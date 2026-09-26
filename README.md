@@ -1,44 +1,41 @@
-# LSH 18-Day Foundational Training Program
+# LSH Standard Foundational Training
 
 The training platform for the *Revised 18-Day Foundational Training Program* (Training Guide for LSH Trainees). It runs on the same engine as the EA/PA portal and the CM course:
 
 - sign-in and approvals
-- day-by-day slideshows
+- lesson slideshows
 - progress saved to the trainee's account
 - the admin Trainee Audit and trainer feedback
 - trainee feedback and certificates
 - 🖥 Presenter view and 👁 Trainee view
 
-Each day follows its section of the curriculum (same order and wording), with two rules:
+Trainees see **the lessons**. Each lesson is its Canva training deck, shown full width in the platform (with Full screen). Lessons are named by their training title, not by day.
 
-- **The Canva training deck is the lesson.** Each Classroom Discussion shows its role deck (Law Firm Communication, Calendaring, Intake, Medical Records, Lien Negotiator, and so on) instead of the curriculum's discussion material.
-- **Trainees see only their tasks.** Task instructions and the links those tasks need (videos to watch, assessments, activities, templates, demo and mock call metrics) stay on the page. Everything else in the curriculum (AI Assisted Discussion links, digital handouts, discussion questions, reference and optional materials) is for admins only, in **Admin → 📘 Curriculum**.
+The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
 
-## Days
+## Lessons
 
-All 18 days are on the platform, each split into its agenda items (one slide each):
-
-| Day | Title | Parts |
+| # | Lesson | On the platform |
 |---|---|---|
-| 1 | VA Essentials | 9 |
-| 2 | VA Essentials | 4 |
-| 3–5 | Reception Training | 2 · 3 · 3 |
-| 6 | Calendar Management Training | 2 |
-| 7–9 | Intake Training | 2 · 3 · 3 |
-| 10–12 | Insurance Communication Training | 2 · 2 · 1 |
-| 13–16 | Provider Communication Training | 3 · 2 · 2 · 2 |
-| 17–18 | Lien Negotiator Training | 3 · 4 (Day 17's PM part includes the playable Word Game 1) |
+| 1 | Virtual Assistant Essentials | ✅ deck |
+| 2 | Law Firm Communication | ✅ deck |
+| 3 | Personal Injury Process Flow | coming (deck view link needed) |
+| 4 | Receptionist Training | coming (deck view link needed) |
+| 5 | Calendaring & Appointment Setting Training | ✅ deck |
+| 6 | Intake Specialist Training | ✅ deck |
+| 7 | Claims Specialist Training | coming (deck view link needed) |
+| 8 | Medical Records Specialist Training | ✅ deck |
+| 9 | Lien Negotiator Training | ✅ deck, then Word Game 1 (playable) |
 
-Days 2–18 are imported from the Word file with `build/curriculum/` (see its README). Day 1 was built by hand from the same guide.
+A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
 ## How the program works
 
-- **Days open when the trainer opens them.** In **Admin → 📅 Open Days**, a trainer ticks the days that are open, either for **All batches** or for one batch. Trainees only see open days. The setting is stored as `settings:opendays`.
-- **No quizzes.** The day's last slide has **✓ Finish Day N**. When all 18 days are finished, the certificate unlocks. The offline activities will be added when they're uploaded.
+- **Lessons open when the trainer opens them.** In **Admin → 📅 Open Lessons**, a trainer ticks the lessons that are open, either for **All batches** or for one batch. Trainees only see open lessons. The setting is stored as `settings:opendays` (the engine calls lessons "days" internally).
+- **No quizzes.** A lesson's last slide has **✓ Finish lesson**. When every lesson is finished, the certificate unlocks. The assessments will be added as built-in Practice Labs, with the same content as their documents.
 - **Facilitator's notes are trainer-only.** They're not in the page:
   - They live in `trainer/notes.json`, which `worker.js` sends only with a trainer (admin) token.
-  - Signed-in trainers see them in a dashed "Trainer only" box where the curriculum has them.
-  - In Presenter view they're the cues for the part on screen.
+  - Trainers see them in Admin → 📘 Curriculum, where the guide has them. (The lessons don't carry any.)
   - They never show in 👁 Trainee view or in the slides window shared with the room.
 - **Admin → 📘 Curriculum** shows the whole Training Guide (Day 0 to Day 18), facilitator content included. It comes from `trainer/curriculum.json`, which is trainer-only like the notes. Screenshots that belong to facilitator content are in `trainer/img/` and are trainer-only too. Images can't send the sign-in header, so the page also keeps the trainer's token in a cookie limited to `/trainer`.
 - **Log-in credentials are never on the platform.** Wherever the guide lists a username or password, trainers get a link to the credentials document instead. The import stops if any credential would be written.
@@ -52,7 +49,8 @@ Days 2–18 are imported from the Word file with `build/curriculum/` (see its RE
 | `js/eapa-updates.js` | **Generated**: the EA/PA update pack (Presenter view, Trainee view, slide layout), rebranded. |
 | `js/ft-updates.js` | This program's layer: section slides, trainer-only notes, open days, Finish Day, dashboard, pop-out viewer. |
 | `build/build.py` | The build (see below). |
-| `build/days/dayNN.js` | Each day's content: its curriculum sections as HTML. |
+| `build/lessons/lessonNN.js` | Each lesson: its Canva deck (one slide per section). This is what trainees see. |
+| `build/days/dayNN.js` | The curriculum's days as HTML, kept for reference; not built into the trainee pages. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
 | `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |

@@ -28,39 +28,19 @@ def rep(old, new, count=None, min_count=1):
     s = s.replace(old, new) if count is None else s.replace(old, new, count)
 
 
-# ---------- 1. the 18 curriculum days replace the EA/PA days ----------
-DAY_TITLES = {
-    # Day headings as the curriculum gives them. A day without a build/days/dayNN.js
-    # file yet is listed with its title and stays closed until its content is added.
-    1: ("VA Essentials", "DAY 1 VA Essentials"),
-    2: ("VA Essentials", "DAY 2 VA Essentials"),
-    3: ("Reception Training", "DAY 3 Reception Training"),
-    4: ("Reception Training", "DAY 4 Reception Training"),
-    5: ("Reception Training", "DAY 5 Reception Training"),
-    6: ("Calendar Management Training", "DAY 6 Calendar Management Training"),
-    7: ("Intake Training", "DAY 7: Intake Training"),
-    8: ("Intake Training", "DAY 8: Intake Training"),
-    9: ("Intake Training", "DAY 9: Intake Training"),
-    10: ("Insurance Communication Training", "DAY 10: Insurance Communication Training"),
-    11: ("Insurance Communication Training", "DAY 11: Insurance Communication Training"),
-    12: ("Insurance Communication Training", "DAY 12: Insurance Communication Training"),
-    13: ("Provider Communication Training", "DAY 13: Provider Communication Training"),
-    14: ("Provider Communication Training", "DAY 14: Provider Communication Training"),
-    15: ("Provider Communication Training", "DAY 15: Provider Communication Training"),
-    16: ("Provider Communication Training", "DAY 16: Provider Communication Training"),
-    17: ("Lien Negotiator Training", "Day 17: Lien Negotiator Training"),
-    18: ("Lien Negotiator Training", "Day 18: Lien Negotiator Training"),
-}
-parts = []
-for n in range(1, 19):
-    f = os.path.join(B, "days", f"day{n:02d}.js")
-    if os.path.exists(f):
-        parts.append(open(f, encoding="utf8").read().strip())
-    else:
-        title, heading = DAY_TITLES[n]
-        parts.append(f'const DAY{n} = {{ id: {n}, title: {title!r}, heading: {heading!r}, sections: [] }};'.replace("'", '"'))
+# ---------- 1. the lessons replace the EA/PA days ----------
+# Trainees see the lessons only: each lesson is its Canva training deck (build/lessons/lessonNN.js).
+# The curriculum (build/days/, trainer/curriculum.json) is for trainers and admins.
+# The engine still calls them "days" internally (DAYS, DAY1…); on screen they're lessons, named by title.
+LESSONS = sorted(f for f in os.listdir(os.path.join(B, "lessons")) if re.fullmatch(r"lesson\d\d\.js", f))
+parts = [open(os.path.join(B, "lessons", f), encoding="utf8").read().strip() for f in LESSONS]
+N = len(LESSONS)
 days_js = "\n\n".join(parts)
-days_js += "\n\nconst DAYS = [" + ", ".join(f"DAY{n}" for n in range(1, 19)) + "];"
+# ftName(id): a lesson's title for the engine's "Day N" labels (also takes "1, 2" lists and arrays).
+days_js += """
+function ftName(v){ const one = x=>{ const d = DAYS.find(d=>d.id===Number(x)); return d ? d.title : String(x); };
+  return Array.isArray(v) ? v.map(one).join(", ") : String(v).split(/,\\s*/).map(one).join(", "); }"""
+days_js += "\n\nconst DAYS = [" + ", ".join(f"DAY{n}" for n in range(1, N + 1)) + "];"
 # The engine reads d.lessons (topic lists, search) and d.quiz; for this program they come from the sections.
 days_js += "\nDAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });"
 i = s.index("const DAY1 = {")
@@ -85,11 +65,15 @@ rep("EA/PA Upskill Program", "Foundational Training Program", min_count=0)
 rep("LSH EA/PA — Platform Orientation", "LSH Foundational Training — Platform Orientation")
 rep("LSH-EAPA-", "LSH-FT-")
 rep(" of 10</b>", " of ${DAYS.length}</b>")
-rep("Day ${d.id} of 10<", "Day ${d.id} of ${DAYS.length}<")
-# No Knowledge Checks: the last slide finishes the day (js/ft-updates.js handles the click).
-rep("Continue to Knowledge Check &rarr;", "✓ Finish Day ${d.id}")
+rep("Day ${d.id} of 10<", "Lesson ${d.id} of ${DAYS.length}<")
+# No Knowledge Checks: the last slide finishes the lesson (js/ft-updates.js handles the click).
+rep("Continue to Knowledge Check &rarr;", "✓ Finish lesson")
 rep("🎉 That's everything for Day ${d.id} — the Knowledge Check is the last step to mark this day complete.",
-    "🎉 That's everything for Day ${d.id} — click Finish Day ${d.id} to mark it complete.")
+    "🎉 That's everything for this lesson — click Finish lesson to mark it complete.")
+# Lessons are named by their title, not "Day N".
+def name_days(text):
+    return re.sub(r"Day \$\{([^{}]+)\}", r"${ftName(\1)}", text)
+s = name_days(s)
 
 # ---------- 4. build tag + this program's layer ----------
 build_tag = "ft-" + datetime.datetime.utcnow().strftime("%Y.%m.%d-%H%M")
@@ -109,5 +93,7 @@ for old, new in [('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Trai
     if old not in u:
         sys.exit(f"MISSING in eapa-updates.js: {old[:80]!r}")
     u = u.replace(old, new)
+u = u.replace("Preview tomorrow: Day ${", "Up next: Lesson ${")
+u = name_days(u)
 open(os.path.join(ROOT, "js", "eapa-updates.js"), "w", encoding="utf8").write(u)
 print(f"index.html written ({len(s)//1024} KB), build {build_tag}")
