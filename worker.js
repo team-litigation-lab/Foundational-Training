@@ -208,7 +208,13 @@ export default {
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
-        const who = secure ? await readToken(env, request) : { role: "a" };
+        let who = secure ? await readToken(env, request) : { role: "a" };
+        if (secure && !who) {
+          // Images can't send an Authorization header, so the page also sets the trainer's
+          // token as a cookie scoped to /trainer (see js/ft-updates.js).
+          const c = (request.headers.get("Cookie") || "").match(/(?:^|;\s*)ft_admin=([^;]+)/);
+          if (c) who = await readToken(env, new Request(request.url, { headers: { Authorization: "Bearer " + decodeURIComponent(c[1]) } }));
+        }
         if (!who || who.role !== "a") return new Response("Trainer sign-in required", { status: 401, headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
         const res = await env.ASSETS.fetch(new Request(url.toString()));
         const h = new Headers(res.headers);
