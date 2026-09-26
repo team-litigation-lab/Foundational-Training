@@ -24,8 +24,12 @@ CRED = re.compile(r"^\s*(user ?name|(\d+(st|nd|rd|th)\s+)?pass ?word)\b.*?:", re
 CRED_DOC = "https://docs.google.com/document/d/1bX1SuRYrmN_5LobDW3YJuuABBnrdGo99/edit#heading=h.z008zgez2whl"
 CRED_HTML = ('🔒 Log-in credentials aren’t stored on the platform. '
              f'Get them from the <a href="{CRED_DOC}" target="_blank" rel="noopener noreferrer">credentials document</a>.')
-# links that are never published: the Nitro Pro installer and its install video (Day 1)
-BLOCKED_LINKS = ["14FSK6PBlnMlughay5emW2NoNYHMmYJoz", "1NOknYf-njzXxQmdaYHDkMFCWHY_Gc2Mj"]
+# links that are never published: the Nitro Pro installer and its install video (Day 1),
+# matched by the SHA-256 of their Drive file ID so the IDs themselves aren't in this file
+import hashlib
+BLOCKED_ID_HASHES = {"a464cac84d1dc3118ef50c123000eff9f1da882a2d19399983a121aeb948d67e", "cfeeb70c958a1a528145a36ca2c4f984b9294c14ff2a454ab822307519921763"}
+def blocked(url):
+    return any(hashlib.sha256(x.encode()).hexdigest() in BLOCKED_ID_HASHES for x in re.findall(r"[A-Za-z0-9_-]{20,}", url))
 def is_cred(b):
     if b["k"] != "p": return False
     t = text(b).strip()
@@ -145,7 +149,7 @@ def canva_view(url):
     return (f"https://www.canva.com/design/{m.group(1)}/{m.group(2)}/view", f"https://www.canva.com/design/{m.group(1)}/{m.group(2)}/view?embed") if m else (url, None)
 
 def link_html(url, label_html, context, trainer):
-    if any(k in url for k in BLOCKED_LINKS):
+    if blocked(url):
         return "<i>[link not included on the platform]</i>"
     if "canva.com/design/" in url:
         view, _ = canva_view(url)
