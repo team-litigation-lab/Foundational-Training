@@ -1,0 +1,490 @@
+/* ============================================================
+   LSH 18-Day Foundational Training Program — program layer
+   Loaded last (after the EA/PA engine and js/eapa-updates.js). The engine
+   gives sign-in and approvals, progress, admin, feedback, certificates,
+   Presenter view and Trainee view; this file adapts it to the curriculum:
+     1. Each day is its curriculum sections, one slide per section, shown
+        as written (Canva decks and Drive files embedded unchanged).
+     2. Facilitator's notes are not in the page: /trainer/notes.json is
+        sent only to a signed-in trainer (see worker.js). Trainers see them
+        on the day pages and as Presenter view cues; never in Trainee view
+        or in the slides window shared with the room.
+     3. Days open when the trainer opens them for a batch (Admin → 📅 Open Days).
+     4. No quizzes: a trainee marks a day finished; all 18 finished = certificate.
+     5. Dashboard, top bar and admin tabs trimmed to what this program uses.
+     6. Drive files open in the draggable pop-out viewer.
+   ============================================================ */
+window.FT_LAYER = true;
+const FT_TOTAL_DAYS = DAYS.length;
+// eapa-updates.js adds EA/PA topics to some days; each day's topics are its curriculum sections only.
+DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });
+
+(function(){ const s = document.createElement("style"); s.id = "ft-layer"; s.textContent = `
+/* curriculum section slides */
+.ft-section h4{margin-bottom:14px;}
+.ft-body{font-size:15.5px;line-height:1.6;color:var(--ink);text-align:left;}
+.ft-body p{margin:8px 0;}
+.ft-body ul, .ft-body ol{margin:8px 0;padding-left:22px;}
+.ft-body li{margin:4px 0;}
+.ft-body h3{margin:18px 0 8px;font-size:16px;color:var(--navy);}
+.ft-body a{color:var(--orange-deep);overflow-wrap:anywhere;}
+.ft-body .url-list{display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere;}
+.ft-body .plain-list{line-height:1.8;}
+.ft-body .naming{background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;color:var(--navy);margin:8px 0;overflow-wrap:anywhere;}
+.ft-body .naming div + div{margin-top:4px;}
+.ft-body hr.stars{border:none;text-align:center;margin:16px 0;color:var(--ink-soft);letter-spacing:.3em;}
+.ft-body hr.stars::after{content:"***************";}
+.ft-body .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:10px 0;}
+.ft-body .shots figure{margin:0;}
+.ft-body .shots a{display:flex;align-items:center;justify-content:center;background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:6px;height:160px;}
+.ft-body .shots img{max-width:100%;max-height:100%;object-fit:contain;}
+.ft-body .shots figcaption{font-size:13px;color:var(--ink-soft);margin-top:4px;text-align:center;}
+.ft-body .canva-frame{position:relative;width:100%;height:0;padding-top:56.25%;overflow:hidden;border-radius:8px;background:#161829;margin-top:10px;}
+.ft-body .canva-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
+.ft-body .actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--ink-soft);}
+.ft-body .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.ft-body .btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--line);}
+.ft-body .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:10px 0;}
+.ft-body .res-card{background:#fff;border:1px solid var(--line);border-left:6px solid #dc2626;border-radius:10px;padding:12px 14px;cursor:pointer;transition:box-shadow .15s, transform .15s;}
+.ft-body .res-card:hover{box-shadow:0 12px 32px rgba(15,33,72,.12);transform:translateY(-2px);}
+.ft-body .res-head{display:inline-block;padding:3px 9px;border-radius:6px;background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+.ft-body .facilitator, .pv-cues .facilitator{background:#F3F5FA;border:1px dashed #9AA1BC;border-radius:8px;padding:12px 16px;margin:12px 0;}
+.ft-body .facilitator::before{content:"🧑‍🏫 Trainer only";display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);margin-bottom:6px;}
+.ft-empty-day{padding:40px;text-align:center;}
+/* dashboard: 18 days on one timeline row */
+.step-timeline{flex-wrap:nowrap;}
+.step-timeline .step-circle{width:38px;height:38px;font-size:14px;}
+.step-timeline .step-dash{flex:1 1 8px;min-width:6px;width:auto;}
+@media (max-width:900px){ .step-timeline{flex-wrap:wrap;row-gap:10px;} }
+.ft-hero-title{font-family:'Fraunces',Georgia,serif;}
+.ft-open-days{padding:18px 20px;margin-bottom:18px;}
+.ft-open-days h3{margin:0 0 4px;color:var(--navy);}
+.ft-open-days .ft-od-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;}
+.ft-open-days select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);}
+.ft-od-days{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+.ft-od-day{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:#fff;cursor:pointer;}
+.ft-od-day.on{border-color:var(--orange);background:#FFF6EC;}
+.ft-od-day.nocontent{opacity:.55;}
+.ft-od-day b{display:block;color:var(--navy);}
+/* pop-out viewer (same as the LSH Training Portal's Recorded Lectures) */
+#lecture-viewer-pane{position:fixed;right:24px;bottom:24px;width:380px;max-width:calc(100vw - 48px);height:250px;max-height:calc(100vh - 48px);background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.35);display:none;flex-direction:column;z-index:3000;overflow:hidden;}
+#lecture-viewer-pane.open{display:flex;}
+body.lv-dragging iframe{pointer-events:none;}
+body.lv-dragging{user-select:none;}
+#lecture-viewer-header{background:#161829;color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;border-bottom:2px solid #dc2626;}
+#lecture-viewer-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px;}
+#lecture-viewer-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+#lecture-viewer-open-link, #lecture-viewer-fullscreen, #lecture-viewer-close{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font-size:12px;font-weight:700;font-family:inherit;border-radius:5px;padding:4px 8px;cursor:pointer;text-decoration:none;line-height:1.4;display:inline-block;}
+#lecture-viewer-open-link:hover, #lecture-viewer-fullscreen:hover{background:rgba(255,255,255,.15);}
+#lecture-viewer-close:hover{background:#dc2626;border-color:#dc2626;}
+#lecture-viewer-body{flex:1;position:relative;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#lecture-viewer-frame-holder{display:contents;}
+#lecture-viewer-body iframe{width:100%;height:100%;border:none;background:#fff;}
+#lecture-viewer-fallback{padding:40px 24px;text-align:center;font-size:12px;color:#94a3b8;}
+#lecture-viewer-fallback a{color:#dc2626;font-weight:700;}
+`; document.head.appendChild(s); })();
+
+const FT_IS_AUDIENCE = typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE;
+
+/* ---------- 1. one slide per curriculum section ---------- */
+window.buildDaySlides = function(d){ return (d.sections||[]).map((x, i)=>({type:"ftSection", index:i})); };
+const __ftSlideTitle = window.daySlideTitle;
+window.daySlideTitle = function(d, slide){ return slide && slide.type==="ftSection" ? d.sections[slide.index].h : __ftSlideTitle(d, slide); };
+const __ftSlideContent = window.renderDaySlideContent;
+window.renderDaySlideContent = function(d, slide, idx){
+  if(!slide || slide.type!=="ftSection") return __ftSlideContent(d, slide, idx);
+  const sec = d.sections[slide.index];
+  return `
+    <div class="topic-separator">${esc(d.heading || ("DAY " + d.id))} &middot; PART ${slide.index+1} OF ${d.sections.length}</div>
+    <div class="card lesson-card ft-section" data-part="1">
+      <h4><span class="lnum">${String(slide.index+1).padStart(2,"0")}</span>${esc(sec.h)}</h4>
+      <div class="ft-body">${sec.html}</div>
+    </div>`;
+};
+// "Before you start": the day's sections as the curriculum lists them (no objectives, quiz or timing).
+window.renderDayIntro = function(d){
+  return `
+    <div class="lesson-stage day-intro">
+      <div class="lesson-slide"><div class="card lesson-card">
+        <div class="di-kicker">Day ${d.id} of ${DAYS.length} · Before you start</div>
+        <h2>${esc(d.heading || d.title)}</h2>
+        <div class="di-grid" style="grid-template-columns:1fr;">
+          <div class="di-box"><b>🗺 What today covers</b><ol class="di-topics">${d.sections.map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
+        </div>
+      </div></div>
+      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">${d.sections.length} parts</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start Day ${d.id} →</button></div>
+    </div>`;
+};
+const __ftRenderDay = window.renderDay;
+window.renderDay = function(id){
+  const d = DAYS.find(x=>x.id===id);
+  if(!d) return __ftRenderDay(id);
+  const head = `<a class="back-link" onclick="goto('dashboard')">&larr; Back to roadmap</a>`;
+  if(!dayUnlocked(id)){
+    return `${head}
+      <div class="card ft-empty-day">
+        <div style="font-size:34px;margin-bottom:10px;">🔒</div>
+        <h2 style="color:var(--navy);margin:0 0 8px;">Day ${id} is locked</h2>
+        <p style="color:var(--ink-soft);font-size:14px;">${esc(dayLockReason(id))}</p>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('dashboard')">Back to the roadmap</button>
+      </div>`;
+  }
+  if(!d.sections.length){
+    return `${head}
+      <div class="card ft-empty-day">
+        <div style="font-size:34px;margin-bottom:10px;">🗂</div>
+        <h2 style="color:var(--navy);margin:0 0 8px;">${esc(d.heading)}</h2>
+        <p style="color:var(--ink-soft);font-size:14px;">This day's content hasn't been added to the platform yet.</p>
+      </div>`;
+  }
+  return __ftRenderDay(id);
+};
+
+/* ---------- 2. facilitator's notes (trainer only) ---------- */
+const FT = {notes:null, loading:null, tried:false};
+function ftTrainerView(){ return !!state.isAdmin && !state.adminPreview && !FT_IS_AUDIENCE; }
+function ftLoadNotes(){
+  if(FT.notes) return Promise.resolve(FT.notes);
+  if(FT.loading) return FT.loading;
+  FT.tried = true;
+  FT.loading = fetch("/trainer/notes.json", {cache:"no-store", headers: state.adminToken ? {Authorization: "Bearer " + state.adminToken} : {}})
+    .then(r=>r.ok ? r.json() : null)
+    .then(j=>{ FT.notes = j ? (j.slots || {}) : null; FT.loading = null; return FT.notes; })
+    .catch(()=>{ FT.loading = null; return null; });
+  return FT.loading;
+}
+function ftFillSlots(){
+  const on = ftTrainerView();
+  if(on && !FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n) ftFillSlots(); }); }
+  document.querySelectorAll(".trainer-slot").forEach(el=>{
+    const html = on && FT.notes ? (FT.notes[el.getAttribute("data-slot")] || "") : "";
+    if(el.innerHTML !== html) el.innerHTML = html;
+  });
+}
+const __ftAfterRender = window.afterRender;
+window.afterRender = function(){
+  const r = __ftAfterRender.apply(this, arguments);
+  try{ ftFillSlots(); }catch(e){}
+  // The open days are needed as soon as someone is signed in (the first check can run before sign-in).
+  if(!state.ftOpenDays && !FT.odLoading && (state.traineeId || state.isAdmin) && !FT_IS_AUDIENCE){
+    FT.odLoading = true;
+    ftLoadOpenDays().then(()=>{ FT.odLoading = false; if(["dashboard","day"].includes(state.view)) render(); });
+  }
+  return r;
+};
+const __ftAdminLogout = window.adminLogout;
+if(typeof __ftAdminLogout === "function") window.adminLogout = function(){ FT.notes = null; FT.tried = false; return __ftAdminLogout.apply(this, arguments); };
+const __ftOpenAdmin = window.openAdmin;
+if(typeof __ftOpenAdmin === "function") window.openAdmin = function(){ FT.tried = false; return __ftOpenAdmin.apply(this, arguments); };
+const __ftCues = window.presenterCues;
+window.presenterCues = function(d, slide){
+  if(!slide || slide.type!=="ftSection") return __ftCues(d, slide);
+  const sec = d.sections[slide.index];
+  const keys = [...sec.html.matchAll(/data-slot="([^"]+)"/g)].map(m=>m[1]);
+  if(!FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n && state.presenting && typeof presenterRefresh==="function") presenterRefresh(); }); }
+  const notes = keys.map(k=>(FT.notes && FT.notes[k]) || "").join("");
+  const empty = FT.notes || FT.tried ? "No facilitator’s notes for this part." : "Loading the facilitator’s notes…";
+  return `<h3>${esc(sec.h)}</h3>` + (notes || `<p class="pv-empty">${empty}</p>`);
+};
+
+/* ---------- 3. days open when the trainer opens them ----------
+   settings:opendays = {all:[day ids], batches:{"<batch key>":[day ids]}} */
+state.ftOpenDays = null;
+function ftBatchKey(b){ return String(b||"").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+function ftOpenFor(batch){
+  const o = state.ftOpenDays || {};
+  return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(batch)] || []).map(Number));
+}
+async function ftLoadOpenDays(){
+  const v = await sharedGet("settings:opendays").catch(()=>null);
+  const next = (v && typeof v === "object") ? {all: v.all || [], batches: v.batches || {}} : {all: [], batches: {}};
+  const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays);
+  state.ftOpenDays = next;
+  return changed;
+}
+window.dayUnlocked = function(id){
+  const d = DAYS.find(x=>x.id===id); if(!d) return false;
+  if(state.isAdmin || state.adminPreview) return true;
+  if(!d.sections.length) return false;
+  const own = state.progress && state.progress[id];
+  if(own && own.done) return true;
+  return ftOpenFor(state.traineeBatch).has(id);
+};
+window.dayLockReason = function(id){
+  const d = DAYS.find(x=>x.id===id);
+  if(d && !d.sections.length) return `Day ${id}'s content hasn't been added to the platform yet.`;
+  return `Your trainer opens Day ${id} when your batch starts it.`;
+};
+function ftRefreshOpenDays(){
+  if(FT_IS_AUDIENCE || !(state.traineeId || state.isAdmin)) return;
+  ftLoadOpenDays().then(changed=>{ if(changed && ["dashboard","day"].includes(state.view)) render(); });
+}
+setTimeout(ftRefreshOpenDays, 300);
+setInterval(ftRefreshOpenDays, 60000);
+const __ftGoto = window.goto;
+window.goto = function(view){ const r = __ftGoto.apply(this, arguments); if(view==="dashboard") ftRefreshOpenDays(); return r; };
+
+/* Admin → 📅 Open Days */
+function ftKnownBatches(){
+  const set = new Map();
+  (state.adminData || []).forEach(r=>{ const b = String(r.batch||"").trim(); if(b && !set.has(ftBatchKey(b))) set.set(ftBatchKey(b), b); });
+  Object.keys((state.ftOpenDays||{}).batches || {}).forEach(k=>{ if(!set.has(k)) set.set(k, k); });
+  return [...set.entries()].sort((a,b)=>a[1].localeCompare(b[1]));
+}
+function renderFtOpenDays(){
+  const batches = ftKnownBatches();
+  const sel = state.ftOdBatch || "__all";
+  const o = state.ftOpenDays || {all:[], batches:{}};
+  const open = new Set((sel==="__all" ? o.all : (o.batches||{})[sel] || []).map(Number));
+  const everyone = new Set((o.all||[]).map(Number));
+  return `
+    <div class="card ft-open-days">
+      <h3>📅 Open Days</h3>
+      <p style="margin:0;color:var(--ink-soft);font-size:14px;">Trainees only see a day once it's open for them. Open each day when the batch starts it. A day opened for <b>All batches</b> is open for everyone.</p>
+      <div class="ft-od-row">
+        <label for="ftOdBatch"><b>Batch</b></label>
+        <select id="ftOdBatch" onchange="ftSetOdBatch(this.value)">
+          <option value="__all" ${sel==="__all"?"selected":""}>All batches</option>
+          ${batches.map(([k, label])=>`<option value="${esc(k)}" ${sel===k?"selected":""}>${esc(label)}</option>`).join("")}
+        </select>
+        ${state.adminData ? "" : `<span style="font-size:13px;color:var(--ink-soft);">Loading batches…</span>`}
+      </div>
+      <div class="ft-od-days">
+        ${DAYS.map(d=>{
+          const on = open.has(d.id), viaAll = sel!=="__all" && everyone.has(d.id);
+          return `<label class="ft-od-day ${on||viaAll?"on":""} ${d.sections.length?"":"nocontent"}">
+            <input type="checkbox" ${on||viaAll?"checked":""} ${viaAll||!d.sections.length?"disabled":""} onchange="ftToggleOpenDay(${d.id}, this.checked)">
+            <span><b>Day ${d.id}</b>${esc(d.title)}${viaAll?`<br><i>open for all batches</i>`:""}${d.sections.length?"":`<br><i>no content yet</i>`}</span>
+          </label>`;
+        }).join("")}
+      </div>
+    </div>`;
+}
+window.ftSetOdBatch = function(v){ state.ftOdBatch = v; render(); };
+window.ftToggleOpenDay = async function(id, on){
+  await ftLoadOpenDays();
+  const o = state.ftOpenDays;
+  const sel = state.ftOdBatch || "__all";
+  const list = new Set((sel==="__all" ? o.all : (o.batches[sel] = o.batches[sel] || [])).map(Number));
+  on ? list.add(id) : list.delete(id);
+  const arr = [...list].sort((a,b)=>a-b);
+  if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
+  const ok = await sharedSet("settings:opendays", o);
+  toast(ok ? `Day ${id} ${on ? "opened" : "closed"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
+  render();
+};
+const __ftRenderAdmin = window.renderAdmin;
+window.renderAdmin = function(){
+  if(["rankings","sop","cues","studio"].includes(state.adminTab)) state.adminTab = "audit";
+  const odTab = `<button class="admin-tab-btn ${state.adminTab==="opendays"?"active":""}" onclick="setAdminTab('opendays')">📅 Open Days</button>`;
+  if(state.adminTab==="opendays"){
+    state.adminTab = "tfeedback";                    // borrow the tab bar from the engine…
+    let out = __ftRenderAdmin();
+    state.adminTab = "opendays";
+    const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
+    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
+    if(!state.adminData && typeof loadAdminData === "function" && !state.adminLoading) loadAdminData();
+    return ftTrimAdminTabs(bar, odTab) + renderFtOpenDays();
+  }
+  return ftTrimAdminTabs(__ftRenderAdmin(), odTab);
+};
+function ftTrimAdminTabs(html, odTab){
+  html = html.replace(/<button class="admin-tab-btn[^"]*" onclick="setAdminTab\('(rankings|sop|cues|studio)'\)">[^<]*<\/button>/g, "");
+  return html.replace(/(<button class="admin-tab-btn[^"]*" onclick="setAdminTab\('audit'\)">[^<]*<\/button>)/, "$1" + odTab);
+}
+
+/* ---------- 4. finishing a day (no quizzes) ---------- */
+async function ftFinishDay(id){
+  const d = DAYS.find(x=>x.id===id); if(!d) return;
+  if(state.isAdmin && !state.traineeId){ toast("Trainees mark their own days finished."); return; }
+  if(!confirm(`Mark ${d.heading} as finished?`)) return;
+  state.progress[id] = Object.assign({}, state.progress[id], {done:true, date:new Date().toISOString()});
+  await storeSet("day-progress", state.progress);
+  try{ syncToLedger(); }catch(e){}
+  toast(`✓ Day ${id} finished.`);
+  goto("dashboard");
+}
+window.finishTrainingForDay = ftFinishDay;
+window.goToKnowledgeCheckWithInterstitial = function(){ ftFinishDay(state.dayId); };
+
+/* ---------- 5. dashboard, day cards, top bar ---------- */
+window.moduleCard = function(d){
+  const prog = state.progress[d.id];
+  const unlocked = dayUnlocked(d.id);
+  const status = prog && prog.done ? "done" : (unlocked && d.sections.length ? "open" : "locked");
+  const shown = d.lessons.slice(0, 7), more = d.lessons.length - shown.length;
+  const label = status==="done" ? " &middot; Finished" : (!d.sections.length ? " &middot; Coming soon" : (status==="locked" ? " &middot; 🔒 Locked" : ""));
+  return `
+  <div class="module-card mc-${status}" id="module-${d.id}">
+    <div class="module-head">
+      <div class="mh-day">Day ${d.id}${label}</div>
+      <div class="mh-title">${esc(d.title)}</div>
+    </div>
+    <div class="module-body">
+      ${typeof feedbackButton==="function" ? feedbackButton(d.id) : ""}
+      <ul class="module-topic-list">${shown.map(l=>`<li>${esc(l.h)}</li>`).join("")}</ul>
+      ${more>0 ? `<button type="button" class="module-more" onclick="event.stopPropagation(); showDayTopics(${d.id})">+ ${more} more <span>›</span></button>` : ""}
+    </div>
+    <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
+    ${status==="open" && state.traineeId && !state.isAdmin ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="finishTrainingForDay(${d.id})">✓ Finish Day ${d.id}</button>` : ""}
+  </div>`;
+};
+window.renderDashboard = function(){
+  const done = DAYS.filter(d=>state.progress[d.id] && state.progress[d.id].done).length;
+  const pct = Math.round(done / FT_TOTAL_DAYS * 100);
+  const cert = state.traineeId ? certData() : null;
+  return `
+  <div class="dash-top">
+    <div class="dash-hero">
+      <div class="dash-hero-text">
+        <p class="eyebrow">TRAINING GUIDE FOR LSH TRAINEES</p>
+        <h1 class="ft-hero-title">Revised – 18-Day Foundational Training Program</h1>
+      </div>
+      <div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>
+    </div>
+    <div class="step-timeline">
+      ${DAYS.map((d,i)=>{
+        const prog = state.progress[d.id], unlocked = dayUnlocked(d.id) && d.sections.length;
+        const st = (prog&&prog.done ? "st-done" : (unlocked ? "st-open" : "st-locked"));
+        return `<div class="step-node">
+          <div class="step-circle ${st}" onclick="${unlocked?`scrollToModule(${d.id})`:""}" title="Day ${d.id} — ${esc(d.title)}">${prog&&prog.done?"✓":d.id}</div>
+          ${i<DAYS.length-1?`<div class="step-dash ${prog&&prog.done?"filled":""}"></div>`:""}
+        </div>`;
+      }).join("")}
+    </div>
+  </div>
+  <div class="dash-layout">
+    <div class="dash-main">
+      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open days for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin → Open Days</a>.</div>` : ""}
+      <div class="module-grid">${DAYS.map(d=>moduleCard(d)).join("")}</div>
+      <div class="hero-actions bottom-actions">
+        ${resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : ""}
+        ${cert ? (done === FT_TOTAL_DAYS
+          ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
+          : `<span class="cert-hero-locked" title="Finish all ${FT_TOTAL_DAYS} days to unlock">🎓 Certificate · ${done}/${FT_TOTAL_DAYS} days finished</span>`) : ""}
+      </div>
+    </div>
+    <aside class="dash-side"><div class="dash-side-inner">
+      <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
+      <div class="card stat"><div class="num">${done} / ${FT_TOTAL_DAYS}</div><div class="lbl">Days finished</div></div>
+      ${typeof renderFeedbackDashCard==="function" ? renderFeedbackDashCard() : ""}
+    </div></aside>
+  </div>`;
+};
+const __ftCertData = window.certData;
+window.certData = function(src){
+  const c = __ftCertData.apply(this, arguments);
+  c.eligible = c.passed === FT_TOTAL_DAYS;   // every day finished (no Knowledge Checks in this program)
+  return c;
+};
+// EA/PA-only screens (client profile, practice labs, roleplays, handouts, random tasks,
+// orientation deck, facilitator guide) aren't part of this program: they open the dashboard.
+const FT_OFF_VIEWS = {clientprofile:"renderClientProfile", practice:"renderPracticeHub", tool:"renderTool", handouts:"renderHandouts",
+  crisisroleplay:"renderCrisisRoleplayHub", openroleplay:"renderOpenRoleplay", tasks:"renderTasksPage", orientation:"renderOrientation", facilitatorguide:"renderFacilitatorGuide"};
+Object.keys(FT_OFF_VIEWS).forEach(v=>{ window[FT_OFF_VIEWS[v]] = function(){ state.view = "dashboard"; return renderDashboard(); }; });
+const __ftGotoOff = window.goto;
+window.goto = function(view){ if(FT_OFF_VIEWS[view]) arguments[0] = "dashboard"; return __ftGotoOff.apply(this, arguments); };
+const __ftTopbar = window.renderTopbar;
+window.renderTopbar = function(){
+  return __ftTopbar.apply(this, arguments)
+    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|tasks|orientation|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
+    .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search days and topics…"');
+};
+
+/* ---------- 6. Drive files open in the pop-out viewer ---------- */
+(function(){
+  if(document.getElementById("lecture-viewer-pane")) return;
+  const pane = document.createElement("div");
+  pane.id = "lecture-viewer-pane";
+  pane.innerHTML = `<div id="lecture-viewer-header"><span id="lecture-viewer-title">Recorded Lecture</span><div id="lecture-viewer-actions">
+      <a id="lecture-viewer-open-link" href="#" target="_blank" rel="noopener noreferrer" title="Open the original link in a new tab">↗</a>
+      <button id="lecture-viewer-fullscreen" type="button" title="Full Screen">⛶</button>
+      <button id="lecture-viewer-close" type="button" title="Close">✕</button></div></div>
+    <div id="lecture-viewer-body"><div id="lecture-viewer-frame-holder"></div></div>`;
+  document.body.appendChild(pane);
+})();
+const LV = {kind:"video"};
+function lvSrc(raw){ const s = String(raw||""); if(!/<iframe[\s>]/i.test(s)) return s; const m = s.match(/\bsrc=["']([^"']+)["']/i); return m ? m[1] : s; }
+function lvEmbedUrl(raw){
+  const url = lvSrc(raw).trim(); if(!url) return null;
+  if(/youtube(-nocookie)?\.com\/embed\//i.test(url) || /drive\.google\.com\/.*\/preview/i.test(url) || /drive\.google\.com\/embeddedfolderview/i.test(url)) return url;
+  let m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i); if(m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  m = url.match(/drive\.google\.com\/(?:open|uc)\?[^#]*\bid=([a-zA-Z0-9_-]+)/i); if(m) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  m = url.match(/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]+)/i); if(m) return `https://drive.google.com/embeddedfolderview?id=${m[1]}#grid`;
+  m = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/); if(m) return `https://www.youtube.com/embed/${m[1]}`;
+  m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/i); if(m) return `https://www.youtube.com/embed/${m[1]}`;
+  return null;
+}
+function lvFit(){
+  const body = document.getElementById("lecture-viewer-body"), f = body && body.querySelector("iframe");
+  if(!f) return;
+  let w = body.clientWidth, h = body.clientHeight; if(w<=0 || h<=0) return;
+  if(LV.kind !== "doc"){ const hh = w/(16/9); if(hh > h){ w = h*(16/9); } else { h = hh; } }
+  f.style.width = Math.round(w) + "px"; f.style.height = Math.round(h) + "px";
+}
+if(window.ResizeObserver) new ResizeObserver(lvFit).observe(document.getElementById("lecture-viewer-body"));
+function lvReset(){
+  const p = document.getElementById("lecture-viewer-pane"), doc = LV.kind === "doc";
+  Object.assign(p.style, {top:"", left:"", transform:"", right:"24px", bottom:"24px", width: doc ? "820px" : "380px", height: doc ? "600px" : "250px", maxWidth:"", maxHeight:""});
+}
+function lvOpen(item){
+  if(item.kind !== "doc" && !confirm(`Do you want to watch this ${item.kind==="lecture"?"lecture":"video"}?\n\n"${item.title}"`)) return;
+  LV.kind = item.kind === "doc" ? "doc" : "video";
+  const p = document.getElementById("lecture-viewer-pane"), holder = document.getElementById("lecture-viewer-frame-holder"), link = document.getElementById("lecture-viewer-open-link");
+  document.getElementById("lecture-viewer-title").textContent = item.title || "Recorded Lecture";
+  const clean = lvSrc(item.url).trim();
+  if(clean){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
+  const src = lvEmbedUrl(item.url);
+  holder.innerHTML = src
+    ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  p.classList.remove("maximized");
+  const fs = document.getElementById("lecture-viewer-fullscreen"); fs.textContent = "⛶"; fs.title = "Full Screen";
+  lvReset(); p.classList.add("open"); lvFit();
+}
+function lvClose(){ const p = document.getElementById("lecture-viewer-pane"); p.classList.remove("open", "maximized"); document.getElementById("lecture-viewer-frame-holder").innerHTML = ""; }
+function lvToggleMax(){
+  const p = document.getElementById("lecture-viewer-pane"), b = document.getElementById("lecture-viewer-fullscreen");
+  if(!p.classList.contains("maximized")){
+    p.classList.add("maximized");
+    Object.assign(p.style, {top:"0", left:"0", right:"0", bottom:"0", width:"auto", height:"auto", maxWidth:"none", maxHeight:"none", transform:"none"});
+    b.textContent = "⤢"; b.title = "Exit Full Screen";
+  } else { p.classList.remove("maximized"); lvReset(); b.textContent = "⛶"; b.title = "Full Screen"; }
+  lvFit();
+}
+document.getElementById("lecture-viewer-fullscreen").addEventListener("click", lvToggleMax);
+document.getElementById("lecture-viewer-close").addEventListener("click", lvClose);
+(function(){
+  const p = document.getElementById("lecture-viewer-pane"), h = document.getElementById("lecture-viewer-header");
+  const skip = ["lecture-viewer-close", "lecture-viewer-fullscreen", "lecture-viewer-open-link"];
+  let drag = false, ox = 0, oy = 0;
+  const can = t=>skip.indexOf(t.id) === -1 && !p.classList.contains("maximized");
+  const start = (x, y)=>{ const r = p.getBoundingClientRect(); Object.assign(p.style, {transform:"none", right:"", bottom:"", left:r.left+"px", top:r.top+"px"}); ox = x-r.left; oy = y-r.top; drag = true; document.body.classList.add("lv-dragging"); };
+  const move = (x, y)=>{ if(!drag) return; p.style.left = Math.max(-p.offsetWidth+120, Math.min(x-ox, innerWidth-60)) + "px"; p.style.top = Math.max(0, Math.min(y-oy, innerHeight-40)) + "px"; };
+  const end = ()=>{ drag = false; document.body.classList.remove("lv-dragging"); };
+  h.addEventListener("mousedown", e=>{ if(!can(e.target)) return; start(e.clientX, e.clientY); e.preventDefault(); });
+  document.addEventListener("mousemove", e=>move(e.clientX, e.clientY));
+  document.addEventListener("mouseup", end);
+  h.addEventListener("touchstart", e=>{ if(!can(e.target)) return; start(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+  document.addEventListener("touchmove", e=>{ if(drag) move(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+  document.addEventListener("touchend", end);
+})();
+// Links and cards inside section slides (the slides are re-rendered, so listen on the document)
+document.addEventListener("click", function(e){
+  const a = e.target.closest && e.target.closest("a.viewer-link");
+  if(a && !(e.ctrlKey || e.metaKey || e.shiftKey)){
+    e.preventDefault();
+    lvOpen({kind: a.getAttribute("data-kind"), title: a.getAttribute("data-title"), url: a.getAttribute("href")});
+    return;
+  }
+  const card = e.target.closest && e.target.closest(".res-card[data-url]");
+  if(card){ lvOpen({kind: card.getAttribute("data-kind"), title: card.getAttribute("data-title"), url: card.getAttribute("data-url")}); return; }
+  const fsb = e.target.closest && e.target.closest("[data-fullscreen]");
+  if(fsb){ const el = document.getElementById(fsb.getAttribute("data-fullscreen")); const req = el && (el.requestFullscreen || el.webkitRequestFullscreen); if(req) req.call(el); }
+});
+document.addEventListener("keydown", function(e){
+  const card = e.target.closest && e.target.closest(".res-card[data-url]");
+  if(card && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); card.click(); }
+});
+
+if(typeof render === "function") render();
