@@ -17,19 +17,20 @@ Each day's content is its section of the curriculum, **as written**:
 
 ## Days
 
-| Day | Title | On the platform |
-|---|---|---|
-| 1 | VA Essentials | ✅ 9 parts |
-| 2 | VA Essentials | coming |
-| 3–5 | Reception Training | coming |
-| 6 | Calendar Management Training | coming |
-| 7–9 | Intake Training | coming |
-| 10–12 | Insurance Communication Training | coming |
-| 13–16 | Provider Communication Training | coming |
-| 17 | Lien Negotiator Training | 🟡 Word Game 1 (playable); the rest of the deck is coming |
-| 18 | Lien Negotiator Training | coming |
+All 18 days are on the platform, each split into its agenda items (one slide each):
 
-A day without content shows on the dashboard as *Coming soon* and can't be opened by trainees.
+| Day | Title | Parts |
+|---|---|---|
+| 1 | VA Essentials | 9 |
+| 2 | VA Essentials | 4 |
+| 3–5 | Reception Training | 2 · 3 · 3 |
+| 6 | Calendar Management Training | 2 |
+| 7–9 | Intake Training | 2 · 3 · 4 |
+| 10–12 | Insurance Communication Training | 2 · 2 · 1 |
+| 13–16 | Provider Communication Training | 3 · 2 · 2 · 2 |
+| 17–18 | Lien Negotiator Training | 3 · 5 (Day 17's PM part includes the playable Word Game 1) |
+
+Days 2–18 are imported from the Word file with `build/curriculum/` (see its README). Day 1 was built by hand from the same guide.
 
 ## How the program works
 
@@ -40,6 +41,8 @@ A day without content shows on the dashboard as *Coming soon* and can't be opene
   - Signed-in trainers see them in a dashed "Trainer only" box where the curriculum has them.
   - In Presenter view they're the cues for the part on screen.
   - They never show in 👁 Trainee view or in the slides window shared with the room.
+- **Admin → 📘 Curriculum** shows the whole Training Guide (Day 0 to Day 18), facilitator content included. It comes from `trainer/curriculum.json`, which is trainer-only like the notes. Screenshots that belong to facilitator content are in `trainer/img/` and are trainer-only too. Images can't send the sign-in header, so the page also keeps the trainer's token in a cookie limited to `/trainer`.
+- **Log-in credentials are never on the platform.** Wherever the guide lists a username or password, trainers get a link to the credentials document instead. The import stops if any credential would be written.
 - **Drive files** open in a draggable pop-out viewer, the same one as the LSH Training Portal's Recorded Lectures. Videos ask "Do you want to watch…?" first.
 
 ## Files
@@ -52,8 +55,10 @@ A day without content shows on the dashboard as *Coming soon* and can't be opene
 | `build/build.py` | The build (see below). |
 | `build/days/dayNN.js` | Each day's content: its curriculum sections as HTML. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
-| `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. |
+| `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
+| `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
+| `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 
 ## Build

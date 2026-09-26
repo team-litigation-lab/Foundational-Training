@@ -51,6 +51,32 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-body .facilitator, .pv-cues .facilitator{background:#F3F5FA;border:1px dashed #9AA1BC;border-radius:8px;padding:12px 16px;margin:12px 0;}
 .ft-body .facilitator::before{content:"🧑‍🏫 Trainer only";display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);margin-bottom:6px;}
 .ft-empty-day{padding:40px;text-align:center;}
+.ft-body p.li, .ftc-body p.li{display:flex;gap:.5em;margin:4px 0 4px calc(var(--lvl,0) * 24px);}
+.ft-body p.li .lbl, .ftc-body p.li .lbl{flex:0 0 auto;min-width:1.4em;font-weight:700;color:var(--navy);}
+.ft-body h5{margin:14px 0 6px;font-size:15px;color:var(--navy);}
+/* the curriculum styles much of its body text as headings: keep them body-sized inside a slide */
+.lesson-card .ft-body h3, .lesson-card .ft-body h4, .lesson-card .ft-body h5, .lesson-stage #lessonSlideWrap .lesson-card .ft-body h3, .lesson-stage #lessonSlideWrap .lesson-card .ft-body h4, .lesson-stage #lessonSlideWrap .lesson-card .ft-body h5, #audienceRoot .ft-body h3, #audienceRoot .ft-body h4, #audienceRoot .ft-body h5{font-family:'Inter',system-ui,sans-serif !important;font-size:16px !important;line-height:1.45 !important;text-align:left !important;margin:14px 0 6px !important;color:var(--navy) !important;font-weight:700 !important;letter-spacing:0 !important;text-transform:none !important;}
+.lesson-card .ft-body h3, .lesson-stage #lessonSlideWrap .lesson-card .ft-body h3{font-size:17px !important;}
+.lesson-card .ft-body p, .lesson-card .ft-body li, .lesson-card .ft-body td{text-align:left !important;}
+.ft-body .lbl-h, .ftc-body .lbl-h{margin-right:.35em;}
+.ft-body .tbl-wrap, .ftc-body .tbl-wrap{overflow-x:auto;margin:10px 0;}
+.ft-body table.ft-table, .ftc-body table.ft-table{border-collapse:collapse;width:100%;font-size:14px;}
+.ft-body table.ft-table td, .ftc-body table.ft-table td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;}
+.ft-body table.ft-table td p, .ftc-body table.ft-table td p{margin:4px 0;}
+.ft-body .redacted, .ftc-body .redacted{background:#FFF6EC;border:1px solid var(--orange-soft,#F0C08A);border-radius:8px;padding:8px 12px;font-weight:600;}
+/* Admin → 📘 Curriculum */
+.ftc{padding:18px 20px;}
+.ftc-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 14px;}
+.ftc-top select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);max-width:100%;}
+.ftc-body{font-size:15px;line-height:1.6;}
+.ftc-body a{color:var(--orange-deep);overflow-wrap:anywhere;}
+.ftc-body h3{font-size:17px;color:var(--navy);margin:18px 0 8px;} .ftc-body h4, .ftc-body h5{color:var(--navy);margin:14px 0 6px;}
+.ftc-body hr.stars{border:none;text-align:center;margin:14px 0;color:var(--ink-soft);letter-spacing:.3em;} .ftc-body hr.stars::after{content:"***************";}
+.ftc-body .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:10px 0;}
+.ftc-body .shots figure{margin:0;} .ftc-body .shots a{display:flex;align-items:center;justify-content:center;background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:6px;height:160px;}
+.ftc-body .shots img{max-width:100%;max-height:100%;object-fit:contain;} .ftc-body .shots figcaption{font-size:13px;color:var(--ink-soft);text-align:center;}
+.ftc-body .canva-frame{position:relative;width:100%;height:0;padding-top:56.25%;overflow:hidden;border-radius:8px;background:#161829;}
+.ftc-body .canva-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
 /* dashboard: 18 days on one timeline row */
 .step-timeline{flex-wrap:nowrap;}
 .step-timeline .step-circle{width:38px;height:38px;font-size:14px;}
@@ -141,7 +167,7 @@ window.renderDay = function(id){
 };
 
 /* ---------- 2. facilitator's notes (trainer only) ---------- */
-const FT = {notes:null, loading:null, tried:false};
+const FT = {notes:null, loading:null, tried:false, cookie:null};
 function ftTrainerView(){ return !!state.isAdmin && !state.adminPreview && !FT_IS_AUDIENCE; }
 function ftLoadNotes(){
   if(FT.notes) return Promise.resolve(FT.notes);
@@ -153,7 +179,16 @@ function ftLoadNotes(){
     .catch(()=>{ FT.loading = null; return null; });
   return FT.loading;
 }
+// Trainer-only screenshots load as <img>, which can't send the token: keep it in a cookie scoped to /trainer.
+function ftSyncTrainerCookie(){
+  const want = state.isAdmin && state.adminToken ? state.adminToken : "";
+  if(FT.cookie === want) return;
+  FT.cookie = want;
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = want ? `ft_admin=${encodeURIComponent(want)}; path=/trainer; max-age=43200; SameSite=Strict${secure}` : `ft_admin=; path=/trainer; max-age=0; SameSite=Strict${secure}`;
+}
 function ftFillSlots(){
+  ftSyncTrainerCookie();
   const on = ftTrainerView();
   if(on && !FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n) ftFillSlots(); }); }
   document.querySelectorAll(".trainer-slot").forEach(el=>{
@@ -173,7 +208,7 @@ window.afterRender = function(){
   return r;
 };
 const __ftAdminLogout = window.adminLogout;
-if(typeof __ftAdminLogout === "function") window.adminLogout = function(){ FT.notes = null; FT.tried = false; return __ftAdminLogout.apply(this, arguments); };
+if(typeof __ftAdminLogout === "function") window.adminLogout = function(){ FT.notes = null; FT.tried = false; FTC.data = null; FTC.failed = false; return __ftAdminLogout.apply(this, arguments); };
 const __ftOpenAdmin = window.openAdmin;
 if(typeof __ftOpenAdmin === "function") window.openAdmin = function(){ FT.tried = false; return __ftOpenAdmin.apply(this, arguments); };
 const __ftCues = window.presenterCues;
@@ -273,10 +308,51 @@ window.ftToggleOpenDay = async function(id, on){
   toast(ok ? `Day ${id} ${on ? "opened" : "closed"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
   render();
 };
+/* Admin → 📘 Curriculum: the whole Training Guide (facilitator content included) from
+   /trainer/curriculum.json, which the Worker sends only to a signed-in trainer.
+   Log-in credentials are not in it: they point to the credentials document. */
+const FTC = {data:null, loading:false, failed:false};
+function ftLoadCurriculum(){
+  if(FTC.data || FTC.loading) return;
+  FTC.loading = true;
+  fetch("/trainer/curriculum.json", {cache:"no-store", headers: state.adminToken ? {Authorization: "Bearer " + state.adminToken} : {}})
+    .then(r=>r.ok ? r.json() : null)
+    .then(j=>{ FTC.data = j; FTC.failed = !j; FTC.loading = false; if(state.view==="admin" && state.adminTab==="curriculum") render(); })
+    .catch(()=>{ FTC.failed = true; FTC.loading = false; if(state.view==="admin") render(); });
+}
+function renderFtCurriculum(){
+  if(!FTC.data){
+    ftLoadCurriculum();
+    return `<div class="card ftc">${FTC.failed ? "Couldn’t load the curriculum — sign in again as Admin and retry." : "Loading the curriculum…"}</div>`;
+  }
+  const sel = state.ftcDay == null ? (FTC.data.days[0] || {}).id : state.ftcDay;
+  const day = FTC.data.days.find(d=>d.id===sel) || FTC.data.days[0];
+  return `<div class="card ftc">
+    <h3 style="margin:0;color:var(--navy);">📘 Training Guide for LSH Trainees</h3>
+    <p style="margin:4px 0 0;color:var(--ink-soft);font-size:14px;">The full curriculum, facilitator's notes included. Trainer only — trainees never see this tab. Log-in credentials aren’t stored here; they link to the credentials document.</p>
+    <div class="ftc-top">
+      <label for="ftcDay"><b>Day</b></label>
+      <select id="ftcDay" onchange="state.ftcDay = +this.value; render();">
+        ${FTC.data.days.map(d=>`<option value="${d.id}" ${d.id===day.id?"selected":""}>${esc(d.heading)}</option>`).join("")}
+      </select>
+      ${day.id >= 1 && day.id <= DAYS.length ? `<button class="btn btn-ghost btn-sm" onclick="goto('day', ${day.id})">Open Day ${day.id} on the platform</button>` : ""}
+    </div>
+    <div class="ftc-body"><h3 style="font-family:'Fraunces',Georgia,serif;font-size:22px;">${esc(day.heading)}</h3>${day.html}</div>
+  </div>`;
+}
 const __ftRenderAdmin = window.renderAdmin;
 window.renderAdmin = function(){
   if(["rankings","sop","cues","studio"].includes(state.adminTab)) state.adminTab = "audit";
   const odTab = `<button class="admin-tab-btn ${state.adminTab==="opendays"?"active":""}" onclick="setAdminTab('opendays')">📅 Open Days</button>`;
+  const curTab = `<button class="admin-tab-btn ${state.adminTab==="curriculum"?"active":""}" onclick="setAdminTab('curriculum')">📘 Curriculum</button>`;
+  if(state.adminTab==="curriculum"){
+    state.adminTab = "tfeedback";
+    let out = __ftRenderAdmin();
+    state.adminTab = "curriculum";
+    const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
+    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
+    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtCurriculum();
+  }
   if(state.adminTab==="opendays"){
     state.adminTab = "tfeedback";                    // borrow the tab bar from the engine…
     let out = __ftRenderAdmin();
@@ -284,9 +360,9 @@ window.renderAdmin = function(){
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
     const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
     if(!state.adminData && typeof loadAdminData === "function" && !state.adminLoading) loadAdminData();
-    return ftTrimAdminTabs(bar, odTab) + renderFtOpenDays();
+    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays();
   }
-  return ftTrimAdminTabs(__ftRenderAdmin(), odTab);
+  return ftTrimAdminTabs(__ftRenderAdmin(), odTab + curTab);
 };
 function ftTrimAdminTabs(html, odTab){
   html = html.replace(/<button class="admin-tab-btn[^"]*" onclick="setAdminTab\('(rankings|sop|cues|studio)'\)">[^<]*<\/button>/g, "");
