@@ -24,4 +24,10 @@ Days 2–18 and the admin **📘 Curriculum** copy are generated from the *Train
 
 Day 1 was built by hand from the same guide and is kept as it is.
 
-Word Game 1 is not in the Word file. It was added to Day 17's PM part (`s3`) by hand, under Free Communication Upskill, so re-add it to `build/days/day17.js` after re-running `convert.py`.
+Changed by hand after the import, so redo these after re-running `convert.py`:
+- **Trainee pages carry only the Canva training decks and the trainees' tasks.** Discussion material (AI Assisted Discussion links, digital handouts, discussion process questions) and reference material (sample SOPs, sample recordings and documents, additional resources, optional shadowing videos) were taken off the trainee pages. They stay in the admin 📘 Curriculum copy. The same was done by hand on Day 1 (its breakout handouts part was folded into the discussion). Day 9's and Day 18's "additional resources" parts were removed and their Free Communication Upskill line moved to the part before.
+- Day 2 `s3`: the Law Firm Communication Canva deck, at the top of the part.
+- Day 5 `s2`: the Calendar Management Training Canva deck, at the top of the part.
+- Day 7 `s1`: the Intake Specialist Role Canva deck, at the top of the part.
+- Day 13 `s2`: the Medical Records Specialist Role Canva deck, at the top of the part.
+- Day 17 `s3`: the Lien Negotiator Role Canva deck at the top of the part, and Word Game 1 under Free Communication Upskill.

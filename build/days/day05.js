@@ -11,7 +11,7 @@ const DAY5 = {
     {
       "id": "s2",
       "h": "AM: Classroom Discussion on Appointment Setting and Calendar Management Training",
-      "html": "<div class=\"trainer-slot\" data-slot=\"5:s2-1\"></div>\n<p><b>AI Assisted Discussion:</b></p>\n<p><a class=\"viewer-link\" data-kind=\"doc\" data-title=\"AI Assisted Discussion: https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/\" href=\"https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/view?usp=drive_link\">https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/view?usp=drive_link</a></p>"
+      "html": "<div class=\"canva-frame\" id=\"calendarMgmtFrame\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Calendar Management Training (Canva)\"\n    src=\"https://www.canva.com/design/DAGnaz2Or2U/E0o3VALVIauOuoJBuWHOZQ/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"calendarMgmtFrame\">⛶ Full screen</button>\n    <a class=\"btn\" href=\"https://www.canva.com/design/DAGnaz2Or2U/E0o3VALVIauOuoJBuWHOZQ/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>\n<div class=\"trainer-slot\" data-slot=\"5:s2-1\"></div>"
     },
     {
       "id": "s3",

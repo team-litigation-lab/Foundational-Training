@@ -210,7 +210,7 @@ function renderTopbar(){
     <div class="topbar-inner">
       <div class="brand" onclick="goto('dashboard')">
         ${brandMark()}
-        <div class="brand-text"><b>LSH Foundational Training</b><span>18-Day Foundational Training Program</span></div>
+        <div class="brand-text"><b>LSH Foundational Training</b><span>Standard Foundational Training</span></div>
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
@@ -438,7 +438,7 @@ function renderAdminSOP(){
         <button class="btn btn-sm ${day===0?'btn-navy':'btn-ghost'}" onclick="setSopDay(0)">🧭 Program flow</button>
         ${Array.from({length:10},(_,i)=>i+1).map(n=>{
           const has = availableDays.includes(n);
-          return `<button class="btn btn-sm ${n===day?'btn-navy':'btn-ghost'}" ${has?'':'disabled title="Not yet added"'} onclick="setSopDay(${n})">Day ${n}${has?'':' (soon)'}</button>`;
+          return `<button class="btn btn-sm ${n===day?'btn-navy':'btn-ghost'}" ${has?'':'disabled title="Not yet added"'} onclick="setSopDay(${n})">${ftName(n)}${has?'':' (soon)'}</button>`;
         }).join("")}
       </div>
       <div class="sopx-mode" role="tablist" style="${day===0?"display:none":""}">
@@ -446,7 +446,7 @@ function renderAdminSOP(){
         <button class="${mode==="present"?"on":""}" onclick="setSopMode('present')">🎤 Present</button>
       </div>
     </div>
-    ${day===0 ? sopProgramFlow() : !d ? `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">Day ${day}'s SOP content hasn't been added yet.</div>`
+    ${day===0 ? sopProgramFlow() : !d ? `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">${ftName(day)}'s SOP content hasn't been added yet.</div>`
       : mode==="present" ? renderSopPresent(d) : renderSopDayContent(d)}
   `;
 }
@@ -461,7 +461,7 @@ function renderSopDayContent(d){
   const meta = [["⏱","Duration",info.duration],["🖥","PPT",info.ppt],["🎨","Canva",info.canvaLabel],["🎬","Video",info.video]].filter(x=>x[2]);
   return `
     <div class="card sopx-hero">
-      <div class="sopx-kicker">Day ${d.id} · Trainer SOP</div>
+      <div class="sopx-kicker">${ftName(d.id)} · Trainer SOP</div>
       <h2>${esc(d.title)}</h2>
       ${d.introduction ? `<blockquote class="sopx-quote">“${esc(d.introduction)}”</blockquote>` : ""}
       ${meta.length ? `<div class="sopx-meta">${meta.map(([i,k,v])=>`<span>${i} <b>${k}</b> ${esc(v)}</span>`).join("")}</div>` : ""}
@@ -532,10 +532,10 @@ function sopPresentSlides(d){
 }
 function renderSopSlide(sl, d){
   const head = (k)=>`<div class="sopx-s-kicker">${k}</div><h2 class="sopx-s-title">${esc(sl.h)}${sl.parts>1?` <span class="sopx-s-part">${sl.part} / ${sl.parts}</span>`:""}</h2>`;
-  const kick = sl.num && sl.of > 1 ? `Day ${d.id} · Section ${sl.num} of ${sl.of}` : `Day ${d.id}`;
+  const kick = sl.num && sl.of > 1 ? `${ftName(d.id)} · Section ${sl.num} of ${sl.of}` : `${ftName(d.id)}`;
   if(sl.kind==="title"){
     const i = sl.info;
-    return `<div class="sopx-s-kicker">Day ${d.id} · Upskill Training</div>
+    return `<div class="sopx-s-kicker">${ftName(d.id)} · Upskill Training</div>
       <h1 class="sopx-s-big">${esc(d.title)}</h1>
       ${d.introduction ? `<p class="sopx-s-quote">“${esc(d.introduction)}”</p>` : ""}
       <div class="sopx-meta center">${[["⏱",i.duration],["🖥",i.ppt],["🎬",i.video]].filter(x=>x[1]).map(([e,v])=>`<span>${e} ${esc(v)}</span>`).join("")}</div>`;
@@ -688,7 +688,7 @@ function presenterCues(d, slide){
   }else if(slide.type==="meetClient"){
     out.push(`<h3>Meet Elias Thorne — Live Q&amp;A</h3>` + renderMeetClientTrainerGuide());
   }else if(slide.type==="discussion"){
-    out.push(`<h3>Trainer Checkpoint</h3><p><b>Say:</b> "Before we close Day ${d.id}, let's step back and talk about this together."</p><p><b>Ask:</b> ${esc(d.discussionQuestion||"")}</p><p>Take 2–3 answers, connect each one to a lesson from today, then move on to the Knowledge Check.</p>`);
+    out.push(`<h3>Trainer Checkpoint</h3><p><b>Say:</b> "Before we close ${ftName(d.id)}, let's step back and talk about this together."</p><p><b>Ask:</b> ${esc(d.discussionQuestion||"")}</p><p>Take 2–3 answers, connect each one to a lesson from today, then move on to the Knowledge Check.</p>`);
   }else if(slide.type==="practiceLab"){
     out.push(`<h3>Practice Lab</h3><p>Trainees complete the exercise now. Once it's finished, pause for a live debrief — have them walk through what they did, why, and where their judgment differed from the model answer.</p>`);
   }else if(slide.type==="video"){
@@ -710,7 +710,7 @@ function renderPresenterConsole(d){
   return `
     <div class="pv">
       <div class="pv-head">
-        <div class="pv-title"><b>🖥 Presenter view</b> · Day ${d.id} — ${esc(d.title)}</div>
+        <div class="pv-title"><b>🖥 Presenter view</b> · ${ftName(d.id)} — ${esc(d.title)}</div>
         <div class="pv-meta"><span id="pvCount">${presenterCountText(d)}</span><span class="pv-timer" id="pvTimer">00:00</span><span class="pv-aud on" id="pvAud">● Slides window open</span></div>
         <div class="pv-actions"><button class="btn btn-ghost btn-sm" onclick="presenterReopen()">↗ Re-open slides window</button><button class="btn btn-primary btn-sm" onclick="presenterEnd()">■ End</button></div>
       </div>
@@ -1027,7 +1027,7 @@ function eoView(){
       <div class="eo-k">Likely need</div><p>${esc(p.need)}</p>
       <div class="eo-k">Your goal</div><p>A 15-minute intro call with <b>Elias Thorne</b>, Managing Owner &amp; CEO of Thorne &amp; Partners Law Group.</p>
       <div class="eo-k">Cadence</div>
-      <ol class="eo-cad">${EO_TOUCHES.map((t,i)=>`<li class="${i<sentTouches?"done":(next && next.kind==="touch" && next.n===i+1?"now":"")}">Day ${t.day} · ${t.label}</li>`).join("")}</ol>
+      <ol class="eo-cad">${EO_TOUCHES.map((t,i)=>`<li class="${i<sentTouches?"done":(next && next.kind==="touch" && next.n===i+1?"now":"")}">${ftName(t.day)} · ${t.label}</li>`).join("")}</ol>
       <button class="btn btn-ghost btn-sm" onclick="eoReset()">↺ Start over / another prospect</button>
     </aside>
     <section class="eo-main">
@@ -1041,7 +1041,7 @@ function eoMsgHtml(m){
   if(m.from==="system") return `<div class="eo-sys">📭 ${esc(m.body)}</div>`;
   const mine = m.from==="you";
   return `<div class="eo-msg ${mine?"mine":"theirs"}">
-    <div class="eo-mh"><b>${mine ? "You (for Elias Thorne)" : esc(p.name)}</b><span>Day ${m.day}${mine && m.kind==="touch" ? " · "+esc(m.label) : ""}</span></div>
+    <div class="eo-mh"><b>${mine ? "You (for Elias Thorne)" : esc(p.name)}</b><span>${ftName(m.day)}${mine && m.kind==="touch" ? " · "+esc(m.label) : ""}</span></div>
     ${m.subject ? `<div class="eo-subj">${esc(m.subject)}</div>` : ""}
     <div class="eo-body">${esc(m.body).replace(/\n/g,"<br>")}</div>
   </div>`;
@@ -1051,7 +1051,7 @@ function eoComposerHtml(next){
   const first = eoMine()[0];
   const subj = s.draftSubject != null ? s.draftSubject : (first ? (/^re:/i.test(first.subject) ? first.subject : "Re: "+first.subject) : "");
   return `<div class="card eo-compose">
-    <div class="eo-ch"><b>✉ ${esc(next.label)}</b><span>Day ${next.day} · to ${esc(p.name)} &lt;${esc(p.first.toLowerCase())}@${esc(p.company.toLowerCase().replace(/[^a-z]/g,""))}.com&gt;</span></div>
+    <div class="eo-ch"><b>✉ ${esc(next.label)}</b><span>${ftName(next.day)} · to ${esc(p.name)} &lt;${esc(p.first.toLowerCase())}@${esc(p.company.toLowerCase().replace(/[^a-z]/g,""))}.com&gt;</span></div>
     <input id="eoSubject" placeholder="Subject line (3–7 specific words)" value="${esc(subj)}" oninput="eoDraft()">
     <textarea id="eoBody" placeholder="Hi ${esc(p.first)}, …" oninput="eoDraft()">${esc(s.draftBody||"")}</textarea>
     <div class="eo-checks" id="eoChecks">${eoChecksHtml(subj, s.draftBody||"", next)}</div>
@@ -1095,7 +1095,7 @@ async function eoSend(){
   if(next.kind==="touch" && !subject){ toast("Add a subject line."); return; }
   const btn = document.getElementById("eoSendBtn"); if(btn){ btn.disabled = true; btn.textContent = "Sending…"; }
   const msg = {from:"you", kind:next.kind, label:next.label, day:next.day, subject: next.kind==="touch" ? subject : "", body};
-  const threadText = s.thread.concat([msg]).map(m=> m.from==="system" ? `[${m.body}]` : `--- Day ${m.day} · ${m.from==="you" ? "FROM the assistant (for Elias Thorne)" : "FROM "+p.name} ---\n${m.subject ? "Subject: "+m.subject+"\n" : ""}${m.body}`).join("\n\n");
+  const threadText = s.thread.concat([msg]).map(m=> m.from==="system" ? `[${m.body}]` : `--- ${ftName(m.day)} · ${m.from==="you" ? "FROM the assistant (for Elias Thorne)" : "FROM "+p.name} ---\n${m.subject ? "Subject: "+m.subject+"\n" : ""}${m.body}`).join("\n\n");
   const prompt = `You are role-playing a real prospect who receives cold outreach email, inside a training simulation for executive assistants at a law firm. Stay fully in character.
 
 PROSPECT: ${p.name}, ${p.role} at ${p.company}.
@@ -1128,7 +1128,7 @@ Return ONLY JSON:
     s.thread.push(msg); s.draftSubject = null; s.draftBody = "";
     if(action==="no_reply"){
       const nx = eoNextSend();
-      s.thread.push({from:"system", day:msg.day, body: nx ? `No reply from ${p.first} by Day ${nx.day}.` : `No reply from ${p.first}. The sequence is complete.`});
+      s.thread.push({from:"system", day:msg.day, body: nx ? `No reply from ${p.first} by ${ftName(nx.day)}.` : `No reply from ${p.first}. The sequence is complete.`});
       if(!nx) { s.done = true; s.outcome = "no_reply"; }
     }else{
       s.thread.push({from:"prospect", day:msg.day + (action==="booked" ? 0 : 1), body:String(r.reply||"").trim() || "Thanks — not right now."});
@@ -1150,7 +1150,7 @@ function eoDebriefHtml(){
   return `<div class="card eo-debrief">
     <div class="eo-out"><span>${banner[0]}</span><div><b>${banner[1]}</b><p>${esc(banner[2])}</p></div></div>
     <div class="eo-k">How each email landed — in ${esc(p.first)}'s words</div>
-    <ol class="eo-thoughts">${eoMine().map(m=>`<li><b>${esc(m.kind==="touch" ? m.label : "Your reply")} (Day ${m.day})</b><span>“${esc(m.thought||"—")}”</span></li>`).join("")}</ol>
+    <ol class="eo-thoughts">${eoMine().map(m=>`<li><b>${esc(m.kind==="touch" ? m.label : "Your reply")} (${ftName(m.day)})</b><span>“${esc(m.thought||"—")}”</span></li>`).join("")}</ol>
     <div class="eo-actions"><button class="btn btn-ghost btn-sm" onclick="eoReset()">↺ Try again / another prospect</button>
       <button class="btn btn-navy" onclick="eoEvaluate()">Get Evaluation</button></div>
     <div id="eoResult">${s.reportHtml || ""}</div>
@@ -1160,7 +1160,7 @@ async function eoEvaluate(){
   const s = eoState(), p = eoProspect(), el = document.getElementById("eoResult");
   if(!(await useLabAttempt(4, "emailOutreachSim"))) return;
   el.innerHTML = `<div class="ai-loading">Evaluating your outreach sequence…</div>`;
-  const thread = s.thread.map(m=> m.from==="system" ? `[${m.body}]` : `--- Day ${m.day} · ${m.from==="you" ? "TRAINEE" : "PROSPECT ("+p.name+")"}${m.label && m.from==="you" ? " · "+m.label : ""} ---\n${m.subject ? "Subject: "+m.subject+"\n" : ""}${m.body}`).join("\n\n");
+  const thread = s.thread.map(m=> m.from==="system" ? `[${m.body}]` : `--- ${ftName(m.day)} · ${m.from==="you" ? "TRAINEE" : "PROSPECT ("+p.name+")"}${m.label && m.from==="you" ? " · "+m.label : ""} ---\n${m.subject ? "Subject: "+m.subject+"\n" : ""}${m.body}`).join("\n\n");
   try{
     const report = await runRubricEvaluation(
       "Email Outreach Sequence",
@@ -1892,7 +1892,7 @@ window.toolHead = function(t){
     <a class="back-link" onclick="goto('practice')">&larr; Back to Practice Lab</a>
     <section class="page-hero lab-hero">
       <div class="lab-hero-top">
-        <p class="eyebrow">${d ? `Day ${d} · Practice Lab` : "Practice Lab"}</p>
+        <p class="eyebrow">${d ? `${ftName(d)} · Practice Lab` : "Practice Lab"}</p>
         <div class="lab-hero-actions">
           <span class="lab-save-status" id="labSaveStatus">💾 Auto-save on</span>
           <button class="btn btn-sm lab-hbtn" onclick="saveLabNow()">💾 Save</button>
@@ -2009,9 +2009,9 @@ function sopRunOfShow(dRaw){
   const steps = []; let t = 0;
   const add = (mins, s)=>{ steps.push(Object.assign({from:t, to:t+mins}, s)); t += mins; };
   add(15, {pre:true, title:"Before trainees join", do:[
-    `Admin → <b>Trainee Audit</b>: approve anyone new; check everyone has Day ${d.id} unlocked (the previous day's Practice Lab submitted).`,
-    `Open <b>Admin → Trainer Cues → Day ${d.id}</b> in a second window, or use Presenter view (below) which shows the cues for each slide.`,
-    `Open Day ${d.id} → slides → <b>🖥 Presenter view</b>. Allow pop-ups. In Google Meet: <b>Present now → A window</b> → “LSH Slides — share this window”.`,
+    `Admin → <b>Trainee Audit</b>: approve anyone new; check everyone has ${ftName(d.id)} unlocked (the previous day's Practice Lab submitted).`,
+    `Open <b>Admin → Trainer Cues → ${ftName(d.id)}</b> in a second window, or use Presenter view (below) which shows the cues for each slide.`,
+    `Open ${ftName(d.id)} → slides → <b>🖥 Presenter view</b>. Allow pop-ups. In Google Meet: <b>Present now → A window</b> → “LSH Slides — share this window”.`,
     `Pick your random-task moment (step marked below) and how long trainees get (15–30 min).`]});
   add(5, {title:"Welcome, recap & today's objectives", do:[
     `Show the <b>📋 Objectives</b> page (button above the slides) — it lists what trainees will be able to do by the end of today.`,
@@ -2023,7 +2023,7 @@ function sopRunOfShow(dRaw){
   const perTopic = 2.5, blockTopics = Math.max(8, Math.round(45/perTopic));
   let i = 0, block = 1; const blocks = Math.ceil(n/blockTopics);
   const midBlock = Math.max(1, Math.ceil(blocks/2));
-  const taskStep = {opt:true, title:"Send today's random task", do:[`Admin → <b>Trainee Audit → 🎲 Random Task Injection</b>: choose <b>Day ${d.id}</b>, set 15–30 minutes, <b>Generate &amp; Broadcast</b>. Keep teaching — trainees handle it in 🎲 Tasks alongside the session.`, `Anyone who doesn't submit before the timer ends gets it logged as Missed (0).`]};
+  const taskStep = {opt:true, title:"Send today's random task", do:[`Admin → <b>Trainee Audit → 🎲 Random Task Injection</b>: choose <b>${ftName(d.id)}</b>, set 15–30 minutes, <b>Generate &amp; Broadcast</b>. Keep teaching — trainees handle it in 🎲 Tasks alongside the session.`, `Anyone who doesn't submit before the timer ends gets it logged as Missed (0).`]};
   while(i < n){
     const j = Math.min(n, i+blockTopics);
     if(block===midBlock+1) add(0, taskStep);   // right after the break, as teaching resumes
@@ -2049,11 +2049,11 @@ function sopRunOfShow(dRaw){
       watch:"Anyone stuck on the same activity for more than 10 minutes — nudge them to submit and move on; the debrief is where the learning lands."});
     add(10, {title:"Practice Lab debrief", do:[`Ask 2–3 trainees to walk through what they did and why, and where their judgment differed from the model answer.`, `Point to the Evaluation Report's “Not this way — what to change” section: it's the next step, not a verdict.`]});
   }
-  if(d.discussionQuestion) add(8, {title:"End-of-day discussion", say:`“Before we close Day ${d.id}, let's step back and talk about this together: ${esc(d.discussionQuestion)}”`, do:[`Take 2–3 answers, connect each one to a lesson from today, then move on.`]});
+  if(d.discussionQuestion) add(8, {title:"End-of-day discussion", say:`“Before we close ${ftName(d.id)}, let's step back and talk about this together: ${esc(d.discussionQuestion)}”`, do:[`Take 2–3 answers, connect each one to a lesson from today, then move on.`]});
   add(10, {title:`Knowledge Check (${kc} questions)`, do:[`Trainees click <b>Continue to Knowledge Check</b> on the last slide. 70% marks the day complete ✓.`, `Below 70% is a “not yet”: they can still move on and retake it any time; their best score counts.`], watch:"Stop presenting while they answer, so no one reads answers off the shared screen."});
-  add(5, {title:"Close", do:[`Ask everyone to send quick feedback with the 💬 Feedback button.`, `Preview tomorrow: Day ${d.id+1<=DAYS.length ? `${d.id+1} — ${esc((DAYS.find(x=>x.id===d.id+1)||{}).title||"")}` : "certificates and wrap-up"}.`, `Click <b>■ End</b> in Presenter view.`]});
+  add(5, {title:"Close", do:[`Ask everyone to send quick feedback with the 💬 Feedback button.`, `Up next: Lesson ${d.id+1<=DAYS.length ? `${d.id+1} — ${esc((DAYS.find(x=>x.id===d.id+1)||{}).title||"")}` : "certificates and wrap-up"}.`, `Click <b>■ End</b> in Presenter view.`]});
   add(20, {pre:true, title:"After the session", do:[
-    `<b>Trainee Audit → View Detail → Day-by-Day Feedback</b>: review each trainee's Day ${d.id} feedback, edit and <b>Send</b>.`,
+    `<b>Trainee Audit → View Detail → Day-by-Day Feedback</b>: review each trainee's ${ftName(d.id)} feedback, edit and <b>Send</b>.`,
     `Add a <b>🎯 Focus</b> item for anyone who needs one specific next step.`,
     `Check <b>Rankings</b> and the Knowledge Check column; schedule retakes for anyone under 70%.`,
     `Read <b>Trainee Feedback</b> for today and note one thing to change tomorrow.`]});
@@ -2071,7 +2071,7 @@ function sopRunOfShow(dRaw){
   }).join("");
   const endClock = sopClock(start, liveMins);
   return `<section class="card sopf">
-    <div class="sopf-head"><div><div class="sopx-kicker">Day ${d.id} · How to run this session</div><h2>Run of show</h2></div>
+    <div class="sopf-head"><div><div class="sopx-kicker">${ftName(d.id)} · How to run this session</div><h2>Run of show</h2></div>
       <label class="sopf-start">Session starts at <input type="time" value="${esc(state.sopStart||"09:00")}" onchange="setSopStart(this.value)"> <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button></label></div>
     <div class="sopf-meta"><span>⏱ About ${Math.round(liveMins/60*10)/10} hours live · ends ≈ ${endClock}</span><span>📚 ${n} topics</span><span>✔ ${qcs.length} Quick Checks</span>${lab?`<span>🧪 ${esc(lab.title)}</span>`:""}<span>📝 ${kc}-question Knowledge Check</span></div>
     <ol class="sopf-steps">${rows}</ol>
@@ -2079,7 +2079,7 @@ function sopRunOfShow(dRaw){
   </section>`;
 }
 function sopProgramFlow(){
-  const days = DAYS.map(d=>{ const lab = relatedTools(d.id)[0]; return `<tr><td><b>Day ${d.id}</b></td><td>${esc(d.title)}</td><td>${d.lessons.length}</td><td>${lab?esc(lab.title):"—"}</td><td><button class="btn btn-ghost btn-sm" onclick="setSopDay(${d.id})">Run of show →</button></td></tr>`; }).join("");
+  const days = DAYS.map(d=>{ const lab = relatedTools(d.id)[0]; return `<tr><td><b>${ftName(d.id)}</b></td><td>${esc(d.title)}</td><td>${d.lessons.length}</td><td>${lab?esc(lab.title):"—"}</td><td><button class="btn btn-ghost btn-sm" onclick="setSopDay(${d.id})">Run of show →</button></td></tr>`; }).join("");
   return `
     <section class="card sopf"><div class="sopx-kicker">Trainer reference · The whole program</div><h2 style="font-family:'Fraunces',Georgia,serif;color:var(--navy);font-size:26px;margin:4px 0 8px;">How to facilitate the LSH EA / PA Upskill Program</h2>
       <p style="font-size:14.5px;line-height:1.6;margin:0;max-width:85ch;">Ten live sessions, one realistic client (Elias Thorne), one rhythm every day: <b>teach → check → practise → debrief → assess → follow up</b>. This page is the big picture; open any day for its minute-by-minute run of show.</p></section>

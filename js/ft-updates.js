@@ -1,16 +1,17 @@
 /* ============================================================
-   LSH 18-Day Foundational Training Program — program layer
+   LSH Standard Foundational Training — program layer
    Loaded last (after the EA/PA engine and js/eapa-updates.js). The engine
    gives sign-in and approvals, progress, admin, feedback, certificates,
    Presenter view and Trainee view; this file adapts it to the curriculum:
-     1. Each day is its curriculum sections, one slide per section, shown
-        as written (Canva decks and Drive files embedded unchanged).
+     1. Trainees see the lessons: each lesson is its Canva training deck,
+        one slide per section, named by its title (no "Day N" labels). The
+        engine still calls them days internally (DAYS, state.dayId…).
      2. Facilitator's notes are not in the page: /trainer/notes.json is
         sent only to a signed-in trainer (see worker.js). Trainers see them
-        on the day pages and as Presenter view cues; never in Trainee view
+        in Admin → 📘 Curriculum (the whole guide); never in Trainee view
         or in the slides window shared with the room.
-     3. Days open when the trainer opens them for a batch (Admin → 📅 Open Days).
-     4. No quizzes: a trainee marks a day finished; all 18 finished = certificate.
+     3. Lessons open when the trainer opens them for a batch (Admin → 📅 Open Lessons).
+     4. No quizzes: a trainee marks a lesson finished; all finished = certificate.
      5. Dashboard, top bar and admin tabs trimmed to what this program uses.
      6. Drive files open in the draggable pop-out viewer.
    ============================================================ */
@@ -77,7 +78,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ftc-body .shots img{max-width:100%;max-height:100%;object-fit:contain;} .ftc-body .shots figcaption{font-size:13px;color:var(--ink-soft);text-align:center;}
 .ftc-body .canva-frame{position:relative;width:100%;height:0;padding-top:56.25%;overflow:hidden;border-radius:8px;background:#161829;}
 .ftc-body .canva-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
-/* dashboard: 18 days on one timeline row */
+/* dashboard: every lesson on one timeline row */
 .step-timeline{flex-wrap:nowrap;}
 .step-timeline .step-circle{width:38px;height:38px;font-size:14px;}
 .step-timeline .step-dash{flex:1 1 8px;min-width:6px;width:auto;}
@@ -121,7 +122,7 @@ window.renderDaySlideContent = function(d, slide, idx){
   if(!slide || slide.type!=="ftSection") return __ftSlideContent(d, slide, idx);
   const sec = d.sections[slide.index];
   return `
-    <div class="topic-separator">${esc(d.heading || ("DAY " + d.id))} &middot; PART ${slide.index+1} OF ${d.sections.length}</div>
+    <div class="topic-separator">${esc(d.title)}${d.sections.length>1 ? ` &middot; PART ${slide.index+1} OF ${d.sections.length}` : ""}</div>
     <div class="card lesson-card ft-section" data-part="1">
       <h4><span class="lnum">${String(slide.index+1).padStart(2,"0")}</span>${esc(sec.h)}</h4>
       <div class="ft-body">${sec.html}</div>
@@ -132,13 +133,13 @@ window.renderDayIntro = function(d){
   return `
     <div class="lesson-stage day-intro">
       <div class="lesson-slide"><div class="card lesson-card">
-        <div class="di-kicker">Day ${d.id} of ${DAYS.length} · Before you start</div>
+        <div class="di-kicker">Lesson ${d.id} of ${DAYS.length} · Before you start</div>
         <h2>${esc(d.heading || d.title)}</h2>
         <div class="di-grid" style="grid-template-columns:1fr;">
-          <div class="di-box"><b>🗺 What today covers</b><ol class="di-topics">${d.sections.map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
+          <div class="di-box"><b>🗺 What this lesson covers</b><ol class="di-topics">${d.sections.map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
         </div>
       </div></div>
-      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">${d.sections.length} parts</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start Day ${d.id} →</button></div>
+      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">${d.sections.length} parts</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
     </div>`;
 };
 const __ftRenderDay = window.renderDay;
@@ -150,7 +151,7 @@ window.renderDay = function(id){
     return `${head}
       <div class="card ft-empty-day">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
-        <h2 style="color:var(--navy);margin:0 0 8px;">Day ${id} is locked</h2>
+        <h2 style="color:var(--navy);margin:0 0 8px;">${esc(ftName(id))} is locked</h2>
         <p style="color:var(--ink-soft);font-size:14px;">${esc(dayLockReason(id))}</p>
         <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('dashboard')">Back to the roadmap</button>
       </div>`;
@@ -160,7 +161,7 @@ window.renderDay = function(id){
       <div class="card ft-empty-day">
         <div style="font-size:34px;margin-bottom:10px;">🗂</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">${esc(d.heading)}</h2>
-        <p style="color:var(--ink-soft);font-size:14px;">This day's content hasn't been added to the platform yet.</p>
+        <p style="color:var(--ink-soft);font-size:14px;">This lesson's deck hasn't been added to the platform yet.</p>
       </div>`;
   }
   return __ftRenderDay(id);
@@ -247,8 +248,8 @@ window.dayUnlocked = function(id){
 };
 window.dayLockReason = function(id){
   const d = DAYS.find(x=>x.id===id);
-  if(d && !d.sections.length) return `Day ${id}'s content hasn't been added to the platform yet.`;
-  return `Your trainer opens Day ${id} when your batch starts it.`;
+  if(d && !d.sections.length) return `${ftName(id)} hasn't been added to the platform yet.`;
+  return `Your trainer opens this lesson when your batch starts it.`;
 };
 function ftRefreshOpenDays(){
   if(FT_IS_AUDIENCE || !(state.traineeId || state.isAdmin)) return;
@@ -274,8 +275,8 @@ function renderFtOpenDays(){
   const everyone = new Set((o.all||[]).map(Number));
   return `
     <div class="card ft-open-days">
-      <h3>📅 Open Days</h3>
-      <p style="margin:0;color:var(--ink-soft);font-size:14px;">Trainees only see a day once it's open for them. Open each day when the batch starts it. A day opened for <b>All batches</b> is open for everyone.</p>
+      <h3>📅 Open Lessons</h3>
+      <p style="margin:0;color:var(--ink-soft);font-size:14px;">Trainees only see a lesson once it's open for them. Open each lesson when the batch starts it. A lesson opened for <b>All batches</b> is open for everyone.</p>
       <div class="ft-od-row">
         <label for="ftOdBatch"><b>Batch</b></label>
         <select id="ftOdBatch" onchange="ftSetOdBatch(this.value)">
@@ -289,7 +290,7 @@ function renderFtOpenDays(){
           const on = open.has(d.id), viaAll = sel!=="__all" && everyone.has(d.id);
           return `<label class="ft-od-day ${on||viaAll?"on":""} ${d.sections.length?"":"nocontent"}">
             <input type="checkbox" ${on||viaAll?"checked":""} ${viaAll||!d.sections.length?"disabled":""} onchange="ftToggleOpenDay(${d.id}, this.checked)">
-            <span><b>Day ${d.id}</b>${esc(d.title)}${viaAll?`<br><i>open for all batches</i>`:""}${d.sections.length?"":`<br><i>no content yet</i>`}</span>
+            <span><b>${esc(d.title)}</b>${viaAll?`<br><i>open for all batches</i>`:""}${d.sections.length?"":`<br><i>no content yet</i>`}</span>
           </label>`;
         }).join("")}
       </div>
@@ -305,7 +306,7 @@ window.ftToggleOpenDay = async function(id, on){
   const arr = [...list].sort((a,b)=>a-b);
   if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
   const ok = await sharedSet("settings:opendays", o);
-  toast(ok ? `Day ${id} ${on ? "opened" : "closed"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
+  toast(ok ? `${ftName(id)} ${on ? "opened" : "closed"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
   render();
 };
 /* Admin → 📘 Curriculum: the whole Training Guide (facilitator content included) from
@@ -335,7 +336,6 @@ function renderFtCurriculum(){
       <select id="ftcDay" onchange="state.ftcDay = +this.value; render();">
         ${FTC.data.days.map(d=>`<option value="${d.id}" ${d.id===day.id?"selected":""}>${esc(d.heading)}</option>`).join("")}
       </select>
-      ${day.id >= 1 && day.id <= DAYS.length ? `<button class="btn btn-ghost btn-sm" onclick="goto('day', ${day.id})">Open Day ${day.id} on the platform</button>` : ""}
     </div>
     <div class="ftc-body"><h3 style="font-family:'Fraunces',Georgia,serif;font-size:22px;">${esc(day.heading)}</h3>${day.html}</div>
   </div>`;
@@ -343,7 +343,7 @@ function renderFtCurriculum(){
 const __ftRenderAdmin = window.renderAdmin;
 window.renderAdmin = function(){
   if(["rankings","sop","cues","studio"].includes(state.adminTab)) state.adminTab = "audit";
-  const odTab = `<button class="admin-tab-btn ${state.adminTab==="opendays"?"active":""}" onclick="setAdminTab('opendays')">📅 Open Days</button>`;
+  const odTab = `<button class="admin-tab-btn ${state.adminTab==="opendays"?"active":""}" onclick="setAdminTab('opendays')">📅 Open Lessons</button>`;
   const curTab = `<button class="admin-tab-btn ${state.adminTab==="curriculum"?"active":""}" onclick="setAdminTab('curriculum')">📘 Curriculum</button>`;
   if(state.adminTab==="curriculum"){
     state.adminTab = "tfeedback";
@@ -372,12 +372,12 @@ function ftTrimAdminTabs(html, odTab){
 /* ---------- 4. finishing a day (no quizzes) ---------- */
 async function ftFinishDay(id){
   const d = DAYS.find(x=>x.id===id); if(!d) return;
-  if(state.isAdmin && !state.traineeId){ toast("Trainees mark their own days finished."); return; }
+  if(state.isAdmin && !state.traineeId){ toast("Trainees mark their own lessons finished."); return; }
   if(!confirm(`Mark ${d.heading} as finished?`)) return;
   state.progress[id] = Object.assign({}, state.progress[id], {done:true, date:new Date().toISOString()});
   await storeSet("day-progress", state.progress);
   try{ syncToLedger(); }catch(e){}
-  toast(`✓ Day ${id} finished.`);
+  toast(`✓ ${ftName(id)} finished.`);
   goto("dashboard");
 }
 window.finishTrainingForDay = ftFinishDay;
@@ -388,12 +388,13 @@ window.moduleCard = function(d){
   const prog = state.progress[d.id];
   const unlocked = dayUnlocked(d.id);
   const status = prog && prog.done ? "done" : (unlocked && d.sections.length ? "open" : "locked");
-  const shown = d.lessons.slice(0, 7), more = d.lessons.length - shown.length;
+  const parts = d.lessons.filter(l=>l.h!==d.title);   // a lesson's deck slide is named after the lesson: not listed again
+  const shown = parts.slice(0, 7), more = parts.length - shown.length;
   const label = status==="done" ? " &middot; Finished" : (!d.sections.length ? " &middot; Coming soon" : (status==="locked" ? " &middot; 🔒 Locked" : ""));
   return `
   <div class="module-card mc-${status}" id="module-${d.id}">
     <div class="module-head">
-      <div class="mh-day">Day ${d.id}${label}</div>
+      <div class="mh-day">${label.replace(/^ &middot; /,"") || "&nbsp;"}</div>
       <div class="mh-title">${esc(d.title)}</div>
     </div>
     <div class="module-body">
@@ -402,7 +403,7 @@ window.moduleCard = function(d){
       ${more>0 ? `<button type="button" class="module-more" onclick="event.stopPropagation(); showDayTopics(${d.id})">+ ${more} more <span>›</span></button>` : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
-    ${status==="open" && state.traineeId && !state.isAdmin ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="finishTrainingForDay(${d.id})">✓ Finish Day ${d.id}</button>` : ""}
+    ${status==="open" && state.traineeId && !state.isAdmin ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="finishTrainingForDay(${d.id})">✓ Finish lesson</button>` : ""}
   </div>`;
 };
 window.renderDashboard = function(){
@@ -413,8 +414,8 @@ window.renderDashboard = function(){
   <div class="dash-top">
     <div class="dash-hero">
       <div class="dash-hero-text">
-        <p class="eyebrow">TRAINING GUIDE FOR LSH TRAINEES</p>
-        <h1 class="ft-hero-title">Revised – 18-Day Foundational Training Program</h1>
+        <p class="eyebrow">LSH TRAINING PROGRAM</p>
+        <h1 class="ft-hero-title">Standard Foundational Training</h1>
       </div>
       <div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>
     </div>
@@ -423,7 +424,7 @@ window.renderDashboard = function(){
         const prog = state.progress[d.id], unlocked = dayUnlocked(d.id) && d.sections.length;
         const st = (prog&&prog.done ? "st-done" : (unlocked ? "st-open" : "st-locked"));
         return `<div class="step-node">
-          <div class="step-circle ${st}" onclick="${unlocked?`scrollToModule(${d.id})`:""}" title="Day ${d.id} — ${esc(d.title)}">${prog&&prog.done?"✓":d.id}</div>
+          <div class="step-circle ${st}" onclick="${unlocked?`scrollToModule(${d.id})`:""}" title="${esc(d.title)}">${prog&&prog.done?"✓":d.id}</div>
           ${i<DAYS.length-1?`<div class="step-dash ${prog&&prog.done?"filled":""}"></div>`:""}
         </div>`;
       }).join("")}
@@ -431,18 +432,18 @@ window.renderDashboard = function(){
   </div>
   <div class="dash-layout">
     <div class="dash-main">
-      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open days for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin → Open Days</a>.</div>` : ""}
+      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open lessons for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin → Open Lessons</a>.</div>` : ""}
       <div class="module-grid">${DAYS.map(d=>moduleCard(d)).join("")}</div>
       <div class="hero-actions bottom-actions">
         ${resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : ""}
         ${cert ? (done === FT_TOTAL_DAYS
           ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
-          : `<span class="cert-hero-locked" title="Finish all ${FT_TOTAL_DAYS} days to unlock">🎓 Certificate · ${done}/${FT_TOTAL_DAYS} days finished</span>`) : ""}
+          : `<span class="cert-hero-locked" title="Finish all ${FT_TOTAL_DAYS} lessons to unlock">🎓 Certificate · ${done}/${FT_TOTAL_DAYS} lessons finished</span>`) : ""}
       </div>
     </div>
     <aside class="dash-side"><div class="dash-side-inner">
       <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
-      <div class="card stat"><div class="num">${done} / ${FT_TOTAL_DAYS}</div><div class="lbl">Days finished</div></div>
+      <div class="card stat"><div class="num">${done} / ${FT_TOTAL_DAYS}</div><div class="lbl">Lessons finished</div></div>
       ${typeof renderFeedbackDashCard==="function" ? renderFeedbackDashCard() : ""}
     </div></aside>
   </div>`;
@@ -464,7 +465,7 @@ const __ftTopbar = window.renderTopbar;
 window.renderTopbar = function(){
   return __ftTopbar.apply(this, arguments)
     .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|tasks|orientation|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
-    .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search days and topics…"');
+    .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search lessons…"');
 };
 
 /* ---------- 6. Drive files open in the pop-out viewer ---------- */
