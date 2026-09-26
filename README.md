@@ -19,8 +19,8 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 |---|---|---|
 | 1 | Virtual Assistant Essentials | ✅ deck |
 | 2 | Law Firm Communication | ✅ deck |
-| 3 | Personal Injury Process Flow | coming (deck view link needed) |
-| 4 | Receptionist Training | coming (deck view link needed) |
+| 3 | Personal Injury Process Flow | ✅ deck |
+| 4 | Receptionist Training | ✅ deck |
 | 5 | Calendaring & Appointment Setting Training | ✅ deck |
 | 6 | Intake Specialist Training | ✅ deck |
 | 7 | Claims Specialist Training | coming (deck view link needed) |
