@@ -2428,7 +2428,18 @@ const DAY15 = { id: 15, title: "Provider Communication Training", heading: "DAY 
 
 const DAY16 = { id: 16, title: "Provider Communication Training", heading: "DAY 16: Provider Communication Training", sections: [] };
 
-const DAY17 = { id: 17, title: "Lien Negotiator Training", heading: "Day 17: Lien Negotiator Training", sections: [] };
+const DAY17 = {
+  id: 17,
+  title: "Lien Negotiator Training",
+  heading: "Day 17: Lien Negotiator Training",
+  sections: [
+    {
+      "id": "word-game-1",
+      "h": "Word Game 1",
+      "html": "<div class=\"canva-frame\" id=\"wordGame1Frame\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Word Game 1\"\n    src=\"/ft/day17/word-game-1.html\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span>Goal: Form as many words as possible on the grid in 4 minutes.</span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"wordGame1Frame\">⛶ Full screen</button>\n    <a class=\"btn\" href=\"/ft/day17/word-game-1.html\" target=\"_blank\" rel=\"noopener noreferrer\">Open in a new tab ↗</a>\n  </div>\n</div>"
+    }
+  ]
+};
 
 const DAY18 = { id: 18, title: "Lien Negotiator Training", heading: "Day 18: Lien Negotiator Training", sections: [] };
 
@@ -15416,7 +15427,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.26-1339";
+var APP_BUILD = "ft-2026.09.26-1904";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15460,6 +15471,6 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=z"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.26-1339"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.26-1904"></script>
 </body>
 </html>

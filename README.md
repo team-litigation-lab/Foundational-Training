@@ -26,7 +26,8 @@ Each day's content is its section of the curriculum, **as written**:
 | 7–9 | Intake Training | coming |
 | 10–12 | Insurance Communication Training | coming |
 | 13–16 | Provider Communication Training | coming |
-| 17–18 | Lien Negotiator Training | coming |
+| 17 | Lien Negotiator Training | 🟡 Word Game 1 (playable); the rest of the deck is coming |
+| 18 | Lien Negotiator Training | coming |
 
 A day without content shows on the dashboard as *Coming soon* and can't be opened by trainees.
 
@@ -51,6 +52,7 @@ A day without content shows on the dashboard as *Coming soon* and can't be opene
 | `build/build.py` | The build (see below). |
 | `build/days/dayNN.js` | Each day's content: its curriculum sections as HTML. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
+| `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. |
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 
