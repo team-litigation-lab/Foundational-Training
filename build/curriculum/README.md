@@ -24,4 +24,6 @@ Days 2–18 and the admin **📘 Curriculum** copy are generated from the *Train
 
 Day 1 was built by hand from the same guide and is kept as it is.
 
-Word Game 1 is not in the Word file. It was added to Day 17's PM part (`s3`) by hand, under Free Communication Upskill, so re-add it to `build/days/day17.js` after re-running `convert.py`.
+Not in the Word file, added by hand, so re-add them after re-running `convert.py`:
+- Day 7 `s1`: the Intake Specialist Role Canva deck, at the top of the part.
+- Day 17 `s3`: Word Game 1, under Free Communication Upskill.
