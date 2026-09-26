@@ -78,7 +78,7 @@ if not (n1 and n2 and n3):
 
 # ---------- 3. branding ----------
 rep("<title>LSH EA/PA Upskill Program</title>", "<title>LSH Foundational Training Program</title>")
-rep('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Training</span>', '<b>LSH Foundational Training</b><span>18-Day Foundational Training Program</span>')
+rep('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Training</span>', '<b>LSH Foundational Training</b><span>Standard Foundational Training</span>')
 rep("LSH EA / PA Upskill Program", "LSH Foundational Training Program")
 rep("EA / PA Upskill Program", "Foundational Training Program")
 rep("EA/PA Upskill Program", "Foundational Training Program", min_count=0)
@@ -104,7 +104,7 @@ s = s[:m.end()] + f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>' +
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.
 u = open(os.path.join(SRC_DIR, "js", "eapa-updates.js"), encoding="utf8").read()
-for old, new in [('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Training</span>', '<b>LSH Foundational Training</b><span>18-Day Foundational Training Program</span>'),
+for old, new in [('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Training</span>', '<b>LSH Foundational Training</b><span>Standard Foundational Training</span>'),
                  ('<b>LSH EA/PA Upskill Program</b>Waiting for the presenter…', '<b>LSH Foundational Training</b>Waiting for the presenter…')]:
     if old not in u:
         sys.exit(f"MISSING in eapa-updates.js: {old[:80]!r}")

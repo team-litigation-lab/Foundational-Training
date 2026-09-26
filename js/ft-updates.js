@@ -413,8 +413,8 @@ window.renderDashboard = function(){
   <div class="dash-top">
     <div class="dash-hero">
       <div class="dash-hero-text">
-        <p class="eyebrow">TRAINING GUIDE FOR LSH TRAINEES</p>
-        <h1 class="ft-hero-title">Revised – 18-Day Foundational Training Program</h1>
+        <p class="eyebrow">LSH TRAINING PROGRAM</p>
+        <h1 class="ft-hero-title">Standard Foundational Training</h1>
       </div>
       <div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>
     </div>

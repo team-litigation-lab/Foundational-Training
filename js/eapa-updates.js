@@ -210,7 +210,7 @@ function renderTopbar(){
     <div class="topbar-inner">
       <div class="brand" onclick="goto('dashboard')">
         ${brandMark()}
-        <div class="brand-text"><b>LSH Foundational Training</b><span>18-Day Foundational Training Program</span></div>
+        <div class="brand-text"><b>LSH Foundational Training</b><span>Standard Foundational Training</span></div>
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
