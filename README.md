@@ -28,7 +28,7 @@ All 18 days are on the platform, each split into its agenda items (one slide eac
 | 7–9 | Intake Training | 2 · 3 · 4 |
 | 10–12 | Insurance Communication Training | 2 · 2 · 1 |
 | 13–16 | Provider Communication Training | 3 · 2 · 2 · 2 |
-| 17–18 | Lien Negotiator Training | 3 · 5 |
+| 17–18 | Lien Negotiator Training | 3 · 5 (Day 17's PM part includes the playable Word Game 1) |
 
 Days 2–18 are imported from the Word file with `build/curriculum/` (see its README). Day 1 was built by hand from the same guide.
 
@@ -55,6 +55,7 @@ Days 2–18 are imported from the Word file with `build/curriculum/` (see its RE
 | `build/build.py` | The build (see below). |
 | `build/days/dayNN.js` | Each day's content: its curriculum sections as HTML. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
+| `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |

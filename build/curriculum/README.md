@@ -23,3 +23,5 @@ Days 2–18 and the admin **📘 Curriculum** copy are generated from the *Train
 - **Not published:** the Nitro Pro installer and its install-video links.
 
 Day 1 was built by hand from the same guide and is kept as it is.
+
+Word Game 1 is not in the Word file. It was added to Day 17's PM part (`s3`) by hand, under Free Communication Upskill, so re-add it to `build/days/day17.js` after re-running `convert.py`.
