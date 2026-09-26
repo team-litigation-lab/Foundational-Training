@@ -27,4 +27,4 @@ Day 1 was built by hand from the same guide and is kept as it is.
 Not in the Word file, added by hand, so re-add them after re-running `convert.py`:
 - Day 7 `s1`: the Intake Specialist Role Canva deck, at the top of the part.
 - Day 13 `s2`: the Medical Records Specialist Role Canva deck, at the top of the part.
-- Day 17 `s3`: Word Game 1, under Free Communication Upskill.
+- Day 17 `s3`: the Lien Negotiator Role Canva deck at the top of the part, and Word Game 1 under Free Communication Upskill.
