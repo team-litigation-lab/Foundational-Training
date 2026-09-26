@@ -20,7 +20,7 @@ All 18 days are on the platform, each split into its agenda items (one slide eac
 
 | Day | Title | Parts |
 |---|---|---|
-| 1 | VA Essentials | 8 |
+| 1 | VA Essentials | 9 |
 | 2 | VA Essentials | 4 |
 | 3–5 | Reception Training | 2 · 3 · 3 |
 | 6 | Calendar Management Training | 2 |
