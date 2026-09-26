@@ -9,11 +9,10 @@ The training platform for the *Revised 18-Day Foundational Training Program* (Tr
 - trainee feedback and certificates
 - 🖥 Presenter view and 👁 Trainee view
 
-Each day's content is its section of the curriculum, **as written**:
+Each day follows its section of the curriculum (same order and wording), with two rules:
 
-- the same wording, order and screenshots
-- Canva decks and Google Drive videos, handouts and readings embedded unchanged
-- nothing added that isn't in the curriculum
+- **The Canva training deck is the lesson.** Each Classroom Discussion shows its role deck (Law Firm Communication, Calendaring, Intake, Medical Records, Lien Negotiator, and so on) instead of the curriculum's discussion material.
+- **Trainees see only their tasks.** Task instructions and the links those tasks need (videos to watch, assessments, activities, templates, demo and mock call metrics) stay on the page. Everything else in the curriculum (AI Assisted Discussion links, digital handouts, discussion questions, reference and optional materials) is for admins only, in **Admin → 📘 Curriculum**.
 
 ## Days
 
@@ -21,14 +20,14 @@ All 18 days are on the platform, each split into its agenda items (one slide eac
 
 | Day | Title | Parts |
 |---|---|---|
-| 1 | VA Essentials | 9 |
+| 1 | VA Essentials | 8 |
 | 2 | VA Essentials | 4 |
 | 3–5 | Reception Training | 2 · 3 · 3 |
 | 6 | Calendar Management Training | 2 |
-| 7–9 | Intake Training | 2 · 3 · 4 |
+| 7–9 | Intake Training | 2 · 3 · 3 |
 | 10–12 | Insurance Communication Training | 2 · 2 · 1 |
 | 13–16 | Provider Communication Training | 3 · 2 · 2 · 2 |
-| 17–18 | Lien Negotiator Training | 3 · 5 (Day 17's PM part includes the playable Word Game 1) |
+| 17–18 | Lien Negotiator Training | 3 · 4 (Day 17's PM part includes the playable Word Game 1) |
 
 Days 2–18 are imported from the Word file with `build/curriculum/` (see its README). Day 1 was built by hand from the same guide.
 
