@@ -96,6 +96,7 @@ Every edit checks that its anchor exists, so the build stops with an error if th
 ## Deploy
 
 - Cloudflare Worker with static assets (`wrangler.json`), using the shared `LSH_KV` namespace. Records are stored under the `ft:` prefix, so they don't mix with the EA/PA (no prefix) or CM (`cm:`) records.
+- **PR previews** (Cloudflare runs `wrangler preview` for non-production branches) use their own KV namespace, `LSH_KV2` (`previews` in `wrangler.json`), so testing a PR never touches live trainee data. Cron triggers don't run on previews.
 - `.assetsignore` keeps the Worker, config, build files and Markdown out of the served files.
 - Secrets:
   - `ADMIN_PASSPHRASE`: trainer sign-in. It turns on secure mode, which the trainer-only notes need.
