@@ -16,9 +16,17 @@
  *                        a signed session token.
  *   SESSION_SECRET     — optional; signs session tokens (defaults to ADMIN_PASSPHRASE)
  *
+ * Daily Task Tracker: each trainee's sheet is tracker:<id> (the trainee edits it); the daily check,
+ * notes review and trainer comments are trackerreview:<id> (trainees read it, only admins write it).
+ * The check runs on the cron in wrangler.json (after the training day, Pacific time), and on demand
+ * from Admin → 📋 Task Trackers. The rules are shared with the page: js/ft-tracker-rules.js.
+ *
  * Without ADMIN_PASSPHRASE the Worker runs in the old open mode so nothing breaks
  * before you've configured it (the Admin screen shows a warning).
  */
+import "./js/ft-tracker-rules.js";
+const TR = globalThis.FTTrackerRules;
+
 /* ---------- KV with the "ft:" namespace prefix ---------- */
 const KV_PREFIX = "ft:";
 function kvOf(env) {
@@ -82,7 +90,7 @@ function candidateIds(name, batch) {
 
 /* ---------- what a trainee may touch ---------- */
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays)$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 function canRead(tok, key) {
@@ -104,6 +112,10 @@ async function traineeWrite(env, tok, key, value) {
     await kv.put(key, JSON.stringify(merged)); return null;
   }
   if (key === `progress:${id}`) { await kv.put(key, value); return null; }
+  if (key === `tracker:${id}`) {
+    if (value.length > 900000) return "The tracker is too large to save";
+    await kv.put(key, value); return null;
+  }
   if (key === `feedback:${id}`) {
     // Trainees (auto-review) may add days and mark reviews read — never rewrite a trainer's review.
     const out = existing && existing.days ? JSON.parse(JSON.stringify(existing)) : { days: {} };
@@ -184,7 +196,50 @@ async function listAll(env, prefix) {
   return keys;
 }
 
+/* ---------- Daily Task Tracker: the daily check ----------
+   For every approved trainee with a tracker: run the rules for the day, write a notes review
+   against the trainer's criteria (settings:trackercriteria), and keep the trainer's comment. */
+async function aiText(env, system, prompt, maxTokens) {
+  if (!env.GEMINI_API_KEY) return "";
+  const r = await callGemini(env, JSON.stringify({ system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
+  const j = await r.json().catch(() => ({}));
+  return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
+}
+async function runTrackerChecks(env, opts) {
+  const kv = kvOf(env);
+  const o = opts || {};
+  const D = o.date || TR.ptDate();
+  if (!o.force && !TR.isWeekday(D)) return { date: D, skipped: "weekend", checked: 0 };
+  const critRaw = await kv.get("settings:trackercriteria");
+  const criteria = (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA;
+  const keys = o.id ? [`tracker:${o.id}`] : await listAll(env, "tracker:");
+  const done = [];
+  for (const k of keys) {
+    const id = k.slice("tracker:".length);
+    const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+    if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
+    const t = JSON.parse((await kv.get(k)) || "null");
+    if (!t) continue;
+    const res = TR.checkDay(t, D);
+    if (res.na) continue;   // before this trainee's first tracker day
+    const p = TR.reviewPrompt(t, D, criteria, rec && rec.name);
+    let review = "";
+    try { review = await aiText(env, p.system, p.prompt, 400); } catch (e) { review = ""; }
+    const rk = `trackerreview:${id}`;
+    const cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+    const prev = cur.days[D] || {};
+    cur.days[D] = Object.assign({}, res, { review: review || prev.review || "", checkedAt: new Date().toISOString(), comment: prev.comment || "", commentAt: prev.commentAt || "" });
+    cur.updatedAt = new Date().toISOString();
+    await kv.put(rk, JSON.stringify(cur));
+    done.push({ id, pct: res.pct, flags: res.flags.length });
+  }
+  return { date: D, checked: done.length, results: done };
+}
+
 export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runTrackerChecks(env, {}));
+  },
   async fetch(request, env) {
     const kv = kvOf(env);
     try {
@@ -266,6 +321,13 @@ export default {
       if (path === "/api/claude" || path === "/api/ai") {
         if (!env.GEMINI_API_KEY) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY as a Secret in Cloudflare." }, 500);
         return await callGemini(env, await request.text());
+      }
+
+      /* ---------- Daily Task Tracker: run the daily check now (admin) ---------- */
+      if (path === "/api/tracker/check") {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        return json(await runTrackerChecks(env, { id: b.id || null, date: b.date || null, force: true }));
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
