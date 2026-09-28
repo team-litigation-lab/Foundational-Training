@@ -631,6 +631,10 @@ rect.svg-callout-badge{animation:none;}
   display:none;
 }
 .quiz-rationale.show{display:block;}
+.qc-mark{display:inline-block;margin-left:10px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.02em;white-space:nowrap;background:#fff;}
+.qc-mark.ok{color:var(--success);} .qc-mark.no{color:var(--danger);}
+.qc-verdict{display:block;font-size:15px;margin-bottom:6px;color:var(--ink);}
+.qc-verdict.ok b{color:var(--success);} .qc-verdict.no b{color:var(--danger);} .qc-verdict b.qc-ans{color:var(--success);}
 
 .quiz-dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:4px 0 10px;max-width:480px;margin-left:auto;margin-right:auto;}
 .quiz-dot{width:8px;height:8px;border-radius:50%;background:var(--line);cursor:pointer;transition:all .15s ease;}
@@ -2347,6 +2351,10 @@ em.warn{font-style:normal;color:var(--danger);}
 .lesson-stage #lessonSlideWrap .quiz-q{font-family:'Fraunces',Georgia,serif;font-size:clamp(20px,1.8vw,28px) !important;color:var(--navy);line-height:1.3;margin:8px 0 16px !important;}
 .lesson-stage #lessonSlideWrap .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .lesson-stage #lessonSlideWrap .quiz-opt{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;font-size:15px;text-align:left;margin:0;}
+.lesson-stage #lessonSlideWrap .quiz-opt.selected{border-color:var(--navy);background:#EEF0F8;box-shadow:inset 0 0 0 1px var(--navy);}
+.lesson-stage #lessonSlideWrap .quiz-opt.correct{border-color:var(--success);background:var(--success-bg);box-shadow:inset 0 0 0 1px var(--success);}
+.lesson-stage #lessonSlideWrap .quiz-opt.incorrect{border-color:var(--danger);background:var(--danger-bg);box-shadow:inset 0 0 0 1px var(--danger);}
+.lesson-stage #lessonSlideWrap .quiz-opt.dim{opacity:.6;}
 /* task overview / meet client / practice slide */
 .lesson-stage #lessonSlideWrap > .card > p, .lesson-stage #lessonSlideWrap .meet-client-card p{font-size:16px;line-height:1.6;}
 .lesson-stage #lessonSlideWrap > .card > div > p{font-size:16px;line-height:1.6;}
@@ -6042,7 +6050,7 @@ function resumeLabel(){
 function resumeWhereLeftOff(saved){
   const lv = saved || state.lastView; state.resumePending = false; if(!lv) return;
   if(lv.view==="day" && lv.dayId){ goto("day", lv.dayId); return; }
-  if(lv.view==="tool" && lv.toolId){ state.pendingWizardIndex = lv.wizardIndex||0; goto("tool", lv.toolId); return; }
+  if(lv.view==="tool" && lv.toolId){ state.pendingWizardIndex = lv.wizardIndex||0; state.pendingWizardScrollTop = true; goto("tool", lv.toolId); return; }
   goto(lv.view);
 }
 window.resumeWhereLeftOff = resumeWhereLeftOff;
@@ -6124,7 +6132,10 @@ function afterRender(){
   if(state.traineeId && !state.isAdmin && (!state.feedbackLoadedAt || Date.now()-state.feedbackLoadedAt > 5*60*1000)){ state.feedbackLoadedAt = Date.now(); setTimeout(()=>{ loadMyFeedback(); loadMyFocus(); }, 0); }
   if(state.view==="tool"){
     initTool(state.toolId);
-    if(state.pendingWizardIndex){ const wi = state.pendingWizardIndex; state.pendingWizardIndex = 0; setTimeout(()=>{ try{ wizardGoTo(wi); }catch(e){} }, 60); }
+    // A re-render (auto-update, trainer reset, sync) rebuilds the lab at step 1 — put the trainee back on their step.
+    const lw = state.labWizard && state.labWizard.toolId===state.toolId ? state.labWizard.idx : 0;
+    const wi = state.pendingWizardIndex || lw; state.pendingWizardIndex = 0;
+    if(wi){ setTimeout(()=>{ try{ wizardGoTo(wi, !state.pendingWizardScrollTop); }catch(e){} state.pendingWizardScrollTop = false; }, 60); }
     setTimeout(()=>restoreLabFields(), 80);
   }
   if(state.view==="admin" && state.isAdmin && !state.adminData && !state.adminLoading) loadAdminLedger();
@@ -6531,7 +6542,7 @@ async function applyUpdate(){
   try{
     if(state.view==="tool" && typeof saveLabNow==="function" && state.labDrafts){ await storeSet("lab-drafts", state.labDrafts); }
     if(state.traineeId && !state.isAdmin) await cloudSaveNow();
-    sessionStorage.setItem("lsh_resume_after_update", JSON.stringify({view:state.view, dayId:state.dayId, lessonSlide:state.lessonSlide, toolId:state.toolId, adminTab:state.adminTab, cuesDay:state.cuesDay, sopDay:state.sopDay, studioDay:state.studioDay, orientIdx:state.orientIdx, scroll:window.scrollY}));
+    sessionStorage.setItem("lsh_resume_after_update", JSON.stringify({view:state.view, dayId:state.dayId, lessonSlide:state.lessonSlide, toolId:state.toolId, wizardIndex:(state.view==="tool" && toolState && toolState.wizardIndex) || 0, adminTab:state.adminTab, cuesDay:state.cuesDay, sopDay:state.sopDay, studioDay:state.studioDay, orientIdx:state.orientIdx, scroll:window.scrollY}));
   }catch(e){}
   location.reload();
 }
@@ -6550,7 +6561,7 @@ function restoreAfterUpdate(){
   if(!st || !st.view || st.view==="login") return false;
   ["adminTab","cuesDay","sopDay","studioDay","orientIdx"].forEach(k=>{ if(st[k]!=null) state[k] = st[k]; });
   if(st.view==="day" && st.dayId){ goto("day", st.dayId); if(typeof st.lessonSlide==="number"){ state.lessonSlide = Math.min(st.lessonSlide, Math.max(state.maxSlideReached||0, st.lessonSlide)); render(); } }
-  else if(st.view==="tool" && st.toolId) goto("tool", st.toolId);
+  else if(st.view==="tool" && st.toolId){ state.labWizard = {toolId:st.toolId, idx:st.wizardIndex||0}; goto("tool", st.toolId); }
   else goto(st.view);
   setTimeout(()=>{ window.scrollTo(0, st.scroll||0); toast("✨ Updated to the latest version."); }, 300);
   return true;
@@ -6863,7 +6874,7 @@ function warmupQuestionHtml(dayId, q, k){
       const cls = !done ? "" : oi===q.a ? " ok" : oi===picked ? " no" : " dim";
       return `<button type="button" class="di-wq-opt${cls}" ${done?"disabled":""} onclick="pickWarmup(${dayId},${k},${oi})"><span>${String.fromCharCode(65+oi)}</span>${esc(o)}${done&&oi===q.a?" ✓":""}${done&&oi===picked&&oi!==q.a?" ✗":""}</button>`;
     }).join("")}</div>
-    ${done ? `<div class="di-wq-fb ${picked===q.a?"ok":"no"}"><b>${picked===q.a?"✓ Correct.":"Not quite — you'll cover this today."}</b>${q.r?` ${esc(q.r)}`:""}</div>` : `<div class="di-wq-hint">Pick an answer to check yourself.</div>`}
+    ${done ? `<div class="di-wq-fb ${picked===q.a?"ok":"no"}"><b>${picked===q.a?"✓ Correct.":`Not quite — the correct answer is ${String.fromCharCode(65+q.a)}. You'll cover this today.`}</b>${q.r?` ${esc(q.r)}`:""}</div>` : `<div class="di-wq-hint">Pick an answer to check yourself.</div>`}
   </div>`;
 }
 function pickWarmup(dayId, k, oi){
@@ -7347,17 +7358,23 @@ function renderQuickChecksAfter(d, lessonIndex){
       <p class="quiz-q" style="margin-bottom:10px;">${esc(c.q)}</p>
       <div class="quiz-opts">
         ${c.opts.map((o,oi)=>{
-          let cls = "";
-          if(checked){ if(oi===c.a) cls="correct"; else if(oi===st.picked) cls="incorrect"; }
+          let cls = "", mark = "";
+          if(checked){
+            if(oi===c.a){ cls="correct"; mark = `<span class="qc-mark ok">✓ Correct answer${oi===st.picked?" · your answer":""}</span>`; }
+            else if(oi===st.picked){ cls="incorrect"; mark = `<span class="qc-mark no">✗ Your answer</span>`; }
+            else cls="dim";
+          }
           else if(oi===st.picked) cls="selected";
-          return `<div class="quiz-opt ${cls}" ${checked?"":`onclick="selectQuickCheck('${gi}',${oi})" style="cursor:pointer;"`}>${esc(o)}</div>`;
+          return `<div class="quiz-opt ${cls}" ${checked?"":`onclick="selectQuickCheck('${gi}',${oi})" style="cursor:pointer;"`}>${esc(o)}${mark}</div>`;
         }).join("")}
       </div>
       ${checked ? "" : `<div class="qc-actions">
         <span class="qc-hint">${typeof st.picked==="number" ? "You can still change your answer." : "Pick an answer, then check it."}</span>
         <button type="button" class="btn btn-navy btn-sm" ${typeof st.picked==="number"?"":"disabled"} onclick="checkQuickCheck('${gi}',${c.a})">Check Answer</button>
       </div>`}
-      <div class="quiz-rationale ${checked?"show":""}" id="qcr_${gi}">${esc(c.r)}</div>
+      <div class="quiz-rationale ${checked?"show":""}" id="qcr_${gi}">${checked ? (st.picked===c.a
+        ? `<span class="qc-verdict ok"><b>✓ Correct!</b></span>`
+        : `<span class="qc-verdict no"><b>✗ Not quite.</b> The correct answer is: <b class="qc-ans">${esc(c.opts[c.a])}</b></span>`) : ""}${esc(c.r)}</div>
     </div>`;
   }).join("");
 }
@@ -8192,10 +8209,11 @@ function renderToolWizard(dayId, parts){
     <div class="wizard-nav">${wizardNavHtml(idx)}</div>
   `;
 }
-function wizardGoTo(i){
+function wizardGoTo(i, keepScroll){
   const labels = toolState.wizardLabels || [];
   if(i<0 || i>=labels.length) return;
   toolState.wizardIndex = i;
+  state.labWizard = {toolId:state.toolId, idx:i};   // survives a re-render of the same lab
   setTimeout(bookmarkView, 0);
   document.querySelectorAll(".wizard-screen").forEach(el=>{
     el.style.display = (parseInt(el.dataset.wizardIdx,10)===i) ? "block" : "none";
@@ -8209,7 +8227,7 @@ function wizardGoTo(i){
   if(labelEl) labelEl.textContent = `Part ${i+1} of ${labels.length} — ${labels[i]}`;
   const navWrap = document.querySelector(".wizard-nav");
   if(navWrap) navWrap.innerHTML = wizardNavHtml(i);
-  window.scrollTo({top:0, behavior:"smooth"});
+  if(!keepScroll) window.scrollTo({top:0, behavior:"smooth"});
 }
 window.wizardGoTo = wizardGoTo;
 /* Bottom navigation for every lab: Back · Next: <next activity> · and on the last activity, Return to Progress */
@@ -15170,7 +15188,7 @@ function initForceMultiplier2(body){
     <div class="card" style="padding:14px 16px;">
       ${FM2_CHECKLIST.map((c,i)=>`
         <label style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer;">
-          <input type="checkbox" onchange="toolState.fm2.checklistSelected[${i}]=this.checked" style="margin-top:3px;">
+          <input type="checkbox" id="fm2Chk${i}" onchange="toolState.fm2.checklistSelected[${i}]=this.checked" style="margin-top:3px;">
           <span style="font-size:13px;color:#37394A;">${esc(c.text)}</span>
         </label>`).join("")}
     </div>
@@ -16054,7 +16072,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1755";
+var APP_BUILD = "ft-2026.09.28-1803";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -16098,9 +16116,9 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=zf"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1755"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1755"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1755"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.28-1755"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1803"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1803"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1803"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.28-1803"></script>
 </body>
 </html>

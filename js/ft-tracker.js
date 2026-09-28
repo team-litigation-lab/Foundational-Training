@@ -317,48 +317,111 @@ document.addEventListener("keydown", ev=>{
   }
 });
 
-/* ---------- admin: every trainee's tracker ---------- */
-const FTA = {rows:null, loading:false, criteria:null, running:false};
+/* ---------- admin: every trainee's tracker, batch by batch ---------- */
+/* Batch → trainee → their daily records. Only active trainees' trackers are
+   loaded; archived batches are listed from their trainee records and a
+   trainee's records there are fetched when opened, so old batches cost nothing. */
+const FTA = {rows:null, archived:null, loading:false, criteria:null, running:false, open:{}, closed:{}, archOpen:false, arch:{}};
 async function loadAdmin(){
   FTA.loading = true;
   try{
     const keys = (await sharedList("tracker:")) || [];
     const ids = keys.map(k=>String(k).replace(/^tracker:/,""));
-    const out = await Promise.all(ids.map(async id=>{
-      const [rec, t, rv] = await Promise.all([sharedGet("trainee:"+id), sharedGet("tracker:"+id), sharedGet("trackerreview:"+id)]);
-      return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived), t, rv:rv||{days:{}}};
+    const recs = await Promise.all(ids.map(async id=>{ const rec = await sharedGet("trainee:"+id); return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; }));
+    const active = await Promise.all(recs.filter(x=>!x.archived).map(async x=>{
+      const [t, rv] = await Promise.all([sharedGet("tracker:"+x.id), sharedGet("trackerreview:"+x.id)]);
+      return Object.assign(x, {t, rv:rv||{days:{}}});
     }));
-    FTA.rows = out.filter(x=>x.t && !x.archived).sort((a,b)=>(a.batch+a.name).localeCompare(b.batch+b.name));
+    FTA.rows = active.filter(x=>x.t).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+    FTA.archived = recs.filter(x=>x.archived).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     const c = await sharedGet("settings:trackercriteria");
     FTA.criteria = (c && c.text) || TR.DEFAULT_CRITERIA;
-  }catch(err){ FTA.rows = []; }
+  }catch(err){ FTA.rows = []; FTA.archived = []; }
   FTA.loading = false;
   if(state.view==="admin" && state.adminTab==="trackers") render();
+}
+const fttBatch = (b)=> b ? `Batch ${b}` : "No batch set";
+const fttJs = (v)=> e(JSON.stringify(v));
+function fttDays(n){ const out = [], d = new Date(today()+"T12:00:00Z"); while(out.length<n){ const iso = d.toISOString().slice(0,10); if(TR.isWeekday(iso)) out.push(iso); d.setUTCDate(d.getUTCDate()-1); } return out.reverse(); }
+// One day's result: the stored end-of-day check (with the trainer's comment) or, for today, the live check.
+function fttDay(x, d){
+  const s = x.rv.days[d]; const live = x.t ? TR.checkDay(x.t, d) : null;
+  if(!s && (!live || live.na)) return null;
+  return {pct: s ? s.pct : live.pct, flags: (s ? s.flags : live.flags) || [], comment: s && s.comment, stored: !!s};
+}
+function fttCell(x, d){
+  const r = fttDay(x, d);
+  if(!r) return `<td class="ftt-acell na" title="Before this trainee's first tracker day">—</td>`;
+  const n = r.flags.length;
+  return `<td class="ftt-acell ${r.pct>=100?"ok":r.pct>=60?"mid":"bad"}" onclick="event.stopPropagation();FTTracker.openAdmin('${x.id}','${d}')" title="${n} flag${n===1?"":"s"}${r.comment?" · commented":""}">${r.pct}%${n?`<small>⚑ ${n}</small>`:""}${r.comment?"<i>💬</i>":""}</td>`;
+}
+// Every record on file for a trainee, newest first.
+function fttRecords(x){
+  const dates = new Set(Object.keys(x.rv.days||{})); if(x.t){ const td = today(); if(TR.isWeekday(td) && fttDay(x, td)) dates.add(td); }
+  const list = [...dates].sort().reverse().map(d=>({d, r: fttDay(x, d)})).filter(o=>o.r);
+  if(!list.length) return `<div class="ftt-muted" style="padding:8px 0;">No daily records yet.</div>`;
+  return `<table class="ftt-rtable"><thead><tr><th>Day</th><th>Check</th><th>Flags</th><th>Your comment</th><th></th></tr></thead><tbody>
+    ${list.map(({d, r})=>`<tr><td>${e(TR.fmtDate(d))}${d===today()?' <em class="ftt-live">today · live</em>':""}</td>
+      <td><span class="ftt-pill ${r.pct>=100?"ok":r.pct>=60?"mid":"bad"}">${r.pct}%</span></td>
+      <td>${r.flags.length ? `⚑ ${r.flags.length}` : '<span class="ftt-muted">none</span>'}</td>
+      <td>${r.comment ? e(String(r.comment).slice(0,140)) + (String(r.comment).length>140?"…":"") : '<span class="ftt-muted">—</span>'}</td>
+      <td>${x.t ? `<button class="btn btn-ghost btn-sm" onclick="FTTracker.openAdmin('${x.id}','${d}')">Open day</button>` : ""}</td></tr>`).join("")}</tbody></table>`;
+}
+function fttTraineeRows(list, days){
+  return list.map(x=>{
+    const c = counts(x.t), open = (c["New"]||0)+(c["Pending for >3 days"]||0)+(c["Ongoing"]||0)+(c["Priority - Ongoing"]||0);
+    const ps = days.map(d=>fttDay(x, d)).filter(Boolean).map(r=>r.pct), avg = ps.length ? Math.round(ps.reduce((a,b)=>a+b,0)/ps.length) : null;
+    const isOpen = !!FTA.open[x.id];
+    return `<tr class="ftt-trow" onclick="FTTracker.toggle('${x.id}')" aria-expanded="${isOpen}">
+        <td><span class="ftt-caret">${isOpen?"▾":"▸"}</span> <b>${e(x.name)}</b></td>
+        <td class="ftt-tasks"><b>${open}</b> open · ${c["Completed"]||0} done${c["Pending for >3 days"]?` · <span class="ftt-warn">${c["Pending for >3 days"]} pending &gt;3d</span>`:""}</td>
+        ${days.map(d=>fttCell(x, d)).join("")}
+        <td class="ftt-avg">${avg==null?"—":avg+"%"}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();FTTracker.openAdmin('${x.id}','${today()}')">Open</button></td></tr>
+      ${isOpen ? `<tr class="ftt-rec"><td colspan="${days.length+4}">${fttRecords(x)}</td></tr>` : ""}`;
+  }).join("");
+}
+function fttArchived(){
+  const list = FTA.archived || [];
+  if(!list.length) return "";
+  const groups = {}; list.forEach(x=>{ (groups[x.batch] = groups[x.batch] || []).push(x); });
+  const keys = Object.keys(groups).sort((a,b)=>(a==="")-(b==="") || b.localeCompare(a, undefined, {numeric:true}));
+  return `<details class="card ftt-admin ftt-archived" ${FTA.archOpen?"open":""} ontoggle="FTTracker.archOpen(this.open)">
+    <summary>📦 Archived batches <span class="ftt-n">${keys.length}</span> <span class="ftt-muted">— trainees archived in Admin; their records load when you open one</span></summary>
+    ${keys.map(b=>`<div class="ftt-abatch"><b>📁 ${e(fttBatch(b))}</b> <span class="ftt-muted">${groups[b].length} trainee${groups[b].length===1?"":"s"}</span>
+      <ul>${groups[b].map(x=>{ const st = FTA.arch[x.id];
+        return `<li><button class="ftt-linkbtn" onclick="FTTracker.archRecords('${x.id}')">${st&&st.show?"▾":"▸"} ${e(x.name)}</button>
+          ${st&&st.show ? (st.loading ? '<div class="ftt-muted">Loading…</div>' : fttRecords(Object.assign({}, x, {t:null, rv:st.rv}))) : ""}</li>`; }).join("")}</ul></div>`).join("")}
+  </details>`;
 }
 function renderAdminTrackers(){
   if(!FTA.rows && !FTA.loading) loadAdmin();
   if(!FTA.rows) return `<div class="card" style="padding:24px;">Loading the Task Trackers…</div>`;
-  const D = today();
-  const days = []; { const d = new Date(D+"T12:00:00Z"); while(days.length<5){ const iso = d.toISOString().slice(0,10); if(TR.isWeekday(iso)) days.push(iso); d.setUTCDate(d.getUTCDate()-1); } }
-  days.reverse();
-  const cell = (x, d)=>{
-    const s = x.rv.days[d]; const live = TR.checkDay(x.t, d);
-    if(live.na && !s) return `<td class="ftt-acell na" title="Before this trainee's first tracker day">—</td>`;
-    const p = s ? s.pct : live.pct; const n = (s ? s.flags : live.flags).length;
-    return `<td class="ftt-acell ${p>=100?"ok":p>=60?"mid":"bad"}" onclick="FTTracker.openAdmin('${x.id}','${d}')" title="${n} flag${n===1?"":"s"}${s&&s.comment?" · commented":""}">${p}%${n?`<small>⚑ ${n}</small>`:""}${s&&s.comment?"<i>💬</i>":""}</td>`;
-  };
+  const D = today(), days = fttDays(5);
+  const groups = {}; FTA.rows.forEach(x=>{ (groups[x.batch] = groups[x.batch] || []).push(x); });
+  const keys = Object.keys(groups).sort((a,b)=>(a==="")-(b==="") || b.localeCompare(a, undefined, {numeric:true}));
+  const head = `<thead><tr><th>Trainee</th><th>Tasks</th>${days.map(d=>`<th>${TR.fmtDate(d).slice(0,5)}${d===D?"<br><em>today</em>":""}</th>`).join("")}<th>5-day avg</th><th></th></tr></thead>`;
+  const batches = keys.map(b=>{
+    const list = groups[b], closed = !!FTA.closed[b];
+    const todays = list.map(x=>fttDay(x, D)).filter(Boolean);
+    const avg = todays.length ? Math.round(todays.reduce((a,r)=>a+r.pct,0)/todays.length) : null;
+    const attention = todays.filter(r=>r.pct<100).length;
+    return `<section class="ftt-batch">
+      <div class="ftt-batch-hd" onclick="FTTracker.toggleBatch(${fttJs(b)})"><span class="ftt-caret">${closed?"▸":"▾"}</span> <b>📁 ${e(fttBatch(b))}</b>
+        <span class="ftt-muted">${list.length} trainee${list.length===1?"":"s"}${avg!=null?` · today ${avg}% avg`:""}${attention?` · <span class="ftt-warn">${attention} need${attention===1?"s":""} attention</span>`:""}</span></div>
+      ${closed ? "" : `<div class="ftt-atable-wrap"><table class="ftt-atable">${head}<tbody>${fttTraineeRows(list, days)}</tbody></table></div>`}
+    </section>`; }).join("");
   return `
   <div class="card ftt-admin">
     <h3>📋 Task Trackers</h3>
-    <p class="ftt-muted">Each trainee's Daily Task Tracker, checked automatically at the end of every training day (7 PM Pacific daylight time, 6 PM in winter). Red means something is missing: click a day to see the flagged cells, the notes review, and leave your comment.</p>
-    ${FTA.rows.length ? `<div class="ftt-atable-wrap"><table class="ftt-atable"><thead><tr><th>Trainee</th><th>Batch</th>${days.map(d=>`<th>${TR.fmtDate(d).slice(0,5)}${d===D?"<br><em>today</em>":""}</th>`).join("")}<th></th></tr></thead>
-      <tbody>${FTA.rows.map(x=>`<tr><td><b>${e(x.name)}</b></td><td>${e(x.batch)}</td>${days.map(d=>cell(x,d)).join("")}<td><button class="btn btn-ghost btn-sm" onclick="FTTracker.openAdmin('${x.id}','${D}')">Open</button></td></tr>`).join("")}</tbody></table></div>`
-      : `<div class="ftt-muted" style="margin:14px 0;">No trainee has opened their Task Tracker yet.</div>`}
+    <p class="ftt-muted">Each trainee's Daily Task Tracker, by batch, checked automatically at the end of every training day (7 PM Pacific daylight time, 6 PM in winter). Click a trainee for all their daily records; click a day to see the flagged cells, the notes review, and leave your comment.</p>
+    ${FTA.rows.length ? batches : `<div class="ftt-muted" style="margin:14px 0;">No active trainee has opened their Task Tracker yet.</div>`}
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-ghost btn-sm" ${FTA.running?"disabled":""} onclick="FTTracker.runNow()">${FTA.running?"Checking…":"Run today's check now"}</button>
       <button class="btn btn-ghost btn-sm" onclick="FTA_reload()">↻ Refresh</button>
     </div>
   </div>
+  ${fttArchived()}
   <div class="card ftt-admin">
     <h3>Notes review criteria</h3>
     <p class="ftt-muted">What the daily notes review looks for. Trainees see the review as "Notes review".</p>
@@ -370,6 +433,17 @@ window.FTA_reload = function(){ FTA.rows = null; render(); };
 
 /* ---------- actions ---------- */
 window.FTTracker = {
+  toggle(id){ FTA.open[id] = !FTA.open[id]; render(); },
+  archOpen(v){ FTA.archOpen = !!v; },
+  toggleBatch(b){ FTA.closed[b] = !FTA.closed[b]; render(); },
+  async archRecords(id){
+    const cur = FTA.arch[id];
+    if(cur && cur.show){ cur.show = false; render(); return; }
+    if(cur && cur.rv){ cur.show = true; render(); return; }
+    FTA.arch[id] = {show:true, loading:true}; render();
+    const rv = await sharedGet("trackerreview:"+id).catch(()=>null);
+    FTA.arch[id] = {show:true, rv: rv || {days:{}}}; render();
+  },
   tab(k){ FTT.sheet = k; FTT.sel = null; render(); },
   select(sheet, r, k, scroll){ selectCell(sheet, r, k, scroll); },
   edit(){ startEdit(); },
@@ -409,7 +483,7 @@ window.FTTracker = {
     FTT.admin = {id, name: x ? x.name : id}; FTT.day = d || today(); FTT.id = null; FTT.sheet = "tracker";
     goto("tracker");
   },
-  closeAdmin(){ FTT.admin = null; FTT.id = null; FTT.data = null; state.adminTab = "trackers"; FTA.rows = null; goto("admin"); },
+  closeAdmin(){ FTT.admin = null; FTT.id = null; FTT.data = null; state.adminTab = "trackers"; FTA.rows = null; FTA.archived = null; goto("admin"); },
   async saveComment(){
     const D = FTT.day || today(), v = (document.getElementById("fttComment")||{}).value || "";
     const cur = (await sharedGet("trackerreview:"+FTT.id)) || {days:{}};
@@ -551,6 +625,22 @@ main.main-tracker{max-width:none;}
 .ftt-acell{cursor:pointer;font-weight:700;text-align:center !important;}
 .ftt-acell.na{color:var(--ink-soft);font-weight:400;cursor:default;}
 .ftt-acell small{display:block;font-size:11px;font-weight:600;} .ftt-acell i{font-style:normal;font-size:11px;}
+.ftt-batch{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.ftt-batch-hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:#F8F9FC;cursor:pointer;user-select:none;}
+.ftt-batch-hd b{color:var(--navy);font-size:15px;} .ftt-batch .ftt-atable-wrap{margin-top:0;}
+.ftt-caret{display:inline-block;width:12px;color:var(--ink-soft);}
+.ftt-trow{cursor:pointer;} .ftt-trow:hover td{background:#FAFBFD;}
+.ftt-tasks{font-size:13px;white-space:nowrap;} .ftt-avg{font-weight:700;text-align:center !important;}
+.ftt-warn{color:#b45309;font-weight:700;}
+.ftt-rec td{background:#FBFCFE;padding:6px 14px 12px !important;}
+.ftt-rtable{border-collapse:collapse;width:100%;font-size:13px;} .ftt-rtable th,.ftt-rtable td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;}
+.ftt-rtable th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);}
+.ftt-pill{display:inline-block;min-width:44px;text-align:center;padding:2px 8px;border-radius:999px;font-weight:700;}
+.ftt-pill.ok{background:#e6f4ea;color:#137333;} .ftt-pill.mid{background:#fef7e0;color:#b06000;} .ftt-pill.bad{background:#fce8e6;color:#c5221f;}
+.ftt-live{font-style:normal;font-size:11px;color:#1a73e8;}
+.ftt-archived summary{cursor:pointer;font-weight:800;color:var(--navy);} .ftt-n{display:inline-block;padding:1px 8px;border-radius:999px;background:#eef2f7;font-size:12px;}
+.ftt-abatch{margin-top:12px;} .ftt-abatch ul{list-style:none;margin:6px 0 0;padding:0;} .ftt-abatch li{padding:4px 0;border-top:1px solid var(--line);}
+.ftt-linkbtn{background:none;border:none;padding:4px 0;font:inherit;color:var(--navy);cursor:pointer;font-weight:600;}
 .ftt-dash .num.ok{color:#188038;} .ftt-dash .num.mid{color:#b06000;} .ftt-dash .num.bad{color:#d93025;}
 `; document.head.appendChild(s); })();
 })();
