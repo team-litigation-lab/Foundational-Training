@@ -678,7 +678,8 @@ function presenterCues(d, slide){
   if(slide.type==="topic"){
     const l = d.lessons[slide.lessonIndex];
     out.push(`<h3>${esc(l.h)}${l.singleSlide ? "" : ` <small style="font-size:12px;color:var(--ink-soft);">Part ${slide.part} of 2</small>`}</h3>`);
-    out.push(renderPresenterNote(d, l, slide.part));   // hardcoded notes: js/presenter-notes.js
+    const pageInfo = state.presentSecsFor === (state.lessonSlide||0);
+    out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null));   // hardcoded notes: js/presenter-notes.js
   }else if(slide.type==="quickCheck"){
     out.push(`<h3>Quick Check</h3><p>Let the room answer first — then reveal and use the rationale.</p>`);
     (d.quickChecks||[]).filter(c=>c.afterIndex===slide.lessonIndex).forEach(c=>{
@@ -735,7 +736,8 @@ function presenterRefresh(){
   const c = document.getElementById("pvCount"); if(c) c.textContent = presenterCountText(d);
   const n = document.getElementById("pvNext"); if(n) n.innerHTML = presenterNextText(d);
   const j = document.getElementById("pvJump"); if(j) j.value = String(idx);
-  const cu = document.getElementById("pvCues"); if(cu && cu.dataset.slide !== String(idx)){ cu.dataset.slide = String(idx); cu.innerHTML = presenterCues(d, slides[idx]); cu.parentElement.scrollTop = 0; }
+  const cueKey = idx + "|" + (state.presentSecsFor===idx ? (state.presentSecs||[]).join(",") : "");
+  const cu = document.getElementById("pvCues"); if(cu && cu.dataset.slide !== cueKey){ cu.dataset.slide = cueKey; cu.innerHTML = presenterCues(d, slides[idx]); cu.parentElement.scrollTop = 0; }
 }
 function presenterFitMirror(){
   const box = document.getElementById("pvMirror"), f = document.getElementById("pvFrame"); if(!box || !f) return;
@@ -776,6 +778,7 @@ if(pvChannel() && !PV_IS_AUDIENCE){
     if(m.type==="hello") presenterSend();
     if(m.type==="key") presenterStep(m.dir);
     if(m.type==="rendered" && m.dayId===state.dayId && m.slide===(state.lessonSlide||0)){
+      state.presentSecs = m.secs || null; state.presentAllSecs = m.allSecs || null; state.presentSecsFor = m.slide;
       state.presentPage = m.page; state.presentPages = m.pages;
       if(!PV.size || PV.size.w!==m.w || PV.size.h!==m.h){ PV.size = {w:m.w, h:m.h}; presenterFitMirror(); }
       presenterRefresh();
@@ -817,7 +820,12 @@ if(PV_IS_AUDIENCE){
     state.stageInnerOnly = false;
     decorateCallouts(root);
     paginateLessonSlide();
-    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight});
+    // which numbered sections (① Core Principles … ④ Go Deeper) are on this page, so the
+    // presenter's notes can follow the page instead of the whole slide
+    const secNum = (s)=>+((s.querySelector(".fp-num")||{}).textContent||0);
+    const allSecs = [...root.querySelectorAll(".fp-section")].map(secNum).filter(Boolean);
+    const secs = [...root.querySelectorAll(".fp-section")].filter(s=>!s.closest(".pg-hide")).map(secNum).filter(Boolean);
+    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight, secs, allSecs});
   };
   if(pvChannel()){
     PV.ch.addEventListener("message", (e)=>{

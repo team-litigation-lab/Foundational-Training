@@ -5218,13 +5218,13 @@ function renderDashboard(){
       <div class="module-grid">
         ${DAYS.map(d=>moduleCard(d)).join("")}
       </div>
-          <div class="hero-actions bottom-actions">
-            ${resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : ""}
-            ${(()=>{ if(!state.traineeId) return ""; const c = certData();
+          <div class="hero-actions bottom-actions">${[
+            resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : "",
+            (()=>{ if(!state.traineeId) return ""; const c = certData();
               return c.eligible
                 ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
-                : `<span class="cert-hero-locked" title="Pass all ${c.total} Knowledge Checks (70%+) to unlock">🎓 Certificate · ${c.passed}/${c.total} Knowledge Checks passed</span>`; })()}
-          </div>
+                : `<span class="cert-hero-locked" title="Pass all ${c.total} Knowledge Checks (70%+) to unlock">🎓 Certificate · ${c.passed}/${c.total} Knowledge Checks passed</span>`; })()
+          ].join("")}</div>
           ${renderCompetencyStrip()}
     </div>
 
@@ -11555,7 +11555,17 @@ async function submitTraineeFeedback(){
 }
 Object.assign(window, {openTraineeFeedback, submitTraineeFeedback, tfbSetStar});
 function renderFeedbackDashCard(){
-  if(!state.traineeId || state.isAdmin) return "";
+  if(state.isAdmin) return "";
+  if(!state.traineeId){
+    /* Trainee view (admin preview) or signed out: show the card so trainers see it; sending needs a trainee sign-in. */
+    const msg = state.adminPreview ? "Preview — trainees send feedback from this card." : "Sign in first to send feedback.";
+    return `<div class="card stat tfb-dash">
+    <div class="lbl">💬 Your feedback</div>
+    <div class="sub" style="margin:4px 0 10px;">Tell us how the platform, lessons and your facilitator are working for you.</div>
+    <div class="tfb-dash-stars">${[1,2,3,4,5].map(n=>`<button type="button" aria-label="${n} stars" onclick="toast('${msg}')">★</button>`).join("")}</div>
+    <div class="tfb-dash-actions"><button type="button" class="btn btn-primary btn-sm" onclick="toast('${msg}')">Write feedback</button></div>
+  </div>`;
+  }
   const cur = nextDayId();
   return `<div class="card stat tfb-dash">
     <div class="lbl">💬 Your feedback</div>
@@ -12860,9 +12870,24 @@ function presenterNote(d, l, part){
   if(part===1 || l.singleSlide) return {cue, say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
   return {say: sc.correct || "", wrap: unq(sc.wrap), scenario: scen};
 }
-function renderPresenterNote(d, l, part){
+// Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
+// ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper. When the slide is split over pages,
+// the presenter sees only the sections on the current page; Wrap and Scenario come with the last one.
+const PN_SECTION_NAMES = {1:"Core Principles", 2:"Step-by-Step Framework", 3:"Best Practices & Pitfalls", 4:"Go Deeper"};
+function renderPresenterNote(d, l, part, secs, allSecs){
   const n = presenterNote(d, l, part);
   const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
+  const all = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`] || {};
+  const split = secs && secs.length && allSecs && secs.length < allSecs.length;
+  if(split && secs.every(s=>all["s"+s])){
+    const last = secs.includes(Math.max(...allSecs));
+    return `<div class="pn">
+      ${secs.map(s=>{ const x = all["s"+s]; if(!x) return ""; return `
+        <div class="pn-on"><b>On this page · ${esc(PN_SECTION_NAMES[s]||"")}</b><p>${esc(x.on||"")}</p></div>
+        <div class="script-block"><div class="script-head"><span>🎙 Script</span></div>${row("Say", x.say)}${row("Ask", x.ask)}</div>`; }).join("")}
+      ${last ? `${n.wrap ? `<div class="script-block"><div class="script-head"><span>🎙 Close</span></div>${row("Wrap", n.wrap)}</div>` : ""}${n.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}` : ""}
+    </div>`;
+  }
   return `<div class="pn">
     ${n.on ? `<div class="pn-on"><b>On this slide</b><p>${esc(n.on)}</p></div>` : ""}
     ${n.cue ? `<div class="pn-on"><b>Trainer note</b><p>${esc(n.cue)}</p></div>` : ""}
@@ -15724,7 +15749,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1620";
+var APP_BUILD = "ft-2026.09.28-1626";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15768,8 +15793,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=ze"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1620"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1620"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1620"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1626"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1626"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1626"></script>
 </body>
 </html>
