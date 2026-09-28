@@ -94,13 +94,15 @@ function candidateIds(name, batch) {
 }
 
 /* ---------- what a trainee may touch ---------- */
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays)$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`];
+// Activities: activities:dayN and their attachments (actfile:*) are published by trainers for everyone;
+// settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|feedback-style)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || PUBLIC_READ.some((re) => re.test(key));
+  return OWN(tok.id).includes(key) || key.startsWith(`actup:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
@@ -139,6 +141,34 @@ async function traineeWrite(env, tok, key, value) {
     const byId = Object.fromEntries(((incoming && incoming.items) || []).map((x) => [x.id, x]));
     out.items.forEach((x) => { const u = byId[x.id]; if (u) { x.seenAt = u.seenAt || x.seenAt || null; x.doneAt = u.doneAt || null; } });
     await kv.put(key, JSON.stringify(out)); return null;
+  }
+  if (key === `actsub:${id}`) {
+    // Daily Activities submissions: a trainee writes their own answers and marks feedback read;
+    // the trainer's feedback is never theirs to change. A new submission retires the old feedback.
+    const out = existing && existing.items ? existing : { items: {} };
+    for (const [aid, v] of Object.entries((incoming && incoming.items) || {})) {
+      if (!/^[a-z0-9]{1,40}$/.test(aid) || !v || typeof v !== "object") continue;
+      const cur = out.items[aid] || {};
+      const next = Object.assign({}, cur);
+      if (typeof v.answer === "string") next.answer = v.answer.slice(0, 20000);
+      if ("file" in v) next.file = v.file && typeof v.file === "object" ? { name: String(v.file.name || "").slice(0, 200), type: String(v.file.type || "").slice(0, 100), size: Number(v.file.size) || 0 } : null;
+      if (v.submittedAt && v.submittedAt !== cur.submittedAt) {
+        next.submittedAt = String(v.submittedAt).slice(0, 40);
+        next.attempts = (cur.attempts || 0) + 1;
+        if (cur.feedback && cur.feedback.status === "sent") next.prevFeedback = cur.feedback;
+        delete next.feedback; delete next.readAt;
+      }
+      if (v.readAt && cur.feedback && cur.feedback.status === "sent" && !cur.readAt) next.readAt = String(v.readAt).slice(0, 40);
+      out.items[aid] = next;
+    }
+    const outStr = JSON.stringify(out);
+    if (outStr.length > 1000000) return "Too large";
+    await kv.put(key, outStr); return null;
+  }
+  if (key.startsWith(`actup:${id}:`) && /^actup:.+:[a-z0-9]{1,40}$/.test(key)) {
+    // A file a trainee attached to an activity answer (a data URL, about 4 MB at most).
+    if (String(value).length > 6000000) return "File too large";
+    await kv.put(key, value); return null;
   }
   if (/^tfeedback:[a-z0-9]+$/.test(key) || /^cert:LSH-FT-\d{4}-[A-Z0-9]{6}$/.test(key)) {
     if (existing && /^tfeedback:/.test(key)) return "Already submitted";
@@ -261,6 +291,12 @@ async function aiText(env, system, prompt, maxTokens) {
   const j = await r.json().catch(() => ({}));
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
 }
+// The facilitator's feedback voice (Admin → 🗣 Feedback Style, js/ft-activities.js); "" when off.
+function facilitatorVoice(st) {
+  if (!st || st.enabled === false || !st.guide) return "";
+  const ex = (st.examples || []).slice(0, 3).map((x, i) => `(${i + 1}) ${String(x).slice(0, 900)}`).join("\n");
+  return `\n\nVOICE: write the way this program's facilitator writes feedback. Keep the requested format and keep the judgement evidence-based; the voice changes wording only.\nFacilitator style guide:\n${String(st.guide).slice(0, 2500)}${ex ? `\nExamples of the facilitator's voice (match tone and phrasing; do not reuse their content):\n${ex}` : ""}`;
+}
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -268,6 +304,7 @@ async function runTrackerChecks(env, opts) {
   if (!o.force && !TR.isWeekday(D)) return { date: D, skipped: "weekend", checked: 0 };
   const critRaw = await kv.get("settings:trackercriteria");
   const criteria = (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA;
+  const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
   const keys = o.id ? [`tracker:${o.id}`] : await listAll(env, "tracker:");
   const done = [];
   for (const k of keys) {
@@ -280,7 +317,7 @@ async function runTrackerChecks(env, opts) {
     if (res.na) continue;   // before this trainee's first tracker day
     const p = TR.reviewPrompt(t, D, criteria, rec && rec.name);
     let review = "";
-    try { review = await aiText(env, p.system, p.prompt, 400); } catch (e) { review = ""; }
+    try { review = await aiText(env, p.system + voice, p.prompt, 400); } catch (e) { review = ""; }
     const rk = `trackerreview:${id}`;
     const cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
     const prev = cur.days[D] || {};

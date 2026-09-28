@@ -70,6 +70,29 @@ Each case's one-line description is taken from `mock-cases.js`. If a case change
 - For trainees, a mock call or demo card opens with its lesson (Admin → 📅 Open Lessons). Trainers see every card.
 - Portal simulators get `program=FT` with the trainee's name and batch, so scores are saved for the trainer.
 
+## Activities and the facilitator's feedback style
+
+`js/ft-activities.js` (wired in like the Tracker and Simulators, no edits to the generated page):
+
+- **📝 Activities** (top bar): trainers add activities for each program day (**Admin → 📝 Activities → Set activities**, Day 0 to Day 18). Each activity has:
+  - a title and instructions (paste from your document; `**bold**`, `- ` bullets and links work);
+  - attached files (up to 4 MB each);
+  - how trainees answer (written, file upload or both);
+  - private notes on what a strong answer includes;
+  - **Visible to trainees** and an optional **Batch** (empty = all batches).
+
+  Trainees see the visible activities for their batch, newest day first, answer (drafts autosave), attach a file and submit.
+- **Review submissions:** ✨ Draft with AI writes a review from the private notes; the trainer edits it and sends it. The trainee gets a badge on 📝 Activities and reads it on the activity page. Resubmitting keeps the earlier feedback and waits for a new review.
+- **Admin → 🗣 Feedback Style** learns how the facilitator writes feedback:
+  - **Import** takes the reviews the trainer wrote or edited (trainer reviews and activity reviews); more examples can be pasted or uploaded (.txt).
+  - **Learn the style** makes a style guide plus generic voice examples, which can be edited or switched off.
+  - While it's on, AI feedback is written in that voice: activity drafts, trainer review drafts, graded exercises, and the Worker's nightly **Task Tracker notes review** (`facilitatorVoice` in `worker.js`). Ratings, scores and the tracker check itself don't change.
+
+Storage (`ft:` prefix, rules in `worker.js`):
+- Trainers publish, everyone reads: `activities:dayN`, `actfile:*`, `settings:feedback-style`.
+- Each trainee's own: `actsub:<trainee>` and `actup:<trainee>:*`. Trainees can't write the trainer's feedback.
+- Trainer-only: `actadmin:rubrics`, `admin:fbstyle-samples`.
+
 ## How the program works
 
 - **Lessons open when the trainer opens them.** In **Admin → 📅 Open Lessons**, a trainer ticks the lessons that are open, either for **All batches** or for one batch. Trainees only see open lessons. The setting is stored as `settings:opendays` (the engine calls lessons "days" internally).
@@ -98,6 +121,7 @@ Each case's one-line description is taken from `mock-cases.js`. If a case change
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
+| `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 
