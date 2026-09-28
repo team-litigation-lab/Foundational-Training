@@ -94,7 +94,8 @@ if not m:
 s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker-rules.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker.js?v={build_tag}"></script>'
-     f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>') + s[m.end():]
+     f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>') + s[m.end():]
 
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.
