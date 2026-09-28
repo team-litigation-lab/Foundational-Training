@@ -7636,12 +7636,13 @@ function assessSubmissionQuality(text){
 function friendlyAiError(e){
   const m = String((e && e.message) || e || "");
   if(/x-api-key|authentication_error|invalid api key|API key not valid/i.test(m)) return /gemini/i.test(m) ? "The Gemini API key on the server is invalid — replace GEMINI_API_KEY in Cloudflare (Workers & Pages → ea-pa-training → Settings → Variables and Secrets)." : "The AI key on the server is invalid — replace it in Cloudflare (Settings → Variables and Secrets).";
-  if(/quota|RESOURCE_EXHAUSTED|free tier/i.test(m)) return "The free Gemini limit has been reached for now (it allows a limited number of requests per minute and per day). Wait a minute and try again — or enable billing in Google AI Studio for higher limits.";
+  if(/quota|RESOURCE_EXHAUSTED|free tier/i.test(m)) return "AI generation limit reached. Try again in a minute.";
   if(/401|sign-in required|unauthor/i.test(m)) return (state.isAdmin || state.view==="admin") ? "Your admin sign-in has expired or was made before secure mode was switched on. Click 🛡 Admin → Sign out, then sign in again with the passphrase and retry." : "Your session needs refreshing — sign out and back in, then try again.";
   if(/403|not allowed/i.test(m)) return "The server refused this request for your account type. Sign out and back in, then try again.";
   if(/GEMINI_API_KEY|not configured|No AI key/i.test(m)) return "No AI key is set on the server — add GEMINI_API_KEY (free, from Google AI Studio) as a Secret in Cloudflare (Workers & Pages → ea-pa-training → Settings → Variables and Secrets).";
   if(/credit|billing|balance/i.test(m)) return "The Gemini account has hit its quota or billing limit — check Google AI Studio, then retry.";
-  if(/429|rate|overloaded|529/i.test(m)) return "The service is busy right now — wait a minute and try again.";
+  if(/429|rate limit/i.test(m)) return "AI generation limit reached. Try again in a minute.";
+  if(/overloaded|529|503/i.test(m)) return "The AI service is busy right now. Try again in a minute.";
   if(/timed out|abort/i.test(m)) return "The review took too long to respond — try again (long scripts can take up to a minute).";
   if(/404|model/i.test(m)) return "The model name wasn't recognised by the service: " + m.slice(0,160);
   if(/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Couldn't reach the server — check your internet connection and try again.";
@@ -12232,7 +12233,7 @@ async function prepareMyReviews(){
     if(failed){
       const friendly = /GEMINI_API_KEY|No AI key|not configured/i.test(lastErr) ? "The AI service isn't set up on the server yet — please tell your trainer."
         : /401|403|sign-in/i.test(lastErr) ? "Your session needs refreshing — sign out and back in, then try again."
-        : /429|rate|busy/i.test(lastErr) ? "The AI service is busy — try again in a minute."
+        : /429|rate|busy|quota|free tier/i.test(lastErr) ? "AI generation limit reached. Try again in a minute."
         : lastErr;
       say(`${done} review(s) ready · ${failed} couldn't be prepared: ${friendly}`, true);
     }else say(`✅ ${done} review(s) ready — tap a day above to read it.`);
@@ -15596,16 +15597,16 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1501";
+var APP_BUILD = "ft-2026.09.28-1506";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
   const msg = (e && e.message) || String(e||"Unknown error");
   const friendly = /GEMINI_API_KEY|No AI key|not configured/i.test(msg) ? "No AI key is set on the server (add GEMINI_API_KEY in Cloudflare)."
     : /x-api-key|API key not valid/i.test(msg) ? "The AI key on the server is invalid (GEMINI_API_KEY)."
-    : /quota|RESOURCE_EXHAUSTED|free tier/i.test(msg) ? "The free Gemini limit is reached for now — wait a minute and try again."
+    : /quota|RESOURCE_EXHAUSTED|free tier/i.test(msg) ? "AI generation limit reached. Try again in a minute."
     : /401|sign-in/i.test(msg) ? "Your admin sign-in expired — click 🛡 Admin and sign in again."
-    : /429|rate/i.test(msg) ? "The service is busy — wait a minute and try again."
+    : /429|rate/i.test(msg) ? "AI generation limit reached. Try again in a minute."
     : /timed out/i.test(msg) ? "The service took too long — try again."
     : /Failed to fetch|NetworkError|Load failed/i.test(msg) ? "Couldn't reach the server — check your connection."
     : "";
@@ -15640,8 +15641,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=zd"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1501"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1501"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1501"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1506"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1506"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1506"></script>
 </body>
 </html>

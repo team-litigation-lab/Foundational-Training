@@ -13,7 +13,9 @@
  *   GEMINI_API_KEY1    — optional: grading, AI feedback and the tracker's daily notes review (see AI_FEATURE_KEYS)
  *   GEMINI_API_KEY2    — optional: trainer tools (feedback drafts, auto-review, Studio)
  *                        Live chat stays on GEMINI_API_KEY; a missing key falls back to it.
- *   GEMINI_MODEL       — optional, default "gemini-3.8-flash" (falls back to gemini-3.5-flash-lite)
+ *   GEMINI_MODEL       — optional: first model for grading and trainer tools (default gemini-3.8-flash).
+ *                        Live chat always starts on gemini-3.5-flash-lite (the free tier's daily limit
+ *                        is ~500 requests there, 20 on the Flash models); see geminiModels.
  *   ADMIN_PASSPHRASE   — trainer/admin sign-in. Setting this switches the portal
  *                        into SECURE MODE: every storage and AI request must carry
  *                        a signed session token.
@@ -148,16 +150,21 @@ async function traineeWrite(env, tok, key, value) {
 /* ---------- Google Gemini (free tier) ----------
    Gemini is the only reviewer. The portal sends a simple
    {messages, system, max_tokens} request; this translates it to Gemini's
-   generateContent and the reply back. Model: GEMINI_MODEL (default gemini-3.8-flash),
-   falling back to gemini-3.5-flash-lite / gemini-3.5-flash if busy or unavailable. */
+   generateContent and the reply back. Models: see geminiModels (chat starts on Flash-Lite),
+   each falling back to the next model, then the next key, if busy or unavailable. */
 // Each AI feature can use its own Gemini key. Free-tier limits are per Google Cloud
 // project, so the keys only share the load if they come from different projects.
 const AI_FEATURE_KEYS = {
   chat: "GEMINI_API_KEY",      // live roleplays, simulated calls and chats, inbox and task simulations
-  grading: "GEMINI_API_KEY1",  // rubric evaluations, AI feedback, the tracker's daily notes review
+  grading: "GEMINI_API_KEY1",  // rubric evaluations and AI feedback on trainees' work
+  tracker: "GEMINI_API_KEY1",  // the Daily Task Tracker's notes review (bulk: one per trainee per day)
   trainer: "GEMINI_API_KEY2"   // trainer tools: day feedback drafts, auto-review, Studio drafting
 };
 const geminiKey = (env, feature) => (AI_FEATURE_KEYS[feature] && env[AI_FEATURE_KEYS[feature]]) || env.GEMINI_API_KEY;
+const GEMINI_FLASH = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"], GEMINI_LITE = "gemini-3.5-flash-lite";
+const geminiModels = (env, feature) => (feature === "chat" || feature === "tracker" || !feature   // high-volume features start on Flash-Lite
+  ? [GEMINI_LITE, ...GEMINI_FLASH]
+  : [env.GEMINI_MODEL, ...GEMINI_FLASH, GEMINI_LITE]).filter((v, i, a) => v && a.indexOf(v) === i);
 const featureFromBody = (raw) => { try { return String(JSON.parse(raw).feature || ""); } catch (e) { return ""; } };
 
 async function callGemini(env, rawBody) {
@@ -174,7 +181,12 @@ async function callGemini(env, rawBody) {
   };
   if (req.system) payload.systemInstruction = { parts: [{ text: toText(req.system) }] };
   // Google limits the 2.5 models to accounts that already used them; new projects use 3.8 Flash / 3.5 Flash-Lite.
-  const models = [env.GEMINI_MODEL || "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash"].filter((v, i, a) => a.indexOf(v) === i);
+  // Free tier: each model has its own quota. Flash-Lite allows about 500 requests a day and 15 a
+  // minute; the Flash models only 20 a day and 5 a minute. So live chat (high volume) starts on
+  // Flash-Lite, while grading and trainer tools (low volume) start on the Flash models for quality
+  // and fall back to Flash-Lite when those run out. GEMINI_MODEL, if set, is the first choice for
+  // grading and trainer tools only.
+  const models = geminiModels(env, req.feature);
   let last = null, limit = null;
   for (const apiKey of keys) {
     let limited = false;
@@ -223,8 +235,8 @@ async function listAll(env, prefix) {
    For every approved trainee with a tracker: run the rules for the day, write a notes review
    against the trainer's criteria (settings:trackercriteria), and keep the trainer's comment. */
 async function aiText(env, system, prompt, maxTokens) {
-  if (!geminiKey(env, "grading")) return "";
-  const r = await callGemini(env, JSON.stringify({ feature: "grading", system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
+  if (!geminiKey(env, "tracker")) return "";
+  const r = await callGemini(env, JSON.stringify({ feature: "tracker", system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
   const j = await r.json().catch(() => ({}));
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
 }
@@ -282,7 +294,7 @@ export default {
         const page = await env.ASSETS.fetch(new Request(new URL("/", request.url)));
         const html = await page.text();
         const m = html.match(/APP_BUILD = "([^"]+)"/);
-        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nWorker: secure-mode worker.js\nSecure mode: ${env.ADMIN_PASSPHRASE ? "ON" : "OFF"}\nAI provider: ${env.GEMINI_API_KEY ? "Google Gemini (" + (env.GEMINI_MODEL || "gemini-3.8-flash") + ")" : "none — add GEMINI_API_KEY"}\nAI keys by feature: ${Object.entries(AI_FEATURE_KEYS).map(([f, name]) => `${f} ${env[name] ? name : env.GEMINI_API_KEY ? "GEMINI_API_KEY (fallback)" : "none"}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
+        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nWorker: secure-mode worker.js\nSecure mode: ${env.ADMIN_PASSPHRASE ? "ON" : "OFF"}\nAI provider: ${env.GEMINI_API_KEY ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY"}\nAI keys by feature: ${Object.entries(AI_FEATURE_KEYS).map(([f, name]) => `${f} ${env[name] ? name : env.GEMINI_API_KEY ? "GEMINI_API_KEY (fallback)" : "none"}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
