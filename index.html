@@ -4926,7 +4926,13 @@ function workOnNextItems(){
    focus:<traineeId> = {items:[{id,text,day,priority,by,createdAt,seenAt,doneAt}]}
    Trainers add them in Trainee Audit → View Detail; trainees see them
    pinned at the top of 🎯 Focus and can tick them off. */
-async function loadFocusItems(id){ const v = await sharedGet("focus:"+id).catch(()=>null); return (v && Array.isArray(v.items)) ? v : {items:[]}; }
+async function loadFocusItems(id){
+  const v = await sharedGet("focus:"+id).catch(()=>null);
+  const f = (v && Array.isArray(v.items)) ? v : {items:[]};
+  // the trainee's own items: keep what they've already opened on this page, even if the save hasn't landed yet
+  if(id===state.traineeId && !state.isAdmin && state.focusSeenLocal) f.items.forEach(x=>{ if(!x.seenAt && state.focusSeenLocal[x.id]) x.seenAt = state.focusSeenLocal[x.id]; });
+  return f;
+}
 async function adminAddFocus(id){
   const sid = cssId(id);
   const text = (document.getElementById(`focusText_${sid}`)||{}).value || "";
@@ -5002,9 +5008,12 @@ async function loadMyFocus(){
 async function markFocusSeen(){
   const f = state.myFocus; if(!f || !f.items.some(x=>!x.seenAt)) return;
   const now = new Date().toISOString();
-  const fresh = await loadFocusItems(state.traineeId);
-  fresh.items.forEach(x=>{ if(!x.seenAt) x.seenAt = now; });
-  await sharedSet("focus:"+state.traineeId, fresh); state.myFocus = fresh; render();
+  state.focusSeenLocal = state.focusSeenLocal || {};
+  f.items.forEach(x=>{ if(!x.seenAt){ x.seenAt = now; state.focusSeenLocal[x.id] = now; } });
+  refreshFocusBadge();                                  // the badge updates straight away
+  const fresh = await loadFocusItems(state.traineeId);  // then save (only the items the trainee actually saw)
+  await sharedSet("focus:"+state.traineeId, fresh); state.myFocus = fresh;
+  if(!document.querySelector(".overlay")) render(); else refreshFocusBadge();
 }
 async function toggleFocusDone(fid){
   const fresh = await loadFocusItems(state.traineeId);
@@ -5028,6 +5037,16 @@ function renderTrainerFocusCards(hasNext){
     ${hasNext ? `<div class="won-sub">✨ Suggested from your work</div>` : ""}`;
 }
 function focusNewCount(){ return Object.values(state.myFeedback||{}).filter(f=>!f.readAt).length + ((state.myFocus||{}).items||[]).filter(x=>!x.seenAt).length; }
+// Updates the 🎯 Focus badge in place, on whatever page the trainee is on.
+function refreshFocusBadge(){
+  const n = focusNewCount();
+  document.querySelectorAll(".nav-focus").forEach(btn=>{
+    let b = btn.querySelector(".nav-badge");
+    if(n){ if(!b){ b = document.createElement("span"); b.className = "nav-badge"; btn.appendChild(b); } b.textContent = n; }
+    else if(b) b.remove();
+  });
+}
+window.refreshFocusBadge = refreshFocusBadge;
 function openFocusPanel(){
   if(!state.feedbackLoadedAt){ state.feedbackLoadedAt = Date.now(); loadMyFeedback(); }
   const body = renderWorkOnNextPanel() || `<section class="won-panel"><div class="won-head"><h3>🎯 My Focus</h3></div><p style="font-size:13.5px;color:var(--ink-soft);margin:0;">Nothing flagged yet — keep going. Your trainer's feedback and personal focus areas will appear here as your work is reviewed.</p></section>`;
@@ -5041,7 +5060,7 @@ function openFocusPanel(){
   // opening feedback from inside the panel closes the panel first
   overlay.querySelectorAll("[onclick*='openDayFeedback'],[onclick*='goto(']").forEach(b=>b.addEventListener("click",()=>overlay.remove()));
   document.body.appendChild(overlay);
-  setTimeout(()=>markFocusSeen(), 1200);
+  markFocusSeen();
 }
 window.openFocusPanel = openFocusPanel;
 function renderWorkOnNextPanel(){
@@ -12337,6 +12356,7 @@ async function loadMyFeedbackCore(){
   const fb = await sharedGet("feedback:"+state.traineeId).catch(()=>null);
   const sent = {};
   if(fb && fb.days) Object.entries(fb.days).forEach(([k,v])=>{ if(v && v.status==="sent" && (!v.auto || v.editedByTrainer)) sent[k]=v; });
+  Object.entries(state.fbReadLocal||{}).forEach(([k,t])=>{ if(sent[k] && !sent[k].readAt) sent[k].readAt = t; });
   const newOnes = Object.entries(sent).filter(([k,v])=>!v.readAt).map(([k])=>k);
   const changed = JSON.stringify(sent) !== JSON.stringify(state.myFeedback||{});
   state.myFeedback = sent; state.myFeedbackRaw = fb;
@@ -12370,6 +12390,8 @@ async function openDayFeedback(dayId){
   document.body.appendChild(overlay);
   if(!f.readAt){
     f.readAt = new Date().toISOString();
+    (state.fbReadLocal = state.fbReadLocal || {})[dayId] = f.readAt;
+    refreshFocusBadge();
     try{ const raw = await sharedGet("feedback:"+state.traineeId); if(raw && raw.days && raw.days[dayId]){ raw.days[dayId].readAt = f.readAt; await sharedSet("feedback:"+state.traineeId, raw); } }catch(e){}
     if(state.view==="dashboard") render();
   }
@@ -15538,7 +15560,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1443";
+var APP_BUILD = "ft-2026.09.28-1448";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15581,9 +15603,9 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=zc"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1443"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1443"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1443"></script>
+<script src="/js/eapa-updates.js?v=zd"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1448"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1448"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1448"></script>
 </body>
 </html>
