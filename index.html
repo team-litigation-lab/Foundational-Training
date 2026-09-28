@@ -3535,7 +3535,7 @@ async function callAITextOnce(prompt, maxTokens, timeoutMs, feature){
   try{
     const response = await fetch("/api/claude", {
       method:"POST", headers:authHeaders(),
-      // feature picks the Gemini key on the Worker: chat → GEMINI_API_KEY, grading → GEMINI_API_KEY1, trainer → GEMINI_API_KEY2
+      // feature picks the model on the Worker (chat starts on Flash-Lite); every feature shares the Worker's Gemini key pool
       body: JSON.stringify({ model:"gemini", feature: feature||"", max_tokens:maxTokens||600, messages:[{role:"user", content:prompt}] }),
       signal: controller.signal
     });
@@ -6361,7 +6361,7 @@ function startLiveUpdates(){
 }
 
 /* ============================================================
-   AUTO-UPDATE — checks every 2 minutes (and when the tab comes back
+   AUTO-UPDATE — checks every 45 seconds (and when the tab comes back
    into view) whether a newer build has been deployed. If so, it saves
    everything and reloads by itself at a safe moment — never mid-call,
    mid-quiz, while typing or with a pop-up open. Until then a banner
@@ -6380,10 +6380,14 @@ async function checkForUpdate(){
     tryAutoUpdate();
   }catch(e){ /* offline — try again later */ }
 }
+// Last keystroke anywhere on the page: a Practice Lab box that has been idle for 20s counts as
+// safe to reload, because lab drafts are saved first and restored after the reload.
+let lastKeyAt = 0;
+document.addEventListener("keydown", ()=>{ lastKeyAt = Date.now(); }, true);
 function updateIsSafe(){
   if(typeof VoiceCall!=="undefined" && VoiceCall.active) return false;
   if(state.view==="day" && state.dayViewMode==="knowledgeCheck" && !state.quizSubmitted && Object.keys(state.quizAnswers||{}).length) return false;
-  if(isTyping()) return false;
+  if(isTyping() && !(state.view==="tool" && Date.now()-lastKeyAt > 20000)) return false;
   if(document.querySelector(".overlay")) return false;
   if(state.loginBusy || state.studioBusy) return false;
   if(document.querySelector('[data-busy="1"]')) return false;
@@ -6421,7 +6425,7 @@ setInterval(()=>{ if(state.isAdmin && document.visibilityState==="visible" && !i
 setTimeout(()=>{ if(state.isAdmin) autoPublishBlueprint(); }, 15000);
 function startUpdateChecks(){
   if(updateTimer) return;
-  updateTimer = setInterval(()=>{ if(updatePendingBuild) tryAutoUpdate(); else checkForUpdate(); }, 120000);
+  updateTimer = setInterval(()=>{ if(updatePendingBuild) tryAutoUpdate(); else checkForUpdate(); }, 45000);
   setInterval(()=>{ if(updatePendingBuild) tryAutoUpdate(); }, 15000);
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ if(updatePendingBuild) tryAutoUpdate(); else checkForUpdate(); } });
   setTimeout(checkForUpdate, 20000);
@@ -7771,6 +7775,81 @@ Return ONLY a JSON object with this exact shape, no other text:
     blindspots: Array.isArray(raw.blindspots) ? raw.blindspots : [],
     growthSuggestions: Array.isArray(raw.growthSuggestions) ? raw.growthSuggestions : []
   };
+}
+// Day 2's Practice Lab scores against a fixed checklist instead of calling Gemini, so it works
+// even when the AI quota is used up. Set to false to go back to the AI review.
+const DAY2_CHECKLIST_SCORING = true;
+// checks: [{cat:"accuracy"|"presence"|"risk"|"efficiency", pts, ok, good, fix}]. Returns the same
+// shape as runRubricEvaluation, so renderEvaluationReport shows it the same way.
+function checklistRubric(submissionText, checks){
+  const quality = assessSubmissionQuality(submissionText);
+  if(!quality.ok){ refundLastLabAttempt(); const err = new Error(quality.msg); err.invalidInput = true; throw err; }
+  state.lastLabAttempt = null;
+  const max = {accuracy:35, presence:30, risk:20, efficiency:15}, got = {accuracy:0, presence:0, risk:0, efficiency:0};
+  checks.forEach(c=>{ if(c.ok) got[c.cat] += c.pts; });
+  Object.keys(got).forEach(k=>{ got[k] = Math.min(max[k], Math.round(got[k])); });
+  const totalScore = got.accuracy + got.presence + got.risk + got.efficiency;
+  const fixes = checks.filter(c=>!c.ok && c.fix).map(c=>c.fix);
+  return {
+    accuracyScore:got.accuracy, presenceScore:got.presence, riskScore:got.risk, efficiencyScore:got.efficiency, totalScore,
+    gradeTier: gradeTierFor(totalScore),
+    strengths: checks.filter(c=>c.ok && c.good).map(c=>c.good).slice(0,4),
+    blindspots: fixes.slice(0,4),
+    growthSuggestions: fixes.length ? ["Not yet — rework the points above, then run it again."] : ["Strong work. Try the same approach on a messier, longer email next."]
+  };
+}
+const wordCount = (t)=>String(t||"").split(/\s+/).filter(Boolean).length;
+function fm2PromptChecks(draft){
+  const d = draft.toLowerCase(), n = wordCount(draft);
+  return [
+    {cat:"accuracy", pts:9, ok:/bullet|•|\blist\b|point/.test(d), good:"Asks for bullet points.", fix:"Not yet: say the format you want — \"3 bullet points\"."},
+    {cat:"accuracy", pts:9, ok:/\b(3|three)\b/.test(d), good:"Fixes the number of bullets at 3.", fix:"Not yet: give the exact count — 3 bullets, so the output is always the same shape."},
+    {cat:"accuracy", pts:9, ok:/\b(15|fifteen)\b/.test(d) || /(word|length) (limit|max)/.test(d), good:"Sets the 15-word limit.", fix:"Not yet: add the length limit — \"no more than 15 words per bullet\"."},
+    {cat:"accuracy", pts:8, ok:/action|to-?do|next step|task|follow.?up|what .* (needs|has) to/.test(d), good:"Asks for action items, not a general summary.", fix:"Not this way — \"summarize\" gets you a recap. Ask for action items only."},
+    {cat:"presence", pts:12, ok:/elias|executive|attorney|briefing|8 ?am|morning|boss/.test(d), good:"Gives the audience and purpose (the executive's briefing).", fix:"Not yet: say who it's for and why — \"for Elias's 8 AM briefing\"."},
+    {cat:"presence", pts:8, ok:/you are|act as|as an? (assistant|ea|executive)|professional|concise|clear/.test(d), good:"Sets the role or tone.", fix:"Try giving the tool a role or tone — \"You're an executive assistant; be concise\"."},
+    {cat:"presence", pts:10, ok:/\bonly\b|no (intro|preamble|extra|other)|nothing else|don't add|do not add|exclude/.test(d), good:"Rules out filler (only the bullets).", fix:"Not yet: rule out padding — \"only the bullets, no intro\"."},
+    {cat:"risk", pts:12, ok:/confidential|privileg|anonymi|placeholder|redact|remove (the )?(names|client)|no (client )?names|\[client\]/.test(d), good:"Protects client details before pasting them into an AI tool.", fix:"Not this way — client emails are confidential. Swap names for placeholders like [Client] before pasting."},
+    {cat:"risk", pts:8, ok:/verify|double.?check|flag|confirm|accurate|don't (invent|make up|guess)|do not (invent|make up|guess)/.test(d), good:"Asks the tool not to guess and to flag anything unclear.", fix:"Add a guardrail — \"don't invent details; flag anything unclear\"."},
+    {cat:"efficiency", pts:15, ok:n>=12 && n<=120, good:"Clear and to the point.", fix: n<12 ? "Not yet: the prompt is too thin to steer the tool — spell out format, length and focus." : "Tighten it: a prompt over 120 words is harder to reuse. Keep only the instructions that change the output."},
+    {cat:"efficiency", pts:0, ok:true}
+  ];
+}
+const FM2_MODEL_OUTPUT = [
+  "Confirm with legal that moving the closing date up won't affect financing.",
+  "Schedule the CFO call next week; confirm the exact day with the client.",
+  "Prepare the escrow holdback percentage answer before the CFO call."
+];
+function fm2PlanChecks(draft){
+  const d = draft.toLowerCase();
+  return [
+    {cat:"accuracy", pts:12, ok:/what happened|find out|look into|review (the )?(filing|docket|thread|file)|check (the )?(filing|docket|status|case)|investigat|status of the filing/.test(d), good:"Finds out what actually happened with the filing first.", fix:"Not yet: start by finding out what happened with the filing and whether the timeline is affected."},
+    {cat:"accuracy", pts:12, ok:/attorney|lawyer|associate|elias|loop in|check with|escalat|partner/.test(d), good:"Loops in the attorney handling the filing.", fix:"Not this way — questions about the case timeline need the attorney. Say who you'd loop in."},
+    {cat:"accuracy", pts:11, ok:/timeline|by (end of|eod|tomorrow|\d)|today|within \d|follow.?up|update (them|the client)|next step/.test(d), good:"Commits to a clear follow-up and timeline for the client.", fix:"Not yet: give the client a time for the next update — \"I'll update you by 3 PM\"."},
+    {cat:"presence", pts:15, ok:/acknowledg|apolog|understand|hear (you|your)|concern|frustrat|upset|sorry/.test(d), good:"Acknowledges the client's frustration.", fix:"Not yet: acknowledge how the client feels before explaining — it lowers the temperature."},
+    {cat:"presence", pts:15, ok:/prompt|ask (the )?ai|using ai|with ai|ai tool|chatgpt|claude|gemini|copilot/.test(d) && /draft|summar|respon|reply|email|bullet/.test(d), good:"Uses AI for a specific task (drafting the reply or summarizing the thread).", fix:"Not yet: include the actual AI prompt you'd use — e.g. to draft the client reply or summarize the thread."},
+    {cat:"risk", pts:12, ok:/confidential|privileg|anonymi|placeholder|redact|remove (the )?(names|client)|no (client )?names|approv/.test(d), good:"Keeps privileged details out of the AI tool.", fix:"Not this way — the thread is privileged. Remove names and case details before using AI, and only with approval."},
+    {cat:"risk", pts:8, ok:!/guarantee|won'?t affect|will not affect|no impact|definitely|promise/.test(d), good:"Avoids promising outcomes the attorney hasn't confirmed.", fix:"Careful: don't promise the case timeline isn't affected — only the attorney can say that."},
+    {cat:"efficiency", pts:15, ok:/\n\s*(\d+[.)]|[-•*])/.test(draft) || /first|then|next|finally/.test(d), good:"Laid out as clear steps.", fix:"Lay the plan out as numbered steps so it's easy to follow."}
+  ];
+}
+// replies: the trainee's reply to each client email that needed one ("" if none was sent)
+function fm2InboxChecks(replies){
+  replies = (replies||[]).map(r=>String(r||"").trim());
+  const msgs = replies;
+  const sent = replies.filter(r=>r.length), share = (f)=> sent.length ? sent.filter(f).length/sent.length : 0;
+  const allSent = sent.length === msgs.length;
+  return [
+    {cat:"accuracy", pts:35*(sent.length/Math.max(1,msgs.length)), ok:true, good: allSent ? "Replied to every client email that needed an answer." : ""},
+    {cat:"accuracy", pts:0, ok:allSent, fix:`Not yet: ${msgs.length-sent.length} client email(s) that needed a reply were left without one.`},
+    {cat:"presence", pts:15*share(r=>/^(hi|hello|dear|good (morning|afternoon|evening)|hey)\b/i.test(r)), ok:true, good: share(r=>/^(hi|hello|dear|good (morning|afternoon|evening)|hey)\b/i.test(r))===1 ? "Every reply opens with a greeting." : ""},
+    {cat:"presence", pts:0, ok:share(r=>/^(hi|hello|dear|good (morning|afternoon|evening)|hey)\b/i.test(r))===1 || !sent.length, fix:"Open every reply with a greeting that fits the client — \"Dear Mr. Lee\" for the formal one, \"Hi Sam\" for the casual one."},
+    {cat:"presence", pts:15*share(r=>/(regards|thank you|thanks|best|sincerely|cheers)[\s\S]{0,60}$/i.test(r)), ok:true, good: share(r=>/(regards|thank you|thanks|best|sincerely|cheers)[\s\S]{0,60}$/i.test(r))===1 ? "Every reply closes with a proper sign-off." : ""},
+    {cat:"presence", pts:0, ok:share(r=>/(regards|thank you|thanks|best|sincerely|cheers)[\s\S]{0,60}$/i.test(r))===1 || !sent.length, fix:"Close every reply with a sign-off and your name."},
+    {cat:"risk", pts:20, ok:!sent.some(r=>/password|ssn|social security|account (number|no)|routing|pin\b/i.test(r)), good:"No sensitive information shared in replies.", fix:"Not this way — a reply included sensitive details (a password or account number). Never send those by email."},
+    {cat:"efficiency", pts:15*share(r=>wordCount(r)>=20 && wordCount(r)<=220), ok:true, good: share(r=>wordCount(r)>=20 && wordCount(r)<=220)===1 ? "Replies are complete but not padded." : ""},
+    {cat:"efficiency", pts:0, ok:share(r=>wordCount(r)>=20 && wordCount(r)<=220)===1 || !sent.length, fix:"Keep each reply between about 20 and 220 words — enough to answer fully, short enough to read on a phone."}
+  ];
 }
 async function runRoleplayRubricEvaluation(scenario, transcript){
   const prompt = `You are an automated evaluator grading a trainee Executive/Personal Assistant's performance in a live, unscripted roleplay call. Grade rigorously and realistically — do not default to the same score every time, and don't award high marks just because the trainee said something plausible-sounding.
@@ -13674,7 +13753,8 @@ Do not evaluate filing or security awareness — those are scored separately and
 
   let rubricScore = 0;
   try{
-    const report = await runRubricEvaluation(
+    const sentText = EMAIL_SIM_MESSAGES.map((m,i)=>m.type==="actionable" ? (e.replies[i]||"") : "").join("\n\n");
+    const report = (DAY2_CHECKLIST_SCORING && toolState.esimContainerId==="fm2EmailWrap") ? checklistRubric(sentText.trim() ? sentText : actionableSummary, fm2InboxChecks(EMAIL_SIM_MESSAGES.map((m,i)=>m.type==="actionable" ? (e.replies[i]||"") : null).filter(r=>r!==null))) : await runRubricEvaluation(
       "Inbox Triage — Writing DNA Match & Professionalism",
       `This is one part of a larger inbox-triage exercise. Filing accuracy and security/phishing awareness are scored separately and objectively elsewhere — grade only the writing quality shown in these replies.`,
       actionableSummary,
@@ -13738,11 +13818,11 @@ function renderInboxZeroSection(){
   const hasInbox = iz.inbox.length > 0;
   return `
     <h3 style="margin:36px 0 6px;color:var(--navy);font-size:15px;">Inbox Zero — Eisenhower Matrix Challenge</h3>
-    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">A fresh inbox of 25 overlapping, conflicting, urgent emails — different every time you run this. Drag each one into the right quadrant.</p>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">${DAY2_CHECKLIST_SCORING ? "An inbox of overlapping, conflicting, urgent emails, shuffled every time you open it." : "A fresh inbox of 25 overlapping, conflicting, urgent emails — different every time you run this."} Drag each one into the right quadrant.</p>
     <div class="card" style="padding:16px 18px;margin-bottom:14px;">
       <b style="font-size:13px;color:var(--navy);">Step 1 — Generate the Inbox</b>
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:6px 0 10px;">Elias's inbox after a red-eye — 25 emails, all landed while he was offline. Nothing here is pre-sorted.</p>
-      <button class="btn btn-orange btn-sm" id="izGenBtn" onclick="izGenerateInbox()">${hasInbox?"Regenerate Inbox":"Generate 25-Email Inbox"}</button>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:6px 0 10px;">Elias's inbox after a red-eye — ${DAY2_CHECKLIST_SCORING ? IZ_FIXED_INBOX.length : 25} emails, all landed while he was offline. Nothing here is pre-sorted.</p>
+      <button class="btn btn-orange btn-sm" id="izGenBtn" onclick="izGenerateInbox()">${hasInbox ? (DAY2_CHECKLIST_SCORING ? "Shuffle Inbox" : "Regenerate Inbox") : (DAY2_CHECKLIST_SCORING ? "Open the Inbox" : "Generate 25-Email Inbox")}</button>
       <span id="izGenStatus" style="margin-left:10px;font-size:12px;color:var(--ink-soft);">${hasInbox?`${iz.inbox.length} emails loaded.`:""}</span>
     </div>
     ${trainerInline() ? `
@@ -13770,6 +13850,25 @@ function renderInboxZeroSection(){
 }
 
 const IZ_SIMULATE_FIRST_FAILURE = false; // set true to re-enable the deliberate "tool failure" training moment
+// Day 2's Eisenhower inbox when AI is off (DAY2_CHECKLIST_SCORING). q: 1 Do, 2 Schedule, 3 Delegate, 4 Delete.
+const IZ_FIXED_INBOX = [
+  {q:"1", from:"Arbitration Clerk <clerk@aaa-adr.org>", subject:"Meridian Dynamics — hearing moved to tomorrow 9 AM", preview:"The panel has moved the evidentiary hearing to tomorrow at 9 AM; confirm counsel's attendance by noon today."},
+  {q:"1", from:"Dana Whitfield <dana@meridiandynamics.com>", subject:"URGENT: exhibit 14 missing from our production", preview:"Our GC just noticed exhibit 14 isn't in last night's production — the deadline is 5 PM today."},
+  {q:"1", from:"First National Bank <wires@firstnational.com>", subject:"Wire on hold — client escrow release needs your approval", preview:"The $240,000 escrow release for the Harlow closing is on hold until an authorized signer approves it today."},
+  {q:"1", from:"Sarah Thorne <sarah.thorne@gmail.com>", subject:"School called — Maya has a fever", preview:"The school nurse called; someone needs to pick Maya up within the hour and I'm in surgery until 2."},
+  {q:"2", from:"Rob Kessler <rkessler@thornepartners.com>", subject:"Q3 partner meeting agenda — your input by Friday", preview:"Could you add your items for the Q3 partner strategy meeting? Agenda goes out Friday."},
+  {q:"2", from:"Bar Association CLE <cle@statebar.org>", subject:"You need 4 more ethics hours by December 31", preview:"Our records show Elias still needs 4 ethics CLE hours this reporting period."},
+  {q:"2", from:"Priya Nair <pnair@thornepartners.com>", subject:"Draft engagement letter for the new Calloway matter", preview:"Attached is the draft engagement letter — Elias should review before we send it next week."},
+  {q:"2", from:"Dr. Alan Brooks <office@brookscardiology.com>", subject:"Time to book Elias's annual check-up", preview:"Elias is due for his annual cardiology check-up; please call to book a slot in the next month."},
+  {q:"3", from:"Conference Desk <events@legaltechsummit.com>", subject:"Speaker bio and headshot needed by Thursday", preview:"Please send Elias's bio and a headshot for the panel program by Thursday."},
+  {q:"3", from:"IT Helpdesk <it@thornepartners.com>", subject:"Laptop update will restart devices at 6 PM", preview:"A required security update will restart all firm laptops at 6 PM tonight; save your work."},
+  {q:"3", from:"Marco Ruiz <marco@ruizcatering.com>", subject:"Menu choice for Friday's client lunch", preview:"Can you confirm the menu (chicken or salmon) for Friday's lunch for 12 by tomorrow?"},
+  {q:"3", from:"Accounts Payable <ap@thornepartners.com>", subject:"Expense report missing two receipts", preview:"Elias's travel expense report is missing the hotel and taxi receipts; please send them this week."},
+  {q:"4", from:"LegalWeekly <newsletter@legalweekly.com>", subject:"This week's top 10 law firm marketing tips", preview:"Ten ways to grow your firm's brand this quarter, plus our webinar schedule."},
+  {q:"4", from:"Premium Pens Co. <deals@premiumpens.com>", subject:"40% off engraved executive pens", preview:"Treat your team to engraved executive pens — this week only."},
+  {q:"4", from:"Networking Hub <invite@networkinghub.io>", subject:"You're invited: virtual mixer for professionals", preview:"Join 300 professionals for a virtual mixer next Tuesday evening."},
+  {q:"4", from:"Cloud Storage <no-reply@cloudbox.com>", subject:"Your storage is 80% full — upgrade today", preview:"Upgrade your personal plan to get 2 TB more space."}
+];
 async function izGenerateInbox(){
   const btn = document.getElementById("izGenBtn");
   const status = document.getElementById("izGenStatus");
@@ -13802,6 +13901,17 @@ For EACH email, privately classify the Eisenhower quadrant from the EA's perspec
 
 Return ONLY a JSON array of exactly 5 objects — no preamble, no markdown fences. Each object:
 {"from":"Name <email>", "subject":"...", "preview":"one sentence preview", "idealQuadrant":"1"}`;
+  if(DAY2_CHECKLIST_SCORING){
+    const emails = IZ_FIXED_INBOX.slice();
+    for(let i=emails.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [emails[i],emails[j]]=[emails[j],emails[i]]; }
+    toolState.iz.inbox = emails.map((e,i)=>({id:"m"+i, from:e.from, subject:e.subject, preview:e.preview, idealQuadrant:e.q}));
+    toolState.iz.placements = {};
+    status.textContent = `${toolState.iz.inbox.length} emails in the inbox.`;
+    btn.textContent = "Shuffle Inbox"; btn.disabled = false;
+    document.getElementById("izSortCard").style.display = "block";
+    izRenderBoard();
+    return;
+  }
   try{
     const results = [];
     for(let k=0;k<themes.length;k+=2){ results.push(...await Promise.allSettled(themes.slice(k,k+2).map(t=>callAIJson(makePrompt(t), 1400, 60000, "chat")))); }
@@ -14791,6 +14901,18 @@ async function runFm2Prompt(){
   if(draft.length < 10){ toast("Write your prompt first."); return; }
   if(!(await useLabAttempt(2, "runFm2Prompt"))) return;
   el.innerHTML = `<div class="ai-loading">Running your prompt…</div>`;
+  if(DAY2_CHECKLIST_SCORING){
+    try{
+      const report = checklistRubric(draft, fm2PromptChecks(draft));
+      el.innerHTML = `
+        <div class="ai-result"><b>What a well-built prompt produces from this email</b><div class="ai-result-body">${FM2_MODEL_OUTPUT.map(b=>"• "+esc(b)).join("<br>")}</div></div>
+        <b style="font-size:13px;color:var(--navy);display:block;margin:14px 0 8px;">Evaluation Report — Your Prompt</b>
+        ${renderEvaluationReport(report, 2)}
+      `;
+      await bumpPracticeProgress("forcemultiplier2", report.totalScore);
+    }catch(e){ el.innerHTML = renderAiErrorBlock(e, "Couldn't score your prompt"); }
+    return;
+  }
   const executionPrompt = `${draft}\n\nHere is the text to work with:\n"${FM2_PROMPT_TASK.sourceText}"`;
   try{
     const output = await callAIText(executionPrompt, 300, undefined, "chat");
@@ -14819,7 +14941,7 @@ async function reviewFm2Plan(){
   if(!(await useLabAttempt(2, "reviewFm2Plan"))) return;
   el.innerHTML = `<div class="ai-loading">Reviewing your plan…</div>`;
   try{
-    const report = await runRubricEvaluation(
+    const report = DAY2_CHECKLIST_SCORING ? checklistRubric(draft, fm2PlanChecks(draft)) : await runRubricEvaluation(
       "Managing Up & AI Proficiency — Ambiguous Instruction Response",
       `SCENARIO: ${FM2_FULL_SCENARIO.text}`,
       draft,
@@ -15597,7 +15719,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1506";
+var APP_BUILD = "ft-2026.09.28-1551";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15640,9 +15762,9 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=zd"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1506"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1506"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1506"></script>
+<script src="/js/eapa-updates.js?v=ze"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1551"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1551"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1551"></script>
 </body>
 </html>

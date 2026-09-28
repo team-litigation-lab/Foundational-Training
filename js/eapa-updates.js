@@ -1655,6 +1655,18 @@ function gmMaybeRush(){ const iz = gmIz(); if(__gmRushInFlight){ iz.rush = "load
 async function gmRush(){
   if(__gmRushInFlight) return; __gmRushInFlight = true;
   const iz = gmIz(); iz.rush = "loading"; gmRender();
+  if(typeof DAY2_CHECKLIST_SCORING!=="undefined" && DAY2_CHECKLIST_SCORING && typeof IZ_FIXED_INBOX!=="undefined"){
+    // AI is off for Day 2: the overnight mail is the fixed set, shuffled, instead of generated.
+    const pool = IZ_FIXED_INBOX.slice(); for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+    let mins = 8*60+58;
+    const add = pool.slice(0, GM_RUSH).map((e,i)=>{ mins -= 5 + Math.floor(Math.random()*20); const h = Math.floor(mins/60), m = mins%60;
+      const who = String(e.from).split("<")[0].trim();
+      return {id:"m"+i, from:e.from, subject:e.subject, preview:e.preview, body:`Hi,\n\n${e.preview}\n\nThanks,\n${who}`, time:`${h%12||12}:${String(m).padStart(2,"0")} ${h<12?"AM":"PM"}`, idealQuadrant:e.q}; });
+    const cur = gmIz(); cur.inbox = cur.inbox.filter(e=>e.fixed).concat(add); cur.rush = "done";
+    cur.snack = `${add.length} new messages`; clearTimeout(gmAct.t); gmAct.t = setTimeout(()=>{ gmIz().snack = null; gmRender(); }, 4000);
+    gmSave(); gmRender(); __gmRushInFlight = false;
+    return;
+  }
   const themes = [
     "client matters and court/arbitration deadlines — include at least one genuine emergency tied to the Meridian Dynamics arbitration",
     "scheduling: overlapping meeting requests, calendar conflicts, reschedules, and travel changes",
@@ -1708,7 +1720,10 @@ async function gmSubmit(){
   const replies = fixed.filter(e=>e.type==="actionable").map(e=>`--- Client Email ---\nFrom: ${e.from}\nSubject: ${e.subject}\nOriginal message:\n${e.body}\n\nTrainee's reply:\n${iz.meta[e.id] && iz.meta[e.id].action==="reply" ? iz.notes[e.id] : "(No reply was sent — this client email was handled without a response.)"}`).join("\n\n");
   let writing = null, reportHtml = "";
   try{
-    const report = await runRubricEvaluation(
+    const replyTexts = fixed.filter(e=>e.type==="actionable").map(e=>iz.meta[e.id] && iz.meta[e.id].action==="reply" ? (iz.notes[e.id]||"") : "");
+    const report = (typeof DAY2_CHECKLIST_SCORING!=="undefined" && DAY2_CHECKLIST_SCORING)
+      ? checklistRubric(replyTexts.join("\n\n").trim() || replies, fm2InboxChecks(replyTexts))
+      : await runRubricEvaluation(
       "Inbox Triage — Writing DNA Match & Professionalism",
       "This is one part of a larger inbox exercise. Filing, triage and phishing awareness are scored separately — grade only the writing quality of these client replies.",
       replies,
