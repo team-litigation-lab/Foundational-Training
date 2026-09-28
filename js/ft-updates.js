@@ -414,12 +414,11 @@ window.finishTrainingForDay = ftFinishDay;
 window.goToKnowledgeCheckWithInterstitial = function(){ ftFinishDay(state.dayId); };
 
 /* ---------- 5. dashboard, day cards, top bar ---------- */
+// A lesson card shows its title only (no list of its slides).
 window.moduleCard = function(d){
   const prog = state.progress[d.id];
   const unlocked = dayUnlocked(d.id);
   const status = prog && prog.done ? "done" : (unlocked && d.sections.length ? "open" : "locked");
-  const parts = d.lessons.filter(l=>l.h!==d.title);   // a lesson's deck slide is named after the lesson: not listed again
-  const shown = parts.slice(0, 7), more = parts.length - shown.length;
   const label = status==="done" ? " &middot; Finished" : (!d.sections.length ? " &middot; Coming soon" : (status==="locked" ? " &middot; 🔒 Locked" : ""));
   return `
   <div class="module-card mc-${status}" id="module-${d.id}">
@@ -429,8 +428,6 @@ window.moduleCard = function(d){
     </div>
     <div class="module-body">
       ${typeof feedbackButton==="function" ? feedbackButton(d.id) : ""}
-      <ul class="module-topic-list">${shown.map(l=>`<li>${esc(l.h)}</li>`).join("")}</ul>
-      ${more>0 ? `<button type="button" class="module-more" onclick="event.stopPropagation(); showDayTopics(${d.id})">+ ${more} more <span>›</span></button>` : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
     ${d.video && status!=="locked" ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>` : ""}
