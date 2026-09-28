@@ -32,7 +32,7 @@ def rep(old, new, count=None, min_count=1):
 # Trainees see the lessons only: each lesson is its Canva training deck (build/lessons/lessonNN.js).
 # The curriculum (build/days/, trainer/curriculum.json) is for trainers and admins.
 # The engine still calls them "days" internally (DAYS, DAY1…); on screen they're lessons, named by title.
-LESSONS = sorted(f for f in os.listdir(os.path.join(B, "lessons")) if re.fullmatch(r"lesson\d\d\.js", f))
+LESSONS = sorted(f for f in os.listdir(os.path.join(B, "lessons")) if re.fullmatch(r"lesson\d\d[a-z]?\.js", f))
 parts = [open(os.path.join(B, "lessons", f), encoding="utf8").read().strip() for f in LESSONS]
 N = len(LESSONS)
 days_js = "\n\n".join(parts)
@@ -40,7 +40,7 @@ days_js = "\n\n".join(parts)
 days_js += """
 function ftName(v){ const one = x=>{ const d = DAYS.find(d=>d.id===Number(x)); return d ? d.title : String(x); };
   return Array.isArray(v) ? v.map(one).join(", ") : String(v).split(/,\\s*/).map(one).join(", "); }"""
-# DAYS in file order (lesson00.js, Day 0–1, comes first). Each lesson keeps its own id, so a card added
+# DAYS in file order (lesson00a.js Onboarding and lesson00b.js Set-up come first). Each lesson keeps its own id, so a card added
 # in front never shifts the lessons' saved progress; d.label / d.short override "Lesson N" and the number.
 names = [re.search(r"const (DAY\d+) = \{", x).group(1) for x in parts]
 days_js += "\n\nconst DAYS = [" + ", ".join(names) + "];"

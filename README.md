@@ -17,7 +17,8 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 | # | Lesson | On the platform |
 |---|---|---|
-| 0–1 | Day 0–1: Onboarding & Tech Set-up | ✅ 9 slides: Day 0 (Hubstaff, onboarding instructions, onboarding orientation), Day 1's tasks (expectations, Hubstaff To-Do, reminders, reading task, monitoring sheet) and the Tech Tools Set-up (curriculum Days 1–2, links, no passwords) |
+| 👋 | Onboarding | ✅ 3 slides from the curriculum's Day 0: Setting up Hubstaff, Onboarding Instructions, Onboarding Orientation |
+| 🛠 | Setting of Expectations & Tech Set-up | ✅ 6 slides: Day 1's tasks (expectations, Hubstaff To-Do, reminders, reading task, monitoring sheet) and the Tech Tools Set-up (curriculum Days 1–2, links, no passwords) |
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
 | 2 | Law Firm Communication | ✅ deck |
 | 3 | Personal Injury Process Flow | ✅ deck |
@@ -28,7 +29,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 8 | Medical Records Specialist Training | ✅ deck |
 | 9 | Lien Negotiator Training | ✅ deck, then Word Game 1 (playable) |
 
-Day 0–1 (`build/lessons/lesson00.js`) is listed first but keeps its own id (10), so the lessons' ids, and the progress saved against them, don't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number. Day 0's facilitator lines ("Note 1:"–"Note 7:") are trainer-only (`d0:*` in `trainer/notes.json`), the Gmail log-in isn't on the platform, and its screenshots are in `ft/day0/img/`.
+Onboarding (`build/lessons/lesson00a.js`, id 10) and Setting of Expectations & Tech Set-up (`lesson00b.js`, id 11) are listed first but keep their own ids, so the lessons' ids, and the progress saved against them, don't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number (👋 and 🛠: these two aren't labelled with day numbers). Day 0's facilitator lines ("Note 1:"–"Note 7:") are trainer-only (`d0:*` in `trainer/notes.json`), the Gmail log-in isn't on the platform, and its screenshots are in `ft/day0/img/`.
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
