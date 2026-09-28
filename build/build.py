@@ -32,6 +32,7 @@ def rep(old, new, count=None, min_count=1):
 # Trainees see the lessons only: each lesson is its Canva training deck (build/lessons/lessonNN.js).
 # The curriculum (build/days/, trainer/curriculum.json) is for trainers and admins.
 # The engine still calls them "days" internally (DAYS, DAY1…); on screen they're lessons, named by title.
+# build/lessons/off/ holds lessons taken off the platform (not built); move a file back to restore it.
 LESSONS = sorted(f for f in os.listdir(os.path.join(B, "lessons")) if re.fullmatch(r"lesson\d\d[a-z]?\.js", f))
 parts = [open(os.path.join(B, "lessons", f), encoding="utf8").read().strip() for f in LESSONS]
 N = len(LESSONS)
@@ -96,6 +97,11 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>') + s[m.end():]
+# 🏠 Main Portal button for admins (js/portal-link.js), last before </body>.
+k = s.rfind("</body>")
+if k < 0:
+    sys.exit("MISSING: </body>")
+s = s[:k] + '<script src="/js/portal-link.js?v=1"></script>\n' + s[k:]
 
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.

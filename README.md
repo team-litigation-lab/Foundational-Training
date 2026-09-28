@@ -19,8 +19,6 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 | # | Lesson | On the platform |
 |---|---|---|
-| 👋 | Onboarding | ✅ 3 slides from the curriculum's Day 0: Setting up Hubstaff, Onboarding Instructions, Onboarding Orientation |
-| 🛠 | Setting of Expectations & Tech Set-up | ✅ 6 slides: Day 1's tasks (expectations, Hubstaff To-Do, reminders, reading task, monitoring sheet) and the Tech Tools Set-up (curriculum Days 1–2, links, no passwords) |
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
 | 2 | Law Firm Communication | ✅ deck |
 | 3 | Personal Injury Process Flow | ✅ deck |
@@ -31,7 +29,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 8 | Medical Records Specialist Training | ✅ deck |
 | 9 | Lien Negotiator Training | ✅ deck, then Word Game 1 (playable) |
 
-Onboarding (`build/lessons/lesson00a.js`, id 10) and Setting of Expectations & Tech Set-up (`lesson00b.js`, id 11) are listed first but keep their own ids, so the lessons' ids, and the progress saved against them, don't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number (👋 and 🛠: these two aren't labelled with day numbers). Day 0's facilitator lines ("Note 1:"–"Note 7:") are trainer-only (`d0:*` in `trainer/notes.json`), the Gmail log-in isn't on the platform, and its screenshots are in `ft/day0/img/`.
+Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skips. To bring one back, move its file into `build/lessons/` and rebuild; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
 
 Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer once the lesson is open. Lessons are finished from their last slide (✓ Finish lesson).
 
