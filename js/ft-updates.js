@@ -264,6 +264,17 @@ window.dayUnlocked = function(id){
   if(own && own.done) return true;
   return ftOpenFor(state.traineeBatch).has(id);
 };
+// A lesson address in a new or duplicated tab (#/day/3): the open lessons load a moment after start-up,
+// so wait for them before deciding whether that lesson is locked.
+const __ftOpenRoute = window.openRouteFromHash;
+window.openRouteFromHash = function(){
+  const r = typeof parseRouteHash === "function" ? parseRouteHash() : null;
+  if(r && r.view === "day" && !state.isAdmin && !state.ftOpenDays){
+    ftLoadOpenDays().then(()=>{ if(!__ftOpenRoute()) goto("dashboard"); }).catch(()=>goto("dashboard"));
+    return true;
+  }
+  return __ftOpenRoute.apply(this, arguments);
+};
 window.dayLockReason = function(id){
   const d = DAYS.find(x=>x.id===id);
   if(d && !d.sections.length) return `${ftName(id)} hasn't been added to the platform yet.`;

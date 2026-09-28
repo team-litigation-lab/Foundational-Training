@@ -14,6 +14,9 @@
 const TR = window.FTTrackerRules;
 if(!TR) return;
 
+// the tracker has its own address (#/tracker), so it can be opened or duplicated in a new tab
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["tracker"]);
+
 const FTT = {id:null, name:"", data:null, review:null, loading:false, err:"", saveTimer:null, saving:false, savedAt:null,
   sheet:"tracker", sel:null, day:null, readOnly:false, admin:null, criteria:null};
 

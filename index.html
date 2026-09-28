@@ -1416,6 +1416,12 @@ rect.svg-callout-badge{animation:none;}
 .ai-result b{color:var(--navy);font-size:var(--font-sub);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;}
 /* Inbox Zero — Eisenhower Matrix */
 .iz-pool{border:1px solid var(--line);border-radius:12px;padding:12px;min-height:80px;background:#fff;margin-bottom:14px;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;}
+.iz-board{display:grid;grid-template-columns:minmax(240px,1fr) 2fr;gap:14px;align-items:start;}
+.iz-board .iz-pool{margin-bottom:0;max-height:calc(100vh - 170px);position:sticky;top:84px;}
+.iz-board .iz-quad-grid{position:sticky;top:84px;}
+.iz-board .iz-quad > div{max-height:calc((100vh - 300px) / 2);min-height:40px;overflow-y:auto;}
+.iz-move{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;} .iz-mv{font:inherit;font-size:11px;font-weight:700;border:1px solid var(--line);background:#F6F7FB;color:var(--navy);border-radius:6px;padding:2px 7px;cursor:pointer;} .iz-mv:hover{border-color:var(--orange);} .iz-mv.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+@media(max-width:900px){.iz-board{grid-template-columns:1fr;} .iz-board .iz-pool{position:static;max-height:320px;} .iz-board .iz-quad-grid{position:static;} .iz-board .iz-quad > div{max-height:none;}}
 .iz-quad-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:720px){.iz-quad-grid{grid-template-columns:1fr;}}
 .iz-quad{border-radius:12px;padding:12px;min-height:100px;border:2px dashed var(--line);background:var(--bg);transition:border-color .15s ease, background .15s ease;}
@@ -1679,6 +1685,9 @@ body.tap-moving [ondrop]{outline:2px dashed rgba(219,132,55,.55);outline-offset:
 .qns-warn{background:#FFF4E8;border-color:var(--orange);} .qns-warn .qns-title{color:var(--orange-deep);}
 .qns-stop{background:var(--danger-bg);border-color:var(--danger);} .qns-stop .qns-title{color:var(--danger);}
 
+.pn-on{background:#F3F5FA;border-radius:10px;padding:10px 14px;margin:8px 0;} .pn-on b, .pn-scen b{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:4px;} .pn-on p, .pn-scen p{margin:0;line-height:1.5;}
+.pn-scen{background:#FFF4E6;border-left:4px solid var(--orange);border-radius:10px;padding:10px 14px;margin:10px 0 4px;}
+.pn-part{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-deep);margin:12px 0 2px;}
 .script-block{margin-top:12px;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:10px;background:#FFFCF8;padding:12px 14px;}
 .script-head{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--navy);font-size:13px;margin-bottom:6px;}
 .script-time{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--orange-deep);background:#FFF1E2;border-radius:20px;padding:2px 8px;}
@@ -2221,6 +2230,8 @@ em.warn{font-style:normal;color:var(--danger);}
 .di-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 12px;}
 .di-strip > div{background:#F3F5FB;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;} .di-strip span{font-size:22px;} .di-strip b{color:var(--navy);font-size:14px;} .di-strip em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
 .di-warm{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;} .di-warm > span{font-size:12.5px;color:var(--ink-soft);}
+.quiz-key-locked{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;font-size:14px;color:var(--ink);margin:0 0 14px;}
+.di-wq{margin-top:10px;} .di-wq-q{font-weight:700;font-size:14px;color:var(--navy);margin-bottom:6px;} .di-wq-opts{display:flex;flex-direction:column;gap:6px;} .di-wq-opt{display:flex;gap:8px;align-items:flex-start;text-align:left;font:inherit;font-size:13.5px;background:#fff;border:1px solid #E6D6C2;border-radius:9px;padding:7px 10px;cursor:pointer;color:var(--ink);} .di-wq-opt span{font-weight:800;color:var(--ink-soft);min-width:14px;} .di-wq-opt:hover:not([disabled]){border-color:var(--orange);background:#FFFDF9;} .di-wq-opt[disabled]{cursor:default;} .di-wq-opt.ok{border-color:#3F7D58;background:#EEF7F1;color:#2E6546;font-weight:700;} .di-wq-opt.no{border-color:#C9544A;background:#FCEFEE;color:#9B3A32;} .di-wq-opt.dim{opacity:.6;} .di-wq-fb{font-size:13px;margin-top:6px;color:var(--ink-soft);} .di-wq-fb.ok b{color:#3F7D58;} .di-wq-fb.no b{color:#9B3A32;} .di-wq-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:italic;}
 .di-warm details{margin-top:8px;} .di-warm summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy);} .di-warm ol{margin:6px 0 0;padding-left:22px;} .di-warm li{font-size:13.5px;} .di-warm li.ok{font-weight:800;color:#3F7D58;} .di-warm p{font-size:13px;color:var(--ink-soft);margin:6px 0 0;}
 @media(max-width:900px){.di-grid{grid-template-columns:1fr;} .di-strip{grid-template-columns:1fr 1fr;}}
 
@@ -4006,6 +4017,7 @@ function renderTopbar(){
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
           <button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>
+          <button type="button" class="nav-fs" onclick="openInNewTab()" title="Open this page in a new tab (e.g. to review a lesson while you work)">⧉</button>
           <button type="button" class="nav-fs" onclick="togglePageFullscreen()" title="Full screen (Esc to exit)">⛶</button>
         </div>
         <div class="trainee-chip" onclick="promptName()">
@@ -5761,6 +5773,77 @@ function bookmarkView(){
   if(prev && prev.view===bm.view && prev.dayId===bm.dayId && prev.toolId===bm.toolId && prev.wizardIndex===bm.wizardIndex) return;
   state.lastView = bm; storeSet("last-view", bm);
 }
+/* ============================================================
+   OPEN IN A NEW TAB
+   Every page has its own address (#/day/3, #/tool/<id>, #/notes …), so a
+   trainee can duplicate the tab (or use ⧉ in the top bar) and review a lesson
+   while answering a Knowledge Check, the Client Profile or a Practice Lab.
+   Tabs stay in sync: when one tab saves, the others pick the change up (the
+   browser's "storage" event), so an older tab never overwrites newer progress.
+   ============================================================ */
+const ROUTE_VIEWS = ["dashboard","practice","notes","clientprofile","handouts","tasks","crisisroleplay","orientation","facilitatorguide"];
+const routeViews = ()=>ROUTE_VIEWS.concat(window.EXTRA_ROUTE_VIEWS||[]);   // a course build can add its own pages
+function routeHash(){
+  if(state.view==="day" && state.dayId) return "#/day/"+state.dayId;
+  if(state.view==="tool" && state.toolId) return "#/tool/"+encodeURIComponent(state.toolId);
+  if(routeViews().includes(state.view)) return "#/"+state.view;
+  return "";
+}
+// The address this tab opened with (a duplicated tab, or ⧉ "open in new tab"). Nothing may
+// overwrite it until start-up has opened that page (state.routeReady).
+const BOOT_ROUTE_HASH = String(location.hash||"");
+function restoreBootRouteHash(){
+  if(BOOT_ROUTE_HASH.indexOf("#/")===0 && location.hash!==BOOT_ROUTE_HASH){ try{ history.replaceState(history.state, "", location.pathname + location.search + BOOT_ROUTE_HASH); }catch(e){} }
+}
+function syncRouteHash(){
+  if(!state.routeReady) return;
+  const h = routeHash();
+  if(!h){
+    // A page without its own address: drop the old one so a duplicated tab doesn't open the wrong page.
+    if(String(location.hash).indexOf("#/")===0 && !state.resumePending && (state.traineeId || state.isAdmin) && !["login","pendingApproval","registrationDenied"].includes(state.view)){
+      try{ history.replaceState(history.state, "", location.pathname + location.search); }catch(e){}
+    }
+    return;
+  }
+  if(location.hash===h) return;
+  try{ history.replaceState(history.state, "", location.pathname + location.search + h); }catch(e){}
+}
+function parseRouteHash(){
+  const m = String(location.hash||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
+  if(!m) return null;
+  const view = m[1], id = m[2] ? decodeURIComponent(m[2]) : null;
+  if(view==="day"){ const n = parseInt(id,10); return DAYS.some(d=>d.id===n) ? {view, id:n} : null; }
+  if(view==="tool") return PRACTICE_TOOLS.some(t=>t.id===id) ? {view, id} : null;
+  return routeViews().includes(view) ? {view, id:null} : null;
+}
+function openRouteFromHash(){
+  const r = parseRouteHash();
+  if(!r) return false;
+  if(r.view==="day" && !state.isAdmin && typeof dayUnlocked==="function" && !dayUnlocked(r.id)) return false;
+  goto(r.view, r.id);
+  return true;
+}
+function openInNewTab(){ syncRouteHash(); window.open(location.href, "_blank"); }
+function openRouteInNewTab(hash){ window.open(location.pathname + location.search + hash, "_blank"); }
+window.addEventListener("hashchange", ()=>{
+  if(!(state.traineeId || state.isAdmin) || ["login","pendingApproval","registrationDenied"].includes(state.view)) return;
+  if(location.hash && location.hash!==routeHash()) openRouteFromHash();
+});
+const TAB_SYNC_KEYS = {"day-progress":"progress","practice-progress":"practiceProgress","lab-attempts-global":"labAttemptsGlobal",
+  "notes":"notes","completed-lab-actions":"completedLabActions","submissions":"submissions","roleplayHistory":"roleplayHistory",
+  "slide-progress":"slideProgress","last-slide":"lastSlide","quick-check-answers":"qcAnswers","intro-seen":"introSeen",
+  "work-log":"workLog","lab-drafts":"labDrafts","task-log":"taskLog","task-day-since":"taskDaySince","day10-window":"day10Window"};
+window.addEventListener("storage", (e)=>{
+  if(!e.key || e.key.indexOf("lsh_")!==0) return;
+  const key = e.key.slice(4), field = TAB_SYNC_KEYS[key];
+  if(!field || e.newValue===null) return;
+  let val; try{ val = JSON.parse(e.newValue); }catch(err){ return; }
+  mem[key] = val;
+  state[field] = val;
+  if(key==="slide-progress" && state.view==="day" && state.dayId && !state.isAdmin) state.maxSlideReached = Math.max(state.maxSlideReached||0, val[state.dayId]||0);
+  if(key==="notes" && state.view==="notes" && !(typeof isTyping==="function" && isTyping())) render();
+});
+Object.assign(window, {openInNewTab, openRouteInNewTab});
 function resumeLabel(){
   const lv = state.lastView; if(!lv) return "";
   if(lv.view==="day" && lv.dayId){ const idx = resumeSlideFor(lv.dayId); const d = DAYS.find(x=>x.id===lv.dayId); const sl = buildDaySlides(d)[idx]; return `${ftName(lv.dayId)} · ${sl ? daySlideTitle(d, sl) : "Lesson"}`; }
@@ -5843,6 +5926,7 @@ function applyPageHero(){
   hero.appendChild(eyebrow); hero.appendChild(h1); if(sub) hero.appendChild(sub);
 }
 function afterRender(){
+  syncRouteHash();
   applyPageHero();
   narratorAfterRender();
   bookmarkView();
@@ -6300,13 +6384,17 @@ window.applyUpdate = applyUpdate;
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
   loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
+  if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); }, 0); } }
   if(!state.traineeName){
     state.view = "login";
   }else if(state.traineeId){
     const status = await getApprovalStatus(state.traineeId);
     if(status==="approved"){
       // Returning trainee: reopen the page they were on (refresh / closed tab).
-      if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; state.resumePending = true; setTimeout(()=>resumeWhereLeftOff(lv), 0); }
+      // A page address in the URL (a duplicated tab, or ⧉ "open in new tab") wins over the bookmark.
+      restoreBootRouteHash();
+      if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; if(!openRouteFromHash()) resumeWhereLeftOff(state.lastView); state.routeReady = true; syncRouteHash(); }, 0); }
+      else if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; state.resumePending = true; setTimeout(()=>{ resumeWhereLeftOff(lv); state.routeReady = true; syncRouteHash(); }, 0); }
       try{
         const rec = await sharedGet("trainee:"+state.traineeId);
         if(rec) state.assignedRoleplay = rec.assignedRoleplay || null;
@@ -6318,6 +6406,7 @@ window.applyUpdate = applyUpdate;
       state.view = "pendingApproval";
     }
   }
+  if(!state.resumePending) state.routeReady = true;
   render();
 })();
 
@@ -6406,6 +6495,7 @@ function renderDay(id){
       ${prog&&prog.done ? `<div class="card" style="padding:16px 20px;margin-bottom:16px;font-size:13.5px;color:var(--ink-soft);">You already passed this check on ${fmtDate(prog.date)} with a score of <b style="color:var(--navy);">${prog.score}%</b>. You can retake it any time — your best score is kept.</div>`:""}
       <div id="quizWrap">${renderQuiz(d)}</div>
       <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="backToSlidesFromKnowledgeCheck()">&larr; Back to lessons</button>
+      <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="openRouteInNewTab('#/day/${d.id}')" title="Keep this Knowledge Check open and review the lesson slides side by side">📑 Review lessons in a new tab</button>
     `;
   }
 
@@ -6429,10 +6519,10 @@ function buildDaySlides(d){
   if(d.id===1) slides.push({type:"meetClient"});
   d.lessons.forEach((l,i)=>{
     slides.push({type:"topic", lessonIndex:i, part:1});
-    slides.push({type:"topic", lessonIndex:i, part:2});
+    if(!l.singleSlide) slides.push({type:"topic", lessonIndex:i, part:2});   // singleSlide: Part 2 would only repeat Part 1
     if((d.quickChecks||[]).some(q=>q.afterIndex===i)) slides.push({type:"quickCheck", lessonIndex:i});
   });
-  slides.push({type:"video"});
+  if(d.recapVideo) slides.push({type:"video"});   // the recap slide only shows once a video link is set
   if(relatedTools(d.id).length) slides.push({type:"practiceLab"});
   if(d.discussionQuestion && trainerInline()) slides.push({type:"discussion"});
   return slides;
@@ -6441,7 +6531,7 @@ function daySlideTitle(d, slide){
   if(slide.type==="video") return "Video Recap";
   if(slide.type==="taskOverview") return "Legal EA Task Overview";
   if(slide.type==="meetClient") return "Meet Elias Thorne — Live Q&A";
-  if(slide.type==="topic") return d.lessons[slide.lessonIndex].h + (slide.part===1 ? " (Part 1 of 2)" : " (Part 2 of 2)");
+  if(slide.type==="topic"){ const l = d.lessons[slide.lessonIndex]; return l.h + (l.singleSlide ? "" : (slide.part===1 ? " (Part 1 of 2)" : " (Part 2 of 2)")); }
   if(slide.type==="quickCheck") return "Quick Check";
   if(slide.type==="practiceLab") return "Practice Lab";
   if(slide.type==="discussion") return "Trainer Checkpoint";
@@ -6545,7 +6635,8 @@ function renderDayIntro(d){
   const n = d.lessons.length, slides = buildDaySlides(d).length;
   const mins = Math.round(n*2.5 + 25);
   const outcomes = String(d.objective||"").split(/,\s*(?:and\s+)?|;\s*|\.\s+/).map(x=>x.trim().replace(/\.$/,"")).filter(x=>x.length>8).slice(0,4);
-  const warm = (d.quiz||[]).slice(0,2);
+  // Warm-up uses the day's ungraded Quick Checks, never the Knowledge Check (so it can't leak the graded answers).
+  const warm = (d.quickChecks||[]).slice(0,2);
   return `
     <div class="lesson-stage day-intro">
       <div class="lesson-slide"><div class="card lesson-card">
@@ -6563,11 +6654,33 @@ function renderDayIntro(d){
           <div><span>⏱</span><b>About ${Math.round(mins/10)*10} min</b><em>at your own pace</em></div>
         </div>
         ${warm.length ? `<div class="di-warm"><b>🧠 Warm-up — what do you already know?</b> <span>Not graded. Just notice what you're unsure about.</span>
-          ${warm.map((q,k)=>`<details><summary>${k+1}. ${esc(q.q)}</summary><ol type="A">${q.opts.map((o,oi)=>`<li class="${oi===q.a?"ok":""}">${esc(o)}${oi===q.a?" ✓":""}</li>`).join("")}</ol>${q.r?`<p>${esc(q.r)}</p>`:""}</details>`).join("")}</div>` : ""}
+          ${warm.map((q,k)=>warmupQuestionHtml(d.id,q,k)).join("")}</div>` : ""}
       </div></div>
       <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">Objectives</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start ${ftName(d.id)} →</button></div>
     </div>`;
 }
+/* Warm-up: the trainee picks an answer first; only then do we show whether it was right
+   (and the correct option + why). Nothing is highlighted before they choose. */
+function warmupQuestionHtml(dayId, q, k){
+  const picked = ((state.warmupPicks||{})[dayId]||{})[k];
+  const done = typeof picked==="number";
+  return `<div class="di-wq" id="diwq_${dayId}_${k}"><div class="di-wq-q">${k+1}. ${esc(q.q)}</div>
+    <div class="di-wq-opts">${q.opts.map((o,oi)=>{
+      const cls = !done ? "" : oi===q.a ? " ok" : oi===picked ? " no" : " dim";
+      return `<button type="button" class="di-wq-opt${cls}" ${done?"disabled":""} onclick="pickWarmup(${dayId},${k},${oi})"><span>${String.fromCharCode(65+oi)}</span>${esc(o)}${done&&oi===q.a?" ✓":""}${done&&oi===picked&&oi!==q.a?" ✗":""}</button>`;
+    }).join("")}</div>
+    ${done ? `<div class="di-wq-fb ${picked===q.a?"ok":"no"}"><b>${picked===q.a?"✓ Correct.":"Not quite — you'll cover this today."}</b>${q.r?` ${esc(q.r)}`:""}</div>` : `<div class="di-wq-hint">Pick an answer to check yourself.</div>`}
+  </div>`;
+}
+function pickWarmup(dayId, k, oi){
+  state.warmupPicks = state.warmupPicks||{}; state.warmupPicks[dayId] = state.warmupPicks[dayId]||{};
+  if(typeof state.warmupPicks[dayId][k]==="number") return;
+  state.warmupPicks[dayId][k] = oi;
+  const d = DAYS.find(x=>x.id===dayId); const q = d && (d.quickChecks||[])[k];
+  const el = document.getElementById(`diwq_${dayId}_${k}`);
+  if(q && el) el.outerHTML = warmupQuestionHtml(dayId, q, k);
+}
+window.pickWarmup = pickWarmup;
 async function startDayFromIntro(dayId){ await markIntroSeen(dayId); state.dayViewMode = "slides"; render(); }
 function showDayIntro(){ state.dayViewMode = "intro"; render(); }
 Object.assign(window, {startDayFromIntro, showDayIntro});
@@ -6896,7 +7009,7 @@ function renderLessonCard(l,i,d,unused,part){
   const density = textLen < 280 ? "density-xs" : (textLen < 650 ? "density-s" : "density-m");
 
   return `
-    <div class="topic-separator">DAY ${d.id} &middot; TOPIC ${i+1} OF ${d.lessons.length} &middot; PART ${p} OF 2</div>
+    <div class="topic-separator">DAY ${d.id} &middot; TOPIC ${i+1} OF ${d.lessons.length}${l.singleSlide ? "" : ` &middot; PART ${p} OF 2`}</div>
     <div class="card lesson-card ${expSec ? "density-m" : density}" data-part="${p}">
       <h4><span class="lnum">0${i+1}</span>${esc(l.h)}</h4>
       ${expSec ? renderExpansionPanel(expSec) : ""}
@@ -7197,7 +7310,7 @@ function renderQuizNextStep(d, passed){
 function renderQuizResult(d){
   const {lastScore, lastCorrect, lastTotal, lastPassed} = state;
   const passMsgs = ["Nice work — well done.", "Sharp — you've got this down.", "Solid pass. On to the next one.", "That's a wrap on Day "+d.id+" — well done."];
-  const failMsgs = ["Not quite 70% yet — review below, retake if you like, or keep going.", "Close, but not there yet — a quick review below should help. You can still move on.", "So close! Look over the answers below — a retake is optional."];
+  const failMsgs = ["Not quite 70% yet. See which questions you missed below, retake if you like, or keep going.", "Close, but not there yet. Review the topics you missed (marked below). You can still move on.", "So close! Check which questions you missed below. A retake is optional."];
   const msg = lastPassed ? passMsgs[Math.floor(Math.random()*passMsgs.length)] : failMsgs[Math.floor(Math.random()*failMsgs.length)];
   const history = (state.progress[d.id] && state.progress[d.id].history) || [];
   return `
@@ -7241,12 +7354,16 @@ async function downloadQuizResultPdf(dayId){
     history.forEach((h,i)=>lines.push(`   Attempt ${i+1}: ${h.score}% — ${h.passed?"Passed":"Not yet"} — ${new Date(h.date).toLocaleDateString()}`));
     lines.push("---");
   }
+  const reveal = quizKeyUnlocked(d);
+  if(!reveal) lines.push("The answer key unlocks once you pass this Knowledge Check (70%+).", "---");
   d.quiz.forEach((q,i)=>{
     const picked = state.quizAnswers[i];
     lines.push(`Q${i+1}: ${q.q}`);
-    lines.push(`   Your answer: ${typeof picked==="number" ? q.opts[picked] : "(not answered)"}`);
-    lines.push(`   Correct answer: ${q.opts[q.a]}`);
-    lines.push(`   Why: ${q.r}`);
+    lines.push(`   Your answer: ${typeof picked==="number" ? q.opts[picked] : "(not answered)"}${picked===q.a ? " (correct)" : " (incorrect)"}`);
+    if(reveal){
+      lines.push(`   Correct answer: ${q.opts[q.a]}`);
+      lines.push(`   Why: ${q.r}`);
+    }
   });
   buildAndSavePdf("LSH Foundational Training Program", `${ftName(dayId)} Knowledge Check — Results`, lines, `LSH_Day${dayId}_Knowledge_Check`);
 }
@@ -7268,14 +7385,33 @@ function retakeQuiz(dayId){
 }
 window.retakeQuiz = retakeQuiz;
 
+/* The full answer key (correct option + rationale) is shown only once the trainee
+   has passed this day's Knowledge Check. Before that, the review shows which
+   questions they got right or wrong, but not the right answers. Otherwise a failed
+   attempt would give away the key for the retake. */
+function quizKeyUnlocked(d){ return !!(state.lastPassed || (state.progress[d.id]||{}).done || state.isAdmin); }
+window.quizKeyUnlocked = quizKeyUnlocked;
 function renderAnswerFeedback(d){
   const el = document.getElementById("answerFeedback");
   if(!el) return;
+  const reveal = quizKeyUnlocked(d);
+  const missed = d.quiz.filter((q,i)=>state.quizAnswers[i]!==q.a).length;
   el.innerHTML = `
     <h2 class="section-title" style="margin-top:34px;">Answer Review</h2>
+    ${reveal ? "" : `<div class="quiz-key-locked">🔒 <b>The answer key unlocks when you pass (70%+).</b> You missed ${missed} question${missed===1?"":"s"}: they're marked ❌ below. Review those topics in the lesson slides, then retake the check.</div>`}
     ${d.quiz.map((q,i)=>{
       const picked = state.quizAnswers[i];
       const isCorrect = picked===q.a;
+      if(!reveal){
+        return `
+      <div class="card quiz-card">
+        <p class="quiz-q">${i+1}. ${esc(q.q)}</p>
+        <div class="quiz-opts">
+          <div class="quiz-opt ${isCorrect?"correct":"incorrect"}">${isCorrect?"✅":"❌"} Your answer: ${typeof picked==="number" ? esc(q.opts[picked]) : "(not answered)"}</div>
+        </div>
+        ${isCorrect ? `<div class="quiz-rationale show">${esc(q.r)}</div>` : `<div class="quiz-rationale show">Not quite. Revisit this topic before you retake.</div>`}
+      </div>`;
+      }
       return `
       <div class="card quiz-card">
         <p class="quiz-q">${i+1}. ${esc(q.q)}</p>
@@ -12565,84 +12701,42 @@ function buildDiscussionScript(d, l, i){
     minutes: "2–3 min"
   };
 }
-function renderDiscussionScript(d, l, i){
-  const sc = buildDiscussionScript(d, l, i);
-  const key = `script:${d.id}::${l.h}`;
-  const saved = (state.aiScripts||{})[key];
-  return `
-    <div class="script-block">
-      <div class="script-head"><span>🎙 Verbal Discussion Script${sc.slides ? ` <span class="script-slides">for ${sc.slides}</span>` : ""}</span><span class="script-time">${sc.minutes}</span></div>
-      <div class="script-row"><b>Say</b><p>${esc(sc.open)}</p></div>
-      <div class="script-row"><b>Ask</b><p>${esc(sc.ask)}</p></div>
-      ${sc.listen.length ? `<div class="script-row"><b>Listen for</b><ul>${sc.listen.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
-      <div class="script-row"><b>If quiet</b><p>${esc(sc.probe)}</p></div>
-      ${sc.correct ? `<div class="script-row"><b>Watch for</b><p>${esc(sc.correct)}</p></div>` : ""}
-      <div class="script-row"><b>Wrap</b><p>${esc(sc.wrap)}</p></div>
-      <div class="script-ai" id="scriptAi-${cssId(key)}">
-        ${saved ? renderAiScript(saved) + `<button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="generateAiScript(${d.id}, ${i})">↻ Rewrite (short)</button>` : `<button class="btn btn-ghost btn-sm" onclick="generateAiScript(${d.id}, ${i})">✨ Write a short speaker script</button>`}
-      </div>
-    </div>`;
+/* ---------- trainer speaker notes (hardcoded in js/presenter-notes.js) ----------
+   One note per slide: "On this slide" (what's on screen), the script (Say / Ask /
+   Wrap) and, on the topic's last slide, the scenario to run with the room.
+   No AI writes these while a session runs. */
+function presenterNote(d, l, part){
+  const n = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`];
+  if(n) return l.singleSlide ? Object.assign({}, n.p1, {wrap: n.p2 && n.p2.wrap, scenario: n.p2 && n.p2.scenario}) : (part===2 ? n.p2 : n.p1) || {};
+  // A topic added later in the Content Studio has no written note yet: use the lesson's own lines.
+  const sc = buildDiscussionScript(d, l, d.lessons.indexOf(l)), unq = t=>String(t||"").replace(/^"|"$/g,"");
+  const scen = (l.fourPart && l.fourPart.discussionCase) || "";
+  if(part===1 || l.singleSlide) return {say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
+  return {say: sc.correct || "", wrap: unq(sc.wrap), scenario: scen};
 }
-function renderAiScript(text){
-  return `<div class="script-ai-body"><b>Short speaker script (saved for all trainers)</b>${esc(text).split(/\n+/).map(p=>{ const m=p.match(/^([A-Z][A-Z &\/-]{2,24}):\s*(.*)$/); return m ? `<p><span class="script-lbl">${m[1]}</span> ${m[2]}</p>` : `<p>${p}</p>`; }).join("")}</div>`;
+function renderPresenterNote(d, l, part){
+  const n = presenterNote(d, l, part);
+  const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
+  return `<div class="pn">
+    ${n.on ? `<div class="pn-on"><b>On this slide</b><p>${esc(n.on)}</p></div>` : ""}
+    <div class="script-block"><div class="script-head"><span>🎙 Script</span></div>${row("Say", n.say)}${row("Ask", n.ask)}${row("Wrap", n.wrap)}</div>
+    ${n.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}
+  </div>`;
 }
-async function loadSavedScripts(dayId){
-  state.aiScripts = state.aiScripts || {};
-  const d = DAYS.find(x=>x.id===dayId); if(!d) return;
-  const keys = await sharedList(`script:${dayId}::`);
-  let changed = false;
-  for(const k of keys){ if(state.aiScripts[k]) continue; const v = await sharedGet(k); if(v && v.text){ state.aiScripts[k] = v.text; changed = true; } }
-  if(changed && state.view==="admin" && state.adminTab==="cues") render();
-}
-async function generateAiScript(dayId, i, quiet){
-  const d = DAYS.find(x=>x.id===dayId); const l = d.lessons[i];
-  const key = `script:${d.id}::${l.h}`;
-  const el = document.getElementById("scriptAi-"+cssId(key));
-  if(el) el.innerHTML = `<div class="ai-loading">Writing the script…</div>`;
-  const {principles, steps, pitfalls} = lessonParts(l);
-  const exp = lessonExpansion(d, l);
-  const prompt = `Write a SHORT, on-point speaker script (about 2 minutes spoken, under 160 words total) that a live trainer reads aloud for this topic in the Legal Support Help EA/PA program. Warm, plain, conversational — no filler, no repetition, no lecturing. Running client case: Elias Thorne, Managing Owner & CEO of Thorne & Partners Law Group.
-
-LESSON: ${l.h} (${ftName(d.id)}: ${d.title}) — shown on ${slideLabel(d, i)}
-KEY PRINCIPLES: ${principles.join(" | ")}
-STEPS: ${steps.join(" | ")}
-PITFALLS: ${pitfalls.slice(0,2).join(" | ")}
-${exp ? "RULES/CONTEXT: "+(exp.lawsAndRules||"") : ""}
-${l.trainerCue ? "TRAINER CUE: "+l.trainerCue : ""}
-
-Use exactly these labels, one per line, and keep each to the length shown:
-SAY: (2 sentences — what this is and why it matters)
-KEY POINTS: (the 3 things to remember, separated by " / ", each under 12 words)
-ASK: (1 question to the room, ideally about Elias)
-LISTEN FOR: (2 short points a good answer includes, separated by " / ")
-IF QUIET: (1 short prompt)
-WRAP: (1 sentence)
-Plain text only, no markdown, no bullet symbols.`;
-  try{
-    const text = await callAIText(prompt, 700, 60000);
-    state.aiScripts = state.aiScripts || {};
-    state.aiScripts[key] = text.trim();
-    await sharedSet(key, {text:text.trim(), at:new Date().toISOString()});
-    if(el) el.innerHTML = renderAiScript(text.trim());
-  }catch(e){
-    if(el) el.innerHTML = renderAiErrorBlock(e, "Couldn't write the script") + `<button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="generateAiScript(${d.id}, ${i})">Try again</button>`;
-    if(quiet) throw e;
-  }
-}
-window.generateAiScript = generateAiScript;
 function buildDayScriptLines(d){
-  const lines = [`## ${ftName(d.id)} — ${d.title}: Verbal Discussion Scripts`];
+  const lines = [`## ${ftName(d.id)} — ${d.title}: Trainer Speaker Notes`];
   d.lessons.forEach((l,i)=>{
-    const sc = buildDiscussionScript(d,l,i);
-    lines.push(`## ${String(i+1).padStart(2,"0")}. ${l.h}  ·  ${sc.slides||""}  (${sc.minutes})`);
-    lines.push(`SAY: ${sc.open}`); lines.push(`ASK: ${sc.ask}`);
-    if(sc.facilitator) lines.push(`FACILITATOR MOVE: ${sc.facilitator}`);
-    if(sc.listen.length){ lines.push("LISTEN FOR:"); sc.listen.forEach(x=>lines.push("   • "+x)); }
-    lines.push(`IF QUIET: ${sc.probe}`);
-    if(sc.correct) lines.push(`CORRECT: ${sc.correct}`);
-    lines.push(`WRAP: ${sc.wrap}`);
-    const saved = (state.aiScripts||{})[`script:${d.id}::${l.h}`];
-    if(saved){ lines.push("FULL SCRIPT:"); saved.split(/\n+/).forEach(p=>lines.push("   "+p)); }
+    const parts = l.singleSlide ? [1] : [1,2];
+    lines.push(`## ${String(i+1).padStart(2,"0")}. ${l.h}  ·  ${slideLabel(d, i)}`);
+    parts.forEach(p=>{
+      const n = presenterNote(d, l, p);
+      if(parts.length > 1) lines.push(`PART ${p}`);
+      if(n.on) lines.push(`ON THIS SLIDE: ${n.on}`);
+      if(n.say) lines.push(`SAY: ${n.say}`);
+      if(n.ask) lines.push(`ASK: ${n.ask}`);
+      if(n.wrap) lines.push(`WRAP: ${n.wrap}`);
+      if(n.scenario) lines.push(`SCENARIO: ${n.scenario}`);
+    });
     lines.push("---");
   });
   if(d.discussionQuestion){ lines.push("## End-of-Day Discussion"); lines.push(`SAY: "Before we close ${ftName(d.id)}, let's step back and talk about this together."`); lines.push(`ASK: "${d.discussionQuestion}"`); lines.push(`WRAP: "Thank you — hold onto those examples; we'll build on them tomorrow."`); }
@@ -12650,7 +12744,7 @@ function buildDayScriptLines(d){
 }
 function downloadDayScriptsPdf(dayId){
   const d = DAYS.find(x=>x.id===dayId);
-  buildAndSavePdf("LSH Foundational Training Program", `${ftName(d.id)} — Trainer Discussion Scripts`, buildDayScriptLines(d), `LSH_Day${d.id}_Discussion_Scripts`);
+  buildAndSavePdf("LSH Foundational Training Program", `${ftName(d.id)} — Trainer Speaker Notes`, buildDayScriptLines(d), `LSH_Day${d.id}_Speaker_Notes`);
 }
 window.downloadDayScriptsPdf = downloadDayScriptsPdf;
 /* ============================================================
@@ -12821,15 +12915,6 @@ async function studioSetExtraStatus(dayId, idx, status){
   else list[idx].status = status;
   await studioSave("extralessons:day"+dayId, {lessons:list}); mergeExtraLessons(d); render();
 }
-async function studioWriteAllScripts(dayId){
-  const d = DAYS.find(x=>x.id===dayId);
-  await loadSavedScripts(dayId);
-  const todo = d.lessons.map((l,i)=>({l,i})).filter(({l})=>!(state.aiScripts||{})[`script:${d.id}::${l.h}`]);
-  if(!todo.length){ toast("Every topic already has a full script."); return; }
-  studioShow(`Writing scripts… 0/${todo.length}`);
-  const res = await runPool(todo, async ({i})=>{ await generateAiScript(dayId, i, true); }, 1, (n,t,rs)=>studioShow(`Writing scripts… ${n}/${t}${rs.failed?` (${rs.failed} failed so far)`:""}`));
-  state.studioMsg = studioResultMessage("scripts", res).replace("review them below, then publish.","they're in Trainer Cues."); render();
-}
 
 /* extraquiz:day<N> = {questions:[{q,opts,a,r,forLesson,status}]} — published ones join the day's Knowledge Check */
 function mergeExtraQuiz(d){
@@ -12877,18 +12962,16 @@ Object.assign(window, {studioDraftQuiz, studioSetQuizStatus, studioPublishAllQui
 function setStudioDay(id){ state.studioDay = id; state.studioProposals = null; state.studioMsg = ""; render(); }
 let studioListTimer = null;
 function studioRefreshList(){ clearTimeout(studioListTimer); studioListTimer = setTimeout(()=>{ if(state.view==="admin" && state.adminTab==="studio"){ const keep = state.studioMsg; render(); state.studioMsg = keep; } }, 400); }
-Object.assign(window, {studioDraftExpansions, studioPublishAllExpansions, studioToggleExpansion, studioRegenerateExpansion, studioProposeTopics, studioDraftSelectedTopics, studioSetExtraStatus, studioWriteAllScripts, setStudioDay});
+Object.assign(window, {studioDraftExpansions, studioPublishAllExpansions, studioToggleExpansion, studioRegenerateExpansion, studioProposeTopics, studioDraftSelectedTopics, studioSetExtraStatus, setStudioDay});
 function renderAdminStudio(){
   const dayId = state.studioDay || 1;
   const d = DAYS.find(x=>x.id===dayId);
-  if(state.scriptsLoadedFor !== dayId){ state.scriptsLoadedFor = dayId; setTimeout(()=>loadSavedScripts(dayId), 0); }
   const bundle = state.lessonExp[dayId] || {};
   const extras = state.extraLessons[dayId] || [];
   const pubTopics = d.lessons.length;
   const pendingNew = extras.filter(l=>l.status!=="published").length;
   const expPub = d.lessons.filter(l=>bundle[l.h] && bundle[l.h].status==="published").length;
   const expDraft = d.lessons.filter(l=>bundle[l.h] && bundle[l.h].status!=="published").length;
-  const scripts = d.lessons.filter(l=>(state.aiScripts||{})[`script:${d.id}::${l.h}`]).length;
   const props = state.studioProposals && state.studioProposals.dayId===dayId ? state.studioProposals.items : null;
   const gap = Math.max(0, TARGET_TOPICS - pubTopics - pendingNew);
   return `
@@ -12955,11 +13038,7 @@ function renderAdminStudio(){
           <div class="studio-actions">${q.status==="published"?`<button class="btn btn-ghost btn-sm" onclick="studioSetQuizStatus(${dayId},${i},'draft')">Unpublish</button>`:`<button class="btn btn-primary btn-sm" onclick="studioSetQuizStatus(${dayId},${i},'published')">Publish</button>`}
           <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="studioSetQuizStatus(${dayId},${i},'delete')">Delete</button></div></details>`).join("")}</div>` : ""}
     </div>`; })()}
-    <div class="card studio-card">
-      <h3>4 · Short speaker scripts</h3>
-      <p>Writes a short, on-point speaker script (about 2 minutes) for every topic — what to say, 3 key points, one question, what to listen for and a one-line wrap. Scripts appear under each lesson in <b>Trainer Cues</b> and in the day's script PDF.</p>
-      <button class="btn btn-navy btn-sm" onclick="studioWriteAllScripts(${dayId})">✨ Write scripts for every topic without one</button>
-    </div>`;
+`;
 }
 
 function trainerDiscussionHtml(l){
@@ -12974,17 +13053,13 @@ function setCuesDay(id){ state.cuesDay = id; render(); }
 window.setCuesDay = setCuesDay;
 function renderAdminTrainerCues(){
   const dayId = state.cuesDay || 1;
-  if(state.scriptsLoadedFor !== dayId){ state.scriptsLoadedFor = dayId; setTimeout(()=>loadSavedScripts(dayId), 0); }
   const d = DAYS.find(x=>x.id===dayId) || DAYS[0];
   const lessonBlocks = d.lessons.map((l,i)=>{
-    const disc = trainerDiscussionHtml(l);
     return `
       <details class="cue-item" ${i===0?"open":""}>
         <summary><span class="cue-num">${String(i+1).padStart(2,"0")}</span>${esc(l.h)}<span class="cue-steps">${slideLabel(d, i)}</span></summary>
         <div class="cue-body">
-          ${l.trainerCue ? `<div class="tc-tag">🧑‍🏫 Trainer Cue</div><p>${esc(l.trainerCue)}</p>` : ""}
-          ${disc ? `<b class="cue-sub">Applied Discussion Case</b>${disc}` : ""}
-          ${renderDiscussionScript(d, l, i)}
+          ${l.singleSlide ? renderPresenterNote(d, l, 1) : `<div class="pn-part">Part 1</div>${renderPresenterNote(d, l, 1)}<div class="pn-part">Part 2</div>${renderPresenterNote(d, l, 2)}`}
         </div>
       </details>`;
   }).join("");
@@ -12998,7 +13073,7 @@ function renderAdminTrainerCues(){
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 10px;">
       <h2 style="color:var(--navy);font-size:19px;margin:0;">${ftName(d.id)} — ${esc(d.title)}</h2>
-      <button class="btn btn-navy btn-sm" onclick="downloadDayScriptsPdf(${d.id})">⬇ Download ${ftName(d.id)} Discussion Scripts (PDF)</button>
+      <button class="btn btn-navy btn-sm" onclick="downloadDayScriptsPdf(${d.id})">⬇ Download ${ftName(d.id)} Speaker Notes (PDF)</button>
     </div>
     ${d.id===1 ? `<div class="card" style="padding:14px 18px;margin-bottom:12px;">${renderMeetClientTrainerGuide()}</div>` : ""}
     ${d.discussionQuestion ? `
@@ -13614,7 +13689,8 @@ function renderInboxZeroSection(){
     </div>` : ""}
     <div class="card" id="izSortCard" style="padding:16px 18px;display:${hasInbox?'block':'none'};">
       <b style="font-size:13px;color:var(--navy);">Step 2 — Sort with the Eisenhower Matrix</b>
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:6px 0 10px;">Drag each email out of the pool below into the quadrant where it belongs.</p>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:6px 0 10px;">Drag each email from the list into the quadrant where it belongs, or use the Do / Schedule / Delegate / Delete buttons on the email. All four quadrants stay on screen while you work.</p>
+      <div class="iz-board">
       <div class="iz-pool" id="izPool" ondragover="event.preventDefault()" ondrop="izDropInto(event,null)"></div>
       <div class="iz-quad-grid">
         ${["1","2","3","4"].map(q=>`
@@ -13622,6 +13698,7 @@ function renderInboxZeroSection(){
             <h5>${IZ_QUAD_LABELS[q]} <span class="iz-tag">${IZ_QUAD_TAGS[q]}</span></h5>
             <div id="izQlist${q}"></div>
           </div>`).join("")}
+      </div>
       </div>
       <button class="btn btn-navy btn-sm" style="margin-top:16px;" onclick="izSubmitSort()">Submit for Grading</button>
       <div id="izSortResult" style="margin-top:14px;"></div>
@@ -13686,12 +13763,22 @@ Return ONLY a JSON array of exactly 5 objects — no preamble, no markdown fence
 window.izGenerateInbox = izGenerateInbox;
 
 function izCardHtml(e){
+  const at = (toolState.iz && toolState.iz.placements || {})[e.id];
+  const ida = esc(JSON.stringify(String(e.id)));
   return `<div class="iz-card" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${e.id}')">
     <div class="iz-from">${esc(e.from)}</div>
     <div class="iz-subj">${esc(e.subject)}</div>
     <div class="iz-preview">${esc(e.preview)}</div>
+    <div class="iz-move">${["1","2","3","4"].map(q=>`<button type="button" class="iz-mv iz-mv${q} ${at===q?"on":""}" title="${IZ_QUAD_LABELS[q]}" onclick="izPlace(${ida},'${q}')">${IZ_QUAD_TAGS[q]}</button>`).join("")}${at?`<button type="button" class="iz-mv" title="Back to the unsorted list" onclick="izPlace(${ida},null)">↩</button>`:""}</div>
   </div>`;
 }
+/* Button alternative to drag-and-drop (works on phones and when a quadrant is off screen). */
+function izPlace(id, q){
+  if(!toolState.iz) return;
+  if(q===null) delete toolState.iz.placements[id]; else toolState.iz.placements[id] = q;
+  izRenderBoard();
+}
+window.izPlace = izPlace;
 function izRenderBoard(){
   const { inbox, placements } = toolState.iz;
   const pool = document.getElementById("izPool");
@@ -15447,7 +15534,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.27-0200";
+var APP_BUILD = "ft-2026.09.28-1411";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15481,18 +15568,18 @@ function busyWrap(name, label){
   window[name] = wrapped;
 }
 [["studioDraftExpansions","Drafting explanations"],["studioProposeTopics","Proposing topics"],["studioDraftSelectedTopics","Drafting lessons"],
- ["studioWriteAllScripts","Writing scripts"],["studioRegenerateExpansion","Rewriting"],["studioPublishAllExpansions","Publishing"],
+["studioRegenerateExpansion","Rewriting"],["studioPublishAllExpansions","Publishing"],
  ["studioToggleExpansion","Publishing"],["studioSetExtraStatus","Updating lesson"],["studioTestAI","AI test"],
  ["draftDayFeedback","Drafting feedback"],["draftAllFeedback","Drafting feedback"],["saveDayFeedback","Saving feedback"],
- ["generateAiScript","Writing script"],["resetTraineeLabAttempts","Reset"],["downloadDayScriptsPdf","PDF download"]]
+ ["resetTraineeLabAttempts","Reset"],["downloadDayScriptsPdf","PDF download"]]
  .forEach(([n,l])=>busyWrap(n,l));
 window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e && e.invalidInput) return; if(state.isAdmin) showActionError(e, ""); });
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=z"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.27-0200"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.27-0200"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.27-0200"></script>
+<script src="/js/eapa-updates.js?v=za"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1411"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1411"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1411"></script>
 </body>
 </html>
