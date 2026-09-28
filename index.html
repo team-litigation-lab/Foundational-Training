@@ -3348,9 +3348,41 @@ function cleanName(n){
   const v = String(n||"").trim().replace(/\s+/g," ");
   return (v.length<=60 && /^[\p{L}][\p{L}\p{M} .'’\-]*$/u.test(v)) ? v : "";
 }
+// A trainer's "↺ Reset Attempts" writes labAttemptsGlobal=0 plus a new labAttemptsResetAt
+// on the trainee record. Apply it on this device as soon as we see it: take the trainer's
+// count and remember which reset we applied (kept across reloads). Returns true for a
+// reset this device hadn't applied yet.
+async function applyLabAttemptReset(rec){
+  if(!rec || !rec.labAttemptsResetAt || rec.labAttemptsResetAt === state.labAttemptsResetSeen) return false;
+  // Nothing remembered yet (older build or a new device): only adopt the record's
+  // count if it is lower, so a reset from long ago can't wipe newer local usage.
+  const first = !state.labAttemptsResetSeen;
+  state.labAttemptsResetSeen = rec.labAttemptsResetAt;
+  await storeSet("lab-attempts-reset-seen", rec.labAttemptsResetAt);
+  if(first && (state.labAttemptsGlobal||0) <= (rec.labAttemptsGlobal||0)) return false;
+  state.labAttemptsGlobal = rec.labAttemptsGlobal||0;
+  await storeSet("lab-attempts-global", state.labAttemptsGlobal);
+  return !first;
+}
+// Show a reset on the open page right away: re-render unless the trainee is typing
+// or has a pop-up open, in which case the next live tick re-renders.
+async function showLabAttemptReset(){
+  state.labResetRenderPending = true;
+  toast(`🔁 Your trainer reset your Practice Lab attempts — you have ${LAB_ATTEMPT_CAP} again.`);
+  await renderLabResetIfSafe();
+}
+async function renderLabResetIfSafe(){
+  if(!state.labResetRenderPending || isTyping() || document.querySelector(".overlay")) return;
+  if(typeof VoiceCall!=="undefined" && VoiceCall.active) return;
+  state.labResetRenderPending = false;
+  if(state.view==="tool" && state.labDrafts){ try{ await storeSet("lab-drafts", state.labDrafts); }catch(e){} }
+  const scroll = window.scrollY; render(); window.scrollTo(0, scroll);
+}
 async function syncToLedger(allowCreate){
   if(!state.traineeId) return;
   const existing = await sharedGet("trainee:"+state.traineeId);
+  // Take a pending trainer reset first, so this save never writes the old count back over it.
+  if(existing && await applyLabAttemptReset(existing)) showLabAttemptReset();
   // A missing record after registration means an admin revoked/deleted it —
   // don't silently re-create it from this device. Only login may create one.
   if(!existing && !allowCreate) return;
@@ -3439,6 +3471,8 @@ async function loadAll(){
       state.labAttemptsGlobal = 0;
     }
   }
+  const lrs = await storeGet("lab-attempts-reset-seen");
+  state.labAttemptsResetSeen = lrs || undefined;
   const nt = await storeGet("notes");
   state.notes = nt || [];
   const cla = await storeGet("completed-lab-actions");
@@ -6150,6 +6184,8 @@ async function resetTraineeSessionData(){
   state.day10Window = null;
   state.traineeBatch = "";
   await storeSet("lab-attempts-global", 0);
+  state.labAttemptsResetSeen = undefined; state.labResetRenderPending = false;
+  await storeSet("lab-attempts-reset-seen", null);
   await storeSet("completed-lab-actions", {});
   await storeSet("submissions", []);
   await storeSet("roleplayHistory", []);
@@ -6226,15 +6262,7 @@ function startApprovalPolling(traineeId){
     }catch(e){ /* transient network issue — try again next interval, don't force a logout on a fetch failure */ }
     try{
       const me = await sharedGet("trainee:"+traineeId);
-      if(me && me.labAttemptsResetAt && me.labAttemptsResetAt !== state.labAttemptsResetSeen){
-        const first = state.labAttemptsResetSeen === undefined;
-        state.labAttemptsResetSeen = me.labAttemptsResetAt;
-        if(!first || (state.labAttemptsGlobal||0) > (me.labAttemptsGlobal||0)){
-          state.labAttemptsGlobal = me.labAttemptsGlobal||0;
-          await storeSet("lab-attempts-global", state.labAttemptsGlobal);
-          if(!first) toast("Your trainer reset your Practice Lab attempts.");
-        }
-      }
+      if(await applyLabAttemptReset(me)) await showLabAttemptReset();
     }catch(e){ /* best-effort */ }
     if(state.view==="dashboard" && !state.surpriseGrading){
       try{
@@ -6253,8 +6281,8 @@ function startApprovalPolling(traineeId){
    LIVE UPDATES — the page refreshes itself, no reload needed.
    • Waiting for approval: checks every 8s; opens the portal the
      moment an admin approves (or shows the decision if declined).
-   • Trainees: new trainer feedback, Focus items and attempt resets
-     appear within ~45s.
+   • Trainees: new trainer feedback and Focus items appear within
+     ~45s; a Practice Lab attempt reset within ~10s.
    • Admins: Trainee Audit / Rankings / Trainee Feedback pick up new
      registrations and progress every 30s (never while you're typing).
    Polling pauses while the tab is hidden and catches up on return.
@@ -6278,6 +6306,12 @@ async function liveTick(){
     }
     // 2) signed-in trainee: trainer feedback + focus items
     if(state.traineeId && !state.isAdmin && state.view!=="login"){
+      await renderLabResetIfSafe();
+      if(!state.liveResetAt || Date.now()-state.liveResetAt > 10000){
+        state.liveResetAt = Date.now();
+        const me = await sharedGet("trainee:"+state.traineeId);
+        if(await applyLabAttemptReset(me)) await showLabAttemptReset();
+      }
       if(!state.liveFbAt || Date.now()-state.liveFbAt > 45000){
         state.liveFbAt = Date.now();
         const beforeFb = JSON.stringify(state.myFeedback||{}), beforeFo = JSON.stringify((state.myFocus||{}).items||[]);
@@ -6321,7 +6355,7 @@ async function loadAdminLedgerQuiet(){
 function startLiveUpdates(){
   if(liveTimer) return;
   liveTimer = setInterval(liveTick, 8000);
-  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ state.liveFbAt = 0; state.liveAdminAt = 0; liveTick(); } });
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ state.liveFbAt = 0; state.liveAdminAt = 0; state.liveResetAt = 0; liveTick(); } });
 }
 
 /* ============================================================
@@ -11918,7 +11952,7 @@ async function resetTraineeLabAttempts(traineeId){
     if(idx!==-1) state.adminData[idx] = rec;
     const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
   }
-  toast(`Practice Lab attempts reset for ${rec.name||"trainee"}. It applies on their next check-in (within ~90 seconds) or next login.`);
+  toast(`Practice Lab attempts reset for ${rec.name||"trainee"}. Their open page updates within about 10 seconds.`);
 }
 window.resetTraineeLabAttempts = resetTraineeLabAttempts;
 async function generateAiReview(traineeId){
@@ -15560,7 +15594,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1448";
+var APP_BUILD = "ft-2026.09.28-1457";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15604,8 +15638,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=zd"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1448"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1448"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1448"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1457"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1457"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1457"></script>
 </body>
 </html>
