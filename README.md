@@ -43,6 +43,27 @@ Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracke
 - **Notes review:** the Worker also writes a short review of the day's notes against the criteria in **Admin → 📋 Task Trackers** (`settings:trackercriteria`). It uses the Gemini key pool (`GEMINI_API_KEY5` … `GEMINI_API_KEY9`); trainees see it as "Notes review".
 - **Trainer's comment:** in Admin → 📋 Task Trackers, open a trainee's day, write a comment, and the trainee sees it under the check. Results and comments are in `trackerreview:<id>`, which trainees can read but not change.
 
+## Simulators
+
+**🛠 Simulators** in the top bar (`#/simulators`, `js/ft-simulators.js`) has one card for each mock call and demo in the Training Guide. Each card uses the guide's name for the activity and shows the lesson it belongs to:
+
+| Activity | Lesson | Practice tools |
+|---|---|---|
+| Reception Mock Calls | Receptionist Training | Front Desk Drill (training CMS, scored), Call Simulator |
+| Calendar Management Mock Calls | Calendaring & Appointment Setting | Calendaring Simulator, Call Simulator |
+| Intake Mock Calls | Intake Specialist | Call Simulator, CMS intake |
+| Saving Intake Packet and Extracted Intake Documents Demo | Intake Specialist | CMS intake |
+| LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | CMS, Email Workspace |
+| Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | Medical Records Requests, CMS |
+| LV (Lien Verification) Request Demo | Medical Records Specialist | CMS, Email Workspace |
+| Reduction Request, Settlement Release Forms and Closing Statement Demo | Lien Negotiator | CMS, Email Workspace |
+
+- The simulators are the LSH Training Portal's shared ones (`cm-training-activity.pages.dev/simulators/`) and the training CMS (`lshcasemanagementtraining-trainingcrm.pages.dev`).
+- **Open here** runs the tool in a full-window panel (✕ Close or Esc returns to the page). **New tab ↗** opens it in its own tab.
+- For trainees, a card opens with its lesson (Admin → 📅 Open Lessons). Trainers see every card.
+- The portal simulators receive `program=FT` with the trainee's name and batch, so scores are saved for the trainer.
+- To change a card or add one, edit `ACTIVITIES` / `TOOLS` in `js/ft-simulators.js`.
+
 ## How the program works
 
 - **Lessons open when the trainer opens them.** In **Admin → 📅 Open Lessons**, a trainer ticks the lessons that are open, either for **All batches** or for one batch. Trainees only see open lessons. The setting is stored as `settings:opendays` (the engine calls lessons "days" internally).
@@ -70,6 +91,7 @@ Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracke
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
+| `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 
