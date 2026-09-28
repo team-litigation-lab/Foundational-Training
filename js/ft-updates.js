@@ -152,7 +152,7 @@ window.renderDayIntro = function(d){
   return `
     <div class="lesson-stage day-intro">
       <div class="lesson-slide"><div class="card lesson-card">
-        <div class="di-kicker">Lesson ${d.id} of ${DAYS.length} · Before you start</div>
+        <div class="di-kicker">${ftLabel(d)} · Before you start</div>
         <h2>${esc(d.heading || d.title)}</h2>
         <div class="di-grid" style="grid-template-columns:1fr;">
           <div class="di-box"><b>🗺 What this lesson covers</b><ol class="di-topics">${d.sections.map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
@@ -454,7 +454,7 @@ window.renderDashboard = function(){
         const prog = state.progress[d.id], unlocked = dayUnlocked(d.id) && d.sections.length;
         const st = (prog&&prog.done ? "st-done" : (unlocked ? "st-open" : "st-locked"));
         return `<div class="step-node">
-          <div class="step-circle ${st}" onclick="${unlocked?`scrollToModule(${d.id})`:""}" title="${esc(d.title)}">${prog&&prog.done?"✓":d.id}</div>
+          <div class="step-circle ${st}" onclick="${unlocked?`scrollToModule(${d.id})`:""}" title="${esc(d.title)}">${prog&&prog.done?"✓":(d.short||d.id)}</div>
           ${i<DAYS.length-1?`<div class="step-dash ${prog&&prog.done?"filled":""}"></div>`:""}
         </div>`;
       }).join("")}

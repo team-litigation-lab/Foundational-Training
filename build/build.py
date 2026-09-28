@@ -40,7 +40,12 @@ days_js = "\n\n".join(parts)
 days_js += """
 function ftName(v){ const one = x=>{ const d = DAYS.find(d=>d.id===Number(x)); return d ? d.title : String(x); };
   return Array.isArray(v) ? v.map(one).join(", ") : String(v).split(/,\\s*/).map(one).join(", "); }"""
-days_js += "\n\nconst DAYS = [" + ", ".join(f"DAY{n}" for n in range(1, N + 1)) + "];"
+# DAYS in file order (lesson00.js, Day 0–1, comes first). Each lesson keeps its own id, so a card added
+# in front never shifts the lessons' saved progress; d.label / d.short override "Lesson N" and the number.
+names = [re.search(r"const (DAY\d+) = \{", x).group(1) for x in parts]
+days_js += "\n\nconst DAYS = [" + ", ".join(names) + "];"
+days_js += """
+function ftLabel(d){ return d.label || `Lesson ${d.id} of ${DAYS.filter(x=>!x.label).length}`; }"""
 # The engine reads d.lessons (topic lists, search) and d.quiz; for this program they come from the sections.
 days_js += "\nDAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });"
 i = s.index("const DAY1 = {")
@@ -65,7 +70,7 @@ rep("EA/PA Upskill Program", "Foundational Training Program", min_count=0)
 rep("LSH EA/PA — Platform Orientation", "LSH Foundational Training — Platform Orientation")
 rep("LSH-EAPA-", "LSH-FT-")
 rep(" of 10</b>", " of ${DAYS.length}</b>")
-rep("Day ${d.id} of 10<", "Lesson ${d.id} of ${DAYS.length}<")
+rep("Day ${d.id} of 10<", "${ftLabel(d)}<")
 # No Knowledge Checks: the last slide finishes the lesson (js/ft-updates.js handles the click).
 rep("Continue to Knowledge Check &rarr;", "✓ Finish lesson")
 rep("🎉 That's everything for Day ${d.id} — the Knowledge Check is the last step to mark this day complete.",
