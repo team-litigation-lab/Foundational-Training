@@ -11732,8 +11732,17 @@ function renderAdmin(){
   const fullyDone = state.adminData.filter(r=>adminDayStats(r).done===DAYS.length).length;
 
   return tabBar + `
-    <p class="eyebrow">Admin Dashboard</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Trainee Audit</h1>
+    <div class="audit-page-head" style="display:flex;gap:12px 16px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;">
+      <div>
+        <p class="eyebrow">Admin Dashboard</p>
+        <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Trainee Audit</h1>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="refreshAdminData()">🔄 Refresh</button>
+        <button class="btn btn-navy btn-sm" onclick="downloadCohortPdf()">⬇ Download Cohort Report</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Log out</button>
+      </div>
+    </div>
     <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Every trainee's registration, exact progress, Knowledge Checks, Practice Labs and your day-by-day feedback — refreshed automatically every 30 seconds.</p>
 
     ${state.secureMode===false ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;border-left:4px solid var(--danger);background:var(--danger-bg);"><b style="color:var(--danger);">⚠ Security not enabled.</b> <span style="font-size:13px;">Storage and AI are open to anyone who finds the API. Run <code>wrangler secret put ADMIN_PASSPHRASE</code> (and redeploy the updated worker.js) to require sign-in.</span></div>` : ""}
@@ -11805,9 +11814,6 @@ function renderAdmin(){
       </div>
       <div style="display:flex;gap:8px;">
         ${state.adminBatchFilter ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="confirmArchiveBatch('${esc(state.adminBatchFilter)}')">📦 Archive This Batch</button>` : ""}
-        <button class="btn btn-ghost btn-sm" onclick="refreshAdminData()">🔄 Refresh</button>
-        <button class="btn btn-navy btn-sm" onclick="downloadCohortPdf()">⬇ Download Cohort Report</button>
-        <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Log out</button>
       </div>
     </div>
 
@@ -12860,9 +12866,24 @@ function presenterNote(d, l, part){
   if(part===1 || l.singleSlide) return {cue, say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
   return {say: sc.correct || "", wrap: unq(sc.wrap), scenario: scen};
 }
-function renderPresenterNote(d, l, part){
+// Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
+// ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper. When the slide is split over pages,
+// the presenter sees only the sections on the current page; Wrap and Scenario come with the last one.
+const PN_SECTION_NAMES = {1:"Core Principles", 2:"Step-by-Step Framework", 3:"Best Practices & Pitfalls", 4:"Go Deeper"};
+function renderPresenterNote(d, l, part, secs, allSecs){
   const n = presenterNote(d, l, part);
   const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
+  const all = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`] || {};
+  const split = secs && secs.length && allSecs && secs.length < allSecs.length;
+  if(split && secs.every(s=>all["s"+s])){
+    const last = secs.includes(Math.max(...allSecs));
+    return `<div class="pn">
+      ${secs.map(s=>{ const x = all["s"+s]; if(!x) return ""; return `
+        <div class="pn-on"><b>On this page · ${esc(PN_SECTION_NAMES[s]||"")}</b><p>${esc(x.on||"")}</p></div>
+        <div class="script-block"><div class="script-head"><span>🎙 Script</span></div>${row("Say", x.say)}${row("Ask", x.ask)}</div>`; }).join("")}
+      ${last ? `${n.wrap ? `<div class="script-block"><div class="script-head"><span>🎙 Close</span></div>${row("Wrap", n.wrap)}</div>` : ""}${n.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}` : ""}
+    </div>`;
+  }
   return `<div class="pn">
     ${n.on ? `<div class="pn-on"><b>On this slide</b><p>${esc(n.on)}</p></div>` : ""}
     ${n.cue ? `<div class="pn-on"><b>Trainer note</b><p>${esc(n.cue)}</p></div>` : ""}
@@ -15724,7 +15745,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1616";
+var APP_BUILD = "ft-2026.09.28-1618";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15768,8 +15789,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=ze"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1616"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1616"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1616"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1618"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1618"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1618"></script>
 </body>
 </html>
