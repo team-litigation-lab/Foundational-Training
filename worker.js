@@ -162,7 +162,9 @@ const featureFromBody = (raw) => { try { return String(JSON.parse(raw).feature |
 
 async function callGemini(env, rawBody) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
-  const apiKey = geminiKey(env, req.feature);
+  // The feature's own key first, then every other configured key: when one key's free-tier
+  // limit is used up (429) or the key is rejected, the next key takes the request.
+  const keys = [geminiKey(env, req.feature), env.GEMINI_API_KEY, env.GEMINI_API_KEY1, env.GEMINI_API_KEY2].filter((k, i, a) => k && a.indexOf(k) === i);
   const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
   const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: toText(m.content) }] }));
   const payload = {
@@ -173,32 +175,39 @@ async function callGemini(env, rawBody) {
   if (req.system) payload.systemInstruction = { parts: [{ text: toText(req.system) }] };
   // Google limits the 2.5 models to accounts that already used them; new projects use 3.8 Flash / 3.5 Flash-Lite.
   const models = [env.GEMINI_MODEL || "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash"].filter((v, i, a) => a.indexOf(v) === i);
-  let last = null;
-  for (const model of models) {
-    const p = JSON.parse(JSON.stringify(payload));
-    if (/2\.5-flash/.test(model)) p.generationConfig.thinkingConfig = { thinkingBudget: 0 };   // 2.5: thinking off
-    else p.generationConfig.thinkingConfig = { thinkingLevel: "low" };                         // 3.x: think briefly → much faster replies
-    const send = (body) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify(body)
-    });
-    let r = await send(p);
-    let data = await r.json().catch(() => ({}));
-    if (r.status === 400 && /thinking/i.test((data.error && data.error.message) || "")) {   // model doesn't accept that setting → send without it
-      delete p.generationConfig.thinkingConfig; r = await send(p); data = await r.json().catch(() => ({}));
+  let last = null, limit = null;
+  for (const apiKey of keys) {
+    let limited = false;
+    for (const model of models) {
+      const p = JSON.parse(JSON.stringify(payload));
+      if (/2\.5-flash/.test(model)) p.generationConfig.thinkingConfig = { thinkingBudget: 0 };   // 2.5: thinking off
+      else p.generationConfig.thinkingConfig = { thinkingLevel: "low" };                         // 3.x: think briefly → much faster replies
+      const send = (body) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify(body)
+      });
+      let r = await send(p);
+      let data = await r.json().catch(() => ({}));
+      if (r.status === 400 && /thinking/i.test((data.error && data.error.message) || "")) {   // model doesn't accept that setting → send without it
+        delete p.generationConfig.thinkingConfig; r = await send(p); data = await r.json().catch(() => ({}));
+      }
+      if (r.ok) {
+        const cand = (data.candidates || [])[0] || {};
+        const text = ((cand.content && cand.content.parts) || []).filter((x) => !x.thought).map((x) => x.text || "").join("");
+        if (!text) { last = { status: 502, msg: `Gemini returned no text (${cand.finishReason || "blocked"})` }; continue; }
+        return json({ content: [{ type: "text", text }], model, stop_reason: cand.finishReason === "MAX_TOKENS" ? "max_tokens" : "end_turn", provider: "gemini" });
+      }
+      const msg = (data.error && data.error.message) || `Gemini error ${r.status}`;
+      last = { status: r.status, msg };
+      if (r.status === 429) { limited = true; limit = last; }
+      if (r.status === 400 && /API key/i.test(msg)) break;            // bad key: no point trying another model
+      if (![404, 429, 500, 503].includes(r.status)) break;
     }
-    if (r.ok) {
-      const cand = (data.candidates || [])[0] || {};
-      const text = ((cand.content && cand.content.parts) || []).filter((x) => !x.thought).map((x) => x.text || "").join("");
-      if (!text) { last = { status: 502, msg: `Gemini returned no text (${cand.finishReason || "blocked"})` }; continue; }
-      return json({ content: [{ type: "text", text }], model, stop_reason: cand.finishReason === "MAX_TOKENS" ? "max_tokens" : "end_turn", provider: "gemini" });
-    }
-    const msg = (data.error && data.error.message) || `Gemini error ${r.status}`;
-    last = { status: r.status, msg };
-    if (r.status === 400 && /API key/i.test(msg)) break;            // bad key: no point trying another model
-    if (![404, 429, 500, 503].includes(r.status)) break;
+    const badKey = last && last.status === 400 && /API key/i.test(last.msg);
+    if (!(limited || badKey)) break;   // only a rate limit or a rejected key is worth another key
   }
+  if (limit && !(last.status === 400 && /API key/i.test(last.msg))) last = limit;   // report the limit, not a later model's 404
   const status = last.status === 400 && /API key/i.test(last.msg) ? 502 : last.status;   // 502, not 401: a bad AI key is not a portal sign-in problem
   return json({ error: { message: (status === 502 && /API key/i.test(last.msg) ? "invalid x-api-key (Gemini): " : status === 429 ? "rate limit (Gemini free tier): " : "") + last.msg } }, status);
 }
