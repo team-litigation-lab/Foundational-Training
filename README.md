@@ -46,24 +46,29 @@ Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracke
 
 ## Simulators
 
-**🛠 Simulators** in the top bar (`#/simulators`, `js/ft-simulators.js`) has one card for each mock call and demo in the Training Guide. Each card uses the guide's name for the activity and shows the lesson it belongs to:
+**🛠 Simulators** (top bar, and the **Simulators** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`).
 
-| Activity | Lesson | Practice tools |
-|---|---|---|
-| Reception Mock Calls | Receptionist Training | Front Desk Drill (training CMS, scored), Call Simulator |
-| Calendar Management Mock Calls | Calendaring & Appointment Setting | Calendaring Simulator, Call Simulator |
-| Intake Mock Calls | Intake Specialist | Call Simulator, CMS intake |
-| Saving Intake Packet and Extracted Intake Documents Demo | Intake Specialist | CMS intake |
-| LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | CMS, Email Workspace |
-| Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | Medical Records Requests, CMS |
-| LV (Lien Verification) Request Demo | Medical Records Specialist | CMS, Email Workspace |
-| Reduction Request, Settlement Release Forms and Closing Statement Demo | Lien Negotiator | CMS, Email Workspace |
+**Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
 
-- The simulators are the LSH Training Portal's shared ones (`cm-training-activity.pages.dev/simulators/`) and the training CMS (`lshcasemanagementtraining-trainingcrm.pages.dev`).
+| Activity | Lesson | Example cases | Also |
+|---|---|---|---|
+| Reception Mock Calls | Receptionist Training | MC-01, MC-06, MC-10, MC-16 | Front Desk Drill (scored calls on these cases), Training Library, Call Simulator |
+| Calendar Management Mock Calls | Calendaring & Appointment Setting | MC-01, MC-05, MC-08 | Calendaring, Call Simulator |
+| Intake Mock Calls | Intake Specialist | MC-02, MC-13, MC-12, MC-19 | Call Simulator |
+| Saving Intake Packet and Extracted Intake Documents Demo | Intake Specialist | MC-02, MC-13 | Training Library |
+| LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | MC-01, MC-02, MC-12 | Training Library |
+| Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | MC-01, MC-15, MC-08 | Training Library |
+| LV (Lien Verification) Request Demo | Medical Records Specialist | MC-09, MC-15, MC-05 | Training Library |
+| Reduction Request, Settlement Release Forms and Closing Statement Demo | Lien Negotiator | MC-11, MC-06 | Training Library |
+
+Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
+
+**All simulators.** Every live simulator on the LSH Training Portal: Call, Calendaring, Email Workspace, Email Replies, Docket System, Medical Records Requests and Court E-Filing. These are open any time, and the section links to the portal's Simulators hub.
+
+**How the tools open**
 - **Open here** runs the tool in a full-window panel (✕ Close or Esc returns to the page). **New tab ↗** opens it in its own tab.
-- For trainees, a card opens with its lesson (Admin → 📅 Open Lessons). Trainers see every card.
-- The portal simulators receive `program=FT` with the trainee's name and batch, so scores are saved for the trainer.
-- To change a card or add one, edit `ACTIVITIES` / `TOOLS` in `js/ft-simulators.js`.
+- For trainees, a mock call or demo card opens with its lesson (Admin → 📅 Open Lessons). Trainers see every card.
+- Portal simulators get `program=FT` with the trainee's name and batch, so scores are saved for the trainer.
 
 ## How the program works
 
