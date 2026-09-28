@@ -11742,8 +11742,17 @@ function renderAdmin(){
   const fullyDone = state.adminData.filter(r=>adminDayStats(r).done===DAYS.length).length;
 
   return tabBar + `
-    <p class="eyebrow">Admin Dashboard</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Trainee Audit</h1>
+    <div class="audit-page-head" style="display:flex;gap:12px 16px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;">
+      <div>
+        <p class="eyebrow">Admin Dashboard</p>
+        <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Trainee Audit</h1>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="refreshAdminData()">🔄 Refresh</button>
+        <button class="btn btn-navy btn-sm" onclick="downloadCohortPdf()">⬇ Download Cohort Report</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Log out</button>
+      </div>
+    </div>
     <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Every trainee's registration, exact progress, Knowledge Checks, Practice Labs and your day-by-day feedback — refreshed automatically every 30 seconds.</p>
 
     ${state.secureMode===false ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;border-left:4px solid var(--danger);background:var(--danger-bg);"><b style="color:var(--danger);">⚠ Security not enabled.</b> <span style="font-size:13px;">Storage and AI are open to anyone who finds the API. Run <code>wrangler secret put ADMIN_PASSPHRASE</code> (and redeploy the updated worker.js) to require sign-in.</span></div>` : ""}
@@ -11815,9 +11824,6 @@ function renderAdmin(){
       </div>
       <div style="display:flex;gap:8px;">
         ${state.adminBatchFilter ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="confirmArchiveBatch('${esc(state.adminBatchFilter)}')">📦 Archive This Batch</button>` : ""}
-        <button class="btn btn-ghost btn-sm" onclick="refreshAdminData()">🔄 Refresh</button>
-        <button class="btn btn-navy btn-sm" onclick="downloadCohortPdf()">⬇ Download Cohort Report</button>
-        <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Log out</button>
       </div>
     </div>
 
@@ -15749,7 +15755,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1626";
+var APP_BUILD = "ft-2026.09.28-1628";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15793,8 +15799,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=ze"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1626"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1626"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1626"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1628"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1628"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1628"></script>
 </body>
 </html>
