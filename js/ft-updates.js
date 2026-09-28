@@ -52,6 +52,20 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-body .facilitator, .pv-cues .facilitator{background:#F3F5FA;border:1px dashed #9AA1BC;border-radius:8px;padding:12px 16px;margin:12px 0;}
 .ft-body .facilitator::before{content:"🧑‍🏫 Trainer only";display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);margin-bottom:6px;}
 .ft-empty-day{padding:40px;text-align:center;}
+/* deck slides: the deck fills the slide at 16:9, with its Full screen button, no scrolling */
+.lesson-slide:has(> .ft-deck){overflow:hidden;}
+.lesson-slide > .card.ft-deck{height:100%;box-sizing:border-box;display:flex;flex-direction:column;padding:12px 16px 16px;margin:0;}
+.ft-deck .topic-separator{margin:0 0 8px;}
+.ft-deck .ft-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+.ft-deck .ft-body .canva-frame{flex:1 1 auto;min-height:0;padding-top:0;height:auto;margin:0;container-type:size;background:transparent;overflow:visible;}
+.ft-deck .ft-body .canva-frame iframe{position:absolute;inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100cqw, 100cqh * 16 / 9);height:min(100cqh, 100cqw * 9 / 16);border-radius:8px;background:#161829;}
+.ft-deck .ft-body .actions{margin-top:8px;flex:0 0 auto;justify-content:center;}
+.ft-deck .ft-body .actions > span:empty{display:none;}
+.ft-deck .topic-separator{align-self:center;}
+/* centred in the stage: a deck slide doesn't keep the presenter figure's column */
+.stage-body:has(.ft-deck){grid-template-columns:minmax(0,1fr);}
+.stage-body:has(.ft-deck) .stage-presenter{display:none;}
+.stage-body:has(.ft-deck) #lessonSlideWrap{align-items:center;}
 .ft-body p.li, .ftc-body p.li{display:flex;gap:.5em;margin:4px 0 4px calc(var(--lvl,0) * 24px);}
 .ft-body p.li .lbl, .ftc-body p.li .lbl{flex:0 0 auto;min-width:1.4em;font-weight:700;color:var(--navy);}
 .ft-body h5{margin:14px 0 6px;font-size:15px;color:var(--navy);}
@@ -121,8 +135,12 @@ const __ftSlideContent = window.renderDaySlideContent;
 window.renderDaySlideContent = function(d, slide, idx){
   if(!slide || slide.type!=="ftSection") return __ftSlideContent(d, slide, idx);
   const sec = d.sections[slide.index];
+  const sep = `<div class="topic-separator">${esc(d.title)}${d.sections.length>1 ? ` &middot; PART ${slide.index+1} OF ${d.sections.length}` : ""}</div>`;
+  // A deck (or the word game) is the whole slide: no big heading, and it's sized to fit the slide.
+  if(/^\s*<div class="canva-frame"/.test(sec.html)) return `
+    <div class="card lesson-card ft-section ft-deck" data-part="1">${sep}<div class="ft-body">${sec.html}</div></div>`;
   return `
-    <div class="topic-separator">${esc(d.title)}${d.sections.length>1 ? ` &middot; PART ${slide.index+1} OF ${d.sections.length}` : ""}</div>
+    ${sep}
     <div class="card lesson-card ft-section" data-part="1">
       <h4><span class="lnum">${String(slide.index+1).padStart(2,"0")}</span>${esc(sec.h)}</h4>
       <div class="ft-body">${sec.html}</div>
@@ -245,6 +263,17 @@ window.dayUnlocked = function(id){
   const own = state.progress && state.progress[id];
   if(own && own.done) return true;
   return ftOpenFor(state.traineeBatch).has(id);
+};
+// A lesson address in a new or duplicated tab (#/day/3): the open lessons load a moment after start-up,
+// so wait for them before deciding whether that lesson is locked.
+const __ftOpenRoute = window.openRouteFromHash;
+window.openRouteFromHash = function(){
+  const r = typeof parseRouteHash === "function" ? parseRouteHash() : null;
+  if(r && r.view === "day" && !state.isAdmin && !state.ftOpenDays){
+    ftLoadOpenDays().then(()=>{ if(!__ftOpenRoute()) goto("dashboard"); }).catch(()=>goto("dashboard"));
+    return true;
+  }
+  return __ftOpenRoute.apply(this, arguments);
 };
 window.dayLockReason = function(id){
   const d = DAYS.find(x=>x.id===id);

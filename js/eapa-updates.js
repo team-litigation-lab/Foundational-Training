@@ -226,6 +226,7 @@ function renderTopbar(){
             ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('admin')" title="Return to the admin (trainer) view">🛡 Back to Admin view</button>`
             : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`}
           ${state.isAdmin ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="See the portal exactly as a trainee does — no trainer tools or admin pages">👁 Trainee view</button>` : ""}
+          <button type="button" class="nav-fs" onclick="openInNewTab()" title="Open this page in a new tab (e.g. to review a lesson while you work)">⧉</button>
           <button type="button" class="nav-fs" onclick="togglePageFullscreen()" title="Full screen (Esc to exit)">⛶</button>
         </div>
         <div class="trainee-chip" onclick="promptName()">
@@ -676,10 +677,8 @@ function presenterCues(d, slide){
   const out = [];
   if(slide.type==="topic"){
     const l = d.lessons[slide.lessonIndex];
-    out.push(`<h3>${esc(l.h)} <small style="font-size:12px;color:var(--ink-soft);">Part ${slide.part} of 2</small></h3>`);
-    if(l.trainerCue) out.push(`<div class="tc-tag">🧑‍🏫 Trainer Cue</div><p>${esc(l.trainerCue)}</p>`);
-    const disc = trainerDiscussionHtml(l); if(disc) out.push(`<b class="cue-sub">Applied Discussion Case</b>${disc}`);
-    out.push(renderDiscussionScript(d, l, slide.lessonIndex));
+    out.push(`<h3>${esc(l.h)}${l.singleSlide ? "" : ` <small style="font-size:12px;color:var(--ink-soft);">Part ${slide.part} of 2</small>`}</h3>`);
+    out.push(renderPresenterNote(d, l, slide.part));   // hardcoded notes: js/presenter-notes.js
   }else if(slide.type==="quickCheck"){
     out.push(`<h3>Quick Check</h3><p>Let the room answer first — then reveal and use the rationale.</p>`);
     (d.quickChecks||[]).filter(c=>c.afterIndex===slide.lessonIndex).forEach(c=>{
@@ -706,7 +705,6 @@ function presenterNextText(d){
 function renderPresenterConsole(d){
   const slides = buildDaySlides(d);
   const idx = Math.min(state.lessonSlide||0, slides.length-1); state.lessonSlide = idx;
-  if(state.pvScriptsFor !== d.id){ state.pvScriptsFor = d.id; setTimeout(()=>loadSavedScripts(d.id).then(()=>presenterRefresh()), 0); }
   return `
     <div class="pv">
       <div class="pv-head">
@@ -1122,7 +1120,7 @@ Return ONLY JSON:
  "reply":"your reply email text when action is reply, booked or unsubscribe (1-4 short sentences, in character, sign with your first name); empty string for no_reply",
  "thought":"1-2 sentences, first person, about how this specific email landed with you and why — honest and concrete (shown to the trainee afterwards)"}`;
   try{
-    const r = await callAIJson(prompt, 500);
+    const r = await callAIJson(prompt, 500, undefined, "chat");
     const action = ["no_reply","reply","booked","unsubscribe"].includes(r.action) ? r.action : "no_reply";
     msg.thought = String(r.thought||"").slice(0,400);
     s.thread.push(msg); s.draftSubject = null; s.draftBody = "";
@@ -1677,7 +1675,7 @@ Return ONLY a JSON array of exactly 3 objects — no preamble, no markdown fence
 {"from":"Name <email>", "subject":"...", "preview":"one sentence preview", "body":"the full email, 2-5 short sentences, written the way this sender really would (greeting and sign-off included)", "idealQuadrant":"1"}`;
   try{
     const results = [];
-    for(let k=0;k<themes.length;k+=2){ results.push(...await Promise.allSettled(themes.slice(k,k+2).map(t=>callAIJson(makePrompt(t), 1600, 70000)))); }
+    for(let k=0;k<themes.length;k+=2){ results.push(...await Promise.allSettled(themes.slice(k,k+2).map(t=>callAIJson(makePrompt(t), 1600, 70000, "chat")))); }
     const emails = results.filter(x=>x.status==="fulfilled" && Array.isArray(x.value)).flatMap(x=>x.value);
     if(emails.length < 6) throw new Error("only "+emails.length+" emails returned");
     let mins = 8*60+58;
@@ -1817,7 +1815,7 @@ List the 5 most valuable PROACTIVE tasks an EA should independently add to their
 
 Return ONLY a JSON array of objects like: [{"task":"...", "why":"..."}]`;
   try{
-    let tasks = await callAIJson(prompt, 1400, 90000);
+    let tasks = await callAIJson(prompt, 1400, 90000, "chat");
     if(tasks && !Array.isArray(tasks)){ const arr = Object.values(tasks).find(v=>Array.isArray(v)); if(arr) tasks = arr; }
     tasks = (Array.isArray(tasks)?tasks:[]).map(t=> typeof t==="string" ? {task:t, why:""} : t).filter(t=>t && t.task);
     if(!tasks.length) throw new Error("the reply had no tasks");

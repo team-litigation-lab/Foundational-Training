@@ -75,6 +75,9 @@ def name_days(text):
     return re.sub(r"Day \$\{([^{}]+)\}", r"${ftName(\1)}", text)
 s = name_days(s)
 
+# The EA/PA speaker notes (js/presenter-notes.js) aren't part of this program: its trainer notes are trainer/notes.json.
+s = re.sub(r'<script src="/js/presenter-notes\.js[^"]*"></script>\n?', '', s)
+
 # ---------- 4. build tag + this program's layer ----------
 build_tag = "ft-" + datetime.datetime.utcnow().strftime("%Y.%m.%d-%H%M")
 s, n = re.subn(r'var APP_BUILD = "[^"]*";', f'var APP_BUILD = "{build_tag}";', s, count=1)

@@ -102,3 +102,4 @@ Every edit checks that its anchor exists, so the build stops with an error if th
   - `ADMIN_PASSPHRASE`: trainer sign-in. It turns on secure mode, which the trainer-only notes need.
   - `SESSION_SECRET` (optional)
   - `GEMINI_API_KEY` (optional: AI drafts for trainer feedback)
+  - `GEMINI_API_KEY1` (optional: grading, AI feedback and the tracker's daily notes review) and `GEMINI_API_KEY2` (optional: trainer tools). Live chat stays on `GEMINI_API_KEY`, and a missing key falls back to it.
