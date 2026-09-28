@@ -89,20 +89,29 @@ window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["simulators"
 const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
 // key: a tool id, or a Training Library case id ("MC-04")
 function keyHref(key, a){
-  if(/^MC-\d+$/.test(key)) return CMS + "?" + new URLSearchParams({program:a.cms, mock:key});
+  if(/^MC-\d+$/.test(key)) return cmsHref({program:a.cms, mock:key});
   const t = TOOLS[key];
-  if(t.cms) return CMS + "?program=" + (key==="drill" ? "reception" : a.cms) + "&" + t.cms;
+  if(t.cms) return cmsHref({program: key==="drill" ? "reception" : a.cms}, t.cms);
   return portalHref(t.page, key==="call" ? a.title : "");
 }
-function portalHref(page, line){
-  const q = new URLSearchParams({program:"FT"});
-  if(line) q.set("line", line);   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
+// The trainee's name and batch go with the link, so their scores are saved for the trainer.
+function addWho(q){
   if(isTrainee()){
     const name = state.certName || state.traineeName;
     if(name) q.set("name", name);
     if(state.traineeBatch) q.set("batch", state.traineeBatch);
   }
-  return PORTAL + page + "?" + q;
+  return q;
+}
+// from=standard: the CMS lets Standard trainees in with just their name (no CMS account).
+function cmsHref(params, extra){
+  const q = addWho(new URLSearchParams(Object.assign({}, params, {from:"standard"})));
+  return CMS + "?" + q + (extra ? "&" + extra : "");
+}
+function portalHref(page, line){
+  const q = new URLSearchParams({program:"FT"});
+  if(line) q.set("line", line);   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
+  return PORTAL + page + "?" + addWho(q);
 }
 function keyName(key, a){
   const c = a.cases.find(x=>x[0]===key);
