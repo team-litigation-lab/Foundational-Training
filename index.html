@@ -3481,11 +3481,11 @@ async function loadAll(){
 /* ---------- helpers ---------- */
 function esc(s){ return (s+"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-async function callAIText(prompt, maxTokens, timeoutMs){
+async function callAIText(prompt, maxTokens, timeoutMs, feature){
   // Retry rate-limit / overload / transient server errors with backoff.
   const waits = [2500, 6000, 12000];
   for(let attempt=0;;attempt++){
-    try{ return await callAITextOnce(prompt, maxTokens, timeoutMs); }
+    try{ return await callAITextOnce(prompt, maxTokens, timeoutMs, feature); }
     catch(e){
       const retryable = e && (e.status===429 || e.status===529 || e.status===503 || e.status===502 || (e.status===500 && !/not configured|api key|x-api-key/i.test(e.message||"")));
       if(!retryable || attempt>=waits.length) throw e;
@@ -3493,13 +3493,14 @@ async function callAIText(prompt, maxTokens, timeoutMs){
     }
   }
 }
-async function callAITextOnce(prompt, maxTokens, timeoutMs){
+async function callAITextOnce(prompt, maxTokens, timeoutMs, feature){
   const controller = new AbortController();
   const timeoutId = setTimeout(()=>controller.abort(), timeoutMs || Math.max(60000, (maxTokens||600) * 40));
   try{
     const response = await fetch("/api/claude", {
       method:"POST", headers:authHeaders(),
-      body: JSON.stringify({ model:"gemini", max_tokens:maxTokens||600, messages:[{role:"user", content:prompt}] }),
+      // feature picks the Gemini key on the Worker: chat → GEMINI_API_KEY, grading → GEMINI_API_KEY1, trainer → GEMINI_API_KEY2
+      body: JSON.stringify({ model:"gemini", feature: feature||"", max_tokens:maxTokens||600, messages:[{role:"user", content:prompt}] }),
       signal: controller.signal
     });
     if(!response.ok){
@@ -3518,7 +3519,7 @@ async function callAITextOnce(prompt, maxTokens, timeoutMs){
     clearTimeout(timeoutId);
   }
 }
-async function callAIJson(prompt, maxTokens, timeoutMs){
+async function callAIJson(prompt, maxTokens, timeoutMs, feature){
   function extractAndParse(text){
     let cleaned = text.replace(/^```json\s*/i,"").replace(/^```\s*/,"").replace(/```\s*$/,"").trim();
     // Robustness: if the model added any preamble/postamble text around the JSON
@@ -3553,14 +3554,14 @@ async function callAIJson(prompt, maxTokens, timeoutMs){
     }
   }
   try{
-    const text = await callAIText(prompt, maxTokens, timeoutMs);
+    const text = await callAIText(prompt, maxTokens, timeoutMs, feature);
     return extractAndParse(text);
   }catch(firstErr){
     if(firstErr && (/timed out/i.test(firstErr.message||"") || firstErr.status)) throw firstErr; // API/timeout errors aren't fixed by an identical retry
     // A single malformed or truncated JSON response is often just a transient
     // formatting glitch, not a real failure — one retry resolves the large
     // majority of these without surfacing an error to the trainee at all.
-    const text2 = await callAIText(prompt, maxTokens, timeoutMs);
+    const text2 = await callAIText(prompt, maxTokens, timeoutMs, feature);
     return extractAndParse(text2);
   }
 }
@@ -4380,7 +4381,7 @@ Return ONLY a JSON object with this exact shape, no other text:
   "keyInformationCaptured": "<1-2 sentence assessment of whether the trainee captured or confirmed the actual important details from the call>",
   "recommendedActionItems": ["<a concrete next step or follow-up the trainee should take>", "..."]
 }`;
-  const raw = await callAIJson(prompt, 500);
+  const raw = await callAIJson(prompt, 500, undefined, "grading");
   return {
     activeListening: raw.activeListening || "",
     keyInformationCaptured: raw.keyInformationCaptured || "",
@@ -4616,7 +4617,7 @@ ${s.persona ? `\nCALLER PERSONA: ${s.persona.label} — ${s.persona.desc}` : ""}
 
 Open immediately with the specific, in-character problem itself — never a generic time-pressure line like "What is it, I have ninety seconds." Write ONLY the opening line this caller would actually say — 1-3 sentences, realistic, dropping the EA/PA straight into the situation with no preamble. Do not narrate the scene or explain who's calling — just speak as them.`;
   try{
-    const opening = await callAIText(prompt, 150);
+    const opening = await callAIText(prompt, 150, undefined, "chat");
     s.chatHistory = [{role:"client", text: opening.trim().replace(/^["“]+|["”]+$/g,"")}];
   }catch(e){
     s.chatHistory = [{role:"client", text:"[Connection issue generating the scenario — try Restart below.]"}];
@@ -4712,7 +4713,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, realistic in tone for this situation and persona. If the EA/PA is handling it well, you may show some de-escalation. If they're vague, evasive, or clearly wrong, apply more pressure or push back.`;
   try{
-    const reply = await callAIText(prompt, 200);
+    const reply = await callAIText(prompt, 200, undefined, "chat");
     s.chatHistory = s.chatHistory.filter(m=>!m.pending);
     s.chatHistory.push({role:"client", text: reply.trim().replace(/^["“]+|["”]+$/g,"")});
   }catch(e){
@@ -4797,7 +4798,7 @@ async function rpGenerateRapidTasks(){
 
 Return ONLY a JSON array of 4 strings, each a short, realistic incoming request (1-2 sentences), nothing else — no markdown, no explanation.`;
   try{
-    const raw = await callAIText(prompt, 300);
+    const raw = await callAIText(prompt, 300, undefined, "chat");
     const cleaned = raw.replace(/```json|```/g,"").trim();
     s.rapidTasks = JSON.parse(cleaned).slice(0,4);
   }catch(e){
@@ -7701,7 +7702,7 @@ Return ONLY a JSON object with this exact shape, no other text:
   "blindspots": ["...", "..."],
   "growthSuggestions": ["...", "..."]
 }`;
-  const raw = await callAIJson(prompt, 900);
+  const raw = await callAIJson(prompt, 900, undefined, "grading");
   const accuracyScore = Math.max(0, Math.min(35, Math.round(raw.accuracyScore||0)));
   const presenceScore = Math.max(0, Math.min(30, Math.round(raw.presenceScore||0)));
   const riskScore = Math.max(0, Math.min(20, Math.round(raw.riskScore||0)));
@@ -7742,7 +7743,7 @@ Return ONLY a JSON object with this exact shape, no other text:
   "blindspots": ["...", "..."],
   "growthSuggestions": ["...", "..."]
 }`;
-  const raw = await callAIJson(prompt, 900);
+  const raw = await callAIJson(prompt, 900, undefined, "grading");
   const blufScore = Math.max(0, Math.min(25, Math.round(raw.blufScore||0)));
   const riskPrivilegeScore = Math.max(0, Math.min(25, Math.round(raw.riskPrivilegeScore||0)));
   const composureScore = Math.max(0, Math.min(25, Math.round(raw.composureScore||0)));
@@ -8474,7 +8475,7 @@ Vary these each time — don't just restate the same generic list. Base them spe
 
 Return ONLY a JSON array of objects like: [{"task":"...", "why":"..."}]`;
   try{
-    let tasks = await callAIJson(prompt, 1400, 90000);
+    let tasks = await callAIJson(prompt, 1400, 90000, "chat");
     if(tasks && !Array.isArray(tasks)){ const arr = Object.values(tasks).find(v=>Array.isArray(v)); if(arr) tasks = arr; }
     tasks = (Array.isArray(tasks)?tasks:[]).map(t=> typeof t==="string" ? {task:t, why:""} : t).filter(t=>t && t.task);
     if(!tasks.length) throw new Error("the reply had no tasks");
@@ -9465,7 +9466,7 @@ CALLER CONTEXT: ${persona.context}
 
 Open immediately with how this specific caller would actually start the call — 1-3 sentences, realistic to their situation and tone. Do not narrate the scene — just speak as them.`;
   try{
-    const opening = await callAIText(prompt, 150);
+    const opening = await callAIText(prompt, 150, undefined, "chat");
     ic.chatHistory = [{role:"caller", text: opening.trim().replace(/^["“]+|["”]+$/g,"")}];
   }catch(e){
     ic.chatHistory = [{role:"caller", text:"[Connection issue generating the call — try Restart below.]"}];
@@ -9545,7 +9546,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, realistic in tone for this caller. If the intake coordinator is handling things well (staying within scope, being patient, asking good questions), you may show trust building or start answering more fully. If they're vague, if they overstep into giving legal advice, or if they mishandle your tone, react accordingly — push back, repeat yourself, or get more frustrated, consistent with who you are.`;
   try{
-    const reply = await callAIText(prompt, 200);
+    const reply = await callAIText(prompt, 200, undefined, "chat");
     ic.chatHistory = ic.chatHistory.filter(m=>!m.pending);
     ic.chatHistory.push({role:"caller", text: reply.trim().replace(/^["“]+|["”]+$/g,"")});
   }catch(e){
@@ -9604,7 +9605,7 @@ Return ONLY a JSON object with this exact shape, no other text:
   "blindspots": ["...", "..."],
   "growthSuggestions": ["...", "..."]
 }`;
-  const raw = await callAIJson(prompt, 900);
+  const raw = await callAIJson(prompt, 900, undefined, "grading");
   const boundaryScore = Math.max(0, Math.min(25, Math.round(raw.boundaryScore||0)));
   const stressScore = Math.max(0, Math.min(25, Math.round(raw.stressScore||0)));
   const taskScore = Math.max(0, Math.min(25, Math.round(raw.taskScore||0)));
@@ -10487,7 +10488,7 @@ ${n.content}
 """`;
 
   try{
-    const text = await callAIText(prompt, 600);
+    const text = await callAIText(prompt, 600, undefined, "grading");
     fb.innerHTML = text
       ? `<div class="ai-result"><b>Feedback</b><div class="ai-result-body">${esc(text).replace(/\n/g,"<br>")}</div></div>`
       : `<div class="ai-result"><b>Feedback</b><div class="ai-result-body">No feedback returned — try again in a moment.</div></div>`;
@@ -11934,7 +11935,7 @@ Return ONLY a JSON object with this exact shape, no other text:
   "endorsement": "one of exactly: 'Highly Endorsed', 'Endorsed', 'Specific Area to Improve', 'Not Yet Endorsed'"
 }`;
   try{
-    const review = await callAIJson(prompt, 700);
+    const review = await callAIJson(prompt, 700, undefined, "grading");
     review.generatedAt = new Date().toISOString();
     rec.aiReview = review;
     await sharedSet("trainee:"+traineeId, rec);
@@ -12038,7 +12039,7 @@ async function draftDayFeedback(id, dayId, silent){
   const ev = dayEvidence(rec, work, dayId);
   if(!ev.active){ if(!silent) toast(`No ${ftName(dayId)} activity to review yet.`); return; }
   const prompt = feedbackPrompt(rec, ev, dayId);
-  const fb = await callAIJson(prompt, 1600, 120000);
+  const fb = await callAIJson(prompt, 1600, 120000, "trainer");
   if(!fb || typeof fb!=="object" || !fb.summary) throw new Error("the reply didn't include a summary — try again");
   return finishDraft(id, work, dayId, fb, silent);
 }
@@ -12143,7 +12144,7 @@ async function autoReviewDay(dayId, loud){
     const snap = await sharedGet("progress:"+state.traineeId);
     const work = {snap: snap&&snap.data || {}, feedback: fbAll};
     const ev = dayEvidence(rec, work, dayId); if(!ev.active) return;
-    const fb = await callAIJson(feedbackPrompt(rec, ev, dayId), 1600, 120000);
+    const fb = await callAIJson(feedbackPrompt(rec, ev, dayId), 1600, 120000, "trainer");
     if(!fb || !fb.summary){ if(loud) throw new Error("the reply didn't include a review — try again"); return; }
     const latest = (await sharedGet("feedback:"+state.traineeId)) || {days:{}};  // re-read to avoid clobbering a trainer edit
     latest.days = latest.days || {};
@@ -12517,7 +12518,7 @@ CLIENT CONTEXT:
 ${CLIENT_DOSSIER_MD}
 Write a short (2-4 sentence), realistic incoming request or situation — the kind that would actually land on an EA/PA's desk — that specifically requires applying one or more of today's topics correctly. Return ONLY the task text itself, nothing else — no preamble, no explanation, no quotation marks around it.`;
   try{
-    const task = await callAIText(prompt, 400, 150000);
+    const task = await callAIText(prompt, 400, 150000, "trainer");
     const mins = parseInt((document.getElementById("surpriseTaskDuration")||{}).value, 10) || 30;
     const now = Date.now();
     const prev = await sharedGet("surprise-task-day"+dayId).catch(()=>null);
@@ -12845,7 +12846,7 @@ async function studioTestAI(){
   studioShow("Testing the AI connection…");
   const t0 = Date.now();
   try{
-    const out = await callAIText("Reply with exactly: OK", 10, 30000);
+    const out = await callAIText("Reply with exactly: OK", 10, 30000, "trainer");
     studioShow(`✅ AI connection works (${((Date.now()-t0)/1000).toFixed(1)}s, reply: "${out.slice(0,20)}"). The Studio buttons will draft content.`);
   }catch(e){ studioShow(studioResultMessage("test", {ok:0, failed:1, errors:[e.message||String(e)]})); }
 }
@@ -12860,7 +12861,7 @@ async function studioDraftExpansions(dayId){
   if(!todo.length){ studioShow("Every topic already has an explanation — see the list below."); return; }
   studioShow(`Drafting explanations… 0/${todo.length} (about 15–40 seconds each, 2 at a time)`);
   const res = await runPool(todo, async (l)=>{
-    const sec = await callAIJson(expansionPrompt(d, l), 2500, 120000);
+    const sec = await callAIJson(expansionPrompt(d, l), 2500, 120000, "trainer");
     if(!sec || typeof sec!=="object" || !(sec.introduction || sec.explanation)) throw new Error("the reply was missing the expected sections");
     bundle[l.h] = {sections:sec, status:"draft", at:new Date().toISOString()};
     await studioSave("lessonx:day"+dayId, bundle);
@@ -12883,7 +12884,7 @@ async function studioRegenerateExpansion(dayId, title){
   const d = DAYS.find(x=>x.id===dayId); const l = d.lessons.find(x=>x.h===title); if(!l) return;
   studioProgress("Rewriting…");
   try{
-    const sec = await callAIJson(expansionPrompt(d, l), 1800, 90000);
+    const sec = await callAIJson(expansionPrompt(d, l), 1800, 90000, "trainer");
     state.lessonExp[dayId][title] = {sections:sec, status:"draft", at:new Date().toISOString()};
     await studioSave("lessonx:day"+dayId, state.lessonExp[dayId]); render();
   }catch(e){ studioProgress("Couldn't rewrite — try again."); }
@@ -12894,7 +12895,7 @@ async function studioProposeTopics(dayId){
   if(n <= 0){ toast(`${ftName(dayId)} already has ${TARGET_TOPICS} topics (including drafts).`); return; }
   studioProgress(`Proposing ${n} new topics…`);
   try{
-    const list = await callAIJson(proposeTopicsPrompt(d, n), 2000, 90000);
+    const list = await callAIJson(proposeTopicsPrompt(d, n), 2000, 90000, "trainer");
     state.studioProposals = {dayId, items:(Array.isArray(list)?list:[]).slice(0,n)};
     state.studioMsg = ""; render();
   }catch(e){ studioShow(studioResultMessage("topics", {ok:0, failed:1, errors:[e.message]})); }
@@ -12906,7 +12907,7 @@ async function studioDraftSelectedTopics(dayId){
   const list = state.extraLessons[dayId] = state.extraLessons[dayId] || [];
   studioShow(`Drafting new lessons… 0/${picks.length}`);
   const res = await runPool(picks, async (title)=>{
-    const lesson = await callAIJson(newLessonPrompt(d, title), 2200, 120000);
+    const lesson = await callAIJson(newLessonPrompt(d, title), 2200, 120000, "trainer");
     if(!lesson || !lesson.fourPart) throw new Error("the reply wasn't a complete lesson");
     lesson.h = title; lesson.status = "draft"; list.push(lesson); await studioSave("extralessons:day"+dayId, {lessons:list});
   }, 1, (n,t,rs)=>studioShow(`Drafting new lessons… ${n}/${t}${rs.failed?` (${rs.failed} failed so far)`:""}`));
@@ -12943,7 +12944,7 @@ async function studioDraftQuiz(dayId){
   if(!todo.length){ studioShow("Every published new topic already has Knowledge Check questions."); return; }
   studioShow(`Drafting questions… 0/${todo.length}`);
   const res = await runPool(todo, async (l)=>{
-    const qs = await callAIJson(quizPrompt(d, l), 1400, 90000);
+    const qs = await callAIJson(quizPrompt(d, l), 1400, 90000, "trainer");
     const ok = (Array.isArray(qs)?qs:[]).filter(q=>q && q.q && Array.isArray(q.opts) && q.opts.length>=3 && Number.isInteger(q.a) && q.a>=0 && q.a<q.opts.length);
     if(!ok.length) throw new Error("the reply had no usable questions");
     ok.slice(0,2).forEach(q=>list.push({q:q.q, opts:q.opts.slice(0,4), a:q.a, r:q.r||"", forLesson:l.h, status:"draft"}));
@@ -13744,7 +13745,7 @@ Return ONLY a JSON array of exactly 5 objects — no preamble, no markdown fence
 {"from":"Name <email>", "subject":"...", "preview":"one sentence preview", "idealQuadrant":"1"}`;
   try{
     const results = [];
-    for(let k=0;k<themes.length;k+=2){ results.push(...await Promise.allSettled(themes.slice(k,k+2).map(t=>callAIJson(makePrompt(t), 1400, 60000)))); }
+    for(let k=0;k<themes.length;k+=2){ results.push(...await Promise.allSettled(themes.slice(k,k+2).map(t=>callAIJson(makePrompt(t), 1400, 60000, "chat")))); }
     const emails = results.filter(x=>x.status==="fulfilled" && Array.isArray(x.value)).flatMap(x=>x.value);
     if(emails.length < 10) throw new Error("only "+emails.length+" emails returned");
     // shuffle so themes are mixed like a real inbox
@@ -14036,7 +14037,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, stressed but not cartoonish, true to the personality established for whoever is speaking (Elias is blunt/direct; David Reyes is measured but exacting; a vendor or school contact is procedural but not unkind). If the EA has handled things well, you may show de-escalation. If they're vague or stall, apply more pressure.`;
   try{
-    const reply = await callAIText(prompt, 220);
+    const reply = await callAIText(prompt, 220, undefined, "chat");
     toolState.cr.chatHistory = toolState.cr.chatHistory.filter(m=>!m.pending);
     toolState.cr.chatHistory.push({role:"client", text: reply});
   }catch(e){
@@ -14244,7 +14245,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, stressed but not cartoonish, true to the personality established for whoever is speaking. If the EA has handled things well, you may show de-escalation. If they're vague, deflect blame, or stall, apply more pressure.`;
   try{
-    const reply = await callAIText(prompt, 220);
+    const reply = await callAIText(prompt, 220, undefined, "chat");
     toolState.c6cr.chatHistory = toolState.c6cr.chatHistory.filter(m=>!m.pending);
     toolState.c6cr.chatHistory.push({role:"client", text: reply});
   }catch(e){
@@ -14733,7 +14734,7 @@ async function runFm2Prompt(){
   el.innerHTML = `<div class="ai-loading">Running your prompt…</div>`;
   const executionPrompt = `${draft}\n\nHere is the text to work with:\n"${FM2_PROMPT_TASK.sourceText}"`;
   try{
-    const output = await callAIText(executionPrompt, 300);
+    const output = await callAIText(executionPrompt, 300, undefined, "chat");
     const report = await runRubricEvaluation(
       "Prompt Engineering — Turning a Messy Email into Action Bullets",
       `The trainee was asked to write a prompt that turns a messy client email into 3 clean bullet points (no more than 15 words per bullet, action items only) for an executive's morning briefing.`,
@@ -15537,7 +15538,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1417";
+var APP_BUILD = "ft-2026.09.28-1443";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15580,9 +15581,9 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=za"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1417"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1417"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1417"></script>
+<script src="/js/eapa-updates.js?v=zc"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1443"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1443"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1443"></script>
 </body>
 </html>
