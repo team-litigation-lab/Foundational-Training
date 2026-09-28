@@ -11665,7 +11665,14 @@ async function submitTraineeFeedback(){
 }
 Object.assign(window, {openTraineeFeedback, submitTraineeFeedback, tfbSetStar});
 function renderFeedbackDashCard(){
-  if(state.isAdmin) return "";
+  if(state.isAdmin){
+    /* Admin view: trainers read feedback rather than send it, so the card opens Admin → Trainee Feedback. */
+    return `<div class="card stat tfb-dash">
+    <div class="lbl">💬 Trainee feedback</div>
+    <div class="sub" style="margin:4px 0 10px;">Trainees rate the platform, lessons and facilitator from this card. See what they've sent.</div>
+    <div class="tfb-dash-actions"><button type="button" class="btn btn-primary btn-sm" onclick="state.adminTab='tfeedback'; goto('admin')">View trainee feedback →</button></div>
+  </div>`;
+  }
   if(!state.traineeId){
     /* Trainee view (admin preview) or signed out: show the card so trainers see it; sending needs a trainee sign-in. */
     const msg = state.adminPreview ? "Preview — trainees send feedback from this card." : "Sign in first to send feedback.";
@@ -16028,7 +16035,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1702";
+var APP_BUILD = "ft-2026.09.28-1708";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -16072,8 +16079,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=zf"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1702"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1702"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1702"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1708"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1708"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1708"></script>
 </body>
 </html>
