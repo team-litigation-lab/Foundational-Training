@@ -20,6 +20,8 @@
      actsub:<traineeId>       that trainee's answers + the trainer's feedback
      actup:<traineeId>:<act>  a file the trainee attached to an answer
      actadmin:rubrics         trainer-only notes on what a strong answer includes
+     actadmin:scoring         trainer-only scored rubrics per activity: criteria with 5→1 descriptors,
+                              plus a graded example the AI copies the scoring and wording from
      settings:feedback-style  the learned facilitator voice (everyone reads, admin writes)
      admin:fbstyle-samples    the raw feedback examples it was learned from (admin only)
    ============================================================ */
@@ -53,6 +55,54 @@ function daFormat(t){
       return "<p>" + lines.join("<br>") + "</p>";
     }).join("");
 }
+/* ---------- scored rubrics ----------
+   A rubric is pasted straight from a Word/Docs table (cells arrive tab-separated):
+     Criteria | Excellent (5pts) | Good (4pts) | Satisfactory (3pts) | Needs Improvement (2pts) | Poor (1pt)
+   A graded example is the trainer's own evaluation of one real answer:
+     Criteria | Score | Evaluation      (e.g. "2. Stages of a PI Claim | 4/5 | Demonstrated…")
+   Feedback then carries scores:[{criterion, score, evaluation}], total, max and finalRating
+   (total ÷ number of criteria, out of 5). */
+function daTsv(text){
+  const rows = [[]]; let cell = "", q = false; const t = String(text || "").replace(/\r\n?/g, "\n");
+  for(let i = 0; i < t.length; i++){
+    const c = t[i];
+    if(q){ if(c === '"' && t[i + 1] === '"'){ cell += '"'; i++; } else if(c === '"') q = false; else cell += c; continue; }
+    if(c === '"' && cell === "") q = true;
+    else if(c === "\t"){ rows[rows.length - 1].push(cell); cell = ""; }
+    else if(c === "\n"){ rows[rows.length - 1].push(cell); cell = ""; rows.push([]); }
+    else cell += c;
+  }
+  rows[rows.length - 1].push(cell);
+  return rows.map(r => r.map(x => x.replace(/\s+/g, " ").trim())).filter(r => r.some(Boolean));
+}
+const daCritName = (x) => String(x || "").replace(/^\s*\d+\s*[.)]\s*/, "").trim();
+function daParseRubric(text){
+  return daTsv(text).filter(r => r.length >= 3 && !/^(criteria|criterion)$/i.test(r[0]) && !/\(\s*\d+\s*pts?\s*\)/i.test(r[1] || ""))
+    .map(r => ({name: daCritName(r[0]), levels: [5, 4, 3, 2, 1].map((pt, i) => r[i + 1] || "")})).filter(c => c.name);
+}
+function daParseExample(text, criteria){
+  const out = [];
+  daTsv(text).forEach(r => {
+    if(r.length < 2 || /^(criteria|criterion)$/i.test(r[0])) return;
+    const m = String(r[1]).match(/^(\d)(?:\s*\/\s*5)?$/); if(!m) return;
+    out.push({criterion: daCritName(r[0]), score: +m[1], evaluation: r.slice(2).join(" ").trim()});
+  });
+  return out.filter(x => x.evaluation).slice(0, (criteria || []).length || 20);
+}
+function daScoreTotals(scores){
+  const n = scores.length, total = scores.reduce((a, x) => a + (Number(x.score) || 0), 0);
+  return {total, max: n * 5, finalRating: n ? Math.round(total / n * 100) / 100 : 0};
+}
+const daRatingFromScore = (r) => r >= 4.5 ? "Strong" : r >= 3.5 ? "On Track" : "Needs Support";
+function daScoring(actId){ const sc = (daState().scoring || {})[actId]; return sc && (sc.criteria || []).length ? sc : null; }
+function daScoresTable(fb){
+  const t = daScoreTotals(fb.scores);
+  return `<table class="da-score"><thead><tr><th>Criteria</th><th>Score</th><th>Evaluation</th></tr></thead><tbody>
+    ${fb.scores.map((x, i) => `<tr><td><b>${i + 1}. ${esc(x.criterion)}</b></td><td class="da-score-n">${Number(x.score) || 0}/5</td><td>${esc(x.evaluation || "")}</td></tr>`).join("")}
+    </tbody></table>
+    <div class="da-score-tot"><span>Total Score: <b>${t.total}/${t.max}</b></span><span>Final Rating: <b>${t.finalRating.toFixed(2)}/5.00</b></span></div>`;
+}
+
 function daReadFile(file){
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error("Couldn't read " + file.name)); r.readAsDataURL(file); });
 }
@@ -147,7 +197,7 @@ function renderActivityDetail(a, dayId){
 function daFeedbackCard(fb, title){
   const list = (h, arr) => (arr || []).length ? `<div class="da-fb-l"><b>${h}</b><ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
   return `<div class="card da-fb"><div class="da-fb-h"><span>💬 ${esc(title)}</span>${fb.rating ? `<span class="pill ${fb.rating === "Strong" ? "pill-done" : fb.rating === "Needs Support" ? "pill-locked" : "pill-open"}">${esc(fb.rating)}</span>` : ""}</div>
-    ${fb.summary ? `<p>${esc(fb.summary)}</p>` : ""}${list("What worked", fb.strengths)}${list("Not yet — build on this", fb.areasToBuild)}${list("Next steps", fb.nextSteps)}
+    ${fb.summary ? `<p>${esc(fb.summary)}</p>` : ""}${(fb.scores || []).length ? daScoresTable(fb) : ""}${list("What worked", fb.strengths)}${list("Not yet — build on this", fb.areasToBuild)}${list("Next steps", fb.nextSteps)}
     ${fb.sentAt ? `<div class="da-note">Sent ${fmtDate(fb.sentAt)}</div>` : ""}</div>`;
 }
 let daDraftTimer = null;
@@ -208,7 +258,11 @@ function renderAdminActivities(){
 window.renderAdminActivities = renderAdminActivities;
 function daAdminSub(t){ const s = daState(); s.adminSub = t; if(t === "review" && !s.review) daLoadReview(); render(); }
 window.daAdminSub = daAdminSub;
-async function daLoadRubrics(){ const s = daState(); try{ s.rubrics = (await sharedGet("actadmin:rubrics")) || {}; }catch(e){ s.rubrics = s.rubrics || {}; } }
+async function daLoadRubrics(){
+  const s = daState();
+  try{ s.rubrics = (await sharedGet("actadmin:rubrics")) || {}; }catch(e){ s.rubrics = s.rubrics || {}; }
+  try{ s.scoring = (await sharedGet("actadmin:scoring")) || {}; }catch(e){ s.scoring = s.scoring || {}; }
+}
 
 function renderDaManage(){
   const s = daState(), dayId = s.adminDay, acts = daActs(dayId), e = s.edit;
@@ -240,14 +294,36 @@ function renderDaForm(e){
       <label class="da-check">Batch <input type="text" id="daf_batch" list="daf_batches" value="${esc(e.batch || "")}" placeholder="All batches" style="width:180px;margin-left:6px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13px;"></label>
       <datalist id="daf_batches">${[...new Set((state.adminData || []).map(r => r.batch).filter(Boolean))].map(b => `<option value="${esc(b)}">`).join("")}</datalist></div>
     <label>What a strong answer includes <span>(private — for your review and the AI draft; trainees never see this)</span><textarea id="daf_rubric" rows="5">${esc(e.rubric || "")}</textarea></label>
+    <details class="da-scoring" ${e.scoringText ? "open" : ""}><summary><b>📊 Scored rubric</b> <span class="da-note">(optional, private — score each criterion out of 5, like your rubric documents)</span></summary>
+      <p class="da-note">Copy your rubric table from Word or Google Docs and paste it here (or upload it as .txt/.tsv): one row per criterion — the criterion, then what earns 5, 4, 3, 2 and 1 points. Then paste one evaluation you wrote (Criteria · Score · Evaluation): the AI scores every new submission the same way and writes each evaluation in that style.</p>
+      <label>Rubric table<textarea id="daf_scoring" rows="7" placeholder="Criteria&#9;Excellent (5pts)&#9;Good (4pts)&#9;Satisfactory (3pts)&#9;Needs Improvement (2pts)&#9;Poor (1pt)&#10;1. Definition and Types&#9;Clear definition with at least 5 types…&#9;…">${esc(e.scoringText || "")}</textarea></label>
+      <label class="da-check" style="cursor:pointer;">⬆ Upload rubric (.txt / .tsv)<input type="file" accept=".txt,.tsv,.csv,text/plain" style="display:none" onchange="daLoadText(this,'daf_scoring')"></label>
+      <label>A graded example <span>(your evaluation of one real answer — remove the trainee's name)</span><textarea id="daf_example" rows="7" placeholder="Criteria&#9;Score&#9;Evaluation&#10;1. Definition &amp; Types&#9;5/5&#9;Provided an accurate definition…">${esc(e.exampleText || "")}</textarea></label>
+      <label class="da-check" style="cursor:pointer;">⬆ Upload graded example (.txt / .tsv)<input type="file" accept=".txt,.tsv,.csv,text/plain" style="display:none" onchange="daLoadText(this,'daf_example')"></label>
+      <div id="daf_scoring_preview">${daScoringPreview(e)}</div>
+    </details>
     <div style="display:flex;gap:10px;margin-top:12px;"><button class="btn btn-primary" id="dafSave" onclick="daSaveActivity()">${e.id ? "Save changes" : "Publish activity"}</button><button class="btn btn-ghost" onclick="daCancelEdit()">Cancel</button></div>
   </div>`;
 }
+function daScoringPreview(e){
+  const crit = daParseRubric(e.scoringText || ""), ex = daParseExample(e.exampleText || "", crit);
+  if(!crit.length) return e.scoringText ? `<p class="da-note" style="color:var(--danger);">No criteria found — paste the table with its cells separated by tabs (copying a Word table does this).</p>` : "";
+  const t = daScoreTotals(ex);
+  return `<p class="da-note"><b>${crit.length} criteria</b> · out of ${crit.length * 5}${ex.length ? ` · graded example: ${ex.length} evaluations, ${t.total}/${t.max} (${t.finalRating.toFixed(2)}/5.00)` : " · no graded example yet"}</p>
+    <ol class="da-crit">${crit.map(c => `<li><b>${esc(c.name)}</b> <span class="da-note">5: ${esc(c.levels[0].slice(0, 90))}${c.levels[0].length > 90 ? "…" : ""}</span></li>`).join("")}</ol>`;
+}
+async function daLoadText(input, target){
+  const f = input.files && input.files[0]; if(!f) return;
+  const el = document.getElementById(target); if(el){ el.value = await f.text(); daKeepForm(); const p = document.getElementById("daf_scoring_preview"); if(p) p.innerHTML = daScoringPreview(daState().edit); }
+}
+Object.assign(window, {daLoadText});
 function daAdminDay(d){ const s = daState(); s.adminDay = d; s.edit = null; render(); }
 function daEdit(id){
   const s = daState();
   const a = id ? daActs(s.adminDay).find(x => x.id === id) : null;
-  s.edit = a ? JSON.parse(JSON.stringify(Object.assign({}, a, {rubric:(s.rubrics || {})[a.id] || ""}))) : {id:null, title:"", instructions:"", response:{text:true, file:false}, files:[], rubric:"", visible:true, batch:""};
+  const sc = a ? (s.scoring || {})[a.id] : null;
+  s.edit = a ? JSON.parse(JSON.stringify(Object.assign({}, a, {rubric:(s.rubrics || {})[a.id] || "", scoringText:(sc && sc.rubricText) || "", exampleText:(sc && sc.exampleText) || ""})))
+    : {id:null, title:"", instructions:"", response:{text:true, file:false}, files:[], rubric:"", scoringText:"", exampleText:"", visible:true, batch:""};
   render(); setTimeout(() => { const f = document.getElementById("daForm"); if(f) f.scrollIntoView({behavior:"smooth", block:"start"}); }, 50);
 }
 function daCancelEdit(){ daState().edit = null; render(); }
@@ -255,6 +331,7 @@ function daKeepForm(){
   const s = daState(), e = s.edit; if(!e) return;
   const v = (id) => { const el = document.getElementById(id); return el ? el.value : ""; };
   e.title = v("daf_title"); e.instructions = v("daf_instr"); e.rubric = v("daf_rubric");
+  if(document.getElementById("daf_scoring")){ e.scoringText = v("daf_scoring"); e.exampleText = v("daf_example"); }
   e.response = {text:!!(document.getElementById("daf_text") || {}).checked, file:!!(document.getElementById("daf_file") || {}).checked};
   e.visible = !!(document.getElementById("daf_visible") || {}).checked; e.batch = v("daf_batch").trim();
 }
@@ -285,6 +362,12 @@ async function daSaveActivity(){
     await daSaveDay(dayId, items);
     s.rubrics = s.rubrics || {}; if(e.rubric.trim()) s.rubrics[act.id] = e.rubric.trim(); else delete s.rubrics[act.id];
     await sharedSet("actadmin:rubrics", s.rubrics);
+    s.scoring = s.scoring || {};
+    const crit = daParseRubric(e.scoringText || "");
+    if(e.scoringText && e.scoringText.trim() && !crit.length) throw new Error("the scored rubric has no criteria — paste the table with tab-separated cells");
+    if(crit.length) s.scoring[act.id] = {criteria:crit, example:daParseExample(e.exampleText || "", crit), rubricText:e.scoringText.trim(), exampleText:(e.exampleText || "").trim(), updatedAt:new Date().toISOString()};
+    else delete s.scoring[act.id];
+    if(!(await sharedSet("actadmin:scoring", s.scoring))) throw new Error("the scored rubric couldn't be saved");
     s.edit = null; toast(act.visible ? `Saved — trainees${act.batch ? " in " + act.batch : ""} see it under 📝 Activities.` : "Saved as hidden — tick Visible to trainees when it's time."); render();
   }catch(err){ showActionError(err, "Saving the activity"); if(btn){ btn.disabled = false; btn.textContent = "Publish activity"; } }
 }
@@ -361,6 +444,7 @@ function renderDaReviewRow(r){
     <details ${st === "sent" ? "" : "open"}><summary>Answer</summary><div class="da-rev-a">${r.sub.answer ? esc(r.sub.answer).replace(/\n/g, "<br>") : "<i>(no written answer)</i>"}</div>
       ${r.sub.file ? `<button class="btn btn-ghost btn-sm" onclick="daDownload('actup:${esc(r.tid)}:${r.aid}')">📎 ${esc(r.sub.file.name)}</button>` : ""}</details>
     <div class="da-rev-f">
+      ${daScoring(r.aid) ? daScoreEditor(r, id) : ""}
       <label>Rating <select id="dar_${id}_rating">${["Strong", "On Track", "Needs Support"].map(x => `<option ${fb.rating === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>
       <label>Summary<textarea id="dar_${id}_summary" rows="3">${esc(fb.summary || "")}</textarea></label>
       <div class="da-rev-3">
@@ -376,7 +460,58 @@ function renderDaReviewRow(r){
     </div>
   </div>`;
 }
+// The per-criterion editor on a review (scored rubric activities).
+function daScoreEditor(r, id){
+  const sc = daScoring(r.aid), fb = r.sub.feedback || {}, have = fb.scores || [];
+  const rows = sc.criteria.map((c, i) => { const x = have.find(y => y.criterion === c.name) || have[i] || {};
+    return `<tr><td><b>${i + 1}. ${esc(c.name)}</b><details class="da-desc"><summary>descriptors</summary>${c.levels.map((l, j) => `<div><b>${5 - j}</b> ${esc(l)}</div>`).join("")}</details></td>
+      <td><select id="dar_${id}_s${i}" onchange="daScoreTotal('${id}', ${sc.criteria.length})">${[5, 4, 3, 2, 1].map(n => `<option ${Number(x.score) === n ? "selected" : ""}>${n}</option>`).join("")}${x.score == null ? `<option value="" selected>–</option>` : ""}</select> /5</td>
+      <td><textarea id="dar_${id}_e${i}" rows="3">${esc(x.evaluation || "")}</textarea></td></tr>`; }).join("");
+  const t = daScoreTotals(have);
+  return `<div class="da-score-edit"><b>📊 Rubric scores</b>
+    <table class="da-score"><thead><tr><th>Criteria</th><th>Score</th><th>Evaluation</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="da-score-tot" id="dar_${id}_tot">${have.length ? `<span>Total Score: <b>${t.total}/${t.max}</b></span><span>Final Rating: <b>${t.finalRating.toFixed(2)}/5.00</b></span>` : `<span class="da-note">Draft with AI or score each criterion.</span>`}</div></div>`;
+}
+function daScoreTotal(id, n){
+  const scores = Array.from({length:n}, (_, i) => ({score: Number((document.getElementById(`dar_${id}_s${i}`) || {}).value) || 0}));
+  const t = daScoreTotals(scores), el = document.getElementById(`dar_${id}_tot`);
+  if(el) el.innerHTML = `<span>Total Score: <b>${t.total}/${t.max}</b></span><span>Final Rating: <b>${t.finalRating.toFixed(2)}/5.00</b></span>`;
+  const sel = document.getElementById(`dar_${id}_rating`); if(sel) sel.value = daRatingFromScore(t.finalRating);
+}
+window.daScoreTotal = daScoreTotal;
 function daRow(tid, aid){ return (daState().review || []).find(r => r.tid === tid && r.aid === aid); }
+// With a scored rubric: score every criterion like the trainer's graded example, in the same voice.
+function daScoredPrompt(r, sc){
+  const f = daFindAct(r.aid), a = f ? f.act : {title:"", instructions:""}, notes = (daState().rubrics || {})[r.aid] || "";
+  const ex = sc.example || [], exT = daScoreTotals(ex);
+  return `You are the facilitator at Legal Support Help (LSH) scoring one trainee's submission against a rubric, exactly the way you scored the graded example below.
+
+ACTIVITY (Day ${f ? f.dayId : "?"}): ${a.title}
+INSTRUCTIONS GIVEN TO THE TRAINEE:
+${String(a.instructions || "(see attached file)").slice(0, 3500)}
+${notes ? `\nWHAT A STRONG ANSWER INCLUDES (private notes):\n${notes.slice(0, 2500)}\n` : ""}
+RUBRIC — score each criterion 1–5 using these descriptors:
+${sc.criteria.map((c, i) => `${i + 1}. ${c.name}\n   5: ${c.levels[0]}\n   4: ${c.levels[1]}\n   3: ${c.levels[2]}\n   2: ${c.levels[3]}\n   1: ${c.levels[4]}`).join("\n")}
+${ex.length ? `
+GRADED EXAMPLE — how you scored and wrote about another trainee's answer (total ${exT.total}/${exT.max}). Match its scoring standard, sentence style and length; do not copy its content:
+${ex.map((x, i) => `${i + 1}. ${x.criterion} — ${x.score}/5: ${x.evaluation}`).join("\n")}
+` : ""}
+HOW TO WRITE EACH EVALUATION (the facilitator's style):
+- 2–4 sentences, speaking to the trainee as "you"; open with what they did, e.g. "Provided…", "Demonstrated…", "Identified…", "Gave…".
+- Be specific: name the facts, figures and points they got right, taken from their answer.
+- For any point off, say exactly what was missing or combined (e.g. "you omitted the separate investigation stage"). A 5/5 needs no criticism.
+- For writing/clarity, quote actual typos in quotation marks and say whether they affect understanding.
+- For completeness/effort, name the notable omissions from the other criteria.
+- Score strictly by the descriptors and only on what they submitted; never invent content. If a criterion isn't addressed, score it low and say so.
+
+TRAINEE: ${daTraineeName(r.tid)}
+THEIR SUBMISSION:
+${String(r.sub.answer || "(no written answer)").slice(0, 9000)}${r.sub.file ? `\n(They also attached a file, "${r.sub.file.name}". You can't see its contents — score only the written answer and mention that the trainer will look at the file.)` : ""}
+
+Return ONLY JSON (no markdown):
+{"scores":[${sc.criteria.map(c => `{"criterion":${JSON.stringify(c.name)},"score":1-5,"evaluation":"…"}`).join(",")}],
+ "summary":"1-2 sentences on the overall result"}` + fbStyleBlock();
+}
 function daActivityPrompt(r){
   const f = daFindAct(r.aid), a = f ? f.act : {title:"", instructions:""}, rubric = (daState().rubrics || {})[r.aid] || "";
   return `You are the facilitator at Legal Support Help (LSH) reviewing one trainee's submission for a daily training activity. Write specific, honest, encouraging feedback based ONLY on what they submitted — never invent work they didn't do. If the answer is thin or off-task, say so kindly and clearly.
@@ -405,10 +540,22 @@ async function daDraft(tid, aid, quiet){
   const btn = document.getElementById(`dar_${daRowId(r)}_ai`); if(btn){ btn.disabled = true; btn.textContent = "✨ Drafting…"; }
   try{
     await fbEnsureStyle();
-    const fb = await callAIJson(daActivityPrompt(r), 900, 90000, "trainer");
-    const clean = {rating:["Strong", "On Track", "Needs Support"].includes(fb.rating) ? fb.rating : "On Track", summary:String(fb.summary || ""),
-      strengths:(fb.strengths || []).map(String), areasToBuild:(fb.areasToBuild || []).map(String), nextSteps:(fb.nextSteps || []).map(String),
-      status:"draft", auto:true, draftedAt:new Date().toISOString()};
+    const sc = daScoring(aid);
+    let clean;
+    if(sc){
+      const fb = await callAIJson(daScoredPrompt(r, sc), 2200, 120000, "trainer");
+      const got = Array.isArray(fb.scores) ? fb.scores : [];
+      const scores = sc.criteria.map((c, i) => { const x = got.find(y => daCritName(y.criterion).toLowerCase() === c.name.toLowerCase()) || got[i] || {};
+        const n = Math.round(Number(x.score)); return {criterion:c.name, score: n >= 1 && n <= 5 ? n : 1, evaluation:String(x.evaluation || "")}; });
+      const t = daScoreTotals(scores);
+      clean = {rating:daRatingFromScore(t.finalRating), summary:String(fb.summary || ""), scores, total:t.total, max:t.max, finalRating:t.finalRating,
+        strengths:[], areasToBuild:[], nextSteps:[], status:"draft", auto:true, draftedAt:new Date().toISOString()};
+    } else {
+      const fb = await callAIJson(daActivityPrompt(r), 900, 90000, "trainer");
+      clean = {rating:["Strong", "On Track", "Needs Support"].includes(fb.rating) ? fb.rating : "On Track", summary:String(fb.summary || ""),
+        strengths:(fb.strengths || []).map(String), areasToBuild:(fb.areasToBuild || []).map(String), nextSteps:(fb.nextSteps || []).map(String),
+        status:"draft", auto:true, draftedAt:new Date().toISOString()};
+    }
     await daWriteFeedback(tid, aid, clean);
     if(!quiet){ toast("Draft ready — review and edit it, then send."); render(); }
   }catch(e){ if(quiet) throw e; showActionError(e, "Drafting feedback"); if(btn){ btn.disabled = false; btn.textContent = "✨ Draft with AI"; } }
@@ -437,7 +584,13 @@ async function daSaveFeedback(tid, aid, send){
   const id = daRowId(r), g = (k) => { const el = document.getElementById(`dar_${id}_${k}`); return el ? el.value : ""; };
   const lines = (k) => g(k).split("\n").map(x => x.replace(/^[-•\s]+/, "").trim()).filter(Boolean);
   const fb = Object.assign({}, r.sub.feedback || {}, {rating:g("rating"), summary:g("summary").trim(), strengths:lines("strengths"), areasToBuild:lines("areas"), nextSteps:lines("next"), editedByTrainer:true});
-  if(!fb.summary && !fb.strengths.length && !fb.areasToBuild.length){ toast("Write at least a summary, a strength or an area to build."); return; }
+  const sc = daScoring(aid);
+  if(sc){
+    const scores = sc.criteria.map((c, i) => ({criterion:c.name, score:Number(g("s" + i)) || 0, evaluation:g("e" + i).trim()}));
+    if(scores.some(x => !x.score)){ toast("Give every criterion a score from 1 to 5."); return; }
+    Object.assign(fb, {scores}, daScoreTotals(scores));
+  }
+  if(!fb.summary && !fb.strengths.length && !fb.areasToBuild.length && !(fb.scores || []).some(x => x.evaluation)){ toast("Write at least a summary, a strength, an area to build or a criterion evaluation."); return; }
   if(send){ fb.status = "sent"; fb.sentAt = new Date().toISOString(); } else if(fb.status !== "sent") fb.status = "draft";
   try{ await daWriteFeedback(tid, aid, fb); toast(send ? "Sent — the trainee sees it under 📝 Activities." : "Draft saved."); render(); }
   catch(e){ showActionError(e, "Saving feedback"); render(); }
@@ -484,7 +637,8 @@ setInterval(() => { if(state.traineeId || state.isAdmin) fbEnsureStyle(true); },
 
 function fbSampleText(fb){
   const part = (h, arr) => (arr || []).length ? `${h}\n${arr.map(x => "- " + x).join("\n")}` : "";
-  return [fb.summary, part("Strengths:", fb.strengths), part("Areas to build:", fb.areasToBuild), part("Next focus:", fb.nextDayFocus || fb.nextSteps)].filter(Boolean).join("\n").trim();
+  const scored = (fb.scores || []).filter(x => x.evaluation).map(x => `${x.criterion} — ${x.score}/5: ${x.evaluation}`).join("\n");
+  return [fb.summary, scored, part("Strengths:", fb.strengths), part("Areas to build:", fb.areasToBuild), part("Next focus:", fb.nextDayFocus || fb.nextSteps)].filter(Boolean).join("\n").trim();
 }
 async function fbLoadSamples(){ const s = daState(); try{ s.fbSamples = (await sharedGet("admin:fbstyle-samples")) || {items:[]}; }catch(e){ s.fbSamples = s.fbSamples || {items:[]}; } }
 function renderAdminFeedbackStyle(){
@@ -610,6 +764,13 @@ Object.assign(window, {fbAddPasted, fbUpload, fbRemove, fbImport, fbLearn, fbTog
 .da-answer{padding:18px 22px;margin-bottom:14px;} .da-textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:12px;border:1px solid var(--line);border-radius:10px;min-height:200px;}
 .da-upload{margin-top:12px;font-size:14px;} .da-note{font-size:12.5px;color:var(--ink-soft);}
 .da-fb{padding:16px 20px;margin-bottom:14px;border-left:4px solid var(--orange);} .da-fb p{margin:6px 0 8px;font-size:14.5px;}
+.da-score{width:100%;border-collapse:collapse;margin:8px 0;font-size:13.5px;} .da-score th,.da-score td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+.da-score th{background:#F4F6FB;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);} .da-score td:first-child{width:28%;} .da-score-n{white-space:nowrap;font-weight:800;color:var(--navy);width:70px;}
+.da-score textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;} .da-score select{font:inherit;padding:3px 6px;}
+.da-score-tot{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin:6px 0 10px;} .da-score-tot b{color:var(--navy);}
+.da-score-edit{margin-bottom:12px;} .da-desc{font-weight:500;font-size:12px;color:var(--ink-soft);margin-top:4px;} .da-desc summary{cursor:pointer;} .da-desc div{margin:3px 0;}
+.da-scoring{margin:6px 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;} .da-scoring summary{cursor:pointer;}
+.da-crit{margin:4px 0 0 18px;padding:0;font-size:13px;} .da-crit li{margin:2px 0;}
 .da-fb-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800;color:var(--navy);} .da-fb-l{font-size:14px;} .da-fb-l ul{margin:4px 0 8px;padding-left:22px;}
 .da-prev{margin-bottom:14px;} .da-prev summary{cursor:pointer;font-weight:700;color:var(--navy);margin-bottom:8px;}
 .da-subtabs,.da-review-bar,.da-daychips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
