@@ -24,7 +24,7 @@ const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const TOOLS = {
   drill:    {icon:"☎️", name:"Front Desk Drill (CMS)", cms:"drill=1", desc:"Scored incoming calls on the Training Library cases: find the file, verify the caller, handle or route the call."},
   library:  {icon:"📚", name:"Training Library (all 20 cases)", cms:"library=1", desc:"Every mock case in the CMS, with the firm directory and front-desk rules."},
-  call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"More call practice: a caller phones in; you answer by voice or typing, then get a scored debrief."},
+  call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"This mock call's calls on the same cases: a caller phones in, you answer by voice or typing, write the note, and get a scored debrief."},
   calendar: {icon:"📅", name:"Calendaring Simulator", page:"calendar.html", desc:"More practice: a week of scheduling requests to put on the calendar, checked for conflicts and details."}
 };
 
@@ -92,10 +92,11 @@ function keyHref(key, a){
   if(/^MC-\d+$/.test(key)) return CMS + "?" + new URLSearchParams({program:a.cms, mock:key});
   const t = TOOLS[key];
   if(t.cms) return CMS + "?program=" + (key==="drill" ? "reception" : a.cms) + "&" + t.cms;
-  return portalHref(t.page);
+  return portalHref(t.page, key==="call" ? a.title : "");
 }
-function portalHref(page){
+function portalHref(page, line){
   const q = new URLSearchParams({program:"FT"});
+  if(line) q.set("line", line);   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
   if(isTrainee()){
     const name = state.certName || state.traineeName;
     if(name) q.set("name", name);
