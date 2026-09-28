@@ -1,6 +1,7 @@
 const DAY9 = {
   id: 9,
   title: "Lien Negotiator Training",
+  video: "https://drive.google.com/file/d/1Kc6H6thd7wa0LRr20UFiQpi08HyEDV8R/view",
   heading: "Lien Negotiator Training",
   sections: [
     {

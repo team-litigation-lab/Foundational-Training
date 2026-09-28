@@ -1,6 +1,7 @@
 const DAY1 = {
   id: 1,
   title: "Virtual Assistant Essentials",
+  video: "https://drive.google.com/file/d/1aMGZdIwGh3uY4TdsHFomNzkgK4kRdiNr/view",
   heading: "Virtual Assistant Essentials",
   sections: [
     {

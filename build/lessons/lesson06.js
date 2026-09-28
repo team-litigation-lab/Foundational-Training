@@ -1,6 +1,7 @@
 const DAY6 = {
   id: 6,
   title: "Intake Specialist Training",
+  video: "https://drive.google.com/file/d/1FPA2qhvFOe56b6A2Mcp-OFExqiaO-ZDH/view",
   heading: "Intake Specialist Training",
   sections: [
     {

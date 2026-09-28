@@ -1,6 +1,7 @@
 const DAY3 = {
   id: 3,
   title: "Personal Injury Process Flow",
+  video: "https://drive.google.com/file/d/1hRbuwwsTpccy0DCy7Rn90HZy_h8t4tbo/view",
   heading: "Personal Injury Process Flow",
   sections: [
     {

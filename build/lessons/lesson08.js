@@ -1,6 +1,7 @@
 const DAY8 = {
   id: 8,
   title: "Medical Records Specialist Training",
+  video: "https://drive.google.com/file/d/1Wdq-wNfxvAK1J7ovjbn_ON9CrkjAKCjd/view",
   heading: "Medical Records Specialist Training",
   sections: [
     {

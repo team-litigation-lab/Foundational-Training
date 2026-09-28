@@ -433,7 +433,7 @@ window.moduleCard = function(d){
       ${more>0 ? `<button type="button" class="module-more" onclick="event.stopPropagation(); showDayTopics(${d.id})">+ ${more} more <span>›</span></button>` : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
-    ${status==="open" && state.traineeId && !state.isAdmin ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="finishTrainingForDay(${d.id})">✓ Finish lesson</button>` : ""}
+    ${d.video && status!=="locked" ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>` : ""}
   </div>`;
 };
 window.renderDashboard = function(){
@@ -534,6 +534,12 @@ function lvReset(){
   const p = document.getElementById("lecture-viewer-pane"), doc = LV.kind === "doc";
   Object.assign(p.style, {top:"", left:"", transform:"", right:"24px", bottom:"24px", width: doc ? "820px" : "380px", height: doc ? "600px" : "250px", maxWidth:"", maxHeight:""});
 }
+// A lesson's video presentation (its AI Assisted Discussion video) plays in the pop-out viewer.
+// Lessons are finished from their last slide ("✓ Finish lesson").
+window.ftOpenVideo = function(id){
+  const d = DAYS.find(x=>x.id===id);
+  if(d && d.video) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:d.video});
+};
 function lvOpen(item){
   if(item.kind !== "doc" && !confirm(`Do you want to watch this ${item.kind==="lecture"?"lecture":"video"}?\n\n"${item.title}"`)) return;
   LV.kind = item.kind === "doc" ? "doc" : "video";

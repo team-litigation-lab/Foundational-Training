@@ -1,6 +1,7 @@
 const DAY5 = {
   id: 5,
   title: "Calendaring & Appointment Setting Training",
+  video: "https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/view",
   heading: "Calendaring & Appointment Setting Training",
   sections: [
     {

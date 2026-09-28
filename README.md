@@ -31,6 +31,8 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 Onboarding (`build/lessons/lesson00a.js`, id 10) and Setting of Expectations & Tech Set-up (`lesson00b.js`, id 11) are listed first but keep their own ids, so the lessons' ids, and the progress saved against them, don't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number (👋 and 🛠: these two aren't labelled with day numbers). Day 0's facilitator lines ("Note 1:"–"Note 7:") are trainer-only (`d0:*` in `trainer/notes.json`), the Gmail log-in isn't on the platform, and its screenshots are in `ft/day0/img/`.
 
+Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer once the lesson is open. Lessons are finished from their last slide (✓ Finish lesson).
+
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
 ## Daily Task Tracker

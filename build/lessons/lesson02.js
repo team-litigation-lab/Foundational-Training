@@ -1,6 +1,7 @@
 const DAY2 = {
   id: 2,
   title: "Law Firm Communication",
+  video: "https://drive.google.com/file/d/1o3LYojKAhid10ovts_umxhbWxb2j5i6l/view",
   heading: "Law Firm Communication",
   sections: [
     {
