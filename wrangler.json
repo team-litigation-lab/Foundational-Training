@@ -6,13 +6,27 @@
     "directory": ".",
     "binding": "ASSETS"
   },
-  "triggers": { "crons": ["0 2 * * *"] },
+  "triggers": {
+    "crons": [
+      "0 2 * * *"
+    ]
+  },
   "kv_namespaces": [
-    { "binding": "LSH_KV", "id": "b121aa911590471bbad351d03274d7f4" }
+    {
+      "binding": "LSH_KV",
+      "id": "b121aa911590471bbad351d03274d7f4"
+    }
   ],
   "previews": {
     "kv_namespaces": [
-      { "binding": "LSH_KV", "id": "2ce4c84d609f46799ac9fbe480e1d372" }
+      {
+        "binding": "LSH_KV",
+        "id": "2ce4c84d609f46799ac9fbe480e1d372"
+      }
     ]
+  },
+  "placement": {
+    "mode": "targeted",
+    "region": "gcp:us-central1"
   }
 }
