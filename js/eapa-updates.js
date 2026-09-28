@@ -1309,6 +1309,9 @@ window.initColdCalling4 = function(body){
 .gm-lblhead button{border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:#444746;width:28px;height:28px;border-radius:50%;} .gm-lblhead button:hover{background:#e9eaed;}
 .gm-lbl{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;font:inherit;font-size:13.5px;color:#202124;height:30px;border-radius:0 16px 16px 0;cursor:pointer;text-align:left;padding-right:12px;}
 .gm-lbl:hover{background:#e9eaed;} .gm-lbl.on{background:#d3e3fd;font-weight:700;}
+.gm-lbl.dragover{background:#c2e7ff;box-shadow:inset 0 0 0 2px #0b57d0;}
+.gm-row.dragging{opacity:.45;}
+.gm-dragghost{position:fixed;top:-100px;left:-100px;padding:8px 14px;border-radius:8px;background:#202124;color:#fff;font:600 13px/1.2 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.3);}
 .gm-lbl i{width:10px;height:10px;border-radius:2px;flex-shrink:0;} .gm-lbl span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .gm-lbl em{font-style:normal;font-size:12px;color:#5f6368;}
 .gm-chip{display:inline-block;font-size:11.5px;font-weight:600;border-radius:4px;padding:1px 6px;margin-right:6px;color:#fff;vertical-align:1px;}
 .gm-dialog{position:absolute;inset:0;background:rgba(32,33,36,.45);display:flex;align-items:center;justify-content:center;z-index:40;}
@@ -1414,7 +1417,7 @@ window.renderEsimBody = function(body){
     toolState.gmRestoreTried = true;
     storeGet(GM_STORE).then(v=>{ if(v && v.inbox && v.inbox.length){ Object.assign(toolState.iz, v); if(toolState.iz.rush!=="done") toolState.iz.rush = "idle"; } gmRender(); gmMaybeRush(); });
   }
-  body.innerHTML = `<div class="gm-howto">This is Elias's real inbox. <b>File every email under a label</b> (create your own folders and nest sub-labels under them), then clear the Inbox with <b>one decision per email</b>: Reply or ⭐ Star = Do · 🕒 Snooze = Schedule · ↪ Forward = Delegate · Archive or 🗑 = Delete/Defer · 🚩 Report phishing. Reply to clients in <b>their</b> style (ACT: Acknowledge, Clarify, Timeline). More mail arrives while you work. Watch for anything suspicious.</div><div id="gmZone">${gmView()}</div>`;
+  body.innerHTML = `<div class="gm-howto">This is Elias's real inbox. <b>File every email under a label</b> (drag an email onto a label in the sidebar, or use the 🏷 Label button; create your own folders and nest sub-labels under them), then clear the Inbox with <b>one decision per email</b>: Reply or ⭐ Star = Do · 🕒 Snooze = Schedule · ↪ Forward = Delegate · Archive or 🗑 = Delete/Defer · 🚩 Report phishing. Reply to clients in <b>their</b> style (ACT: Acknowledge, Clarify, Timeline). More mail arrives while you work. Watch for anything suspicious.</div><div id="gmZone">${gmView()}</div>`;
 };
 function gmRender(){ const z = document.getElementById("gmZone"); if(z){ const hadFocus = document.activeElement && document.activeElement.id==="gmShell"; z.innerHTML = gmView(); if(hadFocus){ const s = document.getElementById("gmShell"); if(s) s.focus({preventScroll:true}); } } }
 function gmView(){
@@ -1443,7 +1446,7 @@ function gmView(){
         <button class="gm-compose" title="Not needed for this exercise" disabled>${GM_ICON.pencil} Compose</button>
         ${GM_FOLDERS.map(f=>`<button class="gm-folder ${f.sub?"two":""} ${iz.folder===f.id?"on":""}" onclick="gmFolder('${f.id}')">${GM_ICON[f.icon]}<span>${f.name}${f.sub?`<small>${f.sub}</small>`:""}</span><em>${f.id==="inbox" ? (unreadIn||"") : (counts[f.id]||"")}</em></button>`).join("")}
         <div class="gm-lblhead">Labels <button title="Create new label" onclick="gmNewLabel()">+</button></div>
-        ${gmLabelTree(null).map(({l,depth})=>`<button class="gm-lbl ${iz.folder==="label:"+l.id?"on":""}" style="padding-left:${16+depth*16}px" onclick="gmFolder('label:${l.id}')" title="${esc(gmLabelPath(l.id))}"><i style="background:${l.color||"#7C82A0"}"></i><span>${esc(l.name)}</span><em>${lblCount[l.id]||""}</em></button>`).join("")}
+        ${gmLabelTree(null).map(({l,depth})=>`<button class="gm-lbl ${iz.folder==="label:"+l.id?"on":""}" style="padding-left:${16+depth*16}px" onclick="gmFolder('label:${l.id}')" ondragover="gmDragOver(event)" ondragleave="this.classList.remove('dragover')" ondrop="gmDropLabel(event,'${l.id}')" title="${esc(gmLabelPath(l.id))}"><i style="background:${l.color||"#7C82A0"}"></i><span>${esc(l.name)}</span><em>${lblCount[l.id]||""}</em></button>`).join("")}
       </nav>
       <section class="gm-main">${open ? gmReaderHtml(open) : gmListHtml()}</section>
     </div>
@@ -1481,7 +1484,7 @@ function gmListHtml(){
   }else{
     body = rows.map((e,i)=>{
       const n = gmName(e.from), m = iz.meta[e.id], unread = !iz.read[e.id], live = !m;
-      return `<div class="gm-row ${unread?"unread":""} ${iz.focus===i?"focus":""} ${iz.sel[e.id]?"sel":""}" onclick="gmOpen('${e.id}')">
+      return `<div class="gm-row ${unread?"unread":""} ${iz.focus===i?"focus":""} ${iz.sel[e.id]?"sel":""}" onclick="gmOpen('${e.id}')" draggable="true" data-notap="1" ondragstart="gmDragStart(event,'${e.id}')" ondragend="gmDragEnd()">
         <input type="checkbox" class="gm-chk" ${iz.sel[e.id]?"checked":""} onclick="event.stopPropagation();gmSelect('${e.id}',this.checked)" aria-label="Select">
         <button class="gm-ib gm-star ${m && m.action==="star"?"on":""}" onclick="event.stopPropagation();${live?`gmAct(['${e.id}'],'star')`:""}" title="${live?"Star (Do now)":""}">${m && m.action==="star" ? GM_ICON.starOn : GM_ICON.star}</button>
         <div class="gm-from">${esc(n.name)}</div>
@@ -1605,6 +1608,32 @@ function gmSetLabel(labelId){
   iz.snack = labelId ? `${ids.length>1 ? ids.length+" conversations" : "Conversation"} labelled "${gmLabelPath(labelId)}".` : "Label removed.";
   clearTimeout(gmAct.t); gmAct.t = setTimeout(()=>{ gmIz().snack = null; gmRender(); }, 5000);
   gmSave(); gmRender();
+}
+// Drag an email (or every selected email, if the dragged one is selected) onto a label in the sidebar.
+function gmDragStart(ev, id){
+  const iz = gmIz();
+  const ids = iz.sel[id] ? gmVisible().filter(e=>iz.sel[e.id]).map(e=>e.id) : [id];
+  gmDragStart.ids = ids;
+  ev.dataTransfer.effectAllowed = "move";
+  ev.dataTransfer.setData("text/plain", ids.join(","));
+  const ghost = document.createElement("div");
+  ghost.className = "gm-dragghost";
+  ghost.textContent = `Move ${ids.length} conversation${ids.length>1?"s":""}`;
+  document.body.appendChild(ghost);
+  try{ ev.dataTransfer.setDragImage(ghost, 12, 12); }catch(e){}
+  setTimeout(()=>ghost.remove(), 0);
+  document.querySelectorAll(".gm-row").forEach(r=>{ if(ids.some(x=>r.getAttribute("onclick")===`gmOpen('${x}')`)) r.classList.add("dragging"); });
+}
+function gmDragEnd(){ gmDragStart.ids = null; document.querySelectorAll(".gm-row.dragging, .gm-lbl.dragover").forEach(el=>el.classList.remove("dragging","dragover")); }
+function gmDragOver(ev){ if(!gmDragStart.ids) return; ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; ev.currentTarget.classList.add("dragover"); }
+function gmDropLabel(ev, labelId){
+  ev.preventDefault();
+  const iz = gmIz();
+  const ids = gmDragStart.ids || String(ev.dataTransfer.getData("text/plain")||"").split(",").filter(id=>iz.inbox.some(e=>e.id===id));
+  gmDragEnd();
+  if(!ids.length || !gmLabel(labelId)) return;
+  iz.menu = {type:"label", ids};
+  gmSetLabel(labelId);
 }
 function gmNewLabel(fromMenu){ const iz = gmIz(); iz.dialog = {name:"", parent:null, applyTo: fromMenu && iz.menu ? iz.menu.ids : null}; iz.menu = null; gmRender(); setTimeout(()=>{ const i = document.getElementById("gmLblName"); if(i) i.focus(); }, 30); }
 function gmCloseDialog(){ gmIz().dialog = null; gmRender(); }
@@ -1766,7 +1795,7 @@ async function gmSubmit(){
 }
 async function izGenerateInbox(){ return gmRush(); }
 async function izSubmitSort(){ return gmSubmit(); }
-Object.assign(window, {izGenerateInbox, izSubmitSort, gmSubmit, gmRush, gmRestart, gmAct, gmUndo, gmToInbox, gmBulk, gmOpen, gmBack, gmUnread, gmFolder, gmSearch, gmSelect, gmSelectAll, gmMenu, gmLabelMenu, gmCloseMenu, gmSnooze, gmSetLabel, gmNewLabel, gmCloseDialog, gmCreateLabel, gmCompose, gmCloseCompose, gmSendCompose, gmPhishClick, gmKey, gmRender});
+Object.assign(window, {izGenerateInbox, izSubmitSort, gmSubmit, gmRush, gmRestart, gmAct, gmUndo, gmToInbox, gmBulk, gmOpen, gmBack, gmUnread, gmFolder, gmSearch, gmSelect, gmSelectAll, gmMenu, gmLabelMenu, gmCloseMenu, gmSnooze, gmSetLabel, gmDragStart, gmDragEnd, gmDragOver, gmDropLabel, gmNewLabel, gmCloseDialog, gmCreateLabel, gmCompose, gmCloseCompose, gmSendCompose, gmPhishClick, gmKey, gmRender});
 document.addEventListener("click", (e)=>{ const iz = toolState && toolState.iz; if(iz && iz.menu && !e.target.closest(".gm-menu") && !e.target.closest(".gm-ib") && !e.target.closest(".gm-dialog")){ iz.menu = null; gmRender(); } });
 
 /* ---------- 8. Day 3 lab, Part 3: Proactive EA Tasks becomes a real exercise ----------
