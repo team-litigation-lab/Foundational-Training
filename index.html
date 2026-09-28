@@ -1942,6 +1942,20 @@ body.tap-moving [ondrop]{outline:2px dashed rgba(219,132,55,.55);outline-offset:
 
 .bottom-actions{justify-content:center;margin:22px 0 6px;padding:16px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.75);border-radius:14px;}
 .bottom-actions:empty{display:none;}
+.batch-folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;}
+.batch-folder{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px;border-radius:14px;border:1px solid var(--line);background:#fff;cursor:pointer;font:inherit;box-shadow:0 1px 2px rgba(20,30,60,.05);transition:border-color .15s, box-shadow .15s;}
+.batch-folder:hover{border-color:var(--orange,#DB8437);box-shadow:0 4px 14px rgba(20,30,60,.10);}
+.batch-folder .bf-icon{font-size:30px;line-height:1;}
+.batch-folder .bf-name{font-weight:800;color:var(--navy);font-size:15px;margin-top:4px;}
+.batch-folder .bf-meta{font-size:12px;color:var(--ink-soft);}
+.bf-crumb{margin-bottom:6px;}
+.bf-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px;}
+.bf-tabs button{font:inherit;font-size:13px;font-weight:700;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;}
+.bf-tabs button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.bf-tabs em{font-style:normal;font-weight:600;opacity:.7;margin-left:2px;}
+.bf-act-row{display:grid;grid-template-columns:minmax(0,1.4fr) 110px minmax(0,1.6fr) 60px 110px 120px 130px;gap:10px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line);font-size:12.5px;}
+.bf-act-head{background:#F8F9FC;font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;}
+@media (max-width:900px){ .bf-act-row{grid-template-columns:1fr 1fr;} .bf-act-head{display:none;} }
 
 .ho-search{width:100%;max-width:420px;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:16px;background:#fff;}
 .ho-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
@@ -2230,6 +2244,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .di-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 12px;}
 .di-strip > div{background:#F3F5FB;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;} .di-strip span{font-size:22px;} .di-strip b{color:var(--navy);font-size:14px;} .di-strip em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
 .di-warm{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;} .di-warm > span{font-size:12.5px;color:var(--ink-soft);}
+.nav-back-row{margin:0 0 12px;} .nav-back{font:inherit;font-size:13px;font-weight:700;color:var(--navy);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(20,30,60,.06);} .nav-back:hover{border-color:var(--orange);color:var(--orange);}
 .quiz-key-locked{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;font-size:14px;color:var(--ink);margin:0 0 14px;}
 .di-wq{margin-top:10px;} .di-wq-q{font-weight:700;font-size:14px;color:var(--navy);margin-bottom:6px;} .di-wq-opts{display:flex;flex-direction:column;gap:6px;} .di-wq-opt{display:flex;gap:8px;align-items:flex-start;text-align:left;font:inherit;font-size:13.5px;background:#fff;border:1px solid #E6D6C2;border-radius:9px;padding:7px 10px;cursor:pointer;color:var(--ink);} .di-wq-opt span{font-weight:800;color:var(--ink-soft);min-width:14px;} .di-wq-opt:hover:not([disabled]){border-color:var(--orange);background:#FFFDF9;} .di-wq-opt[disabled]{cursor:default;} .di-wq-opt.ok{border-color:#3F7D58;background:#EEF7F1;color:#2E6546;font-weight:700;} .di-wq-opt.no{border-color:#C9544A;background:#FCEFEE;color:#9B3A32;} .di-wq-opt.dim{opacity:.6;} .di-wq-fb{font-size:13px;margin-top:6px;color:var(--ink-soft);} .di-wq-fb.ok b{color:#3F7D58;} .di-wq-fb.no b{color:#9B3A32;} .di-wq-hint{font-size:12px;color:var(--ink-soft);margin-top:4px;font-style:italic;}
 .di-warm details{margin-top:8px;} .di-warm summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy);} .di-warm ol{margin:6px 0 0;padding-left:22px;} .di-warm li{font-size:13.5px;} .di-warm li.ok{font-weight:800;color:#3F7D58;} .di-warm p{font-size:13px;color:var(--ink-soft);margin:6px 0 0;}
@@ -4136,7 +4151,7 @@ function renderTopbar(){
   const fake = (el)=>({preventDefault(){}, stopPropagation(){}, dataTransfer:dt, target:el, currentTarget:el, clientX:0, clientY:0});
   const clear = ()=>{ if(sel) sel.classList.remove("tap-selected"); sel=null; document.body.classList.remove("tap-moving"); };
   document.addEventListener("click", (e)=>{
-    const drag = e.target.closest('[draggable="true"]');
+    const drag = e.target.closest('[draggable="true"]:not([data-notap])');
     const zone = e.target.closest("[ondrop]");
     if(sel && zone && drag!==sel){
       e.preventDefault(); e.stopPropagation();
@@ -5857,7 +5872,7 @@ function render(){
   else if(state.view==="tasks") body=renderTasksPage();
   else if(state.view==="orientation") body = state.isAdmin ? renderOrientation() : renderDashboard();
   const presenterView = false;   // the presenter now lives inside the lesson stage
-  app.innerHTML = renderTopbar() + `<main class="${state.view==="dashboard"?"main-dash":""}${presenterView?" has-presenter":""}">${body}</main>` + (presenterView ? `<img class="slide-presenter" src="${PRESENTER_IMG}" alt="" aria-hidden="true">` : "")
+  app.innerHTML = renderTopbar() + `<main class="${state.view==="dashboard"?"main-dash":""}${presenterView?" has-presenter":""}"><div id="navBackSlot"></div>${body}</main>` + (presenterView ? `<img class="slide-presenter" src="${PRESENTER_IMG}" alt="" aria-hidden="true">` : "")
     + ((state.traineeId && !state.isAdmin && !["login","pendingApproval","registrationDenied","dashboard","day"].includes(state.view)) ? `<button type="button" class="tfb-fab" onclick="openTraineeFeedback(${state.view==="day"?state.dayId:"null"})" title="Share feedback about the platform, lessons or facilitator" aria-label="Share feedback">💬<span class="fab-label"> Feedback</span></button>` : "")
     + renderFooter();
   afterRender();
@@ -5918,8 +5933,51 @@ function syncRouteHash(){
     return;
   }
   if(location.hash===h) return;
-  try{ history.replaceState(history.state, "", location.pathname + location.search + h); }catch(e){}
+  // Moving from one course page to another adds a browser history entry, so the browser's
+  // Back / Forward buttons (and the in-page "← Back to …" button) return to the previous page.
+  const from = String(location.hash||""), depth = routeDepth();
+  try{
+    if(from.indexOf("#/")===0 && !state.resumePending){
+      routeTrailSet(depth+1, h);
+      history.pushState({lshDepth:depth+1}, "", location.pathname + location.search + h);
+    }else{
+      routeTrailSet(depth, h);
+      history.replaceState(Object.assign({}, history.state||{}, {lshDepth:depth}), "", location.pathname + location.search + h);
+    }
+  }catch(e){}
 }
+/* ---------- page history: "← Back to …" ---------- */
+function routeDepth(){ const st = history.state; return (st && typeof st.lshDepth==="number") ? st.lshDepth : 0; }
+function routeTrail(){ try{ const t = JSON.parse(sessionStorage.getItem("lsh_route_trail")||"[]"); return Array.isArray(t) ? t : []; }catch(e){ return []; } }
+function routeTrailSet(depth, h){ const t = routeTrail().slice(0, depth); t[depth] = h; try{ sessionStorage.setItem("lsh_route_trail", JSON.stringify(t.slice(-60))); }catch(e){} }
+const ROUTE_LABELS = {dashboard:"Dashboard", practice:"Practice Lab", notes:"My Notes", clientprofile:"Client Profile", handouts:"Handouts",
+  tasks:"Tasks", crisisroleplay:"Live Roleplay", orientation:"Orientation", facilitatorguide:"Facilitator Guide"};
+function routeLabel(h){
+  const m = String(h||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
+  if(!m) return "";
+  const view = m[1], id = m[2] ? decodeURIComponent(m[2]) : null;
+  if(view==="day") return "Day "+parseInt(id,10);
+  if(view==="tool"){ const t = PRACTICE_TOOLS.find(x=>x.id===id); return t ? t.title : "the previous activity"; }
+  return (window.EXTRA_ROUTE_LABELS||{})[view] || ROUTE_LABELS[view] || "";
+}
+function navBackTarget(){
+  const d = routeDepth(); if(d<1) return "";
+  const prev = routeTrail()[d-1] || "";
+  if(!prev || prev===routeHash()) return "";
+  // The page already has a link back to this place (Day → roadmap, activity → Practice Lab).
+  if(state.view==="day" && prev==="#/dashboard") return "";
+  if(state.view==="tool" && prev==="#/practice") return "";
+  return prev;
+}
+// Filled in after the page's history entry is recorded (afterRender), so it names the right page.
+function fillNavBack(){
+  const slot = document.getElementById("navBackSlot"); if(!slot) return;
+  const prev = ["login","pendingApproval","registrationDenied","dashboard"].includes(state.view) ? "" : navBackTarget();
+  const label = prev && routeLabel(prev);
+  slot.innerHTML = label ? `<div class="nav-back-row"><button type="button" class="nav-back" onclick="navBack()" title="Go back to the page you were on">← Back to ${esc(label)}</button></div>` : "";
+}
+function navBack(){ if(routeDepth()>0) history.back(); else goto("dashboard"); }
+window.navBack = navBack;
 function parseRouteHash(){
   const m = String(location.hash||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
   if(!m) return null;
@@ -6039,6 +6097,7 @@ function applyPageHero(){
 }
 function afterRender(){
   syncRouteHash();
+  fillNavBack();
   applyPageHero();
   narratorAfterRender();
   bookmarkView();
@@ -6500,7 +6559,7 @@ window.applyUpdate = applyUpdate;
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
   loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
-  if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); }, 0); } }
+  if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
   if(!state.traineeName){
     state.view = "login";
   }else if(state.traineeId){
@@ -6509,8 +6568,8 @@ window.applyUpdate = applyUpdate;
       // Returning trainee: reopen the page they were on (refresh / closed tab).
       // A page address in the URL (a duplicated tab, or ⧉ "open in new tab") wins over the bookmark.
       restoreBootRouteHash();
-      if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; if(!openRouteFromHash()) resumeWhereLeftOff(state.lastView); state.routeReady = true; syncRouteHash(); }, 0); }
-      else if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; state.resumePending = true; setTimeout(()=>{ resumeWhereLeftOff(lv); state.routeReady = true; syncRouteHash(); }, 0); }
+      if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; if(!openRouteFromHash()) resumeWhereLeftOff(state.lastView); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); }
+      else if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; state.resumePending = true; setTimeout(()=>{ resumeWhereLeftOff(lv); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); }
       try{
         const rec = await sharedGet("trainee:"+state.traineeId);
         if(rec) state.assignedRoleplay = rec.assignedRoleplay || null;
@@ -11656,6 +11715,15 @@ function tfbExportCsv(){
   saveBlob(blob, "LSH_trainee_feedback.csv");
 }
 Object.assign(window, {tfbSetStatus, tfbExportCsv, loadTraineeFeedbackAdmin});
+function tfbItemCard(x){
+  return `<div class="card tfb-item ${x.status||"new"}">
+      <div class="tfb-item-head"><b>${esc(x.name||"Trainee")}</b>${x.batch?` · Batch ${esc(x.batch)}`:""} · ${x.dayId?`${ftName(x.dayId)}`:"Program overall"} · <span>${new Date(x.at).toLocaleString()}</span>
+        <span class="studio-badge ${x.status==="actioned"?"published":""}">${esc(x.status||"new")}</span></div>
+      <div class="tfb-item-ratings">${TFB_AREAS.filter(a=>x.ratings&&x.ratings[a.id]).map(a=>`<span>${a.icon} ${esc(a.label)}: <b>${"★".repeat(x.ratings[a.id])}${"☆".repeat(5-x.ratings[a.id])}</b></span>`).join("")}</div>
+      ${x.good?`<p><b>Worked well:</b> ${esc(x.good)}</p>`:""}${x.improve?`<p><b>Improve:</b> ${esc(x.improve)}</p>`:""}${x.facilitator?`<p><b>For facilitator:</b> ${esc(x.facilitator)}</p>`:""}
+      <div class="studio-actions">${["acknowledged","actioned"].filter(s=>s!==x.status).map(s=>`<button class="btn btn-ghost btn-sm" onclick="tfbSetStatus('${x.id}','${s}')">Mark ${s}</button>`).join("")}</div>
+    </div>`;
+}
 function renderAdminTraineeFeedback(){
   if(!state.tfbAdmin){ setTimeout(()=>loadTraineeFeedbackAdmin(), 0); return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">Loading trainee feedback…</div>`; }
   if(state.tfbAdmin.loading) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">Loading trainee feedback…</div>`;
@@ -11682,13 +11750,7 @@ function renderAdminTraineeFeedback(){
       <button class="btn btn-ghost btn-sm" onclick="loadTraineeFeedbackAdmin()">↻ Refresh</button>
       <button class="btn btn-navy btn-sm" onclick="tfbExportCsv()" ${all.length?"":"disabled"}>⬇ Export CSV</button>
     </div>
-    ${items.length ? items.map(x=>`<div class="card tfb-item ${x.status||"new"}">
-      <div class="tfb-item-head"><b>${esc(x.name||"Trainee")}</b>${x.batch?` · Batch ${esc(x.batch)}`:""} · ${x.dayId?`${ftName(x.dayId)}`:"Program overall"} · <span>${new Date(x.at).toLocaleString()}</span>
-        <span class="studio-badge ${x.status==="actioned"?"published":""}">${esc(x.status||"new")}</span></div>
-      <div class="tfb-item-ratings">${TFB_AREAS.filter(a=>x.ratings&&x.ratings[a.id]).map(a=>`<span>${a.icon} ${esc(a.label)}: <b>${"★".repeat(x.ratings[a.id])}${"☆".repeat(5-x.ratings[a.id])}</b></span>`).join("")}</div>
-      ${x.good?`<p><b>Worked well:</b> ${esc(x.good)}</p>`:""}${x.improve?`<p><b>Improve:</b> ${esc(x.improve)}</p>`:""}${x.facilitator?`<p><b>For facilitator:</b> ${esc(x.facilitator)}</p>`:""}
-      <div class="studio-actions">${["acknowledged","actioned"].filter(s=>s!==x.status).map(s=>`<button class="btn btn-ghost btn-sm" onclick="tfbSetStatus('${x.id}','${s}')">Mark ${s}</button>`).join("")}</div>
-    </div>`).join("") : `<div class="empty-note">No feedback ${all.length?"matches these filters":"yet — trainees can send it from the 💬 Feedback button or after each Knowledge Check"}.</div>`}`;
+    ${items.length ? items.map(tfbItemCard).join("") : `<div class="empty-note">No feedback ${all.length?"matches these filters":"yet — trainees can send it from the 💬 Feedback button or after each Knowledge Check"}.</div>`}`;
 }
 
 function renderAdminSOP(){
@@ -11766,6 +11828,7 @@ function renderAdmin(){
   const tabBar = `
     <div class="admin-tabs" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
       <button class="admin-tab-btn ${tab==='audit'?'active':''}" onclick="setAdminTab('audit')">Trainee Audit</button>
+      <button class="admin-tab-btn ${tab==='batches'?'active':''}" onclick="setAdminTab('batches')">📁 Batch Folders</button>
       <button class="admin-tab-btn ${tab==='rankings'?'active':''}" onclick="setAdminTab('rankings')">Rankings</button>
       <button class="admin-tab-btn ${tab==='sop'?'active':''}" onclick="setAdminTab('sop')">SOP Reference</button>
       <button class="admin-tab-btn ${tab==='cues'?'active':''}" onclick="setAdminTab('cues')">Trainer Cues</button>
@@ -11777,6 +11840,7 @@ function renderAdmin(){
   if(tab==="studio") return tabBar + renderAdminStudio();
   if(tab==="tfeedback") return tabBar + renderAdminTraineeFeedback();
   if(tab==="rankings") return tabBar + renderAdminRankings();
+  if(tab==="batches") return tabBar + renderAdminBatchFolders();
 
   if(state.adminLoading || !state.adminData){
     return tabBar + `<div class="card" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading trainee ledger…</div>`;
@@ -11903,19 +11967,102 @@ async function downloadCohortPdf(){
 }
 window.downloadCohortPdf = downloadCohortPdf;
 
-function renderAdminRankings(){
+/* ---------- Batch Folders: one folder per batch, holding that batch's
+   registry, rankings, trainee feedback and activity ---------- */
+// batchKey / NO_BATCH come from Rankings below (function declarations hoist; the
+// const is set before any render runs).
+function folderLabel(k){ return k===NO_BATCH ? "No batch" : `Batch ${k}`; }
+function batchMembers(k){ return (state.adminData||[]).filter(r=>batchKey(r)===k && (state.batchShowArchived || !r.archived)); }
+function batchFeedback(k){ return ((state.tfbAdmin||{}).items||[]).filter(x=>(cleanBatch(x.batch)||NO_BATCH)===k); }
+function openBatchFolder(k, sub){ state.batchFolder = k; state.batchSub = sub || state.batchSub || "registry"; render(); }
+function closeBatchFolder(){ state.batchFolder = null; render(); }
+function setBatchSub(sub){ state.batchSub = sub; render(); }
+Object.assign(window, {openBatchFolder, closeBatchFolder, setBatchSub});
+
+function renderAdminBatchFolders(){
   if(state.adminLoading || !state.adminData){
     return `<div class="card" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading trainee ledger…</div>`;
   }
-  let rows = state.adminData.filter(r=>!r.archived);
-  if(state.adminBatchFilter) rows = rows.filter(r=>r.batch===state.adminBatchFilter);
-  if(!rows.length){
-    return `
-      <p class="eyebrow">Admin Dashboard</p>
-      <h1 style="color:var(--navy);font-size:26px;margin:6px 0 16px;">Rankings</h1>
-      <div class="empty-note">No trainees to rank yet — once someone sets their name in the app, they'll show up here.</div>`;
+  if(!state.tfbAdmin) setTimeout(()=>loadTraineeFeedbackAdmin(), 0);
+  const keys = Array.from(new Set(state.adminData.map(batchKey))).sort((a,b)=> a===NO_BATCH ? 1 : b===NO_BATCH ? -1 : a.localeCompare(b, undefined, {numeric:true}));
+  if(state.batchFolder && !keys.includes(state.batchFolder)) state.batchFolder = null;
+  if(state.batchFolder) return renderBatchFolder(state.batchFolder);
+  const head = `
+    <p class="eyebrow">Admin Dashboard</p>
+    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Batch Folders</h1>
+    <p style="color:var(--ink-soft);font-size:13px;max-width:72ch;margin:0 0 18px;">Each batch has its own folder: the trainees registered in it, their rankings, the feedback they sent and their latest activity — kept apart from every other batch.</p>`;
+  if(!keys.length) return head + `<div class="empty-note">No trainees yet — a folder appears for each batch as trainees register.</div>`;
+  return head + `<div class="batch-folder-grid">${keys.map(k=>{
+    const all = state.adminData.filter(r=>batchKey(r)===k);
+    const active = all.filter(r=>!r.archived);
+    const done = active.length ? Math.round(active.reduce((a,r)=>a+adminDayStats(r).done,0)/active.length/DAYS.length*100) : 0;
+    const fb = batchFeedback(k).length;
+    return `<button type="button" class="batch-folder" onclick="openBatchFolder('${esc(k)}','registry')">
+      <span class="bf-icon">📁</span>
+      <span class="bf-name">${esc(folderLabel(k))}</span>
+      <span class="bf-meta">${active.length} trainee${active.length===1?"":"s"}${all.length>active.length?` · ${all.length-active.length} archived`:""}</span>
+      <span class="bf-meta">${done}% avg completion · ${state.tfbAdmin&&!state.tfbAdmin.loading ? `${fb} feedback` : "feedback…"}</span>
+    </button>`; }).join("")}</div>`;
+}
+function renderBatchFolder(k){
+  const sub = state.batchSub || "registry";
+  const members = batchMembers(k);
+  const tabs = [["registry","🗂 Registry"],["rankings","🏆 Rankings"],["feedback","💬 Feedback"],["activities","📈 Activities"]];
+  return `
+    <div class="bf-crumb"><button type="button" class="btn btn-ghost btn-sm" onclick="closeBatchFolder()">← All batch folders</button></div>
+    <p class="eyebrow">Batch Folder</p>
+    <div style="display:flex;gap:10px 16px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;">
+      <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">📁 ${esc(folderLabel(k))}</h1>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;align-items:center;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;"><input type="checkbox" ${state.batchShowArchived?"checked":""} onchange="state.batchShowArchived=this.checked;render()"> Include archived</label>
+        <button class="btn btn-ghost btn-sm" onclick="refreshAdminData();loadTraineeFeedbackAdmin()">🔄 Refresh</button>
+        ${k!==NO_BATCH && members.some(r=>!r.archived) ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="confirmArchiveBatch('${esc(k)}')">📦 Archive This Batch</button>` : ""}
+      </div>
+    </div>
+    <div class="bf-tabs">${tabs.map(([id,l])=>`<button type="button" class="${sub===id?"active":""}" onclick="setBatchSub('${id}')">${l}${id==="registry"?` <em>${members.length}</em>`:id==="feedback"&&state.tfbAdmin&&!state.tfbAdmin.loading?` <em>${batchFeedback(k).length}</em>`:""}</button>`).join("")}</div>
+    <div id="batchFolderBody">${renderBatchFolderBody()}</div>`;
+}
+function renderBatchFolderBody(){
+  const k = state.batchFolder; if(!k) return "";
+  const sub = state.batchSub || "registry";
+  const members = batchMembers(k);
+  if(sub==="rankings") return renderAdminRankings(k);
+  if(sub==="feedback"){
+    if(!state.tfbAdmin || state.tfbAdmin.loading) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">Loading trainee feedback…</div>`;
+    const items = batchFeedback(k);
+    return items.length ? items.map(tfbItemCard).join("") : `<div class="empty-note">No feedback from ${esc(folderLabel(k))} yet.</div>`;
   }
-  const ranked = rows.map(rec=>{
+  if(!members.length) return `<div class="empty-note">No trainees in ${esc(folderLabel(k))}${state.batchShowArchived?"":" (archived trainees are hidden)"}.</div>`;
+  if(members.some(r=>!state.auditExtra[r.id] || Date.now()-state.auditExtra[r.id].at>60000)) setTimeout(()=>loadAuditExtras(), 0);
+  if(sub==="activities"){
+    const rows = members.map(rec=>({rec, day:adminDayStats(rec), practice:adminPracticeStats(rec), a:auditSummary(rec)}))
+      .sort((x,y)=>new Date(y.rec.lastActive||0)-new Date(x.rec.lastActive||0));
+    return `<div class="card" style="padding:0;overflow:hidden;">
+      <div class="bf-act-row bf-act-head"><div>Trainee</div><div>Last active</div><div>Where they are</div><div>Days</div><div>Knowledge Checks</div><div>Practice Lab</div><div>🎲 Tasks</div></div>
+      ${rows.map(({rec,day,practice,a})=>`<div class="bf-act-row">
+        <div><b style="color:var(--navy);">${esc(cleanName(rec.name)||"Unnamed")}</b>${rec.archived?` <span class="studio-badge">archived</span>`:""}</div>
+        <div>${rec.lastActive?esc(fmtDate(rec.lastActive)):"—"}</div>
+        <div>${a.loaded?esc(a.where):"…"}</div>
+        <div>${day.done}/${day.total}</div>
+        <div>${day.avg}% avg</div>
+        <div>${practice.runs} run${practice.runs===1?"":"s"} · ${practice.avg}%</div>
+        <div>${a.loaded&&a.tasksTotal?`${a.tasksDone}/${a.tasksTotal} resolved${a.tasksMissed?` · ${a.tasksMissed} missed`:""}`:a.loaded?"—":"…"}</div>
+      </div>`).join("")}
+    </div>`;
+  }
+  const rows = members.map(r=>({rec:r, day:adminDayStats(r), practice:adminPracticeStats(r)})).sort((a,b)=>(a.rec.name||"").localeCompare(b.rec.name||""));
+  return `<div class="card" style="padding:0;overflow:hidden;">${rows.map(({rec,day,practice})=>renderAdminRow(rec,day,practice)).join("")}</div>`;
+}
+
+// Batch key for ranking/archiving; trainees with no (valid) batch share one group.
+const NO_BATCH = "__none__";
+function batchKey(rec){ return cleanBatch(rec && rec.batch) || NO_BATCH; }
+function batchLabel(b){ return b===NO_BATCH ? "No batch" : b; }
+function renderAdminRankings(onlyBatch){
+  if(state.adminLoading || !state.adminData){
+    return `<div class="card" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading trainee ledger…</div>`;
+  }
+  const scoreOf = rec=>{
     const day = adminDayStats(rec);
     const practice = adminPracticeStats(rec);
     const completionPct = day.total ? (day.done/day.total)*100 : 0;
@@ -11924,33 +12071,84 @@ function renderAdminRankings(){
     // fast-but-sloppy trainee above a careful one who's slightly behind.
     const overall = Math.round(completionPct*0.4 + day.avg*0.3 + practice.avg*0.3);
     return {rec, day, practice, overall};
-  }).sort((a,b)=>b.overall-a.overall);
+  };
+  // One group per batch, ranked within the batch. A batch counts as archived
+  // once every trainee in it is archived (📦 Archive batch).
+  const groups = new Map();
+  state.adminData.forEach(rec=>{
+    const b = batchKey(rec);
+    if(!groups.has(b)) groups.set(b, []);
+    groups.get(b).push(rec);
+  });
+  const batches = Array.from(groups, ([batch, recs])=>{
+    const archived = recs.every(r=>r.archived);
+    const ranked = recs.filter(r=>archived || !r.archived).map(scoreOf).sort((a,b)=>b.overall-a.overall);
+    const last = Math.max(0, ...recs.map(r=>new Date(r.lastActive||0).getTime()||0));
+    return {batch, archived, ranked, last};
+  }).sort((a,b)=>(a.batch===NO_BATCH)-(b.batch===NO_BATCH) || b.last-a.last || a.batch.localeCompare(b.batch));
 
-  const totalTrainees = ranked.length;
-  const avgOverall = Math.round(ranked.reduce((a,r)=>a+r.overall,0)/totalTrainees);
-  const topScore = ranked[0].overall;
-  const fullyDone = ranked.filter(r=>r.day.done===r.day.total).length;
+  const active = batches.filter(g=>!g.archived);
+  const archivedGroups = batches.filter(g=>g.archived);
+  // A saved filter for a batch that no longer exists falls back to all active batches.
+  const filter = onlyBatch || (batches.some(g=>g.batch===state.adminBatchFilter) ? state.adminBatchFilter : "");
+  const shown = filter ? batches.filter(g=>g.batch===filter) : active;
+  const rankedAll = shown.flatMap(g=>g.ranked);
 
-  const medals = ["🥇","🥈","🥉"];
-  return `
+  const header = onlyBatch ? "" : `
     <p class="eyebrow">Admin Dashboard</p>
     <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Rankings</h1>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Ranked by a blended score — 40% program completion, 30% average quiz score, 30% average Practice Lab competency. Meant as a coaching signal, not a formal evaluation.</p>
-
-    <div class="stat-row">
-      <div class="card stat"><div class="num">${totalTrainees}</div><div class="lbl">Trainees ranked</div></div>
-      <div class="card stat"><div class="num">${topScore}%</div><div class="lbl">Top overall score</div></div>
-      <div class="card stat"><div class="num">${avgOverall}%</div><div class="lbl">Cohort avg. score</div></div>
-      <div class="card stat"><div class="num">${fullyDone}</div><div class="lbl">Finished all 10 days</div></div>
-    </div>
-
+    <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Trainees are ranked within their own batch by a blended score — 40% program completion, 30% average quiz score, 30% average Practice Lab competency. Meant as a coaching signal, not a formal evaluation.</p>`;
+  const toolbar = onlyBatch ? "" : `
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      ${renderBatchFilter()}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <select onchange="setAdminBatchFilter(this.value)" style="padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-size:13px;">
+          <option value="">All active batches</option>
+          ${active.map(g=>`<option value="${esc(g.batch)}" ${filter===g.batch?"selected":""}>${esc(batchLabel(g.batch))}</option>`).join("")}
+          ${archivedGroups.length ? `<optgroup label="Archived">${archivedGroups.map(g=>`<option value="${esc(g.batch)}" ${filter===g.batch?"selected":""}>${esc(batchLabel(g.batch))} (archived)</option>`).join("")}</optgroup>` : ""}
+        </select>
+      </div>
       <button class="btn btn-ghost btn-sm" onclick="refreshAdminData()">🔄 Refresh</button>
-    </div>
+    </div>`;
+  const archivedList = !filter && archivedGroups.length ? `
+    <details class="card" style="padding:14px 18px;margin-top:18px;">
+      <summary style="cursor:pointer;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:700;">📦 Archived batches (${archivedGroups.length})</summary>
+      <div style="margin-top:10px;">
+        ${archivedGroups.map(g=>`
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);">
+            <div><b style="color:var(--navy);font-family:'IBM Plex Mono';font-size:13px;">${esc(batchLabel(g.batch))}</b> <span style="font-size:12px;color:var(--ink-soft);">· ${g.ranked.length} trainee${g.ranked.length===1?"":"s"}${g.last?` · last active ${fmtDate(new Date(g.last).toISOString())}`:""}</span></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="setAdminBatchFilter(this.dataset.b)" data-b="${esc(g.batch)}">View ranking</button>
+              <button class="btn btn-ghost btn-sm" onclick="confirmUnarchiveBatch(this.dataset.b)" data-b="${esc(g.batch)}">↩ Restore</button>
+            </div>
+          </div>`).join("")}
+      </div>
+    </details>` : "";
 
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div class="admin-rank-grid" style="display:grid;grid-template-columns:56px minmax(0,1fr) 100px 100px 100px 110px;gap:12px;align-items:center;padding:10px 18px;background:#F8F9FC;border-bottom:1px solid var(--line);">
+  if(!rankedAll.length){
+    return header + toolbar + `<div class="empty-note">${archivedGroups.length && !filter ? "All batches are archived. Open “Archived batches” below to view or restore one." : "No trainees to rank yet — once someone sets their name in the app, they'll show up here."}</div>` + archivedList;
+  }
+
+  const totalTrainees = rankedAll.length;
+  const avgOverall = Math.round(rankedAll.reduce((a,r)=>a+r.overall,0)/totalTrainees);
+  const topScore = Math.max(...rankedAll.map(r=>r.overall));
+  const fullyDone = rankedAll.filter(r=>r.day.done===r.day.total).length;
+
+  const medals = ["🥇","🥈","🥉"];
+  const cols = "56px minmax(0,1fr) 100px 100px 100px 110px";
+  const batchTable = g=>{
+    const avg = Math.round(g.ranked.reduce((a,r)=>a+r.overall,0)/g.ranked.length);
+    return `
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:18px;${g.archived?"opacity:.85;":""}">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line);">
+        <div>
+          <b style="color:var(--navy);font-size:15px;">${g.batch===NO_BATCH ? "No batch set" : `Batch <span style="font-family:'IBM Plex Mono';">${esc(g.batch)}</span>`}</b>${g.archived?` <span class="estatus archived" style="margin-left:6px;">Archived</span>`:""}
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${g.ranked.length} trainee${g.ranked.length===1?"":"s"} · batch avg. ${avg}%${g.last?` · last active ${fmtDate(new Date(g.last).toISOString())}`:""}</div>
+        </div>
+        ${g.archived
+          ? `<button class="btn btn-ghost btn-sm" onclick="confirmUnarchiveBatch(this.dataset.b)" data-b="${esc(g.batch)}">↩ Restore batch</button>`
+          : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="confirmArchiveBatch(this.dataset.b)" data-b="${esc(g.batch)}">📦 Archive batch</button>`}
+      </div>
+      <div class="admin-rank-grid" style="display:grid;grid-template-columns:${cols};gap:12px;align-items:center;padding:10px 18px;background:#F8F9FC;border-bottom:1px solid var(--line);">
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Rank</div>
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Trainee</div>
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Overall</div>
@@ -11958,19 +12156,30 @@ function renderAdminRankings(){
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Quiz Avg</div>
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Lab Avg</div>
       </div>
-      ${ranked.map(({rec,day,practice,overall},i)=>`
-        <div class="admin-rank-grid" style="display:grid;grid-template-columns:56px minmax(0,1fr) 100px 100px 100px 110px;gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);">
+      ${g.ranked.map(({rec,day,practice,overall},i)=>`
+        <div class="admin-rank-grid" style="display:grid;grid-template-columns:${cols};gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);">
           <div style="font-size:${i<3?'20px':'14px'};font-weight:700;color:${i<3?'inherit':'var(--ink-soft)'};">${medals[i] || `#${i+1}`}</div>
           <div>
             <b class="admin-name" title="${esc(String(rec.name||"Unnamed").slice(0,200))}" style="color:var(--navy);font-size:13.5px;">${esc(String(rec.name||"Unnamed").slice(0,60))}${String(rec.name||"").length>60?"…":""}</b>
-            <div style="font-size:10.5px;color:var(--ink-soft);font-family:'IBM Plex Mono';">${rec.batch?esc(cleanBatch(rec.batch)):""}</div>
           </div>
           <div style="font-size:14px;font-weight:700;color:var(--navy);">${overall}%</div>
           <div style="font-size:13px;">${day.done}/${day.total}</div>
           <div style="font-size:13px;">${day.avg}%</div>
           <div style="font-size:13px;">${practice.avg}%</div>
         </div>`).join("")}
+    </div>`;
+  };
+
+  return header + `
+    <div class="stat-row">
+      <div class="card stat"><div class="num">${totalTrainees}</div><div class="lbl">Trainees ranked</div></div>
+      <div class="card stat"><div class="num">${topScore}%</div><div class="lbl">Top overall score</div></div>
+      <div class="card stat"><div class="num">${avgOverall}%</div><div class="lbl">${shown.length===1?"Batch":"Cohort"} avg. score</div></div>
+      <div class="card stat"><div class="num">${fullyDone}</div><div class="lbl">Finished all ${DAYS.length} days</div></div>
     </div>
+    ${toolbar}
+    ${shown.map(batchTable).join("")}
+    ${archivedList}
   `;
 }
 function renderAdminRows(){
@@ -11979,7 +12188,7 @@ function renderAdminRows(){
   const sort = state.adminSort || "completion_desc";
   let rows = state.adminData.filter(r=>!search || (r.name||"").toLowerCase().includes(search));
   if(!state.adminShowArchived) rows = rows.filter(r=>!r.archived);
-  if(state.adminBatchFilter) rows = rows.filter(r=>r.batch===state.adminBatchFilter);
+  if(state.adminBatchFilter) rows = rows.filter(r=>batchKey(r)===state.adminBatchFilter);
   rows = rows.map(r=>({rec:r, day:adminDayStats(r), practice:adminPracticeStats(r)}));
   const sorters = {
     completion_desc: (a,b)=>b.day.done-a.day.done,
@@ -12014,6 +12223,7 @@ async function loadAuditExtras(force){
     }));
   }finally{ state.auditExtraLoading = false; }
   const wrap = document.getElementById("adminRowsWrap"); if(wrap && state.view==="admin" && !isTyping()) wrap.innerHTML = renderAdminRows();
+  const bwrap = document.getElementById("batchFolderBody"); if(bwrap && state.view==="admin" && state.adminTab==="batches" && !isTyping()) bwrap.innerHTML = renderBatchFolderBody();
 }
 function auditSummary(rec){
   const x = state.auditExtra[rec.id]; const data = (x && x.data) || {};
@@ -13343,17 +13553,29 @@ window.setAdminTab = setAdminTab;
 function setSopDay(d){ state.sopDay=d; render(); }
 window.setSopDay = setSopDay;
 async function confirmArchiveBatch(batch){
-  const members = state.adminData.filter(r=>r.batch===batch && !r.archived);
+  const members = state.adminData.filter(r=>batchKey(r)===batch && !r.archived);
   if(!members.length){ toast("Nothing to archive in this batch."); return; }
-  if(!confirm(`Archive all ${members.length} trainee(s) in batch "${batch}"? They'll be hidden from the default view but their data and AI reviews are kept — check "Show archived" to see them again.`)) return;
+  if(!confirm(`Archive all ${members.length} trainee(s) in batch "${batchLabel(batch)}"? They'll be hidden from the default view but their data and AI reviews are kept — check "Show archived" to see them again.`)) return;
   for(const rec of members){
     rec.archived = true;
     await sharedSet("trainee:"+rec.id, rec);
   }
-  toast(`Batch "${batch}" archived (${members.length} trainee(s)).`);
+  toast(`Batch "${batchLabel(batch)}" archived (${members.length} trainee(s)).`);
   await loadAdminLedger();
 }
 window.confirmArchiveBatch = confirmArchiveBatch;
+async function confirmUnarchiveBatch(batch){
+  const members = state.adminData.filter(r=>batchKey(r)===batch && r.archived);
+  if(!members.length){ toast("Nothing to restore in this batch."); return; }
+  if(!confirm(`Restore all ${members.length} trainee(s) in batch "${batchLabel(batch)}"? They'll show up again in Rankings and Trainee Audit.`)) return;
+  for(const rec of members){
+    rec.archived = false;
+    await sharedSet("trainee:"+rec.id, rec);
+  }
+  toast(`Batch "${batchLabel(batch)}" restored (${members.length} trainee(s)).`);
+  await loadAdminLedger();
+}
+window.confirmUnarchiveBatch = confirmUnarchiveBatch;
 function refreshAdminData(){ state.adminData=null; render(); }
 window.refreshAdminData = refreshAdminData;
 
@@ -15806,7 +16028,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1629";
+var APP_BUILD = "ft-2026.09.28-1702";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15849,9 +16071,9 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ze"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1629"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1629"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1629"></script>
+<script src="/js/eapa-updates.js?v=zf"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1702"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1702"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1702"></script>
 </body>
 </html>
