@@ -29,6 +29,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-body li{margin:4px 0;}
 .ft-body h3{margin:18px 0 8px;font-size:16px;color:var(--navy);}
 .ft-body a{color:var(--orange-deep);overflow-wrap:anywhere;}
+.ft-body a.btn{color:#fff;text-decoration:none;} .ft-body a.btn:hover{color:#fff;}
 .ft-body .url-list{display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere;}
 .ft-body .plain-list{line-height:1.8;}
 .ft-body .naming{background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;color:var(--navy);margin:8px 0;overflow-wrap:anywhere;}
