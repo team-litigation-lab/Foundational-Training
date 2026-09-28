@@ -12711,7 +12711,9 @@ function presenterNote(d, l, part){
   // A topic added later in the Content Studio has no written note yet: use the lesson's own lines.
   const sc = buildDiscussionScript(d, l, d.lessons.indexOf(l)), unq = t=>String(t||"").replace(/^"|"$/g,"");
   const scen = (l.fourPart && l.fourPart.discussionCase) || "";
-  if(part===1 || l.singleSlide) return {say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
+  // (A course built on this engine keeps its own trainer cue, e.g. the CM deck's speaker notes.)
+  const cue = l.trainerCue || "";
+  if(part===1 || l.singleSlide) return {cue, say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
   return {say: sc.correct || "", wrap: unq(sc.wrap), scenario: scen};
 }
 function renderPresenterNote(d, l, part){
@@ -12719,6 +12721,7 @@ function renderPresenterNote(d, l, part){
   const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
   return `<div class="pn">
     ${n.on ? `<div class="pn-on"><b>On this slide</b><p>${esc(n.on)}</p></div>` : ""}
+    ${n.cue ? `<div class="pn-on"><b>Trainer note</b><p>${esc(n.cue)}</p></div>` : ""}
     <div class="script-block"><div class="script-head"><span>🎙 Script</span></div>${row("Say", n.say)}${row("Ask", n.ask)}${row("Wrap", n.wrap)}</div>
     ${n.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}
   </div>`;
@@ -15534,7 +15537,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.28-1411";
+var APP_BUILD = "ft-2026.09.28-1417";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -15578,8 +15581,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 
 </script>
 <script src="/js/eapa-updates.js?v=za"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.28-1411"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1411"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.28-1411"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.28-1417"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.28-1417"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.28-1417"></script>
 </body>
 </html>
