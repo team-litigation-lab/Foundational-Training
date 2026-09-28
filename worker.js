@@ -10,6 +10,9 @@
  *
  * Secrets (set once with `wrangler secret put <NAME>`):
  *   GEMINI_API_KEY     — the reviewer behind every AI feature (Google Gemini). Required.
+ *   GEMINI_API_KEY1    — optional: grading, AI feedback and the tracker's daily notes review (see AI_FEATURE_KEYS)
+ *   GEMINI_API_KEY2    — optional: trainer tools (feedback drafts, auto-review, Studio)
+ *                        Live chat stays on GEMINI_API_KEY; a missing key falls back to it.
  *   GEMINI_MODEL       — optional, default "gemini-3.8-flash" (falls back to gemini-3.5-flash-lite)
  *   ADMIN_PASSPHRASE   — trainer/admin sign-in. Setting this switches the portal
  *                        into SECURE MODE: every storage and AI request must carry
@@ -147,8 +150,19 @@ async function traineeWrite(env, tok, key, value) {
    {messages, system, max_tokens} request; this translates it to Gemini's
    generateContent and the reply back. Model: GEMINI_MODEL (default gemini-3.8-flash),
    falling back to gemini-3.5-flash-lite / gemini-3.5-flash if busy or unavailable. */
+// Each AI feature can use its own Gemini key. Free-tier limits are per Google Cloud
+// project, so the keys only share the load if they come from different projects.
+const AI_FEATURE_KEYS = {
+  chat: "GEMINI_API_KEY",      // live roleplays, simulated calls and chats, inbox and task simulations
+  grading: "GEMINI_API_KEY1",  // rubric evaluations, AI feedback, the tracker's daily notes review
+  trainer: "GEMINI_API_KEY2"   // trainer tools: day feedback drafts, auto-review, Studio drafting
+};
+const geminiKey = (env, feature) => (AI_FEATURE_KEYS[feature] && env[AI_FEATURE_KEYS[feature]]) || env.GEMINI_API_KEY;
+const featureFromBody = (raw) => { try { return String(JSON.parse(raw).feature || ""); } catch (e) { return ""; } };
+
 async function callGemini(env, rawBody) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
+  const apiKey = geminiKey(env, req.feature);
   const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
   const contents = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: toText(m.content) }] }));
   const payload = {
@@ -166,7 +180,7 @@ async function callGemini(env, rawBody) {
     else p.generationConfig.thinkingConfig = { thinkingLevel: "low" };                         // 3.x: think briefly → much faster replies
     const send = (body) => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify(body)
     });
     let r = await send(p);
@@ -200,8 +214,8 @@ async function listAll(env, prefix) {
    For every approved trainee with a tracker: run the rules for the day, write a notes review
    against the trainer's criteria (settings:trackercriteria), and keep the trainer's comment. */
 async function aiText(env, system, prompt, maxTokens) {
-  if (!env.GEMINI_API_KEY) return "";
-  const r = await callGemini(env, JSON.stringify({ system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
+  if (!geminiKey(env, "grading")) return "";
+  const r = await callGemini(env, JSON.stringify({ feature: "grading", system, max_tokens: maxTokens || 400, messages: [{ role: "user", content: prompt }] }));
   const j = await r.json().catch(() => ({}));
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
 }
@@ -259,7 +273,7 @@ export default {
         const page = await env.ASSETS.fetch(new Request(new URL("/", request.url)));
         const html = await page.text();
         const m = html.match(/APP_BUILD = "([^"]+)"/);
-        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nWorker: secure-mode worker.js\nSecure mode: ${env.ADMIN_PASSPHRASE ? "ON" : "OFF"}\nAI provider: ${env.GEMINI_API_KEY ? "Google Gemini (" + (env.GEMINI_MODEL || "gemini-3.8-flash") + ")" : "none — add GEMINI_API_KEY"}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
+        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nWorker: secure-mode worker.js\nSecure mode: ${env.ADMIN_PASSPHRASE ? "ON" : "OFF"}\nAI provider: ${env.GEMINI_API_KEY ? "Google Gemini (" + (env.GEMINI_MODEL || "gemini-3.8-flash") + ")" : "none — add GEMINI_API_KEY"}\nAI keys by feature: ${Object.entries(AI_FEATURE_KEYS).map(([f, name]) => `${f} ${env[name] ? name : env.GEMINI_API_KEY ? "GEMINI_API_KEY (fallback)" : "none"}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
@@ -319,8 +333,9 @@ export default {
       /* ---------- AI proxy (signed-in users only, so strangers can't spend your credits) ---------- */
       // (the path keeps its old name so pages already open in browsers keep working)
       if (path === "/api/claude" || path === "/api/ai") {
-        if (!env.GEMINI_API_KEY) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY as a Secret in Cloudflare." }, 500);
-        return await callGemini(env, await request.text());
+        const body = await request.text();
+        if (!geminiKey(env, featureFromBody(body))) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY as a Secret in Cloudflare." }, 500);
+        return await callGemini(env, body);
       }
 
       /* ---------- Daily Task Tracker: run the daily check now (admin) ---------- */
