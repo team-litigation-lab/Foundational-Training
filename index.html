@@ -54,6 +54,11 @@ body::before{
 }
 #app{position:relative;z-index:1;}
 
+/* Fraunces draws "&" as an ornate old-style glyph that reads like a broken character in headings
+   ("The Access & Incident Response Simulator"). These faces come after Google's, so for U+0026 only
+   the browser uses a plain serif instead; every other character stays Fraunces. */
+@font-face{font-family:'Fraunces';src:local('Georgia'),local('Times New Roman'),local('TimesNewRomanPSMT'),local('Liberation Serif'),local('DejaVu Serif'),local('Noto Serif');unicode-range:U+0026;font-weight:100 900;font-style:normal;}
+@font-face{font-family:'Fraunces';src:local('Georgia Italic'),local('Georgia-Italic'),local('Times New Roman Italic'),local('Liberation Serif Italic'),local('Georgia');unicode-range:U+0026;font-weight:100 900;font-style:italic;}
 h1,h2,h3,h4,.display{font-family:'Fraunces',Georgia,serif;letter-spacing:-0.005em;font-weight:600;}
 .mono{font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;}
 a{color:inherit;}
@@ -4256,6 +4261,7 @@ async function renderLabResetIfSafe(){
 async function syncToLedger(allowCreate){
   if(!state.traineeId) return;
   const existing = await sharedGet("trainee:"+state.traineeId);
+  if(existing) state.labResetRequestedAt = (existing.labResetRequestedAt && (!existing.labAttemptsResetAt || existing.labResetRequestedAt > existing.labAttemptsResetAt)) ? existing.labResetRequestedAt : null;
   // Take a pending trainer reset first, so this save never writes the old count back over it.
   if(existing && await applyLabAttemptReset(existing)) showLabAttemptReset();
   if(existing) await applyAdminUnlocks(existing);
@@ -8669,11 +8675,40 @@ async function setLabAttemptsByDay(byDay){
    ever reaching AI grading (and refunds any attempt it consumed).
    ============================================================ */
 const COMMON_WORDS = new Set("the a an and or but to of in on at for with from by is are was were be been will would can could should i you he she we they it this that these those my your his her our their me him them us not no yes if then so as do does did have has had please thank thanks about into over after before when what which who how why all any each more most some such only also just than too very here there now".split(" "));
+/* One piece of trainee writing (a section, a reply…): does it read as words at all?
+   Keyboard mash ("fghfjhfgjhg", "mnNZ.,mNZ/IKZ") fails, so it's rejected before any grading. */
+function looksLikeWriting(text){
+  const t = String(text||"").replace(/\(not written\)/gi," ").trim();
+  if(!t) return true;                       // empty sections are the "write something" checks' job
+  const nonSpace = t.replace(/\s/g,"");
+  const letters = (t.match(/[A-Za-z]/g)||[]).length;
+  if(nonSpace.length >= 4 && letters/nonSpace.length < 0.6) return false;
+  const alpha = t.split(/\s+/).map(w=>w.replace(/[^A-Za-z']/g,"")).filter(Boolean);
+  if(!alpha.length) return false;
+  const wordLike = alpha.filter(w=> w.length<=20 && /[aeiouy]/i.test(w) && !/(.)\1\1/i.test(w) && !/[bcdfghjklmnpqrstvwxz]{5,}/i.test(w));
+  if(wordLike.length/alpha.length < 0.6) return false;
+  if(alpha.length >= 4 && !alpha.some(w=>COMMON_WORDS.has(w.toLowerCase()))) return false;
+  return true;
+}
+// The trainee's own text in each section of a submission ("## Heading" blocks; "Label:" prefixes dropped).
+function submissionSections(text){
+  const parts = []; let cur = [];
+  String(text||"").split("\n").forEach(l=>{ if(/^\s*#/.test(l)){ if(cur.length) parts.push(cur.join("\n")); cur = []; } else cur.push(l.replace(/^\s*[A-Z][A-Za-z /&()'-]{1,40}:\s*/, "")); });
+  if(cur.length) parts.push(cur.join("\n"));
+  return parts.map(x=>x.trim()).filter(Boolean);
+}
+// Keyword "Check" buttons: refuse keyboard mash with a notice instead of a score.
+function labInputRejected(texts, noticeId){
+  if(texts.every(looksLikeWriting)) return false;
+  inlineNotice(noticeId, "Some of this looks like random characters rather than real writing. Write each section in real sentences, then check again.");
+  return true;
+}
 function assessSubmissionQuality(text){
   const cleaned = String(text||"")
     .split("\n").filter(l=>!/^\s*#/.test(l)).join("\n")
     .replace(/\(not written\)/gi," ").trim();
   const bad = (msg)=>({ok:false, msg});
+  if(submissionSections(text).some(sec=>!looksLikeWriting(sec))) return bad("Part of this looks like random characters rather than real writing. Write every part the way you'd actually send it.");
   const words = cleaned.split(/\s+/).filter(Boolean);
   if(words.length < 8) return bad("Your response is too short to evaluate. Write it out in full sentences, the way you'd actually send it.");
   const nonSpace = cleaned.replace(/\s/g,"");
@@ -8722,7 +8757,11 @@ function refundLastLabAttempt(){
 }
 function inlineNotice(id, msg){
   const el = document.getElementById(id);
-  if(el) el.innerHTML = `<div class="ai-result ai-error"><b>Not checked yet</b><div class="ai-result-body">${esc(msg)}</div></div>`;
+  if(!el) return;
+  el.innerHTML = `<div class="ai-result ai-error"><b>Not checked yet</b><div class="ai-result-body">${esc(msg)}</div></div>`;
+  // a report from an earlier submission of this same part no longer matches what's written: clear it
+  const scope = el.closest(".wizard-screen") || el.parentElement;
+  if(scope) scope.querySelectorAll('[id$="Result"]').forEach(x=>{ if(x!==el && x.querySelector(".eval-report, .ai-result")) x.innerHTML = ""; });
 }
 async function useLabAttempt(dayId, actionId){
   if(!state.completedLabActions) state.completedLabActions = {};
@@ -8735,7 +8774,7 @@ async function useLabAttempt(dayId, actionId){
   state.lastLabAttempt = {actionId, dayId, wasRepeat:isRepeat, at:Date.now()};
   if(isRepeat){
     if(labAttemptsRemaining(dayId) <= 0){
-      toast(`No repeat attempts left for ${ftName(dayId)} (all ${LAB_ATTEMPT_CAP} used). Ask your trainer to reset your Practice Lab attempts.`);
+      toast(`No repeat attempts left for ${ftName(dayId)} (all ${LAB_ATTEMPT_CAP} used). Use 🙋 Ask for more attempts, or ask your trainer to reset your Practice Lab attempts.`);
       return false;
     }
     const b = Object.assign({}, state.labAttemptsByDay||{}); b[dayId] = (b[dayId]||0) + 1;
@@ -9019,7 +9058,7 @@ function renderEvaluationReport(report, dayId){
       </div>` : ""}
       ${dayId ? `
       <div class="eval-action-row">
-        <button class="btn btn-ghost btn-sm" onclick="repeatActivity()" ${labAttemptsRemaining(dayId)<=0 ? `disabled title="No repeat attempts left for ${ftName(dayId)} — ask your trainer to reset them"` : ''}>🔁 Repeat Activity${labAttemptsRemaining(dayId)<=0 ? "" : ` (${labAttemptsRemaining(dayId)} left)`}</button>
+        <button class="btn btn-ghost btn-sm" onclick="repeatActivity()" ${labAttemptsRemaining(dayId)<=0 ? `disabled title="No repeat attempts left for ${ftName(dayId)} — ask your trainer to reset them"` : ''}>🔁 Repeat Activity${labAttemptsRemaining(dayId)<=0 ? "" : ` (${labAttemptsRemaining(dayId)} left)`}</button>${labAttemptsRemaining(dayId)<=0 ? `<button class="btn btn-ghost btn-sm" onclick="requestMoreLabAttempts(${dayId})" title="Your trainer sees the request in Trainee Audit and can give you a fresh set">🙋 ${state.labResetRequestedAt ? "Asked for more attempts ✓" : "Ask for more attempts"}</button>` : ''}
         <button class="btn btn-navy btn-sm" onclick="retainScoreAndAdvance()">✅ Retain Score &amp; Advance</button>
       </div>
       <div class="eval-action-row" style="border-top:none;padding-top:0;margin-top:8px;">
@@ -13243,7 +13282,7 @@ function renderAdminRow(rec, day, practice){
           <button class="btn btn-sm btn-ghost" onclick="toggleAdminDetail('${rec.id}')">${expanded?"Hide":"View"} Detail</button>
           <button class="btn btn-sm btn-primary" onclick="openFeedbackFor('${rec.id}')" title="Write and send feedback to this trainee">✍ Feedback</button>
           <button class="btn btn-sm btn-ghost" onclick="adminOpenCertificate('${rec.id}')" title="Preview / download this trainee's Certificate of Completion">🎓 Certificate</button>
-          <button class="btn btn-sm btn-ghost" title="Give this trainee a fresh ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts on every day" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${rec.labAttemptsGlobal ? ` (${rec.labAttemptsGlobal} used)` : ""}</button>
+          ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? `<span class="pill" style="background:var(--danger-bg);color:var(--danger);font-weight:800;" title="Asked ${fmtDate(rec.labResetRequestedAt)}${rec.labResetRequestedDay ? " (Day " + rec.labResetRequestedDay + ")" : ""}">🙋 Asked for more attempts</span>` : ""}<button class="btn btn-sm ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? "btn-primary" : "btn-ghost"}" title="Give this trainee a fresh ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts on every day" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${rec.labAttemptsGlobal ? ` (${rec.labAttemptsGlobal} used)` : ""}</button>
           ${renderUnlockDaysControl(rec)}
           <button class="btn btn-sm btn-ghost" style="color:var(--danger);" onclick="confirmRevokeTrainee('${rec.id}', '${esc(rec.name||"this trainee").replace(/'/g,"\\'")}')">Revoke</button>
         </div>
@@ -13287,6 +13326,7 @@ window.adminUnlockDays = adminUnlockDays;
 async function resetTraineeLabAttempts(traineeId){
   const rec = await sharedGet("trainee:"+traineeId);
   if(!rec) return;
+  rec.labResetRequestedAt = null;   // answered
   rec.labAttemptsGlobal = 0;
   rec.labAttemptsByDay = {};
   rec.labAttemptsResetAt = new Date().toISOString();
@@ -13299,6 +13339,19 @@ async function resetTraineeLabAttempts(traineeId){
   toast(`Practice Lab attempts reset for ${rec.name||"trainee"}. Their open page updates within about 10 seconds.`);
 }
 window.resetTraineeLabAttempts = resetTraineeLabAttempts;
+// Trainee: out of repeat attempts. Flags the record; the trainer sees "🙋 asked for more attempts" in Trainee Audit.
+async function requestMoreLabAttempts(dayId){
+  if(!state.traineeId){ toast("Sign in first."); return; }
+  const rec = await sharedGet("trainee:"+state.traineeId);
+  if(!rec){ toast("Couldn't reach your trainer's records. Try again in a moment."); return; }
+  rec.labResetRequestedAt = new Date().toISOString();
+  rec.labResetRequestedDay = dayId || null;
+  await sharedSet("trainee:"+state.traineeId, rec);
+  state.labResetRequestedAt = rec.labResetRequestedAt;
+  toast("Request sent. Your trainer sees it in Trainee Audit and can give you a fresh set of attempts.");
+  document.querySelectorAll('button[onclick^="requestMoreLabAttempts"]').forEach(b=>{ b.textContent = "🙋 Asked for more attempts ✓"; });
+}
+window.requestMoreLabAttempts = requestMoreLabAttempts;
 async function generateAiReview(traineeId){
   const btnWrap = document.getElementById("aiReviewWrap-"+traineeId);
   if(btnWrap) btnWrap.innerHTML = `<div class="ai-loading">Generating AI review…</div>`;
@@ -16722,6 +16775,7 @@ function coverageScore(facts, sectionNames, getTextForSection){
 async function checkD1Dossier(){
   const texts = DOSSIER_SECTIONS.map((_,si)=>document.getElementById(`d1sec${si}`).value.trim());
   if(texts.some(t=>t.length<15)){ inlineNotice("d1DossierResult","Write something in every section before checking."); const ai=document.getElementById("d1DossierAIResult"); if(ai) ai.innerHTML=""; return; }
+  if(labInputRejected(texts, "d1DossierResult")) return;
   const result = coverageScore(DOSSIER_FACTS, DOSSIER_SECTIONS, (sec)=>{
     const si = DOSSIER_SECTIONS.indexOf(sec);
     return texts[si];
@@ -16740,6 +16794,7 @@ window.checkD1Dossier = checkD1Dossier;
 async function checkD1Tracker(){
   const texts = TRACKER_SECTIONS.map((_,si)=>document.getElementById(`d1trk${si}`).value.trim());
   if(texts.some(t=>t.length<15)){ inlineNotice("d1TrackerResult","Write something in every tracker before checking."); return; }
+  if(labInputRejected(texts, "d1TrackerResult")) return;
   const result = coverageScore(TRACKER_FACTS, TRACKER_SECTIONS, (sec)=>{
     const si = TRACKER_SECTIONS.indexOf(sec);
     return texts[si];
