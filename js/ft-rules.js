@@ -4,7 +4,7 @@
    card sits above the Simulators card). The dashboard card opens #/rules.
      • Why this matters: training simulates the real world; weekly score audits; no progress after
        coaching and feedback may mean offboarding.
-     • Rules: strict tracking 8 AM – 5 PM PST; breaks 15-30-15 or one full hour; cameras on in
+     • Rules: strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
        discussions; the 5-minute response rule (notifications on); naming conventions followed strictly.
      • Auxes: reporting your status in the two Discord channels, no double stamping.
      • #training-reminders (Day 1 → Training Reminders), with its screenshots.
@@ -295,6 +295,8 @@ function renderRules(){
     <section class="ftr-sec ftr-rules">
       <h2>⏰ Rules for every training day</h2>
       <div class="ftr-rule"><b>Hubstaff tracking is strict: ${esc(SHIFT)}.</b></div>
+      <div class="ftr-rule"><b>🕗 Time management: follow your schedule strictly.</b>
+        <span>Log in and log out on time. Don’t track extra time beyond what’s allowed. The idea is to follow protocol at all times.</span></div>
       <div class="ftr-rule"><b>Breaks: strictly 15 – 30 – 15, or one full 1-hour break.</b>
         <span>Take a 15-minute break, a 30-minute break and another 15-minute break, or one full hour. No other split.</span></div>
       <div class="ftr-rule"><b>📷 Cameras on during classroom discussions.</b>
@@ -429,7 +431,7 @@ window.renderDashboard = function(){
   if(!state.traineeId && !state.isAdmin) return html;
   const card = `<div class="ftr-banner" role="link" tabindex="0" onclick="goto('rules')" onkeydown="if(event.key==='Enter') goto('rules')">
       <span class="ftr-banner-ic">📌</span>
-      <span class="ftr-banner-tx"><b>Training Orientation and Rules</b><span>Tracking ${esc(SHIFT)} · Breaks 15 – 30 – 15 or one full hour · Cameras on · 5-minute response rule · Auxes (no double stamping) · #training-reminders · EOD email and trackers · Typing and spelling tests · Your Hubstaff To-Dos and notes · Time adjustments</span></span>
+      <span class="ftr-banner-tx"><b>Training Orientation and Rules</b><span>Tracking ${esc(SHIFT)} · Time management · Breaks 15 – 30 – 15 or one full hour · Cameras on · 5-minute response rule · Auxes (no double stamping) · #training-reminders · EOD email and trackers · Typing and spelling tests · Your Hubstaff To-Dos and notes · Time adjustments</span></span>
       <span class="ftr-banner-go">Open →</span></div>`;
   return html.replace('<div class="module-grid">', card + '<div class="module-grid">');
 };
