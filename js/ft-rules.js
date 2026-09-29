@@ -24,49 +24,49 @@ const SHIFT = "8:00 AM – 5:00 PM PST";
 // Auxes: where and what to type in Discord.
 const AUX_CHANNELS = [
   {ch:"#⏳-timestamps", what:"The LSH BOT channel. Type the command for your status; LSH BOT replies to confirm it.",
-   rows:[["Start of your shift", "!in"], ["Back from a break", "!back"]], bot:true},
+   rows:[["Start of Your Shift", "!in"], ["Back From a Break", "!back"]], bot:true},
   {ch:"#batch-group-channel", what:"Your batch’s channel. Type In at exactly 8:00 AM PST, when you start your Hubstaff.",
-   rows:[["Start of your shift", "In"]]}
+   rows:[["Start of Your Shift", "In"]]}
 ];
 
 // Daily habits. Links from the guide: Day 0 → Onboarding Orientation (Training Matrix, sample
 // updated trackers) and Day 1 → Training Monitoring Sheet. soon: until the templates are provided.
 const HABITS = [
-  {icon:"📧", name:"Send your EOD email", lines:[
+  {icon:"📧", name:"Send Your EOD Email", lines:[
     "Email your EOD (end-of-day) report before the end of every shift.",
-    "Make it as comprehensive as possible: at least 2 sentences for each item, ideally more.",
+    "Make it as comprehensive as possible. Write at least 2 sentences for each item, ideally more.",
     "Include at least 3 key learnings from the tasks you completed that day."],
    to:["martin@legalsupporthelp.com", "michelle.velarde@legalsupporthelp.com"],
-   links:[["Training Matrix", "https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", "your training flow, for your tasks on queue for tomorrow"]],
+   links:[["Training Matrix", "https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", "Your training flow, for your tasks on queue for tomorrow."]],
    soon:"The EOD template will be added here soon."},
-  {icon:"📋", name:"Update your trackers", tracker:true, lines:[
-    "Update your LSH Daily Task Tracker every day, before the end of your shift: every open task gets a Daily Note for the day.",
-    "Make your tracker as comprehensive and detailed as possible, and keep it organized: fill in every part (explained below). You can transfer your discussion notes for reference.",
-    "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered: the date, and all 5 takeaways in complete, specific sentences."],
+  {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
+    "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
+    "Make your tracker as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
+    "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
-   links:[["Sample updated trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "the LSH Daily Task Tracker, filled in"],
-          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1Ty9HXeWRCxqM78quiiEHqFYxZwGeT9Uh/edit?usp=sharing&ouid=107426275770887856664&rtpof=true&sd=true", "download it, then upload it to your trainee folder"]],
+   links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
+          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1Ty9HXeWRCxqM78quiiEHqFYxZwGeT9Uh/edit?usp=sharing&ouid=107426275770887856664&rtpof=true&sd=true", "Download it, then upload it to your trainee folder."]],
    soon:"The tracker templates will be added here soon."}
 ];
 
 // The LSH Daily Task Tracker, part by part (the parts of js/ft-tracker.js's sheet).
 const TRACKER_PARTS = {
-  top:[["Status counts (rows 1–5)", "How many of your tasks are New, Pending for >3 days, Ongoing, Priority - Ongoing and Completed. They count themselves from each task’s Status."]],
+  top:[["Status Counts (Rows 1–5)", "How many of your tasks are New, Pending for >3 days, Ongoing, Priority - Ongoing and Completed. They count themselves from each task’s Status."]],
   sections:[["⬇ FOR COMPLETION ⬇", "The tasks you’re working on. Add a row for each new task."],
             ["⬇ RECURRING ⬇", "Tasks you do every day, like your Typing Test and Spelling Test."],
             ["⬇ COMPLETED ⬇", "Finished tasks, with their Actual Completion Date."]],
   cols:[["Date Received", "The date you got the task."],
         ["Type of Task", "Pick the type from the list. Your training tasks are LSH-TRAINING."],
         ["Task Details / Specific Task", "What the task is, specifically, e.g. Classroom Discussion: Reception Training Day 1."],
-        ["Accountable VA", "Your name: the VA responsible for the task."],
-        ["DAILY NOTES (Dated Significant Task Progress/Difficulties)", "One dated column for each training day. For every open task, write what you did that day, the result and the next step, and any difficulty with what you need to resolve it. As detailed as possible: never just “done”, “ok” or “same”."],
+        ["Accountable VA", "Your name, as the VA responsible for the task."],
+        ["DAILY NOTES (Dated Significant Task Progress/Difficulties)", "One dated column for each training day. For every open task, write what you did that day, the result and the next step, and any difficulty with what you need to resolve it. Make it as detailed as possible. Never write just “done”, “ok” or “same”."],
         ["VA NOTES", "Your takeaways from the task, in complete sentences that show what you learned."],
         ["Deadline", "The date the task is due."],
         ["Status", "New, Pending for >3 days, Ongoing, Priority - Ongoing or Completed. Keep it up to date."],
         ["Actual Completion Date", "The date you finished the task."]],
-  tabs:[["Client-VA Specific Tasks Index", "Each client’s tasks at a glance: client code, business name, state, time zone, field of law, type of task, specific task, period (Daily to Project-based), nature of task (how important and urgent), and deadline (ASAP, Anytime w/in the day, or Timebound, with the date, day or time)."],
-        ["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here: they stay in the credentials document."],
-        ["Directory", "Your contacts: contact person, business name, business address, phone no. (ext), fax number and email."],
+  tabs:[["Client-VA Specific Tasks Index", "Each client’s tasks at a glance, with the client code, business name, state, time zone, field of law, type of task, specific task, period (Daily to Project-based), nature of task (how important and urgent), and deadline (ASAP, Anytime w/in the day, or Timebound, with the date, day or time)."],
+        ["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here. They stay in the credentials document."],
+        ["Directory", "Your contacts, with the contact person, business name, business address, phone no. (ext), fax number and email."],
         ["Time Zone", "The time zones you work with, for quick reference."]],
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
 };
@@ -106,7 +106,7 @@ const REMINDER_POSTS = {
 // Day 1 → Reading Task. The file name gets the trainee's name.
 const READING = {
   title:"Personal Injury Cases (Overview: What is personal injury?)",
-  when:"Day 1: complete it within the 2nd – 3rd hour of the training day.",
+  when:"Day 1: Complete it within the 2nd – 3rd hour of the training day.",
   url:"https://drive.google.com/file/d/1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O/view?usp=sharing",
   questions:[
     "What is personal injury and what are its types?",
@@ -115,15 +115,15 @@ const READING = {
     "How long does it take for a personal injury case to resolve?",
     "What are the common factors that affect a personal injury case?",
     "What do you think are the advantages and disadvantages of pushing for a case to litigation (going to court)?"],
-  file: name => `PI Overview_Answers (${name || "VA’s name"})`
+  file: name => `PI Overview_Answers (${name || "VA’s Name"})`
 };
 
 // Day 1 → Setting of Expectations: the tests' links, file names and sample screenshots.
 const TESTS = [
-  {icon:"⌨️", name:"Typing test", when:"Twice a day: in the morning, 8:00 – 8:10 AM (AM), and before the end of your shift (PM).",
+  {icon:"⌨️", name:"Typing Test", when:"Twice a day, in the morning at 8:00 – 8:10 AM (AM) and before the end of your shift (PM).",
    links:[["TypingClub", "https://www.typingclub.com/sportal/program-3.game"], ["Alternative: TypingTest.com", "https://www.typingtest.com/"]],
    file:"Typing Test [date taken][AM/PM]", sample:"/ft/day1/img/typing-test-sample.png"},
-  {icon:"🔤", name:"Spelling test", when:"Once a day, at your own pace: in the morning or in the afternoon.",
+  {icon:"🔤", name:"Spelling Test", when:"Once a day, at your own pace, in the morning or in the afternoon.",
    links:[["SpellQuiz (Grade 12)", "https://spellquiz.com/spelling-test/grade-12"], ["Alternative: Spelling-Test.com", "https://spelling-test.com/spelling-exercise#question_16"]],
    file:"Spelling Test [date taken][AM/PM]", sample:"/ft/day1/img/spelling-test-sample.png"}
 ];
@@ -157,17 +157,17 @@ const TODOS = [
 const TODO_GUIDE = "https://docs.google.com/spreadsheets/d/1Yfeuw9xGb2H68qF9nHf94whXVKmoL1PP8QocP_FN1Ys/edit#gid=0";
 
 const NOTE_PARTS = [
-  {h:"Start tracking on today’s to-do", steps:[
+  {h:"Start Tracking on Today’s To-Do", steps:[
     "Open the Hubstaff desktop app.",
     "Click your training project, e.g. LSH - SUPPORT (Training Jr). It turns blue.",
-    "Under To-dos, find today’s to-do. Not there yet? Add it first (Your Hubstaff To-Dos, above).",
+    "Under To-dos, find today’s to-do. Not there yet? Add it first (see the Your Hubstaff To-Dos slides).",
     "Click the button inside today’s to-do, at its left. The row turns blue and the timer at the top tracks that to-do."],
    tip:"You can only add a note while the timer is running."},
-  {h:"Add the note", fig:"note", steps:[
+  {h:"Add the Note", fig:"note", steps:[
     "Click the notes button (the pencil icon) next to the timer.",
     "The Add Work Notes box opens. Type what you’re working on.",
     "Click Add Note."]},
-  {h:"Where your note goes", steps:[
+  {h:"Where Your Note Goes", steps:[
     "The note is saved to the 10-minute block of time you’re tracking now.",
     "Your trainers see it with your tracked time and activity in Hubstaff."]}
 ];
@@ -230,9 +230,9 @@ function figTodo(){
     ${rows.map((r,i)=>{ const y = 160 + i*34, on = i===sel;
       return `${on ? `<rect x="251" y="${y}" width="508" height="34" fill="${HB}"/><circle cx="272" cy="${y+17}" r="8" fill="#fff"/><rect x="268.5" y="${y+13.5}" width="7" height="7" rx="1" fill="${HB}"/><circle cx="272" cy="${y+17}" r="13" fill="none" stroke="${OR}" stroke-width="3"/>` : `<path d="M251 ${y+34}H759" stroke="#eceef2"/>`}
         <text x="292" y="${y+21}" font-size="10.5" fill="${on ? "#fff" : "#333"}">${r[0]}</text><text x="597" y="${y+21}" font-size="10.5" fill="${on ? "#fff" : "#333"}">${r[1]}</text>`; }).join("")}
-    ${arrow("M125 372V350", m)}${callout(14, 372, 222, ["① Click your training project"])}
-    ${arrow("M741 57V99", m)}${callout(430, 30, 320, ["② Paste it in Create a to-do, then click +"])}
-    ${arrow("M345 318C300 308 276 292 273 266", m)}${callout(330, 318, 410, ["③ Click the button inside today’s to-do", "to track your time on it. The row turns blue."])}
+    ${arrow("M125 372V350", m)}${callout(14, 372, 222, ["① Click Your Training Project"])}
+    ${arrow("M741 57V99", m)}${callout(410, 30, 340, ["② Paste It in Create a To-Do, Then Click +"])}
+    ${arrow("M345 318C300 308 276 292 273 266", m)}${callout(330, 318, 410, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
   </svg>`;
 }
 // The Add Work Notes box, opened from the notes button next to the timer.
@@ -244,11 +244,11 @@ function figNote(){
     <rect x="330" y="92" width="360" height="176" rx="6" fill="#fff" stroke="#b9bec8"/>
     <path d="M331 118H689" stroke="#e1e4ea"/><text x="342" y="109" font-size="11" fill="#222">Add Work Notes</text>
     <rect x="350" y="128" width="320" height="92" fill="#fff" stroke="#1c5fa8" stroke-width="1.5"/>
-    <text x="362" y="148" font-size="12.5" font-weight="700" fill="${OR}">② Type what you’re working on</text>
+    <text x="362" y="148" font-size="12.5" font-weight="700" fill="${OR}">② Type What You’re Working On</text>
     <rect x="350" y="234" width="66" height="22" rx="3" fill="#fff" stroke="#9aa0ab"/><text x="383" y="249" text-anchor="middle" font-size="11" fill="#222">Cancel</text>
     <rect x="590" y="234" width="80" height="22" rx="3" fill="#f4f4f4" stroke="#b9bec8"/><text x="630" y="249" text-anchor="middle" font-size="11" fill="#222">Add Note</text>
     <rect x="585" y="229" width="90" height="32" rx="6" fill="none" stroke="${OR}" stroke-width="2.5"/>
-    ${arrow("M270 54H240", m)}${callout(270, 40, 320, ["① Click the notes button next to the timer"])}
+    ${arrow("M270 54H240", m)}${callout(270, 40, 340, ["① Click the Notes Button Next to the Timer"])}
     ${arrow("M550 295C590 295 620 285 626 268", m)}${callout(400, 282, 150, ["③ Click Add Note"])}
   </svg>`;
 }
@@ -267,43 +267,43 @@ const botPost = (title, body)=>`<div class="ftr-dc">
     <div class="ftr-dc-embed">${body}</div></div>`;
 
 const SLIDES = [
-  ["why", "Why this matters", ()=>`
-    <div class="ftr-stakes"><b>🎯 Training is a simulation of the real world</b>
+  ["why", "Why This Matters", ()=>`
+    <div class="ftr-stakes"><b>🎯 Training Is a Simulation of the Real World</b>
       <p>We assign all these tasks to prepare you for it. Training is just the beginning. Your scores are audited every week, and if coaching and feedback don’t show progress, you may be considered for offboarding. We need to see that you can actually survive in the legal industry, so don’t be complacent.</p></div>
-    <div class="ftr-goal"><b>🧭 Your goal: become a Generalist Legal VA</b>
+    <div class="ftr-goal"><b>🧭 Your Goal: Become a Generalist Legal VA</b>
       <p>This training is designed to make you familiar with every type of role. You may be hired for a specific role, like Intake Specialist, but you’re expected to take on other roles as the partnership with the client grows. Mastery follows once you’re in a role. What matters now is that you’re comfortable and equipped to take on other tasks confidently, so you make the most of your hours from the start of your role.</p></div>
-    <p class="ftr-sub">Next: the rules for every training day, how to report your status, your daily habits, your Hubstaff To-Dos and notes, and Day 1’s Reading Task.</p>`],
-  ["schedule", "Rules: your schedule", ()=>
-    rule(`⏰ Hubstaff tracking is strict: ${esc(SHIFT)}.`) +
-    rule("🕗 Time management: follow your schedule strictly.", "Log in and log out on time. Don’t track extra time beyond what’s allowed: you may log in up to 10 minutes early as buffer time, only with Matt’s approval. The idea is to follow protocol at all times.") +
-    rule("☕ Breaks: strictly 15 – 30 – 15, or one full 1-hour break.", "Take a 15-minute break, a 30-minute break and another 15-minute break, or one full hour. No other split.")],
-  ["communication", "Rules: communication", ()=>
-    rule("⏱ The 5-minute rule: reply to messages within 5 minutes.", "Be mindful of your response time, and turn on your notifications so you never miss a message.") +
-    rule("✅ Acknowledge every Discord message from your trainer.", "Reply to it, or acknowledge it: an emoji reaction or “Noted” is enough. It shows you’re responsive and reliable.") +
-    rule("📅 Meeting schedules are sent on the date and time of the discussion.", "Keep your notifications on so you don’t miss them.") +
-    rule("📷 Cameras on during classroom discussions.", "Every trainee’s camera stays on for the whole discussion.")],
-  ["work", "Rules: your work", ()=>
-    rule("📛 Follow the naming conventions strictly.", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
-    rule("🤖 Use of AI: don’t rely on it.", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care: it’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
-  ["free-skills", "Free Skills Training: after your shift", ()=>`
-    <div class="ftr-goal"><b>🌱 Every day after your shift, ideally 5:00 – 6:00 PM PST</b>
-      <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you: extra skills on top of your training.</p></div>
-    <div class="ftr-rule"><b>🕔 Unpaid and untracked: don’t track your time for it.</b>
+    <p class="ftr-sub">Next: The rules for every training day, how to report your status, your daily habits, your Hubstaff To-Dos and notes, and Day 1’s Reading Task.</p>`],
+  ["schedule", "Rules: Your Schedule", ()=>
+    rule(`⏰ Hubstaff Tracking Is Strict: ${esc(SHIFT)}`) +
+    rule("🕗 Time Management: Follow Your Schedule Strictly", "Log in and log out on time. Don’t track extra time beyond what’s allowed. You may log in up to 10 minutes early as buffer time, only with Matt’s approval. The idea is to follow protocol at all times.") +
+    rule("☕ Breaks: Strictly 15 – 30 – 15, or One Full 1-Hour Break", "Take a 15-minute break, a 30-minute break and another 15-minute break, or one full hour. No other split.")],
+  ["communication", "Rules: Communication", ()=>
+    rule("⏱ The 5-Minute Rule: Reply to Messages Within 5 Minutes", "Be mindful of your response time, and turn on your notifications so you never miss a message.") +
+    rule("✅ Acknowledge Every Discord Message From Your Trainer", "Reply to it or acknowledge it. An emoji reaction or “Noted” is enough. It shows you’re responsive and reliable.") +
+    rule("📅 Meeting Schedules Are Sent on the Date and Time of the Discussion", "Keep your notifications on so you don’t miss them.") +
+    rule("📷 Cameras On During Classroom Discussions", "Every trainee’s camera stays on for the whole discussion.")],
+  ["work", "Rules: Your Work", ()=>
+    rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
+    rule("🤖 Use of AI: Don’t Rely on It", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care. It’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
+  ["free-skills", "Free Skills Training: After Your Shift", ()=>`
+    <div class="ftr-goal"><b>🌱 Every Day After Your Shift, Ideally 5:00 – 6:00 PM PST</b>
+      <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you, with extra skills on top of your training.</p></div>
+    <div class="ftr-rule"><b>🕔 Unpaid and Untracked: Don’t Track Your Time for It</b>
       <span>Why? Our training covers the standard legal VA training. Free Skills Training is an initiative of the training team, to add to your knowledge.</span></div>
-    <div class="ftr-rule"><b>🙋 Missed it? Be proactive.</b>
+    <div class="ftr-rule"><b>🙋 Missed It? Be Proactive.</b>
       <span>Ask for the materials, and review them at your own pace.</span></div>
-    <div class="ftr-why"><b>Why it matters:</b> it’s the perfect time to show your reliability and flexibility, and your continuous effort to improve yourself.</div>`],
-  ["auxes", "Auxes: reporting your status", ()=>`
-    <p class="ftr-sub">Your aux is your status: in for your shift, on a break, back from a break. Report it in Discord every time it changes, in these 2 channels:</p>
+    <div class="ftr-why"><b>Why It Matters:</b> It’s the perfect time to show your reliability and flexibility, and your continuous effort to improve yourself.</div>`],
+  ["auxes", "Auxes: Reporting Your Status", ()=>`
+    <p class="ftr-sub">Your aux is your status, such as in for your shift, on a break or back from a break. Report it in Discord every time it changes, in these 2 channels:</p>
     <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
       <div class="ftr-chan-h">${esc(c.ch)}</div>
       <p>${esc(c.what)}</p>
       ${c.rows.map(r=>`<div class="ftr-aux"><span>${esc(r[0])}</span><code>${esc(r[1])}</code></div>`).join("")}
       ${c.bot ? `<div class="ftr-chat" aria-label="Example"><div><b>You</b> !back</div><div><b>LSH BOT</b><i>APP</i> <span class="ftr-at">@You</span> is back</div></div>` : ""}
     </div>`).join("")}</div>
-    <div class="ftr-rule ftr-rule-aux"><b>🚫 No double stamping.</b><span>Post each timestamp once.</span></div>
+    <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each timestamp once.</span></div>
     <div class="ftr-part ftr-status">
-      <div class="ftr-part-h">💬 Your Discord profile status</div>
+      <div class="ftr-part-h">💬 Your Discord Profile Status</div>
       <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
       <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
     </div>`],
@@ -312,25 +312,25 @@ const SLIDES = [
     ${botPost(d.title, d.groups.map(g=>`<div class="ftr-dc-g"><b>${esc(g.h)}</b><ul>${g.li.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${(g.after||[]).map(x=>`<div>${esc(x)}</div>`).join("")}</div>`).join("") + `<div class="ftr-dc-g"><b>${esc(d.foot)}</b></div>`)}`; }],
   ["reminders-important", "Check #training-reminders: Important Reminders", ()=>{ const r = REMINDER_POSTS.important;
     return botPost(r.title, `<ol>${r.ol.map(x=>Array.isArray(x) ? `<li>${esc(x[0])}<div class="ftr-dc-sub">${x[1].map(y=>`<div>${esc(y)}</div>`).join("")}</div></li>` : `<li>${esc(x)}</li>`).join("")}</ol>`); }],
-  ["habits", "Building your daily habits", ()=>`
+  ["habits", "Building Your Daily Habits", ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift:</p>
     <div class="ftr-grid">${HABITS.map(h=>`<div class="ftr-chan ftr-test">
       <div class="ftr-part-h">${h.icon} ${esc(h.name)}</div>
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-      ${h.to ? `<div class="ftr-to"><b>Send to</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
+      ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
       ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
-      ${h.tracker && !FT_AUDIENCE() ? `<div class="ftr-links"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open my Task Tracker</button></div>` : ""}
+      ${h.tracker && !FT_AUDIENCE() ? `<div class="ftr-links"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>` : ""}
       ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
       <p class="ftr-soon">🕓 ${esc(h.soon)}</p>
     </div>`).join("")}</div>`],
-  ["tracker", "Your Daily Task Tracker: the sheet", ()=>`
+  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
-    <div class="ftr-parts">${tpart("The top of the sheet", TRACKER_PARTS.top)}${tpart("The three sections", TRACKER_PARTS.sections)}${tpart("The columns, left to right", TRACKER_PARTS.cols)}</div>`],
-  ["tracker-tabs", "Your Daily Task Tracker: the other tabs and the daily check", ()=>`
-    <div class="ftr-parts">${tpart("The other tabs", TRACKER_PARTS.tabs)}</div>
-    <div class="ftr-why" style="margin-top:14px;"><b>The daily check:</b> ${esc(TRACKER_PARTS.check)}</div>
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links" style="margin-top:12px;"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open my Task Tracker</button></div>`}`],
-  ["tests", "Typing and spelling tests", ()=>`
+    <div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div>`],
+  ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
+    <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
+    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>
+    ${FT_AUDIENCE() ? "" : `<div class="ftr-links" style="margin-top:12px;"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}`],
+  ["tests", "Typing and Spelling Tests", ()=>`
     <div class="ftr-why"><b>Why?</b> The client expects a typing speed of 60 WPM (words per minute). The daily tests build your speed and your spelling, and the results you save show your progress through the training.</div>
     <div class="ftr-grid">${TESTS.map(t=>`<div class="ftr-chan ftr-test">
       <div class="ftr-part-h">${t.icon} ${esc(t.name)}</div>
@@ -338,10 +338,10 @@ const SLIDES = [
       <div class="ftr-links">${t.links.map((l,i)=>`<a class="btn ${i ? "btn-ghost" : "btn-navy"} btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0])} ↗</a>`).join("")}</div>
       <p class="ftr-when"><b>Save it</b> in your trainee folder, named exactly:</p>
       <div class="ftr-aux"><code>${esc(t.file)}</code></div>
-      <figure class="ftr-sample"><a href="${esc(t.sample)}" target="_blank"><img src="${esc(t.sample)}" alt="Sample ${esc(t.name.toLowerCase())} screenshot" loading="lazy"></a><figcaption>Sample: the whole screen, with the date and time showing.</figcaption></figure>
+      <figure class="ftr-sample"><a href="${esc(t.sample)}" target="_blank"><img src="${esc(t.sample)}" alt="Sample ${esc(t.name.toLowerCase())} screenshot" loading="lazy"></a><figcaption>Sample: The whole screen, with the date and time showing.</figcaption></figure>
     </div>`).join("")}</div>
     <p class="ftr-sub ftr-after">Take a screenshot of each result and save it in your trainee folder, named exactly as above. Missed a test? Make it up during your idle time. You may also take extra rounds during your idle time or after your shift.</p>`],
-  ["todo-how", "Your Hubstaff To-Dos: how to add them", ()=>`
+  ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`
     <div class="ftr-why"><b>Why?</b> Your To-Dos help the audit team review your work easily, and keep a clear record of what you completed each day. Set your To-Do every day, for the session you’re in. Don’t miss this routine.</div>
     <div class="ftr-part">
       <ol>
@@ -351,28 +351,28 @@ const SLIDES = [
         <li>Click the button inside that to-do, at its left, to track your time on it.</li>
       </ol>
       ${fig(figTodo())}
-      <p class="ftr-tip">More on to-dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p>
+      <p class="ftr-tip">More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p>
     </div>`],
-  ["todos", "Your Hubstaff To-Dos: copy and paste", ()=>`
+  ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>`
     <p class="ftr-sub">Named exactly as below. Click 📋 Copy, then paste it in Hubstaff’s Create a to-do.</p>
     <div class="ftr-todos">${TODOS.map((t,i)=>`<div class="ftr-todo">
       <span class="ftr-todo-n">${i+1}</span>
       <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
       <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`).join("")}</div>
-    <p class="ftr-sub ftr-after"><b>Shadowing session?</b> Use <code class="ftr-code">Shadowing [Type of role or process you’re shadowing] (VA’s Name)</code>. Your trainer tells you exactly what to enter each time a shadowing session is scheduled.</p>`],
-  ["notes", "How to create notes in Hubstaff", ()=>`<div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
+    <p class="ftr-sub ftr-after"><b>Shadowing Session?</b> Use <code class="ftr-code">Shadowing [Type of role or process you’re shadowing] (VA’s Name)</code>. Your trainer tells you exactly what to enter each time a shadowing session is scheduled.</p>`],
+  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
       ${p.fig ? fig(FIGS[p.fig]()) : ""}
     </div>`).join("")}</div>`],
-  ["time-adjustment", "Lost hours? Manual Time Adjustment Request", ()=>`
+  ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
     <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
     <div class="ftr-part">
       ${copyRow("Subject", TIME_ADJ.subject)}
-      ${copyRow("Send to", TIME_ADJ.to)}
+      ${copyRow("Send To", TIME_ADJ.to)}
       ${TIME_ADJ.cc.map(c=>copyRow("CC", c[1], c[0])).join("")}
-      <p class="ftr-when" style="margin-top:10px!important;"><b>In the email:</b></p>
+      <p class="ftr-when" style="margin-top:10px!important;"><b>In the Email:</b></p>
       <ul class="ftr-list">${TIME_ADJ.include.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
     </div>`],
   ["reading", "Day 1 Reading Task: Personal Injury Cases", ()=>{
@@ -385,14 +385,14 @@ const SLIDES = [
       <div class="ftr-links" style="margin-top:8px;"><a class="btn btn-navy btn-sm viewer-link" data-kind="doc" data-title="${esc(READING.title)}" href="${esc(READING.url)}">📄 ${esc(READING.title)}</a></div>
     </div>
     <div class="ftr-part" style="margin-top:14px;">
-      <div class="ftr-part-h"><span>B</span>Answer the following questions</div>
+      <div class="ftr-part-h"><span>B</span>Answer the Following Questions</div>
       <ol>${READING.questions.map(q=>`<li>${esc(q)}</li>`).join("")}</ol>
       <p class="ftr-tip">Write your answers in a Word document or Notepad, then send them in our group chat so we know you’re done. Name the file exactly:</p>
       <div class="ftr-todo"><span class="ftr-todo-tx"><code class="ftr-code">${esc(readFile)}</code></span><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(readFile)}" data-toast="Copied. Use it as your file name." onclick="ftrCopy(this)">📋 Copy</button></div>
     </div>`; }],
-  ["howto", "Hubstaff how-to lessons", ()=>`<div class="ftr-lessons">${HOWTO_LESSONS.length
+  ["howto", "Hubstaff How-To Lessons", ()=>`<div class="ftr-lessons">${HOWTO_LESSONS.length
     ? HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")
-    : `<p class="ftr-soon">Coming soon: the Hubstaff how-to lessons will be added here.</p>`}</div>`]
+    : `<p class="ftr-soon">Coming soon: The Hubstaff how-to lessons will be added here.</p>`}</div>`]
 ];
 // The slides window shown to the room (Presenter view) has no Task Tracker to open.
 function FT_AUDIENCE(){ return typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE; }
@@ -442,7 +442,7 @@ function orientCard(){
   return `
   <div class="module-card mc-${done ? "done" : "open"} ftr-card" id="module-${ORIENT_ID}">
     <div class="module-head">
-      <div class="mh-day">${done ? "Finished" : "📌 Start here"}</div>
+      <div class="mh-day">${done ? "Finished" : "📌 Start Here"}</div>
       <div class="mh-title">${esc(ORIENT.title)}</div>
     </div>
     <div class="module-body"><p class="ftr-card-sub">The rules and your daily routine for the whole training.</p></div>
@@ -460,71 +460,71 @@ window.renderDashboard = function(){
 /* inside a slide (.ft-body): buttons and links keep their own colors */
 .ftr-slide a.btn-ghost, .ft-body .ftr-slide a.btn-ghost{color:var(--navy);} .ftr-slide a.btn-ghost:hover{color:var(--navy);}
 .ftr-slide p{margin:0;} .ftr-slide .ftr-sub{margin:0 0 12px;} .ftr-slide .ftr-after{margin-top:12px;}
-.ftr-card-sub{margin:0;font-size:13px;color:var(--ink-soft);font-weight:600;}
+.ftr-card-sub{margin:0;font-size:14px;color:var(--ink-soft);font-weight:600;}
 /* numbered lists on a slide: the numbers, without the slide's bullet dots */
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide li, .lesson-card .ftr-slide li{text-align:left;}
 .lesson-card .ftr-slide ol{list-style:decimal;padding-left:24px;}
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide ol > li, .lesson-card .ftr-slide ol > li{padding-left:2px;}
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide ol > li::before, .lesson-card .ftr-slide ol > li::before{content:none;display:none;}
-.ftr-sub{margin:0 0 14px;color:var(--ink-soft);font-size:14px;max-width:820px;} .ftr-sub b{color:var(--ink);}
+.ftr-sub{margin:0 0 14px;color:var(--ink-soft);font-size:15.5px;max-width:820px;} .ftr-sub b{color:var(--ink);}
 .ftr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px;}
 .ftr-rule{background:var(--danger-bg);border:1px solid #E9C9C3;border-left:5px solid var(--danger);border-radius:12px;padding:12px 16px;margin-bottom:10px;}
 .ftr-rule-aux{margin-top:14px;}
 .ftr-stakes{background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow);}
 .ftr-goal{background:#FBEBDD;border:1px solid var(--orange-soft);border-left:5px solid var(--orange);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;}
-.ftr-goal b{display:block;font-size:16px;color:var(--orange-deep);} .ftr-goal p{margin:6px 0 0!important;font-size:14.5px;line-height:1.55;}
+.ftr-goal b{display:block;font-size:17px;color:var(--orange-deep);} .ftr-goal p{margin:6px 0 0!important;font-size:15.5px;line-height:1.55;}
 .ftr-dc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-family:'gg sans','Noto Sans',Arial,sans-serif;font-weight:400;color:#313338;}
 .ftr-dc-head{display:flex;align-items:center;gap:8px;font-size:14px;} .ftr-dc-head b{color:#060607;} .ftr-dc-head i{font-style:normal;font-size:10px;font-weight:700;background:#5865F2;color:#fff;border-radius:3px;padding:1px 4px;}
 .ftr-dc-av{width:32px;height:32px;border-radius:50%;background:#7dd3fc;display:flex;align-items:center;justify-content:center;font-size:17px;}
-.ftr-dc-ch{margin-left:auto;font-size:12px;color:#5c5e66;}
-.ftr-dc-title{margin:8px 0 6px;font-size:15px;}
-.ftr-dc-embed{border-left:4px solid #3aa3e3;background:#f8f9fb;border-radius:4px;padding:10px 14px;font-size:14px;line-height:1.5;}
+.ftr-dc-ch{margin-left:auto;font-size:13px;color:#5c5e66;}
+.ftr-dc-title{margin:8px 0 6px;font-size:16px;}
+.ftr-dc-embed{border-left:4px solid #3aa3e3;background:#f8f9fb;border-radius:4px;padding:10px 14px;font-size:15px;line-height:1.5;}
 .ftr-dc-embed ul, .ftr-dc-embed ol{margin:2px 0 0!important;padding-left:20px!important;} .ftr-dc-embed li{margin:2px 0!important;}
 .ftr-dc-g + .ftr-dc-g{margin-top:8px;} .ftr-dc-g b{font-weight:600;} .ftr-dc-sub{margin-top:2px;}
-.ftr-stakes b{display:block;font-size:17px;color:var(--orange-soft);} .ftr-stakes p{margin:6px 0 0;font-size:14.5px;line-height:1.55;max-width:900px;}
-.ftr-why{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:14px;max-width:900px;} .ftr-why b{color:var(--orange-deep);}
+.ftr-stakes b{display:block;font-size:18px;color:var(--orange-soft);} .ftr-stakes p{margin:6px 0 0;font-size:15.5px;line-height:1.55;max-width:900px;}
+.ftr-why{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15.5px;max-width:900px;} .ftr-why b{color:var(--orange-deep);}
 .ftr-test{display:flex;flex-direction:column;gap:8px;} .ftr-test .ftr-aux{border-top:0;padding:0;}
-.ftr-when{margin:0!important;font-size:14px!important;color:var(--ink)!important;}
+.ftr-when{margin:0!important;font-size:15px!important;color:var(--ink)!important;}
 .ftr-links{display:flex;gap:8px;flex-wrap:wrap;} .ftr-links a.btn{text-decoration:none;}
 .ftr-sample{margin:4px 0 0;} .ftr-sample img{display:block;width:100%;border:1px solid var(--line);border-radius:8px;}
-.ftr-sample figcaption{margin-top:4px;font-size:12px;color:var(--ink-soft);}
+.ftr-sample figcaption{margin-top:4px;font-size:14px;color:var(--ink-soft);}
 .ftr-after{margin-top:14px;}
-.ftr-list{margin:0;padding-left:20px;font-size:14px;line-height:1.5;} .ftr-list li{margin-bottom:4px;}
-.ftr-aux small{font-size:12px;color:var(--ink-soft);} .ftr-aux a.btn{text-decoration:none;flex-shrink:0;}
+.ftr-list{margin:0;padding-left:20px;font-size:15px;line-height:1.5;} .ftr-list li{margin-bottom:4px;}
+.ftr-aux small{font-size:14px;color:var(--ink-soft);} .ftr-aux a.btn{text-decoration:none;flex-shrink:0;}
 .ftr-sub a{color:var(--orange-deep);font-weight:700;}
-.ftr-eg{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:6px;}
-.ftr-code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--ink);}
-.ftr-def{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:4px 16px;border-top:1px solid var(--line);padding:9px 0;font-size:14px;} .ftr-def:first-of-type{margin-top:8px;}
+.ftr-eg{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:6px;}
+.ftr-code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14.5px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--ink);}
+.ftr-def{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:4px 16px;border-top:1px solid var(--line);padding:9px 0;font-size:15px;} .ftr-def:first-of-type{margin-top:8px;}
 .ftr-def b{color:var(--navy);} .ftr-def span{color:var(--ink);}
 @media (max-width:620px){ .ftr-def{grid-template-columns:1fr;} }
 .ftr-status{margin-top:14px;} .ftr-status .ftr-when{margin-top:6px!important;}
 .ftr-copyrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:0;} .ftr-copyrow .ftr-code{overflow-wrap:anywhere;}
 .ftr-shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px;}
-.ftr-to{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13.5px;display:flex;flex-direction:column;gap:2px;} .ftr-to b{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);} .ftr-to span{overflow-wrap:anywhere;}
+.ftr-to{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:15px;display:flex;flex-direction:column;gap:2px;} .ftr-to b{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);} .ftr-to span{overflow-wrap:anywhere;}
 .ftr-shots figure{margin:0;} .ftr-shots a{display:flex;align-items:center;justify-content:center;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:6px;height:280px;box-shadow:var(--shadow);}
 .ftr-shots img{max-width:100%;max-height:100%;object-fit:contain;}
-.ftr-rule b{display:block;font-size:16px;color:var(--danger);} .ftr-rule span{display:block;margin-top:4px;font-size:13.5px;color:var(--ink);}
+.ftr-rule b{display:block;font-size:17px;color:var(--danger);} .ftr-rule span{display:block;margin-top:4px;font-size:15px;color:var(--ink);}
 .ftr-chan,.ftr-part{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;}
-.ftr-chan-h{font-size:16px;color:#5865F2;font-weight:800;} .ftr-chan p{margin:6px 0 10px;font-size:13.5px;color:var(--ink-soft);}
-.ftr-aux{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:8px 0;font-size:14px;}
+.ftr-chan-h{font-size:17px;color:#5865F2;font-weight:800;} .ftr-chan p{margin:6px 0 10px;font-size:15px;color:var(--ink-soft);}
+.ftr-aux{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:8px 0;font-size:15px;}
 .ftr-aux code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:800;background:var(--navy);color:#fff;border-radius:6px;padding:3px 10px;}
-.ftr-chat{margin-top:10px;background:#313338;color:#dbdee1;border-radius:10px;padding:10px 12px;font-size:13px;display:flex;flex-direction:column;gap:6px;}
+.ftr-chat{margin-top:10px;background:#313338;color:#dbdee1;border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:6px;}
 .ftr-chat b{color:#f2f3f5;margin-right:6px;} .ftr-chat i{font-style:normal;font-size:10px;font-weight:800;background:#5865F2;color:#fff;border-radius:3px;padding:1px 4px;margin-right:6px;}
 .ftr-at{background:rgba(88,101,242,.3);color:#c9cdfb;border-radius:3px;padding:0 2px;}
 .ftr-todos{padding:6px 14px;margin-top:14px;}
 .ftr-parts{display:flex;flex-direction:column;gap:14px;}
 .ftr-fig{margin:12px 0 0;} .ftr-fig-scroll{overflow-x:auto;border-radius:10px;}
-.ftr-swipe{display:none;margin-top:6px;font-size:12px;color:var(--ink-soft);}
+.ftr-swipe{display:none;margin-top:6px;font-size:13.5px;color:var(--ink-soft);}
 .ftr-fig svg{display:block;width:100%;min-width:620px;height:auto;font-family:"Segoe UI",Arial,sans-serif;font-weight:400;}
 .ftr-todo{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line);} .ftr-todo:first-child{border-top:0;}
-.ftr-todo-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--bg);color:var(--ink-soft);font-size:12px;display:flex;align-items:center;justify-content:center;}
-.ftr-todo-tx{flex:1;min-width:0;font-size:14px;overflow-wrap:anywhere;} .ftr-todo-tx em{font-style:normal;color:var(--orange-deep);font-size:12px;margin-right:4px;}
+.ftr-todo-n{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--bg);color:var(--ink-soft);font-size:13.5px;display:flex;align-items:center;justify-content:center;}
+.ftr-todo-tx{flex:1;min-width:0;font-size:15px;overflow-wrap:anywhere;} .ftr-todo-tx em{font-style:normal;color:var(--orange-deep);font-size:13.5px;margin-right:4px;}
 .ftr-todo .btn{flex-shrink:0;} .ftr-copied{color:var(--success)!important;border-color:var(--success)!important;}
-.ftr-part-h{font-size:16px;color:var(--navy);font-weight:800;} .ftr-part-h span{display:inline-block;margin-right:8px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--orange-deep);border-radius:999px;padding:2px 9px;vertical-align:2px;}
-.ftr-part ol{margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.5;} .ftr-part li{margin-bottom:4px;}
-.ftr-tip{margin:8px 0 0;font-size:13px;color:var(--ink-soft);}
+.ftr-part-h{font-size:17px;color:var(--navy);font-weight:800;} .ftr-part-h span{display:inline-block;margin-right:8px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--orange-deep);border-radius:999px;padding:2px 9px;vertical-align:2px;}
+.ftr-part ol{margin:10px 0 0;padding-left:20px;font-size:15.5px;line-height:1.5;} .ftr-part li{margin-bottom:4px;}
+.ftr-tip{margin:8px 0 0;font-size:14.5px;color:var(--ink-soft);}
 .ftr-lessons{padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
-.ftr-soon{margin:0;color:var(--ink-soft);font-size:14px;}
+.ftr-soon{margin:0;color:var(--ink-soft);font-size:15px;}
 .ftr-lesson{display:block;text-decoration:none;color:var(--ink);} .ftr-lesson b{display:block;color:var(--navy);} .ftr-lesson span{font-size:13px;color:var(--ink-soft);}
 @media (max-width:520px){ .ftr-todo{flex-wrap:wrap;} .ftr-todo .btn{margin-left:38px;} }
 `; document.head.appendChild(s); })();
