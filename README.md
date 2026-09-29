@@ -79,6 +79,25 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
   - The text lives in the constants at the top of `js/ft-rules.js` and in `SLIDES`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
 
+## Training Monitoring Sheet
+
+Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Monitoring Sheet** in the top bar (`#/monitoring`, `js/ft-monitoring.js`).
+
+- **Like the Word sheet** (on Drive; embedded in the pop-out viewer, with Download ↗): one entry per classroom discussion, each with:
+  - the date;
+  - 5 Major Takeaways From This Discussion;
+  - 3 Questions That You Still Have;
+  - Rate Your Understanding (the sheet's 4 statements).
+- **Saving and status:** it saves to the trainee's account as they type (`monitor:<id>`, the trainee's own). An entry is *Filled* when the date, all 5 takeaways and the rating are in. The dashboard shows how many are filled.
+- **The orientation's Rules: Your Work slide** has the rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder") with the embedded sheet and a link to fill it in here.
+- **Admin → 📒 Monitoring Sheets** shows batch → trainee → discussion, with the **automated feedback**:
+  - It comes from fixed checks (`MON_RULES`), not AI: the date filled in; all 5 takeaways; complete sentences; specific, not general (not "I learned about …"); based on the discussion (the takeaways mention at least half of the discussion's key points); and the understanding rating.
+  - Each discussion shows its checks, a score, the feedback to copy, and what the trainee wrote. "Needs extra help" marks the entries rated "I really don't get this".
+  - The trainer's metrics go into `MON_RULES` when they're provided.
+- **Discussions and Key Points** (in the same tab): one discussion per line, with its key points after a "|".
+  - Stored in `settings:monitor`, which everyone reads and trainers write.
+  - Until it's set, the list is the 18 classroom discussions from the Hubstaff To-Dos.
+
 ## Daily Task Tracker
 
 Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracker in the top bar), laid out like the Google Sheets sample: the status counts, Date Received, Type of Task, Task Details, Accountable VA, the dated **Daily Notes** columns, VA Notes, Deadline, Status and Actual Completion Date, with the For Completion / Recurring / Completed sections and the Client-VA Specific Tasks Index, Links & Access (no passwords), Directory and Time Zone tabs. It saves to the trainee's account as they type (`tracker:<id>`).
@@ -136,7 +155,7 @@ Each case's one-line description is taken from `mock-cases.js`. If a case change
 
 Storage (`ft:` prefix, rules in `worker.js`):
 - Trainers publish, everyone reads: `activities:dayN`, `actfile:*`, `settings:feedback-style`.
-- Each trainee's own: `actsub:<trainee>` and `actup:<trainee>:*`. Trainees can't write the trainer's feedback.
+- Each trainee's own: `actsub:<trainee>` and `actup:<trainee>:*`. The Monitoring Sheet: `monitor:<trainee>`; its discussions: `settings:monitor` (trainers write, everyone reads). Trainees can't write the trainer's feedback.
 - Trainer-only: `actadmin:rubrics`, `admin:fbstyle-samples`.
 
 ## How the program works
@@ -176,6 +195,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
+| `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
