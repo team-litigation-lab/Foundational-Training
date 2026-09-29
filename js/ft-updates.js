@@ -322,11 +322,20 @@ function ftDeckConsole(){
   box.appendChild(btn);
 }
 window.ftFocusSlides = function(){
-  try{
-    if(typeof PV !== "undefined" && PV.win && !PV.win.closed){ PV.win.focus(); return; }
-  }catch(e){}
+  // window.focus() on another window is often ignored by the browser. Opening the window by its name
+  // from this click (with no address, so the deck doesn't reload) is what brings it to the front.
+  let w = null;
+  try{ if(typeof PV !== "undefined" && PV.win && !PV.win.closed){ w = window.open("", "lshAudience"); } }catch(e){}
+  if(w){ try{ w.focus(); }catch(e){} if(typeof PV !== "undefined") PV.win = w; setTimeout(ftFocusCheck, 400); return; }
   if(typeof presenterReopen === "function") presenterReopen();
 };
+// If this tab still has focus, the browser kept the slides window behind: say how to get there.
+function ftFocusCheck(){
+  const btn = document.getElementById("ftDeckGo");
+  if(!btn || !document.hasFocus()) return;
+  const sp = btn.querySelector("span");
+  if(sp) sp.innerHTML = "Your browser kept this tab in front. Switch to the <b>LSH Slides</b> window yourself (<b>Alt+Tab</b>, or <b>Cmd+`</b> on a Mac), click the deck, then use ← →.";
+}
 const __ftPvRefresh = window.presenterRefresh;
 if(typeof __ftPvRefresh === "function") window.presenterRefresh = function(){ const r = __ftPvRefresh.apply(this, arguments); try{ ftDeckConsole(); }catch(e){} return r; };
 const __ftAfterRender2 = window.afterRender;

@@ -16013,7 +16013,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.29-1843";
+var APP_BUILD = "ft-2026.09.29-1849";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -16056,12 +16056,12 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.29-1843"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.29-1843"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.29-1843"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.29-1843"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.29-1843"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.29-1843"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.29-1849"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.29-1849"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.29-1849"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.29-1849"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.29-1849"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.29-1849"></script>
 <script src="/js/portal-link.js?v=1"></script>
 </body>
 </html>
