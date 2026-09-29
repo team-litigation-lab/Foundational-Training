@@ -72,7 +72,6 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   14. How to create notes in Hubstaff, with the Add Work Notes picture.
   15. The Manual Time Adjustment Request: subject, To and CC to copy.
   16. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
-  17. Hubstaff how-to lessons: *coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.

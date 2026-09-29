@@ -14,7 +14,7 @@
        #training-reminders (its screenshots); daily habits (EOD email, trackers); the Daily Task Tracker part by part;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; the Manual Time Adjustment Request; Day 1's
-       Reading Task; Hubstaff how-to lessons (HOWTO_LESSONS: coming soon until provided).
+       Reading Task.
      • The Hubstaff pictures are drawn after the trainer's screenshots (SVG): the to-do list, with an
        arrow on the button inside the day's to-do, and the Add Work Notes box.
    ============================================================ */
@@ -157,8 +157,6 @@ const NOTE_PARTS = [
     "Your trainers see it with your tracked time and activity in Hubstaff."]}
 ];
 
-// The Hubstaff how-to lessons, when they're provided: {title, desc, href}.
-const HOWTO_LESSONS = [];
 
 
 /* ---------- the Hubstaff pictures (drawn after the trainer's screenshots) ---------- */
@@ -369,10 +367,7 @@ const SLIDES = [
       <ol>${READING.questions.map(q=>`<li>${esc(q)}</li>`).join("")}</ol>
       <p class="ftr-tip">Write your answers in a Word document or Notepad, then send them in our group chat so we know you’re done. Name the file exactly:</p>
       <div class="ftr-todo"><span class="ftr-todo-tx"><code class="ftr-code">${esc(readFile)}</code></span><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(readFile)}" data-toast="Copied. Use it as your file name." onclick="ftrCopy(this)">📋 Copy</button></div>
-    </div>`; }],
-  ["howto", "Hubstaff How-To Lessons", ()=>`<div class="ftr-lessons">${HOWTO_LESSONS.length
-    ? HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")
-    : `<p class="ftr-soon">Coming soon: The Hubstaff how-to lessons will be added here.</p>`}</div>`]
+    </div>`; }]
 ];
 // The slides window shown to the room (Presenter view) has no Task Tracker to open.
 function FT_AUDIENCE(){ return typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE; }
