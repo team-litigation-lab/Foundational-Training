@@ -19,6 +19,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 | # | Lesson | On the platform |
 |---|---|---|
+| 📌 | Training Orientation and Rules | ✅ slides (`js/ft-rules.js`), always open, not counted |
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
 | 2 | Law Firm Communication | ✅ deck |
 | 3 | Personal Injury Process Flow | ✅ deck |
@@ -45,6 +46,38 @@ Lesson 7 is no longer a Canva embed: each deck page is its own slide in the plat
 Document images are in `ft/claims/img/`. Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
+
+## Training Orientation and Rules
+
+**Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
+
+- **It isn't one of the program's 9 lessons.**
+  - It's always open, for every trainee and batch.
+  - It doesn't count toward "Lessons finished", the certificate or the admin stats.
+  - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
+- **The slides:**
+  1. Why this matters: training is a simulation of the real world; weekly score audits; offboarding if coaching and feedback don't show progress; the goal is a Generalist Legal VA (familiar with every role, so they can take on other tasks confidently from the start of their role; mastery follows in the role).
+  2. Rules: your schedule. Tracking 8:00 AM – 5:00 PM PST; time management (log in and out on time, no extra time; a 10-minute early buffer only with Matt's approval); breaks 15 – 30 – 15 or one full hour.
+  3. Rules: communication. The 5-minute response rule; acknowledge the trainer's Discord messages; meeting schedules sent on the discussion's date and time; cameras on.
+  4. Rules: your work. Naming conventions followed strictly; use of AI (grammar, spelling and sentence structure only; never client, case or medical information).
+  5. Free Skills Training: every day after the shift, ideally 5:00 – 6:00 PM PST (can run longer); unpaid and untracked (an initiative of the training team, beyond the standard legal VA training); soft skills, especially communication; if you miss it, ask for the materials and review them at your own pace.
+  6. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
+  7. #training-reminders: LSH BOT's Deliverables post, written out from the trainer's screenshot.
+  8. #training-reminders: LSH BOT's Important Reminders post.
+  9. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
+  10. The Daily Task Tracker, part 1: the status counts, the sections and every column.
+  11. The Daily Task Tracker, part 2: the other tabs and the daily check.
+  12. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
+  13. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
+  14. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
+  15. How to create notes in Hubstaff, with the Add Work Notes picture.
+  16. The Manual Time Adjustment Request: subject, To and CC to copy.
+  17. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+  18. Hubstaff how-to lessons: *coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
+- **How the slides work:**
+  - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
+  - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
+  - The text lives in the constants at the top of `js/ft-rules.js` and in `SLIDES`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
 
 ## Daily Task Tracker
 
@@ -143,6 +176,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
+| `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
