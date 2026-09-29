@@ -100,7 +100,7 @@ function candidateIds(name, batch) {
 // settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 function canRead(tok, key) {
@@ -130,6 +130,11 @@ async function traineeWrite(env, tok, key, value) {
     // Training Monitoring Sheet (js/ft-monitoring.js): the trainee's own entries; the admin's
     // automated feedback is worked out from them on the page, so there's nothing here to protect.
     if (value.length > 400000) return "The Monitoring Sheet is too large to save";
+    await kv.put(key, value); return null;
+  }
+  if (key === `process:${id}`) {
+    // Process Questions (js/ft-process.js): the trainee's own answer sheets.
+    if (value.length > 400000) return "The answers are too large to save";
     await kv.put(key, value); return null;
   }
   if (key === `feedback:${id}`) {

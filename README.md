@@ -79,6 +79,16 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
   - The text lives in the constants at the top of `js/ft-rules.js` and in `SLIDES`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
 
+## Process Questions
+
+Each lesson's answer sheet is answered on the platform: **✍️ Process Questions** (`#/process`, `js/ft-process.js`). It opens from the lesson card and from the lesson's last slide, which lists the questions and the naming convention. The Virtual Assistant Essentials sheet has 10 questions. Add another lesson's questions to `PROCESS_SETS`.
+
+- **Answering:** trainees answer each question; the answers save as they type (`process:<id>`, the trainee's own). **Submit My Answers** marks the sheet submitted.
+- **Saving to Google Drive with the proper name** (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`, with the trainee's first name):
+  - **📄 Save to My Google Drive** copies the answers and opens a new Google Doc already given that name, in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
+  - **⬇ Download as Word** gives a .doc with that name, to upload to the trainee folder.
+- **Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet (submitted or not, how many answered, the answers), with the line for the ranking report, in the facilitator's words. For example: "Process Questions Responses: COMPLETE; however, Item #7 under the Virtual Assistant Essentials answer sheet was left unanswered." or "Out of N expected answer sheets, X were submitted. The following answer sheets are missing: …".
+
 ## Training Monitoring Sheet
 
 Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Monitoring Sheet** in the top bar (`#/monitoring`, `js/ft-monitoring.js`).
@@ -204,6 +214,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
+| `js/ft-process.js` | Process Questions: each lesson's answer sheet, answered on the platform, saved to Google Drive or Word with the proper name; Admin → ✍️ Process Questions. |
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
