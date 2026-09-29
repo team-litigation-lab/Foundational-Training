@@ -45,7 +45,7 @@ const HABITS = [
     "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1Ty9HXeWRCxqM78quiiEHqFYxZwGeT9Uh/edit?usp=sharing&ouid=107426275770887856664&rtpof=true&sd=true", "Download it, then upload it to your trainee folder."]],
+          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Download it, then upload it to your trainee folder. Or fill it in on the platform: 📒 Monitoring Sheet."]],
    soon:"The tracker templates will be added here soon."}
 ];
 
@@ -283,6 +283,8 @@ const SLIDES = [
     rule("📅 Meeting Schedules Are Sent on the Date and Time of the Discussion", "Keep your notifications on so you don’t miss them.") +
     rule("📷 Cameras On During Classroom Discussions", "Every trainee’s camera stays on for the whole discussion.")],
   ["work", "Rules: Your Work", ()=>
+    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees’ folder. You can also fill it in here on the platform.") +
+    `<div class="ftr-links ftr-mon">${window.FT_MONITOR_DOC ? `<a class="btn btn-navy btn-sm viewer-link" data-kind="doc" data-title="Training Monitoring Sheet" href="${esc(FT_MONITOR_DOC.view)}">📄 Training Monitoring Sheet</a><a class="btn btn-ghost btn-sm" href="${esc(FT_MONITOR_DOC.open)}" target="_blank" rel="noopener noreferrer">Download ↗</a>` : ""}${FT_AUDIENCE() ? "" : `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('monitoring')">📒 Fill It In on the Platform</button>`}</div>` +
     rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
     rule("🤖 Use of AI: Don’t Rely on It", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care. It’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
   ["free-skills", "Free Skills Training: After Your Shift", ()=>`
@@ -460,6 +462,7 @@ window.renderDashboard = function(){
 /* inside a slide (.ft-body): buttons and links keep their own colors */
 .ftr-slide a.btn-ghost, .ft-body .ftr-slide a.btn-ghost{color:var(--navy);} .ftr-slide a.btn-ghost:hover{color:var(--navy);}
 .ftr-slide p{margin:0;} .ftr-slide .ftr-sub{margin:0 0 12px;} .ftr-slide .ftr-after{margin-top:12px;}
+.ftr-mon{margin:-2px 0 10px;} .ftr-mon a.btn{text-decoration:none;}
 .ftr-card-sub{margin:0;font-size:14px;color:var(--ink-soft);font-weight:600;}
 /* numbered lists on a slide: the numbers, without the slide's bullet dots */
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide li, .lesson-card .ftr-slide li{text-align:left;}
