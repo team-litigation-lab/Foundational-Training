@@ -103,6 +103,12 @@ Storage (`ft:` prefix, rules in `worker.js`):
   - They live in `trainer/notes.json`, which `worker.js` sends only with a trainer (admin) token.
   - Trainers see them in Admin → 📘 Curriculum, where the guide has them. (The lessons don't carry any.)
   - They never show in 👁 Trainee view or in the slides window shared with the room.
+- **Presenter view scripts** follow the EA/PA format. Each lesson's deck gets a page-by-page script in the notes panel:
+  - **← Page / Page →** step through the deck's pages alongside it.
+  - Each page has *On this page* and a **🎙 Script — read aloud** in four beats: ① The why, ② Talk it through, ③ Walk through it, ④ Ask the room (④ Your turn on the last page).
+  - The last page adds a 🎬 Scenario, and the part's facilitator's notes follow as the *Trainer note*.
+  - Scripts live in `trainer/scripts.json`, which is trainer-only like the notes: `{"<lesson id>": {"pages": [{"title", "on", "why", "talk", "walk": [...], "ask", "scenario"}]}}`.
+  - A deck without a script shows "The page-by-page script for this deck isn't written yet."
 - **Admin → 📘 Curriculum** shows the whole Training Guide (Day 0 to Day 18), facilitator content included. It comes from `trainer/curriculum.json`, which is trainer-only like the notes. Screenshots that belong to facilitator content are in `trainer/img/` and are trainer-only too. Images can't send the sign-in header, so the page also keeps the trainer's token in a cookie limited to `/trainer`.
 - **Log-in credentials are never on the platform.** Wherever the guide lists a username or password, trainers get a link to the credentials document instead. The import stops if any credential would be written.
 - **Drive files** open in a draggable pop-out viewer, the same one as the LSH Training Portal's Recorded Lectures. Videos ask "Do you want to watch…?" first.

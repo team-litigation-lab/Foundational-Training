@@ -228,19 +228,76 @@ window.afterRender = function(){
   return r;
 };
 const __ftAdminLogout = window.adminLogout;
-if(typeof __ftAdminLogout === "function") window.adminLogout = function(){ FT.notes = null; FT.tried = false; FTC.data = null; FTC.failed = false; return __ftAdminLogout.apply(this, arguments); };
+if(typeof __ftAdminLogout === "function") window.adminLogout = function(){ FT.notes = null; FT.tried = false; FTS_SCRIPT.data = null; FTS_SCRIPT.tried = false; FTC.data = null; FTC.failed = false; return __ftAdminLogout.apply(this, arguments); };
 const __ftOpenAdmin = window.openAdmin;
-if(typeof __ftOpenAdmin === "function") window.openAdmin = function(){ FT.tried = false; return __ftOpenAdmin.apply(this, arguments); };
+if(typeof __ftOpenAdmin === "function") window.openAdmin = function(){ FT.tried = false; FTS_SCRIPT.tried = false; return __ftOpenAdmin.apply(this, arguments); };
+/* Presenter view: the deck's page-by-page script, in the EA/PA format.
+   trainer/scripts.json (trainer-only, like the notes) = {"<lesson id>": {"pages": [
+     {"title": "…", "on": "what is on this page", "why": "① the why", "talk": "② talk it through",
+      "walk": ["③ step", …], "ask": "④ ask the room / your turn", "scenario": "🎬 (optional)"}, …]}}
+   The deck is one Canva embed, so the trainer steps through its pages here (← Page / Page →)
+   alongside the deck. The facilitator's notes for the part follow as the Trainer note. */
+const FTS_SCRIPT = {data:null, loading:null, tried:false, page:{}};
+function ftLoadScripts(){
+  if(FTS_SCRIPT.data) return Promise.resolve(FTS_SCRIPT.data);
+  if(FTS_SCRIPT.loading) return FTS_SCRIPT.loading;
+  FTS_SCRIPT.tried = true;
+  FTS_SCRIPT.loading = fetch("/trainer/scripts.json", {cache:"no-store", headers: state.adminToken ? {Authorization: "Bearer " + state.adminToken} : {}})
+    .then(r=>r.ok ? r.json() : null)
+    .then(j=>{ FTS_SCRIPT.data = j || null; FTS_SCRIPT.loading = null; return FTS_SCRIPT.data; })
+    .catch(()=>{ FTS_SCRIPT.loading = null; return null; });
+  return FTS_SCRIPT.loading;
+}
+function ftScriptHtml(d, sec){
+  const deck = (FTS_SCRIPT.data || {})[String(d.id)];
+  const pages = deck && sec.id === "deck" ? (deck.pages || []) : [];
+  if(!pages.length){
+    if(sec.id !== "deck") return "";
+    return `<p class="pv-empty">${FTS_SCRIPT.data || FTS_SCRIPT.tried ? "The page-by-page script for this deck isn’t written yet." : "Loading the script…"}</p>`;
+  }
+  const i = Math.max(0, Math.min(FTS_SCRIPT.page[d.id] || 0, pages.length - 1)), pg = pages[i], last = i === pages.length - 1;
+  const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
+  const walk = (pg.walk || []).filter(Boolean);
+  return `<div class="ft-pg-nav"><button class="btn btn-ghost btn-sm" onclick="ftScriptPage(${d.id},-1)" ${i===0?"disabled":""}>← Page</button>
+      <b>Page ${i+1} of ${pages.length}${pg.title ? ` · ${esc(pg.title)}` : ""}</b>
+      <button class="btn btn-ghost btn-sm" onclick="ftScriptPage(${d.id},1)" ${last?"disabled":""}>Page →</button></div>
+    <div class="pn">
+      ${pg.on ? `<div class="pn-on"><b>On this page</b><p>${esc(pg.on)}</p></div>` : ""}
+      <div class="script-block"><div class="script-head"><span>🎙 Script — read aloud · page ${i+1} of ${pages.length}</span></div>
+        ${row("① The why", pg.why)}
+        ${row("② Talk it through", pg.talk)}
+        ${walk.length ? `<div class="script-row"><b>③ Walk through it</b><p>${walk.map(esc).join("<br>")}</p></div>` : ""}
+        ${row(last ? "④ Your turn" : "④ Ask the room", pg.ask)}
+      </div>
+      ${pg.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(pg.scenario)}</p></div>` : ""}
+    </div>`;
+}
+window.ftScriptPage = function(id, delta){
+  const deck = (FTS_SCRIPT.data || {})[String(id)], n = deck && deck.pages ? deck.pages.length : 0;
+  FTS_SCRIPT.page[id] = Math.max(0, Math.min((FTS_SCRIPT.page[id] || 0) + delta, n - 1));
+  const d = DAYS.find(x=>x.id===id), cu = document.getElementById("pvCues");
+  if(!d || !cu) return;
+  const slides = buildDaySlides(d), slide = slides[state.lessonSlide || 0];
+  cu.innerHTML = presenterCues(d, slide); cu.parentElement.scrollTop = 0;
+};
 const __ftCues = window.presenterCues;
 window.presenterCues = function(d, slide){
   if(!slide || slide.type!=="ftSection") return __ftCues(d, slide);
   const sec = d.sections[slide.index];
   const keys = [...sec.html.matchAll(/data-slot="([^"]+)"/g)].map(m=>m[1]);
-  if(!FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n && state.presenting && typeof presenterRefresh==="function") presenterRefresh(); }); }
+  const refresh = ()=>{ const cu = document.getElementById("pvCues"); if(cu && state.presenting){ cu.innerHTML = presenterCues(d, slide); } };
+  if(!FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n) refresh(); }); }
+  if(!FTS_SCRIPT.data && !FTS_SCRIPT.tried){ ftLoadScripts().then(j=>{ if(j) refresh(); }); }
   const notes = keys.map(k=>(FT.notes && FT.notes[k]) || "").join("");
+  const script = ftScriptHtml(d, sec);
+  const trainer = notes ? `<div class="pn-on ft-tnote"><b>Trainer note</b>${notes}</div>` : "";
   const empty = FT.notes || FT.tried ? "No facilitator’s notes for this part." : "Loading the facilitator’s notes…";
-  return `<h3>${esc(sec.h)}</h3>` + (notes || `<p class="pv-empty">${empty}</p>`);
+  return `<h3>${esc(sec.h)}</h3>` + (script || trainer ? script + trainer : `<p class="pv-empty">${empty}</p>`);
 };
+(function(){ const st = document.createElement("style"); st.textContent = `
+.ft-pg-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding:8px 10px;background:#F3F5FA;border-radius:10px;}
+.ft-pg-nav b{font-size:13px;color:var(--navy);text-align:center;flex:1;min-width:0;}
+.ft-tnote{margin-top:12px;} .ft-tnote p, .ft-tnote li{font-size:13.5px;}`; document.head.appendChild(st); })();
 
 /* ---------- 3. days open when the trainer opens them ----------
    settings:opendays = {all:[day ids], batches:{"<batch key>":[day ids]}} */
