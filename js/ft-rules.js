@@ -288,7 +288,7 @@ const SLIDES = [
   ["free-skills", "Free Skills Training: after your shift", ()=>`
     <div class="ftr-goal"><b>🌱 Every day after your shift, ideally 5:00 – 6:00 PM PST</b>
       <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you: extra skills on top of your training.</p></div>
-    <div class="ftr-rule"><b>⏸ Unpaid and untracked: don’t track your time for it.</b>
+    <div class="ftr-rule"><b>🕔 Unpaid and untracked: don’t track your time for it.</b>
       <span>Why? Our training covers the standard legal VA training. Free Skills Training is an initiative of the training team, to add to your knowledge.</span></div>
     <div class="ftr-rule"><b>🙋 Missed it? Be proactive.</b>
       <span>Ask for the materials, and review them at your own pace.</span></div>
