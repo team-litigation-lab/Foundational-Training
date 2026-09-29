@@ -1,0 +1,1505 @@
+{
+ "7": {
+  "deck": "claims",
+  "sections": {
+   "n001": {
+    "on": "Slide 1 of 119 · LSH Foundational Training",
+    "why": "Everything a PI case recovers runs through the claims the Claims Specialist opens and moves forward.",
+    "talk": "Good Day Everyone, Welcome to our Claims Specialist Role Training",
+    "walk": [],
+    "ask": "Before we start: who here has already talked to an insurance adjuster, for work or for yourself?"
+   },
+   "n002": {
+    "on": "Slide 2 of 119 · OBJECTIVE",
+    "why": "Knowing the whole role first makes each task that follows make sense.",
+    "talk": "Today’s objective is to introduce the Claims Specialist role in a clear and structured way.\nBy the end of this session, participants should have a solid understanding of the key responsibilities, daily tasks, and the standards expected of someone in this position.\nThis role is crucial in maintaining client trust, managing case details accurately, and pushing claims forward efficiently.\nWe’ll also touch on how Claims Specialists collaborate with the intake specialists, attorneys, adjusters, and other team members to keep the case moving.",
+    "walk": [],
+    "ask": "Which teams do you think a Claims Specialist talks to most in a day?"
+   },
+   "n003": {
+    "on": "Slide 3 of 119",
+    "why": "This workflow is the map for the rest of the session: every section that follows is one of these steps.",
+    "talk": "This is the simplified workflow of claims specialists\nDetermination of Coverages\nOpening of claims\nSend a Letter of Representation (LOR)\nInsurance Confirms Receipt of LOR\nPolicy Limits Disclosure\n“\nFinalized Liability Investigation\nLet's talk about each step in the next slide",
+    "walk": [],
+    "ask": "Without looking, what comes right after sending the LOR?"
+   },
+   "n004": {
+    "on": "Slide 4 of 119 · THE CLAIMS SPECIALIST TASKS",
+    "why": "Missing a policy means leaving money on the table for the client.",
+    "talk": "“A key function of the Claims Specialist is identifying what insurance coverage is available to support the client’s recovery.”\n“This means going beyond just the at-fault driver’s policy — we look at every potential source of compensation.”",
+    "walk": [
+     "🔍 Identify All Involved Policies:",
+     "1st Party – Bodily Injury Coverage (Driver’s Insurance):",
+     "“Check if the client was driving their own vehicle and what their policy includes.”",
+     "1st Party – Bodily Injury Coverage (Vehicle Owner’s Insurance):",
+     "“If the client was driving someone else’s car, the owner's policy may provide coverage.”",
+     "3rd Party – UM/UIM Coverage (Client’s Insurance):",
+     "“If the at-fault party is uninsured or underinsured, the client’s own Uninsured/Underinsured Motorist coverage could apply.”",
+     "3rd Party – UM/UIM Coverage (Resident Relative’s Insurance):",
+     "“Sometimes, a client is covered under a family member’s policy if they live in the same household.”",
+     "3rd Party – PIP Coverage (Client’s Insurance):",
+     "“Personal Injury Protection may cover immediate medical expenses, regardless of fault.”",
+     "Any Other Third-Party Policies:",
+     "“This includes commercial policies, employer insurance, or permissive use scenarios where another party’s insurance may provide coverage.”",
+     "“The goal here is to maximize recovery opportunities by being thorough, strategic, and accurate.”"
+    ],
+    "ask": "The client was driving a friend's car and lives with her mother. Which policies could apply?",
+    "scenario": "Maria was hit while driving her roommate's car. The at-fault driver has $25,000 in coverage and Maria's bills are already $40,000. Ask the room to list every policy they would look for."
+   },
+   "n005": {
+    "on": "Slide 5 of 119 · THE CLAIMS SPECIALIST TASKS",
+    "why": "The police report is where we start, but it's often incomplete. Knowing where else to look keeps the case moving.",
+    "talk": "“Often, we start with the Police Report — it usually lists insurance carrier names and policy numbers for involved parties.”\n“But when that information is missing or incomplete, it’s up to the Claims Specialist to dig deeper.”",
+    "walk": [
+     "Here’s how we do that:",
+     "Contact the Client",
+     "“Ask if they have any documents, insurance cards, or prior communications with their carrier.”",
+     "Reach Out to Insurance Carriers Directly",
+     "“Call or fax a request for verification — you may need to send a Letter of Representation first.”",
+     "Database Checks / Supplemental Reports",
+     "“Use claim databases or request a supplemental police report if the original one is lacking key details.”",
+     "Verify Vehicle Ownership and Policyholder Info",
+     "“Check vehicle registration to confirm ownership — this helps determine which policy applies.”",
+     "“This step is all about being thorough and persistent. The more accurate our coverage map is, the stronger our case positioning becomes.”"
+    ],
+    "ask": "The police report has no insurance listed for the other driver. What is your first move?"
+   },
+   "n007": {
+    "on": "Slide 6 of 119 · THE CLAIMS SPECIALIST TASKS",
+    "why": "A claim opened with the right information the first time saves weeks of follow-ups later.",
+    "talk": "“Opening a claim accurately and efficiently is one of the most important steps a Claims Specialist can take — it sets the entire case up for success.”\n“This involves gathering key information, ensuring the claim is properly documented, and notifying all relevant parties — the client, the insurer, and any third parties involved.”\n“Think of this as building a foundation: if it’s shaky or missing key elements, the rest of the case suffers.”",
+    "walk": [
+     "Tip for Success:",
+     "“Being well-prepared before initiating the claim not only improves data accuracy but also reduces the need for repeated follow-ups and speeds up the process overall.”",
+     "“Your preparation and attention to detail here have a direct impact on how quickly and successfully a claim progresses.”"
+    ],
+    "ask": "What's one thing that goes wrong on a case if the claim is opened with missing details?"
+   },
+   "n008": {
+    "on": "Slide 7 of 119 · THE CLAIMS SPECIALIST TASKS",
+    "why": "Having this ready before the call is what makes you sound prepared to the adjuster.",
+    "talk": "“Before you initiate contact with an insurance company, you’ll want to have all the essential information ready. This saves time and ensures the claim is opened accurately the first time.”\n🗂 Client’s Basic Information\nFull Name, Date of Birth\nContact Number & Email\nMailing and Physical Address\nID or Driver’s License (if available)\n🚗 Involved Parties\nNames and contact details of all drivers\nVehicle details – make, model, license plate\nInsurance info – from the police report or provided by the client\n👁️ Witnesses\nNames and contact details (if any were listed in the report or shared by the client)\n“Having this information upfront not only builds credibility with the insurer but also keeps the process smooth and professional from the start.”",
+    "walk": [],
+    "ask": "Which of these would you usually get from the police report, and which from the client?"
+   },
+   "n009": {
+    "on": "Slide 8 of 119 · THE CLAIMS SPECIALIST TASKS",
+    "why": "Injuries, documents and facts of loss are what turn a name on a claim into a real claim.",
+    "talk": "“To open a claim thoroughly, you’ll need more than just names and contact details. You’ll also need information on injuries, medical treatment, documentation, and the facts of loss.”\n🩺 Injuries and Medical Treatment\nInjuries reported at the scene (as per EMS or client)\nAny hospital or urgent care visits\nOngoing symptoms or follow-up treatments the client has mentioned\n📄 Supporting Documents\nPolice Report (or report number, if not yet available)\nPhotos of the accident scene, vehicles, and visible injuries\nInsurance declaration pages (if the client has them)\nSigned retainer agreement and intake form\n📍 Accident Details / Facts of Loss\nExact date and time of the incident\nLocation (city/state, intersection, or address)\nType of accident (e.g., rear-end, T-bone, hit-and-run, pedestrian)\nA clear narrative of how the accident occurred, ideally in the client’s own words\n“All of this information gives you a complete picture, which is critical when you're speaking with adjusters or setting the claim up in the case management system.”",
+    "walk": [],
+    "ask": "Where would you find the injuries reported at the scene?"
+   },
+   "n010": {
+    "on": "Slide 9 of 119 · THE CLAIMS SPECIALIST TASKS · OPENING A CLAIM",
+    "why": "The facts of loss are the story of the accident, and every later decision about fault leans on them.",
+    "talk": "The Facts of Loss describe what occurred during the accident. This information is usually found in the narrative portion of the police report, where the responding officer outlines the events based on statements, observations, and evidence at the scene.\nHowever, any relevant and verifiable detail—regardless of whether it appears in the police report—may be included as part of the facts of loss. These may include:\nStatements from the client or witnesses\nSurveillance or dashcam footage\nPhotos of the scene and vehicle damage\nWeather and traffic conditions at the time of the incident\nInformation provided by the insurance companies of the involved parties",
+    "walk": [],
+    "ask": "Besides the police report, name two places the facts of loss can come from."
+   },
+   "n011": {
+    "on": "Slide 10 of 119 · THE CLAIMS SPECIALIST TASKS · OPENING A CLAIM",
+    "why": "Sharing too much too early can hurt the case. At opening we give only verified basics.",
+    "talk": "“When you're opening a claim, it’s important to remember: you’re not building the full case yet — you’re simply laying the foundation with general, verifiable facts.”\n“You don’t need to provide a detailed narrative to the adjuster at this stage. Focus on what’s confirmed and factual.”",
+    "walk": [
+     "📌 Facts of Loss – What to Share When Opening a Claim:",
+     "Date and time of the incident",
+     "Location (city, street, or intersection)",
+     "Basic type of accident (e.g., rear-end, T-bone)",
+     "Parties involved (client, other driver(s), pedestrian, etc.)",
+     "🗣️ Where to Reference Details From:",
+     "“Use the Intake Interview completed by the Intake Specialist as your primary source for these facts.”",
+     "“Avoid speculating or sharing anything that hasn’t been confirmed by the client or the police report.”",
+     "“Your goal is to ensure the claim is opened correctly and professionally — detailed investigation and documentation come later.”"
+    ],
+    "ask": "An adjuster asks, 'So how fast was your client going?' What do you say?"
+   },
+   "n013": {
+    "on": "Slide 11 of 119 · THE CLAIMS SPECIALIST TASKS · OPENING A CLAIM",
+    "why": "This sheet is your cheat sheet: it keeps every detail in one place so nothing is missed on the call.",
+    "talk": "Let’s take a look at a practical tool that helps you gather and organize all the important details — the MVA (Motor Vehicle Accident) or MVC (Motor Vehicle Collision) Questionnaire.\nThis document isn’t the actual client questionnaire but rather a reference sheet — a summarized version of the key information you’ll need when handling a case. Think of it as your cheat sheet during the opening of a claim.\n* Purpose of the MVA Questionnaire *",
+    "walk": [
+     "This form serves as your roadmap. It helps you:",
+     "⦁ Keep all accident-related details organized in one place — from basic client information to vehicle and insurance details.",
+     "⦁ Avoid missing any critical information during calls or documentation.",
+     "⦁ Quickly access verified details when speaking with adjusters or drafting letters of representation.",
+     "But most importantly, it helps ensure confidentiality — that you only share information you’re authorized to provide.",
+     "Before calling the insurance adjuster or any third party, always review this sheet first.",
+     "This ensures you:",
+     "⦁ Have all the necessary case information ready.",
+     "⦁ Stay focused during the call, even when the conversation gets engaging.",
+     "⦁ Avoid accidentally sharing restricted details such as index information or any data that could allow the other party (especially the at-fault insurance company) to contact the client directly.",
+     "Remember — sharing those kinds of details could lead to backdoor negotiations that might undermine the client’s settlement and even risk the firm losing the client.",
+     "Key Sections:",
+     "🔹 Client and Insurance Information",
+     "- Lists both 1st Party (our client’s insurance) and 3rd Party (at-fault driver’s insurance). Always double-check accuracy — even a small error in a policy or claim number can delay processing.",
+     "🔹 Accident Details (Facts of Loss)",
+     "- Covers when, where, and how the accident happened — this must align with the details reported in the claim and what we refer to as the “Facts of Loss.”",
+     "🔹 Police Report and Witnesses",
+     "- Indicates whether there’s a police report, the responding department, and any witnesses. These support the client’s version of events later on.",
+     "🔹 Injuries and Medical Treatment",
+     "- Outlines what injuries were sustained, whether the client was transported by ambulance, and where they are currently treating. This section connects the medical aspect of the case to the liability.",
+     "🔹 Vehicle Information",
+     "- Lists both the client’s and the defendant’s vehicle details — make, model, and condition (drivable or not). It also notes visible damages for documentation consistency.",
+     "Key Takeaway:",
+     "- The MVA Questionnaire isn’t just a form — it’s a protection tool for both the client and the firm.",
+     "- It helps you open claims efficiently, stay organized, and safeguard sensitive information while maintaining professionalism and accuracy throughout the process."
+    ],
+    "ask": "Which section of the questionnaire do you think gets missed most often?"
+   },
+   "n014": {
+    "on": "Slide 12 of 119 · CLAIM FILING",
+    "why": "The order claims are opened affects how fast the client gets treated and paid.",
+    "talk": "“After intake, you may be directed to open multiple claim types — PIP, UM/UIM, or Bodily Injury. The order and urgency can vary based on the case and firm preference.”\n🩺 PIP (Personal Injury Protection)\nUsually opened immediately after intake\nHelps cover early medical treatment\nOften available through the client’s own policy\n🚫 UM/UIM (Uninsured/Underinsured Motorist)\nCritical when the at-fault driver lacks insurance or carries low limits\nAlso typically opened right after intake when applicable\n⚖️ Bodily Injury (BI)\nIn some cases, firms may prioritize this if liability is clear\nNeeded for early communication with the at-fault party’s insurance",
+    "walk": [
+     "📌 Key Reminder:",
+     "“Always follow the attorney’s guidance and your firm’s specific protocol on which claims to open first.”",
+     "“When in doubt, ask. It’s better to clarify than to assume.”"
+    ],
+    "ask": "When would a firm open the BI claim first instead of PIP?"
+   },
+   "n015": {
+    "on": "Slide 13 of 119 · CLAIM FILING",
+    "why": "This is the call itself: the claim number and adjuster details you get here are used on every step after.",
+    "talk": "“Once you’ve identified all relevant insurance policies, it’s time to reach out to the insurers and set up the applicable claims. This is a key part of opening the claim process.”",
+    "walk": [
+     "Contacting the Insurance Company:",
+     "Request to Open the Claim",
+     "Initiate contact with the relevant insurance company (based on coverage identified).",
+     "Ensure you have the correct department (e.g., claims, personal injury, or auto).",
+     "Provide the Claim Details",
+     "Share all relevant facts, including the accident date, involved parties, and policy information.",
+     "Be prepared with basic injury information (e.g., medical treatment if applicable).",
+     "Request a Claim Number & Adjuster Information",
+     "Claim Number: “Ensure you get a unique claim number for reference.”",
+     "Adjuster Info: “Ask for the adjuster’s full name, direct phone number, and email if available.”",
+     "Pro Tip:",
+     "“Recording the adjuster’s contact info and keeping it handy for future follow-ups is key to maintaining efficient communication throughout the process.”"
+    ],
+    "ask": "What two things must you never hang up without?",
+    "scenario": "Role-play: one trainee is the adjuster, one is the Claims Specialist opening a PIP claim. Stop after the claim number and adjuster details are confirmed."
+   },
+   "n016": {
+    "on": "Slide 14 of 119 · CLAIM FILING",
+    "why": "Sending documents the way the adjuster wants them is the difference between a quick review and a lost fax.",
+    "talk": "“When you contact the insurance company, confirm their communication preferences for submitting key documents and stay organized throughout the process.”",
+    "walk": [
+     "Confirm Communication Preferences:",
+     "Ask the Claims Examiner (Adjuster):",
+     "“Where and how would you like to receive supporting documents?”",
+     "supporting documents include",
+     "Letter of Representation (LOA/LOD)",
+     "Retainer Agreement",
+     "Police Report or Client Statement",
+     "Preferred Methods of Document Submission:",
+     "Email – Confirm the email address.",
+     "Fax – If applicable, confirm the fax number.",
+     "Portal Upload – If they use a secure client portal, ask for access instructions.",
+     "Document the Interaction:",
+     "Immediately after the call:",
+     "Log the call in your case management system, noting:",
+     "Date and time of the conversation",
+     "Name of the Claims Examiner you spoke to",
+     "The claim number they provided",
+     "Update your team and attorney with the claim status and any necessary follow-up actions.",
+     "Outcome:",
+     "“Once the insurance company has reviewed and accepted the claim, you will be notified of their decision regarding liability for the accident.”"
+    ],
+    "ask": "The adjuster says, 'Just send it over.' What do you ask next?"
+   },
+   "n017": {
+    "on": "Slide 15 of 119 · CLAIM FILING",
+    "why": "Follow-ups and information protection keep the claim moving and the client safe.",
+    "talk": "“It's important to stay on top of the claim setup, ensure no details are missed, and be cautious about sharing sensitive client information.”",
+    "walk": [
+     "Follow-Up Actions:",
+     "If Claim is Not Opened Immediately:",
+     "Set a reminder to follow up within 24–48 hours to confirm the status of the claim.",
+     "“Track the progress and ensure that the claim is opened without delays.”",
+     "Double-Check Key Details:",
+     "Always confirm the claim number and adjuster’s details:",
+     "Adjuster’s name Adjuster’s name",
+     "Adjuster’s phone number and fax number",
+     "Adjuster’s preferred communication method (email, fax, portal)",
+     "Information Protection:",
+     "Third-Party Claims (Bodily Injury):",
+     "“Never provide client’s personal information when opening a third-party claim (BI).”",
+     "Only share the vehicle information (make and model) if specifically requested.",
+     "Plaintiff's Insurance (PIP/UM Claims):",
+     "It’s okay to share the client’s information with their own insurance company (for PIP/UM claims), as they likely have it already or may need to verify.",
+     "Policy Limits:",
+     "Obtain Verbal Confirmation:",
+     "As soon as possible, ask the adjuster for the policy limits for early case evaluation.",
+     "This helps with treatment planning, preparing for negotiations, and establishing a baseline for the case value.",
+     "“By securing these details early on, you ensure the case remains on track and all necessary information is aligned for future stages of the claim.”"
+    ],
+    "ask": "What should you never give a third-party adjuster?"
+   },
+   "n018": {
+    "on": "Slide 16 of 119 · CLAIM FILING",
+    "why": "When a claim already exists, your job changes from opening it to taking it over cleanly.",
+    "talk": "“In some situations, when you contact the insurance company, you may find that a claim has already been opened—either by the client, another party, or through an earlier call. In these cases, your role shifts to confirming the details and taking over the communication.”",
+    "walk": [
+     "When a Claim is Already Opened:",
+     "Gather Key Details:",
+     "Claim Number: Ensure you have the correct claim number for reference.",
+     "Adjuster Information:",
+     "Adjuster’s Name (confirm spelling)",
+     "Adjuster’s Phone Number and/or Email",
+     "Adjuster’s Fax Number (if applicable)",
+     "Additional Information to Confirm:",
+     "Liability Status:",
+     "Ask the adjuster about the current status of liability.",
+     "Is the liability accepted or still under review?",
+     "Policy Limits:",
+     "Confirm the policy limits for the insurance involved (important for evaluating case value and planning next steps).",
+     "Next Steps:",
+     "“Once you have gathered this information, you will take over communication and continue moving the claim forward.”",
+     "Log the information in the case management system and inform the attorney or team of the updated claim details.",
+     "“Make sure all details are confirmed accurately to avoid delays and ensure smooth progress throughout the case.”"
+    ],
+    "ask": "The client already opened a claim themselves. What do you confirm with the adjuster?"
+   },
+   "n019": {
+    "on": "Slide 17 of 119 · CLAIM FILING",
+    "why": "A wrong claimant name in a wrongful death case causes confusion with the insurer and delays.",
+    "talk": "“In wrongful death cases at the pre-litigation stage, it’s crucial to list the claimant correctly when opening the insurance claim to ensure proper handling by the insurer.”",
+    "walk": [
+     "Correct Claimant Designation:",
+     "Use the Statutory Heir Title:",
+     "Format the claimant as:",
+     "\"[Name], Statutory Heir of [Decedent's Name]\"",
+     "Example: John Doe, Statutory Heir of Jane Doe",
+     "Why This is Important:",
+     "This designation ensures that the insurance company understands the claim is being filed by someone legally recognized as an heir to the decedent, even before formal probate proceedings.",
+     "What NOT to Do:",
+     "Do NOT list the claimant as:",
+     "“Estate of [Decedent’s Name]”",
+     "“[Decedent’s Name]” alone",
+     "Reason:",
+     "This could lead to confusion or misclassification of the claim, delaying the process and potentially complicating settlement or benefits determination.",
+     "Key Reminder:",
+     "“Correctly identifying the claimant helps avoid issues with the claim and ensures it is processed in the right legal context from the very beginning.”"
+    ],
+    "ask": "How would you list John Doe filing for his late wife Jane Doe before probate?"
+   },
+   "n020": {
+    "on": "Slide 18 of 119 · CLAIM FILING",
+    "why": "Estate claims need a Personal Representative; getting the designation wrong can get the claim processed wrongly.",
+    "talk": "\"As the case progresses into the litigation stage, your role broadens to include supporting claims on behalf of both the Estate and individual Heirs. Each of these serves a distinct legal purpose and requires careful attention to ensure the right party is designated for each claim.\"",
+    "walk": [
+     "Claims on Behalf of the Estate:",
+     "When to Assert Claims for the Estate:",
+     "Once the estate has been formally opened in probate and a Personal Representative (PR) has been appointed, the law firm can assert claims on behalf of the Estate.",
+     "Common Claims for the Estate:",
+     "Punitive Damages:",
+     "To punish the at-fault party for egregious or reckless conduct.",
+     "Survival Claims:",
+     "For damages the decedent incurred between the injury and their death (e.g., pain and suffering, medical bills).",
+     "Proper Claimant Designation:",
+     "Correct Designation for Estate Claims:",
+     "When opening claims for the Estate, use the following format:",
+     "\"Estate of [Decedent], by [PR’s Name], Personal Representative\"",
+     "Example: \"Estate of John Doe, by Jane Doe, Personal Representative\"",
+     "Why the Correct Designation Matters:",
+     "Accuracy in designation ensures that the claim is properly filed and processed, reflecting both the Estate's interests and the appointed Personal Representative’s legal authority.",
+     "Important Reminder:",
+     "“This distinction between Estate claims and Heir claims is crucial in ensuring the legal purposes of each claim are met, and it helps prevent errors in the processing of wrongful death claims.”"
+    ],
+    "ask": "What has to happen before the firm can assert claims for the Estate?"
+   },
+   "n021": {
+    "on": "Slide 19 of 119 · CLAIM FILING",
+    "why": "Heirs have their own claims, separate from the Estate's, and each needs the right name on it.",
+    "talk": "\"In the litigation stage, the role of a Claims Specialist expands to support both claims made on behalf of the Estate and individual Heirs. While the Estate focuses on the decedent’s rights, Heirs have their own claims for personal losses.\"",
+    "walk": [
+     "Claims on Behalf of Statutory Heirs:",
+     "Heirs’ Personal Claims:",
+     "Loss of Support:",
+     "Claims for loss of financial support from the decedent.",
+     "Loss of Companionship:",
+     "Compensation for emotional and familial loss due to the decedent’s passing.",
+     "Funeral Expenses:",
+     "In certain jurisdictions, Heirs may claim reimbursement for funeral expenses.",
+     "Proper Claimant Designation for Heirs:",
+     "Correct Designation for Heir Claims:",
+     "When opening claims for individual Heirs, the proper designation is:",
+     "\"[Heir’s Name], Statutory Heir of [Decedent]\"",
+     "Example: “John Doe, Statutory Heir of Jane Doe”",
+     "Why the Correct Designation Matters:",
+     "Accuracy in designation ensures that each Heir’s individual claim is properly recorded and processed in the legal system, preventing confusion between Estate claims and Heir claims.",
+     "Key Takeaway:",
+     "\"Heirs assert personal claims for losses, and it’s crucial to properly distinguish these claims from those made by the Estate. Proper designation helps ensure that all claims are treated with the correct legal distinction.\""
+    ],
+    "ask": "What's the difference between an Estate claim and an Heir claim?"
+   },
+   "n022": {
+    "on": "Slide 20 of 119",
+    "why": "The LOR is what stops the insurer from calling our client directly.",
+    "talk": "\"The Letter of Representation (LOR) informs all relevant parties that the client is represented by an attorney. It ensures that no direct communication occurs with the client and that all matters are handled by the attorney.\"",
+    "walk": [
+     "When to Send:",
+     "\"The LOR is sent after the client signs the Retainer Agreement, usually at the beginning of the case, to formally notify others of legal representation.\"",
+     "Key Components:",
+     "\"The LOR is sent on the firm’s letterhead, and includes the client’s information, case details, and a request that all future communication go through the attorney.\"",
+     "Importance:",
+     "\"It helps protect the client’s interests, ensures organized communication, and prevents unwanted contact with the client.\"",
+     "Best Practice:",
+     "\"Send the LOR early to control communication and keep the case on track.\""
+    ],
+    "ask": "What could happen if the LOR isn't sent early in the case?"
+   },
+   "n023": {
+    "on": "Slide 21 of 119",
+    "why": "Knowing why and when the LOR goes out helps you spot when one is missing.",
+    "talk": "Purpose:\nThe Letter of Representation (LOR) notifies all relevant parties that the client is represented by legal counsel. It formally establishes that the law firm will handle the claim on the client’s behalf.",
+    "walk": [
+     "Timing:",
+     "The LOR is typically sent after the client has signed the Retainer Agreement to ensure the attorney is formally recognized as the point of contact.\"\\",
+     "Key Components:",
+     "The LOR should be on the firm’s letterhead, containing the client’s details, case information, and a request for all future communication to be directed to the attorney.",
+     "Importance:",
+     "This document protects the client’s interests by ensuring all communication is routed through the attorney, streamlining the legal process and preventing direct contact with the client."
+    ],
+    "ask": "When is the LOR usually sent?"
+   },
+   "n024": {
+    "on": "Slide 22 of 119 · LETTER OF REPRESENTATION",
+    "why": "Everyone who could contact the client or hold records needs to know the firm represents them.",
+    "talk": "Parties Typically Notified by the LOR:\nInsurance Companies (1P, 3P):\n\"The LOR is sent to both the client’s insurance company (1st Party) and the at-fault party’s insurance (3rd Party). This ensures they recognize the law firm as the point of contact for the claim.\"",
+    "walk": [
+     "Opposing Counsel:",
+     "\"If litigation is involved, the LOR should be sent to the opposing counsel to notify them that the firm is handling the case for the client.\"",
+     "Medical Providers:",
+     "\"The LOR should be sent to medical providers to ensure that they route bills and records to the firm, protecting client confidentiality and allowing the firm to manage those communications.\"",
+     "Employers:",
+     "\"If relevant, employers may be notified regarding any workers' compensation claims or the client’s employment status as part of the case.\"",
+     "Rental Companies (if applicable):",
+     "\"If the client is using a rental vehicle, the LOR is also sent to the rental company to ensure they are aware of the claim and process any rental-related expenses.\"",
+     "Lien Holders / Funding Companies:",
+     "\"Lien holders or any funding companies involved in the case should receive the LOR to manage any lien claims or financial obligations tied to the client’s recovery.\"",
+     "Law Enforcement Agencies:",
+     "\"The LOR is sent to law enforcement agencies, especially when police reports or accident investigations are involved, ensuring proper documentation of the incident.\"",
+     "Tow and Storage Companies:",
+     "\"If the client’s vehicle was towed or stored, the LOR is sent to the tow and storage companies to ensure they release the vehicle to the authorized party and manage storage fees.\"",
+     "Subrogation Companies:",
+     "\"Finally, subrogation companies are notified if there is a potential reimbursement from another party’s insurance for payments made on behalf of the client.\""
+    ],
+    "ask": "Besides insurance companies, who else gets the LOR?"
+   },
+   "n025": {
+    "on": "Slide 23 of 119 · LETTER OF REPRESENTATION",
+    "why": "Different case types need different letters, and missing a preservation letter can mean losing the footage.",
+    "talk": "Purpose of Letters in Premises Liability Cases:\nLetter of Representation (LOR):\n\"The Letter of Representation (LOR) should be sent to the establishment where the incident occurred (e.g., store, restaurant, or property). This notifies them that the client is represented by legal counsel and that the firm will handle the claim.\"\n\"Additionally, the LOR should be sent to the registered agent of the business or property owner to ensure proper legal notice and compliance with the law.\"",
+    "walk": [
+     "Letter for Preservation of Evidence:",
+     "\"In premises liability cases, sending a Letter for Preservation of Evidence is critical. This letter ensures that the business or property owner preserves any relevant evidence, such as security footage, maintenance records, accident reports, or photographs of the incident scene.\"",
+     "\"The letter formally requests the preservation of this evidence, preventing it from being destroyed or altered, which could harm the client’s case.\"",
+     "Why Send Both Letters:",
+     "\"The LOR establishes formal representation, while the Preservation of Evidence letter protects critical evidence that could support the client’s claim. Both letters are essential for creating a solid foundation in a premises liability case.\"",
+     "Conclusion:",
+     "\"By sending these letters promptly, you are ensuring that both the client’s representation is formally recognized, and that key evidence is preserved to support the legal claim.\""
+    ],
+    "ask": "Why does a slip-and-fall case need a Letter for Preservation of Evidence?"
+   },
+   "n026": {
+    "on": "Slide 24 of 119 · LETTER OF REPRESENTATION",
+    "why": "Government and dog-bite cases have their own recipients and notice rules; a missed notice can end the claim.",
+    "talk": "1. Dog-Bite Cases:\nLetter of Representation (LOR):\n\"In dog-bite cases, the LOR should be sent to the dog owner. This notifies the owner that the client is being represented by legal counsel and that the firm will handle the claim moving forward.\"",
+    "walk": [
+     "Preservation of Evidence:",
+     "\"Additionally, a Preservation of Evidence letter may also be necessary if there are concerns about the dog’s behavior history, the property’s security footage, or other relevant details.\"",
+     "2. Government Liability Cases:",
+     "Florida Statute 768.28 Notice of Claim (768 Letter):",
+     "\"When the incident occurred on government-owned property or involved a government-operated vehicle (e.g., public bus), you must send a Florida Statute 768.28 Notice of Claim, also known as a 768 Letter, to the relevant government entity or municipality.\"",
+     "\"This is a legal prerequisite before initiating a lawsuit against a government body due to sovereign immunity laws, which protect the government from many types of claims unless this notice is properly filed.\"",
+     "Key Points for the 768 Letter:",
+     "\"The letter must clearly state the intent to pursue a claim and provide sufficient details regarding the incident and damages.\"",
+     "\"It serves as a formal notice to the government entity that the firm is asserting a claim on behalf of the client.\""
+    ],
+    "ask": "The client was hit by a city bus in Florida. Which letter do you send?"
+   },
+   "n027": {
+    "on": "Slide 25 of 119 · same speaker notes as the slide before: pick up where you left off",
+    "why": "Each state sets its own notice deadline for claims against the government, and they're strict.",
+    "talk": "1. Dog-Bite Cases:\nLetter of Representation (LOR):\n\"In dog-bite cases, the LOR should be sent to the dog owner. This notifies the owner that the client is being represented by legal counsel and that the firm will handle the claim moving forward.\"",
+    "walk": [
+     "Preservation of Evidence:",
+     "\"Additionally, a Preservation of Evidence letter may also be necessary if there are concerns about the dog’s behavior history, the property’s security footage, or other relevant details.\"",
+     "2. Government Liability Cases:",
+     "Florida Statute 768.28 Notice of Claim (768 Letter):",
+     "\"When the incident occurred on government-owned property or involved a government-operated vehicle (e.g., public bus), you must send a Florida Statute 768.28 Notice of Claim, also known as a 768 Letter, to the relevant government entity or municipality.\"",
+     "\"This is a legal prerequisite before initiating a lawsuit against a government body due to sovereign immunity laws, which protect the government from many types of claims unless this notice is properly filed.\"",
+     "Key Points for the 768 Letter:",
+     "\"The letter must clearly state the intent to pursue a claim and provide sufficient details regarding the incident and damages.\"",
+     "\"It serves as a formal notice to the government entity that the firm is asserting a claim on behalf of the client.\""
+    ],
+    "ask": "Using the table, how long does the client have to give notice in Texas?"
+   },
+   "n028": {
+    "on": "Slide 26 of 119 · LOR DRAFTING",
+    "why": "Addressing the LOR to the right person gets it read faster.",
+    "talk": "",
+    "walk": [
+     "If the adjuster’s name is unknown, adjust the address line as follows:",
+     "Attn: Claims Department",
+     "Ensure to follow your firm’s protocol for drafting or sending a Letter of Representation if there is a specific template or process in place."
+    ],
+    "ask": "You don't know the adjuster's name yet. How do you address the letter?"
+   },
+   "n029": {
+    "on": "Slide 27 of 119 · LOR DRAFTING",
+    "why": "These components are what make the LOR complete; a missing one means another round of letters.",
+    "talk": "",
+    "walk": [
+     "LOR Key Components – Speaker's Notes",
+     "Client Name, Date of Loss, Claim Number, and Name of Insured should be clearly listed.",
+     "Note that client sustained injuries — a full demand package (with medical records & expenses) will follow.",
+     "Direct all communication to the attorney's office — no contact with the client.",
+     "Allow 5 business days from the date of the letter for the insurance to inspect the vehicle."
+    ],
+    "ask": "Which component tells the insurer a demand package will follow?"
+   },
+   "n030": {
+    "on": "Slide 28 of 119 · LOR DRAFTING",
+    "why": "Asking for the limits, evidence and Dec Page in the LOR saves separate requests later.",
+    "talk": "Request a copy of the policy limits and inquire about any additional coverage available.\nAsk for preservation of evidence — including videos, reports, or surveillance footage.\nRequest a copy of the Declaration Page for all applicable policies.",
+    "walk": [],
+    "ask": "What three requests go into the LOR?"
+   },
+   "n031": {
+    "on": "Slide 29 of 119",
+    "why": "A letter sent the wrong way, or without a reference, can sit unmatched in the insurer's system.",
+    "talk": "Always send the LOR using the entity’s preferred communication method (email, fax, portal, etc.).\nInclude the Claim Number in the subject line; if not available, use the Policy Number.\nAlways mention the Date of Loss for easy reference and tracking.",
+    "walk": [],
+    "ask": "There's no claim number yet. What goes in the subject line?"
+   },
+   "n032": {
+    "on": "Slide 30 of 119",
+    "why": "The acknowledgment is proof the insurer knows we represent the client.",
+    "talk": "Insurance companies usually send an Acknowledgement Letter within 24–48 hours after receiving the LOR.\nThis confirms they’ve received and recorded our representation.\nIf no response is received within 2–3 business days, follow up to ensure proper documentation and claim progression.",
+    "walk": [],
+    "ask": "It's been three business days and no acknowledgment. What do you do?"
+   },
+   "n033": {
+    "on": "Slide 31 of 119",
+    "why": "The acknowledgment often carries the coverage and limits we need, so read all of it.",
+    "talk": "",
+    "walk": [
+     "When we receive an LOR Acknowledgment, it may include valuable information such as:",
+     "A Statement of Insurance Disclosure",
+     "Confirmation of Coverage for the Loss",
+     "The Policy Limits for applicable coverage",
+     "Always review the acknowledgment thoroughly and update the case file accordingly."
+    ],
+    "ask": "What information might come with an LOR acknowledgment?"
+   },
+   "n034": {
+    "on": "Slide 32 of 119",
+    "why": "Insurers often hold back policy limits until they see proof. Having it ready avoids delays.",
+    "talk": "While some jurisdictions mandate disclosure of policy limits and coverage upon request, many insurance companies may withhold this information until you provide supporting documentation.",
+    "walk": [
+     "They might request:",
+     "A Police Report or brief Incident Narrative",
+     "Initial medical records or bills",
+     "Confirmation that the client is represented by your firm",
+     "Be prepared to respond quickly with these documents to avoid delays in obtaining policy details."
+    ],
+    "ask": "The insurer won't disclose limits. What documents could you send to move them?"
+   },
+   "n035": {
+    "on": "Slide 33 of 119",
+    "why": "The certified policy shows exactly what coverage exists, and it can be hard to get.",
+    "talk": "The Certified Copy of the Policy, also known as the Declaration Pages, outlines the types of coverage and policy limits available.\nNote: Obtaining this document from the defendant’s insurance company can be challenging, as carriers often require:\nFormal requests in writing\nProof of representation\nSupporting case documents (e.g., police report, incident summary)\nAlways follow up and document requests to maintain a paper trail.",
+    "walk": [],
+    "ask": "Why is it harder to get the Dec Page from the defendant's insurer?"
+   },
+   "n036": {
+    "on": "Slide 34 of 119",
+    "why": "The Dec Page is the policy's blueprint: most coverage questions are answered here.",
+    "talk": "Think of the Declarations Page as the blueprint of the policy—a summary that gives you a snapshot of the most important details.",
+    "walk": [
+     "Key Components to Look For:",
+     "Policyholder’s Name & Address",
+     "Policy Number & Period",
+     "Insured Vehicle(s)",
+     "Coverages and Policy Limits (e.g., BI, UM, PIP)",
+     "Premium & Discounts",
+     "Deductibles",
+     "Additional or Excluded Drivers",
+     "Endorsements (added benefits or exceptions)",
+     "Use this page to verify coverage and guide your next steps in the case."
+    ],
+    "ask": "Which part of the Dec Page tells you if coverage was active on the date of loss?"
+   },
+   "n037": {
+    "on": "Slide 35 of 119",
+    "why": "Seeing a real Dec Page makes the components easy to find on the job.",
+    "talk": "Here is an example of the Dec pages",
+    "walk": [],
+    "ask": "Point to the policyholder's name and the policy period on this page."
+   },
+   "n038": {
+    "on": "Slide 36 of 119",
+    "why": "The policy limits are usually on the second part of the document, so don't stop at page one.",
+    "talk": "Here's the rest of the document - notice that the page contains the policy limits",
+    "walk": [],
+    "ask": "Where are the BI limits on this page?"
+   },
+   "n039": {
+    "on": "Slide 37 of 119 · DECLARATION PAGES",
+    "why": "A mismatch in name, vehicle or policy period can mean no coverage for this loss.",
+    "talk": "When reviewing the Declarations Page, pay close attention to the following:\nPolicyholder’s Name & Address:\nFound at the top—ensure accuracy. Look for co-owners or additional insured drivers listed here.",
+    "walk": [
+     "Policy Number:",
+     "A unique identifier for referencing the policy in communications.",
+     "Policy Period:",
+     "Confirms whether the coverage was active on the date of loss.",
+     "This section lists the start and end dates of the policy.",
+     "Always double-check for consistency across documents and verify if the listed vehicle matches the one involved in the incident."
+    ],
+    "ask": "The listed vehicle isn't the one in the accident. What does that mean for the claim?"
+   },
+   "n041": {
+    "on": "Slide 38 of 119",
+    "why": "The vehicle and coverage sections confirm this car, on this date, is covered for this loss.",
+    "talk": "Insured Vehicles",
+    "walk": [
+     "Look for details such as:",
+     "Year, Make, Model",
+     "VIN (Vehicle Identification Number)",
+     "This confirms the vehicle involved in the accident is covered under the policy.",
+     "Coverage and Limits",
+     "This section outlines what the policy includes:",
+     "Liability Coverage",
+     "Collision / Comprehensive",
+     "PIP, UM/UIM",
+     "Verify the limit amounts to understand potential compensation boundaries.",
+     "Premium and Discounts",
+     "The total cost of the insurance policy.",
+     "Premium is based on:",
+     "Vehicle type",
+     "Selected coverage",
+     "Deductibles",
+     "Also note any applied discounts (e.g., multi-policy, safe driver).",
+     "Highlight these areas when reviewing policies to ensure accurate claim assessment and strategy planning."
+    ],
+    "ask": "What do you compare the VIN on the Dec Page against?"
+   },
+   "n042": {
+    "on": "Slide 39 of 119",
+    "why": "Deductibles and driver exclusions can shrink or block the recovery.",
+    "talk": "Deductibles\nThis is the out-of-pocket amount the insured must pay before insurance coverage kicks in.\nReview this carefully, as higher deductibles may impact the claim payout and recovery process.\nAdditional Drivers\nVerify if additional drivers are covered under the policy, or if there are any exclusions.\nThis is especially critical if the driver involved in the incident was not listed on the policy or if there’s ambiguity over coverage for the driver at the time of the accident.\nEnsure all relevant drivers and coverage options are properly included for claim accuracy and to avoid surprises during negotiations.\nOptional Coverage & Special Modifications",
+    "walk": [
+     "Look for:",
+     "Roadside Assistance",
+     "Rental Car Reimbursement",
+     "Gap Insurance",
+     "These extra coverages could play a significant role in your client’s case, especially for added support and expenses after the accident."
+    ],
+    "ask": "The driver in the accident isn't listed on the policy. What do you check next?"
+   },
+   "n043": {
+    "on": "Slide 40 of 119",
+    "why": "Each coverage type pays for something different, and knowing which applies tells you where to file.",
+    "talk": "Bodily Injury Liability (BI) Coverage\nWhat it covers: Damages resulting from injuries caused by the insured in a car accident.\nImportance: It protects the driver who is at fault, covering the medical expenses and other damages incurred by the injured party.\nProperty Damage Coverage\nWhat it covers: Damage to another person’s property (usually vehicles) due to the insured's actions in an accident.\nImportance: This ensures that the person responsible for the accident will not have to pay for the repairs or replacement out of pocket, up to the policy limits.\nMedical Payments Coverage\nWhat it covers: Medical expenses for the insured driver and passengers, no matter who is at fault in the accident.\nImportance: It provides immediate medical coverage and can be used alongside other coverages like health insurance to pay for accident-related medical bills.",
+    "walk": [],
+    "ask": "The at-fault driver damaged the client's car. Which of that driver's coverages pays?"
+   },
+   "n044": {
+    "on": "Slide 41 of 119",
+    "why": "Comprehensive and other coverages fill the gaps the main policies don't cover.",
+    "talk": "Comprehensive Coverage\nWhat it covers: Non-collision-related damage to your vehicle, such as theft, vandalism, natural disasters (hail, fire, etc.), or hitting an animal.\nImportance: It provides broad protection against a variety of risks that could damage the vehicle, even when the driver isn't at fault.\n🚗 Collision Coverage\nWhat it covers: Damages to the insured vehicle from a collision with another vehicle or object (e.g., tree, fence).\nImportance: This coverage is essential, especially for leased or financed vehicles, as it ensures that repairs or replacement costs will be covered in the event of an accident involving your vehicle.",
+    "walk": [],
+    "ask": "Name one loss that comprehensive would cover."
+   },
+   "n045": {
+    "on": "Slide 42 of 119",
+    "why": "First-party and third-party coverage are obtained differently; knowing what each needs saves time.",
+    "talk": "Obtaining Coverage Information:\nPIP/1P: Personal Injury Protection or First-Party coverage is straightforward to obtain and typically provides immediate coverage for medical expenses.\n3P/BI: Third-Party Bodily Injury coverage requires more detailed documentation and usually needs additional information for coverage determination.",
+    "walk": [
+     "Adjuster Investigations:",
+     "BI Adjusters: They often conduct their own background checks or research before confirming coverage. They may request additional documents, such as police reports, medical bills, or statements, before finalizing the claim.",
+     "Tip: Be prepared for requests for more case-specific details and always follow up with the adjusters to ensure they have everything they need."
+    ],
+    "ask": "Why is 3P/BI coverage harder to get than PIP?"
+   },
+   "n046": {
+    "on": "Slide 43 of 119 · UNDERSTANDING POLICIES AND LIMITS",
+    "why": "Policy limits cap what the client can recover, so they shape the whole case.",
+    "talk": "📊 Policy Limits Overview:\nPolicy Limits define the maximum payout an insurer will provide under a specific coverage type.\nThink of it as the \"cap\" that sets a limit on what can be paid out for a claim.",
+    "walk": [
+     "🔑 Types of Policy Limits:",
+     "Per Person Limit:",
+     "The maximum amount the insurance will pay for an individual injured in the incident.",
+     "Example: $100,000 per person for bodily injury.",
+     "Per Accident/Occurrence Limit:",
+     "The maximum payout for a single accident, no matter how many people are injured.",
+     "Example: $300,000 total for all injuries in one accident.",
+     "Aggregate Limit:",
+     "The total payout limit for a policy over the entire policy period (usually one year).",
+     "Example: $1 million aggregate limit for all claims in a year.",
+     "CSL (Combined Single Limit):",
+     "One total amount that applies to all claims (injury + property damage) for a single accident.",
+     "Example: A $500,000 CSL covers both bodily injury and property damage in one accident.",
+     "Tip: Always clarify the type of limit when discussing coverage with insurance adjusters to ensure you understand how the policy will respond to claims."
+    ],
+    "ask": "What is a per person limit?"
+   },
+   "n047": {
+    "on": "Slide 44 of 119 · UNDERSTANDING POLICIES AND LIMITS",
+    "why": "Split limits decide how much each injured person can get from one policy.",
+    "talk": "🔢 Understanding Split Limits:\n$100,000 per person:\nMaximum the insurer will pay for a single person's injuries in an accident.",
+    "walk": [
+     "$300,000 per accident:",
+     "Total payout the insurer will cover for all injured parties in one accident, regardless of how many people are involved.",
+     "$50,000 Property Damage:",
+     "Maximum the insurer will pay for damage to others’ property (e.g., vehicles, fences).",
+     "This is the most common structure in personal auto insurance policies and is known as Split Limits.",
+     "🧩 Example of Split Limits:",
+     "$100,000 / $300,000 / $50,000",
+     "Bodily Injury per person / Bodily Injury per accident / Property Damage",
+     "Tip: Split limits provide clear guidance on how much the insurer will pay for different aspects of a claim, so it’s crucial to understand these limits when reviewing a policy or handling claims."
+    ],
+    "ask": "Three people were hurt. The policy is $100k/$300k. What is the most one person can get?",
+    "scenario": "Two clients in the same car: one has $150,000 in damages, the other $50,000. The at-fault policy is $100,000 per person / $300,000 per accident. Ask the room how much each client can recover."
+   },
+   "n048": {
+    "on": "Slide 45 of 119 · UNDERSTANDING POLICIES AND LIMITS",
+    "why": "With CSL there's one pot of money, which changes how a multi-claimant case is split.",
+    "talk": "🔢 What is CSL?\nWith Combined Single Limits (CSL), there’s a single, total amount available per accident to cover all claims (both bodily injury and property damage).\nThere are no individual caps for specific claim types.\n🧩 Example: $300,000 CSL\nThe insurance will pay up to $300,000 total for all damages in an accident, whether for bodily injury or property damage.\nTip: CSL simplifies the process, but it’s important to ensure that the total amount is sufficient to cover all potential claims in an accident.\nCheck out the comparative table to identify key distinction between the type of limits",
+    "walk": [],
+    "ask": "How is CSL different from split limits?"
+   },
+   "n049": {
+    "on": "Slide 46 of 119 · UNDERSTANDING POLICIES AND LIMITS",
+    "why": "Reading the Dec Page tells you which kind of limits you're dealing with.",
+    "talk": "check out these dec pages to identify how they are specified in the policy limits",
+    "walk": [],
+    "ask": "Looking at these Dec Pages, which one uses CSL?"
+   },
+   "n050": {
+    "on": "Slide 47 of 119 · UNDERSTANDING POLICIES AND LIMITS",
+    "why": "An aggregate limit can shrink during the policy year; earlier claims may have used some of it.",
+    "talk": "What is an Aggregate Limit?\nThe Aggregate Limit is the maximum total amount an insurer will pay for all claims combined during the policy term (typically one year).\n🧩 Example: $2,000,000 Aggregate Limit\nThis means the insurance will pay a total of up to $2,000,000 for all claims during the policy year, regardless of how many individual claims are made.",
+    "walk": [
+     "Where You’ll See Aggregate Limits:",
+     "Commercial General Liability (CGL)",
+     "Professional Liability / Errors & Omissions",
+     "Umbrella or Excess Liability Policies",
+     "Sometimes in PIP or MedPay in no-fault states",
+     "Tip: Always confirm if an aggregate limit applies, as once the cap is reached, no further claims can be paid out under the policy."
+    ],
+    "ask": "What happens if other claims already used most of the aggregate?"
+   },
+   "n051": {
+    "on": "Slide 48 of 119 · UNDERSTANDING POLICIES AND LIMITS",
+    "why": "An umbrella policy can be the difference between a partial and a full recovery.",
+    "talk": "What is an Umbrella Policy?\nAn Umbrella Policy provides extra liability coverage that kicks in after the limits of underlying policies (like auto, homeowners, or commercial liability) have been exhausted.",
+    "walk": [
+     "Example Scenario:",
+     "At-fault driver’s auto policy covers $100,000 in bodily injury liability.",
+     "Your client’s damages total $250,000.",
+     "The at-fault driver has an $1,000,000 umbrella policy.",
+     "Recovery Breakdown:",
+     "$100,000 from the auto liability policy.",
+     "$150,000 from the umbrella policy.",
+     "Total Recovery: $250,000 (Full coverage for the client's damages).",
+     "Key Point: Umbrella policies can provide substantial additional coverage, especially when underlying policies' limits are insufficient. Always check if the at-fault party has an umbrella policy when the damages exceed initial policy limits."
+    ],
+    "ask": "When should you check if the at-fault party has an umbrella policy?"
+   },
+   "n052": {
+    "on": "Slide 49 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Without liability acceptance there's no settlement, so this is the goal of every BI claim.",
+    "talk": "Liability Determination is when the insurer acknowledges their insured is at fault.\nSometimes it’s in the Acknowledgment Letter or early communications, but often it’s not — you’ll need to follow up consistently.\n🧠 Pro Tip: Insurance companies don’t always admit fault right away, even if the accident seems obvious. Keep following up to get confirmation.",
+    "walk": [
+     "Action Plan:",
+     "Initial Inquiry – Ask if liability is being accepted.",
+     "Follow-up – Persist if no confirmation is given.",
+     "Document – Log communications and responses.",
+     "Goal: Confirm liability early to streamline the process."
+    ],
+    "ask": "Where might you first see liability accepted?"
+   },
+   "n053": {
+    "on": "Slide 50 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Fault is what makes the other side responsible for paying.",
+    "talk": "In Personal Injury Law, the at-fault party is legally responsible for the harm caused.",
+    "walk": [
+     "For a car accident, the person who caused the crash is typically liable for:",
+     "Injuries",
+     "Property damage",
+     "To get compensation, the injured party must prove:",
+     "Negligence – The other party wasn’t careful.",
+     "Causation – Their conduct caused the injuries.",
+     "Losses – You suffered losses (e.g., vehicle damage, injuries, lost income)."
+    ],
+    "ask": "What must the injured party prove to show negligence?"
+   },
+   "n054": {
+    "on": "Slide 51 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Knowing what the adjuster is investigating tells you what evidence to send.",
+    "talk": "",
+    "walk": [
+     "Purpose:",
+     "The goal is to determine who is at fault and whether the insurance company will accept liability and pay damages.",
+     "🔍 What Is a Liability Investigation?",
+     "It’s the process the insurance adjuster uses to gather and review evidence to answer key questions:",
+     "Who caused the accident?",
+     "Was it fully or partially their insured’s fault?",
+     "Is there shared (comparative) liability?"
+    ],
+    "ask": "What key questions is the adjuster trying to answer?"
+   },
+   "n055": {
+    "on": "Slide 52 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Each step of the investigation is a point where you can help move the claim along.",
+    "talk": "Step 1: Claim Reported\nThe insured (at-fault party) or claimant reports the incident.\nStep 2: Initial Contact\nThe adjuster contacts all involved parties to gather basic information.\nStep 3: Collect Statements\nAdjuster gets recorded or written statements from the drivers and witnesses.\nStep 4: Review Police Report\nThe police report often provides a preliminary view of fault.\nStep 5: Analyze Evidence\nReview photos, dashcams, CCTV, and accident reconstruction if needed.\nStep 6: Apply State Laws\nThe adjuster determines fault based on state negligence laws (e.g., comparative, contributory).\nStep 7: Liability Decision\nThe adjuster issues a determination — accepts full, partial, or denies liability.",
+    "walk": [],
+    "ask": "At which step would you send the adjuster witness statements?"
+   },
+   "n056": {
+    "on": "Slide 53 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Acceptance opens the door to settlement, and changes what the team does next.",
+    "talk": "What It Means:\nWhen an insurance company accepts liability, they are:\nAdmitting their insured is at fault\nConfirming their policy provides coverage for the incident\nOpening the door to settlement negotiations",
+    "walk": [
+     "Once liability is accepted:",
+     "Client Treats – Focus on managing the client’s medical treatment and care.",
+     "Demand – Prepare to make a demand for settlement based on the damages, injuries, and losses sustained."
+    ],
+    "ask": "Liability is accepted. What does the client focus on now?"
+   },
+   "n057": {
+    "on": "Slide 54 of 119 · UNDERSTANDING LIABILITY",
+    "why": "The case waits on treatment, because treatment drives the claim's value.",
+    "talk": "What Happens Next: Case on Hold (Temporarily)",
+    "walk": [
+     "Once liability is accepted:",
+     "Pause Case Progression: Hold off on further legal steps until the client completes their medical treatment.",
+     "Encourage Ongoing Treatment: Advise the client to continue treatment consistently to ensure maximum recovery.",
+     "Maximize Policy Limits: Continue treatment until the available policy limits are exhausted.",
+     "Gather Documentation: During this pause, collect all relevant medical records, bills, and track the progress of treatment. This will help in the later stages of settlement."
+    ],
+    "ask": "Why do we hold the case while the client is treating?"
+   },
+   "n058": {
+    "on": "Slide 55 of 119 · UNDERSTANDING LIABILITY",
+    "why": "The demand is where the case gets its value, and it only happens after treatment.",
+    "talk": "Next Step: Demand",
+    "walk": [
+     "Once treatment is complete:",
+     "Calculate Total Damages: Add up medical expenses, lost wages, pain and suffering, and any other applicable damages.",
+     "File Demand Package: Once the damages are calculated, prepare and submit the demand package to the insurance company to start settlement negotiations.",
+     "This is a critical step in securing a fair settlement for the client."
+    ],
+    "ask": "What goes into calculating total damages?"
+   },
+   "n059": {
+    "on": "Slide 56 of 119 · UNDERSTANDING LIABILITY",
+    "why": "No liability means no payout: this is why liability comes first.",
+    "talk": "",
+    "walk": [
+     "Why This Matters:",
+     "No liability = no payout: Without liability acceptance, there’s no assurance the policy will cover damages, meaning no potential for a settlement.",
+     "Treatment period is critical: The treatment process directly impacts the claim’s value. The more thorough and complete the treatment, the stronger the claim.",
+     "Premature demands: Filing a demand too early, before treatment is fully completed, could result in leaving money on the table since the full extent of damages might not be captured."
+    ],
+    "ask": "Why does the treatment period matter so much to the claim's value?"
+   },
+   "n060": {
+    "on": "Slide 57 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Verbal acceptance isn't enough; written confirmation protects the case.",
+    "talk": "Once liability is accepted:\nGet written confirmation from the insurance company to properly document the claim, avoid disputes, and ensure clarity on next steps like treatment, demand, and negotiation.",
+    "walk": [
+     "Key Takeaway:",
+     "Liability acceptance is important but it’s just one piece of the puzzle. Thorough documentation of injuries, treatment, and damages is still essential to maximize recovery and secure a fair settlement."
+    ],
+    "ask": "The adjuster accepts liability on the phone. What do you do next?"
+   },
+   "n061": {
+    "on": "Slide 58 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Partial fault reduces what the client recovers, and the rules depend on the state.",
+    "talk": "Partial Liability:\nDefinition: More than one party shares responsibility for causing the accident, including potentially your client.\nEffect on Compensation: The injured party’s compensation will be reduced based on their percentage of fault.",
+    "walk": [
+     "Types of Negligence:",
+     "Pure Comparative Negligence:",
+     "Damages are reduced by the plaintiff’s percentage of fault (e.g., 20% at fault = 80% recovery).",
+     "Modified Comparative Negligence:",
+     "Plaintiff can only recover if they are less than 50% or 51% at fault (depending on the state)."
+    ],
+    "ask": "The client is 30% at fault. How does that affect their compensation?"
+   },
+   "n062": {
+    "on": "Slide 59 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Acceptance doesn't guarantee a strong or high-value case; knowing the limits sets the right expectations.",
+    "talk": "When Liability Is Accepted\nThe at-fault party’s insurer agrees their insured caused the accident.\nTheir liability policy will cover damages—within policy limits.",
+    "walk": [
+     "But Be Cautious:",
+     "It does not guarantee a strong or high-value case.",
+     "Doesn’t mean all damages will be paid in full.",
+     "Settlement Negotiations may still take time."
+    ],
+    "ask": "Liability is accepted. What can still reduce the payout?"
+   },
+   "n063": {
+    "on": "Slide 60 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Liability can be accepted while coverage is still denied, and then the policy won't pay.",
+    "talk": "",
+    "walk": [
+     "Common Reasons for Coverage Denial – Speaker's Notes",
+     "Policy Lapsed – No active coverage due to non-payment.",
+     "Excluded Driver – Driver was not authorized or explicitly excluded.",
+     "Vehicle Not Covered – Car involved wasn’t listed on the policy.",
+     "Intentional Acts – Policies exclude deliberate or illegal actions.",
+     "Out-of-Scope Use – Using a personal vehicle for business without the right coverage.",
+     "Always verify policy status and terms early in the case."
+    ],
+    "ask": "Name two reasons coverage might be denied even when fault is clear."
+   },
+   "n064": {
+    "on": "Slide 61 of 119 · UNDERSTANDING LIABILITY",
+    "why": "These considerations explain why an accepted claim can still settle for less.",
+    "talk": "",
+    "walk": [
+     "Important Considerations – Speaker's Notes",
+     "Policy Limits – Admission of fault doesn't mean unlimited payout; payments are capped.",
+     "Causation – Must link injuries directly to the accident.",
+     "Medical Necessity – Treatment must be necessary and accident-related.",
+     "Comparative Fault – In some states, your client’s partial fault can reduce compensation.",
+     "Even with liability accepted, you must still build a strong case to maximize recovery."
+    ],
+    "ask": "What is causation, and why does the insurer care?"
+   },
+   "n065": {
+    "on": "Slide 62 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Recognizing partial liability scenarios early helps the team plan.",
+    "talk": "Partial Liability – Speaker's Notes\nExample: $100,000 damages – if client is 25% at fault, they recover $75,000 (reduced by their fault).",
+    "walk": [
+     "Common Scenarios:",
+     "Sudden stop in rear-end collision",
+     "Intersection crashes with shared violations",
+     "Pedestrian jaywalking or distracted",
+     "Left-turn accidents with disputed right-of-way",
+     "Key Point: Understanding shared fault helps set realistic expectations on recovery."
+    ],
+    "ask": "Which common scenario might put some of the fault on our client?",
+    "scenario": "The client rear-ended a car that stopped suddenly without brake lights working. Damages are $100,000. Ask the room how fault might be split and what the client could recover."
+   },
+   "n066": {
+    "on": "Slide 63 of 119 · UNDERSTANDING LIABILITY",
+    "why": "A denial means the firm has to prove the case, so the evidence matters.",
+    "talk": "What It Means:\nInsurer/defendant denies fault\nDisputes facts, injury severity, or causation\nMay lead to dispute resolution or litigation",
+    "walk": [
+     "What You Must Prove:",
+     "Duty of Care – Legal obligation (e.g., safe driving)",
+     "Breach of Duty – Failure to meet that obligation",
+     "Causation – Their actions directly caused the injuries",
+     "Damages – Documented losses (medical bills, wages, etc.)",
+     "Goal: Build a strong case to overcome denial and pursue recovery."
+    ],
+    "ask": "What four things must we prove when liability is denied?"
+   },
+   "n067": {
+    "on": "Slide 64 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Knowing what happens during a dispute tells you what to gather and when to escalate.",
+    "talk": "",
+    "walk": [
+     "What Happens During Dispute – Speaker’s Notes",
+     "Evidence Gathering",
+     "Collect all supporting documents: police report, photos, medical records, witness statements.",
+     "Negotiation Attempts",
+     "Reconnect with the adjuster, present updated evidence, or escalate to a supervisor or legal rep.",
+     "Pre-Litigation Demand",
+     "Draft and send a strong, detailed demand to prompt resolution before filing suit.",
+     "Litigation",
+     "If still unresolved, escalate to formal legal action through the court system.",
+     "Key Point: Stay organized and persistent—solid documentation and follow-up can often avoid trial."
+    ],
+    "ask": "The adjuster won't move. What evidence could change their mind?"
+   },
+   "n068": {
+    "on": "Slide 65 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Knowing why insurers deny helps you answer the denial with the right evidence.",
+    "talk": "Liability Disputes – Quick Overview",
+    "walk": [
+     "What It Is:",
+     "When the insurer or defendant refuses to accept full or partial fault for the accident — slowing down resolution and often requiring more evidence or legal pressure.",
+     "Common Denial Reasons:",
+     "Conflicting Statements – Differing driver accounts",
+     "Lack of Evidence – No solid proof (photos, video, witnesses)",
+     "Comparative Negligence – Client shares some blame",
+     "No/Inconclusive Police Report – Weak or missing documentation",
+     "Coverage Denial – Policy doesn’t apply (e.g., excluded driver)",
+     "Pro Tip: The more solid your evidence, the less room for dispute."
+    ],
+    "ask": "What's a common reason an insurer disputes liability?"
+   },
+   "n069": {
+    "on": "Slide 66 of 119 · UNDERSTANDING LIABILITY",
+    "why": "These steps turn a dispute into a path forward instead of a stalled file.",
+    "talk": "🔧 Handling Liability Disputes – Key Steps\nRequest Detailed Denial\nAsk the adjuster for a written reason and supporting evidence.\nStrengthen Your Evidence\nSecure dashcam or surveillance footage\nGet witness statements\nEmphasize vehicle damage patterns\nLeverage Legal Team\nEscalate to attorney\nSend a formal pre-lit demand\nPrepare for litigation or arbitration\nEducate the Client\n💬 “The insurer is disputing liability. We’re building stronger evidence and may take legal action if needed.”",
+    "walk": [],
+    "ask": "What's the first thing you ask for when liability is denied?"
+   },
+   "n070": {
+    "on": "Slide 67 of 119 · UNDERSTANDING LIABILITY",
+    "why": "After a lawsuit, the fight usually moves from fault to causation and damages.",
+    "talk": "Post-Lawsuit Shift in Strategy",
+    "walk": [
+     "Once you file suit and force liability proof, insurers often pivot focus to:",
+     "“Causation and damages — not fault.”",
+     "Why the Shift?",
+     "Their liability denial often can’t stand up in court",
+     "Evidence may be weak (bad witness, unclear photos, vague reports)",
+     "Defense Tactics:",
+     "“Your client wasn’t really injured”",
+     "“Treatment was excessive or unrelated”"
+    ],
+    "ask": "Why do insurers often stop disputing fault after suit is filed?"
+   },
+   "n071": {
+    "on": "Slide 68 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Regular follow-ups are how liability decisions actually get made.",
+    "talk": "LIABILITY FOLLOW-UPS – BI (DEFENDANT)",
+    "walk": [
+     "Purpose:",
+     "To confirm the at-fault party’s insurance position on liability and ensure timely progression of the claim.",
+     "Routine Follow-Up Process:",
+     "Frequency: Every 5 business days or as needed, depending on case status",
+     "Method: Phone call, email, or carrier portal message",
+     "Approach: Be professional, consistent, and clear",
+     "Sample Script:",
+     "\"Hi [Adjuster Name], I’m following up on the liability review for claim #[Claim Number]. Are there any updates on liability acceptance or pending investigation?\""
+    ],
+    "ask": "How often do you follow up with the BI adjuster on liability?"
+   },
+   "n072": {
+    "on": "Slide 69 of 119 · UNDERSTANDING LIABILITY",
+    "why": "Knowing when and how to escalate keeps a stalled claim from sitting for months.",
+    "talk": "Escalation Protocol",
+    "walk": [
+     "When to Escalate:",
+     "If there is no progress after multiple follow-up attempts.",
+     "Steps to Take:",
+     "Contact the Adjuster’s Supervisor",
+     "Request a review of the delay",
+     "Document the date, time, and method of contact",
+     "Flag the File Internally",
+     "Notify the legal team or case manager for review",
+     "Highlight repeated delays or lack of response",
+     "Certified Demand for Liability Position",
+     "If stalling continues, consider sending a formal certified letter requesting a written liability determination"
+    ],
+    "ask": "After how many attempts would you escalate, and to whom?"
+   },
+   "n073": {
+    "on": "Slide 70 of 119",
+    "why": "Liability and coverage are two separate answers; you need both.",
+    "talk": "Liability Accepted:\nThe insurance company acknowledges that their insured caused the accident, and their policy will cover the damages, within the limits.",
+    "walk": [
+     "Liability Denied:",
+     "The insurance company rejects responsibility for the accident, meaning they do not believe their insured was at fault.",
+     "Coverage Accepted:",
+     "Even if liability is accepted, the insurance company confirms that there is sufficient coverage under the policy to pay for the damages.",
+     "Coverage Denied:",
+     "The insurance company denies coverage, which can occur even if liability is accepted, due to policy exclusions or other issues like lapses or limits."
+    ],
+    "ask": "What's the difference between liability accepted and coverage accepted?"
+   },
+   "n074": {
+    "on": "Slide 71 of 119",
+    "why": "Mixed outcomes are common, and each one points to a different next step.",
+    "talk": "Liability Denied – Coverage Accepted:\nThe insurance company denies that their insured caused the accident, but they still confirm that there is coverage under the policy. This situation typically happens if the insurer disputes fault but does not dispute the terms of the coverage, possibly because of policy inclusions that may still apply despite liability being contested.",
+    "walk": [
+     "Liability Denied – Coverage Denied:",
+     "The insurance company denies both the fault of their insured and the coverage for the damages. This could happen if the policy is lapsed, inactive, or if the vehicle or driver involved in the accident is not covered under the terms of the policy.",
+     "Denied Coverage:",
+     "Coverage denial can occur for several reasons:",
+     "Lapsed Policy: The policy was not in effect at the time of the accident due to unpaid premiums.",
+     "Canceled/Inactive Policy: The policy was canceled or has become inactive.",
+     "Unlisted Vehicle/Driver: The vehicle or driver involved in the accident was not listed or is specifically excluded from coverage under the policy."
+    ],
+    "ask": "Liability denied but coverage accepted: what does that tell you?"
+   },
+   "n075": {
+    "on": "Slide 72 of 119 · RIDESHARING COMPANIES AND LIABILITY INSURANCE IN PERSONAL INJURY CASES",
+    "why": "Rideshare cases have layered coverage that depends on what the driver was doing.",
+    "talk": "What Are Transportation Network Companies (TNCs)?\nTNCs like Uber, Lyft, and Grab are digital platforms that link passengers with independent drivers via smartphone apps.\nThese companies do not own vehicles or directly employ drivers; they serve as intermediaries between customers and independent contractors (the drivers).\nTNCs facilitate the entire process — from ride requests to payments — through their app-based systems.",
+    "walk": [
+     "How TNCs Operate:",
+     "Technology-Based Platform: The TNC operates the app and provides the technology for matching riders with drivers.",
+     "Independent Contractors: The drivers are not employees of the TNC but are typically independent contractors who use their own vehicles to provide the service.",
+     "Payment and Pricing: Payments are processed through the app, and pricing is typically based on factors like time, distance, and demand."
+    ],
+    "ask": "Why don't TNCs like Uber carry insurance like a normal employer would?"
+   },
+   "n076": {
+    "on": "Slide 73 of 119 · RIDESHARING COMPANIES AND LIABILITY INSURANCE IN PERSONAL INJURY CASES",
+    "why": "The app status decides which policy pays, so the period is the first thing to pin down.",
+    "talk": "TNC Insurance Coverage by Period:\nPeriod 0 – App is Off\nWhat it Means: The driver is not using the app, and they are not available for ride requests.\nCoverage: Only personal auto insurance applies. TNC insurance does not cover any incidents that occur during this period.\nKey Point: If an accident happens while the app is off, the driver’s personal auto insurance is the only coverage available.\nPeriod 1 – App is On, Waiting for a Ride Request\nWhat it Means: The driver is logged into the TNC app, waiting for a ride request, but hasn’t yet accepted a passenger.",
+    "walk": [
+     "Coverage Provided by TNC: Limited liability coverage kicks in, but it’s very basic:",
+     "Bodily Injury: $50,000 per person",
+     "Bodily Injury: $100,000 per accident",
+     "Property Damage: $25,000",
+     "Key Point: No collision or comprehensive coverage unless the driver has personal coverage with a TNC endorsement."
+    ],
+    "ask": "The driver was logged in but had no ride request. Which period is that?"
+   },
+   "n077": {
+    "on": "Slide 74 of 119 · RIDESHARING COMPANIES AND LIABILITY INSURANCE IN PERSONAL INJURY CASES",
+    "why": "Periods 2 and 3 carry the TNC's $1 million coverage, which changes the case's value.",
+    "talk": "Period 2 – Matched with Rider, En Route to Pick Up\nWhat it Means: The driver has accepted a ride request and is on their way to pick up the passenger.",
+    "walk": [
+     "Coverage Provided by TNC:",
+     "Full Commercial Coverage: TNC provides $1 million in liability coverage, covering the driver, passengers, and any third parties.",
+     "Collision/Comprehensive Coverage: If the driver has their own personal insurance with a TNC endorsement, contingent collision and comprehensive coverage applies, but with a deductible.",
+     "Key Point: The coverage is much higher during this period, and the driver is protected in case of accidents, as long as they are en route to pick up the passenger.",
+     "What it Means: The ride is in progress, and the passenger is in the vehicle until they are dropped off at their destination.",
+     "Coverage Provided by TNC:",
+     "$1 Million Commercial Liability Insurance: Continues to apply, covering the driver, the passenger, and others involved in an accident.",
+     "Uninsured/Underinsured Motorist Coverage: If another driver is at fault and doesn’t have enough insurance or no insurance, the TNC coverage steps in.",
+     "Collision/Comprehensive Coverage: Contingent coverage applies if the driver has it through their own insurance with a TNC endorsement.",
+     "Key Point: This is the most comprehensive coverage, ensuring both the driver and the passenger are covered throughout the trip."
+    ],
+    "ask": "The passenger was in the car when the crash happened. Which coverage applies?",
+    "scenario": "The client was a passenger in a Lyft that was hit by an uninsured driver. Ask the room which period applies and which coverages the client could claim."
+   },
+   "n078": {
+    "on": "Slide 75 of 119 · RIDESHARING COMPANIES AND LIABILITY INSURANCE IN PERSONAL INJURY CASES",
+    "why": "One question, what the driver was doing, determines which insurance applies.",
+    "talk": "Always Ask: \"What was the driver doing at the time of the accident?\"\nThis determines which insurance policy applies — personal or TNC-provided.\nThe coverage changes based on app status and trip phase (Period 0 to 3).\nVerify App Status and Trip Phase",
+    "walk": [
+     "Use intake details or the police report to confirm whether the app was:",
+     "Off (Period 0)",
+     "On but no ride matched (Period 1)",
+     "En route to pick up (Period 2)",
+     "Ride in progress (Period 3)",
+     "Notify the TNC’s Insurance Provider",
+     "These claims are typically handled by third-party administrators like:",
+     "James River Insurance",
+     "York Risk Services",
+     "It’s important to get the claim filed quickly with the correct TNC insurer.",
+     "Maintain Clear Communication",
+     "Coordinate between the driver’s personal auto insurer and the TNC’s insurer.",
+     "Avoid delays or denials caused by miscommunication about who is responsible."
+    ],
+    "ask": "What's the one question you always ask in a rideshare case?"
+   },
+   "n079": {
+    "on": "Slide 76 of 119 · TNC DRIVERS",
+    "why": "When the rideshare driver is at fault, the TNC's coverage is excess, not primary.",
+    "talk": "Transportation Network Companies (TNCs) like Uber and Lyft provide third-party liability insurance that covers up to $1 million in injuries or damages.\nThis insurance only applies after the driver’s personal insurance has been exhausted or denied—it’s not primary unless the driver is actively engaged in a ride (Periods 2 or 3).\nRemind the audience: Always confirm the driver’s status at the time of the crash (Was the app on? Were they matched with a rider?).\nImportant Caveat: These policy limits and terms can vary by state, so always verify local requirements.",
+    "walk": [],
+    "ask": "The driver's personal insurance denies the claim. What happens next?"
+   },
+   "n080": {
+    "on": "Slide 77 of 119 · TNC DRIVERS",
+    "why": "When another driver is at fault, the TNC's UM/UIM can protect the client if that driver has no insurance.",
+    "talk": "Recovering from the At-Fault Driver’s Insurance\nFile a third-party claim directly against the at-fault driver’s insurance provider.\nWhat If the At-Fault Driver Has No Insurance?\nTransportation Network Companies (TNCs) typically provide Uninsured/Underinsured Motorist (UM/UIM) coverage, which may offer up to $1 million in protection.\nNote: Policy limits and coverage may vary by state.",
+    "walk": [],
+    "ask": "The at-fault driver has no insurance. Where do you turn?"
+   },
+   "n081": {
+    "on": "Slide 78 of 119",
+    "why": "The evidence gathered right after the accident is what proves the claim later.",
+    "talk": "\"Let’s walk through the essential steps someone should take after being involved in a rideshare accident.\nStep 1: First and foremost, take clear photos of the accident scene. This should include damage to all vehicles, license plates, and the drivers involved. These images serve as critical evidence and can help support the claim.\nStep 2: Document the time and exact location where the accident occurred. This detail may align with GPS data from the rideshare platform and help verify the incident.\nStep 3: It's important to file a police report right away. The police report provides an official account of what happened and is often required when filing insurance claims or pursuing legal action.\nStep 4: Finally, you’ll want to request trip verification from the rideshare company—Uber or Lyft. This confirms that the client was on an active trip when the accident happened. For Uber, you can use this link: https://inquiries.uber.com. Lyft has a similar process on their help page.\"",
+    "walk": [],
+    "ask": "What should the client photograph at the scene?"
+   },
+   "n082": {
+    "on": "Slide 79 of 119",
+    "why": "Complete information in the report lets Uber find the trip record and process the claim faster.",
+    "talk": "\"When reporting an accident to Uber, it’s essential to provide complete and accurate information to avoid delays in processing the claim.\nStart with the client’s basic contact details—name, phone number, and email address. These help Uber locate the trip record and follow up as needed.\nNext, include the Uber driver’s name, which links the incident to the correct driver profile.\nBe sure to note the date, time, and exact location of the accident. These details help match the report to the trip data in Uber’s system.\nLastly, give a clear and concise description of how the accident occurred—this supports the investigation and helps Uber determine the next steps.\"",
+    "walk": [],
+    "ask": "What details help Uber locate the trip?"
+   },
+   "n083": {
+    "on": "Slide 80 of 119",
+    "why": "Following the TNC's own claim process avoids delays and lost reports.",
+    "talk": "\"To initiate a claim with a TNC like Uber or Lyft, there are several critical steps.\nStep 1: Start by using the TNC’s online inquiry form—for Uber, the link is inquiries.uber.com. This form allows you to report the accident and provide preliminary details.\nStep 2: When filling out the form, make sure to submit all required accident details, including time, location, driver information, and a description of the incident.\nStep 3: After the initial report, you should reach out directly to the insurance carrier handling claims for the rideshare company. For example, Allstate typically handles Uber claims.\nStep 4: Once contact is established, send a Letter of Representation (LOR) if you’re working on behalf of the client, and follow up to determine the liability status.\nStep 5: Finally, be sure to secure the claim number and the adjuster’s contact information so you can track the claim’s progress and communicate efficiently throughout the process.\"",
+    "walk": [],
+    "ask": "Where do you start a claim with Uber?"
+   },
+   "n084": {
+    "on": "Slide 81 of 119",
+    "why": "In rental car cases, which policy is primary depends on the renter's coverage and the add-ons they bought.",
+    "talk": "\"When dealing with a rental car accident, understanding which insurance applies is critical.\nLet’s start with Personal Insurance. In most cases, the renter’s own auto insurance policy is primary—meaning it will respond first before any other coverage kicks in.\nRental Company Insurance may exist, but many companies are self-insured or only offer minimum liability protection. This means their policies may not cover the full cost of damages or injuries.\nNext, it’s important to note that state laws vary widely. For instance, in Florida, the rental company may bear more liability than in a state like Nevada, where personal policies take precedence.\nFinally, renters often have access to additional coverages, like Renter’s Choice or Loss Damage Waivers (LDWs). These can provide extra protection and peace of mind but come at an added cost.\"",
+    "walk": [],
+    "ask": "Whose insurance usually pays first in a rental car accident?"
+   },
+   "n085": {
+    "on": "Slide 82 of 119",
+    "why": "Knowing who covers what in a rental case tells you where to open each claim.",
+    "talk": "\"Let’s break down who is responsible for covering damages when a rental vehicle is involved in an accident.\nRental Company Coverage: Companies like Enterprise often carry self-insurance, which means they don't use a traditional insurance provider. They’ll only step in with coverage if the renter’s personal insurance denies the claim.\nMost of the time, it’s the renter’s personal auto insurance that’s expected to provide liability and property damage coverage. For example, in Florida, if a renter is insured with USAA, USAA will handle the claim. If they deny it, then Enterprise’s internal insurance may apply.\nNow let’s talk about the Renter’s Responsibility. Renters are expected to carry valid auto insurance or purchase supplemental coverage through the rental company. If they lack sufficient coverage, they may be personally responsible for damages, medical costs, or even loss-of-use fees from the rental company.\"",
+    "walk": [],
+    "ask": "When does Enterprise's self-insurance step in?"
+   },
+   "n086": {
+    "on": "Slide 83 of 119 · STATUTES",
+    "why": "Florida's statutes decide who pays first for rental vehicles in a no-fault state.",
+    "talk": "\"Florida law has specific statutes that govern how insurance works in the context of rental vehicles.\nStarting with § 627.736, this is the state's PIP statute—part of Florida’s no-fault insurance system. Every vehicle owner must carry at least $10,000 in PIP coverage, which pays for medical expenses, lost income, and death benefits, regardless of who caused the accident. This is often the first line of coverage in any motor vehicle accident.\nNext, § 324.021(9)(b)(2) outlines that the renter’s personal auto insurance is primary. This means that when someone rents a car, their own policy responds to any accident before the rental company’s insurance would.\nLastly, under § 324.171, rental companies like Enterprise or Hertz can become self-insured, but only with approval from the state. This allows them to handle claims internally without relying on third-party insurance providers—though their coverage often only kicks in if the renter’s insurance denies the claim.\"",
+    "walk": [],
+    "ask": "In Florida, whose PIP pays first for the renter?"
+   },
+   "n087": {
+    "on": "Slide 84 of 119 · STATUTES",
+    "why": "California has no PIP, so medical bills are paid differently.",
+    "talk": "\"In California, the insurance framework for rental vehicles is different from no-fault states like Florida.\nLet’s start with PIP coverage—California does not offer PIP. Instead, drivers can choose Medical Payments Coverage, commonly called MedPay. This optional coverage pays for medical bills regardless of fault, but unlike PIP, it does not cover lost wages or death benefits.\nUnder California Civil Code § 1939.09, the renter’s personal insurance is considered primary. This means any claims arising from an accident during a rental period should first go through the renter’s own auto insurance policy.\nFinally, California Vehicle Code § 16050 allows companies that operate 25 or more vehicles to become self-insured, provided they receive certification from the DMV. This is common among major rental companies and rideshare platforms operating large fleets.\"",
+    "walk": [],
+    "ask": "What does a California driver use instead of PIP?"
+   },
+   "n088": {
+    "on": "Slide 85 of 119 · STATUTES",
+    "why": "Texas mixes required offers with case-specific rules, so read each policy closely.",
+    "talk": "\"Texas takes a hybrid approach to rental car insurance, with a mix of mandatory offerings and case-specific rules.\nUnder § 1952.152 of the Texas Insurance Code, PIP must be offered by auto insurers at a minimum of $2,500. However, it’s important to know that this coverage can be waived in writing—so not every driver will have it.\nWhen it comes to primary insurance, there’s no specific statute that determines who pays first in a rental accident. That’s decided case by case, often based on the rental agreement language and individual insurance policy terms.\nFinally, under Texas Transportation Code § 601.124, any company with 25 or more vehicles can apply for self-insurance status through the Department of Public Safety. This is common among rental companies and large fleet operators.\"",
+    "walk": [],
+    "ask": "Does every Texas driver have PIP?"
+   },
+   "n089": {
+    "on": "Slide 86 of 119 · STATUTES",
+    "why": "In Illinois fault must be decided first, which changes how the claim moves.",
+    "talk": "\"In Illinois, rental car insurance operates within a tort-based system, meaning fault must be determined before liability is assigned.\nThere is no PIP requirement in Illinois. Instead, drivers can choose to add Medical Payments Coverage, or MedPay, which helps pay for medical expenses regardless of fault—but this is entirely optional.\nIn terms of primary insurance, Illinois doesn’t establish a strict statutory order. Responsibility is determined case-by-case, but rental companies are required by law to provide minimum liability coverage, currently set at $25,000 per person, $50,000 per accident, and $20,000 for property damage.\nUnder § 7-502 of the Illinois Vehicle Code, rental companies or businesses operating 25 or more vehicles may seek self-insured status by applying through the Secretary of State. This is common among national rental agencies.\"",
+    "walk": [],
+    "ask": "What does 'tort-based system' mean for our claim?"
+   },
+   "n090": {
+    "on": "Slide 87 of 119 · RENTAL AGREEMENT",
+    "why": "A renter who declines protections carries the liability, and their own policy has to respond.",
+    "talk": "\"When someone rents a car and doesn’t purchase optional protections, they are essentially assuming full liability. That means they’ll need to rely solely on their personal auto insurance for any accident-related claims.\nMost rental agreements offer optional protections such as Supplemental Liability Protection (SLP) and Collision Damage Waivers (CDW). SLP helps if the renter injures someone or damages another vehicle, while CDW protects against costs for damage to the rental vehicle itself.",
+    "walk": [
+     "Here’s a real-world example:",
+     "A renter chooses not to buy SLP and gets into an accident. In that case, their personal insurer, say USAA, would be on the hook to cover damages, up to the policy limits. Anything beyond that could become the renter’s personal responsibility.\""
+    ],
+    "ask": "The renter declined SLP and CDW. Which policy pays?"
+   },
+   "n092": {
+    "on": "Slide 88 of 119",
+    "why": "State minimums tell you how little coverage an at-fault driver may carry.",
+    "talk": "\"Each state sets its minimum required auto liability insurance, and these vary widely.\nIn Nevada, the limits are relatively high—$25,000 per person for bodily injury, $50,000 per accident, and $20,000 for property damage.\nWashington has the same bodily injury minimums but a slightly lower property damage limit at $10,000.\nCalifornia, on the other hand, has some of the lowest minimums in the country—$15,000 per person, $30,000 per accident, and just $5,000 for property damage.\nThese minimums are critical when determining liability exposure in rental or rideshare-related accidents, especially if a renter declines optional coverage.\"",
+    "walk": [],
+    "ask": "Which state on this slide has the highest bodily injury minimum?"
+   },
+   "n093": {
+    "on": "Slide 89 of 119 · PRACTICAL EXAMPLE",
+    "why": "Walking through a real-style scenario shows how the rules decide who pays.",
+    "talk": "\"This scenario walks us through a common rental car case in Florida. The driver rents from Enterprise, has personal coverage through USAA, and declines add-ons like SLP or CDW.\nBecause Florida law makes the renter’s personal insurance primary, USAA steps in first. If USAA accepts the claim, they cover the damages.\nHowever, if USAA denies the claim—perhaps due to an expired policy or an uncovered driver—the renter must obtain a denial letter.\nOnly after receiving that denial, Enterprise, which operates under self-insurance authorization, will cover the claim through their internal process.\nThis example highlights why understanding primary insurance laws and the rental agreement is crucial in Florida.\"",
+    "walk": [],
+    "ask": "In this scenario, who pays first and who pays after?",
+    "scenario": "Change one detail: the renter has no personal auto insurance. Ask the room who pays first now."
+   },
+   "n094": {
+    "on": "Slide 90 of 119 · PRACTICAL EXAMPLE",
+    "why": "The same accident is handled differently in Nevada, so check the state before opening claims.",
+    "talk": "\"In this Nevada scenario, the renter’s personal insurance with State Farm serves as the primary coverage in the event of an accident. Since the renter declined CDW and SLP, their State Farm insurance would handle any damages or claims related to the rental vehicle.\nHowever, if State Farm denies the claim, such as in the case of an exclusion or insufficient coverage, the renter would then need to provide the denial letter to Enterprise.\nAt that point, Enterprise, which may be self-insured, would review the situation and proceed with the claim under their own self-insurance policy, assuming they meet Nevada’s self-insurance requirements.\"",
+    "walk": [],
+    "ask": "Why is State Farm primary here?"
+   },
+   "n095": {
+    "on": "Slide 91 of 119 · PRACTICAL EXAMPLE",
+    "why": "Without PIP, medical bills need another source, and the client needs to know which.",
+    "talk": "\"In this scenario, medical expenses play a significant role. Since Nevada does not have mandatory PIP, the renter must look to other sources of coverage.\nIf the renter has MedPay as part of their State Farm auto insurance, this will help cover immediate medical bills regardless of fault. If MedPay isn’t part of the policy, the driver is responsible for paying medical bills out of pocket or through health insurance.\nNow, if State Farm denies the accident claim, Enterprise can step in and cover the damages under their self-insurance policy, but only after receiving a formal denial letter from State Farm. This process ensures that the rental company follows the correct procedures under Nevada’s self-insurance regulations.\"",
+    "walk": [],
+    "ask": "The renter has no MedPay. How are medical expenses covered?"
+   },
+   "n096": {
+    "on": "Slide 92 of 119 · PRACTICAL EXAMPLE",
+    "why": "Subrogation explains why the rental company or insurer may come after the at-fault party later.",
+    "talk": "\"In this scenario, after Enterprise covers the cost of the accident, they or State Farm may pursue a process known as subrogation. This means that since the accident wasn’t the renter’s fault, Enterprise (or State Farm) can attempt to recover the money they paid out from the at-fault driver’s insurance company.\nSubrogation essentially allows the insurer to step into the shoes of the insured and recover the costs directly from the party responsible for the damages.\nThis process helps ensure that the burden of costs doesn’t fall on the renter or the renter’s insurance if the accident was caused by someone else’s negligence.\"",
+    "walk": [],
+    "ask": "What is subrogation, in your own words?"
+   },
+   "n097": {
+    "on": "Slide 93 of 119",
+    "why": "Seeing real correspondence helps you recognize it when it lands in the file.",
+    "talk": "Here is an example of\nRental Claims Services\nClaims Correspondence",
+    "walk": [],
+    "ask": "What details on this letter would you update in the case file?"
+   },
+   "n098": {
+    "on": "Slide 94 of 119",
+    "why": "The rental agreement shows which protections the renter accepted or declined.",
+    "talk": "Here is an example of\nEnterprise Rental\nAgreement",
+    "walk": [],
+    "ask": "Where on the agreement would you check if SLP was declined?"
+   },
+   "n099": {
+    "on": "Slide 95 of 119 · same speaker notes as the slide before: pick up where you left off",
+    "why": "Every page of the agreement can hold coverage details you need.",
+    "talk": "Here is an example of\nEnterprise Rental\nAgreement",
+    "walk": [],
+    "ask": "What else on this page matters for the claim?"
+   },
+   "n100": {
+    "on": "Slide 96 of 119 · BEST PRACTICES · Claims Specialist",
+    "why": "You're the link between everyone on the claim, and how you communicate affects the result.",
+    "talk": "\"As a Claims Specialist, you are the key communication link between multiple parties, including policyholders, attorneys, adjusters, and medical providers. The importance of clear, professional communication cannot be overstated, as it impacts not only the resolution of claims but also the client’s overall experience.\nAlways strive for clarity in every conversation, and avoid jargon or overly complex language.\nEmpathy is essential, especially when dealing with clients in stressful situations—your professionalism can set the tone for the entire process.\nActive listening helps you fully understand the situation and ensures you respond appropriately.\nTimeliness in communication ensures that all parties are aligned and keeps the process moving forward efficiently.\"",
+    "walk": [],
+    "ask": "Give an example of a clear, professional update to a client."
+   },
+   "t151649.387": {
+    "on": "Slide 97 of 119 · BEST PRACTICES · Claims Specialist",
+    "why": "Professionalism builds the trust that keeps adjusters and clients working with us.",
+    "talk": "\"As a Claims Specialist, you're often the primary point of contact in the claims process. Your ability to interact professionally and diplomatically is crucial for building trust and ensuring the case moves forward smoothly.\nAlways communicate clearly and transparently with all involved parties. Clear communication sets realistic expectations and prevents misunderstandings.\nWhen facing difficult situations or emotions, it's essential to remain calm and offer reassurance—this keeps the process grounded and keeps clients from becoming overwhelmed.\nRespect cultural differences and emotional sensitivities—each person you interact with may need a tailored approach.\nPractice active listening—sometimes just listening and paraphrasing can make a huge difference in ensuring all parties feel heard and understood.\nFinally, stay organized and accessible. Clients and attorneys will look to you for information and updates, so being responsive and thorough will make a big difference in the overall experience.\"",
+    "walk": [],
+    "ask": "An adjuster is rude on the phone. How do you respond?"
+   },
+   "t151655.924": {
+    "on": "Slide 98 of 119 · BEST PRACTICES · Claims Specialist",
+    "why": "With a heavy caseload, time management decides what gets done and what slips.",
+    "talk": "\"Effective time management is a crucial skill for Claims Specialists since you're often handling a high volume of claims with various deadlines and dependencies. Here's how you can manage your time effectively:\nPrioritize based on urgency and importance. Use tools like the Eisenhower Matrix to determine which tasks need immediate attention and which can be scheduled for later.\nSet realistic deadlines for yourself. Make sure your schedule allows time for follow-up, case review, and necessary actions.\nImplement a task management system like Trello or Asana to stay organized. This helps break large tasks into manageable steps.\nBatch similar tasks together to reduce distractions and increase efficiency. For example, respond to emails in one block instead of throughout the day.\nDelegate when appropriate—by passing on less critical tasks, you can focus on high-priority actions.\nFinally, always review and adjust your schedule at the end of the day to ensure you're on track.\"",
+    "walk": [],
+    "ask": "How would you decide which of ten follow-ups to do first?"
+   },
+   "t151702.080": {
+    "on": "Slide 99 of 119 · BEST PRACTICES · Claims Specialist",
+    "why": "One wrong date or claim number can delay payment or hurt liability.",
+    "talk": "\"One of the most essential skills for a Claims Specialist is having a strong focus on attention to detail. Errors in documentation can have a significant impact on the claims process, affecting everything from liability to payment delays.\nAlways review documents thoroughly—check for discrepancies in names, dates, and figures that could cause issues later on.\nKeep your files organized—whether digital or physical—to ensure easy access to critical information.\nCross-reference data to ensure consistency across all documents involved in the claim.\nDouble-check all calculations and dates to ensure everything aligns correctly.\nUse checklists to make sure you haven’t missed any critical steps in the claims process.\nFinally, always proofread your communications before submitting or sharing with clients or attorneys.\"",
+    "walk": [],
+    "ask": "What's one detail you'd always double-check before sending a letter?"
+   },
+   "t151710.938": {
+    "on": "Slide 100 of 119 · BEST PRACTICES · Claims Specialist",
+    "why": "Adjusters can be slow or difficult; patience and follow-through are what get results.",
+    "talk": "\"As a Claims Specialist, you're often dealing with situations where patience and perseverance are required, especially when faced with unresponsive or difficult adjusters. Here’s how to navigate those challenging moments:\nWhen frustration arises, it's important to stay calm and focused on problem-solving. Your ability to maintain composure will help you find solutions more effectively.\nKeep clients informed of timelines and potential delays, offering reassurance to manage their expectations.\nUse clear and respectful communication, even in tough situations. This helps maintain a professional relationship with all parties involved.\nPractice active listening—understanding the other party's perspective can sometimes lead to quicker resolution.\nRecognize when you need to take breaks to manage your own stress, and keep detailed records of every conversation and decision made throughout the process.\nMaintaining patience and perseverance is key to staying effective, even in high-pressure situations.\"",
+    "walk": [],
+    "ask": "What keeps you going when an adjuster hasn't answered in two weeks?"
+   },
+   "t151715.508": {
+    "on": "Slide 101 of 119",
+    "why": "Dropped cases must be handled carefully to protect the client and the firm.",
+    "talk": "\"A Dropped Case is one that fails to progress towards resolution, often due to reasons like client withdrawal, lack of evidence, or failure to meet deadlines. It is crucial that such cases are handled with care and documented properly to ensure firm integrity and compliance.\nDocument the reason for the case discontinuation, and ensure that any necessary closing actions are taken. This will protect the firm in the event of later inquiries.\nMaintain open communication with the client throughout the process. If they are considering dropping the case, make sure they understand the full impact of that decision.\nAlways ensure the case is officially closed in the system once the client or other circumstances have led to the case's dismissal, and take any necessary steps to ensure compliance with the law and insurance policies.\"",
+    "walk": [],
+    "ask": "Why document a dropped case as carefully as an active one?"
+   },
+   "t151722.466": {
+    "on": "Slide 102 of 119",
+    "why": "Knowing why a case is dropped tells you how to document it.",
+    "talk": "\"A Dropped Case can happen for several reasons, each of which must be carefully documented and managed. Let’s go over some of the common reasons a case might be discontinued:\nClient unresponsiveness or withdrawal—if a client decides to stop cooperating or pulls out of the case entirely.\nLiability issues—if we cannot establish fault or liability with sufficient evidence.\nCoverage problems—either the insurance company denies the claim or the policy limits are insufficient to cover the damages.\nClient treatment non-compliance—if the client fails to complete medical treatments, it can undermine the credibility and validity of their claim.\nDiscovery of conflicting or fraudulent information—this may force us to drop the case to avoid legal repercussions.\nProper handling and documentation of these situations are vital to maintaining integrity in the claims process.\"",
+    "walk": [],
+    "ask": "Name two common reasons a case is dropped."
+   },
+   "t151730.614": {
+    "on": "Slide 103 of 119 · DROPPED CASES",
+    "why": "The withdrawal letter formally ends representation and tells the client what to do next.",
+    "talk": "\"When a case is dropped, and representation is terminated, sending a Withdrawal Letter is an essential step for protecting both the client and the law firm. The letter serves as a formal communication that the attorney-client relationship has ended and guides the client on how to proceed.",
+    "walk": [
+     "Key points to include:",
+     "Case details: Start by clearly identifying the case and the reason for withdrawal.",
+     "Next steps: Direct the client to seek new counsel if necessary.",
+     "Documentation: Always send the letter via certified mail and keep a record of receipt for legal protection."
+    ],
+    "ask": "Who needs to receive a withdrawal letter?"
+   },
+   "t151738.994": {
+    "on": "Slide 104 of 119 · TO CLIENTS",
+    "why": "Following the steps before sending protects the firm legally.",
+    "talk": "\"Before sending out a Withdrawal Letter, it’s crucial to follow these key steps to ensure both legal compliance and professionalism:",
+    "walk": [
+     "1. Confirm Case Status:",
+     "Ensure that the case status is marked as ‘Pending Drop’ in the system.",
+     "This ensures that you are following the correct procedure before sending any formal communication.",
+     "2. Confirm Client Notification:",
+     "Before sending the Withdrawal Letter, check that the case manager or attorney has communicated with the client regarding the case status.",
+     "The client should already be aware that the case is being dropped, so the letter doesn’t come as a surprise.",
+     "3. Preparing the Withdrawal Letter:",
+     "Once the case status is confirmed, and the client has been notified, the Withdrawal Letter should be generated.",
+     "Important details to include:",
+     "Client Name",
+     "Reason for Withdrawal",
+     "Next Steps for the client to seek alternative legal counsel.",
+     "Send the letter via Certified Mail to ensure proof of receipt.",
+     "4. Post-Withdrawal Procedures:",
+     "Keep a record of the letter's dispatch and ensure that all necessary parties (e.g., opposing counsel, insurance adjusters) are copied on the letter.",
+     "Store the signed letter in both Word and PDF formats to keep a record for future reference.",
+     "Why This Matters:",
+     "This step not only protects the law firm legally but also ensures that the client is informed of their next steps in the legal process.",
+     "Handling this process professionally will help maintain client trust and prevent any potential conflicts or confusion down the line."
+    ],
+    "ask": "What case status should you check before sending the letter?"
+   },
+   "t151750.011": {
+    "on": "Slide 105 of 119 · TO CLIENTS",
+    "why": "Using the client's preferred method makes sure the letter is actually received.",
+    "talk": "Confirm Client’s Preferred Contact Method:\nEnsure you know whether the client prefers email, text, or both.\nSome firms send withdrawal letters via email and mail, others only use one method.",
+    "walk": [
+     "Attach or Paste the Letter:",
+     "If emailing, attach the letter as a PDF or paste it in the body.",
+     "For text, you can either paste the letter or send a link to it.",
+     "Email Considerations:",
+     "Use the correct active email and a clear subject line, e.g., “Notice of Withdrawal of Representation.”",
+     "Include a Brief Description:",
+     "In the email or text, include a short summary of the letter’s contents.",
+     "Follow-Up:",
+     "After sending, confirm receipt to ensure the client received and understands the letter."
+    ],
+    "ask": "The client prefers text. How do you send the letter?"
+   },
+   "t151755.399": {
+    "on": "Slide 106 of 119 · TO CLIENTS",
+    "why": "A saved, annotated copy is the proof the letter was sent.",
+    "talk": "Annotate and Save:\nRegardless of how the letter is sent (email, text, or mail), always annotate and save a copy of the sent withdrawal letter in the client’s file or on the drive for record-keeping.",
+    "walk": [
+     "Confirm Mailing Address:",
+     "If sending the withdrawal letter via mail, double-check that it is sent to the client’s current and correct address.",
+     "If unsure, ask your in-house representative to assist in confirming the address.",
+     "Document the Process:",
+     "After sending, document the method (email, text, or mail) and date of dispatch for clarity and compliance."
+    ],
+    "ask": "Where do you save the copy of the sent letter?"
+   },
+   "t151800.445": {
+    "on": "Slide 107 of 119 · Insurance Carriers and Medical Providers",
+    "why": "Carriers and providers need to know the firm no longer represents the client.",
+    "talk": "Preferred Methods:\nWhen sending withdrawal letters to insurance carriers or medical providers, the usual methods are email or fax. Make sure to choose the most effective method depending on the recipient.",
+    "walk": [
+     "Content Customization:",
+     "Before sending, generate and edit the Withdrawal Letter with the necessary details:",
+     "Date of the letter",
+     "Client’s name",
+     "Date of loss",
+     "Claim number",
+     "File Formats:",
+     "Once the letter is edited, save it in both Word and PDF formats for proper record-keeping and easy access.",
+     "Record the Communication:",
+     "Annotate the method used (email, fax) and the date of dispatch in the client’s file for future reference and compliance.",
+     "Follow-Up:",
+     "If required, ensure there’s a follow-up to confirm receipt, especially for time-sensitive cases."
+    ],
+    "ask": "How do you usually send a withdrawal letter to an insurer?"
+   },
+   "t151811.506": {
+    "on": "Slide 108 of 119 · Insurance Carriers and Medical Providers",
+    "why": "Checking details and CRM notes first prevents sending the letter to the wrong place.",
+    "talk": "Draft and Confirm:\nAfter drafting the Withdrawal Letter and ensuring all details (date, client’s name, date of loss, claim number) are correct, confirm the preferred method of sending with the insurance carrier and medical provider.",
+    "walk": [
+     "Check CRM for Notes:",
+     "Before sending, check the CRM for any notes regarding the preferred method for receiving documents. This will ensure you send the letter via the appropriate channel (email, fax, etc.).",
+     "Proceed with Sending:",
+     "Once the method is confirmed, proceed with sending the letter to the appropriate parties.",
+     "Record the Process:",
+     "Document the method used (email, fax) and the date of dispatch in the client’s file to maintain compliance and ensure proper record-keeping."
+    ],
+    "ask": "What do you check in the CRM before sending?"
+   },
+   "t151817.916": {
+    "on": "Slide 109 of 119 · Insurance Carriers and Medical Providers",
+    "why": "Annotating after sending closes the loop so the team knows it's done.",
+    "talk": "Send the Withdrawal Letters:\nOnce you have confirmed the method and successfully sent the Withdrawal Letters to all relevant parties (including insurance carriers and medical providers), proceed with the next steps.",
+    "walk": [
+     "Annotate the Case:",
+     "Annotate the case with the method of communication used (email, fax, etc.) and the date it was sent. This helps ensure that all actions are properly documented.",
+     "Save the Letter:",
+     "Save the sent withdrawal letter in the client’s file or on the drive for future reference.",
+     "Update Case Status:",
+     "Switch the case status to “Dropped” (or an equivalent status used by your firm) to officially close the case in the system.",
+     "Final Documentation:",
+     "Ensure that all related information is documented thoroughly in the client’s file, including any correspondence with insurance or medical providers."
+    ],
+    "ask": "What goes in the case annotation after sending?"
+   },
+   "t151825.685": {
+    "on": "Slide 110 of 119",
+    "why": "The No Contact Protocol documents every attempt to reach the client and protects the firm.",
+    "talk": "Initiating the No Contact Protocol:\nWhen a client becomes unresponsive for a period of time, initiate the No Contact Protocol. This helps ensure that the law firm has proper documentation of efforts made to reach the client and protects the firm from potential liability.",
+    "walk": [
+     "Purpose:",
+     "Track and Manage Unresponsiveness: By following the protocol, you formally document all attempts to contact the client.",
+     "Ensure Due Diligence Before Withdrawal: The protocol ensures that all steps have been taken before deciding to withdraw from the case.",
+     "Protect the Firm: Properly documenting the process prevents potential liability for the law firm if the case is withdrawn."
+    ],
+    "ask": "When do you start the No Contact Protocol?"
+   },
+   "t151833.149": {
+    "on": "Slide 111 of 119",
+    "why": "Escalating to the team keeps the attorney informed before anything final happens.",
+    "talk": "Team Notification:\nNotify the attorney or supervisor about the unresponsiveness and the steps taken so far.\nEnsure the issue is escalated appropriately within the team.\nDocument all actions in the case management system for proper record-keeping and compliance.",
+    "walk": [
+     "Case Impact Consideration:",
+     "Evaluate the impact of the client's unresponsiveness on the case:",
+     "Statute of limitations: Ensure deadlines are not missed.",
+     "Hearing dates: Assess any upcoming hearings or deadlines that may be affected.",
+     "Final Documentation:",
+     "Ensure that all actions are well-documented and updated in the case file. If the case is heading toward withdrawal, this documentation will be essential."
+    ],
+    "ask": "Who do you notify when a client stops responding?"
+   },
+   "t151849.806": {
+    "on": "Slide 112 of 119",
+    "why": "The final warning letter is the client's last chance before the case is closed.",
+    "talk": "Final Warning Letter:\nOnce previous attempts to contact the client have failed, a Final Warning Letter must be sent.\nMethod: This letter should be sent via certified mail and email to ensure the client has multiple ways to receive it.",
+    "walk": [
+     "Content: The letter should include:",
+     "A summary of all previous contact attempts.",
+     "A clear response deadline (e.g., 7-14 days).",
+     "A notice of potential withdrawal if the client remains unresponsive.",
+     "Decision Point:",
+     "After sending the final warning letter, wait for the client's response by the specified deadline.",
+     "If the client remains unresponsive, the attorney may proceed with:",
+     "A formal Notice of Withdrawal or Motion to Withdraw as per firm and court rules.",
+     "Consult with the attorney to determine the appropriate course of action based on the specifics of the case.",
+     "File Closure and Documentation:",
+     "Mark the file with the reason for the case drop, noting that it was due to no response and the withdrawal was processed per the No Contact Protocol.",
+     "Retain all communications (letters, emails, records of phone calls, etc.) as proof of all attempts to reach the client. This ensures the firm remains compliant and prepared in case of any future inquiries or disputes."
+    ],
+    "ask": "How is the final warning letter sent, and why both ways?"
+   },
+   "t151859.661": {
+    "on": "Slide 113 of 119",
+    "why": "Seeing a real sample shows what a finished withdrawal email looks like.",
+    "talk": "sample Withdrawal LetterS Sent via Email",
+    "walk": [],
+    "ask": "What details in this email would you change for each client?"
+   },
+   "t151905.516": {
+    "on": "Slide 114 of 119",
+    "why": "Text withdrawals need to be short but still complete.",
+    "talk": "sample Withdrawal LetterS Sent via Text",
+    "walk": [],
+    "ask": "What must a withdrawal text still include?"
+   },
+   "t151913.179": {
+    "on": "Slide 115 of 119",
+    "why": "Insurers need the claim details to close their file on our side.",
+    "talk": "sample Withdrawal LetterS Sent to Defense/Plaintiff Insurance",
+    "walk": [],
+    "ask": "Which reference numbers does this letter include?"
+   },
+   "t151930.834": {
+    "on": "Slide 116 of 119",
+    "why": "The wording for unresponsive clients must be clear and documented.",
+    "talk": "sample Withdrawal LetterS Sent to Unresponsive Clients",
+    "walk": [],
+    "ask": "How does this letter differ from the standard one?"
+   },
+   "t151942.423": {
+    "on": "Slide 117 of 119",
+    "why": "Unpaid-fee withdrawals need careful wording to stay professional.",
+    "talk": "sample Withdrawal LetterS Sent to Clients with Unpaid Fees",
+    "walk": [],
+    "ask": "What tone should this letter keep?"
+   },
+   "t152002.391": {
+    "on": "Slide 118 of 119",
+    "why": "Every case is different; adapting is part of the job.",
+    "talk": "Role Flexibility:\nAs a Claims Specialist or legal support team member, be ready to adapt to each case’s unique needs.",
+    "walk": [
+     "Key Mindset:",
+     "Stay adaptable, detail-oriented, and solution-focused to handle varying client and case requirements.",
+     "Adapting to Client Needs:",
+     "Be flexible in adjusting your approach and stepping into different tasks when necessary to keep the case moving forward.",
+     "Practical Application:",
+     "Handle unexpected complications, research, or communication tasks with a solution-oriented mindset."
+    ],
+    "ask": "Share a time you had to adapt quickly at work."
+   },
+   "t152011.392": {
+    "on": "Slide 119 of 119 · Claims Specialist Training",
+    "why": "Close the session and check understanding before the next part of training.",
+    "talk": "Thank you.",
+    "walk": [],
+    "ask": "What's one thing from today you'll use on your first claim?"
+   }
+  }
+ }
+}

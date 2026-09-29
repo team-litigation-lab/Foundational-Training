@@ -248,8 +248,33 @@ function ftLoadScripts(){
     .catch(()=>{ FTS_SCRIPT.loading = null; return null; });
   return FTS_SCRIPT.loading;
 }
+// A lesson rebuilt from its deck (build/slides/make_scripts.py) has one script per slide:
+// {"sections": {"<section id>": {on, why, talk, walk, ask, scenario}}}. Headings in the notes (lines
+// ending in ":") are shown in bold, the other walk-through lines as bullets.
+function ftScriptLines(lines, bullets){
+  return (lines || []).filter(Boolean).map(t=>/:\s*$|[–-] Speaker[’']s Notes$/.test(t) && t.length <= 90
+    ? `<span class="fts-h">${esc(t)}</span>` : bullets ? `<span class="fts-li">${esc(t)}</span>` : `<span class="fts-p">${esc(t)}</span>`).join("");
+}
+function ftSectionScript(d, sec, sc){
+  const i = d.sections.indexOf(sec), last = i === d.sections.length - 1;
+  const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
+  const talk = (sc.talk || "").split("\n"), walk = sc.walk || [];
+  return `<div class="pn">
+      ${sc.on ? `<div class="pn-on"><b>On this page</b><p>${esc(sc.on)}</p></div>` : ""}
+      <div class="script-block"><div class="script-head"><span>🎙 Script — read aloud</span></div>
+        ${row("① The why", sc.why)}
+        ${talk.filter(Boolean).length ? `<div class="script-row"><b>② Talk it through</b><div class="fts">${ftScriptLines(talk, false)}</div></div>` : ""}
+        ${walk.length ? `<div class="script-row"><b>③ Walk through it</b><div class="fts">${ftScriptLines(walk, true)}</div></div>` : ""}
+        ${row(last ? "④ Your turn" : "④ Ask the room", sc.ask)}
+      </div>
+      ${sc.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(sc.scenario)}</p></div>` : ""}
+    </div>`;
+}
 function ftScriptHtml(d, sec){
   const deck = (FTS_SCRIPT.data || {})[String(d.id)];
+  const sc = deck && deck.sections && deck.sections[sec.id];
+  if(sc) return ftSectionScript(d, sec, sc);
+  if(FTS_SCRIPT.loading && /^<div class="cs"/.test(sec.html)) return `<p class="pv-empty">Loading the script…</p>`;
   const pages = deck && sec.id === "deck" ? (deck.pages || []) : [];
   if(!pages.length){
     if(sec.id !== "deck") return "";
@@ -297,7 +322,10 @@ window.presenterCues = function(d, slide){
 (function(){ const st = document.createElement("style"); st.textContent = `
 .ft-pg-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;padding:8px 10px;background:#F3F5FA;border-radius:10px;}
 .ft-pg-nav b{font-size:13px;color:var(--navy);text-align:center;flex:1;min-width:0;}
-.ft-tnote{margin-top:12px;} .ft-tnote p, .ft-tnote li{font-size:13.5px;}`; document.head.appendChild(st); })();
+.ft-tnote{margin-top:12px;} .ft-tnote p, .ft-tnote li{font-size:13.5px;}
+.fts{font-size:13px;line-height:1.5;} .fts span{display:block;margin:2px 0;}
+.fts .fts-h{font-weight:700;color:var(--navy);margin-top:6px;} .fts .fts-h:first-child{margin-top:0;}
+.fts .fts-li{position:relative;padding-left:14px;} .fts .fts-li::before{content:"•";position:absolute;left:2px;color:var(--orange-deep);}`; document.head.appendChild(st); })();
 
 /* Presenter view console: on a Canva deck step, the preview area becomes a button that brings the
    slides window to the front. The preview itself is a locked copy (clicks there can't reach the room),
