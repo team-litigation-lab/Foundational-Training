@@ -59,19 +59,21 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   1. Why this matters: training is a simulation of the real world; weekly score audits; offboarding if coaching and feedback don't show progress; the goal is a Generalist Legal VA (familiar with every role, so they can take on other tasks confidently from the start of their role; mastery follows in the role).
   2. Rules: your schedule. Tracking 8:00 AM – 5:00 PM PST; time management (log in and out on time, no extra time; a 10-minute early buffer only with Matt's approval); breaks 15 – 30 – 15 or one full hour.
   3. Rules: communication. The 5-minute response rule; acknowledge the trainer's Discord messages; meeting schedules sent on the discussion's date and time; cameras on.
-  4. Rules: your work. Naming conventions followed strictly; use of AI (grammar, spelling and sentence structure only; never client, case or medical information).
-  5. Free Skills Training: every day after the shift, ideally 5:00 – 6:00 PM PST (can run longer); unpaid and untracked (an initiative of the training team, beyond the standard legal VA training); soft skills, especially communication; if you miss it, ask for the materials and review them at your own pace.
-  6. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
-  7. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
-  8. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
-  9. The Daily Task Tracker, part 1: the status counts, the sections and every column.
-  10. The Daily Task Tracker, part 2: the other tabs and the daily check.
-  11. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
-  12. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
-  13. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
-  14. How to create notes in Hubstaff, with the Add Work Notes picture.
-  15. The Manual Time Adjustment Request: subject, To and CC to copy.
-  16. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+  4. Rules: your work. Naming conventions followed strictly; use of AI (grammar and spelling only; never client, case or medical information).
+  5. Rules: your Training Monitoring Sheet. The rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder."), with the sheet embedded in full and a link to fill it in on the platform.
+  6. Free Skills Training: every day after the shift, ideally 5:00 – 6:00 PM PST (can run longer); unpaid and untracked (an initiative of the training team, beyond the standard legal VA training); soft skills, especially communication; if you miss it, ask for the materials and review them at your own pace.
+  7. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
+  8. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
+  9. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
+  10. The Daily Task Tracker, part 1: the status counts, the sections and every column.
+  11. The Daily Task Tracker, part 2: the other tabs and the daily check.
+  12. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
+  13. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
+  14. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
+  15. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
+  16. How to create notes in Hubstaff, with the Add Work Notes picture.
+  17. The Manual Time Adjustment Request: subject, To and CC to copy.
+  18. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
@@ -81,13 +83,13 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
 
 Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Monitoring Sheet** in the top bar (`#/monitoring`, `js/ft-monitoring.js`).
 
-- **Like the Word sheet** (on Drive; embedded in the pop-out viewer, with Download ↗): one entry per classroom discussion, each with:
+- **Like the Word sheet**, which is embedded in full at the top of the page (Drive preview, with Download ↗): one entry per classroom discussion, each with:
   - the date;
   - 5 Major Takeaways From This Discussion;
   - 3 Questions That You Still Have;
   - Rate Your Understanding (the sheet's 4 statements).
 - **Saving and status:** it saves to the trainee's account as they type (`monitor:<id>`, the trainee's own). An entry is *Filled* when the date, all 5 takeaways and the rating are in. The dashboard shows how many are filled.
-- **The orientation's Rules: Your Work slide** has the rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder") with the embedded sheet and a link to fill it in here.
+- **The orientation's Rules: Your Work slide** has the rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder") on its own slide, with the sheet embedded in full and a link to fill it in here.
 - **Admin → 📒 Monitoring Sheets** shows batch → trainee → discussion, with the **automated feedback**:
   - It comes from the **📏 Feedback Rubric**, not AI. The starting metrics: the date filled in; all 5 takeaways; complete sentences; specific, not general (not "I learned about …"); based on the discussion (the takeaways mention a set share of the discussion's key points, 50% to start); and the understanding rating.
   - Each discussion shows its checks, a score, the feedback to copy, and what the trainee wrote. "Needs extra help" marks the entries rated "I really don't get this".
