@@ -109,6 +109,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
   - The last page adds a 🎬 Scenario, and the part's facilitator's notes follow as the *Trainer note*.
   - Scripts live in `trainer/scripts.json`, which is trainer-only like the notes: `{"<lesson id>": {"pages": [{"title", "on", "why", "talk", "walk": [...], "ask", "scenario"}]}}`.
   - A deck without a script shows "The page-by-page script for this deck isn't written yet."
+- **The deck stays live in the slides window.** Resizing it, full screen (Canva's own button, ⛶ Full screen or a double-click) and a reconnecting presenter don't reload the deck or send it back to page 1, and ← → pressed in the slides window turn the deck's pages. The console's live copy shows a note instead of a second deck, since it can't follow the room's page. These engine edits are in `build/ft_engine_patches.py`, which the build applies to `js/eapa-updates.js`.
 - **Admin → 📘 Curriculum** shows the whole Training Guide (Day 0 to Day 18), facilitator content included. It comes from `trainer/curriculum.json`, which is trainer-only like the notes. Screenshots that belong to facilitator content are in `trainer/img/` and are trainer-only too. Images can't send the sign-in header, so the page also keeps the trainer's token in a cookie limited to `/trainer`.
 - **Log-in credentials are never on the platform.** Wherever the guide lists a username or password, trainers get a link to the credentials document instead. The import stops if any credential would be written.
 - **Drive files** open in a draggable pop-out viewer, the same one as the LSH Training Portal's Recorded Lectures. Videos ask "Do you want to watch…?" first.
@@ -121,6 +122,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/eapa-updates.js` | **Generated**: the EA/PA update pack (Presenter view, Trainee view, slide layout), rebranded. |
 | `js/ft-updates.js` | This program's layer: section slides, trainer-only notes, open days, Finish Day, dashboard, pop-out viewer. |
 | `build/build.py` | The build (see below). |
+| `build/ft_engine_patches.py` | This program's edits to the EA/PA engine (`js/eapa-updates.js`): the Canva deck in the slides window. |
 | `build/lessons/lessonNN.js` | Each lesson: its Canva deck (one slide per section). This is what trainees see. |
 | `build/days/dayNN.js` | The curriculum's days as HTML, kept for reference; not built into the trainee pages. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
