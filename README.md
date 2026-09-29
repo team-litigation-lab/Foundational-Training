@@ -197,7 +197,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `build/build.py` | The build (see below). |
 | `build/ft_engine_patches.py` | This program's edits to the EA/PA engine (`js/eapa-updates.js`): the Canva deck in the slides window. |
 | `build/lessons/lessonNN.js` | Each lesson: its Canva deck (one slide per section). This is what trainees see. |
-| `js/ft-slides.js`, `build/slides/` | The design for native slides, and the tools that rebuild a deck as native slides with its scripts. |
+| `js/ft-slides.js`, `build/slides/` | The design for native slides, and the tools that rebuild a deck as native slides with its scripts. In full screen and the slides window, a native slide (and an orientation slide) fills the screen: no width cap, no presenter column, and the text scales with the screen. |
 | `build/days/dayNN.js` | The curriculum's days as HTML, kept for reference; not built into the trainee pages. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
 | `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |

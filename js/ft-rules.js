@@ -452,6 +452,15 @@ window.renderDashboard = function(){
 .ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
 .ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 .ftr-embed-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:var(--ink-soft);} .ftr-embed-bar a.btn{text-decoration:none;}
+/* Full screen and the slides window: the page fills the screen (no width cap, no presenter column) and scales up. */
+.lesson-stage:fullscreen .stage-body:has(.ftr-slide), #audienceRoot .stage-body:has(.ftr-slide){grid-template-columns:minmax(0,1fr) !important;}
+.lesson-stage:fullscreen .stage-body:has(.ftr-slide) .stage-presenter, #audienceRoot .stage-body:has(.ftr-slide) .stage-presenter{display:none !important;}
+.lesson-stage:fullscreen #lessonSlideWrap:has(.ftr-slide), #audienceRoot #lessonSlideWrap:has(.ftr-slide){align-items:stretch !important;}
+.lesson-stage:fullscreen #lessonSlideWrap:has(.ftr-slide) > *, #audienceRoot #lessonSlideWrap:has(.ftr-slide) > *{max-width:none !important;width:100% !important;}
+.lesson-stage:fullscreen .lesson-card:has(.ftr-slide), #audienceRoot .lesson-card:has(.ftr-slide){max-width:none !important;width:100%;}
+.lesson-stage:fullscreen .ftr-sub, #audienceRoot .ftr-sub{max-width:none;} .lesson-stage:fullscreen .ftr-why, #audienceRoot .ftr-why{max-width:none;}
+@media (min-width:1500px){ .lesson-stage:fullscreen .ftr-slide, #audienceRoot .ftr-slide{zoom:1.15;} .lesson-stage:fullscreen .ftr-embed, #audienceRoot .ftr-embed{height:62vh;} }
+@media (min-width:1900px){ .lesson-stage:fullscreen .ftr-slide, #audienceRoot .ftr-slide{zoom:1.35;} }
 .ftr-card-sub{margin:0;font-size:14px;color:var(--ink-soft);font-weight:600;}
 /* numbered lists on a slide: the numbers, without the slide's bullet dots */
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide li, .lesson-card .ftr-slide li{text-align:left;}
