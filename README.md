@@ -45,7 +45,7 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
 - **The slides:**
-  1. Why this matters: training is a simulation of the real world; weekly score audits; offboarding if coaching and feedback don't show progress; the goal is a Generalist Legal VA.
+  1. Why this matters: training is a simulation of the real world; weekly score audits; offboarding if coaching and feedback don't show progress; the goal is a Generalist Legal VA (familiar with every role, so they can take on other tasks confidently from the start of their role; mastery follows in the role).
   2. Rules: your schedule. Tracking 8:00 AM – 5:00 PM PST; time management (log in and out on time, no extra time; a 10-minute early buffer only with Matt's approval); breaks 15 – 30 – 15 or one full hour.
   3. Rules: communication. The 5-minute response rule; acknowledge the trainer's Discord messages; meeting schedules sent on the discussion's date and time; cameras on.
   4. Rules: your work. Naming conventions followed strictly; use of AI (grammar, spelling and sentence structure only; never client, case or medical information).

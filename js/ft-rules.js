@@ -271,7 +271,7 @@ const SLIDES = [
     <div class="ftr-stakes"><b>🎯 Training is a simulation of the real world</b>
       <p>We assign all these tasks to prepare you for it. Training is just the beginning. Your scores are audited every week, and if coaching and feedback don’t show progress, you may be considered for offboarding. We need to see that you can actually survive in the legal industry, so don’t be complacent.</p></div>
     <div class="ftr-goal"><b>🧭 Your goal: become a Generalist Legal VA</b>
-      <p>You may be hired for a specific role, like Intake Specialist, but you’re expected to be able to take on other roles as the partnership with the client grows. That’s why you train in every role.</p></div>
+      <p>This training is designed to make you familiar with every type of role. You may be hired for a specific role, like Intake Specialist, but you’re expected to take on other roles as the partnership with the client grows. Mastery follows once you’re in a role. What matters now is that you’re comfortable and equipped to take on other tasks confidently, so you make the most of your hours from the start of your role.</p></div>
     <p class="ftr-sub">Next: the rules for every training day, how to report your status, your daily habits, your Hubstaff To-Dos and notes, and Day 1’s Reading Task.</p>`],
   ["schedule", "Rules: your schedule", ()=>
     rule(`⏰ Hubstaff tracking is strict: ${esc(SHIFT)}.`) +
