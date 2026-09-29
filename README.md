@@ -32,7 +32,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skips. To bring one back, move its file into `build/lessons/` and rebuild; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
 
-Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer once the lesson is open. Lessons are finished from their last slide (✓ Finish lesson).
+Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer. Lessons are finished from their last slide (✓ Finish lesson). **Videos stay locked** (🔒 Video Presentation) until a trainer unlocks them in **Admin → 📅 Open Lessons → 🎬 Unlock Videos**, for all batches or one batch (`settings:openvideos`, same shape as `settings:opendays`). Trainers and 👁 Trainee view always see them.
 
 ### Native slides (rebuilt from a deck)
 
@@ -89,9 +89,13 @@ Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Mon
 - **Saving and status:** it saves to the trainee's account as they type (`monitor:<id>`, the trainee's own). An entry is *Filled* when the date, all 5 takeaways and the rating are in. The dashboard shows how many are filled.
 - **The orientation's Rules: Your Work slide** has the rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder") with the embedded sheet and a link to fill it in here.
 - **Admin → 📒 Monitoring Sheets** shows batch → trainee → discussion, with the **automated feedback**:
-  - It comes from fixed checks (`MON_RULES`), not AI: the date filled in; all 5 takeaways; complete sentences; specific, not general (not "I learned about …"); based on the discussion (the takeaways mention at least half of the discussion's key points); and the understanding rating.
+  - It comes from the **📏 Feedback Rubric**, not AI. The starting metrics: the date filled in; all 5 takeaways; complete sentences; specific, not general (not "I learned about …"); based on the discussion (the takeaways mention a set share of the discussion's key points, 50% to start); and the understanding rating.
   - Each discussion shows its checks, a score, the feedback to copy, and what the trainee wrote. "Needs extra help" marks the entries rated "I really don't get this".
-  - The trainer's metrics go into `MON_RULES` when they're provided.
+  - **📏 Feedback Rubric:** trainers keep improving the metrics.
+    - Switch a metric on or off, and change its settings, its weight in the score and its feedback line (`{which}`, `{count}`, `{min}`, `{missing}`, `{found}` and `{sentences}` are filled in).
+    - Add metrics: avoid these words, mention at least one of these, a minimum number of words per takeaway, or questions filled in.
+    - Each save is a new version, and every review uses it from then on ("rubric vN" shows on each review). The last 30 versions are kept and can be restored.
+    - Stored in `monadmin:rubric` (trainers only); the metric types are `MON_TYPES` in `js/ft-monitoring.js`.
 - **Discussions and Key Points** (in the same tab): one discussion per line, with its key points after a "|".
   - Stored in `settings:monitor`, which everyone reads and trainers write.
   - Until it's set, the list is the 18 classroom discussions from the Hubstaff To-Dos.
@@ -146,8 +150,13 @@ Each case's one-line description is taken from `mock-cases.js`. If a case change
   Trainees see the visible activities for their batch, newest day first, answer (drafts autosave), attach a file and submit.
 - **Review submissions:** ✨ Draft with AI writes a review from the private notes; the trainer edits it and sends it. The trainee gets a badge on 📝 Activities and reads it on the activity page. Resubmitting keeps the earlier feedback and waits for a new review.
 - **Scored rubrics** (optional, per activity, private): in the activity form, open **📊 Scored rubric** and paste the rubric table from Word/Docs (or upload it as .txt/.tsv): one row per criterion, then what earns 5, 4, 3, 2 and 1 points. Add one **graded example**, an evaluation you wrote (Criteria · Score · Evaluation), with the trainee's name removed. From then on, ✨ Draft with AI scores every submission for that activity criterion by criterion, the way the example does: a score out of 5 and a 2–4 sentence evaluation in the facilitator's style (specific facts from the answer, exact omissions, quoted typos). The review shows each criterion's score and evaluation to edit, with the **Total Score** and **Final Rating** (total ÷ number of criteria) recalculated; the trainee sees the same table. Stored in `actadmin:scoring` (trainer-only).
+- **The facilitator's DNA** (`js/ft-facilitator-dna.js`) is the default voice of every AI reviewer: activity drafts, trainer review drafts, graded exercises, and the Worker's nightly Task Tracker notes review.
+  - It was written from the facilitator's own evaluations (the B082826 Week 1–3 ranking reports and a Scheduling Activity Review).
+  - Its main rules: open with a verdict label ("Good, with Improvements Needed.", "Needs Improvement."…); give the strength with exact counts, items, dates and times; then "However, improvement is needed in …" with the specific components; grade the severity; and tie the fix to its purpose.
+  - It keeps no trainee names; its examples are generic.
+  - It's used until a trainer saves another voice in 🗣 Feedback Style (saved with `v2`: edited, learned, restored or switched off). **🧬 Go back to the facilitator's DNA** restores it. The page (`fbEffective`) and the Worker (`facilitatorVoice`) resolve the voice the same way.
 - **Admin → 🗣 Feedback Style** learns how the facilitator writes feedback:
-  - **Import** takes the reviews the trainer wrote or edited (trainer reviews and activity reviews); more examples can be pasted or uploaded (.txt).
+  - **Import** takes the reviews the trainer wrote or edited (trainer reviews and activity reviews). More examples can be pasted, or uploaded as .docx / .xlsx reports or .txt files. Each feedback passage in a Word table or Excel cell becomes an example; JSZip from cdnjs opens the files.
   - **Learn the style** makes a style guide plus generic voice examples, which can be edited or switched off.
   - While it's on, AI feedback is written in that voice: activity drafts, trainer review drafts, graded exercises, and the Worker's nightly **Task Tracker notes review** (`facilitatorVoice` in `worker.js`). Ratings, scores and the tracker check itself don't change.
 

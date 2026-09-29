@@ -107,6 +107,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-od-day{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;background:#fff;cursor:pointer;}
 .ft-od-day.on{border-color:var(--orange);background:#FFF6EC;}
 .ft-od-day.nocontent{opacity:.55;}
+.module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
 .ft-od-day b{display:block;color:var(--navy);}
 /* pop-out viewer (same as the LSH Training Portal's Recorded Lectures) */
 #lecture-viewer-pane{position:fixed;right:24px;bottom:24px;width:380px;max-width:calc(100vw - 48px);height:250px;max-height:calc(100vh - 48px);background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.35);display:none;flex-direction:column;z-index:3000;overflow:hidden;}
@@ -384,11 +385,20 @@ function ftOpenFor(batch){
   return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(batch)] || []).map(Number));
 }
 async function ftLoadOpenDays(){
-  const v = await sharedGet("settings:opendays").catch(()=>null);
-  const next = (v && typeof v === "object") ? {all: v.all || [], batches: v.batches || {}} : {all: [], batches: {}};
-  const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays);
-  state.ftOpenDays = next;
+  const [v, vv] = await Promise.all([sharedGet("settings:opendays").catch(()=>null), sharedGet("settings:openvideos").catch(()=>null)]);
+  const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: x.batches || {}} : {all: [], batches: {}};
+  const next = shape(v), nextV = shape(vv);
+  const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos);
+  state.ftOpenDays = next; state.ftOpenVideos = nextV;
   return changed;
+}
+/* A lesson's ▶ Video Presentation stays locked until a trainer unlocks it (Admin → 📅 Open Lessons → 🎬 Unlock Videos),
+   for all batches or one batch: settings:openvideos = {all:[lesson ids], batches:{"<batch key>":[lesson ids]}}. */
+state.ftOpenVideos = null;
+function ftVideoUnlocked(id){
+  if(state.isAdmin || state.adminPreview) return true;
+  const o = state.ftOpenVideos || {};
+  return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(state.traineeBatch)] || []).map(Number)).has(Number(id));
 }
 window.dayUnlocked = function(id){
   const d = DAYS.find(x=>x.id===id); if(!d) return false;
@@ -459,6 +469,39 @@ function renderFtOpenDays(){
       </div>
     </div>`;
 }
+function renderFtOpenVideos(){
+  const sel = state.ftOdBatch || "__all";
+  const o = state.ftOpenVideos || {all:[], batches:{}};
+  const open = new Set((sel==="__all" ? o.all : (o.batches||{})[sel] || []).map(Number));
+  const everyone = new Set((o.all||[]).map(Number));
+  const withVideo = DAYS.filter(d=>d.video);
+  return `
+    <div class="card ft-open-days">
+      <h3>🎬 Unlock Videos</h3>
+      <p style="margin:0;color:var(--ink-soft);font-size:14px;">A lesson’s ▶ Video Presentation stays locked for trainees (🔒) until you unlock it here, for ${sel==="__all" ? "<b>All batches</b>" : "batch <b>" + esc(sel) + "</b>"} (the batch chosen above). A video unlocked for All batches is unlocked for everyone.</p>
+      <div class="ft-od-days" style="margin-top:10px;">
+        ${withVideo.map(d=>{
+          const on = open.has(d.id), viaAll = sel!=="__all" && everyone.has(d.id);
+          return `<label class="ft-od-day ${on||viaAll?"on":""}">
+            <input type="checkbox" ${on||viaAll?"checked":""} ${viaAll?"disabled":""} onchange="ftToggleOpenVideo(${d.id}, this.checked)">
+            <span><b>${esc(d.title)}</b>${viaAll?`<br><i>unlocked for all batches</i>`:""}</span>
+          </label>`;
+        }).join("")}
+      </div>
+    </div>`;
+}
+window.ftToggleOpenVideo = async function(id, on){
+  await ftLoadOpenDays();
+  const o = state.ftOpenVideos;
+  const sel = state.ftOdBatch || "__all";
+  const list = new Set((sel==="__all" ? o.all : (o.batches[sel] = o.batches[sel] || [])).map(Number));
+  on ? list.add(id) : list.delete(id);
+  const arr = [...list].sort((a,b)=>a-b);
+  if(sel==="__all") o.all = arr; else o.batches[sel] = arr;
+  const ok = await sharedSet("settings:openvideos", o);
+  toast(ok ? `${ftName(id)} video ${on ? "unlocked" : "locked"} for ${sel==="__all" ? "all batches" : "batch " + sel}.` : "Couldn't save — check your connection and try again.");
+  render();
+};
 window.ftSetOdBatch = function(v){ state.ftOdBatch = v; render(); };
 window.ftToggleOpenDay = async function(id, on){
   await ftLoadOpenDays();
@@ -523,7 +566,8 @@ window.renderAdmin = function(){
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
     const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
     if(!state.adminData && typeof loadAdminData === "function" && !state.adminLoading) loadAdminData();
-    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays();
+    if(!state.ftOpenVideos) ftLoadOpenDays().then(()=>{ if(state.adminTab==="opendays") render(); });
+    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays() + renderFtOpenVideos();
   }
   return ftTrimAdminTabs(__ftRenderAdmin(), odTab + curTab);
 };
@@ -563,7 +607,9 @@ window.moduleCard = function(d){
       ${typeof feedbackButton==="function" ? feedbackButton(d.id) : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
-    ${d.video && status!=="locked" ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>` : ""}
+    ${d.video ? (ftVideoUnlocked(d.id)
+      ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>`
+      : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}
   </div>`;
 };
 window.renderDashboard = function(){
@@ -668,6 +714,7 @@ function lvReset(){
 // Lessons are finished from their last slide ("✓ Finish lesson").
 window.ftOpenVideo = function(id){
   const d = DAYS.find(x=>x.id===id);
+  if(d && d.video && !ftVideoUnlocked(id)){ toast("🔒 This video opens when your trainer unlocks it."); return; }
   if(d && d.video) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:d.video});
 };
 function lvOpen(item){

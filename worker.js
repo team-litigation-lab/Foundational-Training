@@ -30,6 +30,7 @@
  * before you've configured it (the Admin screen shows a warning).
  */
 import "./js/ft-tracker-rules.js";
+import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
 const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
@@ -97,7 +98,8 @@ function candidateIds(name, batch) {
 // Activities: activities:dayN and their attachments (actfile:*) are published by trainers for everyone;
 // settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
 // settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|feedback-style|monitor)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+// settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
@@ -299,10 +301,14 @@ async function aiText(env, system, prompt, maxTokens) {
   return r.ok && j.content && j.content[0] ? String(j.content[0].text || "").trim() : "";
 }
 // The facilitator's feedback voice (Admin → 🗣 Feedback Style, js/ft-activities.js); "" when off.
-function facilitatorVoice(st) {
+// The voice in use: the facilitator's DNA (js/ft-facilitator-dna.js) until a trainer saves a voice (v2) in
+// Admin → 🗣 Feedback Style; the page (js/ft-activities.js, fbEffective) resolves it the same way.
+function facilitatorVoice(saved) {
+  const dna = globalThis.FT_FACILITATOR_DNA;
+  const st = saved && saved.v2 ? saved : (dna ? { enabled: true, guide: dna.guide, examples: dna.examples } : saved);
   if (!st || st.enabled === false || !st.guide) return "";
   const ex = (st.examples || []).slice(0, 3).map((x, i) => `(${i + 1}) ${String(x).slice(0, 900)}`).join("\n");
-  return `\n\nVOICE: write the way this program's facilitator writes feedback. Keep the requested format and keep the judgement evidence-based; the voice changes wording only.\nFacilitator style guide:\n${String(st.guide).slice(0, 2500)}${ex ? `\nExamples of the facilitator's voice (match tone and phrasing; do not reuse their content):\n${ex}` : ""}`;
+  return `\n\nVOICE: write the way this program's facilitator writes feedback. Keep the requested format and keep the judgement evidence-based; the voice changes wording only.\nFacilitator style guide:\n${String(st.guide).slice(0, 3500)}${ex ? `\nExamples of the facilitator's voice (match tone and phrasing; do not reuse their content):\n${ex}` : ""}`;
 }
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
