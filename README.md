@@ -43,6 +43,7 @@ The **📌 Training Orientation and Rules** card is first on the dashboard, abov
   - Hubstaff tracking is strict, 8:00 AM – 5:00 PM PST.
   - Breaks are strictly 15 – 30 – 15, or one full 1-hour break.
   - Cameras are on during classroom discussions.
+  - The 5-minute rule: reply to messages within 5 minutes, with notifications turned on.
   - Follow the naming conventions strictly.
 - **Auxes:** the trainee reports their status in 2 Discord channels:
   - #⏳-timestamps: `!in` at the start of the shift and `!back` after a break. LSH BOT replies, e.g. "@name is back".
