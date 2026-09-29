@@ -48,6 +48,7 @@ The **📌 Training Orientation and Rules** card is first on the dashboard, abov
   - Hubstaff tracking is strict, 8:00 AM – 5:00 PM PST.
   - Time management: follow the schedule strictly, log in and out on time, don't track extra time beyond what's allowed (logging in up to 10 minutes early as buffer time needs Matt's approval), follow protocol at all times.
   - Breaks are strictly 15 – 30 – 15, or one full 1-hour break.
+  - Meeting schedules are sent on the date and time of the discussion.
   - Cameras are on during classroom discussions.
   - The 5-minute rule: reply to messages within 5 minutes, with notifications turned on.
   - Acknowledge every Discord message from the trainer: a reply, an emoji reaction or "Noted".

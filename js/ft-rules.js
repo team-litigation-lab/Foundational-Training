@@ -4,7 +4,8 @@
    card sits above the Simulators card). The dashboard card opens #/rules.
      • Why this matters: training simulates the real world; weekly score audits; no progress after
        coaching and feedback may mean offboarding.
-     • Rules (also: acknowledge the trainer's Discord messages, emoji or "Noted"): strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
+     • Rules (also: meeting schedules sent on the discussion's date and time; acknowledge the trainer's
+       Discord messages, emoji or "Noted"): strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
        discussions; the 5-minute response rule (notifications on); naming conventions followed strictly.
      • Auxes: reporting your status in the two Discord channels, no double stamping.
      • #training-reminders (Day 1 → Training Reminders), with its screenshots.
@@ -299,6 +300,8 @@ function renderRules(){
         <span>Log in and log out on time. Don’t track extra time beyond what’s allowed: you may log in up to 10 minutes early as buffer time, only with Matt’s approval. The idea is to follow protocol at all times.</span></div>
       <div class="ftr-rule"><b>Breaks: strictly 15 – 30 – 15, or one full 1-hour break.</b>
         <span>Take a 15-minute break, a 30-minute break and another 15-minute break, or one full hour. No other split.</span></div>
+      <div class="ftr-rule"><b>📅 Meeting schedules are sent on the date and time of the discussion.</b>
+        <span>Keep your notifications on so you don’t miss them.</span></div>
       <div class="ftr-rule"><b>📷 Cameras on during classroom discussions.</b>
         <span>Every trainee’s camera stays on for the whole discussion.</span></div>
       <div class="ftr-rule"><b>⏱ The 5-minute rule: reply to messages within 5 minutes.</b>
