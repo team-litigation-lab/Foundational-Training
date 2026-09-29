@@ -2,6 +2,8 @@
    Training Orientation and Rules
    Loaded after js/ft-tracker.js, before js/ft-simulators.js (so its dashboard
    card sits above the Simulators card). The dashboard card opens #/rules.
+     • Why this matters: training simulates the real world; weekly score audits; no progress after
+       coaching and feedback may mean offboarding.
      • Rules: strict tracking 8 AM – 5 PM PST; breaks 15-30-15 or one full hour; cameras on in
        discussions; the 5-minute response rule (notifications on); naming conventions followed strictly.
      • Auxes: reporting your status in the two Discord channels, no double stamping.
@@ -288,6 +290,8 @@ function renderRules(){
     : `<p class="ftr-soon">Coming soon: the Hubstaff how-to lessons will be added here.</p>`;
   return `<div class="ftr-hero"><h1>📌 Training Orientation and Rules</h1>
       <p>The rules for every training day, how to report your status, your daily habits (EOD email, trackers, typing and spelling tests), your Hubstaff To-Dos and notes, time adjustments, and Day 1’s Reading Task.</p></div>
+    <div class="ftr-stakes"><b>🎯 Why this matters</b>
+      <p>Your training is a simulation of the real world: we assign all these tasks to prepare you for it. Training is just the beginning. Your scores are audited every week, and if coaching and feedback don’t show progress, you may be considered for offboarding. We need to see that you can actually survive in the legal industry, so don’t be complacent.</p></div>
     <section class="ftr-sec ftr-rules">
       <h2>⏰ Rules for every training day</h2>
       <div class="ftr-rule"><b>Hubstaff tracking is strict: ${esc(SHIFT)}.</b></div>
@@ -439,6 +443,8 @@ main.main-rules{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .ftr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px;}
 .ftr-rule{background:var(--danger-bg);border:1px solid #E9C9C3;border-left:5px solid var(--danger);border-radius:12px;padding:12px 16px;margin-bottom:10px;}
 .ftr-rule-aux{margin-top:14px;}
+.ftr-stakes{background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;box-shadow:var(--shadow);}
+.ftr-stakes b{display:block;font-size:17px;color:var(--orange-soft);} .ftr-stakes p{margin:6px 0 0;font-size:14.5px;line-height:1.55;max-width:900px;}
 .ftr-why{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:14px;max-width:900px;} .ftr-why b{color:var(--orange-deep);}
 .ftr-test{display:flex;flex-direction:column;gap:8px;} .ftr-test .ftr-aux{border-top:0;padding:0;}
 .ftr-when{margin:0!important;font-size:14px!important;color:var(--ink)!important;}

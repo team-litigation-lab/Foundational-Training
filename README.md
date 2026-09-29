@@ -39,6 +39,11 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
 
 The **📌 Training Orientation and Rules** card is first on the dashboard, above Simulators. It opens `#/rules` (`js/ft-rules.js`) for trainees and trainers. The page has these sections, in order:
 
+- **Why this matters**, at the top:
+  - Training is a simulation of the real world.
+  - Scores are audited every week.
+  - If coaching and feedback don't show progress, the trainee may be considered for offboarding.
+  - Don't be complacent.
 - **Rules for every training day:**
   - Hubstaff tracking is strict, 8:00 AM – 5:00 PM PST.
   - Breaks are strictly 15 – 30 – 15, or one full 1-hour break.
