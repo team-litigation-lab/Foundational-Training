@@ -296,7 +296,7 @@ function renderRules(){
       <h2>⏰ Rules for every training day</h2>
       <div class="ftr-rule"><b>Hubstaff tracking is strict: ${esc(SHIFT)}.</b></div>
       <div class="ftr-rule"><b>🕗 Time management: follow your schedule strictly.</b>
-        <span>Log in and log out on time. Don’t track extra time beyond what’s allowed. The idea is to follow protocol at all times.</span></div>
+        <span>Log in and log out on time. Don’t track extra time beyond what’s allowed: you may log in up to 10 minutes early as buffer time, only with Matt’s approval. The idea is to follow protocol at all times.</span></div>
       <div class="ftr-rule"><b>Breaks: strictly 15 – 30 – 15, or one full 1-hour break.</b>
         <span>Take a 15-minute break, a 30-minute break and another 15-minute break, or one full hour. No other split.</span></div>
       <div class="ftr-rule"><b>📷 Cameras on during classroom discussions.</b>
