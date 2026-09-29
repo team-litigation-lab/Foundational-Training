@@ -280,12 +280,74 @@ def claims_pages():
     P["t152011.392"] = lambda b: S("Thank You", hero("Claims Specialist Training", "Thank you."))
     return P
 
+# ---------- Receptionist Training (lesson 4), from the deck's PDF ----------
+# A PDF gives each text block as its wrapped lines: J() joins a block back into its sentence,
+# items() into its list items (a line that starts in lower case continues the item before it).
+RIMG = "/ft/receptionist/img/"
+FOOT = "RECEPTIONIST ROLE"
+def J(lines): return " ".join(l for l in lines if l != FOOT)
+def items(lines):
+    out = []
+    for l in lines:
+        if l == FOOT: continue
+        if out and (l[:1].islower() or l[:1] in "(0123456789"): out[-1] += " " + l
+        else: out.append(l)
+    return out
+def pt(n, body, head=None, its=None, cls=""):
+    """A numbered point, numbered as on the deck page."""
+    inner = (f"<b>{esc(head)}</b>" if head else "") + (f"<p>{body if body.startswith('<') else esc(body)}</p>" if body else "") + \
+            ("<ul>" + "".join(f"<li>{esc(i)}</li>" for i in its) + "</ul>" if its else "")
+    return f'<div class="cs-card num {cls}"><div class="cs-ic">{n}</div><div>{inner}</div></div>'
+def media(img, *parts): return f'<div class="cs-media"><div class="cs-stack">{"".join(parts)}</div><img src="{RIMG}{img}.jpg" alt="" loading="lazy"></div>'
+def hero_photo(lab, big, img): return f'<div class="cs-hero photo" style="--img:url({RIMG}{img}.jpg)">{label(lab)}<div class="cs-big">{esc(big)}</div></div>'
+def emph(text, *parts):
+    """The deck's underlined words, bold and underlined (the words themselves are unchanged)."""
+    h = esc(text)
+    for x in parts: h = h.replace(esc(x), f"<b><u>{esc(x)}</u></b>")
+    return f"<span>{h}</span>"
+
+def receptionist_pages():
+    P = {}
+    T = lambda b: title(J(b[0]))
+    P["p01"] = lambda b: S("The Receptionist Role", hero_photo("LSH Foundational Training", title(J(b[0])), "title"))
+    P["p02"] = lambda b: S(T(b), media("intro", pt("1", J(b[1]))))
+    P["p03"] = lambda b: S(T(b), media("intro", pt("2", J(b[1])), pt("3", J(b[2]))))
+    P["p04"] = lambda b: S(T(b), media("intro", pt("4", J(b[1])), pt("5", J(b[2]))))
+    task = lambda n, ic, t, its=None: pt(str(n), None, t, its)
+    P["p05"] = lambda b: S(T(b), media("tasks", task(1, "💼", J(b[1] + b[4])), task(2, "👤", J(b[2] + b[5])), task(3, "📣", J(b[3]))))
+    P["p06"] = lambda b: S(T(b), media("tasks", task(4, "⚖️", J(b[1] + b[4])), task(5, "🩺", J(b[2] + b[5])), task(6, "🏛", J(b[3] + b[6]))))
+    P["p07"] = lambda b: S(T(b), media("tasks", task(7, "🛡", J(b[2])), task(8, "👥", J(b[3] + b[4] + b[5] + b[6])),
+                                       task(9, "📠", None, [b[1][0], J(b[1][1:])])))
+    two = lambda img, n: (lambda b: S(T(b), media(img, pt(str(n), J(b[1])), pt(str(n + 1), J(b[2]))), lab=FOOT))
+    P["p08"] = two("inquiries", 1); P["p09"] = two("inquiries", 3)
+    P["p10"] = two("existing-client", 1); P["p11"] = two("existing-client", 3)
+    P["p12"] = two("sales", 1)
+    P["p13"] = lambda b: S(T(b), media("sales", pt("3", None, J(b[1]), items(b[2]), "soft"), pt("4", None, J(b[3]), items(b[4]), "dark")), lab=FOOT)
+    P["p14"] = two("opposing-counsel", 1); P["p15"] = two("opposing-counsel", 3)
+    P["p16"] = two("opposing-counsel", 5); P["p17"] = two("opposing-counsel", 7)
+    P["p18"] = two("medical", 1)
+    P["p19"] = two("court", 1)
+    P["p20"] = lambda b: S(T(b), media("court", pt("3", J(b[1])), pt("4", None, J(b[2]), items(b[3]))), lab=FOOT)
+    P["p21"] = lambda b: S(T(b), media("insurance", pt("1", emph(J(b[1]), "ALWAYS ASK for a CLAIM NUMBER and DOL")),
+                                       pt("2", emph(J(b[2]), "WE DO NOT GIVE THAT INFORMATION EVER!"), cls="dark")), lab=FOOT)
+    P["p22"] = two("insurance", 3); P["p23"] = two("insurance", 5)
+    P["p24"] = two("other-parties", 1)
+    P["p25"] = lambda b: S(T(b), media("other-parties", pt("3", J(b[1])), pt("4", None, J(b[2]), items(b[3]))), lab=FOOT)
+    P["p26"] = lambda b: S(T(b), media("other-parties", pt("5", None, J(b[1]), items(b[2])), pt("6", None, J(b[3]), items(b[4]), "dark")), lab=FOOT)
+    return P
+
 LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Training", "file": "lesson07.js",
                       "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
                       "canva": "https://www.canva.com/design/DAHWU-Wq2mQ/Nh3SycOXOAg7kl5EOQ-Z6Q/view",
                       "pages": claims_pages,
                       # pages that repeat the page before them in the deck (kept once)
-                      "repeats": {"n006", "n012", "n040"}}}
+                      "repeats": {"n006", "n012", "n040"}},
+           "receptionist": {"id": 4, "var": "DAY4", "title": "Receptionist Training", "file": "lesson04.js",
+                      "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
+                      "canva": "https://www.canva.com/design/DAHWU0f4UhU/A3houRJtASX7fhKWBA5zFA/view",
+                      "pages": receptionist_pages, "repeats": set(),
+                      # The lesson's Canva deck stays as its last slide until the whole deck is rebuilt here.
+                      "tail": "receptionist_tail.json"}}
 
 def main(name):
     L = LESSONS[name]
@@ -300,6 +362,7 @@ def main(name):
         if not f: missing.append(k); continue
         s = f(byk[k]["boxes"] if k in byk else [])
         sections.append({"id": k, "h": s["h"], "html": s["html"]})
+    if L.get("tail"): sections += json.load(open(os.path.join(B, L["tail"]), encoding="utf8"))
     js = (f"const {L['var']} = {{\n  id: {L['id']},\n  title: {json.dumps(L['title'])},\n  video: {json.dumps(L['video'])},\n"
           f"  canva: {json.dumps(L['canva'])},\n  heading: {json.dumps(L['title'])},\n  sections: " + json.dumps(sections, ensure_ascii=False, indent=2) + "\n};\n")
     open(os.path.join(ROOT, "build", "lessons", L["file"]), "w", encoding="utf8").write(js)

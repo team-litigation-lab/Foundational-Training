@@ -7,6 +7,8 @@ Each slide's script is built from that deck page's speaker notes, word for word:
   ③ Walk through it  the rest of the notes, in order (headings in bold, points as bullets)
 plus the beats the notes don't have, from build/slides/<deck>_script.py:
   ① The why, ④ Ask the room (④ Your turn on the last slide) and an optional 🎬 Scenario.
+A deck without speaker notes (downloaded as PDF) has ② written in <deck>_script.py too, and ③ is the
+slide's own points.
 trainer/scripts.json is trainer-only (served behind the /trainer/ gate, like trainer/notes.json):
   {"<lesson id>": {"sections": {"<section id>": {"on", "why", "talk", "walk": [...], "ask", "scenario"}}}}
 """
@@ -41,6 +43,12 @@ def split(paras):
             return walk[:h], walk[h:]
     return talk, walk
 
+def slide_points(h):
+    """The slide's text, point by point: card headings, paragraphs and list items (not the label)."""
+    h = re.sub(r'<div class="cs-(label|ic)">.*?</div>|<span class="cs-tag[^"]*">.*?</span>', "", h)
+    parts = re.findall(r"<(b|p|li)>(.*?)</\1>", h)
+    return [html.unescape(re.sub(r"<[^>]+>", "", t)).strip() for tag, t in parts if re.sub(r"<[^>]+>", "", t).strip()]
+
 def main(deck):
     L = LESSONS[deck]
     pages = {p["key"]: p for p in json.load(open(os.path.join(HERE, f"{deck}.json")))}
@@ -51,7 +59,15 @@ def main(deck):
     labels = {x["id"]: m.group(1) for x in secs for m in [re.search(r'class="cs-label">([^<]*)<', x["html"])] if m}
     out, prev = {}, None
     for n, k in enumerate(ids):
+        if k not in pages: continue          # a kept Canva deck slide (see "tail" in make_lesson.py)
         pg, b = pages[k], beats[k]
+        if not pg["notes"]:
+            # A deck without speaker notes (a PDF): the talk-through is written in <deck>_script.py
+            # and the walk-through is the slide's own points.
+            html_ = next(x["html"] for x in secs if x["id"] == k)
+            s = {"on": f"Slide {n+1} of {len(ids)}", "why": b[0], "talk": b[1], "walk": slide_points(html_), "ask": b[2]}
+            if len(b) > 3: s["scenario"] = b[3]
+            out[k] = s; prev = None; continue
         talk, walk = split(pg.get("paras") or [pg["notes"]])
         on = f"Slide {n+1} of {len(ids)}" + (f" · {html.unescape(labels[k])}" if labels.get(k) else "")
         if prev is not None and pg["notes"] == prev:

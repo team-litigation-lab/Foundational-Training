@@ -23,7 +23,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
 | 2 | Law Firm Communication | ✅ deck |
 | 3 | Personal Injury Process Flow | ✅ deck |
-| 4 | Receptionist Training | ✅ deck |
+| 4 | Receptionist Training | ✅ native slides (26, rebuilt from the deck's PDF), then the Canva deck |
 | 5 | Calendaring & Appointment Setting Training | ✅ deck |
 | 6 | Intake Specialist Training | ✅ deck |
 | 7 | Claims Specialist Training | ✅ native slides (119, rebuilt from the deck) |
@@ -36,14 +36,14 @@ Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI As
 
 ### Native slides (rebuilt from a deck)
 
-Lesson 7 is no longer a Canva embed: each deck page is its own slide in the platform, with the deck's exact wording in this program's own design (`js/ft-slides.js`: cards, numbered steps, check lists, do / don't boxes, tips, tables and zoomable document images). The deck's link is kept as the lesson's `canva` field.
+Lessons 4 and 7 are no longer Canva embeds: each deck page is its own slide in the platform, with the deck's exact wording in this program's own design (`js/ft-slides.js`: cards, numbered steps, check lists, do / don't boxes, tips, tables and zoomable document images). The deck's link is kept as the lesson's `canva` field.
 
-1. Download the deck from Canva as `.pptx` (speaker notes included) and extract it: `build/slides/extract_pptx.py` writes `build/slides/<deck>.json` (each page's text boxes and notes).
+1. Download the deck from Canva as `.pptx` (speaker notes included) and extract it: `build/slides/extract_pptx.py` writes `build/slides/<deck>.json` (each page's text boxes and notes). A deck downloaded as PDF works too: `build/slides/extract_pdf.py <deck.pdf> <deck>` (needs `pip install pymupdf`). A PDF has no speaker notes, so its scripts' talk-through is written in `build/slides/<deck>_script.py` and the walk-through is the slide's own points.
 2. `python3 build/slides/make_lesson.py <deck>` writes `build/lessons/lessonNN.js`. Each page's layout is set in `make_lesson.py`; exact repeats of a page are kept once.
 3. `python3 build/slides/make_scripts.py <deck>` writes that lesson's Presenter view scripts into `trainer/scripts.json` (see *How the program works*). The beats the notes don't have (the why, the question for the room, scenarios) are in `build/slides/<deck>_script.py`.
 4. Rebuild.
 
-Document images are in `ft/claims/img/`. Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
+Lesson 4 keeps its Canva deck as its last slide (`build/slides/receptionist_tail.json`, the lesson's `tail`) until the whole deck is rebuilt; remove `tail` from `make_lesson.py` then. Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/receptionist/img/`. Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 

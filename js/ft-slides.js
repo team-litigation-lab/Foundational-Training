@@ -12,7 +12,8 @@
      .cs-tip, .cs-warn     callouts
      .cs-table   a table
      .cs-fig     a document image: click to see it full size
-     .cs-hero    title and closing slides
+     .cs-hero    title and closing slides (.photo: over the deck's photo)
+     .cs-media   the points beside the deck page's photo; .cs-card.num a numbered point
    In full screen and the slides window a page fills the screen: no width cap, no presenter
    column, and the text scales with the screen.
    Loaded after js/ft-updates.js.
@@ -99,6 +100,17 @@ const css = `
 .cs-stat{display:flex;flex-wrap:wrap;gap:10px;}
 .cs-stat span{background:var(--navy);color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:18px;}
 .cs-stat span small{display:block;font-size:11.5px;font-weight:600;color:#F0C08A;letter-spacing:.04em;}
+.cs-media{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:center;}
+.cs-media > img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:18px;box-shadow:0 18px 36px -22px rgba(22,24,41,.6);}
+.cs-stack{display:flex;flex-direction:column;gap:12px;min-width:0;}
+.cs-card.num{flex-direction:row;align-items:flex-start;gap:12px;}
+.cs-card.num > div{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.cs-card.num .cs-ic{background:var(--orange);color:#fff;font-weight:800;font-size:18px;font-family:'Fraunces',Georgia,serif;}
+.cs-card.num.dark .cs-ic{background:#F0C08A;color:var(--navy);}
+.cs-card.num p{font-size:15px;color:var(--ink);} .cs-card.num.dark p{color:rgba(255,255,255,.9);}
+.cs-card u{text-decoration-thickness:2px;text-underline-offset:2px;}
+.cs-hero.photo{background:linear-gradient(100deg,rgba(22,24,41,.96) 0%,rgba(22,24,41,.85) 45%,rgba(22,24,41,.25) 100%),var(--img) right center/cover no-repeat;}
+@media (max-width:760px){ .cs-media{grid-template-columns:1fr;} .cs-media > img{order:-1;aspect-ratio:16/7;} .cs-hero.photo{background:linear-gradient(rgba(22,24,41,.88),rgba(22,24,41,.88)),var(--img) center/cover no-repeat;} }
 /* Full screen and the slides window: a deck page fills the whole screen. No width cap, no presenter
    column, and everything scales with the screen (the sizes below are in em of .cs). */
 .lesson-stage:fullscreen .stage-body:has(.cs), #audienceRoot .stage-body:has(.cs){grid-template-columns:minmax(0,1fr) !important;}
@@ -132,6 +144,11 @@ const css = `
 .lesson-stage:fullscreen .cs-hero p, #audienceRoot .cs-hero p{font-size:1.1em;max-width:none;}
 .lesson-stage:fullscreen .cs-hero .cs-big, #audienceRoot .cs-hero .cs-big{font-size:clamp(34px,3.6vw,72px);}
 .lesson-stage:fullscreen .cs-stat span, #audienceRoot .cs-stat span{font-size:1.15em;}
+.lesson-stage:fullscreen .cs-media, #audienceRoot .cs-media{gap:1.3em;}
+.lesson-stage:fullscreen .cs-media > img, #audienceRoot .cs-media > img{max-height:70vh;}
+.lesson-stage:fullscreen .cs-stack, #audienceRoot .cs-stack{gap:.8em;}
+.lesson-stage:fullscreen .cs-card.num p, #audienceRoot .cs-card.num p{font-size:1em;}
+.lesson-stage:fullscreen .cs-card.num .cs-ic, #audienceRoot .cs-card.num .cs-ic{font-size:1.15em;}
 #csZoom{position:fixed;inset:0;z-index:9500;background:rgba(10,12,24,.86);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;}
 #csZoom img{max-width:96vw;max-height:94vh;border-radius:8px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 @media (max-width:640px){ .cs-lead{font-size:16px;} .cs-flow li:not(:last-child)::after{display:none;} .cs-hero{padding:22px 18px;} }
