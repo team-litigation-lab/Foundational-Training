@@ -187,8 +187,11 @@ function renderPage(){
   return `<div class="ftm-hero"><h1>📒 Training Monitoring Sheet</h1>
       <p>Update it within the shift, as soon as a topic is fully covered. It saves as you type. <span class="ftm-save" id="ftmSave"></span></p>
       <div class="ftm-actions"><span class="ftm-count" id="ftmCount">${countLine()}</span>
-        <a class="btn btn-ghost btn-sm viewer-link" data-kind="doc" data-title="Training Monitoring Sheet" href="${e(MON_DOC.view)}">📄 View the Word Version</a>
         <a class="btn btn-ghost btn-sm" href="${e(MON_DOC.open)}" target="_blank" rel="noopener noreferrer">Download ↗</a></div></div>
+    <details class="card ftm-doc" ${FTM.docOpen === false ? "" : "open"} ontoggle="FTMon.doc(this.open)">
+      <summary><b>📄 The Training Monitoring Sheet</b> <span class="ftm-muted">— the Word version, in full</span></summary>
+      <div class="ftm-embed"><iframe src="${e(MON_DOC.view.replace(/\/view$/, "/preview"))}" title="Training Monitoring Sheet" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+    </details>
     <div class="card ftm-how">
       <b>For Each Discussion</b>
       <ul><li>Fill in the date the topic was covered.</li>
@@ -212,6 +215,7 @@ window.FTMon = {
     paintStatus(tid);
   },
   toggle(tid, open){ FTM.open[tid] = open; },
+  doc(open){ FTM.docOpen = open; },
   reload(){ FTM.id = null; FTM.err = ""; render(); }
 };
 
@@ -443,6 +447,8 @@ main.main-monitor{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ftm-save{margin-left:6px;font-size:13px;color:var(--success);}
 .ftm-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;} .ftm-actions a.btn{text-decoration:none;}
 .ftm-count{font-size:14px;font-weight:800;color:var(--navy);margin-right:auto;}
+.ftm-doc{padding:0;margin-bottom:16px;overflow:hidden;} .ftm-doc > summary{padding:12px 16px;cursor:pointer;color:var(--navy);font-size:15.5px;}
+.ftm-embed{position:relative;height:max(420px, 70vh);border-top:1px solid var(--line);background:#F6F7FB;} .ftm-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 .ftm-how{padding:14px 18px;margin-bottom:16px;font-size:15px;} .ftm-how > b{display:block;color:var(--navy);font-size:16px;}
 .ftm-how ul{margin:6px 0 10px;padding-left:20px;} .ftm-how li{margin:3px 0;}
 .ftm-eg{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:6px;}

@@ -10,8 +10,8 @@
      • A slide's html is built when it's shown (a getter), so the file name in the Reading Task
        has the trainee's name and the Copy buttons work.
      • The parts: why this matters (and the goal: a Generalist Legal VA); the rules (schedule, communication, your work: naming
-       conventions, use of AI); Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
-       #training-reminders (its screenshots); daily habits (EOD email, trackers); the Daily Task Tracker part by part;
+       conventions, use of AI); the Training Monitoring Sheet, embedded; Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
+       #training-reminders (its screenshots); daily habits (EOD email, trackers); the Daily Task Tracker part by part, and its filled-in sample, embedded;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; the Manual Time Adjustment Request; Day 1's
        Reading Task.
@@ -71,6 +71,9 @@ const TRACKER_PARTS = {
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
 };
 
+// Day 0 → Onboarding Orientation: the LSH Daily Task Tracker's "Sample updated trackers".
+const TRACKER_SAMPLE = {view:"https://drive.google.com/file/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/view",
+  open:"https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516"};
 // Day 0 → Onboarding Orientation.
 const DISCORD_STATUS = {format:"LSH | [your team] | [time zone] [work days] [shift] RD [rest days]", example:"LSH | Support | EST Mon-Fri 8AM-5PM RD Sat-Sun", note:"RD = rest days."};
 const TIME_ADJ = {
@@ -240,6 +243,10 @@ const FIGS = {note: figNote};
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
 /* ---------- the slides ---------- */
+// A Drive file shown in full inside the slide (its /preview), with a link to open it in its own tab.
+const drivePreview = u => { const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
+const embed = (url, title, open)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+    <div class="ftr-embed-bar"><span>📄 ${esc(title)}</span>${open ? `<a class="btn btn-ghost btn-sm" href="${esc(open)}" target="_blank" rel="noopener noreferrer">Open or Download ↗</a>` : ""}</div>`;
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
@@ -261,10 +268,12 @@ const SLIDES = [
     rule("📅 Meeting Schedules Are Sent on the Date and Time of the Discussion", "Keep your notifications on so you don’t miss them.") +
     rule("📷 Cameras On During Classroom Discussions", "Every trainee’s camera stays on for the whole discussion.")],
   ["work", "Rules: Your Work", ()=>
-    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees’ folder. You can also fill it in here on the platform.") +
-    `<div class="ftr-links ftr-mon">${window.FT_MONITOR_DOC ? `<a class="btn btn-navy btn-sm viewer-link" data-kind="doc" data-title="Training Monitoring Sheet" href="${esc(FT_MONITOR_DOC.view)}">📄 Training Monitoring Sheet</a><a class="btn btn-ghost btn-sm" href="${esc(FT_MONITOR_DOC.open)}" target="_blank" rel="noopener noreferrer">Download ↗</a>` : ""}${FT_AUDIENCE() ? "" : `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('monitoring')">📒 Fill It In on the Platform</button>`}</div>` +
     rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
     rule("🤖 Use of AI: Don’t Rely on It", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care. It’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
+  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>
+    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees’ folder. You can also fill it in here on the platform.") +
+    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
+    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('monitoring')">📒 Fill It In on the Platform</button></div>`)],
   ["free-skills", "Free Skills Training: After Your Shift", ()=>`
     <div class="ftr-goal"><b>🌱 Every Day After Your Shift, Ideally 5:00 – 6:00 PM PST</b>
       <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you, with extra skills on top of your training.</p></div>
@@ -308,6 +317,10 @@ const SLIDES = [
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>
     ${FT_AUDIENCE() ? "" : `<div class="ftr-links" style="margin-top:12px;"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}`],
+  ["tracker-sample", "Your Daily Task Tracker: A Filled-In Sample", ()=>`
+    <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
+    ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
+    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}`],
   ["tests", "Typing and Spelling Tests", ()=>`
     <div class="ftr-why"><b>Why?</b> The client expects a typing speed of 60 WPM (words per minute). The daily tests build your speed and your spelling, and the results you save show your progress through the training.</div>
     <div class="ftr-grid">${TESTS.map(t=>`<div class="ftr-chan ftr-test">
@@ -435,7 +448,10 @@ window.renderDashboard = function(){
 /* inside a slide (.ft-body): buttons and links keep their own colors */
 .ftr-slide a.btn-ghost, .ft-body .ftr-slide a.btn-ghost{color:var(--navy);} .ftr-slide a.btn-ghost:hover{color:var(--navy);}
 .ftr-slide p{margin:0;} .ftr-slide .ftr-sub{margin:0 0 12px;} .ftr-slide .ftr-after{margin-top:12px;}
-.ftr-mon{margin:-2px 0 10px;} .ftr-mon a.btn{text-decoration:none;}
+.ftr-mon{margin:10px 0 0;} .ftr-mon a.btn{text-decoration:none;}
+.ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
+.ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
+.ftr-embed-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:var(--ink-soft);} .ftr-embed-bar a.btn{text-decoration:none;}
 .ftr-card-sub{margin:0;font-size:14px;color:var(--ink-soft);font-weight:600;}
 /* numbered lists on a slide: the numbers, without the slide's bullet dots */
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide li, .lesson-card .ftr-slide li{text-align:left;}
