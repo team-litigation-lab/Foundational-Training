@@ -1,0 +1,309 @@
+#!/usr/bin/env python3
+"""Builds a native lesson (one slide per deck page, the deck's exact wording) from its extracted
+Canva pages.
+
+    python3 build/slides/make_lesson.py claims
+
+Input:  build/slides/<name>.json  (one entry per deck page: {"key", "boxes": [[paragraph, …], …], "notes"})
+        made from the deck's one-page PPTX exports by build/slides/extract_pptx.py.
+Output: build/lessons/lessonNN.js (the lesson's sections)
+
+Each page's layout is written below as a small function that places the page's own text blocks
+(b[i] = the i-th text box, a list of its paragraphs). Nothing is retyped, so the wording is the deck's.
+The components are styled by js/ft-slides.js. Run build/build.py afterwards.
+"""
+import json, os, re, sys, html
+
+B = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(B))
+
+def esc(t): return html.escape(t, quote=False)
+WORDS = {"TNC": "TNC", "TNCS": "TNCs", "UBER/LYFT": "Uber/Lyft"}  # mixed-case words an ALL-CAPS title loses
+ACR = {"LOR","PIP","UM","UIM","BI","MVA","CSL","1P","3P","PR","SLP","CDW","VIN","CRM","UM/UIM","PIP/1P","3P/BI","LOA/LOD","MVC","ID"}
+def title(t):
+    """ALL-CAPS deck titles read as Title Case on the slide heading (acronyms stay as they are)."""
+    if t.upper() != t: return t
+    small = {"a","an","the","of","in","on","to","for","and","or","by","vs","with"}
+    out = []
+    for i, w in enumerate(t.split(" ")):
+        core = re.sub(r"[^A-Za-z0-9/]", "", w)
+        if core.upper() in WORDS: out.append(w.replace(core, WORDS[core.upper()])); continue
+        if core.upper() in ACR or re.fullmatch(r"\(?[A-Z0-9/]{1,4}\)?[:,.]?", w) and core.upper() in ACR: out.append(w); continue
+        lw = w.lower()
+        out.append(lw if i and core.lower() in small else lw[:1].upper() + lw[1:] if lw[:1].isalpha() else lw[:1] + lw[1:2].upper() + lw[2:])
+    return " ".join(out)
+
+# ---------- components ----------
+def label(t): return f'<div class="cs-label">{esc(t)}</div>'
+def lead(t): return f'<p class="cs-lead">{t if t.startswith("<") else esc(t)}</p>'
+def sub(t): return f'<div class="cs-sub">{esc(t)}</div>'
+def ul(items, cls=""): return f'<ul class="cs-list {cls}">' + "".join(f"<li>{i if i.startswith('<') else esc(i)}</li>" for i in items) + "</ul>"
+def card(ic, head, body=None, items=None, cls="", tag=None):
+    h = f'<div class="cs-card {cls}">'
+    if ic: h += f'<div class="cs-ic">{ic}</div>'
+    if tag: h += f'<span class="cs-tag{" o" if "o" in (tag[1:] if isinstance(tag, tuple) else "") else ""}">{esc(tag[0] if isinstance(tag, tuple) else tag)}</span>'
+    if head: h += f"<b>{esc(head)}</b>"
+    if body: h += f"<p>{body if body.startswith('<') else esc(body)}</p>"
+    if items: h += "<ul>" + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul>"
+    return h + "</div>"
+def grid(cards, cols=""): return f'<div class="cs-grid {cols}">' + "".join(cards) + "</div>"
+def flow(steps): return '<ol class="cs-flow">' + "".join(f"<li>{esc(s[0]) if isinstance(s, tuple) else esc(s)}{f'<span>{esc(s[1])}</span>' if isinstance(s, tuple) else ''}</li>" for s in steps) + "</ol>"
+def tip(t): return f'<div class="cs-tip"><div>{t if t.startswith("<") else esc(t)}</div></div>'
+def warn(t): return f'<div class="cs-warn"><div>{t if t.startswith("<") else esc(t)}</div></div>'
+def note(t): return f'<div class="cs-note"><div>{t if t.startswith("<") else esc(t)}</div></div>'
+def do(head, items): return f'<div class="cs-do"><b>{esc(head)}</b><ul>' + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul></div>"
+def dont(head, items): return f'<div class="cs-dont"><b>{esc(head)}</b><ul>' + "".join(f"<li>{esc(i)}</li>" for i in items) + "</ul></div>"
+def split(*parts): return '<div class="cs-split">' + "".join(parts) + "</div>"
+def div(*parts): return "<div>" + "".join(parts) + "</div>"
+def table(head, rows): return '<div class="cs-tablewrap"><table class="cs-table"><tr>' + "".join(f"<th>{esc(h)}</th>" for h in head) + "</tr>" + "".join("<tr>" + "".join(f"<td>{esc(c)}</td>" for c in r) + "</tr>" for r in rows) + "</table></div>"
+def fig(srcs, cap=None):
+    imgs = "".join(f'<figure class="cs-fig"><img src="{s}" alt="{esc(cap or "")}" loading="lazy"></figure>' for s in srcs)
+    return f'<div class="cs-figs">{imgs}</div>' + (f'<div class="cs-sub" style="text-align:center;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink-soft);">{esc(cap)}</div>' if cap else "")
+def hero(lab, big, text=None): return f'<div class="cs-hero">{label(lab) if lab else ""}<div class="cs-big">{esc(big)}</div>{f"<p>{esc(text)}</p>" if text else ""}</div>'
+def kv(t):
+    """'Term – description' → bold term (the deck's own dash split)."""
+    m = re.match(r"^(.+?)\s+[–-]\s+(.*)$", t)
+    return f"<b>{esc(m.group(1))}</b> – {esc(m.group(2))}" if m else esc(t)
+def headed(x, ic=None, cls="accent"):
+    """A text box whose first line is its heading ('🔍 Key Points:') and the rest its points."""
+    return card(ic, x[0], items=x[1:], cls=cls)
+def tbl(x, n):
+    """A table exported as one flat list of cells: n header cells, then the rows."""
+    return table(x[:n], [x[i:i+n] for i in range(n, len(x) - len(x[n:]) % n, n)])
+def tfig(srcs, cap=None):
+    """Real documents with personal details: served from /trainer/ (trainers only, never public).
+    They show in the trainer's own windows (Presenter view, the slides window); anyone else sees a note."""
+    ph = "<div class=&quot;cs-note&quot;><div>🔒 A real document example: your trainer shows it during the session.</div></div>"
+    imgs = "".join(f'<figure class="cs-fig"><img src="{s}" alt="{esc(cap or "")}" loading="lazy" onerror="this.closest(\'.cs-figs\').outerHTML=\'{ph}\'"></figure>' for s in srcs)
+    return f'<div class="cs-figs">{imgs}</div>' + (f'<div class="cs-sub" style="text-align:center;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink-soft);">{esc(cap)}</div>' if cap else "")
+def S(h, *parts, lab=None): return {"h": h, "html": '<div class="cs">' + (label(lab) if lab else "") + "".join(parts) + "</div>"}
+
+# ---------- Claims Specialist Training (lesson 7) ----------
+IMG = "/ft/claims/img/"
+def claims_pages():
+    P = {}
+    P["n002"] = lambda b: S(title(b[0][0]), hero(b[0][0], b[1][0]))
+    P["n003"] = lambda b: S(title(b[1][0]), flow([b[6][0], b[0][0], b[2][0], " ".join(b[3]), b[4][0], b[5][0]]))
+    def p4(b):
+        def c(t):
+            tag, rest = re.match(r"^(\S+ ?\([^)]*\))\s*-\s*(.*)$", t).groups()
+            cov, who = [x.strip() for x in re.split(r"-\s*", rest, maxsplit=1)]
+            return card("🛡" if tag.startswith("3P") else "👤", cov, who, tag=(tag, "o" if tag.startswith("1P") else ""))
+        return S(title(b[1][0]), lead(b[2][0]), sub(b[3][0]), grid([c(b[i][0]) for i in (4, 5, 6, 7, 8)] + [card("🏢", None, b[9][0], cls="soft")], "c3"), lab=b[0][0])
+    P["n004"] = p4
+    P["n005"] = lambda b: S(title(b[0][0]), lead(b[1][0]), sub(b[2][0]), grid([card(ic, None, t) for ic, t in zip("📞🏢🔎🚗", b[2][1:])]), lab=b[3][0])
+    P["n007"] = lambda b: S(title(b[0][0]), lead(b[1][0]), tip("<b>Tip:</b> " + esc(b[2][0][len("Tip: "):]) if b[2][0].startswith("Tip: ") else b[2][0]), lab=b[3][0])
+    P["n008"] = lambda b: S(title(b[0][0]), sub(b[1][0]), grid([card("🗂", b[2][0], items=b[2][1:], cls="accent"), card("🚗", b[3][0], items=b[3][1:], cls="accent")], "c2"), lab=b[4][0])
+    P["n009"] = lambda b: S(title(b[0][0]), sub(b[1][0]), grid([card("🩺", b[2][0], items=b[2][1:], cls="accent"), card("📄", b[3][0], items=b[3][1:], cls="accent"), card("📍", b[4][0], items=b[4][1:], cls="accent")], "c3"), lab=b[5][0])
+    def p10(b):
+        first = b[1][0]
+        first = "The facts of loss refer to what" + first[len("THE FACTS OF LOSS REFER TO WHat"):] if first.startswith("THE FACTS OF LOSS REFER TO WHat") else first
+        second = b[2][0]
+        second = "However" + second[len("HOWEVER"):] if second.startswith("HOWEVER") else second
+        return S(title(b[3][0]), lead(first), sub(second), grid([card(ic, None, t, cls="soft") for ic, t in zip(["🗣", "🎥", "📸", "🌦", "🏢"], b[2][1:])], "c3"), lab=b[4][0] + " · " + b[0][0])
+    P["n010"] = p10
+    P["n011"] = lambda b: S(title(b[1][0]), lead(b[2][0]), note(f"<b>{esc(b[3][0])}</b><br>{esc(b[3][1])}"), lab=b[4][0] + " · " + b[0][0])
+    def p13(b):
+        groups = [("Client and Insurance Information", "#E3F2E7", ["3P Insurance Policy:", "1P Insurance Policy:", "Claimant Name:"]),
+                  ("Accident Details (Facts of Loss)", "#FBEDE2", ["Date of Loss:", "Time of Loss:", "# of Vehicles:", "# of Passengers in Client's Vehicle (Cite Minors):", "# of Passengers in Defendant's Vehicle (Cite Minors):", "Cross Street and State:"]),
+                  ("Police Report and Witnesses", "#FFF4D6", ["Police Report (Y/N):", "Police Department:", "Incident Number:", "Accident Details (What Happened?):", "Witnesses (Y/N):"]),
+                  ("Injuries and Medical Treatment", "#E3F1FA", ["Ambulance Transporation (Y/N):", "Hospital Destination:", "Currently Treating? (Y/N):", "Providers providing treatment:", "Injuries:"]),
+                  ("Vehicle Information", "#EAF5DD", ["Client's Vehicle (Year, Make and Model):", "Vehicle Drivable?:", "Indicate the Damages on the Vehicle:", "Defendant's Name, Vehicle Year, Make and Model:"])]
+        rows = "".join(f'<tr><td colspan="2" style="background:{c};color:var(--navy);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;">{esc(g)}</td></tr>' + "".join(f'<tr><td style="background:#fff;">{esc(f)}</td><td style="background:#fff;color:#B6BCCB;">…</td></tr>' for f in fields) for g, c, fields in groups)
+        return S(title(b[1][0]), f'<div class="cs-tablewrap"><table class="cs-table"><tr><th colspan="2">MVA QUESTIONNAIRE</th></tr>{rows}</table></div>', lab=b[2][0] + " · " + b[0][0])
+    P["n013"] = p13
+    P["n014"] = lambda b: S(title(b[1][0]), lead(b[0][0]), note(b[0][1]), tip(b[0][2]), lab=b[2][0])
+    P["n015"] = lambda b: S(title(b[1][0]), grid([card("1", b[2][0], b[0][0], cls="accent"), card("2", b[3][0], b[4][0], cls="accent"), card("3", b[5][0], b[6][0], items=b[6][1:], cls="accent")], "c3"), lab=b[7][0])
+    P["n016"] = lambda b: S(title(b[1][0]), lead(b[2][0]), grid([card("4", b[0][0], b[3][0], items=b[3][1:], cls="accent"), card("5", b[4][0], b[5][0], items=b[5][1:], cls="accent")], "c2"), note(b[6][0]), lab=b[7][0])
+    P["n017"] = lambda b: S(title(b[0][0]), grid([card("⏰", None, b[1][0]), card("🔁", None, b[2][0]), card("🚫", None, b[3][0], cls="dark"), card("✅", None, b[4][0]), card("💲", None, b[5][0])], "c3"), lab=b[6][0])
+    def p18(b):
+        x = b[1]; k = x.index("Additionally:")
+        return S(title(b[0][0]), lead(x[0]), split(div(ul(x[1:k])), div(sub(x[k]), ul(x[k+1:], "dot"))), lab=b[2][0])
+    P["n018"] = p18
+    def p19(b):
+        x = b[2]
+        return S(title(b[0][0]), lead(b[1][0]), split(do(x[0], [x[1]]), dont(x[2], [x[3], x[4]])), note(x[5]), lab=b[3][0])
+    P["n019"] = p19
+    def p20(b):
+        x = b[1]
+        return S(title(b[2][0]), lead(b[0][0]), sub(x[0].lstrip("🔹 ")), f"<p>{esc(x[1])}</p>",
+                 grid([card("⚖️", x[2], x[3], cls="accent"), card("🕊", x[4], x[5], cls="accent")], "c2"), do(x[6], [x[7]]), lab=b[3][0])
+    P["n020"] = p20
+    def p21(b):
+        x = b[0]
+        return S(title(b[1][0]), sub(x[0].lstrip("🔹 ")), f"<p>{esc(x[1])}</p>",
+                 grid([card(ic, t) for ic, t in zip(["💼", "🤝", "🕯"], x[2:5])], "c3"), do(x[5], [x[6]]), lab=b[2][0])
+    P["n021"] = p21
+    P["n022"] = lambda b: S(title(b[2][0]), grid([card("📨", None, b[0][0], cls="dark"), card("📝", None, b[1][0], cls="soft")], "c2"))
+    P["n023"] = lambda b: S(title(b[2][0]), lead(b[0][0]), note(b[1][0]))
+    P["n024"] = lambda b: S(title(b[0][0]), grid([card(ic, b[i][0]) for ic, i in zip(["🛡", "⚖️", "🏥", "🏢", "🚙", "🏦", "👮", "🚚", "🔄"], range(1, 10))], "c3"), lab=b[10][0])
+    P["n026"] = lambda b: S(title(b[3][0]), grid([card("🐕", None, b[0][0], cls="accent"), card("🏛", None, b[1][0], cls="accent")], "c2"), ul(b[4], "dot"), lab=b[2][0])
+    P["n027"] = lambda b: S(title(b[0][0]), sub("🔹 Notice of Claim Requirements by State (Examples)"), table(["State", "Statute / Form Name", "Filing Deadline", "Filed With", "Notes"], [
+        ["California", "Government Claim Form (Gov. Code § 910)", "6 months", "State/local entity involved", "Must use specific form; claim must be denied before filing suit"],
+        ["New York", "Notice of Claim (General Municipal Law § 50-e)", "90 days", "Local entity (e.g., city, county)", "Required for claims against municipalities and school districts"],
+        ["Texas", "Texas Tort Claims Act – Notice of Claim (Civ. Prac. & Rem. Code § 101.101)", "6 months (some cities have shorter limits like 45-90 days)", "Relevant agency or city", "Strict deadlines; some municipalities have their own notice rules"],
+        ["Arizona", "Notice of Claim (A.R.S. § 12-821.01)", "180 days", "Appropriate public entity", "Must include specific settlement amount and supporting facts"],
+        ["Illinois", "Court of Claims Act (705 ILCS 505/22)", "1 year", "Illinois Court of Claims", "Must file with both Court and Attorney General"],
+        ["Colorado", "Colorado Governmental Immunity Act (C.R.S. § 24-10-109)", "182 days (about 6 months)", "Governing body of the public entity", "Must include nature and location of injury and damages sought"],
+        ["Georgia", "Georgia Tort Claims Act (O.C.G.A. § 50-21-26)", "1 year", "Risk Management Division", "Applies to state (not local) claims; local governments may have different rules"],
+        ["Oregon", "Oregon Tort Claims Act Notice (ORS § 30.275)", "180 days", "Appropriate public agency", "Formal written notice required"],
+        ["Washington", "Standard Tort Claim Form (RCW § 4.92.100 & § 4.96.020)", "3 years (but must file form first)", "State Office of Risk Management or local agency", "Mandatory use of state-provided forms"],
+        ["Nevada", "NRS Chapter 41 (Notice of Claim)", "2 years", "State/local agency", "Informal notice allowed, but formal claim helps preserve rights"]]))
+    P["n028"] = lambda b: S(title(b[1][0]), flow([b[2][0], b[3][0], b[4][0]]), split(do("Adjuster known", [b[5][0]]), note(f"<b>{esc(b[6][0])}</b> {esc(b[6][1])}")), lab=b[0][0])
+    P["n029"] = lambda b: S(title(b[2][0]), grid([card("1", None, items=b[0], cls="accent"), card("2", None, b[1][0], cls="accent"), card("3", None, b[4][0], cls="accent"), card("4", None, b[5][0], cls="accent")]), lab=b[3][0])
+    P["n030"] = lambda b: S(title(b[2][0]), grid([card("5", None, b[0][0], cls="accent"), card("6", None, b[1][0], cls="accent"), card("7", None, b[4][0], cls="accent")], "c3"), lab=b[3][0])
+    P["n031"] = lambda b: S(title(b[1][0]), lead(b[0][0]), ul(b[2]))
+    P["n032"] = lambda b: S(title(b[1][0]), lead(b[0][0]), tip(b[2][0]))
+    P["n033"] = lambda b: S(title(b[1][0]), sub(b[0][0]), grid([card(ic, t, cls="accent") for ic, t in zip(["📑", "🛡", "💲"], b[0][1:])], "c3"))
+    P["n034"] = lambda b: S(title(b[1][0]), lead(b[0][0]), grid([card(ic, t, cls="soft") for ic, t in zip(["🚓", "🩺", "✍️"], b[0][1:])], "c3"))
+    P["n035"] = lambda b: S(title(b[1][0]), hero(None, title(b[1][0]), b[0][0]))
+    P["n036"] = lambda b: S(title(b[1][0]), lead(kv(b[0][0])), sub(b[0][1]), ul(b[0][2:], "num two"))
+    P["n037"] = lambda b: S(title(b[0][0]), fig([IMG + "decpage-1a.png", IMG + "decpage-1b.png"], "Here is an example of the Dec pages"))
+    P["n038"] = lambda b: S(title(b[0][0]), fig([IMG + "decpage-2a.png", IMG + "decpage-2b.png"], "Here's the rest of the document - notice that the page contains the policy limits"))
+    P["n039"] = lambda b: S(title(b[0][0]), sub(b[1][0].capitalize()), ul([kv(b[2][0]) + "<br>" + esc(b[2][1]), kv(b[3][0]), kv(b[4][0])]), lab=b[5][0])
+    P["n041"] = lambda b: S(title(b[1][0]), ul([kv(t) for t in b[0]]))
+    P["n042"] = lambda b: S(title(b[6][0]), grid([card("💵", b[1][0], b[4][0], cls="accent"), card("🧑‍🤝‍🧑", b[2][0], b[5][0], cls="accent"), card("➕", b[3][0], b[0][0], cls="accent")], "c3"))
+    P["n043"] = lambda b: S(title(b[0][0]), grid([card("🤕", b[4][0], b[1][0], cls="dark"), card("🚗", b[5][0], b[2][0], cls="dark"), card("🩺", " ".join(b[6]), b[3][0], cls="dark")], "c3"))
+    P["n044"] = lambda b: S(title(b[4][0]), grid([card("🌩", b[2][0], b[0][0], cls="dark"), card("💥", b[3][0], b[1][0], cls="dark")], "c2"))
+    P["n045"] = lambda b: S(title(b[3][0]), grid([card("👤", b[1][0], b[0][0], cls="accent"), card("🛡", b[2][0], items=[b[4][0], b[5][0]], cls="accent")], "c2"))
+    P["n046"] = lambda b: S(title(b[1][0]), lead(b[0][0]), f"<p>{esc(b[0][1])}</p>", sub(b[2][0]),
+                           grid([card("👤", b[3][0], b[5][0], cls="dark"), card("🚗", b[4][0], b[7][0], cls="dark"), card("📅", b[6][0], b[8][0], cls="dark"), card("🧮", b[9][0], b[10][0], cls="dark")]), lab=b[11][0])
+    def p47(b):
+        t = b[0]; x = b[1]
+        return S(title(" ".join(b[2])), table([t[0], t[1]], [[t[2], t[3]], [t[4], t[5]], [t[6], t[7]]]), note(x[0]),
+                 f'<div class="cs-stat"><span><small>{esc(x[1])}</small>{esc(x[2])}</span></div><p style="color:var(--ink-soft);font-size:14px;">{esc(x[3])}</p>', lab=b[3][0])
+    P["n047"] = p47
+    P["n001"] = lambda b: S(title(b[0][0]), hero("LSH Foundational Training", title(b[0][0]), title(b[1][0])))
+    P["n025"] = lambda b: S(title(b[0][0]), lead(b[1][0]), grid([card("🏬", None, b[1][1], cls="accent"), card("📋", None, b[1][2], cls="accent")], "c2"), lab=b[2][0])
+    P["n048"] = lambda b: S(title(" ".join(b[0])), lead(b[2][0]), f'<div class="cs-stat"><span><small>🧩 Example</small>{esc(b[3][0].split(": ",1)[1])}</span></div>', ul(b[4]), lab=b[1][0])
+    P["n049"] = lambda b: S("CSL vs Per Person / Per Accident", split(div(sub(b[0][0]), fig([IMG + "csl-example.png"])), div(sub(b[1][0]), fig([IMG + "split-limits-example.png"]))), lab=b[2][0])
+    P["n050"] = lambda b: S(title(b[2][0]), lead(b[1][0]), table(["Limit Type", "Amount", "What It Means:"], [["Per occurrence", "$1,000,000", "Max for one incident (e.g., customer slips and falls)"], ["Aggregate limit", "$2,000,000", "Max for all claims combined during policy year"]]), headed(b[3], cls="soft"), lab=b[4][0])
+    def p51(b):
+        x = b[2]; k = x.index("You recover:")
+        return S(title(b[1][0]), lead(b[0][0]), split(headed(x[:k], cls="soft"), card("💰", x[k], items=x[k+1:-1], cls="dark")), tip(x[-1]), lab=b[3][0])
+    P["n051"] = p51
+    P["n052"] = lambda b: S(b[1][0], headed(b[3], "🔍", "soft"), tip(f"<b>{esc(b[4][0])}</b> {esc(' '.join(b[4][1:]))}"), lab=b[0][0])
+    P["n053"] = lambda b: S(b[2][0].replace("🧠 ", ""), lead(b[1][0]), sub(b[3][0]), ul(b[3][1:], "num"), lab=b[0][0])
+    P["n054"] = lambda b: S(b[2][0], card("🎯", b[1][0], b[1][1], cls="dark"), card("🔍", b[3][0], b[3][1], items=b[3][2:], cls="accent"), lab=b[0][0])
+    P["n055"] = lambda b: S(b[2][0], tbl(b[0], 2), lab=b[1][0])
+    P["n056"] = lambda b: S(b[2][0], headed(b[0], None, "soft"), flow([b[3][0], b[4][0], b[5][0]]), lab=b[1][0])
+    P["n057"] = lambda b: S(b[2][0], card(None, b[0][0], b[0][1], items=b[0][2:], cls="accent"), lab=b[1][0])
+    P["n058"] = lambda b: S(b[2][0], card(None, b[0][0], b[0][1], items=b[0][2:], cls="accent"), lab=b[1][0])
+    P["n059"] = lambda b: S(b[2][0], headed(b[0], None, "dark"), lab=b[1][0])
+    P["n060"] = lambda b: S(b[1][0], card("📝", None, b[2][0], items=b[2][1:], cls="accent"), tip(f"<b>{esc(b[3][0].replace('🧠 ', ''))}</b> {esc(' '.join(b[3][1:]))}"), lab=b[0][0])
+    P["n061"] = lambda b: S(b[1][0], lead(b[2][0]), f"<p>{esc(b[3][0])}</p>", grid([card("⚖️", b[4][0], b[5][0], cls="dark"), card("📐", b[6][0], b[7][0], cls="dark")], "c2"), lab=b[0][0])
+    P["n062"] = lambda b: S(b[1][0], split(do("✅ " + b[2][0], b[2][1:]), dont("⚠️ " + b[3][0], b[3][1:])), lab=b[0][0])
+    P["n063"] = lambda b: S(b[1][0], warn(b[3][0]), sub(b[4][0].replace("⚠️ ", "")), ul([f"<b>{esc(t.split(': ',1)[0])}:</b> {esc(t.split(': ',1)[1])}" for t in b[4][1:]]), lab=b[0][0])
+    P["n064"] = lambda b: S(b[2][0].replace("🔍 ", ""), tbl(b[0], 2), lab=b[1][0])
+    P["n065"] = lambda b: S(b[1][0], tip(b[2][0]), headed(b[3], None, "soft"), lab=b[0][0])
+    P["n066"] = lambda b: S(b[1][0], split(card("🚫", b[3][0].replace("🚫 ", ""), b[3][1], items=b[3][2:], cls="accent"), card("🧠", b[4][0].replace("🧠 ", ""), b[4][1], items=b[4][2:], cls="dark")), lab=b[0][0])
+    P["n067"] = lambda b: S(b[1][0], sub(b[3][0].replace("🔍 ", "")), flow([(b[4][i], b[4][i+1]) for i in range(0, len(b[4]), 2)]), lab=b[0][0])
+    P["n068"] = lambda b: S(b[2][0], warn(b[4][0]), tbl(b[0], 2), lab=b[1][0])
+    def p69(b):
+        x = b[3]
+        # the deck numbers steps 2–4 and not the first; each step's heading is followed by its points
+        heads = [i for i, t in enumerate(x) if i == 1 or re.match(r"^\d\.\s*\S", t)]
+        cards_ = []
+        for n, i in enumerate(heads):
+            j = heads[n+1] if n + 1 < len(heads) else len(x)
+            h = re.sub(r"^\d\.\s*", "", x[i])
+            body = x[i+1:j]
+            cards_.append(card(str(n+1), h, items=body, cls="accent"))
+        return S(b[1][0], sub(x[0].replace("🔧 ", "")), grid(cards_), lab=b[0][0])
+    P["n069"] = p69
+    P["n070"] = lambda b: S(b[1][0], lead(b[3][0].replace("🎯 ", "")), headed(b[4], "🧠", "soft"), *[headed(x, None, "accent") for x in b[5:]], lab=b[0][0])
+    def p71(b):
+        x = b[3]
+        g = lambda a, z: x[x.index(a)+1:x.index(z)] if z else x[x.index(a)+1:]
+        return S(b[1][0], sub(x[0]), card("🎯", x[1].rstrip(":"), x[2], cls="dark"), sub(x[3]),
+                 grid([card("🔁", x[4], items=x[5:7], cls="accent"), card("✍️", x[9], items=x[10:12], cls="accent")], "c2"),
+                 tip(f"<b>{esc(x[7])}</b> {esc(x[8])}"), note(f"<b>{esc(x[12])}</b> {esc(x[13])}"), lab=b[0][0])
+    P["n071"] = p71
+    P["n072"] = lambda b: S(b[1][0], warn(f"<b>{esc(b[3][0].replace('⚠️ ', ''))}</b> {esc(b[3][1])}"), ul(b[3][2:], "num"), lab=b[0][0])
+    P["n073"] = lambda b: S(title(b[0][0]), sub(b[1][0].replace("🔍", "🔍 ")), grid([card(ic, t.split(" – ")[0], t.split(" – ")[1], cls=c) for ic, t, c in zip(["✅", "❌", "🛡", "🚫"], b[2], ["dark", "soft", "dark", "soft"])], "c2"))
+    P["n074"] = lambda b: S(title(b[0][0]), sub(b[1][0].replace("🔍", "🔍 ")), grid([card("❌", b[2][0], b[2][1], cls="accent"), card("🚫", b[3][0], b[3][1], cls="accent")], "c2"), card("⚠️", title(b[4][0]), items=b[4][1:], cls="soft"))
+    P["n075"] = lambda b: S(title(b[2][0]), card("🚗", b[1][0], b[1][1], cls="dark"), lab=b[0][0])
+    P["n076"] = lambda b: S(title(b[1][0]), grid([card(None, b[0][0].replace("🕒 ", "🕒 "), items=b[2], cls="soft"), card(None, b[3][0], items=b[4], cls="accent")], "c2"), lab=b[5][0])
+    P["n077"] = lambda b: S(title(b[1][0]), grid([card(None, b[0][0], items=b[2], cls="accent"), card(None, b[3][0], items=b[4], cls="dark")], "c2"), lab=b[5][0])
+    P["n078"] = lambda b: S(title(b[0][0]), ul(b[1]), lab=b[2][0])
+    P["n079"] = lambda b: S(title(b[1][0]), card("🛡", b[0][0], items=[t.lstrip("•") for t in b[0][1:3]], cls="dark"), note(b[0][3]), lab=b[2][0])
+    P["n080"] = lambda b: S(title(b[1][0]), grid([card("🚗", b[0][0], b[0][1].lstrip("•"), cls="accent"), card("❓", b[0][2], b[0][3].lstrip("•"), cls="accent")], "c2"), note(b[0][4]), lab=b[2][0])
+    def p81(b):
+        steps = sorted([b[i][0] for i in (1, 2, 3, 4)], key=lambda t: int(t.split(".")[0]))
+        return S(title(b[0][0]), flow([re.sub(r"^\d\.\s*", "", t) for t in steps]))
+    P["n081"] = p81
+    P["n082"] = lambda b: S(title(b[2][0]), sub(b[1][0]), ul(b[0], "two"))
+    P["n083"] = lambda b: S(title(b[0][0]), flow([b[i][0] for i in range(1, 6)]))
+    P["n084"] = lambda b: S(title(b[0][0]), sub(b[1][0]), grid([card(ic, b[i][0], b[i][1], cls="accent") for ic, i in zip(["👤", "🏢", "⚖️", "➕"], range(2, 6))]))
+    P["n085"] = lambda b: S(b[0][0], sub(b[1][0]), grid([card("🏢", b[2][0], items=b[2][1:], cls="soft"), card("👤", b[4][0], items=b[3], cls="accent")], "c2"), note(b[5][0]))
+    def statute(b, state, pairs, lab):
+        return S(title(state), grid([card(ic, h, t, cls="accent") for ic, (h, t) in zip(["🩺", "🥇", "🏢"], pairs)], "c3"), lab=lab)
+    P["n086"] = lambda b: statute(b, b[0][0], [(b[2][0], " ".join(b[3])), (b[4][0], b[5][0]), (b[6][0], b[7][0])], b[1][0])
+    P["n087"] = lambda b: statute(b, b[7][0], [(b[0][0], b[1][0]), (b[2][0], b[3][0]), (b[4][0], b[5][0])], b[6][0])
+    P["n088"] = lambda b: statute(b, b[7][0], [(b[0][0], b[1][0]), (b[2][0], b[3][0]), (b[4][0], b[5][0])], b[6][0])
+    P["n089"] = lambda b: statute(b, b[0][0], [(b[1][0], b[2][0]), (b[3][0], b[4][0]), (b[5][0], b[6][0])], b[7][0])
+    P["n090"] = lambda b: S(title(b[0][0]), lead(b[1][0]), split(card("🧾", title(b[3][0]), items=b[4], cls="dark"), card("💡", b[5][0], b[5][1], cls="soft")), lab=b[2][0])
+    P["n092"] = lambda b: S(title(b[0][0]), grid([card("📍", title(b[i][0]), items=b[j], cls="dark") for i, j in ((4, 1), (5, 2), (6, 3))], "c3"))
+    P["n093"] = lambda b: S(title(b[0][0]), lead(b[1][0]), f"<p>{esc(b[1][1])}</p>", sub(b[1][2]), flow([tuple(t.split(": ", 1)) for t in b[1][3:]]), lab=b[2][0])
+    P["n094"] = lambda b: S(title(b[0][0]), lead(b[1][0]), f"<p>{esc(b[1][1])}</p>", sub(b[1][2]), flow([tuple(b[1][3].split(": ", 1))]), lab=b[2][0])
+    P["n095"] = lambda b: S(title(b[2][0]), card("🩺", b[0][0], items=b[0][1:3], cls="accent"), card("🏢", b[0][3], items=b[0][4:6], cls="soft"), lab=b[1][0])
+    P["n096"] = lambda b: S(title(b[2][0]), card("🔄", b[0][0], b[0][1], cls="dark"), lab=b[1][0])
+    P["n097"] = lambda b: S(title(b[0][0]), sub(b[0][1]), tfig(["/trainer/img/claims/rental-claims-letter.png"]))
+    P["n098"] = lambda b: S(title(" ".join(b[0])), tfig(["/trainer/img/claims/rental-agreement-1.png"], "Here is an example of Enterprise Rental Agreement"))
+    P["n099"] = lambda b: S(title(" ".join(b[0])), tfig(["/trainer/img/claims/rental-agreement-2.png"], "Here is an example of Enterprise Rental Agreement"))
+    def practice(b, text_i, head_i, lab_i):
+        x = b[text_i]
+        return S(title(b[head_i][0].split(" ", 1)[1]), card(b[head_i][0].split(" ", 1)[0], None, x[0], items=x[1:], cls="dark"), lab=b[lab_i][0] + " · Claims Specialist")
+    P["n100"] = lambda b: practice(b, 0, 2, 1)
+    P["t151649.387"] = lambda b: practice(b, 0, 3, 1)
+    P["t151655.924"] = lambda b: practice(b, 0, 2, 1)
+    P["t151702.080"] = lambda b: practice(b, 0, 2, 1)
+    P["t151710.938"] = lambda b: practice(b, 0, 2, 1)
+    P["t151715.508"] = lambda b: S(title(b[1][0]), hero(None, title(b[1][0]), b[0][0]))
+    P["t151722.466"] = lambda b: S(title(b[1][0]), sub(b[0][0].replace("⚠️ ", "")), grid([card(ic, None, t, cls="accent") for ic, t in zip(["📵", "⚖️", "🛡", "🩺", "🔎"], b[0][1:])], "c3"))
+    P["t151730.614"] = lambda b: S(title(b[3][0]), lead(b[0][0]), note(b[1][0]), lab=b[2][0])
+    P["t151738.994"] = lambda b: S(title(b[3][0]) + " – " + title(b[2][0]), grid([card("1", None, b[1][0], cls="accent"), card("2", None, b[0][0], cls="accent")], "c2"), lab=b[2][0])
+    P["t151750.011"] = lambda b: S(title(b[3][0]) + " – " + title(b[2][0]), grid([card("3", None, b[1][0], cls="accent"), card("4", None, b[0][0], cls="accent")], "c2"), lab=b[2][0])
+    P["t151755.399"] = lambda b: S(title(b[3][0]) + " – " + title(b[2][0]), grid([card("📬", None, b[1][0], cls="accent"), card("🗂", None, b[0][0], cls="dark")], "c2"), lab=b[2][0])
+    P["t151800.445"] = lambda b: S(title(b[1][0]) + " – " + b[3][0], grid([card("1", None, b[2][0], cls="accent"), card("📠", None, b[0][0], cls="soft")], "c2"), lab=b[3][0])
+    P["t151811.506"] = lambda b: S(title(b[1][0]) + " – " + b[3][0], grid([card("2", None, b[2][0], cls="accent"), card("3", None, b[0][0], cls="accent")], "c2"), lab=b[3][0])
+    P["t151817.916"] = lambda b: S(title(b[1][0]) + " – " + b[3][0], grid([card("4", None, b[0][0], cls="dark"), card("🗂", None, b[2][0], cls="soft")], "c2"), lab=b[3][0])
+    P["t151825.685"] = lambda b: S(title(b[2][0]), lead(b[0][0]), headed(b[1], None, "dark"))
+    P["t151833.149"] = lambda b: S(title(b[0][0]), sub(b[1][0].replace("🔄 ", "")), grid([card("1", title(b[2][0]), items=b[3], cls="accent"), card("2", title(b[4][0]), items=b[5], cls="accent"), card("3", title(b[6][0]), items=b[7], cls="accent")], "c3"))
+    P["t151849.806"] = lambda b: S(title(b[7][0]), sub(b[0][0].replace("🔄 ", "")), grid([card("4", title(b[1][0]), items=b[2], cls="accent"), card("5", title(b[3][0]), b[4][0], cls="accent"), card("6", title(b[5][0]), items=b[6], cls="dark")], "c3"))
+    P["t151859.661"] = lambda b: S(title(b[0][0]) + " – " + b[1][0], fig([IMG + "withdrawal-email-1.png", IMG + "withdrawal-email-2.png"], b[1][0]))
+    P["t151905.516"] = lambda b: S(title(b[0][0]) + " – " + b[1][0], fig([IMG + "withdrawal-text.png"], b[1][0]))
+    P["t151913.179"] = lambda b: S(title(b[0][0]) + " – " + b[1][0], fig([IMG + "withdrawal-insurance.png"], b[1][0]))
+    P["t151930.834"] = lambda b: S(title(b[0][0]) + " – " + b[1][0], fig([IMG + "withdrawal-unresponsive.png"], b[1][0]))
+    P["t151942.423"] = lambda b: S(title(b[0][0]) + " – " + b[1][0], fig([IMG + "withdrawal-unpaid-fees.png"], b[1][0]))
+    P["t152002.391"] = lambda b: S(b[0][0].replace("🎯 ", ""), lead(b[0][1]), card("🎯", None, b[0][2], cls="accent"), card("✅", b[1][0].replace("✅ ", ""), b[1][1], cls="dark"))
+    P["t152011.392"] = lambda b: S("Thank You", hero("Claims Specialist Training", "Thank you."))
+    return P
+
+LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Training", "file": "lesson07.js",
+                      "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
+                      "canva": "https://www.canva.com/design/DAHWU-Wq2mQ/Nh3SycOXOAg7kl5EOQ-Z6Q/view",
+                      "pages": claims_pages,
+                      # pages that repeat the page before them in the deck (kept once)
+                      "repeats": {"n006", "n012", "n040"}}}
+
+def main(name):
+    L = LESSONS[name]
+    pages = json.load(open(os.path.join(B, name + ".json"), encoding="utf8"))
+    P = L["pages"]()
+    sections, missing = [], []
+    order = [p["key"] for p in pages]
+    byk = {p["key"]: p for p in pages}
+    for k in order:
+        if k in L["repeats"]: continue
+        f = P.get(k)
+        if not f: missing.append(k); continue
+        s = f(byk[k]["boxes"] if k in byk else [])
+        sections.append({"id": k, "h": s["h"], "html": s["html"]})
+    js = (f"const {L['var']} = {{\n  id: {L['id']},\n  title: {json.dumps(L['title'])},\n  video: {json.dumps(L['video'])},\n"
+          f"  canva: {json.dumps(L['canva'])},\n  heading: {json.dumps(L['title'])},\n  sections: " + json.dumps(sections, ensure_ascii=False, indent=2) + "\n};\n")
+    open(os.path.join(ROOT, "build", "lessons", L["file"]), "w", encoding="utf8").write(js)
+    print(f"{L['file']}: {len(sections)} slides" + (f"; no layout yet for {', '.join(missing)}" if missing else ""))
+
+if __name__ == "__main__":
+    main(sys.argv[1] if len(sys.argv) > 1 else "claims")

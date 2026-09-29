@@ -96,6 +96,7 @@ m = re.search(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', s)
 if not (n and m):
     sys.exit("MISSING: eapa-updates.js script tag")
 s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-slides.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker-rules.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>'
