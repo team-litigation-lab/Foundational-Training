@@ -87,4 +87,7 @@ BEATS = {
         "Government and law enforcement call to follow up on reports, process FOIA requests, verify backgrounds, request missing authorizations and give case or incident numbers. Your role: identify the request, confirm what's missing, never explain legal meaning, and route it to records, the assigned paralegal, or the attorney if urgent.",
         "What's one thing you should never do on a call from a police records department?",
         "A police records clerk calls saying the firm's FOIA request is missing a signed HIPAA authorization. Walk through how you handle and route the call."),
+"p27": ("Spam and malicious robocalls reach reception too, and they shouldn't get any further.",
+        "Other parties also include the occasional spam or malicious robocall. Handle them the way we covered for sales calls: identify, don't transfer, block, and log them when needed.",
+        "What would make you suspect a call is malicious rather than just spam?"),
 }

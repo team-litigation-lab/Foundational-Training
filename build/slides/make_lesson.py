@@ -333,6 +333,7 @@ def receptionist_pages():
     P["p22"] = two("insurance", 3); P["p23"] = two("insurance", 5)
     P["p24"] = two("other-parties", 1)
     P["p25"] = lambda b: S(T(b), media("other-parties", pt("3", J(b[1])), pt("4", None, J(b[2]), items(b[3]))), lab=FOOT)
+    P["p27"] = lambda b: S(T(b), media("other-parties", pt("7", J(b[1]))), lab=FOOT)
     P["p26"] = lambda b: S(T(b), media("other-parties", pt("5", None, J(b[1]), items(b[2])), pt("6", None, J(b[3]), items(b[4]), "dark")), lab=FOOT)
     return P
 

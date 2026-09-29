@@ -136,6 +136,11 @@ const DAY4 = {
     "html": "<div class=\"cs\"><div class=\"cs-label\">RECEPTIONIST ROLE</div><div class=\"cs-media\"><div class=\"cs-stack\"><div class=\"cs-card num \"><div class=\"cs-ic\">5</div><div><b>Why Government &amp; Law Enforcement Call:</b><ul><li>Follow up on police or long-form reports</li><li>Process FOIA requests (traffic footage, 911 calls, maintenance logs)</li><li>Verify criminal backgrounds (SLED/CJIS)</li><li>Request missing authorizations (HIPAA, LOR, executor documents)</li><li>Provide case or incident numbers for indexing</li></ul></div></div><div class=\"cs-card num dark\"><div class=\"cs-ic\">6</div><div><b>Key Role:</b><ul><li>Identify the type of request</li><li>Confirm what document is missing or pending</li><li>Never interpret or explain legal meaning</li><li>Route to: Records department, Assigned paralegal, Attorney (if urgent)</li></ul></div></div></div><img src=\"/ft/receptionist/img/other-parties.jpg\" alt=\"\" loading=\"lazy\"></div></div>"
   },
   {
+    "id": "p27",
+    "h": "Other Parties",
+    "html": "<div class=\"cs\"><div class=\"cs-label\">RECEPTIONIST ROLE</div><div class=\"cs-media\"><div class=\"cs-stack\"><div class=\"cs-card num \"><div class=\"cs-ic\">7</div><div><p>Occasional \"spam\" or malicious robocalls</p></div></div></div><img src=\"/ft/receptionist/img/other-parties.jpg\" alt=\"\" loading=\"lazy\"></div></div>"
+  },
+  {
     "id": "deck",
     "h": "Receptionist Training: the full Canva deck",
     "html": "<div class=\"canva-frame\" id=\"lessonDeck4\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Receptionist Training (Canva)\"\n    src=\"https://www.canva.com/design/DAHWU0f4UhU/A3houRJtASX7fhKWBA5zFA/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck4\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://www.canva.com/design/DAHWU0f4UhU/A3houRJtASX7fhKWBA5zFA/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>"

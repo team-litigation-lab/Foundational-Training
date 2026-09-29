@@ -1,7 +1,10 @@
 """Extracts a Canva deck downloaded as PDF into build/slides/<deck>.json, like extract_pptx.py does for PPTX.
 
     pip install pymupdf
-    python3 build/slides/extract_pdf.py <deck.pdf> <deck>
+    python3 build/slides/extract_pdf.py <deck.pdf> [<part2.pdf> …] <deck>
+
+A deck downloaded in parts (to stay under an upload limit) is given part by part, in order;
+its pages are numbered straight through.
 
 Each page becomes {"key": "pNN", "boxes": [[line, …], …], "notes": ""}: one box per text block, in
 reading order, with the block's lines as they wrap on the slide (the layouts in make_lesson.py join
@@ -25,11 +28,11 @@ def page(p):
         boxes.append((round(b["bbox"][1]), round(b["bbox"][0]), lines))
     return [l for y, x, l in sorted(boxes)]
 
-def main(pdf, deck):
-    d = pymupdf.open(pdf)
-    out = [{"key": f"p{i + 1:02d}", "boxes": page(p), "notes": ""} for i, p in enumerate(d)]
+def main(pdfs, deck):
+    pages = [p for f in pdfs for p in pymupdf.open(f)]
+    out = [{"key": f"p{i + 1:02d}", "boxes": page(p), "notes": ""} for i, p in enumerate(pages)]
     json.dump(out, open(os.path.join(HERE, deck + ".json"), "w"), ensure_ascii=False, indent=1)
     print(f"{deck}.json: {len(out)} pages")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1:-1], sys.argv[-1])
