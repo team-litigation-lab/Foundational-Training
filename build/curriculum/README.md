@@ -31,3 +31,5 @@ Changed by hand after the import, so redo these after re-running `convert.py`:
 - Day 7 `s1`: the Intake Specialist Role Canva deck, at the top of the part.
 - Day 13 `s2`: the Medical Records Specialist Role Canva deck, at the top of the part.
 - Day 17 `s3`: the Lien Negotiator Role Canva deck at the top of the part, and Word Game 1 under Free Communication Upskill.
+
+**Decks rebuilt on the platform:** a Canva deck listed in `NATIVE_DECKS` in `convert.py` (by its design id) is linked as a button that opens its lesson on the platform, instead of the Canva link. The Receptionist Training deck opens Lesson 4.

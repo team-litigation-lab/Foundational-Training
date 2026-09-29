@@ -91,6 +91,8 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ftc-body .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:10px 0;}
 .ftc-body .shots figure{margin:0;} .ftc-body .shots a{display:flex;align-items:center;justify-content:center;background:#F6F7FB;border:1px solid var(--line);border-radius:8px;padding:6px;height:160px;}
 .ftc-body .shots img{max-width:100%;max-height:100%;object-fit:contain;} .ftc-body .shots figcaption{font-size:13px;color:var(--ink-soft);text-align:center;}
+.ftc-body a.ft-lesson-link{display:inline-block;background:var(--navy);color:#fff;padding:8px 14px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;}
+.ftc-body a.ft-lesson-link:hover{background:var(--orange-deep);color:#fff;}
 .ftc-body .canva-frame{position:relative;width:100%;height:0;padding-top:56.25%;overflow:hidden;border-radius:8px;background:#161829;}
 .ftc-body .canva-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
 /* dashboard: every lesson on one timeline row */

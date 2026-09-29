@@ -148,9 +148,17 @@ def canva_view(url):
     m = re.match(r"https://www\.canva\.com/design/([^/]+)/([^/]+)/", url)
     return (f"https://www.canva.com/design/{m.group(1)}/{m.group(2)}/view", f"https://www.canva.com/design/{m.group(1)}/{m.group(2)}/view?embed") if m else (url, None)
 
+# Canva decks rebuilt as native lessons on the platform: their links open the lesson instead of Canva.
+NATIVE_DECKS = {"DAGnZuriur8": (4, "Receptionist Training")}
+def lesson_link(day, title):
+    return f'<a href="#" class="ft-lesson-link" onclick="goto(\'day\',{day});return false;">📘 Open Lesson {day}: {esc(title)} on the platform</a>'
+
 def link_html(url, label_html, context, trainer):
     if blocked(url):
         return "<i>[link not included on the platform]</i>"
+    m = re.match(r"https://www\.canva\.com/design/([^/]+)/", url)
+    if m and m.group(1) in NATIVE_DECKS:
+        return lesson_link(*NATIVE_DECKS[m.group(1)])
     if "canva.com/design/" in url:
         view, _ = canva_view(url)
         return f'<a href="{esc(view)}" target="_blank" rel="noopener noreferrer">{label_html if not label_html.startswith("https://www.canva.com") else esc(view)}</a>'

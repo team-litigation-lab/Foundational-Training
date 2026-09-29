@@ -2,7 +2,6 @@ const DAY4 = {
   id: 4,
   title: "Receptionist Training",
   video: "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
-  canva: "https://www.canva.com/design/DAHWU0f4UhU/A3houRJtASX7fhKWBA5zFA/view",
   heading: "Receptionist Training",
   sections: [
   {

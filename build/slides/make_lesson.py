@@ -406,7 +406,6 @@ LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Traini
                       "repeats": {"n006", "n012", "n040"}},
            "receptionist": {"id": 4, "var": "DAY4", "title": "Receptionist Training", "file": "lesson04.js",
                       "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
-                      "canva": "https://www.canva.com/design/DAHWU0f4UhU/A3houRJtASX7fhKWBA5zFA/view",
                       "pages": receptionist_pages, "repeats": set()}}
 
 def main(name):
@@ -423,8 +422,8 @@ def main(name):
         s = f(byk[k]["boxes"] if k in byk else [])
         sections.append({"id": k, "h": s["h"], "html": s["html"]})
     if L.get("tail"): sections += json.load(open(os.path.join(B, L["tail"]), encoding="utf8"))
-    js = (f"const {L['var']} = {{\n  id: {L['id']},\n  title: {json.dumps(L['title'])},\n  video: {json.dumps(L['video'])},\n"
-          f"  canva: {json.dumps(L['canva'])},\n  heading: {json.dumps(L['title'])},\n  sections: " + json.dumps(sections, ensure_ascii=False, indent=2) + "\n};\n")
+    js = (f"const {L['var']} = {{\n  id: {L['id']},\n  title: {json.dumps(L['title'])},\n  video: {json.dumps(L['video'])},\n" +
+          (f"  canva: {json.dumps(L['canva'])},\n" if L.get("canva") else "") + f"  heading: {json.dumps(L['title'])},\n  sections: " + json.dumps(sections, ensure_ascii=False, indent=2) + "\n};\n")
     open(os.path.join(ROOT, "build", "lessons", L["file"]), "w", encoding="utf8").write(js)
     print(f"{L['file']}: {len(sections)} slides" + (f"; no layout yet for {', '.join(missing)}" if missing else ""))
 
