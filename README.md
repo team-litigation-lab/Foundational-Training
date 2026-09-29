@@ -19,6 +19,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 
 | # | Lesson | On the platform |
 |---|---|---|
+| 📌 | Training Orientation and Rules | ✅ slides (`js/ft-rules.js`), always open, not counted |
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
 | 2 | Law Firm Communication | ✅ deck |
 | 3 | Personal Injury Process Flow | ✅ deck |
@@ -37,62 +38,34 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
 
 ## Training Orientation and Rules
 
-The **📌 Training Orientation and Rules** card is first on the dashboard, above Simulators. It opens `#/rules` (`js/ft-rules.js`) for trainees and trainers. The page has these sections, in order:
+**Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
 
-- **Why this matters**, at the top:
-  - Training is a simulation of the real world.
-  - Scores are audited every week.
-  - If coaching and feedback don't show progress, the trainee may be considered for offboarding.
-  - Don't be complacent.
-- **Rules for every training day:**
-  - Hubstaff tracking is strict, 8:00 AM – 5:00 PM PST.
-  - Time management: follow the schedule strictly, log in and out on time, don't track extra time beyond what's allowed (logging in up to 10 minutes early as buffer time needs Matt's approval), follow protocol at all times.
-  - Breaks are strictly 15 – 30 – 15, or one full 1-hour break.
-  - Meeting schedules are sent on the date and time of the discussion.
-  - Cameras are on during classroom discussions.
-  - The 5-minute rule: reply to messages within 5 minutes, with notifications turned on.
-  - Acknowledge every Discord message from the trainer: a reply, an emoji reaction or "Noted".
-  - Follow the naming conventions strictly.
-  - Use of AI: don't rely on it. Trainees develop their own reasoning and discretion, and every document is sensitive (attorney-client privilege, confidentiality, HIPAA): no client, case or medical information goes into an AI tool.
-- **Auxes:** the trainee reports their status in 2 Discord channels:
-  - #⏳-timestamps: `!in` at the start of the shift and `!back` after a break. LSH BOT replies, e.g. "@name is back".
-  - #batch-group-channel: `In` at 8:00 AM PST.
-  - No double stamping.
-  - The Discord profile status format, `LSH | [your time zone] | Trainee`.
-- **#training-reminders:** check it regularly. Shows Day 1's screenshots of the channel.
-- **Building your daily habits**, from the #training-reminders Deliverables post:
-  - The EOD email: before the end of every shift, to Matt and Michelle. As comprehensive as possible (at least 2 sentences per item), with at least 3 key learnings. Links to the Training Matrix.
-  - Updating the trackers: the LSH Daily Task Tracker, as comprehensive and detailed as possible, and the Training Monitoring Sheet, with the general-vs-specific takeaway example. Links to the sample updated trackers and the Training Monitoring Sheet.
-  - The EOD and tracker templates show as *coming soon* until they're provided.
-- **Your Daily Task Tracker, part by part:** every part of the platform's 📋 Task Tracker explained:
-  - the status counts;
-  - the For Completion / Recurring / Completed sections;
-  - every column, including the dated Daily Notes;
-  - the other tabs;
-  - the daily check.
-- **Typing and spelling tests**, from Day 1's Setting of Expectations:
-  - Why: the client expects 60 WPM.
-  - Typing twice a day (8:00 – 8:10 AM and before the end of the shift); spelling once a day, at the trainee's own pace.
-  - The links and the sample screenshots.
-  - Each result is saved in the trainee folder as `Typing Test [date taken][AM/PM]` / `Spelling Test [date taken][AM/PM]`.
-- **Your Hubstaff To-Dos:**
-  - Why the To-Dos matter (the audit team's review), and a link to the LSH VA Guide "Create a to-do" task list.
-  - The steps, with a picture of the to-do list.
-  - The 22 To-Dos, each with **📋 Copy**. Copy takes the to-do's name without the "To-Do:" label.
-  - The shadowing template.
-- **How to create notes in Hubstaff**, part by part: start tracking on the day's to-do, then the notes button → *Add Work Notes* → *Add Note*.
-- **Manual Time Adjustment Request**, from Day 0's Onboarding Orientation:
-  - Subject, To and CC, each with **📋 Copy**.
-  - What the email includes.
-- **Day 1 Reading Task:**
-  - The reading, which opens in the pop-out viewer.
-  - The 6 questions.
-  - The file name with the trainee's name filled in, e.g. `PI Overview_Answers (Jamie Santos)`, with **📋 Copy**.
-- **Hubstaff how-to lessons:** *Coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
-
-The Hubstaff pictures are drawn as SVG after the trainer's screenshots: the to-do list and the Add Work Notes box. The to-do list has an arrow on the button inside the day's to-do. On a phone the pictures scroll sideways in their box.
-
-The page's text lives in the constants at the top of `js/ft-rules.js`: `SHIFT`, `AUX_CHANNELS`, `HABITS`, `TRACKER_PARTS`, `DISCORD_STATUS`, `TIME_ADJ`, `REMINDER_SHOTS`, `READING`, `TESTS`, `TODOS`, `NOTE_PARTS` and `HOWTO_LESSONS`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
+- **It isn't one of the program's 9 lessons.**
+  - It's always open, for every trainee and batch.
+  - It doesn't count toward "Lessons finished", the certificate or the admin stats.
+  - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
+- **The slides:**
+  1. Why this matters: training is a simulation of the real world; weekly score audits; offboarding if coaching and feedback don't show progress; the goal is a Generalist Legal VA.
+  2. Rules: your schedule. Tracking 8:00 AM – 5:00 PM PST; time management (log in and out on time, no extra time; a 10-minute early buffer only with Matt's approval); breaks 15 – 30 – 15 or one full hour.
+  3. Rules: communication. The 5-minute response rule; acknowledge the trainer's Discord messages; meeting schedules sent on the discussion's date and time; cameras on.
+  4. Rules: your work. Naming conventions followed strictly; use of AI (grammar, spelling and sentence structure only; never client, case or medical information).
+  5. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
+  6. #training-reminders: LSH BOT's Deliverables post, written out from the trainer's screenshot.
+  7. #training-reminders: LSH BOT's Important Reminders post.
+  8. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
+  9. The Daily Task Tracker, part 1: the status counts, the sections and every column.
+  10. The Daily Task Tracker, part 2: the other tabs and the daily check.
+  11. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
+  12. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
+  13. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
+  14. How to create notes in Hubstaff, with the Add Work Notes picture.
+  15. The Manual Time Adjustment Request: subject, To and CC to copy.
+  16. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+  17. Hubstaff how-to lessons: *coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
+- **How the slides work:**
+  - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
+  - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
+  - The text lives in the constants at the top of `js/ft-rules.js` and in `SLIDES`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
 
 ## Daily Task Tracker
 
@@ -189,7 +162,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
-| `js/ft-rules.js` | The 📌 Training Orientation and Rules card and page: the daily rules, auxes, #training-reminders, daily habits (EOD, trackers), the Task Tracker explained, typing and spelling tests, Hubstaff To-Dos and notes, time adjustments and Day 1's Reading Task. |
+| `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
