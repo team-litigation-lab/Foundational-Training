@@ -11,7 +11,7 @@
        has the trainee's name and the Copy buttons work.
      • The parts: why this matters (and the goal: a Generalist Legal VA); the rules (schedule, communication, your work: naming
        conventions, use of AI); Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
-       #training-reminders; daily habits (EOD email, trackers); the Daily Task Tracker part by part;
+       #training-reminders (its screenshots); daily habits (EOD email, trackers); the Daily Task Tracker part by part;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; the Manual Time Adjustment Request; Day 1's
        Reading Task; Hubstaff how-to lessons (HOWTO_LESSONS: coming soon until provided).
@@ -81,27 +81,12 @@ const TIME_ADJ = {
            "Screenshots that show the work you did during the lost hours.",
            "The affected start and end time."]
 };
-// #training-reminders: LSH BOT's Deliverables and Important Reminders posts, as the trainer's
-// screenshot of the channel shows them.
-const REMINDER_POSTS = {
-  deliverables:{title:"📜 DELIVERABLES", groups:[
-    {h:"📝 1. Typing & Spelling Tests", li:["Morning: 10-minute spelling & typing test.", "Before end of shift: Typing test only.",
-      "Upload results to your trainee folder with the correct date & label (e.g., Morning/End of Shift)."]},
-    {h:"📌 2. EOD Report Submission 📩", li:["Where to send? ➡️ martin@legalsupporthelp.com & michelle.velarde@legalsupporthelp.com",
-      "Follow the correct format and include at least 3 key learnings from your completed tasks for the day."]},
-    {h:"📌 3. LSH Tracker Updates 📊", li:["Update your tracker daily before the end of your shift.", "Must be detailed and organized (can transfer discussion notes for reference)."]},
-    {h:"📌 4. Monitoring Sheet Updates 📌", li:["Update within the shift once a topic is fully covered.", "Write specific takeaways in complete sentences. (Avoid general statements!)"],
-     after:["❌ General: \"I learned about auto liability.\"",
-            "✅ Specific: \"Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage.\""]}],
-    foot:"📌 Stay on top of your tasks, track your progress, and make the most of your training!"},
-  important:{title:"⚠️ Important Reminders", ol:[
-    "Ensure your Hubstaff name is free of special characters (e.g., ñ, è, etc.).",
-    "Maintain activity in Hubstaff by frequently moving your mouse or taking down notes to keep keyboard activity (avoid idle time).",
-    ["Track the correct TO-DO during each training phase:", ["🏁 Onboarding Day: New Hire Orientation", "📚 From Day 1 Until the Last Day of Training: Classroom Discussion", "👀 During Shadowing Sessions: Shadowing"]],
-    "Acknowledge messages promptly with a react, “OK,” or “Understood” to confirm you have read and understood them. ✅",
-    "Join all classroom discussions using your work email and ensure your camera is ready 🎥.",
-    "Use the official LSH virtual background during meetings 🎭."]}
-};
+// Day 1 → Training Reminders: screenshots of the #training-reminders channel (LSH BOT's posts).
+const REMINDER_SHOTS = [
+  ["/ft/day1/img/training-reminders-deliverables.png", "#training-reminders: Deliverables and Important Reminders"],
+  ["/ft/day1/img/training-reminders-welcome.png", "#training-reminders: Welcome to Your Training Journey (Hubstaff TO-DOs)"],
+  ["/ft/day1/img/training-reminders-channel.png", "The #training-reminders channel on Discord"]
+];
 
 // Day 1 → Reading Task. The file name gets the trainee's name.
 const READING = {
@@ -261,11 +246,6 @@ const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
 
-const botPost = (title, body)=>`<div class="ftr-dc">
-    <div class="ftr-dc-head"><span class="ftr-dc-av">🤖</span><b>LSH BOT</b><i>APP</i><span class="ftr-dc-ch"># training-reminders</span></div>
-    <div class="ftr-dc-title">${esc(title)}</div>
-    <div class="ftr-dc-embed">${body}</div></div>`;
-
 const SLIDES = [
   ["why", "Why This Matters", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is a Simulation of the Real World</b>
@@ -309,11 +289,9 @@ const SLIDES = [
       <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
       <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
     </div>`],
-  ["reminders", "Check #training-reminders: Deliverables", ()=>{ const d = REMINDER_POSTS.deliverables; return `
-    <p class="ftr-sub">Check #training-reminders on Discord regularly, so you’re always guided on the right things to do for your HS To-Do, your deliverables and other important reminders throughout the training.</p>
-    ${botPost(d.title, d.groups.map(g=>`<div class="ftr-dc-g"><b>${esc(g.h)}</b><ul>${g.li.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>${(g.after||[]).map(x=>`<div>${esc(x)}</div>`).join("")}</div>`).join("") + `<div class="ftr-dc-g"><b>${esc(d.foot)}</b></div>`)}`; }],
-  ["reminders-important", "Check #training-reminders: Important Reminders", ()=>{ const r = REMINDER_POSTS.important;
-    return botPost(r.title, `<ol>${r.ol.map(x=>Array.isArray(x) ? `<li>${esc(x[0])}<div class="ftr-dc-sub">${x[1].map(y=>`<div>${esc(y)}</div>`).join("")}</div></li>` : `<li>${esc(x)}</li>`).join("")}</ol>`); }],
+  ["reminders", "Check #training-reminders", ()=>`
+    <p class="ftr-sub">Check #training-reminders on Discord regularly, so you’re always guided on the right things to do for your HS To-Do, your deliverables and other important reminders throughout the training. Click a screenshot to see it full size.</p>
+    <div class="ftr-rshots">${REMINDER_SHOTS.map(x=>`<figure><a href="${esc(x[0])}" target="_blank" rel="noopener"><img src="${esc(x[0])}" alt="${esc(x[1])}" loading="lazy"></a><figcaption>${esc(x[1])}</figcaption></figure>`).join("")}</div>`],
   ["habits", "Building Your Daily Habits", ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift:</p>
     <div class="ftr-grid">${HABITS.map(h=>`<div class="ftr-chan ftr-test">
@@ -476,14 +454,11 @@ window.renderDashboard = function(){
 .ftr-stakes{background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow);}
 .ftr-goal{background:#FBEBDD;border:1px solid var(--orange-soft);border-left:5px solid var(--orange);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;}
 .ftr-goal b{display:block;font-size:17px;color:var(--orange-deep);} .ftr-goal p{margin:6px 0 0!important;font-size:15.5px;line-height:1.55;}
-.ftr-dc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-family:'gg sans','Noto Sans',Arial,sans-serif;font-weight:400;color:#313338;}
-.ftr-dc-head{display:flex;align-items:center;gap:8px;font-size:14px;} .ftr-dc-head b{color:#060607;} .ftr-dc-head i{font-style:normal;font-size:10px;font-weight:700;background:#5865F2;color:#fff;border-radius:3px;padding:1px 4px;}
-.ftr-dc-av{width:32px;height:32px;border-radius:50%;background:#7dd3fc;display:flex;align-items:center;justify-content:center;font-size:17px;}
-.ftr-dc-ch{margin-left:auto;font-size:13px;color:#5c5e66;}
-.ftr-dc-title{margin:8px 0 6px;font-size:16px;}
-.ftr-dc-embed{border-left:4px solid #3aa3e3;background:#f8f9fb;border-radius:4px;padding:10px 14px;font-size:15px;line-height:1.5;}
-.ftr-dc-embed ul, .ftr-dc-embed ol{margin:2px 0 0!important;padding-left:20px!important;} .ftr-dc-embed li{margin:2px 0!important;}
-.ftr-dc-g + .ftr-dc-g{margin-top:8px;} .ftr-dc-g b{font-weight:600;} .ftr-dc-sub{margin-top:2px;}
+.ftr-rshots{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:14px;align-items:start;}
+.ftr-rshots figure{margin:0;} .ftr-rshots a{display:flex;align-items:flex-start;justify-content:center;background:#313338;border:1px solid var(--line);border-radius:10px;padding:6px;box-shadow:var(--shadow);}
+.ftr-rshots img{display:block;max-width:100%;height:auto;border-radius:6px;}
+.ftr-rshots figcaption{margin-top:6px;font-size:14px;color:var(--ink-soft);text-align:center;}
+@media (max-width:760px){ .ftr-rshots{grid-template-columns:1fr;} }
 .ftr-stakes b{display:block;font-size:18px;color:var(--orange-soft);} .ftr-stakes p{margin:6px 0 0;font-size:15.5px;line-height:1.55;max-width:900px;}
 .ftr-why{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15.5px;max-width:900px;} .ftr-why b{color:var(--orange-deep);}
 .ftr-test{display:flex;flex-direction:column;gap:8px;} .ftr-test .ftr-aux{border-top:0;padding:0;}
