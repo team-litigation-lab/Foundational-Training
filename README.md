@@ -25,7 +25,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 4 | Receptionist Training | ✅ deck |
 | 5 | Calendaring & Appointment Setting Training | ✅ deck |
 | 6 | Intake Specialist Training | ✅ deck |
-| 7 | Claims Specialist Training | coming (deck view link needed) |
+| 7 | Claims Specialist Training | ✅ deck |
 | 8 | Medical Records Specialist Training | ✅ deck |
 | 9 | Lien Negotiator Training | ✅ deck, then Word Game 1 (playable) |
 
