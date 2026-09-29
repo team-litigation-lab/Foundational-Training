@@ -13,6 +13,8 @@
      .cs-table   a table
      .cs-fig     a document image: click to see it full size
      .cs-hero    title and closing slides
+   In full screen and the slides window a page fills the screen: no width cap, no presenter
+   column, and the text scales with the screen.
    Loaded after js/ft-updates.js.
    ============================================================ */
 (function(){
@@ -97,6 +99,39 @@ const css = `
 .cs-stat{display:flex;flex-wrap:wrap;gap:10px;}
 .cs-stat span{background:var(--navy);color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;font-size:18px;}
 .cs-stat span small{display:block;font-size:11.5px;font-weight:600;color:#F0C08A;letter-spacing:.04em;}
+/* Full screen and the slides window: a deck page fills the whole screen. No width cap, no presenter
+   column, and everything scales with the screen (the sizes below are in em of .cs). */
+.lesson-stage:fullscreen .stage-body:has(.cs), #audienceRoot .stage-body:has(.cs){grid-template-columns:minmax(0,1fr) !important;}
+.lesson-stage:fullscreen .stage-body:has(.cs) .stage-presenter, #audienceRoot .stage-body:has(.cs) .stage-presenter{display:none !important;}
+.lesson-stage:fullscreen #lessonSlideWrap:has(.cs), #audienceRoot #lessonSlideWrap:has(.cs){align-items:stretch !important;}
+.lesson-stage:fullscreen #lessonSlideWrap:has(.cs) > *, #audienceRoot #lessonSlideWrap:has(.cs) > *{max-width:none !important;width:100% !important;}
+.lesson-stage:fullscreen .lesson-card:has(.cs), #audienceRoot .lesson-card:has(.cs){max-width:none !important;width:100%;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box;}
+.lesson-stage:fullscreen .cs, #audienceRoot .cs{font-size:clamp(17px,1.32vw,32px);gap:clamp(14px,1.3vw,30px);}
+.lesson-stage:fullscreen .cs-lead, #audienceRoot .cs-lead{font-size:1.18em;max-width:none;}
+.lesson-stage:fullscreen .cs-label, #audienceRoot .cs-label{font-size:.72em;}
+.lesson-stage:fullscreen .cs-sub, #audienceRoot .cs-sub{font-size:.8em;}
+.lesson-stage:fullscreen .cs-grid, #audienceRoot .cs-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,14em),1fr));gap:.9em;}
+.lesson-stage:fullscreen .cs-grid.c2, #audienceRoot .cs-grid.c2{grid-template-columns:repeat(auto-fit,minmax(min(100%,19em),1fr));}
+.lesson-stage:fullscreen .cs-grid.c3, #audienceRoot .cs-grid.c3{grid-template-columns:repeat(auto-fit,minmax(min(100%,15em),1fr));}
+.lesson-stage:fullscreen .cs-card, #audienceRoot .cs-card{padding:.9em 1.1em;gap:.45em;}
+.lesson-stage:fullscreen .cs-card .cs-ic, #audienceRoot .cs-card .cs-ic{width:2.1em;height:2.1em;font-size:1.25em;}
+.lesson-stage:fullscreen .cs-card b, #audienceRoot .cs-card b{font-size:1.02em;}
+.lesson-stage:fullscreen .cs-card p, .lesson-stage:fullscreen .cs-card li, #audienceRoot .cs-card p, #audienceRoot .cs-card li{font-size:.92em;}
+.lesson-stage:fullscreen .cs-flow, #audienceRoot .cs-flow{grid-template-columns:repeat(auto-fit,minmax(min(100%,10em),1fr));gap:.7em;}
+.lesson-stage:fullscreen .cs-flow li, #audienceRoot .cs-flow li{font-size:.92em;padding:2.6em .8em .8em;}
+.lesson-stage:fullscreen .cs-flow li span, #audienceRoot .cs-flow li span{font-size:.88em;}
+.lesson-stage:fullscreen .cs-list li, #audienceRoot .cs-list li, .lesson-stage:fullscreen .cs-do li, .lesson-stage:fullscreen .cs-dont li, #audienceRoot .cs-do li, #audienceRoot .cs-dont li{font-size:.95em;}
+.lesson-stage:fullscreen .cs-list.two, #audienceRoot .cs-list.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,17em),1fr));}
+.lesson-stage:fullscreen .cs-split, #audienceRoot .cs-split{grid-template-columns:repeat(auto-fit,minmax(min(100%,19em),1fr));}
+.lesson-stage:fullscreen .cs-tip, .lesson-stage:fullscreen .cs-warn, .lesson-stage:fullscreen .cs-note, #audienceRoot .cs-tip, #audienceRoot .cs-warn, #audienceRoot .cs-note{font-size:.95em;}
+.lesson-stage:fullscreen .cs-table, #audienceRoot .cs-table{font-size:.88em;} .lesson-stage:fullscreen .cs-table th, #audienceRoot .cs-table th{font-size:.9em;}
+.lesson-stage:fullscreen .cs-figs, #audienceRoot .cs-figs{grid-template-columns:repeat(auto-fit,minmax(min(100%,17em),1fr));}
+.lesson-stage:fullscreen .cs-fig img, #audienceRoot .cs-fig img{max-height:72vh;}
+.lesson-stage:fullscreen .cs-fig figcaption, #audienceRoot .cs-fig figcaption{font-size:.8em;}
+.lesson-stage:fullscreen .cs-hero, #audienceRoot .cs-hero{min-height:60vh;padding:2em 2.2em;}
+.lesson-stage:fullscreen .cs-hero p, #audienceRoot .cs-hero p{font-size:1.1em;max-width:none;}
+.lesson-stage:fullscreen .cs-hero .cs-big, #audienceRoot .cs-hero .cs-big{font-size:clamp(34px,3.6vw,72px);}
+.lesson-stage:fullscreen .cs-stat span, #audienceRoot .cs-stat span{font-size:1.15em;}
 #csZoom{position:fixed;inset:0;z-index:9500;background:rgba(10,12,24,.86);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out;}
 #csZoom img{max-width:96vw;max-height:94vh;border-radius:8px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5);}
 @media (max-width:640px){ .cs-lead{font-size:16px;} .cs-flow li:not(:last-child)::after{display:none;} .cs-hero{padding:22px 18px;} }
