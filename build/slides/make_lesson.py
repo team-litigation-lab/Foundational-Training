@@ -295,7 +295,8 @@ def items(lines):
     return out
 def pt(n, body, head=None, its=None, cls=""):
     """A numbered point, numbered as on the deck page."""
-    inner = (f"<b>{esc(head)}</b>" if head else "") + (f"<p>{body if body.startswith('<') else esc(body)}</p>" if body else "") + \
+    inner = (f"<b>{esc(head)}</b>" if head else "") + \
+            (body if body and body.startswith("<div") else f"<p>{body if body.startswith('<') else esc(body)}</p>" if body else "") + \
             ("<ul>" + "".join(f"<li>{esc(i)}</li>" for i in its) + "</ul>" if its else "")
     return f'<div class="cs-card num {cls}"><div class="cs-ic">{n}</div><div>{inner}</div></div>'
 def media(img, *parts): return f'<div class="cs-media"><div class="cs-stack">{"".join(parts)}</div><img src="{RIMG}{img}.jpg" alt="" loading="lazy"></div>'
@@ -335,6 +336,66 @@ def receptionist_pages():
     P["p25"] = lambda b: S(T(b), media("other-parties", pt("3", J(b[1])), pt("4", None, J(b[2]), items(b[3]))), lab=FOOT)
     P["p27"] = lambda b: S(T(b), media("other-parties", pt("7", J(b[1]))), lab=FOOT)
     P["p26"] = lambda b: S(T(b), media("other-parties", pt("5", None, J(b[1]), items(b[2])), pt("6", None, J(b[3]), items(b[4]), "dark")), lab=FOOT)
+
+    # Receptionist Best Practices: each practice (its name is the page's badge) numbers its own points.
+    def practice(b):
+        """Splits a Best Practices page: the practice's name (the all-caps badge lines), the page's opening
+        statement ("A good RECEPTIONIST is …", when it has one) and its text, as paragraphs."""
+        rest = [x for x in b[1:]]
+        badge = [x for x in rest if all(l == l.upper() for l in x)]
+        body = [x for x in rest if x not in badge]
+        head = None
+        if body and body[0][0].startswith("A good RECEPTIONIST"):
+            head = J(body[0] + body[1]); body = body[2:]
+        paras, cur = [], []
+        for x in body:                                   # a new paragraph where the deck leaves a blank line
+            if cur and x[0].startswith("A good receptionist"): paras.append(J(cur)); cur = []
+            cur += x
+        if cur: paras.append(J(cur))
+        return J(sum(badge, [])), head, paras
+    def bp(img, n):
+        def f(b):
+            name, head, paras = practice(b)
+            body = "".join(f"<p>{esc(t)}</p>" for t in paras)
+            return S(title(J(b[0])), media(img, pt(str(n), f'<div class="cs-paras">{body}</div>' if len(paras) > 1 else (paras[0] if paras else None), head)), lab=name)
+        return f
+    P["p28"] = bp("welcoming", 4)
+    P["p29"] = bp("confirm", 1)
+    P["p30"] = bp("expert", 1)
+    def p31(b):
+        name = J(b[5] + b[6]); q = b[2][:2] + [J(b[2][2:] + b[3] + b[4][:1])]
+        return S(title(J(b[0])), media("expert", pt("2", None, b[1][0], q), pt("💡", J(b[4][1:] + b[7]), cls="dark")), lab=name)
+    P["p31"] = p31
+    P["p32"] = bp("paraphrase", 1); P["p33"] = bp("paraphrase", 2)
+    P["p34"] = bp("attention", 1); P["p35"] = bp("attention", 2)
+    P["p36"] = bp("adapt", 1); P["p37"] = bp("adapt", 2); P["p38"] = bp("adapt", 3)
+    P["p39"] = lambda b: S(title(J(b[1])), media("payment",
+        card("💬", b[2][0], J(b[0]), cls="accent"),
+        card("🧾", J([b[4][0], b[6][0]]), J(b[3]), cls="accent"),
+        card("💳", J([b[9][0], b[10][0]]), J(b[7]), cls="accent")))
+    P["p40"] = lambda b: S(title(J(b[1])), media("payment",
+        card("🔐", J([b[2][0], b[4][0]]), J(b[0]), cls="accent"),
+        card("🔎", J([b[7][0], b[8][0]]), J(b[5]), cls="accent"),
+        card("🗂", b[10][0], J(b[9]), cls="accent")))
+    def p41(b):
+        box = lambda ic, head, text, cls="": card(ic, head, text, cls=cls)
+        arrow = '<div class="cs-arrow">↓</div>'
+        yes = f'<div class="cs-col"><div class="cs-sub">{esc(b[7][0])}</div>' + \
+              f'<div class="cs-warn"><div><b>{esc(b[3][0])}</b> {esc(J(b[4] + b[5]))}</div></div>' + arrow + \
+              box("🛡", b[8][0], J(b[8][1:] + b[10]), "dark") + "</div>"
+        no = f'<div class="cs-col"><div class="cs-sub">{esc(b[11][0])}</div>' + \
+             box("ℹ️", b[13][0], J(b[15] + b[18])) + box("📝", b[14][0], J(b[14][1:] + b[17])) + arrow + \
+             box("📨", b[12][0], J(b[12][1:] + b[16]), "accent") + "</div>"
+        return S(title(b[0][0]), f'<div class="cs-tip"><div><b>{esc(b[1][0])}</b></div></div>', arrow,
+                 box("🪪", b[2][0], b[2][1], "accent"), arrow,
+                 box("❓", b[6][0], J(b[6][1:] + b[9]), "dark"),
+                 f'<div class="cs-split">{yes}{no}</div>')
+    P["p41"] = p41
+    P["p42"] = lambda b: S(title(J(b[0])), media("conference", pt("1", J(b[1])), warn(J(b[2])), tip(J(b[3]))), lab=J(b[4]))
+    P["p43"] = lambda b: S(title(J(b[0])), media("conference", pt("1", J(b[1])), tip(J(b[2]))), lab=J(b[3]))
+    P["p44"] = lambda b: S(title(J(b[0] + b[1])), media("conference", pt("1", J(b[2])), pt("2", J(b[3]))), lab=J(b[4]))
+    P["p45"] = lambda b: S(title(b[0][0]), hero_photo(b[0][0], J(b[1]), "remember"))
+    P["p46"] = lambda b: S(title(b[0][0]), hero_photo("Receptionist Training", b[0][0], "thanks"))
     return P
 
 LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Training", "file": "lesson07.js",
@@ -346,9 +407,7 @@ LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Traini
            "receptionist": {"id": 4, "var": "DAY4", "title": "Receptionist Training", "file": "lesson04.js",
                       "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
                       "canva": "https://www.canva.com/design/DAHWU0f4UhU/A3houRJtASX7fhKWBA5zFA/view",
-                      "pages": receptionist_pages, "repeats": set(),
-                      # The lesson's Canva deck stays as its last slide until the whole deck is rebuilt here.
-                      "tail": "receptionist_tail.json"}}
+                      "pages": receptionist_pages, "repeats": set()}}
 
 def main(name):
     L = LESSONS[name]

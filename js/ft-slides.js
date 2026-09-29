@@ -108,6 +108,9 @@ const css = `
 .cs-card.num .cs-ic{background:var(--orange);color:#fff;font-weight:800;font-size:18px;font-family:'Fraunces',Georgia,serif;}
 .cs-card.num.dark .cs-ic{background:#F0C08A;color:var(--navy);}
 .cs-card.num p{font-size:15px;color:var(--ink);} .cs-card.num.dark p{color:rgba(255,255,255,.9);}
+.cs-col{display:flex;flex-direction:column;gap:10px;min-width:0;}
+.cs-arrow{align-self:center;color:var(--orange);font-size:22px;font-weight:800;line-height:1;margin:-4px 0;}
+.cs-paras{display:flex;flex-direction:column;gap:6px;}
 .cs-card u{text-decoration-thickness:2px;text-underline-offset:2px;}
 .cs-hero.photo{background:linear-gradient(100deg,rgba(22,24,41,.96) 0%,rgba(22,24,41,.85) 45%,rgba(22,24,41,.25) 100%),var(--img) right center/cover no-repeat;}
 @media (max-width:760px){ .cs-media{grid-template-columns:1fr;} .cs-media > img{order:-1;aspect-ratio:16/7;} .cs-hero.photo{background:linear-gradient(rgba(22,24,41,.88),rgba(22,24,41,.88)),var(--img) center/cover no-repeat;} }

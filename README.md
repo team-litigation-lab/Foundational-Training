@@ -23,7 +23,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
 | 2 | Law Firm Communication | ✅ deck |
 | 3 | Personal Injury Process Flow | ✅ deck |
-| 4 | Receptionist Training | ✅ native slides (27, rebuilt from the deck's PDF), then the Canva deck |
+| 4 | Receptionist Training | ✅ native slides (46, rebuilt from the deck's PDF) |
 | 5 | Calendaring & Appointment Setting Training | ✅ deck |
 | 6 | Intake Specialist Training | ✅ deck |
 | 7 | Claims Specialist Training | ✅ native slides (119, rebuilt from the deck) |
@@ -43,7 +43,7 @@ Lessons 4 and 7 are no longer Canva embeds: each deck page is its own slide in t
 3. `python3 build/slides/make_scripts.py <deck>` writes that lesson's Presenter view scripts into `trainer/scripts.json` (see *How the program works*). The beats the notes don't have (the why, the question for the room, scenarios) are in `build/slides/<deck>_script.py`.
 4. Rebuild.
 
-Lesson 4 keeps its Canva deck as its last slide (`build/slides/receptionist_tail.json`, the lesson's `tail`) until the whole deck is rebuilt; remove `tail` from `make_lesson.py` then. Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/receptionist/img/`. Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
+Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/receptionist/img/`. Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 

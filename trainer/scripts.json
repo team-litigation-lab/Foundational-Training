@@ -1506,14 +1506,14 @@
   "deck": "receptionist",
   "sections": {
    "p01": {
-    "on": "Slide 1 of 28",
+    "on": "Slide 1 of 46",
     "why": "The receptionist is the first voice every caller hears, so the firm's first impression starts here.",
     "talk": "Welcome everyone. Today we cover the Receptionist Role: who calls the firm, what each caller needs, and what we can and can't say to them.",
     "walk": [],
     "ask": "Before we start: think of the last time you called an office. What made the call feel professional?"
    },
    "p02": {
-    "on": "Slide 2 of 28",
+    "on": "Slide 2 of 46",
     "why": "Every kind of caller reaches the firm through reception first, so professionalism on every call protects the firm.",
     "talk": "Receptionists are the first point of contact. In one shift you may speak with adjusters, opposing counsel, medical staff and clients, and each deserves the same professional, friendly tone.",
     "walk": [
@@ -1522,7 +1522,7 @@
     "ask": "Which of these callers do you think will be the hardest to handle, and why?"
    },
    "p03": {
-    "on": "Slide 3 of 28",
+    "on": "Slide 3 of 46",
     "why": "Some callers need us right away; being ready from the first minute means no urgent call is missed.",
     "talk": "Be on ready status as soon as the shift starts. Your core job is answering calls and relaying messages between the caller and the person they need, both ways.",
     "walk": [
@@ -1532,7 +1532,7 @@
     "ask": "Your shift starts at 9:00. What should already be done at 8:59?"
    },
    "p04": {
-    "on": "Slide 4 of 28",
+    "on": "Slide 4 of 46",
     "why": "Documents and call records that aren't saved are lost to the team.",
     "talk": "Reception also saves the documents that come in by fax or email, and logs every call and saved document in the LSH tracker so the team can find them.",
     "walk": [
@@ -1542,7 +1542,7 @@
     "ask": "Why does it matter that every call is logged, even a short one?"
    },
    "p05": {
-    "on": "Slide 5 of 28",
+    "on": "Slide 5 of 46",
     "why": "Knowing the type of caller in the first seconds tells you where the call goes.",
     "talk": "These are the common reception tasks. The first three: inquiry calls about the firm's services (potential leads), existing client inquiries, and sales calls.",
     "walk": [
@@ -1553,7 +1553,7 @@
     "ask": "How can you tell a potential lead from an existing client in the first few seconds?"
    },
    "p06": {
-    "on": "Slide 6 of 28",
+    "on": "Slide 6 of 46",
     "why": "These callers are connected to cases, so what you share with each one is limited.",
     "talk": "Next: calls from opposing counsel, medical providers and court staff. We'll go through the rules for each one.",
     "walk": [
@@ -1564,7 +1564,7 @@
     "ask": "Which of these three callers must you be the most careful with?"
    },
    "p07": {
-    "on": "Slide 7 of 28",
+    "on": "Slide 7 of 46",
     "why": "Insurance and outside parties call often, and routing and saving documents keeps the firm organized.",
     "talk": "The last group: insurance adjusters, and calls from other parties such as witnesses, mediators, government and law enforcement. Reception also handles call routing and saving documents and faxes.",
     "walk": [
@@ -1576,7 +1576,7 @@
     "ask": "Name one type of call from 'other parties' you'd expect to get."
    },
    "p08": {
-    "on": "Slide 8 of 28",
+    "on": "Slide 8 of 46",
     "why": "Leads are new business for the firm; handling them well can bring in a new client.",
     "talk": "A lead is anyone who has shown interest in the firm's legal services. Usually the call is where they share their email or other contact details with you.",
     "walk": [
@@ -1586,7 +1586,7 @@
     "ask": "What details would you make sure to get from a potential client?"
    },
    "p09": {
-    "on": "Slide 9 of 28",
+    "on": "Slide 9 of 46",
     "why": "Getting the lead to the right department quickly is how the firm keeps them.",
     "talk": "Once you've confirmed on a surface level that the caller is a potential client, transfer them to the right department, and follow the firm's procedures before you transfer.",
     "walk": [
@@ -1597,7 +1597,7 @@
     "scenario": "A caller says, 'I was rear-ended yesterday and my neck hurts. Can you help?' Walk through what you say and where the call goes."
    },
    "p10": {
-    "on": "Slide 10 of 28",
+    "on": "Slide 10 of 46",
     "why": "Clients call about their own case, so finding the right file first is everything.",
     "talk": "Clients call about case updates, loans and payments, medical appointments, transportation, and to reach their attorney. Get their first and last name, spelled correctly, and the date of loss, then search for the project in the CRM/CMS.",
     "walk": [
@@ -1607,7 +1607,7 @@
     "ask": "Why is the date of loss asked for along with the name?"
    },
    "p11": {
-    "on": "Slide 11 of 28",
+    "on": "Slide 11 of 46",
     "why": "Confidentiality protects the client, even when the caller is family.",
     "talk": "If no case comes up, check if the caller is calling on behalf of a client, like a parent, child, sibling or partner, and verify the name on the case. If you find the records, keep everything confidential and check the Case Type, Case Manager and Claims Assistant before the call goes anywhere.",
     "walk": [
@@ -1618,7 +1618,7 @@
     "scenario": "Role-play: one trainee calls as a client's sister asking about the settlement. The receptionist verifies, keeps details confidential and routes the call."
    },
    "p12": {
-    "on": "Slide 12 of 28",
+    "on": "Slide 12 of 46",
     "why": "Sales calls take time from real callers, and some are attempts to get information.",
     "talk": "A sales call is an unsolicited call from someone selling to the firm. It can be a cold call or a scheduled one, offering anything from products to legal services.",
     "walk": [
@@ -1628,7 +1628,7 @@
     "ask": "How can you tell a sales call from a real inquiry?"
    },
    "p13": {
-    "on": "Slide 13 of 28",
+    "on": "Slide 13 of 46",
     "why": "Social engineering calls try to get past reception with tricks; knowing the tactics keeps the firm safe.",
     "talk": "Watch for these tactics: claiming prior meetings, pretending to know the attorneys, selling AI or marketing, and robocalls. The handling is firm: no transfers, ask them to email, take a message only if they claim an appointment, and block or list persistent callers.",
     "walk": [
@@ -1648,7 +1648,7 @@
     "scenario": "Role-play: a confident salesperson insists they have a meeting with the managing attorney. The receptionist follows the proper handling steps."
    },
    "p14": {
-    "on": "Slide 14 of 28",
+    "on": "Slide 14 of 46",
     "why": "Talking to a represented opposing party breaks a core ethics rule, and it applies to staff too.",
     "talk": "Lawyers must not communicate with opposing parties who have counsel. The rule covers paralegals and case assistants as well, so never share any information without your supervising lawyer's permission.",
     "walk": [
@@ -1658,7 +1658,7 @@
     "ask": "Why does this rule apply to support staff, not only lawyers?"
    },
    "p15": {
-    "on": "Slide 15 of 28",
+    "on": "Slide 15 of 46",
     "why": "Every firm handles opposing counsel differently; asking first avoids a costly mistake.",
     "talk": "Confirm with the attorneys, case managers or paralegals whether you may speak with the opposing counsel's side at all, and follow the firm's SOPs. When in doubt, ask before you do anything.",
     "walk": [
@@ -1668,7 +1668,7 @@
     "ask": "Who would you ask first at our firm?"
    },
    "p16": {
-    "on": "Slide 16 of 28",
+    "on": "Slide 16 of 46",
     "why": "Confirming who is calling, and never discussing facts, protects the case.",
     "talk": "Make sure the caller is a licensed attorney before taking any action, and never discuss case facts, under any circumstances.",
     "walk": [
@@ -1678,7 +1678,7 @@
     "ask": "The caller says, 'I just need to confirm the date of the accident.' What do you say?"
    },
    "p17": {
-    "on": "Slide 17 of 28",
+    "on": "Slide 17 of 46",
     "why": "A call that isn't passed on or logged can mean a missed deadline.",
     "talk": "Either transfer the call to the right attorney or paralegal, or take a detailed message. Then tag them in the CRM so the follow-up is tracked.",
     "walk": [
@@ -1688,7 +1688,7 @@
     "ask": "What makes a message 'detailed'?"
    },
    "p18": {
-    "on": "Slide 18 of 28",
+    "on": "Slide 18 of 46",
     "why": "Medical providers need information too, but only what the attorney approves.",
     "talk": "Medical offices call about case status, representation, claim information, appointments, client questions, and bills or records. Don't share client information they didn't ask for, and confirm with the attorney what you may disclose or where the call should go.",
     "walk": [
@@ -1698,7 +1698,7 @@
     "ask": "A clinic asks for the client's claim number. What do you check first?"
    },
    "p19": {
-    "on": "Slide 19 of 28",
+    "on": "Slide 19 of 46",
     "why": "Court calls often involve deadlines the firm can't miss.",
     "talk": "Court staff call about litigation cases, to give information or to reach the litigation department about court-scheduled mandates. Always direct them to the correct staff member.",
     "walk": [
@@ -1708,7 +1708,7 @@
     "ask": "Who in the firm usually handles calls from the court?"
    },
    "p20": {
-    "on": "Slide 20 of 28",
+    "on": "Slide 20 of 46",
     "why": "A missed court call can hurt a case, so it is always urgent.",
     "talk": "Treat court calls as urgent and try a live or warm transfer. If the attorney isn't available, go to the supervising attorney or paralegal, or coordinate an immediate callback.",
     "walk": [
@@ -1722,7 +1722,7 @@
     "scenario": "The court clerk calls about a hearing moved to tomorrow and the attorney is in a deposition. Walk through what you do."
    },
    "p21": {
-    "on": "Slide 21 of 28",
+    "on": "Slide 21 of 46",
     "why": "The claim number and DOL find the right file, and a client's personal details must never be given out.",
     "talk": "Besides the usual questions, always ask insurance callers for the claim number and date of loss. They will ask for index information like DOB or SSN, which can be used against the client and the firm. We never give that information.",
     "walk": [
@@ -1732,7 +1732,7 @@
     "ask": "An adjuster asks for the client's date of birth 'to verify.' What do you say?"
    },
    "p22": {
-    "on": "Slide 22 of 28",
+    "on": "Slide 22 of 46",
     "why": "Adjusters call about decisions that affect the case's value, so the right person must answer.",
     "talk": "Adjuster calls cover demand responses, settlement offers, liability decisions, IMEs, recorded statements, extensions and status updates. If you're unsure what you can say, offer a callback and check with the supervising attorney or case manager first.",
     "walk": [
@@ -1742,7 +1742,7 @@
     "ask": "Which of these calls should always go to the attorney or case manager?"
    },
    "p23": {
-    "on": "Slide 23 of 28",
+    "on": "Slide 23 of 46",
     "why": "Firm policy is your shield when an adjuster pushes for information.",
     "talk": "If an adjuster gives you a hard time, you can tell them it's the firm's policy. Requests should come in writing by fax or mail, and always check the SOPs before sharing anything.",
     "walk": [
@@ -1753,7 +1753,7 @@
     "scenario": "Role-play: an impatient adjuster demands the client's SSN over the phone. The receptionist refers to firm policy and asks for the request in writing."
    },
    "p24": {
-    "on": "Slide 24 of 28",
+    "on": "Slide 24 of 46",
     "why": "Witnesses and other parties are covered by ethics rules too.",
     "talk": "Be careful with witnesses: ethics rules govern contact with represented opposing parties. Generally, a lawyer may not communicate with someone represented by another lawyer, except in limited circumstances.",
     "walk": [
@@ -1763,7 +1763,7 @@
     "ask": "A witness calls wanting to talk about the accident. What do you do?"
    },
    "p25": {
-    "on": "Slide 25 of 28",
+    "on": "Slide 25 of 46",
     "why": "The no-contact rule covers anyone with counsel, and government offices call often.",
     "talk": "The rule extends to any represented party, not only the adversary. Receptionists often get calls from police records departments, city hall or county offices, probate courts and state agencies like SLED.",
     "walk": [
@@ -1777,7 +1777,7 @@
     "ask": "Why would a probate court call a PI firm?"
    },
    "p26": {
-    "on": "Slide 26 of 28",
+    "on": "Slide 26 of 46",
     "why": "Government calls usually concern documents the case needs, so the right routing moves the case forward.",
     "talk": "Government and law enforcement call to follow up on reports, process FOIA requests, verify backgrounds, request missing authorizations and give case or incident numbers. Your role: identify the request, confirm what's missing, never explain legal meaning, and route it to records, the assigned paralegal, or the attorney if urgent.",
     "walk": [
@@ -1797,13 +1797,217 @@
     "scenario": "A police records clerk calls saying the firm's FOIA request is missing a signed HIPAA authorization. Walk through how you handle and route the call."
    },
    "p27": {
-    "on": "Slide 27 of 28",
+    "on": "Slide 27 of 46",
     "why": "Spam and malicious robocalls reach reception too, and they shouldn't get any further.",
     "talk": "Other parties also include the occasional spam or malicious robocall. Handle them the way we covered for sales calls: identify, don't transfer, block, and log them when needed.",
     "walk": [
      "Occasional \"spam\" or malicious robocalls"
     ],
     "ask": "What would make you suspect a call is malicious rather than just spam?"
+   },
+   "p28": {
+    "on": "Slide 28 of 46",
+    "why": "Callers hear a smile; a warm tone builds trust from the first second.",
+    "talk": "Welcoming and building rapport: the easiest way to sound friendly and inviting is to smile while you talk. The caller can hear it in your voice.",
+    "walk": [
+     "If you want to sound friendly and inviting, smiling is the easiest way to ensure the perfect tone of voice."
+    ],
+    "ask": "Try it: say 'Thank you for calling, how may I help you?' once without smiling and once smiling. What changed?"
+   },
+   "p29": {
+    "on": "Slide 29 of 46",
+    "why": "A wrong name, number or date in a message sends the call to the wrong place.",
+    "talk": "Confirm your content: a good receptionist is meticulous. Take notes, spell out names, use phonetics, and repeat the details back so everything is recorded correctly.",
+    "walk": [
+     "A good RECEPTIONIST is meticulous.",
+     "A good receptionist carefully records and confirms all caller information by taking notes, spelling out names, using phonetics, and repeating details for accuracy."
+    ],
+    "ask": "How would you spell 'Nguyen' back to a caller using phonetics?",
+    "scenario": "Role-play: a caller gives a long name and a callback number quickly. The receptionist confirms both using phonetics and repeats them back."
+   },
+   "p30": {
+    "on": "Slide 30 of 46",
+    "why": "Saying 'I don't know' ends the conversation and makes the firm sound unprepared.",
+    "talk": "Sound like an expert: you'll often be asked things you don't know, especially when you're new. But 'I don't know' is a dead end, so we never leave the caller there.",
+    "walk": [
+     "A good RECEPTIONIST should be knowledgeable.",
+     "Chances are very good that you’ll be asked questions that you don’t know how to answer, especially if you’re new to a job. But saying “I don’t know” is a dead end."
+    ],
+    "ask": "What could you say instead of 'I don't know'?"
+   },
+   "p31": {
+    "on": "Slide 31 of 46",
+    "why": "The right phrase keeps the caller confident in the firm even when you don't have the answer yet.",
+    "talk": "Use these phrases instead: 'Let me find out for you', 'I'd be happy to look into that', or 'Great question! Let me put you in touch with the best person to answer it.' Starting with 'Let me' or 'I'd be happy to' beats the 'I don't know' blues.",
+    "walk": [
+     "Instead, opt for these examples.",
+     "“Let me find out for you”",
+     "“I’d be happy to look into that”",
+     "“Great question! Let me put you in touch with the best person to answer it.”",
+     "Phrases beginning in “Let me” and “I’d be happy to” are great ways to beat the “I don’t know” blues."
+    ],
+    "ask": "A caller asks about the statute of limitations in their state. What do you say?"
+   },
+   "p32": {
+    "on": "Slide 32 of 46",
+    "why": "Callers need to trust that their message will reach the right person exactly as they said it.",
+    "talk": "Paraphrase the message: practice active listening, and read the message back to the caller word for word to make sure it's accurate.",
+    "walk": [
+     "A good RECEPTIONIST should practice active listening.",
+     "Reading the message back to the caller word-for-word is another good practice to ensure accuracy. Callers love to know that their messages will be relayed accurately."
+    ],
+    "ask": "What's the difference between hearing and actively listening on a call?"
+   },
+   "p33": {
+    "on": "Slide 33 of 46",
+    "why": "Repeating the message back catches mistakes before they reach the team.",
+    "talk": "Repeating the message back reassures the caller that it will be relayed accurately, and it's your chance to catch any mistakes.",
+    "walk": [
+     "What better way to assure them of this than repeating their messages back to them it’s also a great way to look out for mistakes."
+    ],
+    "ask": "Practice: I'll give you a message; read it back to me before I hang up."
+   },
+   "p34": {
+    "on": "Slide 34 of 46",
+    "why": "Using the file's notes lets you understand a client even when communication is difficult.",
+    "talk": "Attention to detail: for existing clients, review the notes in the file during the call, and use context clues to work through any communication difficulties.",
+    "walk": [
+     "A good RECEPTIONIST is attentive.",
+     "For existing clients, review all notes during the call and use context clues to overcome communication difficulties."
+    ],
+    "ask": "Where in the CRM would you look for notes while a client is on the line?"
+   },
+   "p35": {
+    "on": "Slide 35 of 46",
+    "why": "Sharing information before verifying the caller can expose client details.",
+    "talk": "Before you transfer or end the call, gather all the details you need and authenticate the caller before you share any information.",
+    "walk": [
+     "Before transferring or ending the call, gather all necessary details and authenticate the caller before sharing any information."
+    ],
+    "ask": "What details would you verify before sharing anything with a caller?"
+   },
+   "p36": {
+    "on": "Slide 36 of 46",
+    "why": "Reception is busy; handling several tasks during a call keeps everything moving.",
+    "talk": "Adaptability and multitasking: adjust to any situation. Manage your time, and while you're speaking with the caller, take notes, send emails and notify the call recipient.",
+    "walk": [
+     "A good RECEPTIONIST should be able to adjust to any situation.",
+     "A good receptionist manages time efficiently and multitasks by taking notes, sending emails, and notifying the call recipient while speaking with the caller."
+    ],
+    "ask": "Which of these tasks is hardest to do while talking, and how would you manage it?"
+   },
+   "p37": {
+    "on": "Slide 37 of 46",
+    "why": "Staying calm under pressure is what keeps the day's tasks done right.",
+    "talk": "Receptionists multitask, stay calm under pressure, and prioritize so the day's responsibilities get done.",
+    "walk": [
+     "Receptionists must multitask, stay calm under pressure, and prioritize tasks effectively to meet daily responsibilities."
+    ],
+    "ask": "Three lines ring at once and an email says 'urgent'. What do you do first?"
+   },
+   "p38": {
+    "on": "Slide 38 of 46",
+    "why": "Not every call follows a script; initiative fills the gaps.",
+    "talk": "Take initiative and think on your feet when the situation demands it, and adjust to uncertainties quickly.",
+    "walk": [
+     "Receptionists should be able to take initiative and think on their feet when the situation demands it.",
+     "A good receptionist should be able to adjust to uncertainties and adjust according without sparing time."
+    ],
+    "ask": "Share a time you had to think on your feet at work.",
+    "scenario": "Role-play: the attorney a caller needs just left for court and the caller says it's urgent. The receptionist adapts without keeping them waiting."
+   },
+   "p39": {
+    "on": "Slide 39 of 46",
+    "why": "Payment questions are common, and the answers depend on who is calling.",
+    "talk": "Payment calls: some attorneys offer free consultations, others charge a fee or bill hourly. Clients may ask about their balance, and medical providers call about treatment bills. Offer the payment methods available.",
+    "walk": [
+     "CONSULTATION FEES",
+     "Some attorneys offer free consultations, while others charge an initial consultation fee or bill at their regular or reduced hourly rate.",
+     "EXISTING CLIENT’S PAYMENTS",
+     "Some clients would ask regarding their outstanding balance or some medical providers will call regarding client’s treatment bills.",
+     "PROVIDE PAYMENT OPTIONS",
+     "Provide them the different payment methods available."
+    ],
+    "ask": "A potential client asks, 'How much does a consultation cost?' What do you check first?"
+   },
+   "p40": {
+    "on": "Slide 40 of 46",
+    "why": "Payment details are confidential, and wrong figures cause real problems for the client.",
+    "talk": "Always verify the caller before discussing payments. Double-check the figures in the system and give only accurate amounts. After confirming, record the transaction in the CRM and save the receipts and confirmations.",
+    "walk": [
+     "AUTHENTICATE THE CALLER",
+     "Always verify the caller’s identity before discussing payment details to protect confidentiality and follow firm policies.",
+     "REVIEW THE AMOUNT CAREFULLY",
+     "Double-check payment details in the system and provide only accurate figures clearly and confidently.",
+     "ENSURE PROPER DOCUMENTATION",
+     "After confirming payment details, record the transaction in the CRM with the client’s name, date, payment method, and amount, and save all related receipts and confirmations."
+    ],
+    "ask": "What goes into the CRM after a payment call?"
+   },
+   "p41": {
+    "on": "Slide 41 of 46",
+    "why": "This decision tree keeps figures and settlement details with the people allowed to discuss them.",
+    "talk": "Follow the tree: authenticate the caller and case, then ask the core question. If they want specific figures, timelines or settlement offers, don't disclose or estimate; route to the senior legal advisor or compliance manager. If not, handle the general inquiry, log it in the CRM, and route it by internal ticket.",
+    "walk": [
+     "INITIAL CONTACT: “PAYMENT/SETTLEMENT ENQUIRY”",
+     "IDENTITY & VERIFICATION:",
+     "“Authenticate Caller Name and Case ID”",
+     "CORE QUESTION:",
+     "“Is the caller requesting specific financial figures, legal timelines, or settlement offers?”",
+     "COMPLIANCE RESTRICTION:",
+     "SPECIALIZED ROUTING:",
+     "“Connect to Senior Legal Advisor or Compliance Manager”",
+     "GENERAL INQUIRY HANDLER:",
+     "“For procedural or status questions, provide available public case information.”",
+     "COMMUNICATION LOG:",
+     "“Take a detailed message and log the query in the CRM.”",
+     "ACTION:",
+     "“Route message and case notes to the appropriate department via internal ticket.”"
+    ],
+    "ask": "A client asks, 'How much will my settlement be?' Which branch of the tree is that?",
+    "scenario": "Walk the room through two calls: a client asking for their settlement amount, and a provider asking whether a payment was sent. Trace each through the decision tree."
+   },
+   "p42": {
+    "on": "Slide 42 of 46",
+    "why": "A cold transfer risks dropping the caller, so we set expectations first.",
+    "talk": "Routing calls: a cold transfer sends the call on without telling the caller. It isn't recommended because the call may drop. Before putting someone on hold, tell them you'll put them through as soon as someone is available.",
+    "walk": [
+     "This is when you transfer the call right away without advising your caller they are about to be transferred to another line."
+    ],
+    "ask": "What would you say to a caller before placing them on hold?"
+   },
+   "p43": {
+    "on": "Slide 43 of 46",
+    "why": "A warm transfer makes sure the caller actually reaches someone.",
+    "talk": "A warm transfer introduces both parties, or at least confirms by listening that the transfer went through. It's recommended, especially when call volume is low, for courtesy and better service.",
+    "walk": [
+     "This is when you introduce both parties to one another or at least make sure (by listening) that the call was transferred properly and that it was neither dropped nor disconnected."
+    ],
+    "ask": "How would you introduce a caller to the attorney in a warm transfer?"
+   },
+   "p44": {
+    "on": "Slide 44 of 46",
+    "why": "Some callers need a third person on the line, like a translator, to be helped.",
+    "talk": "A conference call starts like a warm transfer, but you stay on the line and join the conversation. It's usually used when a caller needs a translator.",
+    "walk": [
+     "These calls’ process starts similarly to a warm transfer call, however the only difference is that you stay on the line and join the conversation.",
+     "This is usually done when a caller needs a translator and the receptionist calls for a translator to join the line."
+    ],
+    "ask": "A Spanish-speaking caller needs help. Walk through setting up the conference call."
+   },
+   "p45": {
+    "on": "Slide 45 of 46",
+    "why": "Every client and firm is different, and the role adapts to them.",
+    "talk": "Remember: your tasks and role can change depending on the client's needs and requirements.",
+    "walk": [],
+    "ask": "What's one thing you'd ask a new client firm about how they want calls handled?"
+   },
+   "p46": {
+    "on": "Slide 46 of 46",
+    "why": "Close the session and check what the trainees will take into their first shift.",
+    "talk": "Thank you! That's the Receptionist Role. Let's finish with questions.",
+    "walk": [],
+    "ask": "What's one habit from today you'll use on your very first call?"
    }
   }
  }
