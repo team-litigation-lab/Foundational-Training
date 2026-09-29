@@ -299,6 +299,45 @@ window.presenterCues = function(d, slide){
 .ft-pg-nav b{font-size:13px;color:var(--navy);text-align:center;flex:1;min-width:0;}
 .ft-tnote{margin-top:12px;} .ft-tnote p, .ft-tnote li{font-size:13.5px;}`; document.head.appendChild(st); })();
 
+/* Presenter view console: on a Canva deck step, the preview area becomes a button that brings the
+   slides window to the front. The preview itself is a locked copy (clicks there can't reach the room),
+   and Canva doesn't let another page turn its deck, so the deck is turned in the slides window. */
+function ftDeckConsole(){
+  const box = document.getElementById("pvMirror");
+  if(!box || !state.presenting) return;
+  const d = DAYS.find(x=>x.id===state.dayId), slides = d ? buildDaySlides(d) : [], slide = slides[state.lessonSlide||0];
+  const sec = slide && slide.type==="ftSection" ? d.sections[slide.index] : null;
+  const isDeck = !!(sec && /class="canva-frame"/.test(sec.html));
+  let btn = document.getElementById("ftDeckGo");
+  if(!isDeck){ if(btn) btn.remove(); return; }
+  const canva = /canva\.com\/design\//.test(sec.html), kind = canva ? "deck" : "game";
+  if(btn && btn.dataset.kind === kind) return;
+  if(btn) btn.remove();
+  btn = document.createElement("button");
+  btn.type = "button"; btn.id = "ftDeckGo"; btn.className = "ft-deck-go"; btn.dataset.kind = kind;
+  btn.innerHTML = canva
+    ? `<b>🎞 Turn the deck’s pages</b><span>Click here to bring the slides window to the front, then click the deck and use ← → (or Canva’s arrows).</span>`
+    : `<b>🎮 Run it in the slides window</b><span>Click here to bring the slides window to the front, then click inside it to play.</span>`;
+  btn.onclick = ftFocusSlides;
+  box.appendChild(btn);
+}
+window.ftFocusSlides = function(){
+  try{
+    if(typeof PV !== "undefined" && PV.win && !PV.win.closed){ PV.win.focus(); return; }
+  }catch(e){}
+  if(typeof presenterReopen === "function") presenterReopen();
+};
+const __ftPvRefresh = window.presenterRefresh;
+if(typeof __ftPvRefresh === "function") window.presenterRefresh = function(){ const r = __ftPvRefresh.apply(this, arguments); try{ ftDeckConsole(); }catch(e){} return r; };
+const __ftAfterRender2 = window.afterRender;
+window.afterRender = function(){ const r = __ftAfterRender2.apply(this, arguments); try{ ftDeckConsole(); }catch(e){} return r; };
+(function(){ const st = document.createElement("style"); st.textContent = `
+.ft-deck-go{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;border:0;border-radius:12px;background:#141833;color:#fff;font:inherit;text-align:center;cursor:pointer;}
+.ft-deck-go b{font-family:'Fraunces',Georgia,serif;font-size:22px;color:#F0C08A;}
+.ft-deck-go span{font-size:14px;line-height:1.5;max-width:420px;opacity:.9;}
+.ft-deck-go:hover{background:#1F2440;} .ft-deck-go:hover b{text-decoration:underline;}
+.ft-deck-go:focus-visible{outline:3px solid #F0C08A;outline-offset:-3px;}`; document.head.appendChild(st); })();
+
 /* ---------- 3. days open when the trainer opens them ----------
    settings:opendays = {all:[day ids], batches:{"<batch key>":[day ids]}} */
 state.ftOpenDays = null;

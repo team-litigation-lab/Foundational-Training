@@ -89,8 +89,11 @@ build_tag = "ft-" + datetime.datetime.utcnow().strftime("%Y.%m.%d-%H%M")
 s, n = re.subn(r'var APP_BUILD = "[^"]*";', f'var APP_BUILD = "{build_tag}";', s, count=1)
 if not n:
     sys.exit("MISSING: APP_BUILD")
+# js/eapa-updates.js is rebuilt here too (with this program's patches), so it gets this build's tag:
+# browsers then always fetch the version that matches this index.html.
+s, n = re.subn(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', f'<script src="/js/eapa-updates.js?v={build_tag}"></script>', s, count=1)
 m = re.search(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', s)
-if not m:
+if not (n and m):
     sys.exit("MISSING: eapa-updates.js script tag")
 s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker-rules.js?v={build_tag}"></script>'
