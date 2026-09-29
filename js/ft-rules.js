@@ -5,7 +5,7 @@
      • Why this matters: training simulates the real world; weekly score audits; no progress after
        coaching and feedback may mean offboarding.
      • Rules (also: meeting schedules sent on the discussion's date and time; acknowledge the trainer's
-       Discord messages, emoji or "Noted"): strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
+       Discord messages, emoji or "Noted"; don't rely on AI: privilege and HIPAA): strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
        discussions; the 5-minute response rule (notifications on); naming conventions followed strictly.
      • Auxes: reporting your status in the two Discord channels, no double stamping.
      • #training-reminders (Day 1 → Training Reminders), with its screenshots.
@@ -310,6 +310,8 @@ function renderRules(){
         <span>Reply to it, or acknowledge it: an emoji reaction or “Noted” is enough. It shows you’re responsive and reliable.</span></div>
       <div class="ftr-rule"><b>📛 Follow the naming conventions strictly.</b>
         <span>Name your Hubstaff To-Dos, test screenshots and files exactly as given.</span></div>
+      <div class="ftr-rule"><b>🤖 Use of AI: don’t rely on it.</b>
+        <span>As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. Every document we handle is sensitive and must be treated with the utmost care: it’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.</span></div>
     </section>
     <section class="ftr-sec">
       <h2>🟢 Auxes: reporting your status</h2>

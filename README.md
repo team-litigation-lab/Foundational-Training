@@ -53,6 +53,7 @@ The **📌 Training Orientation and Rules** card is first on the dashboard, abov
   - The 5-minute rule: reply to messages within 5 minutes, with notifications turned on.
   - Acknowledge every Discord message from the trainer: a reply, an emoji reaction or "Noted".
   - Follow the naming conventions strictly.
+  - Use of AI: don't rely on it. Trainees develop their own reasoning and discretion, and every document is sensitive (attorney-client privilege, confidentiality, HIPAA): no client, case or medical information goes into an AI tool.
 - **Auxes:** the trainee reports their status in 2 Discord channels:
   - #⏳-timestamps: `!in` at the start of the shift and `!back` after a break. LSH BOT replies, e.g. "@name is back".
   - #batch-group-channel: `In` at 8:00 AM PST.
