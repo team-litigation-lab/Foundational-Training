@@ -6,9 +6,10 @@
        3 Questions That You Still Have, and Rate Your Understanding.
        It saves to their account (monitor:<id>) as they type.
      • Admin → 📒 Monitoring Sheets: batch → trainee → each discussion, with
-       automated feedback. The feedback comes from fixed checks (MON_RULES)
-       on what the trainee wrote and on the discussion's key points; no AI
-       writes it. The trainer's metrics go in MON_RULES when they're provided.
+       automated feedback from a rubric of metrics on what the trainee wrote and
+       on the discussion's key points; no AI writes it. Trainers improve the
+       rubric there (📏 Feedback Rubric): each save is a new version, used from
+       then on, and earlier versions can be restored.
      • Admin → 📒 Monitoring Sheets → Discussions and key points: the list of
        discussions (settings:monitor, everyone reads it), each with optional key
        points the takeaways should mention. Defaults: MON_DEFAULT_TOPICS.
@@ -36,49 +37,84 @@ const e = v => esc(String(v == null ? "" : v));
 // "takeaway 2" / "takeaways 1 and 4" / "takeaways 1, 3 and 4"
 const nums = a => (a.length === 1 ? "takeaway " : "takeaways ") + (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length-1]);
 
-/* ---------- the automated feedback: fixed checks, no AI ----------
-   Each rule: run(entry, topic) → {na} when it doesn't apply, else {pass, detail, fix}.
-   "fix" is the feedback line for the trainee. Add the trainer's metrics here. */
-const GENERAL = /^(i\s+)?(have\s+)?(learned|learnt|understood|understand|know|knew|discussed|studied|was taught)\b/i;
-const MON_RULES = [
-  {id:"date", label:"Date filled in", run:(x)=> has(x.date) ? {pass:true} : {pass:false, detail:"No date.", fix:"Add the date the topic was covered."}},
-  {id:"five", label:"All 5 takeaways written", run:(x)=>{
-    const n = (x.takeaways||[]).filter(has).length;
-    return n >= 5 ? {pass:true, detail:"5 of 5."} : {pass:false, detail:`${n} of 5.`, fix:`Write all 5 takeaways, not just ${n}.`};
+const FMA = {rows:null, loading:false, open:{}, topicOpen:{}, closed:{}, editing:false, draft:"", rubric:null, rdraft:null, rOpen:false};
+/* ---------- the automated feedback: a rubric of metrics, no AI ----------
+   Trainers improve it in Admin → 📒 Monitoring Sheets → 📏 Feedback Rubric: switch metrics on or off, change their
+   settings, weights and feedback lines, add metrics, and save each change as a new version. The latest version
+   scores every entry from then on; earlier versions are kept and can be restored.
+   Stored in monadmin:rubric (trainers only): {current:{version, savedAt, note, metrics}, history:[older versions]}.
+   A metric: {id, type (MON_TYPES), label, on, weight, fix, …its settings}. In "fix", the feedback line, these are
+   filled in: {which} (e.g. "takeaways 1 and 4"), {count}, {min}, {missing}, {found}, {sentences}. */
+const takes = x => (x.takeaways||[]).map((v,i)=>({v:String(v||"").trim(), n:i+1})).filter(o=>o.v);
+const list = v => String(v||"").split(",").map(t=>t.trim()).filter(Boolean);
+const MON_TYPES = {
+  date: {name:"Date filled in", params:[], run:(m,x)=> has(x.date) ? {pass:true} : {pass:false, detail:"No date."}},
+  count: {name:"Number of takeaways", params:[["min","Takeaways required","number"]], run:(m,x)=>{
+    const n = (x.takeaways||[]).filter(has).length, min = +m.min || 5;
+    return {pass:n >= min, detail:`${n} of ${min}.`, vars:{count:n, min}};
   }},
-  {id:"sentences", label:"Complete sentences", run:(x)=>{
-    const t = (x.takeaways||[]).map((v,i)=>({v:String(v||"").trim(), n:i+1})).filter(o=>o.v);
-    if(!t.length) return {na:true};
-    const bad = t.filter(o => words(o.v) < 4 || !/^[A-Z0-9“"(]/.test(o.v) || !/[.!?)”"]$/.test(o.v));
-    const n = bad.map(o=>o.n);
-    return bad.length ? {pass:false, detail:`${nums(n).replace(/^t/, "T")}.`, fix:`Write ${nums(n)} as ${bad.length===1?"a complete sentence":"complete sentences"}: a capital letter at the start, a period at the end, and not just a word or a phrase.`}
-      : {pass:true};
+  sentences: {name:"Complete sentences", params:[["minWords","Fewest words in a sentence","number"]], run:(m,x)=>{
+    const t = takes(x); if(!t.length) return {na:true};
+    const bad = t.filter(o => words(o.v) < (+m.minWords || 4) || !/^[A-Z0-9“"(]/.test(o.v) || !/[.!?)”"]$/.test(o.v)).map(o=>o.n);
+    return bad.length ? {pass:false, detail:`${nums(bad).replace(/^t/, "T")}.`, vars:{which:nums(bad), sentences: bad.length===1 ? "a complete sentence" : "complete sentences"}} : {pass:true};
   }},
-  {id:"specific", label:"Specific, not general", run:(x)=>{
-    const t = (x.takeaways||[]).map((v,i)=>({v:String(v||"").trim(), n:i+1})).filter(o=>o.v);
-    if(!t.length) return {na:true};
-    const gen = t.filter(o => words(o.v) < 7 || (GENERAL.test(o.v) && words(o.v) < 16));   // too short to be specific, or "I learned about …"
-    const n = gen.map(o=>o.n);
-    return gen.length ? {pass:false, detail:`${nums(n).replace(/^t/, "T")}.`, fix:`Make ${nums(n)} specific: say what you learned and how it works or why it matters, not just the topic (not “I learned about auto liability.”).`}
-      : {pass:true};
+  specific: {name:"Specific, not general", params:[["minWords","Fewest words to be specific","number"], ["phrases","General openings (comma-separated)","text"], ["maxWords","A general opening is fine from this many words","number"]], run:(m,x)=>{
+    const t = takes(x); if(!t.length) return {na:true};
+    const openers = list(m.phrases).map(p=>p.toLowerCase());
+    const gen = t.filter(o=>{ const low = o.v.toLowerCase().replace(/^i\s+have\s+/, "i ");
+      return words(o.v) < (+m.minWords || 7) || (openers.some(p=>low.startsWith(p)) && words(o.v) < (+m.maxWords || 16)); }).map(o=>o.n);
+    return gen.length ? {pass:false, detail:`${nums(gen).replace(/^t/, "T")}.`, vars:{which:nums(gen)}} : {pass:true};
   }},
-  {id:"discussion", label:"Based on the discussion", run:(x, topic)=>{
-    const keys = (topic && topic.keys || []).filter(has);
-    if(!keys.length) return {na:true};
+  keypoints: {name:"Based on the discussion (its key points)", params:[["share","Key points to mention (%)","number"]], run:(m,x,topic)=>{
+    const keys = (topic && topic.keys || []).filter(has); if(!keys.length) return {na:true};
     const text = (x.takeaways||[]).join(" ").toLowerCase();
-    const hit = keys.filter(k => text.includes(String(k).toLowerCase().trim()));
-    const need = Math.ceil(keys.length / 2);
-    return hit.length >= need ? {pass:true, detail:`${hit.length} of ${keys.length} key points.`}
-      : {pass:false, detail:`${hit.length} of ${keys.length} key points.`, fix:`Base your takeaways on the discussion. Cover its key points, such as ${keys.filter(k=>!hit.includes(k)).slice(0,3).join(", ")}.`};
+    const hit = keys.filter(k=>text.includes(String(k).toLowerCase().trim()));
+    const need = Math.max(1, Math.ceil(keys.length * (m.share == null || m.share === "" ? 50 : +m.share) / 100));
+    return {pass:hit.length >= need, detail:`${hit.length} of ${keys.length} key points.`, vars:{missing:keys.filter(k=>!hit.includes(k)).slice(0,3).join(", ")}};
   }},
-  {id:"rating", label:"Understanding rated", run:(x)=> x.rating ? {pass:true, detail:RATINGS[x.rating-1]} : {pass:false, detail:"Not rated.", fix:"Rate your understanding of the topic."}}
-];
+  rating: {name:"Understanding rated", params:[], run:(m,x)=> x.rating ? {pass:true, detail:RATINGS[x.rating-1]} : {pass:false, detail:"Not rated."}},
+  questions: {name:"Questions filled in (or “None”)", params:[], run:(m,x)=> (x.questions||[]).some(has) ? {pass:true} : {pass:false, detail:"No questions."}},
+  avoid: {name:"Avoid these words", params:[["words","Words or phrases (comma-separated)","text"]], run:(m,x)=>{
+    const t = takes(x), w = list(m.words); if(!t.length || !w.length) return {na:true};
+    const re = new RegExp(`(^|[^a-z])(${w.map(v=>v.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?=$|[^a-z])`, "i");
+    const hit = t.filter(o=>re.test(o.v));
+    const found = [...new Set(hit.map(o=>(o.v.match(re)||[])[2]).filter(Boolean).map(v=>v.toLowerCase()))];
+    return hit.length ? {pass:false, detail:`${nums(hit.map(o=>o.n)).replace(/^t/, "T")}: ${found.join(", ")}.`, vars:{which:nums(hit.map(o=>o.n)), found:found.join(", ")}} : {pass:true};
+  }},
+  include: {name:"Mention at least one of these", params:[["words","Words or phrases (comma-separated)","text"]], run:(m,x)=>{
+    const w = list(m.words); if(!w.length) return {na:true};
+    const text = (x.takeaways||[]).join(" ").toLowerCase();
+    const found = w.filter(v=>text.includes(v.toLowerCase()));
+    return found.length ? {pass:true, detail:found.join(", ")} : {pass:false, detail:"None mentioned.", vars:{missing:w.slice(0,3).join(", ")}};
+  }},
+  minwords: {name:"Minimum words per takeaway", params:[["min","Words","number"]], run:(m,x)=>{
+    const t = takes(x); if(!t.length) return {na:true};
+    const short = t.filter(o=>words(o.v) < (+m.min || 10)).map(o=>o.n);
+    return short.length ? {pass:false, detail:`${nums(short).replace(/^t/, "T")}.`, vars:{which:nums(short), min:+m.min || 10}} : {pass:true};
+  }}
+};
+const MON_DEFAULT_RUBRIC = {version:1, savedAt:"", note:"The starting metrics", metrics:[
+  {id:"date", type:"date", label:"Date filled in", on:true, weight:1, fix:"Add the date the topic was covered."},
+  {id:"five", type:"count", label:"All 5 takeaways written", on:true, weight:1, min:5, fix:"Write all {min} takeaways, not just {count}."},
+  {id:"sentences", type:"sentences", label:"Complete sentences", on:true, weight:1, minWords:4, fix:"Write {which} as {sentences}: a capital letter at the start, a period at the end, and not just a word or a phrase."},
+  {id:"specific", type:"specific", label:"Specific, not general", on:true, weight:1, minWords:7, maxWords:16,
+   phrases:"I learned, I learnt, I understood, I understand, I know, I knew, I discussed, I studied, I was taught, We learned, We discussed",
+   fix:"Make {which} specific: say what you learned and how it works or why it matters, not just the topic (not “I learned about auto liability.”)."},
+  {id:"discussion", type:"keypoints", label:"Based on the discussion", on:true, weight:1, share:50, fix:"Base your takeaways on the discussion. Cover its key points, such as {missing}."},
+  {id:"rating", type:"rating", label:"Understanding rated", on:true, weight:1, fix:"Rate your understanding of the topic."}
+]};
+const rubricNow = ()=> (FMA.rubric && FMA.rubric.current) || MON_DEFAULT_RUBRIC;
 function started(x){ return !!x && (has(x.date) || (x.takeaways||[]).some(has) || (x.questions||[]).some(has) || !!x.rating); }
-function review(x, topic){
-  const results = MON_RULES.map(r => Object.assign({id:r.id, label:r.label}, r.run(x||{}, topic)));
-  const on = results.filter(r => !r.na);
-  const pct = on.length ? Math.round(100 * on.filter(r => r.pass).length / on.length) : 0;
-  return {results, pct, fixes: on.filter(r => !r.pass && r.fix).map(r => r.fix), needsHelp: x && x.rating === 1};
+function review(x, topic, rubric){
+  const r = rubric || rubricNow();
+  const results = r.metrics.filter(m=>m.on !== false && MON_TYPES[m.type]).map(m=>{
+    const o = MON_TYPES[m.type].run(m, x||{}, topic) || {na:true};
+    const fix = o.pass || o.na ? "" : String(m.fix||"").replace(/\{(\w+)\}/g, (all,k)=> o.vars && o.vars[k] != null && o.vars[k] !== "" ? o.vars[k] : all);
+    return Object.assign({id:m.id, label:m.label || MON_TYPES[m.type].name, weight:m.weight == null || m.weight === "" ? 1 : +m.weight}, o, {fix});
+  });
+  const on = results.filter(o=>!o.na), total = on.reduce((a,o)=>a+o.weight, 0);
+  const pct = total ? Math.round(100 * on.filter(o=>o.pass).reduce((a,o)=>a+o.weight, 0) / total) : 0;
+  return {results, pct, version:r.version, fixes:on.filter(o=>!o.pass && o.fix).map(o=>o.fix), needsHelp: !!x && x.rating === 1};
 }
 // Filled = every part filled in (the date, all 5 takeaways, the rating); the checks judge the quality.
 function statusOf(x){
@@ -180,11 +216,11 @@ window.FTMon = {
 };
 
 /* ---------- admin: every trainee's sheet, with the automated feedback ---------- */
-const FMA = {rows:null, loading:false, open:{}, topicOpen:{}, closed:{}, editing:false, draft:""};
 async function loadAdmin(){
   FMA.loading = true;
   try{
     await loadTopics();
+    FMA.rubric = (await sharedGet("monadmin:rubric").catch(()=>null)) || {current:MON_DEFAULT_RUBRIC, history:[]};
     const keys = (await sharedList("monitor:")) || [];
     const ids = keys.map(k=>String(k).replace(/^monitor:/, ""));
     const rows = await Promise.all(ids.map(async id=>{
@@ -214,7 +250,7 @@ function entryReport(x, t, rowId){
       <span class="ftm-muted">${e(x.date ? TRDate(x.date) : "no date")}</span></div>
     ${open ? `<div class="ftm-arep-body">
       <div class="ftm-checks">${r.results.filter(c=>!c.na).map(c=>`<div class="${c.pass?"ok":"bad"}">${c.pass?"✅":"❌"} ${e(c.label)}${c.detail?` <small>${e(c.detail)}</small>`:""}</div>`).join("")}</div>
-      <div class="ftm-afb"><b>Automated Feedback</b><pre>${e(feedbackText("", t, r))}</pre>
+      <div class="ftm-afb"><b>Automated Feedback <span class="ftm-muted">· rubric v${r.version}</span></b><pre>${e(feedbackText("", t, r))}</pre>
         <button class="btn btn-ghost btn-sm" type="button" onclick="FTMonAdmin.copy('${rowId}','${t.id}')">📋 Copy Feedback</button></div>
       <div class="ftm-awrote"><b>What They Wrote</b>
         <ol>${(x.takeaways||[]).map(v=>`<li>${has(v)?e(v):'<span class="ftm-muted">(empty)</span>'}</li>`).join("")}</ol>
@@ -243,17 +279,88 @@ function renderAdminMonitor(){
   const topicsText = FTM.topics.map(t=>t.title + (t.keys && t.keys.length ? " | " + t.keys.join(", ") : "")).join("\n");
   return `<div class="card ftm-admin">
     <h3>📒 Monitoring Sheets</h3>
-    <p class="ftm-muted">Each trainee’s Training Monitoring Sheet, by batch. The feedback is automated from fixed checks on what they wrote and on the discussion’s key points (no AI writes it): the date, all 5 takeaways, complete sentences, specific rather than general, based on the discussion, and the understanding rating. Click a trainee, then a discussion, for the checks, the feedback to copy, and what they wrote.</p>
+    <p class="ftm-muted">Each trainee’s Training Monitoring Sheet, by batch. The feedback is automated from the 📏 Feedback Rubric below (rubric v${rubricNow().version}), on what they wrote and on the discussion’s key points; no AI writes it. Click a trainee, then a discussion, for the checks, the feedback to copy, and what they wrote.</p>
     ${FMA.rows.length ? batches : `<div class="ftm-muted" style="margin:14px 0;">No active trainee has started their Monitoring Sheet yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTMonAdmin.refresh()">Refresh</button></div>
   </div>
   <details class="card ftm-admin" ${FMA.editing?"open":""} ontoggle="FTMonAdmin.edit(this.open)">
     <summary><b>Discussions and Key Points</b> <span class="ftm-muted">— the sheet’s discussions, and what each one’s takeaways should cover</span></summary>
-    <p class="ftm-muted">One discussion per line. Add its key points after a “|”, separated by commas, e.g. <code>Intake Training Day 1 | statute of limitations, conflict check, retainer</code>. The “Based on the discussion” check passes when the takeaways mention at least half of them. A renamed discussion starts a new entry, so keep titles as they are once trainees have started.</p>
+    <p class="ftm-muted">One discussion per line. Add its key points after a “|”, separated by commas, e.g. <code>Intake Training Day 1 | statute of limitations, conflict check, retainer</code>. The “Based on the discussion” metric passes when the takeaways mention the share of them set in the rubric. A renamed discussion starts a new entry, so keep titles as they are once trainees have started.</p>
     <textarea id="ftmTopics" class="ftm-topics" rows="14">${e(FMA.draft || topicsText)}</textarea>
     <div style="display:flex;gap:8px;margin-top:8px;"><button class="btn btn-navy btn-sm" onclick="FTMonAdmin.saveTopics()">Save</button><button class="btn btn-ghost btn-sm" onclick="FTMonAdmin.resetTopics()">Use the Default List</button></div>
+  </details>
+  ${renderRubricEditor()}`;
+}
+/* ---------- 📏 Feedback Rubric: the trainer improves the metrics; each save is a new version ---------- */
+function renderRubricEditor(){
+  const cur = rubricNow(), hist = (FMA.rubric && FMA.rubric.history) || [];
+  const d = FMA.rdraft || cur.metrics;
+  const changed = !!FMA.rdraft && JSON.stringify(FMA.rdraft) !== JSON.stringify(cur.metrics);
+  const field = (i, key, label, kind, v)=>`<label class="ftm-rp">${e(label)}<input type="${kind==="number"?"number":"text"}" ${kind==="number"?'min="0" step="1"':""} value="${e(v==null?"":v)}" oninput="FTMonRubric.set(${i},'${key}',this.value)"></label>`;
+  return `<details class="card ftm-admin ftm-rubric" ${FMA.rOpen?"open":""} ontoggle="FTMonRubric.open(this.open)">
+    <summary><b>📏 Feedback Rubric</b> <span class="ftm-muted">— version ${cur.version}${cur.savedAt ? `, saved ${e(TRDate(cur.savedAt.slice(0,10)))}` : " (the starting metrics)"}${cur.note ? ` · ${e(cur.note)}` : ""}</span></summary>
+    <p class="ftm-muted">Improve the metrics as you go: switch a metric on or off, change its settings, its weight in the score and its feedback line, or add a metric. Save, and every review uses the new version from then on. Earlier versions are kept below and can be restored. In a feedback line, <code>{which}</code> becomes the takeaways it’s about (e.g. “takeaways 1 and 4”); <code>{count}</code>, <code>{min}</code>, <code>{missing}</code> (key points or words not mentioned), <code>{found}</code> and <code>{sentences}</code> are filled in too.</p>
+    ${d.map((m,i)=>{ const T = MON_TYPES[m.type] || {name:m.type, params:[]};
+      return `<div class="ftm-metric ${m.on===false?"off":""}">
+        <div class="ftm-mrow"><label class="ftm-on"><input type="checkbox" ${m.on===false?"":"checked"} onchange="FTMonRubric.set(${i},'on',this.checked)"> On</label>
+          <input class="ftm-mlabel" value="${e(m.label||"")}" oninput="FTMonRubric.set(${i},'label',this.value)" aria-label="Metric name">
+          <span class="ftm-mtype">${e(T.name)}</span>
+          ${field(i, "weight", "Weight", "number", m.weight == null ? 1 : m.weight)}
+          <button class="btn btn-ghost btn-sm" type="button" title="Remove this metric" onclick="FTMonRubric.remove(${i})">✕</button></div>
+        ${T.params.length ? `<div class="ftm-mrow">${T.params.map(([k,l,kind])=>field(i, k, l, kind, m[k])).join("")}</div>` : ""}
+        <label class="ftm-rp ftm-rfix">Feedback line<textarea rows="2" oninput="FTMonRubric.set(${i},'fix',this.value)">${e(m.fix||"")}</textarea></label>
+      </div>`; }).join("")}
+    <div class="ftm-mrow" style="margin-top:10px;"><select id="ftmAddType">${Object.keys(MON_TYPES).map(k=>`<option value="${k}">${e(MON_TYPES[k].name)}</option>`).join("")}</select>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTMonRubric.add()">+ Add Metric</button></div>
+    <div class="ftm-mrow" style="margin-top:12px;"><input id="ftmRubricNote" class="ftm-mlabel" placeholder="What changed in this version (optional)">
+      <button class="btn btn-navy btn-sm" type="button" ${changed?"":"disabled"} onclick="FTMonRubric.save()">Save as Version ${cur.version + 1}</button>
+      ${changed ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTMonRubric.discard()">Discard Changes</button>` : ""}
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTMonRubric.restore(-1)">Start From the Starting Metrics</button></div>
+    ${hist.length ? `<div class="ftm-hist"><b>Earlier Versions</b>${hist.map((h,j)=>`<div><span>v${h.version}${h.savedAt ? ` · ${e(TRDate(h.savedAt.slice(0,10)))}` : " · the starting metrics"}${h.note ? ` · ${e(h.note)}` : ""} · ${h.metrics.filter(m=>m.on!==false).length} metrics</span><button class="btn btn-ghost btn-sm" type="button" onclick="FTMonRubric.restore(${j})">Restore</button></div>`).join("")}</div>` : ""}
   </details>`;
 }
+window.FTMonRubric = {
+  open(v){ FMA.rOpen = v; },
+  draft(){ if(!FMA.rdraft) FMA.rdraft = JSON.parse(JSON.stringify(rubricNow().metrics)); return FMA.rdraft; },
+  set(i, key, v){
+    const m = this.draft()[i]; if(!m) return;
+    const T = MON_TYPES[m.type] || {params:[]};
+    const isNum = key === "weight" || T.params.some(([k,,kind])=>k===key && kind==="number");
+    m[key] = key === "on" ? !!v : isNum ? (v === "" ? "" : +v) : v;
+    if(key === "on"){ render(); return; }
+    const btn = [...document.querySelectorAll(".ftm-rubric button")].find(b=>/^Save as Version/.test(b.textContent));
+    if(btn) btn.disabled = JSON.stringify(FMA.rdraft) === JSON.stringify(rubricNow().metrics);
+  },
+  add(){
+    const type = (document.getElementById("ftmAddType")||{}).value; const T = MON_TYPES[type]; if(!T) return;
+    const base = MON_DEFAULT_RUBRIC.metrics.find(m=>m.type===type);
+    const m = base ? JSON.parse(JSON.stringify(base)) : {type, label:T.name, on:true, weight:1,
+      fix: type==="avoid" ? "Replace the vague words in {which}: {found}." : type==="include" ? "Mention at least one of these in your takeaways: {missing}." :
+           type==="minwords" ? "Write more on {which}: at least {min} words each." : type==="questions" ? "Write the questions you still have, or “None”." : ""};
+    m.id = type + "-" + Date.now().toString(36);
+    if(type==="minwords") m.min = 10;
+    this.draft().push(m); FMA.rOpen = true; render();
+  },
+  remove(i){ const d = this.draft(); if(!confirm(`Remove “${d[i].label}” from the rubric? It takes effect when you save.`)) return; d.splice(i, 1); render(); },
+  discard(){ FMA.rdraft = null; render(); },
+  async save(){
+    const cur = rubricNow(), hist = (FMA.rubric && FMA.rubric.history) || [];
+    const note = String((document.getElementById("ftmRubricNote")||{}).value || "").trim().slice(0, 200);
+    const next = {version:cur.version + 1, savedAt:new Date().toISOString(), note, metrics:this.draft()};
+    const doc = {current:next, history:[cur].concat(hist).slice(0, 30)};
+    if(await sharedSet("monadmin:rubric", doc) === false){ toast("Couldn’t save. Check your connection."); return; }
+    FMA.rubric = doc; FMA.rdraft = null; toast(`📏 Rubric version ${next.version} saved. Every review uses it from now on.`); render();
+  },
+  // j = -1: the starting metrics. Restoring saves a copy as the next version.
+  async restore(j){
+    const cur = rubricNow(), hist = (FMA.rubric && FMA.rubric.history) || [];
+    const from = j < 0 ? MON_DEFAULT_RUBRIC : hist[j]; if(!from) return;
+    if(!confirm(`Save ${j < 0 ? "the starting metrics" : "version " + from.version} as version ${cur.version + 1}?`)) return;
+    FMA.rdraft = JSON.parse(JSON.stringify(from.metrics));
+    const n = document.getElementById("ftmRubricNote"); if(n) n.value = j < 0 ? "Back to the starting metrics" : `Restored version ${from.version}`;
+    await this.save();
+  }
+};
 window.FTMonAdmin = {
   row(id){ FMA.open[id] = !FMA.open[id]; render(); },
   topic(id, tid){ const k = id+"|"+tid; FMA.topicOpen[k] = !FMA.topicOpen[k]; render(); },
@@ -374,6 +481,17 @@ main.main-monitor{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ftm-afb pre{white-space:pre-wrap;font-family:inherit;font-size:14px;background:var(--bg);border-radius:8px;padding:10px 12px;margin:6px 0;}
 .ftm-afb > b, .ftm-awrote > b{display:block;font-size:13px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-top:4px;}
 .ftm-awrote{grid-column:1 / -1;font-size:14px;} .ftm-awrote ol{margin:4px 0 8px;padding-left:22px;} .ftm-awrote li{margin:3px 0;font-weight:500;}
+.ftm-rubric code{font-size:12.5px;background:var(--bg);border-radius:4px;padding:0 4px;}
+.ftm-metric{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;background:#fff;} .ftm-metric.off{opacity:.55;}
+.ftm-mrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;} .ftm-mrow + .ftm-mrow{margin-top:8px;}
+.ftm-on{display:flex;gap:4px;align-items:center;font-size:13.5px;align-self:center;}
+.ftm-mlabel{flex:1 1 220px;min-width:0;font:inherit;font-size:14.5px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;}
+.ftm-mtype{font-size:12px;color:var(--ink-soft);background:var(--bg);border-radius:999px;padding:3px 9px;align-self:center;}
+.ftm-rp{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-soft);}
+.ftm-rp input{font:inherit;font-size:14px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;min-width:0;} .ftm-rp input[type=number]{width:90px;} .ftm-rp input[type=text]{width:min(420px,70vw);}
+.ftm-rfix{margin-top:8px;} .ftm-rfix textarea{font:inherit;font-weight:500;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;width:100%;box-sizing:border-box;resize:vertical;}
+.ftm-hist{margin-top:14px;font-size:14px;} .ftm-hist > b{display:block;color:var(--navy);margin-bottom:4px;}
+.ftm-hist > div{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--line);padding:6px 0;}
 .ftm-topics{width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;padding:10px;border:1px solid var(--line);border-radius:8px;}
 `; document.head.appendChild(s); })();
 })();

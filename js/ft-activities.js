@@ -601,11 +601,19 @@ Object.assign(window, {daReviewFilter, daReviewDay, daDraft, daDraftAll, daSaveF
    FACILITATOR FEEDBACK STYLE
    ============================================================ */
 let fbStyleLoadedAt = 0;
+// The voice in use: the facilitator's DNA (js/ft-facilitator-dna.js) until a trainer saves a voice here
+// (saved with v2: edited, learned, restored or switched off). worker.js resolves it the same way.
+function fbEffective(saved){
+  if(saved && saved.v2) return saved;
+  const dna = window.FT_FACILITATOR_DNA;
+  return dna ? {enabled:true, dna:true, guide:dna.guide, traits:dna.traits.slice(), examples:dna.examples.slice(), source:dna.source, learnedAt:dna.learnedAt} : saved;
+}
 async function fbEnsureStyle(force){
   if(!force && fbStyleLoadedAt && Date.now() - fbStyleLoadedAt < 10 * 60000) return state.fbStyle;
-  try{ state.fbStyle = (await sharedGet("settings:feedback-style")) || null; fbStyleLoadedAt = Date.now(); }catch(e){ /* keep the last copy */ }
+  try{ state.fbStyle = fbEffective((await sharedGet("settings:feedback-style")) || null); fbStyleLoadedAt = Date.now(); }catch(e){ /* keep the last copy */ }
   return state.fbStyle;
 }
+if(!state.fbStyle) state.fbStyle = fbEffective(null);
 function fbStyleOn(){ const s = state.fbStyle; return !!(s && s.enabled !== false && s.guide); }
 // Appended to every feedback prompt; keeps the requested output format and the judgement unchanged.
 function fbStyleBlock(){
@@ -615,7 +623,7 @@ function fbStyleBlock(){
 
 VOICE — write all feedback wording the way this program's facilitator writes feedback. Keep exactly the output format requested above. Ratings and scores must stay evidence-based: the voice changes how things are said, not the judgement.
 Facilitator style guide:
-${String(s.guide).slice(0, 2500)}${(s.examples || []).length ? `
+${String(s.guide).slice(0, 3500)}${(s.examples || []).length ? `
 Examples of the facilitator's voice (match tone, rhythm and phrasing; do not reuse their content):
 ${s.examples.slice(0, 3).map((x, i) => `(${i + 1}) ${String(x).slice(0, 900)}`).join("\n")}` : ""}`;
 }
@@ -652,7 +660,9 @@ function renderAdminFeedbackStyle(){
     <div class="card fbs-card">
       <div class="fbs-h"><b>Current voice</b>
         ${st.guide ? `<label class="da-check"><input type="checkbox" ${st.enabled !== false ? "checked" : ""} onchange="fbToggle(this.checked)"> Use this voice for all AI feedback</label>` : `<span class="pill pill-locked">Not learned yet</span>`}</div>
-      ${st.guide ? `<p class="da-note">Learned ${fmtDate(st.learnedAt)} from ${st.sampleCount || "?"} examples. You can edit the guide directly.</p>
+      ${st.dna ? `<p class="da-note">🧬 <b>The facilitator’s DNA</b>, written from ${esc(st.source || "the facilitator’s evaluations")}. Every AI reviewer uses it. Edit it and click Save edits to improve it, or learn a new voice from examples below.</p>`
+        : st.guide ? `<p class="da-note">${st.learnedAt ? `Learned ${fmtDate(st.learnedAt)} from ${st.sampleCount || "?"} examples. ` : ""}You can edit the guide directly. <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="fbUseDna()">🧬 Go back to the facilitator’s DNA</a></p>` : ""}
+      ${st.guide ? `
         ${(st.traits || []).length ? `<div class="fbs-traits">${st.traits.map(t => `<span class="da-chip">${esc(t)}</span>`).join("")}</div>` : ""}
         <label>Style guide<textarea id="fbs_guide" rows="8">${esc(st.guide)}</textarea></label>
         <label>Voice examples <span>(generic — no real trainee details; separate with a line of three dashes)</span><textarea id="fbs_examples" rows="8">${esc((st.examples || []).join("\n---\n"))}</textarea></label>
@@ -660,14 +670,15 @@ function renderAdminFeedbackStyle(){
         <div id="fbsTry"></div>` : `<p class="da-note">Add examples below, then click <b>Learn the style</b>.</p>`}
     </div>
     <div class="card fbs-card">
-      <div class="fbs-h"><b>Examples to learn from (${items.length})</b><span class="da-note">${bySrc("review")} from sent reviews · ${bySrc("activity")} from activity feedback · ${bySrc("pasted")} pasted</span></div>
+      <div class="fbs-h"><b>Examples to learn from (${items.length})</b><span class="da-note">${bySrc("review")} from sent reviews · ${bySrc("activity")} from activity feedback · ${bySrc("pasted")} pasted · ${bySrc("document")} from documents</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
         <button class="btn btn-ghost btn-sm" id="fbsImportBtn" onclick="fbImport()">⤵ Import feedback you've sent in the portal</button>
         <button class="btn btn-navy btn-sm" id="fbsLearnBtn" ${items.length < 3 ? "disabled title='Add at least 3 examples'" : ""} onclick="fbLearn()">✨ Learn the style from ${items.length} example${items.length === 1 ? "" : "s"}</button>
       </div>
       <label>Paste facilitator feedback <span>(one or more messages; separate messages with a line of three dashes ---)</span><textarea id="fbs_paste" rows="6" placeholder="Hi Maria! Great job on today's inbox triage…&#10;---&#10;Hey John, solid start. Not yet on the follow-up email though…"></textarea></label>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><button class="btn btn-ghost btn-sm" onclick="fbAddPasted()">+ Add pasted examples</button>
-        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">⬆ Upload .txt / .md / .csv<input type="file" accept=".txt,.md,.csv,text/plain" multiple style="display:none" onchange="fbUpload(this)"></label></div>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer;">⬆ Upload reports: .docx / .xlsx / .txt<input type="file" accept=".docx,.xlsx,.txt,.md,.csv,text/plain" multiple style="display:none" onchange="fbUpload(this)"></label></div>
+      <p class="da-note" style="margin-top:6px;">Ranking reports and review sheets (.docx / .xlsx) work well: each feedback passage in them becomes an example. Then click Learn the style.</p>
       ${items.length ? `<details style="margin-top:10px;"><summary>See all ${items.length} examples</summary>${items.map((x, i) => `<div class="fbs-sample"><span class="da-note">${esc(x.source || "")}</span><div>${esc(x.text).replace(/\n/g, "<br>")}</div><button class="btn btn-ghost btn-sm" onclick="fbRemove(${i})">Remove</button></div>`).join("")}</details>` : ""}
     </div>`;
 }
@@ -685,9 +696,52 @@ async function fbAddPasted(){
 }
 async function fbUpload(input){
   let n = 0;
-  for(const f of [...(input.files || [])]){ const t = await f.text(); n += fbAddTexts(t.split(/\n\s*-{3,}\s*\n|\n{3,}/), "pasted"); }
-  try{ await fbSaveSamples(); toast(`Added ${n} example(s).`); render(); }catch(e){ showActionError(e, "Saving examples"); }
+  try{
+    for(const f of [...(input.files || [])]){
+      if(/\.docx$/i.test(f.name)) n += fbAddTexts(await fbDocxPassages(f), "document");
+      else if(/\.xlsx$/i.test(f.name)) n += fbAddTexts(await fbXlsxPassages(f), "document");
+      else { const t = await f.text(); n += fbAddTexts(t.split(/\n\s*-{3,}\s*\n|\n{3,}/), "pasted"); }
+    }
+    await fbSaveSamples(); toast(`Added ${n} example(s).`); render();
+  }catch(e){ showActionError(e, "Reading the files"); }
 }
+// Word and Excel files are zip packages: JSZip (cdnjs) opens them; each feedback passage becomes an example.
+function fbJsZip(){
+  if(window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise((ok, fail)=>{ const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload = ()=>ok(window.JSZip); s.onerror = ()=>fail(new Error("couldn't load the file reader")); document.head.appendChild(s); });
+}
+const fbXml = (s)=>new DOMParser().parseFromString(s, "application/xml");
+const fbWText = (el)=>[...el.getElementsByTagName("w:p")].map(p=>[...p.getElementsByTagName("w:t")].map(t=>t.textContent).join("")).join("\n").trim();
+async function fbDocxPassages(file){
+  const zip = await (await fbJsZip()).loadAsync(await file.arrayBuffer());
+  const doc = fbXml(await zip.file("word/document.xml").async("string"));
+  const cells = [...doc.getElementsByTagName("w:tc")].filter(tc=>!tc.getElementsByTagName("w:tc").length).map(fbWText);
+  const loose = [...doc.getElementsByTagName("w:p")].filter(p=>!p.closest || !p.closest("tc")).map(p=>[...p.getElementsByTagName("w:t")].map(t=>t.textContent).join(""));
+  return cells.concat(cells.length ? [] : loose).map(t=>t.trim()).filter(t=>t.length >= 80);
+}
+async function fbXlsxPassages(file){
+  const zip = await (await fbJsZip()).loadAsync(await file.arrayBuffer());
+  const ssf = zip.file("xl/sharedStrings.xml");
+  const shared = ssf ? [...fbXml(await ssf.async("string")).getElementsByTagName("si")].map(si=>[...si.getElementsByTagName("t")].map(t=>t.textContent).join("")) : [];
+  const out = [];
+  for(const name of Object.keys(zip.files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k))){
+    const sheet = fbXml(await zip.file(name).async("string"));
+    [...sheet.getElementsByTagName("c")].forEach(c=>{
+      const v = c.getElementsByTagName("v")[0], is = c.getElementsByTagName("is")[0];
+      const t = c.getAttribute("t") === "s" && v ? shared[+v.textContent] : is ? is.textContent : "";
+      if(t && t.trim().length >= 40) out.push(t.trim());
+    });
+  }
+  return out;
+}
+async function fbUseDna(){
+  if(!window.FT_FACILITATOR_DNA) return;
+  const d = window.FT_FACILITATOR_DNA;
+  const st = {v2:true, enabled:true, dna:true, guide:d.guide, traits:d.traits.slice(), examples:d.examples.slice(), source:d.source, learnedAt:d.learnedAt, savedAt:new Date().toISOString()};
+  if(await sharedSet("settings:feedback-style", st)){ state.fbStyle = st; toast("🧬 Every AI reviewer uses the facilitator’s DNA again."); render(); } else toast("Couldn't save — check your connection.");
+}
+window.fbUseDna = fbUseDna;
 async function fbRemove(i){ const s = daState(); s.fbSamples.items.splice(i, 1); try{ await fbSaveSamples(); render(); }catch(e){ showActionError(e, "Removing"); } }
 // Pull in the feedback the trainer has actually written or edited: daily reviews and activity reviews.
 async function fbImport(){
@@ -721,21 +775,21 @@ ${pick.map((t, i) => `--- ${i + 1} ---\n${t}`).join("\n")}`;
   try{
     const out = await callAIJson(prompt, 1800, 120000, "trainer");
     if(!out || !out.guide) throw new Error("the AI didn't return a style guide — try again");
-    const style = {enabled:true, guide:String(out.guide).trim(), traits:(out.traits || []).map(String).slice(0, 8), examples:(out.examples || []).map(String).slice(0, 3), sampleCount:pick.length, learnedAt:new Date().toISOString()};
+    const style = {v2:true, enabled:true, guide:String(out.guide).trim(), traits:(out.traits || []).map(String).slice(0, 8), examples:(out.examples || []).map(String).slice(0, 3), sampleCount:pick.length, learnedAt:new Date().toISOString()};
     if(!(await sharedSet("settings:feedback-style", style))) throw new Error("couldn't save to the server");
     state.fbStyle = style; fbStyleLoadedAt = Date.now();
     toast("🗣 Style learned — all AI feedback now uses this voice."); render();
   }catch(e){ showActionError(e, "Learning the style"); if(btn){ btn.disabled = false; btn.textContent = "✨ Learn the style"; } }
 }
 async function fbToggle(on){
-  const st = Object.assign({}, state.fbStyle || {}, {enabled:!!on});
+  const st = Object.assign({}, state.fbStyle || {}, {enabled:!!on, v2:true});
   if(await sharedSet("settings:feedback-style", st)){ state.fbStyle = st; toast(on ? "AI feedback now uses the facilitator's voice." : "Voice switched off — AI feedback uses the default wording."); }
   else toast("Couldn't save — check your connection.");
 }
 async function fbSaveGuide(){
   const g = (document.getElementById("fbs_guide") || {}).value || "", ex = (document.getElementById("fbs_examples") || {}).value || "";
   if(!g.trim()){ toast("The style guide can't be empty."); return; }
-  const st = Object.assign({}, state.fbStyle || {}, {guide:g.trim(), examples:ex.split(/\n\s*-{3,}\s*\n/).map(x => x.trim()).filter(Boolean).slice(0, 3), editedAt:new Date().toISOString()});
+  const st = Object.assign({}, state.fbStyle || {}, {v2:true, guide:g.trim(), examples:ex.split(/\n\s*-{3,}\s*\n/).map(x => x.trim()).filter(Boolean).slice(0, 3), editedAt:new Date().toISOString()});
   if(await sharedSet("settings:feedback-style", st)){ state.fbStyle = st; toast("Saved."); } else toast("Couldn't save — check your connection.");
 }
 async function fbTry(){
