@@ -659,7 +659,7 @@ rect.svg-callout-badge{animation:none;}
   display:flex;align-items:center;justify-content:center;margin-right:10px;margin-bottom:0;flex-shrink:0;
 }
 .quiz-grid-opt.selected .quiz-grid-letter{background:var(--orange-deep);}
-.quiz-grid-text{font-size:var(--font-sub);color:#37394A;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.quiz-grid-text{font-size:var(--font-sub);color:#37394A;line-height:1.35;overflow-wrap:anywhere;}   /* full answer text, never cut off */
 .quiz-nav{
   display:flex;align-items:center;justify-content:space-between;margin-top:22px;
 }
@@ -1696,8 +1696,9 @@ body.tap-moving [ondrop]{outline:2px dashed rgba(219,132,55,.55);outline-offset:
 .script-head{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--navy);font-size:13px;margin-bottom:6px;}
 .script-time{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--orange-deep);background:#FFF1E2;border-radius:20px;padding:2px 8px;}
 .script-row{margin-top:8px;}
+.script-say{margin:6px 0 0;font-size:14px;line-height:1.6;} .script-say.script-ask{margin-top:10px;font-weight:600;color:var(--navy);} .script-next{margin:10px 0 0;font-size:12px;color:var(--orange-deep);font-weight:700;} .pn-cue{margin-top:10px;} .pn-cue p{font-size:12.5px;}
 .script-row b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--orange-deep);margin-bottom:2px;}
-.script-row p{margin:0;font-size:13px;line-height:1.5;}
+.script-row p{margin:0;font-size:13px;line-height:1.5;white-space:pre-line;}   /* numbered step scripts keep their lines */
 .script-row ul{margin:2px 0 0;padding-left:18px;} .script-row li{font-size:13px;margin-bottom:3px;}
 .script-ai{margin-top:10px;}
 .script-ai-body{background:#fff;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;}
@@ -2244,7 +2245,8 @@ em.warn{font-style:normal;color:var(--danger);}
 .di-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0;}
 .di-box{background:#fff;border:1px solid var(--line);border-top:4px solid var(--orange);border-radius:12px;padding:14px 16px;}
 .di-box:nth-child(2){border-top-color:var(--navy);}
-.di-box b{display:block;color:var(--navy);margin-bottom:6px;} .di-box li{font-size:14px;line-height:1.5;margin-bottom:4px;} .di-topics .more{list-style:none;color:var(--ink-soft);font-style:italic;}
+.di-box b{display:block;color:var(--navy);margin-bottom:6px;}
+.topics-modal-sec{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--orange-deep);margin:12px 0 2px;} .di-box li{font-size:14px;line-height:1.5;margin-bottom:4px;} .di-topics .more{list-style:none;color:var(--ink-soft);font-style:italic;}
 .di-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 12px;}
 .di-strip > div{background:#F3F5FB;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:2px;} .di-strip span{font-size:22px;} .di-strip b{color:var(--navy);font-size:14px;} .di-strip em{font-style:normal;font-size:12.5px;color:var(--ink-soft);}
 .di-warm{background:#FFF8EF;border:1px solid #F0D2AE;border-radius:12px;padding:12px 16px;} .di-warm > span{font-size:12.5px;color:var(--ink-soft);}
@@ -2379,6 +2381,8 @@ em.warn{font-style:normal;color:var(--danger);}
 
 
 
+// Deck: the updated "I. Virtual Assistant Essentials" (Canva design DAGtQfkdZeg), shown from its PDF on
+// Google Drive until its Canva view link is added (Canva → Share → View-only link).
 const DAY1 = {
   id: 1,
   title: "Virtual Assistant Essentials",
@@ -2388,7 +2392,7 @@ const DAY1 = {
     {
       "id": "deck",
       "h": "Virtual Assistant Essentials",
-      "html": "<div class=\"canva-frame\" id=\"lessonDeck1\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Virtual Assistant Essentials (Canva)\"\n    src=\"https://www.canva.com/design/DAGnZTxmWyk/sLRwYE5XE5EhyZvY98iQ2Q/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck1\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://www.canva.com/design/DAGnZTxmWyk/sLRwYE5XE5EhyZvY98iQ2Q/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>"
+      "html": "<div class=\"canva-frame\" id=\"lessonDeck1\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Virtual Assistant Essentials (training deck)\"\n    src=\"https://drive.google.com/file/d/1Gq1eF0nA0wRreiMOS9VGphw721JHH3rz/preview\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck1\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://drive.google.com/file/d/1Gq1eF0nA0wRreiMOS9VGphw721JHH3rz/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open the deck ↗</a>\n  </div>\n</div>"
     }
   ]
 };
@@ -3968,10 +3972,10 @@ const mem = {}; // in-memory fallback if window.storage is unavailable
    this browser. Any change is saved within ~1.5s; logging in on
    any device restores it; logging out flushes it first.
    ============================================================ */
-const PERSONAL_KEYS = ["day-progress","practice-progress","lab-attempts-global","notes","completed-lab-actions",
+const PERSONAL_KEYS = ["day-progress","practice-progress","lab-attempts-global","lab-attempts-by-day","admin-unlocked-days","notes","completed-lab-actions",
   "day10-window","submissions","roleplayHistory","slide-progress","last-slide","attn-detail-findings",
   "calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels","trainee-batch",
-  "quick-check-answers","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since"];
+  "quick-check-answers","day-order-migrated","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since"];
 const PERSONAL_KEY_SET = new Set(PERSONAL_KEYS);
 let cloudSaveTimer = null;
 function scheduleCloudSave(){
@@ -4217,15 +4221,29 @@ async function applyLabAttemptReset(rec){
   state.labAttemptsResetSeen = rec.labAttemptsResetAt;
   await storeSet("lab-attempts-reset-seen", rec.labAttemptsResetAt);
   if(first && (state.labAttemptsGlobal||0) <= (rec.labAttemptsGlobal||0)) return false;
-  state.labAttemptsGlobal = rec.labAttemptsGlobal||0;
-  await storeSet("lab-attempts-global", state.labAttemptsGlobal);
+  await setLabAttemptsByDay(rec.labAttemptsByDay && typeof rec.labAttemptsByDay==="object" ? rec.labAttemptsByDay : {});
   return !first;
+}
+// A trainer can open days for a trainee (Admin → Trainee Audit → 🔓 Unlock days), e.g. after an
+// absence. The list lives on the trainee record as unlockedDays (the server keeps trainees from
+// changing it). Apply it as soon as this device sees a change, and redraw so the day opens.
+async function applyAdminUnlocks(rec){
+  if(!rec) return;
+  const next = (Array.isArray(rec.unlockedDays) ? rec.unlockedDays : []).map(Number).filter(n=>n>1).sort((a,b)=>a-b);
+  const prev = state.adminUnlockedDays || [];
+  if(JSON.stringify(next)===JSON.stringify(prev)) return;
+  state.adminUnlockedDays = next;
+  await storeSet("admin-unlocked-days", next);
+  const added = next.filter(n=>!prev.includes(n));
+  if(added.length) toast(`🔓 Your trainer unlocked Day${added.length>1?"s":""} ${added.join(", ")} for you.`);
+  state.labResetRenderPending = true;
+  await renderLabResetIfSafe();
 }
 // Show a reset on the open page right away: re-render unless the trainee is typing
 // or has a pop-up open, in which case the next live tick re-renders.
 async function showLabAttemptReset(){
   state.labResetRenderPending = true;
-  toast(`🔁 Your trainer reset your Practice Lab attempts — you have ${LAB_ATTEMPT_CAP} again.`);
+  toast(`🔁 Your trainer reset your Practice Lab attempts — you have ${LAB_ATTEMPT_CAP} repeats per day again.`);
   await renderLabResetIfSafe();
 }
 async function renderLabResetIfSafe(){
@@ -4240,6 +4258,7 @@ async function syncToLedger(allowCreate){
   const existing = await sharedGet("trainee:"+state.traineeId);
   // Take a pending trainer reset first, so this save never writes the old count back over it.
   if(existing && await applyLabAttemptReset(existing)) showLabAttemptReset();
+  if(existing) await applyAdminUnlocks(existing);
   // A missing record after registration means an admin revoked/deleted it —
   // don't silently re-create it from this device. Only login may create one.
   if(!existing && !allowCreate) return;
@@ -4261,6 +4280,7 @@ async function syncToLedger(allowCreate){
     archived: existing ? (existing.archived||false) : false,
     aiReview: existing ? existing.aiReview : null,
     labAttemptsGlobal: (typeof state.labAttemptsGlobal === "number") ? state.labAttemptsGlobal : (existing ? (existing.labAttemptsGlobal||0) : 0),
+    labAttemptsByDay: state.labAttemptsByDay || (existing && existing.labAttemptsByDay) || {},
     labAttemptsResetAt: existing ? (existing.labAttemptsResetAt||null) : null
   });
   const strip = (o)=>{ const c = Object.assign({}, o||{}); delete c.lastActive; return JSON.stringify(c); };
@@ -4328,6 +4348,13 @@ async function loadAll(){
       state.labAttemptsGlobal = 0;
     }
   }
+  // Per-day repeat counts. Older counts were one shared pool, so they don't carry
+  // over — everyone starts with a fresh 3 repeats per day.
+  const laByDay = await storeGet("lab-attempts-by-day");
+  state.labAttemptsByDay = (laByDay && typeof laByDay==="object") ? laByDay : {};
+  state.labAttemptsGlobal = labAttemptsTotal(state.labAttemptsByDay);
+  const aud = await storeGet("admin-unlocked-days");
+  state.adminUnlockedDays = Array.isArray(aud) ? aud : [];
   const lrs = await storeGet("lab-attempts-reset-seen");
   state.labAttemptsResetSeen = lrs || undefined;
   const nt = await storeGet("notes");
@@ -4346,6 +4373,9 @@ async function loadAll(){
   state.lastSlide = (ls && typeof ls==="object") ? ls : {};
   const qa = await storeGet("quick-check-answers");
   state.qcAnswers = (qa && typeof qa==="object") ? qa : {};
+  const dom = await storeGet("day-order-migrated");
+  state.dayOrderMigrated = (dom && typeof dom==="object") ? dom : {};
+  await migrateDayOrder();
   const lv = await storeGet("last-view");
   state.lastView = (lv && typeof lv==="object") ? lv : null;
   const tl = await storeGet("task-log"); state.taskLog = Array.isArray(tl) ? tl : [];
@@ -4488,14 +4518,19 @@ function dayLabDone(dayId){
   const pp = state.practiceProgress || {};
   return tools.every(t=>pp[t.id] && (pp[t.id].runs||0) >= 1);
 }
-function dayUnlocked(id){
+/* Every day, lesson and Practice Lab is open to every trainee — there are no locks.
+   dayReached() keeps the old "where the trainee has got to" rule, only to highlight
+   the trainee's current day on the dashboard. */
+function dayUnlocked(id){ return true; }
+function dayReached(id){
   if(id <= 1) return true;
   if(state.isAdmin) return true;   // locks are for trainees only
+  if((state.adminUnlockedDays||[]).includes(id)) return true;   // opened by a trainer (e.g. the trainee was absent)
   // Never re-lock a day a trainee has already started under the old rule.
   const own = state.progress[id];
   if(own && (own.done || typeof own.score==="number")) return true;
   if(state.slideProgress && state.slideProgress[id] > 0) return true;
-  return dayUnlocked(id-1) && dayLabDone(id-1);
+  return dayReached(id-1) && dayLabDone(id-1);
 }
 function dayLockReason(id){
   const t = PRACTICE_TOOLS.find(x=>(String(x.relates||"").match(/\d+/g)||[]).map(Number).includes(id-1));
@@ -4586,7 +4621,7 @@ function orientSlides(){
    {k:"Dashboard", h:"Your dashboard at a glance", body:`
      <div class="or-bp">
        <div class="or-bp-main">
-         <div class="or-box or-hero"><span class="or-num">1</span><b>Progress track</b><em>Days 1–10 · ✓ = passed · 🔒 = not open yet</em></div>
+         <div class="or-box or-hero"><span class="or-num">1</span><b>Progress track</b><em>Days 1–10 · ✓ = passed · every day is open</em></div>
          <div class="or-box or-cards"><span class="or-num">2</span><b>Day cards</b><em>Start / Review a day · 💬 trainer feedback appears here</em></div>
          <div class="or-box"><span class="or-num">3</span><b>Resume &amp; certificate</b><em>Jump back to where you left off · download your certificate when earned</em></div>
          <div class="or-box"><span class="or-num">4</span><b>Competency profile</b><em>Eight skills that grow as your work is graded</em></div>
@@ -4609,7 +4644,7 @@ function orientSlides(){
        <ul class="or-list"><li>Read the <b>Client Profile</b> before Day 1 and keep it handy — his preferences are graded.</li><li>If a later task seems to contradict the profile, raise it — spotting that is the job.</li><li>Treat everything about him as confidential, like a real client.</li></ul></div>
      </div>`},
    {k:"Practice", h:"Practice Labs: how grading works", body:`
-     <div class="or-3">${pill("🆓","First try is free","Your first submission of each exercise never uses an attempt.")}${pill("🔁",`${LAB_ATTEMPT_CAP} repeat attempts`,"Shared across the whole program — use them wisely. Your trainer can reset them.")}${pill("💾","Auto-saves","Close the tab or switch devices — your work is still there.")}</div>
+     <div class="or-3">${pill("🆓","First try is free","Your first submission of each exercise never uses an attempt.")}${pill("🔁",`${LAB_ATTEMPT_CAP} repeats per day`,"Each day's Practice Lab has its own repeats. Your trainer can reset them.")}${pill("💾","Auto-saves","Close the tab or switch devices — your work is still there.")}</div>
      <div class="or-note"><b>Feedback, not just a score:</b> every graded submission shows strengths, what to change (“not this way — here's the better way”) and next steps. Nonsense or copy-paste answers aren't graded.</div>`},
    {k:"Calls", h:"Live calls & roleplays", body:`
      <ul class="or-list big"><li>🎧 Use a headset. The caller <b>speaks</b>; you answer out loud (Chrome/Edge) or type.</li><li>🔊 Can't hear the caller? Check your volume and press <b>↻ Replay</b>.</li><li>🙋 Hands-free mode listens automatically after the caller finishes.</li><li>📞 <b>Hang Up</b> ends the call and gives you your evaluation.</li></ul>`},
@@ -4794,8 +4829,8 @@ function renderFacilitatorGuide(){
     <div class="card fg-card">
       <h3>Progression Rules Trainees Follow</h3>
       <ul>
-        <li><b>Next day unlocks</b> when the previous day's <b>Practice Lab</b> has been submitted and graded — any score counts.</li>
-        <li><b>Practice Lab attempts:</b> the first submission of each exercise is free; repeats use one of <b>3 program-wide attempts</b>. Reset them per trainee in Trainee Audit (↺ Reset Attempts).</li>
+        <li><b>Every day is open.</b> Trainees can open any day, any slide and any Practice Lab at any time — nothing is locked.</li>
+        <li><b>Practice Lab attempts:</b> the first submission of each exercise is free; repeats use one of <b>3 attempts per day</b>. Reset them per trainee in Trainee Audit (↺ Reset Attempts).</li>
         <li><b>Feedback style:</b> grades below 85% are framed as <b>"Not yet"</b> or <b>"Not this way"</b> with concrete next steps — never a flat "no".</li>
         <li><b>Progress is saved to the server</b> (not just the browser): trainees can log in on any device and pick up on the exact slide or tool they left.</li>
       </ul>
@@ -5743,7 +5778,7 @@ window.rpSubmitRapidTask = rpSubmitRapidTask;
 /* ---------- dashboard ---------- */
 
 /* ---------- Trainee-facing ranking (dashboard sidebar) ----------
-   Same scoring as Admin → Rankings: 40% completion + 30% Knowledge Check
+   Admin → Rankings uses this same score: 40% completion + 30% Knowledge Check
    average + 30% Practice Lab average, within the trainee's own batch.
    Other trainees are shown as first name + last initial only. */
 function taskAvgOf(rec){
@@ -6271,7 +6306,9 @@ function closeSurpriseResult(){
 }
 window.closeSurpriseResult = closeSurpriseResult;
 async function checkSurpriseTask(){
-  const dayId = nextDayId();
+  // A trainer sends a task to a day. Check every day this trainee has unlocked (not just the
+  // furthest one), so a trainee who is a day ahead or behind the batch still gets it.
+  const dayIds = DAYS.map(d=>d.id).filter(id=>dayUnlocked(id));
   try{
     // Registration time is fetched once per session and cached — it's what
     // keeps newly-registered trainees from inheriting an older broadcast.
@@ -6279,27 +6316,31 @@ async function checkSurpriseTask(){
       const me = await sharedGet("trainee:"+state.traineeId);
       state.traineeRegisteredAt = (me && me.registeredAt) || new Date().toISOString();
     }
-    const rec = await sharedGet("surprise-task-day"+dayId);
-    state.activeSurpriseTask = surpriseTaskIsLive(rec) ? rec : null;
-    if(state.activeSurpriseTask) syncTaskFromBroadcast(state.activeSurpriseTask);
-    // Every task sent to this day since the trainee reached it is logged — including
-    // ones replaced by a newer task or whose timer ran out while they were away
-    // (those land under Missed). Tasks the trainer ended early before the trainee
-    // ever saw them are not held against anyone.
-    state.taskDaySince = state.taskDaySince || {};
-    if(!state.taskDaySince[dayId]){ state.taskDaySince[dayId] = new Date().toISOString(); storeSet("task-day-since", state.taskDaySince); }
-    const since = new Date(state.taskDaySince[dayId]).getTime();
-    const reg = state.traineeRegisteredAt ? new Date(state.traineeRegisteredAt).getTime() : 0;
-    const seen = new Set(taskLog().map(x=>x.id));
-    ((rec && rec.history) || []).concat(rec && rec.generatedAt ? [rec] : []).forEach(t=>{
-      if(!t || !t.generatedAt || seen.has(t.generatedAt)) return;
-      const g = new Date(t.generatedAt).getTime();
-      if(g < since || g < reg || t.endedAt) return;
-      syncTaskFromBroadcast(t); seen.add(t.generatedAt);
-    });
+    const recs = await Promise.all(dayIds.map(id=>sharedGet("surprise-task-day"+id).catch(()=>null)));
+    const live = recs.filter(r=>surpriseTaskIsLive(r)).sort((a,b)=>new Date(b.generatedAt||0)-new Date(a.generatedAt||0));
+    state.activeSurpriseTask = live[0] || null;
+    live.forEach(t=>syncTaskFromBroadcast(t));
+    dayIds.forEach((dayId, k)=>logDayTaskHistory(dayId, recs[k]));
   }catch(e){
     state.activeSurpriseTask = null;
   }
+}
+function logDayTaskHistory(dayId, rec){
+  // Every task sent to this day since the trainee reached it is logged — including
+  // ones replaced by a newer task or whose timer ran out while they were away
+  // (those land under Missed). Tasks the trainer ended early before the trainee
+  // ever saw them are not held against anyone.
+  state.taskDaySince = state.taskDaySince || {};
+  if(!state.taskDaySince[dayId]){ state.taskDaySince[dayId] = new Date().toISOString(); storeSet("task-day-since", state.taskDaySince); }
+  const since = new Date(state.taskDaySince[dayId]).getTime();
+  const reg = state.traineeRegisteredAt ? new Date(state.traineeRegisteredAt).getTime() : 0;
+  const seen = new Set(taskLog().map(x=>x.id));
+  ((rec && rec.history) || []).concat(rec && rec.generatedAt ? [rec] : []).forEach(t=>{
+    if(!t || !t.generatedAt || seen.has(t.generatedAt)) return;
+    const g = new Date(t.generatedAt).getTime();
+    if(g < since || g < reg || t.endedAt) return;
+    syncTaskFromBroadcast(t); seen.add(t.generatedAt);
+  });
 }
 function surpriseTaskSignature(){
   const t = state.activeSurpriseTask;
@@ -6422,9 +6463,9 @@ function showDayTopics(dayId){
         <div class="mh-title">${icon} ${esc(d.title)}</div>
         <button type="button" class="topics-close" aria-label="Close" onclick="this.closest('.overlay').remove()">✕</button>
       </div>
-      <ol class="topics-modal-list">
+      ${lessonSections(d) ? lessonSections(d).map(g=>`<div class="topics-modal-sec">${esc(g.section)}</div><ol class="topics-modal-list" start="${g.items[0].i+1}">${g.items.map(x=>`<li>${esc(x.l.h)}</li>`).join("")}</ol>`).join("") : `<ol class="topics-modal-list">
         ${d.lessons.map(l=>`<li>${esc(l.h)}</li>`).join("")}
-      </ol>
+      </ol>`}
       <div class="topics-modal-foot">
         <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.overlay').remove()">Close</button>
         ${status!=='locked' ? `<button type="button" class="btn btn-navy btn-sm" onclick="this.closest('.overlay').remove(); goto('day',${d.id})">${status==='done'?'Review Day':'Start Day'} ${d.id}</button>` : `<span class="topics-locked-note">${esc(dayLockReason(d.id))}</span>`}
@@ -6447,6 +6488,56 @@ function scrollToModule(id){
 window.scrollToModule = scrollToModule;
 /* Where a trainee should land when they come back to a day: the slide they
    were last on, falling back to the furthest slide they've reached. */
+/* Topics grouped by their "section" (Day 3 so far): [{section, items:[{l, i}]}], or null when the day has none. */
+function lessonSections(d){
+  if(!d || !d.lessons.some(l=>l.section)) return null;
+  const groups = [];
+  d.lessons.forEach((l,i)=>{ const sec = l.section || "More topics"; const g = groups[groups.length-1];
+    if(g && g.section===sec) g.items.push({l,i}); else groups.push({section:sec, items:[{l,i}]}); });
+  return groups;
+}
+/* Each day's topics were regrouped into sections. A trainee's saved "resume here" slide and Quick Check
+   answers were stored by position in the old order, so move them once to the same topic in the new order. */
+async function migrateDayOrder(){
+  if(typeof DAY_OLD_ORDER==="undefined") return;
+  state.dayOrderMigrated = state.dayOrderMigrated || {};
+  let lsChanged = false, spChanged = false, qaChanged = false;
+  for(const [dk, oldTitles] of Object.entries(DAY_OLD_ORDER)){
+    const dayId = +dk;
+    if(state.dayOrderMigrated[dayId]) continue;
+    const d = DAYS.find(x=>x.id===dayId); if(!d) continue;
+    const byTitle = Object.fromEntries(d.lessons.map(l=>[l.h,l]));
+    const oldLessons = oldTitles.map(h=>byTitle[h]).filter(Boolean).concat(d.lessons.filter(l=>!oldTitles.includes(l.h)));
+    const newIndexOf = i => oldLessons[i] ? d.lessons.indexOf(oldLessons[i]) : -1;
+    // Quick Checks in the old order sat after the same topics, by their old positions.
+    const oldQC = (d.quickChecks||[]).map(q=>Object.assign({}, q, {afterIndex: oldLessons.indexOf(d.lessons[q.afterIndex])}));
+    const oldD = Object.assign({}, d, {lessons: oldLessons, quickChecks: oldQC});
+    const last = state.lastSlide && state.lastSlide[dayId];
+    if(typeof last==="number" && last > 0){
+      const key = (dd, x)=> x ? `${x.type}|${x.lessonIndex!=null && dd.lessons[x.lessonIndex] ? dd.lessons[x.lessonIndex].h : ""}|${x.part||""}` : "";
+      const want = key(oldD, buildDaySlides(oldD)[last]);
+      const idx = buildDaySlides(d).findIndex(x=>key(d, x)===want);
+      if(idx >= 0){
+        state.lastSlide[dayId] = idx; lsChanged = true;
+        state.slideProgress = state.slideProgress || {};
+        if((state.slideProgress[dayId]||0) < idx){ state.slideProgress[dayId] = idx; spChanged = true; }
+      }
+    }
+    // Quick Check answers are keyed "<day>_<topic position>_<n>".
+    const qa = state.qcAnswers || {}, moved = {};
+    Object.keys(qa).forEach(k=>{
+      const m = k.match(/^(\d+)_(\d+)_(\d+)$/); if(!m || +m[1]!==dayId) return;
+      const ni = newIndexOf(+m[2]);
+      if(ni >= 0 && ni !== +m[2]){ moved[`${dayId}_${ni}_${m[3]}`] = qa[k]; delete qa[k]; qaChanged = true; }
+    });
+    Object.assign(qa, moved); state.qcAnswers = qa;
+    state.dayOrderMigrated[dayId] = true;
+  }
+  if(lsChanged) await storeSet("last-slide", state.lastSlide);
+  if(spChanged) await storeSet("slide-progress", state.slideProgress);
+  if(qaChanged) await storeSet("quick-check-answers", state.qcAnswers);
+  await storeSet("day-order-migrated", state.dayOrderMigrated);
+}
 function resumeSlideFor(dayId){
   const d = DAYS.find(x=>x.id===dayId); if(!d) return 0;
   const total = buildDaySlides(d).length;
@@ -6506,9 +6597,9 @@ function reviewMyScore(dayId){
 window.reviewMyScore = reviewMyScore;
 const DAY_ICONS = {1:"🗂",2:"📅",3:"💬",4:"📨",5:"🛡",6:"📊",7:"Σ",8:"☎",9:"📋",10:"📱"};
 function nextDayId(){
-  // The trainee's current day = the furthest day they've unlocked.
+  // The trainee's current day = the furthest day they've reached.
   let cur = 1;
-  for(const d of DAYS){ if(dayUnlocked(d.id)) cur = d.id; }
+  for(const d of DAYS){ if(dayReached(d.id)) cur = d.id; }
   return cur;
 }
 function avgScore(){
@@ -6564,7 +6655,7 @@ function goto(view, id){
   state.searchQuery = "";
   if(VoiceCall.active && view!=="openroleplay") VoiceCall.hangup(true);
   state.view=view;
-  if(view==="dashboard"){ state.surpriseTaskChecked = false; }
+  if(view==="dashboard" || view==="tasks"){ state.surpriseTaskChecked = false; }
   if(view==="day"){ state.dayId=id; state.quizAnswers={}; state.quizQuestionIndex=0; state.quizSubmitted=false; state.slideDir="next"; state.slideInterstitial=null; state.dayViewMode="slides"; state.maxSlideReached=(state.slideProgress&&state.slideProgress[id])||0; state.lessonSlide=resumeSlideFor(id); }
   if(view==="tool"){
     const t = PRACTICE_TOOLS.find(x=>x.id===id);
@@ -6783,7 +6874,7 @@ window.addEventListener("hashchange", ()=>{
   if(!(state.traineeId || state.isAdmin) || ["login","pendingApproval","registrationDenied"].includes(state.view)) return;
   if(location.hash && location.hash!==routeHash()) openRouteFromHash();
 });
-const TAB_SYNC_KEYS = {"day-progress":"progress","practice-progress":"practiceProgress","lab-attempts-global":"labAttemptsGlobal",
+const TAB_SYNC_KEYS = {"day-progress":"progress","practice-progress":"practiceProgress","lab-attempts-global":"labAttemptsGlobal","lab-attempts-by-day":"labAttemptsByDay","admin-unlocked-days":"adminUnlockedDays",
   "notes":"notes","completed-lab-actions":"completedLabActions","submissions":"submissions","roleplayHistory":"roleplayHistory",
   "slide-progress":"slideProgress","last-slide":"lastSlide","quick-check-answers":"qcAnswers","intro-seen":"introSeen",
   "work-log":"workLog","lab-drafts":"labDrafts","task-log":"taskLog","task-day-since":"taskDaySince","day10-window":"day10Window"};
@@ -6896,9 +6987,10 @@ function afterRender(){
     setTimeout(()=>restoreLabFields(), 80);
   }
   if(state.view==="admin" && state.isAdmin && !state.adminData && !state.adminLoading) loadAdminLedger();
-  if(state.view==="dashboard" && state.traineeId && !state.isAdmin && !state.surpriseTaskChecked){
+  if((state.view==="dashboard" || state.view==="tasks") && state.traineeId && !state.isAdmin && !state.surpriseTaskChecked){
     state.surpriseTaskChecked = true;
-    checkSurpriseTask().then(()=>{ if(state.activeSurpriseTask && state.view==="dashboard") render(); });
+    const beforeCount = taskLog().length;
+    checkSurpriseTask().then(()=>{ if((state.activeSurpriseTask && state.view==="dashboard") || (state.view==="tasks" && taskLog().length!==beforeCount)) render(); });
   }
   if(state.view==="login"){
     const input = document.getElementById("loginLastInput") || document.getElementById("loginNameInput");
@@ -7000,6 +7092,11 @@ async function submitLoginInner(){
       }else{
         state.labAttemptsGlobal = 0;
       }
+      state.labAttemptsByDay = (existing.labAttemptsByDay && typeof existing.labAttemptsByDay === "object") ? existing.labAttemptsByDay : {};
+      state.adminUnlockedDays = Array.isArray(existing.unlockedDays) ? existing.unlockedDays.map(Number).filter(n=>n>1) : [];
+      await storeSet("admin-unlocked-days", state.adminUnlockedDays);
+      state.labAttemptsGlobal = labAttemptsTotal(state.labAttemptsByDay);
+      await storeSet("lab-attempts-by-day", state.labAttemptsByDay);
       state.completedLabActions = (existing.completedLabActions && typeof existing.completedLabActions === "object") ? existing.completedLabActions : {};
       // Restore these too — otherwise the sync below would overwrite the
       // trainee's saved submissions / roleplay history with an empty list.
@@ -7081,6 +7178,10 @@ async function resetTraineeSessionData(){
   // Everything that belongs to ONE trainee and must not leak to the next
   // person who logs in on the same device.
   state.labAttemptsGlobal = 0;
+  state.labAttemptsByDay = {};
+  await storeSet("lab-attempts-by-day", {});
+  state.adminUnlockedDays = [];
+  await storeSet("admin-unlocked-days", []);
   state.completedLabActions = {};
   state.submissions = [];
   state.roleplayHistory = [];
@@ -7118,7 +7219,7 @@ async function logout(){
   await storeSet("notes", []);
   await resetTraineeSessionData();
   for(const k of ["work-log","quick-check-answers","lab-drafts","last-view","slide-progress","last-slide","attn-detail-findings","calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels"]) await storeSet(k, null);
-  state.slideProgress = {}; state.lastSlide = {}; state.lastCloudSave = null;
+  state.slideProgress = {}; state.lastSlide = {}; state.lastCloudSave = null; state.dayOrderMigrated = {};
   try{ localStorage.removeItem("lsh_progress-saved-at"); }catch(e){}
   state.view = "login";
   render();
@@ -7167,14 +7268,18 @@ function startApprovalPolling(traineeId){
     try{
       const me = await sharedGet("trainee:"+traineeId);
       if(await applyLabAttemptReset(me)) await showLabAttemptReset();
+      await applyAdminUnlocks(me);
     }catch(e){ /* best-effort */ }
-    if(state.view==="dashboard" && !state.surpriseGrading){
+    // New tasks are picked up on every page (trainees are usually in a lesson or lab when one is
+    // sent); the dashboard and 🎲 Tasks redraw, elsewhere the "New task assigned" alert shows.
+    if(!state.surpriseGrading){
       try{
-        const before = surpriseTaskSignature();
+        const before = surpriseTaskSignature(), beforeCount = taskLog().length;
         await checkSurpriseTask();
         const ae = document.activeElement;
         const typing = ae && (ae.tagName==="TEXTAREA" || ae.tagName==="INPUT");
-        if(before !== surpriseTaskSignature() && !typing && state.view==="dashboard") render();
+        const changed = before !== surpriseTaskSignature() || beforeCount !== taskLog().length;
+        if(changed && !typing && (state.view==="dashboard" || state.view==="tasks")) render();
       }catch(e){ /* best-effort */ }
     }
   }, 45000);
@@ -7215,6 +7320,7 @@ async function liveTick(){
         state.liveResetAt = Date.now();
         const me = await sharedGet("trainee:"+state.traineeId);
         if(await applyLabAttemptReset(me)) await showLabAttemptReset();
+        await applyAdminUnlocks(me);
       }
       if(!state.liveFbAt || Date.now()-state.liveFbAt > 45000){
         state.liveFbAt = Date.now();
@@ -7270,11 +7376,37 @@ function startLiveUpdates(){
    offers "Update now". After reloading, the user lands where they were.
    ============================================================ */
 let updateTimer = null, updatePendingBuild = null;
+let loadedDeployment = "", candidateDeployment = "";
+// Safety net against reload loops: at most 2 automatic reloads per 10 minutes in a tab, and never
+// twice for the same version. After that the banner's Update now button is the only way to reload.
+const AUTO_RELOAD_KEY = "lsh_auto_reloads";
+function autoReloadAllowed(target){
+  try{
+    const recent = (JSON.parse(sessionStorage.getItem(AUTO_RELOAD_KEY) || "[]") || []).filter(x=>x && Date.now()-x.at < 10*60*1000);
+    return recent.length < 2 && !recent.some(x=>x.target===target);
+  }catch(e){ return false; }
+}
+function noteAutoReload(target){
+  try{
+    const recent = (JSON.parse(sessionStorage.getItem(AUTO_RELOAD_KEY) || "[]") || []).filter(x=>x && Date.now()-x.at < 10*60*1000);
+    recent.push({target, at:Date.now()});
+    sessionStorage.setItem(AUTO_RELOAD_KEY, JSON.stringify(recent));
+  }catch(e){}
+}
 async function checkForUpdate(){
   try{
     const r = await fetch("/version?ts="+Date.now(), {cache:"no-store"});
     if(!r.ok) return;
     const txt = await r.text();
+    // Every Cloudflare deploy gets a new deployment id, so open pages notice any update on their
+    // own — nobody has to remember to bump APP_BUILD. The first id this page sees is its own.
+    const dep = (txt.match(/^Deployment:\s*(\S+)/mi) || [])[1];
+    if(dep && dep !== "unknown"){
+      if(!loadedDeployment){ loadedDeployment = dep; }
+      else if(dep === loadedDeployment){ candidateDeployment = ""; }
+      else if(dep !== candidateDeployment){ candidateDeployment = dep; }   // seen once: wait for the next check to confirm
+      else { updatePendingBuild = dep; showUpdateBanner(); tryAutoUpdate(); return; }
+    }
     const m = txt.match(/Portal build deployed:\s*([0-9.]+-[a-z0-9]+)/i);
     if(!m || m[1]===APP_BUILD) return;
     updatePendingBuild = m[1];
@@ -7293,6 +7425,7 @@ function updateIsSafe(){
   if(document.querySelector(".overlay")) return false;
   if(state.loginBusy || state.studioBusy) return false;
   if(document.querySelector('[data-busy="1"]')) return false;
+  if(state.presenting) return false;   // reloading would close Presenter view mid-session: the banner's Update now is there instead
   return true;
 }
 async function applyUpdate(){
@@ -7305,12 +7438,15 @@ async function applyUpdate(){
 }
 function tryAutoUpdate(){
   if(!updatePendingBuild) return;
-  if(updateIsSafe()) applyUpdate();
+  if(!autoReloadAllowed(updatePendingBuild)) return;   // already reloaded for this (or twice recently): wait for Update now
+  if(updateIsSafe()){ noteAutoReload(updatePendingBuild); applyUpdate(); }
 }
 function showUpdateBanner(){
   if(document.getElementById("updateBanner")) return;
   const b = document.createElement("div"); b.id = "updateBanner"; b.className = "update-banner";
-  b.innerHTML = `<span>✨ A new version of the portal is ready. It will update automatically in a moment — your progress is saved.</span><button type="button" onclick="applyUpdate()">Update now</button>`;
+  b.innerHTML = state.presenting
+    ? `<span>✨ A new version of the portal is ready (e.g. updated speaker notes). Click Update now between slides — Presenter view will need reopening.</span><button type="button" onclick="applyUpdate()">Update now</button>`
+    : `<span>✨ A new version of the portal is ready. It will update automatically in a moment — your progress is saved.</span><button type="button" onclick="applyUpdate()">Update now</button>`;
   document.body.appendChild(b);
 }
 function restoreAfterUpdate(){
@@ -7330,6 +7466,7 @@ function startUpdateChecks(){
   updateTimer = setInterval(()=>{ if(updatePendingBuild) tryAutoUpdate(); else checkForUpdate(); }, 45000);
   setInterval(()=>{ if(updatePendingBuild) tryAutoUpdate(); }, 15000);
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible"){ if(updatePendingBuild) tryAutoUpdate(); else checkForUpdate(); } });
+  checkForUpdate();   // records this page's deployment id straight away
   setTimeout(checkForUpdate, 20000);
 }
 window.applyUpdate = applyUpdate;
@@ -7607,7 +7744,7 @@ function renderDayIntro(d){
         ${d.theme ? `<p class="di-theme">${esc(d.theme)}</p>` : ""}
         <div class="di-grid">
           <div class="di-box"><b>🎯 By the end of today you'll be able to</b><ul>${(outcomes.length?outcomes:[d.objective||""]).map(o=>`<li>${esc(asSentence(o).replace(/\.$/,""))}</li>`).join("")}</ul></div>
-          <div class="di-box"><b>🗺 What today covers</b><ul class="di-topics">${d.lessons.slice(0,8).map(l=>`<li>${esc(l.h)}</li>`).join("")}${n>8?`<li class="more">…and ${n-8} more topics</li>`:""}</ul></div>
+          <div class="di-box"><b>🗺 What today covers</b><ul class="di-topics">${lessonSections(d) ? lessonSections(d).map(g=>`<li><b style="display:inline;margin:0;">${esc(g.section)}</b> · ${g.items.length} topic${g.items.length===1?"":"s"}</li>`).join("") : `${d.lessons.slice(0,8).map(l=>`<li>${esc(l.h)}</li>`).join("")}${n>8?`<li class="more">…and ${n-8} more topics</li>`:""}`}</ul></div>
         </div>
         <div class="di-strip">
           <div><span>📚</span><b>${n} topics</b><em>${slides} slides</em></div>
@@ -7658,8 +7795,7 @@ function renderDaySlideshow(d){
   const inner = `
     <div class="slide-dots">
       ${slides.map((_,i)=>{
-        const locked = i > (state.maxSlideReached||0);
-        return `<span class="slide-dot ${i===idx?'active':i<idx?'visited':''} ${locked?'locked':''}" onclick="goToSlide(${i})" title="${locked?'Complete the current topic first':'Step '+(i+1)}"></span>`;
+        return `<span class="slide-dot ${i===idx?'active':i<idx?'visited':''}" onclick="goToSlide(${i})" title="Step ${i+1}"></span>`;
       }).join("")}
     </div>
     <div class="stage-body">
@@ -7669,7 +7805,10 @@ function renderDaySlideshow(d){
       <img class="stage-presenter" src="${PRESENTER_IMG}" alt="" aria-hidden="true">
     </div>
     <div class="slide-nav">
-      <button class="btn btn-ghost" ${idx===0?'disabled':''} onclick="prevSlide()">&larr; Previous</button>
+      <span style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-ghost" ${idx===0?'disabled':''} onclick="prevSlide()">&larr; Previous</button>
+        ${state.isAdmin && idx>0 ? `<button class="btn btn-ghost btn-sm" onclick="goToSlide(0)" title="Admin: go back to the first slide of ${ftName(d.id)}">⏮ Slide 1</button>` : ""}
+      </span>
       <span class="slide-counter">Step ${idx+1} of ${total}</span>
       ${isLast
         ? `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()">✓ Finish lesson</button>`
@@ -7721,11 +7860,6 @@ document.addEventListener("keydown", (e)=>{
   else if(e.key==="ArrowLeft" || e.key==="PageUp"){ e.preventDefault(); prevSlide(); }
 });
 function goToSlide(i){
-  const maxReached = state.maxSlideReached||0;
-  if(i > maxReached){
-    toast("Complete the current topic before jumping ahead.");
-    return;
-  }
   state.slideDir = i>(state.lessonSlide||0) ? "next" : "prev";
   state.lessonSlide = i;
   refreshLessonSlide();
@@ -7971,7 +8105,7 @@ function renderLessonCard(l,i,d,unused,part){
   const density = textLen < 280 ? "density-xs" : (textLen < 650 ? "density-s" : "density-m");
 
   return `
-    <div class="topic-separator">DAY ${d.id} &middot; TOPIC ${i+1} OF ${d.lessons.length}${l.singleSlide ? "" : ` &middot; PART ${p} OF 2`}</div>
+    <div class="topic-separator">DAY ${d.id}${l.section ? ` &middot; ${esc(l.section).toUpperCase()}` : ""} &middot; TOPIC ${i+1} OF ${d.lessons.length}${l.singleSlide ? "" : ` &middot; PART ${p} OF 2`}</div>
     <div class="card lesson-card ${expSec ? "density-m" : density}" data-part="${p}">
       <h4><span class="lnum">0${i+1}</span>${esc(l.h)}</h4>
       ${expSec ? renderExpansionPanel(expSec) : ""}
@@ -8353,11 +8487,8 @@ function retakeQuiz(dayId){
 }
 window.retakeQuiz = retakeQuiz;
 
-/* The full answer key (correct option + rationale) is shown only once the trainee
-   has passed this day's Knowledge Check. Before that, the review shows which
-   questions they got right or wrong, but not the right answers. Otherwise a failed
-   attempt would give away the key for the retake. */
-function quizKeyUnlocked(d){ return !!(state.lastPassed || (state.progress[d.id]||{}).done || state.isAdmin); }
+/* The full answer key (correct option + rationale) shows after every attempt. */
+function quizKeyUnlocked(d){ return true; }   // no locks: the answer key shows after every attempt
 window.quizKeyUnlocked = quizKeyUnlocked;
 function renderAnswerFeedback(d){
   const el = document.getElementById("answerFeedback");
@@ -8407,7 +8538,7 @@ function renderPracticeHub(){
   return `
     <p class="eyebrow">Practice Lab</p>
     <h1 style="color:var(--navy);font-size:26px;margin:6px 0 10px;">Let's Practice the Principles</h1>
-    <p style="color:var(--ink-soft);font-size:14.5px;max-width:70ch;margin:0 0 26px;">Hands-on tools for the skills that show up every day on the job. Each day's Practice Lab opens when you reach that day${state.isAdmin ? " — as an admin you can open all of them" : ""}.</p>
+    <p style="color:var(--ink-soft);font-size:14.5px;max-width:70ch;margin:0 0 26px;">Hands-on tools for the skills that show up every day on the job. Every day's Practice Lab is open — start any of them at any time.</p>
     <div class="card" style="padding:14px 18px;margin-bottom:22px;background:#F8F9FC;border-left:4px solid var(--navy);">
       <b style="font-size:12px;color:var(--navy);text-transform:uppercase;letter-spacing:.03em;">A note before you begin</b>
       <p style="font-size:12.8px;color:#37394A;margin:8px 0 0;font-style:italic;">Utilization of AI in the legal industry depends entirely on the firm's or attorney's specific preferences — it is never a universal default. Different roles in this industry require human intervention regardless of how capable a tool is. Because this work touches attorney-client privilege, AI must be used with the utmost discretion, and only with actual approval.</p>
@@ -8513,12 +8644,25 @@ async function bumpPracticeProgress(toolId, score){
 /* ============================================================
    PRACTICE LAB USAGE CAP — 3 AI-graded attempts per day's module.
    ============================================================ */
-const LAB_ATTEMPT_CAP = 3; // program-wide cap, shared across all 10 days combined, no exceptions
-function labAttemptsUsed(){
-  return state.labAttemptsGlobal || 0;
+const LAB_ATTEMPT_CAP = 3; // repeat attempts per day's Practice Lab (first tries are free)
+// Repeats are counted per day in state.labAttemptsByDay; labAttemptsGlobal is kept as the
+// total across all days (shown to admins, and used by the trainer-reset check).
+function currentLabDay(){
+  return (typeof toolState!=="undefined" && toolState && toolState.wizardDayId) || (state.view==="tool" && state.toolId ? toolIdToDayId(state.toolId) : null) || null;
 }
-function labAttemptsRemaining(){
-  return Math.max(0, LAB_ATTEMPT_CAP - labAttemptsUsed());
+function labAttemptsTotal(byDay){ return Object.values(byDay||{}).reduce((a,n)=>a+(n||0),0); }
+function labAttemptsUsed(dayId){
+  const d = dayId || currentLabDay();
+  return d ? ((state.labAttemptsByDay||{})[d] || 0) : 0;
+}
+function labAttemptsRemaining(dayId){
+  return Math.max(0, LAB_ATTEMPT_CAP - labAttemptsUsed(dayId));
+}
+async function setLabAttemptsByDay(byDay){
+  state.labAttemptsByDay = byDay || {};
+  state.labAttemptsGlobal = labAttemptsTotal(state.labAttemptsByDay);
+  await storeSet("lab-attempts-by-day", state.labAttemptsByDay);
+  await storeSet("lab-attempts-global", state.labAttemptsGlobal);
 }
 /* ============================================================
    INPUT QUALITY GATE — blocks key-mashing / placeholder text from
@@ -8571,7 +8715,7 @@ function refundLastLabAttempt(){
   state.lastLabAttempt = null;
   // Only refund an attempt spent moments ago by this same submission.
   if(!la || Date.now() - (la.at||0) > 15000) return;
-  if(la.wasRepeat){ state.labAttemptsGlobal = Math.max(0, labAttemptsUsed()-1); storeSet("lab-attempts-global", state.labAttemptsGlobal); }
+  if(la.wasRepeat && la.dayId){ const b = Object.assign({}, state.labAttemptsByDay||{}); b[la.dayId] = Math.max(0, (b[la.dayId]||0)-1); setLabAttemptsByDay(b); }
   else if(la.actionId && state.completedLabActions){ delete state.completedLabActions[la.actionId]; storeSet("completed-lab-actions", state.completedLabActions); }
   state.lastLabAttempt = null;
   syncToLedger();
@@ -8587,14 +8731,15 @@ async function useLabAttempt(dayId, actionId){
   // action is ever submitted, it's free — only a second-or-later submission
   // of that SAME action consumes one of the 3 global attempts.
   const isRepeat = actionId ? !!state.completedLabActions[actionId] : false;
-  state.lastLabAttempt = {actionId, wasRepeat:isRepeat, at:Date.now()};
+  dayId = dayId || currentLabDay();
+  state.lastLabAttempt = {actionId, dayId, wasRepeat:isRepeat, at:Date.now()};
   if(isRepeat){
-    if(labAttemptsRemaining() <= 0){
-      toast(`No repeat attempts left (all ${LAB_ATTEMPT_CAP} used). Ask your trainer to reset your Practice Lab attempts.`);
+    if(labAttemptsRemaining(dayId) <= 0){
+      toast(`No repeat attempts left for ${ftName(dayId)} (all ${LAB_ATTEMPT_CAP} used). Ask your trainer to reset your Practice Lab attempts.`);
       return false;
     }
-    state.labAttemptsGlobal = labAttemptsUsed() + 1;
-    await storeSet("lab-attempts-global", state.labAttemptsGlobal);
+    const b = Object.assign({}, state.labAttemptsByDay||{}); b[dayId] = (b[dayId]||0) + 1;
+    await setLabAttemptsByDay(b);
   }
   if(actionId && !isRepeat){
     state.completedLabActions[actionId] = true;
@@ -8874,7 +9019,7 @@ function renderEvaluationReport(report, dayId){
       </div>` : ""}
       ${dayId ? `
       <div class="eval-action-row">
-        <button class="btn btn-ghost btn-sm" onclick="repeatActivity()" ${labAttemptsRemaining()<=0 ? 'disabled title="No Practice Lab attempts remaining"' : ''}>🔁 Repeat Activity</button>
+        <button class="btn btn-ghost btn-sm" onclick="repeatActivity()" ${labAttemptsRemaining(dayId)<=0 ? `disabled title="No repeat attempts left for ${ftName(dayId)} — ask your trainer to reset them"` : ''}>🔁 Repeat Activity${labAttemptsRemaining(dayId)<=0 ? "" : ` (${labAttemptsRemaining(dayId)} left)`}</button>
         <button class="btn btn-navy btn-sm" onclick="retainScoreAndAdvance()">✅ Retain Score &amp; Advance</button>
       </div>
       <div class="eval-action-row" style="border-top:none;padding-top:0;margin-top:8px;">
@@ -10482,7 +10627,7 @@ function renderIntakeCallSection(){
 function startIntakeVoiceCall(){
   const ic = toolState.intakeCall;
   const persona = INTAKE_CALL_PERSONAS.find(p=>p.id===ic.personaId);
-  const readOnly = labAttemptsRemaining() <= 0 && !!(state.completedLabActions||{}).endIntakeCallDebrief;
+  const readOnly = labAttemptsRemaining(4) <= 0 && !!(state.completedLabActions||{}).endIntakeCallDebrief;
   VoiceCall.start("intake", {name:persona.name, subtitle:`Incoming call · ${persona.matter}`, inputId:"intakeCallInput", readOnly,
     send:()=>sendIntakeCallMessage(), onHangup:()=>endIntakeCallDebrief()});
 }
@@ -10525,7 +10670,7 @@ function renderIntakeCallChatWindow(){
 function renderIntakeCallChat(){
   const ic = toolState.intakeCall;
   const persona = INTAKE_CALL_PERSONAS.find(p=>p.id===ic.personaId);
-  const locked = labAttemptsRemaining() <= 0 && !!(state.completedLabActions||{}).endIntakeCallDebrief;
+  const locked = labAttemptsRemaining(4) <= 0 && !!(state.completedLabActions||{}).endIntakeCallDebrief;
   return `
     <button class="btn btn-ghost btn-sm" style="margin-bottom:12px;" onclick="backToIntakePersonaPicker()">&larr; Choose a Different Caller</button>
     <div class="rp-session-header">
@@ -12866,17 +13011,16 @@ function renderAdminRankings(onlyBatch){
   const scoreOf = rec=>{
     const day = adminDayStats(rec);
     const practice = adminPracticeStats(rec);
-    const completionPct = day.total ? (day.done/day.total)*100 : 0;
-    // Overall ranking score: weighted blend of how far they've progressed and
-    // how well they're actually performing — progress alone would rank a
-    // fast-but-sloppy trainee above a careful one who's slightly behind.
-    const overall = Math.round(completionPct*0.4 + day.avg*0.3 + practice.avg*0.3);
-    return {rec, day, practice, overall};
+    // Same score the trainee's dashboard ranking card uses (rankOverall), so both show the same rank.
+    const overall = rankOverall(rec);
+    const task = taskAvgOf(rec);
+    return {rec, day, practice, overall, task: task===null ? null : Math.round(task)};
   };
   // One group per batch, ranked within the batch. A batch counts as archived
   // once every trainee in it is archived (📦 Archive batch).
   const groups = new Map();
   state.adminData.forEach(rec=>{
+    if(rec.approved!==true) return;   // like the trainee view, only approved trainees are ranked
     const b = batchKey(rec);
     if(!groups.has(b)) groups.set(b, []);
     groups.get(b).push(rec);
@@ -12898,7 +13042,7 @@ function renderAdminRankings(onlyBatch){
   const header = onlyBatch ? "" : `
     <p class="eyebrow">Admin Dashboard</p>
     <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Rankings</h1>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Trainees are ranked within their own batch by a blended score — 40% program completion, 30% average quiz score, 30% average Practice Lab competency. Meant as a coaching signal, not a formal evaluation.</p>`;
+    <p style="color:var(--ink-soft);font-size:13px;max-width:70ch;margin:0 0 20px;">Approved trainees are ranked within their own batch by a blended score — 40% program completion, 30% average quiz score, 30% average Practice Lab competency. Once a trainee has graded random tasks, it becomes 35% completion, 25% quiz, 25% Practice Lab and 15% random tasks. Trainees see the same score and rank on their dashboard. Meant as a coaching signal, not a formal evaluation.</p>`;
   const toolbar = onlyBatch ? "" : `
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -12935,7 +13079,7 @@ function renderAdminRankings(onlyBatch){
   const fullyDone = rankedAll.filter(r=>r.day.done===r.day.total).length;
 
   const medals = ["🥇","🥈","🥉"];
-  const cols = "56px minmax(0,1fr) 100px 100px 100px 110px";
+  const cols = "56px minmax(0,1fr) 90px 80px 90px 90px 100px";
   const batchTable = g=>{
     const avg = Math.round(g.ranked.reduce((a,r)=>a+r.overall,0)/g.ranked.length);
     return `
@@ -12956,8 +13100,9 @@ function renderAdminRankings(onlyBatch){
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Days</div>
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Quiz Avg</div>
         <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Lab Avg</div>
+        <div style="font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;">Random Tasks</div>
       </div>
-      ${g.ranked.map(({rec,day,practice,overall},i)=>`
+      ${g.ranked.map(({rec,day,practice,overall,task},i)=>`
         <div class="admin-rank-grid" style="display:grid;grid-template-columns:${cols};gap:12px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);">
           <div style="font-size:${i<3?'20px':'14px'};font-weight:700;color:${i<3?'inherit':'var(--ink-soft)'};">${medals[i] || `#${i+1}`}</div>
           <div>
@@ -12967,6 +13112,7 @@ function renderAdminRankings(onlyBatch){
           <div style="font-size:13px;">${day.done}/${day.total}</div>
           <div style="font-size:13px;">${day.avg}%</div>
           <div style="font-size:13px;">${practice.avg}%</div>
+          <div style="font-size:13px;${task===null?"color:var(--ink-soft);":""}">${task===null ? "—" : task+"%"}</div>
         </div>`).join("")}
     </div>`;
   };
@@ -13093,11 +13239,12 @@ function renderAdminRow(rec, day, practice){
         <div style="font-size:13px;">${day.avg}% avg</div>
         <div style="font-size:13px;">${practice.runs} runs</div>
         <div style="font-size:11.5px;color:var(--ink-soft);">${rec.lastActive?fmtDate(rec.lastActive):"—"}</div>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:520px;">
           <button class="btn btn-sm btn-ghost" onclick="toggleAdminDetail('${rec.id}')">${expanded?"Hide":"View"} Detail</button>
           <button class="btn btn-sm btn-primary" onclick="openFeedbackFor('${rec.id}')" title="Write and send feedback to this trainee">✍ Feedback</button>
           <button class="btn btn-sm btn-ghost" onclick="adminOpenCertificate('${rec.id}')" title="Preview / download this trainee's Certificate of Completion">🎓 Certificate</button>
-          <button class="btn btn-sm btn-ghost" title="Give this trainee a fresh set of ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${typeof rec.labAttemptsGlobal==="number" ? ` (${Math.max(0,LAB_ATTEMPT_CAP-rec.labAttemptsGlobal)} left)` : ""}</button>
+          <button class="btn btn-sm btn-ghost" title="Give this trainee a fresh ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts on every day" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${rec.labAttemptsGlobal ? ` (${rec.labAttemptsGlobal} used)` : ""}</button>
+          ${renderUnlockDaysControl(rec)}
           <button class="btn btn-sm btn-ghost" style="color:var(--danger);" onclick="confirmRevokeTrainee('${rec.id}', '${esc(rec.name||"this trainee").replace(/'/g,"\\'")}')">Revoke</button>
         </div>
       </div>
@@ -13106,10 +13253,42 @@ function renderAdminRow(rec, day, practice){
     </div>`;
 }
 
+/* Admin: open days for a trainee who missed a session. "Unlock up to Day N" opens Days 2..N
+   whether or not the earlier Practice Labs are done; "Remove manual unlocks" returns the
+   trainee to the normal rule (days they've already started stay open). */
+function renderUnlockDaysControl(rec){
+  return "";   // every day is open to everyone now, so there is nothing to unlock
+  const cur = (Array.isArray(rec.unlockedDays) ? rec.unlockedDays : []).map(Number);
+  const top = cur.length ? Math.max(...cur) : 0;
+  return `<select class="btn btn-sm btn-ghost" style="padding:4px 8px;" title="Open days for a trainee who missed a session" onchange="adminUnlockDays('${rec.id}', this.value); this.selectedIndex=0;">
+      <option value="">🔓 ${top ? `Unlocked to ${ftName(top)}` : "Unlock days"}</option>
+      ${DAYS.filter(d=>d.id>1).map(d=>`<option value="${d.id}">Unlock up to ${ftName(d.id)}</option>`).join("")}
+      ${top ? `<option value="0">Remove manual unlocks</option>` : ""}
+    </select>`;
+}
+async function adminUnlockDays(traineeId, value){
+  const n = parseInt(value, 10); if(isNaN(n)) return;
+  const rec = await sharedGet("trainee:"+traineeId);
+  if(!rec){ toast("Couldn't load that trainee — refresh and try again."); return; }
+  const who = cleanName(rec.name) || "this trainee";
+  if(n > 1 && !confirm(`Unlock Days 2–${n} for ${who}? They can open those lessons and Practice Labs right away, even if earlier labs aren't done.`)) return;
+  rec.unlockedDays = n > 1 ? DAYS.map(d=>d.id).filter(id=>id>1 && id<=n) : [];
+  rec.unlockedDaysAt = new Date().toISOString();
+  await sharedSet("trainee:"+traineeId, rec);
+  if(state.adminData){
+    const idx = state.adminData.findIndex(x=>x.id===traineeId);
+    if(idx!==-1) state.adminData[idx] = rec;
+    const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
+  }
+  toast(n > 1 ? `Days 2–${n} unlocked for ${who}. Their open page updates within about 10 seconds.` : `Manual unlocks removed for ${who}.`);
+}
+window.adminUnlockDays = adminUnlockDays;
+
 async function resetTraineeLabAttempts(traineeId){
   const rec = await sharedGet("trainee:"+traineeId);
   if(!rec) return;
   rec.labAttemptsGlobal = 0;
+  rec.labAttemptsByDay = {};
   rec.labAttemptsResetAt = new Date().toISOString();
   await sharedSet("trainee:"+traineeId, rec);
   if(state.adminData){
@@ -13938,29 +14117,198 @@ function presenterNote(d, l, part){
   if(part===1 || l.singleSlide) return {cue, say: unq(sc.open), ask: unq(sc.ask), wrap: l.singleSlide ? unq(sc.wrap) : "", scenario: l.singleSlide ? scen : ""};
   return {say: sc.correct || "", wrap: unq(sc.wrap), scenario: scen};
 }
-// Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
-// ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper. When the slide is split over pages,
-// the presenter sees only the sections on the current page; Wrap and Scenario come with the last one.
-const PN_SECTION_NAMES = {1:"Core Principles", 2:"Step-by-Step Framework", 3:"Best Practices & Pitfalls", 4:"Go Deeper"};
-function renderPresenterNote(d, l, part, secs, allSecs){
-  const n = presenterNote(d, l, part);
-  const row = (k, v)=> v ? `<div class="script-row"><b>${k}</b><p>${esc(v)}</p></div>` : "";
-  const all = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`] || {};
-  const split = secs && secs.length && allSecs && secs.length < allSecs.length;
-  if(split && secs.every(s=>all["s"+s])){
-    const last = secs.includes(Math.max(...allSecs));
-    return `<div class="pn">
-      ${secs.map(s=>{ const x = all["s"+s]; if(!x) return ""; return `
-        <div class="pn-on"><b>On this page · ${esc(PN_SECTION_NAMES[s]||"")}</b><p>${esc(x.on||"")}</p></div>
-        <div class="script-block"><div class="script-head"><span>🎙 Script</span></div>${row("Say", x.say)}${row("Ask", x.ask)}</div>`; }).join("")}
-      ${last ? `${n.wrap ? `<div class="script-block"><div class="script-head"><span>🎙 Close</span></div>${row("Wrap", n.wrap)}</div>` : ""}${n.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}` : ""}
-    </div>`;
+/* ---------- Full spoken script for a slide ----------
+   Built from exactly what is on the slide (the same data the slide renders), so it always matches
+   what the room sees — including topics added later in the Content Studio. Part 1 covers ① Core
+   Principles and ② Step-by-Step; Part 2 covers ③ Best Practices & Pitfalls and ④ Go Deeper.
+   A hand-written "steps" script in presenter-notes.js (Day 3) replaces the generated ② section. */
+const SCRIPT_ORDINALS = ["First","Second","Third","Fourth","Fifth","Sixth","Seventh","Eighth","Ninth","Tenth"];
+function scriptSentence(t){
+  let x = String(t||"").replace(/\s+/g," ").trim();
+  if(!x) return "";
+  if(!/[.!?:"”')]$/.test(x)) x += ".";
+  return x;
+}
+function scriptSoften(t){
+  // "First, the calendar…" reads better than "First, The calendar…" for ordinary opening words.
+  const x = scriptSentence(t);
+  return /^(A|An|The|This|That|These|Those|Every|Each|Your|You|It|Its|If|When|Most|Many|Some|Good|Always|Never|Once|Before|After|Treat|Use|Keep|Build|Set|Make|Don't|Do|Know|Ask|Check|Write|Log|Map|Track|Confirm|Identify|Review|Protect|Name|Plan)\b/.test(x)
+    ? x.charAt(0).toLowerCase() + x.slice(1) : x;
+}
+function scriptList(items, intro){
+  const xs = (items||[]).map(scriptSentence).filter(Boolean);
+  if(!xs.length) return "";
+  if(xs.length===1) return (intro ? intro+" " : "") + xs[0];
+  return (intro ? intro+"\n" : "") + xs.map((x,i)=>{
+    const lead = i===xs.length-1 && xs.length>2 ? "And finally" : (SCRIPT_ORDINALS[i]||"Next");
+    const soft = scriptSoften(x);
+    // A point that opens with a name or a label ("Five categories: …") keeps its capital: "Second point: Five categories…"
+    return soft !== x ? `${lead}, ${soft}` : `${lead === "And finally" ? "And finally" : lead + " point"}: ${x}`;
+  }).join("\n");
+}
+function scriptLabelled(items, pick){
+  return (items||[]).map(pick).filter(Boolean).map(scriptSentence).join("\n");
+}
+function slideScriptSections(d, l, part){
+  const out = {};
+  const notes = (window.PRESENTER_NOTES || {})[`${d.id}::${l.h}`] || {};
+  const fp = l.fourPart || null;
+  const topic = `"${l.h}"`;
+  if(part !== 2){
+    // ① Core Principles
+    let core = "";
+    if(fp && fp.corePrinciples && fp.corePrinciples.length){
+      core = scriptList(fp.corePrinciples, `Let's start with the core principles behind ${topic}.`);
+    }else if(l.layout==="QUADRANT" && l.quadrants){
+      core = `This slide breaks ${topic} into ${l.quadrants.length} areas. Let's walk through each one.\n` + scriptLabelled(l.quadrants, q=>q.label ? `${q.label}: ${q.desc||""}` : q.desc);
+    }else if(l.layout==="COMPARE" && l.compareLeft && l.compareRight){
+      core = `This slide puts two approaches side by side.\n` +
+        `On the left, ${l.compareLeft.label}:\n${(l.compareLeft.items||[]).map(scriptSentence).join("\n")}\n` +
+        `On the right, ${l.compareRight.label}:\n${(l.compareRight.items||[]).map(scriptSentence).join("\n")}\n` +
+        `Notice the difference between the two columns: that contrast is the point of this topic.`;
+    }else if(l.layout==="THREEBOX" && l.boxes){
+      core = `There are ${l.boxes.length} pieces to ${topic}. Let's take them one at a time.\n` + scriptLabelled(l.boxes, x=>x.label ? `${x.label}: ${x.desc||""}` : x.desc);
+    }else if(l.layout==="STAT"){
+      core = `Take a look at the number on this slide: ${l.statNumber}${l.statLabel ? ` ${l.statLabel}` : ""}. Keep that figure in mind as we go through ${topic}.`;
+    }else if(l.layout==="ICONLIST" && l.icons){
+      core = `This slide lays out ${l.icons.length} parts of ${topic}.\n` + scriptLabelled(l.icons, x=>x.label ? `${x.label}: ${x.desc||""}` : x.desc);
+    }else if(l.layout==="PALETTE" && l.palette){
+      core = `Here is the palette, color by color.\n` + scriptLabelled(l.palette, c=>`${c.name}${c.hex ? ` (${c.hex})` : ""}: ${c.use||""}`);
+    }else if(l.layout==="TABLE" && l.tableHeaders && l.tableRows){
+      const h = l.tableHeaders;
+      core = `This table compares ${h.slice(1).join(" and ")}, row by row.\n` + l.tableRows.map(r=>scriptSentence(`${r[0]}: ${h.slice(1).map((hh,k)=>`${hh}, ${r[k+1]}`).join("; ")}`)).join("\n");
+    }else if(l.layout==="PROCESS"){
+      core = `${topic} is a sequential skill. The core principle is to follow the steps in order, not to treat them as optional or interchangeable.`;
+    }else if((l.b||[]).length){
+      core = `Here's the core idea behind ${topic}. ${scriptSentence(l.b[0])}`;
+    }
+    if(core) out[1] = core;
+    // ② Step-by-Step How-To Framework
+    let steps = "";
+    if(notes.steps) steps = notes.steps;
+    else{
+      const list = (fp && fp.howTo && fp.howTo.length) ? fp.howTo
+        : (l.layout==="PROCESS" && l.processSteps) ? l.processSteps.map(x=>x.label ? `${x.label}: ${x.desc||""}` : x.desc)
+        : (l.howTo || []);
+      if(list.length) steps = `Continuing on, here is our step-by-step how-to framework for putting ${topic} into practice:\n` + list.map((x,i)=>`${i+1}. ${scriptSentence(x)}`).join("\n");
+    }
+    if(steps) out[2] = steps;
   }
+  if(part === 2 || l.singleSlide){
+    if(l.singleSlide && part !== 2){ /* single-slide topics show only ① and ② */ }
+    else{
+      // ③ Best Practices & Pitfalls
+      const bp = (fp && fp.bestPractices) ? fp.bestPractices : ((!l.layout && (l.b||[]).length > 1) ? l.b.slice(1) : (l.b||[]));
+      const lines = [];
+      const plain = bp.map(x=>String(x||"").trim()).filter(t=>t && !/^(pitfall|discussion prompt):/i.test(t));
+      const LEAD = ["To begin with,","Next,","Also,","On top of that,","Another key point:","Keep in mind,","Beyond that,"];
+      let n = 0;
+      bp.forEach(x=>{
+        const t = String(x||"").trim(); if(!t) return;
+        if(/^pitfall:/i.test(t)) lines.push(`Here's a pitfall to watch out for: ${scriptSentence(t.replace(/^pitfall:\s*/i,""))}`);
+        else if(/^discussion prompt:/i.test(t)) lines.push(`Let's discuss this as a group: ${scriptSentence(t.replace(/^discussion prompt:\s*/i,""))}`);
+        else{ const lead = plain.length>1 && n===plain.length-1 ? "And finally," : LEAD[Math.min(n, LEAD.length-1)]; n++;
+          const soft = scriptSoften(t);
+          // Points that open with a label or a name are read as they are, without a connector in front.
+          lines.push(plain.length===1 || (soft===scriptSentence(t) && !/:$/.test(lead)) ? scriptSentence(t) : `${lead} ${/:$/.test(lead) ? scriptSentence(t) : soft}`); }
+      });
+      if(l.callout && l.callout.text) lines.push(`Notice the ${l.callout.label ? `"${l.callout.label}"` : "highlighted"} box on this slide: ${scriptSentence(l.callout.text)}`);
+      if(lines.length) out[3] = `Now let's move on to the practices that make ${topic} work, and the pitfalls to avoid.\n` + lines.join("\n");
+      // ④ Go Deeper
+      const extra = typeof LESSON_EXTRA_LEARNING!=="undefined" && LESSON_EXTRA_LEARNING[d.id+"::"+l.h];
+      if(extra && extra.p && extra.p.length) out[4] = `To go deeper, let's look at ${extra.t}.\n` + extra.p.map((x,i)=>`${i===0 ? "" : (i===extra.p.length-1 ? "Finally, " : "Also, ")}${i===0 ? scriptSentence(x) : scriptSoften(x)}`).join("\n");
+    }
+  }
+  return out;
+}
+function slideScriptText(d, l, part, secs){
+  const all = slideScriptSections(d, l, part);
+  const keys = Object.keys(all).map(Number).filter(k=>!secs || secs.includes(k)).sort();
+  return keys.map(k=>all[k]).join("\n\n");
+}
+// Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
+// ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper (used for the "On this page" summary when
+// a slide is split over pages).
+const PN_SECTION_NAMES = {1:"Core Principles", 2:"Step-by-Step Framework", 3:"Best Practices & Pitfalls", 4:"Go Deeper"};
+/* ---------- The spoken script for one slide ----------
+   Every slide's script follows the same four beats:
+     ① The why      — the punchline: why this slide matters, in one quick sentence
+     ② Talk it through — what's on the slide, in plain spoken words (not the bullets read out)
+     ③ Walk through it — the steps or points in order: first, next, then, finally
+     ④ Ask the room / Your turn — an action or a question, so it ends as a conversation
+   Hand-written scripts live in js/slide-scripts/dayN.js (window.SLIDE_SCRIPTS["day::title"].p1 / .p2).
+   A topic without one (e.g. added later in the Content Studio) gets the same four beats built from
+   what is on the slide. */
+function scriptInline(t){
+  // A point read mid-sentence: "Perform the check" → "perform the check"; a label or a name keeps its capitals.
+  const x = scriptSentence(t), w = x.split(/\s+/);
+  const head = x.split(/\s[—–-]\s|:/)[0].split(/\s+/).filter(v=>!/^(of|the|and|a|an|to|for|in|on|with|or|vs\.?|&)$/i.test(v) && !/^[A-Z0-9/&().-]{2,}$/.test(v));
+  const label = head.length >= 2 && head.every(v=>/^[A-Z“"(]/.test(v));
+  if(label || /^[A-Z][A-Z0-9]|^[A-Z][a-z]+[A-Z]/.test(w[0]) || /^(I|Elias|Thorne|Meridian|Harrington|Clio|Outlook|Slack|Zoom|Teams|Google|Microsoft|QuickBooks|LinkedIn|Claude|ChatGPT|Gemini|Loom|Asana|Trello)\b/.test(w[0])) return x;
+  return x.charAt(0).toLowerCase() + x.slice(1);
+}
+function scriptWalk(items){
+  const xs = (items||[]).map(x=>String(x||"").replace(/^\s*\d+[.)]\s*/,"").trim()).filter(Boolean);
+  return xs.map((x,i)=>{
+    const lead = xs.length===1 ? "" : i===0 ? "First, " : i===xs.length-1 ? "Finally, " : (i===1 ? "Next, " : (i%2 ? "After that, " : "Then, "));
+    return lead ? lead + scriptInline(x) : scriptSentence(x);
+  });
+}
+function slideScript(d, l, part){
+  const key = (part===2 && !l.singleSlide) ? "p2" : "p1";
+  const hand = ((window.SLIDE_SCRIPTS || {})[`${d.id}::${l.h}`] || {})[key];
+  if(hand) return {why: hand.why||"", talk: hand.talk||"", walk: hand.walk||[], ask: hand.ask||"", hand: true};
+  const n = presenterNote(d, l, part), secs = slideScriptSections(d, l, part);
+  let walk = [];
+  if(secs[2]) walk = scriptWalk(secs[2].split("\n").slice(1));
+  const talk = [secs[1], secs[3], secs[4]].filter(Boolean).join("\n\n");
+  const ask = key==="p1" ? (n.ask || (l.singleSlide ? n.wrap : "")) : (n.wrap || n.ask || "");
+  return {why: n.say || "", talk, walk, ask, hand: false};
+}
+function slideScriptText(d, l, part){
+  const s = slideScript(d, l, part);
+  return [s.why, s.talk, s.walk.join("\n"), s.ask].filter(Boolean).join("\n\n");
+}
+/* When a long slide is split over pages, each page gets its own part of the slide's script:
+   page 1 opens with the why and the explanation, the pages that show the steps (slide 1) or the
+   practices (slide 2) share the walk-through in order, and the last page ends with the question. */
+function slideScriptForPage(s, l, part, pg){
+  const P = pg && pg.pages > 1 && Array.isArray(pg.secsByPage) && pg.secsByPage.length===pg.pages ? pg.pages : 1;
+  if(P===1) return Object.assign({}, s, {more: false, cont: false});
+  const k = Math.max(0, Math.min(pg.page||0, P-1));
+  const walkSecs = (part===2 && !l.singleSlide) ? [3,4] : [2];
+  // a page with no numbered section on it (e.g. only a diagram) carries on from the page before
+  let prev = [];
+  const byPage = pg.secsByPage.map(ss=>{ const x = (ss && ss.length) ? ss : prev; prev = x; return x; });
+  let wp = byPage.map((ss,i)=>ss.some(x=>walkSecs.includes(x)) ? i : -1).filter(i=>i>=0);
+  if(!wp.length) wp = [P-1];
+  const n = s.walk.length, pos = wp.indexOf(k);
+  let walk = [];
+  let from = 0;
+  if(pos >= 0){ from = Math.round(n*pos/wp.length); const to = Math.round(n*(pos+1)/wp.length); walk = s.walk.slice(from, to); }
+  return {why: k===0 ? s.why : "", talk: k===0 ? s.talk : "", walk, ask: k===P-1 ? s.ask : "",
+    more: k < P-1, cont: from > 0, hand: s.hand, page: k, pages: P};
+}
+/* The script reads like speaker notes: one flowing paragraph the trainer can say out loud (the
+   why, the explanation and the points in order), then the closing question on its own line. */
+function scriptProse(s){
+  const body = [s.why, String(s.talk||"").replace(/\s*\n+\s*/g, " "), (s.walk||[]).join(" ")].filter(Boolean).join(" ");
+  return [body, s.ask].filter(Boolean);
+}
+function renderPresenterNote(d, l, part, secs, allSecs, pg){
+  const n = presenterNote(d, l, part);
+  const s = slideScriptForPage(slideScript(d, l, part), l, part, pg);
+  const lastSlide = l.singleSlide || part===2;
+  const where = (l.singleSlide ? "" : ` · slide ${part===2 ? 2 : 1} of 2`) + (s.pages > 1 ? ` · page ${s.page+1} of ${s.pages}` : "");
+  let paras = scriptProse(s);
+  if(!paras.length) paras = ["Give the room a moment to read this page, then ask which point here matters most in their own work."];
   return `<div class="pn">
-    ${n.on ? `<div class="pn-on"><b>On this slide</b><p>${esc(n.on)}</p></div>` : ""}
-    ${n.cue ? `<div class="pn-on"><b>Trainer note</b><p>${esc(n.cue)}</p></div>` : ""}
-    <div class="script-block"><div class="script-head"><span>🎙 Script</span></div>${row("Say", n.say)}${row("Ask", n.ask)}${row("Wrap", n.wrap)}</div>
-    ${n.scenario ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}
+    <div class="script-block"><div class="script-head"><span>🎙 Script — read aloud${where}</span></div>
+      ${paras.map((x,i)=>`<p class="script-say${i && s.ask && i===paras.length-1 ? " script-ask" : ""}">${esc(x)}</p>`).join("")}
+      ${s.more ? `<p class="script-next">Continues on the next page →</p>` : ""}
+    </div>
+    ${n.cue && s.page ? "" : (n.cue ? `<div class="pn-on pn-cue"><b>Trainer note — not read aloud</b><p>${esc(n.cue)}</p></div>` : "")}
+    ${lastSlide && !s.more && n.scenario && !s.hand ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}
   </div>`;
 }
 function buildDayScriptLines(d){
@@ -13969,13 +14317,12 @@ function buildDayScriptLines(d){
     const parts = l.singleSlide ? [1] : [1,2];
     lines.push(`## ${String(i+1).padStart(2,"0")}. ${l.h}  ·  ${slideLabel(d, i)}`);
     parts.forEach(p=>{
-      const n = presenterNote(d, l, p);
-      if(parts.length > 1) lines.push(`PART ${p}`);
-      if(n.on) lines.push(`ON THIS SLIDE: ${n.on}`);
-      if(n.say) lines.push(`SAY: ${n.say}`);
-      if(n.ask) lines.push(`ASK: ${n.ask}`);
-      if(n.wrap) lines.push(`WRAP: ${n.wrap}`);
-      if(n.scenario) lines.push(`SCENARIO: ${n.scenario}`);
+      const n = presenterNote(d, l, p), s = slideScript(d, l, p);
+      if(parts.length > 1) lines.push(`SLIDE ${p} OF 2`);
+      const paras = scriptProse(s);
+      if(paras[0]) lines.push(paras[0]);
+      if(paras[1]) lines.push(`ASK: ${paras[1]}`);
+      if((l.singleSlide || p===2) && n.scenario && !s.hand) lines.push(`SCENARIO: ${n.scenario}`);
     });
     lines.push("---");
   });
@@ -16829,7 +17176,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.29-2307";
+var APP_BUILD = "ft-2026.09.29-2319";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -16872,17 +17219,28 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-slides.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-process.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-rules.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.29-2307"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.29-2307"></script>
+<script src="/js/slide-scripts/day1.js?v=2"></script>
+<script src="/js/slide-scripts/day2.js?v=3"></script>
+<script src="/js/slide-scripts/day3.js?v=4"></script>
+<script src="/js/slide-scripts/day4.js?v=3"></script>
+<script src="/js/slide-scripts/day5.js?v=3"></script>
+<script src="/js/slide-scripts/day6.js?v=3"></script>
+<script src="/js/slide-scripts/day7.js?v=3"></script>
+<script src="/js/slide-scripts/day8.js?v=3"></script>
+<script src="/js/slide-scripts/day9.js?v=3"></script>
+<script src="/js/slide-scripts/day10.js?v=3"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-slides.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-process.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-rules.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.29-2319"></script>
+<script src="/js/portal-link.js?v=1"></script>
 <script src="/js/portal-link.js?v=1"></script>
 </body>
 </html>

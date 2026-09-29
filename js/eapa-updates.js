@@ -14,6 +14,9 @@
      8. Day 3 "Proactive EA Tasks" is now a written, graded exercise.
      9. Practice Lab pages in the platform page style (hero, activity headings, cards, buttons).
     10. SOP: Program flow page + a timed run of show for every day.
+    11. Trainee feedback: open any page in a new tab (right-click, Ctrl/⌘-click,
+        middle-click), "Lessons in a new tab" on every lab, Gmail inbox labels stay on screen.
+    12. Batch Folders: an Archive shelf, restore, search, and records downloads for later use.
    ============================================================ */
 window.EAPA_UPDATE_PACK = "z";
 (function(){ const s = document.createElement("style"); s.id = "eapa-update-p"; s.textContent = `
@@ -21,6 +24,24 @@ window.EAPA_UPDATE_PACK = "z";
 .nav .nav-viewswitch:hover{background:rgba(240,192,138,.28) !important;}
 .view-mode-strip{background:#F0C08A;color:#1F2440;font-size:13px;text-align:center;padding:7px 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
 .view-mode-strip button{font:inherit;font-weight:700;background:#1F2440;color:#fff;border:none;border-radius:999px;padding:4px 12px;cursor:pointer;}
+/* Top-bar search: the input may shrink (the placeholder ends in "…" instead of spilling out of the box) */
+.topbar-search input{flex:1 1 auto;min-width:0;width:100%;text-overflow:ellipsis}
+.topbar-search{min-height:36px}
+.topbar-search .sicon{flex:0 0 auto;display:flex;align-items:center;color:#fff;cursor:text}
+.topbar-search .sicon svg{width:15px;height:15px;display:block}
+/* Top bar on laptops and desktops: nothing overlaps. The program title gives way first (down to the logo;
+   the text hides when there's no room to read it), then the search box shrinks to its minimum, then the
+   nav wraps its last buttons onto a second line. */
+@media(min-width:1181px){
+  .topbar .brand{flex:0 1000000 280px;min-width:40px;container-type:inline-size}
+  .topbar-right{min-width:auto}
+  .topbar .nav{flex:0 1 auto;min-width:0;flex-wrap:wrap;column-gap:0;row-gap:4px}
+  .topbar .nav>*+*{margin-left:2px}  /* margins, not column-gap: Chrome leaves the gap out of a wrapping row's width */
+  .topbar-search{flex-shrink:100000}
+  .trainee-chip{flex-shrink:0}
+  .topbar-search .search-results{min-width:320px}
+}
+@container (max-width:170px){.topbar .brand-text{display:none !important}}
 /* ================= Standard-size, centred slides =================
    Every slide is the same size. Content sits in a centred column; anything
    that doesn't fit continues on a balanced next page (see paginateLessonSlide). */
@@ -151,12 +172,7 @@ body.audience-mode > *:not(#audienceRoot):not(.aud-hint){display:none !important
 `; document.head.appendChild(s); })();
 
 /* ---------- 1. standard-size slides ---------- */
-function goToSlide(i){
-  const maxReached = state.maxSlideReached||0;
-  if(i > maxReached){
-    toast("Complete the current topic before jumping ahead.");
-    return;
-  }
+function goToSlide(i){   // any slide can be opened — nothing is locked
   state.slideDir = i>(state.lessonSlide||0) ? "next" : "prev";
   state.lessonSlide = i; state.slidePage = 0;
   refreshLessonSlide();
@@ -217,7 +233,7 @@ function renderTopbar(){
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
         <div class="topbar-search">
-          <span class="sicon">🔍</span>
+          <label class="sicon" for="topSearchInput" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg></label>
           <input type="text" id="topSearchInput" name="topSearchInput" autocomplete="off" placeholder="Search days, topics, tools…" value="${esc(state.searchQuery||'')}" oninput="setTopSearch(this.value)" onkeydown="if(event.key==='Escape') clearTopSearch();">
           ${state.searchQuery ? `<div class="search-results" id="searchResultsWrap">${renderSearchResults(state.searchQuery)}</div>` : ""}
         </div>
@@ -681,7 +697,8 @@ function presenterCues(d, slide){
     const l = d.lessons[slide.lessonIndex];
     out.push(`<h3>${esc(l.h)}${l.singleSlide ? "" : ` <small style="font-size:12px;color:var(--ink-soft);">Part ${slide.part} of 2</small>`}</h3>`);
     const pageInfo = state.presentSecsFor === (state.lessonSlide||0);
-    out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null));   // hardcoded notes: js/presenter-notes.js
+    out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null,
+      pageInfo ? {page: state.presentPage||0, pages: state.presentPages||1, secsByPage: state.presentSecsByPage} : null));   // scripts: js/slide-scripts/dayN.js
   }else if(slide.type==="quickCheck"){
     out.push(`<h3>Quick Check</h3><p>Let the room answer first — then reveal and use the rationale.</p>`);
     (d.quickChecks||[]).filter(c=>c.afterIndex===slide.lessonIndex).forEach(c=>{
@@ -721,6 +738,7 @@ function renderPresenterConsole(d){
           <div class="pv-mirror" id="pvMirror"><iframe class="pv-frame" id="pvFrame" src="/?audience=mirror&day=${d.id}" tabindex="-1" inert title="Live copy of the slides window"></iframe></div>
           <div class="pv-nav">
             <button class="btn btn-ghost" onclick="presenterStep(-1)">← Previous</button>
+            <button class="btn btn-ghost btn-sm" onclick="presenterJump(0)" title="Go back to the first slide">⏮ Slide 1</button>
             <select id="pvJump" onchange="presenterJump(this.value)" title="Jump to a slide">${slides.map((s,i)=>`<option value="${i}" ${i===idx?"selected":""}>${i+1}. ${esc(daySlideTitle(d,s))}</option>`).join("")}</select>
             <button class="btn btn-primary" onclick="presenterStep(1)">Next →</button>
           </div>
@@ -738,7 +756,7 @@ function presenterRefresh(){
   const c = document.getElementById("pvCount"); if(c) c.textContent = presenterCountText(d);
   const n = document.getElementById("pvNext"); if(n) n.innerHTML = presenterNextText(d);
   const j = document.getElementById("pvJump"); if(j) j.value = String(idx);
-  const cueKey = idx + "|" + (state.presentSecsFor===idx ? (state.presentSecs||[]).join(",") : "");
+  const cueKey = idx + "|" + (state.presentSecsFor===idx ? (state.presentSecs||[]).join(",") + "|" + (state.presentPage||0) + "/" + (state.presentPages||1) : "");
   const cu = document.getElementById("pvCues"); if(cu && cu.dataset.slide !== cueKey){ cu.dataset.slide = cueKey; cu.innerHTML = presenterCues(d, slides[idx]); cu.parentElement.scrollTop = 0; }
 }
 function presenterFitMirror(){
@@ -781,7 +799,7 @@ if(pvChannel() && !PV_IS_AUDIENCE){
     if(m.type==="key") presenterStep(m.dir);
     if(m.type==="rendered" && m.dayId===state.dayId && m.slide===(state.lessonSlide||0)){
       state.presentSecs = m.secs || null; state.presentAllSecs = m.allSecs || null; state.presentSecsFor = m.slide;
-      state.presentPage = m.page; state.presentPages = m.pages;
+      state.presentPage = m.page; state.presentPages = m.pages; state.presentSecsByPage = m.secsByPage || null;
       if(!PV.size || PV.size.w!==m.w || PV.size.h!==m.h){ PV.size = {w:m.w, h:m.h}; presenterFitMirror(); }
       presenterRefresh();
     }
@@ -835,9 +853,11 @@ if(PV_IS_AUDIENCE){
     const secNum = (s)=>+((s.querySelector(".fp-num")||{}).textContent||0);
     const allSecs = [...root.querySelectorAll(".fp-section")].map(secNum).filter(Boolean);
     const secs = [...root.querySelectorAll(".fp-section")].filter(s=>!s.closest(".pg-hide")).map(secNum).filter(Boolean);
+    // the sections on every page, so each page of a long slide gets its own part of the script
+    const secsByPage = __slidePg ? __slidePg.pages.map(([a,b])=>[...new Set(__slidePg.units.slice(a,b+1).map(u=>{ const s = u.closest(".fp-section"); return s ? secNum(s) : 0; }).filter(Boolean))]) : [allSecs];
     // The live copy in the console doesn't load a second deck: it can't follow the room's page.
     if(!isMain) root.querySelectorAll(".canva-frame").forEach(f=>{ f.innerHTML = `<div class="aud-deck-note"><b>🎞 Canva deck</b>It's live in your slides window. Turn its pages there: click the deck, or press ← →.</div>`; });
-    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight, secs, allSecs});
+    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight, secs, allSecs, secsByPage});
   };
   if(pvChannel()){
     PV.ch.addEventListener("message", (e)=>{
@@ -912,6 +932,7 @@ const EO_TOPIC_TITLE = "Email Outreach End-to-End: Research, Write, Follow Up";
   const d = DAYS.find(x=>x.id===4); if(!d || d.lessons.some(l=>l.h===EO_TOPIC_TITLE)) return;
   d.lessons.push({
     h: EO_TOPIC_TITLE,
+    section: "Email Outreach & Marketing",
     trainerCue: "Before the Practice Lab, read one weak and one strong outreach email aloud and have the room vote on which they'd actually open on their phone — then ask what exactly made the difference.",
     fourPart: {
       corePrinciples: [
@@ -1973,7 +1994,7 @@ function labChipsHtml(t){
   const left = typeof labAttemptsRemaining==="function" ? labAttemptsRemaining() : null;
   return (n ? `<span>🧩 ${n} activities</span>` : "")
     + (p ? `<span class="ok">✓ Best score ${p.bestScore}% · ${p.runs} run${p.runs===1?"":"s"}</span>` : `<span>◻ Not started</span>`)
-    + (left!=null ? `<span>🔁 ${left} of ${LAB_ATTEMPT_CAP} repeat attempts left</span>` : "")
+    + (left!=null ? `<span>🔁 ${left} of ${LAB_ATTEMPT_CAP} repeats left for this day</span>` : "")
     + `<span>🆓 First try of each exercise is free</span>`;
 }
 const LAB_CTA = /^\s*(check|submit|get review|get evaluation|get feedback|finish|evaluate|grade|review my|send for review)/i;
@@ -2192,6 +2213,274 @@ function sopProgramFlow(){
       <table class="log-table sopx-table sopf-map"><thead><tr><th>Day</th><th>Title</th><th>Topics</th><th>Practice Lab</th><th></th></tr></thead><tbody>${days}</tbody></table></section>`;
 }
 window.setSopStart = setSopStart;
+
+/* ---------- 11. Trainee feedback (2026-09-28) ----------
+   a) Open any page in a new tab. Menu items, day cards and activity cards are buttons,
+      so the browser offers no "Open link in new tab". Right-click on anything that opens
+      a portal page shows that option; Ctrl/⌘-click and middle-click open it directly.
+   b) Every Practice Lab activity has "Lessons in a new tab", to review the day's lesson
+      while answering (Client Dossier, activities, Knowledge Checks).
+   c) Gmail inbox (Day 2 lab): a fixed-height window like real Gmail. The label list stays
+      on screen and only the email list scrolls, so every email can be dragged onto a label. */
+(function(){ const s = document.createElement("style"); s.id = "eapa-update-11"; s.textContent = `
+.nt-menu{position:fixed;z-index:9999;background:#fff;border:1px solid #dadce0;border-radius:10px;box-shadow:0 10px 30px -8px rgba(31,36,64,.35);padding:6px;min-width:200px;font-size:13.5px;}
+.nt-menu button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;background:none;border:none;border-radius:7px;padding:8px 10px;color:#1F2440;cursor:pointer;}
+.nt-menu button:hover{background:#F2F4FA;}
+.gm.gm-dragging .gm-folder, .gm.gm-dragging .gm-compose{display:none;}
+.gm.gm-dragging .gm-lblhead::after{content:"Drop on a label";font-size:11px;font-weight:600;color:#0b57d0;margin-left:8px;}
+.gm.gm-dragging .gm-lbl{outline:1px dashed #a8c7fa;outline-offset:-3px;}
+.nt-menu small{display:block;color:#6B7089;font-size:11.5px;padding:4px 10px 2px;}
+@media(min-width:861px){
+  .gm-body{height:clamp(420px, calc(100vh - 250px), 760px);min-height:0;grid-template-rows:minmax(0,1fr);}
+  .gm-nav{overflow-y:auto;min-height:0;}
+  .gm-main{min-height:0;overflow:hidden;}
+  .gm-list, .gm-read{min-height:0;overflow-y:auto;}
+}
+`; document.head.appendChild(s); })();
+
+// The portal page a click would open ("#/day/3", "#/tool/dossier1", "#/notes" …), or "".
+function ntRouteOf(el){
+  const node = el && el.closest && el.closest("[onclick]"); if(!node) return "";
+  const js = node.getAttribute("onclick") || "";
+  let m = js.match(/\bgoto\(\s*['"]([a-z]+)['"]\s*(?:,\s*['"]?([^'")\s]+)['"]?\s*)?\)/i), h = "";
+  if(m) h = "#/" + m[1] + (m[2] ? "/" + encodeURIComponent(m[2]) : "");
+  else if((m = js.match(/\b(?:returnToLessonCard|goToNextDay)\(\s*(\d+)\s*\)/))) h = "#/day/" + m[1];
+  else if((m = js.match(/\bopenRouteInNewTab\(/))) return "";
+  if(!h) return "";
+  const r = h.match(/^#\/([a-z]+)(?:\/(.+))?$/i), view = r[1], id = r[2] ? decodeURIComponent(r[2]) : null;
+  if(view==="day") return DAYS.some(d=>String(d.id)===String(id)) ? h : "";
+  if(view==="tool") return PRACTICE_TOOLS.some(t=>t.id===id) ? h : "";
+  return (typeof routeViews==="function" && routeViews().includes(view)) ? h : "";
+}
+function ntSignedIn(){ return !!(state.traineeId || state.isAdmin) && !["login","pendingApproval","registrationDenied"].includes(state.view); }
+function ntClose(){ const m = document.getElementById("ntMenu"); if(m) m.remove(); }
+document.addEventListener("click", (e)=>{
+  if(!(e.ctrlKey || e.metaKey || e.shiftKey) || !ntSignedIn()) return;
+  const h = ntRouteOf(e.target); if(!h) return;
+  e.preventDefault(); e.stopImmediatePropagation(); openRouteInNewTab(h);
+}, true);
+document.addEventListener("mousedown", (e)=>{ if(e.button===1 && ntSignedIn() && ntRouteOf(e.target)) e.preventDefault(); }, true); // no autoscroll
+document.addEventListener("auxclick", (e)=>{
+  if(e.button!==1 || !ntSignedIn()) return;
+  const h = ntRouteOf(e.target); if(!h) return;
+  e.preventDefault(); openRouteInNewTab(h);
+}, true);
+document.addEventListener("contextmenu", (e)=>{
+  ntClose();
+  if(!ntSignedIn() || e.target.closest("input, textarea, [contenteditable]")) return;
+  const node = e.target.closest("[onclick]"), h = ntRouteOf(e.target); if(!h) return;
+  e.preventDefault();
+  const label = (typeof routeLabel==="function" && routeLabel(h)) || "this page";
+  const m = document.createElement("div"); m.className = "nt-menu"; m.id = "ntMenu";
+  m.innerHTML = `<small>${esc(label)}</small>
+    <button type="button" data-nt="tab">⧉ Open in new tab</button>
+    <button type="button" data-nt="here">↪ Open here</button>`;
+  document.body.appendChild(m);
+  const w = m.offsetWidth, hgt = m.offsetHeight;
+  m.style.left = Math.min(e.clientX, innerWidth - w - 8) + "px"; m.style.top = Math.min(e.clientY, innerHeight - hgt - 8) + "px";
+  m.addEventListener("click", (ev)=>{ const b = ev.target.closest("[data-nt]"); if(!b) return; ntClose();
+    if(b.dataset.nt==="tab") openRouteInNewTab(h); else if(node) node.click(); });
+}, true);
+document.addEventListener("mousedown", (e)=>{ if(!e.target.closest("#ntMenu")) ntClose(); });
+document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") ntClose(); });
+window.addEventListener("scroll", ntClose, true);
+window.addEventListener("blur", ntClose);
+
+// c) While an email is being dragged, the folders (not drop targets) step aside so every
+//    label is on screen, even on a short laptop screen.
+const __gmDragStart11 = gmDragStart, __gmDragEnd11 = gmDragEnd;
+window.gmDragStart = function(){
+  __gmDragStart11.apply(this, arguments);
+  setTimeout(()=>{ const sh = document.getElementById("gmShell"); if(!sh || !gmDragStart.ids) return; sh.classList.add("gm-dragging"); const nav = sh.querySelector(".gm-nav"); if(nav) nav.scrollTop = 0; }, 0);
+};
+window.gmDragEnd = function(){
+  __gmDragEnd11.apply(this, arguments);
+  const sh = document.getElementById("gmShell"); if(sh) sh.classList.remove("gm-dragging");
+};
+
+// b) "Lessons in a new tab" on every Practice Lab activity
+const __eapaToolHead11 = window.toolHead;
+window.toolHead = function(t){
+  const html = __eapaToolHead11.apply(this, arguments);
+  const d = t.relates ? parseInt(String(t.relates).replace(/[^0-9]/g,""), 10) : null;
+  if(!d) return html;
+  const btn = `<button class="btn btn-sm lab-hbtn" onclick="openRouteInNewTab('#/day/${d}')" title="Keep this activity open and review the ${ftName(d)} lessons side by side">📑 Lessons in a new tab</button>`;
+  return html.replace(/(<div class="lab-hero-actions">)/, "$1" + btn);
+};
+
+/* ---------- 12. Batch Folders: Archive shelf + re-access records (2026-09-28) ----------
+   Archiving a batch moves its folder to the 📦 Archive shelf instead of leaving an empty
+   "0 trainees" folder. Every record is kept: open an archived folder to see its registry,
+   rankings, feedback and activity as they were, download the records (CSV for a sheet,
+   JSON for a full backup), or restore the batch. A search box finds a batch or a trainee
+   in active and archived batches alike. */
+(function(){ const s = document.createElement("style"); s.id = "eapa-update-12"; s.textContent = `
+.bf-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 16px;}
+.bf-search{flex:1 1 260px;max-width:420px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;}
+.bf-search input{border:none;outline:none;font:inherit;font-size:13.5px;width:100%;background:transparent;color:var(--ink);}
+.bf-count{font-size:12.5px;color:var(--ink-soft);}
+.batch-folder{position:relative;}
+.batch-folder .bf-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.batch-folder .bf-actions button{font:inherit;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#F6F7FB;color:var(--navy);cursor:pointer;}
+.batch-folder .bf-actions button:hover{border-color:var(--orange,#DB8437);}
+.batch-folder .bf-actions .bf-arch{color:#8A5A1E;}
+.batch-folder .bf-hit{font-size:11.5px;color:#0b57d0;font-weight:600;}
+.bf-shelf{margin-top:30px;padding:18px;border-radius:16px;background:#EEF0F6;border:1px dashed #C9CEDD;}
+.bf-shelf h2{margin:0 0 4px;font-size:16px;color:var(--navy);}
+.bf-shelf > p{margin:0 0 14px;font-size:12.5px;color:var(--ink-soft);}
+.batch-folder.is-archived{background:#FAFAFC;}
+.batch-folder.is-archived .bf-icon{filter:grayscale(1);opacity:.75;}
+.batch-folder.is-archived .bf-name::after{content:"Archived";margin-left:8px;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#5B6178;background:#E4E6EE;padding:2px 7px;border-radius:999px;vertical-align:middle;}
+.bf-archived-banner{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#EEF0F6;border:1px solid #C9CEDD;border-radius:12px;padding:12px 16px;margin:10px 0 4px;font-size:13px;color:var(--ink);}
+.bf-archived-banner b{color:var(--navy);}
+.bf-archived-banner .grow{flex:1 1 260px;}
+`; document.head.appendChild(s); })();
+
+function bfAll(k){ return (state.adminData||[]).filter(r=>batchKey(r)===k); }
+function bfIsArchived(k){ const all = bfAll(k); return all.length>0 && all.every(r=>r.archived); }
+function bfArchivedAt(k){ return bfAll(k).map(r=>r.archivedAt).filter(Boolean).sort().pop() || null; }
+// An archived batch shows all of its records; an active one hides archived trainees unless asked.
+function batchMembers(k){ const all = bfAll(k), arch = all.length>0 && all.every(r=>r.archived); return all.filter(r=>arch || state.batchShowArchived || !r.archived); }
+function bfKeys(){
+  return Array.from(new Set((state.adminData||[]).map(batchKey))).sort((a,b)=> a===NO_BATCH ? 1 : b===NO_BATCH ? -1 : a.localeCompare(b, undefined, {numeric:true}));
+}
+function bfMatches(k){
+  const q = String(state.bfSearch||"").trim().toLowerCase(); if(!q) return {ok:true, names:[]};
+  const names = bfAll(k).map(r=>cleanName(r.name)||"").filter(n=>n.toLowerCase().includes(q));
+  return {ok: folderLabel(k).toLowerCase().includes(q) || names.length>0, names};
+}
+function bfCard(k){
+  const all = bfAll(k), arch = bfIsArchived(k), m = bfMatches(k);
+  const shown = arch ? all : all.filter(r=>!r.archived);
+  const done = shown.length ? Math.round(shown.reduce((a,r)=>a+adminDayStats(r).done,0)/shown.length/DAYS.length*100) : 0;
+  const fb = batchFeedback(k).length, fbTxt = state.tfbAdmin && !state.tfbAdmin.loading ? `${fb} feedback` : "feedback…";
+  const extraArch = !arch && all.length>shown.length ? ` · ${all.length-shown.length} archived` : "";
+  const at = arch ? bfArchivedAt(k) : null;
+  const kq = esc(k).replace(/'/g, "&#39;");
+  return `<div class="batch-folder ${arch?"is-archived":""}" role="button" tabindex="0" onclick="openBatchFolder('${kq}','registry')" onkeydown="if(event.key==='Enter'){openBatchFolder('${kq}','registry')}">
+    <span class="bf-icon">${arch?"🗄":"📁"}</span>
+    <span class="bf-name">${esc(folderLabel(k))}</span>
+    <span class="bf-meta">${shown.length} trainee${shown.length===1?"":"s"}${extraArch}</span>
+    <span class="bf-meta">${done}% avg completion · ${fbTxt}</span>
+    ${arch ? `<span class="bf-meta">${at ? "Archived " + esc(fmtDate(at)) : "Archived"}</span>` : ""}
+    ${m.names.length ? `<span class="bf-hit">Found: ${m.names.slice(0,3).map(esc).join(", ")}${m.names.length>3?` +${m.names.length-3}`:""}</span>` : ""}
+    <div class="bf-actions">
+      ${arch
+        ? `<button type="button" onclick="event.stopPropagation();openBatchFolder('${kq}','registry')">📂 Open records</button><button type="button" onclick="event.stopPropagation();confirmUnarchiveBatch('${kq}')">↩ Restore</button>`
+        : (k!==NO_BATCH ? `<button type="button" class="bf-arch" onclick="event.stopPropagation();confirmArchiveBatch('${kq}')">📦 Archive</button>` : "")}
+      <button type="button" onclick="event.stopPropagation();bfExportCsv('${kq}')" title="Download this batch's records as a spreadsheet (CSV)">⬇ Records</button>
+    </div>
+  </div>`;
+}
+function bfGridHtml(){
+  const keys = bfKeys(), shown = keys.filter(k=>bfMatches(k).ok);
+  const active = shown.filter(k=>!bfIsArchived(k)), archived = shown.filter(k=>bfIsArchived(k));
+  const allArch = keys.filter(k=>bfIsArchived(k)).length;
+  const q = String(state.bfSearch||"").trim();
+  const open = q || state.bfShelfOpen;
+  return `
+    ${active.length ? `<div class="batch-folder-grid">${active.map(bfCard).join("")}</div>`
+      : `<div class="empty-note">${q ? `No active batch matches “${esc(q)}”.` : "No active batches. Archived batches are on the shelf below."}</div>`}
+    <div class="bf-shelf">
+      <h2>📦 Archive <span class="bf-count">(${allArch} batch${allArch===1?"":"es"})</span></h2>
+      <p>Archived batches keep every record: registry, rankings, feedback and activity. Open one to look back, download its records, or restore it.</p>
+      ${!allArch ? `<div class="empty-note" style="margin:0;">Nothing archived yet. Use 📦 Archive on a batch when its training is finished.</div>`
+        : archived.length ? (open || archived.length<=8
+            ? `<div class="batch-folder-grid">${archived.map(bfCard).join("")}</div>`
+            : `<button class="btn btn-ghost btn-sm" onclick="state.bfShelfOpen=true;bfRedraw()">Show ${archived.length} archived batches</button>`)
+        : `<div class="empty-note" style="margin:0;">No archived batch matches “${esc(q)}”.</div>`}
+    </div>`;
+}
+function bfRedraw(){ const g = document.getElementById("bfGrid"); if(g) g.innerHTML = bfGridHtml(); else render(); }
+function bfSearch(v){ state.bfSearch = v; bfRedraw(); }
+
+function renderAdminBatchFolders(){
+  if(state.adminLoading || !state.adminData){
+    return `<div class="card" style="padding:40px;text-align:center;color:var(--ink-soft);">Loading trainee ledger…</div>`;
+  }
+  if(!state.tfbAdmin) setTimeout(()=>loadTraineeFeedbackAdmin(), 0);
+  const keys = bfKeys();
+  if(state.batchFolder && !keys.includes(state.batchFolder)) state.batchFolder = null;
+  if(state.batchFolder) return renderBatchFolder(state.batchFolder);
+  const head = `
+    <p class="eyebrow">Admin Dashboard</p>
+    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Batch Folders</h1>
+    <p style="color:var(--ink-soft);font-size:13px;max-width:72ch;margin:0 0 18px;">Each batch has its own folder: the trainees registered in it, their rankings, the feedback they sent and their latest activity — kept apart from every other batch. Archive a batch when it finishes; its records stay available on the Archive shelf.</p>`;
+  if(!keys.length) return head + `<div class="empty-note">No trainees yet — a folder appears for each batch as trainees register.</div>`;
+  const nArch = keys.filter(k=>bfIsArchived(k)).length;
+  return head + `
+    <div class="bf-toolbar">
+      <label class="bf-search"><span>🔍</span><input type="search" placeholder="Find a batch or trainee (active and archived)" value="${esc(state.bfSearch||"")}" oninput="bfSearch(this.value)"></label>
+      <span class="bf-count">${keys.length-nArch} active · ${nArch} archived</span>
+      <button class="btn btn-ghost btn-sm" onclick="refreshAdminData();loadTraineeFeedbackAdmin()">🔄 Refresh</button>
+    </div>
+    <div id="bfGrid">${bfGridHtml()}</div>`;
+}
+
+const __bfRenderFolder12 = window.renderBatchFolder;
+window.renderBatchFolder = function(k){
+  let html = __bfRenderFolder12(k);
+  const kq = esc(k).replace(/'/g, "&#39;");
+  const dl = `<button class="btn btn-ghost btn-sm" onclick="bfExportCsv('${kq}')" title="Spreadsheet of every trainee's progress and scores">⬇ Records (CSV)</button>
+        <button class="btn btn-ghost btn-sm" onclick="bfExportJson('${kq}')" title="Complete backup of this batch's records and feedback">⬇ Full backup (JSON)</button>`;
+  html = html.replace(/(<button class="btn btn-ghost btn-sm" onclick="refreshAdminData\(\);loadTraineeFeedbackAdmin\(\)">)/, dl + "\n        $1");
+  if(bfIsArchived(k)){
+    const at = bfArchivedAt(k), n = bfAll(k).length;
+    const banner = `<div class="bf-archived-banner"><span style="font-size:22px;">🗄</span>
+      <div class="grow"><b>Archived batch</b>${at ? ` · archived ${esc(fmtDate(at))}` : ""}. All ${n} trainee record${n===1?"":"s"} are kept below: registry, rankings, feedback and activity, as they were.</div>
+      <button class="btn btn-primary btn-sm" onclick="confirmUnarchiveBatch('${kq}')">↩ Restore batch</button></div>`;
+    html = html.replace(/(<div class="bf-tabs">)/, banner + "\n    $1")
+               .replace(/<label style="display:flex;align-items:center;gap:5px;font-size:12.5px;color:var\(--ink-soft\);cursor:pointer;"><input type="checkbox"[^>]*> Include archived<\/label>/, "");
+  }
+  return html;
+};
+
+// Archive / restore: same as before, plus the archive date, and the folder moves to (or off) the shelf.
+window.confirmArchiveBatch = async function(batch){
+  const members = (state.adminData||[]).filter(r=>batchKey(r)===batch && !r.archived);
+  if(!members.length){ toast("Nothing to archive in this batch."); return; }
+  if(!confirm(`Archive batch "${batchLabel(batch)}" (${members.length} trainee${members.length===1?"":"s"})?\n\nThe folder moves to the 📦 Archive shelf and the trainees leave Rankings and Trainee Audit. Nothing is deleted: open the archived folder any time to see or download the records, or restore the batch.`)) return;
+  const at = new Date().toISOString();
+  for(const rec of members){ rec.archived = true; rec.archivedAt = at; await sharedSet("trainee:"+rec.id, rec); }
+  toast(`Batch "${batchLabel(batch)}" archived — find it on the 📦 Archive shelf.`);
+  if(state.batchFolder===batch) state.batchFolder = null;
+  await loadAdminLedger();
+};
+window.confirmUnarchiveBatch = async function(batch){
+  const members = (state.adminData||[]).filter(r=>batchKey(r)===batch && r.archived);
+  if(!members.length){ toast("Nothing to restore in this batch."); return; }
+  if(!confirm(`Restore batch "${batchLabel(batch)}" (${members.length} trainee${members.length===1?"":"s"})? They'll show up again in Batch Folders, Rankings and Trainee Audit.`)) return;
+  for(const rec of members){ rec.archived = false; delete rec.archivedAt; await sharedSet("trainee:"+rec.id, rec); }
+  toast(`Batch "${batchLabel(batch)}" restored (${members.length} trainee${members.length===1?"":"s"}).`);
+  await loadAdminLedger();
+};
+
+// Records downloads, for keeping or re-using a batch's results later.
+function bfFileName(k, ext){ return `LSH_EAPA_${(k===NO_BATCH?"No_batch":"Batch_"+k).replace(/[^A-Za-z0-9_-]+/g,"_")}_records_${new Date().toISOString().slice(0,10)}.${ext}`; }
+function bfExportCsv(k){
+  const recs = bfAll(k).slice().sort((a,b)=>(cleanName(a.name)||"").localeCompare(cleanName(b.name)||""));
+  if(!recs.length){ toast("No records in this batch."); return; }
+  const q = (v)=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const head = ["Name","First name","Last name","Batch","Status","Approved","Registered","Last active","Archived on",
+    "Days completed","Knowledge Check avg %", ...DAYS.map(d=>`${ftName(d.id)} KC %`), "Practice Lab runs","Practice Lab avg %","Submissions","Feedback sent"];
+  const fbBy = {}; batchFeedback(k).forEach(x=>{ const n = (cleanName(x.name)||"").toLowerCase(); fbBy[n] = (fbBy[n]||0)+1; });
+  const d8 = (v)=> v ? String(v).slice(0,10) : "";
+  const rows = recs.map(r=>{ const ds = adminDayStats(r), ps = adminPracticeStats(r), dp = r.dayProgress||{};
+    return [cleanName(r.name)||"", r.firstName||"", r.lastName||"", batchLabel(k), r.archived?"Archived":"Active", r.approved===true?"Yes":r.approved===false?"No":"",
+      d8(r.registeredAt), d8(r.lastActive), d8(r.archivedAt), `${ds.done}/${ds.total}`, ds.avg,
+      ...DAYS.map(d=>{ const p = dp[d.id]; return p && typeof p.score==="number" ? p.score : ""; }),
+      ps.runs, ps.avg, (r.submissions||[]).length, fbBy[(cleanName(r.name)||"").toLowerCase()]||0].map(q).join(","); });
+  saveBlob(new Blob(["﻿" + [head.map(q).join(","), ...rows].join("\n")], {type:"text/csv;charset=utf-8"}), bfFileName(k, "csv"));
+  toast(`Downloaded ${recs.length} record${recs.length===1?"":"s"} for ${folderLabel(k)}.`);
+}
+function bfExportJson(k){
+  const recs = bfAll(k); if(!recs.length){ toast("No records in this batch."); return; }
+  const data = {exportedAt:new Date().toISOString(), program:"LSH EA/PA Upskill Program", batch:batchLabel(k), archived:bfIsArchived(k), archivedAt:bfArchivedAt(k),
+    trainees:recs, feedback:batchFeedback(k)};
+  saveBlob(new Blob([JSON.stringify(data, null, 2)], {type:"application/json"}), bfFileName(k, "json"));
+  toast(`Full backup of ${folderLabel(k)} downloaded.`);
+}
+Object.assign(window, {bfSearch, bfRedraw, bfExportCsv, bfExportJson});
 
 /* if the portal already drew itself before this file loaded, redraw with the updates */
 if(document.querySelector(".topbar")) render();
