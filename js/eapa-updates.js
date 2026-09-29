@@ -143,6 +143,8 @@ body.audience-mode > *:not(#audienceRoot):not(.aud-hint){display:none !important
 #audienceRoot .slide-dot{pointer-events:none;}
 .aud-wait{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font-size:18px;text-align:center;padding:20px;}
 .aud-wait b{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#F0C08A;}
+.aud-deck-note{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;background:#161829;border-radius:8px;color:#fff;font-size:30px;line-height:1.4;text-align:center;}
+.aud-deck-note b{font-family:'Fraunces',Georgia,serif;font-size:44px;color:#F0C08A;}
 .aud-hint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:rgba(0,0,0,.72);color:#fff;border-radius:999px;padding:8px 16px;font-size:13px;z-index:5;transition:opacity .6s;}
 .aud-hint.gone{opacity:0;pointer-events:none;}
 
@@ -801,7 +803,11 @@ if(PV_IS_AUDIENCE){
   // arrow keys pressed in the slides window (or while the live copy holds focus) drive the presentation
   document.addEventListener("keydown", (e)=>{
     const dir = ["ArrowRight","PageDown"," "].includes(e.key) ? 1 : (["ArrowLeft","PageUp"].includes(e.key) ? -1 : 0);
-    if(dir && pvChannel()){ e.preventDefault(); PV.ch.postMessage({type:"key", dir}); }
+    if(!dir) return;
+    // On a Canva deck the keys turn the deck's pages: they go to the deck (the console's Next → moves on).
+    const deck = isMain && root.querySelector(".canva-frame iframe");
+    if(deck){ e.preventDefault(); deck.focus(); return; }
+    if(pvChannel()){ e.preventDefault(); PV.ch.postMessage({type:"key", dir}); }
   });
   if(isMain){
     const hint = document.createElement("div"); hint.className = "aud-hint"; hint.textContent = "Share this window in Google Meet · double-click for full screen";
@@ -811,7 +817,11 @@ if(PV_IS_AUDIENCE){
   let last = null;
   const show = (m)=>{
     const d = DAYS.find(x=>x.id===m.dayId); if(!d) return;
+    // A Canva deck is a live embed: drawing the step again would reload it at page 1 and drop Canva's own
+    // full screen. Keep it when the same step comes again (a resize, full screen, the presenter reconnecting).
+    const keep = last && last.dayId===m.dayId && last.slide===m.slide && root.querySelector(".canva-frame");
     last = m;
+    if(keep){ if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:0, pages:1, w:root.clientWidth, h:root.clientHeight}); return; }
     // view is "audience", not "day", so the portal's own arrow-key handler stays out of it
     state.view = "audience"; state.dayId = d.id; state.lessonSlide = m.slide; state.maxSlideReached = 9999;
     state.slidePage = m.page; state.slidePageKey = d.id+":"+m.slide; state.slideDir = "next";
@@ -825,6 +835,8 @@ if(PV_IS_AUDIENCE){
     const secNum = (s)=>+((s.querySelector(".fp-num")||{}).textContent||0);
     const allSecs = [...root.querySelectorAll(".fp-section")].map(secNum).filter(Boolean);
     const secs = [...root.querySelectorAll(".fp-section")].filter(s=>!s.closest(".pg-hide")).map(secNum).filter(Boolean);
+    // The live copy in the console doesn't load a second deck: it can't follow the room's page.
+    if(!isMain) root.querySelectorAll(".canva-frame").forEach(f=>{ f.innerHTML = `<div class="aud-deck-note"><b>🎞 Canva deck</b>It's live in your slides window. Turn its pages there: click the deck, or press ← →.</div>`; });
     if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight, secs, allSecs});
   };
   if(pvChannel()){

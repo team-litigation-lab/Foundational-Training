@@ -113,5 +113,9 @@ for old, new in [('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Trai
     u = u.replace(old, new)
 u = u.replace("Preview tomorrow: Day ${", "Up next: Lesson ${")
 u = name_days(u)
+# The Canva deck in the slides window (see ft_engine_patches.py).
+sys.path.insert(0, B)
+from ft_engine_patches import apply as ft_engine_patches
+u = ft_engine_patches(u)
 open(os.path.join(ROOT, "js", "eapa-updates.js"), "w", encoding="utf8").write(u)
 print(f"index.html written ({len(s)//1024} KB), build {build_tag}")
