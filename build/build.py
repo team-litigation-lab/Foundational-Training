@@ -98,6 +98,7 @@ if not (n and m):
 s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker-rules.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-tracker.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-rules.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>') + s[m.end():]
 # 🏠 Main Portal button for admins (js/portal-link.js), last before </body>.

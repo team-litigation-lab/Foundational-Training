@@ -35,6 +35,32 @@ Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI As
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
+## Training Orientation and Rules
+
+The **📌 Training Orientation and Rules** card is first on the dashboard, above Simulators. It opens `#/rules` (`js/ft-rules.js`) for trainees and trainers. The page has:
+
+- **Rules for every training day:**
+  - Hubstaff tracking is strict, 8:00 AM – 5:00 PM PST.
+  - Breaks are strictly 15 – 30 – 15, or one full 1-hour break.
+  - Cameras are on during classroom discussions.
+- **Auxes:** the trainee reports their status in 2 Discord channels:
+  - #⏳-timestamps: `!in` at the start of the shift and `!back` after a break. LSH BOT replies, e.g. "@name is back".
+  - #batch-group-channel: `In` at 8:00 AM PST.
+  - No double stamping.
+- **Typing and spelling tests**, from Day 1's Setting of Expectations:
+  - Why: the client expects 60 WPM.
+  - Typing twice a day (AM and PM); spelling once a day, at the trainee's own pace.
+  - The links and the sample screenshots.
+  - Each result is saved in the trainee folder as `Typing Test [date taken][AM/PM]` / `Spelling Test [date taken][AM/PM]`.
+- **Your Hubstaff To-Dos:** the To-Dos from the guide's Hubstaff To-Do Set-up, each with **📋 Copy**, to paste into Hubstaff's *Create a to-do*. Copy takes the to-do's name without the "To-Do:" label.
+- **How to create notes in Hubstaff**, part by part: start tracking on the day's to-do, then the notes button → *Add Work Notes* → *Add Note*.
+- **The Hubstaff pictures:** the to-do list and the Add Work Notes box, drawn as SVG after the trainer's screenshots.
+  - The to-do list has an arrow on the button inside the day's to-do.
+  - On a phone the pictures scroll sideways in their box.
+- **Hubstaff how-to lessons:** *Coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
+
+The page's text is in the constants at the top of `js/ft-rules.js`: `SHIFT`, `AUX_CHANNELS`, `TESTS`, `TODOS`, `NOTE_PARTS` and `HOWTO_LESSONS`.
+
 ## Daily Task Tracker
 
 Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracker in the top bar), laid out like the Google Sheets sample: the status counts, Date Received, Type of Task, Task Details, Accountable VA, the dated **Daily Notes** columns, VA Notes, Deadline, Status and Actual Completion Date, with the For Completion / Recurring / Completed sections and the Client-VA Specific Tasks Index, Links & Access (no passwords), Directory and Time Zone tabs. It saves to the trainee's account as they type (`tracker:<id>`).
@@ -130,6 +156,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
+| `js/ft-rules.js` | The 📌 Training Orientation and Rules card and page: the daily rules, auxes, typing and spelling tests, Hubstaff To-Dos to copy, and how to create notes in Hubstaff. |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
