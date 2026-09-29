@@ -4,7 +4,7 @@
    card sits above the Simulators card). The dashboard card opens #/rules.
      • Why this matters: training simulates the real world; weekly score audits; no progress after
        coaching and feedback may mean offboarding.
-     • Rules: strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
+     • Rules (also: acknowledge the trainer's Discord messages, emoji or "Noted"): strict tracking 8 AM – 5 PM PST; time management (schedule, log in/out on time, no extra time); breaks 15-30-15 or one full hour; cameras on in
        discussions; the 5-minute response rule (notifications on); naming conventions followed strictly.
      • Auxes: reporting your status in the two Discord channels, no double stamping.
      • #training-reminders (Day 1 → Training Reminders), with its screenshots.
@@ -303,6 +303,8 @@ function renderRules(){
         <span>Every trainee’s camera stays on for the whole discussion.</span></div>
       <div class="ftr-rule"><b>⏱ The 5-minute rule: reply to messages within 5 minutes.</b>
         <span>Be mindful of your response time, and turn on your notifications so you never miss a message.</span></div>
+      <div class="ftr-rule"><b>✅ Acknowledge every Discord message from your trainer.</b>
+        <span>Reply to it, or acknowledge it: an emoji reaction or “Noted” is enough. It shows you’re responsive and reliable.</span></div>
       <div class="ftr-rule"><b>📛 Follow the naming conventions strictly.</b>
         <span>Name your Hubstaff To-Dos, test screenshots and files exactly as given.</span></div>
     </section>

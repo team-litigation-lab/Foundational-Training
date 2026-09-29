@@ -50,6 +50,7 @@ The **📌 Training Orientation and Rules** card is first on the dashboard, abov
   - Breaks are strictly 15 – 30 – 15, or one full 1-hour break.
   - Cameras are on during classroom discussions.
   - The 5-minute rule: reply to messages within 5 minutes, with notifications turned on.
+  - Acknowledge every Discord message from the trainer: a reply, an emoji reaction or "Noted".
   - Follow the naming conventions strictly.
 - **Auxes:** the trainee reports their status in 2 Discord channels:
   - #⏳-timestamps: `!in` at the start of the shift and `!back` after a break. LSH BOT replies, e.g. "@name is back".
