@@ -49,19 +49,20 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   2. Rules: your schedule. Tracking 8:00 AM – 5:00 PM PST; time management (log in and out on time, no extra time; a 10-minute early buffer only with Matt's approval); breaks 15 – 30 – 15 or one full hour.
   3. Rules: communication. The 5-minute response rule; acknowledge the trainer's Discord messages; meeting schedules sent on the discussion's date and time; cameras on.
   4. Rules: your work. Naming conventions followed strictly; use of AI (grammar, spelling and sentence structure only; never client, case or medical information).
-  5. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
-  6. #training-reminders: LSH BOT's Deliverables post, written out from the trainer's screenshot.
-  7. #training-reminders: LSH BOT's Important Reminders post.
-  8. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
-  9. The Daily Task Tracker, part 1: the status counts, the sections and every column.
-  10. The Daily Task Tracker, part 2: the other tabs and the daily check.
-  11. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
-  12. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
-  13. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
-  14. How to create notes in Hubstaff, with the Add Work Notes picture.
-  15. The Manual Time Adjustment Request: subject, To and CC to copy.
-  16. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
-  17. Hubstaff how-to lessons: *coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
+  5. Free Skills Training: every day after the shift, ideally 5:00 – 6:00 PM PST (can run longer); unpaid and untracked (an initiative of the training team, beyond the standard legal VA training); soft skills, especially communication; if you miss it, ask for the materials and review them at your own pace.
+  6. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
+  7. #training-reminders: LSH BOT's Deliverables post, written out from the trainer's screenshot.
+  8. #training-reminders: LSH BOT's Important Reminders post.
+  9. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
+  10. The Daily Task Tracker, part 1: the status counts, the sections and every column.
+  11. The Daily Task Tracker, part 2: the other tabs and the daily check.
+  12. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
+  13. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
+  14. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
+  15. How to create notes in Hubstaff, with the Add Work Notes picture.
+  16. The Manual Time Adjustment Request: subject, To and CC to copy.
+  17. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+  18. Hubstaff how-to lessons: *coming soon* until `HOWTO_LESSONS` gets its entries (`{title, desc, href}`).
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.

@@ -10,7 +10,7 @@
      • A slide's html is built when it's shown (a getter), so the file name in the Reading Task
        has the trainee's name and the Copy buttons work.
      • The parts: why this matters (and the goal: a Generalist Legal VA); the rules (schedule, communication, your work: naming
-       conventions, use of AI); auxes (the 2 Discord channels, no double stamping, profile status);
+       conventions, use of AI); Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
        #training-reminders; daily habits (EOD email, trackers); the Daily Task Tracker part by part;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; the Manual Time Adjustment Request; Day 1's
@@ -285,6 +285,14 @@ const SLIDES = [
   ["work", "Rules: your work", ()=>
     rule("📛 Follow the naming conventions strictly.", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
     rule("🤖 Use of AI: don’t rely on it.", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care: it’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
+  ["free-skills", "Free Skills Training: after your shift", ()=>`
+    <div class="ftr-goal"><b>🌱 Every day after your shift, ideally 5:00 – 6:00 PM PST</b>
+      <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you: extra skills on top of your training.</p></div>
+    <div class="ftr-rule"><b>⏸ Unpaid and untracked: don’t track your time for it.</b>
+      <span>Why? Our training covers the standard legal VA training. Free Skills Training is an initiative of the training team, to add to your knowledge.</span></div>
+    <div class="ftr-rule"><b>🙋 Missed it? Be proactive.</b>
+      <span>Ask for the materials, and review them at your own pace.</span></div>
+    <div class="ftr-why"><b>Why it matters:</b> it’s the perfect time to show your reliability and flexibility, and your continuous effort to improve yourself.</div>`],
   ["auxes", "Auxes: reporting your status", ()=>`
     <p class="ftr-sub">Your aux is your status: in for your shift, on a break, back from a break. Report it in Discord every time it changes, in these 2 channels:</p>
     <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
