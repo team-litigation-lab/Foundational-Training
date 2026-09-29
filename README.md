@@ -89,7 +89,7 @@ Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Mon
   - 3 Questions That You Still Have;
   - Rate Your Understanding (the sheet's 4 statements).
 - **Saving and status:** it saves to the trainee's account as they type (`monitor:<id>`, the trainee's own). An entry is *Filled* when the date, all 5 takeaways and the rating are in. The dashboard shows how many are filled.
-- **The orientation's Rules: Your Work slide** has the rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder") on its own slide, with the sheet embedded in full and a link to fill it in here.
+- **The orientation's Rules: Your Training Monitoring Sheet slide** has the rule ("As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees' folder"), with the sheet embedded in full and a link to fill it in here.
 - **Admin → 📒 Monitoring Sheets** shows batch → trainee → discussion, with the **automated feedback**:
   - It comes from the **📏 Feedback Rubric**, not AI. The starting metrics: the date filled in; all 5 takeaways; complete sentences; specific, not general (not "I learned about …"); based on the discussion (the takeaways mention a set share of the discussion's key points, 50% to start); and the understanding rating.
   - Each discussion shows its checks, a score, the feedback to copy, and what the trainee wrote. "Needs extra help" marks the entries rated "I really don't get this".
