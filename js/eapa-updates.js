@@ -71,19 +71,20 @@ window.EAPA_UPDATE_PACK = "z";
 }
 /* Lesson page: the slide and its Previous / Next bar fit on one screen. On a desktop the lesson's controls
    (back links, title, Listen, Objectives, Present full screen, Presenter view) sit in a column to the right of
-   the slide, and fitSlideFrame() sizes the slide to the height that's left. */
+   the slide, and fitSlideFrame() sizes the slide to the height that's left. (Foundational's deck-page lessons,
+   body.ft-fit, have their own layout in js/ft-slides.js.) */
 @media(min-width:1000px){
-  main:has(> #lessonStage){display:grid;grid-template-columns:minmax(0,1fr) 200px;column-gap:16px;align-items:start;padding-top:12px;}
-  main:has(> #lessonStage) > *{grid-column:2;margin:0 0 10px;}
-  main:has(> #lessonStage) > #lessonStage{grid-column:1;grid-row:1 / span 40;margin:0;}
-  main:has(> #lessonStage) > #navBackSlot:empty{display:none;}
-  main:has(> #lessonStage) .day-head-compact{display:flex;flex-direction:column;gap:4px;border:0;padding:0;}
-  main:has(> #lessonStage) .day-head-compact .dhc-title{white-space:normal;font-size:17px;line-height:1.3;}
-  main:has(> #lessonStage) .ls-top{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
-  main:has(> #lessonStage) .ls-top > *, main:has(> #lessonStage) .ls-top .btn{width:100%;margin:0 !important;justify-content:center;}
-  main:has(> #lessonStage) .ls-top .audio-bar{display:grid;grid-template-columns:1fr auto;gap:6px;}
-  main:has(> #lessonStage) .ls-top .audio-bar #audioModeBtn{grid-column:1 / -1;}
-  main:has(> #lessonStage) .ls-top .or-tip{font-size:12px;line-height:1.4;order:9;white-space:normal;}
+  body:not(.ft-fit) main:has(> #lessonStage){display:grid;grid-template-columns:minmax(0,1fr) 200px;column-gap:16px;align-items:start;padding-top:12px;}
+  body:not(.ft-fit) main:has(> #lessonStage) > *{grid-column:2;margin:0 0 10px;}
+  body:not(.ft-fit) main:has(> #lessonStage) > #lessonStage{grid-column:1;grid-row:1 / span 40;margin:0;}
+  body:not(.ft-fit) main:has(> #lessonStage) > #navBackSlot:empty{display:none;}
+  body:not(.ft-fit) main:has(> #lessonStage) .day-head-compact{display:flex;flex-direction:column;gap:4px;border:0;padding:0;}
+  body:not(.ft-fit) main:has(> #lessonStage) .day-head-compact .dhc-title{white-space:normal;font-size:17px;line-height:1.3;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top > *, body:not(.ft-fit) main:has(> #lessonStage) .ls-top .btn{width:100%;margin:0 !important;justify-content:center;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .audio-bar{display:grid;grid-template-columns:1fr auto;gap:6px;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .audio-bar #audioModeBtn{grid-column:1 / -1;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .or-tip{font-size:12px;line-height:1.4;order:9;white-space:normal;}
 }
 /* ================= SOP Reference: readable reference + live Present mode ================= */
 .sopx-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
@@ -344,6 +345,7 @@ function paginateLessonSlide(){
 function fitSlideFrame(wrap){
   if(!wrap) return;
   slideZoomParts(wrap).forEach(n=>n.style.zoom = "");
+  if(document.body.classList.contains("ft-fit")) return;   // Foundational's deck-page lessons size themselves (fitPages in js/ft-slides.js)
   const stage = wrap.closest(".lesson-stage");
   // full screen and the shared slides window already fill their window; phones scroll
   if(!stage || stage.id !== "lessonStage" || wrap.closest("#audienceRoot") || document.fullscreenElement || window.innerWidth <= 760){ wrap.style.height = ""; delete wrap.dataset.fitTop; return; }
@@ -2095,9 +2097,9 @@ const SOP_LAB_ACTIVITIES = {
   coldcalling4:["Cold-Calling Log","Lead Generation Practice","Live Intake Call Simulator","Email Outreach Simulator"],
   insurance5:["Classify the Risk","Match the Strategy","Home Binder","Crisis Roleplay"],
   projectcompliance6:["Compliance Risk","Operational Warning Signs","Recovery Memo","Crisis Roleplay","Compliance Audit Simulation"],
-  financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Attention to Detail Test"],
+  financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Invoice Follow-Up","Attention to Detail Test"],
   accessincident8:["Least-Privilege Access Audit","Verify Before You Disclose","Contain the Leak"],
-  compliance9:["CLE Compliance Dashboard","Event Follow-Up","Negative Review Response","Awards Tracker","Crisis Roleplay"],
+  compliance9:["Event Invite & Registration Form","Event Follow-Up","Meeting Notes & Action Items","CLE Compliance Dashboard","Negative Review Response","Awards Tracker","Crisis Roleplay"],
   socialmedia10:["Engagement Rate","Version Matching","Campaign Math","Brand Kit","Marketing Plan"]
 };
 (function(){ const s = document.createElement("style"); s.id = "eapa-sop-flow"; s.textContent = `
