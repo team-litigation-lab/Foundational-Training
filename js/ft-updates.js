@@ -701,7 +701,6 @@ window.moduleCard = function(d){
       ${typeof feedbackButton==="function" ? feedbackButton(d.id) : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
-    ${ftTopics(d).length > 1 ? `<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); ftShowTopics(${d.id})">☰ Topics <span>· ${ftTopics(d).length}</span></button>` : ""}
     ${d.video ? (ftVideoUnlocked(d.id)
       ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>`
       : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}

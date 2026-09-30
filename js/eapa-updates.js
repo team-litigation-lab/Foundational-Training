@@ -62,21 +62,6 @@ window.EAPA_UPDATE_PACK = "z";
 .lesson-stage #lessonSlideWrap .pg-badge{position:absolute;right:16px;bottom:12px;width:auto;max-width:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--orange-deep);background:#FFF1E2;border-radius:999px;padding:4px 10px;}
 .lesson-stage #lessonSlideWrap.pg-later .lesson-card h4::after{content:" · continued";font-family:'IBM Plex Mono',monospace;font-size:.4em;font-weight:700;letter-spacing:.08em;color:var(--ink-soft);vertical-align:middle;}
 @media(max-width:760px){.lesson-stage #lessonSlideWrap{height:auto;display:block;overflow:visible;} .lesson-stage #lessonSlideWrap .pg-badge{display:none;}}
-/* Dashboard side column: the four numbers as a compact 2 x 2 grid, the cards under them full width, so
-   the column is no taller than the day cards and the dashboard fits on one screen (the tall column
-   stretched the page and left a gap under the day cards). */
-@media(min-width:1101px){
-  .dash-layout{grid-template-columns:minmax(0,1fr) 290px;}
-  .dash-side{padding:12px;}
-  .dash-side-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:stretch;}
-  .dash-side-inner > *{grid-column:1 / -1;margin:0 !important;}
-  .dash-side-inner > .card.stat{grid-column:auto;padding:12px 12px 11px;display:flex;flex-direction:column;justify-content:flex-start;}
-  .dash-side-inner > .card.stat.tfb-dash, .dash-side-inner > .card.stat.rank-card, .dash-side-inner > .card.stat.cert-dash, .dash-side-inner > .card.stat.comp-card{grid-column:1 / -1;}
-  .dash-side .stat .num{font-size:22px;line-height:1.1;}
-  .dash-side .stat .lbl{font-size:10px;letter-spacing:.05em;line-height:1.3;margin-top:5px;}
-  .dash-side .stat .lbl span{font-size:10px;text-transform:none;letter-spacing:0;margin-top:3px !important;}
-  .dash-side .tfb-dash, .dash-side .rank-card, .dash-side .cert-dash, .dash-side .comp-card{padding:12px 14px;}
-}
 /* Lesson view: the slide uses the width of the screen, with small margins on the sides */
 @media(min-width:761px){
   main:has(.lesson-stage){max-width:1880px;padding-left:24px;padding-right:24px;}

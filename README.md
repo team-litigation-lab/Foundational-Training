@@ -99,7 +99,7 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 ## Process Questions
 
-Each lesson's answer sheet is answered on the platform: **✍️ Process Questions** (`#/process`, `js/ft-process.js`). It opens from the lesson card and from the lesson's last slide, which lists the questions and the naming convention. The Virtual Assistant Essentials sheet has 10 questions. Add another lesson's questions to `PROCESS_SETS`.
+Each lesson's answer sheet is answered on the platform: **✍️ Process Questions** (`#/process`, `js/ft-process.js`). It opens from the lesson's last slide, which lists the questions and the naming convention (lesson cards show only Start and ▶ Video Presentation). The Virtual Assistant Essentials sheet has 10 questions. Add another lesson's questions to `PROCESS_SETS`.
 
 - **Answering:** trainees answer each question; the answers save as they type (`process:<id>`, the trainee's own). **Submit My Answers** marks the sheet submitted.
 - **Saving to Google Drive with the proper name** (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`, with the trainee's first name):

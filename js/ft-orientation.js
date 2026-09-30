@@ -55,7 +55,7 @@ window.orientSlides = function(){
        <div class="or-bp-main">
          ${box(1,"Progress track",`📌 and Lessons 1–${N} · ✓ = finished`,"or-hero")}
          ${box(2,"🛠 Simulators","Mock calls, demos and every LSH simulator")}
-         ${box(3,"Lesson cards","Start / Review · ▶ Video Presentation · ✍️ Process Questions · 💬 trainer feedback","or-cards")}
+         ${box(3,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
          ${box(4,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
        </div>
        <div class="or-bp-side">
@@ -72,7 +72,7 @@ window.orientSlides = function(){
           ["📝 Activities","Your trainer's activities for each day. Answer, attach a file and submit."],
           ["📋 Task Tracker","Your LSH Daily Task Tracker. Every open task gets a Daily Note each day."],
           ["📒 Monitoring Sheet","One entry per classroom discussion: takeaways, questions, your understanding."],
-          ["✍️ Process Questions","A lesson's answer sheet. Open it from the lesson card or its last slide."],
+          ["✍️ Process Questions","A lesson's answer sheet. Open it from the lesson's last slide."],
           ["My Notes","Your private notes — download them as a PDF."],
           ["🎯 Focus","Your trainer's feedback and what to work on next."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
      </div>
