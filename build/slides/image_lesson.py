@@ -6,13 +6,14 @@
     python3 build/slides/image_lesson.py piw "<deck.pdf>"     (Lesson 3)
     python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
     python3 build/slides/image_lesson.py cal "<deck.pdf>"     (Lesson 5)
-    python3 build/slides/image_lesson.py isr "<deck.pdf>"     (Lesson 6)
+    python3 build/slides/image_lesson.py isr "<part1.pdf>" "<part2.pdf>"     (Lesson 6)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
 deck's fonts, so nothing reflows (a PPTX rendered without Canva's fonts spills its text out of its boxes).
 Each slide's heading (for the slide list and Presenter view) is the page's largest text; its alt text is
-the page's words. Only a deck's "keep" pages go in the lesson.
+the page's words. Only a deck's "keep" pages go in the lesson. A deck sent in parts takes each part's PDF in
+order: its pages are numbered straight through (Part 2's first page follows Part 1's last).
 Output: the images and build/lessons/lessonNN.js. Run build/build.py afterwards.
 """
 import html, io, json, os, re, sys
@@ -55,9 +56,14 @@ DECKS = {
             "headings": {10: 'Step-by-Step Guide', 33: 'Time Management Strategies: The Two-Minute Rule', 35: 'Troubleshooting Common Calendar Management Challenges', 44: 'Thank You'}},
     "isr": {"id": 6, "var": "DAY6", "file": "lesson06.js", "title": "Intake Specialist Training",
             "video": "https://drive.google.com/file/d/1FPA2qhvFOe56b6A2Mcp-OFExqiaO-ZDH/view",
-            "pdf": "THE_INTAKE_SPECIALIST_ROLE_Part1.pdf (sent in chat)",
-            "about": 'the "The Intake Specialist Role" deck (Canva design DAGnZhT1ZE0), Part 1, all 53 pages',
-            "headings": {}},
+            "pdf": "THE_INTAKE_SPECIALIST_ROLE_Part1.pdf and _Part2.pdf (sent in chat)",
+            "about": 'the "The Intake Specialist Role" deck (Canva design DAGnZhT1ZE0), Parts 1 and 2, all 105 pages',
+            # Part 1 is pages 1-53, Part 2 pages 54-105
+            "headings": {54: 'Key Intake Red Flags VAs Must Ask About', 55: 'Important Training Note for Legal VAs',
+                         72: 'HIPAA Authorization', 75: 'HITECH Medical Records Request',
+                         79: 'Consent to Release Medicare/Medicaid Information',
+                         84: 'Joint Acceptance of Common Legal Representation & Waiver of Conflict of Interest',
+                         94: 'ISO Claim Search Disclosure Request', 96: '3rd Party Insurance Affidavit', 105: 'Thank You'}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
@@ -76,15 +82,15 @@ def heading(p):
     t = title(re.sub(r"\s+", " ", " ".join(parts)).upper())
     return " ".join(WORDS.get(w, w) for w in t.split(" "))
 
-def main(name, pdf):
+def main(name, *pdfs):
     D = DECKS[name]
     out_dir = os.path.join(ROOT, "ft", name, "slides")
     os.makedirs(out_dir, exist_ok=True)
     for f in os.listdir(out_dir): os.remove(os.path.join(out_dir, f))
-    doc = pymupdf.open(pdf)
-    z = WIDTH / doc[0].rect.width
+    pages = [p for pdf in pdfs for p in pymupdf.open(pdf)]
+    z = WIDTH / pages[0].rect.width
     sections = []
-    for i, p in enumerate(doc, 1):
+    for i, p in enumerate(pages, 1):
         if "keep" in D and i not in D["keep"]: continue
         f = f"{i:03d}.webp"
         pix = p.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=False)
@@ -103,4 +109,4 @@ def main(name, pdf):
     print(f"{D['file']}: {len(sections)} slides, images in ft/{name}/slides/")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], *sys.argv[2:])
