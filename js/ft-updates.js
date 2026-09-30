@@ -139,10 +139,9 @@ const FT_IS_AUDIENCE = typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE;
    starts at the page with that id (page ids stay put when pages are added). A lesson that is one Canva
    deck has no dividers: the deck has its own title page. */
 const FT_TOPICS = {
-  1: [["v002", "Objective, Agenda & Introduction"], ["v005", "The U.S. Legal System & Common Legal Terms"], ["v020", "Legal Practice & the Legal VA's Role"],
-      ["v036", "Types of Law Firms"], ["v040", "The Legal Support Help Task List"], ["v045", "Areas of Law & VA Tasks by Practice Area"],
-      ["v072", "Legal Support Help Services & Clients"], ["v100", "American & U.S. Law Firm Work Culture"], ["v115", "U.S. States & Time Zones"],
-      ["v134", "Tips to Stand Out as a Legal VA"]],
+  1: [["v002", "Objective, Agenda & Introduction"], ["v020", "Kickstart Your Legal VA Career"], ["v021", "Legal Practice and Virtual Assistants"],
+      ["v025", "Overview of Tasks and Roles"],
+      ["v036", "Types of Law Firms"], ["v134", "Tips to Stand Out as a Legal VA"]],
   2: [["p02", "Objectives & Agenda"], ["p05", "Inbound Calls: Caller Roles"], ["p07", "Inbound Call Best Practices"],
       ["p25", "Common Outbound Calls"], ["p27", "Client Contact Calls"], ["p30", "Invoice Follow-up Calls"], ["p36", "Provider Calls"],
       ["p40", "Calls to Adjusters"], ["p45", "Court Calls"], ["p48", "Calls to Opposing Counsel"], ["p53", "Outbound Caller Best Practices"]],
@@ -186,6 +185,9 @@ window.renderDaySlideContent = function(d, slide, idx){
   if(!slide || slide.type!=="ftSection") return __ftSlideContent(d, slide, idx);
   const sec = d.sections[slide.index];
   const sep = `<div class="topic-separator">${esc(d.title)}${d.sections.length>1 ? ` &middot; PART ${slide.index+1} OF ${d.sections.length}` : ""}</div>`;
+  // A deck page shown as its own image (build/slides/image_lesson.py) carries its own title: the page alone.
+  if(/^\s*<div class="cs cs-pages"/.test(sec.html)) return `
+    <div class="card lesson-card ft-section ft-page" data-part="1"><div class="ft-body">${sec.html}</div></div>`;
   // A deck (or the word game) is the whole slide: no big heading, and it's sized to fit the slide.
   if(/^\s*<div class="canva-frame"/.test(sec.html)) return `
     <div class="card lesson-card ft-section ft-deck" data-part="1">${sep}<div class="ft-body">${sec.html}</div></div>`;

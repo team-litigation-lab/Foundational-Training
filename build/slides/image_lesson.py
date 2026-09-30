@@ -7,7 +7,8 @@
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
 deck's fonts, so nothing reflows (a PPTX rendered without Canva's fonts spills its text out of its boxes).
-Each slide's heading is the page's largest text; its alt text is the page's words.
+Each slide's heading (for the slide list and Presenter view) is the page's largest text; its alt text is
+the page's words. Only a deck's "keep" pages go in the lesson.
 Output: the images and build/lessons/lessonNN.js. Run build/build.py afterwards.
 """
 import html, io, json, os, re, sys
@@ -25,7 +26,12 @@ DECKS = {
             "pdf": "https://drive.google.com/file/d/1Gq1eF0nA0wRreiMOS9VGphw721JHH3rz/view",
             "about": 'the "I. Virtual Assistant Essentials" deck (Canva design DAGtQfkdZeg)',
             # a heading the largest-text rule gets wrong (the page's section label sits at the same size)
-            "headings": {46: "Specific VA Tasks in PI Firms"}},
+            "headings": {46: "Specific VA Tasks in PI Firms"},
+            # the deck's pages in the lesson: the title, Objective, Training Agenda and Introduction (1-4),
+            # Kickstart Your Legal VA Career (20), Legal Practice and Virtual Assistants with its Benefits
+            # (21-24), Overview of Tasks and Roles (25-35), Types of Law Firms (36-39), Tips to Stand Out as a
+            # Legal VA (134-137) and the Thank You page (138)
+            "keep": {*range(1, 5), *range(20, 40), *range(134, 139)}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
@@ -48,10 +54,12 @@ def main(name, pdf):
     D = DECKS[name]
     out_dir = os.path.join(ROOT, "ft", name, "slides")
     os.makedirs(out_dir, exist_ok=True)
+    for f in os.listdir(out_dir): os.remove(os.path.join(out_dir, f))
     doc = pymupdf.open(pdf)
     z = WIDTH / doc[0].rect.width
     sections = []
     for i, p in enumerate(doc, 1):
+        if "keep" in D and i not in D["keep"]: continue
         f = f"{i:03d}.webp"
         pix = p.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=False)
         Image.open(io.BytesIO(pix.tobytes("png"))).save(os.path.join(out_dir, f), "WEBP", quality=82, method=6)
