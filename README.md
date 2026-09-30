@@ -40,6 +40,12 @@ Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each of 
 
 ### Native slides (rebuilt from a deck)
 
+**Topic dividers.** Lessons 1, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 9 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
+- **Where topics start:** `FT_TOPICS` in `js/ft-updates.js`, with each topic's first page by page id. Lesson 1 has 10 topics, Lesson 4 has 5 and Lesson 7 has 12.
+- **Adding pages:** new pages don't move the dividers. To start a topic somewhere else, change its page id there.
+- **Canva lessons:** a lesson that is one Canva deck has no dividers, because the deck has its own title page.
+- **Saved places:** these are slide positions, so each trainee's "resume here" and "furthest reached" moved once to the same page when the dividers arrived. The saved objects record which lessons were moved (`_ftTopics`).
+
 Lessons 4 and 7 are no longer Canva embeds: each deck page is its own slide in the platform, with the deck's exact wording in this program's own design (`js/ft-slides.js`: cards, numbered steps, check lists, do / don't boxes, tips, tables and zoomable document images). The deck's link is kept as the lesson's `canva` field.
 
 1. Download the deck from Canva as `.pptx` (speaker notes included) and extract it: `build/slides/extract_pptx.py` writes `build/slides/<deck>.json` (each page's text boxes and notes). A deck downloaded as PDF works too: `build/slides/extract_pdf.py <deck.pdf> [<part 2.pdf> …] <deck>` (needs `pip install pymupdf`; a deck downloaded in parts is given in order). A PDF has no speaker notes, so its scripts' talk-through is written in `build/slides/<deck>_script.py` and the walk-through is the slide's own points.
