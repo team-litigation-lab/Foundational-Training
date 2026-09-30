@@ -2034,9 +2034,9 @@ const SOP_LAB_ACTIVITIES = {
   coldcalling4:["Cold-Calling Log","Lead Generation Practice","Live Intake Call Simulator","Email Outreach Simulator"],
   insurance5:["Classify the Risk","Match the Strategy","Home Binder","Crisis Roleplay"],
   projectcompliance6:["Compliance Risk","Operational Warning Signs","Recovery Memo","Crisis Roleplay","Compliance Audit Simulation"],
-  financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Attention to Detail Test"],
+  financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Invoice Follow-Up","Attention to Detail Test"],
   accessincident8:["Least-Privilege Access Audit","Verify Before You Disclose","Contain the Leak"],
-  compliance9:["CLE Compliance Dashboard","Event Follow-Up","Negative Review Response","Awards Tracker","Crisis Roleplay"],
+  compliance9:["Event Invite & Registration Form","Event Follow-Up","Meeting Notes & Action Items","CLE Compliance Dashboard","Negative Review Response","Awards Tracker","Crisis Roleplay"],
   socialmedia10:["Engagement Rate","Version Matching","Campaign Math","Brand Kit","Marketing Plan"]
 };
 (function(){ const s = document.createElement("style"); s.id = "eapa-sop-flow"; s.textContent = `

@@ -139,7 +139,8 @@ const FT_IS_AUDIENCE = typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE;
    starts at the page with that id (page ids stay put when pages are added). A lesson that is one Canva
    deck has no dividers: the deck has its own title page. */
 const FT_TOPICS = {
-  1: [["v002", "Objective, Agenda & Introduction"], ["v020", "Kickstart Your Legal VA Career"], ["v025", "Overview of Tasks and Roles"],
+  1: [["v002", "Objective, Agenda & Introduction"], ["v020", "Kickstart Your Legal VA Career"], ["v021", "Legal Practice and Virtual Assistants"],
+      ["v025", "Overview of Tasks and Roles"],
       ["v036", "Types of Law Firms"], ["v134", "Tips to Stand Out as a Legal VA"]],
   4: [["p02", "Introduction & Common Reception Tasks"], ["p08", "Handling Callers: Inquiries, Clients, Counsel, Providers, Courts & Insurers"],
       ["p28", "Receptionist Best Practices"], ["p39", "Payment Calls"], ["p42", "Routing Calls: Transfers & Conference Calls"]],
