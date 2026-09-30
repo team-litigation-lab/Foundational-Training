@@ -2718,5 +2718,29 @@ window.fitTopicsModal = fitTopicsModal;
 `; document.head.appendChild(st);
 })();
 
+/* ================= Toasts stay clear of the controls =================
+   A toast used to sit top right, on "← Back to roadmap" and the lesson controls. On a desktop it now shows
+   top centre, just under the top bar (measured, so a top bar that wraps to two rows is respected); on a
+   phone it shows over the top bar (the bottom has the Previous / Next bar). It still disappears on its own and never takes a click. */
+(function(){
+  if(typeof toast !== "function" || toast.__placed) return;
+  const __toast = toast;
+  toast = function(msg){
+    const r = __toast.apply(this, arguments);
+    const t = document.getElementById("toast"), bar = document.querySelector(".topbar");
+    if(t) t.style.top = window.innerWidth > 760 && bar ? Math.max(8, Math.round(bar.getBoundingClientRect().bottom) + 10) + "px" : "";
+    return r;
+  };
+  toast.__placed = true; window.toast = toast;
+  const st = document.createElement("style"); st.id = "toast-place"; st.textContent = `
+.toast{left:50%;right:auto;max-width:min(420px, calc(100vw - 40px));transform:translate(-50%,-6px);text-align:center;}
+.toast.show{transform:translate(-50%,0);}
+@media(max-width:760px){
+  .toast{top:8px !important;bottom:auto;left:10px;right:10px;max-width:none;transform:translateY(-6px);}
+  .toast.show{transform:none;}
+}
+`; document.head.appendChild(st);
+})();
+
 /* if the portal already drew itself before this file loaded, redraw with the updates */
 if(document.querySelector(".topbar")) render();
