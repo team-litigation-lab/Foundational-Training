@@ -2335,6 +2335,14 @@ em.warn{font-style:normal;color:var(--danger);}
 .lesson-stage #lessonSlideWrap .topic-separator{display:block;background:none !important;border:none !important;padding:0 !important;margin:0 0 6px !important;color:var(--orange-deep) !important;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.12em;text-align:left;}
 .lesson-stage #lessonSlideWrap .lesson-card h4, .lesson-stage #lessonSlideWrap h2.section-title, .lesson-stage #lessonSlideWrap .meet-client-card h3, .lesson-stage #lessonSlideWrap > .card > b:first-child{display:block;font-family:'Fraunces',Georgia,serif !important;font-size:clamp(26px,2.4vw,38px) !important;line-height:1.15;color:var(--navy) !important;margin:2px 0 16px !important;font-weight:700;}
 .lesson-stage #lessonSlideWrap .lesson-card h4 .lnum{font-family:'IBM Plex Mono',monospace;font-size:.45em;color:var(--orange-deep);vertical-align:middle;margin-right:10px;}
+/* topic divider slide: opens each topic */
+.topic-divider{position:relative;overflow:hidden;background:linear-gradient(135deg,#1F2440 0%,#2B3158 60%,#353C68 100%);color:#fff;border-radius:18px;padding:40px 48px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:min(100%,380px);}
+.lesson-stage #lessonSlideWrap > .topic-divider{flex:1 0 auto;}
+.topic-divider::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:linear-gradient(90deg,var(--orange),#F0C08A);}
+.topic-divider .td-kicker{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#F0C08A;}
+.topic-divider .td-num{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:18px 0 10px;}
+.topic-divider h2.td-title{font-family:'Fraunces',Georgia,serif;font-size:clamp(30px,min(3.8vw,7vh),56px);line-height:1.12;font-weight:700;color:#fff;margin:0;max-width:24ch;}
+@media(max-width:760px){.topic-divider{padding:30px 20px;min-height:260px;}}
 /* section labels */
 .lesson-stage #lessonSlideWrap .fp-section{margin:0 0 18px;}
 .lesson-stage #lessonSlideWrap .fp-label{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-deep);margin:0 0 10px;}
@@ -2383,9 +2391,9 @@ em.warn{font-style:normal;color:var(--danger);}
 <div id="app"></div>
 <div id="toast" class="toast"></div>
 <script>
-
-
-
+/* Each day's lessons live in js/days/dayN/lessons.js, loaded just above this script.
+   A day whose file didn't load is left out and a banner asks the trainee to refresh,
+   rather than the whole portal stopping. */
 // Deck: the updated "I. Virtual Assistant Essentials" (Canva design DAGtQfkdZeg), shown from its PDF on
 // Google Drive until its Canva view link is added (Canva → Share → View-only link).
 const DAY1 = {
@@ -3339,7 +3347,17 @@ function ftName(v){ const one = x=>{ const d = DAYS.find(d=>d.id===Number(x)); r
 
 const DAYS = [DAY1, DAY2, DAY3, DAY4, DAY5, DAY6, DAY7, DAY8, DAY9];
 function ftLabel(d){ return d.label || `Lesson ${d.id} of ${DAYS.filter(x=>!x.label).length}`; }
-DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });
+DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; d.noDividers = true; });
+const DAY_FILES = {};
+const MISSING_DAYS = [];
+
+/* Each day's topic order before a change that added or moved topics, oldest first.
+   When a trainee next signs in, migrateDayOrder() moves their saved place and Quick Check
+   answers to the same topic in today's order. To add or reorder topics later, add an entry
+   here with the day's topic titles as they were before the change. A topic moved to another
+   day is found there by its title (titles are unique across the course). Layouts up to and
+   including "email-management" had no divider slides. */
+const DAY_LAYOUTS = [];
 
 /* ============================================================
    PRACTICE LAB DATA — Legal-field focused
@@ -3980,7 +3998,7 @@ const mem = {}; // in-memory fallback if window.storage is unavailable
 const PERSONAL_KEYS = ["day-progress","practice-progress","lab-attempts-global","lab-attempts-by-day","admin-unlocked-days","notes","completed-lab-actions",
   "day10-window","submissions","roleplayHistory","slide-progress","last-slide","attn-detail-findings",
   "calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels","trainee-batch",
-  "quick-check-answers","day-order-migrated","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since"];
+  "quick-check-answers","day-order-migrated","qc-options-reordered","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since"];
 const PERSONAL_KEY_SET = new Set(PERSONAL_KEYS);
 let cloudSaveTimer = null;
 function scheduleCloudSave(){
@@ -4382,6 +4400,7 @@ async function loadAll(){
   const dom = await storeGet("day-order-migrated");
   state.dayOrderMigrated = (dom && typeof dom==="object") ? dom : {};
   await migrateDayOrder();
+  await migrateQuickCheckOrder();
   const lv = await storeGet("last-view");
   state.lastView = (lv && typeof lv==="object") ? lv : null;
   const tl = await storeGet("task-log"); state.taskLog = Array.isArray(tl) ? tl : [];
@@ -6504,45 +6523,89 @@ function lessonSections(d){
 }
 /* Each day's topics were regrouped into sections. A trainee's saved "resume here" slide and Quick Check
    answers were stored by position in the old order, so move them once to the same topic in the new order. */
+/* The Quick Check answer choices were reordered (so the right answer isn't always B). A trainee's
+   saved picks are option positions, so each one is moved to the same answer's new position, once.
+   QC_OPTION_MOVES["<day>|<question>"][old position] = new position. */
+const QC_OPTION_MOVES = {};
+async function migrateQuickCheckOrder(){
+  if(await storeGet("qc-options-reordered")) return;
+  const qa = state.qcAnswers || {}; let changed = false;
+  Object.keys(qa).forEach(k=>{
+    const m = k.match(/^(\d+)_(\d+)_(\d+)$/); if(!m) return;
+    const d = DAYS.find(x=>x.id===+m[1]); if(!d) return;
+    const q = (d.quickChecks||[]).filter(c=>c.afterIndex===+m[2])[+m[3]];
+    const mv = q && QC_OPTION_MOVES[`${d.id}|${q.q}`];
+    if(mv && typeof qa[k]==="number" && mv[qa[k]]!=null){ qa[k] = mv[qa[k]]; changed = true; }
+  });
+  state.qcAnswers = qa;
+  if(changed) await storeSet("quick-check-answers", state.qcAnswers);
+  await storeSet("qc-options-reordered", true);
+}
 async function migrateDayOrder(){
-  if(typeof DAY_OLD_ORDER==="undefined") return;
   state.dayOrderMigrated = state.dayOrderMigrated || {};
-  let lsChanged = false, spChanged = false, qaChanged = false;
-  for(const [dk, oldTitles] of Object.entries(DAY_OLD_ORDER)){
-    const dayId = +dk;
-    if(state.dayOrderMigrated[dayId]) continue;
-    const d = DAYS.find(x=>x.id===dayId); if(!d) continue;
+  // The first layout was recorded as dayOrderMigrated[<day>] = true; later ones as "<id>:<day>".
+  const flag = (li, dayId)=> li===0 ? dayId : `${DAY_LAYOUTS[li].id}:${dayId}`;
+  // Slides saved in this layout or an earlier one had no divider slides.
+  const lastWithoutDividers = DAY_LAYOUTS.findIndex(x=>x.id==="email-management");
+  // A topic can move to another day, so every built-in topic is found by its title, with the day it's in now.
+  const home = new Map();
+  DAYS.forEach(dd=>dd.lessons.forEach(l=>{ if(!l.__extra) home.set(l.h, {d:dd, l}); }));
+  // Each Quick Check follows its topic, wherever that topic is now.
+  const allQC = [];
+  DAYS.forEach(dd=>(dd.quickChecks||[]).forEach(q=>allQC.push({q, l:dd.lessons[q.afterIndex]})));
+  const qa = state.qcAnswers || {}, moved = {};
+  let lsChanged = false, spChanged = false, qaChanged = false, flagsChanged = false;
+  for(const d of DAYS){
+    const dayId = d.id;
+    // the oldest layout this trainee's saved place is still in
+    const li = DAY_LAYOUTS.findIndex((x,i)=>x.order[dayId] && !state.dayOrderMigrated[flag(i, dayId)]);
+    if(li < 0) continue;
+    const oldTitles = DAY_LAYOUTS[li].order[dayId];
     const byTitle = Object.fromEntries(d.lessons.map(l=>[l.h,l]));
-    const oldLessons = oldTitles.map(h=>byTitle[h]).filter(Boolean).concat(d.lessons.filter(l=>!oldTitles.includes(l.h)));
-    const newIndexOf = i => oldLessons[i] ? d.lessons.indexOf(oldLessons[i]) : -1;
+    // Content Studio topics (__extra) always came after the built-in ones.
+    const oldLessons = oldTitles.map(h=>byTitle[h] || (home.get(h)||{}).l).filter(Boolean).concat(d.lessons.filter(l=>l.__extra));
+    const dayOf = l => d.lessons.includes(l) ? d : (home.get(l.h)||{}).d;
     // Quick Checks in the old order sat after the same topics, by their old positions.
-    const oldQC = (d.quickChecks||[]).map(q=>Object.assign({}, q, {afterIndex: oldLessons.indexOf(d.lessons[q.afterIndex])}));
-    const oldD = Object.assign({}, d, {lessons: oldLessons, quickChecks: oldQC});
+    const oldQC = allQC.filter(x=>oldLessons.includes(x.l)).map(x=>Object.assign({}, x.q, {afterIndex: oldLessons.indexOf(x.l)}));
+    const oldD = Object.assign({}, d, {lessons: oldLessons, quickChecks: oldQC, noDividers: li <= lastWithoutDividers});
+    const oldSlides = buildDaySlides(oldD), newSlides = buildDaySlides(d);
+    const key = (dd, x)=> x ? `${x.type}|${x.lessonIndex!=null && dd.lessons[x.lessonIndex] ? dd.lessons[x.lessonIndex].h : ""}|${x.part||""}` : "";
+    // the same slide in today's order; if it's gone (its topic moved to another day), the next one that's still here
+    const moveSlide = i => {
+      for(let k=i; k<oldSlides.length; k++){ const want = key(oldD, oldSlides[k]); const j = want ? newSlides.findIndex(x=>key(d, x)===want) : -1; if(j >= 0) return j; }
+      return -1;
+    };
+    // the saved place and the furthest slide reached both move to the same slide in today's order
     const last = state.lastSlide && state.lastSlide[dayId];
     if(typeof last==="number" && last > 0){
-      const key = (dd, x)=> x ? `${x.type}|${x.lessonIndex!=null && dd.lessons[x.lessonIndex] ? dd.lessons[x.lessonIndex].h : ""}|${x.part||""}` : "";
-      const want = key(oldD, buildDaySlides(oldD)[last]);
-      const idx = buildDaySlides(d).findIndex(x=>key(d, x)===want);
-      if(idx >= 0){
-        state.lastSlide[dayId] = idx; lsChanged = true;
-        state.slideProgress = state.slideProgress || {};
-        if((state.slideProgress[dayId]||0) < idx){ state.slideProgress[dayId] = idx; spChanged = true; }
-      }
+      const idx = moveSlide(last);
+      if(idx >= 0 && idx !== last){ state.lastSlide[dayId] = idx; lsChanged = true; }
     }
-    // Quick Check answers are keyed "<day>_<topic position>_<n>".
-    const qa = state.qcAnswers || {}, moved = {};
+    state.slideProgress = state.slideProgress || {};
+    const far = state.slideProgress[dayId];
+    if(typeof far==="number" && far > 0){
+      const idx = moveSlide(far);
+      if(idx >= 0 && idx !== far){ state.slideProgress[dayId] = idx; spChanged = true; }
+    }
+    const now = state.lastSlide && state.lastSlide[dayId];
+    if(typeof now==="number" && (state.slideProgress[dayId]||0) < now){ state.slideProgress[dayId] = now; spChanged = true; }
+    // Quick Check answers are keyed "<day>_<topic position>_<n>"; they follow their topic, to another day if it moved.
     Object.keys(qa).forEach(k=>{
       const m = k.match(/^(\d+)_(\d+)_(\d+)$/); if(!m || +m[1]!==dayId) return;
-      const ni = newIndexOf(+m[2]);
-      if(ni >= 0 && ni !== +m[2]){ moved[`${dayId}_${ni}_${m[3]}`] = qa[k]; delete qa[k]; qaChanged = true; }
+      const l = oldLessons[+m[2]], nd = l && dayOf(l); if(!nd) return;
+      const ni = nd.lessons.indexOf(l);
+      if(ni >= 0 && (nd.id !== dayId || ni !== +m[2])){ moved[`${nd.id}_${ni}_${m[3]}`] = qa[k]; delete qa[k]; qaChanged = true; }
     });
-    Object.assign(qa, moved); state.qcAnswers = qa;
-    state.dayOrderMigrated[dayId] = true;
+    // the saved place now matches today's order, so every later layout is covered too
+    for(let i=li; i<DAY_LAYOUTS.length; i++) if(DAY_LAYOUTS[i].order[dayId]) state.dayOrderMigrated[flag(i, dayId)] = true;
+    flagsChanged = true;
   }
+  // added after every day is done, so an answer moved into a later day isn't moved a second time
+  Object.assign(qa, moved); state.qcAnswers = qa;
   if(lsChanged) await storeSet("last-slide", state.lastSlide);
   if(spChanged) await storeSet("slide-progress", state.slideProgress);
   if(qaChanged) await storeSet("quick-check-answers", state.qcAnswers);
-  await storeSet("day-order-migrated", state.dayOrderMigrated);
+  if(flagsChanged) await storeSet("day-order-migrated", state.dayOrderMigrated);
 }
 function resumeSlideFor(dayId){
   const d = DAYS.find(x=>x.id===dayId); if(!d) return 0;
@@ -7623,6 +7686,8 @@ function buildDaySlides(d){
   if(d.taskOverview) slides.push({type:"taskOverview"});
   if(d.id===1) slides.push({type:"meetClient"});
   d.lessons.forEach((l,i)=>{
+    // each topic opens with a divider slide (noDividers: a saved layout from before they existed)
+    if(!d.noDividers) slides.push({type:"divider", lessonIndex:i});
     slides.push({type:"topic", lessonIndex:i, part:1});
     if(!l.singleSlide) slides.push({type:"topic", lessonIndex:i, part:2});   // singleSlide: Part 2 would only repeat Part 1
     if((d.quickChecks||[]).some(q=>q.afterIndex===i)) slides.push({type:"quickCheck", lessonIndex:i});
@@ -7636,6 +7701,7 @@ function daySlideTitle(d, slide){
   if(slide.type==="video") return "Video Recap";
   if(slide.type==="taskOverview") return "Legal EA Task Overview";
   if(slide.type==="meetClient") return "Meet Elias Thorne — Live Q&A";
+  if(slide.type==="divider") return `Topic ${slide.lessonIndex+1}: ${d.lessons[slide.lessonIndex].h}`;
   if(slide.type==="topic"){ const l = d.lessons[slide.lessonIndex]; return l.h + (l.singleSlide ? "" : (slide.part===1 ? " (Part 1 of 2)" : " (Part 2 of 2)")); }
   if(slide.type==="quickCheck") return "Quick Check";
   if(slide.type==="practiceLab") return "Practice Lab";
@@ -7646,6 +7712,7 @@ function renderDaySlideContent(d, slide, idx){
   if(slide.type==="video") return renderVideoPlaceholder(d);
   if(slide.type==="taskOverview") return renderTaskOverview(d.taskOverview);
   if(slide.type==="meetClient") return renderMeetClientSlide();
+  if(slide.type==="divider") return renderTopicDivider(d, slide.lessonIndex);
   if(slide.type==="topic") return renderLessonCard(d.lessons[slide.lessonIndex], slide.lessonIndex, d, "", slide.part);
   if(slide.type==="quickCheck") return `
     <div class="topic-separator">DAY ${d.id} &middot; QUICK CHECK</div>
@@ -7653,6 +7720,16 @@ function renderDaySlideContent(d, slide, idx){
   if(slide.type==="practiceLab") return renderPracticeLabSlide(d);
   if(slide.type==="discussion") return renderDiscussionSlide(d);
   return "";
+}
+/* The divider that opens a topic: which section it's in, its number and its title. */
+function renderTopicDivider(d, i){
+  const l = d.lessons[i];
+  return `
+    <div class="topic-divider">
+      <div class="td-kicker">${ftName(d.id)}${l.section ? ` &middot; ${esc(l.section)}` : ""}</div>
+      <div class="td-num">Topic ${i+1} of ${d.lessons.length}</div>
+      <h2 class="td-title">${esc(l.h)}</h2>
+    </div>`;
 }
 function renderMeetClientSlide(){
   return `
@@ -7970,7 +8047,8 @@ function renderFourPartSection(num, label, content){
 /* ---------- LESSON_DIAGRAMS (visual-learner diagrams, keyed "day::lesson title") ---------- */
 const LESSON_DIAGRAMS = {};
 /* ---------- /LESSON_DIAGRAMS ---------- */
-/* Additional learning content for lessons whose Part 2 was only 1–3 lines. Keyed "day::lesson title". */
+/* Additional learning content for lessons whose Part 2 was only 1–3 lines. Keyed "day::lesson title".
+   Each day's entries live in js/days/dayN/lessons.js (DAYn_EXTRA_LEARNING). */
 const LESSON_EXTRA_LEARNING = {};
 /* ============================================================
    VISUAL LEARNING — every lesson slide gets a graphic:
@@ -8111,7 +8189,7 @@ function renderLessonCard(l,i,d,unused,part){
   const density = textLen < 280 ? "density-xs" : (textLen < 650 ? "density-s" : "density-m");
 
   return `
-    <div class="topic-separator">DAY ${d.id}${l.section ? ` &middot; ${esc(l.section).toUpperCase()}` : ""} &middot; TOPIC ${i+1} OF ${d.lessons.length}${l.singleSlide ? "" : ` &middot; PART ${p} OF 2`}</div>
+    <div class="topic-separator">DAY ${d.id} &middot; TOPIC ${i+1} OF ${d.lessons.length}${l.singleSlide ? "" : ` &middot; PART ${p} OF 2`}</div>
     <div class="card lesson-card ${expSec ? "density-m" : density}" data-part="${p}">
       <h4><span class="lnum">0${i+1}</span>${esc(l.h)}</h4>
       ${expSec ? renderExpansionPanel(expSec) : ""}
@@ -12213,7 +12291,8 @@ const SOP_DATA = [
     topics: [
       "Managing Up: The \"Three C's\" Framework",
       "The Tactical Foundation and Digital Edge",
-      "The Role Evolution: From \"Helper\" to \"Force Multiplier\""
+      "The Role Evolution: From \"Helper\" to \"Force Multiplier\"",
+      "Email Management: The Inbox as a Control System"
     ],
     sections: [
       { h: "Level 1: The Tactical Foundation", type: "bullets", items: [
@@ -14155,7 +14234,7 @@ function buildDiscussionScript(d, l, i){
     minutes: "2–3 min"
   };
 }
-/* ---------- trainer speaker notes (hardcoded in js/presenter-notes.js) ----------
+/* ---------- trainer speaker notes (hardcoded in js/days/dayN/notes.js) ----------
    One note per slide: "On this slide" (what's on screen), the script (Say / Ask /
    Wrap) and, on the topic's last slide, the scenario to run with the room.
    No AI writes these while a session runs. */
@@ -14174,7 +14253,7 @@ function presenterNote(d, l, part){
    Built from exactly what is on the slide (the same data the slide renders), so it always matches
    what the room sees — including topics added later in the Content Studio. Part 1 covers ① Core
    Principles and ② Step-by-Step; Part 2 covers ③ Best Practices & Pitfalls and ④ Go Deeper.
-   A hand-written "steps" script in presenter-notes.js (Day 3) replaces the generated ② section. */
+   A hand-written "steps" script in js/days/day3/notes.js replaces the generated ② section. */
 const SCRIPT_ORDINALS = ["First","Second","Third","Fourth","Fifth","Sixth","Seventh","Eighth","Ninth","Tenth"];
 function scriptSentence(t){
   let x = String(t||"").replace(/\s+/g," ").trim();
@@ -14289,7 +14368,7 @@ const PN_SECTION_NAMES = {1:"Core Principles", 2:"Step-by-Step Framework", 3:"Be
      ② Talk it through — what's on the slide, in plain spoken words (not the bullets read out)
      ③ Walk through it — the steps or points in order: first, next, then, finally
      ④ Ask the room / Your turn — an action or a question, so it ends as a conversation
-   Hand-written scripts live in js/slide-scripts/dayN.js (window.SLIDE_SCRIPTS["day::title"].p1 / .p2).
+   Hand-written scripts live in js/days/dayN/scripts.js (window.SLIDE_SCRIPTS["day::title"].p1 / .p2).
    A topic without one (e.g. added later in the Content Studio) gets the same four beats built from
    what is on the slide. */
 function scriptInline(t){
@@ -14310,13 +14389,13 @@ function scriptWalk(items){
 function slideScript(d, l, part){
   const key = (part===2 && !l.singleSlide) ? "p2" : "p1";
   const hand = ((window.SLIDE_SCRIPTS || {})[`${d.id}::${l.h}`] || {})[key];
-  if(hand) return {why: hand.why||"", talk: hand.talk||"", walk: hand.walk||[], ask: hand.ask||"", hand: true};
+  if(hand) return {why: hand.why||"", talk: hand.talk||"", walk: hand.walk||[], ask: hand.ask||"", scenario: hand.scenario||"", hand: true};
   const n = presenterNote(d, l, part), secs = slideScriptSections(d, l, part);
   let walk = [];
   if(secs[2]) walk = scriptWalk(secs[2].split("\n").slice(1));
   const talk = [secs[1], secs[3], secs[4]].filter(Boolean).join("\n\n");
   const ask = key==="p1" ? (n.ask || (l.singleSlide ? n.wrap : "")) : (n.wrap || n.ask || "");
-  return {why: n.say || "", talk, walk, ask, hand: false};
+  return {why: n.say || "", talk, walk, ask, scenario: (key==="p2" || l.singleSlide) ? (n.scenario || "") : "", hand: false};
 }
 function slideScriptText(d, l, part){
   const s = slideScript(d, l, part);
@@ -14339,7 +14418,7 @@ function slideScriptForPage(s, l, part, pg){
   let walk = [];
   let from = 0;
   if(pos >= 0){ from = Math.round(n*pos/wp.length); const to = Math.round(n*(pos+1)/wp.length); walk = s.walk.slice(from, to); }
-  return {why: k===0 ? s.why : "", talk: k===0 ? s.talk : "", walk, ask: k===P-1 ? s.ask : "",
+  return {why: k===0 ? s.why : "", talk: k===0 ? s.talk : "", walk, ask: k===P-1 ? s.ask : "", scenario: k===P-1 ? s.scenario : "",
     more: k < P-1, cont: from > 0, hand: s.hand, page: k, pages: P};
 }
 /* The script reads like speaker notes: one flowing paragraph the trainer can say out loud (the
@@ -14361,7 +14440,7 @@ function renderPresenterNote(d, l, part, secs, allSecs, pg){
       ${s.more ? `<p class="script-next">Continues on the next page →</p>` : ""}
     </div>
     ${n.cue && s.page ? "" : (n.cue ? `<div class="pn-on pn-cue"><b>Trainer note — not read aloud</b><p>${esc(n.cue)}</p></div>` : "")}
-    ${lastSlide && !s.more && n.scenario && !s.hand ? `<div class="pn-scen"><b>🎬 Scenario</b><p>${esc(n.scenario)}</p></div>` : ""}
+    ${s.scenario ? `<div class="pn-scen"><b>🎬 Scenario — work through it with the room</b><p>${esc(s.scenario)}</p></div>` : ""}
   </div>`;
 }
 function buildDayScriptLines(d){
@@ -14375,7 +14454,7 @@ function buildDayScriptLines(d){
       const paras = scriptProse(s);
       if(paras[0]) lines.push(paras[0]);
       if(paras[1]) lines.push(`ASK: ${paras[1]}`);
-      if((l.singleSlide || p===2) && n.scenario && !s.hand) lines.push(`SCENARIO: ${n.scenario}`);
+      if(s.scenario) lines.push(`SCENARIO: ${s.scenario}`);
     });
     lines.push("---");
   });
@@ -15693,7 +15772,9 @@ async function crSendChat(){
   const input = document.getElementById("crChatInput");
   const text = input.value.trim();
   if(!text) return;
-  if(!(await useLabAttempt(toolIdToDayId(toolState.cr.setKey), "crSendChat_"+toolState.cr.setKey))) return;
+  // One role-play conversation counts as one attempt: only its first message is charged (and only when
+  // it is a repeat); the replies after it and the debrief of the same conversation are free.
+  if(!(toolState.cr.chatHistory||[]).some(m=>m.role==="ea") && !(await useLabAttempt(toolIdToDayId(toolState.cr.setKey), "crSendChat_"+toolState.cr.setKey))) return;
   toolState.cr.chatHistory.push({role:"ea", text});
   input.value = "";
   crRenderChatWindow();
@@ -15730,7 +15811,7 @@ window.crSendChat = crSendChat;
 async function crEndDebrief(){
   const el = document.getElementById("crDebrief");
   if((toolState.cr.chatHistory||[]).filter(m=>m.role==="ea").length < 1){ toast("Exchange at least one message first."); return; }
-  if(!(await useLabAttempt(toolIdToDayId(toolState.cr.setKey), "crEndDebrief_"+toolState.cr.setKey))) return;
+  // (the conversation was already counted when its first message was sent)
   el.innerHTML = `<div class="ai-loading">Preparing your debrief…</div>`;
   const s = crCurrentScenario();
   const transcript = toolState.cr.chatHistory.filter(m=>!m.pending).map(m=>(m.role==="client"?"CLIENT: ":"EA: ")+m.text).join("\n");
@@ -15901,7 +15982,8 @@ async function d6crSendChat(){
   const input = document.getElementById("d6crChatInput");
   const text = input.value.trim();
   if(!text) return;
-  if(!(await useLabAttempt(6, "d6crSendChat"))) return;
+  // One role-play conversation = one attempt (see crSendChat).
+  if(!(toolState.c6cr.chatHistory||[]).some(m=>m.role==="ea") && !(await useLabAttempt(6, "d6crSendChat"))) return;
   toolState.c6cr.chatHistory.push({role:"ea", text});
   input.value = "";
   d6crRenderChatWindow();
@@ -15938,7 +16020,7 @@ window.d6crSendChat = d6crSendChat;
 async function d6crEndDebrief(){
   const el = document.getElementById("d6crDebrief");
   if((toolState.c6cr.chatHistory||[]).filter(m=>m.role==="ea").length < 1){ toast("Exchange at least one message first."); return; }
-  if(!(await useLabAttempt(6, "d6crEndDebrief"))) return;
+  // (the conversation was already counted when its first message was sent)
   el.innerHTML = `<div class="ai-loading">Preparing your debrief…</div>`;
   const s = d6crCurrentScenario();
   const transcript = toolState.c6cr.chatHistory.filter(m=>!m.pending).map(m=>(m.role==="client"?"EXECUTIVE/STAKEHOLDER: ":"EA: ")+m.text).join("\n");
@@ -17231,7 +17313,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.30-1511";
+var APP_BUILD = "ft-2026.09.30-1521";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -17274,28 +17356,18 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/slide-scripts/day1.js?v=2"></script>
-<script src="/js/slide-scripts/day2.js?v=3"></script>
-<script src="/js/slide-scripts/day3.js?v=4"></script>
-<script src="/js/slide-scripts/day4.js?v=3"></script>
-<script src="/js/slide-scripts/day5.js?v=3"></script>
-<script src="/js/slide-scripts/day6.js?v=3"></script>
-<script src="/js/slide-scripts/day7.js?v=3"></script>
-<script src="/js/slide-scripts/day8.js?v=3"></script>
-<script src="/js/slide-scripts/day9.js?v=3"></script>
-<script src="/js/slide-scripts/day10.js?v=3"></script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-slides.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-process.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-rules.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.30-1511"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.09.30-1511"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-slides.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-process.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-rules.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.30-1521"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.09.30-1521"></script>
 <script src="/js/portal-link.js?v=1"></script>
 <script src="/js/portal-link.js?v=1"></script>
 </body>
