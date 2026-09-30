@@ -14,6 +14,7 @@
      .cs-fig     a document image: click to see it full size
      .cs-hero    title and closing slides (.photo: over the deck's photo)
      .cs-media   the points beside the deck page's photo; .cs-card.num a numbered point
+     .cs-pages   a deck page shown as its own image (build/slides/image_lesson.py)
      .cs-cover   a correspondence slide: the title on the deck's photo beside the document (orange frame)
    In full screen and the slides window a page fills the screen: no width cap, no presenter
    column, and the text scales with the screen.
@@ -113,6 +114,9 @@ const css = `
 .cs-arrow{align-self:center;color:var(--orange);font-size:22px;font-weight:800;line-height:1;margin:-4px 0;}
 .cs-paras{display:flex;flex-direction:column;gap:6px;}
 .cs-card u{text-decoration-thickness:2px;text-underline-offset:2px;}
+.cs-pages{align-items:center;}
+.cs-page{margin:0;width:100%;display:flex;justify-content:center;}
+.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:68vh;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:#fff;}
 .cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
 .cs-cover .cs-hero{position:relative;min-height:52vh;justify-content:flex-end;padding-top:96px;}
 .cs-cover .cs-logo{position:absolute;top:20px;left:22px;width:78px;height:auto;}
@@ -156,6 +160,7 @@ const css = `
 .lesson-stage:fullscreen .cs-hero .cs-big, #audienceRoot .cs-hero .cs-big{font-size:clamp(34px,3.6vw,72px);}
 .lesson-stage:fullscreen .cs-stat span, #audienceRoot .cs-stat span{font-size:1.15em;}
 .lesson-stage:fullscreen .cs-cover .cs-hero, #audienceRoot .cs-cover .cs-hero{min-height:74vh;}
+.lesson-stage:fullscreen .cs-page img, #audienceRoot .cs-page img{max-width:none;width:auto;max-height:86vh;max-width:100%;border-radius:6px;}
 .lesson-stage:fullscreen .cs-hero .cs-big.caps, #audienceRoot .cs-hero .cs-big.caps{font-size:clamp(26px,2.5vw,56px);}
 .lesson-stage:fullscreen .cs-cover .cs-logo, #audienceRoot .cs-cover .cs-logo{width:6.5em;}
 .lesson-stage:fullscreen .cs-doc .cs-fig img, #audienceRoot .cs-doc .cs-fig img{max-height:80vh;}
