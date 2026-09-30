@@ -1491,13 +1491,21 @@ rect.svg-callout-badge{animation:none;}
 }
 .lab-attempt-banner{display:none !important;}
 
-/* ---------- dashboard v2 (sidebar layout — structure only, original colours) ---------- */
+/* ---------- dashboard v2 (stats band above the days — structure only, original colours) ---------- */
 main.main-dash{max-width:1600px;}
-.dash-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px;align-items:stretch;}
+.dash-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:stretch;}
 .dash-main{min-width:0;}
 .dash-main .module-grid{margin-bottom:0;}
-.dash-side{background:linear-gradient(180deg, var(--navy) 0%, var(--navy-soft) 100%);border-radius:14px;padding:16px;box-shadow:var(--shadow);}
-.dash-side-inner{display:flex;flex-direction:column;gap:14px;position:sticky;top:84px;}
+/* the progress stats run across the page in one navy band, above the Day cards */
+.dash-side{order:-1;background:linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%);border-radius:14px;padding:16px;box-shadow:var(--shadow);}
+.dash-side-inner{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;align-items:stretch;}
+.dash-side-inner > .card{margin:0;}
+/* one row on a desktop: the four numbers, then the wider Feedback and Ranking cards */
+@media(min-width:1001px){.dash-side-inner{grid-template-columns:repeat(4,minmax(0,1fr)) repeat(2,minmax(0,1.6fr));}}
+.dash-side-inner > .tfb-dash, .dash-side-inner > .rank-card{grid-column:span 2;}
+@media(min-width:1001px){.dash-side-inner > .tfb-dash, .dash-side-inner > .rank-card{grid-column:auto;}}
+.dash-side-inner > .card.stat:not(.tfb-dash):not(.rank-card){display:flex;flex-direction:column;justify-content:center;}
+.dash-side .tfb-dash .tfb-dash-stars{margin-bottom:8px;}
 .dash-side .card.stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);box-shadow:none;}
 .dash-side .stat .num{color:#fff;}
 .dash-side .stat .lbl{color:#C9CCDD;}
@@ -2004,7 +2012,7 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
   .tfb-fab .fab-label{display:none;}
 }
 
-/* bottom action bar lines up with the bottom of the stats panel */
+/* bottom action bar sits at the bottom of the Day cards column */
 @media(min-width:1001px){
   .dash-layout{align-items:stretch;}
   .dash-main{display:flex;flex-direction:column;}
@@ -3283,18 +3291,236 @@ const DAY4 = {
 ]
 };
 
+// Slides: the "Calendar Management Training" deck (Canva design DAGnaz2Or2U), all 44 pages, one image per page, rendered from its PDF by build/slides/image_lesson.py.
+// PDF: Calendar_Management_Training_compressed.pdf (sent in chat)
 const DAY5 = {
   id: 5,
   title: "Calendaring & Appointment Setting Training",
   video: "https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/view",
+  deck: "Calendar_Management_Training_compressed.pdf (sent in chat)",
   heading: "Calendaring & Appointment Setting Training",
   sections: [
-    {
-      "id": "deck",
-      "h": "Calendaring & Appointment Setting Training",
-      "html": "<div class=\"canva-frame\" id=\"lessonDeck5\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Calendaring & Appointment Setting Training (Canva)\"\n    src=\"https://www.canva.com/design/DAGnaz2Or2U/E0o3VALVIauOuoJBuWHOZQ/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck5\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://www.canva.com/design/DAGnaz2Or2U/E0o3VALVIauOuoJBuWHOZQ/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>"
-    }
-  ]
+  {
+    "id": "v001",
+    "h": "Calendar Management Training",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/001.webp\" alt=\"CALENDAR MANAGEMENT TRAINING\" width=\"1920\" height=\"1080\" loading=\"eager\"></figure></div>"
+  },
+  {
+    "id": "v002",
+    "h": "Training Objective",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/002.webp\" alt=\"To provide participants with a structured approach to mastering calendar management, which will boost their productivity, organization, and time management abilities. By the end of the training, participants will be capable of effectively using digital calendars, implementing time-blocking strategies, managing recurring events, and addressing common obstacles to optimize their workflow. TRAINING OBJECTIVE\" width=\"1920\" height=\"1080\" loading=\"eager\"></figure></div>"
+  },
+  {
+    "id": "v003",
+    "h": "Training Agenda",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/003.webp\" alt=\"TRAINING AGENDA THE BASICS OF CALENDAR MANAGEMENT CALENDAR ORGANIZATION AND SETUP SCHEDULING BEST PRACTICES MANAGING INTERRUPTIONS AND FLEXIBILITY ADVANCED CALENDAR TECHNIQUES TIME MANAGEMENT STRATEGIES TROUBLESHOOTING COMMON CHALLENGES\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v004",
+    "h": "Introduction to Calendar Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/004.webp\" alt=\"Effective calendar management is key to staying organized, meeting deadlines, and balancing both personal and professional commitments. A well-managed calendar can increase productivity, reduce stress, and ensure that your time is being used efficiently. INTRODUCTION TO CALENDAR MANAGEMENT\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v005",
+    "h": "The Importance of Calendar Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/005.webp\" alt=\"The Importance of Calendar Management Time Management Task Prioritization Avoiding Overlaps Stress Reduction Organize your tasks and meetings effectively to optimize your time. Prevent double-booking and over-scheduling. Ensures you focus on the most important tasks. A clear plan reduces decision fatigue and last- minute scrambling.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v006",
+    "h": "Calendars We Use",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/006.webp\" alt=\"Calendars We Use Google Calendar Apple Calendar: Outlook Calendar: Calendar Apps: Cloud-based, integrates with other Google tools and devices. Common in corporate settings; integrates with email and task management. Syncs across Apple devices for personal and professional use. Advanced features like natural language input and task integration. DIGITAL CALENDARS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v007",
+    "h": "Types of Digital Calendars",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/007.webp\" alt=\"TYPES OF DIGITAL CALENDARS SHARED CALENDARS SINGLE VS. MULTIPLE CALENDARS Deciding whether to consolidate all events into one calendar or manage separate calendars (personal, work, school, etc.). Ideal for team settings, allowing visibility into colleagues&#x27; schedules and easier meeting coordination.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v008",
+    "h": "Basic Calendar Tools and Features",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/008.webp\" alt=\"BASIC CALENDAR TOOLS AND FEATURES CREATING EVENTS RECURRING EVENTS TIME ZONES NOTIFICATIONS AND ALERTS How to add events and meetings. COLOR CODING Setting up recurring meetings (e.g., weekly meetings, monthly check-ins). Handling different time zones when scheduling cross-country or international meetings. Setting up reminders for events or tasks. Use different colors for various types of events or categories (e.g., work, personal, health).\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v009",
+    "h": "Calendar Organization and Setup",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/009.webp\" alt=\"Setting up and organizing a calendar efficiently can help you stay on top of your tasks and make sure you don’t miss any important deadlines or events. CALENDAR ORGANIZATION AND SETUP\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v010",
+    "h": "Step-by-Step Guide",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/010.webp\" alt=\"x Digital Calendar: Ideal for syncing across devices, setting reminders, and sharing with others. It’s flexible and can be accessed anywhere. Set Up your Calendar Use a digital calendar (e.g., Google Calendar, Outlook, Apple Calendar) Define Your Categories Organize your client’s calendar into categories so you can quickly differentiate between various types of events or tasks. STEP BY STEP GUIDE 1 2 Attorney’s Schedule Court Schedule Urgent Tasks Personal\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v011",
+    "h": "Step-by-step Guide",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/011.webp\" alt=\"Weekly meetings Special dates (birthdays, holidays) Include Deadlines &amp; Events Consider any regular events you need to track, such as: Now, start populating your client’s calendar with specific dates and deadlines. STEP-BY-STEP GUIDE 3 4 Court Schedule Appointments (Deposition, Client Calls ) Social Events (parties, outings, holidays) Travel plans (flights, hotel check-ins) Add Recurring Events Daily routines (e.g., morning workout) Monthly reminders (e.g., bill payments, recurring expenses)\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v012",
+    "h": "Step-by-step Guide",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/012.webp\" alt=\"Evening: Gym, relax, personal time Review Weekly &amp; Monthly If your client have a busy schedule, consider using time blocking. This technique involves setting aside specific time blocks for focused work, meetings, and personal time. STEP-BY-STEP GUIDE 5 6 Time Blocking (Optional) Morning: Work on the project Afternoon: Respond to emails, attend meetings Evening: Gym, relax, personal time Add any new events or tasks Ensure you’re staying on track with deadlines Take a few minutes at the start of each week or month to review your client’s calendar and make adjustments as necessary:\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v013",
+    "h": "Step-by-step Guide",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/013.webp\" alt=\"Voice reminders allow you to create task notifications by speaking, using various apps and smart devices. Stay Flexible Setting reminders is an effective method for time management and organization, helping to ensure important tasks or events, such as appointments and deadlines, are not overlooked. STEP-BY-STEP GUIDE 7 8 Set Reminders Digital reminders are alerts set on electronic devices like smartphones, tablets, or computers. Physical Reminders: These can include sticky notes, written agendas, planners, or any tangible object you use to note important tasks. Being flexible in calendar management is crucial for effective time management. It allows adaptation to changing circumstances while maintaining organization and productivity. While structure is essential, a rigid schedule can cause stress during unexpected events. Flexibility helps manage disruptions with minimal impact on overal\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v014",
+    "h": "Tips for Managing Reminders",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/014.webp\" alt=\"Avoid Overloading: Too many reminders can become overwhelming, so prioritize and categorize them (e.g., work-related, personal, urgent). TIPS FOR MANAGING REMINDERS Review Regularly: Check your reminders often to ensure they’re still relevant and accurate. Clear out completed or outdated tasks to keep your system efficient. Use Multiple Platforms: If necessary, use a combination of digital and physical reminders for added effectiveness.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v015",
+    "h": "Tools for Setting Reminders",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/015.webp\" alt=\"SMARTPHONE APPS: Apps like Google Keep, Apple Reminders, Microsoft To-Do, or Todoist allow for setting simple reminders, organizing tasks, and syncing across devices. VIRTUAL ASSISTANT: Use Siri, Google Assistant, or Amazon Alexa to set voice-activated reminders. CALENDAR APPS: Google Calendar, Apple Calendar, and Outlook Calendar can be used to set date-based reminders for events, appointments, or meetings. TASK MANAGEMENT TOOLS: For more complex projects, tools like Asana, Trello, or Notion can help with setting reminders within the context of larger tasks or projects. TOOLS FOR SETTING REMINDERS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v016",
+    "h": "Suggestions for Keeping Your Calendar Up to Date",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/016.webp\" alt=\"Consistency: Make it a habit to review and update your client’s calendar regularly. Color Coding: Use colors to categorize your client’s tasks and events for easy identification. Syncing: Sync your client’s calendar across multiple devices so you can access it from anywhere. Set Boundaries: Block out time for rest, breaks, and self-care to avoid burnout. SUGGESTIONS FOR KEEPING YOUR CALENDAR UP TO DATE\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v017",
+    "h": "Calendar Organization and Setup",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/017.webp\" alt=\"CALENDAR ORGANIZATION AND SETUP SETTING UP FOR SUCCESS Buffer Times: Leave short breaks between meetings or tasks to handle overflows or simply to reset your client’s focus. Weekly Reviews: Set aside time each week (e.g., Sunday evening or Monday morning) to review your upcoming events and tasks.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v018",
+    "h": "Calendar Organization and Setup",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/018.webp\" alt=\"Choosing Your Platform: Whether Google Calendar, Outlook, or Apple Calendar, ensure the platform syncs across devices. CALENDAR ORGANIZATION AND SETUP SETTING UP YOUR CALENDAR Linking with Other Tools: Integrate with apps like task managers (Trello, Todoist) or communication tools (Slack, Microsoft Teams). Time Blocks and Themes: Assign time blocks for different types of tasks (deep work, meetings, breaks). This helps create a more structured, focused day.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v019",
+    "h": "Calendar Organization and Setup",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/019.webp\" alt=\"Click Add a new color label at the bottom left CALENDAR ORGANIZATION AND SETUP CATEGORIZING EVENTS: COLOR-CODING Assign colors for different categories like meetings, personal tasks, deadlines, exercise, etc. To create a new color label, you can: Open Google Calendar Click More insights on the left Click Edit next to Time breakdown on the right\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v020",
+    "h": "Calendar Organization and Setup",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/020.webp\" alt=\"CALENDAR ORGANIZATION AND SETUP To assign a color label to an event: Open the Google Calendar App Tap Edit Tap Save Create a new event or tap an existing event Select your current calendar color near the bottom CATEGORIZING EVENTS : LABELS AND DESCRIPTIONS Provide clear descriptions for each event to avoid ambiguity. Select an existing color label Click Time insights in the left side panel Click More insights\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v021",
+    "h": "Calendar Organization and Setup",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/021.webp\" alt=\"CALENDAR ORGANIZATION AND SETUP CATEGORIZING EVENTS BY PRIORITY Use categories such as: High Priority Medium Priority Low Priority to distinguish between urgent and non-urgent tasks. ACTION PRIORITY MATRIX\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v022",
+    "h": "Scheduling Best Practices",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/022.webp\" alt=\"Time Blocking and Prioritization SCHEDULING BEST PRACTICES Time blocking is a technique where you allocate specific chunks of time for particular tasks. WHAT IS TIME BLOCKING? Example: Block 9:00 AM - 11:00 AM for “Deep Work” and 2:00 PM - 3:00 PM for meetings.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v023",
+    "h": "Scheduling Best Practices",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/023.webp\" alt=\"Eisenhower Matrix: Classify tasks into four categories: urgent &amp; important, important but not urgent, urgent but not important, neither urgent nor important. Time Blocking and Prioritization SCHEDULING BEST PRACTICES PRIORITIZATION TECHNIQUES ABC Method: Assign A, B, or C priority levels to tasks—A for most critical, B for important but not urgent, and C for lower priority.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v024",
+    "h": "Scheduling Best Practices",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/024.webp\" alt=\"Avoiding Over-Scheduling: Don’t schedule too many meetings back-to-back. Leave at least 10-15 minutes between meetings for transition time. Best Time for Meetings: Consider the energy levels of participants. Morning tends to be better for focused discussions; afternoons for catch- ups. Setting Agenda and Goals: Always attach a meeting agenda to each event. Be clear about the objective (e.g., “Discuss Q4 Marketing Strategy”). Time Zones: Use tools like World Time Buddy or built-in calendar tools to manage time zone differences. Scheduling Meetings SCHEDULING BEST PRACTICES\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v025",
+    "h": "Managing Interruptions and Flexibility",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/025.webp\" alt=\"When planning your Client’s calendar, always include some flexible time in case meetings run over or urgent tasks arise. MANAGING INTERRUPTIONS AND FLEXIBILITY If possible, delegate tasks or reschedule non- critical events to avoid overwhelming your calendar. Stick to the time blocks and resist the temptation to drift into other tasks or meetings outside of the designated time. BUFFER TIME DELEGATION SELF- DISCIPLINE\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v026",
+    "h": "Scheduling Best Practices",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/026.webp\" alt=\"Schedule Buffer Time refers to intentionally allocated extra time within one’s schedule to absorb delays, manage unforeseen circumstances, or simply provide a pause between tasks. SCHEDULING BEST PRACTICES This concept is pivotal in creating a more resilient and less stressful approach to time management by accounting for the unpredictable nature of daily activities.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v027",
+    "h": "Advanced Calendar Techniques",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/027.webp\" alt=\"ADVANCED CALENDAR TECHNIQUES MANAGE YOUR COSTS Separate Personal &amp; Professional Calendars: Use different calendars for work- related and personal events. Delegation: For busy executives or teams, delegate calendar management to assistants using shared calendar features. Visibility &amp; Privacy: Ensure your calendar is visible to the right people and that private events are protected. MULTI-CALENDAR MANAGEMENT\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v028",
+    "h": "Advanced Calendar Techniques",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/028.webp\" alt=\"ADVANCED CALENDAR TECHNIQUES Setting Recurring Events: For daily, weekly, or monthly tasks, create a recurring event. Understand the frequency options available (daily, weekly, monthly, yearly) and how to adjust for holidays or exceptions. Dealing with Multiple Time Zones: Use scheduling assistants like Calendly to automatically adjust for time zone differences when setting up recurring international meetings. MASTERING RECURRING EVENTS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v029",
+    "h": "Advanced Calendar Techniques",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/029.webp\" alt=\"ADVANCED CALENDAR TECHNIQUES Syncing Tools: Use cloud-based calendars like Google Calendar or Outlook for real-time syncing between devices (phone, tablet, desktop). Integrating Other Platforms: Sync your calendar with your email platform (e.g., Outlook or Gmail) and task management apps (e.g., Asana, Trello). Cross-Platform Syncing: If you&#x27;re using multiple platforms (e.g., Google Calendar for work, Apple Calendar for personal events), ensure they sync to avoid missing events. SYNCING ACROSS DEVICES AND PLATFORMS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v030",
+    "h": "Time Management Strategies Using Your Calendar",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/030.webp\" alt=\"The Pomodoro® Technique is a time management strategy created by Francesco Cirillo in the late 1980s. This systematic approach consists of processes, tools, principles, and values designed to help individuals manage their time effectively, transforming it from a daunting opponent into a supportive ally that enhances productivity. Rooted in self-observation and awareness, this technique fosters the development of skills that allow us to reshape our relationship with time, enabling us to achieve our goals with reduced effort and stress. THE POMODORO TECHNIQUE The Pomodoro® Technique is an easy and fun way to get the most out of time management. Turn time into a valuable ally to accomplish tasks while keeping track of your progress. TIME MANAGEMENT STRATEGIES USING YOUR CALENDAR\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v031",
+    "h": "Time Management Strategies Using Your Calendar",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/031.webp\" alt=\"Time is limited and uncontrollable, causing anxiety and overwhelm. Common responses, such as trying to &quot;run faster&quot; or &quot;find shortcuts,&quot; often lead to frustration and procrastination. The Pomodoro® Technique aids individuals in recognizing and managing these challenges, helping them find effective solutions and achieve their goals. TIME MANAGEMENT STRATEGIES USING YOUR CALENDAR\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v032",
+    "h": "Time Management Strategies Using Your Calendar",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/032.webp\" alt=\"Work in blocks of 25 minutes followed by a 5- minute break. After four &quot;Pomodoros&quot;, take a 15- 30 minute break. How to Use Your Calendar: Schedule Pomodoro sessions as recurring events or color-code them to distinguish work blocks from meetings. TIME MANAGEMENT STRATEGIES USING YOUR CALENDAR How does the Technique work?\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v033",
+    "h": "Time Management Strategies: The Two-Minute Rule",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/033.webp\" alt=\"The Two-Minute Rule What It Is: If a task will take less than two minutes, do it immediately. How to Use Your Calendar: Block time for tasks that need to be done immediately, then move on. This can prevent tasks from piling up. TIME MANAGEMENT STRATEGIES USING YOUR CALENDAR\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v034",
+    "h": "Time Management Strategies Using Your Calendar",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/034.webp\" alt=\"The 80/20 Rule (Pareto Principle) Focus on the Important 20%: Identify the top 20% of your client’s tasks that yield 80% of your results. Ensure these high-priority tasks take up the majority of your time blocks. TIME MANAGEMENT STRATEGIES USING YOUR CALENDAR\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v035",
+    "h": "Troubleshooting Common Calendar Management Challenges",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/035.webp\" alt=\"STAY FLEXIBLE: Set aside buffer time in your client’s schedule to account for unexpected changes or urgent tasks. TROUBLESHOOTING COMMON CALENDAR MANAGEMENT CHALLENGES Dealing with Last-Minute Changes USE NOTIFICATIONS: Set notifications for upcoming events and last-minute schedule updates.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v036",
+    "h": "Troubleshooting Common Calendar Management Challenges",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/036.webp\" alt=\"AVOID OVER COMMITMENT: Learn to say no when your client’s calendar is too full. Reschedule or delegate when necessary. SETTING BOUNDARIES: Block out time for personal activities (exercise, family time, etc.) to ensure your client have a balanced life. ( This is the Attorney’s Prerogative.) TROUBLESHOOTING COMMON CALENDAR MANAGEMENT CHALLENGES Managing Work-Life Balance\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v037",
+    "h": "Troubleshooting Common Calendar Management Challenges",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/037.webp\" alt=\"TROUBLESHOOTING COMMON CALENDAR MANAGEMENT CHALLENGES REALISTIC SCHEDULING: Be mindful of how long tasks and meetings typically take. Avoid stacking too many appointments in one day. LEAVE WHITE SPACE: Ensure your client’s calendar has free time for flexibility and relaxation. Preventing Over Scheduling\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v038",
+    "h": "Advance Schedule Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/038.webp\" alt=\"ADVANCE SCHEDULE MANAGEMENT The do/build method involves scheduling dedicated time for ‘doing’ tasks, which include activities like responding to emails, participating in meetings, or drafting reports. Additionally, it emphasizes setting aside time for ‘building’ tasks, such as training, brainstorming, networking, and engaging in strategic thinking. Each day, executives should allocate time for both execution and development. Ideally, this should occur at the same time every day.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v039",
+    "h": "Advance Schedule Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/039.webp\" alt=\"ADVANCE SCHEDULE MANAGEMENT It’s evident that a degree of flexibility is essential in any routine. If a meeting needs to take place at a specific time, it might be necessary to modify the executive’s schedule, but this should be viewed as an exception rather than the norm. Maintain your routine as consistently as you can. Numerous studies indicate that having a routine is essential for effective time management, and it will undoubtedly help keep executives focused and productive.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v040",
+    "h": "Advance Schedule Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/040.webp\" alt=\"ADVANCE SCHEDULE MANAGEMENT There&#x27;s a saying that if you don&#x27;t take charge of your emails, they will take charge of you. It&#x27;s essential to take every possible step to minimize the number of emails your attorney receives right from the start. After gaining control of the inbox, you can arrange a time for your executive to address and respond to the messages. E-mail Management\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v041",
+    "h": "Advance Schedule Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/041.webp\" alt=\"ADVANCE SCHEDULE MANAGEMENT Work in progress The schedule of your executive is continually evolving and should be assessed on a regular basis. Can you adjust the schedule for specific activities or upcoming events? Does your executive require additional time for extracurricular pursuits? What&#x27;s working well, and what needs improvement? How can you assist them in saving even more time?\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v042",
+    "h": "Advance Schedule Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/042.webp\" alt=\"ADVANCE SCHEDULE MANAGEMENT Work in progress You are responsible for managing your executive’s time, so ensure you schedule regular meetings in their calendar to assess how things are progressing. Establishing a productive routine with your attorney takes time, but the effort is worthwhile. Your executive will excel in their role, and you&#x27;ll truly shine in your own responsibilities.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v043",
+    "h": "Conclusion: Mastering Calendar Management",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/043.webp\" alt=\"CONCLUSION: MASTERING CALENDAR MANAGEMENT The tools and strategies outlined in this training will help you gain control of your time, reduce stress, and increase productivity. The key is consistency and fine-tuning your approach as your needs and goals evolve. By incorporating smart scheduling techniques, setting up recurring events, and using time-blocking methods, you&#x27;ll be able to take full advantage of your calendar and manage your time effectively.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v044",
+    "h": "Thank You",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/cal/slides/044.webp\" alt=\"THANK YOU FOR YOUR ATTENTION\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  }
+]
 };
 
 const DAY6 = {
@@ -18097,7 +18323,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.30-1925";
+var APP_BUILD = "ft-2026.09.30-1950";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18140,19 +18366,19 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.30-1925-toast"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-slides.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-process.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-rules.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.09.30-1925"></script>
-<script src="/js/attendance.js?v=ft-2026.09.30-1925"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-slides.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-process.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-rules.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.09.30-1950"></script>
+<script src="/js/attendance.js?v=ft-2026.09.30-1950"></script>
 <script src="/js/portal-link.js?v=1"></script>
 <script src="/js/portal-link.js?v=1"></script>
 </body>

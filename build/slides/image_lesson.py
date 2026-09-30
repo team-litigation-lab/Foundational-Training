@@ -5,6 +5,7 @@
     python3 build/slides/image_lesson.py vae "<deck.pdf>"     (Lesson 1)
     python3 build/slides/image_lesson.py piw "<deck.pdf>"     (Lesson 3)
     python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
+    python3 build/slides/image_lesson.py cal "<deck.pdf>"     (Lesson 5)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
@@ -46,6 +47,11 @@ DECKS = {
             "pdf": "The_Receptionist_Role.pdf (sent in chat)",
             "about": 'the "The Receptionist Role" deck (Canva design DAHWU0f4UhU), all 55 pages',
             "headings": {28: 'Handling Mass Tort & Long-Duration Case Calls', 29: 'Handling Mass Tort & Long-Duration Case Calls', 51: 'Routing Calls: Cold Transfers', 52: 'Routing Calls: Warm Transfers', 53: 'Routing Calls: Conference Calls', 55: 'Thank You'}},
+    "cal": {"id": 5, "var": "DAY5", "file": "lesson05.js", "title": "Calendaring & Appointment Setting Training",
+            "video": "https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/view",
+            "pdf": "Calendar_Management_Training_compressed.pdf (sent in chat)",
+            "about": 'the "Calendar Management Training" deck (Canva design DAGnaz2Or2U), all 44 pages',
+            "headings": {10: 'Step-by-Step Guide', 33: 'Time Management Strategies: The Two-Minute Rule', 35: 'Troubleshooting Common Calendar Management Challenges', 44: 'Thank You'}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
