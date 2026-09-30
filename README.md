@@ -43,7 +43,7 @@ Lessons 4 and 7 are no longer Canva embeds: each deck page is its own slide in t
 3. `python3 build/slides/make_scripts.py <deck>` writes that lesson's Presenter view scripts into `trainer/scripts.json` (see *How the program works*). The beats the notes don't have (the why, the question for the room, scenarios) are in `build/slides/<deck>_script.py`.
 4. Rebuild.
 
-Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/receptionist/img/`. Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
+Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/receptionist/img/`. The Rental Claims Services slide follows the revised deck page (`Claims_Specialist (8).pptx`, slide 1): the title on the rental-keys photo with the LSH logo, beside the letter in an orange frame (`cover()` in `make_lesson.py`, `.cs-cover` in `js/ft-slides.js`; the photo and logo are `ft/claims/img/rental-keys.jpg` and `lsh-logo.png`). Real client documents (the rental claims letter and rental agreement) are in `trainer/img/claims/`, which only a signed-in trainer can load; trainees see "🔒 A real document example: your trainer shows it during the session." in their place.
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 

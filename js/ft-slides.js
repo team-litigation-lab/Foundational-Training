@@ -14,6 +14,7 @@
      .cs-fig     a document image: click to see it full size
      .cs-hero    title and closing slides (.photo: over the deck's photo)
      .cs-media   the points beside the deck page's photo; .cs-card.num a numbered point
+     .cs-cover   a correspondence slide: the title on the deck's photo beside the document (orange frame)
    In full screen and the slides window a page fills the screen: no width cap, no presenter
    column, and the text scales with the screen.
    Loaded after js/ft-updates.js.
@@ -112,8 +113,15 @@ const css = `
 .cs-arrow{align-self:center;color:var(--orange);font-size:22px;font-weight:800;line-height:1;margin:-4px 0;}
 .cs-paras{display:flex;flex-direction:column;gap:6px;}
 .cs-card u{text-decoration-thickness:2px;text-underline-offset:2px;}
+.cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
+.cs-cover .cs-hero{position:relative;min-height:52vh;justify-content:flex-end;padding-top:96px;}
+.cs-cover .cs-logo{position:absolute;top:20px;left:22px;width:78px;height:auto;}
+.cs-hero .cs-big.caps{font-family:inherit;font-style:italic;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:1.2;font-size:clamp(20px,2.3vw,34px);overflow-wrap:normal;}
+.cs-doc{display:flex;align-items:center;justify-content:center;}
+.cs-doc .cs-figs{display:flex;justify-content:center;width:100%;}
+.cs-doc .cs-fig img{border:6px solid var(--orange);border-radius:4px;max-height:60vh;width:auto;}
 .cs-hero.photo{background:linear-gradient(100deg,rgba(22,24,41,.96) 0%,rgba(22,24,41,.85) 45%,rgba(22,24,41,.25) 100%),var(--img) right center/cover no-repeat;}
-@media (max-width:760px){ .cs-media{grid-template-columns:1fr;} .cs-media > img{order:-1;aspect-ratio:16/7;} .cs-hero.photo{background:linear-gradient(rgba(22,24,41,.88),rgba(22,24,41,.88)),var(--img) center/cover no-repeat;} }
+@media (max-width:760px){ .cs-cover{grid-template-columns:1fr;} .cs-cover .cs-hero{min-height:30vh;} .cs-media{grid-template-columns:1fr;} .cs-media > img{order:-1;aspect-ratio:16/7;} .cs-hero.photo{background:linear-gradient(rgba(22,24,41,.88),rgba(22,24,41,.88)),var(--img) center/cover no-repeat;} }
 /* Full screen and the slides window: a deck page fills the whole screen. No width cap, no presenter
    column, and everything scales with the screen (the sizes below are in em of .cs). */
 .lesson-stage:fullscreen .stage-body:has(.cs), #audienceRoot .stage-body:has(.cs){grid-template-columns:minmax(0,1fr) !important;}
@@ -147,6 +155,10 @@ const css = `
 .lesson-stage:fullscreen .cs-hero p, #audienceRoot .cs-hero p{font-size:1.1em;max-width:none;}
 .lesson-stage:fullscreen .cs-hero .cs-big, #audienceRoot .cs-hero .cs-big{font-size:clamp(34px,3.6vw,72px);}
 .lesson-stage:fullscreen .cs-stat span, #audienceRoot .cs-stat span{font-size:1.15em;}
+.lesson-stage:fullscreen .cs-cover .cs-hero, #audienceRoot .cs-cover .cs-hero{min-height:74vh;}
+.lesson-stage:fullscreen .cs-hero .cs-big.caps, #audienceRoot .cs-hero .cs-big.caps{font-size:clamp(26px,2.5vw,56px);}
+.lesson-stage:fullscreen .cs-cover .cs-logo, #audienceRoot .cs-cover .cs-logo{width:6.5em;}
+.lesson-stage:fullscreen .cs-doc .cs-fig img, #audienceRoot .cs-doc .cs-fig img{max-height:80vh;}
 .lesson-stage:fullscreen .cs-media, #audienceRoot .cs-media{gap:1.3em;}
 .lesson-stage:fullscreen .cs-media > img, #audienceRoot .cs-media > img{max-height:70vh;}
 .lesson-stage:fullscreen .cs-stack, #audienceRoot .cs-stack{gap:.8em;}
