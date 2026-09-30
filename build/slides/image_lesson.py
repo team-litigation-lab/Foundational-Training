@@ -28,9 +28,10 @@ DECKS = {
             # a heading the largest-text rule gets wrong (the page's section label sits at the same size)
             "headings": {46: "Specific VA Tasks in PI Firms"},
             # the deck's pages in the lesson: the title, Objective, Training Agenda and Introduction (1-4),
-            # Kickstart Your Legal VA Career (20), Overview of Tasks and Roles (25-35), Types of Law Firms
-            # (36-39), Tips to Stand Out as a Legal VA (134-137) and the Thank You page (138)
-            "keep": {*range(1, 5), 20, *range(25, 40), *range(134, 139)}},
+            # Kickstart Your Legal VA Career (20), Legal Practice and Virtual Assistants with its Benefits
+            # (21-24), Overview of Tasks and Roles (25-35), Types of Law Firms (36-39), Tips to Stand Out as a
+            # Legal VA (134-137) and the Thank You page (138)
+            "keep": {*range(1, 5), *range(20, 40), *range(134, 139)}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",

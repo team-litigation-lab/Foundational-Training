@@ -118,10 +118,13 @@ const css = `
 /* A lesson of deck pages (body.ft-fit): the controls sit in a column to the right of the slide, so the
    slide and its Previous / Next bar fit on one screen (fitPages() below sizes the page to what's left). */
 @media (min-width:1000px){
-  body.ft-fit main:has(.lesson-stage){display:grid;grid-template-columns:minmax(0,1fr) 200px;column-gap:16px;align-items:start;padding-top:12px;}
-  body.ft-fit main:has(.lesson-stage) > *{grid-column:2;margin:0 0 10px;}
-  body.ft-fit main:has(.lesson-stage) > #lessonStage{grid-column:1;grid-row:1 / span 40;margin:0;}
+  body.ft-fit main:has(.lesson-stage){display:flow-root;padding-top:12px;}
+  body.ft-fit main:has(.lesson-stage) > *:not(#lessonStage){float:right;clear:right;width:200px;margin:0 0 10px;}
+  body.ft-fit main:has(.lesson-stage) > #lessonStage{margin:0 216px 0 0;}
   body.ft-fit main:has(.lesson-stage) > #navBackSlot:empty{display:none;}
+  /* the footer line about an inch under the slide, and the page ends there */
+  body.ft-fit main:has(.lesson-stage){padding-bottom:62px;}
+  body.ft-fit main:has(.lesson-stage) + .footer-note{padding:24px 24px 10px;}
   body.ft-fit .day-head-compact{display:flex;flex-direction:column;gap:4px;border:0;padding:0;}
   body.ft-fit .day-head-compact .dhc-title{white-space:normal;font-size:17px;line-height:1.3;}
   body.ft-fit .ls-top{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
@@ -189,31 +192,48 @@ const css = `
 @media (max-width:640px){ .cs-lead{font-size:16px;} .cs-flow li:not(:last-child)::after{display:none;} .cs-hero{padding:22px 18px;} }
 `;
 const st = document.createElement("style"); st.id = "ft-slides"; st.textContent = css; document.head.appendChild(st);
-// A deck page (.cs-page) is sized to the room it has: the page and the Previous / Next bar under it fit on
-// one screen, on the lesson page, in full screen and in the slides window. The page is shrunk by however
-// much it runs under the bar or past the bottom of the screen (a few passes, as the layout settles).
+// A deck page (.cs-page) is sized to the room it has, so nothing needs scrolling: on the lesson page the
+// whole page fits the screen (the slide, its Previous / Next bar and, about an inch below, the footer line);
+// in full screen and the slides window, the slide and the bar fit. It runs after each render and again once
+// the slide has slid in (measured mid-animation, positions are off), and on resize and full screen.
 function fitPages(){
   const d = typeof state !== "undefined" && state.view === "day" && typeof DAYS !== "undefined" ? DAYS.find(x=>x.id===state.dayId) : null;
   document.body.classList.toggle("ft-fit", !!(d && (d.sections||[]).some(x=>/class="cs cs-pages"/.test(x.html))));
   const img = document.querySelector(".cs-page img"); if(!img) return;
   const stage = img.closest(".lesson-stage, #audienceRoot"), nav = stage && stage.querySelector(".slide-nav");
   const frame = img.closest(".lesson-slide"), pad = frame ? parseFloat(getComputedStyle(frame).paddingBottom) || 0 : 0;
-  const off = document.fullscreenElement || img.closest("#audienceRoot") ? 0 : window.scrollY;
-  img.style.maxHeight = "none";
-  let h = img.getBoundingClientRect().height;
+  const page = !document.fullscreenElement && !img.closest("#audienceRoot");
+  // On the lesson page the slide frame takes the height the screen has left above the footer line
+  // (the portal gives it 66% of the screen, whatever else is on the page).
+  const foot = page && document.body.classList.contains("ft-fit") && document.querySelector(".footer-note");
+  if(foot && frame && stage){
+    // (the page stretches to the screen, so the footer's own place says nothing: count from the stage down)
+    const main = stage.closest("main"), below = (main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0) + foot.offsetHeight;
+    const slack = window.innerHeight - 4 - (stage.getBoundingClientRect().bottom + window.scrollY + below);
+    if(Math.abs(slack) > 2) frame.style.height = Math.max(320, Math.round(frame.getBoundingClientRect().height + slack)) + "px";
+  } else if(frame && frame.style.height) frame.style.height = "";   // full screen / slides window: the frame fills the stage
   for(let pass = 0; pass < 4; pass++){
     const r = img.getBoundingClientRect(), n = nav ? nav.getBoundingClientRect() : null;
-    // under the bar, past the bottom of the screen, or past the slide frame (full screen gives it a set height)
-    const over = Math.max(n ? r.bottom + 8 - n.top : 0, (n ? n.bottom : r.bottom) + off + 10 - window.innerHeight,
-                          frame ? r.bottom + pad - frame.getBoundingClientRect().bottom : 0);
-    if(over <= 1) break;
-    h = Math.max(160, r.height - over); img.style.maxHeight = h + "px";
+    // positive: how far it runs under the bar or past the slide frame; negative: room to grow
+    const over = Math.max(n ? r.bottom + 8 - n.top : -1e4, frame ? r.bottom + pad - frame.getBoundingClientRect().bottom : -1e4,
+                          page ? -1e4 : (n ? n.bottom : r.bottom) + 10 - window.innerHeight);
+    if(Math.abs(over) <= 2) break;
+    const h = Math.max(160, Math.round(r.height - over));
+    if(h === Math.round(r.height)) break;
+    img.style.maxHeight = h + "px";
+    if(over < 0 && Math.round(img.getBoundingClientRect().height) === Math.round(r.height)) break;   // at its widest already
   }
+  // the whole lesson page fits now: show it from the top (the portal scrolls the slide under the top bar)
+  if(page && document.body.classList.contains("ft-fit") && document.documentElement.scrollHeight <= window.innerHeight + 2 && window.scrollY) window.scrollTo(0, 0);
 }
-let fitQueued = false;
-const queueFit = ()=>{ if(fitQueued) return; fitQueued = true; requestAnimationFrame(()=>{ fitQueued = false; fitPages(); }); };
+let fitQueued = false, fitLater = 0;
+const queueFit = ()=>{
+  if(!fitQueued){ fitQueued = true; requestAnimationFrame(()=>{ fitQueued = false; fitPages(); }); }
+  clearTimeout(fitLater); fitLater = setTimeout(fitPages, 480);   // after the slide-in (0.4s)
+};
 new MutationObserver(queueFit).observe(document.body, {childList:true, subtree:true});
 window.addEventListener("resize", queueFit);
+document.addEventListener("animationend", (e)=>{ if(e.target && e.target.id === "lessonSlideWrap") fitPages(); }, true);
 document.addEventListener("fullscreenchange", ()=>setTimeout(fitPages, 60));
 // Document images open full size on click (Esc or a click closes).
 document.addEventListener("click", function(e){

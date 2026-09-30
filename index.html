@@ -2437,6 +2437,26 @@ const DAY1 = {
     "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/020.webp\" alt=\"In today&#x27;s fast-paced legal industry, law firms are always looking for ways to streamline their operations and increase their efficiency. One solution that has been gaining popularity in recent years is the use of virtual assistants (VAs). OVERVIEW VAs are skilled professionals who work remotely to assist with a variety of tasks, from administrative work to legal research. LEGAL VIRTUAL ASSISTANTS KICKSTART YOUR LEGAL VA CAREER\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
   },
   {
+    "id": "v021",
+    "h": "Legal Practice and Virtual Assistants",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/021.webp\" alt=\"Virtual Assistants can help Law Firms become more efficient and cost-effective by handling routine administrative tasks, such as scheduling appointments, responding to emails, and managing documents. This lets Lawyers focus on tasks like case preparation and client communication. LEGAL PRACTICE AND VIRTUAL ASSISTANTS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v022",
+    "h": "Benefits",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/022.webp\" alt=\"Unlike hiring an in-house employee, Firms don&#x27;t have to worry about providing benefits or paying for office space and equipment. VAs are highly skilled and experienced in their respective fields, which means they can complete tasks more quickly and accurately than an in-house employee. INCREASE EFFICIENCY COST-EFFECTIVE BENEFITS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v023",
+    "h": "Benefits",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/023.webp\" alt=\"For law firms, this means they can hire a VA who has experience in legal research, document preparation, transcription, and more. Unlike in-house employees who work on a set schedule, VAs are often available to work outside of traditional business hours. SPECIALIZED SKILLS FLEXIBILITY BENEFITS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v024",
+    "h": "Benefits",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/024.webp\" alt=\"BENEFITS With VAs handling administrative tasks, lawyers can focus on providing top-notch legal service to their clients. IMPROVED CLIENT SERVICE\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
     "id": "v025",
     "h": "Overview of Tasks and Roles",
     "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/025.webp\" alt=\"Law Firms come in a variety of shapes and sizes, ranging from single-attorney law practices to multi- state, multi-staffed legal organizations. In addition, law firms in the U.S. are generally equipped to handle nearly every legal challenge facing individuals, small businesses, and large corporations. OVERVIEW OF TASKS AND ROLES\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
@@ -3506,11 +3526,11 @@ const PRACTICE_TOOLS = [
   {id:"projectcompliance6", icon:"📊", title:"Business Compliance & Project Recovery", relates:"Day 6",
    desc:"Check the firm's multi-jurisdiction licenses and KPI dashboard for what's off-target, then draft a recovery plan for a trial team that's fallen behind."},
   {id:"financial", icon:"Σ", title:"Trust Account & Billing Sheet", relates:"Day 7",
-   desc:"Reconcile a client trust ledger and build a legal services invoice — with live calculations."},
-  {id:"compliance9", icon:"📋", title:"Compliance & Reputation Tracker", relates:"Day 9",
-   desc:"Spot who's behind on CLE hours, catch unconfirmed event registrants, draft a professional public response to a negative review, and track which awards deadlines are still open versus already passed."},
+   desc:"Reconcile a client trust ledger, audit a queue of invoices and bills, decide the right follow-up for every open invoice, then find the planted errors in a set of billing documents."},
   {id:"accessincident8", icon:"🔐", title:"The Access & Incident Response Simulator", relates:"Day 8",
    desc:"Audit who actually has too much system access, decide how to verify a caller before disclosing anything sensitive, then write your real containment response to an active confidentiality leak."},
+  {id:"compliance9", icon:"📋", title:"Compliance & Reputation Tracker", relates:"Day 9",
+   desc:"Write the invitation and registration form for a firm CLE seminar, catch unconfirmed registrants, turn a strategy call into clean meeting notes, spot who's behind on CLE hours, answer a negative review and track which awards deadlines are still open."},
   {id:"socialmedia10", icon:"📱", title:"Social Media Metrics Lab", relates:"Day 10",
    desc:"Calculate real engagement rates to find the top-performing post, match tone to platform, and work the campaign math on cost-per-lead and ROI."}
 ];
@@ -10126,13 +10146,58 @@ function initFinancial(body){
 
     <button class="btn btn-navy btn-sm" style="margin-top:16px;" onclick="downloadFinancialPdf()">⬇ Download My Work</button>
   `;
+  const partF = `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">Invoice Follow-Up</h3>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">Today is June 30. For each open invoice in the register, choose the right next step.</p>
+    <div class="card" style="padding:14px 16px;overflow-x:auto;">
+      <table class="log-table">
+        <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Due</th><th>What you know</th><th>Your next step</th></tr></thead>
+        <tbody>
+          ${INVOICE_AGING.map((v,i)=>`
+            <tr>
+              <td>${esc(v.inv)}</td><td>${esc(v.client)}</td><td>$${v.amount.toLocaleString()}</td><td>${esc(v.due)}</td><td style="font-size:12.5px;">${esc(v.note)}</td>
+              <td><select id="invAging${i}" onchange="setInvAging(${i}, this.value)">
+                <option value="">Choose&hellip;</option>
+                ${INVOICE_AGING_ACTIONS.map(x=>`<option value="${x}">${x}</option>`).join("")}
+              </select></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="checkInvAging()">Check My Follow-Up Plan</button>
+    <div id="invAgingResult" style="margin-top:8px;font-size:13px;"></div>
+  `;
   body.innerHTML = renderToolWizard(null, [
     {label:"Trust Ledger Reconciliation", html:partA},
     {label:"Invoice & Bill Audit", html:partB},
+    {label:"Invoice Follow-Up", html:partF},
     {label:"Attention to Detail Test", html:partC}
   ]);
   recalcSoa();
 }
+/* Day 7 lab: Invoice Follow-Up. "Today" is June 30; the right step follows the Invoice Management lessons. */
+const INVOICE_AGING_ACTIONS = ["Send a friendly reminder","Reminder + flag to Elias","Pause reminders — route the dispute to Elias","Record the payment and mark it paid","No action yet"];
+const INVOICE_AGING = [
+  {inv:"INV-2041", client:"Meridian", amount:4200, due:"July 3", note:"Sent June 3. Due in 3 days.", want:0, why:"due within the week, so a friendly note before the due date"},
+  {inv:"INV-2033", client:"Harlow Industries", amount:6750, due:"June 18", note:"12 days overdue. No reply to the invoice email.", want:0, why:"1–30 days overdue: a polite reminder"},
+  {inv:"INV-2019", client:"Castellan Group", amount:12400, due:"April 17", note:"74 days overdue. Two reminders sent, no reply.", want:1, why:"over 60 days: keep reminding, and flag it to the attorney, who decides anything further"},
+  {inv:"INV-2027", client:"Harlow Industries", amount:3100, due:"June 9", note:"21 days overdue. Harlow emailed yesterday disputing the hours billed.", want:2, why:"a disputed invoice goes to the attorney, and reminders pause"},
+  {inv:"INV-2038", client:"Northgate Logistics", amount:2250, due:"June 22", note:"8 days overdue. The bank shows a $2,250 wire today referencing INV-2038.", want:3, why:"it's paid: record the payment the day it arrives so nobody is chased"},
+  {inv:"INV-2045", client:"Meridian", amount:5900, due:"July 26", note:"Sent yesterday.", want:4, why:"not due for almost four weeks"}
+];
+function setInvAging(i,v){ toolState.audit.aging = toolState.audit.aging || {}; toolState.audit.aging[i] = v; }
+window.setInvAging = setInvAging;
+async function checkInvAging(){
+  const got = toolState.audit.aging || {};
+  if(INVOICE_AGING.some((_,i)=>!got[i])){ toast(`Choose a next step for all ${INVOICE_AGING.length} invoices first.`); return; }
+  let correct = 0;
+  const rows = INVOICE_AGING.map((v,i)=>{ const ok = got[i]===INVOICE_AGING_ACTIONS[v.want]; if(ok) correct++;
+    return `<li>${ok?"✅":"❌"} <b>${esc(v.inv)}</b>: ${esc(INVOICE_AGING_ACTIONS[v.want])} (${esc(v.why)})</li>`; });
+  const score = Math.round(correct/INVOICE_AGING.length*100);
+  document.getElementById("invAgingResult").innerHTML = `<b style="color:${score===100?'var(--success)':'var(--danger)'};">${correct}/${INVOICE_AGING.length} correct (${score}%)</b><ul style="margin:8px 0 0;padding-left:20px;">${rows.join("")}</ul>`;
+  await bumpPracticeProgress("financial", score);
+}
+window.checkInvAging = checkInvAging;
 async function submitAttnDetail(){
   const val = document.getElementById("attnDetailFindings").value.trim();
   const msgEl = document.getElementById("attnDetailSubmitMsg");
@@ -10425,9 +10490,11 @@ async function downloadFinancialPdf(){
     const yourErr = a.errorTypes[i] ? " — reason: "+(ERROR_TYPES.find(e=>e.id===a.errorTypes[i])||{}).label : "";
     return `   Invoice #${inv.invNum} (${inv.client}, Matter ${inv.matter}): your call — ${your}${yourErr}`;
   });
+  const agingLines = INVOICE_AGING.map((v,i)=>`   ${v.inv} (${v.client}, $${v.amount.toLocaleString()}, due ${v.due}): your step — ${(a.aging||{})[i]||"(not chosen)"}`);
   const lines = [
     "## Client Trust Ledger Reconciliation", ...soaLines, `   Closing Balance: ${closing}`, "---",
-    "## Invoice & Bill Audit Queue", ...auditLines
+    "## Invoice & Bill Audit Queue", ...auditLines, "---",
+    "## Invoice Follow-Up (today: June 30)", ...agingLines
   ];
   buildAndSavePdf("LSH Foundational Training Program", "Trust Ledger & Billing — Results", lines, "LSH_Financial_Sheet");
 }
@@ -16379,7 +16446,7 @@ function initCompliance9(body){
   toolState.cr = {setKey:"compliance9", activeScenario: CRISIS_SCENARIO_SETS.compliance9[0].id, chatHistory:[{role:"client", text: CRISIS_SCENARIO_SETS.compliance9[0].script.split("\n")[0].replace(/^OPENING LINE[^:]*:\s*/,"").replace(/^"|"$/g,"")}]};
   toolState.wizardIndex = 0;
   const partA = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">A. CLE Compliance Dashboard</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">D. CLE Compliance Dashboard</h3>
     <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">For each attorney, decide: On Track, or Needs Follow-up.</p>
     <div class="card" style="padding:14px 16px;overflow-x:auto;">
       <table class="log-table">
@@ -16415,7 +16482,7 @@ function initCompliance9(body){
     <div id="c9RegResult" style="margin-top:8px;font-size:13px;"></div>
   `;
   const partC = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">C. Respond to a Negative Review</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">E. Respond to a Negative Review</h3>
     <div class="card" style="padding:16px 18px;margin-bottom:10px;background:#F8F9FC;">
       <b style="font-size:13px;color:var(--ink);">${esc(NEGATIVE_REVIEW.author)}</b> <span style="color:var(--orange-deep);">${"★".repeat(NEGATIVE_REVIEW.stars)}${"☆".repeat(5-NEGATIVE_REVIEW.stars)}</span>
       <p style="font-size:13px;color:#37394A;margin:8px 0 0;font-style:italic;">"${esc(NEGATIVE_REVIEW.text)}"</p>
@@ -16425,7 +16492,7 @@ function initCompliance9(body){
     <div id="c9ReviewResult" style="margin-top:10px;"></div>
   `;
   const partD = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">D. Awards &amp; Recognition Deadline Tracker</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">F. Awards &amp; Recognition Deadline Tracker</h3>
     <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">Today's date for this exercise is treated as March 15. For each award below, decide: still time to apply, or the deadline has already passed.</p>
     <div class="card" style="padding:14px 16px;overflow-x:auto;">
       <table class="log-table">
@@ -16449,15 +16516,91 @@ function initCompliance9(body){
     <div id="c9AwardsResult" style="margin-top:8px;font-size:13px;"></div>
     <button class="btn btn-ghost btn-sm" style="margin-top:20px;" onclick="downloadCompliance9Pdf()">⬇ Download My Work</button>
   `;
-  const partE = renderCrisisRoleplaySection("compliance9", "E. Live Crisis Roleplay — Compliance & Reputation");
+  const partE = renderCrisisRoleplaySection("compliance9", "G. Live Crisis Roleplay — Compliance & Reputation");
+  const ta = 'width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;';
+  const partInvite = `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">A. Event Invitation &amp; Registration Form</h3>
+    <div class="card" style="padding:14px 18px;margin-bottom:12px;background:#F8F9FC;font-size:13px;line-height:1.55;">${EVENT_BRIEF}</div>
+    <label style="font-size:12.8px;font-weight:600;color:var(--navy);display:block;margin:0 0 5px;">1. The invitation email (subject line and body)</label>
+    <textarea id="c9Invite" style="${ta}min-height:150px;" placeholder="Subject: …"></textarea>
+    <label style="font-size:12.8px;font-weight:600;color:var(--navy);display:block;margin:12px 0 5px;">2. The registration form: list each question, and mark which are required</label>
+    <textarea id="c9Form" style="${ta}min-height:120px;" placeholder="1. Full name (required)&#10;2. …"></textarea>
+    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="checkC9Invite(this)">Get Review</button>
+    <div id="c9InviteResult" style="margin-top:10px;"></div>
+  `;
+  const partNotes = `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">C. Meeting Notes &amp; Action Items</h3>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 10px;">Here's what was said on this morning's Harlow strategy call. Write the notes you'd send within 24 hours: decisions, action items (each with an owner and a due date) and open questions.</p>
+    <div class="card" style="padding:14px 18px;margin-bottom:12px;background:#F8F9FC;font-size:13px;line-height:1.6;">${MEETING_TRANSCRIPT.map(l=>`<div>${esc(l)}</div>`).join("")}</div>
+    <textarea id="c9Notes" style="${ta}min-height:170px;" placeholder="Decisions:&#10;Action items:&#10;Open questions:"></textarea>
+    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="checkC9Notes(this)">Get Review</button>
+    <div id="c9NotesResult" style="margin-top:10px;"></div>
+  `;
   body.innerHTML = renderToolWizard(9, [
-    {label:"CLE Compliance Dashboard", html:partA},
+    {label:"Event Invite & Registration Form", html:partInvite},
     {label:"Event Follow-Up", html:partB},
+    {label:"Meeting Notes & Action Items", html:partNotes},
+    {label:"CLE Compliance Dashboard", html:partA},
     {label:"Negative Review Response", html:partC},
     {label:"Awards Tracker", html:partD},
     {label:"Crisis Roleplay", html:partE}
   ]);
 }
+/* Day 9 lab, parts A and C: follow the Sending Invites, Sending Intake Forms, CLE Management and
+   Everyday Meeting Notes lessons. */
+const EVENT_BRIEF = `<b style="color:var(--navy);">The event:</b> Thorne &amp; Partners' breakfast seminar, <i>Employment Law Update 2026</i>, Thursday, October 22, 8:00–10:00 AM (breakfast from 7:30), at the Harborview Hotel, 200 Pier Street, Boston. Speakers: Elias Thorne and Dana Morales (ethics segment). Two hours of CLE credit, including one hour of ethics, <b>has been applied for</b> in Massachusetts and New York — not yet approved. Guests: 60 in-house counsel and HR directors. RSVP by October 9. There's a vegetarian option; the room is wheelchair accessible.`;
+const MEETING_TRANSCRIPT = [
+  "Elias: Let's lock it in — we're making the settlement offer at $180,000, not $200,000.",
+  "R. Chen (associate): OK. I'll draft the offer letter. I can have it to you by Wednesday.",
+  "Elias: Good. Dana, can you get the expert's updated damages report from Brightline? We need it before the offer goes out.",
+  "Dana (paralegal): I'll chase them today. Their last estimate was Tuesday.",
+  "Elias: The deposition of Harlow's CFO — do we still want it before mediation?",
+  "R. Chen: I think so, but I'm not sure opposing counsel will agree to a date in November.",
+  "Elias: Let's decide that after we hear from them. Can someone ask?",
+  "(Nobody answers.)",
+  "Elias: And book the mediation room at the Boston office for November 12. Dana, that's you too.",
+  "Elias: One more thing — this stays privileged. Don't forward these notes to the client until I've looked at them."
+];
+async function checkC9Invite(btn){
+  const invite = document.getElementById("c9Invite").value.trim(), form = document.getElementById("c9Form").value.trim();
+  if(invite.length < 40 || form.length < 20){ toast("Write both the invitation and the form questions first."); return; }
+  if(!(await useLabAttempt(9, "checkC9Invite"))) return;
+  btn.disabled = true; btn.textContent = "Reviewing…";
+  const el = document.getElementById("c9InviteResult");
+  el.innerHTML = `<div class="ai-loading">Reviewing your invitation and registration form…</div>`;
+  try{
+    const report = await runRubricEvaluation("Event Invitation & Registration Form (CLE seminar)",
+      "Event brief: " + EVENT_BRIEF.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&"),
+      `INVITATION:\n${invite}\n\nREGISTRATION FORM:\n${form}`,
+      `Evaluate against the Day 9 lessons. The invitation should give the event name, date, time (with breakfast), venue, speakers, a clear RSVP date and registration link or instruction, and a short reason to attend. It must say CLE credit "has been applied for" (not promise approved credit), and it must not expose other guests. The form should ask only what's needed: name, organization, email, dietary needs, accessibility needs, and, because this is a CLE event, bar number and state(s) of admission, with required fields marked. Deduct for missing essentials, promising unapproved CLE credit, unnecessary or sensitive questions, or unprofessional tone.`);
+    toolState.c9.inviteReport = report;
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Invitation & Form</b>` + renderEvaluationReport(report, 9);
+    await bumpPracticeProgress("compliance9", report.totalScore);
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }finally{ btn.disabled = false; btn.textContent = "Get Review"; }
+}
+window.checkC9Invite = checkC9Invite;
+async function checkC9Notes(btn){
+  const notes = document.getElementById("c9Notes").value.trim();
+  if(notes.length < 60){ toast("Write fuller meeting notes first."); return; }
+  if(!(await useLabAttempt(9, "checkC9Notes"))) return;
+  btn.disabled = true; btn.textContent = "Reviewing…";
+  const el = document.getElementById("c9NotesResult");
+  el.innerHTML = `<div class="ai-loading">Checking your notes against the call…</div>`;
+  try{
+    const report = await runRubricEvaluation("Meeting Notes & Action Items (Harlow strategy call)",
+      "Call transcript:\n" + MEETING_TRANSCRIPT.join("\n"),
+      notes,
+      `Answer key. Decision: the settlement offer is $180,000 (not $200,000). Action items: R. Chen drafts the offer letter by Wednesday; Dana gets Brightline's updated damages report (before the offer goes out; last estimate Tuesday); Dana books the Boston mediation room for November 12. Open question: whether to depose Harlow's CFO before mediation, pending opposing counsel's answer on a November date; this item has NO owner yet, and strong notes flag that an owner is needed rather than inventing one. The notes must be marked privileged/confidential and sent to Elias first, not to the client. Evaluate completeness against this key, that every action has an owner and a date, that decisions are stated clearly (not as a transcript), and the privilege handling.`);
+    toolState.c9.notesReport = report;
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Meeting Notes</b>` + renderEvaluationReport(report, 9);
+    await bumpPracticeProgress("compliance9", report.totalScore);
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }finally{ btn.disabled = false; btn.textContent = "Get Review"; }
+}
+window.checkC9Notes = checkC9Notes;
 const AWARDS_TRACKER = [
   {name:"State Bar Excellence in Litigation Award", deadline:"March 1"},
   {name:"Regional 40 Under 40 Legal Professionals", deadline:"April 10"},
@@ -16550,18 +16693,23 @@ window.checkC9Review = checkC9Review;
 async function downloadCompliance9Pdf(){
   await ensureTraineeName();
   const c9 = toolState.c9;
-  const lines = ["## A. CLE Compliance Dashboard"];
-  CLE_ROSTER.forEach((a,i)=>{
-    const correct = a.completed>=a.required ? "On Track" : "Needs Follow-up";
-    lines.push(`${a.name}: ${a.completed}/${a.required} hrs, deadline ${a.deadline} — your call: ${c9.cle[i]||"(not answered)"} (correct: ${correct})`);
-  });
+  const val = id => ((document.getElementById(id)||{}).value||"").trim();
+  const lines = ["## A. Event Invitation & Registration Form", "Invitation:", val("c9Invite")||"(not written)", "", "Registration form:", val("c9Form")||"(not written)"];
+  if(c9.inviteReport) lines.push("", `Score: ${c9.inviteReport.totalScore}/100`);
   lines.push("---", "## B. Event Registration Follow-Up");
   EVENT_REGISTRANTS.forEach((r,i)=>{
     lines.push(`${r.name} — confirmed: ${r.confirmed?"yes":"no"} — flagged for follow-up: ${c9.reg[i]?"yes":"no"}`);
   });
-  lines.push("---", "## C. Negative Review Response", `Review: "${NEGATIVE_REVIEW.text}"`, `Your reply: ${document.getElementById("c9ReviewReply").value.trim()||"(not written)"}`);
+  lines.push("---", "## C. Meeting Notes & Action Items", val("c9Notes")||"(not written)");
+  if(c9.notesReport) lines.push("", `Score: ${c9.notesReport.totalScore}/100`);
+  lines.push("---", "## D. CLE Compliance Dashboard");
+  CLE_ROSTER.forEach((a,i)=>{
+    const correct = a.completed>=a.required ? "On Track" : "Needs Follow-up";
+    lines.push(`${a.name}: ${a.completed}/${a.required} hrs, deadline ${a.deadline} — your call: ${c9.cle[i]||"(not answered)"} (correct: ${correct})`);
+  });
+  lines.push("---", "## E. Negative Review Response", `Review: "${NEGATIVE_REVIEW.text}"`, `Your reply: ${document.getElementById("c9ReviewReply").value.trim()||"(not written)"}`);
   if(c9.reviewReport) lines.push("", "Feedback:", c9.reviewReport);
-  lines.push("---", "## D. Awards & Recognition Deadline Tracker");
+  lines.push("---", "## F. Awards & Recognition Deadline Tracker");
   AWARDS_TRACKER.forEach((a,i)=>{
     lines.push(`${a.name} — deadline ${a.deadline} — your call: ${(c9.awards&&c9.awards[i])||"(not answered)"}`);
   });
@@ -17491,7 +17639,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.30-1707";
+var APP_BUILD = "ft-2026.09.30-1724";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -17534,19 +17682,19 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-slides.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-process.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-rules.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.09.30-1707"></script>
-<script src="/js/attendance.js?v=ft-2026.09.30-1707"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-slides.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-process.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-rules.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.09.30-1724"></script>
+<script src="/js/attendance.js?v=ft-2026.09.30-1724"></script>
 <script src="/js/portal-link.js?v=1"></script>
 <script src="/js/portal-link.js?v=1"></script>
 </body>

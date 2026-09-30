@@ -33,6 +33,26 @@ const DAY1 = {
     "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/020.webp\" alt=\"In today&#x27;s fast-paced legal industry, law firms are always looking for ways to streamline their operations and increase their efficiency. One solution that has been gaining popularity in recent years is the use of virtual assistants (VAs). OVERVIEW VAs are skilled professionals who work remotely to assist with a variety of tasks, from administrative work to legal research. LEGAL VIRTUAL ASSISTANTS KICKSTART YOUR LEGAL VA CAREER\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
   },
   {
+    "id": "v021",
+    "h": "Legal Practice and Virtual Assistants",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/021.webp\" alt=\"Virtual Assistants can help Law Firms become more efficient and cost-effective by handling routine administrative tasks, such as scheduling appointments, responding to emails, and managing documents. This lets Lawyers focus on tasks like case preparation and client communication. LEGAL PRACTICE AND VIRTUAL ASSISTANTS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v022",
+    "h": "Benefits",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/022.webp\" alt=\"Unlike hiring an in-house employee, Firms don&#x27;t have to worry about providing benefits or paying for office space and equipment. VAs are highly skilled and experienced in their respective fields, which means they can complete tasks more quickly and accurately than an in-house employee. INCREASE EFFICIENCY COST-EFFECTIVE BENEFITS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v023",
+    "h": "Benefits",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/023.webp\" alt=\"For law firms, this means they can hire a VA who has experience in legal research, document preparation, transcription, and more. Unlike in-house employees who work on a set schedule, VAs are often available to work outside of traditional business hours. SPECIALIZED SKILLS FLEXIBILITY BENEFITS\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v024",
+    "h": "Benefits",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/024.webp\" alt=\"BENEFITS With VAs handling administrative tasks, lawyers can focus on providing top-notch legal service to their clients. IMPROVED CLIENT SERVICE\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
     "id": "v025",
     "h": "Overview of Tasks and Roles",
     "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/025.webp\" alt=\"Law Firms come in a variety of shapes and sizes, ranging from single-attorney law practices to multi- state, multi-staffed legal organizations. In addition, law firms in the U.S. are generally equipped to handle nearly every legal challenge facing individuals, small businesses, and large corporations. OVERVIEW OF TASKS AND ROLES\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
