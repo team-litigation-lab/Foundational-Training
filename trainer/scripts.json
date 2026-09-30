@@ -1212,9 +1212,10 @@
    "n097": {
     "on": "Slide 93 of 119",
     "why": "Seeing real correspondence helps you recognize it when it lands in the file.",
-    "talk": "Here is an example of\nRental Claims Services\nClaims Correspondence",
+    "talk": "Here is an example of Rental Claims Services – Claims Correspondence.",
     "walk": [],
-    "ask": "What details on this letter would you update in the case file?"
+    "ask": "Per this letter, where does the demand go first, and when will Rental Claims Services open a claim?",
+    "scenario": "The renter's insurer writes back that there is no coverage. Ask the room what to send Rental Claims Services, and what to update in the case file."
    },
    "n098": {
     "on": "Slide 94 of 119",

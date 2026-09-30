@@ -76,6 +76,13 @@ def tfig(srcs, cap=None):
     ph = "<div class=&quot;cs-note&quot;><div>🔒 A real document example: your trainer shows it during the session.</div></div>"
     imgs = "".join(f'<figure class="cs-fig"><img src="{s}" alt="{esc(cap or "")}" loading="lazy" onerror="this.closest(\'.cs-figs\').outerHTML=\'{ph}\'"></figure>' for s in srcs)
     return f'<div class="cs-figs">{imgs}</div>' + (f'<div class="cs-sub" style="text-align:center;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink-soft);">{esc(cap)}</div>' if cap else "")
+def cover(lines, img, doc):
+    """The deck's correspondence slides: its title on the photo (logo top left) beside the document in an
+    orange frame. The document is a real one, so it goes through tfig (trainers only)."""
+    big = "<br>".join(esc(l) for l in lines)
+    return (f'<div class="cs-cover"><div class="cs-hero photo" style="--img:url({IMG}{img})">'
+            f'<img class="cs-logo" src="{IMG}lsh-logo.png" alt="Legal Support Help"><div class="cs-big caps">{big}</div></div>'
+            f'<div class="cs-doc">{tfig([doc], None)}</div></div>')
 def S(h, *parts, lab=None): return {"h": h, "html": '<div class="cs">' + (label(lab) if lab else "") + "".join(parts) + "</div>"}
 
 # ---------- Claims Specialist Training (lesson 7) ----------
@@ -248,7 +255,7 @@ def claims_pages():
     P["n094"] = lambda b: S(title(b[0][0]), lead(b[1][0]), f"<p>{esc(b[1][1])}</p>", sub(b[1][2]), flow([tuple(b[1][3].split(": ", 1))]), lab=b[2][0])
     P["n095"] = lambda b: S(title(b[2][0]), card("🩺", b[0][0], items=b[0][1:3], cls="accent"), card("🏢", b[0][3], items=b[0][4:6], cls="soft"), lab=b[1][0])
     P["n096"] = lambda b: S(title(b[2][0]), card("🔄", b[0][0], b[0][1], cls="dark"), lab=b[1][0])
-    P["n097"] = lambda b: S(title(b[0][0]), sub(b[0][1]), tfig(["/trainer/img/claims/rental-claims-letter.png"]))
+    P["n097"] = lambda b: S(title(b[0][0]), cover(b[0], "rental-keys.jpg", "/trainer/img/claims/rental-claims-letter.png"))
     P["n098"] = lambda b: S(title(" ".join(b[0])), tfig(["/trainer/img/claims/rental-agreement-1.png"], "Here is an example of Enterprise Rental Agreement"))
     P["n099"] = lambda b: S(title(" ".join(b[0])), tfig(["/trainer/img/claims/rental-agreement-2.png"], "Here is an example of Enterprise Rental Agreement"))
     def practice(b, text_i, head_i, lab_i):

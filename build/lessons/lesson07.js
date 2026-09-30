@@ -468,7 +468,7 @@ const DAY7 = {
   {
     "id": "n097",
     "h": "Rental Claims Services",
-    "html": "<div class=\"cs\"><div class=\"cs-sub\">CLAIMS CORRESPONDENCE</div><div class=\"cs-figs\"><figure class=\"cs-fig\"><img src=\"/trainer/img/claims/rental-claims-letter.png\" alt=\"\" loading=\"lazy\" onerror=\"this.closest('.cs-figs').outerHTML='<div class=&quot;cs-note&quot;><div>🔒 A real document example: your trainer shows it during the session.</div></div>'\"></figure></div></div>"
+    "html": "<div class=\"cs\"><div class=\"cs-cover\"><div class=\"cs-hero photo\" style=\"--img:url(/ft/claims/img/rental-keys.jpg)\"><img class=\"cs-logo\" src=\"/ft/claims/img/lsh-logo.png\" alt=\"Legal Support Help\"><div class=\"cs-big caps\">RENTAL CLAIMS SERVICES<br>CLAIMS CORRESPONDENCE</div></div><div class=\"cs-doc\"><div class=\"cs-figs\"><figure class=\"cs-fig\"><img src=\"/trainer/img/claims/rental-claims-letter.png\" alt=\"\" loading=\"lazy\" onerror=\"this.closest('.cs-figs').outerHTML='<div class=&quot;cs-note&quot;><div>🔒 A real document example: your trainer shows it during the session.</div></div>'\"></figure></div></div></div></div>"
   },
   {
     "id": "n098",
