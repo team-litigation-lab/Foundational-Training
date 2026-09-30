@@ -16,6 +16,8 @@
      6. Drive files open in the draggable pop-out viewer.
    ============================================================ */
 window.FT_LAYER = true;
+// Admin → 🕘 Attendance (js/attendance.js): the program's first days, off the platform, come before the lessons.
+window.ATTENDANCE_TRAININGS_BEFORE = ["Onboarding", "Setting of Expectations & Tech Set-up"];
 const FT_TOTAL_DAYS = DAYS.length;
 // eapa-updates.js adds EA/PA topics to some days; each day's topics are its curriculum sections only.
 DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });
