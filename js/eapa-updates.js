@@ -709,6 +709,9 @@ function presenterCues(d, slide){
     const pageInfo = state.presentSecsFor === (state.lessonSlide||0);
     out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null,
       pageInfo ? {page: state.presentPage||0, pages: state.presentPages||1, secsByPage: state.presentSecsByPage} : null));   // scripts: js/days/dayN/scripts.js
+  }else if(slide.type==="block"){
+    const b = dayBlock(d, slide.lessonIndex), first = b.lessons[0].num, last = b.lessons[b.lessons.length-1].num;
+    out.push(`<h3>Part ${b.n} of ${b.of}: ${esc(b.title)}</h3><p>Topics ${first}–${last}${b.sections.length > 1 ? `, in ${b.sections.length} sections` : ""}. Tell the room what this part of the day covers and why it matters, then move on to Topic ${first}.</p>`);
   }else if(slide.type==="divider"){
     const l = d.lessons[slide.lessonIndex];
     out.push(`<h3>Topic ${slide.lessonIndex+1} of ${d.lessons.length}: ${esc(l.h)}</h3><p>${l.section ? `Section: ${esc(l.section)}. ` : ""}Name the topic, then move on to its first slide.</p>`);
