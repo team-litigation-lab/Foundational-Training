@@ -7,6 +7,7 @@
     python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
     python3 build/slides/image_lesson.py cal "<deck.pdf>"     (Lesson 5)
     python3 build/slides/image_lesson.py isr "<part1.pdf>" "<part2.pdf>"     (Lesson 6)
+    python3 build/slides/image_lesson.py mrs "<deck.pdf>"     (Lesson 8)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
@@ -64,6 +65,12 @@ DECKS = {
                          79: 'Consent to Release Medicare/Medicaid Information',
                          84: 'Joint Acceptance of Common Legal Representation & Waiver of Conflict of Interest',
                          94: 'ISO Claim Search Disclosure Request', 96: '3rd Party Insurance Affidavit', 105: 'Thank You'}},
+    "mrs": {"id": 8, "var": "DAY8", "file": "lesson08.js", "title": "Medical Records Specialist Training",
+            "video": "https://drive.google.com/file/d/1Wdq-wNfxvAK1J7ovjbn_ON9CrkjAKCjd/view",
+            "pdf": "VI_Medical_Records_Specialist_compressed.pdf (sent in chat)",
+            "about": 'the "VI. Medical Records Specialist" deck (Canva design DAGnZudb92w), all 55 pages',
+            "headings": {**{i: 'Legal Compliance: Protecting Sensitive Information' for i in range(7, 20)},
+                         28: 'Checklist for Requesting Bills and Records', 54: 'Remember!', 55: 'Thank You'}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
@@ -96,7 +103,7 @@ def main(name, *pdfs):
         pix = p.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=False)
         Image.open(io.BytesIO(pix.tobytes("png"))).save(os.path.join(out_dir, f), "WEBP", quality=82, method=6)
         h = D["headings"].get(i) or heading(p) or f"Slide {i}"
-        words = re.sub(r"\s+", " ", p.get_text()).strip()[:900]
+        words = re.sub(r"\s+", " ", p.get_text()).strip()[:900] or h   # a page drawn as a picture has no words
         img = (f'<figure class="cs-page"><img src="/ft/{name}/slides/{f}" alt="{html.escape(words)}" '
                f'width="{pix.width}" height="{pix.height}" loading="{"eager" if i <= 2 else "lazy"}"></figure>')
         sections.append({"id": f"v{i:03d}", "h": h, "html": f'<div class="cs cs-pages">{img}</div>'})
