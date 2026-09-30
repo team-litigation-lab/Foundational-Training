@@ -663,16 +663,17 @@ window.certData = function(src){
   return c;
 };
 // EA/PA-only screens (client profile, practice labs, roleplays, handouts, random tasks,
-// orientation deck, facilitator guide) aren't part of this program: they open the dashboard.
+// facilitator guide) aren't part of this program: they open the dashboard.
+// (🧭 Orientation stays, with this program's slides: js/ft-orientation.js.)
 const FT_OFF_VIEWS = {clientprofile:"renderClientProfile", practice:"renderPracticeHub", tool:"renderTool", handouts:"renderHandouts",
-  crisisroleplay:"renderCrisisRoleplayHub", openroleplay:"renderOpenRoleplay", tasks:"renderTasksPage", orientation:"renderOrientation", facilitatorguide:"renderFacilitatorGuide"};
+  crisisroleplay:"renderCrisisRoleplayHub", openroleplay:"renderOpenRoleplay", tasks:"renderTasksPage", facilitatorguide:"renderFacilitatorGuide"};
 Object.keys(FT_OFF_VIEWS).forEach(v=>{ window[FT_OFF_VIEWS[v]] = function(){ state.view = "dashboard"; return renderDashboard(); }; });
 const __ftGotoOff = window.goto;
 window.goto = function(view){ if(FT_OFF_VIEWS[view]) arguments[0] = "dashboard"; return __ftGotoOff.apply(this, arguments); };
 const __ftTopbar = window.renderTopbar;
 window.renderTopbar = function(){
   return __ftTopbar.apply(this, arguments)
-    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|tasks|orientation|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
+    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|tasks|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
     .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search lessons…"');
 };
 
