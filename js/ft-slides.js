@@ -245,4 +245,46 @@ document.addEventListener("click", function(e){
   document.body.appendChild(z);
 });
 document.addEventListener("keydown", function(e){ if(e.key === "Escape"){ const z = document.getElementById("csZoom"); if(z) z.remove(); } });
+
+/* ▶ Listen and 🎧 Audio mode: what a slide reads aloud.
+   - A deck page shown as an image reads its spoken script (data-say, the page's text in reading order,
+     written by build/slides/image_lesson.py).
+   - Other slides read their text a box at a time: each heading, card, list item and table cell ends in a
+     pause, so words from two boxes don't run together, and a title shown twice (a label over its heading)
+     is read once. Emoji, arrows and bullets aren't read out, nor the slide's buttons and links.
+   - Audio mode moves on from a slide with nothing to read instead of stopping there. */
+const SAY_SKIP = ".pg-hide, .pg-badge, svg, .svg-diagram-card, .vis-flow, .vis-chips, .vis-label, .topic-separator, .fp-num, .lnum, .vis-badge, .vis-card-i, .qc-actions, .quiz-rationale:not(.show), button, a.btn, .actions, .canva-frame, iframe, .lx-panel:not([open])";
+const SAY_BLOCK = "p, div, li, h1, h2, h3, h4, h5, h6, td, th, tr, dt, dd, figure, figcaption, section, blockquote, summary, table, ul, ol, br";
+function ftSayLines(root){
+  const pages = [...root.querySelectorAll(".cs-page[data-say]")].filter(f=>!f.closest(".pg-hide"));
+  if(pages.length) return pages.map(f=>f.dataset.say).join("\n").split("\n");
+  const c = root.cloneNode(true);
+  c.querySelectorAll(SAY_SKIP).forEach(n=>n.remove());
+  c.querySelectorAll(SAY_BLOCK).forEach(n=>{ n.before("\n"); n.after("\n"); });
+  return c.textContent.split("\n");
+}
+function ftSayText(root){
+  const out = [];
+  for(let l of ftSayLines(root)){
+    l = l.replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}\u2022\u25AA\u25E6\u2023\u2043\u2713\u2714\u2716\u2717\u2718]/gu, " ")
+         .replace(/\s*[→➜➔⟶]\s*/g, ", then ").replace(/\s+[·|]\s+/g, ", ").replace(/^\s*[-–·*]\s+/, "")
+         .replace(/^(\d{1,2})(?=[A-Z])/, "$1. ").replace(/([a-z])(\d{1,2})(?=[A-Z])/g, "$1. $2. ")
+         .replace(/\s+/g, " ").replace(/^[,\s]+|[,\s]+$/g, "");
+    if(!/[A-Za-z0-9]/.test(l)) continue;
+    const key = l.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if(out.length && out[out.length-1].key === key) continue;   // OBJECTIVE over "Objective": read once
+    if(key.length > 12 && out.some(o=>o.key === key)) continue;   // a title shown again lower on the slide
+    out.push({l, key});
+  }
+  return out.map(o=>o.l + (/[.!?:;]$/.test(o.l) ? " " : ". ")).join("").trim();
+}
+if(typeof Narrator !== "undefined"){
+  Narrator.slideText = function(){ const card = document.querySelector("#lessonSlideWrap"); return card ? ftSayText(card) : ""; };
+  const __play = Narrator.play;
+  Narrator.play = function(){
+    if(this.supported && !this.slideText()){ this.stop(true); this.paint(); if(state.audioMode) this.finished(); else toast("This slide has nothing to read aloud."); return; }
+    return __play.apply(this, arguments);
+  };
+  window.ftSayText = ftSayText;
+}
 })();
