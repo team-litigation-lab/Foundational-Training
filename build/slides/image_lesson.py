@@ -2,7 +2,8 @@
 """Builds a lesson whose slides are its deck's own pages, rendered from the Canva PDF.
 
     pip install pymupdf pillow
-    python3 build/slides/image_lesson.py vae "<deck.pdf>"
+    python3 build/slides/image_lesson.py vae "<deck.pdf>"     (Lesson 1)
+    python3 build/slides/image_lesson.py lfc "<deck.pdf>"     (Lesson 2)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
@@ -14,6 +15,7 @@ Output: the images and build/lessons/lessonNN.js. Run build/build.py afterwards.
 import html, io, json, os, re, sys
 import pymupdf
 from PIL import Image
+pymupdf.TOOLS.mupdf_display_errors(False)   # a compressed PDF can drop a pattern or two: it still renders
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -32,6 +34,12 @@ DECKS = {
             # (21-24), Overview of Tasks and Roles (25-35), Types of Law Firms (36-39), Tips to Stand Out as a
             # Legal VA (134-137) and the Thank You page (138)
             "keep": {*range(1, 5), *range(20, 40), *range(134, 139)}},
+    "lfc": {"id": 2, "var": "DAY2", "file": "lesson02.js", "title": "Law Firm Communication",
+            "video": "https://drive.google.com/file/d/1o3LYojKAhid10ovts_umxhbWxb2j5i6l/view",
+            "pdf": "LAW_FIRM_COMMUNICATION_compressed.pdf (sent in chat)",
+            "about": 'the "II. Law Firm Communication" deck (Canva design DAHWr8Hp16g), all 54 pages',
+            # Canva draws "Invoice Follow Up Calls" twice on these pages; the last page's words are an image
+            "headings": {**{i: "Invoice Follow-up Calls" for i in range(30, 36)}, 54: "Thank You"}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
