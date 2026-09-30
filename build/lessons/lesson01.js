@@ -126,6 +126,11 @@ const DAY1 = {
     "id": "v137",
     "h": "Tips to Stand Out As a Legal VA Legal VA Mindset",
     "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/137.webp\" alt=\"TIPS TO STAND OUT AS A LEGAL VA LEGAL VA MINDSET You are more than an assistant—you are the backbone of the case. Show up with purpose, precision, and professionalism. Don’t wait to be told—anticipate, act, and lead quietly. Stay curious—always learning, always improving. Master your tools, own your workflow, and evolve with every challenge. Understand that success isn’t about doing more—it’s about doing smarter. Bring clarity, calm, and confidence to every case you touch. You are a Legal VA. And you keep the curiosity burning.\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
+  },
+  {
+    "id": "v138",
+    "h": "Thank You!",
+    "html": "<div class=\"cs cs-pages\"><figure class=\"cs-page\"><img src=\"/ft/vae/slides/138.webp\" alt=\"THANK YOU!\" width=\"1920\" height=\"1080\" loading=\"lazy\"></figure></div>"
   }
 ]
 };
