@@ -112,6 +112,8 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-od-day.on{border-color:var(--orange);background:#FFF6EC;}
 .ft-od-day.nocontent{opacity:.55;}
 .module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
+/* the progress band (Program complete, Lessons finished, feedback) sits below the lesson cards */
+.dash-layout > .dash-side{order:1;}
 .topics-modal-list .tm-pages{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-left:6px;white-space:nowrap;}
 .ft-od-day b{display:block;color:var(--navy);}
 /* pop-out viewer (same as the LSH Training Portal's Recorded Lectures) */
