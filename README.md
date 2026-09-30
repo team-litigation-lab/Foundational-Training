@@ -129,6 +129,23 @@ Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracke
 - **Trainer's comment:** in Admin → 📋 Task Trackers, open a trainee's day, write a comment, and the trainee sees it under the check. Results and comments are in `trackerreview:<id>`, which trainees can read but not change.
 - **Admin → 📋 Task Trackers** is laid out batch → trainee → record: a collapsible 📁 section per batch (today's average and how many need attention), one compact row per trainee (open and completed tasks, the last five training days, 5-day average), and, when you click a trainee, every daily record on file (the check %, flags and your comment, each opening that day). Archived trainees are listed under **📦 Archived batches**; only active trainees' trackers are loaded, and an archived trainee's records load when you open them.
 
+## Attendance
+
+Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/ft-attendance.js`). Trainees don't see it.
+
+- **By batch:** one section per batch (newest first, like the other admin tabs), listing its approved, active trainees. Each section shows its count of every status.
+- **The day:** the date is today's in Pacific time (the program's time zone, as in the Task Tracker). ◀ ▶ step through the training days, and the date picker opens any day. The batch's **Day N** counts its days already logged; the trainer can change it.
+- **Each trainee's row:**
+  - **Name**, from their trainee record.
+  - **Training**: the batch's training for the day. It starts as the batch's latest open lesson (Admin → 📅 Open Lessons), or the orientation when none is open. It can be changed for the batch, or for one trainee (marked in orange).
+  - **Time In / Time Out**, in Pacific time: typed, or ⏱ Now.
+  - **Status**, tagged by the trainer from the attendance sheet's dropdown, in its colors: Present, Late, Late with Notif, Early Out - POC Approved, Undertime - POC Approved, Undertime - No Approval, NCNS, Sick Leave, RL, EOP, Absent with Notif. **✓ Mark the rest Present** tags everyone not yet tagged.
+  - **Notes**.
+- **Saving:** each change saves as you go. A save re-reads the day and writes only the rows changed on that screen, so two trainers can take one batch's attendance at the same time.
+- **📊 Summary** (per batch): each trainee's count of every status over all the batch's logged days, with the last 10 days as colored squares.
+- **⬇ CSV**, which opens in Excel or Google Sheets: **This day** (every batch) or **Download all days** (one batch, from its summary). The columns: Date, Day, Batch, Name, Training, Time In (PT), Time Out (PT), Status, Notes.
+- **Storage:** `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for trainees with no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at}}}`. The Worker lets only admins read and write these records. To change the statuses or their colors, edit `STATUSES`.
+
 ## Simulators
 
 **🛠 Simulators** (top bar, and the **Simulators** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`).
@@ -229,6 +246,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
+| `js/ft-attendance.js` | Admin → 🕘 Attendance: each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 
 ## Build
