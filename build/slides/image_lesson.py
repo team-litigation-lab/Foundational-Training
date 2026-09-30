@@ -14,6 +14,7 @@ Output: the images and build/lessons/lessonNN.js. Run build/build.py afterwards.
 import html, io, json, os, re, sys
 import pymupdf
 from PIL import Image
+pymupdf.TOOLS.mupdf_display_errors(False)   # a compressed PDF can drop a pattern or two: it still renders
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
