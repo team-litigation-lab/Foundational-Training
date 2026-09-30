@@ -2581,5 +2581,58 @@ ${B}{position:absolute;left:1px;top:.6em;margin:0;}
 `; document.head.appendChild(st);
 })();
 
+/* ================= The ☰ Topics pop-up fits on one screen =================
+   A long list gets a wider card with its sections side by side in columns; if it still doesn't fit the
+   window, the type steps down a little, so nothing in the card scrolls. (fitTopicsModal runs on each
+   topics card as it opens, and again on resize.) */
+function fitTopicsModal(overlay){
+  const modal = overlay && overlay.querySelector(".topics-modal"); if(!modal) return;
+  let cols = modal.querySelector(".topics-cols");
+  if(!cols){
+    const head = modal.querySelector(".topics-modal-head"), foot = modal.querySelector(".topics-modal-foot");
+    cols = document.createElement("div"); cols.className = "topics-cols";
+    let group = null;
+    [...modal.children].filter(n=>n !== head && n !== foot).forEach(n=>{
+      if(n.classList.contains("topics-modal-sec")){ group = document.createElement("div"); group.className = "tm-group"; cols.appendChild(group); group.appendChild(n); }
+      else if(group && n.classList.contains("topics-modal-list")){ group.appendChild(n); group = null; }
+      else { cols.appendChild(n); group = null; }
+    });
+    if(foot) modal.insertBefore(cols, foot); else modal.appendChild(cols);
+  }
+  const head = modal.querySelector(".topics-modal-head"), foot = modal.querySelector(".topics-modal-foot");
+  let fs = 13.5; cols.style.fontSize = "";
+  const fit = ()=>{
+    // the room the list has: the window's height, less the card's title and buttons
+    const room = Math.min(window.innerHeight*0.92, 900) - (head ? head.offsetHeight : 0) - (foot ? foot.offsetHeight : 0);
+    cols.style.height = "";
+    if(cols.scrollHeight > room) cols.style.height = Math.floor(room) + "px";   // columns fill this height, then overflow sideways
+    return cols.scrollHeight <= cols.clientHeight + 1 && cols.scrollWidth <= cols.clientWidth + 1;
+  };
+  // one column while the list fits; a wider card with columns when it doesn't; smaller type as a last resort
+  modal.classList.remove("tm-wide");
+  if(!fit()) modal.classList.add("tm-wide");
+  while(!fit() && fs > 9.5){ fs -= 0.5; cols.style.fontSize = fs + "px"; }
+}
+window.fitTopicsModal = fitTopicsModal;
+(function(){
+  if(typeof showDayTopics === "function" && !showDayTopics.__fit){
+    const __show = showDayTopics;
+    showDayTopics = function(id){ const r = __show(id); fitTopicsModal(document.querySelector(".overlay.topics-overlay:last-of-type")); return r; };
+    showDayTopics.__fit = true; window.showDayTopics = showDayTopics;
+  }
+  window.addEventListener("resize", ()=>{ const o = document.querySelector(".overlay.topics-overlay"); if(o) fitTopicsModal(o); });
+  const st = document.createElement("style"); st.id = "topics-fit"; st.textContent = `
+.overlay .card.topics-modal{max-height:min(92vh,900px);overflow:hidden;}
+.overlay .card.topics-modal.tm-wide{width:min(1100px,94vw);max-width:none;}
+.topics-cols{flex:1 1 auto;min-height:0;overflow:hidden;padding:14px 24px 10px;font-size:13.5px;}
+.tm-wide .topics-cols{column-width:240px;column-gap:28px;}
+.topics-cols .tm-group{break-inside:avoid;margin:0 0 10px;}
+.topics-cols .topics-modal-sec{padding:0 0 3px;margin:0;font-size:.82em;}
+.topics-cols .topics-modal-list{padding:0 0 0 18px;margin:0;}
+.topics-cols .topics-modal-list li{font-size:1em;line-height:1.35;padding:3px 0;border-bottom:none;break-inside:avoid;}
+.topics-cols .tm-pages{font-size:.82em;}
+`; document.head.appendChild(st);
+})();
+
 /* if the portal already drew itself before this file loaded, redraw with the updates */
 if(document.querySelector(".topbar")) render();

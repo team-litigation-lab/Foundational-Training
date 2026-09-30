@@ -722,6 +722,7 @@ function ftShowTopics(id){
   const onKey = e=>{ if(e.key==="Escape"){ overlay.remove(); document.removeEventListener("keydown", onKey); } };
   document.addEventListener("keydown", onKey);
   document.body.appendChild(overlay);
+  if(typeof fitTopicsModal === "function") fitTopicsModal(overlay);   // the whole list on one screen
 }
 window.ftShowTopics = ftShowTopics;
 window.renderDashboard = function(){
