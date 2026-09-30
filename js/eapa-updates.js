@@ -62,6 +62,13 @@ window.EAPA_UPDATE_PACK = "z";
 .lesson-stage #lessonSlideWrap .pg-badge{position:absolute;right:16px;bottom:12px;width:auto;max-width:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--orange-deep);background:#FFF1E2;border-radius:999px;padding:4px 10px;}
 .lesson-stage #lessonSlideWrap.pg-later .lesson-card h4::after{content:" · continued";font-family:'IBM Plex Mono',monospace;font-size:.4em;font-weight:700;letter-spacing:.08em;color:var(--ink-soft);vertical-align:middle;}
 @media(max-width:760px){.lesson-stage #lessonSlideWrap{height:auto;display:block;overflow:visible;} .lesson-stage #lessonSlideWrap .pg-badge{display:none;}}
+/* Lesson view: the slide uses the width of the screen, with small margins on the sides */
+@media(min-width:761px){
+  main:has(.lesson-stage){max-width:1880px;padding-left:24px;padding-right:24px;}
+  .lesson-stage{padding:14px 16px;}
+  .lesson-stage #lessonSlideWrap{padding-left:24px;padding-right:24px;}
+  .lesson-stage #lessonSlideWrap > *, .lesson-stage:fullscreen #lessonSlideWrap > *{max-width:1600px;}
+}
 /* ================= SOP Reference: readable reference + live Present mode ================= */
 .sopx-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
 .sopx-days{display:flex;gap:6px;flex-wrap:wrap;}
