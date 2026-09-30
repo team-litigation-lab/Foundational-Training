@@ -172,15 +172,7 @@ PROCESS_SETS.forEach(set=>{
   }});
   d.lessons = d.sections.map(x=>({h:x.h}));
 });
-const __card = window.moduleCard;
-window.moduleCard = function(d){
-  const html = __card.apply(this, arguments);
-  const set = PROCESS_SETS.find(s=>s.lesson===d.id);
-  if(!set || !(state.traineeId || state.isAdmin)) return html;
-  const btn = setOpen(set) ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); goto('process')">✍️ Process Questions</button>`
-    : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled>🔒 Process Questions</button>`;
-  return html.replace(/<\/div>\s*$/, btn + "\n  </div>");
-};
+// Lesson cards show only Start and ▶ Video Presentation: the Process Questions open from the lesson's last slide.
 
 /* ---------- admin: every trainee's answer sheets ---------- */
 const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}};
