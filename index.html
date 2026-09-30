@@ -2062,14 +2062,44 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
   .dash-top .step-dash{width:4px;margin:0 1px;}
   .dash-top .step-timeline{flex-wrap:nowrap;}
 }
+/* Compact dashboard banner, so Days 1–5 fit on one screen under it (laptops and up; phones keep the layout above). */
+@media(min-width:761px){
+  main.main-dash{padding-top:12px;}
+  .dash-top{padding:12px 22px 8px !important;margin-bottom:12px !important;border-radius:16px;}
+  .dash-hero{grid-template-columns:52px minmax(0,1fr) !important;gap:16px !important;margin-bottom:6px !important;}
+  .dash-hero-ribbon svg{max-width:52px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
+  .dash-top .eyebrow{font-size:10px !important;padding:2px 9px !important;margin:0 0 4px !important;letter-spacing:.14em;}
+  .dash-hero h1{font-size:clamp(18px, 1.5vw, 24px) !important;line-height:1.2 !important;margin:0 0 3px !important;}
+  .dash-hero p{font-size:12.5px !important;line-height:1.4 !important;max-width:none;}
+  .dash-top .step-timeline{padding:7px 0 1px !important;}
+  .dash-top .step-circle{width:28px;height:28px;font-size:12.5px;border-width:2px;}
+  .dash-top .step-dash{width:22px;margin:0 3px;}
+  /* Days 1–5 in one row, compact cards */
+  .dash-layout{gap:14px;}
+  .dash-main .module-grid{grid-template-columns:repeat(5,minmax(0,1fr)) !important;gap:12px;}
+  .dash-main .module-head{min-height:0;padding:7px 8px 8px;}
+  .dash-main .mh-day{font-size:9.5px;margin-bottom:1px;}
+  .dash-main .mh-title{font-size:11.5px;line-height:1.2;}
+  .dash-main .module-body{padding:8px 12px 4px;}
+  .dash-main .module-icon{font-size:18px;margin:0 0 6px;}
+  .dash-main .module-topic-list li{font-size:12px;line-height:1.35;margin-bottom:3px;}
+  .dash-main .module-topic-list li::before{top:5px;}
+  .dash-main .module-more{font-size:11.5px;margin:2px 0 0;padding:2px 0;}
+  .dash-main .module-start-btn{margin:0 12px 8px;width:calc(100% - 24px);padding:7px;}
+  .dash-main .module-finish-btn,.dash-main .module-review-row{margin:0 12px 10px;}
+  .dash-main .module-finish-btn{width:calc(100% - 24px);padding:4px;font-size:11px;}
+}
+@media(min-width:761px) and (max-width:1100px){
+  .dash-main .module-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr)) !important;}
+}
 
 .live-note{font-size:12.5px;color:var(--success);font-weight:700;margin:0 0 10px;}
 .live-note::first-letter{animation:ringPulse 1.6s ease-in-out infinite;}
 
-/* hero: headline and tagline each on one line (auto-sized to fit) on laptops/desktops */
+/* hero: headline and tagline each on one line (auto-sized to fit, compact) on laptops/desktops */
 @media(min-width:1200px){
-  .dash-hero h1{white-space:nowrap;font-size:34px !important;}
-  .dash-hero p{white-space:nowrap;max-width:none !important;font-size:15px !important;}
+  .dash-hero h1{white-space:nowrap;font-size:24px !important;}
+  .dash-hero p{white-space:nowrap;max-width:none !important;font-size:13px !important;}
   .dash-hero > *{min-width:0;}
   .dash-hero h1, .dash-hero p:not(.eyebrow){max-width:100% !important;overflow:hidden;}
 }
@@ -2338,6 +2368,14 @@ em.warn{font-style:normal;color:var(--danger);}
 /* topic divider slide: opens each topic */
 .topic-divider{position:relative;overflow:hidden;background:linear-gradient(135deg,#1F2440 0%,#2B3158 60%,#353C68 100%);color:#fff;border-radius:18px;padding:40px 48px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:min(100%,380px);}
 .lesson-stage #lessonSlideWrap > .topic-divider{flex:1 0 auto;}
+/* block divider slide: opens a part of the day (e.g. Day 4's Time Management block) */
+.topic-divider.block-divider{background:linear-gradient(135deg,#8A3F0E 0%,#B5561A 55%,#D9782F 100%);}
+.topic-divider.block-divider::before{background:linear-gradient(90deg,#F0C08A,#fff);}
+.block-divider .td-kicker{color:#FFE3C4;}
+.block-divider .bd-list{list-style:none;margin:22px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(var(--bd-rows,1),auto);grid-auto-flow:column;gap:6px 28px;text-align:left;max-width:860px;width:100%;}
+.block-divider .bd-list li{font-size:15px;line-height:1.35;color:#fff;}
+.block-divider .bd-list li b{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#FFE3C4;margin-right:8px;}
+@media(max-width:760px){.block-divider .bd-list{grid-template-columns:1fr;grid-template-rows:none;grid-auto-flow:row;}}
 .topic-divider::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:linear-gradient(90deg,var(--orange),#F0C08A);}
 .topic-divider .td-kicker{font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#F0C08A;}
 .topic-divider .td-num{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.72);margin:18px 0 10px;}
@@ -3774,11 +3812,11 @@ const PRACTICE_TOOLS = [
   {id:"projectcompliance6", icon:"📊", title:"Business Compliance & Project Recovery", relates:"Day 6",
    desc:"Check the firm's multi-jurisdiction licenses and KPI dashboard for what's off-target, then draft a recovery plan for a trial team that's fallen behind."},
   {id:"financial", icon:"Σ", title:"Trust Account & Billing Sheet", relates:"Day 7",
-   desc:"Reconcile a client trust ledger and build a legal services invoice — with live calculations."},
-  {id:"compliance9", icon:"📋", title:"Compliance & Reputation Tracker", relates:"Day 9",
-   desc:"Spot who's behind on CLE hours, catch unconfirmed event registrants, draft a professional public response to a negative review, and track which awards deadlines are still open versus already passed."},
+   desc:"Reconcile a client trust ledger, audit a queue of invoices and bills, decide the right follow-up for every open invoice, then find the planted errors in a set of billing documents."},
   {id:"accessincident8", icon:"🔐", title:"The Access & Incident Response Simulator", relates:"Day 8",
    desc:"Audit who actually has too much system access, decide how to verify a caller before disclosing anything sensitive, then write your real containment response to an active confidentiality leak."},
+  {id:"compliance9", icon:"📋", title:"Compliance & Reputation Tracker", relates:"Day 9",
+   desc:"Write the invitation and registration form for a firm CLE seminar, catch unconfirmed registrants, turn a strategy call into clean meeting notes, spot who's behind on CLE hours, answer a negative review and track which awards deadlines are still open."},
   {id:"socialmedia10", icon:"📱", title:"Social Media Metrics Lab", relates:"Day 10",
    desc:"Calculate real engagement rates to find the top-performing post, match tone to platform, and work the campaign math on cost-per-lead and ROI."}
 ];
@@ -6844,7 +6882,7 @@ function moduleCard(d){
   const unlocked = dayUnlocked(d.id);
   const status = prog&&prog.done ? "done" : (unlocked?"open":"locked");
   const icon = DAY_ICONS[d.id] || "📘";
-  const TOPIC_PREVIEW = 7;
+  const TOPIC_PREVIEW = 5;
   const shown = d.lessons.slice(0, TOPIC_PREVIEW);
   const more = d.lessons.length - shown.length;
   return `
@@ -6944,6 +6982,8 @@ async function migrateDayOrder(){
   const flag = (li, dayId)=> li===0 ? dayId : `${DAY_LAYOUTS[li].id}:${dayId}`;
   // Slides saved in this layout or an earlier one had no divider slides.
   const lastWithoutDividers = DAY_LAYOUTS.findIndex(x=>x.id==="email-management");
+  // ... and no block slides (the divider that opens a part of the day).
+  const lastWithoutBlocks = DAY_LAYOUTS.findIndex(x=>x.id==="time-management-day4");
   // A topic can move to another day, so every built-in topic is found by its title, with the day it's in now.
   const home = new Map();
   DAYS.forEach(dd=>dd.lessons.forEach(l=>{ if(!l.__extra) home.set(l.h, {d:dd, l}); }));
@@ -6963,8 +7003,10 @@ async function migrateDayOrder(){
     const oldLessons = oldTitles.map(h=>byTitle[h] || (home.get(h)||{}).l).filter(Boolean).concat(d.lessons.filter(l=>l.__extra));
     const dayOf = l => d.lessons.includes(l) ? d : (home.get(l.h)||{}).d;
     // Quick Checks in the old order sat after the same topics, by their old positions.
-    const oldQC = allQC.filter(x=>oldLessons.includes(x.l)).map(x=>Object.assign({}, x.q, {afterIndex: oldLessons.indexOf(x.l)}));
-    const oldD = Object.assign({}, d, {lessons: oldLessons, quickChecks: oldQC, noDividers: li <= lastWithoutDividers});
+    // a Quick Check marked addedIn: "<layout id>" didn't exist in that layout or any earlier one
+    const oldQC = allQC.filter(x=>oldLessons.includes(x.l) && !(x.q.addedIn && DAY_LAYOUTS.findIndex(y=>y.id===x.q.addedIn) >= li))
+      .map(x=>Object.assign({}, x.q, {afterIndex: oldLessons.indexOf(x.l)}));
+    const oldD = Object.assign({}, d, {lessons: oldLessons, quickChecks: oldQC, noDividers: li <= lastWithoutDividers, noBlocks: li <= lastWithoutBlocks});
     const oldSlides = buildDaySlides(oldD), newSlides = buildDaySlides(d);
     const key = (dd, x)=> x ? `${x.type}|${x.lessonIndex!=null && dd.lessons[x.lessonIndex] ? dd.lessons[x.lessonIndex].h : ""}|${x.part||""}` : "";
     // the same slide in today's order; if it's gone (its topic moved to another day), the next one that's still here
@@ -7416,8 +7458,8 @@ function fitHeroText(){
     while(el.scrollWidth > el.clientWidth + 1 && size > min){ size -= 0.5; el.style.setProperty("font-size", size+"px", "important"); }
     if(el.scrollWidth > el.clientWidth + 1){ el.style.setProperty("font-size", max+"px", "important"); el.style.whiteSpace = "normal"; }  // can't fit one line legibly → wrap at full size
   };
-  fit(document.querySelector(".dash-hero h1"), 34, 16);
-  fit(document.querySelector(".dash-hero p:not(.eyebrow)"), 15, 12.5);
+  fit(document.querySelector(".dash-hero h1"), 24, 16);
+  fit(document.querySelector(".dash-hero p:not(.eyebrow)"), 13, 11);
 }
 window.addEventListener("resize", ()=>{ clearTimeout(window.__heroFitT); window.__heroFitT = setTimeout(fitHeroText, 120); });
 if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", ()=>fitHeroText());
@@ -8084,6 +8126,8 @@ function buildDaySlides(d){
   if(d.id===1) slides.push({type:"meetClient"});
   d.lessons.forEach((l,i)=>{
     // each topic opens with a divider slide (noDividers: a saved layout from before they existed)
+    // a topic with "block" opens a part of the day (noBlocks: a saved layout from before blocks existed)
+    if(l.block && !d.noBlocks) slides.push({type:"block", lessonIndex:i});
     if(!d.noDividers) slides.push({type:"divider", lessonIndex:i});
     slides.push({type:"topic", lessonIndex:i, part:1});
     if(!l.singleSlide) slides.push({type:"topic", lessonIndex:i, part:2});   // singleSlide: Part 2 would only repeat Part 1
@@ -8098,6 +8142,7 @@ function daySlideTitle(d, slide){
   if(slide.type==="video") return "Video Recap";
   if(slide.type==="taskOverview") return "Legal EA Task Overview";
   if(slide.type==="meetClient") return "Meet Elias Thorne — Live Q&A";
+  if(slide.type==="block"){ const b = dayBlock(d, slide.lessonIndex); return `Part ${b.n} of ${b.of}: ${b.title}`; }
   if(slide.type==="divider") return `Topic ${slide.lessonIndex+1}: ${d.lessons[slide.lessonIndex].h}`;
   if(slide.type==="topic"){ const l = d.lessons[slide.lessonIndex]; return l.h + (l.singleSlide ? "" : (slide.part===1 ? " (Part 1 of 2)" : " (Part 2 of 2)")); }
   if(slide.type==="quickCheck") return "Quick Check";
@@ -8109,6 +8154,7 @@ function renderDaySlideContent(d, slide, idx){
   if(slide.type==="video") return renderVideoPlaceholder(d);
   if(slide.type==="taskOverview") return renderTaskOverview(d.taskOverview);
   if(slide.type==="meetClient") return renderMeetClientSlide();
+  if(slide.type==="block") return renderBlockDivider(d, slide.lessonIndex);
   if(slide.type==="divider") return renderTopicDivider(d, slide.lessonIndex);
   if(slide.type==="topic") return renderLessonCard(d.lessons[slide.lessonIndex], slide.lessonIndex, d, "", slide.part);
   if(slide.type==="quickCheck") return `
@@ -8117,6 +8163,29 @@ function renderDaySlideContent(d, slide, idx){
   if(slide.type==="practiceLab") return renderPracticeLabSlide(d);
   if(slide.type==="discussion") return renderDiscussionSlide(d);
   return "";
+}
+/* A part of the day opened by a topic with "block": its number, title, topics and sections. */
+function dayBlock(d, i){
+  const starts = d.lessons.map((l,k)=>l.block ? k : -1).filter(k=>k>=0);
+  const n = starts.indexOf(i), end = starts[n+1] != null ? starts[n+1] : d.lessons.length;
+  const lessons = d.lessons.slice(i, end).map((l,k)=>({l, num: i+k+1}));
+  const sections = [];
+  lessons.forEach(x=>{ const s = sections[sections.length-1]; if(s && s.name===(x.l.section||"")) s.last = x.num; else sections.push({name: x.l.section||"", first: x.num, last: x.num}); });
+  return {n: n+1, of: starts.length, title: d.lessons[i].block, lessons, sections};
+}
+/* The divider that opens a part of the day: one section lists its topics; several list the sections. */
+function renderBlockDivider(d, i){
+  const b = dayBlock(d, i);
+  const items = b.sections.length > 1
+    ? b.sections.map(s=>`<li><b>${s.first===s.last ? s.first : `${s.first}–${s.last}`}</b>${esc(s.name)}</li>`)
+    : b.lessons.map(x=>`<li><b>${x.num}</b>${esc(x.l.h)}</li>`);
+  return `
+    <div class="topic-divider block-divider">
+      <div class="td-kicker">${ftName(d.id)} &middot; Part ${b.n} of ${b.of}</div>
+      <h2 class="td-title">${esc(b.title)}</h2>
+      <div class="td-num">${b.sections.length > 1 ? `${b.sections.length} sections &middot; ` : ""}Topics ${b.lessons[0].num}–${b.lessons[b.lessons.length-1].num}</div>
+      <ul class="bd-list" style="--bd-rows:${Math.ceil(items.length/2)}">${items.join("")}</ul>
+    </div>`;
 }
 /* The divider that opens a topic: which section it's in, its number and its title. */
 function renderTopicDivider(d, i){
@@ -10285,7 +10354,7 @@ function initFinancial(body){
     <div id="auditResult"></div>
   `;
   const partC = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">C. Attention to Detail Test</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">D. Attention to Detail Test</h3>
     <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 14px;">Below are three real documents for Matter 24-0113 — an invoice, a payment receipt, and the raw time-tracking export they were both supposed to come from. Nothing here is wrong within any single document at a glance — the errors only show up when you actually cross-check one against another, the way a careful EA would before filing.</p>
 
     <div class="mock-doc mock-invoice">
@@ -10363,13 +10432,58 @@ function initFinancial(body){
 
     <button class="btn btn-navy btn-sm" style="margin-top:16px;" onclick="downloadFinancialPdf()">⬇ Download My Work</button>
   `;
+  const partF = `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">C. Invoice Follow-Up</h3>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">Today is June 30. For each open invoice in the register, choose the right next step.</p>
+    <div class="card" style="padding:14px 16px;overflow-x:auto;">
+      <table class="log-table">
+        <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Due</th><th>What you know</th><th>Your next step</th></tr></thead>
+        <tbody>
+          ${INVOICE_AGING.map((v,i)=>`
+            <tr>
+              <td>${esc(v.inv)}</td><td>${esc(v.client)}</td><td>$${v.amount.toLocaleString()}</td><td>${esc(v.due)}</td><td style="font-size:12.5px;">${esc(v.note)}</td>
+              <td><select id="invAging${i}" onchange="setInvAging(${i}, this.value)">
+                <option value="">Choose&hellip;</option>
+                ${INVOICE_AGING_ACTIONS.map(x=>`<option value="${x}">${x}</option>`).join("")}
+              </select></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="checkInvAging()">Check My Follow-Up Plan</button>
+    <div id="invAgingResult" style="margin-top:8px;font-size:13px;"></div>
+  `;
   body.innerHTML = renderToolWizard(null, [
     {label:"Trust Ledger Reconciliation", html:partA},
     {label:"Invoice & Bill Audit", html:partB},
+    {label:"Invoice Follow-Up", html:partF},
     {label:"Attention to Detail Test", html:partC}
   ]);
   recalcSoa();
 }
+/* Day 7 lab: Invoice Follow-Up. "Today" is June 30; the right step follows the Invoice Management lessons. */
+const INVOICE_AGING_ACTIONS = ["Send a friendly reminder","Reminder + flag to Elias","Pause reminders — route the dispute to Elias","Record the payment and mark it paid","No action yet"];
+const INVOICE_AGING = [
+  {inv:"INV-2041", client:"Meridian", amount:4200, due:"July 3", note:"Sent June 3. Due in 3 days.", want:0, why:"due within the week, so a friendly note before the due date"},
+  {inv:"INV-2033", client:"Harlow Industries", amount:6750, due:"June 18", note:"12 days overdue. No reply to the invoice email.", want:0, why:"1–30 days overdue: a polite reminder"},
+  {inv:"INV-2019", client:"Castellan Group", amount:12400, due:"April 17", note:"74 days overdue. Two reminders sent, no reply.", want:1, why:"over 60 days: keep reminding, and flag it to the attorney, who decides anything further"},
+  {inv:"INV-2027", client:"Harlow Industries", amount:3100, due:"June 9", note:"21 days overdue. Harlow emailed yesterday disputing the hours billed.", want:2, why:"a disputed invoice goes to the attorney, and reminders pause"},
+  {inv:"INV-2038", client:"Northgate Logistics", amount:2250, due:"June 22", note:"8 days overdue. The bank shows a $2,250 wire today referencing INV-2038.", want:3, why:"it's paid: record the payment the day it arrives so nobody is chased"},
+  {inv:"INV-2045", client:"Meridian", amount:5900, due:"July 26", note:"Sent yesterday.", want:4, why:"not due for almost four weeks"}
+];
+function setInvAging(i,v){ toolState.audit.aging = toolState.audit.aging || {}; toolState.audit.aging[i] = v; }
+window.setInvAging = setInvAging;
+async function checkInvAging(){
+  const got = toolState.audit.aging || {};
+  if(INVOICE_AGING.some((_,i)=>!got[i])){ toast(`Choose a next step for all ${INVOICE_AGING.length} invoices first.`); return; }
+  let correct = 0;
+  const rows = INVOICE_AGING.map((v,i)=>{ const ok = got[i]===INVOICE_AGING_ACTIONS[v.want]; if(ok) correct++;
+    return `<li>${ok?"✅":"❌"} <b>${esc(v.inv)}</b>: ${esc(INVOICE_AGING_ACTIONS[v.want])} (${esc(v.why)})</li>`; });
+  const score = Math.round(correct/INVOICE_AGING.length*100);
+  document.getElementById("invAgingResult").innerHTML = `<b style="color:${score===100?'var(--success)':'var(--danger)'};">${correct}/${INVOICE_AGING.length} correct (${score}%)</b><ul style="margin:8px 0 0;padding-left:20px;">${rows.join("")}</ul>`;
+  await bumpPracticeProgress("financial", score);
+}
+window.checkInvAging = checkInvAging;
 async function submitAttnDetail(){
   const val = document.getElementById("attnDetailFindings").value.trim();
   const msgEl = document.getElementById("attnDetailSubmitMsg");
@@ -10662,9 +10776,11 @@ async function downloadFinancialPdf(){
     const yourErr = a.errorTypes[i] ? " — reason: "+(ERROR_TYPES.find(e=>e.id===a.errorTypes[i])||{}).label : "";
     return `   Invoice #${inv.invNum} (${inv.client}, Matter ${inv.matter}): your call — ${your}${yourErr}`;
   });
+  const agingLines = INVOICE_AGING.map((v,i)=>`   ${v.inv} (${v.client}, $${v.amount.toLocaleString()}, due ${v.due}): your step — ${(a.aging||{})[i]||"(not chosen)"}`);
   const lines = [
     "## Client Trust Ledger Reconciliation", ...soaLines, `   Closing Balance: ${closing}`, "---",
-    "## Invoice & Bill Audit Queue", ...auditLines
+    "## Invoice & Bill Audit Queue", ...auditLines, "---",
+    "## Invoice Follow-Up (today: June 30)", ...agingLines
   ];
   buildAndSavePdf("LSH Foundational Training Program", "Trust Ledger & Billing — Results", lines, "LSH_Financial_Sheet");
 }
@@ -11101,7 +11217,8 @@ async function submitCalls(){
 window.submitCalls = submitCalls;
 async function downloadCallsPdf(){
   await ensureTraineeName();
-  const lines = ["## A. Cold-Calling Outreach Log"];
+  const tm = (typeof TM_TASKS!=="undefined") ? TM_TASKS.map((x,i)=>`${i+1}. ${x.t} — your call: ${((document.getElementById("tmTask"+i)||{}).value)||"(not chosen)"}`) : [];
+  const lines = ["## A. Prioritize the Day", ...tm, "", "Reply to the partner:", ((document.getElementById("tmPushback")||{}).value||"").trim()||"(not written)", "---", "## B. Cold-Calling Outreach Log"];
   COLD_LEADS.forEach((l,i)=>{
     const date=document.getElementById(`logDate${i}`)?.value||"";
     const outcome=document.getElementById(`logOutcome${i}`)?.value||"";
@@ -11111,7 +11228,7 @@ async function downloadCallsPdf(){
     lines.push(`   Called: ${date||"—"}   Outcome: ${outcome||"—"}   Follow-up: ${followup||"—"}   Notes: ${notes||"—"}`);
   });
   const leadGenDraft = document.getElementById("leadGenDraft");
-  lines.push("---", "## B. Lead Generation Practice", `Scenario: ${LEAD_GEN_SCENARIO.text}`, `Your plan: ${leadGenDraft && leadGenDraft.value.trim() ? leadGenDraft.value.trim() : "(not written)"}`);
+  lines.push("---", "## C. Lead Generation Practice", `Scenario: ${LEAD_GEN_SCENARIO.text}`, `Your plan: ${leadGenDraft && leadGenDraft.value.trim() ? leadGenDraft.value.trim() : "(not written)"}`);
   buildAndSavePdf("LSH Foundational Training Program", "Cold-Calling & Lead Generation — Results", lines, "LSH_Cold_Calling");
 }
 window.downloadCallsPdf = downloadCallsPdf;
@@ -12426,7 +12543,8 @@ const SOP_DATA = [
       "Professional Standards & Confidentiality",
       "Typical Work Environment",
       "Boundary, Stress, Task Management and Strategic Thinking",
-      "Command Hierarchy for Legal / Executive Assistant"
+      "Command Hierarchy for Legal / Executive Assistant",
+      "Managing Up Basics: Bulletproof Basics, the \"Three C's\" & Earning Credibility"
     ],
     sections: [
       { h: "Virtual Executive Assistant", type: "bullets", items: [
@@ -12673,6 +12791,28 @@ const SOP_DATA = [
       { h: "Practical Examples: System Separation", type: "bullets", items: [
         "EA: A contract requires executive approval before signing.",
         "PA: A personal vendor requests access to financial accounts; escalate to principal before action."
+      ]},
+      { h: "Level 1: The Tactical Foundation", type: "bullets", items: [
+        "To be strategic, master the basics first.",
+        "Categorize emails by Action, Information, or Delegation.",
+        "Draft responses in your Executive's voice for quick sending.",
+        "Aim for Inbox Zero and effective triaging.",
+        "Prepare \"What If\" plans for travel — e.g., holding a backup flight on hold for cancellations.",
+        "Manage complex travel logistics efficiently, with contingency plans in place.",
+        "Understand the full meeting lifecycle — shift from merely recording minutes to driving outcomes.",
+        "Set agendas and track deliverables, not just attendance."
+      ]},
+      { h: "The Three C's Framework — Overview", type: "bullets", items: [
+        "A strategic partnership model for Executive and Personal Assistants: managing up focuses on alignment, anticipation, and strategic support — not control.",
+        "When Clarity, Communication, and Credibility all operate together, the assistant becomes a Force Multiplier: decision velocity increases, stress decreases, executive/attorney trust deepens, and boundaries hold."
+      ]},
+      { h: "Credibility — Influence Without Authority", type: "bullets", items: [
+        "Credibility enables assistants to manage confidently, earned through consistent execution and mature judgment.",
+        "Operational reliability is built on: accuracy, follow-through, on-time execution, anticipation of next steps, and zero-drama problem solving.",
+        "A single missed detail can damage months of built-up trust."
+      ]},
+      { h: "The No-Surprises Rule", type: "bullets", items: [
+        "Executives and attorneys should never be caught off guard by information their assistant already knew about — anything relevant needs to reach them proactively, good or bad."
       ]}
     ]
   },
@@ -12686,22 +12826,12 @@ const SOP_DATA = [
     ],
     discussionInfo: { duration: "Approximately 1-2 hours", ppt: "EA PA Day 2", canvaLabel: "EA PA Day 2", video: "Video Discussion EA PA Day 2" },
     topics: [
-      "Managing Up: The \"Three C's\" Framework",
-      "The Tactical Foundation and Digital Edge",
+      "Managing Up: Putting the \"Three C's\" into Practice",
+      "The Digital Edge",
       "The Role Evolution: From \"Helper\" to \"Force Multiplier\"",
       "Email Management: The Inbox as a Control System"
     ],
     sections: [
-      { h: "Level 1: The Tactical Foundation", type: "bullets", items: [
-        "To be strategic, master the basics first.",
-        "Categorize emails by Action, Information, or Delegation.",
-        "Draft responses in your Executive's voice for quick sending.",
-        "Aim for Inbox Zero and effective triaging.",
-        "Prepare \"What If\" plans for travel — e.g., holding a backup flight on hold for cancellations.",
-        "Manage complex travel logistics efficiently, with contingency plans in place.",
-        "Understand the full meeting lifecycle — shift from merely recording minutes to driving outcomes.",
-        "Set agendas and track deliverables, not just attendance."
-      ]},
       { h: "Level 2: The Digital Edge", type: "bullets", items: [
         "Use AI (e.g. Gemini) to summarize lengthy reports into concise bullet points for briefings.",
         "Automate tasks through workflows (e.g. Zapier) triggered by client emails.",
@@ -12712,10 +12842,6 @@ const SOP_DATA = [
         "Gatekeeping vs. Gatewaying — safeguard your executive's time while still seizing genuinely valuable opportunities.",
         "Stakeholder Mapping — navigate office politics and manage key relationships on your executive's behalf.",
         "Executive Presence — develop the confidence to effectively represent your executive in meetings."
-      ]},
-      { h: "The Three C's Framework — Overview", type: "bullets", items: [
-        "A strategic partnership model for Executive and Personal Assistants: managing up focuses on alignment, anticipation, and strategic support — not control.",
-        "When Clarity, Communication, and Credibility all operate together, the assistant becomes a Force Multiplier: decision velocity increases, stress decreases, executive/attorney trust deepens, and boundaries hold."
       ]},
       { h: "Clarity — Structural Alignment", type: "bullets", items: [
         "Structural alignment is essential before execution — clarity defines the assistant-executive relationship. Without it, even skilled assistants can only react.",
@@ -12828,14 +12954,6 @@ const SOP_DATA = [
         "Tone can be layered: externally formal (\"Please review the attached draft trust amendment for the Executive's personal estate file. Execution timeline requested by Friday.\") while internally controlled but supportive (\"The updated trust amendment is ready for your review. I'll coordinate signing at your convenience.\").",
         "Without tone discipline: casual language reduces authority, informal communication creates legal risk, overly formal language in personal matters can damage trust, and blurred boundaries create governance challenges. Hybrid roles need intentional tone switching, not accidental blending."
       ]},
-      { h: "Credibility — Influence Without Authority", type: "bullets", items: [
-        "Credibility enables assistants to manage confidently, earned through consistent execution and mature judgment.",
-        "Operational reliability is built on: accuracy, follow-through, on-time execution, anticipation of next steps, and zero-drama problem solving.",
-        "A single missed detail can damage months of built-up trust."
-      ]},
-      { h: "The No-Surprises Rule", type: "bullets", items: [
-        "Executives and attorneys should never be caught off guard by information their assistant already knew about — anything relevant needs to reach them proactively, good or bad."
-      ]},
       { h: "Judgment Under Pressure", type: "bullets", items: [
         "Assistants make micro-decisions that impact financial exposure, legal risk, reputation, and relationships.",
         "Credibility grows specifically when an assistant diplomatically protects others from potential pitfalls — not just when things go smoothly."
@@ -12865,39 +12983,22 @@ const SOP_DATA = [
   },
   {
     id: 3,
-    title: "Time, Calendar & Travel Management",
+    title: "Calendar & Travel Management",
     introduction: "Welcome to LSH EA PA Upskill Training Day 3. My name is ___ and I am your upskill coach.",
     objectives: [
-      "Apply prioritization frameworks to resolve competing demands on the executive's time.",
       "Build and defend a calendar that holds up under real-world pressure, not just on paper.",
       "Plan and execute complex, multi-leg travel itineraries with built-in contingency for the disruptions that always happen."
     ],
     discussionInfo: { duration: "Approximately 1-2 hours", ppt: "EA PA Day 3", canvaLabel: "EA PA Day 3", video: "Video Discussion EA PA Day 3" },
     topics: [
-      "Prioritization Frameworks & Time Tracking",
       "Calendar Management That Holds Under Pressure",
-      "Energy Management vs. Time Management",
-      "Handling Interruptions Without Losing the Day",
-      "Weekly Planning & the Cost of Context-Switching",
       "Recurring Meeting Hygiene & Buffer Time",
       "Time Zone Management & Multi-Calendar Coordination",
+      "Legal Calendaring: Docketing, Deadline Counting & E-Filing",
       "International Travel Planning End-to-End",
-      "Travel Risk Contingency & Ground Transportation",
-      "The Weekly Time Audit & Setting Realistic Deadlines"
+      "Travel Risk Contingency & Ground Transportation"
     ],
     sections: [
-      { h: "Why Time Management Alone Isn't Enough", type: "paragraph", text: "A perfectly clean calendar can still fail an executive if it doesn't account for energy, interruptions, and real-world disruption. Today's session treats calendar management as a system that has to survive contact with a real day — not just a tidy static artifact." },
-      { h: "Prioritization Frameworks", type: "bullets", items: [
-        "The Eisenhower Matrix: sort every incoming task by urgent/important, not just by who asked or how loudly.",
-        "Time-blocking: protect deep-work windows on the calendar itself, not just tasks in a to-do list.",
-        "The 80/20 lens: identify which 20% of tasks are actually driving the executive's outcomes this week."
-      ]},
-      { h: "Time Tracking Done Right", type: "bullets", items: [
-        "Track time at the category level (meetings, deep work, admin, travel), not just a raw hours log — categories are what make a time audit actionable.",
-        "Log in real time or same-day; reconstructing a week from memory produces unreliable data.",
-        "The point of tracking isn't surveillance — it's finding where the calendar's stated priorities and the actual time spent diverge."
-      ]},
-      { h: "When Time Management Fails Despite a Clean Calendar", type: "paragraph", text: "A common failure mode: the calendar looks perfectly organized, but the executive is still overwhelmed. This almost always means the calendar is tracking commitments, not capacity — it has no buffer, no accounting for energy level, and no room for the inevitable unplanned item." },
       { h: "Calendar Management That Holds", type: "bullets", items: [
         "Every meeting on the calendar should have a stated purpose — an unclear meeting purpose is the first thing to question before accepting an invite on the executive's behalf.",
         "Default to shorter meetings (25/50 minutes instead of 30/60) to build in natural buffer between commitments.",
@@ -12909,30 +13010,6 @@ const SOP_DATA = [
         "Recommend a specific resolution, don't just present the conflict and wait.",
         "Confirm the resolution back to both parties in writing, same day."
       ]},
-      { h: "Energy Management vs. Time Management", type: "bullets", items: [
-        "Time management asks \"is this slot free?\" — energy management asks \"is this the right slot for this kind of work?\"",
-        "Protect the executive's highest-focus hours for their highest-stakes work, not whatever request came in first.",
-        "A calendar that's technically full but energy-mismatched still produces poor decisions and missed details."
-      ]},
-      { h: "Handling Interruptions Without Losing the Day", type: "bullets", items: [
-        "Distinguish a genuine interruption (something that changes today's plan) from a request that can wait for the next natural check-in.",
-        "Keep a running \"parking lot\" for non-urgent items that surface mid-task, so they're captured without breaking focus.",
-        "After any real interruption, explicitly re-confirm what's still on track for the day rather than assuming."
-      ]},
-      { h: "The Two-Minute Rule", type: "paragraph", text: "If a task genuinely takes two minutes or less, do it immediately rather than logging it for later — the overhead of tracking it exceeds the cost of just finishing it. Anything longer gets scheduled or delegated, not done reactively." },
-      { h: "Weekly Planning Rituals", type: "bullets", items: [
-        "Set aside a fixed weekly block (same day, same time) to review the coming week's calendar for conflicts, gaps, and prep needs before the week starts, not during it.",
-        "Confirm the top 3 priorities for the week with the executive before Monday, so daily triage has a clear reference point."
-      ]},
-      { h: "Saying No Without Damaging Relationships", type: "bullets", items: [
-        "Decline on behalf of the executive with a reason and an alternative, never a bare no.",
-        "Example: \"The executive can't join Thursday's call, but I can get you 15 minutes Friday morning if that works.\""
-      ]},
-      { h: "Batch Processing Similar Tasks", type: "bullets", items: [
-        "Group similar small tasks (expense approvals, short replies, scheduling requests) into one focused block rather than handling them as they trickle in.",
-        "Batching reduces the number of times you have to mentally switch categories of work, which is where the real time loss happens."
-      ]},
-      { h: "The Cost of Context-Switching", type: "paragraph", text: "Every switch between unrelated types of work — from a legal filing question to a personal travel request to a board deck — carries a real refocusing cost, not just the minutes the interruption itself takes. Protecting blocks of same-category work is a genuine productivity lever, not a nice-to-have." },
       { h: "Recurring Meeting Hygiene", type: "bullets", items: [
         "Audit standing meetings quarterly — a recurring meeting that's lost its original purpose should be shortened, merged, or cancelled, not left on the calendar by default.",
         "Every recurring meeting needs a clear owner and agenda; if neither exists, that's the first thing to flag."
@@ -13000,7 +13077,64 @@ const SOP_DATA = [
       { h: "Post-Trip Debrief & Follow-Up", type: "bullets", items: [
         "Log what actually happened on the trip (delays, issues, what worked) so the next itinerary for this executive improves rather than repeats the same problem.",
         "Reconcile travel expenses and receipts within a set window after return, not left to accumulate."
+      ]}
+    ]
+  },
+  {
+    id: 4,
+    title: "Time Management, Data & Outreach",
+    introduction: "Welcome to LSH EA PA Upskill Training Day 4. My name is ___ and I am your upskill coach.",
+    objectives: [
+      "Apply prioritization frameworks to resolve competing demands on the executive's time, and protect the time that matters.",
+      "Clean and manage data so contact lists, CRM records and reports stay accurate.",
+      "Open cold outreach by phone and email the right way, from research to follow-up."
+    ],
+    discussionInfo: { duration: "Approximately 1-2 hours", ppt: "EA PA Day 4", canvaLabel: "EA PA Day 4", video: "Video Discussion EA PA Day 4" },
+    topics: [
+      "Part 1 — Time Management & Productivity: Prioritization, Time Tracking & Energy",
+      "Part 1 — Interruptions, Batching, Weekly Planning & Realistic Deadlines",
+      "Part 2 — Data & Outreach: Daily Operations, Data Entry & Spreadsheets",
+      "Part 2 — Research, Contact Lists, CRM & Data Hygiene",
+      "Part 2 — Sales, Lead Generation & Cold Calling",
+      "Part 2 — Email Outreach & Marketing"
+    ],
+    sections: [
+      { h: "Why Time Management Alone Isn't Enough", type: "paragraph", text: "A perfectly clean calendar can still fail an executive if it doesn't account for energy, interruptions, and real-world disruption. Today's session treats calendar management as a system that has to survive contact with a real day — not just a tidy static artifact." },
+      { h: "Prioritization Frameworks", type: "bullets", items: [
+        "The Eisenhower Matrix: sort every incoming task by urgent/important, not just by who asked or how loudly.",
+        "Time-blocking: protect deep-work windows on the calendar itself, not just tasks in a to-do list.",
+        "The 80/20 lens: identify which 20% of tasks are actually driving the executive's outcomes this week."
       ]},
+      { h: "Time Tracking Done Right", type: "bullets", items: [
+        "Track time at the category level (meetings, deep work, admin, travel), not just a raw hours log — categories are what make a time audit actionable.",
+        "Log in real time or same-day; reconstructing a week from memory produces unreliable data.",
+        "The point of tracking isn't surveillance — it's finding where the calendar's stated priorities and the actual time spent diverge."
+      ]},
+      { h: "When Time Management Fails Despite a Clean Calendar", type: "paragraph", text: "A common failure mode: the calendar looks perfectly organized, but the executive is still overwhelmed. This almost always means the calendar is tracking commitments, not capacity — it has no buffer, no accounting for energy level, and no room for the inevitable unplanned item." },
+      { h: "Energy Management vs. Time Management", type: "bullets", items: [
+        "Time management asks \"is this slot free?\" — energy management asks \"is this the right slot for this kind of work?\"",
+        "Protect the executive's highest-focus hours for their highest-stakes work, not whatever request came in first.",
+        "A calendar that's technically full but energy-mismatched still produces poor decisions and missed details."
+      ]},
+      { h: "Handling Interruptions Without Losing the Day", type: "bullets", items: [
+        "Distinguish a genuine interruption (something that changes today's plan) from a request that can wait for the next natural check-in.",
+        "Keep a running \"parking lot\" for non-urgent items that surface mid-task, so they're captured without breaking focus.",
+        "After any real interruption, explicitly re-confirm what's still on track for the day rather than assuming."
+      ]},
+      { h: "The Two-Minute Rule", type: "paragraph", text: "If a task genuinely takes two minutes or less, do it immediately rather than logging it for later — the overhead of tracking it exceeds the cost of just finishing it. Anything longer gets scheduled or delegated, not done reactively." },
+      { h: "Weekly Planning Rituals", type: "bullets", items: [
+        "Set aside a fixed weekly block (same day, same time) to review the coming week's calendar for conflicts, gaps, and prep needs before the week starts, not during it.",
+        "Confirm the top 3 priorities for the week with the executive before Monday, so daily triage has a clear reference point."
+      ]},
+      { h: "Saying No Without Damaging Relationships", type: "bullets", items: [
+        "Decline on behalf of the executive with a reason and an alternative, never a bare no.",
+        "Example: \"The executive can't join Thursday's call, but I can get you 15 minutes Friday morning if that works.\""
+      ]},
+      { h: "Batch Processing Similar Tasks", type: "bullets", items: [
+        "Group similar small tasks (expense approvals, short replies, scheduling requests) into one focused block rather than handling them as they trickle in.",
+        "Batching reduces the number of times you have to mentally switch categories of work, which is where the real time loss happens."
+      ]},
+      { h: "The Cost of Context-Switching", type: "paragraph", text: "Every switch between unrelated types of work — from a legal filing question to a personal travel request to a board deck — carries a real refocusing cost, not just the minutes the interruption itself takes. Protecting blocks of same-category work is a genuine productivity lever, not a nice-to-have." },
       { h: "The Weekly Time Audit", type: "paragraph", text: "Close every week by comparing planned time allocation against what actually happened — this is where prioritization frameworks, calendar discipline, and travel logistics all get checked against reality, and where next week's plan gets corrected." },
       { h: "Setting Realistic Deadlines", type: "bullets", items: [
         "Build in buffer before committing a deadline on the executive's behalf — an optimistic deadline that slips damages trust more than a realistic one set further out.",
@@ -13011,7 +13145,7 @@ const SOP_DATA = [
 ];
 
 
-/* SOP for any day: the hand-written SOP where one exists (Days 1–3), plus an
+/* SOP for any day: the hand-written SOP where one exists (Days 1–4), plus an
    auto-built session plan from the live portal content so every day — and
    every topic added later in Content Studio — is always covered. */
 function sopLiveSections(d){
@@ -14650,7 +14784,7 @@ function presenterNote(d, l, part){
    Built from exactly what is on the slide (the same data the slide renders), so it always matches
    what the room sees — including topics added later in the Content Studio. Part 1 covers ① Core
    Principles and ② Step-by-Step; Part 2 covers ③ Best Practices & Pitfalls and ④ Go Deeper.
-   A hand-written "steps" script in js/days/day3/notes.js replaces the generated ② section. */
+   A hand-written "steps" script in js/days/day3/notes.js or day4/notes.js (the topics that began on Day 3) replaces the generated ② section. */
 const SCRIPT_ORDINALS = ["First","Second","Third","Fourth","Fifth","Sixth","Seventh","Eighth","Ninth","Tenth"];
 function scriptSentence(t){
   let x = String(t||"").replace(/\s+/g," ").trim();
@@ -14844,6 +14978,7 @@ function buildDayScriptLines(d){
   const lines = [`## ${ftName(d.id)} — ${d.title}: Trainer Speaker Notes`];
   d.lessons.forEach((l,i)=>{
     const parts = l.singleSlide ? [1] : [1,2];
+    if(l.block){ const b = dayBlock(d, i); lines.push(`## PART ${b.n} OF ${b.of}: ${b.title}`); }
     lines.push(`## ${String(i+1).padStart(2,"0")}. ${l.h}  ·  ${slideLabel(d, i)}`);
     parts.forEach(p=>{
       const n = presenterNote(d, l, p), s = slideScript(d, l, p);
@@ -16598,7 +16733,7 @@ function initCompliance9(body){
   toolState.cr = {setKey:"compliance9", activeScenario: CRISIS_SCENARIO_SETS.compliance9[0].id, chatHistory:[{role:"client", text: CRISIS_SCENARIO_SETS.compliance9[0].script.split("\n")[0].replace(/^OPENING LINE[^:]*:\s*/,"").replace(/^"|"$/g,"")}]};
   toolState.wizardIndex = 0;
   const partA = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">A. CLE Compliance Dashboard</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">D. CLE Compliance Dashboard</h3>
     <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">For each attorney, decide: On Track, or Needs Follow-up.</p>
     <div class="card" style="padding:14px 16px;overflow-x:auto;">
       <table class="log-table">
@@ -16634,7 +16769,7 @@ function initCompliance9(body){
     <div id="c9RegResult" style="margin-top:8px;font-size:13px;"></div>
   `;
   const partC = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">C. Respond to a Negative Review</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">E. Respond to a Negative Review</h3>
     <div class="card" style="padding:16px 18px;margin-bottom:10px;background:#F8F9FC;">
       <b style="font-size:13px;color:var(--ink);">${esc(NEGATIVE_REVIEW.author)}</b> <span style="color:var(--orange-deep);">${"★".repeat(NEGATIVE_REVIEW.stars)}${"☆".repeat(5-NEGATIVE_REVIEW.stars)}</span>
       <p style="font-size:13px;color:#37394A;margin:8px 0 0;font-style:italic;">"${esc(NEGATIVE_REVIEW.text)}"</p>
@@ -16644,7 +16779,7 @@ function initCompliance9(body){
     <div id="c9ReviewResult" style="margin-top:10px;"></div>
   `;
   const partD = `
-    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">D. Awards &amp; Recognition Deadline Tracker</h3>
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">F. Awards &amp; Recognition Deadline Tracker</h3>
     <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">Today's date for this exercise is treated as March 15. For each award below, decide: still time to apply, or the deadline has already passed.</p>
     <div class="card" style="padding:14px 16px;overflow-x:auto;">
       <table class="log-table">
@@ -16668,15 +16803,91 @@ function initCompliance9(body){
     <div id="c9AwardsResult" style="margin-top:8px;font-size:13px;"></div>
     <button class="btn btn-ghost btn-sm" style="margin-top:20px;" onclick="downloadCompliance9Pdf()">⬇ Download My Work</button>
   `;
-  const partE = renderCrisisRoleplaySection("compliance9", "E. Live Crisis Roleplay — Compliance & Reputation");
+  const partE = renderCrisisRoleplaySection("compliance9", "G. Live Crisis Roleplay — Compliance & Reputation");
+  const ta = 'width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;';
+  const partInvite = `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">A. Event Invitation &amp; Registration Form</h3>
+    <div class="card" style="padding:14px 18px;margin-bottom:12px;background:#F8F9FC;font-size:13px;line-height:1.55;">${EVENT_BRIEF}</div>
+    <label style="font-size:12.8px;font-weight:600;color:var(--navy);display:block;margin:0 0 5px;">1. The invitation email (subject line and body)</label>
+    <textarea id="c9Invite" style="${ta}min-height:150px;" placeholder="Subject: …"></textarea>
+    <label style="font-size:12.8px;font-weight:600;color:var(--navy);display:block;margin:12px 0 5px;">2. The registration form: list each question, and mark which are required</label>
+    <textarea id="c9Form" style="${ta}min-height:120px;" placeholder="1. Full name (required)&#10;2. …"></textarea>
+    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="checkC9Invite(this)">Get Review</button>
+    <div id="c9InviteResult" style="margin-top:10px;"></div>
+  `;
+  const partNotes = `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">C. Meeting Notes &amp; Action Items</h3>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 10px;">Here's what was said on this morning's Harlow strategy call. Write the notes you'd send within 24 hours: decisions, action items (each with an owner and a due date) and open questions.</p>
+    <div class="card" style="padding:14px 18px;margin-bottom:12px;background:#F8F9FC;font-size:13px;line-height:1.6;">${MEETING_TRANSCRIPT.map(l=>`<div>${esc(l)}</div>`).join("")}</div>
+    <textarea id="c9Notes" style="${ta}min-height:170px;" placeholder="Decisions:&#10;Action items:&#10;Open questions:"></textarea>
+    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="checkC9Notes(this)">Get Review</button>
+    <div id="c9NotesResult" style="margin-top:10px;"></div>
+  `;
   body.innerHTML = renderToolWizard(9, [
-    {label:"CLE Compliance Dashboard", html:partA},
+    {label:"Event Invite & Registration Form", html:partInvite},
     {label:"Event Follow-Up", html:partB},
+    {label:"Meeting Notes & Action Items", html:partNotes},
+    {label:"CLE Compliance Dashboard", html:partA},
     {label:"Negative Review Response", html:partC},
     {label:"Awards Tracker", html:partD},
     {label:"Crisis Roleplay", html:partE}
   ]);
 }
+/* Day 9 lab, parts A and C: follow the Sending Invites, Sending Intake Forms, CLE Management and
+   Everyday Meeting Notes lessons. */
+const EVENT_BRIEF = `<b style="color:var(--navy);">The event:</b> Thorne &amp; Partners' breakfast seminar, <i>Employment Law Update 2026</i>, Thursday, October 22, 8:00–10:00 AM (breakfast from 7:30), at the Harborview Hotel, 200 Pier Street, Boston. Speakers: Elias Thorne and Dana Morales (ethics segment). Two hours of CLE credit, including one hour of ethics, <b>has been applied for</b> in Massachusetts and New York — not yet approved. Guests: 60 in-house counsel and HR directors. RSVP by October 9. There's a vegetarian option; the room is wheelchair accessible.`;
+const MEETING_TRANSCRIPT = [
+  "Elias: Let's lock it in — we're making the settlement offer at $180,000, not $200,000.",
+  "R. Chen (associate): OK. I'll draft the offer letter. I can have it to you by Wednesday.",
+  "Elias: Good. Dana, can you get the expert's updated damages report from Brightline? We need it before the offer goes out.",
+  "Dana (paralegal): I'll chase them today. Their last estimate was Tuesday.",
+  "Elias: The deposition of Harlow's CFO — do we still want it before mediation?",
+  "R. Chen: I think so, but I'm not sure opposing counsel will agree to a date in November.",
+  "Elias: Let's decide that after we hear from them. Can someone ask?",
+  "(Nobody answers.)",
+  "Elias: And book the mediation room at the Boston office for November 12. Dana, that's you too.",
+  "Elias: One more thing — this stays privileged. Don't forward these notes to the client until I've looked at them."
+];
+async function checkC9Invite(btn){
+  const invite = document.getElementById("c9Invite").value.trim(), form = document.getElementById("c9Form").value.trim();
+  if(invite.length < 40 || form.length < 20){ toast("Write both the invitation and the form questions first."); return; }
+  if(!(await useLabAttempt(9, "checkC9Invite"))) return;
+  btn.disabled = true; btn.textContent = "Reviewing…";
+  const el = document.getElementById("c9InviteResult");
+  el.innerHTML = `<div class="ai-loading">Reviewing your invitation and registration form…</div>`;
+  try{
+    const report = await runRubricEvaluation("Event Invitation & Registration Form (CLE seminar)",
+      "Event brief: " + EVENT_BRIEF.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&"),
+      `INVITATION:\n${invite}\n\nREGISTRATION FORM:\n${form}`,
+      `Evaluate against the Day 9 lessons. The invitation should give the event name, date, time (with breakfast), venue, speakers, a clear RSVP date and registration link or instruction, and a short reason to attend. It must say CLE credit "has been applied for" (not promise approved credit), and it must not expose other guests. The form should ask only what's needed: name, organization, email, dietary needs, accessibility needs, and, because this is a CLE event, bar number and state(s) of admission, with required fields marked. Deduct for missing essentials, promising unapproved CLE credit, unnecessary or sensitive questions, or unprofessional tone.`);
+    toolState.c9.inviteReport = report;
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Invitation & Form</b>` + renderEvaluationReport(report, 9);
+    await bumpPracticeProgress("compliance9", report.totalScore);
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }finally{ btn.disabled = false; btn.textContent = "Get Review"; }
+}
+window.checkC9Invite = checkC9Invite;
+async function checkC9Notes(btn){
+  const notes = document.getElementById("c9Notes").value.trim();
+  if(notes.length < 60){ toast("Write fuller meeting notes first."); return; }
+  if(!(await useLabAttempt(9, "checkC9Notes"))) return;
+  btn.disabled = true; btn.textContent = "Reviewing…";
+  const el = document.getElementById("c9NotesResult");
+  el.innerHTML = `<div class="ai-loading">Checking your notes against the call…</div>`;
+  try{
+    const report = await runRubricEvaluation("Meeting Notes & Action Items (Harlow strategy call)",
+      "Call transcript:\n" + MEETING_TRANSCRIPT.join("\n"),
+      notes,
+      `Answer key. Decision: the settlement offer is $180,000 (not $200,000). Action items: R. Chen drafts the offer letter by Wednesday; Dana gets Brightline's updated damages report (before the offer goes out; last estimate Tuesday); Dana books the Boston mediation room for November 12. Open question: whether to depose Harlow's CFO before mediation, pending opposing counsel's answer on a November date; this item has NO owner yet, and strong notes flag that an owner is needed rather than inventing one. The notes must be marked privileged/confidential and sent to Elias first, not to the client. Evaluate completeness against this key, that every action has an owner and a date, that decisions are stated clearly (not as a transcript), and the privilege handling.`);
+    toolState.c9.notesReport = report;
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Meeting Notes</b>` + renderEvaluationReport(report, 9);
+    await bumpPracticeProgress("compliance9", report.totalScore);
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }finally{ btn.disabled = false; btn.textContent = "Get Review"; }
+}
+window.checkC9Notes = checkC9Notes;
 const AWARDS_TRACKER = [
   {name:"State Bar Excellence in Litigation Award", deadline:"March 1"},
   {name:"Regional 40 Under 40 Legal Professionals", deadline:"April 10"},
@@ -16769,18 +16980,23 @@ window.checkC9Review = checkC9Review;
 async function downloadCompliance9Pdf(){
   await ensureTraineeName();
   const c9 = toolState.c9;
-  const lines = ["## A. CLE Compliance Dashboard"];
-  CLE_ROSTER.forEach((a,i)=>{
-    const correct = a.completed>=a.required ? "On Track" : "Needs Follow-up";
-    lines.push(`${a.name}: ${a.completed}/${a.required} hrs, deadline ${a.deadline} — your call: ${c9.cle[i]||"(not answered)"} (correct: ${correct})`);
-  });
+  const val = id => ((document.getElementById(id)||{}).value||"").trim();
+  const lines = ["## A. Event Invitation & Registration Form", "Invitation:", val("c9Invite")||"(not written)", "", "Registration form:", val("c9Form")||"(not written)"];
+  if(c9.inviteReport) lines.push("", `Score: ${c9.inviteReport.totalScore}/100`);
   lines.push("---", "## B. Event Registration Follow-Up");
   EVENT_REGISTRANTS.forEach((r,i)=>{
     lines.push(`${r.name} — confirmed: ${r.confirmed?"yes":"no"} — flagged for follow-up: ${c9.reg[i]?"yes":"no"}`);
   });
-  lines.push("---", "## C. Negative Review Response", `Review: "${NEGATIVE_REVIEW.text}"`, `Your reply: ${document.getElementById("c9ReviewReply").value.trim()||"(not written)"}`);
+  lines.push("---", "## C. Meeting Notes & Action Items", val("c9Notes")||"(not written)");
+  if(c9.notesReport) lines.push("", `Score: ${c9.notesReport.totalScore}/100`);
+  lines.push("---", "## D. CLE Compliance Dashboard");
+  CLE_ROSTER.forEach((a,i)=>{
+    const correct = a.completed>=a.required ? "On Track" : "Needs Follow-up";
+    lines.push(`${a.name}: ${a.completed}/${a.required} hrs, deadline ${a.deadline} — your call: ${c9.cle[i]||"(not answered)"} (correct: ${correct})`);
+  });
+  lines.push("---", "## E. Negative Review Response", `Review: "${NEGATIVE_REVIEW.text}"`, `Your reply: ${document.getElementById("c9ReviewReply").value.trim()||"(not written)"}`);
   if(c9.reviewReport) lines.push("", "Feedback:", c9.reviewReport);
-  lines.push("---", "## D. Awards & Recognition Deadline Tracker");
+  lines.push("---", "## F. Awards & Recognition Deadline Tracker");
   AWARDS_TRACKER.forEach((a,i)=>{
     lines.push(`${a.name} — deadline ${a.deadline} — your call: ${(c9.awards&&c9.awards[i])||"(not answered)"}`);
   });
@@ -17710,7 +17926,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.30-1901";
+var APP_BUILD = "ft-2026.09.30-1906";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -17753,19 +17969,19 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-slides.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-process.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-rules.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.09.30-1901"></script>
-<script src="/js/attendance.js?v=ft-2026.09.30-1901"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-slides.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-process.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-rules.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.09.30-1906"></script>
+<script src="/js/attendance.js?v=ft-2026.09.30-1906"></script>
 <script src="/js/portal-link.js?v=1"></script>
 <script src="/js/portal-link.js?v=1"></script>
 </body>

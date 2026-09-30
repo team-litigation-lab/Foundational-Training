@@ -62,6 +62,45 @@ window.EAPA_UPDATE_PACK = "z";
 .lesson-stage #lessonSlideWrap .pg-badge{position:absolute;right:16px;bottom:12px;width:auto;max-width:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--orange-deep);background:#FFF1E2;border-radius:999px;padding:4px 10px;}
 .lesson-stage #lessonSlideWrap.pg-later .lesson-card h4::after{content:" · continued";font-family:'IBM Plex Mono',monospace;font-size:.4em;font-weight:700;letter-spacing:.08em;color:var(--ink-soft);vertical-align:middle;}
 @media(max-width:760px){.lesson-stage #lessonSlideWrap{height:auto;display:block;overflow:visible;} .lesson-stage #lessonSlideWrap .pg-badge{display:none;}}
+/* Dashboard side column: the four numbers as a compact 2 x 2 grid, the cards under them full width, so
+   the column is no taller than the day cards and the dashboard fits on one screen (the tall column
+   stretched the page and left a gap under the day cards). */
+@media(min-width:1101px){
+  .dash-layout{grid-template-columns:minmax(0,1fr) 290px;}
+  .dash-side{padding:12px;}
+  .dash-side-inner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:stretch;}
+  .dash-side-inner > *{grid-column:1 / -1;margin:0 !important;}
+  .dash-side-inner > .card.stat{grid-column:auto;padding:12px 12px 11px;display:flex;flex-direction:column;justify-content:flex-start;}
+  .dash-side-inner > .card.stat.tfb-dash, .dash-side-inner > .card.stat.rank-card, .dash-side-inner > .card.stat.cert-dash, .dash-side-inner > .card.stat.comp-card{grid-column:1 / -1;}
+  .dash-side .stat .num{font-size:22px;line-height:1.1;}
+  .dash-side .stat .lbl{font-size:10px;letter-spacing:.05em;line-height:1.3;margin-top:5px;}
+  .dash-side .stat .lbl span{font-size:10px;text-transform:none;letter-spacing:0;margin-top:3px !important;}
+  .dash-side .tfb-dash, .dash-side .rank-card, .dash-side .cert-dash, .dash-side .comp-card{padding:12px 14px;}
+}
+/* Lesson view: the slide uses the width of the screen, with small margins on the sides */
+@media(min-width:761px){
+  main:has(.lesson-stage){max-width:1880px;padding-left:24px;padding-right:24px;}
+  .lesson-stage{padding:14px 16px;}
+  .lesson-stage #lessonSlideWrap{padding-left:24px;padding-right:24px;}
+  .lesson-stage #lessonSlideWrap > *, .lesson-stage:fullscreen #lessonSlideWrap > *{max-width:1600px;}
+}
+/* Lesson page: the slide and its Previous / Next bar fit on one screen. On a desktop the lesson's controls
+   (back links, title, Listen, Objectives, Present full screen, Presenter view) sit in a column to the right of
+   the slide, and fitSlideFrame() sizes the slide to the height that's left. (Foundational's deck-page lessons,
+   body.ft-fit, have their own layout in js/ft-slides.js.) */
+@media(min-width:1000px){
+  body:not(.ft-fit) main:has(> #lessonStage){display:grid;grid-template-columns:minmax(0,1fr) 200px;column-gap:16px;align-items:start;padding-top:12px;}
+  body:not(.ft-fit) main:has(> #lessonStage) > *{grid-column:2;margin:0 0 10px;}
+  body:not(.ft-fit) main:has(> #lessonStage) > #lessonStage{grid-column:1;grid-row:1 / span 40;margin:0;}
+  body:not(.ft-fit) main:has(> #lessonStage) > #navBackSlot:empty{display:none;}
+  body:not(.ft-fit) main:has(> #lessonStage) .day-head-compact{display:flex;flex-direction:column;gap:4px;border:0;padding:0;}
+  body:not(.ft-fit) main:has(> #lessonStage) .day-head-compact .dhc-title{white-space:normal;font-size:17px;line-height:1.3;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top > *, body:not(.ft-fit) main:has(> #lessonStage) .ls-top .btn{width:100%;margin:0 !important;justify-content:center;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .audio-bar{display:grid;grid-template-columns:1fr auto;gap:6px;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .audio-bar #audioModeBtn{grid-column:1 / -1;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .or-tip{font-size:12px;line-height:1.4;order:9;white-space:normal;}
+}
 /* ================= SOP Reference: readable reference + live Present mode ================= */
 .sopx-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
 .sopx-days{display:flex;gap:6px;flex-wrap:wrap;}
@@ -280,7 +319,7 @@ Narrator.slideText = function(){
    rebalance so every page carries a similar amount (no crammed page + near-empty
    page). Next / Previous (and the arrow keys) step through pages before slides.
    Headings (kicker, title, section labels) repeat on every page of their block. */
-const SLIDE_PG_BLOCKS = ".card, .lesson-card, .meet-client-card, .qcheck-card, .fp-section, .fp-body, .trainer-checkpoint";
+const SLIDE_PG_BLOCKS = ".card, .lesson-card, .meet-client-card, .qcheck-card, .fp-section, .fp-body, .trainer-checkpoint, .ft-body, .cs, .cs-tablewrap, .cs-tablewrap > table, .cs-tablewrap > table > tbody, .svg-diagram-card";
 const SLIDE_PG_HEADS = "h2, h3, h4, .topic-separator, .fp-label, .mc-tag, .tc-tag, .qc-tag, .discussion-tag, .vis-label";
 let __slidePg = null;
 function collectSlideUnits(root, bigH){
@@ -289,11 +328,14 @@ function collectSlideUnits(root, bigH){
     for(const c of el.children){
       if(c.matches(SLIDE_PG_HEADS) || c.classList.contains("pg-badge")) continue;
       if(c.matches(SLIDE_PG_BLOCKS)){ walk(c); continue; }
+      // a tall wrapper around one thing (e.g. a diagram's frame): look inside it for places to break
+      if(c.children.length === 1 && c.getBoundingClientRect().height > bigH && !c.matches("svg, img, picture, figure, table") &&
+         [...c.childNodes].every(n=>n.nodeType !== 3 || !n.textContent.trim())){ walk(c); continue; }
       // lists and card grids may break between items — but only when they're tall;
       // short ones (e.g. a row of 3 step cards) always stay together
       if(c.children.length > 1 && c.getBoundingClientRect().height > bigH){
         const cs = getComputedStyle(c);
-        if(c.matches("ul, ol") || cs.display.includes("grid") || (cs.display.includes("flex") && (cs.flexWrap==="wrap" || cs.flexDirection==="column"))){ units.push(...c.children); continue; }
+        if(c.matches("ul, ol") || cs.display.includes("grid") || cs.display === "block" || (cs.display.includes("flex") && (cs.flexWrap==="wrap" || cs.flexDirection==="column"))){ units.push(...c.children); continue; }
       }
       units.push(c);
     }
@@ -301,7 +343,49 @@ function collectSlideUnits(root, bigH){
   walk(root);
   return units.filter(u=>u.getClientRects().length);
 }
+// Every slide fits on one screen: the frame is sized to the room left on the lesson page (fitSlideFrame),
+// what doesn't fit continues on the next page (paginateSlideUnits), and a block too big for one page is
+// scaled down a little (fitSlideZoom), so the frame never scrolls.
 function paginateLessonSlide(){
+  const wrap = document.getElementById("lessonSlideWrap");
+  fitSlideFrame(wrap);
+  paginateSlideUnits();
+  fitSlideZoom(wrap);
+  // something above the slide can still change height once the page is drawn (e.g. the top bar gains a
+  // button and wraps): fit again if the slide has moved
+  if(wrap && wrap.dataset.fitTop) requestAnimationFrame(()=>{
+    if(wrap.isConnected && Math.abs(wrap.getBoundingClientRect().top + window.scrollY - Number(wrap.dataset.fitTop)) > 1) paginateLessonSlide();
+  });
+}
+function fitSlideFrame(wrap){
+  if(!wrap) return;
+  slideZoomParts(wrap).forEach(n=>n.style.zoom = "");
+  if(document.body.classList.contains("ft-fit")) return;   // Foundational's deck-page lessons size themselves (fitPages in js/ft-slides.js)
+  const stage = wrap.closest(".lesson-stage");
+  // full screen and the shared slides window already fill their window; phones scroll
+  if(!stage || stage.id !== "lessonStage" || wrap.closest("#audienceRoot") || document.fullscreenElement || window.innerWidth <= 760){ wrap.style.height = ""; delete wrap.dataset.fitTop; return; }
+  const r = wrap.getBoundingClientRect(), below = stage.getBoundingClientRect().bottom - r.bottom;
+  wrap.dataset.fitTop = String(r.top + window.scrollY);
+  // the top bar can gain a button (and wrap to a second row) after the page is drawn: fit again when it does
+  const bar = document.querySelector(".topbar");
+  if(bar && window.__fitBar !== bar && typeof ResizeObserver === "function"){
+    if(window.__fitBarRO) window.__fitBarRO.disconnect();
+    let h0 = bar.offsetHeight; window.__fitBar = bar;
+    window.__fitBarRO = new ResizeObserver(()=>{ const h = bar.offsetHeight; if(h !== h0){ h0 = h; if(state.view==="day" && document.getElementById("lessonSlideWrap")) paginateLessonSlide(); } });   // before the next paint: no jump
+    window.__fitBarRO.observe(bar);
+  }
+  wrap.style.height = Math.max(320, Math.floor(window.innerHeight - (r.top + window.scrollY) - below - 12)) + "px";
+}
+function slideZoomParts(wrap){ return [...wrap.children].filter(n=>!n.classList.contains("pg-badge")); }
+function fitSlideZoom(wrap){
+  if(!wrap || !wrap.isConnected || window.innerWidth <= 760 || wrap.querySelector(".cs-page")) return;   // deck pages size themselves
+  // a picture that hasn't loaded yet has no height: lay the slide out again once it has
+  wrap.querySelectorAll("img").forEach(img=>{ if(!img.complete && !img.dataset.fitWait){ img.dataset.fitWait = "1"; img.addEventListener("load", repaginateSoon, {once:true}); } });
+  const parts = slideZoomParts(wrap); let z = 1;
+  parts.forEach(n=>n.style.zoom = "");
+  while(wrap.scrollHeight > wrap.clientHeight + 2 && z > 0.6){ z = Math.round((z - 0.05)*100)/100; parts.forEach(n=>n.style.zoom = String(z)); }
+}
+function paginateSlideUnits(){
   const wrap = document.getElementById("lessonSlideWrap");
   __slidePg = null; state.slidePages = 1;
   if(!wrap) return;
@@ -368,6 +452,7 @@ function applySlidePage(){
   pg.wrap.querySelectorAll(".pg-badge").forEach(n=>n.remove());
   pg.wrap.insertAdjacentHTML("beforeend", `<div class="pg-badge">PAGE ${p+1} / ${pg.pages.length}${p < pg.pages.length-1 ? " · CONTINUES →" : ""}</div>`);
   pg.wrap.scrollTop = 0;
+  fitSlideZoom(pg.wrap);
   updateSlidePageUi();
 }
 function updateSlidePageUi(){
@@ -702,6 +787,9 @@ function presenterCues(d, slide){
     const pageInfo = state.presentSecsFor === (state.lessonSlide||0);
     out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null,
       pageInfo ? {page: state.presentPage||0, pages: state.presentPages||1, secsByPage: state.presentSecsByPage} : null));   // scripts: js/days/dayN/scripts.js
+  }else if(slide.type==="block"){
+    const b = dayBlock(d, slide.lessonIndex), first = b.lessons[0].num, last = b.lessons[b.lessons.length-1].num;
+    out.push(`<h3>Part ${b.n} of ${b.of}: ${esc(b.title)}</h3><p>Topics ${first}–${last}${b.sections.length > 1 ? `, in ${b.sections.length} sections` : ""}. Tell the room what this part of the day covers and why it matters, then move on to Topic ${first}.</p>`);
   }else if(slide.type==="divider"){
     const l = d.lessons[slide.lessonIndex];
     out.push(`<h3>Topic ${slide.lessonIndex+1} of ${d.lessons.length}: ${esc(l.h)}</h3><p>${l.section ? `Section: ${esc(l.section)}. ` : ""}Name the topic, then move on to its first slide.</p>`);
@@ -1193,14 +1281,82 @@ async function eoEvaluate(){
 }
 Object.assign(window, {eoChoose, eoReset, eoSend, eoDraft, eoFinish, eoEvaluate});
 
-/* Day 4 Practice Lab: add the simulator as Part 4 */
+/* Day 4 Practice Lab, Part A: Prioritize the Day (the Time Management & Productivity block).
+   Step 1 sorts eight real tasks with the day's tools (two-minute rule, time blocking, batching,
+   delegating, pushing back); step 2 is the written push-back on an unrealistic deadline, AI-graded. */
+const TM_ACTIONS = ["Do it now (under 2 minutes)","Block time for it today","Batch it with similar tasks","Delegate it","Push back and renegotiate the deadline"];
+const TM_TASKS = [
+  {t:"The court reporter emailed to confirm Thursday's deposition time. They just need a 'Confirmed' reply.", want:0, why:"a one-line reply: do it now"},
+  {t:"Draft the exhibit index for Friday's Harlow hearing. About 90 minutes of focused work; Elias needs it by Wednesday.", want:1, why:"important focused work with a deadline: protect a block of time for it"},
+  {t:"Eleven expense receipts from last week are waiting to be entered.", want:2, why:"many small, similar entries: do them together in one sitting"},
+  {t:"Order lunch for Wednesday's partner meeting. The office coordinator handles all catering orders.", want:3, why:"someone else owns catering: hand it over with the details"},
+  {t:"At 8:45 a partner asks for a summary of a 40-page contract 'by 10 today.' Your morning is already booked with Elias's exhibit index and a 10:30 filing.", want:4, why:"a new request that collides with existing priorities: offer a realistic time instead of silently failing"},
+  {t:"Six vendor calls to return, none urgent.", want:2, why:"similar low-urgency calls: batch them into one slot"},
+  {t:"Someone sent a new Zoom link for Elias's 2 PM call. The calendar invite needs updating.", want:0, why:"a two-minute fix that prevents a missed meeting: do it now"},
+  {t:"Prepare the quarterly CLE hours report for the managing partner, due Friday. About an hour.", want:1, why:"a known task with a deadline: put an hour on the calendar"}
+];
+function renderTimeMgmtSection(){
+  return `
+    <h3 style="margin:0 0 6px;color:var(--navy);font-size:15px;">A. Prioritize the Day</h3>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">It's Monday, 8:30 AM. Here's what's on your list for Elias's office. For each task, choose how you'll handle it, using the tools from today's Time Management &amp; Productivity lessons.</p>
+    <div class="card" style="padding:14px 16px;overflow-x:auto;">
+      <table class="log-table">
+        <thead><tr><th>#</th><th>Task</th><th>How you'll handle it</th></tr></thead>
+        <tbody>${TM_TASKS.map((x,i)=>`
+          <tr><td>${i+1}</td><td style="font-size:12.8px;">${esc(x.t)}</td>
+          <td><select id="tmTask${i}" onchange="setTmTask(${i}, this.value)"><option value="">Choose&hellip;</option>${TM_ACTIONS.map(a=>`<option value="${a}">${a}</option>`).join("")}</select></td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="checkTmTasks()">Check My Plan</button>
+    <div id="tmTasksResult" style="margin-top:8px;font-size:13px;"></div>
+    <label style="font-size:12.8px;font-weight:600;color:var(--navy);display:block;margin:18px 0 5px;">Now write your reply to the partner in task 5: acknowledge the request, explain the conflict briefly and offer a realistic alternative.</label>
+    <textarea id="tmPushback" style="width:100%;min-height:120px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;" placeholder="Hi …"></textarea>
+    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="checkTmPushback(this)">Get Review</button>
+    <div id="tmPushbackResult" style="margin-top:10px;"></div>`;
+}
+function setTmTask(i,v){ toolState.tm = toolState.tm || {}; toolState.tm[i] = v; }
+async function checkTmTasks(){
+  const got = toolState.tm || {};
+  if(TM_TASKS.some((_,i)=>!got[i])){ toast(`Choose how you'll handle all ${TM_TASKS.length} tasks first.`); return; }
+  let correct = 0;
+  const rows = TM_TASKS.map((x,i)=>{ const ok = got[i]===TM_ACTIONS[x.want]; if(ok) correct++;
+    return `<li>${ok?"✅":"❌"} <b>Task ${i+1}:</b> ${esc(TM_ACTIONS[x.want])} (${esc(x.why)})</li>`; });
+  const score = Math.round(correct/TM_TASKS.length*100);
+  document.getElementById("tmTasksResult").innerHTML = `<b style="color:${score===100?'var(--success)':'var(--danger)'};">${correct}/${TM_TASKS.length} correct (${score}%)</b><ul style="margin:8px 0 0;padding-left:20px;">${rows.join("")}</ul>`;
+  await bumpPracticeProgress("coldcalling4", score);
+}
+async function checkTmPushback(btn){
+  const text = ((document.getElementById("tmPushback")||{}).value||"").trim();
+  if(text.length < 40){ toast("Write a fuller reply first."); return; }
+  if(!(await useLabAttempt(4, "tmPushback"))) return;
+  btn.disabled = true; btn.textContent = "Reviewing…";
+  const el = document.getElementById("tmPushbackResult");
+  el.innerHTML = `<div class="ai-loading">Reviewing your reply…</div>`;
+  try{
+    const report = await runRubricEvaluation("Renegotiating an Unrealistic Deadline (reply to a partner)",
+      "At 8:45 AM a partner asks the assistant for a summary of a 40-page contract 'by 10 today.' The assistant's morning is already committed to Elias Thorne's exhibit index for Friday's hearing and a filing due at 10:30.",
+      text,
+      "Evaluate against the Day 4 time management lessons (Saying No Without Damaging Relationships; Setting Realistic Deadlines). A strong reply: acknowledges the request and its importance; states the conflict briefly and factually without oversharing confidential matter details; offers a specific realistic alternative (for example a time this afternoon, or the key sections by a set time) and asks which works; and, where two senior people's priorities truly collide, offers to check with Elias rather than silently choosing. It is short, polite and leads with the answer. Deduct for silently accepting a deadline that can't be met, a flat refusal with no alternative, blaming, or vague promises ('I'll try').");
+    toolState.tm = toolState.tm || {}; toolState.tm.pushbackReport = report;
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Your Reply</b>` + renderEvaluationReport(report, 4);
+    await bumpPracticeProgress("coldcalling4", report.totalScore);
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }finally{ btn.disabled = false; btn.textContent = "Get Review"; }
+}
+Object.assign(window, {setTmTask, checkTmTasks, checkTmPushback});
+
+/* Day 4 Practice Lab: Prioritize the Day (Part A), then cold calling, lead generation, the intake call
+   and the Email Outreach Simulator */
 window.initColdCalling4 = function(body){
   toolState.calls = {};
   toolState.wizardIndex = 0;
   toolState.intakeCall = toolState.intakeCall || {step:"pick", personaId:null, chatHistory:[], startedAt:null};
-  const partA = renderColdCallingSection('A');
+  const partTM = renderTimeMgmtSection();
+  const partA = renderColdCallingSection('B').replace("margin:32px 0 10px;", "margin:0 0 10px;");
   const partB = `
-    <h3 style="margin:0 0 10px;color:var(--navy);font-size:15px;">B. Lead Generation Practice</h3>
+    <h3 style="margin:0 0 10px;color:var(--navy);font-size:15px;">C. Lead Generation Practice</h3>
     <div class="card" style="padding:16px 18px;margin-bottom:12px;background:#F8F9FC;">
       <p style="font-size:13px;color:#37394A;margin:0;">${esc(LEAD_GEN_SCENARIO.text)}</p>
     </div>
@@ -1209,9 +1365,10 @@ window.initColdCalling4 = function(body){
     <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="reviewLeadGenPlan()">Get Review</button>
     <div id="leadGenResult" style="margin-top:14px;"></div>
   `;
-  const partC = renderIntakeCallSection();
-  const partD = renderEmailOutreachSection();
+  const partC = renderIntakeCallSection().replace(">C. Live Intake Call Simulator<", ">D. Live Intake Call Simulator<");
+  const partD = renderEmailOutreachSection().replace(">D. Email Outreach Simulator<", ">E. Email Outreach Simulator<");
   body.innerHTML = renderToolWizard(4, [
+    {label:"Prioritize the Day", html:partTM},
     {label:"Cold-Calling Log", html:partA},
     {label:"Lead Generation Practice", html:partB},
     {label:"Live Intake Call Simulator", html:partC},
@@ -1223,7 +1380,7 @@ window.initColdCalling4 = function(body){
 };
 (function(){
   const t = PRACTICE_TOOLS.find(x=>x.id==="coldcalling4");
-  if(t){ t.title = "Cold-Calling, Lead Generation & Email Outreach"; t.desc = "Log a full round of cold-calling outreach, draft a real lead-generation plan, handle a live intake call, then run an email outreach sequence against a prospect who replies — or doesn't — the way a busy professional really would."; }
+  if(t){ t.title = "Prioritization, Cold-Calling & Email Outreach"; t.desc = "Sort a real Monday's tasks with the time-management tools and push back on an impossible deadline, then log a round of cold calls, draft a lead-generation plan, handle a live intake call and run an email outreach sequence against a prospect who replies — or doesn't."; }
 })();
 
 /* ---------- 7. Inbox Triage + Inbox Zero, one Gmail-style inbox (Day 2 lab) ----------
@@ -2021,12 +2178,12 @@ const SOP_LAB_ACTIVITIES = {
   dossier1:["Client Dossier","Preference Trackers","ACT Email","Gatekeeping Practice"],
   forcemultiplier2:["Anticipate the Real Need","Prompt Engineering","The Full Scenario","Inbox Triage"],
   calendar:["Calendar Conflict Resolver","Daily Briefing Prompt","Proactive EA Tasks","Travel Management"],
-  coldcalling4:["Cold-Calling Log","Lead Generation Practice","Live Intake Call Simulator","Email Outreach Simulator"],
+  coldcalling4:["Prioritize the Day","Cold-Calling Log","Lead Generation Practice","Live Intake Call Simulator","Email Outreach Simulator"],
   insurance5:["Classify the Risk","Match the Strategy","Home Binder","Crisis Roleplay"],
   projectcompliance6:["Compliance Risk","Operational Warning Signs","Recovery Memo","Crisis Roleplay","Compliance Audit Simulation"],
-  financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Attention to Detail Test"],
+  financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Invoice Follow-Up","Attention to Detail Test"],
   accessincident8:["Least-Privilege Access Audit","Verify Before You Disclose","Contain the Leak"],
-  compliance9:["CLE Compliance Dashboard","Event Follow-Up","Negative Review Response","Awards Tracker","Crisis Roleplay"],
+  compliance9:["Event Invite & Registration Form","Event Follow-Up","Meeting Notes & Action Items","CLE Compliance Dashboard","Negative Review Response","Awards Tracker","Crisis Roleplay"],
   socialmedia10:["Engagement Rate","Version Matching","Campaign Math","Brand Kit","Marketing Plan"]
 };
 (function(){ const s = document.createElement("style"); s.id = "eapa-sop-flow"; s.textContent = `
@@ -2457,6 +2614,109 @@ function bfExportJson(k){
   toast(`Full backup of ${folderLabel(k)} downloaded.`);
 }
 Object.assign(window, {bfSearch, bfRedraw, bfExportCsv, bfExportJson});
+
+/* ================= Dashboard day cards: clean cards, topics in a pop-up card =================
+   A day card shows its day and title, Start and short buttons (as in the Foundational course). Its topics
+   open in a pop-up card from "☰ Topics" (showDayTopics), grouped by section. */
+(function(){
+  if(typeof moduleCard !== "function" || moduleCard.__clean) return;
+  const __card = moduleCard;
+  moduleCard = function(d){
+    const html = __card(d), t = document.createElement("template"); t.innerHTML = html.trim();
+    const card = t.content.firstElementChild; if(!card) return html;
+    card.querySelectorAll(".module-icon, .module-topic-list, .module-more").forEach(n=>n.remove());
+    const n = (d.lessons||[]).length, start = card.querySelector(".module-start-btn");
+    if(n && start) start.insertAdjacentHTML("afterend", `<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${n}</span></button>`);
+    card.classList.add("mc-clean");
+    return card.outerHTML;
+  };
+  moduleCard.__clean = true;
+  const st = document.createElement("style"); st.id = "clean-day-cards"; st.textContent = `
+.module-card.mc-clean .module-body{flex:1 1 auto;min-height:12px;padding:10px 16px 4px;}
+.module-card.mc-clean .module-body:empty{padding:0;}
+.module-card.mc-clean .module-topics-btn span{color:var(--ink-soft);font-weight:700;margin-left:2px;}
+.topics-modal{overflow-y:auto;}
+.topics-modal-head{position:sticky;top:0;z-index:1;flex-shrink:0;}
+.topics-modal-foot{position:sticky;bottom:0;flex-shrink:0;}
+.topics-modal-sec{padding:14px 22px 2px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-deep);}
+.topics-modal-list{flex:none;overflow:visible;padding:4px 22px 6px 42px;}
+.topics-modal-sec ~ .topics-modal-list{padding-top:2px;}
+.topics-modal-list li{list-style:disc;}
+.topics-modal-list li::marker{color:var(--orange);}
+.topics-modal-list li:last-child{border-bottom:none;}
+`; document.head.appendChild(st);
+})();
+
+/* ================= Bullet lists on a slide: every bullet starts on the same line =================
+   The list sits centred as a block, and its items are left-aligned with the bullet hanging on the left, so
+   the bullets line up one under the other (they used to follow each centred line). */
+(function(){
+  const L = ".lesson-stage #lessonSlideWrap ul:not([class]), .lesson-stage #lessonSlideWrap .lesson-card ul, .lesson-stage #lessonSlideWrap .meet-client-card ul";
+  const LI = ".lesson-stage #lessonSlideWrap .lesson-card ul > li, .lesson-stage #lessonSlideWrap .meet-client-card ul > li";
+  const B = ".lesson-stage #lessonSlideWrap .lesson-card ul > li::before, .lesson-stage #lessonSlideWrap .meet-client-card ul > li::before";
+  const st = document.createElement("style"); st.id = "slide-bullets"; st.textContent = `
+${L}{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;text-align:left;}
+.lesson-stage #lessonSlideWrap ul:not([class]) > li{text-align:left;}
+${LI}{text-align:left;padding-left:22px;position:relative;}
+${B}{position:absolute;left:1px;top:.6em;margin:0;}
+.lesson-stage #lessonSlideWrap .meet-client-card ul{list-style:disc;padding-left:22px;}
+.lesson-stage #lessonSlideWrap .meet-client-card ul > li{padding-left:4px;}
+.lesson-stage #lessonSlideWrap .meet-client-card ul > li::marker{color:var(--orange);}
+`; document.head.appendChild(st);
+})();
+
+/* ================= The ☰ Topics pop-up fits on one screen =================
+   A long list gets a wider card with its sections side by side in columns; if it still doesn't fit the
+   window, the type steps down a little, so nothing in the card scrolls. (fitTopicsModal runs on each
+   topics card as it opens, and again on resize.) */
+function fitTopicsModal(overlay){
+  const modal = overlay && overlay.querySelector(".topics-modal"); if(!modal) return;
+  let cols = modal.querySelector(".topics-cols");
+  if(!cols){
+    const head = modal.querySelector(".topics-modal-head"), foot = modal.querySelector(".topics-modal-foot");
+    cols = document.createElement("div"); cols.className = "topics-cols";
+    let group = null;
+    [...modal.children].filter(n=>n !== head && n !== foot).forEach(n=>{
+      if(n.classList.contains("topics-modal-sec")){ group = document.createElement("div"); group.className = "tm-group"; cols.appendChild(group); group.appendChild(n); }
+      else if(group && n.classList.contains("topics-modal-list")){ group.appendChild(n); group = null; }
+      else { cols.appendChild(n); group = null; }
+    });
+    if(foot) modal.insertBefore(cols, foot); else modal.appendChild(cols);
+  }
+  const head = modal.querySelector(".topics-modal-head"), foot = modal.querySelector(".topics-modal-foot");
+  let fs = 13.5; cols.style.fontSize = "";
+  const fit = ()=>{
+    // the room the list has: the window's height, less the card's title and buttons
+    const room = Math.min(window.innerHeight*0.92, 900) - (head ? head.offsetHeight : 0) - (foot ? foot.offsetHeight : 0);
+    cols.style.height = "";
+    if(cols.scrollHeight > room) cols.style.height = Math.floor(room) + "px";   // columns fill this height, then overflow sideways
+    return cols.scrollHeight <= cols.clientHeight + 1 && cols.scrollWidth <= cols.clientWidth + 1;
+  };
+  // one column while the list fits; a wider card with columns when it doesn't; smaller type as a last resort
+  modal.classList.remove("tm-wide");
+  if(!fit()) modal.classList.add("tm-wide");
+  while(!fit() && fs > 9.5){ fs -= 0.5; cols.style.fontSize = fs + "px"; }
+}
+window.fitTopicsModal = fitTopicsModal;
+(function(){
+  if(typeof showDayTopics === "function" && !showDayTopics.__fit){
+    const __show = showDayTopics;
+    showDayTopics = function(id){ const r = __show(id); fitTopicsModal(document.querySelector(".overlay.topics-overlay:last-of-type")); return r; };
+    showDayTopics.__fit = true; window.showDayTopics = showDayTopics;
+  }
+  window.addEventListener("resize", ()=>{ const o = document.querySelector(".overlay.topics-overlay"); if(o) fitTopicsModal(o); });
+  const st = document.createElement("style"); st.id = "topics-fit"; st.textContent = `
+.overlay .card.topics-modal{max-height:min(92vh,900px);overflow:hidden;}
+.overlay .card.topics-modal.tm-wide{width:min(1100px,94vw);max-width:none;}
+.topics-cols{flex:1 1 auto;min-height:0;overflow:hidden;padding:14px 24px 10px;font-size:13.5px;}
+.tm-wide .topics-cols{column-width:240px;column-gap:28px;}
+.topics-cols .tm-group{break-inside:avoid;margin:0 0 10px;}
+.topics-cols .topics-modal-sec{padding:0 0 3px;margin:0;font-size:.82em;}
+.topics-cols .topics-modal-list{padding:0 0 0 18px;margin:0;}
+.topics-cols .topics-modal-list li{font-size:1em;line-height:1.35;padding:3px 0;border-bottom:none;break-inside:avoid;}
+.topics-cols .tm-pages{font-size:.82em;}
+`; document.head.appendChild(st);
+})();
 
 /* if the portal already drew itself before this file loaded, redraw with the updates */
 if(document.querySelector(".topbar")) render();
