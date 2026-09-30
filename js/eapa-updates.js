@@ -66,25 +66,48 @@ window.EAPA_UPDATE_PACK = "z";
    (the numbers, then the Feedback and Ranking cards, in one row on a laptop or desktop). */
 @media(min-width:761px){
   .dash-layout{grid-template-columns:minmax(0,1fr) !important;gap:12px;}
-  .dash-side{padding:10px 12px;}
-  .dash-side-inner{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) repeat(2,minmax(0,1.7fr));gap:10px;align-items:stretch;position:static;}
+  .dash-side{padding:6px 10px;}
+  .dash-side-inner{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) repeat(2,minmax(0,1.7fr));gap:8px;align-items:stretch;position:static;}
   .dash-side-inner > *{margin:0 !important;}
-  .dash-side-inner > .card.stat{grid-column:auto;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;}
-  .dash-side .stat .num{font-size:18px;line-height:1.1;}
-  .dash-side .stat .lbl{font-size:9.5px;letter-spacing:.05em;line-height:1.3;margin-top:3px;}
-  .dash-side .stat .lbl span{font-size:9.5px;text-transform:none;letter-spacing:0;margin-top:2px !important;}
-  .dash-side .tfb-dash, .dash-side .rank-card, .dash-side .cert-dash, .dash-side .comp-card{padding:8px 12px;}
-  .dash-side .tfb-dash .sub, .dash-side .rank-card .sub, .dash-side .comp-card .sub, .dash-side .cert-dash .sub{font-size:10.5px;line-height:1.35;margin:3px 0 6px;}
-  .dash-side .tfb-dash .btn, .dash-side .cert-dash .btn{padding:4px 10px;font-size:11.5px;}
+  .dash-side-inner > .card.stat{grid-column:auto;padding:5px 10px;display:flex;flex-direction:column;justify-content:center;}
+  .dash-side .stat .num{font-size:15px;line-height:1.1;}
+  .dash-side .stat .lbl{font-size:8.5px;letter-spacing:.05em;line-height:1.25;margin-top:2px;}
+  .dash-side .stat .lbl span{font-size:8.5px;text-transform:none;letter-spacing:0;margin-top:2px !important;}
+  .dash-side .tfb-dash, .dash-side .rank-card, .dash-side .cert-dash, .dash-side .comp-card{padding:5px 10px;}
+  .dash-side .tfb-dash .sub, .dash-side .rank-card .sub, .dash-side .comp-card .sub, .dash-side .cert-dash .sub{font-size:10px;line-height:1.3;margin:2px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dash-side .tfb-dash .btn, .dash-side .cert-dash .btn{padding:2px 9px;font-size:10.5px;}
   .dash-side .rank-list{margin:3px 0 0;}
-  .dash-side .rank-list li{padding:2px 6px;font-size:11.5px;}
-  .dash-side .rank-card .num{font-size:15px;}
-  .dash-side .rank-card .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0 0;}
-  .dash-side .tfb-dash .sub{margin:2px 0 4px !important;}
-  .dash-side .tfb-dash-stars{margin-bottom:4px !important;}
-  .dash-side .tfb-dash-stars button{font-size:17px;}
-  .dash-main > .dash-side{margin-top:12px;}
+  .dash-side .rank-list li{padding:1px 6px;font-size:10.5px;}
+  .dash-side .rank-card .num{font-size:13px;}
+  .dash-side .rank-card .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:2px 0 0;}
+  .dash-side .tfb-dash .sub{margin:1px 0 3px !important;}
+  .dash-side .tfb-dash-stars{margin-bottom:2px !important;}
+  .dash-side .tfb-dash-stars button{font-size:14px;}
+  .dash-side .tfb-dash h4, .dash-side .rank-card h4, .dash-side .comp-card h4, .dash-side .cert-dash h4, .dash-side .card h3{font-size:9.5px;margin:0;}
+  .dash-main > .dash-side{margin-top:10px;}
 }
+/* The dashboard fills the screen: the two rows of day cards grow into the height that's left, so there's no
+   empty space under the page (laptops and desktops). */
+@media(min-width:1001px){
+  main.main-dash{display:flex;flex-direction:column;padding-bottom:14px !important;}
+  main.main-dash > .dash-layout{flex:1 1 auto;display:flex !important;flex-direction:column;}
+  main.main-dash .dash-main{flex:1 1 auto;display:flex;flex-direction:column;}
+  main.main-dash .module-grid{flex:1 1 0;grid-auto-rows:1fr;align-items:stretch;}
+  .dash-main .module-card.mc-clean .module-head{padding:10px 10px;min-height:58px;justify-content:center;}
+  .dash-main .module-card.mc-clean .mh-day{font-size:11px;}
+  .dash-main .module-card.mc-clean .mh-title{font-size:14px;line-height:1.25;}
+  .dash-main .module-card.mc-clean .module-body{flex:1 1 0;min-height:0;overflow:hidden;container-type:size;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:8px 16px 6px;}
+  .dash-main .module-card.mc-clean .module-icon{font-size:30px;line-height:1;margin:0;}
+  .dash-main .module-card.mc-clean .module-start-btn{margin:0 14px 8px;width:calc(100% - 28px);padding:10px;font-size:15px;}
+  .dash-main .module-card.mc-clean .module-finish-btn{margin:0 14px 8px;width:calc(100% - 28px);padding:6px;font-size:12.5px;}
+  .dash-main .module-card.mc-clean > :last-child{margin-bottom:10px;}
+  body:has(main.main-dash) .footer-note{padding:6px 24px 8px;}
+}
+/* the middle of a day card shows as much as fits: icon and theme, then the icon alone (smaller), then nothing */
+@container (max-height:96px){ .module-card.mc-clean .module-theme{display:none;} }
+@container (max-height:40px){ .module-card.mc-clean .module-icon{font-size:20px;} }
+@container (max-height:26px){ .module-card.mc-clean .module-icon{display:none;} }
+.module-theme{font-size:12.5px;color:var(--ink-soft);line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 @media(min-width:761px) and (max-width:1100px){
   .dash-side-inner{grid-template-columns:repeat(4,minmax(0,1fr));}
   .dash-side-inner > .tfb-dash, .dash-side-inner > .rank-card, .dash-side-inner > .cert-dash, .dash-side-inner > .comp-card{grid-column:span 2;}
@@ -2636,7 +2659,9 @@ Object.assign(window, {bfSearch, bfRedraw, bfExportCsv, bfExportJson});
   moduleCard = function(d){
     const html = __card(d), t = document.createElement("template"); t.innerHTML = html.trim();
     const card = t.content.firstElementChild; if(!card) return html;
-    card.querySelectorAll(".module-icon, .module-topic-list, .module-more").forEach(n=>n.remove());
+    card.querySelectorAll(".module-topic-list, .module-more").forEach(n=>n.remove());
+    const body = card.querySelector(".module-body");   // the day's icon and what it covers fill the card
+    if(body && d.theme) body.insertAdjacentHTML("beforeend", `<div class="module-theme">${esc(d.theme)}</div>`);
     const n = (d.lessons||[]).length, start = card.querySelector(".module-start-btn");
     if(n && start) start.insertAdjacentHTML("afterend", `<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${n}</span></button>`);
     card.classList.add("mc-clean");
