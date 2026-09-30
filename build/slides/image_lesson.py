@@ -13,7 +13,8 @@ For a deck whose design is the content (Virtual Assistant Essentials): each PDF 
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
 deck's fonts, so nothing reflows (a PPTX rendered without Canva's fonts spills its text out of its boxes).
 Each slide's heading (for the slide list and Presenter view) is the page's largest text; its alt text is
-the page's words. Only a deck's "keep" pages go in the lesson. A deck sent in parts takes each part's PDF in
+the page's words. Its spoken script (data-say, read by ▶ Listen and Audio mode) is the page's text in reading
+order, a sentence per line, with the logo and repeated text left out. Only a deck's "keep" pages go in the lesson. A deck sent in parts takes each part's PDF in
 order: its pages are numbered straight through (Part 2's first page follows Part 1's last).
 Output: the images and build/lessons/lessonNN.js. Run build/build.py afterwards.
 """
@@ -74,7 +75,9 @@ DECKS = {
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
-         "Summaries/demand": "Summaries/Demand"}
+         "Summaries/demand": "Summaries/Demand",
+         "Hipaa": "HIPAA", "Hitech": "HITECH", "Hipaa/hitech": "HIPAA/HITECH", "Iso": "ISO", "Vas": "VAs", "Phi": "PHI",
+         "Lop": "LOP", "Lops": "LOPs", "Pip": "PIP", "Medlor": "MedLOR", "Dol": "DOL", "E-portal": "E-Portal"}
 WIDTH = 1920
 
 def heading(p):
@@ -88,6 +91,46 @@ def heading(p):
         if x[3] not in parts: parts.append(x[3])   # Canva draws some text twice
     t = title(re.sub(r"\s+", " ", " ".join(parts)).upper())
     return " ".join(WORDS.get(w, w) for w in t.split(" "))
+
+def speech(p, h):
+    """The page's text as Listen reads it: its blocks top to bottom, one sentence or item per line."""
+    caps = lambda t: bool(re.search(r"[A-Z]", t)) and t.upper() == t
+    lines, seen, kept = [], set(), []
+    def dup(sp):   # Canva draws some text twice (a shadow or outline copy a few points off): keep one copy
+        t, (x0, y0, x1, y1) = sp["text"].strip(), sp["bbox"]
+        for u, (a0, b0, a1, b1) in kept:
+            if u == t and abs(x0 - a0) < max(6, (y1 - y0) * .6) and abs(y0 - b0) < max(6, (y1 - y0) * .6): return True
+        kept.append((t, sp["bbox"])); return False
+    blocks = sorted((b for b in p.get_text("dict")["blocks"] if b["type"] == 0), key=lambda b: (round(b["bbox"][1]), b["bbox"][0]))
+    for b in blocks:
+        text = "\n".join("".join(sp["text"] for sp in l["spans"] if sp["text"].strip() and not dup(sp)) for l in b["lines"])
+        key = re.sub(r"\W+", "", text).lower()
+        if not key or key in seen or key == "legalsupporthelp": continue   # a whole block drawn twice
+        seen.add(key)
+        cur = ""
+        for l in (x.strip() for x in text.split("\n")):
+            if not l: continue
+            if cur and not re.search(r"[.!?:;]$", cur) and (l[:1].islower() or cur.endswith((",", "-", "–", "&"))
+                                                                or caps(cur) and caps(l)): cur += ("" if re.search(r"\w-$", cur) else " ") + l   # a wrapped line, or an ALL-CAPS title over two lines
+            else:
+                if cur: lines.append(cur)
+                cur = l
+        if cur: lines.append(cur)
+    joined = []
+    for l in lines:
+        if joined and not re.search(r"[.!?:;]$", joined[-1]) and l[:1].islower(): joined[-1] += " " + l
+        else: joined.append(l)
+    out = []
+    for l in joined:
+        if re.search(r"[A-Za-z]", l) and l.upper() == l: l = " ".join(WORDS.get(w, w) for w in title(re.sub(r"\s+", " ", l)).split(" "))
+        if not out or out[-1].lower() != l.lower(): out.append(l)
+    norm = lambda t: re.sub(r"[^a-z0-9]", "", t.lower())
+    acc = ""
+    for k, l in enumerate(out):   # a title set in pieces (THE / MEDICAL RECORDS SPECIALIST / ROLE) reads as the whole title
+        acc += norm(l)
+        if not norm(h).startswith(acc): break
+        if acc == norm(h): out = [h] + out[k + 1:]; break
+    return "\n".join(out) or h
 
 def main(name, *pdfs):
     D = DECKS[name]
@@ -104,7 +147,7 @@ def main(name, *pdfs):
         Image.open(io.BytesIO(pix.tobytes("png"))).save(os.path.join(out_dir, f), "WEBP", quality=82, method=6)
         h = D["headings"].get(i) or heading(p) or f"Slide {i}"
         words = re.sub(r"\s+", " ", p.get_text()).strip()[:900] or h   # a page drawn as a picture has no words
-        img = (f'<figure class="cs-page"><img src="/ft/{name}/slides/{f}" alt="{html.escape(words)}" '
+        img = (f'<figure class="cs-page" data-say="{html.escape(speech(p, h))}"><img src="/ft/{name}/slides/{f}" alt="{html.escape(words)}" '
                f'width="{pix.width}" height="{pix.height}" loading="{"eager" if i <= 2 else "lazy"}"></figure>')
         sections.append({"id": f"v{i:03d}", "h": h, "html": f'<div class="cs cs-pages">{img}</div>'})
     js = (f"// Slides: {D['about']}, one image per page, rendered from its PDF by build/slides/image_lesson.py.\n"
