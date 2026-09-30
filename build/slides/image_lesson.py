@@ -2,7 +2,8 @@
 """Builds a lesson whose slides are its deck's own pages, rendered from the Canva PDF.
 
     pip install pymupdf pillow
-    python3 build/slides/image_lesson.py vae "<deck.pdf>"
+    python3 build/slides/image_lesson.py vae "<deck.pdf>"     (Lesson 1)
+    python3 build/slides/image_lesson.py piw "<deck.pdf>"     (Lesson 3)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
@@ -33,6 +34,12 @@ DECKS = {
             # (21-24), Overview of Tasks and Roles (25-35), Types of Law Firms (36-39), Tips to Stand Out as a
             # Legal VA (134-137) and the Thank You page (138)
             "keep": {*range(1, 5), *range(20, 40), *range(134, 139)}},
+    "piw": {"id": 3, "var": "DAY3", "file": "lesson03.js", "title": "Personal Injury Process Flow",
+            "video": "https://drive.google.com/file/d/1hRbuwwsTpccy0DCy7Rn90HZy_h8t4tbo/view",
+            "pdf": "Personal_Injury_Workflow.pdf (sent in chat)",
+            "about": 'the "Personal Injury Workflow" deck (Canva design DAHWU4bkV0I), all 25 pages',
+            # each page's own title (its largest text is the role label, e.g. "Role: Intake Specialist")
+            "headings": {2: 'Introduction', 3: 'Personal Injury Case Stages', 4: 'Legal Intake', 5: 'Legal Intake and Consultation', 6: 'Investigation', 7: 'Opening Claims', 8: 'Claims Set Up and Liability Determination', 9: 'Policy Limits and Coverages', 10: 'Client Communication Specialist', 11: 'Treatment', 12: 'Collecting Medical Bills and Records', 13: 'Collecting Medical Bills and Records', 14: 'Demands', 15: 'Demands', 16: 'Demands', 17: 'Settlement', 18: 'Negotiations', 19: 'Disbursement', 20: 'Litigation', 21: 'Receptionist', 22: 'Calendar Management', 23: 'Appointment Setter', 24: 'Scheduler', 25: 'Thank You'}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
