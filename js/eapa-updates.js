@@ -69,6 +69,23 @@ window.EAPA_UPDATE_PACK = "z";
   .lesson-stage #lessonSlideWrap{padding-left:24px;padding-right:24px;}
   .lesson-stage #lessonSlideWrap > *, .lesson-stage:fullscreen #lessonSlideWrap > *{max-width:1600px;}
 }
+/* Lesson page: the slide and its Previous / Next bar fit on one screen. On a desktop the lesson's controls
+   (back links, title, Listen, Objectives, Present full screen, Presenter view) sit in a column to the right of
+   the slide, and fitSlideFrame() sizes the slide to the height that's left. (Foundational's deck-page lessons,
+   body.ft-fit, have their own layout in js/ft-slides.js.) */
+@media(min-width:1000px){
+  body:not(.ft-fit) main:has(> #lessonStage){display:grid;grid-template-columns:minmax(0,1fr) 200px;column-gap:16px;align-items:start;padding-top:12px;}
+  body:not(.ft-fit) main:has(> #lessonStage) > *{grid-column:2;margin:0 0 10px;}
+  body:not(.ft-fit) main:has(> #lessonStage) > #lessonStage{grid-column:1;grid-row:1 / span 40;margin:0;}
+  body:not(.ft-fit) main:has(> #lessonStage) > #navBackSlot:empty{display:none;}
+  body:not(.ft-fit) main:has(> #lessonStage) .day-head-compact{display:flex;flex-direction:column;gap:4px;border:0;padding:0;}
+  body:not(.ft-fit) main:has(> #lessonStage) .day-head-compact .dhc-title{white-space:normal;font-size:17px;line-height:1.3;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top > *, body:not(.ft-fit) main:has(> #lessonStage) .ls-top .btn{width:100%;margin:0 !important;justify-content:center;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .audio-bar{display:grid;grid-template-columns:1fr auto;gap:6px;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .audio-bar #audioModeBtn{grid-column:1 / -1;}
+  body:not(.ft-fit) main:has(> #lessonStage) .ls-top .or-tip{font-size:12px;line-height:1.4;order:9;white-space:normal;}
+}
 /* ================= SOP Reference: readable reference + live Present mode ================= */
 .sopx-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
 .sopx-days{display:flex;gap:6px;flex-wrap:wrap;}
@@ -287,7 +304,7 @@ Narrator.slideText = function(){
    rebalance so every page carries a similar amount (no crammed page + near-empty
    page). Next / Previous (and the arrow keys) step through pages before slides.
    Headings (kicker, title, section labels) repeat on every page of their block. */
-const SLIDE_PG_BLOCKS = ".card, .lesson-card, .meet-client-card, .qcheck-card, .fp-section, .fp-body, .trainer-checkpoint";
+const SLIDE_PG_BLOCKS = ".card, .lesson-card, .meet-client-card, .qcheck-card, .fp-section, .fp-body, .trainer-checkpoint, .ft-body, .cs, .cs-tablewrap, .cs-tablewrap > table, .cs-tablewrap > table > tbody, .svg-diagram-card";
 const SLIDE_PG_HEADS = "h2, h3, h4, .topic-separator, .fp-label, .mc-tag, .tc-tag, .qc-tag, .discussion-tag, .vis-label";
 let __slidePg = null;
 function collectSlideUnits(root, bigH){
@@ -296,11 +313,14 @@ function collectSlideUnits(root, bigH){
     for(const c of el.children){
       if(c.matches(SLIDE_PG_HEADS) || c.classList.contains("pg-badge")) continue;
       if(c.matches(SLIDE_PG_BLOCKS)){ walk(c); continue; }
+      // a tall wrapper around one thing (e.g. a diagram's frame): look inside it for places to break
+      if(c.children.length === 1 && c.getBoundingClientRect().height > bigH && !c.matches("svg, img, picture, figure, table") &&
+         [...c.childNodes].every(n=>n.nodeType !== 3 || !n.textContent.trim())){ walk(c); continue; }
       // lists and card grids may break between items — but only when they're tall;
       // short ones (e.g. a row of 3 step cards) always stay together
       if(c.children.length > 1 && c.getBoundingClientRect().height > bigH){
         const cs = getComputedStyle(c);
-        if(c.matches("ul, ol") || cs.display.includes("grid") || (cs.display.includes("flex") && (cs.flexWrap==="wrap" || cs.flexDirection==="column"))){ units.push(...c.children); continue; }
+        if(c.matches("ul, ol") || cs.display.includes("grid") || cs.display === "block" || (cs.display.includes("flex") && (cs.flexWrap==="wrap" || cs.flexDirection==="column"))){ units.push(...c.children); continue; }
       }
       units.push(c);
     }
@@ -308,7 +328,49 @@ function collectSlideUnits(root, bigH){
   walk(root);
   return units.filter(u=>u.getClientRects().length);
 }
+// Every slide fits on one screen: the frame is sized to the room left on the lesson page (fitSlideFrame),
+// what doesn't fit continues on the next page (paginateSlideUnits), and a block too big for one page is
+// scaled down a little (fitSlideZoom), so the frame never scrolls.
 function paginateLessonSlide(){
+  const wrap = document.getElementById("lessonSlideWrap");
+  fitSlideFrame(wrap);
+  paginateSlideUnits();
+  fitSlideZoom(wrap);
+  // something above the slide can still change height once the page is drawn (e.g. the top bar gains a
+  // button and wraps): fit again if the slide has moved
+  if(wrap && wrap.dataset.fitTop) requestAnimationFrame(()=>{
+    if(wrap.isConnected && Math.abs(wrap.getBoundingClientRect().top + window.scrollY - Number(wrap.dataset.fitTop)) > 1) paginateLessonSlide();
+  });
+}
+function fitSlideFrame(wrap){
+  if(!wrap) return;
+  slideZoomParts(wrap).forEach(n=>n.style.zoom = "");
+  if(document.body.classList.contains("ft-fit")) return;   // Foundational's deck-page lessons size themselves (fitPages in js/ft-slides.js)
+  const stage = wrap.closest(".lesson-stage");
+  // full screen and the shared slides window already fill their window; phones scroll
+  if(!stage || stage.id !== "lessonStage" || wrap.closest("#audienceRoot") || document.fullscreenElement || window.innerWidth <= 760){ wrap.style.height = ""; delete wrap.dataset.fitTop; return; }
+  const r = wrap.getBoundingClientRect(), below = stage.getBoundingClientRect().bottom - r.bottom;
+  wrap.dataset.fitTop = String(r.top + window.scrollY);
+  // the top bar can gain a button (and wrap to a second row) after the page is drawn: fit again when it does
+  const bar = document.querySelector(".topbar");
+  if(bar && window.__fitBar !== bar && typeof ResizeObserver === "function"){
+    if(window.__fitBarRO) window.__fitBarRO.disconnect();
+    let h0 = bar.offsetHeight; window.__fitBar = bar;
+    window.__fitBarRO = new ResizeObserver(()=>{ const h = bar.offsetHeight; if(h !== h0){ h0 = h; if(state.view==="day" && document.getElementById("lessonSlideWrap")) paginateLessonSlide(); } });   // before the next paint: no jump
+    window.__fitBarRO.observe(bar);
+  }
+  wrap.style.height = Math.max(320, Math.floor(window.innerHeight - (r.top + window.scrollY) - below - 12)) + "px";
+}
+function slideZoomParts(wrap){ return [...wrap.children].filter(n=>!n.classList.contains("pg-badge")); }
+function fitSlideZoom(wrap){
+  if(!wrap || !wrap.isConnected || window.innerWidth <= 760 || wrap.querySelector(".cs-page")) return;   // deck pages size themselves
+  // a picture that hasn't loaded yet has no height: lay the slide out again once it has
+  wrap.querySelectorAll("img").forEach(img=>{ if(!img.complete && !img.dataset.fitWait){ img.dataset.fitWait = "1"; img.addEventListener("load", repaginateSoon, {once:true}); } });
+  const parts = slideZoomParts(wrap); let z = 1;
+  parts.forEach(n=>n.style.zoom = "");
+  while(wrap.scrollHeight > wrap.clientHeight + 2 && z > 0.6){ z = Math.round((z - 0.05)*100)/100; parts.forEach(n=>n.style.zoom = String(z)); }
+}
+function paginateSlideUnits(){
   const wrap = document.getElementById("lessonSlideWrap");
   __slidePg = null; state.slidePages = 1;
   if(!wrap) return;
@@ -375,6 +437,7 @@ function applySlidePage(){
   pg.wrap.querySelectorAll(".pg-badge").forEach(n=>n.remove());
   pg.wrap.insertAdjacentHTML("beforeend", `<div class="pg-badge">PAGE ${p+1} / ${pg.pages.length}${p < pg.pages.length-1 ? " · CONTINUES →" : ""}</div>`);
   pg.wrap.scrollTop = 0;
+  fitSlideZoom(pg.wrap);
   updateSlidePageUi();
 }
 function updateSlidePageUi(){
