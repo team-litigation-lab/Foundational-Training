@@ -6,7 +6,7 @@
    Portal's 🕘 Attendance page (attendance.html) reads and writes the
    same records, for every program.
    Trainers take each day's attendance, batch by batch:
-     • the date is today's (Pacific time, the firm's time zone) and the
+     • the date is today's (Eastern time: EST, or EDT in summer) and the
        batch's Day N is counted from the days already logged for it; both
        can be changed (📅 date picker, the Day box);
      • every approved, active trainee of the batch is listed with their
@@ -16,6 +16,10 @@
        sheet's dropdown and colors) and Notes;
      • 📊 Summary shows each trainee's count of every status over all the
        batch's logged days; ⬇ CSV downloads a day or a batch's history.
+   Automatic Time In: a trainee's first visit each day (Eastern time) records
+   their Time In on the Worker (/api/checkin → checkin:<YYYY-MM-DD>:<id>, the
+   trainee's own key, kept 40 days). The tab shows it (marked "auto") until a
+   trainer sets one, and a row a trainer tags keeps it. Trainers tag the status.
    Stored per batch per day: attendance:<batch key>:<YYYY-MM-DD> =
      {v, batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at}}, updatedAt}
    (the batch key is slugPart(batch), "_none" for no batch; each course's
@@ -26,10 +30,10 @@
    ============================================================ */
 (function(){
 "use strict";
-// Training days follow the firm's time zone.
-const TZ = "America/Los_Angeles";
+// Attendance runs on Eastern time (America/New_York: EST, or EDT in summer).
+const TZ = "America/New_York";
 const TR = {
-  ptDate(d){
+  etDate(d){
     const p = new Intl.DateTimeFormat("en-CA", {timeZone:TZ, year:"numeric", month:"2-digit", day:"2-digit"}).formatToParts(d || new Date());
     const g = t => (p.find(x => x.type === t) || {}).value;
     return `${g("year")}-${g("month")}-${g("day")}`;
@@ -84,13 +88,13 @@ function defaultTraining(b){
 // A record started on the Training Portal has no training yet: it shows the batch's default.
 const trainingOf = (r, b) => r.training || defaultTraining(b);
 
-const AT = {date:null, keys:null, recs:{}, loading:false, seq:0, closed:{}, sum:{}, dirty:{}, timers:{}, saving:0, failed:false};
+const AT = {date:null, keys:null, recs:{}, ci:{}, loading:false, seq:0, closed:{}, sum:{}, dirty:{}, timers:{}, saving:0, failed:false};
 const slugB = b => b === NO_BATCH ? "_none" : (slugPart(b) || "_none");     // "_" is never in a slug, so no batch is named that
 const keyOf = (b, date) => `attendance:${slugB(b)}:${date}`;
-const today = () => TR.ptDate();
+const today = () => TR.etDate();
 function shiftDay(iso, n){ const d = new Date(iso + "T12:00:00Z"); do d.setUTCDate(d.getUTCDate() + n); while(!TR.isWeekday(d.toISOString().slice(0, 10))); return d.toISOString().slice(0, 10); }
 function longDate(iso){ return new Date(iso + "T12:00:00Z").toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric", year:"numeric", timeZone:"UTC"}); }
-function nowPT(){ return new Intl.DateTimeFormat("en-GB", {timeZone:TZ, hour:"2-digit", minute:"2-digit", hourCycle:"h23"}).format(new Date()); }
+function nowET(){ return new Intl.DateTimeFormat("en-GB", {timeZone:TZ, hour:"2-digit", minute:"2-digit", hourCycle:"h23"}).format(new Date()); }
 function time12(v){
   const m = /^(\d{1,2}):(\d{2})/.exec(String(v || "")); if(!m) return "";
   const h = +m[1]; return `${h % 12 || 12}:${m[2]} ${h < 12 ? "AM" : "PM"}`;
@@ -118,6 +122,8 @@ function rec(b){
   return AT.recs[k] || (AT.recs[k] = {v:1, batch:b === NO_BATCH ? "" : b, date:AT.date, day:autoDay(b, AT.date), training:defaultTraining(b), rows:{}});
 }
 const rowOf = (b, id) => rec(b).rows[id] || {};
+// A trainee's automatic Time In for the day on screen ("" if none).
+const autoIn = id => ((AT.ci[AT.date] || {})[id] || {}).timeIn || "";
 
 async function load(date){
   const seq = ++AT.seq;                            // a later load (another date) wins
@@ -128,6 +134,10 @@ async function load(date){
     const want = batches().map(x => keyOf(x.b, date)).filter(k => AT.keys.includes(k) && !AT.dirty[k]);
     const got = await Promise.all(want.map(k => sharedGet(k).catch(() => null)));
     want.forEach((k, i) => { if(got[i]) AT.recs[k] = Object.assign({rows:{}}, got[i]); });
+    const ciKeys = ((await sharedList("checkin:" + date + ":")) || []).map(k => typeof k === "string" ? k : k.key);
+    const ci = await Promise.all(ciKeys.map(k => sharedGet(k).catch(() => null))), mine = {};
+    ciKeys.forEach((k, i) => { if(ci[i] && ci[i].timeIn) mine[k.slice(("checkin:" + date + ":").length)] = ci[i]; });
+    AT.ci[date] = mine;
   }catch(err){ AT.keys = AT.keys || []; }
   if(seq !== AT.seq) return;
   AT.loading = false;
@@ -203,13 +213,13 @@ function trainingSelect(val, onchange, extra, cls){
 function batchSection(x){
   const {b, people} = x, r = rec(b), closed = !!AT.closed[b], label = b === NO_BATCH ? "No batch set" : "Batch " + b;
   const rows = people.map((p, i) => {
-    const row = rowOf(b, p.id);
+    const row = rowOf(b, p.id), auto = row.timeIn ? "" : autoIn(p.id);
     return `<tr>
       <td class="att-n">${i + 1}</td>
       <td><b>${e(p.name)}</b></td>
       <td title="${row.training ? "Set for this trainee" : "The batch’s training"}">${trainingSelect(row.training || "", `LSHAttend.field(${js(b)},${js(p.id)},'training',this.value)`, `<option value="" ${row.training ? "" : "selected"}>${e(trainingOf(r, b))}</option>`, row.training ? " own" : "")}</td>
-      <td class="att-time"><input type="time" value="${e(row.timeIn || "")}" onchange="LSHAttend.field(${js(b)},${js(p.id)},'timeIn',this.value)"><button type="button" class="att-now" title="Now (Pacific time)" onclick="LSHAttend.now(${js(b)},${js(p.id)},'timeIn',this)">⏱</button></td>
-      <td class="att-time"><input type="time" value="${e(row.timeOut || "")}" onchange="LSHAttend.field(${js(b)},${js(p.id)},'timeOut',this.value)"><button type="button" class="att-now" title="Now (Pacific time)" onclick="LSHAttend.now(${js(b)},${js(p.id)},'timeOut',this)">⏱</button></td>
+      <td class="att-time"><input type="time" class="${auto ? "auto" : ""}" title="${auto ? "Recorded automatically when they opened the course" : ""}" value="${e(row.timeIn || auto)}" onchange="LSHAttend.field(${js(b)},${js(p.id)},'timeIn',this.value)"><button type="button" class="att-now" title="Now (Eastern time)" onclick="LSHAttend.now(${js(b)},${js(p.id)},'timeIn',this)">⏱</button>${auto ? `<span class="att-auto">auto</span>` : ""}</td>
+      <td class="att-time"><input type="time" value="${e(row.timeOut || "")}" onchange="LSHAttend.field(${js(b)},${js(p.id)},'timeOut',this.value)"><button type="button" class="att-now" title="Now (Eastern time)" onclick="LSHAttend.now(${js(b)},${js(p.id)},'timeOut',this)">⏱</button></td>
       <td>${statusSelect(b, p.id, row.status)}</td>
       <td><input type="text" class="att-note" maxlength="300" placeholder="Notes" value="${e(row.note || "")}" oninput="LSHAttend.field(${js(b)},${js(p.id)},'note',this.value)"></td>
     </tr>`;
@@ -229,7 +239,7 @@ function batchSection(x){
       <button type="button" class="btn btn-ghost btn-sm" onclick="LSHAttend.summary(${js(b)})">📊 ${AT.sum[b] ? "Hide summary" : "Summary"}</button>
     </div>
     <div class="att-scroll"><table class="att-table">
-      <thead><tr><th>#</th><th>Name</th><th>Training</th><th>Time In (PT)</th><th>Time Out (PT)</th><th>Status</th><th>Notes</th></tr></thead>
+      <thead><tr><th>#</th><th>Name</th><th>Training</th><th>Time In (EST)</th><th>Time Out (EST)</th><th>Status</th><th>Notes</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
     ${AT.sum[b] ? renderSummary(b, people) : ""}`}
   </section>`;
@@ -275,13 +285,13 @@ function renderSummary(b, people){
 }
 
 /* ---------- CSV (opens in Excel and Google Sheets) ---------- */
-const CSV_HEAD = ["Date", "Day", "Batch", "Name", "Training", "Time In (PT)", "Time Out (PT)", "Status", "Notes"];
+const CSV_HEAD = ["Date", "Day", "Batch", "Name", "Training", "Time In (EST)", "Time Out (EST)", "Status", "Notes"];
 function csvRows(r, people, b){
   const ids = people ? people.map(p => p.id) : [];
   Object.keys(r.rows || {}).forEach(id => { if(!ids.includes(id)) ids.push(id); });
   const nameOf = id => ((people || []).find(p => p.id === id) || {}).name || ((r.rows || {})[id] || {}).name || id;
   return ids.map(id => { const row = (r.rows || {})[id] || {};
-    return [TR.fmtDate(r.date), r.day || "", r.batch || "", nameOf(id), row.training || r.training || (b ? defaultTraining(b) : ""), time12(row.timeIn), time12(row.timeOut), row.status || "", row.note || ""]; });
+    return [TR.fmtDate(r.date), r.day || "", r.batch || "", nameOf(id), row.training || r.training || (b ? defaultTraining(b) : ""), time12(row.timeIn || (r.date === AT.date ? autoIn(id) : "")), time12(row.timeOut), row.status || "", row.note || ""]; });
 }
 function download(name, rows){
   const q = v => { const s = String(v == null ? "" : v); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -301,7 +311,7 @@ function renderAdminAttendance(){
   return `<div class="card att-admin">
     <div class="att-top">
       <div><h3>🕘 Attendance</h3>
-        <p class="att-muted">Each batch’s attendance for the day. The date is today’s (Pacific time) and Day N counts the batch’s logged days; change either if needed. Tag each trainee’s status and time in; it saves as you go. Trainees don’t see this page.</p></div>
+        <p class="att-muted">Each batch’s attendance for the day. The date is today’s (Eastern time) and Day N counts the batch’s logged days; change either if needed. Each trainee’s Time In fills in on its own when they open the course (marked “auto”); tag their status, and change anything if needed. It saves as you go. Trainees don’t see this page.</p></div>
       <span id="attSave" class="att-save${AT.failed ? " bad" : ""}">${AT.failed ? "⚠ Not saved" : ""}</span>
     </div>
     <div class="att-datebar">
@@ -323,7 +333,7 @@ function pick(b){ return batches().find(x => x.b === b) || {b, people:[]}; }
 function paintCounts(b){ const el = document.getElementById("attCount-" + slugB(b)); if(el) el.innerHTML = counts(b, pick(b).people); }
 function setRow(b, id, field, value){
   const r = rec(b), p = pick(b).people.find(x => x.id === id);
-  const row = r.rows[id] || (r.rows[id] = {name:"", training:"", timeIn:"", timeOut:"", status:"", note:""});
+  const row = r.rows[id] || (r.rows[id] = {name:"", training:"", timeIn:autoIn(id), timeOut:"", status:"", note:""});   // a new row keeps the automatic Time In
   row[field] = value;
   row.name = (p && p.name) || row.name || id;
   row.at = new Date().toISOString();
@@ -337,7 +347,7 @@ window.LSHAttend = {
     sel.style.background = s ? s.bg : ""; sel.style.color = s ? s.fg : ""; sel.classList.toggle("empty", !s);
     paintCounts(b);
   },
-  now(b, id, field, btn){ const v = nowPT(), inp = btn.previousElementSibling; if(inp) inp.value = v; setRow(b, id, field, v); },
+  now(b, id, field, btn){ const v = nowET(), inp = btn.previousElementSibling; if(inp) inp.value = v; setRow(b, id, field, v); },
   head(b, field, value){
     const r = rec(b);
     if(field === "day"){ const n = Math.round(+value); if(!(n >= 1)) { keepScroll(render); return; } r.day = n; }
@@ -374,6 +384,42 @@ window.LSHAttend = {
 };
 // Leaving with changes still waiting to save: save them now.
 window.addEventListener("beforeunload", () => { Object.keys(AT.dirty).forEach(k => { clearTimeout(AT.timers[k]); save(k); }); });
+
+/* ---------- 🕘 automatic Time In (trainees) ----------
+   A trainee's first visit each day (Eastern time) records their Time In on the Worker (/api/checkin, which
+   keeps the first one): when the page opens, when they come back to the tab, and on their first click or
+   key press if the page was left open overnight. It sends the training they're on, for the Google Sheet. */
+const CI = {busy:false, wait:0, tapped:0};
+function myTraining(){
+  try{
+    if(typeof ftOpenFor === "function"){
+      const open = ftOpenFor(state.traineeBatch), last = DAYS.filter(d => open.has(d.id)).pop();
+      return last ? lessonName(last) : (window.FT_ORIENTATION ? window.FT_ORIENTATION.title : "");
+    }
+    const p = state.progress || {}, d = DAYS.find(x => !(p[x.id] && p[x.id].done)) || DAYS[DAYS.length - 1];
+    return d ? lessonName(d) : "";
+  }catch(err){ return ""; }
+}
+function checkIn(){
+  if(CI.busy || Date.now() < CI.wait || typeof state === "undefined" || !state.traineeId || state.isAdmin || state.adminPreview) return;
+  if(document.visibilityState !== "visible" || typeof authFetch !== "function") return;
+  const date = today(), mark = "lsh-checkin:" + state.traineeId;
+  try{ if(localStorage.getItem(mark) === date) return; }catch(err){}
+  CI.busy = true;
+  authFetch("/api/checkin", {id:state.traineeId, training:myTraining()})
+    .then(r => r.json()).then(j => {
+      if(j && j.ok){ try{ localStorage.setItem(mark, j.date || date); }catch(err){} }
+      else CI.wait = Date.now() + 10 * 60 * 1000;     // not approved yet: ask again later
+    })
+    .catch(() => { CI.wait = Date.now() + 60 * 1000; })
+    .finally(() => { CI.busy = false; });
+}
+[2000, 6000, 20000].forEach(t => setTimeout(checkIn, t));
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") checkIn(); });
+["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, () => {
+  if(Date.now() - CI.tapped < 60000) return;
+  CI.tapped = Date.now(); checkIn();
+}, {capture:true, passive:true}));
 
 /* ---------- wiring into the engine ---------- */
 const __admin = window.renderAdmin;
@@ -420,7 +466,8 @@ window.renderAdmin = function(){
 .att-table td.att-n{color:var(--ink-soft);font-size:12.5px;width:24px;}
 .att-table select, .att-table input, .att-bbar select{font:inherit;font-size:13.5px;padding:5px 6px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);}
 .att-tr{max-width:230px;} .att-bbar .att-tr{max-width:280px;min-width:0;} .att-tr.own{border-color:var(--orange);background:#FFF8F1;}
-.att-time{white-space:nowrap;} .att-time input{width:128px;}
+.att-time{white-space:nowrap;} .att-time input{width:128px;} .att-time input.auto{border-color:#86efac;background:#f0fdf4;}
+.att-auto{display:inline-block;margin-left:4px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--success);}
 .att-now{font-size:13px;margin-left:2px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;}
 .att-now:hover{background:#F3F5FB;}
 select.att-st{font-weight:700;border-radius:999px;padding:5px 10px;min-width:150px;border-color:transparent;cursor:pointer;}

@@ -134,17 +134,18 @@ Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracke
 Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attendance.js`). Trainees don't see it. It's the same file in every LSH course repo (EA-PA-TRAINING, Case-Management-Training, propertydamageclaimstraining, Foundational-Training); change it in all of them. The LSH Training Portal's admin **🕘 Attendance** page shows and edits the same records, for every program.
 
 - **By batch:** one section per batch (newest first, like the other admin tabs), listing its approved, active trainees. Each section shows its count of every status.
-- **The day:** the date is today's in Pacific time (the program's time zone, as in the Task Tracker). ◀ ▶ step through the training days, and the date picker opens any day. The batch's **Day N** counts its days already logged; the trainer can change it.
+- **The day:** the date is today's in Eastern time (EST, or EDT in summer; attendance only, the Task Tracker keeps Pacific time). ◀ ▶ step through the training days, and the date picker opens any day. The batch's **Day N** counts its days already logged; the trainer can change it.
 - **Each trainee's row:**
   - **Name**, from their trainee record.
   - **Training**: the batch's training for the day. It starts as the batch's latest open lesson (Admin → 📅 Open Lessons), or the orientation when none is open. It can be changed for the batch, or for one trainee (marked in orange). The list is the lessons, after the orientation and the first days that are off the platform (`ATTENDANCE_TRAININGS_BEFORE` in `js/ft-updates.js`).
-  - **Time In / Time Out**, in Pacific time: typed, or ⏱ Now.
+  - **Time In / Time Out**, in Eastern time (EST, or EDT in summer): typed, or ⏱ Now. **Time In fills in on its own:** the first time a trainee opens the course each day, the Worker records it (`/api/checkin`). The tab shows it marked "auto" until a trainer sets one, and it's saved into the day's attendance when a trainer tags that trainee. Trainers always tag the status.
   - **Status**, tagged by the trainer from the attendance sheet's dropdown, in its colors: Present, Late, Late with Notif, Early Out - POC Approved, Undertime - POC Approved, Undertime - No Approval, NCNS, Sick Leave, RL, EOP, Absent with Notif. **✓ Mark the rest Present** tags everyone not yet tagged.
   - **Notes**.
 - **Saving:** each change saves as you go. A save re-reads the day and writes only the rows changed on that screen, so two trainers can take one batch's attendance at the same time.
 - **📊 Summary** (per batch): each trainee's count of every status over all the batch's logged days, with the last 10 days as colored squares.
-- **⬇ CSV**, which opens in Excel or Google Sheets: **This day** (every batch) or **Download all days** (one batch, from its summary). The columns: Date, Day, Batch, Name, Training, Time In (PT), Time Out (PT), Status, Notes.
-- **Storage:** `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for trainees with no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at}}}`. The Worker lets only admins read and write these records. To change the statuses or their colors, edit `STATUSES`.
+- **⬇ CSV**, which opens in Excel or Google Sheets: **This day** (every batch) or **Download all days** (one batch, from its summary). The columns: Date, Day, Batch, Name, Training, Time In (EST), Time Out (EST), Status, Notes.
+- **Google Sheet:** the LSH Training Portal keeps the attendance Google Sheet's **Platform Attendance** tab in step, both ways: everything here (automatic Time Ins included) goes to the sheet every 15 minutes, and edits made in the sheet to Training, Time In, Time Out, Status or Notes come back here straight away. See the Training Portal's README.
+- **Storage:** `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for trainees with no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at, by}}}`. `checkin:<YYYY-MM-DD>:<trainee id>` = `{timeIn, at, name, batch, training}` is the automatic Time In (each trainee's own key, so a room signing in at once never overwrites one another; its KV metadata carries the same for the portal; kept 40 days). The Worker lets only admins read and write these records. To change the statuses or their colors, edit `STATUSES`.
 
 ## Simulators
 

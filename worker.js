@@ -40,7 +40,7 @@ function kvOf(env) {
   if (!raw) return null;
   return {
     get: (k) => raw.get(KV_PREFIX + k),
-    put: (k, v) => raw.put(KV_PREFIX + k, v),
+    put: (k, v, o) => raw.put(KV_PREFIX + k, v, o),
     delete: (k) => raw.delete(KV_PREFIX + k),
     list: async (opts = {}) => {
       const r = await raw.list(Object.assign({}, opts, { prefix: KV_PREFIX + (opts.prefix || "") }));
@@ -347,6 +347,28 @@ async function runTrackerChecks(env, opts) {
   return { date: D, checked: done.length, results: done };
 }
 
+/* ---------- 🕘 automatic Time In (js/attendance.js) ----------
+   A trainee's course calls /api/checkin on their first visit each day (Eastern time). The first call records
+   checkin:<YYYY-MM-DD>:<id> = {timeIn, at, name, batch, training}, with the same in its KV metadata
+   ({t, at, n, b, tr}) so the LSH Training Portal reads a whole day from one key list; kept 40 days. Each
+   trainee has their own key, so a room signing in at once never overwrites one another. The attendance
+   tab shows it until a trainer sets a Time In, and the Google Sheet gets it through the portal. */
+function etNow(d) {
+  const p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(d);
+  const g = (t) => (p.find((x) => x.type === t) || {}).value;
+  return { date: `${g("year")}-${g("month")}-${g("day")}`, time: `${g("hour")}:${g("minute")}` };
+}
+async function checkIn(kv, id, training) {
+  const now = new Date(), et = etNow(now), key = `checkin:${et.date}:${id}`;
+  const had = JSON.parse((await kv.get(key)) || "null");
+  if (had) return { ok: true, date: et.date, timeIn: had.timeIn, already: true };
+  const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+  if (!rec || rec.approved !== true || rec.archived) return { ok: false, error: "Not an approved trainee" };
+  const v = { timeIn: et.time, at: now.toISOString(), name: String(rec.name || id).slice(0, 80), batch: String(rec.batch || "").slice(0, 24), training: String(training || "").slice(0, 160) };
+  await kv.put(key, JSON.stringify(v), { expirationTtl: 40 * 86400, metadata: { t: v.timeIn, at: v.at, n: v.name, b: v.batch, tr: v.training } });
+  return { ok: true, date: et.date, timeIn: v.timeIn };
+}
+
 export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
@@ -426,6 +448,14 @@ export default {
 
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
+
+      /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
+      if (path === "/api/checkin") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "t" ? tok.id : (!secure && typeof b.id === "string" ? b.id.slice(0, 100) : "");
+        if (!id) return json({ ok: false, error: "Trainees only" }, 403);
+        return json(await checkIn(kvOf(env), id, b.training));
+      }
 
       /* ---------- AI proxy (signed-in users only, so strangers can't spend your credits) ---------- */
       // (the path keeps its old name so pages already open in browsers keep working)
