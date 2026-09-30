@@ -2531,5 +2531,55 @@ function bfExportJson(k){
 }
 Object.assign(window, {bfSearch, bfRedraw, bfExportCsv, bfExportJson});
 
+/* ================= Dashboard day cards: clean cards, topics in a pop-up card =================
+   A day card shows its day and title, Start and short buttons (as in the Foundational course). Its topics
+   open in a pop-up card from "☰ Topics" (showDayTopics), grouped by section. */
+(function(){
+  if(typeof moduleCard !== "function" || moduleCard.__clean) return;
+  const __card = moduleCard;
+  moduleCard = function(d){
+    const html = __card(d), t = document.createElement("template"); t.innerHTML = html.trim();
+    const card = t.content.firstElementChild; if(!card) return html;
+    card.querySelectorAll(".module-icon, .module-topic-list, .module-more").forEach(n=>n.remove());
+    const n = (d.lessons||[]).length, start = card.querySelector(".module-start-btn");
+    if(n && start) start.insertAdjacentHTML("afterend", `<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${n}</span></button>`);
+    card.classList.add("mc-clean");
+    return card.outerHTML;
+  };
+  moduleCard.__clean = true;
+  const st = document.createElement("style"); st.id = "clean-day-cards"; st.textContent = `
+.module-card.mc-clean .module-body{flex:1 1 auto;min-height:12px;padding:10px 16px 4px;}
+.module-card.mc-clean .module-body:empty{padding:0;}
+.module-card.mc-clean .module-topics-btn span{color:var(--ink-soft);font-weight:700;margin-left:2px;}
+.topics-modal{overflow-y:auto;}
+.topics-modal-head{position:sticky;top:0;z-index:1;flex-shrink:0;}
+.topics-modal-foot{position:sticky;bottom:0;flex-shrink:0;}
+.topics-modal-sec{padding:14px 22px 2px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-deep);}
+.topics-modal-list{flex:none;overflow:visible;padding:4px 22px 6px 42px;}
+.topics-modal-sec ~ .topics-modal-list{padding-top:2px;}
+.topics-modal-list li{list-style:disc;}
+.topics-modal-list li::marker{color:var(--orange);}
+.topics-modal-list li:last-child{border-bottom:none;}
+`; document.head.appendChild(st);
+})();
+
+/* ================= Bullet lists on a slide: every bullet starts on the same line =================
+   The list sits centred as a block, and its items are left-aligned with the bullet hanging on the left, so
+   the bullets line up one under the other (they used to follow each centred line). */
+(function(){
+  const L = ".lesson-stage #lessonSlideWrap ul:not([class]), .lesson-stage #lessonSlideWrap .lesson-card ul, .lesson-stage #lessonSlideWrap .meet-client-card ul";
+  const LI = ".lesson-stage #lessonSlideWrap .lesson-card ul > li, .lesson-stage #lessonSlideWrap .meet-client-card ul > li";
+  const B = ".lesson-stage #lessonSlideWrap .lesson-card ul > li::before, .lesson-stage #lessonSlideWrap .meet-client-card ul > li::before";
+  const st = document.createElement("style"); st.id = "slide-bullets"; st.textContent = `
+${L}{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;text-align:left;}
+.lesson-stage #lessonSlideWrap ul:not([class]) > li{text-align:left;}
+${LI}{text-align:left;padding-left:22px;position:relative;}
+${B}{position:absolute;left:1px;top:.6em;margin:0;}
+.lesson-stage #lessonSlideWrap .meet-client-card ul{list-style:disc;padding-left:22px;}
+.lesson-stage #lessonSlideWrap .meet-client-card ul > li{padding-left:4px;}
+.lesson-stage #lessonSlideWrap .meet-client-card ul > li::marker{color:var(--orange);}
+`; document.head.appendChild(st);
+})();
+
 /* if the portal already drew itself before this file loaded, redraw with the updates */
 if(document.querySelector(".topbar")) render();
