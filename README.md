@@ -34,6 +34,10 @@ Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the
 
 Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer. Lessons are finished from their last slide (✓ Finish lesson). **Videos stay locked** (🔒 Video Presentation) until a trainer unlocks them in **Admin → 📅 Open Lessons → 🎬 Unlock Videos**, for all batches or one batch (`settings:openvideos`, same shape as `settings:opendays`). Trainers and 👁 Trainee view always see them.
 
+### Virtual Assistant Essentials: the deck's own pages
+
+Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each of its 138 pages is one slide, an image in `ft/vae/slides/` rendered from the Canva PDF, with the page's largest text as the slide heading and its words as the alt text. To update it, download the deck from Canva as PDF and run `python3 build/slides/image_lesson.py vae <deck.pdf>` (needs `pip install pymupdf pillow`), then rebuild. Render from the PDF, not the PPTX: the PDF carries the deck's fonts, while a PPTX rendered without them spills its text out of its boxes.
+
 ### Native slides (rebuilt from a deck)
 
 Lessons 4 and 7 are no longer Canva embeds: each deck page is its own slide in the platform, with the deck's exact wording in this program's own design (`js/ft-slides.js`: cards, numbered steps, check lists, do / don't boxes, tips, tables and zoomable document images). The deck's link is kept as the lesson's `canva` field.
