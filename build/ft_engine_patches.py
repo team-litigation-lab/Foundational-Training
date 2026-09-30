@@ -21,20 +21,21 @@ PATCHES = [
     if(deck){ e.preventDefault(); deck.focus(); return; }
     if(pvChannel()){ e.preventDefault(); PV.ch.postMessage({type:"key", dir}); }
   });'''),
-    ('''  const show = (m)=>{
-    const d = DAYS.find(x=>x.id===m.dayId); if(!d) return;
+    ('''    const same = !!(last && last.dayId===m.dayId && last.slide===m.slide && root.querySelector("#lessonStage"));
     last = m;''',
-     '''  const show = (m)=>{
-    const d = DAYS.find(x=>x.id===m.dayId); if(!d) return;
+     '''    const same = !!(last && last.dayId===m.dayId && last.slide===m.slide && root.querySelector("#lessonStage"));
+    last = m;
     // A Canva deck is a live embed: drawing the step again would reload it at page 1 and drop Canva's own
     // full screen. Keep it when the same step comes again (a resize, full screen, the presenter reconnecting).
-    const keep = last && last.dayId===m.dayId && last.slide===m.slide && root.querySelector(".canva-frame");
-    last = m;
-    if(keep){ if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:0, pages:1, w:root.clientWidth, h:root.clientHeight}); return; }'''),
-    ('''    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0''',
-     '''    // The live copy in the console doesn't load a second deck: it can't follow the room's page.
+    if(same && root.querySelector(".canva-frame")){ if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:0, pages:1, w:root.clientWidth, h:root.clientHeight}); return; }'''),
+    ('''    paginateLessonSlide();
+    report(d, m.slide);
+  };''',
+     '''    paginateLessonSlide();
+    // The live copy in the console doesn't load a second deck: it can't follow the room's page.
     if(!isMain) root.querySelectorAll(".canva-frame").forEach(f=>{ f.innerHTML = `<div class="aud-deck-note"><b>🎞 Canva deck</b>It's live in your slides window. Turn its pages there: click the deck, or press ← →.</div>`; });
-    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0'''),
+    report(d, m.slide);
+  };'''),
     (""".aud-wait b{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#F0C08A;}""",
      """.aud-wait b{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#F0C08A;}
 .aud-deck-note{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;background:#161829;border-radius:8px;color:#fff;font-size:30px;line-height:1.4;text-align:center;}
