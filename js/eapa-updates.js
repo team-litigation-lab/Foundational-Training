@@ -162,6 +162,9 @@ body.audience-mode > *:not(#audienceRoot):not(.aud-hint){display:none !important
 #audienceRoot #lessonSlideWrap{height:100% !important;font-size:1.08em;}
 #audienceRoot .slide-nav .btn, #audienceRoot .slide-done-banner{visibility:hidden;}
 #audienceRoot .slide-dot{pointer-events:none;}
+/* The shared window cuts straight to the next slide or page: no slide-in or fade (in a Meet share
+   the empty first frames of an entrance animation read as a flicker). */
+#audienceRoot .lesson-slide, #audienceRoot #lessonSlideWrap > *, #audienceRoot .slide-interstitial{animation:none !important;}
 .aud-wait{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font-size:18px;text-align:center;padding:20px;}
 .aud-wait b{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#F0C08A;}
 .aud-deck-note{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;background:#161829;border-radius:8px;color:#fff;font-size:30px;line-height:1.4;text-align:center;}
@@ -814,6 +817,7 @@ if(PV_IS_AUDIENCE){
   document.body.classList.add("audience-mode");
   window.render = function(){};                          // the normal portal never draws here
   window.autoPublishBlueprint = async function(){};       // leave background jobs to the trainer's own tab
+  window.updateIsSafe = function(){ return false; };      // never reload itself for an update mid-class (the console offers Update now)
   const app = document.getElementById("app"); if(app) app.innerHTML = "";
   const root = document.createElement("div"); root.id = "audienceRoot";
   root.innerHTML = `<div class="aud-wait"><b>LSH Foundational Training</b>Waiting for the presenter…</div>`;
@@ -833,13 +837,34 @@ if(PV_IS_AUDIENCE){
     document.addEventListener("dblclick", ()=>{ if(document.fullscreenElement) document.exitFullscreen(); else if(document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); });
   }
   let last = null;
-  const show = (m)=>{
+  // tell the console what is on screen: the page, and which numbered sections (① Core Principles …
+  // ④ Go Deeper) are on this page and on every page, so the presenter's script follows the page
+  const report = (d, slide)=>{
+    if(!isMain) return;
+    const secNum = (s)=>+((s.querySelector(".fp-num")||{}).textContent||0);
+    const allSecs = [...root.querySelectorAll(".fp-section")].map(secNum).filter(Boolean);
+    const secs = [...root.querySelectorAll(".fp-section")].filter(s=>!s.closest(".pg-hide")).map(secNum).filter(Boolean);
+    const secsByPage = __slidePg ? __slidePg.pages.map(([a,b])=>[...new Set(__slidePg.units.slice(a,b+1).map(u=>{ const s = u.closest(".fp-section"); return s ? secNum(s) : 0; }).filter(Boolean))]) : [allSecs];
+    pvChannel().postMessage({type:"rendered", dayId:d.id, slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight, secs, allSecs, secsByPage});
+  };
+  // `force`: the window changed size, so lay the slide out again
+  const show = (m, force)=>{
     const d = DAYS.find(x=>x.id===m.dayId); if(!d) return;
+    const same = !!(last && last.dayId===m.dayId && last.slide===m.slide && root.querySelector("#lessonStage"));
+    last = m;
     // A Canva deck is a live embed: drawing the step again would reload it at page 1 and drop Canva's own
     // full screen. Keep it when the same step comes again (a resize, full screen, the presenter reconnecting).
-    const keep = last && last.dayId===m.dayId && last.slide===m.slide && root.querySelector(".canva-frame");
-    last = m;
-    if(keep){ if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:0, pages:1, w:root.clientWidth, h:root.clientHeight}); return; }
+    if(same && root.querySelector(".canva-frame")){ if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:0, pages:1, w:root.clientWidth, h:root.clientHeight}); return; }
+    // The slide on screen is never drawn again for the same step (the console re-drawing, its live
+    // copy reconnecting): in the shared window a redraw is a visible flash. A page change within
+    // the slide happens in place.
+    if(same && !force){
+      if(__slidePg){
+        const n = __slidePg.pages.length, want = m.page === -1 ? n-1 : Math.max(0, Math.min(m.page||0, n-1));
+        if(want !== (state.slidePage||0)){ state.slidePage = want; applySlidePage(); }
+      }
+      return report(d, m.slide);
+    }
     // view is "audience", not "day", so the portal's own arrow-key handler stays out of it
     state.view = "audience"; state.dayId = d.id; state.lessonSlide = m.slide; state.maxSlideReached = 9999;
     state.slidePage = m.page; state.slidePageKey = d.id+":"+m.slide; state.slideDir = "next";
@@ -848,16 +873,9 @@ if(PV_IS_AUDIENCE){
     state.stageInnerOnly = false;
     decorateCallouts(root);
     paginateLessonSlide();
-    // which numbered sections (① Core Principles … ④ Go Deeper) are on this page, so the
-    // presenter's notes can follow the page instead of the whole slide
-    const secNum = (s)=>+((s.querySelector(".fp-num")||{}).textContent||0);
-    const allSecs = [...root.querySelectorAll(".fp-section")].map(secNum).filter(Boolean);
-    const secs = [...root.querySelectorAll(".fp-section")].filter(s=>!s.closest(".pg-hide")).map(secNum).filter(Boolean);
-    // the sections on every page, so each page of a long slide gets its own part of the script
-    const secsByPage = __slidePg ? __slidePg.pages.map(([a,b])=>[...new Set(__slidePg.units.slice(a,b+1).map(u=>{ const s = u.closest(".fp-section"); return s ? secNum(s) : 0; }).filter(Boolean))]) : [allSecs];
     // The live copy in the console doesn't load a second deck: it can't follow the room's page.
     if(!isMain) root.querySelectorAll(".canva-frame").forEach(f=>{ f.innerHTML = `<div class="aud-deck-note"><b>🎞 Canva deck</b>It's live in your slides window. Turn its pages there: click the deck, or press ← →.</div>`; });
-    if(isMain) pvChannel().postMessage({type:"rendered", dayId:d.id, slide:m.slide, page:state.slidePage||0, pages:state.slidePages||1, w:root.clientWidth, h:root.clientHeight, secs, allSecs, secsByPage});
+    report(d, m.slide);
   };
   if(pvChannel()){
     PV.ch.addEventListener("message", (e)=>{
@@ -868,7 +886,7 @@ if(PV_IS_AUDIENCE){
     PV.ch.postMessage({type:"hello"});
   }
   let rt = null;
-  const reshow = ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ if(last) show(last); }, 200); };
+  const reshow = ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ if(last) show(last, true); }, 200); };
   window.addEventListener("resize", reshow);
   document.addEventListener("fullscreenchange", reshow);
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(reshow);
