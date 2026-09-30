@@ -134,11 +134,52 @@ body.lv-dragging{user-select:none;}
 const FT_IS_AUDIENCE = typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE;
 
 /* ---------- 1. one slide per curriculum section ---------- */
-window.buildDaySlides = function(d){ return (d.sections||[]).map((x, i)=>({type:"ftSection", index:i})); };
+/* Topic dividers, as in the EA/PA and CM courses: in a lesson rebuilt from its deck (one slide per deck
+   page), each topic opens with a divider slide (the lesson · Topic N of M · the topic's title). A topic
+   starts at the page with that id (page ids stay put when pages are added). A lesson that is one Canva
+   deck has no dividers: the deck has its own title page. */
+const FT_TOPICS = {
+  1: [["v002", "Objective, Agenda & Introduction"], ["v005", "The U.S. Legal System & Common Legal Terms"], ["v020", "Legal Practice & the Legal VA's Role"],
+      ["v036", "Types of Law Firms"], ["v040", "The Legal Support Help Task List"], ["v045", "Areas of Law & VA Tasks by Practice Area"],
+      ["v072", "Legal Support Help Services & Clients"], ["v100", "American & U.S. Law Firm Work Culture"], ["v115", "U.S. States & Time Zones"],
+      ["v134", "Tips to Stand Out as a Legal VA"]],
+  4: [["p02", "Introduction & Common Reception Tasks"], ["p08", "Handling Callers: Inquiries, Clients, Counsel, Providers, Courts & Insurers"],
+      ["p28", "Receptionist Best Practices"], ["p39", "Payment Calls"], ["p42", "Routing Calls: Transfers & Conference Calls"]],
+  7: [["n002", "The Role, Objective & Workflow"], ["n004", "Coverages & Opening a Claim"], ["n014", "Contacting Insurers & Filing Claims"],
+      ["n022", "Letter of Representation"], ["n036", "Declaration Pages"], ["n043", "Coverages & Policy Limits"],
+      ["n052", "Liability"], ["n075", "Rideshare (TNC) Claims"], ["n084", "Rental Car Claims"],
+      ["n100", "Best Practices for Claims Specialists"], ["t151715.508", "Dropped Cases & Withdrawal Letters"], ["t151825.685", "No Contact Protocol"]]
+};
+// the day's topics that are in it: [{h, at: index of the topic's first page}]
+function ftTopics(d){
+  const ids = (d.sections||[]).map(x=>x.id);
+  return (FT_TOPICS[d.id]||[]).map(([id, h])=>({h, at: ids.indexOf(id)})).filter(t=>t.at >= 0).sort((a, b)=>a.at - b.at);
+}
+window.buildDaySlides = function(d){
+  const topics = ftTopics(d), out = [];
+  (d.sections||[]).forEach((x, i)=>{
+    const k = topics.findIndex(t=>t.at === i);
+    if(k >= 0) out.push({type:"ftDivider", topic:k, before:i});
+    out.push({type:"ftSection", index:i});
+  });
+  return out;
+};
 const __ftSlideTitle = window.daySlideTitle;
-window.daySlideTitle = function(d, slide){ return slide && slide.type==="ftSection" ? d.sections[slide.index].h : __ftSlideTitle(d, slide); };
+window.daySlideTitle = function(d, slide){
+  if(slide && slide.type==="ftDivider") return `Topic ${slide.topic+1}: ${ftTopics(d)[slide.topic].h}`;
+  return slide && slide.type==="ftSection" ? d.sections[slide.index].h : __ftSlideTitle(d, slide);
+};
 const __ftSlideContent = window.renderDaySlideContent;
 window.renderDaySlideContent = function(d, slide, idx){
+  if(slide && slide.type==="ftDivider"){
+    const topics = ftTopics(d), t = topics[slide.topic];
+    return `
+    <div class="topic-divider">
+      <div class="td-kicker">${esc(ftLabel(d))} &middot; ${esc(d.title)}</div>
+      <div class="td-num">Topic ${slide.topic+1} of ${topics.length}</div>
+      <h2 class="td-title">${esc(t.h)}</h2>
+    </div>`;
+  }
   if(!slide || slide.type!=="ftSection") return __ftSlideContent(d, slide, idx);
   const sec = d.sections[slide.index];
   const sep = `<div class="topic-separator">${esc(d.title)}${d.sections.length>1 ? ` &middot; PART ${slide.index+1} OF ${d.sections.length}` : ""}</div>`;
@@ -152,6 +193,38 @@ window.renderDaySlideContent = function(d, slide, idx){
       <div class="ft-body">${sec.html}</div>
     </div>`;
 };
+/* Saved places are slide positions, and before the dividers a slide was a page. So each trainee's
+   "resume here" (lastSlide) and "furthest reached" (slideProgress) move once, per day, to the same page.
+   Each of the two saved objects records which days it already holds in the new layout (its "_ftTopics"
+   list), so the positions and that marker are always saved, synced and restored together (e.g. an older
+   copy restored from the cloud is moved again, a moved one never twice). */
+function ftMoveToDividers(){
+  let changed = false;
+  for(const [key, field] of [["last-slide", "lastSlide"], ["slide-progress", "slideProgress"]]){
+    const obj = state[field] = (state[field] && typeof state[field]==="object") ? state[field] : {};
+    const done = Array.isArray(obj._ftTopics) ? obj._ftTopics : [];
+    let mine = false;
+    for(const d of DAYS){
+      if(!ftTopics(d).length || done.includes(d.id)) continue;
+      const at = obj[d.id];
+      if(typeof at==="number" && at > 0){
+        const i = buildDaySlides(d).findIndex(x=>x.type==="ftSection" && x.index===at);
+        if(i >= 0) obj[d.id] = i;
+      }
+      done.push(d.id); mine = true;
+    }
+    if(mine){ obj._ftTopics = done; storeSet(key, obj); changed = true; }
+  }
+  return changed;
+}
+// Saved progress is loaded (and migrateDayOrder runs) when the page starts, which can be before this file
+// loads, and again after signing in or a cloud restore: move it now if it's loaded, and after every load.
+const __ftMigrateDayOrder = window.migrateDayOrder;
+window.migrateDayOrder = async function(){
+  if(typeof __ftMigrateDayOrder === "function") await __ftMigrateDayOrder.apply(this, arguments);
+  ftMoveToDividers();
+};
+if(state.dayOrderMigrated !== undefined) ftMoveToDividers();
 // "Before you start": the day's sections as the curriculum lists them (no objectives, quiz or timing).
 window.renderDayIntro = function(d){
   return `
@@ -160,10 +233,10 @@ window.renderDayIntro = function(d){
         <div class="di-kicker">${ftLabel(d)} · Before you start</div>
         <h2>${esc(d.heading || d.title)}</h2>
         <div class="di-grid" style="grid-template-columns:1fr;">
-          <div class="di-box"><b>🗺 What this lesson covers</b><ol class="di-topics">${d.sections.map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
+          <div class="di-box"><b>🗺 What this lesson covers</b><ol class="di-topics">${(ftTopics(d).length ? ftTopics(d) : d.sections).map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
         </div>
       </div></div>
-      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">${d.sections.length} parts</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
+      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">${ftTopics(d).length ? `${ftTopics(d).length} topics · ${d.sections.length} pages` : `${d.sections.length} parts`}</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
     </div>`;
 };
 const __ftRenderDay = window.renderDay;
@@ -312,6 +385,10 @@ window.ftScriptPage = function(id, delta){
 };
 const __ftCues = window.presenterCues;
 window.presenterCues = function(d, slide){
+  if(slide && slide.type==="ftDivider"){
+    const topics = ftTopics(d), t = topics[slide.topic], end = topics[slide.topic+1] ? topics[slide.topic+1].at : d.sections.length;
+    return `<h3>Topic ${slide.topic+1} of ${topics.length}: ${esc(t.h)}</h3><p>Name the topic, then move on to its first page (${end - t.at} page${end - t.at === 1 ? "" : "s"}, from “${esc(d.sections[t.at].h)}”).</p>`;
+  }
   if(!slide || slide.type!=="ftSection") return __ftCues(d, slide);
   const sec = d.sections[slide.index];
   const keys = [...sec.html.matchAll(/data-slot="([^"]+)"/g)].map(m=>m[1]);
