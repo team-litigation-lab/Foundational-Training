@@ -4,6 +4,7 @@
     pip install pymupdf pillow
     python3 build/slides/image_lesson.py vae "<deck.pdf>"     (Lesson 1)
     python3 build/slides/image_lesson.py piw "<deck.pdf>"     (Lesson 3)
+    python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
@@ -40,6 +41,11 @@ DECKS = {
             "about": 'the "Personal Injury Workflow" deck (Canva design DAHWU4bkV0I), all 25 pages',
             # each page's own title (its largest text is the role label, e.g. "Role: Intake Specialist")
             "headings": {2: 'Introduction', 3: 'Personal Injury Case Stages', 4: 'Legal Intake', 5: 'Legal Intake and Consultation', 6: 'Investigation', 7: 'Opening Claims', 8: 'Claims Set Up and Liability Determination', 9: 'Policy Limits and Coverages', 10: 'Client Communication Specialist', 11: 'Treatment', 12: 'Collecting Medical Bills and Records', 13: 'Collecting Medical Bills and Records', 14: 'Demands', 15: 'Demands', 16: 'Demands', 17: 'Settlement', 18: 'Negotiations', 19: 'Disbursement', 20: 'Litigation', 21: 'Receptionist', 22: 'Calendar Management', 23: 'Appointment Setter', 24: 'Scheduler', 25: 'Thank You'}},
+    "rec": {"id": 4, "var": "DAY4", "file": "lesson04.js", "title": "Receptionist Training",
+            "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
+            "pdf": "The_Receptionist_Role.pdf (sent in chat)",
+            "about": 'the "The Receptionist Role" deck (Canva design DAHWU0f4UhU), all 55 pages',
+            "headings": {28: 'Handling Mass Tort & Long-Duration Case Calls', 29: 'Handling Mass Tort & Long-Duration Case Calls', 51: 'Routing Calls: Cold Transfers', 52: 'Routing Calls: Warm Transfers', 53: 'Routing Calls: Conference Calls', 55: 'Thank You'}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
