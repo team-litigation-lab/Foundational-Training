@@ -240,7 +240,8 @@ python3 build/build.py ../EA-PA-TRAINING
 ```
 
 The script:
-- swaps the EA/PA days for this program's 18 days from `build/days/`
+- swaps the EA/PA days for this program's lessons from `build/lessons/`: it drops the EA/PA day files (`js/days/dayN/lessons.js`, `notes.js`, `scripts.js`) and puts the lessons where the EA/PA page builds `DAYS`
+- switches off what only fits the EA/PA days: the divider slide before each topic (`noDividers`), and the saved-place migrations keyed to EA/PA topic titles (`DAY_LAYOUTS`, `QC_OPTION_MOVES` are left empty)
 - drops the EA/PA-only heavy content
 - applies the branding
 - adds `js/ft-updates.js`
