@@ -48,15 +48,28 @@ days_js += "\n\nconst DAYS = [" + ", ".join(names) + "];"
 days_js += """
 function ftLabel(d){ return d.label || `Lesson ${d.id} of ${DAYS.filter(x=>!x.label).length}`; }"""
 # The engine reads d.lessons (topic lists, search) and d.quiz; for this program they come from the sections.
-days_js += "\nDAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });"
-i = s.index("const DAY1 = {")
-j = s.index("const DAYS = [DAY1")
-j2 = s.index("\n", j)
-s = s[:i] + days_js + s[j2:]
+# noDividers: each deck page is its own slide, so no "Topic N of M" divider slide goes before each one.
+days_js += "\nDAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; d.noDividers = true; });"
+# The EA/PA portal keeps each day in js/days/dayN/ (lessons.js, notes.js, scripts.js), loaded by script
+# tags, and index.html builds DAYS from them. None of those files are this program's: drop the tags and
+# put the lessons where DAYS was built.
+s, n = re.subn(r'<script src="/js/days/day\d+/(?:lessons|notes|scripts)\.js[^"]*"></script>\n?', '', s)
+if not n:
+    sys.exit("MISSING: the js/days/dayN/*.js script tags")
+m = re.search(r'const DAY_FILES = window\.EA_DAY_FILES \|\| \{\};\n.*?\nconst MISSING_DAYS = [^\n]*\nif\(MISSING_DAYS\.length\)\{\n.*?\n\}\n', s, flags=re.S)
+if not m:
+    sys.exit("MISSING: the DAY_FILES / DAYS / MISSING_DAYS block")
+s = s[:m.start()] + days_js + "\nconst DAY_FILES = {};\nconst MISSING_DAYS = [];\n" + s[m.end():]
+# The EA/PA saved-place migrations (DAY_LAYOUTS: its topic orders by title; QC_OPTION_MOVES: its Quick
+# Check answers) are about the EA/PA days: here they'd move trainees' places in these lessons.
+s, n = re.subn(r'const DAY_LAYOUTS = \[\n.*?\n\];\n', 'const DAY_LAYOUTS = [];\n', s, count=1, flags=re.S)
+s, n2 = re.subn(r'const QC_OPTION_MOVES = \{.*?\};\n', 'const QC_OPTION_MOVES = {};\n', s, count=1, flags=re.S)
+if not (n and n2):
+    sys.exit(f"MISSING: DAY_LAYOUTS / QC_OPTION_MOVES ({n} {n2})")
 
 # ---------- 2. drop EA/PA-only heavy assets and keyed content (as the CM build does) ----------
 s = "\n".join(l for l in s.split("\n") if not l.startswith('LESSON_DIAGRAMS["'))
-s, n1 = re.subn(r'const LESSON_EXTRA_LEARNING = \{.*?\};\n', 'const LESSON_EXTRA_LEARNING = {};\n', s, count=1, flags=re.S)
+s, n1 = re.subn(r'const LESSON_EXTRA_LEARNING = Object\.assign\(\{\}, \.\.\.DAYS\.map\([^\n]*\);\n', 'const LESSON_EXTRA_LEARNING = {};\n', s, count=1)
 s, n2 = re.subn(r'const ELIAS_VOICE_NOTE_AUDIO_DATAURI = "[^"]*";', 'const ELIAS_VOICE_NOTE_AUDIO_DATAURI = "";', s, count=1)
 s, n3 = re.subn(r'const CLIENT_AVATAR_SRC = \(.*?\n', 'const CLIENT_AVATAR_SRC = "";\n', s, count=1)
 if not (n1 and n2 and n3):

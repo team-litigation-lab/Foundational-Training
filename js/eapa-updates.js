@@ -698,7 +698,10 @@ function presenterCues(d, slide){
     out.push(`<h3>${esc(l.h)}${l.singleSlide ? "" : ` <small style="font-size:12px;color:var(--ink-soft);">Part ${slide.part} of 2</small>`}</h3>`);
     const pageInfo = state.presentSecsFor === (state.lessonSlide||0);
     out.push(renderPresenterNote(d, l, slide.part, pageInfo ? state.presentSecs : null, pageInfo ? state.presentAllSecs : null,
-      pageInfo ? {page: state.presentPage||0, pages: state.presentPages||1, secsByPage: state.presentSecsByPage} : null));   // scripts: js/slide-scripts/dayN.js
+      pageInfo ? {page: state.presentPage||0, pages: state.presentPages||1, secsByPage: state.presentSecsByPage} : null));   // scripts: js/days/dayN/scripts.js
+  }else if(slide.type==="divider"){
+    const l = d.lessons[slide.lessonIndex];
+    out.push(`<h3>Topic ${slide.lessonIndex+1} of ${d.lessons.length}: ${esc(l.h)}</h3><p>${l.section ? `Section: ${esc(l.section)}. ` : ""}Name the topic, then move on to its first slide.</p>`);
   }else if(slide.type==="quickCheck"){
     out.push(`<h3>Quick Check</h3><p>Let the room answer first — then reveal and use the rationale.</p>`);
     (d.quickChecks||[]).filter(c=>c.afterIndex===slide.lessonIndex).forEach(c=>{
@@ -920,59 +923,14 @@ window.afterRender = function(){
   return r;
 };
 
-/* ---------- 6. Email Outreach: capstone topic (Day 4) + Email Outreach Simulator ----------
-   Topic: appended as the LAST Day 4 topic so trainees' saved places don't shift.
+/* ---------- 6. Email Outreach Simulator (Day 4) ----------
+   The capstone topic, "Email Outreach End-to-End: Research, Write, Follow Up", is the last
+   Day 4 topic in js/days/day4/lessons.js.
    Simulator: Part 4 of the Day 4 Practice Lab. The trainee picks a prospect,
    writes a real 3-touch sequence (first email → follow-up → close-out), and an
    AI plays the prospect — ignoring, replying, objecting, opting out or booking
    the call depending on how good each email is. Then a debrief and a graded
    evaluation (same rubric system and attempt rules as every other lab). */
-const EO_TOPIC_TITLE = "Email Outreach End-to-End: Research, Write, Follow Up";
-(function addEmailOutreachTopic(){
-  const d = DAYS.find(x=>x.id===4); if(!d || d.lessons.some(l=>l.h===EO_TOPIC_TITLE)) return;
-  d.lessons.push({
-    h: EO_TOPIC_TITLE,
-    section: "Email Outreach & Marketing",
-    trainerCue: "Before the Practice Lab, read one weak and one strong outreach email aloud and have the room vote on which they'd actually open on their phone — then ask what exactly made the difference.",
-    fourPart: {
-      corePrinciples: [
-        "An outreach email is judged in about three seconds on a phone screen — the subject line and first sentence decide whether the rest gets read.",
-        "Relevance beats polish: one specific, verified fact about the recipient's situation does more than any clever phrasing.",
-        "Every email has exactly one job — usually a small, easy yes (a 15-minute call with Elias), never a hard sell.",
-        "Most replies come from the follow-ups, not the first touch — so the sequence is planned before the first email goes out."
-      ],
-      howTo: [
-        "Research first: confirm the person's current role and find one recent, specific trigger (an expansion, funding, a new hire, public news). Log the source in the CRM.",
-        "Write a subject line of 3–7 specific words — no clickbait, no ALL CAPS (e.g. \"Contracts for your Denver expansion\").",
-        "Write the body in 50–125 words: open with their situation, one line on how Elias can help, then one clear, low-friction ask.",
-        "Sign off on Elias's behalf and include a simple opt-out line — compliance is part of the craft, not an afterthought.",
-        "Plan the cadence: a follow-up around day 3–4 with a new angle or useful resource, and a short, courteous close-out around day 8–10.",
-        "Stop the moment they reply or opt out. Log the outcome and route any interest to Elias with a one-line summary."
-      ],
-      bestPractices: [
-        "Write about the recipient's priorities, not the firm's — \"you\" should appear more often than \"we\".",
-        "Each follow-up adds something new — an insight, a relevant article, a narrower question — never just \"bumping this to the top of your inbox\".",
-        "Read it on a phone before sending: if the ask isn't visible without scrolling, it's too long.",
-        "Pitfall: the same template to everyone with only the name swapped — recipients can tell, and it trains them to ignore the firm.",
-        "Pitfall: guilt-trip or pressure follow-ups (\"I'm surprised I haven't heard back\") — they burn the relationship for any future opportunity.",
-        "Pitfall: promising outcomes or giving legal advice in outreach — only the attorney speaks to a matter; the assistant's job is to open the door."
-      ],
-      discussionCase: "Elias wants you to email the operations director of a regional construction company that just announced a two-state expansion. Your first email got no reply after four days. Walk through what your follow-up says, what new angle it uses, and when you'd stop."
-    }
-  });
-  LESSON_EXTRA_LEARNING["4::"+EO_TOPIC_TITLE] = {t:"The 3-touch cadence", p:[
-    "Touch 1 (day 1): the specific trigger + one line of value + one small ask.",
-    "Touch 2 (day 3–4): a new angle — a relevant resource, a sharper question, or a different benefit. Same small ask.",
-    "Touch 3 (day 8–10): a short, courteous close-out that makes it easy to say \"not now\" — it often gets the most replies.",
-    "Then stop. Log the outcome and set a reminder only if they asked you to follow up later."
-  ]};
-  d.quickChecks = d.quickChecks || [];
-  d.quickChecks.push({afterIndex: d.lessons.length-1,
-    q: "Your first outreach email got no reply after four days. What's the strongest follow-up?",
-    opts: ["\"Just bumping this to the top of your inbox.\"", "A short note with a new, relevant angle and the same small ask", "A longer email re-explaining every service the firm offers", "Wait a month, then resend the original email"],
-    a: 1,
-    r: "A follow-up should add something new and keep the ask small. A bare \"bump\" adds nothing, a longer pitch adds friction, and waiting a month loses the trigger that made the timing relevant."});
-})();
 
 
 (function(){ const s = document.createElement("style"); s.id = "eapa-email-outreach"; s.textContent = `
