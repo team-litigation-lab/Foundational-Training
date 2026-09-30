@@ -116,7 +116,7 @@ const css = `
 .cs-card u{text-decoration-thickness:2px;text-underline-offset:2px;}
 .cs-pages{align-items:center;}
 .cs-page{margin:0;width:100%;display:flex;justify-content:center;}
-.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:68vh;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:#fff;}
+.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:#fff;}
 .cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
 .cs-cover .cs-hero{position:relative;min-height:52vh;justify-content:flex-end;padding-top:96px;}
 .cs-cover .cs-logo{position:absolute;top:20px;left:22px;width:78px;height:auto;}
