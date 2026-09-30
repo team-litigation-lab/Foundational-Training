@@ -79,6 +79,14 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
   - The text lives in the constants at the top of `js/ft-rules.js` and in `SLIDES`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
 
+## 🧭 Platform Orientation and the Blueprint PDF
+
+Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/PA portal and the other LSH courses. It's a screen-shareable blueprint of the platform for the first session. It's not the 📌 Training Orientation and Rules lesson above.
+
+- **The page:** 12 slides with ← → (or the arrow keys), **⛶ Present full screen**, **🖨 Print** and **⬇ Download PDF** (`LSH_FT_Platform_Orientation.pdf`). Nothing private is on it: no facilitator's notes, answers or trainee data. Trainees and 👁 Trainee view don't see it.
+- **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; simulators; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
+- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. When the build changes, the first admin to open the portal rebuilds and publishes it in the background (`blueprint:pdf`, `blueprint:meta`). The Orientation page shows the published build, with **open** and **rebuild** links. It's the EA/PA engine's feature; this program only supplies the slides.
+
 ## Process Questions
 
 Each lesson's answer sheet is answered on the platform: **✍️ Process Questions** (`#/process`, `js/ft-process.js`). It opens from the lesson card and from the lesson's last slide, which lists the questions and the naming convention. The Virtual Assistant Essentials sheet has 10 questions. Add another lesson's questions to `PROCESS_SETS`.
@@ -217,6 +225,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-process.js` | Process Questions: each lesson's answer sheet, answered on the platform, saved to Google Drive or Word with the proper name; Admin → ✍️ Process Questions. |
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
+| `js/ft-orientation.js` | Admin → 🧭 Orientation: this program's platform orientation slides, which are also the Blueprint PDF (`/blueprint.pdf`). |
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |

@@ -69,6 +69,7 @@ rep("LSH EA / PA Upskill Program", "LSH Foundational Training Program")
 rep("EA / PA Upskill Program", "Foundational Training Program")
 rep("EA/PA Upskill Program", "Foundational Training Program", min_count=0)
 rep("LSH EA/PA — Platform Orientation", "LSH Foundational Training — Platform Orientation")
+rep('doc.save("LSH_EA-PA_Platform_Orientation.pdf")', 'doc.save("LSH_FT_Platform_Orientation.pdf")')
 rep("LSH-EAPA-", "LSH-FT-")
 rep(" of 10</b>", " of ${DAYS.length}</b>")
 rep("Day ${d.id} of 10<", "${ftLabel(d)}<")
@@ -104,7 +105,8 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-rules.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-facilitator-dna.js?v={build_tag}"></script>'
-     f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>') + s[m.end():]
+     f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-orientation.js?v={build_tag}"></script>') + s[m.end():]
 # 🏠 Main Portal button for admins (js/portal-link.js), last before </body>.
 k = s.rfind("</body>")
 if k < 0:
