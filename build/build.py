@@ -93,6 +93,8 @@ if not n:
 # js/eapa-updates.js is rebuilt here too (with this program's patches), so it gets this build's tag:
 # browsers then always fetch the version that matches this index.html.
 s, n = re.subn(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', f'<script src="/js/eapa-updates.js?v={build_tag}"></script>', s, count=1)
+# 🕘 Attendance (js/attendance.js) is the same file in every LSH course; it loads in the list below, not where the EA/PA page has it.
+s = re.sub(r'<script src="/?js/attendance\.js[^"]*"></script>\n?', '', s)
 m = re.search(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', s)
 if not (n and m):
     sys.exit("MISSING: eapa-updates.js script tag")
@@ -107,7 +109,7 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-facilitator-dna.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-orientation.js?v={build_tag}"></script>'
-     f'\n<script src="/js/ft-attendance.js?v={build_tag}"></script>') + s[m.end():]
+     f'\n<script src="/js/attendance.js?v={build_tag}"></script>') + s[m.end():]
 # 🏠 Main Portal button for admins (js/portal-link.js), last before </body>.
 k = s.rfind("</body>")
 if k < 0:

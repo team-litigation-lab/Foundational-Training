@@ -131,13 +131,13 @@ Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracke
 
 ## Attendance
 
-Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/ft-attendance.js`). Trainees don't see it.
+Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attendance.js`). Trainees don't see it. It's the same file in every LSH course repo (EA-PA-TRAINING, Case-Management-Training, propertydamageclaimstraining, Foundational-Training); change it in all of them. The LSH Training Portal's admin **🕘 Attendance** page shows and edits the same records, for every program.
 
 - **By batch:** one section per batch (newest first, like the other admin tabs), listing its approved, active trainees. Each section shows its count of every status.
 - **The day:** the date is today's in Pacific time (the program's time zone, as in the Task Tracker). ◀ ▶ step through the training days, and the date picker opens any day. The batch's **Day N** counts its days already logged; the trainer can change it.
 - **Each trainee's row:**
   - **Name**, from their trainee record.
-  - **Training**: the batch's training for the day. It starts as the batch's latest open lesson (Admin → 📅 Open Lessons), or the orientation when none is open. It can be changed for the batch, or for one trainee (marked in orange).
+  - **Training**: the batch's training for the day. It starts as the batch's latest open lesson (Admin → 📅 Open Lessons), or the orientation when none is open. It can be changed for the batch, or for one trainee (marked in orange). The list is the lessons, after the orientation and the first days that are off the platform (`ATTENDANCE_TRAININGS_BEFORE` in `js/ft-updates.js`).
   - **Time In / Time Out**, in Pacific time: typed, or ⏱ Now.
   - **Status**, tagged by the trainer from the attendance sheet's dropdown, in its colors: Present, Late, Late with Notif, Early Out - POC Approved, Undertime - POC Approved, Undertime - No Approval, NCNS, Sick Leave, RL, EOP, Absent with Notif. **✓ Mark the rest Present** tags everyone not yet tagged.
   - **Notes**.
@@ -246,7 +246,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
-| `js/ft-attendance.js` | Admin → 🕘 Attendance: each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
+| `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 
 ## Build
