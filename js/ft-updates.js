@@ -114,6 +114,8 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .module-finish-btn.ft-video-locked{opacity:.6;cursor:not-allowed;}
 /* the progress band (Program complete, Lessons finished, feedback) sits below the lesson cards */
 .dash-layout > .dash-side{order:1;}
+/* lesson cards show Start and Video only (js/lsh-dashboard.js adds a Topics button to every course's cards) */
+.module-card .module-topics-btn{display:none !important;}
 .topics-modal-list .tm-pages{font-size:11.5px;font-weight:700;color:var(--ink-soft);margin-left:6px;white-space:nowrap;}
 .ft-od-day b{display:block;color:var(--navy);}
 /* pop-out viewer (same as the LSH Training Portal's Recorded Lectures) */
@@ -745,7 +747,8 @@ window.renderDashboard = function(){
     <div class="dash-hero">
       <div class="dash-hero-text">
         <p class="eyebrow">LSH TRAINING PROGRAM</p>
-        <h1 class="ft-hero-title">Standard Foundational Training</h1>
+        <h1><span class="hl"><svg class="hero-spark hero-spark-lead" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg>Standard Foundational Training<svg class="hero-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg></span></h1>
+        <p>Build the foundation every legal VA needs: how U.S. law firms work, the roles in a case, and how to communicate like a pro.</p>
       </div>
       <div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>
     </div>

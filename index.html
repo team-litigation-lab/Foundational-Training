@@ -2078,15 +2078,15 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
 /* Compact dashboard banner, so Days 1–5 fit on one screen under it (laptops and up; phones keep the layout above). */
 @media(min-width:761px){
   main.main-dash{padding-top:12px;}
-  .dash-top{padding:12px 22px 8px !important;margin-bottom:12px !important;border-radius:16px;}
-  .dash-hero{grid-template-columns:52px minmax(0,1fr) !important;gap:16px !important;margin-bottom:6px !important;}
-  .dash-hero-ribbon svg{max-width:52px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
-  .dash-top .eyebrow{font-size:10px !important;padding:2px 9px !important;margin:0 0 4px !important;letter-spacing:.14em;}
-  .dash-hero h1{font-size:clamp(18px, 1.5vw, 24px) !important;line-height:1.2 !important;margin:0 0 3px !important;}
-  .dash-hero p{font-size:12.5px !important;line-height:1.4 !important;max-width:none;}
-  .dash-top .step-timeline{padding:7px 0 1px !important;}
-  .dash-top .step-circle{width:28px;height:28px;font-size:12.5px;border-width:2px;}
-  .dash-top .step-dash{width:22px;margin:0 3px;}
+  .dash-top{padding:16px 26px 10px !important;margin-bottom:8px !important;border-radius:16px;}
+  .dash-hero{grid-template-columns:66px minmax(0,1fr) !important;gap:18px !important;margin-bottom:8px !important;}
+  .dash-hero-ribbon svg{max-width:66px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));}
+  .dash-top .eyebrow{font-size:11px !important;padding:3px 10px !important;margin:0 0 6px !important;letter-spacing:.14em;}
+  .dash-hero h1{font-size:clamp(20px, 1.8vw, 29px) !important;line-height:1.2 !important;margin:0 0 5px !important;}
+  .dash-hero p{font-size:13.5px !important;line-height:1.45 !important;max-width:none;}
+  .dash-top .step-timeline{padding:9px 0 2px !important;}
+  .dash-top .step-circle{width:32px;height:32px;font-size:13.5px;border-width:2px;}
+  .dash-top .step-dash{width:24px;margin:0 3px;}
   /* Days 1–5 in one row, compact cards */
   .dash-layout{gap:14px;}
   .dash-main .module-grid{grid-template-columns:repeat(5,minmax(0,1fr)) !important;gap:12px;}
@@ -2111,8 +2111,8 @@ main:not(.main-dash){padding-bottom:84px;} /* room for the 💬 Feedback button 
 
 /* hero: headline and tagline each on one line (auto-sized to fit, compact) on laptops/desktops */
 @media(min-width:1200px){
-  .dash-hero h1{white-space:nowrap;font-size:24px !important;}
-  .dash-hero p{white-space:nowrap;max-width:none !important;font-size:13px !important;}
+  .dash-hero h1{white-space:nowrap;font-size:29px !important;}
+  .dash-hero p{white-space:nowrap;max-width:none !important;font-size:14px !important;}
   .dash-hero > *{min-width:0;}
   .dash-hero h1, .dash-hero p:not(.eyebrow){max-width:100% !important;overflow:hidden;}
 }
@@ -7862,8 +7862,8 @@ function fitHeroText(){
     while(el.scrollWidth > el.clientWidth + 1 && size > min){ size -= 0.5; el.style.setProperty("font-size", size+"px", "important"); }
     if(el.scrollWidth > el.clientWidth + 1){ el.style.setProperty("font-size", max+"px", "important"); el.style.whiteSpace = "normal"; }  // can't fit one line legibly → wrap at full size
   };
-  fit(document.querySelector(".dash-hero h1"), 24, 16);
-  fit(document.querySelector(".dash-hero p:not(.eyebrow)"), 13, 11);
+  fit(document.querySelector(".dash-hero h1"), 29, 16);
+  fit(document.querySelector(".dash-hero p:not(.eyebrow)"), 14, 11);
 }
 window.addEventListener("resize", ()=>{ clearTimeout(window.__heroFitT); window.__heroFitT = setTimeout(fitHeroText, 120); });
 if(document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", ()=>fitHeroText());
@@ -18330,7 +18330,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.09.30-2100";
+var APP_BUILD = "ft-2026.09.30-2048";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18373,21 +18373,21 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-updates.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-slides.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-process.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-rules.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-activities.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.09.30-2026"></script>
-<script src="/js/attendance.js?v=ft-2026.09.30-2026"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-updates.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-slides.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-process.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-rules.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-activities.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.09.30-2048"></script>
+<script src="/js/attendance.js?v=ft-2026.09.30-2048"></script>
 <script src="/js/portal-link.js?v=1"></script>
 <script src="/js/portal-link.js?v=1"></script>
-<script src="/js/lsh-dashboard.js?v=1"></script>
+<script src="/js/lsh-dashboard.js?v=ft-2026.09.30-2048"></script>
 </body>
 </html>
