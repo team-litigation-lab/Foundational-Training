@@ -2,9 +2,9 @@
 """Builds a lesson whose slides are its deck's own pages, rendered from the Canva PDF.
 
     pip install pymupdf pillow
-    python3 build/slides/image_lesson.py vae "<deck.pdf>"
+    python3 build/slides/image_lesson.py vae "<deck.pdf>"     # or: lfc
 
-For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
+For a deck whose design is the content (Virtual Assistant Essentials, Law Firm Communication): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
 deck's fonts, so nothing reflows (a PPTX rendered without Canva's fonts spills its text out of its boxes).
 Each slide's heading is the page's largest text; its alt text is the page's words.
@@ -26,6 +26,11 @@ DECKS = {
             "about": 'the "I. Virtual Assistant Essentials" deck (Canva design DAGtQfkdZeg)',
             # a heading the largest-text rule gets wrong (the page's section label sits at the same size)
             "headings": {46: "Specific VA Tasks in PI Firms"}},
+    "lfc": {"id": 2, "var": "DAY2", "file": "lesson02.js", "title": "Law Firm Communication",
+            "video": "https://drive.google.com/file/d/1o3LYojKAhid10ovts_umxhbWxb2j5i6l/view",
+            "pdf": "https://www.canva.com/design/DAGnZlfVDg0/-8llTBcfj8N_Xk35hYyarQ/view",
+            "about": 'the "Law Firm Communication" deck (Canva design DAGnZlfVDg0)',
+            "headings": {**{i: "Invoice Follow-up Calls" for i in range(30, 36)}, 54: "Thank You"}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",

@@ -21,7 +21,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 |---|---|---|
 | 📌 | Training Orientation and Rules | ✅ slides (`js/ft-rules.js`), always open, not counted |
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
-| 2 | Law Firm Communication | ✅ deck |
+| 2 | Law Firm Communication | ✅ deck's own pages (54) |
 | 3 | Personal Injury Process Flow | ✅ deck |
 | 4 | Receptionist Training | ✅ native slides (46, rebuilt from the deck's PDF) |
 | 5 | Calendaring & Appointment Setting Training | ✅ deck |
@@ -37,6 +37,8 @@ Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI As
 ### Virtual Assistant Essentials: the deck's own pages
 
 Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each of its 138 pages is one slide, an image in `ft/vae/slides/` rendered from the Canva PDF, with the page's largest text as the slide heading and its words as the alt text. To update it, download the deck from Canva as PDF and run `python3 build/slides/image_lesson.py vae <deck.pdf>` (needs `pip install pymupdf pillow`), then rebuild. Render from the PDF, not the PPTX: the PDF carries the deck's fonts, while a PPTX rendered without them spills its text out of its boxes.
+
+Lesson 2 (Law Firm Communication) is built the same way: its 54 pages are images in `ft/lfc/slides/`. To update it, download the deck from Canva as PDF and run `python3 build/slides/image_lesson.py lfc <deck.pdf>`, then rebuild.
 
 ### Native slides (rebuilt from a deck)
 
