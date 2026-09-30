@@ -21,7 +21,7 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 |---|---|---|
 | 📌 | Training Orientation and Rules | ✅ slides (`js/ft-rules.js`), always open, not counted |
 | 1 | Virtual Assistant Essentials | ✅ deck (Open in Canva ↗) |
-| 2 | Law Firm Communication | ✅ deck's own pages (54) |
+| 2 | Law Firm Communication | ✅ native slides (52, rebuilt from the deck's PDF) |
 | 3 | Personal Injury Process Flow | ✅ deck |
 | 4 | Receptionist Training | ✅ native slides (46, rebuilt from the deck's PDF) |
 | 5 | Calendaring & Appointment Setting Training | ✅ deck |
@@ -38,17 +38,15 @@ Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI As
 
 Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each of its 138 pages is one slide, an image in `ft/vae/slides/` rendered from the Canva PDF, with the page's largest text as the slide heading and its words as the alt text. To update it, download the deck from Canva as PDF and run `python3 build/slides/image_lesson.py vae <deck.pdf>` (needs `pip install pymupdf pillow`), then rebuild. Render from the PDF, not the PPTX: the PDF carries the deck's fonts, while a PPTX rendered without them spills its text out of its boxes.
 
-Lesson 2 (Law Firm Communication) is built the same way: its 54 pages are images in `ft/lfc/slides/`. To update it, download the deck from Canva as PDF and run `python3 build/slides/image_lesson.py lfc <deck.pdf>`, then rebuild.
-
 ### Native slides (rebuilt from a deck)
 
-**Topic dividers.** Lessons 1, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 9 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
-- **Where topics start:** `FT_TOPICS` in `js/ft-updates.js`, with each topic's first page by page id. Lesson 1 has 10 topics, Lesson 4 has 5 and Lesson 7 has 12.
+**Topic dividers.** Lessons 1, 2, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 9 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
+- **Where topics start:** `FT_TOPICS` in `js/ft-updates.js`, with each topic's first page by page id. Lesson 1 has 10 topics, Lesson 2 has 11, Lesson 4 has 5 and Lesson 7 has 12.
 - **Adding pages:** new pages don't move the dividers. To start a topic somewhere else, change its page id there.
 - **Canva lessons:** a lesson that is one Canva deck has no dividers, because the deck has its own title page.
 - **Saved places:** these are slide positions, so each trainee's "resume here" and "furthest reached" moved once to the same page when the dividers arrived. The saved objects record which lessons were moved (`_ftTopics`).
 
-Lessons 4 and 7 are no longer Canva embeds: each deck page is its own slide in the platform, with the deck's exact wording in this program's own design (`js/ft-slides.js`: cards, numbered steps, check lists, do / don't boxes, tips, tables and zoomable document images). The deck's link is kept as the lesson's `canva` field.
+Lessons 2, 4 and 7 are no longer Canva embeds (Lesson 2 came as a PDF like Lesson 4: `extract_pdf.py <deck.pdf> lfc`, `make_lesson.py lfc`, `make_scripts.py lfc`; its beats are in `build/slides/lfc_script.py`, and the deck's two section title pages, p04 and p24, are replaced by the topic dividers): each deck page is its own slide in the platform, with the deck's exact wording in this program's own design (`js/ft-slides.js`: cards, numbered steps, check lists, do / don't boxes, tips, tables and zoomable document images). The deck's link is kept as the lesson's `canva` field.
 
 1. Download the deck from Canva as `.pptx` (speaker notes included) and extract it: `build/slides/extract_pptx.py` writes `build/slides/<deck>.json` (each page's text boxes and notes). A deck downloaded as PDF works too: `build/slides/extract_pdf.py <deck.pdf> [<part 2.pdf> …] <deck>` (needs `pip install pymupdf`; a deck downloaded in parts is given in order). A PDF has no speaker notes, so its scripts' talk-through is written in `build/slides/<deck>_script.py` and the walk-through is the slide's own points.
 2. `python3 build/slides/make_lesson.py <deck>` writes `build/lessons/lessonNN.js`. Each page's layout is set in `make_lesson.py`; exact repeats of a page are kept once.

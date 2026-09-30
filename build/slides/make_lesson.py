@@ -405,12 +405,96 @@ def receptionist_pages():
     P["p46"] = lambda b: S(title(b[0][0]), hero_photo("Receptionist Training", b[0][0], "thanks"))
     return P
 
+# ---------- Law Firm Communication (lesson 2) ----------
+def lfc_pages():
+    P = {}
+    j = lambda b, *ix: " ".join(l for i in ix for l in b[i])            # boxes ix joined into one paragraph
+    rest = lambda b, a: " ".join(l for x in b[a:] for l in x)           # every box from a on
+    def one(h, a=1):                                                    # a one-paragraph practice page
+        return lambda b: S(h, lead(rest(b, a)), lab="Inbound call best practices")
+    P["p01"] = lambda b: S("Law Firm Communication", hero("LSH Foundational Training", "Law Firm Communication"))
+    P["p02"] = lambda b: S("Objectives", grid([card(str(i + 1), None, j(b, i + 1), cls="accent") for i in range(3)], "c3"))
+    P["p03"] = lambda b: S("Training Agenda", flow([j(b, i) for i in range(1, 6)]))
+    P["p05"] = lambda b: S("Inbound Caller Roles", grid([card(ic, None, j(b, i)) for ic, i in zip("💼👤📅💳", range(2, 6))]))
+    def p06(b):
+        rec = ["Welcoming", "Addresses any call inquiries", "Determine leads and endorse to intake."]
+        sales = ["Consultation", "Attorney", "Leading the prospect to choosing the firm", "Selling the firm’s services", "Retaining the firm"]
+        return S("Inbound Caller Roles", grid([card("💼", "Reception", items=rec, cls="accent"), card("👤", "Intake", items=b[3], cls="accent"),
+                                               card("🤝", "Sales", items=sales, cls="accent"), card("⚖️", "Legal", items=b[7], cls="accent")], "c2"))
+    P["p06"] = p06
+    for k, h, a in [("p07", "Answer Quickly", 1), ("p08", "Answer Quickly", 1), ("p09", "Be Ready", 1), ("p10", "Set a Positive Tone", 1),
+                    ("p11", "Set a Positive Tone", 3), ("p12", "Manage Your Hold Time", 1), ("p13", "Manage Your Hold Time", 1),
+                    ("p14", "Make Every Caller Feel Valued", 3), ("p15", "Make Every Caller Feel Valued", 3), ("p16", "Be Consistent", 1),
+                    ("p17", "Be Consistent", 1), ("p18", "Stay in Control", 1), ("p19", "Stay in Control", 1), ("p20", "Recap", 1),
+                    ("p21", "Recap", 1), ("p22", "Proper Documentation", 2), ("p23", "Proper Documentation", 2)]:
+        P[k] = one(h, a)
+    P["p25"] = lambda b: S("Common Outbound Calls", grid([
+        card("📞", "Follow up", j(b, 2, 3), cls="accent"), card("📎", "Request for additional information or documents", j(b, 5), cls="accent"),
+        card("💳", "Payment reminders", j(b, 7), cls="accent"), card("📅", "Coordinate appointments", j(b, 9), cls="accent")], "c2"))
+    P["p26"] = lambda b: S("Common Outbound Calls", grid([
+        card("🩺", "Appointment reminders", j(b, 2, 3), cls="accent"), card("🏛", "Court process inquiries", j(b, 5), cls="accent"),
+        card("⏰", "Reminders and scheduling", j(b, 7), cls="accent"), card("🗂", "Personal assistant related calls", j(b, 9), cls="accent"),
+        card("📋", "Any other calls requested by the office", j(b, 11), cls="accent")], "c3"))
+    def steps(h, lab, spec, drop=None):      # drop: a stray word of the next block the PDF put at the end of a box
+        return lambda b: S(h, grid([card(str(n), t, j(b, *ix).removesuffix(drop) .strip() if drop else j(b, *ix), cls="accent") for n, t, ix in spec], "c2"), lab=lab)
+    CT = "Outbound call type"
+    P["p27"] = steps("Client Contact Calls", CT, [(1, "Introduction", (2,)), (2, "Authenticate", (4,))], drop="OUTBOUND")
+    P["p28"] = steps("Client Contact Calls", CT, [(3, "Purpose", (2,)), (4, "Closing the call", (4,))])
+    P["p29"] = steps("Client Contact Calls", CT, [(5, "Engagement appreciation", (2,)), (6, "Leave voicemail if necessary", (4, 5))])
+    IF = "Invoice follow-up"
+    P["p30"] = lambda b: S("Invoice Follow-up Calls", grid([card("1", "Introduction", " ".join(b[1][1:]), cls="accent"),
+                           card("2", "Confirm that you are speaking with the client", j(b, 3), cls="accent")], "c2"), lab=IF)
+    P["p31"] = lambda b: S("Invoice Follow-up Calls", lead(j(b, 1)), ul([j(b, 2), j(b, 3), j(b, 4)]), lab=IF)
+    P["p32"] = lambda b: S("Invoice Follow-up Calls", sub("Sample script"), lead(j(b, 2)), note(f"<b>Note:</b> {esc(' '.join(b[3][1:] + b[4]))}"), lab=IF)
+    P["p33"] = lambda b: S("Invoice Follow-up Calls", sub("Sample script"), grid([card("1", "If it is not the client", j(b, 2), cls="soft"), card("2", "If it is the client", j(b, 3), cls="soft")], "c2"), lab=IF)
+    P["p34"] = lambda b: S("Invoice Follow-up Calls", sub("Document all calls on CRM"), grid([
+        card("1", "Scenario 1", " ".join(b[3]), cls="accent"), card("2", "Scenario 2", j(b, 5), cls="accent")], "c2"), tip(f"<b>Example:</b> {esc(j(b, 7))}"), lab=IF)
+    P["p35"] = lambda b: S("Invoice Follow-up Calls", sub("Email template"), lead(j(b, 2)),
+        f'<div class="cs-card soft"><p><b>{esc(b[3][0])}</b><br><b>{esc(b[4][0])}</b><br><br>{esc(j(b, 5))}<br><br>{esc(j(b, 6))}<br><br>{esc(j(b, 7))}<br><br>{esc(j(b, 8))}</p></div>', lab=IF)
+    P["p36"] = lambda b: S("Provider Calls", grid([card("1", "Introduction", j(b, 2), cls="accent"),
+                           card("2", "Confirm that you are speaking with the right contact person", j(b, 4, 5), cls="accent")], "c2"), lab=CT)
+    P["p37"] = lambda b: S("Provider Calls", sub("Proceed in completing the call"), grid([card("🔓", None, j(b, 2), cls="accent"), card("🪪", None, j(b, 3), cls="accent")], "c2"), warn(f"<b>{esc(j(b, 4))}</b>"), lab=CT)
+    P["p38"] = lambda b: S("Provider Calls", sub("Sample script"), grid([card("1", "Speaking with someone", j(b, 2), cls="soft"), card("2", "Leaving a voicemail", j(b, 3), cls="soft")], "c2"), lab=CT)
+    P["p39"] = lambda b: S("Provider Calls", grid([card("🙏", "Show appreciation for their time", j(b, 2), cls="accent"),
+                           card("📞", "Leave voicemail if necessary", j(b, 4), cls="accent")], "c2"), warn(f"<b>{esc(b[5][0])}</b> {esc(b[5][1])}"), lab=CT)
+    P["p40"] = lambda b: S("Calls to Adjusters", grid([card("1", "Introduction", " ".join(b[3][1:]), cls="accent"),
+                           card("2", "Confirm that you are speaking with the right person", j(b, 6), cls="accent")], "c2"), lab=CT)
+    P["p41"] = lambda b: S("Calls to Adjusters", sub("Complete the call"), lead(j(b, 4)), grid([card("🔢", None, b[5][0], cls="accent"), card("🚫", None, j(b, 6), cls="dark")], "c2"), warn(f"<b>{esc(j(b, 9))}</b>"), lab=CT)
+    P["p42"] = lambda b: S("Calls to Adjusters", sub("Complete the call"), lead(j(b, 4)), sub("Show appreciation for their time"), f"<p>{esc(j(b, 8))}</p>", lab=CT)
+    P["p43"] = lambda b: S("Calls to Adjusters", sub("Leave voicemail if necessary"), lead(j(b, 3)), grid([card("🔒", None, b[5][0], cls="dark"), card("✉️", None, b[7][0], cls="accent")], "c2"), lab=CT)
+    P["p44"] = lambda b: S("Calls to Adjusters", sub("Sample script"), lead(j(b, 3)), lab=CT)
+    P["p45"] = lambda b: S("Court Calls", grid([card("1", "Introduction", j(b, 2), cls="accent"),
+                           card("2", "Confirm that you are speaking with the court department or clerk", j(b, 4), cls="accent")], "c2"), lab=CT)
+    P["p46"] = lambda b: S("Court Calls", sub("Proceed in completing the call"), lead(j(b, 2)), grid([card("🙏", "Show appreciation for their time", j(b, 4), cls="accent"), card("📞", "Leave voicemail if necessary", j(b, 6), cls="accent")], "c2"), lab=CT)
+    P["p47"] = lambda b: S("Court Calls", sub("Sample script"), lead(j(b, 2)), lab=CT)
+    def p48(b):
+        pts = [x.strip() for x in j(b, 6).split("•") if x.strip()]
+        return S("Calls to Opposing Counsel", grid([card("1", "Introduction", " ".join(b[2][1:]), cls="accent"),
+                 card("2", "Confirm that you are speaking with opposing counsel or their staff", items=pts, cls="accent")], "c2"), lab=CT)
+    P["p48"] = p48
+    P["p49"] = lambda b: S("Calls to Opposing Counsel", sub("Complete the call"), lead(j(b, 2)), grid([card("🔢", None, b[3][0], cls="accent"), card("🚫", None, j(b, 4), cls="dark")], "c2"),
+                           card("🙏", "Show appreciation for their time", j(b, 6), cls="soft"), lab=CT)
+    P["p50"] = lambda b: S("Calls to Opposing Counsel", sub("Leave voicemail if necessary"), lead(j(b, 2)), grid([card("🔒", None, b[3][0], cls="dark"), card("✉️", None, b[4][0], cls="accent")], "c2"), lab=CT)
+    P["p51"] = lambda b: S("Calls to Opposing Counsel", sub("Sample script"), lead(j(b, 2)), lab=CT)
+    P["p52"] = lambda b: S("Calls to Opposing Counsel", sub("Sample script: voicemail"), lead(j(b, 2)), lab=CT)
+    P["p53"] = lambda b: S("Outbound Caller Best Practices", grid([
+        card("1", "Preparation is key", j(b, 3), cls="accent"), card("2", "Proper introduction", j(b, 6), cls="accent"), card("3", "Be direct", j(b, 7), cls="accent"),
+        card("4", "Call within office hours", j(b, 10), cls="accent"), card("5", "Value their time", j(b, 12), cls="accent")], "c3"))
+    P["p54"] = lambda b: S("Thank You", hero("Law Firm Communication", "Thank You"))
+    return P
+
 LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Training", "file": "lesson07.js",
                       "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
                       "canva": "https://www.canva.com/design/DAHWU-Wq2mQ/Nh3SycOXOAg7kl5EOQ-Z6Q/view",
                       "pages": claims_pages,
                       # pages that repeat the page before them in the deck (kept once)
                       "repeats": {"n006", "n012", "n040"}},
+           "lfc": {"id": 2, "var": "DAY2", "title": "Law Firm Communication", "file": "lesson02.js",
+                      "video": "https://drive.google.com/file/d/1o3LYojKAhid10ovts_umxhbWxb2j5i6l/view",
+                      "canva": "https://www.canva.com/design/DAGnZlfVDg0/-8llTBcfj8N_Xk35hYyarQ/view",
+                      "pages": lfc_pages,
+                      # the deck's two section title pages: the topic dividers take their place
+                      "repeats": {"p04", "p24"}},
            "receptionist": {"id": 4, "var": "DAY4", "title": "Receptionist Training", "file": "lesson04.js",
                       "video": "https://drive.google.com/file/d/1W7vkDcf6FpPSDEOWcEmTylJdKNyss-1M/view",
                       "pages": receptionist_pages, "repeats": set()}}

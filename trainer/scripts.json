@@ -2011,5 +2011,546 @@
     "ask": "What's one habit from today you'll use on your very first call?"
    }
   }
+ },
+ "2": {
+  "deck": "lfc",
+  "sections": {
+   "p01": {
+    "on": "Slide 1 of 52",
+    "why": "Every call to or from a law firm is a first impression of the firm, and of us.",
+    "talk": "Welcome everyone. Today is Law Firm Communication: how we handle the calls that come in, the calls we make, and what we can and can't say on each one.",
+    "walk": [],
+    "ask": "Think of the last professional call you had. What made it go well or badly?"
+   },
+   "p02": {
+    "on": "Slide 2 of 52",
+    "why": "Three goals keep the session focused: professionalism, handling hard calls, and following protocol.",
+    "talk": "By the end of this session you can communicate professionally, handle difficult callers and unclear messages, and follow the firm's protocols for confidentiality and legal compliance.",
+    "walk": [
+     "To develop and demonstrate professional communication skills appropriate for a law firm setting, ensuring clarity, confidentiality, and effectiveness in all interactions.",
+     "To enhance the ability of participants to effectively address common challenges such as handling difficult callers and clarifying unclear messages.",
+     "To become familiar with and adhere to established protocols for handling communication within a law firm setting, ensuring professionalism and legal compliance at all times."
+    ],
+    "ask": "Which of these three do you think is hardest to do well on a live call?"
+   },
+   "p03": {
+    "on": "Slide 3 of 52",
+    "why": "Seeing the agenda first tells trainees where the session is going and why each part matters.",
+    "talk": "Here is the road map: soft phones, call handling, law firm call management, attorney-client privilege and best practices. We start with the calls that come in.",
+    "walk": [
+     "Soft Phones",
+     "Call Handling",
+     "Law Firm Call Management",
+     "Attorney - Client Privilege",
+     "Best Practices"
+    ],
+    "ask": "Which item on this list have you used before?"
+   },
+   "p05": {
+    "on": "Slide 4 of 52",
+    "why": "Inbound calls reach different roles, and the caller shouldn't feel bounced around.",
+    "talk": "Four roles take inbound calls: the receptionist, the intake specialist, the appointment setter and the payment processor. Each has a different job on the phone.",
+    "walk": [
+     "RECEPTIONIST",
+     "INTAKE SPECIALIST",
+     "APPOINTMENT SETTER",
+     "PAYMENT PROCESSOR"
+    ],
+    "ask": "If a caller says, 'I want to pay my invoice,' which role takes the call?"
+   },
+   "p06": {
+    "on": "Slide 5 of 52",
+    "why": "Knowing what each role covers tells you when to help and when to hand the call over.",
+    "talk": "Reception welcomes callers, handles inquiries and passes leads to intake. Intake finds good leads and books consultations. Sales sells the firm's services and retains the client. Legal does the actual work on the case, including VA tasks.",
+    "walk": [
+     "Reception",
+     "Welcoming",
+     "Addresses any call inquiries",
+     "Determine leads and endorse to intake.",
+     "Intake",
+     "Determining good leads",
+     "Intake questions",
+     "Selling the appointment",
+     "Book Consultations",
+     "Sales",
+     "Consultation",
+     "Attorney",
+     "Leading the prospect to choosing the firm",
+     "Selling the firm’s services",
+     "Retaining the firm",
+     "Legal",
+     "Actual work done",
+     "Legal Services",
+     "Resolution",
+     "Completion of case",
+     "VA tasks"
+    ],
+    "ask": "A caller wants to schedule a consultation. Which role do you pass them to?"
+   },
+   "p07": {
+    "on": "Slide 6 of 52",
+    "why": "The first ring is the first sign of how the firm treats people.",
+    "talk": "Aim to answer within the first ring. A fast answer tells the caller you are eager to help and sets the tone for the rest of the service.",
+    "walk": [],
+    "ask": "What does a slow answer tell a caller before you say a word?"
+   },
+   "p08": {
+    "on": "Slide 7 of 52",
+    "why": "Trust can be lost before the conversation starts.",
+    "talk": "First impressions form in the first 7 seconds to two minutes. If most of that time is hold or waiting, we've risked losing trust before we begin.",
+    "walk": [],
+    "ask": "How long do you think you would wait before hanging up on a law office?"
+   },
+   "p09": {
+    "on": "Slide 8 of 52",
+    "why": "Hesitation makes callers doubt that we can help.",
+    "talk": "Stay alert and ready for any scenario in real time. Even a short pause can shake the caller's confidence. Being at your phone outside scheduled breaks makes this easy.",
+    "walk": [],
+    "ask": "What is one thing you can do at your desk so you're ready when the phone rings?"
+   },
+   "p10": {
+    "on": "Slide 9 of 52",
+    "why": "Your voice is the only thing the caller has to judge you by.",
+    "talk": "The moment you answer, your tone is your first impression. Callers can hear your smile, so stay calm and professional from the first word.",
+    "walk": [],
+    "ask": "Say 'Thank you for calling' in a flat voice, then with a smile. What changed?"
+   },
+   "p11": {
+    "on": "Slide 10 of 52",
+    "why": "Even the hard calls go better with a good tone and a script.",
+    "talk": "With the right script, a positive tone and respectful confidence, even sensitive calls, like past due invoices, can lead to productive conversations.",
+    "walk": [],
+    "ask": "Why is a script helpful on a call about a past due invoice?"
+   },
+   "p12": {
+    "on": "Slide 11 of 52",
+    "why": "A caller left on hold feels ignored.",
+    "talk": "Hold is a last resort. If you need to research, offer to call back instead. Respect and prioritize the caller's time.",
+    "walk": [],
+    "ask": "When is a callback better than a hold?"
+   },
+   "p13": {
+    "on": "Slide 12 of 52",
+    "why": "Asking permission shows respect and keeps the caller from feeling dropped.",
+    "talk": "Before a hold or a transfer, ask for permission, explain the reason, and reassure the caller that you, or the person you're transferring to, will handle their concern promptly.",
+    "walk": [],
+    "ask": "What do you say before you put a caller on hold?",
+    "scenario": "Role-play: a caller needs the billing department. The trainee asks permission, explains the reason, reassures the caller and makes the transfer."
+   },
+   "p14": {
+    "on": "Slide 13 of 52",
+    "why": "People stay with a firm where they feel heard.",
+    "talk": "Put yourself in the caller's shoes. Make them comfortable, talk about their needs, and use their name during the call to build rapport.",
+    "walk": [],
+    "ask": "How often should you use the caller's name on a call?"
+   },
+   "p15": {
+    "on": "Slide 14 of 52",
+    "why": "You can't know what might offend a caller, so formal language protects you.",
+    "talk": "Stay mindful and respectful. Since you never know what might offend, use formal, professional language at all times.",
+    "walk": [],
+    "ask": "Rewrite 'Yeah, hold on a sec' in formal, professional language."
+   },
+   "p16": {
+    "on": "Slide 15 of 52",
+    "why": "Mixed answers make the caller doubt the firm.",
+    "talk": "Inconsistency leads to more questions, and if you can't answer them the caller loses trust in you and in the firm.",
+    "walk": [],
+    "ask": "What could happen if two team members give the same caller two different answers?"
+   },
+   "p17": {
+    "on": "Slide 16 of 52",
+    "why": "An honest 'I'll find out' is better than a wrong answer.",
+    "talk": "Admit when you don't have the answer instead of making excuses or giving wrong information. Promise to find the correct answer and follow up shortly, or connect the caller with someone who can help.",
+    "walk": [],
+    "ask": "A caller asks about their case status and you don't know. What do you say?",
+    "scenario": "Role-play: the caller asks something the trainee can't answer. The trainee admits it, promises a follow-up and offers to connect them with the right person."
+   },
+   "p18": {
+    "on": "Slide 17 of 52",
+    "why": "If the caller controls the call, the call runs long and nothing gets done.",
+    "talk": "Be respectful and friendly, but keep control. Don't give too much leeway and be firm. You guide the call, not the caller.",
+    "walk": [],
+    "ask": "How do you steer a caller who keeps going off topic?"
+   },
+   "p19": {
+    "on": "Slide 18 of 52",
+    "why": "Owning the call shows professionalism and integrity.",
+    "talk": "Take ownership of your calls. Be the responsible, well-guided point of contact.",
+    "walk": [],
+    "ask": "What does 'taking ownership' of a call look like in one sentence?"
+   },
+   "p20": {
+    "on": "Slide 19 of 52",
+    "why": "A recap catches mistakes while the caller is still on the line.",
+    "talk": "As the call ends, summarize the key points. That checks that you captured everything and reassures the caller that they were heard.",
+    "walk": [],
+    "ask": "What three points would you recap after a call to reschedule a consultation?"
+   },
+   "p21": {
+    "on": "Slide 20 of 52",
+    "why": "The next person who takes the call needs to know what happened on this one.",
+    "talk": "After the call, write an after-call summary in the call notes so future assistants can address the issue quickly, and the caller isn't frustrated if they call again.",
+    "walk": [],
+    "ask": "What could go wrong for the caller if the call notes are empty?"
+   },
+   "p22": {
+    "on": "Slide 21 of 52",
+    "why": "Documented calls protect the client and the firm.",
+    "talk": "Document everything discussed on the call, in your client's preferred way (email, call log, advising the client). It also serves as a reference for you and the client later.",
+    "walk": [],
+    "ask": "Where does your client want call notes to go: email or call log? How would you find out?"
+   },
+   "p23": {
+    "on": "Slide 22 of 52",
+    "why": "Multiple clients and tasks mean you can't rely on memory.",
+    "talk": "Taking notes and updating records during the call is a vital skill for a VA, especially when handling several clients, projects or tasks.",
+    "walk": [],
+    "ask": "What is your system for taking notes while you talk?"
+   },
+   "p25": {
+    "on": "Slide 23 of 52",
+    "why": "Most outbound calls have one of these purposes, so you can prepare before dialing.",
+    "talk": "Common outbound calls: follow ups (treatment status, case updates, consultations), requests for additional information or documents, payment reminders and coordinating appointments.",
+    "walk": [
+     "Follow up",
+     "Client’s treatment status or general well-being, case status updates, schedule consultation, follow up after consultation and vouch for client sign up, follow up with requests, etc.",
+     "Request for additional information or documents",
+     "Asking client to resend information or documents needed for the case.",
+     "Payment reminders",
+     "Confirmation of existing client’s invoice and other outstanding payments.",
+     "Coordinate appointments",
+     "Consultation, meeting, court events (hearing, mediation, telephone conference)"
+    ],
+    "ask": "Which of these do you think happens most in a day?"
+   },
+   "p26": {
+    "on": "Slide 24 of 52",
+    "why": "Appointment and court calls have to include the right details or they cause missed visits.",
+    "talk": "More outbound calls: appointment reminders (always give the facility name, appointment type, time, address and contact info), court process inquiries, reminders and scheduling, personal assistant calls, and anything else the office asks for.",
+    "walk": [
+     "Appointment reminders",
+     "Physical therapy, Orthopedic, and Chiropractic appointments. (always include name of facility, kind of appointment, time, address, and contact info.)",
+     "Court process inquiries",
+     "Court staff, Court Mandates, etc.",
+     "Reminders and scheduling",
+     "Client, Opposing Party, Court, Adjusters.",
+     "Personal assistant related calls",
+     "Reservations, Scheduling, Booking, etc.",
+     "Any other calls requested by the office",
+     "Any other reasons tasked to you by other staff members to call."
+    ],
+    "ask": "What five details go into an appointment reminder?"
+   },
+   "p27": {
+    "on": "Slide 25 of 52",
+    "why": "Confirming who you're speaking to protects attorney-client privilege.",
+    "talk": "Client contact calls start with a greeting and the firm's name, then you authenticate. If you can't confirm you're speaking with the client, ask them to have the client call back or get written authorization from the client by SMS or email.",
+    "walk": [
+     "Introduction",
+     "Do your greetings and introduce yourself and the firm you are calling from.",
+     "Authenticate",
+     "Confirm that you are speaking with the client following Attorney- Client Privilege protocols. If all efforts are to no avail, advise them to have the client call you back or obtain a written authorization from the client himself via SMS or Email."
+    ],
+    "ask": "Someone answers and says, 'She's not here, but you can tell me.' What do you do?",
+    "scenario": "Role-play: the trainee calls a client's phone and a family member answers. Practice the authentication step and what to say next."
+   },
+   "p28": {
+    "on": "Slide 26 of 52",
+    "why": "Clear purpose and a closing that reassures keep clients confident in the firm.",
+    "talk": "State your reason clearly and ask all the relevant questions once, so the client doesn't repeat themselves. To close, wrap up, assure the client the firm is working on their case, and say you'll follow up on any updates.",
+    "walk": [
+     "Purpose",
+     "State the reason for your call clearly and ask all relevant questions. Pay attention to what they are saying and avoid making them answer you repeatedly.",
+     "Closing the call",
+     "After getting all the information you need. Wrap up and provide assurance that the firm is working on their case and say that you will follow-up once you get any updates."
+    ],
+    "ask": "Why should you avoid making the client answer the same question twice?"
+   },
+   "p29": {
+    "on": "Slide 27 of 52",
+    "why": "A thank-you and a safe voicemail finish the call well.",
+    "talk": "Thank the client for their time. If no one answers, leave your name, why you're calling, a good callback time and a number. Never leave sensitive information.",
+    "walk": [
+     "Engagement appreciation",
+     "Express your appreciation to them for taking the time to answer the call and for graciously engaging with you.",
+     "Leave voicemail if necessary",
+     "Clearly provide your name, a brief summary why you are calling, a good callback time, and a callback number. Never provide any sensitive information."
+    ],
+    "ask": "What must never be in a voicemail?"
+   },
+   "p30": {
+    "on": "Slide 28 of 52",
+    "why": "Invoice calls follow the same start as any client call, with the same authentication.",
+    "talk": "Introduce yourself and the firm. Then authenticate and find out if you're speaking to the client. If not, ask them to have the client call you back.",
+    "walk": [
+     "Introduction",
+     "Do your greetings and introduce yourself and the firm you are calling from.",
+     "Confirm that you are speaking with the client",
+     "Authenticate and find out if you are speaking to the client. If not advise them to have the client call you back."
+    ],
+    "ask": "Why do we authenticate on an invoice call before mentioning the amount?"
+   },
+   "p31": {
+    "on": "Slide 29 of 52",
+    "why": "Making it easy to pay is the goal of the call.",
+    "talk": "Confirm the client got the invoice email. If yes, offer to help them pay over the phone, or offer a payment plan with automatic payments. If paying online is hard, confirm the payment method. If they don't want to pay by phone, ask when to expect payment, for our records.",
+    "walk": [
+     "If yes, offer assistance if they want to pay over the phone. Offer payment plan to the client where the payment will be automatically deducted from their account.",
+     "If the client mentioned that he or she is having difficulty paying online, confirm the mode of payment he or she chooses to use.",
+     "If the client doesn’t want to pay over the phone, politely ask when can we expect the payment. Mention to the client that this is for our records and reference. The purpose of knowing this is to track the payment and know when to make a follow-up call if payment was not received on the said payment date."
+    ],
+    "ask": "Why do we ask when we can expect the payment?"
+   },
+   "p32": {
+    "on": "Slide 30 of 52",
+    "why": "A script keeps the call polite and the same every time.",
+    "talk": "Read this sample together: greet, confirm the person, check it's a good time, ask about the invoice email and offer to help pay by phone or a payment plan. Note the 3% credit card fee, which is why we prefer bank transfer.",
+    "walk": [
+     "Note:"
+    ],
+    "ask": "Why do we prefer bank transfer?"
+   },
+   "p33": {
+    "on": "Slide 31 of 52",
+    "why": "The client may not be available, so plan for both paths.",
+    "talk": "Two sample scripts: if you're not speaking with the client, ask for the best time to call back and record it. If you are, confirm the invoice email and ask when to expect payment. In both cases, record the date and time and follow up that day.",
+    "walk": [
+     "If it is not the client",
+     "Hi, this is ________. I’m calling from the ABC Law office, am I speaking with Ms. Jane Smith? (If not), I would like to confirm when is your most convenient time for me to call. This is with regard to the invoices we sent to your email. [Record the date and time the client will provide, and do a follow-up call on that day].",
+     "If it is the client",
+     "Hi, this is ________. I’m calling from the ABC Law office, am I speaking with Ms. Jane Smith? (If yes), This is to confirm if you received an email from us regarding your invoices. [If yes], I would just like to check when we should expect the payment. This is for our records and reference. [Take note of the date and time the client will provide, and do a follow-up call on that day]."
+    ],
+    "ask": "What do you record after each of these calls?",
+    "scenario": "Role-play: partner A is the client. Partner B calls about the past due invoice and records the date and time the client gives."
+   },
+   "p34": {
+    "on": "Slide 32 of 52",
+    "why": "Notes that follow the template can be read by anyone on the team.",
+    "talk": "Document every call on the CRM. Use [MM/DD] [Time] [Summary], and your assigned initials on the second version. Look at the example: date, time, what happened, the promised payment and initials.",
+    "walk": [
+     "Scenario 1",
+     "CRM Documentation Template: [MM/DD] [Time] [Summary]",
+     "Scenario 2",
+     "[MM/DD] [Time] [Summary] [Your assigned initials. e.g. MG for Martin Gan.]",
+     "Example:"
+    ],
+    "ask": "Write a CRM note for a call where the client promised to pay $500 on Friday."
+   },
+   "p35": {
+    "on": "Slide 33 of 52",
+    "why": "When the client doesn't answer, the email keeps the follow-up going.",
+    "talk": "Find the client's last Reminder: Pay Past Due Invoices thread and reply. Say you tried to call and reached voicemail, offer help paying online or a payment plan, give the office hours and phone number, and sign with your initials.",
+    "walk": [
+     "From: Accounts (accounts@abclawfirm.com)cc: Accounts (accounts@abclawfirm.com)Hi [Client Name],We tried calling you at [client phone number] to follow up on your past-due invoices, but were routed to voicemail.If you need help making payments online or would like to set up a payment plan. You may give us a call from 8AM to 5PM at 123-456-7890. Look for me or reply to this email so we can give you a return call at your most convenient time. Looking forward to hearing from you.[Assigned Initials]"
+    ],
+    "ask": "Why do we reply on the existing email thread instead of starting a new one?"
+   },
+   "p36": {
+    "on": "Slide 34 of 52",
+    "why": "Reaching the right department saves a second call.",
+    "talk": "Introduce yourself and the firm. Check you're speaking with the right department, like medical records or billing. If not, politely ask to be transferred.",
+    "walk": [
+     "Introduction",
+     "Do your greetings and introduce yourself and the firm you are calling from.",
+     "Confirm that you are speaking with the right contact person",
+     "Verify that you are speaking with someone in the correct department (e.g., medical records or billing). If not, politely ask to be transferred to the appropriate person or department who can assist with your request."
+    ],
+    "ask": "Who do you ask for when you're calling about medical records?"
+   },
+   "p37": {
+    "on": "Slide 35 of 52",
+    "why": "Providers can ask for private data, and giving too much could hurt the client.",
+    "talk": "Give only public information: name, phone number and address. If needed for verification, give the date of birth and the last 4 digits of the SSN. Never give any case details unless the attorney says so.",
+    "walk": [
+     "Only provide public information (Name, phone number, address)",
+     "Some medical providers may ask for private information, only provide date of birth, last 4 digits of SSN if necessary to complete verification.",
+     "Never provide any case details unless advised by the attorney."
+    ],
+    "ask": "A provider asks, 'What happened in the accident?' What do you say?"
+   },
+   "p38": {
+    "on": "Slide 36 of 52",
+    "why": "Practicing the exact words makes the real call easier.",
+    "talk": "Two samples: one when you reach someone, to follow up on a records request, and one for voicemail, with the client's name, callback hours and number.",
+    "walk": [
+     "Speaking with someone",
+     "“Hi, this is Jane and I’m calling from ABC Law firm to follow up on our medical and billing records request for one of our clients… Thank you for your time..”",
+     "Leaving a voicemail",
+     "“Hi, this is Jane and I’m calling from ABC Law firm to follow up and the status of our medical and billing records request for John Smith. At your earliest convenience, please give me a callback from 8AM to 5PM at 800-123-4567. Thank you”"
+    ],
+    "ask": "Which details in the voicemail sample would you personalize?",
+    "scenario": "Role-play: one trainee is the medical records clerk and one calls to follow up on a records request, then leaves the voicemail version."
+   },
+   "p39": {
+    "on": "Slide 37 of 52",
+    "why": "Gratitude and a safe voicemail keep providers willing to help next time.",
+    "talk": "Thank them for their time. If you leave a voicemail: your name, a brief reason, a good callback time and a number, with no sensitive information. Send a follow up email if needed.",
+    "walk": [
+     "Show appreciation for their time",
+     "Show them gratitude for answering the call and providing you what you needed.",
+     "Leave voicemail if necessary",
+     "Clearly provide your name, a brief summary why you are calling, a good callback time, and a callback number.",
+     "Never provide any sensitive information."
+    ],
+    "ask": "When would you send a follow up email after a voicemail?"
+   },
+   "p40": {
+    "on": "Slide 38 of 52",
+    "why": "Adjusters talk to many firms, so speaking to the right person quickly matters.",
+    "talk": "Introduce yourself and the firm, then authenticate and confirm you're speaking with the right person. If not, get their contact details and try again.",
+    "walk": [
+     "Introduction",
+     "Do your greetings and introduce yourself and the firm you are calling from.",
+     "Confirm that you are speaking with the right person",
+     "Authenticate and find out if you are speaking to the right person. If not get the necessary contact details and try again."
+    ],
+    "ask": "What do you do if the adjuster you reach isn't handling the claim?"
+   },
+   "p41": {
+    "on": "Slide 39 of 52",
+    "why": "Adjusters work for the other side, so we give them very little.",
+    "talk": "Confirm the information you gathered before you hang up. The only thing to give is the claim number. Never give progress or case information, and no case details unless the attorney advises it.",
+    "walk": [
+     "Only provide CLAIM NUMBER",
+     "Some insurance companies may ask for private information, NEVER provide any progress or case information. Only provide needed information that is necessary.",
+     "Never provide any CASE DETAILS unless advised by the attorney."
+    ],
+    "ask": "An adjuster asks, 'How is the client's treatment going?' What is your answer?",
+    "scenario": "Role-play: the trainee calls an adjuster about the liability decision. The adjuster keeps asking for case details; the trainee gives only the claim number."
+   },
+   "p42": {
+    "on": "Slide 40 of 52",
+    "why": "The sample shows how short and clean an adjuster call can be.",
+    "talk": "Read the sample: greet, name the firm, and say you're following up on the liability decision for a claim number. Then thank them for their time and what they gave you.",
+    "walk": [
+     "Show them gratitude for answering the call and providing you what you needed."
+    ],
+    "ask": "What did the caller in the sample leave out on purpose?"
+   },
+   "p43": {
+    "on": "Slide 41 of 52",
+    "why": "A voicemail for an adjuster must not reveal case details.",
+    "talk": "Leave your name, a brief reason, a good callback time and a number. Never give sensitive information, and send a follow up email if needed.",
+    "walk": [
+     "Never provide any sensitive information.",
+     "Send a follow up email if necessary."
+    ],
+    "ask": "What goes in the follow up email after an adjuster voicemail?"
+   },
+   "p44": {
+    "on": "Slide 42 of 52",
+    "why": "The voicemail sample is the model to copy.",
+    "talk": "This is the voicemail version: follow up on the liability decision for the claim number, and ask for a callback in office hours at a number.",
+    "walk": [],
+    "ask": "Read the sample aloud in a calm, professional tone."
+   },
+   "p45": {
+    "on": "Slide 43 of 52",
+    "why": "Court staff can only help if we reach the right department.",
+    "talk": "Introduce yourself and the firm, then confirm the department, such as the Civil Clerk's Office or Records. If not, ask to be transferred or for the right contact information.",
+    "walk": [
+     "Introduction",
+     "Do your greetings and introduce yourself and the firm you are calling from.",
+     "Confirm that you are speaking with the court department or clerk",
+     "Politely confirm you’ve reached the correct department (e.g., Civil Clerk’s Office, Records, Domestic Relations Department, Commercial Division ). If not, ask to be transferred or request the correct contact information."
+    ],
+    "ask": "Which department would you ask for to check on a hearing date?"
+   },
+   "p46": {
+    "on": "Slide 44 of 52",
+    "why": "The case number and case style are how the court finds the file.",
+    "talk": "Give the case number and case style. Thank them for their time. If you leave a voicemail, give your name, why you're calling, a callback time and a number.",
+    "walk": [
+     "Show appreciation for their time",
+     "Show them gratitude for answering the call and providing you what you needed.",
+     "Leave voicemail if necessary",
+     "Clearly provide your name, a brief summary why you are calling, a good callback time, and a callback number."
+    ],
+    "ask": "What two identifiers do you give the court first?"
+   },
+   "p47": {
+    "on": "Slide 45 of 52",
+    "why": "Coordinating a hearing has to be short and specific.",
+    "talk": "Read the sample: greet, name the firm, say you're coordinating a hearing on a case in this court, give the case number and thank them.",
+    "walk": [],
+    "ask": "What would you add if the clerk asks for the case style?"
+   },
+   "p48": {
+    "on": "Slide 46 of 52",
+    "why": "Opposing counsel represents the other side, so anything you say can be used against our client.",
+    "talk": "Introduce yourself and the firm. Confirm you're speaking with opposing counsel or their staff. If not, don't discuss case details. Ask to be transferred or for their callback information.",
+    "walk": [
+     "Introduction",
+     "Do your greetings and introduce yourself and the firm you are calling from.",
+     "Confirm that you are speaking with opposing counsel or their staff",
+     "Politely confirm if you’re speaking with the opposing counsel or a member of their legal team.",
+     "If not, do not discuss case details. Simply ask to be transferred to the appropriate contact or request their callback information."
+    ],
+    "ask": "Someone says, 'I'm just the receptionist, but I can help.' What do you say?"
+   },
+   "p49": {
+    "on": "Slide 47 of 52",
+    "why": "Keep the call to what is needed and nothing more.",
+    "talk": "Confirm the information you gathered, give the case number and case style, never give progress or case information, and thank them for their time.",
+    "walk": [
+     "Provide the case number and case style.",
+     "NEVER provide any progress or case information. Only provide needed information that is necessary.",
+     "Show appreciation for their time",
+     "Show them gratitude for answering the call and providing you what you needed."
+    ],
+    "ask": "What information is it okay to give opposing counsel's office?"
+   },
+   "p50": {
+    "on": "Slide 48 of 52",
+    "why": "A voicemail can be replayed or forwarded, so it stays free of sensitive details.",
+    "talk": "Leave your name, a brief reason, a good callback time and a number. Never give sensitive information, and send a follow up email if necessary.",
+    "walk": [
+     "Never provide any sensitive information.",
+     "Send a follow up email if necessary."
+    ],
+    "ask": "Why is a follow up email helpful after leaving a voicemail?"
+   },
+   "p51": {
+    "on": "Slide 49 of 52",
+    "why": "A sample keeps calls to opposing counsel consistent.",
+    "talk": "Read the sample: follow up on the request for a telephone conference with their attorney, naming the case and number.",
+    "walk": [],
+    "ask": "Which details would you change for your own case?",
+    "scenario": "Role-play: the trainee calls opposing counsel's office to follow up on a telephone conference request and stays within the script."
+   },
+   "p52": {
+    "on": "Slide 50 of 52",
+    "why": "Voicemails are shorter and always end with a way to reach you.",
+    "talk": "Read the voicemail version: the same request, then a callback number at their earliest convenience.",
+    "walk": [],
+    "ask": "How is the voicemail different from the live call?"
+   },
+   "p53": {
+    "on": "Slide 51 of 52",
+    "why": "These five habits make every outbound call go better.",
+    "talk": "Preparation is key: name, number, purpose and any documents ready, and double check everything. Introduce yourself with your name, the firm and the reason. Be direct. Call within office hours and have a voicemail script. Value their time and schedule a callback if the client is busy or the line is unclear.",
+    "walk": [
+     "Preparation is key",
+     "Prepare Name, Number, Purpose and any information or document that you may need for the call before calling. Double check all everything and prepare yourself for any question that the client may ask you.",
+     "Proper introduction",
+     "Always state your name, the name of the firm, and the reason why you’re calling.",
+     "Be direct",
+     "Ask what you need and provide details if necessary. Don’t beat around the bush and get to your point.",
+     "Call within office hours",
+     "Memorize or have a written script for leaving voicemails and adjust accordingly if necessary.",
+     "Value their time",
+     "Schedule a callback if necessary especially if the client sounds busy or if the line is not clear."
+    ],
+    "ask": "Which of the five is the one you're most likely to skip?"
+   },
+   "p54": {
+    "on": "Slide 52 of 52",
+    "why": "Ending on the takeaway helps it stick.",
+    "talk": "Thank you everyone. Remember: be prepared, be professional, protect confidentiality and document every call.",
+    "walk": [],
+    "ask": "What is the one thing you'll do differently on your next call?"
+   }
+  }
  }
 }
