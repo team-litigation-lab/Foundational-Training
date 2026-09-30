@@ -159,6 +159,8 @@ const FT_TOPICS = {
   5: [["v002", "Objective, Agenda & Introduction"], ["v006", "Calendars, Tools & Features"], ["v009", "Calendar Organization & Setup"],
       ["v022", "Scheduling Best Practices"], ["v027", "Advanced Calendar Techniques"], ["v030", "Time Management Strategies"],
       ["v035", "Troubleshooting Common Calendar Challenges"], ["v038", "Advance Schedule Management"], ["v043", "Conclusion: Mastering Calendar Management"]],
+  6: [["v002", "Table of Contents & Introduction"], ["v007", "Requirements of a Good Intake System"], ["v011", "Lead Call Flow & Required Information"],
+      ["v018", "Checklist of Documents & Sample Intake Form"], ["v030", "Documents to Support the Claim"], ["v043", "Conflict Awareness During Intake"]],
   7: [["n002", "The Role, Objective & Workflow"], ["n004", "Coverages & Opening a Claim"], ["n014", "Contacting Insurers & Filing Claims"],
       ["n022", "Letter of Representation"], ["n036", "Declaration Pages"], ["n043", "Coverages & Policy Limits"],
       ["n052", "Liability"], ["n075", "Rideshare (TNC) Claims"], ["n084", "Rental Car Claims"],

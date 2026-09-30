@@ -6,6 +6,7 @@
     python3 build/slides/image_lesson.py piw "<deck.pdf>"     (Lesson 3)
     python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
     python3 build/slides/image_lesson.py cal "<deck.pdf>"     (Lesson 5)
+    python3 build/slides/image_lesson.py isr "<deck.pdf>"     (Lesson 6)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
 an image in ft/<deck>/slides/NNN.webp. Render from Canva's PDF, not from a PPTX: the PDF carries the
@@ -52,6 +53,11 @@ DECKS = {
             "pdf": "Calendar_Management_Training_compressed.pdf (sent in chat)",
             "about": 'the "Calendar Management Training" deck (Canva design DAGnaz2Or2U), all 44 pages',
             "headings": {10: 'Step-by-Step Guide', 33: 'Time Management Strategies: The Two-Minute Rule', 35: 'Troubleshooting Common Calendar Management Challenges', 44: 'Thank You'}},
+    "isr": {"id": 6, "var": "DAY6", "file": "lesson06.js", "title": "Intake Specialist Training",
+            "video": "https://drive.google.com/file/d/1FPA2qhvFOe56b6A2Mcp-OFExqiaO-ZDH/view",
+            "pdf": "THE_INTAKE_SPECIALIST_ROLE_Part1.pdf (sent in chat)",
+            "about": 'the "The Intake Specialist Role" deck (Canva design DAGnZhT1ZE0), Part 1, all 53 pages',
+            "headings": {}},
 }
 WORDS = {"Va": "VA", "Us": "US", "U.s.": "U.S.", "Pi": "PI", "(Dst)": "(DST)", "(Pst)": "(PST)", "(Mst)": "(MST)",
          "(Cst)": "(CST)", "(Est)": "(EST)", "(Ast)": "(AST)", "(Hst)": "(HST)", "Hawaii-aleutian": "Hawaii-Aleutian",
