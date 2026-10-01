@@ -400,6 +400,15 @@ async function checkIn(kv, id, training) {
   return { ok: true, date: et.date, timeIn: v.timeIn };
 }
 
+/* The month's server requests for the admin pages' meter (js/request-budget.js), as the Request budget
+   workflow (EA-PA-TRAINING) saved them to KV under "_request-usage": the same key for every LSH site, so
+   it's read without this course's key prefix. null until the workflow has run. */
+async function requestMeter(kv) {
+  const raw = kv ? await kv.get("_request-usage") : null;
+  if (!raw) return null;
+  try { const u = JSON.parse(raw); delete u.cache; return u; } catch (e) { return null; }
+}
+
 export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
@@ -479,6 +488,12 @@ export default {
 
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
+
+      /* ---------- 📊 server request meter (admins; README → Server request meter) ---------- */
+      if (path === "/api/request-budget") {
+        if (tok.role !== "a") return json({ error: "Admins only" }, 403);
+        return json({ ok: true, usage: await requestMeter(env.LSH_KV) });
+      }
 
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
       if (path === "/api/checkin") {
