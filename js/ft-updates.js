@@ -167,10 +167,9 @@ const FT_TOPICS = {
       ["v020", "Medical Records Request"], ["v028", "Checklist for Requesting Bills and Records"],
       ["v038", "Drafting, Sending & Following Up on Requests"], ["v044", "Documentation & the Request Letter"],
       ["v049", "Lien Balance Verification"]],
-  7: [["n002", "The Role, Objective & Workflow"], ["n004", "Coverages & Opening a Claim"], ["n014", "Contacting Insurers & Filing Claims"],
-      ["n022", "Letter of Representation"], ["n036", "Declaration Pages"], ["n043", "Coverages & Policy Limits"],
-      ["n052", "Liability"], ["n075", "Rideshare (TNC) Claims"], ["n084", "Rental Car Claims"],
-      ["n100", "Best Practices for Claims Specialists"], ["t151715.508", "Dropped Cases & Withdrawal Letters"], ["t151825.685", "No Contact Protocol"]]
+  7: [["v002", "Objective, Introduction & Workflow"], ["v005", "Determination of Coverages & Opening a Claim"], ["v013", "Claim Filing"],
+      ["v021", "Letter of Representation"], ["v034", "Insurance Disclosure & Declarations Pages"], ["v043", "Understanding Coverages"],
+      ["v047", "Policies & Limits"], ["v053", "Understanding Liability"], ["v074", "Liability and Coverage & Wrap-Up"]]
 };
 // the day's topics that are in it: [{h, at: index of the topic's first page}]
 function ftTopics(d){

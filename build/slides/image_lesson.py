@@ -7,6 +7,7 @@
     python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
     python3 build/slides/image_lesson.py cal "<deck.pdf>"     (Lesson 5)
     python3 build/slides/image_lesson.py isr "<part1.pdf>" "<part2.pdf>"     (Lesson 6)
+    python3 build/slides/image_lesson.py csr "<deck.pdf>"     (Lesson 7)
     python3 build/slides/image_lesson.py mrs "<deck.pdf>"     (Lesson 8)
 
 For a deck whose design is the content (Virtual Assistant Essentials): each PDF page becomes one slide,
@@ -66,6 +67,12 @@ DECKS = {
                          79: 'Consent to Release Medicare/Medicaid Information',
                          84: 'Joint Acceptance of Common Legal Representation & Waiver of Conflict of Interest',
                          94: 'ISO Claim Search Disclosure Request', 96: '3rd Party Insurance Affidavit', 105: 'Thank You'}},
+    "csr": {"id": 7, "var": "DAY7", "file": "lesson07.js", "title": "Claims Specialist Training",
+            "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
+            "pdf": "V_Claims_Specialist_compressed.pdf (sent in chat)",
+            "about": 'the "V. Claims Specialist" deck (Canva design DAHWU-Wq2mQ), all 77 pages',
+            "headings": {24: 'LOR Recipients', 25: 'Case Specifics', 26: 'Case Specifics',
+                         76: 'Role Flexibility Based on Client Needs', 77: 'Thank You'}},
     "mrs": {"id": 8, "var": "DAY8", "file": "lesson08.js", "title": "Medical Records Specialist Training",
             "video": "https://drive.google.com/file/d/1Wdq-wNfxvAK1J7ovjbn_ON9CrkjAKCjd/view",
             "pdf": "VI_Medical_Records_Specialist_compressed.pdf (sent in chat)",
