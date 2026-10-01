@@ -49,7 +49,7 @@ window.orientSlides = function(){
      <div class="or-note">There are <b>no quizzes</b>: you finish each lesson from its last slide. Missed something? Every open lesson stays on your dashboard — press <b>Review</b> to go back to it any time.</div>`},
    {k:"Discussions", h:"Classroom discussions with your trainer", body:`
      <div class="or-3">${pill("🖥","Follow the shared slides","Your trainer presents each lesson live. They're the same slides you have on the platform — nothing extra to install.")}${pill("📷","Cameras on","Your camera stays on for the whole discussion. Meeting schedules are sent on the discussion's date and time — keep your notifications on.")}${pill("📒","Then your Monitoring Sheet","After each discussion: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.")}</div>
-     <div class="or-note"><b>Free Skills Training</b> runs every day after your shift, ideally 5:00 – 6:00 PM PST: soft skills, especially communication. Missed one? Ask for the materials and review them at your own pace.</div>`},
+     <div class="or-note"><b>Free Upskill Training</b> runs right after your shift, for an hour or so: communication, accent reduction, grammar, email writing and client interviews. Unpaid and not mandatory, but highly encouraged. Missed one? Ask your trainers what was covered, review the materials and do the practice on your own time.</div>`},
    {k:"Dashboard", h:"Your dashboard at a glance", body:`
      <div class="or-bp">
        <div class="or-bp-main">

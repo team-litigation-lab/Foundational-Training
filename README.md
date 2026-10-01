@@ -68,23 +68,26 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
 - **The slides:**
-  1. Why this matters: training is a simulation of the real world; weekly score audits; offboarding if coaching and feedback don't show progress; the goal is a Generalist Legal VA (familiar with every role, so they can take on other tasks confidently from the start of their role; mastery follows in the role).
-  2. Rules: your schedule. Tracking 8:00 AM – 5:00 PM PST; time management (log in and out on time, no extra time; a 10-minute early buffer only with Matt's approval); breaks 15 – 30 – 15 or one full hour.
-  3. Rules: communication. The 5-minute response rule; acknowledge the trainer's Discord messages; meeting schedules sent on the discussion's date and time; cameras on.
-  4. Rules: your work. Naming conventions followed strictly; use of AI (grammar and spelling only; never client, case or medical information).
-  5. Free Skills Training: every day after the shift, ideally 5:00 – 6:00 PM PST (can run longer); unpaid and untracked (an initiative of the training team, beyond the standard legal VA training); soft skills, especially communication; if you miss it, ask for the materials and review them at your own pace.
-  6. Auxes: `!in` / `!back` in #⏳-timestamps and `In` in #batch-group-channel; no double stamping; the Discord profile status format.
-  7. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
-  8. Building your daily habits: the EOD email and the trackers, with the guide's links. The templates are *coming soon*.
-  9. The Daily Task Tracker, part 1: the status counts, the sections and every column.
-  10. The Daily Task Tracker, part 2: the other tabs and the daily check.
-  11. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
-  12. Typing and spelling tests: the client expects 60 WPM; links, samples and file names.
-  13. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
-  14. Hubstaff To-Dos, part 2: the 22 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
-  15. How to create notes in Hubstaff, with the Add Work Notes picture.
-  16. The Manual Time Adjustment Request: subject, To and CC to copy.
-  17. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+  The slides follow the trainers' Setting of Expectations:
+  1. Setting expectations: training isn't the end goal, you need to pass (performance deliberated weekly; you can still be let go); training is hard on purpose; your trainers are your first clients (resilience, pressure, time management).
+  2. You're a General VA: tagged General VAs but may be assigned to different roles; take initiative when tasks run low; stay placed when a firm restructures; a foundation, not mastery (mastery once a role is assigned, or in the Free Trial period).
+  3. Rules: your schedule and breaks. Tracking 8:00 AM – 5:00 PM PST, no tracking beyond 5:00 PM; unfinished deliverables are finished unpaid unless the trainer approves tracking; log in up to 10 minutes early (tools, and a buffer for breaks beyond the hour); breaks 1 hour total maximum, split as the trainee likes.
+  4. Rules: communication. Reply on Discord within 5 minutes; acknowledge every instruction and activity with a message or a reaction; all meetings are posted on their day, no need to ask; cameras on always (it tests internet speed and connectivity).
+  5. Rules: your work and the use of AI. Naming conventions; don't rely on AI to draft or complete work (grammar and spelling only); protect client information; AI is a tool, not a replacement; some firms allow it, depending on the client.
+  6. Free Upskill Training: right after the shift for an hour or so; communication, accent reduction, grammar, email writing, client interviews; unpaid, not mandatory but highly encouraged; missed sessions are caught up on the trainee's own initiative.
+  7. Auxes: in #⏳-timestamps `!in`, `!brb - lunch`, `!out`, `!brb - power outage`, `!brb - internet outage` (check LSH BOT's notification), and the same without `!` in #batch-group-channel; no double stamping; the Discord profile status format.
+  8. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
+  9. Building your habits for working with clients: the EOD email (a summary: everything completed, at least 3 specific learnings of at least 2 sentences each) and the trackers (the rest of the learnings), with the guide's links.
+  10. The EOD template: subject `Daily Report mm/dd/yy` or `EOD Report mm/dd/yy`, its three parts, and 📋 Copy the Template.
+  11. The Daily Task Tracker, part 1: the status counts, the sections and every column.
+  12. The Daily Task Tracker, part 2: the other tabs and the daily check.
+  13. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
+  14. Typing and spelling tests: clients look for at least 60 WPM; typing twice a day (the 8:00 – 8:10 AM Typing & Spelling Activity and the afternoon), spelling once a day; links, samples and file names; screenshots show the time and date, saved in the training subfolder.
+  15. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
+  16. Hubstaff To-Dos, part 2: the 19 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
+  17. How to create notes in Hubstaff, with the Add Work Notes picture.
+  18. The Manual Time Adjustment Request: subject, To and CC to copy.
+  19. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
