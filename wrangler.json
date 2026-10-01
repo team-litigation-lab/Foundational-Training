@@ -28,5 +28,21 @@
   "placement": {
     "mode": "targeted",
     "region": "gcp:us-central1"
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GEMINI_RELAY",
+        "class_name": "GeminiRelay"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1-gemini-relay",
+      "new_sqlite_classes": [
+        "GeminiRelay"
+      ]
+    }
+  ]
 }
