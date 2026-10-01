@@ -327,11 +327,13 @@ async function loadAdmin(){
   try{
     const keys = (await sharedList("tracker:")) || [];
     const ids = keys.map(k=>String(k).replace(/^tracker:/,""));
-    const recs = await Promise.all(ids.map(async id=>{ const rec = await sharedGet("trainee:"+id); return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; }));
-    const active = await Promise.all(recs.filter(x=>!x.archived).map(async x=>{
-      const [t, rv] = await Promise.all([sharedGet("tracker:"+x.id), sharedGet("trackerreview:"+x.id)]);
-      return Object.assign(x, {t, rv:rv||{days:{}}});
-    }));
+    // The trainee records in one request, then the active trainees' sheets and reviews a few requests at most
+    // (sharedGetMany; ftGetMany in js/ft-updates.js), not one request per record.
+    const people = await sharedGetMany(ids.map(id=>"trainee:"+id));
+    const recs = ids.map((id, i)=>{ const rec = people[i]; return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; });
+    const live = recs.filter(x=>!x.archived);
+    const sheets = await ftGetMany(live.flatMap(x=>["tracker:"+x.id, "trackerreview:"+x.id]));
+    const active = live.map((x, i)=>Object.assign(x, {t:sheets[2*i], rv:sheets[2*i+1]||{days:{}}}));
     FTA.rows = active.filter(x=>x.t).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     FTA.archived = recs.filter(x=>x.archived).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
     const c = await sharedGet("settings:trackercriteria");

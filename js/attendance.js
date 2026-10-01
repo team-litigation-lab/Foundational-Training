@@ -132,10 +132,10 @@ async function load(date){
     if(!state.ftOpenDays && typeof ftLoadOpenDays === "function") await ftLoadOpenDays().catch(() => null);
     AT.keys = ((await sharedList("attendance:")) || []).map(k => typeof k === "string" ? k : k.key);
     const want = batches().map(x => keyOf(x.b, date)).filter(k => AT.keys.includes(k) && !AT.dirty[k]);
-    const got = await Promise.all(want.map(k => sharedGet(k).catch(() => null)));
+    const got = await sharedGetMany(want);
     want.forEach((k, i) => { if(got[i]) AT.recs[k] = Object.assign({rows:{}}, got[i]); });
     const ciKeys = ((await sharedList("checkin:" + date + ":")) || []).map(k => typeof k === "string" ? k : k.key);
-    const ci = await Promise.all(ciKeys.map(k => sharedGet(k).catch(() => null))), mine = {};
+    const ci = await sharedGetMany(ciKeys), mine = {};
     ciKeys.forEach((k, i) => { if(ci[i] && ci[i].timeIn) mine[k.slice(("checkin:" + date + ":").length)] = ci[i]; });
     AT.ci[date] = mine;
   }catch(err){ AT.keys = AT.keys || []; }
@@ -251,7 +251,7 @@ async function loadSummary(b){
   AT.sum[b] = {loading:true, recs:null};
   keepScroll(render);
   const keys = ((await sharedList(pre).catch(() => null)) || []).map(k => typeof k === "string" ? k : k.key).filter(k => k.startsWith(pre));
-  const recs = (await Promise.all(keys.map(k => sharedGet(k).catch(() => null)))).filter(Boolean);
+  const recs = (await sharedGetMany(keys)).filter(Boolean);
   // The day on screen may have changes that aren't saved yet.
   const here = AT.recs[keyOf(b, AT.date)];
   if(here){ const i = recs.findIndex(r => r.date === here.date); if(i >= 0) recs[i] = here; else if(Object.keys(here.rows || {}).length) recs.push(here); }

@@ -641,7 +641,9 @@ if(typeof feedbackPrompt === "function"){
   window.feedbackPrompt = function(){ return __fbFeedbackPrompt.apply(this, arguments) + fbStyleBlock(); };
 }
 setTimeout(() => { if(state.traineeId || state.isAdmin) fbEnsureStyle(); }, 2500);
-setInterval(() => { if(state.traineeId || state.isAdmin) fbEnsureStyle(true); }, 10 * 60000);
+// Re-read every 10 minutes while the page is in view, not in a background tab: every /api/ request counts
+// toward the Cloudflare account's request allowance, shared by every LSH site.
+setInterval(() => { if((state.traineeId || state.isAdmin) && document.visibilityState !== "hidden") fbEnsureStyle(true); }, 10 * 60000);
 
 function fbSampleText(fb){
   const part = (h, arr) => (arr || []).length ? `${h}\n${arr.map(x => "- " + x).join("\n")}` : "";

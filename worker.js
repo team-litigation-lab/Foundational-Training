@@ -529,6 +529,18 @@ export default {
         if (!canRead(tok, key)) return json({ error: "Not allowed" }, 403);
         return json({ value: await kv.get(key) });
       }
+      if (path === "/api/storage/get-many") {
+        // Several records in one request (the Trainee Audit, attendance, a trainee's tasks for every
+        // lesson): every Worker request counts toward the Cloudflare account's request allowance, shared
+        // by every LSH site, so lists aren't fetched one request per record. The same rule as /get for
+        // each key (keys as the page sends them; kv adds the "ft:" prefix); a key this user may not
+        // read is left out.
+        const keys = Array.isArray(body.keys) ? body.keys.map((k) => String(k || "")) : [];
+        if (!keys.length || keys.length > 100) return json({ error: "Send 1 to 100 keys" }, 400);
+        const values = {};
+        await Promise.all(keys.map(async (k) => { if (k && canRead(tok, k)) values[k] = await kv.get(k); }));
+        return json({ values });
+      }
       if (path === "/api/storage/set") {
         if (!key) return json({ error: "Missing key" }, 400);
         if (tok.role === "a") { await kv.put(key, body.value); return json({ ok: true }); }
