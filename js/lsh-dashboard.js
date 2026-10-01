@@ -230,3 +230,36 @@ img[alt="Legal Support Help"]{border-radius:8px;}
   /* the portal may have drawn the dashboard before this file loaded */
   if(typeof render === "function" && typeof state !== "undefined" && state.view === "dashboard"){ try{ render(); }catch(e){} }
 })();
+
+/* The Orientation's Dashboard slide (and the Blueprint PDF built from it) shows the dashboard as it is now:
+   the boxes that sat in a dark sidebar become a light band under the lesson cards, like the real scores band. */
+(function(){
+  if(typeof window.orientSlides !== "function" || window.orientSlides.__band) return;
+  const __o = window.orientSlides;
+  window.orientSlides = function(){
+    const slides = __o.apply(this, arguments);
+    const i = slides.findIndex(x => x && x.k === "Dashboard");
+    if(i >= 0 && /or-bp-side/.test(slides[i].body || "")){
+      const t = document.createElement("template"); t.innerHTML = slides[i].body;
+      const bp = t.content.querySelector(".or-bp"), main = t.content.querySelector(".or-bp-main"), side = t.content.querySelector(".or-bp-side");
+      if(bp && main && side){
+        side.classList.remove("or-bp-side"); side.classList.add("or-bp-band");
+        side.querySelectorAll(".or-box.dark").forEach(b => b.classList.remove("dark"));
+        side.insertAdjacentHTML("afterbegin", `<div class="or-bp-band-h">Under the lessons: your scores band</div>`);
+        bp.classList.add("or-bp-now");
+        const cards = main.querySelector(".or-cards");
+        if(cards) cards.after(side); else main.after(side);
+        slides[i] = Object.assign({}, slides[i], {body: t.innerHTML});
+      }
+    }
+    return slides;
+  };
+  window.orientSlides.__band = true;
+  const st = document.createElement("style"); st.id = "lsh-orient-band"; st.textContent = `
+.or-bp.or-bp-now, .or-slide.or-export .or-bp.or-bp-now{display:block;}
+.or-bp-now .or-bp-main{display:grid;gap:10px;}
+.or-bp-band{display:flex;flex-wrap:wrap;gap:8px;background:#F7F8FB;border:1px solid #E3E6EE;border-radius:12px;padding:10px;}
+.or-bp-band .or-box{background:#fff;flex:1 1 170px;min-width:0;}
+.or-bp-band-h{flex:0 0 100%;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-deep);}
+`; document.head.appendChild(st);
+})();
