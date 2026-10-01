@@ -3,6 +3,7 @@
 
     pip install pymupdf pillow
     python3 build/slides/image_lesson.py vae "<deck.pdf>"     (Lesson 1)
+    python3 build/slides/image_lesson.py lfc "<deck.pdf>"     (Lesson 2)
     python3 build/slides/image_lesson.py piw "<deck.pdf>"     (Lesson 3)
     python3 build/slides/image_lesson.py rec "<deck.pdf>"     (Lesson 4)
     python3 build/slides/image_lesson.py cal "<deck.pdf>"     (Lesson 5)
@@ -41,6 +42,11 @@ DECKS = {
             # (21-24), Overview of Tasks and Roles (25-35), Types of Law Firms (36-39), Tips to Stand Out as a
             # Legal VA (134-137) and the Thank You page (138)
             "keep": {*range(1, 5), *range(20, 40), *range(134, 139)}},
+    "lfc": {"id": 2, "var": "DAY2", "file": "lesson02.js", "title": "Law Firm Communication",
+            "video": "https://drive.google.com/file/d/1o3LYojKAhid10ovts_umxhbWxb2j5i6l/view",
+            "pdf": "LAW_FIRM_COMMUNICATION_compressed.pdf (sent in chat)",
+            "about": 'the "Law Firm Communication" deck (Canva design DAGnZlfVDg0), all 54 pages',
+            "headings": {**{i: 'Invoice Follow-Up Calls' for i in range(30, 36)}, 54: 'Thank You'}},
     "piw": {"id": 3, "var": "DAY3", "file": "lesson03.js", "title": "Personal Injury Process Flow",
             "video": "https://drive.google.com/file/d/1hRbuwwsTpccy0DCy7Rn90HZy_h8t4tbo/view",
             "pdf": "Personal_Injury_Workflow.pdf (sent in chat)",
