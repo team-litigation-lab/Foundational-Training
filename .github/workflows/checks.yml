@@ -1,0 +1,53 @@
+# Runs on every pull request and every push to main. A failure shows as a red
+# "Checks" status on the PR/commit with a readable log, and GitHub emails the
+# person who pushed. Nothing here deploys.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Syntax, files and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: JavaScript syntax, local files, JSON
+        run: node .github/scripts/check-site.mjs
+      - name: Build the Worker without deploying (wrangler dry run)
+        run: npx --yes wrangler@4 deploy --dry-run --outdir "$RUNNER_TEMP/dist"
+
+  smoke:
+    name: Server requests in a browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Server requests (sparing, batched, none in the background)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: |
+          node .github/scripts/server.mjs 8787 > "$RUNNER_TEMP/server.log" 2>&1 &
+          sleep 2
+          node .github/scripts/requests.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }

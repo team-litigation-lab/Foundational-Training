@@ -227,11 +227,12 @@ async function loadAdmin(){
     FMA.rubric = (await sharedGet("monadmin:rubric").catch(()=>null)) || {current:MON_DEFAULT_RUBRIC, history:[]};
     const keys = (await sharedList("monitor:")) || [];
     const ids = keys.map(k=>String(k).replace(/^monitor:/, ""));
-    const rows = await Promise.all(ids.map(async id=>{
-      const [rec, m] = await Promise.all([sharedGet("trainee:"+id), sharedGet("monitor:"+id)]);
-      return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived), m:m||{entries:{}}};
-    }));
-    FMA.rows = rows.filter(x=>!x.archived).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+    // The trainee records in one request, then the active trainees' sheets (sharedGetMany; ftGetMany in js/ft-updates.js).
+    const people = await sharedGetMany(ids.map(id=>"trainee:"+id));
+    const rows = ids.map((id, i)=>{ const rec = people[i]; return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; }).filter(x=>!x.archived);
+    const sheets = await ftGetMany(rows.map(x=>"monitor:"+x.id));
+    rows.forEach((x, i)=>{ x.m = sheets[i] || {entries:{}}; });
+    FMA.rows = rows.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
   }catch(err){ FMA.rows = []; }
   FMA.loading = false;
   if(state.view==="admin" && state.adminTab==="monitor") render();

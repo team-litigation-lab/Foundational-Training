@@ -262,6 +262,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
 | `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
+| `.github/workflows/checks.yml`, `.github/scripts/` | The checks on every pull request (see *Checks*): `check-site.mjs` (syntax, files, JSON), `server.mjs` (the site through `worker.js` with an in-memory KV, for local runs) and `requests.cjs` (how often a page asks the server). |
 
 ## Build
 
@@ -300,3 +301,43 @@ Every edit checks that its anchor exists, so the build stops with an error if th
   - `SESSION_SECRET` (optional)
   - `GEMINI_API_KEY5` … `GEMINI_API_KEY9`: the Gemini key pool behind every AI feature (live chat, grading, the tracker's notes review, trainer tools). Each request starts on the next key in turn, so the load is spread across all of them; a key that hits its limit rests (a minute for a per-minute limit, an hour for a daily one) and the next key takes over. Create each key in its **own** Google Cloud project: keys in the same project share one quota. `/version` shows which pool keys are set.
   - `GEMINI_API_KEY`, `GEMINI_API_KEY1`, `GEMINI_API_KEY2` (optional): used only after every pool key.
+
+## 📉 Staying under Cloudflare's monthly request limit
+
+Every request to the Worker (everything under `/api/` and `/version`) counts toward the Cloudflare account's requests. The account is on Workers Paid: **10 million requests a month, shared by every LSH site** (the courses, the CMS, the Training Portal and the rest). The EA-PA-TRAINING repository's **Request budget** workflow switches the sites' servers off before the limit, until the next billing month, so a page that asks too often can take every site down with it. Static files (the page, `js/`, images) don't count.
+
+So an open page asks the server sparingly (`POLL` in `index.html`; the open lessons in `js/ft-updates.js`), and not at all while its tab is in the background. When the tab is back, whatever came due runs then; a quick look at another tab (Google Meet) asks nothing:
+
+| What | How often | Before |
+|---|---|---|
+| A trainee's access and new tasks (`startApprovalPolling`) | every minute: their record, and the tasks for every open lesson in one request | every 45 s: their record twice and one request per lesson (up to 9), also in the background |
+| A Practice Lab attempt reset, or lessons a trainer unlocked for them (`liveTick`) | every minute (the minute check above counts) | about every 15 s |
+| Trainer feedback and Focus items | every 2 minutes | about every 45 s |
+| Waiting for approval | every 15 s | every 8 s |
+| The open lessons and videos (`ftRefreshOpenDays`) | every 3 minutes, both settings in one request; going back to the dashboard re-reads them at most once a minute | every minute, one request per setting, also in the background, and on every visit to the dashboard |
+| The facilitator's feedback style (`fbEnsureStyle`) | every 10 minutes | every 10 minutes, also in the background |
+| Admin: Trainee Audit, Rankings, Trainee Feedback | every minute, every trainee in one request | about every 30 s, one request per trainee |
+| A new version (`/version`) | every 3 minutes | every 45 s, also in the background |
+
+A trainee's page in view now sends about 4 requests a minute (before: about 24, and about 18 in a background tab, now none). An admin on the Trainee Audit sends about 3 a minute for up to 100 trainees (before: about 2 a minute per trainee, so about 60 for 30 trainees).
+
+Lists of records are read with `/api/storage/get-many` (1 to 100 keys, the same rules as `/api/storage/get` for each key, under the `ft:` prefix like every other key), not one request per record: the tasks for every lesson, the Trainee Audit, Rankings and Trainee Feedback, 🕘 Attendance, and the trainees' sheets in 📋 Task Trackers, 📒 Monitoring Sheets and ✍️ Process Questions (20 sheets to a request, since a sheet can be up to about 1 MB). A trainee is signed out as revoked only when the server answers that their record is gone or not approved: a server that doesn't answer (offline, or the request limit) no longer signs anyone out, and their open lessons stay open until it answers again.
+
+The `index.html` part is the EA/PA portal's engine (the same change is in EA-PA-TRAINING), so a rebuild keeps it.
+
+## Checks (GitHub Actions)
+
+`.github/workflows/checks.yml` runs on every pull request and every push to `main`. A red **Checks** status means something is broken, and the log says what:
+
+- **Syntax, files and build:** every `.js` file and inline script parses, every local file the pages load is in the repository, and every JSON file parses (`.github/scripts/check-site.mjs`, the EA/PA portal's); the Worker builds (`wrangler deploy --dry-run`).
+- **Server requests** (`.github/scripts/requests.cjs`): `get-many` gives a trainee only their own and public records and an Admin every one, reads this program's `ft:` records only, and refuses more than 100 keys. In a browser, with the checks sped up: a trainee's page reads the tasks for every open lesson in one request, their record about once per check, and the open lessons in one request; checks for a new version rarely; and asks nothing while the tab is in the background (catching up when it's back) or on a quick switch to another tab and back. A server that doesn't answer doesn't sign the trainee out or lock their lessons; a revoke does. The Trainee Audit reads every trainee in two requests, and Task Trackers, Monitoring Sheets and Process Questions read the trainees' sheets with get-many.
+
+To run them locally (Node 22; the browser test needs Playwright: `npm install playwright` and `npx playwright install chromium`):
+
+```
+node .github/scripts/check-site.mjs
+node .github/scripts/server.mjs 8787 &      # the site through worker.js, with an in-memory KV
+node .github/scripts/requests.cjs http://localhost:8787/
+```
+
+`server.mjs` runs the Worker in open mode (no passphrase) and with no AI keys, so nothing outside your computer is called. The requests test takes about a minute.

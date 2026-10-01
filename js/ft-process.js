@@ -180,11 +180,13 @@ async function loadAdmin(){
   FPA.loading = true;
   try{
     const keys = (await sharedList("process:")) || [];
-    const rows = await Promise.all(keys.map(k=>String(k).replace(/^process:/, "")).map(async id=>{
-      const [rec, p] = await Promise.all([sharedGet("trainee:"+id), sharedGet("process:"+id)]);
-      return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived), p:p||{sets:{}}};
-    }));
-    FPA.rows = rows.filter(x=>!x.archived).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+    // The trainee records in one request, then the active trainees' answer sheets (sharedGetMany; ftGetMany in js/ft-updates.js).
+    const ids = keys.map(k=>String(k).replace(/^process:/, ""));
+    const people = await sharedGetMany(ids.map(id=>"trainee:"+id));
+    const rows = ids.map((id, i)=>{ const rec = people[i]; return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; }).filter(x=>!x.archived);
+    const sheets = await ftGetMany(rows.map(x=>"process:"+x.id));
+    rows.forEach((x, i)=>{ x.p = sheets[i] || {sets:{}}; });
+    FPA.rows = rows.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
   }catch(err){ FPA.rows = []; }
   FPA.loading = false;
   if(state.view==="admin" && state.adminTab==="process") render();

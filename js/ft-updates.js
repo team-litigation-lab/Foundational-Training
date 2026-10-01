@@ -489,8 +489,14 @@ function ftOpenFor(batch){
   const o = state.ftOpenDays || {};
   return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(batch)] || []).map(Number));
 }
+let ftOpenDaysAt = 0;   // when the open lessons were last read (see ftRefreshOpenDays)
 async function ftLoadOpenDays(){
-  const [v, vv] = await Promise.all([sharedGet("settings:opendays").catch(()=>null), sharedGet("settings:openvideos").catch(()=>null)]);
+  ftOpenDaysAt = Date.now();
+  // Both settings in one request (/api/storage/get-many).
+  const [v, vv] = await sharedGetMany(["settings:opendays", "settings:openvideos"]);
+  // Nothing back (the server didn't answer: offline, or Cloudflare's request limit): the lessons already
+  // open stay open until the next check, rather than locking for everyone in the meantime.
+  if(v == null && vv == null && state.ftOpenDays) return false;
   const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: x.batches || {}} : {all: [], batches: {}};
   const next = shape(v), nextV = shape(vv);
   const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos);
@@ -529,14 +535,33 @@ window.dayLockReason = function(id){
   if(d && !d.sections.length) return `${ftName(id)} hasn't been added to the platform yet.`;
   return `Your trainer opens this lesson when your batch starts it.`;
 };
-function ftRefreshOpenDays(){
+/* A lesson a trainer opens reaches open pages within 3 minutes while the page is in view, on coming back
+   to the tab when a check is due, and on going back to the dashboard (unless read in the last minute).
+   Nothing is asked while the tab is in the background: every /api/ request counts toward the Cloudflare
+   account's request allowance, shared by every LSH site (POLL in index.html; POLL.openDays in the tests). */
+const FT_OPEN_DAYS_EVERY = (typeof POLL !== "undefined" && POLL.openDays) || 3 * 60000;
+function ftRefreshOpenDays(minAge){
   if(FT_IS_AUDIENCE || !(state.traineeId || state.isAdmin)) return;
+  if(document.visibilityState === "hidden") return;
+  if(minAge && Date.now() - ftOpenDaysAt < minAge) return;
   ftLoadOpenDays().then(changed=>{ if(changed && ["dashboard","day"].includes(state.view)) render(); });
 }
-setTimeout(ftRefreshOpenDays, 300);
-setInterval(ftRefreshOpenDays, 60000);
+setTimeout(()=>ftRefreshOpenDays(), 300);
+setInterval(()=>ftRefreshOpenDays(), FT_OPEN_DAYS_EVERY);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "visible") ftRefreshOpenDays(FT_OPEN_DAYS_EVERY); });
 const __ftGoto = window.goto;
-window.goto = function(view){ const r = __ftGoto.apply(this, arguments); if(view==="dashboard") ftRefreshOpenDays(); return r; };
+window.goto = function(view){ const r = __ftGoto.apply(this, arguments); if(view==="dashboard") ftRefreshOpenDays(60000); return r; };
+
+/* The admin tabs that list every trainee's sheet (📋 Task Trackers, 📒 Monitoring Sheets, ✍️ Process Questions)
+   read them with sharedGetMany, 20 keys to a request (the requests sent together), not one request per key:
+   a sheet can be up to about 1 MB, so this keeps each answer from the Worker a sensible size. Values come back
+   in the order asked (null when missing). */
+async function ftGetMany(keys, per){
+  per = per || 20;
+  const parts = [];
+  for(let i = 0; i < keys.length; i += per) parts.push(keys.slice(i, i + per));
+  return [].concat(...await Promise.all(parts.map(p => sharedGetMany(p))));
+}
 
 /* Admin → 📅 Open Days */
 function ftKnownBatches(){
