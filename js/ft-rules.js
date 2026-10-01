@@ -10,7 +10,7 @@
      • A slide's html is built when it's shown (a getter), so the file name in the Reading Task
        has the trainee's name and the Copy buttons work.
      • The parts: why this matters (and the goal: a Generalist Legal VA); the rules (schedule, communication, your work: naming
-       conventions, use of AI); the Training Monitoring Sheet, embedded; Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
+       conventions, use of AI); Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
        #training-reminders (its screenshots); daily habits (EOD email, trackers); the Daily Task Tracker part by part, and its filled-in sample, embedded;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; the Manual Time Adjustment Request; Day 1's
@@ -30,7 +30,7 @@ const AUX_CHANNELS = [
 ];
 
 // Daily habits. Links from the guide: Day 0 → Onboarding Orientation (Training Matrix, sample
-// updated trackers) and Day 1 → Training Monitoring Sheet. soon: until the templates are provided.
+// updated trackers). soon: until the templates are provided.
 const HABITS = [
   {icon:"📧", name:"Send Your EOD Email", lines:[
     "Email your EOD (end-of-day) report before the end of every shift.",
@@ -41,11 +41,9 @@ const HABITS = [
    soon:"The EOD template will be added here soon."},
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
-    "Make your tracker as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
+    "Make your tracker as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
-   links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Download it, then upload it to your trainee folder. Or fill it in on the platform: 📒 Monitoring Sheet."]],
+   links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."]],
    soon:"The tracker templates will be added here soon."}
 ];
 
@@ -270,10 +268,6 @@ const SLIDES = [
   ["work", "Rules: Your Work", ()=>
     rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
     rule("🤖 Use of AI: Don’t Rely on It", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care. It’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
-  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>
-    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, kindly download your monitoring sheet below and upload it to your respective trainees’ folder. You can also fill it in here on the platform.") +
-    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
-    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('monitoring')">📒 Fill It In on the Platform</button></div>`)],
   ["free-skills", "Free Skills Training: After Your Shift", ()=>`
     <div class="ftr-goal"><b>🌱 Every Day After Your Shift, Ideally 5:00 – 6:00 PM PST</b>
       <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you, with extra skills on top of your training.</p></div>
