@@ -9,9 +9,10 @@
        (#/day/12) and names find it, while DAYS.length, map and filter still count the 9 lessons.
      • A slide's html is built when it's shown (a getter), so the file name in the Reading Task
        has the trainee's name and the Copy buttons work.
-     • The parts: why this matters (and the goal: a Generalist Legal VA); the rules (schedule, communication, your work: naming
-       conventions, use of AI); Free Skills Training (after the shift, unpaid, untracked); auxes (the 2 Discord channels, no double stamping, profile status);
-       #training-reminders (its screenshots); daily habits (EOD email, trackers); the Daily Task Tracker part by part, and its filled-in sample, embedded;
+     • The parts follow the Setting of Expectations: what training is (pass it; hard on purpose; trainers are your first clients);
+       General VAs (foundation, not mastery); the rules (schedule and breaks, communication, your work and the use of AI);
+       Free Upskill Training (after the shift, unpaid, encouraged); auxes (the 2 Discord channels, no double stamping, profile status);
+       #training-reminders (its screenshots); daily habits (EOD email, trackers); the EOD template; the Daily Task Tracker part by part, and its filled-in sample, embedded;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; the Manual Time Adjustment Request; Day 1's
        Reading Task.
@@ -23,29 +24,39 @@ const SHIFT = "8:00 AM – 5:00 PM PST";
 
 // Auxes: where and what to type in Discord.
 const AUX_CHANNELS = [
-  {ch:"#⏳-timestamps", what:"The LSH BOT channel. Type the command for your status; LSH BOT replies to confirm it.",
-   rows:[["Start of Your Shift", "!in"], ["Back From a Break", "!back"]], bot:true},
-  {ch:"#batch-group-channel", what:"Your batch’s channel. Type In at exactly 8:00 AM PST, when you start your Hubstaff.",
-   rows:[["Start of Your Shift", "In"]]}
+  {ch:"#⏳-timestamps", what:"The LSH BOT channel. Type the command for your status. LSH BOT replies with a notification: check it, so your log is recorded properly.",
+   rows:[["Logging In", "!in"], ["Lunch Break", "!brb - lunch"], ["Logging Out", "!out"],
+         ["Power Outage", "!brb - power outage"], ["Internet Outage", "!brb - internet outage"]], bot:true},
+  {ch:"#batch-group-channel", what:"Your batch’s channel. Post the same update here, at the same time, when you start your Hubstaff.",
+   rows:[["Logging In", "in"], ["Lunch Break", "brb - lunch"], ["Logging Out", "out"],
+         ["Power Outage", "brb - power outage"], ["Internet Outage", "brb - internet outage"]]}
 ];
 
 // Daily habits. Links from the guide: Day 0 → Onboarding Orientation (Training Matrix, sample
-// updated trackers). soon: until the templates are provided.
+// updated trackers).
 const HABITS = [
   {icon:"📧", name:"Send Your EOD Email", lines:[
-    "Email your EOD (end-of-day) report before the end of every shift.",
-    "Make it as comprehensive as possible. Write at least 2 sentences for each item, ideally more.",
-    "Include at least 3 key learnings from the tasks you completed that day."],
+    "Email your EOD (end-of-day) report before the end of every shift, using the template on the next slide.",
+    "Your EOD is a summary of your day. List everything you accomplished and completed.",
+    "Include at least 3 specific learnings from the tasks you completed, with at least 2 sentences for each, so your trainers can gauge your understanding."],
    to:["martin@legalsupporthelp.com", "michelle.velarde@legalsupporthelp.com"],
    links:[["Training Matrix", "https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", "Your training flow, for your tasks on queue for tomorrow."]],
-   soon:"The EOD template will be added here soon."},
+   },
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
-    "Make your tracker as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference."],
+    "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."]],
-   soon:"The tracker templates will be added here soon."}
+   }
 ];
+// The EOD email (Setting of Expectations).
+const EOD = {
+  subject:"Daily Report mm/dd/yy", subjectAlt:"EOD Report mm/dd/yy",
+  parts:[["Accomplishments/Completed Tasks:", "All the tasks you accomplished and completed for the day.", 4],
+         ["These are the things I've learned that I can put into practice later on:", "At least 3 specific learnings from the tasks you accomplished, at least 2 sentences each.", 3],
+         ["On queue for tomorrow:", "Your next tasks, from your Training Matrix.", 3]]
+};
+EOD.body = EOD.parts.map(p=>p[0] + "\n" + "-\n".repeat(p[2])).join("\n");
 
 // The LSH Daily Task Tracker, part by part (the parts of js/ft-tracker.js's sheet).
 const TRACKER_PARTS = {
@@ -106,10 +117,10 @@ const READING = {
 
 // Day 1 → Setting of Expectations: the tests' links, file names and sample screenshots.
 const TESTS = [
-  {icon:"⌨️", name:"Typing Test", when:"Twice a day, in the morning at 8:00 – 8:10 AM (AM) and before the end of your shift (PM).",
+  {icon:"⌨️", name:"Typing Test", when:"Twice a day: in the morning, during the 8:00 – 8:10 AM Typing & Spelling Activity (AM), and once in the afternoon (PM).",
    links:[["TypingClub", "https://www.typingclub.com/sportal/program-3.game"], ["Alternative: TypingTest.com", "https://www.typingtest.com/"]],
    file:"Typing Test [date taken][AM/PM]", sample:"/ft/day1/img/typing-test-sample.png"},
-  {icon:"🔤", name:"Spelling Test", when:"Once a day, at your own pace, in the morning or in the afternoon.",
+  {icon:"🔤", name:"Spelling Test", when:"Once a day, during the 8:00 – 8:10 AM Typing & Spelling Activity.",
    links:[["SpellQuiz (Grade 12)", "https://spellquiz.com/spelling-test/grade-12"], ["Alternative: Spelling-Test.com", "https://spelling-test.com/spelling-exercise#question_16"]],
    file:"Spelling Test [date taken][AM/PM]", sample:"/ft/day1/img/spelling-test-sample.png"}
 ];
@@ -133,11 +144,8 @@ const TODOS = [
   "Classroom Discussion: Provider Communication Training Day 1",
   "Classroom Discussion: Provider Communication Training Day 2",
   "Classroom Discussion: Provider Communication Training Day 3",
-  "Shadowing Provider Communication Role (Vince)",
   "Classroom Discussion: Provider Communication Training Day 4",
-  "Shadowing Provider Communication Role (Allesa)",
-  "Classroom Discussion: Lien Negotiator Training Day 1",
-  "Classroom Discussion: Lien Negotiator Training Day 2"
+  "Shadowing Provider Communication Role (Allesa)"
 ];
 // Day 0 → Onboarding Orientation: LSH VA Guide | "Create a to-do" task list.
 const TODO_GUIDE = "https://docs.google.com/spreadsheets/d/1Yfeuw9xGb2H68qF9nHf94whXVKmoL1PP8QocP_FN1Ys/edit#gid=0";
@@ -250,41 +258,47 @@ const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
 
 const SLIDES = [
-  ["why", "Why This Matters", ()=>`
-    <div class="ftr-stakes"><b>🎯 Training Is a Simulation of the Real World</b>
-      <p>We assign all these tasks to prepare you for it. Training is just the beginning. Your scores are audited every week, and if coaching and feedback don’t show progress, you may be considered for offboarding. We need to see that you can actually survive in the legal industry, so don’t be complacent.</p></div>
-    <div class="ftr-goal"><b>🧭 Your Goal: Become a Generalist Legal VA</b>
-      <p>This training is designed to make you familiar with every type of role. You may be hired for a specific role, like Intake Specialist, but you’re expected to take on other roles as the partnership with the client grows. Mastery follows once you’re in a role. What matters now is that you’re comfortable and equipped to take on other tasks confidently, so you make the most of your hours from the start of your role.</p></div>
-    <p class="ftr-sub">Next: The rules for every training day, how to report your status, your daily habits, your Hubstaff To-Dos and notes, and Day 1’s Reading Task.</p>`],
-  ["schedule", "Rules: Your Schedule", ()=>
-    rule(`⏰ Hubstaff Tracking Is Strict: ${esc(SHIFT)}`) +
-    rule("🕗 Time Management: Follow Your Schedule Strictly", "Log in and log out on time. Don’t track extra time beyond what’s allowed. You may log in up to 10 minutes early as buffer time, only with Matt’s approval. The idea is to follow protocol at all times.") +
-    rule("☕ Breaks: Strictly 15 – 30 – 15, or One Full 1-Hour Break", "Take a 15-minute break, a 30-minute break and another 15-minute break, or one full hour. No other split.")],
+  ["why", "Setting Expectations: What Training Is", ()=>`
+    <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
+      <p>Being in training doesn’t mean you can be complacent. Your performance is deliberated every week, and depending on the outcome you can still be let go and have your project ended.</p></div>
+    ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
+    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
+    <p class="ftr-sub">Next: Your role as a General VA, the rules for every training day, your auxes, your daily habits, your tests, your Hubstaff To-Dos and notes, and Day 1’s Reading Task.</p>`],
+  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
+    <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
+      <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
+    ${rule("🙋 Take Initiative", "Knowing every role lets you take on other work when your tasks run low or what you’re assigned is limited.")}
+    ${rule("🛡 Stay Placed", "When a firm restructures, you can move into a different role instead of being laid off.")}
+    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}`],
+  ["schedule", "Rules: Your Schedule and Breaks", ()=>
+    rule(`⏰ Hubstaff Tracking Is Strict: ${esc(SHIFT)}`, "We follow a strict schedule. Log out no later than 5:00 PM. No tracking is allowed beyond it.") +
+    rule("🕗 Managing Your Time Is Essential", "If you don’t finish a deliverable by the end of your shift, stop tracking and finish it unpaid, since you didn’t manage your time well. You may keep tracking only if you ask your trainer and they approve it.") +
+    rule("🕖 Log In Up to 10 Minutes Early", "You may log in up to 10 minutes before your shift, no earlier. Use it to prepare your tools, and as a buffer for any break beyond your 1-hour total.") +
+    rule("☕ Breaks: 1 Hour Total, Maximum", "The prescribed total break during training is 1 hour. How you split it is up to you, as long as you don’t go over 1 hour. Going over is your choice only if you accept not getting 8 hours for your shift, since tracking beyond 5:00 PM isn’t allowed.")],
   ["communication", "Rules: Communication", ()=>
-    rule("⏱ The 5-Minute Rule: Reply to Messages Within 5 Minutes", "Be mindful of your response time, and turn on your notifications so you never miss a message.") +
-    rule("✅ Acknowledge Every Discord Message From Your Trainer", "Reply to it or acknowledge it. An emoji reaction or “Noted” is enough. It shows you’re responsive and reliable.") +
-    rule("📅 Meeting Schedules Are Sent on the Date and Time of the Discussion", "Keep your notifications on so you don’t miss them.") +
-    rule("📷 Cameras On During Classroom Discussions", "Every trainee’s camera stays on for the whole discussion.")],
-  ["work", "Rules: Your Work", ()=>
+    rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
+    rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
+    rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.") +
+    rule("📷 Cameras On, Always", "Keep your camera on during every meeting. It tests and gauges your internet speed and connectivity.")],
+  ["work", "Rules: Your Work and the Use of AI", ()=>
     rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
-    rule("🤖 Use of AI: Don’t Rely on It", "As a legal VA, you’re expected to use your own reasoning and discretion, and this training is here to develop them. You may use AI to improve your grammar, spelling and sentence structure. Every document we handle is sensitive and must be treated with the utmost care. It’s protected by attorney-client privilege and by confidentiality rules (HIPAA). Never paste client, case or medical information into an AI tool.")],
-  ["free-skills", "Free Skills Training: After Your Shift", ()=>`
-    <div class="ftr-goal"><b>🌱 Every Day After Your Shift, Ideally 5:00 – 6:00 PM PST</b>
-      <p>It can run longer. It’s designed to develop important soft skills that the regular training doesn’t cover, especially your communication skills. It’s an advantage for you, with extra skills on top of your training.</p></div>
-    <div class="ftr-rule"><b>🕔 Unpaid and Untracked: Don’t Track Your Time for It</b>
-      <span>Why? Our training covers the standard legal VA training. Free Skills Training is an initiative of the training team, to add to your knowledge.</span></div>
-    <div class="ftr-rule"><b>🙋 Missed It? Be Proactive.</b>
-      <span>Ask for the materials, and review them at your own pace.</span></div>
-    <div class="ftr-why"><b>Why It Matters:</b> It’s the perfect time to show your reliability and flexibility, and your continuous effort to improve yourself.</div>`],
+    rule("🤖 Don’t Rely on AI to Draft or Complete Your Work", "As Legal VAs, you’re trained to draft legal documents from actual case information, instructions and established legal processes. Training develops your own legal reasoning, attention to detail, writing skills and understanding of the case lifecycle. If AI drafts for you, you may produce something that looks correct without understanding why it’s correct, or fail to spot its errors. You may use AI to improve your grammar, spelling and sentence structure.") +
+    rule("🔒 Protect Client Information", "Every document we handle is sensitive. It’s protected by attorney-client privilege and confidentiality rules (HIPAA). Uploading case details or sensitive information to an unauthorized AI tool creates serious risks for the client and the law firm. Never paste client, case or medical information into one.") +
+    rule("⚖️ AI Is a Tool, Not a Replacement", "It never replaces your understanding, judgment or responsibility as a Legal VA. Some law firms allow AI, depending on the client you’re assigned to.")],
+  ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
+    <div class="ftr-goal"><b>🌱 Right After Your Shift, for an Hour or So</b>
+      <p>These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm.</p></div>
+    ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
+    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}
+    <div class="ftr-why"><b>Why It Matters:</b> Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>`],
   ["auxes", "Auxes: Reporting Your Status", ()=>`
-    <p class="ftr-sub">Your aux is your status, such as in for your shift, on a break or back from a break. Report it in Discord every time it changes, in these 2 channels:</p>
+    <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post the update in both channels during training:</p>
     <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
       <div class="ftr-chan-h">${esc(c.ch)}</div>
       <p>${esc(c.what)}</p>
       ${c.rows.map(r=>`<div class="ftr-aux"><span>${esc(r[0])}</span><code>${esc(r[1])}</code></div>`).join("")}
-      ${c.bot ? `<div class="ftr-chat" aria-label="Example"><div><b>You</b> !back</div><div><b>LSH BOT</b><i>APP</i> <span class="ftr-at">@You</span> is back</div></div>` : ""}
     </div>`).join("")}</div>
-    <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each timestamp once.</span></div>
+    <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each aux once in each channel.</span></div>
     <div class="ftr-part ftr-status">
       <div class="ftr-part-h">💬 Your Discord Profile Status</div>
       <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
@@ -293,8 +307,8 @@ const SLIDES = [
   ["reminders", "Check #training-reminders", ()=>`
     <p class="ftr-sub">Check #training-reminders on Discord regularly, so you’re always guided on the right things to do for your HS To-Do, your deliverables and other important reminders throughout the training. Click a screenshot to see it full size.</p>
     <div class="ftr-rshots">${REMINDER_SHOTS.map(x=>`<figure><a href="${esc(x[0])}" target="_blank" rel="noopener"><img src="${esc(x[0])}" alt="${esc(x[1])}" loading="lazy"></a><figcaption>${esc(x[1])}</figcaption></figure>`).join("")}</div>`],
-  ["habits", "Building Your Daily Habits", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift:</p>
+  ["habits", "Building Your Habits for Working With Clients", ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid">${HABITS.map(h=>`<div class="ftr-chan ftr-test">
       <div class="ftr-part-h">${h.icon} ${esc(h.name)}</div>
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
@@ -302,8 +316,14 @@ const SLIDES = [
       ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
       ${h.tracker && !FT_AUDIENCE() ? `<div class="ftr-links"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>` : ""}
       ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
-      <p class="ftr-soon">🕓 ${esc(h.soon)}</p>
     </div>`).join("")}</div>`],
+  ["eod", "Your EOD Email: The Template", ()=>`
+    <div class="ftr-part">
+      ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
+      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join("")}
+      <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
+    </div>
+    <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
   ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div>`],
@@ -316,7 +336,7 @@ const SLIDES = [
     ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
     ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}`],
   ["tests", "Typing and Spelling Tests", ()=>`
-    <div class="ftr-why"><b>Why?</b> The client expects a typing speed of 60 WPM (words per minute). The daily tests build your speed and your spelling, and the results you save show your progress through the training.</div>
+    <div class="ftr-why"><b>Why?</b> LSH’s clients look for VAs who type at least 60 WPM (words per minute), so as an initiative you practice typing every day, twice a day. The daily spelling test improves your listening comprehension, vocabulary and spelling. The results you save show your progress through the training.</div>
     <div class="ftr-grid">${TESTS.map(t=>`<div class="ftr-chan ftr-test">
       <div class="ftr-part-h">${t.icon} ${esc(t.name)}</div>
       <p class="ftr-when"><b>When:</b> ${esc(t.when)}</p>
@@ -325,7 +345,7 @@ const SLIDES = [
       <div class="ftr-aux"><code>${esc(t.file)}</code></div>
       <figure class="ftr-sample"><a href="${esc(t.sample)}" target="_blank"><img src="${esc(t.sample)}" alt="Sample ${esc(t.name.toLowerCase())} screenshot" loading="lazy"></a><figcaption>Sample: The whole screen, with the date and time showing.</figcaption></figure>
     </div>`).join("")}</div>
-    <p class="ftr-sub ftr-after">Take a screenshot of each result and save it in your trainee folder, named exactly as above. Missed a test? Make it up during your idle time. You may also take extra rounds during your idle time or after your shift.</p>`],
+    <p class="ftr-sub ftr-after">Take a screenshot of each result, showing the time and date, and save it in your designated training subfolder, named exactly as above. Missed a test? Make it up during your idle time. You may also take extra rounds during your idle time or after your shift.</p>`],
   ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`
     <div class="ftr-why"><b>Why?</b> Your To-Dos help the audit team review your work easily, and keep a clear record of what you completed each day. Set your To-Do every day, for the session you’re in. Don’t miss this routine.</div>
     <div class="ftr-part">
