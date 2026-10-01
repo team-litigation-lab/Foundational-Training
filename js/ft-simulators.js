@@ -24,7 +24,7 @@ const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const TOOLS = {
   drill:    {icon:"☎️", name:"Front Desk Drill (CMS)", cms:"drill=1", desc:"Scored incoming calls on the Training Library cases: find the file, verify the caller, handle or route the call."},
   library:  {icon:"📚", name:"Training Library (all 20 cases)", cms:"library=1", desc:"Every mock case in the CMS, with the firm directory and front-desk rules."},
-  call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"This mock call's calls on the same cases: a caller phones in, you answer by voice or typing, write the note, and get a scored debrief."},
+  call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"Practice calls on these same cases: a caller phones in, you answer by voice or typing, write the call note, and get a scored debrief."},
   calendar: {icon:"📅", name:"Calendaring Simulator", page:"calendar.html", desc:"More practice: a week of scheduling requests to put on the calendar, checked for conflicts and details."}
 };
 
@@ -146,9 +146,9 @@ function renderSimulators(){
     return `<section class="fts-group"><h2>${h}</h2><p class="fts-sub">${sub}</p><div class="fts-grid">${cards}</div></section>`;
   };
   return `<div class="fts-hero"><h1>🛠 Simulators</h1>
-      <p>Practice for the mock calls and demos in your training on the CMS’s mock case files (MC-01 to MC-20). Each one opens with its lesson. A case opens view only; click “Work on a practice copy” in the CMS to work on it.</p></div>
-    ${group("call", "📞 Mock calls", "Practice the calls on the example cases before your mock call with the trainer.")}
-    ${group("demo", "🖥 Demos", "Walk through the demo’s steps on an example case before your demonstration.")}
+      <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
+    ${group("call", "📞 Mock calls", "In a mock call you handle a call on one of these cases for your trainer. Practice the calls here first.")}
+    ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
     <section class="fts-group"><h2>🧰 All simulators</h2>
       <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
       <div class="fts-grid fts-all">${PORTAL_ALL.map(t=>`<div class="card fts-card">
@@ -212,7 +212,7 @@ window.renderDashboard = function(){
   if(!state.traineeId && !state.isAdmin) return html;
   const card = `<div class="fts-banner" role="link" tabindex="0" onclick="goto('simulators')" onkeydown="if(event.key==='Enter') goto('simulators')">
       <span class="fts-banner-ic">🛠</span>
-      <span class="fts-banner-tx"><b>Simulators</b><span>Mock calls and demos on the CMS’s mock case files, plus calls, calendaring, email, docketing, medical records requests and court e-filing.</span></span>
+      <span class="fts-banner-tx"><b>Simulators</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
       <span class="fts-banner-go">Open →</span></div>`;
   return html.replace('<div class="module-grid">', card + '<div class="module-grid">');
 };
