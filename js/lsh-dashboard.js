@@ -40,6 +40,19 @@
     };
     moduleCard.__clean = true; moduleCard.__theme = true;
   }
+  /* 2b. Under Start, the small buttons (Topics, Finish / Video) sit side by side as quiet buttons. */
+  if(typeof moduleCard === "function" && !moduleCard.__row){
+    const __card3 = moduleCard;
+    moduleCard = function(d){
+      const html = __card3(d), t = document.createElement("template"); t.innerHTML = html.trim();
+      const card = t.content.firstElementChild; if(!card || card.querySelector(".mc-row")) return html;
+      const small = [...card.querySelectorAll(".module-finish-btn")];
+      if(small.length < 2) return html;
+      const row = document.createElement("div"); row.className = "mc-row"; small[0].before(row); small.forEach(x=>row.appendChild(x));
+      return card.outerHTML;
+    };
+    moduleCard.__clean = true; moduleCard.__theme = true; moduleCard.__row = true;
+  }
   /* 3. The progress stats sit in one small band right under the day cards. */
   if(typeof renderDashboard === "function" && !renderDashboard.__band){
     const __dash = renderDashboard;
@@ -181,6 +194,37 @@ img[alt="Legal Support Help"]{border-radius:8px;}
 /* the day's theme under the icon: small grey text, up to three lines */
 .dash-main .module-card.mc-clean .module-theme{font-size:12.5px !important;font-weight:500 !important;line-height:1.45 !important;color:var(--ink-soft) !important;text-transform:none !important;letter-spacing:0 !important;font-family:inherit;margin:0 !important;max-width:100%;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 .module-card.mc-clean .module-topics-btn span{color:var(--ink-soft);font-weight:700;margin-left:2px;}
+/* A calm dashboard (easy on the eyes): light card headers, soft buttons, a light scores band — as on EA/PA */
+.dash-main .module-card.mc-clean{background:#fff;border:1px solid #E3E6EE;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(38,43,69,.04),0 8px 20px -16px rgba(38,43,69,.25);}
+.dash-main .module-card.mc-clean:hover{border-color:#D3D7E3;box-shadow:0 1px 2px rgba(38,43,69,.05),0 10px 24px -14px rgba(38,43,69,.28);}
+.dash-main .module-card.mc-clean .module-head,
+.dash-main .module-card.mc-clean:nth-child(3n+2) .module-head,
+.dash-main .module-card.mc-clean:nth-child(3n+3) .module-head{background:#F7F8FB !important;color:var(--navy);border-top:4px solid #4A5277;border-bottom:1px solid #ECEEF4;}
+.dash-main .module-card.mc-clean:nth-child(3n+2) .module-head{border-top-color:var(--orange);}
+.dash-main .module-card.mc-clean .mh-day{color:var(--orange-deep);opacity:1;font-weight:700;letter-spacing:.1em;}
+.dash-main .module-card.mc-clean .mh-title{text-transform:none;letter-spacing:0;font-weight:700;color:var(--navy);}
+.dash-main .module-card.mc-clean .module-start-btn{background:#ECEEF5;border:1px solid #DDE1EC;color:var(--navy);border-radius:10px;box-shadow:none;font-weight:700;letter-spacing:.01em;}
+.dash-main .module-card.mc-clean .module-start-btn:hover, .dash-main .module-card.mc-clean:hover .module-start-btn{background:#353B57;border-color:#353B57;color:#fff;}
+.dash-main .module-card.mc-clean .mc-row{display:flex;gap:8px;margin:0 14px 12px;}
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:1 1 0;min-width:0;width:auto !important;margin:0 !important;background:#F3F4F8;border:1px solid #F3F4F8;color:#4A5070;font-weight:600;border-radius:9px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(min-width:1001px) and (max-width:1340px){ .dash-main .module-card.mc-clean .mc-row{flex-direction:column;gap:5px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:0 0 auto !important;padding-top:5px;padding-bottom:5px;} }
+@media(max-width:1600px){ .dash-main .module-card.mc-clean .mc-row{gap:6px;margin:0 10px 10px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{font-size:11.5px;padding-left:4px;padding-right:4px;} .dash-main .module-card.mc-clean .mc-row .module-topics-btn{flex:0 1 auto;padding-left:8px;padding-right:8px;} }
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn:hover{background:#E9EBF2;border-color:#E9EBF2;color:var(--navy);}
+.dash-main .module-card.mc-clean > :last-child{margin-bottom:12px;}
+.dash-main .module-card.mc-clean .module-theme{color:#6B7088;}
+/* the scores band: light, so it doesn't compete with the lessons */
+.dash-main > .dash-side{background:#fff !important;border:1px solid #E3E6EE !important;box-shadow:none !important;}
+.dash-main > .dash-side .card{background:#F7F8FB !important;border:1px solid #EDEFF5 !important;box-shadow:none !important;color:var(--navy) !important;}
+.dash-main > .dash-side .card *{color:inherit;}
+.dash-main > .dash-side .stat .num{color:var(--navy) !important;}
+.dash-main > .dash-side .stat .lbl, .dash-main > .dash-side .card .sub, .dash-main > .dash-side .stat .lbl span{color:#6B7088 !important;}
+.dash-main > .dash-side .tfb-dash{background:#FFF7EF !important;border-color:#F7DEC6 !important;}
+.dash-main > .dash-side .tfb-dash .btn{color:#fff !important;}
+.dash-main > .dash-side .tfb-dash-stars button{color:#D5D8E3 !important;}
+.dash-main > .dash-side .tfb-dash-stars button.on, .dash-main > .dash-side .tfb-dash-stars button.lit{color:var(--orange) !important;}
+/* "Resume where you left off": a compact button, not a full-width bar */
+.dash-main .bottom-actions{background:none !important;border:none !important;padding:0 !important;margin:8px 0 0 !important;box-shadow:none !important;}
+.dash-main .bottom-actions .resume-btn{padding:7px 16px;font-size:13.5px;border-radius:999px;}
 `;
   document.head.appendChild(st);
   /* the portal may have drawn the dashboard before this file loaded */
