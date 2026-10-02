@@ -5429,8 +5429,8 @@ const mem = {}; // in-memory fallback if window.storage is unavailable
 
 /* ============================================================
    CLOUD PROGRESS — every trainee's progress is saved to the
-   server (Cloudflare KV, key "progress:<traineeId>"), not just to
-   this browser. Any change is saved within ~1.5s; logging in on
+   server (key "progress:<traineeId>": in R2, with a daily copy in
+   KV — worker.js → dataPut), not just to this browser. Any change is saved within ~1.5s; logging in on
    any device restores it; logging out flushes it first.
    ============================================================ */
 const PERSONAL_KEYS = ["day-progress","practice-progress","lab-attempts-global","lab-attempts-by-day","admin-unlocked-days","notes","completed-lab-actions",
@@ -5859,6 +5859,7 @@ async function loadAll(){
   const dom = await storeGet("day-order-migrated");
   state.dayOrderMigrated = (dom && typeof dom==="object") ? dom : {};
   await migrateDayOrder();
+  await migrateQuickCheckAnchors();
   await migrateQuickCheckOrder();
   const lv = await storeGet("last-view");
   state.lastView = (lv && typeof lv==="object") ? lv : null;
@@ -6079,7 +6080,7 @@ function clientAvatarSvg(){
 }
 
 /* Trainer cues, discussion cases, roleplay scripts and answer keys live ONLY in
-   Admin → Trainer Cues. Nothing trainer-facing renders inside lessons or the
+   🖥 Presenter view. Nothing trainer-facing renders inside lessons or the
    Practice Lab, so a screen-share or a shared device can never expose them. */
 function trainerInline(){ return false; }
 /* ============================================================
@@ -6279,7 +6280,7 @@ function renderFacilitatorGuide(){
       <div class="card" style="padding:40px;text-align:center;">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">Trainers Only</h2>
-        <p style="color:var(--ink-soft);font-size:14px;">The Facilitator Guide, Trainer Cues, and Discussion Checkpoints are only visible once you're signed in as a trainer.</p>
+        <p style="color:var(--ink-soft);font-size:14px;">The Facilitator Guide, Presenter view's notes and the Discussion Checkpoints are only visible once you're signed in as a trainer.</p>
         <button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>
       </div>`;
   }
@@ -6303,9 +6304,9 @@ function renderFacilitatorGuide(){
       <h3>Recommended Session Structure (per day)</h3>
       <ul>
         <li><b>~75–120 minutes,</b> depending on the day's topic count. Each day's timing plan is in <b>Admin → SOP Reference</b> (every day now has one, auto-built from the live content).</li>
-        <li><b>Screen-share the trainee view</b> while you keep <b>Admin → Trainer Cues</b> open in a second window: each topic has a Trainer Cue, an Applied Discussion Case and a <b>🎙 Verbal Discussion Script</b> (open, ask, listen for, probe, correct, wrap). Use "✨ Write a short speaker script" for a 7–10 minute word-for-word version, or download the day's scripts as a PDF.</li>
+        <li><b>Run the slides in 🖥 Presenter view</b> and share only the slides window: each slide's notes panel has what's on the slide, the spoken script and the scenario for the room. The day's Speaker Notes PDF is in Admin → SOP Reference.</li>
         <li><b>Practice Lab is where the learning sticks.</b> Have trainees complete it live, then debrief. Their work auto-saves (💾) and they can resume after a refresh.</li>
-        <li><b>End-of-day discussion</b> is in Trainer Cues for each day — raise it live before the Knowledge Check.</li>
+        <li><b>End-of-day discussion</b> is the day's last slide in Presenter view (and in the SOP session plan) — raise it live before the Knowledge Check.</li>
         <li><b>Knowledge Check:</b> 70% marks the day complete ✓. Failing doesn't block progress — trainees see a clear "cleared to proceed / retake optional" message.</li>
       </ul>
     </div>
@@ -6324,7 +6325,7 @@ function renderFacilitatorGuide(){
       <h3>Your Daily Trainer Workflow</h3>
       <ol>
         <li><b>Approve new registrations</b> in Trainee Audit (registration is name + batch).</li>
-        <li><b>Run the session</b> using the SOP plan, Trainer Cues and scripts.</li>
+        <li><b>Run the session</b> using the SOP plan and 🖥 Presenter view.</li>
         <li><b>Review daily feedback:</b> when a trainee finishes a day's Knowledge Check or Practice Lab, a review is auto-drafted (setting: <b>💬 Daily reviews</b> at the top of Trainee Audit). Open <b>View Detail → Day-by-Day Feedback</b>, edit, and <b>Send</b> — or use <b>✨ Draft for all active days</b> and <b>📤 Send all drafts</b>. Trainees see it on the day card and in <b>🎯 Focus</b>.</li>
         <li><b>Set personal Focus items</b> in View Detail → <b>🎯 Trainer focus</b> (priority + day). They're pinned at the top of the trainee's Focus panel; you'll see when they're seen and marked done.</li>
         <li><b>Check Rankings</b> and each trainee's competency picture; trainees see their own rank within their batch and a 7-skill Competency Profile.</li>
@@ -8000,6 +8001,48 @@ async function migrateQuickCheckOrder(){
   state.qcAnswers = qa;
   if(changed) await storeSet("quick-check-answers", state.qcAnswers);
   await storeSet("qc-options-reordered", true);
+}
+// A Quick Check that was moved to sit after the topic it actually tests: [day, the topic it used to follow, question].
+// Its saved answer moves with it ("<day>_<topic position>_<n>"). Runs after migrateDayOrder (so positions are
+// today's) and before migrateQuickCheckOrder (which finds these Quick Checks where they are now).
+const QC_ANCHOR_MOVES = [
+  [1, "Typical Work Environment", "Updating a client on a filing you just made, the tone should be:"],
+  [1, "Gatekeeping Is Not 'No'", "In the 'Persistent Caller' scenario, the EA's scripted response focuses on:"],
+  [7, "The Financial Calendar", "What's the target range for Invoice Turnaround Time?"]
+];
+async function migrateQuickCheckAnchors(){
+  if(await storeGet("qc-anchors-moved-1")) return;
+  const qa = state.qcAnswers || {}; let changed = false;
+  QC_ANCHOR_MOVES.forEach(([dayId, fromTitle, text])=>{
+    const d = DAYS.find(x=>x.id===dayId); if(!d) return;
+    const from = d.lessons.findIndex(l=>l.h===fromTitle);
+    const q = (d.quickChecks||[]).find(c=>c.q===text); if(from < 0 || !q) return;
+    const oldKey = `${dayId}_${from}_0`;
+    const newKey = `${dayId}_${q.afterIndex}_${d.quickChecks.filter(c=>c.afterIndex===q.afterIndex).indexOf(q)}`;
+    if(oldKey !== newKey && qa[oldKey] !== undefined && qa[newKey] === undefined){ qa[newKey] = qa[oldKey]; delete qa[oldKey]; changed = true; }
+  });
+  state.qcAnswers = qa;
+  if(changed) await storeSet("quick-check-answers", state.qcAnswers);
+  // The Quick Check slide moved too, so the saved place on that day moves to the same slide in today's order.
+  let lsChanged = false, spChanged = false;
+  [...new Set(QC_ANCHOR_MOVES.map(m=>m[0]))].forEach(dayId=>{
+    const d = DAYS.find(x=>x.id===dayId); if(!d) return;
+    const oldQC = (d.quickChecks||[]).map(c=>{
+      const m = QC_ANCHOR_MOVES.find(x=>x[0]===dayId && x[2]===c.q);
+      const from = m ? d.lessons.findIndex(l=>l.h===m[1]) : -1;
+      return from >= 0 ? Object.assign({}, c, {afterIndex: from}) : c;
+    });
+    const oldSlides = buildDaySlides(Object.assign({}, d, {quickChecks: oldQC})), newSlides = buildDaySlides(d);
+    const key = x => x ? `${x.type}|${x.lessonIndex!=null && d.lessons[x.lessonIndex] ? d.lessons[x.lessonIndex].h : ""}|${x.part||""}` : "";
+    const moveSlide = i => { for(let k=i; k<oldSlides.length; k++){ const j = newSlides.findIndex(x=>key(x)===key(oldSlides[k])); if(j >= 0) return j; } return -1; };
+    const last = state.lastSlide && state.lastSlide[dayId];
+    if(typeof last==="number" && last > 0){ const j = moveSlide(last); if(j >= 0 && j !== last){ state.lastSlide[dayId] = j; lsChanged = true; } }
+    const far = state.slideProgress && state.slideProgress[dayId];
+    if(typeof far==="number" && far > 0){ const j = moveSlide(far); if(j >= 0 && j !== far){ state.slideProgress[dayId] = j; spChanged = true; } }
+  });
+  if(lsChanged) await storeSet("last-slide", state.lastSlide);
+  if(spChanged) await storeSet("slide-progress", state.slideProgress);
+  await storeSet("qc-anchors-moved-1", true);
 }
 async function migrateDayOrder(){
   state.dayOrderMigrated = state.dayOrderMigrated || {};
@@ -13867,7 +13910,7 @@ const SOP_DATA = [
   },
   {
     id: 2,
-    title: "Managing Up, Leveraging AI & Email Management",
+    title: "Force Multiplier, Leveraging AI & Email Management",
     introduction: "Welcome to LSH EA PA Upskill Training Day 2. My name is ___ and I am your upskill coach.",
     objectives: [
       "Put Day 1's \"Three C's\" (Clarity, Communication, Credibility) into practice to manage up effectively.",
@@ -14145,9 +14188,9 @@ const SOP_DATA = [
     ],
     discussionInfo: { duration: "Approximately 1-2 hours", ppt: "EA PA Day 4", canvaLabel: "EA PA Day 4", video: "Video Discussion EA PA Day 4" },
     topics: [
-      "Part 1 — Time Management & Productivity: Prioritization, Strategic Time Engineering, Time Tracking & Energy",
-      "Part 1 — Interruptions, Batching, Weekly Planning & Realistic Deadlines",
-      "Part 2 — Data & Outreach: Daily Operations, Data Entry & Spreadsheets",
+      "Part 1 — Time Management & Productivity: Prioritization, Priority Collisions, Strategic Time Engineering, Time Tracking & Energy",
+      "Part 1 — Interruptions, Mid-Stage Task Injections, Batching, Context-Switching, Weekly Planning & Realistic Deadlines",
+      "Part 2 — Data & Outreach: Data Entry & Spreadsheets",
       "Part 2 — Research, Contact Lists, CRM & Data Hygiene",
       "Part 2 — Sales, Lead Generation & Cold Calling",
       "Part 2 — Email Outreach & Marketing"
@@ -14209,14 +14252,14 @@ function sopLiveSections(d){
   const sec = [];
   sec.push({h:"Session plan (auto-built from the portal)", type:"table", headers:["Segment","Time","What happens"], rows:[
     ["Open & recap", "5 min", `Welcome, recap yesterday's Focus items, state today's objective: ${d.objective||d.title}.`],
-    ["Topics 1–"+lessons.length, `~${Math.round(lessons.length*2.5)} min`, "Screen-share the lesson slides; use each topic's Trainer Cue and Verbal Discussion Script (Admin → Trainer Cues)."],
+    ["Topics 1–"+lessons.length, `~${Math.round(lessons.length*2.5)} min`, "Screen-share the lesson slides; run them in 🖥 Presenter view (each slide's notes, script and scenario are in its notes panel)."],
     ["Practice Lab", "15–20 min", tools.length ? `${tools.map(t=>t.title).join(", ")} — trainees complete it live; debrief afterwards.` : "No Practice Lab for this day."],
     ["End-of-day discussion", "5–10 min", d.discussionQuestion || "Open discussion on the day's hardest topic."],
     ["Knowledge Check", "10 min", `${d.quiz.length} questions · 70% marks the day complete (not required to move on).`]
   ]});
   sec.push({h:`Topics covered in the portal (${lessons.length})`, type:"table", headers:["#","Topic","Key teaching point","Trainer cue"], rows:
     lessons.map((l,i)=>{ const {principles} = lessonParts(l); return [String(i+1), l.h + (l.__extra?" (added in Content Studio)":""), scriptShort(principles[0]||"", 160), scriptShort(l.trainerCue||"—", 140)]; })});
-  if(tools.length) sec.push({h:"Practice Lab", type:"bullets", items: tools.map(t=>`${t.title} — ${t.desc}`).concat(["First submission of each exercise is free; repeats use one of the trainee's 3 program-wide attempts (reset them in Trainee Audit if needed).","Completing the Practice Lab (any score) unlocks the next day."])});
+  if(tools.length) sec.push({h:"Practice Lab", type:"bullets", items: tools.map(t=>`${t.title} — ${t.desc}`).concat(["First submission of each exercise is free; repeats use one of the 3 attempts for this day's Practice Lab (reset them in Trainee Audit if needed).","Completing the Practice Lab (any score) unlocks the next day."])});
   sec.push({h:"After the session (trainer checklist)", type:"bullets", items:[
     "Trainee Audit → View Detail: review each trainee's Day-by-Day Feedback (auto-drafted when they finish) and click Send.",
     "Add any personal Focus items for trainees who need a specific next step.",
@@ -14426,6 +14469,7 @@ function renderSopDayContent(d){
     <div class="card" style="padding:22px 26px;margin-bottom:18px;">
       <div style="font-size:12px;color:var(--orange);font-weight:700;letter-spacing:.04em;text-transform:uppercase;">${ftName(d.id)}</div>
       <h2 style="color:var(--navy);margin:4px 0 14px;">${esc(d.title)}</h2>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:-4px 0 14px;"><button class="btn btn-navy btn-sm" onclick="downloadDayScriptsPdf(${d.id})">⬇ ${ftName(d.id)} Speaker Notes (PDF)</button><span style="font-size:12.5px;color:var(--ink-soft);">The same notes are in 🖥 Presenter view, slide by slide.</span></div>
       <div style="background:#F8F9FC;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
         <p style="font-size:13px;font-style:italic;color:#37394A;margin:0;">"${esc(d.introduction)}"</p>
       </div>
@@ -14473,6 +14517,8 @@ function renderAdmin(){
         <p style="color:var(--ink-soft);font-size:14px;">Use the Admin button in the top navigation to sign in.</p>
       </div>`;
   }
+  // "cues" (Trainer Cues) was removed: Presenter view has the notes; the Speaker Notes PDF is in SOP Reference
+  if(state.adminTab === "cues") state.adminTab = "audit";
   const tab = state.adminTab || "audit";
   const tabBar = `
     <div class="admin-tabs" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
@@ -14480,12 +14526,10 @@ function renderAdmin(){
       <button class="admin-tab-btn ${tab==='batches'?'active':''}" onclick="setAdminTab('batches')">📁 Batch Folders</button>
       <button class="admin-tab-btn ${tab==='rankings'?'active':''}" onclick="setAdminTab('rankings')">Rankings</button>
       <button class="admin-tab-btn ${tab==='sop'?'active':''}" onclick="setAdminTab('sop')">SOP Reference</button>
-      <button class="admin-tab-btn ${tab==='cues'?'active':''}" onclick="setAdminTab('cues')">Trainer Cues</button>
       <button class="admin-tab-btn ${tab==='studio'?'active':''}" onclick="setAdminTab('studio')">Content Studio</button>
       <button class="admin-tab-btn ${tab==='tfeedback'?'active':''}" onclick="setAdminTab('tfeedback')">Trainee Feedback</button>
     </div>`;
   if(tab==="sop") return tabBar + renderAdminSOP();
-  if(tab==="cues") return tabBar + renderAdminTrainerCues();
   if(tab==="studio") return tabBar + renderAdminStudio();
   if(tab==="tfeedback") return tabBar + renderAdminTraineeFeedback();
   if(tab==="rankings") return tabBar + renderAdminRankings();
@@ -18980,7 +19024,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.01-2051";
+var APP_BUILD = "ft-2026.10.02-1349";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -19023,27 +19067,27 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-process.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-activities.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.01-2051"></script>
-<script src="/js/attendance.js?v=ft-2026.10.01-2051"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-updates.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-process.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-rules.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-activities.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.10.02-1349"></script>
+<script src="/js/attendance.js?v=ft-2026.10.02-1349"></script>
 <script src="/js/portal-link.js?v=1"></script>
-<script src="/js/portal-link.js?v=1"></script>
-<script src="/js/lsh-dashboard.js?v=ft-2026.10.02-band"></script>
 <script src="/js/request-budget.js?v=1"></script>
 <script>
 /* 📊 Server request meter, for admins: how much of the Cloudflare account's monthly request allowance
    (shared by every LSH site) is used. README → Server request meter. */
 RequestBudget.start({ load: () => authFetch("/api/request-budget", {}).then(r => r.json()), isAdmin: () => !!state.isAdmin });
 </script>
+<script src="/js/portal-link.js?v=1"></script>
+<script src="/js/lsh-dashboard.js?v=ft-2026.10.02-1349"></script>
 </body>
 </html>

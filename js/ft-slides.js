@@ -118,13 +118,13 @@ const css = `
 /* A lesson of deck pages (body.ft-fit): the controls sit in a column to the right of the slide, so the
    slide and its Previous / Next bar fit on one screen (fitPages() below sizes the page to what's left). */
 @media (min-width:1000px){
-  body.ft-fit main:has(.lesson-stage){display:flow-root;padding-top:12px;}
-  body.ft-fit main:has(.lesson-stage) > *:not(#lessonStage){float:right;clear:right;width:200px;margin:0 0 10px;}
-  body.ft-fit main:has(.lesson-stage) > #lessonStage{margin:0 216px 0 0;}
-  body.ft-fit main:has(.lesson-stage) > #navBackSlot:empty{display:none;}
+  body.ft-fit main:has(#lessonStage){display:flow-root;padding-top:12px;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){float:right;clear:right;width:200px;margin:0 0 10px;}
+  body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 216px 0 0;}
+  body.ft-fit main:has(#lessonStage) > #navBackSlot:empty{display:none;}
   /* the footer line about an inch under the slide, and the page ends there */
-  body.ft-fit main:has(.lesson-stage){padding-bottom:62px;}
-  body.ft-fit main:has(.lesson-stage) + .footer-note{padding:24px 24px 10px;}
+  body.ft-fit main:has(#lessonStage){padding-bottom:62px;}
+  body.ft-fit main:has(#lessonStage) + .footer-note{padding:24px 24px 10px;}
   body.ft-fit .day-head-compact{display:flex;flex-direction:column;gap:4px;border:0;padding:0;}
   body.ft-fit .day-head-compact .dhc-title{white-space:normal;font-size:17px;line-height:1.3;}
   body.ft-fit .ls-top{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
@@ -133,6 +133,14 @@ const css = `
   body.ft-fit .ls-top .audio-bar #audioModeBtn{grid-column:1 / -1;}
   body.ft-fit .ls-top .or-tip{font-size:12px;line-height:1.4;order:9;white-space:normal;}
 }
+/* Every slide of a deck-page lesson is the same size (the standard size): nothing on one slide takes room
+   the others don't. The progress dots stay on one row however many slides the lesson has (a long lesson's
+   dots get narrower), and the last slide's "That's everything for this lesson" banner isn't shown (its
+   Finish lesson button says the same). */
+body.ft-fit .lesson-stage .slide-dots{flex-wrap:nowrap;gap:4px;overflow:hidden;padding:0 4px;}
+body.ft-fit .lesson-stage .slide-dot{flex:0 1 10px;min-width:3px;}
+body.ft-fit .lesson-stage .slide-dot.active{flex:0 0 22px;}
+body.ft-fit .lesson-stage .slide-done-banner{display:none;}
 .cs-page{margin:0;width:100%;display:flex;justify-content:center;}
 .cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:#fff;}
 .cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
@@ -199,10 +207,13 @@ const st = document.createElement("style"); st.id = "ft-slides"; st.textContent 
 function fitPages(){
   const d = typeof state !== "undefined" && state.view === "day" && typeof DAYS !== "undefined" ? DAYS.find(x=>x.id===state.dayId) : null;
   document.body.classList.toggle("ft-fit", !!(d && (d.sections||[]).some(x=>/class="cs cs-pages"/.test(x.html))));
-  const img = document.querySelector(".cs-page img"); if(!img) return;
-  const stage = img.closest(".lesson-stage, #audienceRoot"), nav = stage && stage.querySelector(".slide-nav");
-  const frame = img.closest(".lesson-slide"), pad = frame ? parseFloat(getComputedStyle(frame).paddingBottom) || 0 : 0;
-  const page = !document.fullscreenElement && !img.closest("#audienceRoot");
+  const img = document.querySelector(".cs-page img");
+  if(!img && !document.body.classList.contains("ft-fit")) return;
+  // the slide frame: the page image's, or a topic divider's (the same size, so slides don't change size)
+  const frame = img ? img.closest(".lesson-slide") : document.querySelector("#lessonStage .lesson-slide, #audienceRoot .lesson-slide"); if(!frame) return;
+  const stage = frame.closest(".lesson-stage, #audienceRoot"), nav = stage && stage.querySelector(".slide-nav");
+  const pad = parseFloat(getComputedStyle(frame).paddingBottom) || 0;
+  const page = !document.fullscreenElement && !frame.closest("#audienceRoot");
   // On the lesson page the slide frame takes the height the screen has left above the footer line
   // (the portal gives it 66% of the screen, whatever else is on the page).
   const foot = page && document.body.classList.contains("ft-fit") && document.querySelector(".footer-note");
@@ -212,6 +223,7 @@ function fitPages(){
     const slack = window.innerHeight - 4 - (stage.getBoundingClientRect().bottom + window.scrollY + below);
     if(Math.abs(slack) > 2) frame.style.height = Math.max(320, Math.round(frame.getBoundingClientRect().height + slack)) + "px";
   } else if(frame && frame.style.height) frame.style.height = "";   // full screen / slides window: the frame fills the stage
+  if(!img) return;
   for(let pass = 0; pass < 4; pass++){
     const r = img.getBoundingClientRect(), n = nav ? nav.getBoundingClientRect() : null;
     // positive: how far it runs under the bar or past the slide frame; negative: room to grow

@@ -605,6 +605,7 @@ function renderSopDayContent(d){
     <div class="card sopx-hero">
       <div class="sopx-kicker">${ftName(d.id)} · Trainer SOP</div>
       <h2>${esc(d.title)}</h2>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px;"><button class="btn btn-navy btn-sm" onclick="downloadDayScriptsPdf(${d.id})">⬇ ${ftName(d.id)} Speaker Notes (PDF)</button><span style="font-size:12.5px;color:var(--ink-soft);">The same notes are in 🖥 Presenter view, slide by slide.</span></div>
       ${d.introduction ? `<blockquote class="sopx-quote">“${esc(d.introduction)}”</blockquote>` : ""}
       ${meta.length ? `<div class="sopx-meta">${meta.map(([i,k,v])=>`<span>${i} <b>${k}</b> ${esc(v)}</span>`).join("")}</div>` : ""}
       <div class="sopx-cols">
@@ -2261,7 +2262,7 @@ function sopRunOfShow(dRaw){
   const add = (mins, s)=>{ steps.push(Object.assign({from:t, to:t+mins}, s)); t += mins; };
   add(15, {pre:true, title:"Before trainees join", do:[
     `Admin → <b>Trainee Audit</b>: approve anyone new; check everyone has ${ftName(d.id)} unlocked (the previous day's Practice Lab submitted).`,
-    `Open <b>Admin → Trainer Cues → ${ftName(d.id)}</b> in a second window, or use Presenter view (below) which shows the cues for each slide.`,
+    `Presenter view (below) shows each slide's notes, script and scenario; the day's Speaker Notes PDF is in Admin → SOP Reference.`,
     `Open ${ftName(d.id)} → slides → <b>🖥 Presenter view</b>. Allow pop-ups. In Google Meet: <b>Present now → A window</b> → “LSH Slides — share this window”.`,
     `Pick your random-task moment (step marked below) and how long trainees get (15–30 min).`]});
   add(5, {title:"Welcome, recap & today's objectives", do:[
@@ -2296,7 +2297,7 @@ function sopRunOfShow(dRaw){
       `Trainees open it from the Practice Lab slide (or 🧪 Practice Lab). They work in their own portal; stop presenting or leave the Practice Lab slide up.`,
       acts.length ? `Activities (≈10 min each): ${acts.map((a,k)=>`<b>${k+1}. ${esc(a)}</b>`).join(" · ")}.` : "",
       acts.some(a=>/Roleplay/i.test(a)) ? `The Crisis Roleplay can be run live by you, or trainees rehearse solo first.` : "",
-      `First submission of each exercise is free; repeats use one of 3 program-wide attempts (reset in Trainee Audit if someone is blocked by a technical issue).`].filter(Boolean),
+      `First submission of each exercise is free; repeats use one of the 3 attempts for that day's Practice Lab (reset in Trainee Audit if someone is blocked by a technical issue).`].filter(Boolean),
       watch:"Anyone stuck on the same activity for more than 10 minutes — nudge them to submit and move on; the debrief is where the learning lands."});
     add(10, {title:"Practice Lab debrief", do:[`Ask 2–3 trainees to walk through what they did and why, and where their judgment differed from the model answer.`, `Point to the Evaluation Report's “Not this way — what to change” section: it's the next step, not a verdict.`]});
   }
@@ -2352,7 +2353,7 @@ function sopProgramFlow(){
         <li><b>Practise:</b> the day's Practice Lab, then a live debrief.</li>
         <li><b>Discuss:</b> the end-of-day question.</li>
         <li><b>Assess:</b> Knowledge Check (70% = day complete).</li>
-        <li><b>Close:</b> feedback button, preview tomorrow.</li></ol></section>
+        <li><b>Close:</b> feedback button, point trainees to the day\'s <b>📖 Lesson Notes</b> in Handouts (the full text behind the slides), preview tomorrow.</li></ol></section>
       <section class="card sopf-card"><h3>4 · Between sessions</h3><ul>
         <li>Send each trainee's <b>Day-by-Day Feedback</b> (Trainee Audit → View Detail).</li>
         <li>Set <b>🎯 Focus</b> items for anyone who needs a specific next step.</li>
@@ -2368,7 +2369,7 @@ function sopProgramFlow(){
     <section class="card sopf-card" style="margin-top:14px;"><h3>I want to… → go here</h3>
       <table class="log-table sopx-table sopf-map"><thead><tr><th>I want to…</th><th>Where</th></tr></thead><tbody>
         <tr><td>Share only the slides while I see my notes</td><td>Day → slides → <b>🖥 Presenter view</b></td></tr>
-        <tr><td>See cues, discussion cases and scripts for a day</td><td>Admin → <b>Trainer Cues</b> (or Presenter view)</td></tr>
+        <tr><td>See the notes, scripts and scenarios for each slide</td><td>Day → slides → <b>🖥 Presenter view</b> (PDF: Admin → SOP Reference)</td></tr>
         <tr><td>Show the day's plan to the room</td><td>Admin → SOP Reference → <b>🎤 Present</b></td></tr>
         <tr><td>Drop an unannounced task on trainees</td><td>Admin → Trainee Audit → <b>🎲 Random Task Injection</b></td></tr>
         <tr><td>Approve, reset attempts, write feedback, set focus</td><td>Admin → <b>Trainee Audit</b> → View Detail</td></tr>
@@ -2664,6 +2665,9 @@ Object.assign(window, {bfSearch, bfRedraw, bfExportCsv, bfExportJson});
     if(body && d.theme) body.insertAdjacentHTML("beforeend", `<div class="module-theme">${esc(d.theme)}</div>`);
     const n = (d.lessons||[]).length, start = card.querySelector(".module-start-btn");
     if(n && start) start.insertAdjacentHTML("afterend", `<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${n}</span></button>`);
+    // Topics and Finish sit side by side under Start, as two quiet buttons
+    const small = [...card.querySelectorAll(".module-finish-btn")];
+    if(small.length > 1){ const row = document.createElement("div"); row.className = "mc-row"; small[0].before(row); small.forEach(x=>row.appendChild(x)); }
     card.classList.add("mc-clean");
     return card.outerHTML;
   };
@@ -2781,3 +2785,390 @@ window.fitTopicsModal = fitTopicsModal;
 
 /* if the portal already drew itself before this file loaded, redraw with the updates */
 if(document.querySelector(".topbar")) render();
+
+/* ================= A calm dashboard (easy on the eyes) =================
+   Light day-card headers with a thin colour stripe instead of solid navy/orange blocks, titles in normal case,
+   one softer Start button with Topics and Finish side by side as quiet buttons, and a light scores band. */
+(function(){
+  const st = document.createElement("style"); st.id = "calm-dashboard"; st.textContent = `
+.dash-main .module-card.mc-clean{background:#fff;border:1px solid #E3E6EE;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(38,43,69,.04),0 8px 20px -16px rgba(38,43,69,.25);}
+.dash-main .module-card.mc-clean:hover{border-color:#D3D7E3;box-shadow:0 1px 2px rgba(38,43,69,.05),0 10px 24px -14px rgba(38,43,69,.28);}
+.dash-main .module-card.mc-clean .module-head,
+.dash-main .module-card.mc-clean:nth-child(3n+2) .module-head,
+.dash-main .module-card.mc-clean:nth-child(3n+3) .module-head{background:#F7F8FB !important;color:var(--navy);border-top:4px solid #4A5277;border-bottom:1px solid #ECEEF4;}
+.dash-main .module-card.mc-clean:nth-child(3n+2) .module-head{border-top-color:var(--orange);}
+.dash-main .module-card.mc-clean .mh-day{color:var(--orange-deep);opacity:1;font-weight:700;letter-spacing:.1em;}
+.dash-main .module-card.mc-clean .mh-title{text-transform:none;letter-spacing:0;font-weight:700;color:var(--navy);}
+.dash-main .module-card.mc-clean .module-start-btn{background:#ECEEF5;border:1px solid #DDE1EC;color:var(--navy);border-radius:10px;box-shadow:none;font-weight:700;letter-spacing:.01em;}
+.dash-main .module-card.mc-clean .module-start-btn:hover, .dash-main .module-card.mc-clean:hover .module-start-btn{background:#353B57;border-color:#353B57;color:#fff;}
+.dash-main .module-card.mc-clean .mc-row{display:flex;gap:8px;margin:0 14px 12px;}
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:1 1 0;min-width:0;width:auto !important;margin:0 !important;background:#F3F4F8;border:1px solid #F3F4F8;color:#4A5070;font-weight:600;border-radius:9px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(min-width:1001px) and (max-width:1340px){ .dash-main .module-card.mc-clean .mc-row{flex-direction:column;gap:5px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:0 0 auto !important;padding-top:5px;padding-bottom:5px;} }
+@media(max-width:1600px){ .dash-main .module-card.mc-clean .mc-row{gap:6px;margin:0 10px 10px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{font-size:11.5px;padding-left:4px;padding-right:4px;} .dash-main .module-card.mc-clean .mc-row .module-topics-btn{flex:0 1 auto;padding-left:8px;padding-right:8px;} }
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn:hover{background:#E9EBF2;border-color:#E9EBF2;color:var(--navy);}
+.dash-main .module-card.mc-clean > :last-child{margin-bottom:12px;}
+.dash-main .module-card.mc-clean .module-theme{color:#6B7088;}
+/* the scores band: light, so it doesn't compete with the lessons */
+.dash-main > .dash-side{background:#fff !important;border:1px solid #E3E6EE !important;box-shadow:none !important;}
+.dash-main > .dash-side .card{background:#F7F8FB !important;border:1px solid #EDEFF5 !important;box-shadow:none !important;color:var(--navy) !important;}
+.dash-main > .dash-side .card *{color:inherit;}
+.dash-main > .dash-side .stat .num{color:var(--navy) !important;}
+.dash-main > .dash-side .stat .lbl, .dash-main > .dash-side .card .sub, .dash-main > .dash-side .stat .lbl span{color:#6B7088 !important;}
+.dash-main > .dash-side .tfb-dash{background:#FFF7EF !important;border-color:#F7DEC6 !important;}
+.dash-main > .dash-side .tfb-dash .btn{color:#fff !important;}
+.dash-main > .dash-side .tfb-dash-stars button{color:#D5D8E3 !important;}
+.dash-main > .dash-side .tfb-dash-stars button.on, .dash-main > .dash-side .tfb-dash-stars button.lit{color:var(--orange) !important;}
+/* "Resume where you left off": a compact button, not a full-width bar */
+.dash-main .bottom-actions{background:none !important;border:none !important;padding:0 !important;margin:8px 0 0 !important;box-shadow:none !important;}
+.dash-main .bottom-actions .resume-btn{padding:7px 16px;font-size:13.5px;border-radius:999px;}
+`; document.head.appendChild(st);
+  if(typeof render === "function" && typeof state !== "undefined" && state.view === "dashboard"){ try{ render(); }catch(e){} }
+})();
+
+/* ================= Lesson slides: the key line on the slide, the full text in the Handouts =================
+   A slide shows each point's key line (slideBrief: its first sentence, without asides in brackets, cut at a
+   dash or colon when still long); Go Deeper moves off the slide. The full text of every topic, as written in
+   js/days/dayN/lessons.js (principles, steps, best practices and pitfalls, Go Deeper), is each day's
+   📖 Lesson Notes in Handouts (Preview and PDF). "📖 Full notes" on a slide opens that topic there. */
+(function(){
+  function slideBrief(t){
+    let x = String(t || "").replace(/\s+/g, " ").trim();
+    const words = s => s.split(" ").filter(Boolean).length;
+    const end = s => /[.!?]["”’']?$/.test(s) ? s : s.replace(/[,;:\s—–-]+$/, "") + ".";
+    x = x.replace(/\s*\((?:[^()"]{3,})\)(?=[\s.,;:!?]|$)/g, "").replace(/\s+([.,;:!?])/g, "$1");
+    const re = /[.!?](?=["”’']?\s+[A-Z0-9"“'‘])/g; let m;
+    while((m = re.exec(x))){
+      const head = x.slice(0, m.index + 1);
+      if(head.length < 25 || /\b(e\.g|i\.e|vs|etc|Mr|Mrs|Ms|Dr|No|St|Inc|approx)\.$/i.test(head)) continue;
+      x = head; break;
+    }
+    if(words(x) > 16){ const k = x.search(/\s[—–]\s/); if(k > 0 && words(x.slice(0, k)) >= 4) x = end(x.slice(0, k)); }
+    if(words(x) > 18){ const k = x.indexOf(": "); if(k > 0 && words(x.slice(0, k)) >= 4) x = end(x.slice(0, k)); }
+    if(words(x) > 18){ const k = x.indexOf("; "); if(k > 0 && words(x.slice(0, k)) >= 5) x = end(x.slice(0, k)); }
+    return end(x);
+  }
+  window.slideBrief = slideBrief;
+  const briefs = a => Array.isArray(a) ? a.map(x => typeof x === "string" ? slideBrief(x) : x) : a;
+
+  if(typeof renderLessonCard === "function" && !renderLessonCard.__brief){
+    const __card = renderLessonCard;
+    renderLessonCard = function(l, i, d, u, part){
+      if(!l || l.__preview || !d) return __card.apply(this, arguments);
+      const s = Object.assign({}, l);
+      // "This connects directly to …" lines point elsewhere in the program: they stay in the notes, off the slide
+      const own = a => { const k = Array.isArray(a) ? a.filter(x => typeof x !== "string" || !/^This (connects|builds|links|ties) (directly |back )?(to|on)\b/i.test(x.trim())) : a; return k && k.length ? k : a; };
+      if(l.fourPart) s.fourPart = Object.assign({}, l.fourPart, {corePrinciples: briefs(own(l.fourPart.corePrinciples)), howTo: briefs(l.fourPart.howTo), bestPractices: briefs(l.fourPart.bestPractices)});
+      else{
+        s.b = briefs(l.b); s.howTo = briefs(l.howTo);
+        if(Array.isArray(l.processSteps)) s.processSteps = l.processSteps.map(p => Object.assign({}, p, p && typeof p.desc === "string" ? {desc: slideBrief(p.desc)} : {}));
+      }
+      const key = d.id + "::" + l.h, extra = LESSON_EXTRA_LEARNING[key];   // Go Deeper lives in the Lesson Notes
+      if(extra) delete LESSON_EXTRA_LEARNING[key];
+      let html; try{ html = __card.call(this, s, i, d, u, part); } finally { if(extra) LESSON_EXTRA_LEARNING[key] = extra; }
+      return html + `<div class="ln-more"><button type="button" onclick="openLessonNotes(${d.id}, ${esc(JSON.stringify(l.h))})">📖 Full notes for this topic</button><span>${ftName(d.id)} Lesson Notes · Handouts</span></div>`;
+    };
+    renderLessonCard.__brief = true;
+  }
+
+  /* ---------- 📖 Lesson Notes: the full text, per day ---------- */
+  const strs = a => (Array.isArray(a) ? a : []).filter(x => typeof x === "string" && x.trim());
+  function topicNotes(d, l){
+    const fp = l.fourPart || {};
+    const extra = LESSON_EXTRA_LEARNING[d.id + "::" + l.h];
+    const steps = strs(fp.howTo).length ? strs(fp.howTo) : strs(l.howTo).length ? strs(l.howTo)
+      : (Array.isArray(l.processSteps) ? l.processSteps.map(p => p && [p.label, p.desc].filter(Boolean).join(": ")).filter(Boolean) : []);
+    return {
+      h: l.h, section: l.section || "",
+      principles: strs(fp.corePrinciples).length ? strs(fp.corePrinciples) : strs(l.b),
+      steps,
+      practices: strs(fp.bestPractices),
+      callout: l.callout && l.callout.text ? String(l.callout.text) : "",
+      deeper: extra ? {t: extra.t, p: strs(extra.p)} : null
+    };
+  }
+  const dayNotes = d => (d.lessons || []).filter(l => !l.__extra).map(l => topicNotes(d, l));
+  const slug = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  function notesHtml(d){
+    let sec = null;
+    return dayNotes(d).map((t, k) => {
+      const head = t.section && t.section !== sec ? `<div class="ln-sec">${esc(sec = t.section)}</div>` : "";
+      const list = (label, a, ol) => a.length ? `<div class="ln-part"><b>${label}</b><${ol ? "ol" : "ul"}>${a.map(x => `<li>${esc(x)}</li>`).join("")}</${ol ? "ol" : "ul"}></div>` : "";
+      return `${head}<div class="ln-topic" id="ln-${slug(t.h)}"><h4><span>${k + 1}</span>${esc(t.h)}</h4>
+        ${list("Core principles", t.principles)}${list("Step by step", t.steps, true)}${list("Best practices & pitfalls", t.practices)}
+        ${t.callout ? `<p class="ln-callout">${esc(t.callout)}</p>` : ""}
+        ${t.deeper ? list("Go deeper — " + esc(t.deeper.t), t.deeper.p) : ""}</div>`;
+    }).join("");
+  }
+  function previewLessonNotes(day, topic){
+    const d = DAYS.find(x => x.id === day); if(!d) return;
+    document.querySelectorAll(".overlay.ln-overlay").forEach(o => o.remove());
+    const overlay = document.createElement("div"); overlay.className = "overlay topics-overlay ln-overlay";
+    overlay.innerHTML = `<div class="card topics-modal ho-modal"><div class="module-head topics-modal-head"><div class="mh-day">${ftName(day)} · Lesson Notes · ${(d.lessons || []).length} topics</div><div class="mh-title">📖 ${esc(d.title)}</div>
+      <button type="button" class="topics-close" onclick="this.closest('.overlay').remove()">✕</button></div>
+      <div class="ho-body ln-body"><p class="ho-intro">The full text of every topic on ${ftName(day)}. The slides show the key lines; this is the complete version to read, study and keep.</p>${notesHtml(d)}</div>
+      <div class="topics-modal-foot"><button class="btn btn-ghost btn-sm" onclick="this.closest('.overlay').remove()">Close</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadLessonNotesPdf(${day})">⬇ Download PDF</button></div></div>`;
+    overlay.addEventListener("click", e => { if(e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+    if(topic){ const el = overlay.querySelector("#ln-" + slug(topic)); if(el){ el.classList.add("ln-hit"); setTimeout(() => el.scrollIntoView({block:"start"}), 30); } }
+  }
+  // From a slide: the notes open over the lesson, at that topic.
+  function openLessonNotes(day, topic){ previewLessonNotes(day, topic); }
+  async function downloadLessonNotesPdf(day){
+    const d = DAYS.find(x => x.id === day); if(!d) return;
+    if(!(await ensureJsPdf())){ toast("Couldn't load the PDF tools — try again."); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = safeDoc(new jsPDF({unit:"pt", format:"letter"}));
+    drawPdfHeader(doc, `${ftName(day)} Lesson Notes`, d.title);
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), X = 54;
+    let y = 118, sec = null;
+    const need = h => { if(y + h > H - 50){ doc.addPage(); y = 60; } };
+    const para = (t, o = {}) => {
+      doc.setFont("helvetica", o.bold ? "bold" : "normal"); doc.setFontSize(o.size || 10); doc.setTextColor(...(o.color || [27,30,46]));
+      const ind = o.indent || 0, lines = doc.splitTextToSize(t, W - X * 2 - ind);
+      lines.forEach((w, n) => { need(14); if(n === 0 && o.bullet) doc.text(o.bullet, X + ind - 12, y); doc.text(w, X + ind, y); y += (o.lh || 13.5); });
+    };
+    dayNotes(d).forEach((t, k) => {
+      if(t.section && t.section !== sec){ sec = t.section; need(34); y += 6; para(sec.toUpperCase(), {bold:true, size:9.5, color:[181,101,31]}); y += 2; }
+      need(40); y += 4; para(`${k + 1}. ${t.h}`, {bold:true, size:12, color:[38,43,69], lh:16});
+      const part = (label, a, ol) => { if(!a.length) return; need(28); para(label, {bold:true, size:9.5, color:[91,97,120]}); a.forEach((x, n) => para(x, {indent:16, bullet: ol ? (n + 1) + "." : "•"})); y += 3; };
+      part("Core principles", t.principles); part("Step by step", t.steps, true); part("Best practices & pitfalls", t.practices);
+      if(t.callout) para(t.callout, {indent:16, color:[91,97,120]});
+      if(t.deeper) part("Go deeper — " + t.deeper.t, t.deeper.p);
+      y += 6;
+    });
+    const pages = doc.getNumberOfPages();
+    for(let p = 1; p <= pages; p++){ doc.setPage(p); doc.setFontSize(8); doc.setTextColor(110,116,140); doc.text(`LSH EA / PA Upskill Program · ${ftName(day)} Lesson Notes · page ${p} of ${pages}`, X, H - 28); }
+    doc.save(`LSH_Day${day}_Lesson_Notes.pdf`);
+    toast("Lesson Notes downloaded.");
+  }
+  Object.assign(window, {previewLessonNotes, openLessonNotes, downloadLessonNotesPdf});
+
+  // Handouts: the Lesson Notes for every day, above the templates.
+  if(typeof renderHandouts === "function" && !renderHandouts.__notes){
+    const __rh = renderHandouts;
+    renderHandouts = function(){
+      const html = __rh.apply(this, arguments);
+      const q = (state.hoQuery || "").toLowerCase();
+      const days = DAYS.filter(d => !q || ("lesson notes " + d.title).toLowerCase().includes(q) || String(d.id) === q);
+      const cur = state.traineeId && typeof nextDayId === "function" ? nextDayId() : 1;
+      const block = days.length ? `<h2 class="ln-h">📖 Lesson Notes <span>The full text of every topic, day by day. The slides show the key lines; read the complete version here.</span></h2>
+        <div class="ho-grid ln-grid">${days.map(d => `<div class="card ho-card ln-card ${d.id === cur ? "current" : ""}">
+          <div class="ho-top"><div class="ho-icon">📖</div><div><div class="ho-day">${ftName(d.id)}${d.id === cur ? " · you're here" : ""}</div><h4>${esc(d.title)}</h4><span>Lesson Notes · ${(d.lessons || []).length} topics</span></div></div>
+          <div class="ho-actions"><button class="btn btn-primary btn-sm" onclick="previewLessonNotes(${d.id})">Read</button><button class="btn btn-ghost btn-sm" onclick="downloadLessonNotesPdf(${d.id})">⬇ PDF</button></div>
+        </div>`).join("")}</div>
+        <h2 class="ln-h">🧰 Templates &amp; Checklists</h2>` : "";
+      return html.replace('<div class="ho-grid">', block + '<div class="ho-grid">');
+    };
+    renderHandouts.__notes = true;
+  }
+
+  const st = document.createElement("style"); st.id = "lesson-notes"; st.textContent = `
+.ln-more{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 0;font-size:12px;color:var(--ink-soft);}
+.ln-more button{border:1px solid #E3E6EE;background:#fff;color:var(--navy);font-weight:700;font-size:12.5px;border-radius:999px;padding:5px 14px;cursor:pointer;}
+.ln-more button:hover{background:#F3F4F8;}
+.ln-h{color:var(--navy);font-size:17px;margin:18px 0 10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.ln-h span{font-size:13px;font-weight:500;color:var(--ink-soft);}
+.ln-grid{margin-bottom:6px;}
+.ln-card .ho-actions{margin-top:10px;}
+.ln-body .ln-sec{margin:18px 0 4px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-deep);}
+.ln-topic{border-top:1px solid #ECEEF4;padding:10px 0 4px;scroll-margin-top:12px;}
+.ln-topic.ln-hit{background:#FFF7EF;border-radius:10px;padding:10px 12px 4px;margin:0 -12px;}
+.ln-topic h4{margin:4px 0 6px !important;display:flex;gap:8px;align-items:baseline;font-size:16.5px !important;}
+.ln-topic h4 span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--orange-deep);}
+.ln-part{margin:6px 0;} .ln-part b{display:block;font-size:12px;color:#5B6178;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;}
+.ln-part ul,.ln-part ol{margin:2px 0 6px 20px;padding:0;} .ln-part li{font-size:13.5px;line-height:1.5;margin:3px 0;color:#2A2E40;}
+.ln-callout{font-size:13px;color:#5B6178;font-style:italic;margin:4px 0 8px;}
+@media(max-width:760px){ .ln-more span{display:none;} }
+`; document.head.appendChild(st);
+  if(typeof render === "function" && typeof state !== "undefined" && (state.view === "day" || state.view === "handouts")){ try{ render(); }catch(e){} }
+})();
+
+/* ================= Orientation / Blueprint, SOP Reference and handouts follow today's platform =================
+   • Orientation (and the Blueprint PDF built from it): how slides show key lines with 📖 Full notes, the dashboard
+     as it is now (day cards filling the screen, the scores band under them), Handouts with the Lesson Notes.
+   • Admin → SOP Reference: each day's session plan ends with the take-home Lesson Notes.
+   • Handouts & Templates: Days 1–4 follow the days' topics now (gatekeeping and the Three C's on Day 1, inbox
+     triage and AI on Day 2, travel and court deadlines on Day 3, prioritizing the day on Day 4). */
+(function(){
+  if(typeof window.orientSlides === "function" && !window.orientSlides.__now){
+    const __o = window.orientSlides;
+    const card = (n, cls)=>`<div class="or-d2-card ${cls||""}"><span>${ftName(n)}</span><i>Start</i><u>☰ Topics · ✓ Finish</u></div>`;
+    const DASH = `
+     <div class="or-dash2">
+       <div class="or-box or-hero"><span class="or-num">1</span><b>Banner &amp; progress track</b><em>Days 1–10 · ✓ = passed · click a circle to jump to that day</em></div>
+       <div class="or-box or-cards"><span class="or-num">2</span><b>Day cards fill the screen</b><em>Start a day · ☰ Topics lists its topics · ✓ Finish Training · 💬 trainer feedback appears on the card</em>
+         <div class="or-d2-row">${[1,2,3,4,5].map(n=>card(n, n%3===2 ? "or" : "")).join("")}</div></div>
+       <div class="or-box or-band"><span class="or-num">3</span><b>Scores band, under the lessons</b><em>Program complete · best competency score · quiz average · days done · 💬 your feedback · ranking</em></div>
+       <div class="or-box"><span class="or-num">4</span><b>Resume &amp; certificate</b><em>▶ Resume where you left off · download your certificate when earned</em></div>
+     </div>`;
+    window.orientSlides = function(){
+      const slides = __o.apply(this, arguments);
+      const at = k => slides.findIndex(x => x.k === k);
+      let i = at("A day");
+      if(i >= 0) slides[i] = Object.assign({}, slides[i], {body: slides[i].body.replace(/One topic at a time, every slide the same size\.[\s\S]*?Your place is saved\./, "One topic at a time, the key points on each slide. 📖 Full notes opens the complete text, which is also in Handouts → Lesson Notes. Your place is saved.")});
+      i = at("Dashboard");
+      if(i >= 0) slides[i] = Object.assign({}, slides[i], {body: DASH});
+      i = at("Navigation");
+      if(i >= 0) slides[i] = Object.assign({}, slides[i], {body: slides[i].body.replace("Printable checklists and Excel templates for each day.", "📖 Lesson Notes (the full text of every topic) and printable templates for each day.")});
+      return slides;
+    };
+    window.orientSlides.__now = true;
+  }
+
+  if(typeof sopLiveSections === "function" && !sopLiveSections.__notes){
+    const __s = sopLiveSections;
+    sopLiveSections = function(d){
+      const sec = __s.apply(this, arguments);
+      const plan = sec.find(x => x.type === "table" && /^Session plan/.test(x.h));
+      if(plan && d) plan.rows.push(["Take-home reading", "—", `Handouts → 📖 ${ftName(d.id)} Lesson Notes: the full text of every topic (the slides show the key lines). Trainees read it after the session or download the PDF.`]);
+      return sec;
+    };
+    sopLiveSections.__notes = true;
+  }
+
+  if(typeof HANDOUT_CONTENT === "object" && !HANDOUT_CONTENT.__now){
+    const H = HANDOUT_CONTENT, old2 = H[2], old3 = H[3];
+    const pick = (h, re) => ((h && h.blocks) || []).filter(b => re.test(b.h));
+    H[1] = Object.assign({}, H[1], {title:"Command Hierarchy, Gatekeeping & BLUF Checklist", kind:"Checklist + scripts",
+      intro:"Day 1 at your desk: who decides what, how to screen and redirect without alienating anyone, and how to write so the bottom line comes first.",
+      blocks: H[1].blocks.concat(pick(old3, /./), pick(old2, /Three C/))});
+    H[2] = {title:"Inbox Triage & Safe AI Use Card", icon:"📥", kind:"Printable card",
+      intro:"Run the inbox as a control system: tier every item, brief the executive once a morning, and clear every AI use against the firm's rules first.",
+      blocks:[
+        {type:"table", h:"The Priority Matrix", headers:["Tier","What lands here","Your move"], rows:[
+          ["1 · Immediate","Legal deadlines, high-value clients, media, financial approvals, crisis comms","Tell the executive now — no exceptions"],
+          ["2 · Strategic","Revenue opportunities, partnerships, board comms, vendor negotiations","Draft a response within 2–4 hours"],
+          ["3 · Routine","Newsletters, internal FYIs, non-urgent scheduling","Batch into one daily block"],
+          ["4 · Archive / delegate","Promotions, automated notices, requests another team owns","File or forward — no executive time"]], blank:0},
+        {type:"checklist", h:"Tiering rules", items:["Classify every new item before acting on it","Not sure? Treat it as Tier 1 until you confirm otherwise","Re-tier when the facts change (a vendor email that mentions a missed payment is now Tier 1)"]},
+        {type:"template", h:"Morning briefing (same time every day)", lines:["Needs you today: ______________________________ by ______","Needs you today: ______________________________ by ______","Handled / in progress: ______________________________","Handled / in progress: ______________________________","Heads-up (this week): ______________________________"]},
+        {type:"checklist", h:"Before any AI use", items:["I know this attorney's and this matter's AI preference","The task doesn't decide legal judgment, case strategy or client representation","Nothing privileged or confidential goes into the tool without approval","I'll review every word of the output before it's used","Unsure? I ask first"]}]};
+    H[3] = {title:"Travel & Court-Deadline Checklist", icon:"🧳", kind:"Checklist",
+      intro:"Write it once, reuse it every trip — and count every court deadline from the source, with a second person checking it.",
+      blocks:[
+        {type:"checklist", h:"Documents (check first)", items:["Passport valid 6+ months beyond the travel dates","Visa / entry requirements checked for this trip, not a past one","Copies of passport and IDs stored securely"]},
+        {type:"checklist", h:"Bookings & logistics", items:["Flights, hotel and ground transport line up at every leg","Car pickup confirmed: time, place, driver contact","Buffer between connections","Loyalty numbers applied to every booking","One-page itinerary sent (not scattered confirmations)"]},
+        {type:"checklist", h:"Contingency", items:["Backup flight / route identified for the key leg","The trip's hard deadline (hearing, closing) noted","Contingency contact at the destination","Health & safety prep for this destination"]},
+        {type:"template", h:"Court deadline count", lines:["Trigger event & date (with source): ______________________________","Rule & kind of days (calendar / court): ______________________________","Count starts the day after the trigger → last day: __________","Weekend / court holiday? Moved to: __________   Service by mail +3? ____","Docketed with the rule cited · reminders at 14 / 7 / 2 days: [ ]","Second-person check by: __________"]}]};
+    const sched = pick(old2, /top 3|Hour by hour/);
+    H[4] = Object.assign({}, H[4], {title:"Prioritize the Day & Client Data Cleanup", kind:"Worksheet + spreadsheet template",
+      intro:"Plan the day's top three and protect the time for them, then clean contact data in order: de-duplicate → standardize → filter → sort.",
+      blocks: sched.concat(H[4].blocks)});
+    Object.defineProperty(H, "__now", {value:true});
+  }
+
+  const st = document.createElement("style"); st.id = "orient-now"; st.textContent = `
+.or-dash2{display:flex;flex-direction:column;gap:10px;}
+.or-d2-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:10px;}
+.or-d2-card{background:#fff;border:1px solid #E3E6EE;border-top:4px solid #4A5277;border-radius:10px;padding:8px 8px 9px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:var(--navy);}
+.or-d2-card.or{border-top-color:var(--orange);}
+.or-d2-card span{font-weight:800;letter-spacing:.06em;color:var(--orange-deep);font-size:10.5px;text-transform:uppercase;}
+.or-d2-card i{font-style:normal;font-weight:700;background:#ECEEF5;border-radius:7px;width:100%;text-align:center;padding:4px 0;}
+.or-d2-card u{text-decoration:none;color:#5B6178;font-size:10px;}
+.or-box.or-band{background:#F7F8FB;border:1px solid #E3E6EE;border-style:solid;}
+`; document.head.appendChild(st);
+})();
+
+/* ================= Practice Lab disclaimer: 3 attempts only =================
+   Every day's Practice Lab opens with the disclaimer (it was hidden before): 3 attempts per day's lab, the
+   first submission of each part free, attempts left for the day (red when none are left), and how to get
+   more. Day 10 adds its stricter rule: the Brand Kit and the Marketing Plan can be submitted once only. */
+(function(){
+  if(typeof renderToolWizard !== "function" || renderToolWizard.__disclaimer) return;
+  renderLabAttemptBanner = function(dayId){
+    dayId = dayId || (typeof currentLabDay === "function" ? currentLabDay() : null);
+    if(!dayId) return "";
+    const left = labAttemptsRemaining(dayId), cap = LAB_ATTEMPT_CAP;
+    const day10 = +dayId === 10 ? `<p class="lab-disc-strict">Day 10 is the final evaluation: the <b>Brand Kit</b> and the <b>Marketing Plan</b> can be submitted <b>once only</b>.</p>` : "";
+    return `<div class="lab-disclaimer ${left ? "" : "locked"}" data-day="${dayId}" role="note">
+      <div class="lab-disc-ic">${left ? "⚠️" : "⛔"}</div>
+      <div class="lab-disc-body">
+        <b>Disclaimer: ${cap} attempts only</b>
+        <p>This Practice Lab allows <b>${cap} attempts</b>. Your first submission of each part is free; every resubmission uses one attempt, so check your work before you submit.</p>
+        ${day10}
+        <p class="lab-disc-left">${left ? `Attempts left for ${ftName(dayId)}: <b>${left} of ${cap}</b>` : `No attempts left for ${ftName(dayId)}. Use 🙋 Ask for more attempts, or ask your trainer to reset them.`}</p>
+      </div></div>`;
+  };
+  refreshLabAttemptBanners = function(){
+    document.querySelectorAll(".lab-disclaimer").forEach(el => { const h = renderLabAttemptBanner(+el.dataset.day); if(h) el.outerHTML = h; });
+  };
+  const __rtw = renderToolWizard;
+  renderToolWizard = function(dayId, parts){
+    const html = __rtw.apply(this, arguments);
+    if(dayId) return html;                    // the banner is already at the top
+    const d = typeof currentLabDay === "function" ? currentLabDay() : null;   // a lab opened without its day (Day 7)
+    return d ? renderLabAttemptBanner(d) + html : html;
+  };
+  renderToolWizard.__disclaimer = true;
+  const st = document.createElement("style"); st.id = "lab-disclaimer"; st.textContent = `
+.lab-disclaimer{display:flex;gap:14px;align-items:flex-start;background:#FFF7EF;border:1px solid #F3C9A0;border-left:5px solid var(--orange);border-radius:12px;padding:12px 16px;margin:0 0 14px;}
+.lab-disclaimer .lab-disc-ic{font-size:22px;line-height:1.2;flex-shrink:0;}
+.lab-disclaimer .lab-disc-body > b{display:block;font-size:13.5px;color:var(--orange-deep);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.lab-disclaimer p{font-size:13.5px;line-height:1.5;color:#5c3d17;margin:2px 0;}
+.lab-disclaimer .lab-disc-left{font-weight:600;}
+.lab-disclaimer .lab-disc-strict{color:#7a352c;}
+.lab-disclaimer.locked{background:var(--danger-bg);border-color:var(--danger);border-left-color:var(--danger);}
+.lab-disclaimer.locked .lab-disc-body > b{color:var(--danger);} .lab-disclaimer.locked p{color:#7a352c;}
+`; document.head.appendChild(st);
+})();
+
+/* ===== Practice Lab reviews graded against Elias Thorne's client profile =====
+   Every AI review (written labs, roleplay calls, intake calls, quick practice) gets the full
+   client profile and is told to judge the work against it: contradicting a stated preference
+   costs Accuracy, applying it unprompted earns Presence. */
+(function(){
+  if(typeof CLIENT_DOSSIER_MD === "undefined") return;
+  const PROFILE_BLOCK = `\n\nCLIENT PROFILE — Elias Thorne (the executive every task is for; treat it as the source of truth):\n${CLIENT_DOSSIER_MD}`;
+  const PROFILE_NOTES = " CLIENT PROFILE: grade every category against Elias Thorne's profile above. Anything that contradicts a stated preference or standing rule (his channel ranking — Slack DM, then text, then email, phone only for emergencies; BLUF and blunt style; strict Paleo; black coffee; aisle seat and no connecting flights; the spending approval threshold; confidentiality; protected calendar blocks; family and household details) loses Accuracy points. Applying a profile detail without being told earns Presence points. At least one strength or blindspot must begin with \"Elias's profile:\" and name the specific detail it refers to.";
+  const hasProfile = (t)=> String(t||"").includes(CLIENT_DOSSIER_MD.slice(0, 120));
+  const withProfile = (t)=> hasProfile(t) ? String(t||"") : String(t||"") + PROFILE_BLOCK;
+  const tag = (report)=>{ if(report && typeof report === "object") report.eliasProfile = true; return report; };
+
+  const __rre = runRubricEvaluation;
+  runRubricEvaluation = async function(label, context, submission, notes){
+    return tag(await __rre.call(this, label, withProfile(context), submission, (notes||"") + PROFILE_NOTES));
+  };
+  // The call graders read the situation from scenario.topic.context / persona.context, so add the profile there.
+  const withTopicProfile = (scenario, extra)=> scenario && scenario.topic
+    ? Object.assign({}, scenario, {topic: Object.assign({}, scenario.topic, {context: withProfile(scenario.topic.context) + extra})})
+    : scenario;
+  const CALL_NOTES = "\n\nGRADE AGAINST THE PROFILE: where the call touches Elias's preferences, schedule, travel, family or standing rules, the trainee must follow his profile above. Contradicting it is a blindspot; applying it is a strength. Start that point with \"Elias's profile:\".";
+  if(typeof runRoleplayRubricEvaluation === "function"){
+    const __rrp = runRoleplayRubricEvaluation;
+    runRoleplayRubricEvaluation = async function(scenario, transcript){
+      return tag(await __rrp.call(this, withTopicProfile(scenario, CALL_NOTES), transcript));
+    };
+  }
+  if(typeof runQuickPracticeSummary === "function"){
+    const __rqp = runQuickPracticeSummary;
+    runQuickPracticeSummary = async function(scenario, transcript){
+      return __rqp.call(this, withTopicProfile(scenario, CALL_NOTES), transcript);
+    };
+  }
+  if(typeof runIntakeCallEvaluation === "function"){
+    const __ric = runIntakeCallEvaluation;
+    runIntakeCallEvaluation = async function(persona, transcript){
+      const p = persona ? Object.assign({}, persona, {context: withProfile(persona.context) + "\n\nThe trainee answers for Elias Thorne's firm (Thorne & Partners Law Group): judge scheduling, follow-up and escalation commitments against his profile above, and start that point with \"Elias's profile:\"."}) : persona;
+      return tag(await __ric.call(this, p, transcript));
+    };
+  }
+
+  // Show on each AI report that it was graded against the profile, and highlight the profile points.
+  const PROFILE_PILL = `<div class="eval-profile-pill">👤 Graded against Elias Thorne's client profile</div>`;
+  const decorate = (html, report)=>{
+    if(!report || !report.eliasProfile || typeof html !== "string") return html;
+    return html.replace(`<div class="eval-report">`, `<div class="eval-report">${PROFILE_PILL}`)
+      .replace(/<li>(Elias(?:&#39;|&#x27;|'|’)s profile:)/g, `<li class="eval-profile-pt"><b>$1</b>`);
+  };
+  ["renderEvaluationReport", "renderRoleplayEvaluationReport", "renderIntakeCallEvaluationReport"].forEach(name=>{
+    const fn = window[name];
+    if(typeof fn !== "function") return;
+    window[name] = function(report){ return decorate(fn.apply(this, arguments), report); };
+  });
+  const st = document.createElement("style"); st.id = "eval-profile"; st.textContent = `
+.eval-profile-pill{display:inline-block;font-size:12px;font-weight:600;color:var(--navy);background:#EEF2F8;border:1px solid #D5DEEC;border-radius:999px;padding:3px 11px;margin:0 0 12px;}
+.eval-section li.eval-profile-pt b{color:var(--navy);}
+`; document.head.appendChild(st);
+})();
