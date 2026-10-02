@@ -45,6 +45,18 @@ window.portalGate = {
     try{ await authStatus(); }catch(e){}
     if(!ticket || !state.portalOnly) return;
     var t = ticket; ticket = "";
+    // Arriving from the Portal lands on the dashboard (it has its own "Resume where you left off" button) instead of
+    // jumping straight into the last slide: the engine's automatic resume is skipped once, then restored for that button.
+    var resumeOrig = window.resumeWhereLeftOff;
+    if(typeof resumeOrig === "function"){
+      window.resumeWhereLeftOff = function(){
+        window.resumeWhereLeftOff = resumeOrig;
+        state.resumePending = false;
+        if(state.view === "login" || state.view === "pendingApproval") return;
+        state.view = "clientprofile";
+        render();
+      };
+    }
     try{
       var r = await fetch("/api/auth/portal", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ticket:t})});
       var j = await r.json().catch(function(){ return {}; });
