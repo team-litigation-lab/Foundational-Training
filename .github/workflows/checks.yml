@@ -42,7 +42,7 @@ jobs:
           node-version: 22
       - name: Install Playwright and Chromium
         run: |
-          npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1
+          npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1 jspdf@4.2.1
           "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
       - name: Server requests (sparing, batched, none in the background)
         env:
@@ -51,3 +51,7 @@ jobs:
           node .github/scripts/server.mjs 8787 > "$RUNNER_TEMP/server.log" 2>&1 &
           sleep 2
           node .github/scripts/requests.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Blueprints (the Trainer blueprint and its PDF; the Trainee blueprint republished after every deploy)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/blueprint.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
