@@ -303,7 +303,7 @@ Every edit checks that its anchor exists, so the build stops with an error if th
 - **PR previews** (Cloudflare runs `wrangler preview` for non-production branches) use their own KV namespace, `LSH_KV2` (`previews` in `wrangler.json`), so testing a PR never touches live trainee data. Cron triggers don't run on previews.
 - `.assetsignore` keeps the Worker, config, build files and Markdown out of the served files.
 - Secrets:
-  - `ADMIN_PASSPHRASE`: trainer sign-in. It turns on secure mode, which the trainer-only notes need.
+  - `ADMIN_PASSPHRASE`: trainer sign-in. If it isn't set, `MASTER_ADMIN_PASSWORD` (the LSH Training Portal's master admin password) is used instead, so one password works on both. It turns on secure mode, which the trainer-only notes need.
   - `SESSION_SECRET` (optional)
   - `GEMINI_API_KEY5` … `GEMINI_API_KEY9`: the Gemini key pool behind every AI feature (live chat, grading, the tracker's notes review, trainer tools). Each request starts on the next key in turn, so the load is spread across all of them; a key that hits its limit rests (a minute for a per-minute limit, an hour for a daily one) and the next key takes over. Create each key in its **own** Google Cloud project: keys in the same project share one quota. `/version` shows which pool keys are set.
   - `GEMINI_API_KEY`, `GEMINI_API_KEY1`, `GEMINI_API_KEY2` (optional): used only after every pool key.
