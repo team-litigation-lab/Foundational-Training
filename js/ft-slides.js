@@ -141,6 +141,9 @@ body.ft-fit .lesson-stage .slide-dots{flex-wrap:nowrap;gap:4px;overflow:hidden;p
 body.ft-fit .lesson-stage .slide-dot{flex:0 1 10px;min-width:3px;}
 body.ft-fit .lesson-stage .slide-dot.active{flex:0 0 22px;}
 body.ft-fit .lesson-stage .slide-done-banner{display:none;}
+/* the lesson page (not full screen): every slide's frame and page image get the one size fitPages() keeps */
+body.ft-fit #lessonStage:not(:fullscreen) #lessonSlideWrap{height:var(--ft-frame-h, auto);}
+body.ft-fit #lessonStage:not(:fullscreen) .cs-page img{max-height:var(--ft-img-h, calc(100vh - 330px));max-width:100%;}
 .cs-page{margin:0;width:100%;display:flex;justify-content:center;}
 .cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:#fff;}
 .cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
@@ -218,10 +221,25 @@ function fitPages(){
   // (the portal gives it 66% of the screen, whatever else is on the page).
   const foot = page && document.body.classList.contains("ft-fit") && document.querySelector(".footer-note");
   if(foot && frame && stage){
+    // One size for every slide: the frame's height is kept in --ft-frame-h on the page (it outlives each
+    // slide's render), and the page image is sized from it by CSS (--ft-img-h), never by measuring the
+    // image. Once it's set, moving between slides changes nothing, so slides don't flicker or come out
+    // smaller; it's worked out again only when the screen changes size.
     // (the page stretches to the screen, so the footer's own place says nothing: count from the stage down)
+    const root = document.documentElement, cs = getComputedStyle(frame);
     const main = stage.closest("main"), below = (main ? parseFloat(getComputedStyle(main).paddingBottom) || 0 : 0) + foot.offsetHeight;
-    const slack = window.innerHeight - 4 - (stage.getBoundingClientRect().bottom + window.scrollY + below);
-    if(Math.abs(slack) > 2) frame.style.height = Math.max(320, Math.round(frame.getBoundingClientRect().height + slack)) + "px";
+    // measured from the layout (offsetTop / offsetHeight), which the slide-in animation doesn't move
+    const docTop = el=>{ let y = 0; for(; el; el = el.offsetParent) y += el.offsetTop; return y; };
+    const slack = window.innerHeight - 4 - (docTop(stage) + stage.offsetHeight + below);
+    if(Math.abs(slack) > 2 || !root.style.getPropertyValue("--ft-frame-h")){
+      const h = Math.max(320, Math.round(frame.offsetHeight + slack));
+      root.style.setProperty("--ft-frame-h", h + "px");
+      root.style.setProperty("--ft-img-h", Math.max(160, h - (parseFloat(cs.paddingTop) || 0) - pad) + "px");
+    }
+    if(frame.style.height) frame.style.height = "";
+    if(img && img.style.maxHeight) img.style.maxHeight = "";
+    if(window.scrollY && document.documentElement.scrollHeight <= window.innerHeight + 2) window.scrollTo(0, 0);
+    return;
   } else if(frame && frame.style.height) frame.style.height = "";   // full screen / slides window: the frame fills the stage
   if(!img) return;
   for(let pass = 0; pass < 4; pass++){
