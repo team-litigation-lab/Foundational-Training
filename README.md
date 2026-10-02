@@ -105,7 +105,13 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 - **The page:** 12 slides with ← → (or the arrow keys), **⛶ Present full screen**, **🖨 Print** and **⬇ Download PDF** (`LSH_FT_Platform_Orientation.pdf`). Nothing private is on it: no facilitator's notes, answers or trainee data. Trainees and 👁 Trainee view don't see it.
 - **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; simulators; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
-- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. When the build changes, the first admin to open the portal rebuilds and publishes it in the background (`blueprint:pdf`, `blueprint:meta`). The Orientation page shows the published build, with **open** and **rebuild** links. It's the EA/PA engine's feature; this program only supplies the slides.
+- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Trainees open it from the **📘 Platform Blueprint** card on their dashboard (Handouts isn't part of this program).
+  - **It republishes itself after every deploy.** The published copy (`blueprint:pdf`, `blueprint:meta`) is matched against the build and the Worker's deployment id (`/version`, from `version_metadata` in `wrangler.json`). The first admin page open after a deploy rebuilds it in the background (`js/lsh-blueprint-course.js`).
+- **🛠 Trainer blueprint** (admins only, never at a public address): a tab on 🧭 Orientation.
+  - **The slides:** a cover and 11 slides covering signing in, trainees and the Trainee Audit, Open Lessons, the Curriculum, Presenter view, Activities, the facilitator's feedback style, Monitoring Sheets, Process Questions, Task Trackers, Attendance and Trainee view.
+  - **⬇ Download PDF:** a landscape PDF, one page per slide, stamped with the build and the deployment.
+  - **Files:** the slides are in `js/blueprint-content.js`. `js/lsh-blueprint.js` is the same file on every LSH platform, and `js/lsh-blueprint-course.js` is the same on every LSH course: change either in one, copy it to all. `build/build.py` adds the three after this program's scripts.
+  - **Test:** `.github/scripts/blueprint.cjs`.
 
 ## Process Questions
 
