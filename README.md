@@ -310,7 +310,7 @@ Every edit checks that its anchor exists, so the build stops with an error if th
 
 ## 📉 Staying under Cloudflare's monthly request limit
 
-Every request to the Worker (everything under `/api/` and `/version`) counts toward the Cloudflare account's requests. The account is on Workers Paid: **10 million requests a month, shared by every LSH site** (the courses, the CMS, the Training Portal and the rest). The EA-PA-TRAINING repository's **Request budget** workflow switches the sites' servers off before the limit, until the next billing month, so a page that asks too often can take every site down with it. Static files (the page, `js/`, images) don't count.
+Every request to the Worker (everything under `/api/` and `/version`) counts toward the Cloudflare account's requests. The account is on Workers Paid: **10 million requests a month, shared by every LSH site** (the courses, the CMS, the Training Portal and the rest). Past that, Cloudflare charges for every extra million, so a page that asks too often costs money for every site. Static files (the page, `js/`, images) don't count.
 
 So an open page asks the server sparingly (`POLL` in `index.html`; the open lessons in `js/ft-updates.js`), and not at all while its tab is in the background. When the tab is back, whatever came due runs then; a quick look at another tab (Google Meet) asks nothing:
 
@@ -331,23 +331,12 @@ Lists of records are read with `/api/storage/get-many` (1 to 100 keys, the same 
 
 The `index.html` part is the EA/PA portal's engine (the same change is in EA-PA-TRAINING), so a rebuild keeps it.
 
-## 📊 Server request meter
-
-Admins see how much of the month's server requests is used, on every LSH site's admin side: a small chip in the bottom-left corner once signed in to 🛡 Admin. 🟢 on track; 🟠 from 75%, or when this month's pace reaches the limit before the allowance resets; 🔴 from 90%; 🟥 paused (the limit was reached); ⚪ not set up yet, or no recent numbers. When it's amber or red, a note appears above the chip; click the chip for the total, the projection, each day and each site.
-
-- The numbers come from the Request budget workflow in EA-PA-TRAINING (README there → *Monthly request budget* and *Server request meter*), which saves them to KV (`_request-usage`, the same key for every LSH site, so it's read without this course's key prefix).
-- This site's server answers its admins with them: `POST /api/request-budget` (admins only, `worker.js`).
-- The meter is `js/request-budget.js`, **the same file in every LSH platform** (change it in EA-PA-TRAINING and copy it here). It asks once when an admin opens the page, then every 15 minutes while the tab is in view.
-- `index.html` loads it next to the other scripts at the end of the page. If `index.html` is rebuilt from a page that doesn't load it yet, carry those lines over again: `request-meter.cjs` fails until you do.
-- Tests: `.github/scripts/request-meter-widget.cjs` (the meter itself; the same test in every platform) and `.github/scripts/request-meter.cjs` (this site: admins only, one request).
-
 ## Checks (GitHub Actions)
 
 `.github/workflows/checks.yml` runs on every pull request and every push to `main`. A red **Checks** status means something is broken, and the log says what:
 
 - **Syntax, files and build:** every `.js` file and inline script parses, every local file the pages load is in the repository, and every JSON file parses (`.github/scripts/check-site.mjs`, the EA/PA portal's); the Worker builds (`wrangler deploy --dry-run`).
 - **Server requests** (`.github/scripts/requests.cjs`): `get-many` gives a trainee only their own and public records and an Admin every one, reads this program's `ft:` records only, and refuses more than 100 keys. In a browser, with the checks sped up: a trainee's page reads the tasks for every open lesson in one request, their record about once per check, and the open lessons in one request; checks for a new version rarely; and asks nothing while the tab is in the background (catching up when it's back) or on a quick switch to another tab and back. A server that doesn't answer doesn't sign the trainee out or lock their lessons; a revoke does. The Trainee Audit reads every trainee in two requests, and Task Trackers, Monitoring Sheets and Process Questions read the trainees' sheets with get-many.
-- **Server request meter** (`.github/scripts/request-meter-widget.cjs`, `request-meter.cjs`): only admins see it and only their pages ask for it, once on opening; `/api/request-budget` refuses trainees; every level of the meter shows as it should; a background tab asks nothing.
 
 To run them locally (Node 22; the browser test needs Playwright: `npm install playwright` and `npx playwright install chromium`):
 
@@ -355,8 +344,6 @@ To run them locally (Node 22; the browser test needs Playwright: `npm install pl
 node .github/scripts/check-site.mjs
 node .github/scripts/server.mjs 8787 &      # the site through worker.js, with an in-memory KV
 node .github/scripts/requests.cjs http://localhost:8787/
-node .github/scripts/request-meter-widget.cjs js/request-budget.js
-node .github/scripts/request-meter.cjs http://localhost:8787/
 ```
 
 `server.mjs` runs the Worker in open mode (no passphrase) and with no AI keys, so nothing outside your computer is called. The requests test takes about a minute.
