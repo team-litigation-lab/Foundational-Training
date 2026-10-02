@@ -96,16 +96,19 @@ function safeEqual(a, b) {
    (an administrator's ticket is {r: "a", exp}: they were signed in on the Portal with the master admin password).
    exp is epoch milliseconds; a ticket is good for a few minutes, so a copied link is no use later. */
 const PORTAL_TICKET_MAX_MS = 10 * 60 * 1000;
-function portalOnly(env) { return !!(adminPass(env) && env.PORTAL_SSO_SECRET); }
-async function readPortalTicket(env, ticket) {
-  if (!env.PORTAL_SSO_SECRET) return null;
+// The Portal secret, without any space or line break pasted around it (the Portal does the same).
+function portalSecret(env) { return String(env.PORTAL_SSO_SECRET || "").trim(); }
+function portalOnly(env) { return !!(adminPass(env) && portalSecret(env)); }
+// why (optional) gets why a ticket was refused: "format", "signature" (the Portal and this program don't share the same secret) or "expired".
+async function readPortalTicket(env, ticket, why = {}) {
+  if (!portalSecret(env)) { why.r = "format"; return null; }
   const parts = String(ticket || "").split(".");
-  if (parts.length !== 2) return null;
-  const good = await hmac("portal-sso:" + env.PORTAL_SSO_SECRET, parts[0]);
-  if (!safeEqual(good, parts[1])) return null;
-  let t; try { t = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch (e) { return null; }
+  if (parts.length !== 2) { why.r = "format"; return null; }
+  const good = await hmac("portal-sso:" + portalSecret(env), parts[0]);
+  if (!safeEqual(good, parts[1])) { why.r = "signature"; return null; }
+  let t; try { t = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch (e) { why.r = "format"; return null; }
   const exp = Number(t && t.exp);
-  if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) return null;
+  if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) { why.r = "expired"; return null; }
   if (t.r === "a") return { admin: true };   // an administrator signed in on the Portal (the Portal checked their password)
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
   if (!first || !last || !batch) return null;
@@ -532,8 +535,11 @@ export default {
         // The Main Portal's sign-in: a signed ticket carries who the trainee is (their name and batch as registered there).
         if (!portalOnly(env)) return json({ error: "not-configured" }, 501);
         const { ticket } = await request.json().catch(() => ({}));
-        const who = await readPortalTicket(env, ticket);
-        if (!who) return json({ error: "This sign-in link has expired. Open the program again from the LSH Training Portal." }, 401);
+        const why = {};
+        const who = await readPortalTicket(env, ticket, why);
+        if (!who) return json({ error: why.r === "signature"
+          ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
+          : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
         if (who.admin) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
         const res = await traineeSession(who.name, who.batch, "");
         const out = await res.json();
