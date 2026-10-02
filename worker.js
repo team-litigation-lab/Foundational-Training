@@ -92,7 +92,8 @@ function safeEqual(a, b) {
 }
 
 /* ---------- Main Portal sign-in: the LSH Training Portal signs a trainee in, this site trusts its ticket ----------
-   ticket = "<base64url JSON {first, last, b, exp}>.<HMAC-SHA256 of that text, keyed with PORTAL_SSO_SECRET>".
+   ticket = "<base64url JSON {first, last, b, exp}>.<HMAC-SHA256 of that text, keyed with PORTAL_SSO_SECRET>"
+   (an administrator's ticket is {r: "a", exp}: they were signed in on the Portal with the master admin password).
    exp is epoch milliseconds; a ticket is good for a few minutes, so a copied link is no use later. */
 const PORTAL_TICKET_MAX_MS = 10 * 60 * 1000;
 function portalOnly(env) { return !!(adminPass(env) && env.PORTAL_SSO_SECRET); }
@@ -105,6 +106,7 @@ async function readPortalTicket(env, ticket) {
   let t; try { t = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch (e) { return null; }
   const exp = Number(t && t.exp);
   if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) return null;
+  if (t.r === "a") return { admin: true };   // an administrator signed in on the Portal (the Portal checked their password)
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
   if (!first || !last || !batch) return null;
   return { name: `${first} ${last}`, first, last, batch };
@@ -541,6 +543,7 @@ export default {
         const { ticket } = await request.json().catch(() => ({}));
         const who = await readPortalTicket(env, ticket);
         if (!who) return json({ error: "This sign-in link has expired. Open the program again from the LSH Training Portal." }, 401);
+        if (who.admin) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
         const res = await traineeSession(who.name, who.batch, "");
         const out = await res.json();
         return json(Object.assign(out, { name: who.name, first: who.first, last: who.last, batch: who.batch }));

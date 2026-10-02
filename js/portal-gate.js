@@ -6,8 +6,10 @@
    (?ticket=…); the Worker checks it (/api/auth/portal) and the trainee
    is signed in, registered and waiting for approval exactly as before.
    Someone who opens this program's link directly sees a short note
-   with a button back to the Portal instead of a form. Admins keep their
-   passphrase sign-in (the small 🛡 link on that note).
+   with a button back to the Portal instead of a form. Admins sign in on the
+   Portal too and arrive with their own ticket, so they aren't asked for the
+   passphrase; it stays only for someone who opens the link directly (the
+   small 🛡 link on that note).
    It turns on when the Worker has PORTAL_SSO_SECRET (/api/auth/status
    says portalOnly); until then the old name + batch form stays, so
    nothing locks anyone out before the secret is set on both sides.
@@ -47,6 +49,7 @@ window.portalGate = {
       var r = await fetch("/api/auth/portal", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ticket:t})});
       var j = await r.json().catch(function(){ return {}; });
       if(!r.ok || !j.token){ notice = j.error || "We couldn't sign you in from the LSH Training Portal. Open the program from the Portal again."; return; }
+      if(j.admin){ setAdminToken(j.token); return; }                                        // an admin signed in on the Portal: no passphrase here (boot picks up the token)
       if(state.traineeId && state.traineeId === j.id){ setTraineeToken(j.token); return; }   // already signed in as them
       if(state.traineeId){ try{ await logout(); }catch(e){} }                               // someone else was signed in on this device
       setTraineeToken(j.token);
@@ -56,6 +59,11 @@ window.portalGate = {
   // What the sign-in screen shows. With a Portal ticket it registers the trainee (the engine's own steps) on their way in.
   renderCard: function(){
     var logo = (typeof LOGO_FULL_SRC !== "undefined") ? '<img src="'+LOGO_FULL_SRC+'" alt="Legal Support Help" style="width:150px;height:auto;margin-bottom:22px;">' : "";
+    if(state.isAdmin){            // an admin who came in from the Portal (or is signed in): straight to the admin screen
+      setTimeout(function(){ if(state.isAdmin && state.view === "login") goto("admin"); }, 0);
+      return '<div class="login-shell"><div class="login-card">'+logo
+        + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Opening the admin screen…</h1></div></div>';
+    }
     if(pending){
       var p = pending;
       setTimeout(function(){
