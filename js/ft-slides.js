@@ -210,6 +210,7 @@ const st = document.createElement("style"); st.id = "ft-slides"; st.textContent 
 function fitPages(){
   const d = typeof state !== "undefined" && state.view === "day" && typeof DAYS !== "undefined" ? DAYS.find(x=>x.id===state.dayId) : null;
   document.body.classList.toggle("ft-fit", !!(d && (d.sections||[]).some(x=>/class="cs cs-pages"/.test(x.html))));
+  document.body.classList.toggle("ft-orient", !!(d && window.FT_ORIENTATION && d.id === window.FT_ORIENTATION.id));   // its slides' background (ft-rules.js)
   const img = document.querySelector(".cs-page img");
   if(!img && !document.body.classList.contains("ft-fit")) return;
   // the slide frame: the page image's, or a topic divider's (the same size, so slides don't change size)

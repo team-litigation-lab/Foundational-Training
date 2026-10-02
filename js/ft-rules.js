@@ -485,6 +485,23 @@ window.renderDashboard = function(){
 .ftr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px;}
 .ftr-rule{background:var(--danger-bg);border:1px solid #E9C9C3;border-left:5px solid var(--danger);border-radius:12px;padding:12px 16px;margin-bottom:10px;}
 .ftr-rule-aux{margin-top:14px;}
+/* The Orientation slides' background (ft/orientation/background.webp, the trainers' design): navy, the LSH
+   header band with the orange line, orange waves at the sides. The part label and the title sit in the band,
+   right of the logo; the slide's content is a cream panel under the orange line. Sized with the slide's
+   width (cqw), so it lines up at any screen size, in full screen and in the slides window. */
+body.ft-orient #lessonSlideWrap{container-type:inline-size;position:relative;background:#2B2E41 url(/ft/orientation/background.webp) top left / 100% auto no-repeat !important;
+  padding:8px 0 18px !important;border-color:transparent !important;justify-content:flex-start !important;align-items:flex-start !important;}
+/* (cqw on the slide itself would count the screen's width: its content takes the band's room instead) */
+body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:calc(11.3cqw + 2px) 6cqw 0 !important;}
+body.ft-orient #lessonSlideWrap > .topic-separator{position:absolute;left:16.5cqw;top:1.7cqw;width:61cqw;margin:0 !important;padding:0 !important;border:0 !important;background:none !important;
+  color:#F6C79A !important;font-size:max(10px, .78cqw) !important;letter-spacing:.14em;text-align:left !important;}
+body.ft-orient #lessonSlideWrap > .topic-separator::before, body.ft-orient #lessonSlideWrap > .topic-separator::after{display:none !important;}
+body.ft-orient #lessonSlideWrap > .card.lesson-card > h4{position:absolute;left:16.5cqw;top:3.4cqw;width:61cqw;height:5.6cqw;margin:0 !important;padding:0 !important;
+  display:flex;align-items:center;justify-content:flex-start;gap:.8cqw;text-align:left !important;color:#fff !important;font-size:clamp(17px, 2.2cqw, 34px) !important;line-height:1.12 !important;text-shadow:0 2px 6px rgba(20,22,36,.55);}
+body.ft-orient #lessonSlideWrap > .card.lesson-card > h4 .lnum{color:#F6C79A !important;white-space:nowrap;flex:0 0 auto;}
+body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
+body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
+body.ft-orient #lessonSlideWrap .ft-body{background:rgba(255,253,248,.97);border-radius:14px;padding:10px 16px !important;box-shadow:0 18px 40px -24px rgba(0,0,0,.6);}
 .ftr-stakes{background:var(--navy);color:#fff;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow);}
 .ftr-goal{background:#FBEBDD;border:1px solid var(--orange-soft);border-left:5px solid var(--orange);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;}
 .ftr-goal b{display:block;font-size:17px;color:var(--orange-deep);} .ftr-goal p{margin:6px 0 0!important;font-size:15.5px;line-height:1.55;}

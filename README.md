@@ -74,6 +74,7 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
 - **The slides:**
+  Every slide has the trainers' background (`ft/orientation/background.webp`, styled in `js/ft-rules.js` under `body.ft-orient`): navy, the LSH header band with the orange line, orange waves at the sides. The part label and title sit in the band, the content in a cream panel below it, sized with the slide's width so it lines up on any screen.
   The slides follow the trainers' Setting of Expectations:
   1. Setting expectations: training isn't the end goal, you need to pass (performance deliberated weekly; you can still be let go); training is hard on purpose; your trainers are your first clients (resilience, pressure, time management).
   2. You're a General VA: tagged General VAs but may be assigned to different roles; take initiative when tasks run low; stay placed when a firm restructures; a foundation, not mastery (mastery once a role is assigned, or in the Free Trial period).
