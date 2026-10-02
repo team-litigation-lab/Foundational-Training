@@ -123,6 +123,10 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-orientation.js?v={build_tag}"></script>'
      f'\n<script src="/js/attendance.js?v={build_tag}"></script>') + s[m.end():]
+# The EA/PA page's server request meter (js/request-budget.js and its RequestBudget.start call): this
+# program removed it (no budget is set up), so its script tags don't come across (they'd 404 and throw).
+s = re.sub(r'<script src="/?js/request-budget\.js[^"]*"></script>\n?', '', s)
+s = re.sub(r'<script>\s*/\*[^<]*?Server request meter.*?RequestBudget\.start\(.*?</script>\n?', '', s, flags=re.S)
 # 🏠 Main Portal button for admins (js/portal-link.js), last before </body>.
 k = s.rfind("</body>")
 if k < 0:
