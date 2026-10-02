@@ -27,6 +27,23 @@ try{
   ticket = u.searchParams.get("ticket") || "";
   if(ticket){ u.searchParams.delete("ticket"); history.replaceState(history.state, "", u.pathname + (u.search || "") + u.hash); }
 }catch(e){}
+// A page opened from the Portal (it carries a ticket) stays behind a plain "opening" cover until the sign-in has settled,
+// so the dashboard shell, the "Signing you in…" card and the dashboard don't flash one after another.
+var wantAdmin = false;
+try{ wantAdmin = new URL(location.href).searchParams.get("admin") === "1"; }catch(e){}
+var cover = null;
+function uncover(delay){
+  setTimeout(function(){ if(cover && cover.parentNode) cover.parentNode.removeChild(cover); cover = null; }, delay || 0);
+}
+if(ticket){
+  try{
+    cover = document.createElement("div");
+    cover.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:#eef1f6;display:flex;align-items:center;justify-content:center;font:600 15px Arial,Helvetica,sans-serif;color:#0f2148";
+    cover.textContent = "Opening your training…";
+    document.documentElement.appendChild(cover);
+    setTimeout(function(){ uncover(0); }, 10000);   // never leave the cover on if something goes wrong
+  }catch(e){ cover = null; }
+}
 var pending = null;     // the trainee the Portal vouched for, until their registration has been processed
 var notice = "";
 
@@ -43,7 +60,7 @@ window.portalGate = {
   // Runs at boot, once the engine has loaded: learns whether the Portal is the only way in, then signs in whoever arrived with a ticket.
   init: async function(){
     try{ await authStatus(); }catch(e){}
-    if(!ticket || !state.portalOnly) return;
+    if(!ticket || !state.portalOnly){ uncover(150); return; }
     var t = ticket; ticket = "";
     // Arriving from the Portal lands on the dashboard (it has its own "Resume where you left off" button) instead of
     // jumping straight into the last slide: the engine's automatic resume is skipped once, then restored for that button.
@@ -60,13 +77,13 @@ window.portalGate = {
     try{
       var r = await fetch("/api/auth/portal", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ticket:t})});
       var j = await r.json().catch(function(){ return {}; });
-      if(!r.ok || !j.token){ notice = j.error || "We couldn't sign you in from the LSH Training Portal. Open the program from the Portal again."; return; }
-      if(j.admin){ setAdminToken(j.token); return; }                                        // an admin signed in on the Portal: no passphrase here (boot picks up the token)
-      if(state.traineeId && state.traineeId === j.id){ setTraineeToken(j.token); return; }   // already signed in as them
+      if(!r.ok || !j.token){ notice = j.error || "We couldn't sign you in from the LSH Training Portal. Open the program from the Portal again."; uncover(0); return; }
+      if(j.admin){ setAdminToken(j.token); uncover(250); return; }                                        // an admin signed in on the Portal: no passphrase here (boot picks up the token)
+      if(state.traineeId && state.traineeId === j.id){ setTraineeToken(j.token); uncover(250); return; }   // already signed in as them
       if(state.traineeId){ try{ await logout(); }catch(e){} }                               // someone else was signed in on this device
       setTraineeToken(j.token);
       pending = j;
-    }catch(e){ notice = "We couldn't reach the server to sign you in. Check your connection and open the program from the LSH Training Portal again."; }
+    }catch(e){ notice = "We couldn't reach the server to sign you in. Check your connection and open the program from the LSH Training Portal again."; uncover(0); }
   },
   // What the sign-in screen shows. With a Portal ticket it registers the trainee (the engine's own steps) on their way in.
   renderCard: function(){
@@ -81,7 +98,7 @@ window.portalGate = {
       setTimeout(function(){
         if(!pending) return;
         pending = null;
-        Promise.resolve(window.submitLogin()).then(function(){ if(state.view === "login") render(); });
+        Promise.resolve(window.submitLogin()).then(function(){ if(state.view === "login") render(); uncover(200); }, function(){ uncover(0); });
       }, 0);
       return '<div class="login-shell"><div class="login-card">'+logo
         + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Signing you in…</h1>'
@@ -90,6 +107,7 @@ window.portalGate = {
         + '<button id="loginSubmitBtn" class="btn btn-primary" style="display:none"></button>'
         + '</div></div>';
     }
+    if(wantAdmin){ wantAdmin = false; setTimeout(function(){ if(typeof openAdmin === "function") openAdmin(); }, 0); }   // /?admin=1: straight to the passphrase prompt
     var msg = notice; notice = "";
     return '<div class="login-shell"><div class="login-card">'+logo
       + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">'+esc(String(document.title||"Training Program").replace(/^LSH\s+/,""))+'</h1>'
