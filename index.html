@@ -2437,6 +2437,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
+<script src="/js/portal-gate.js?v=ft-2026.10.01-2051"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -5513,12 +5514,12 @@ function setTraineeToken(t){ state.authToken = t||""; try{ t ? localStorage.setI
 function setAdminToken(t){ state.adminToken = t||""; try{ t ? sessionStorage.setItem("lsh_admin_token", t) : sessionStorage.removeItem("lsh_admin_token"); }catch(e){} }
 async function authStatus(){
   if(typeof state.secureMode === "boolean") return state.secureMode;
-  try{ const r = await fetch("/api/auth/status", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); const j = r.ok ? await r.json() : {}; state.secureMode = !!j.secure; }
+  try{ const r = await fetch("/api/auth/status", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); const j = r.ok ? await r.json() : {}; state.secureMode = !!j.secure; state.portalOnly = !!j.portalOnly; }
   catch(e){ state.secureMode = false; }
   return state.secureMode;
 }
 async function traineeAuth(name, batch, id){
-  const r = await fetch("/api/auth/trainee", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({name, batch, id})});
+  const r = await fetch("/api/auth/trainee", {method:"POST", headers:(window.portalGate ? window.portalGate.headers() : {"Content-Type":"application/json"}), body: JSON.stringify({name, batch, id})});
   if(r.status===501) return null;                       // open mode
   if(!r.ok){ const j = await r.json().catch(()=>({})); const e = new Error(j.error || ("sign-in failed ("+r.status+")")); e.status = r.status; throw e; }
   const j = await r.json(); setTraineeToken(j.token); return j;
@@ -8578,6 +8579,7 @@ function afterRender(){
 
 /* ---------- login gate (for monitoring — see honesty note on Admin) ---------- */
 function renderLogin(){
+  if(window.portalGate && window.portalGate.active()) return window.portalGate.renderCard();
   return `
     <div class="login-shell">
       <div class="login-card">
@@ -9072,6 +9074,7 @@ window.applyUpdate = applyUpdate;
   startLiveUpdates();
   startUpdateChecks();
   await loadAll();
+  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees come in from the LSH Training Portal
   if(state.adminToken && (await authStatus())) state.isAdmin = true;
   if(state.isAdmin && !state.adminToken && (await authStatus())){ state.isAdmin = false; setTimeout(()=>{ toast("Secure mode is on — please sign in to Admin again with the passphrase."); }, 600); }
   if(state.traineeId && (await authStatus()) && !state.authToken){
