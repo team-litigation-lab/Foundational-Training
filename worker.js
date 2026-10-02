@@ -16,7 +16,7 @@
  *   GEMINI_MODEL       — optional: first model for grading and trainer tools (default gemini-3.8-flash).
  *                        Live chat always starts on gemini-3.5-flash-lite (the free tier's daily limit
  *                        is ~500 requests there, 20 on the Flash models); see geminiModels.
- *   ADMIN_PASSPHRASE   — trainer/admin sign-in. Setting this switches the portal
+ *   ADMIN_PASSPHRASE   — trainer/admin sign-in (or MASTER_ADMIN_PASSWORD, the Portal's master admin password, when this isn't set). Setting this switches the portal
  *                        into SECURE MODE: every storage and AI request must carry
  *                        a signed session token.
  *   SESSION_SECRET     — optional; signs session tokens (defaults to ADMIN_PASSPHRASE)
@@ -64,7 +64,10 @@ async function hmac(secret, msg) {
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(msg));
   return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-function secretOf(env) { return env.SESSION_SECRET || env.ADMIN_PASSPHRASE || ""; }
+// The trainer/admin passphrase: ADMIN_PASSPHRASE, or else MASTER_ADMIN_PASSWORD (the LSH Training Portal's master admin password,
+// so one password signs an admin in on the Portal and here without setting up a second one).
+function adminPass(env) { return env.ADMIN_PASSPHRASE || env.MASTER_ADMIN_PASSWORD || ""; }
+function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
   const body = `${role}.${encodeURIComponent(subject)}.${exp}`;
@@ -89,10 +92,11 @@ function safeEqual(a, b) {
 }
 
 /* ---------- Main Portal sign-in: the LSH Training Portal signs a trainee in, this site trusts its ticket ----------
-   ticket = "<base64url JSON {first, last, b, exp}>.<HMAC-SHA256 of that text, keyed with PORTAL_SSO_SECRET>".
+   ticket = "<base64url JSON {first, last, b, exp}>.<HMAC-SHA256 of that text, keyed with PORTAL_SSO_SECRET>"
+   (an administrator's ticket is {r: "a", exp}: they were signed in on the Portal with the master admin password).
    exp is epoch milliseconds; a ticket is good for a few minutes, so a copied link is no use later. */
 const PORTAL_TICKET_MAX_MS = 10 * 60 * 1000;
-function portalOnly(env) { return !!(env.ADMIN_PASSPHRASE && env.PORTAL_SSO_SECRET); }
+function portalOnly(env) { return !!(adminPass(env) && env.PORTAL_SSO_SECRET); }
 async function readPortalTicket(env, ticket) {
   if (!env.PORTAL_SSO_SECRET) return null;
   const parts = String(ticket || "").split(".");
@@ -102,6 +106,7 @@ async function readPortalTicket(env, ticket) {
   let t; try { t = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch (e) { return null; }
   const exp = Number(t && t.exp);
   if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) return null;
+  if (t.r === "a") return { admin: true };   // an administrator signed in on the Portal (the Portal checked their password)
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
   if (!first || !last || !batch) return null;
   return { name: `${first} ${last}`, first, last, batch };
@@ -445,7 +450,7 @@ export default {
     try {
       const url = new URL(request.url);
       const path = url.pathname;
-      const secure = !!env.ADMIN_PASSPHRASE;
+      const secure = !!adminPass(env);
       if (path === "/blueprint.pdf") {
         // The Platform Blueprint PDF, rebuilt automatically by the portal after each update (trainee-safe content).
         const raw = kv ? await kv.get("blueprint:pdf") : null;
@@ -459,7 +464,7 @@ export default {
         const page = await env.ASSETS.fetch(new Request(new URL("/", request.url)));
         const html = await page.text();
         const m = html.match(/APP_BUILD = "([^"]+)"/);
-        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nWorker: secure-mode worker.js\nSecure mode: ${env.ADMIN_PASSPHRASE ? "ON" : "OFF"}\nAI provider: ${hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
+        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAI provider: ${hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
@@ -494,7 +499,7 @@ export default {
         if (!secure) return json({ error: "not-configured" }, 501);
         const { passphrase } = await request.json();
         await new Promise((r) => setTimeout(r, 400)); // slow down guessing
-        if (!safeEqual(String(passphrase || ""), env.ADMIN_PASSPHRASE)) return json({ error: "Incorrect passphrase" }, 401);
+        if (!safeEqual(String(passphrase || ""), adminPass(env))) return json({ error: "Incorrect passphrase" }, 401);
         return json({ token: await makeToken(env, "a", "admin", 12) });
       }
       // The trainee's session for a name + batch: their record id (new or legacy form) and token.
@@ -529,6 +534,7 @@ export default {
         const { ticket } = await request.json().catch(() => ({}));
         const who = await readPortalTicket(env, ticket);
         if (!who) return json({ error: "This sign-in link has expired. Open the program again from the LSH Training Portal." }, 401);
+        if (who.admin) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
         const res = await traineeSession(who.name, who.batch, "");
         const out = await res.json();
         return json(Object.assign(out, { name: who.name, first: who.first, last: who.last, batch: who.batch }));
