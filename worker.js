@@ -543,6 +543,14 @@ export default {
         if (who.admin) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
         const res = await traineeSession(who.name, who.batch, "");
         const out = await res.json();
+        // The Portal's approval is the only trainee approval: a trainee it signs in is approved here too
+        // (unless an admin here rejected them), so this program never shows "Registration Pending Approval".
+        const cur = out.existing;
+        if (!cur || (cur.approved !== true && !cur.rejected)) {
+          const rec = Object.assign({}, cur || { id: out.id, name: who.name, firstName: who.first, lastName: who.last, batch: who.batch, registeredAt: new Date().toISOString() }, { approved: true });
+          await kv.put(`trainee:${out.id}`, JSON.stringify(rec));
+          out.existing = rec;
+        }
         return json(Object.assign(out, { name: who.name, first: who.first, last: who.last, batch: who.batch }));
       }
 
