@@ -1,14 +1,15 @@
 /* ============================================================
-   🏠 Back to the LSH Training Portal (admins only)
-   Admins open each program from the portal's Training Directory,
-   which opens it in a new tab. While an admin is signed in, this
-   adds a way back:
-     • top bar:  🏠 Main Portal
-     • Admin:    ← Back to Main Portal (next to "Log out")
-   Trainees, and admins in 👁 Trainee view, don't see it.
+   🏠 Back to the LSH Training Portal (everyone who came from it)
+   Trainees and admins open each program from the Portal's Training
+   Directory, which opens it in a new tab. This adds a way back:
+     • admins:    top bar 🏠 Main Portal, and on the Admin screen
+                  ← Back to Main Portal (next to "Log out")
+     • trainees:  top bar ← Training Directory, and a link under the
+                  sign-in / approval notes (pending, not approved)
+   Admins in 👁 Trainee view see the admin buttons.
    The same file is in every LSH course repo (EA-PA-TRAINING,
    Case-Management-Training, propertydamageclaimstraining,
-   Foundational-Training). Change it in all of them.
+   medsumanddemandtraining, Foundational-Training). Change it in all of them.
    ============================================================ */
 (function(){
 "use strict";
@@ -27,7 +28,27 @@ window.goToMainPortal = function(){ location.href = PORTAL_URL; };
 // The pages re-render often and each course draws its own top bar, so add the
 // buttons to whatever is on screen rather than to each course's templates.
 function paint(){
-  if(typeof state === "undefined" || !state || !state.isAdmin) return;
+  if(typeof state === "undefined" || !state) return;
+  if(!state.isAdmin){
+    if(!state.traineeId) return;
+    // A trainee: a way back to the Training Directory in the top bar, or under the approval notes.
+    var nav = document.querySelector(".topbar .nav");
+    if(nav && !nav.querySelector(".nav-portal")){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "nav-portal"; b.title = TITLE;
+      b.textContent = "← Training Directory";
+      b.onclick = window.goToMainPortal;
+      nav.insertBefore(b, nav.querySelector(".nav-fs"));
+    }
+    var card = document.querySelector(".login-card");
+    if(card && !card.querySelector(".trainee-portal-link")){
+      var l = document.createElement("div");
+      l.className = "trainee-portal-link"; l.style.cssText = "margin-top:14px;font-size:12.5px;";
+      l.innerHTML = '<a href="'+PORTAL_URL+'" style="color:var(--navy);font-weight:600;">← Back to the Training Directory</a>';
+      card.appendChild(l);
+    }
+    return;
+  }
   var nav = document.querySelector(".topbar .nav");
   if(nav && !nav.querySelector(".nav-portal")){
     var b = document.createElement("button");

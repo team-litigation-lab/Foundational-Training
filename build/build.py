@@ -127,7 +127,7 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
 k = s.rfind("</body>")
 if k < 0:
     sys.exit("MISSING: </body>")
-s = s[:k] + '<script src="/js/portal-link.js?v=1"></script>\n' + s[k:]
+s = s[:k] + '<script src="/js/portal-link.js?v=2"></script>\n' + s[k:]
 # The LSH dashboard layout (js/lsh-dashboard.js, the same file in every LSH course repo) loads last of all.
 k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/lsh-dashboard.js?v={build_tag}"></script>\n' + s[k:]
