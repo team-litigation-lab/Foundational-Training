@@ -19084,12 +19084,6 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-orientation.js?v=ft-2026.10.02-1432"></script>
 <script src="/js/attendance.js?v=ft-2026.10.02-1432"></script>
 <script src="/js/portal-link.js?v=1"></script>
-<script src="/js/request-budget.js?v=1"></script>
-<script>
-/* 📊 Server request meter, for admins: how much of the Cloudflare account's monthly request allowance
-   (shared by every LSH site) is used. README → Server request meter. */
-RequestBudget.start({ load: () => authFetch("/api/request-budget", {}).then(r => r.json()), isAdmin: () => !!state.isAdmin });
-</script>
 <script src="/js/portal-link.js?v=1"></script>
 <script src="/js/lsh-dashboard.js?v=ft-2026.10.02-1432"></script>
 </body>
