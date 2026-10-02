@@ -127,7 +127,7 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
 k = s.rfind("</body>")
 if k < 0:
     sys.exit("MISSING: </body>")
-s = s[:k] + '<script src="/js/portal-link.js?v=1"></script>\n' + s[k:]
+s = s[:k] + '<script src="/js/portal-link.js?v=2"></script>\n' + s[k:]
 # 🧭 Blueprints (js/blueprint-content.js: this program's Trainer blueprint; js/lsh-blueprint-course.js and js/lsh-blueprint.js:
 # the same files in every LSH course), after this program's scripts. The engine's page may carry them already: move them here.
 s = re.sub(r'<!-- 🧭 Blueprints:[^\n]*-->\n|<script src="/js/(blueprint-content|lsh-blueprint-course|lsh-blueprint)\.js\?v=[^"]*"></script>\n', "", s)
