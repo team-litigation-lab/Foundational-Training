@@ -135,12 +135,14 @@ s = s[:k] + f'<script src="/js/lsh-dashboard.js?v={build_tag}"></script>\n' + s[
 
 # 🔐 Trainees sign in on the LSH Training Portal only (js/portal-gate.js). The gate file loads in <head>, before the engine,
 # and the engine calls into it in four places: the server's status, the sign-in request, the sign-in screen and boot.
-rep("state.secureMode = !!j.secure; }", "state.secureMode = !!j.secure; state.portalOnly = !!j.portalOnly; }")
-rep('''const r = await fetch("/api/auth/trainee", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({name, batch, id})});''',
-    '''const r = await fetch("/api/auth/trainee", {method:"POST", headers:(window.portalGate ? window.portalGate.headers() : {"Content-Type":"application/json"}), body: JSON.stringify({name, batch, id})});''')
-rep("function renderLogin(){\n  return `", "function renderLogin(){\n  if(window.portalGate && window.portalGate.active()) return window.portalGate.renderCard();\n  return `")
-rep("  startUpdateChecks();\n  await loadAll();\n", "  startUpdateChecks();\n  await loadAll();\n  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees come in from the LSH Training Portal\n")
-rep("</head>", f'<script src="/js/portal-gate.js?v={build_tag}"></script>\n</head>', count=1)
+# (EA-PA-TRAINING carries the same hooks now: patch only when the engine you build from doesn't.)
+if "window.portalGate" not in s:
+    rep("state.secureMode = !!j.secure; }", "state.secureMode = !!j.secure; state.portalOnly = !!j.portalOnly; }")
+    rep('''const r = await fetch("/api/auth/trainee", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({name, batch, id})});''',
+        '''const r = await fetch("/api/auth/trainee", {method:"POST", headers:(window.portalGate ? window.portalGate.headers() : {"Content-Type":"application/json"}), body: JSON.stringify({name, batch, id})});''')
+    rep("function renderLogin(){\n  return `", "function renderLogin(){\n  if(window.portalGate && window.portalGate.active()) return window.portalGate.renderCard();\n  return `")
+    rep("  startUpdateChecks();\n  await loadAll();\n", "  startUpdateChecks();\n  await loadAll();\n  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees come in from the LSH Training Portal\n")
+    rep("</head>", f'<script src="/js/portal-gate.js?v={build_tag}"></script>\n</head>', count=1)
 
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.

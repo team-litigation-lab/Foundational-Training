@@ -80,7 +80,7 @@ window.portalGate = {
     }
     var msg = notice; notice = "";
     return '<div class="login-shell"><div class="login-card">'+logo
-      + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Foundational Training Program</h1>'
+      + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">'+esc(String(document.title||"Training Program").replace(/^LSH\s+/,""))+'</h1>'
       + (msg ? '<p style="font-size:13.5px;color:#b3261e;margin:0 0 14px;">'+esc(msg)+'</p>' : '')
       + '<p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 22px;">You sign in once, on the LSH Training Portal, and open this training from there. There is no separate sign-in here.</p>'
       + '<a class="btn btn-primary" href="'+PORTAL_HOME+'" style="width:100%;justify-content:center;padding:12px;box-sizing:border-box;text-decoration:none;">Go to the LSH Training Portal</a>'
