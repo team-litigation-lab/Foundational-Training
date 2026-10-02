@@ -211,6 +211,12 @@ function fitPages(){
   const d = typeof state !== "undefined" && state.view === "day" && typeof DAYS !== "undefined" ? DAYS.find(x=>x.id===state.dayId) : null;
   document.body.classList.toggle("ft-fit", !!(d && (d.sections||[]).some(x=>/class="cs cs-pages"/.test(x.html))));
   document.body.classList.toggle("ft-orient", !!(d && window.FT_ORIENTATION && d.id === window.FT_ORIENTATION.id));   // its slides' background (ft-rules.js)
+  if(document.body.classList.contains("ft-orient")){   // the band's label and title (drawn by the slide: ft-rules.js)
+    const w = document.getElementById("lessonSlideWrap"), k = w && w.querySelector(":scope > .topic-separator"), t = w && w.querySelector(":scope > .card > h4");
+    if(w && t){ const kt = (k ? k.textContent : "").replace(/\s+/g, " ").trim(), h = t.cloneNode(true); h.querySelectorAll(".lnum").forEach(n=>n.remove());   // the label already says "Part N of 19"
+      const tt = h.textContent.replace(/\s+/g, " ").trim();
+      if(w.dataset.kicker !== kt) w.dataset.kicker = kt; if(w.dataset.title !== tt) w.dataset.title = tt; }
+  }
   const img = document.querySelector(".cs-page img");
   if(!img && !document.body.classList.contains("ft-fit")) return;
   // the slide frame: the page image's, or a topic divider's (the same size, so slides don't change size)

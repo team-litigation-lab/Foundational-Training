@@ -492,13 +492,26 @@ window.renderDashboard = function(){
 body.ft-orient #lessonSlideWrap{container-type:inline-size;position:relative;background:#2B2E41 url(/ft/orientation/background.webp) top left / 100% auto no-repeat !important;
   padding:8px 0 18px !important;border-color:transparent !important;justify-content:flex-start !important;align-items:flex-start !important;}
 /* (cqw on the slide itself would count the screen's width: its content takes the band's room instead) */
-body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:calc(11.3cqw + 2px) 6cqw 0 !important;}
-body.ft-orient #lessonSlideWrap > .topic-separator{position:absolute;left:16.5cqw;top:1.7cqw;width:61cqw;margin:0 !important;padding:0 !important;border:0 !important;background:none !important;
-  color:#F6C79A !important;font-size:max(10px, .78cqw) !important;letter-spacing:.14em;text-align:left !important;}
-body.ft-orient #lessonSlideWrap > .topic-separator::before, body.ft-orient #lessonSlideWrap > .topic-separator::after{display:none !important;}
-body.ft-orient #lessonSlideWrap > .card.lesson-card > h4{position:absolute;left:16.5cqw;top:3.4cqw;width:61cqw;height:5.6cqw;margin:0 !important;padding:0 !important;
-  display:flex;align-items:center;justify-content:flex-start;gap:.8cqw;text-align:left !important;color:#fff !important;font-size:clamp(17px, 2.2cqw, 34px) !important;line-height:1.12 !important;text-shadow:0 2px 6px rgba(20,22,36,.55);}
-body.ft-orient #lessonSlideWrap > .card.lesson-card > h4 .lnum{color:#F6C79A !important;white-space:nowrap;flex:0 0 auto;}
+body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:calc(11.3cqw + 2px) 6cqw 0 !important;
+  flex:1 0 auto;display:flex !important;flex-direction:column;justify-content:safe center;}
+/* the panel: centered in the room under the orange line, across and down (when it holds more than fits, it
+   starts at the top, and the rest continues on the next page) */
+body.ft-orient #lessonSlideWrap > .card.lesson-card > .ft-body{width:100%;max-width:1180px;margin:0 auto !important;flex:0 0 auto;}
+/* The label and title are drawn by the slide itself (::before / ::after, from data-kicker and data-title,
+   set by fitPages in ft-slides.js), so they stay in the band when the engine zooms the slide's content to
+   fit or animates its pages; the slide's own label and title stay in the page (Listen, page splitting) unseen. */
+body.ft-orient #lessonSlideWrap > .topic-separator, body.ft-orient #lessonSlideWrap > .card.lesson-card > h4{position:absolute !important;visibility:hidden;pointer-events:none;height:0;overflow:hidden;margin:0 !important;padding:0 !important;}
+body.ft-orient #lessonSlideWrap[data-title]::before, body.ft-orient #lessonSlideWrap[data-title]::after{position:absolute;left:16.5cqw;width:61cqw;height:auto;background:none;right:auto;bottom:auto;border:0;border-radius:0;pointer-events:none;z-index:2;}
+body.ft-orient #lessonSlideWrap[data-title]::before{content:attr(data-kicker);top:1.7cqw;color:#F6C79A;font:700 max(10px, .78cqw)/1.2 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
+body.ft-orient #lessonSlideWrap[data-title]::after{content:attr(data-title);top:3.4cqw;height:5.6cqw;display:flex;align-items:center;color:#fff;font-family:'Fraunces',Georgia,serif;font-weight:700;
+  font-size:clamp(17px, 2.2cqw, 34px);line-height:1.12;text-shadow:0 2px 6px rgba(20,22,36,.55);}
+body.ft-orient #lessonSlideWrap.pg-later[data-title]::after{content:attr(data-title) "  · continued";}
+body.ft-orient #lessonSlideWrap > .pg-badge, body.ft-orient #lessonStage #lessonSlideWrap > .pg-badge{left:auto !important;width:auto !important;max-width:none !important;}
+/* full screen and the slides window too (their rules make the slide a block and its parts full width) */
+body.ft-orient #lessonStage #lessonSlideWrap, body.ft-orient #audienceRoot #lessonSlideWrap{display:flex !important;flex-direction:column !important;}
+body.ft-orient #lessonStage #lessonSlideWrap > .card.lesson-card, body.ft-orient #audienceRoot #lessonSlideWrap > .card.lesson-card{width:auto !important;max-width:none !important;min-height:0 !important;}
+/* the Hubstaff pictures fit under the band without the slide being zoomed */
+body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
 body.ft-orient #lessonSlideWrap .ft-body{background:rgba(255,253,248,.97);border-radius:14px;padding:10px 16px !important;box-shadow:0 18px 40px -24px rgba(0,0,0,.6);}
