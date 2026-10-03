@@ -319,7 +319,7 @@ function renderTopbar(){
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
           ${state.adminPreview
             ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('admin')" title="Return to the admin (trainer) view">🛡 Back to Admin view</button>`
-            : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`}
+            : ((state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`)}
           ${state.isAdmin ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="See the portal exactly as a trainee does — no trainer tools or admin pages">👁 Trainee view</button>` : ""}
           <button type="button" class="nav-fs" onclick="openInNewTab()" title="Open this page in a new tab (e.g. to review a lesson while you work)">⧉</button>
           <button type="button" class="nav-fs" onclick="togglePageFullscreen()" title="Full screen (Esc to exit)">⛶</button>

@@ -155,6 +155,14 @@ if "window.portalGate" not in s:
     rep("  startUpdateChecks();\n  await loadAll();\n", "  startUpdateChecks();\n  await loadAll();\n  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees come in from the LSH Training Portal\n")
     rep("</head>", f'<script src="/js/portal-gate.js?v={build_tag}"></script>\n</head>', count=1)
 
+# 🛡 Trainees never see an Admin entry: with the Portal as the only way in, the Admin button (and the "Sign In as Trainer" button on
+# trainer-only pages) is shown only to someone already signed in as an admin. Direct visitors use the sign-in note's admin link.
+if "state.portalOnly && !state.isAdmin" not in s:
+    rep('''<button class="${state.view===\'admin\'?\'active\':\'\'}" onclick="openAdmin()">🛡 Admin</button>''',
+        '''${(state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view===\'admin\'?\'active\':\'\'}" onclick="openAdmin()">🛡 Admin</button>`}''')
+    rep('''<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>''',
+        '''${(state.portalOnly && !state.isAdmin) ? "" : `<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>`}''')
+
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.
 u = open(os.path.join(SRC_DIR, "js", "eapa-updates.js"), encoding="utf8").read()
@@ -164,6 +172,10 @@ for old, new in [('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Trai
         sys.exit(f"MISSING in eapa-updates.js: {old[:80]!r}")
     u = u.replace(old, new)
 u = u.replace("Preview tomorrow: Day ${", "Up next: Lesson ${")
+# 🛡 No Admin button for trainees (see the index.html patch above): only someone already signed in as an admin sees it.
+_btn = '''`<button class="${state.view===\'admin\'?\'active\':\'\'}" onclick="openAdmin()">🛡 Admin</button>`'''
+if "state.portalOnly && !state.isAdmin" not in u and _btn in u:
+    u = u.replace(_btn, '((state.portalOnly && !state.isAdmin) ? "" : ' + _btn + ")")
 u = name_days(u)
 # The Canva deck in the slides window (see ft_engine_patches.py).
 sys.path.insert(0, B)

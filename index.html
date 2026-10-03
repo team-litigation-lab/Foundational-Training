@@ -2437,7 +2437,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
-<script src="/js/portal-gate.js?v=ft-2026.10.02-2233-c"></script>
+<script src="/js/portal-gate.js?v=ft-2026.10.02-2233-d"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -6282,7 +6282,7 @@ function renderFacilitatorGuide(){
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">Trainers Only</h2>
         <p style="color:var(--ink-soft);font-size:14px;">The Facilitator Guide, Presenter view's notes and the Discussion Checkpoints are only visible once you're signed in as a trainer.</p>
-        <button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>
+        ${(state.portalOnly && !state.isAdmin) ? "" : `<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>`}
       </div>`;
   }
   return `
@@ -6429,7 +6429,7 @@ function renderTopbar(){
         <div class="nav">
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
-          <button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>
+          ${(state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`}
           <button type="button" class="nav-fs" onclick="openInNewTab()" title="Open this page in a new tab (e.g. to review a lesson while you work)">⧉</button>
           <button type="button" class="nav-fs" onclick="togglePageFullscreen()" title="Full screen (Esc to exit)">⛶</button>
         </div>
@@ -19070,8 +19070,8 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.02-2233"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.02-2233"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.02-2233-a"></script>
+<script src="/js/ft-updates.js?v=ft-2026.10.02-2233-a"></script>
 <script src="/js/ft-slides.js?v=ft-2026.10.02-2233"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.02-2233"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.02-2233"></script>
