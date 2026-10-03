@@ -74,7 +74,7 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
 - **The slides:**
-  Every slide has the trainers' background (`ft/orientation/background.webp`, styled in `js/ft-rules.js` under `body.ft-orient`): navy, the LSH header band with the orange line, orange waves at the sides. The part label and title sit in the band, the content in a cream panel below it, sized with the slide's width so it lines up on any screen.
+  Every slide has the trainers' background (the content sits straight on it, no panel, clear of the orange waves at the sides; a slide's opening line repeats on each of its pages) (`ft/orientation/background.webp`, styled in `js/ft-rules.js` under `body.ft-orient`): navy, the LSH header band with the orange line, orange waves at the sides. The part label and title sit in the band, the content in a cream panel below it, sized with the slide's width so it lines up on any screen.
   The slides follow the trainers' Setting of Expectations:
   1. Setting expectations: training isn't the end goal, you need to pass (performance deliberated weekly; you can still be let go); training is hard on purpose; your trainers are your first clients (resilience, pressure, time management).
   2. You're a General VA: tagged General VAs but may be assigned to different roles; take initiative when tasks run low; stay placed when a firm restructures; a foundation, not mastery (mastery once a role is assigned, or in the Free Trial period).
@@ -85,8 +85,8 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   7. Free Upskill Training: right after the shift for an hour or so; communication, accent reduction, grammar, email writing, client interviews; unpaid, not mandatory but highly encouraged; missed sessions are caught up on the trainee's own initiative.
   8. Auxes: in #⏳-timestamps `!in`, `!brb - lunch`, `!out`, `!brb - power outage`, `!brb - internet outage` (check LSH BOT's notification), and the same without `!` in #batch-group-channel; no double stamping; the Discord profile status format.
   9. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
-  10. Check #training-reminders: Important Reminders, the LSH BOT post (Hubstaff name without special characters, keep Hubstaff active, the right TO-DO per phase, acknowledge messages, join with the work email and camera ready, the LSH virtual background).
-  11. Building your habits for working with clients: the EOD email (a summary: everything completed, at least 3 specific learnings of at least 2 sentences each) the trackers (the rest of the learnings) and the Training Monitoring Sheet, with the guide's links.
+  10. Building your habits: Send Your EOD Email (a summary: everything completed, at least 3 specific learnings of at least 2 sentences each), with the Training Matrix link.
+  11. Building your habits: Update Your Trackers (the rest of the learnings; the Training Monitoring Sheet), with the sample trackers and the Monitoring Sheet links.
   12. The EOD template: subject `Daily Report mm/dd/yy` or `EOD Report mm/dd/yy`, its three parts, and 📋 Copy the Template.
   13. The Daily Task Tracker, part 1: the status counts, the sections and every column.
   14. The Daily Task Tracker, part 2: the other tabs and the daily check.
