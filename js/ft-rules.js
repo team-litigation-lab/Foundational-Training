@@ -358,13 +358,20 @@ const SLIDES = [
       ${fig(figTodo())}
       <p class="ftr-tip">More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p>
     </div>`],
-  ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>`
-    <p class="ftr-sub">Named exactly as below. Click 📋 Copy, then paste it in Hubstaff’s Create a to-do.</p>
-    <div class="ftr-todos">${TODOS.map((t,i)=>`<div class="ftr-todo">
-      <span class="ftr-todo-n">${i+1}</span>
+  ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>{
+    // two parts side by side (1–10, 11–19); 📋 Copy All puts every To-Do on the clipboard, one per line
+    const half = Math.ceil(TODOS.length / 2), parts = [TODOS.slice(0, half), TODOS.slice(half)];
+    const row = (t, n)=>`<div class="ftr-todo">
+      <span class="ftr-todo-n">${n}</span>
       <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
-      <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`).join("")}</div>
-    <p class="ftr-sub ftr-after"><b>Shadowing Session?</b> Use <code class="ftr-code">Shadowing [Type of role or process you’re shadowing] (VA’s Name)</code>. Your trainer tells you exactly what to enter each time a shadowing session is scheduled.</p>`],
+      <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
+    return `<div class="ftr-todos-all">
+    <div class="ftr-todos-top"><p class="ftr-sub">Named exactly as below. Click 📋 Copy, then paste it in Hubstaff’s Create a to-do. Or copy them all at once.</p>
+      <button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
+    <div class="ftr-todo-parts">${parts.map((list, k)=>`<div class="ftr-part ftr-todos">
+      <div class="ftr-part-h"><span>Part ${k+1}</span>Hubstaff To-Dos ${k ? half + 1 : 1}–${k ? TODOS.length : half}</div>
+      ${list.map((t, i)=>row(t, (k ? half : 0) + i + 1)).join("")}</div>`).join("")}</div>
+    <p class="ftr-sub ftr-after"><b>Shadowing Session?</b> Use <code class="ftr-code">Shadowing [Type of role or process you’re shadowing] (VA’s Name)</code>. Your trainer tells you exactly what to enter each time a shadowing session is scheduled.</p></div>`; }],
   ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
@@ -409,11 +416,11 @@ function copyText(t){
     a.remove();
   });
 }
-window.ftrCopy = function(btn){
+window.ftrCopy = function(btn, label){
   const t = btn.getAttribute("data-copy"); if(!t) return;
   copyText(t).then(()=>{
     btn.textContent = "✓ Copied"; btn.classList.add("ftr-copied");
-    setTimeout(()=>{ btn.textContent = "📋 Copy"; btn.classList.remove("ftr-copied"); }, 1600);
+    setTimeout(()=>{ btn.textContent = label || "📋 Copy"; btn.classList.remove("ftr-copied"); }, 1600);
     toast(btn.getAttribute("data-toast") || "Copied. Paste it in your Hubstaff To-Do.");
   }).catch(()=>toast("Couldn’t copy. Select the text and copy it instead."));
 };
@@ -490,9 +497,9 @@ window.renderDashboard = function(){
    right of the logo; the slide's content is a cream panel under the orange line. Sized with the slide's
    width (cqw), so it lines up at any screen size, in full screen and in the slides window. */
 body.ft-orient #lessonSlideWrap{container-type:inline-size;position:relative;background:#2B2E41 url(/ft/orientation/background.webp) top left / 100% auto no-repeat !important;
-  padding:8px 0 18px !important;border-color:transparent !important;justify-content:flex-start !important;align-items:flex-start !important;}
+  padding:var(--ftr-band, calc(11.3cqw + 10px)) 0 18px !important;border-color:transparent !important;justify-content:flex-start !important;align-items:flex-start !important;}
 /* (cqw on the slide itself would count the screen's width: its content takes the band's room instead) */
-body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:calc(11.3cqw + 2px) 6cqw 0 !important;
+body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:0 6cqw !important;
   flex:1 0 auto;display:flex !important;flex-direction:column;justify-content:safe center;}
 /* the panel: centered in the room under the orange line, across and down (when it holds more than fits, it
    starts at the top, and the rest continues on the next page) */
@@ -554,6 +561,21 @@ body.ft-orient #lessonSlideWrap .ft-body{background:rgba(255,253,248,.97);border
 .ftr-chat b{color:#f2f3f5;margin-right:6px;} .ftr-chat i{font-style:normal;font-size:10px;font-weight:800;background:#5865F2;color:#fff;border-radius:3px;padding:1px 4px;margin-right:6px;}
 .ftr-at{background:rgba(88,101,242,.3);color:#c9cdfb;border-radius:3px;padding:0 2px;}
 .ftr-todos{padding:6px 14px;margin-top:14px;}
+.ftr-todos-top{display:flex;align-items:center;justify-content:space-between;gap:14px;}
+.ftr-todos-top .ftr-sub{margin:0 !important;text-align:left;}
+.ftr-todos-top .btn{flex:0 0 auto;}
+/* one block, so the slide stays one page (scaled a little to fit a small screen, never split) */
+.ftr-todos-all{display:flow-root;}
+.ftr-todo-parts{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
+.ftr-todo-parts .ftr-todo .btn, .ftr-todos-top .btn{padding:4px 11px !important;font-size:12.5px !important;min-height:0 !important;line-height:1.3 !important;}
+.ftr-todo-parts .ftr-todo-tx em{display:none;}   /* the parts' headers say To-Dos */
+.ftr-todo-parts .ftr-todo-n{width:22px;height:22px;font-size:11.5px;}
+.ftr-todo-parts .ftr-part-h{margin-bottom:2px;}
+.ftr-todos-all .ftr-after{margin-top:8px !important;font-size:13.5px;}
+.ftr-todo-parts .ftr-todos{margin-top:10px;}
+.ftr-todo-parts .ftr-todo{padding:3px 0;gap:10px;flex-wrap:nowrap;}
+.ftr-todo-parts .ftr-todo-tx{flex:1 1 auto;min-width:0;font-size:13.5px;line-height:1.3;}
+@media(max-width:900px){ .ftr-todo-parts{grid-template-columns:1fr;} .ftr-todos-top{flex-direction:column;align-items:stretch;} }
 .ftr-parts{display:flex;flex-direction:column;gap:14px;}
 .ftr-fig{margin:12px 0 0;} .ftr-fig-scroll{overflow-x:auto;border-radius:10px;}
 .ftr-swipe{display:none;margin-top:6px;font-size:13.5px;color:var(--ink-soft);}
