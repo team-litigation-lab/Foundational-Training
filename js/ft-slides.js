@@ -141,6 +141,16 @@ body.ft-fit .lesson-stage .slide-dots{flex-wrap:nowrap;gap:4px;overflow:hidden;p
 body.ft-fit .lesson-stage .slide-dot{flex:0 1 10px;min-width:3px;}
 body.ft-fit .lesson-stage .slide-dot.active{flex:0 0 22px;}
 body.ft-fit .lesson-stage .slide-done-banner{display:none;}
+/* No white frame around the deck page: the page sits straight on the lesson panel, in the middle, across and
+   down (the frame and its card are see-through, without the orange strip on top). */
+body.ft-fit #lessonSlideWrap{background:transparent !important;border:0 !important;box-shadow:none !important;display:flex !important;flex-direction:column;justify-content:center;align-items:center;}
+body.ft-fit #lessonSlideWrap::before{display:none !important;}
+/* the page in the middle of the lesson panel: the frame takes the panel's whole width, and the presenter
+   character stands in the bottom-right corner over it (beside the page, which is narrower than the frame) */
+body.ft-fit #lessonStage:not(:fullscreen) .stage-body{display:block !important;position:relative;}
+body.ft-fit #lessonStage:not(:fullscreen) .stage-presenter{position:absolute !important;right:0;bottom:0;margin:0 !important;z-index:2;width:clamp(110px, 11%, 170px) !important;height:auto !important;}
+body.ft-fit #lessonSlideWrap > .card.lesson-card{background:transparent !important;border:0 !important;box-shadow:none !important;width:100%;margin:0 auto !important;}
+body.ft-fit #lessonSlideWrap .ft-body{display:flex;justify-content:center;}
 /* the lesson page (not full screen): every slide's frame and page image get the one size fitPages() keeps */
 body.ft-fit #lessonStage:not(:fullscreen) #lessonSlideWrap{height:var(--ft-frame-h, auto);}
 body.ft-fit #lessonStage:not(:fullscreen) .cs-page img{max-height:var(--ft-img-h, calc(100vh - 330px));max-width:100%;

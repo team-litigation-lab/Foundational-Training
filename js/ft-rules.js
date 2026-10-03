@@ -589,6 +589,25 @@ body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub code, body.ft-orient #less
 .lesson-stage #lessonSlideWrap .fp-label.ftr-lead{display:block;font-family:inherit;font-size:15.5px;font-weight:inherit;letter-spacing:normal;text-transform:none;line-height:1.5;margin:0 0 12px;}
 .lesson-stage #lessonSlideWrap .fp-label.ftr-sub.ftr-lead{color:#E7EAF3;text-align:left;}
 .lesson-stage #lessonSlideWrap .fp-label.ftr-why.ftr-lead{color:var(--ink);}
+/* No white boxes on the Orientation slides: they're see-through on the navy, with a light border and light
+   text (the coloured boxes, the "Why?" notes and the rules, keep their colours). */
+body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan, .ftr-lesson, .ftr-eg, .ftr-to){background:none !important;border:0 !important;box-shadow:none !important;color:#E7EAF3 !important;}
+body.ft-orient #lessonSlideWrap .ftr-lesson{border-left:3px solid var(--orange) !important;}
+/* buttons readable on the navy: outline buttons light, filled buttons orange */
+body.ft-orient #lessonSlideWrap .btn-ghost{background:transparent !important;color:#fff !important;border:1px solid rgba(255,255,255,.45) !important;}
+body.ft-orient #lessonSlideWrap .btn-ghost:hover{background:rgba(255,255,255,.1) !important;}
+body.ft-orient #lessonSlideWrap .btn-navy{background:var(--orange) !important;color:#fff !important;border-color:var(--orange) !important;}
+body.ft-orient #lessonSlideWrap .ftr-copied{color:#9BE7B0 !important;border-color:#9BE7B0 !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan, .ftr-lesson, .ftr-eg, .ftr-to) :is(p, li, span:not(.ftr-todo-n):not(.ftr-part-h > span), small, b, em, .ftr-when, .ftr-tip, .ftr-def span, .ftr-todo-tx, .ftr-soon, .ftr-embed-bar, figcaption){color:#E7EAF3 !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-part-h, .ftr-def b, .ftr-lesson b, .ftr-chan-h){color:#fff !important;}
+body.ft-orient #lessonSlideWrap .ftr-chan-h{color:#F6C79A !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-def, .ftr-aux, .ftr-todo){border-top-color:rgba(255,255,255,.14) !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-code, .ftr-aux code){background:rgba(255,255,255,.12) !important;border:1px solid rgba(255,255,255,.22) !important;color:#fff !important;}
+body.ft-orient #lessonSlideWrap .ftr-todo-n{background:rgba(255,255,255,.14) !important;color:#fff !important;}
+body.ft-orient #lessonSlideWrap .ftr-tip a, body.ft-orient #lessonSlideWrap .ftr-part a:not(.btn){color:#F6C79A !important;}
+/* in the middle of the slide: narrower boxes and short rows of cards are centered */
+body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *){margin-left:auto !important;margin-right:auto !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-stakes{background:#363B57;border:1px solid rgba(246,199,154,.35);}
 body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
 .ftr-dc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-family:'gg sans','Noto Sans',Arial,sans-serif;font-weight:400;color:#313338;}
