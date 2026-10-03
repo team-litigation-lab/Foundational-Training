@@ -143,9 +143,11 @@ body.ft-fit .lesson-stage .slide-dot.active{flex:0 0 22px;}
 body.ft-fit .lesson-stage .slide-done-banner{display:none;}
 /* the lesson page (not full screen): every slide's frame and page image get the one size fitPages() keeps */
 body.ft-fit #lessonStage:not(:fullscreen) #lessonSlideWrap{height:var(--ft-frame-h, auto);}
-body.ft-fit #lessonStage:not(:fullscreen) .cs-page img{max-height:var(--ft-img-h, calc(100vh - 330px));max-width:100%;}
+body.ft-fit #lessonStage:not(:fullscreen) .cs-page img{max-height:var(--ft-img-h, calc(100vh - 330px));max-width:100%;
+  width:min(100%, calc(var(--ft-img-h, calc(100vh - 330px)) * 16 / 9));height:auto;}   /* its size before the picture has loaded */
 .cs-page{margin:0;width:100%;display:flex;justify-content:center;}
-.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:#fff;}
+.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:rgba(22,24,41,.06);opacity:0;transition:opacity .18s ease;}
+.cs-page img.ft-shown{opacity:1;}
 .cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
 .cs-cover .cs-hero{position:relative;min-height:52vh;justify-content:flex-end;padding-top:96px;}
 .cs-cover .cs-logo{position:absolute;top:20px;left:22px;width:78px;height:auto;}
@@ -268,7 +270,25 @@ const queueFit = ()=>{
   if(!fitQueued){ fitQueued = true; requestAnimationFrame(()=>{ fitQueued = false; fitPages(); }); }
   clearTimeout(fitLater); fitLater = setTimeout(fitPages, 480);   // after the slide-in (0.4s)
 };
-new MutationObserver(queueFit).observe(document.body, {childList:true, subtree:true});
+// Sized as soon as a slide is put on the page (the observer runs before the browser draws it), so a lesson's
+// first slide never shows for a frame at the default size; then again in the next frame and after the slide-in.
+let fitBusy = false;
+new MutationObserver(()=>{ if(fitBusy) return; fitBusy = true; try{ fitPages(); preloadNext(); } finally { fitBusy = false; } queueFit(); }).observe(document.body, {childList:true, subtree:true});
+// The next two slides' page images load while this one is shown, so Next never waits on a picture.
+const preloaded = new Set();
+function preloadNext(){
+  const cur = document.querySelector(".cs-page img"); if(!cur || typeof state === "undefined" || typeof DAYS === "undefined") return;
+  const d = DAYS.find(x=>x.id===state.dayId); if(!d) return;
+  const srcs = (d.__ftImgs = d.__ftImgs || (d.sections||[]).map(x=>(String(x.html).match(/<img src="([^"]+\/slides\/[^"]+)"/)||[])[1]).filter(Boolean));
+  const at = srcs.indexOf(cur.getAttribute("src"));
+  for(const u of at < 0 ? [] : srcs.slice(at + 1, at + 3)) if(!preloaded.has(u)){ preloaded.add(u); const im = new Image(); im.decoding = "async"; im.src = u; }
+}
+// A page image fades in once it has loaded (no white box first); one already loaded shows at once.
+document.addEventListener("load", (e)=>{ const t = e.target; if(t && t.tagName === "IMG" && t.closest(".cs-page")) t.classList.add("ft-shown"); }, true);
+const markLoaded = ()=>document.querySelectorAll(".cs-page img:not(.ft-shown)").forEach(i=>{ if(i.complete && i.naturalWidth) i.classList.add("ft-shown"); });
+new MutationObserver(markLoaded).observe(document.body, {childList:true, subtree:true});
+// The Orientation slides' background is fetched with the page, so it's there the first time they open.
+(new Image()).src = "/ft/orientation/background.webp";
 window.addEventListener("resize", queueFit);
 document.addEventListener("animationend", (e)=>{ if(e.target && e.target.id === "lessonSlideWrap") fitPages(); }, true);
 document.addEventListener("fullscreenchange", ()=>setTimeout(fitPages, 60));
