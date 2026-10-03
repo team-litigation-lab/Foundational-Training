@@ -109,7 +109,8 @@ async function readPortalTicket(env, ticket, why = {}) {
   let t; try { t = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[0].replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)))); } catch (e) { why.r = "format"; return null; }
   const exp = Number(t && t.exp);
   if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) { why.r = "expired"; return null; }
-  if (t.r === "a") return { admin: true };   // an administrator signed in on the Portal (the Portal checked their password)
+  if (t.r === "s") return { system: true };   // the Portal's own server-side tools (sign-in check, registration import): never given to a person
+  if (t.r === "a") return { admin: true };    // an administrator opened this from the Portal: they still sign in here with the admin password
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
   if (!first || !last || !batch) return null;
   return { name: `${first} ${last}`, first, last, batch };
@@ -541,7 +542,8 @@ export default {
         if (!who) return json({ error: why.r === "signature"
           ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
-        if (who.admin) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
+        if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
+        if (who.admin) return json({ error: "Administrators sign in with the admin password on every platform.", code: "admin-password" }, 403);
         const res = await traineeSession(who.name, who.batch, "");
         const out = await res.json();
         // The Portal's approval is the only trainee approval: a trainee it signs in is approved here too
