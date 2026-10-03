@@ -12,7 +12,7 @@
      • The parts follow the Setting of Expectations: what training is (pass it; hard on purpose; trainers are your first clients);
        General VAs (foundation, not mastery); the rules (schedule and breaks, communication, your work and the use of AI);
        the Training Monitoring Sheet, embedded; Free Upskill Training (after the shift, unpaid, encouraged); auxes (the 2 Discord
-       channels, no double stamping, profile status); #training-reminders (its screenshots) and its Important Reminders post;
+       channels, no double stamping, profile status); #training-reminders (its screenshots);
        daily habits (EOD email, trackers, Monitoring Sheet); the EOD template; the Daily Task Tracker part by part, and its filled-in sample, embedded;
        typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; Hubstaff How-To Lessons (links to those slides and the
@@ -104,14 +104,6 @@ const REMINDER_SHOTS = [
   ["/ft/day1/img/training-reminders-channel.png", "The #training-reminders channel on Discord"]
 ];
 
-// Day 1 → Training Reminders: the #training-reminders "Important Reminders" post (LSH BOT), as posted.
-const IMPORTANT_REMINDERS = {title:"⚠️ Important Reminders", ol:[
-  "Ensure your Hubstaff name is free of special characters (e.g., ñ, è, etc.).",
-  "Maintain activity in Hubstaff by frequently moving your mouse or taking down notes to keep keyboard activity (avoid idle time).",
-  ["Track the correct TO-DO during each training phase:", ["🏁 Onboarding Day: New Hire Orientation", "📚 From Day 1 Until the Last Day of Training: Classroom Discussion", "👀 During Shadowing Sessions: Shadowing"]],
-  "Acknowledge messages promptly with a react, “OK,” or “Understood” to confirm you have read and understood them. ✅",
-  "Join all classroom discussions using your work email and ensure your camera is ready 🎥.",
-  "Use the official LSH virtual background during meetings 🎭."]};
 // Hubstaff How-To Lessons: this lesson's Hubstaff slides (by id) and the guide. Add more as {title, desc, href}.
 const HOWTO_LESSONS = [];
 
@@ -277,6 +269,15 @@ const botPost = (title, body)=>`<div class="ftr-dc">
     <div class="ftr-dc-title">${esc(title)}</div>
     <div class="ftr-dc-embed">${body}</div></div>`;
 
+const habitCard = h=>`<div class="ftr-chan ftr-test">
+      <div class="ftr-part-h">${h.icon} ${esc(h.name)}</div>
+      <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
+      ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
+      ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
+      ${h.tracker && !FT_AUDIENCE() ? `<div class="ftr-links"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>` : ""}
+      ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
+    </div>`;
+
 const SLIDES = [
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
@@ -331,18 +332,10 @@ const SLIDES = [
   ["reminders", "Check #training-reminders", ()=>`
     <p class="ftr-sub">Check #training-reminders on Discord regularly, so you’re always guided on the right things to do for your HS To-Do, your deliverables and other important reminders throughout the training. Click a screenshot to see it full size.</p>
     <div class="ftr-rshots">${REMINDER_SHOTS.map(x=>`<figure><a href="${esc(x[0])}" target="_blank" rel="noopener"><img src="${esc(x[0])}" alt="${esc(x[1])}" loading="lazy"></a><figcaption>${esc(x[1])}</figcaption></figure>`).join("")}</div>`],
-  ["reminders-important", "Check #training-reminders: Important Reminders", ()=>{ const r = IMPORTANT_REMINDERS;
-    return botPost(r.title, `<ol>${r.ol.map(x=>Array.isArray(x) ? `<li>${esc(x[0])}<div class="ftr-dc-sub">${x[1].map(y=>`<div>${esc(y)}</div>`).join("")}</div></li>` : `<li>${esc(x)}</li>`).join("")}</ol>`); }],
-  ["habits", "Building Your Habits for Working With Clients", ()=>`
+  // one slide per habit (side by side, the two cards were too tall for one page)
+  ...HABITS.map((h, k)=>[k ? "habits-trackers" : "habits", `Building Your Habits: ${h.name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid">${HABITS.map(h=>`<div class="ftr-chan ftr-test">
-      <div class="ftr-part-h">${h.icon} ${esc(h.name)}</div>
-      <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-      ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
-      ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
-      ${h.tracker && !FT_AUDIENCE() ? `<div class="ftr-links"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>` : ""}
-      ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
-    </div>`).join("")}</div>`],
+    <div class="ftr-grid ftr-habit">${habitCard(h)}</div>`]),
   ["eod", "Your EOD Email: The Template", ()=>`
     <div class="ftr-part">
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
@@ -446,7 +439,9 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
   const __pg = window.paginateSlideUnits;
   window.paginateSlideUnits = function(){
     const w = document.getElementById("lessonSlideWrap"), on = !!(w && document.body.classList.contains("ft-orient"));
-    if(on) w.classList.add("ftr-measure");
+    if(on){
+      w.classList.add("ftr-measure");
+    }
     try{ return __pg.apply(this, arguments); } finally { if(on) w.classList.remove("ftr-measure"); }
   };
   window.paginateSlideUnits.__ftr = true;
@@ -474,9 +469,19 @@ window.ftrCopy = function(btn, label){
 };
 
 /* ---------- the lesson, beside Virtual Assistant Essentials ---------- */
+// A slide's opening line (an intro, a "Why?" box) is shown at the top of every page of its slide, like a
+// heading (the page splitter repeats .fp-label), so a page is never just the intro, and every page has it.
+function keepLead(html){
+  const t = document.createElement("template"); t.innerHTML = html;
+  const box = t.content.firstElementChild, first = box && box.firstElementChild;
+  if(!first || !first.nextElementSibling || !first.matches(".ftr-sub, .ftr-why, p")) return html;
+  first.classList.add("fp-label", "ftr-lead");
+  t.content.insertBefore(first, box);   // beside the slide's content, where the splitter reads it as a heading
+  return t.innerHTML;
+}
 const ORIENT_ID = 12;   // not used by any lesson (1–9, and 10–11 in build/lessons/off/)
 const ORIENT = {id:ORIENT_ID, title:"Training Orientation and Rules", heading:"Training Orientation and Rules", label:"Orientation", short:"📌",
-  sections: SLIDES.map(([id, h, fn])=>({id, h, get html(){ return `<div class="ftr-slide">${fn()}</div>`; }})),
+  sections: SLIDES.map(([id, h, fn])=>({id, h, get html(){ return keepLead(`<div class="ftr-slide">${fn()}</div>`); }})),
   quiz:[], quickChecks:[]};
 ORIENT.lessons = ORIENT.sections.map(x=>({h:x.h}));
 window.FT_ORIENTATION = ORIENT;
@@ -547,7 +552,7 @@ window.renderDashboard = function(){
 body.ft-orient #lessonSlideWrap{container-type:inline-size;position:relative;background:#2B2E41 url(/ft/orientation/background.webp) top left / 100% auto no-repeat !important;
   padding:var(--ftr-band, calc(11.3cqw + 10px)) 0 18px !important;border-color:transparent !important;justify-content:flex-start !important;align-items:flex-start !important;}
 /* (cqw on the slide itself would count the screen's width: its content takes the band's room instead) */
-body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:0 6cqw !important;
+body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:0 10.5cqw !important;
   flex:1 0 auto;display:flex !important;flex-direction:column;justify-content:safe center;}
 body.ft-orient #lessonSlideWrap.ftr-measure > .card.lesson-card{justify-content:flex-start !important;}
 /* the panel: centered in the room under the orange line, across and down (when it holds more than fits, it
@@ -572,7 +577,20 @@ body.ft-orient #lessonSlideWrap .ftr-embed{height:max(220px, min(34vh, 24cqw)) !
 body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
-body.ft-orient #lessonSlideWrap .ft-body{background:rgba(255,253,248,.97);border-radius:14px;padding:10px 16px !important;box-shadow:0 18px 40px -24px rgba(0,0,0,.6);}
+/* the content sits straight on the background (no panel), clear of the orange waves at the sides; text
+   that isn't in a box is light on the navy, and the boxes keep their own colours */
+body.ft-orient #lessonSlideWrap .ft-body{background:transparent;border-radius:0;padding:4px 0 !important;box-shadow:none;}
+body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub, body.ft-orient #lessonSlideWrap .ftr-slide > p, body.ft-orient #lessonSlideWrap .ftr-todos-top .ftr-sub,
+body.ft-orient #lessonSlideWrap .ftr-todos-all > .ftr-sub, body.ft-orient #lessonSlideWrap .ftr-rshots figcaption, body.ft-orient #lessonSlideWrap .ftr-keep > .ftr-sub, body.ft-orient #lessonSlideWrap .ftr-keep > p{color:#E7EAF3 !important;}
+body.ft-orient #lessonSlideWrap .ftr-keep > .ftr-sub b, body.ft-orient #lessonSlideWrap .ftr-keep > p b{color:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub b, body.ft-orient #lessonSlideWrap .ftr-todos-all > .ftr-sub b{color:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub code, body.ft-orient #lessonSlideWrap .ftr-todos-all > .ftr-sub code{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2);}
+/* the opening line, repeated on each page (a .fp-label for the page splitter), keeps its own look */
+.lesson-stage #lessonSlideWrap .fp-label.ftr-lead{display:block;font-family:inherit;font-size:15.5px;font-weight:inherit;letter-spacing:normal;text-transform:none;line-height:1.5;margin:0 0 12px;}
+.lesson-stage #lessonSlideWrap .fp-label.ftr-sub.ftr-lead{color:#E7EAF3;text-align:left;}
+.lesson-stage #lessonSlideWrap .fp-label.ftr-why.ftr-lead{color:var(--ink);}
+body.ft-orient #lessonSlideWrap .ftr-stakes{background:#363B57;border:1px solid rgba(246,199,154,.35);}
+body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
 .ftr-dc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-family:'gg sans','Noto Sans',Arial,sans-serif;font-weight:400;color:#313338;}
 .ftr-dc-head{display:flex;align-items:center;gap:8px;font-size:14px;}
 .ftr-dc-head b{color:#060607;}
@@ -632,6 +650,7 @@ body.ft-orient #lessonSlideWrap .ft-body{background:rgba(255,253,248,.97);border
 .ftr-todos-top .btn{flex:0 0 auto;}
 /* one block, so the slide stays one page (scaled a little to fit a small screen, never split) */
 .ftr-todos-all, .ftr-keep{display:flow-root;}
+.ftr-habit{grid-template-columns:1fr !important;max-width:980px;margin:0 auto;}
 .ftr-todo-parts{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
 .ftr-todo-parts .ftr-todo .btn, .ftr-todos-top .btn{padding:4px 11px !important;font-size:12.5px !important;min-height:0 !important;line-height:1.3 !important;}
 .ftr-todo-parts .ftr-todo-tx em{display:none;}   /* the parts' headers say To-Dos */
