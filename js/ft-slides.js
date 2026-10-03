@@ -146,8 +146,12 @@ body.ft-fit #lessonStage:not(:fullscreen) #lessonSlideWrap{height:var(--ft-frame
 body.ft-fit #lessonStage:not(:fullscreen) .cs-page img{max-height:var(--ft-img-h, calc(100vh - 330px));max-width:100%;
   width:min(100%, calc(var(--ft-img-h, calc(100vh - 330px)) * 16 / 9));height:auto;}   /* its size before the picture has loaded */
 .cs-page{margin:0;width:100%;display:flex;justify-content:center;}
-.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:rgba(22,24,41,.06);opacity:0;transition:opacity .18s ease;}
-.cs-page img.ft-shown{opacity:1;}
+.cs-page img{display:block;width:auto;max-width:min(100%,1280px);max-height:calc(100vh - 330px);min-height:180px;height:auto;aspect-ratio:16/9;border-radius:12px;box-shadow:0 14px 34px -20px rgba(22,24,41,.55);background:rgba(22,24,41,.06);}
+/* No blink between slides: in a deck-page lesson and the Orientation, the next slide simply replaces the one
+   shown (like a slideshow). The page doesn't fade in on each render, nor the slide or its page parts. */
+body.ft-fit main, body.ft-orient main{animation:none !important;}
+body.ft-fit #lessonSlideWrap, body.ft-orient #lessonSlideWrap,
+body.ft-fit #lessonSlideWrap.pg-anim > *, body.ft-orient #lessonSlideWrap.pg-anim > *{animation:none !important;}
 .cs-cover{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:stretch;}
 .cs-cover .cs-hero{position:relative;min-height:52vh;justify-content:flex-end;padding-top:96px;}
 .cs-cover .cs-logo{position:absolute;top:20px;left:22px;width:78px;height:auto;}
@@ -215,6 +219,9 @@ function fitPages(){
   document.body.classList.toggle("ft-orient", !!(d && window.FT_ORIENTATION && d.id === window.FT_ORIENTATION.id));   // its slides' background (ft-rules.js)
   if(document.body.classList.contains("ft-orient")){   // the band's label and title (drawn by the slide: ft-rules.js)
     const w = document.getElementById("lessonSlideWrap"), k = w && w.querySelector(":scope > .topic-separator"), t = w && w.querySelector(":scope > .card > h4");
+    // the room the band takes, in px from the slide's width (on the slide's padding, which the engine's
+    // fit-zoom doesn't scale, so zoomed content never rises into the band)
+    if(w){ const band = Math.round(w.offsetWidth * 0.113 + 10) + "px"; if(w.style.getPropertyValue("--ftr-band") !== band) w.style.setProperty("--ftr-band", band); }
     if(w && t){ const kt = (k ? k.textContent : "").replace(/\s+/g, " ").trim(), h = t.cloneNode(true); h.querySelectorAll(".lnum").forEach(n=>n.remove());   // the label already says "Part N of 19"
       const tt = h.textContent.replace(/\s+/g, " ").trim();
       if(w.dataset.kicker !== kt) w.dataset.kicker = kt; if(w.dataset.title !== tt) w.dataset.title = tt; }
@@ -283,10 +290,6 @@ function preloadNext(){
   const at = srcs.indexOf(cur.getAttribute("src"));
   for(const u of at < 0 ? [] : srcs.slice(at + 1, at + 3)) if(!preloaded.has(u)){ preloaded.add(u); const im = new Image(); im.decoding = "async"; im.src = u; }
 }
-// A page image fades in once it has loaded (no white box first); one already loaded shows at once.
-document.addEventListener("load", (e)=>{ const t = e.target; if(t && t.tagName === "IMG" && t.closest(".cs-page")) t.classList.add("ft-shown"); }, true);
-const markLoaded = ()=>document.querySelectorAll(".cs-page img:not(.ft-shown)").forEach(i=>{ if(i.complete && i.naturalWidth) i.classList.add("ft-shown"); });
-new MutationObserver(markLoaded).observe(document.body, {childList:true, subtree:true});
 // The Orientation slides' background is fetched with the page, so it's there the first time they open.
 (new Image()).src = "/ft/orientation/background.webp";
 window.addEventListener("resize", queueFit);
