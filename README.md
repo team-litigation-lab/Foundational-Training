@@ -81,20 +81,23 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
   3. Rules: your schedule and breaks. Tracking 8:00 AM – 5:00 PM PST, no tracking beyond 5:00 PM; unfinished deliverables are finished unpaid unless the trainer approves tracking; log in up to 10 minutes early (tools, and a buffer for breaks beyond the hour); breaks 1 hour total maximum, split as the trainee likes.
   4. Rules: communication. Reply on Discord within 5 minutes; acknowledge every instruction and activity with a message or a reaction; all meetings are posted on their day, no need to ask; cameras on always (it tests internet speed and connectivity).
   5. Rules: your work and the use of AI. Naming conventions; don't rely on AI to draft or complete work (grammar and spelling only); protect client information; AI is a tool, not a replacement; some firms allow it, depending on the client.
-  6. Free Upskill Training: right after the shift for an hour or so; communication, accent reduction, grammar, email writing, client interviews; unpaid, not mandatory but highly encouraged; missed sessions are caught up on the trainee's own initiative.
-  7. Auxes: in #⏳-timestamps `!in`, `!brb - lunch`, `!out`, `!brb - power outage`, `!brb - internet outage` (check LSH BOT's notification), and the same without `!` in #batch-group-channel; no double stamping; the Discord profile status format.
-  8. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
-  9. Building your habits for working with clients: the EOD email (a summary: everything completed, at least 3 specific learnings of at least 2 sentences each) and the trackers (the rest of the learnings), with the guide's links.
-  10. The EOD template: subject `Daily Report mm/dd/yy` or `EOD Report mm/dd/yy`, its three parts, and 📋 Copy the Template.
-  11. The Daily Task Tracker, part 1: the status counts, the sections and every column.
-  12. The Daily Task Tracker, part 2: the other tabs and the daily check.
-  13. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
-  14. Typing and spelling tests: clients look for at least 60 WPM; typing twice a day (the 8:00 – 8:10 AM Typing & Spelling Activity and the afternoon), spelling once a day; links, samples and file names; screenshots show the time and date, saved in the training subfolder.
-  15. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
-  16. Hubstaff To-Dos, part 2: the 19 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
-  17. How to create notes in Hubstaff, with the Add Work Notes picture.
-  18. The Manual Time Adjustment Request: subject, To and CC to copy.
-  19. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+  6. Rules: your Training Monitoring Sheet: download it and upload it to the trainee folder once the tasks are done, or fill it in on the platform; the sheet embedded, with 📒 Fill It In on the Platform.
+  7. Free Upskill Training: right after the shift for an hour or so; communication, accent reduction, grammar, email writing, client interviews; unpaid, not mandatory but highly encouraged; missed sessions are caught up on the trainee's own initiative.
+  8. Auxes: in #⏳-timestamps `!in`, `!brb - lunch`, `!out`, `!brb - power outage`, `!brb - internet outage` (check LSH BOT's notification), and the same without `!` in #batch-group-channel; no double stamping; the Discord profile status format.
+  9. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
+  10. Check #training-reminders: Important Reminders, the LSH BOT post (Hubstaff name without special characters, keep Hubstaff active, the right TO-DO per phase, acknowledge messages, join with the work email and camera ready, the LSH virtual background).
+  11. Building your habits for working with clients: the EOD email (a summary: everything completed, at least 3 specific learnings of at least 2 sentences each) the trackers (the rest of the learnings) and the Training Monitoring Sheet, with the guide's links.
+  12. The EOD template: subject `Daily Report mm/dd/yy` or `EOD Report mm/dd/yy`, its three parts, and 📋 Copy the Template.
+  13. The Daily Task Tracker, part 1: the status counts, the sections and every column.
+  14. The Daily Task Tracker, part 2: the other tabs and the daily check.
+  15. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
+  16. Typing and spelling tests: clients look for at least 60 WPM; typing twice a day (the 8:00 – 8:10 AM Typing & Spelling Activity and the afternoon), spelling once a day; links, samples and file names; screenshots show the time and date, saved in the training subfolder.
+  17. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
+  18. Hubstaff To-Dos, part 2: the 19 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
+  19. How to create notes in Hubstaff, with the Add Work Notes picture.
+  20. Hubstaff How-To Lessons: links to this lesson's Hubstaff slides (To-Dos, notes, lost hours) and the LSH VA Guide; more can be added in `HOWTO_LESSONS`.
+  21. The Manual Time Adjustment Request: subject, To and CC to copy.
+  22. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
