@@ -280,7 +280,18 @@ const queueFit = ()=>{
 // Sized as soon as a slide is put on the page (the observer runs before the browser draws it), so a lesson's
 // first slide never shows for a frame at the default size; then again in the next frame and after the slide-in.
 let fitBusy = false;
-new MutationObserver(()=>{ if(fitBusy) return; fitBusy = true; try{ fitPages(); preloadNext(); } finally { fitBusy = false; } queueFit(); }).observe(document.body, {childList:true, subtree:true});
+new MutationObserver(()=>{ if(fitBusy) return; fitBusy = true; try{ noRefade(); fitPages(); preloadNext(); } finally { fitBusy = false; } queueFit(); }).observe(document.body, {childList:true, subtree:true});
+// The page fades in when you go to another page, not when the page you're on is drawn again. On first open
+// the dashboard is drawn several times in a few seconds (progress, settings and sign-in arriving one by one),
+// and each time its fade started from blank: the page blinked. The observer runs before the browser draws.
+let lastPageKey = null;
+function noRefade(){
+  const m = document.querySelector("main"); if(!m || m.__ftSeen || typeof state === "undefined") return;
+  m.__ftSeen = true;
+  const key = [state.view, state.view === "day" ? state.dayId : "", state.view === "day" ? state.dayViewMode : ""].join(":");
+  if(key === lastPageKey) m.style.animation = "none";
+  lastPageKey = key;
+}
 // The next two slides' page images load while this one is shown, so Next never waits on a picture.
 const preloaded = new Set();
 function preloadNext(){
