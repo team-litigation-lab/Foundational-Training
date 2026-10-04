@@ -2437,7 +2437,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
-<script src="/js/portal-gate.js?v=ft-2026.10.04-1324"></script>
+<script src="/js/portal-gate.js?v=ft-2026.10.04-1347"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -5437,7 +5437,7 @@ const mem = {}; // in-memory fallback if window.storage is unavailable
 const PERSONAL_KEYS = ["day-progress","practice-progress","lab-attempts-global","lab-attempts-by-day","admin-unlocked-days","notes","completed-lab-actions",
   "day10-window","submissions","roleplayHistory","slide-progress","last-slide","attn-detail-findings",
   "calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels","trainee-batch",
-  "quick-check-answers","day-order-migrated","qc-options-reordered","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since"];
+  "quick-check-answers","day-order-migrated","qc-options-reordered","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since","outbound-calls","c6-audit"];
 const PERSONAL_KEY_SET = new Set(PERSONAL_KEYS);
 let cloudSaveTimer = null;
 function scheduleCloudSave(){
@@ -5781,31 +5781,6 @@ async function getApprovalStatus(traineeId){
 }
 
 const SUBMISSION_INLINE_LIMIT = 200*1024; // 200KB — stored in full; larger files record metadata only
-function readFileAsDataURL(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = ()=>resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-async function submitFileForReview(toolId, toolTitle, file){
-  const record = {
-    toolId, toolTitle, fileName:file.name, fileType:file.type||"unknown",
-    fileSize:file.size, submittedAt:new Date().toISOString(), dataUrl:null, stored:false
-  };
-  if(file.size<=SUBMISSION_INLINE_LIMIT){
-    try{
-      record.dataUrl = await readFileAsDataURL(file);
-      record.stored = true;
-    }catch(e){ record.stored = false; }
-  }
-  state.submissions = state.submissions||[];
-  state.submissions.push(record);
-  await storeSet("submissions", state.submissions);
-  await syncToLedger();
-  return record;
-}
 
 async function loadAll(){
   const p = await storeGet("day-progress");
@@ -6298,7 +6273,7 @@ function renderFacilitatorGuide(){
 
     <div class="card fg-card">
       <h3>What Trainees See vs. What You See</h3>
-      <p>Trainees get a clean, self-paced flow: one topic per slide (with a 📖 Full explanation panel where you've published one), Quick Checks, the Practice Lab, then the Knowledge Check. <b>Trainer Cues, Applied Discussion Cases, verbal scripts, answer keys and crisis scripts never appear in the lesson slides — even when you're signed in as admin.</b> They live only in <b>Admin → Trainer Cues</b>, so screen-sharing the lesson is always safe.</p>
+      <p>Trainees get a clean, self-paced flow: one topic per slide (with a 📖 Full explanation panel where you've published one), Quick Checks, the Practice Lab, then the Knowledge Check. <b>Speaker notes, scripts, answer keys and crisis scripts never appear in the lesson slides — even when you're signed in as admin.</b> They're only in <b>🖥 Presenter view</b> (your private console) and the day's <b>Speaker Notes PDF</b> in Admin → SOP Reference, so screen-sharing the lesson is always safe.</p>
     </div>
 
     <div class="card fg-card">
@@ -6387,21 +6362,6 @@ function renderClientProfile(){
   `;
 }
 
-function renderNotifBanner(){
-  if(state.notifDismissed) return "";
-  const done = completedCount();
-  if(done===0) return "";
-  const msg = done===10
-    ? "🎉 You've completed all 10 days — congratulations on finishing the program."
-    : `You're on <b>${ftName(nextDayId())} of ${DAYS.length}</b> — pick up right where you left off.`;
-  return `
-  <div class="notif-banner">
-    <span>${msg}</span>
-    <button class="notif-close" onclick="dismissNotifBanner()" title="Dismiss">✕</button>
-  </div>`;
-}
-function dismissNotifBanner(){ state.notifDismissed = true; render(); }
-window.dismissNotifBanner = dismissNotifBanner;
 
 function renderTopbar(){
   let views = [["dashboard","Dashboard"],["tasks","🎲 Tasks"],["clientprofile","Client Profile"],["practice","Practice Lab"],["crisisroleplay","🔥 Live Roleplay"],["notes","My Notes"],["handouts","Handouts"]];
@@ -7516,23 +7476,6 @@ function renderCompetencyStrip(){
       </div>`).join("")}</div>
   </section>`;
 }
-function renderCompetencyCards(){
-  const prof = competencyProfile();
-  const any = prof.some(c=>c.score!==null);
-  const band = (v)=> v>=85 ? "strong" : v>=70 ? "ok" : "build";
-  const bars = prof.map(c=>`<div class="comp-row" title="${c.n} data point(s)">
-      <div class="comp-top"><span>${esc(c.label)}</span><b>${c.score===null ? "—" : c.score+"%"}</b></div>
-      <div class="comp-track"><div class="comp-fill ${c.score===null?"none":band(c.score)}" style="width:${c.score||0}%"></div></div>
-    </div>`).join("");
-  const next = workOnNextItems();
-  return `
-    <div class="card stat comp-card">
-      <div class="lbl">Competency profile</div>
-      ${any ? bars : `<div class="sub">Complete a Knowledge Check or a graded Practice Lab to see your competency profile.</div>`}
-      ${any ? `<div class="sub">Green 85%+ · Amber 70–84% · Orange = not yet</div>` : ""}
-    </div>
-`;
-}
 function renderRankingCard(){
   if(!state.feedbackLoadedAt || Date.now()-state.feedbackLoadedAt > 5*60*1000){ state.feedbackLoadedAt = Date.now(); setTimeout(()=>loadMyFeedback(), 0); }
   const rd = state.rankData;
@@ -7778,14 +7721,6 @@ function renderSurpriseTaskCard(){
       <p>${esc(t.task)}</p></div>
       <button class="btn btn-primary" onclick="goto('tasks')">${le && le.status==="progress" ? "Continue in 🎲 Tasks →" : "Handle it in 🎲 Tasks →"}</button>
     </div>`;
-  return `
-    <div class="card" style="padding:18px 20px;margin-bottom:20px;background:#FFF4E8;border:1.5px solid var(--orange);">
-      <div style="font-size:11px;color:var(--orange-deep);font-weight:700;text-transform:uppercase;letter-spacing:.03em;">🎲 Surprise Task — ${ftName(t.dayId)}</div>
-      <p style="font-size:14px;color:var(--navy);font-weight:600;margin:6px 0 10px;">${esc(t.task)}</p>
-      <textarea id="surpriseTaskInput" placeholder="Handle it — right now, using what you learned today..." style="width:100%;min-height:90px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;">${esc(state.surpriseDraft||"")}</textarea>
-      <button type="button" class="btn btn-navy btn-sm" id="surpriseSubmitBtn" style="margin-top:10px;" onclick="submitSurpriseTask(event)">Submit for Grading</button>
-      <div id="surpriseTaskResult" style="margin-top:12px;"></div>
-    </div>`;
 }
 function closeSurpriseResult(){
   state.surpriseResult = null;
@@ -7833,67 +7768,9 @@ function surpriseTaskSignature(){
   const t = state.activeSurpriseTask;
   return t ? (t.dayId+"|"+t.generatedAt) : "";
 }
-async function submitSurpriseTask(ev){
-  if(ev){ ev.preventDefault(); ev.stopPropagation(); }
-  const t = state.activeSurpriseTask;
-  if(!t){ toast("This surprise task has ended."); render(); return; }
-  const input = document.getElementById("surpriseTaskInput");
-  const val = input.value.trim();
-  const resultEl = document.getElementById("surpriseTaskResult");
-  const btn = document.getElementById("surpriseSubmitBtn");
-  if(val.length < 15){ toast("Write out how you'd actually handle this first."); return; }
-  if(btn){ btn.disabled = true; btn.textContent = "Grading…"; }
-  state.surpriseGrading = true;
-  resultEl.innerHTML = `<div class="ai-loading">Reviewing your response…</div>`;
-  try{
-    const day = DAYS.find(d=>d.id===t.dayId);
-    const report = await runRubricEvaluation(
-      `Surprise Task — ${ftName(t.dayId)}`,
-      `The trainee was handed this task unannounced, mid-session, specifically to test real-time critical thinking, prioritization, and application of ${ftName(t.dayId)}'s material (${day.title}) — not a rehearsed Practice Lab exercise. The task: ${t.task}`,
-      val,
-      `Did they correctly apply today's actual lesson content, not just general common sense? Did they prioritize correctly given it was dropped on them unannounced? Is the response decisive and realistic, not vague or hedging?`
-    );
-    // No dayId passed: the surprise-task report must NOT show the Practice Lab
-    // action row (Repeat / Retain & Advance / Jump to Knowledge Base).
-    state.surpriseResult = {dayId:t.dayId, task:t.task, html: renderEvaluationReport(report)};
-    state.surpriseDraft = "";
-    if(!state.progress[t.dayId]) state.progress[t.dayId] = {};
-    state.progress[t.dayId].surpriseTaskScore = report.totalScore;
-    state.progress[t.dayId].surpriseTaskAnsweredAt = t.generatedAt;
-    state.activeSurpriseTask = null;
-    await storeSet("day-progress", state.progress);
-    state.surpriseGrading = false;
-    if(state.view==="dashboard") render();
-    syncToLedger(); // background — don't block the UI on the ledger write
-    if(report.totalScore>=85) burstConfetti();
-  }catch(e){
-    state.surpriseGrading = false;
-    if(btn){ btn.disabled = false; btn.textContent = "Submit for Grading"; }
-    resultEl.innerHTML = `<div class="ai-result ai-error"><b>Couldn't get feedback</b><div class="ai-result-body">Check your connection and try again.</div></div>`;
-  }
-}
-window.submitSurpriseTask = submitSurpriseTask;
 // Keep the draft in state so a refresh never erases what the trainee typed.
-document.addEventListener("input", (e)=>{ if(e.target && e.target.id==="surpriseTaskInput") state.surpriseDraft = e.target.value; });
 
 /* ---------- Day 10: strict single-attempt (no time limit) ---------- */
-const DAY10_WINDOW_MS = 90*60*1000;
-async function startDay10Window(){
-  if(!state.day10Window){
-    state.day10Window = {startedAt: Date.now(), expiresAt: Date.now()+DAY10_WINDOW_MS};
-    await storeSet("day10-window", state.day10Window);
-  }
-}
-function day10WindowExpired(){
-  return state.day10Window && Date.now() > state.day10Window.expiresAt;
-}
-function day10WindowRemainingLabel(){
-  if(!state.day10Window) return "";
-  const ms = state.day10Window.expiresAt - Date.now();
-  if(ms<=0) return "Window closed";
-  const mins = Math.floor(ms/60000), secs = Math.floor((ms%60000)/1000);
-  return `${mins}:${String(secs).padStart(2,"0")} remaining`;
-}
 function checkDay10SingleAttempt(actionId){
   if(!state.completedLabActions) state.completedLabActions = {};
   if(state.completedLabActions[actionId]){
@@ -8202,30 +8079,6 @@ function averageCompetencyScore(){
   if(!allAttempts.length) return {score:0, tier:null};
   const score = Math.round(allAttempts.reduce((a,b)=>a+b,0)/allAttempts.length);
   return {score, tier: gradeTierFor(score)};
-}
-function practiceRunsCount(){
-  const pp = state.practiceProgress||{};
-  return Object.values(pp).reduce((a,v)=>a+(v.runs||0),0);
-}
-function dayRow(d){
-  const prog = state.progress[d.id];
-  const unlocked = dayUnlocked(d.id);
-  const status = prog&&prog.done ? "done" : (unlocked?"open":"locked");
-  const pillClass = status==="done"?"pill-done":(status==="open"?"pill-open":"pill-locked");
-  const pillLabel = status==="done"?"Completed":(status==="open"?"Available":"Locked");
-  return `
-  <div class="card day-row ${status}">
-    <div class="day-num">${status==="locked"?"🔒":d.id}</div>
-    <div class="day-body">
-      <h3>${ftName(d.id)} — ${esc(d.title)}</h3>
-      <p>${esc(d.theme)}</p>
-    </div>
-    <div class="day-meta">
-      ${prog&&typeof prog.score==="number"?`<span class="score-tag">${prog.score}%</span>`:""}
-      <span class="pill ${pillClass}">${pillLabel}</span>
-      <button class="btn btn-sm ${status==='locked'?'btn-ghost':'btn-navy'}" ${status==='locked'?'disabled':''} onclick="goto('day',${d.id})">${status==='done'?'Review':'Open'}</button>
-    </div>
-  </div>`;
 }
 
 /* ---------- router ---------- */
@@ -8798,7 +8651,7 @@ async function logout(){
   await storeSet("practice-progress", {});
   await storeSet("notes", []);
   await resetTraineeSessionData();
-  for(const k of ["work-log","quick-check-answers","lab-drafts","last-view","slide-progress","last-slide","attn-detail-findings","calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels"]) await storeSet(k, null);
+  for(const k of ["work-log","quick-check-answers","lab-drafts","last-view","slide-progress","last-slide","attn-detail-findings","calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels","outbound-calls","c6-audit"]) await storeSet(k, null);
   state.slideProgress = {}; state.lastSlide = {}; state.lastCloudSave = null; state.dayOrderMigrated = {};
   try{ localStorage.removeItem("lsh_progress-saved-at"); }catch(e){}
   state.view = "login";
@@ -9074,7 +8927,7 @@ window.applyUpdate = applyUpdate;
   startLiveUpdates();
   startUpdateChecks();
   await loadAll();
-  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees come in from the LSH Training Portal
+  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees and admins come in from the LSH Training Portal
   if(state.adminToken && (await authStatus())) state.isAdmin = true;
   if(state.isAdmin && !state.adminToken && (await authStatus())){ state.isAdmin = false; setTimeout(()=>{ toast("Secure mode is on — please sign in to Admin again with the passphrase."); }, 600); }
   if(state.traineeId && (await authStatus()) && !state.authToken){
@@ -9147,21 +9000,6 @@ function relatedTools(dayId){
     const nums = (t.relates.match(/\d+/g)||[]).map(Number);
     return nums.includes(dayId);
   });
-}
-function renderRelatedTools(dayId){
-  const tools = relatedTools(dayId);
-  if(!tools.length) return "";
-  return `
-    <div class="card" style="padding:16px 20px;margin-bottom:16px;background:#FFFBF3;border-color:var(--orange-soft);">
-      <b style="color:var(--navy);font-size:13px;">⚖ Practice what you just read</b>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
-        ${tools.map(t=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-            <div><b style="font-size:13px;color:var(--ink);">${t.icon} ${esc(t.title)}</b><p style="margin:2px 0 0;font-size:12.4px;color:var(--ink-soft);">${esc(t.desc)}</p></div>
-            <button class="btn btn-sm btn-navy" onclick="goto('tool','${t.id}')">Open Tool</button>
-          </div>`).join("")}
-      </div>
-    </div>`;
 }
 
 function renderDay(id){
@@ -9555,11 +9393,6 @@ function refreshLessonSlide(){
     if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
   }, 30);
 }
-function scrollToKnowledgeCheck(){
-  const el = document.getElementById("knowledgeCheckAnchor");
-  if(el) el.scrollIntoView({behavior:"smooth", block:"start"});
-}
-window.scrollToKnowledgeCheck = scrollToKnowledgeCheck;
 
 function deriveFourPartStructure(l){
   // Auto-derives the 4-part structure from a topic's existing data, so every
@@ -9933,8 +9766,8 @@ function checkQuickCheck(gi, correctIdx){
   storeSet("quick-check-answers", state.qcAnswers);
   refreshQuickCheck(gi);
 }
-function answerQuickCheck(gi, picked, correctIdx){ selectQuickCheck(gi, picked); checkQuickCheck(gi, correctIdx); } // legacy
-Object.assign(window, {selectQuickCheck, checkQuickCheck, answerQuickCheck});
+ // legacy
+Object.assign(window, {selectQuickCheck, checkQuickCheck});
 
 function renderQuiz(d){
   if(state.quizSubmitted){
@@ -12310,7 +12143,7 @@ window.submitCalls = submitCalls;
 async function downloadCallsPdf(){
   await ensureTraineeName();
   const tm = (typeof TM_TASKS!=="undefined") ? TM_TASKS.map((x,i)=>`${i+1}. ${x.t} — your call: ${((document.getElementById("tmTask"+i)||{}).value)||"(not chosen)"}`) : [];
-  const lines = ["## A. Prioritize the Day", ...tm, "", "Reply to the partner:", ((document.getElementById("tmPushback")||{}).value||"").trim()||"(not written)", "---", "## B. Cold-Calling Outreach Log"];
+  const lines = ["## A. Prioritize the Day", ...tm, "", "Reply to the partner:", ((document.getElementById("tmPushback")||{}).value||"").trim()||"(not written)", ...(((document.getElementById("tmNotes")||{}).value||"").trim() ? ["", "My notes:", document.getElementById("tmNotes").value.trim()] : []), "---", "## B. Cold-Calling Outreach Log"];
   COLD_LEADS.forEach((l,i)=>{
     const date=document.getElementById(`logDate${i}`)?.value||"";
     const outcome=document.getElementById(`logOutcome${i}`)?.value||"";
@@ -12319,9 +12152,10 @@ async function downloadCallsPdf(){
     lines.push(`${l.name} (${l.company}, ${l.phone})`);
     lines.push(`   Called: ${date||"—"}   Outcome: ${outcome||"—"}   Follow-up: ${followup||"—"}   Notes: ${notes||"—"}`);
   });
+  if(typeof obPdfLines==="function") lines.push(...obPdfLines());
   const leadGenDraft = document.getElementById("leadGenDraft");
-  lines.push("---", "## C. Lead Generation Practice", `Scenario: ${LEAD_GEN_SCENARIO.text}`, `Your plan: ${leadGenDraft && leadGenDraft.value.trim() ? leadGenDraft.value.trim() : "(not written)"}`);
-  buildAndSavePdf("LSH Foundational Training Program", "Prioritize the Day, Cold-Calling & Outreach — Results", lines, "LSH_Cold_Calling");
+  lines.push("---", "## C. Lead Generation Practice", `Scenario: ${LEAD_GEN_SCENARIO.text}`, ...(typeof lgPdfLines==="function" ? lgPdfLines() : []), `Your plan: ${leadGenDraft && leadGenDraft.value.trim() ? leadGenDraft.value.trim() : "(not written)"}`);
+  buildAndSavePdf("LSH Foundational Training Program", `${(PRACTICE_TOOLS.find(t=>t.id==="coldcalling4")||{}).title || "Day 4 Practice Lab"} — Results`, lines, "LSH_Cold_Calling");
 }
 window.downloadCallsPdf = downloadCallsPdf;
 
@@ -13143,153 +12977,8 @@ function adminOpenCertificate(id){
   openCertificate({traineeId:rec.id, name:rec.name, firstName:rec.firstName||"", lastName:rec.lastName||"", certName:rec.certName||"", certTrainer:rec.certTrainer||"", batch:rec.batch, dayProgress:rec.dayProgress||{}});
 }
 Object.assign(window, {openCertificate, downloadCertificatePdf, printCertificate, saveCertSettings, adminOpenCertificate});
-function renderCertificateDashCard(){
-  if(!state.traineeId || state.isAdmin) return "";
-  const c = certData();
-  if(c.eligible) return `<div class="card stat cert-dash ready"><div class="lbl">🎓 Certificate of Completion</div>
-    <div class="sub">Congratulations${c.distinction?" — with Distinction":""}! Your certificate is ready.</div>
-    <button class="btn btn-primary btn-sm" onclick="openCertificate()">View &amp; download</button></div>`;
-  return `<div class="card stat cert-dash"><div class="lbl">🎓 Certificate of Completion</div>
-    <div class="cert-prog"><div style="width:${Math.round(c.passed/c.total*100)}%"></div></div>
-    <div class="sub">${c.passed}/${c.total} Knowledge Checks passed — pass all ${c.total} (70%+) to unlock your certificate.</div></div>`;
-}
 
-async function downloadRecordPdf(){
-  await ensureTraineeName();
 
-  const { jsPDF } = window.jspdf;
-  const doc = safeDoc(new jsPDF({unit:"pt", format:"letter"}));
-  const navy = [38,43,69], soft=[110,116,140];
-  const pageW = doc.internal.pageSize.getWidth();
-  const marginX = 54;
-
-  drawPdfHeader(doc, "LSH Foundational Training Program", "Training Completion Record");
-
-  let y = 118;
-  doc.setTextColor(27,30,46);
-  doc.setFont("helvetica","normal"); doc.setFontSize(10.5);
-  doc.text(`Trainee: ${state.traineeName}`, marginX, y);
-  doc.text(`Date Generated: ${new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"})}`, pageW-marginX, y, {align:"right"});
-  y += 8;
-  doc.setDrawColor(220,224,234);
-  doc.line(marginX, y, pageW-marginX, y);
-  y += 26;
-
-  const done = completedCount();
-  const pct = Math.round((done/DAYS.length)*100);
-  doc.setFont("helvetica","bold"); doc.setFontSize(12);
-  doc.setTextColor(...navy);
-  doc.text(`Overall Progress: ${done} of ${DAYS.length} days complete (${pct}%)`, marginX, y);
-  y += 22;
-
-  // table header
-  doc.setFillColor(...navy);
-  doc.rect(marginX, y, pageW-marginX*2, 22, "F");
-  doc.setTextColor(255,255,255);
-  doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
-  doc.text("DAY", marginX+8, y+14);
-  doc.text("TOPIC", marginX+50, y+14);
-  doc.text("STATUS", pageW-marginX-170, y+14);
-  doc.text("SCORE", pageW-marginX-100, y+14);
-  doc.text("DATE", pageW-marginX-46, y+14);
-  y += 22;
-
-  doc.setFont("helvetica","normal"); doc.setFontSize(9.5);
-  DAYS.forEach((d,i)=>{
-    const prog = state.progress[d.id];
-    const rowH = 24;
-    if(i%2===0){ doc.setFillColor(244,245,249); doc.rect(marginX, y, pageW-marginX*2, rowH, "F"); }
-    doc.setTextColor(27,30,46);
-    doc.text(String(d.id), marginX+8, y+15);
-    const topic = d.title.length>46 ? d.title.slice(0,44)+"…" : d.title;
-    doc.text(topic, marginX+50, y+15);
-    const status = prog&&prog.done ? "Completed" : "Not yet";
-    doc.setTextColor(...(prog&&prog.done?[63,125,88]:soft));
-    doc.text(status, pageW-marginX-170, y+15);
-    doc.setTextColor(27,30,46);
-    doc.text(prog&&typeof prog.score==="number" ? prog.score+"%" : "—", pageW-marginX-100, y+15);
-    doc.text(prog&&prog.date ? new Date(prog.date).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"2-digit"}) : "—", pageW-marginX-46, y+15);
-    y += rowH;
-  });
-
-  y += 26;
-  doc.setDrawColor(220,224,234);
-  doc.line(marginX, y, pageW-marginX, y);
-  y += 20;
-  doc.setFont("helvetica","bold"); doc.setFontSize(10.5);
-  doc.setTextColor(...navy);
-  doc.text("Practice Lab Activity", marginX, y);
-  y += 18;
-  doc.setFont("helvetica","normal"); doc.setFontSize(9.5);
-  doc.setTextColor(27,30,46);
-  const pp = state.practiceProgress || {};
-  if(PRACTICE_TOOLS.every(t=>!pp[t.id])){
-    doc.setTextColor(...soft);
-    doc.text("No Practice Lab activity recorded yet.", marginX, y);
-    y+=16;
-  } else {
-    PRACTICE_TOOLS.forEach(t=>{
-      const p = pp[t.id];
-      if(!p) return;
-      doc.text(`${t.title} — ${p.runs} run(s), best score ${p.bestScore||0}%`, marginX, y);
-      y += 15;
-    });
-  }
-
-  y += 30;
-  doc.setDrawColor(200,204,218);
-  doc.line(marginX, y, marginX+200, y);
-  doc.setFontSize(9); doc.setTextColor(...soft);
-  doc.text("Trainer signature", marginX, y+13);
-  doc.line(pageW-marginX-200, y, pageW-marginX, y);
-  doc.text("Date", pageW-marginX-200, y+13);
-
-  doc.setFontSize(8); doc.setTextColor(...soft);
-  doc.text("LSH Foundational Training Program — generated automatically from this trainee's saved progress.", marginX, doc.internal.pageSize.getHeight()-30);
-
-  const fname = `LSH_Training_Record_${state.traineeName.replace(/\s+/g,"_")}.pdf`;
-  doc.save(fname);
-  toast("Training Record downloaded");
-}
-window.downloadRecordPdf = downloadRecordPdf;
-
-async function downloadFullPortfolioPdf(){
-  await ensureTraineeName();
-  const done = completedCount();
-  const pct = Math.round((done/DAYS.length)*100);
-  const lines = [
-    `## Complete Training Portfolio`,
-    `Overall Progress: ${done} of ${DAYS.length} days complete (${pct}%)  ·  Average quiz score: ${avgScore()}%  ·  Practice Lab runs: ${practiceRunsCount()}`,
-    "---",
-    "## Day-by-Day Summary"
-  ];
-  DAYS.forEach(d=>{
-    const prog = state.progress[d.id];
-    const status = prog&&prog.done ? `Completed (${prog.score}%) on ${fmtDate(prog.date)}` : "Not yet completed";
-    lines.push(`${ftName(d.id)} — ${d.title}: ${status}`);
-  });
-
-  lines.push("---", "## Practice Lab Progress");
-  const pp = state.practiceProgress||{};
-  PRACTICE_TOOLS.forEach(t=>{
-    const rec = pp[t.id];
-    lines.push(`${t.icon} ${t.title} (${t.relates}): ${rec ? `${rec.runs} run${rec.runs===1?"":"s"}, best score ${rec.bestScore}%` : "Not yet attempted"}`);
-  });
-
-  lines.push("---", "## My Notes");
-  if(!state.notes || !state.notes.length){
-    lines.push("(No notes saved yet.)");
-  }else{
-    state.notes.forEach(n=>{
-      lines.push(`## ${n.title || "Untitled Note"}`);
-      lines.push(n.content && n.content.trim() ? n.content.trim() : "(Empty)");
-      lines.push("");
-    });
-  }
-
-  buildAndSavePdf("LSH Foundational Training Program", "Complete Training Portfolio", lines, "LSH_Full_Portfolio");
-}
-window.downloadFullPortfolioPdf = downloadFullPortfolioPdf;
 
 
 /* ============================================================
@@ -14994,7 +14683,6 @@ function renderAdminRow(rec, day, practice){
           <button class="btn btn-sm btn-primary" onclick="openFeedbackFor('${rec.id}')" title="Write and send feedback to this trainee">✍ Feedback</button>
           <button class="btn btn-sm btn-ghost" onclick="adminOpenCertificate('${rec.id}')" title="Preview / download this trainee's Certificate of Completion">🎓 Certificate</button>
           ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? `<span class="pill" style="background:var(--danger-bg);color:var(--danger);font-weight:800;" title="Asked ${fmtDate(rec.labResetRequestedAt)}${rec.labResetRequestedDay ? " (Day " + rec.labResetRequestedDay + ")" : ""}">🙋 Asked for more attempts</span>` : ""}<button class="btn btn-sm ${rec.labResetRequestedAt && (!rec.labAttemptsResetAt || rec.labResetRequestedAt > rec.labAttemptsResetAt) ? "btn-primary" : "btn-ghost"}" title="Give this trainee a fresh ${LAB_ATTEMPT_CAP} Practice Lab repeat attempts on every day" onclick="resetTraineeLabAttempts('${rec.id}')">↺ Reset Attempts${rec.labAttemptsGlobal ? ` (${rec.labAttemptsGlobal} used)` : ""}</button>
-          ${renderUnlockDaysControl(rec)}
           <button class="btn btn-sm btn-ghost" style="color:var(--danger);" onclick="confirmRevokeTrainee('${rec.id}', '${esc(rec.name||"this trainee").replace(/'/g,"\\'")}')">Revoke</button>
         </div>
       </div>
@@ -15006,33 +14694,6 @@ function renderAdminRow(rec, day, practice){
 /* Admin: open days for a trainee who missed a session. "Unlock up to Day N" opens Days 2..N
    whether or not the earlier Practice Labs are done; "Remove manual unlocks" returns the
    trainee to the normal rule (days they've already started stay open). */
-function renderUnlockDaysControl(rec){
-  return "";   // every day is open to everyone now, so there is nothing to unlock
-  const cur = (Array.isArray(rec.unlockedDays) ? rec.unlockedDays : []).map(Number);
-  const top = cur.length ? Math.max(...cur) : 0;
-  return `<select class="btn btn-sm btn-ghost" style="padding:4px 8px;" title="Open days for a trainee who missed a session" onchange="adminUnlockDays('${rec.id}', this.value); this.selectedIndex=0;">
-      <option value="">🔓 ${top ? `Unlocked to ${ftName(top)}` : "Unlock days"}</option>
-      ${DAYS.filter(d=>d.id>1).map(d=>`<option value="${d.id}">Unlock up to ${ftName(d.id)}</option>`).join("")}
-      ${top ? `<option value="0">Remove manual unlocks</option>` : ""}
-    </select>`;
-}
-async function adminUnlockDays(traineeId, value){
-  const n = parseInt(value, 10); if(isNaN(n)) return;
-  const rec = await sharedGet("trainee:"+traineeId);
-  if(!rec){ toast("Couldn't load that trainee — refresh and try again."); return; }
-  const who = cleanName(rec.name) || "this trainee";
-  if(n > 1 && !confirm(`Unlock Days 2–${n} for ${who}? They can open those lessons and Practice Labs right away, even if earlier labs aren't done.`)) return;
-  rec.unlockedDays = n > 1 ? DAYS.map(d=>d.id).filter(id=>id>1 && id<=n) : [];
-  rec.unlockedDaysAt = new Date().toISOString();
-  await sharedSet("trainee:"+traineeId, rec);
-  if(state.adminData){
-    const idx = state.adminData.findIndex(x=>x.id===traineeId);
-    if(idx!==-1) state.adminData[idx] = rec;
-    const wrap = document.getElementById("adminRowsWrap"); if(wrap) wrap.innerHTML = renderAdminRows();
-  }
-  toast(n > 1 ? `Days 2–${n} unlocked for ${who}. Their open page updates within about 10 seconds.` : `Manual unlocks removed for ${who}.`);
-}
-window.adminUnlockDays = adminUnlockDays;
 
 async function resetTraineeLabAttempts(traineeId){
   const rec = await sharedGet("trainee:"+traineeId);
@@ -15319,32 +14980,6 @@ async function autoReviewDay(dayId, loud){
   }catch(e){ console.warn("auto-review skipped:", e); state.reviewError = (e && e.message) || String(e); if(loud) throw e; }
 }
 /* Trainee-triggered: write reviews for every worked day that has none yet, with visible progress/errors. */
-async function prepareMyReviews(){
-  const raw = (state.myFeedbackRaw && state.myFeedbackRaw.days) || {};
-  const todo = DAYS.map(d=>d.id).filter(n=>dayHasActivity(n) && !raw[n]);
-  const box = ()=>document.getElementById("focusStatus");
-  const say = (t, err)=>{ const b = box(); if(b){ b.textContent = t; b.className = "focus-status" + (err?" err":""); } };
-  if(!todo.length){ say("All your completed days already have a review."); return; }
-  state.reviewsPending = todo.slice(); let done = 0, failed = 0, lastErr = "";
-  say(`Preparing ${todo.length} review(s)… this takes about 20 seconds each.`);
-  for(const n of todo){
-    try{ await autoReviewDay(n, true); done++; }catch(e){ failed++; lastErr = e.message||String(e); }
-    state.reviewsPending = state.reviewsPending.filter(x=>x!==n);
-    say(`Prepared ${done} of ${todo.length}${failed?` · ${failed} failed`:""}…`);
-  }
-  state.feedbackLoadedAt = 0; await loadMyFeedbackCore();
-  document.querySelectorAll(".focus-overlay").forEach(o=>o.remove()); openFocusPanel();
-  setTimeout(()=>{
-    if(failed){
-      const friendly = /GEMINI_API_KEY|No AI key|not configured/i.test(lastErr) ? "The AI service isn't set up on the server yet — please tell your trainer."
-        : /401|403|sign-in/i.test(lastErr) ? "Your session needs refreshing — sign out and back in, then try again."
-        : /429|rate|busy|quota|free tier/i.test(lastErr) ? "AI generation limit reached. Try again in a minute."
-        : lastErr;
-      say(`${done} review(s) ready · ${failed} couldn't be prepared: ${friendly}`, true);
-    }else say(`✅ ${done} review(s) ready — tap a day above to read it.`);
-  }, 50);
-}
-window.prepareMyReviews = prepareMyReviews;
 async function saveFeedbackSettings(){
   const autoDraft = document.getElementById("fbAutoDraft").checked;
   await sharedSet("settings:feedback", {autoDraft, autoSend:false});
@@ -15465,28 +15100,6 @@ function dayHasActivity(dayId){
   if(p && typeof p.score==="number") return true;
   const pp = state.practiceProgress||{};
   return relatedTools(dayId).some(t=>pp[t.id] && (pp[t.id].runs||0)>0);
-}
-async function backfillReviews(){
-  if(state.backfillRunning || state.backfillDoneFor===state.traineeId) return;
-  state.backfillRunning = true; state.backfillDoneFor = state.traineeId;
-  try{
-    const cfg = await feedbackSettings(); if(!cfg.autoDraft) return;
-    const fb = (await sharedGet("feedback:"+state.traineeId)) || {days:{}}; fb.days = fb.days||{};
-    // 1) auto drafts nobody edited → send them now if auto-send is on
-    let changed = false;
-    if(cfg.autoSend) Object.entries(fb.days).forEach(([k,v])=>{ if(v && v.status==="draft" && v.auto && !v.editedByTrainer){ Object.assign(v,{status:"sent", sentAt:new Date().toISOString(), sentBy:"LSH Training (auto-review)", readAt:null}); changed = true; } });
-    if(changed){ await sharedSet("feedback:"+state.traineeId, fb); state.feedbackLoadedAt = 0; }
-    // 2) days with work but no review yet → write one
-    const missing = DAYS.map(d=>d.id).filter(n=>dayHasActivity(n) && !fb.days[n]);
-    if(missing.length){
-      state.reviewsPending = missing;
-      toast(`Preparing your trainer feedback for ${ftName(missing.join(", Day "))}…`);
-      for(const n of missing){ await autoReviewDay(n); state.reviewsPending = state.reviewsPending.filter(x=>x!==n); }
-      state.reviewsPending = [];
-    }
-    if(changed || missing.length){ state.feedbackLoadedAt = 0; await loadMyFeedbackCore(); }
-  }catch(e){ console.warn("review backfill skipped", e); }
-  finally{ state.backfillRunning = false; }
 }
 async function loadMyFeedback(){
   if(!state.traineeId || state.isAdmin) return;
@@ -15985,11 +15598,6 @@ function slideScriptSections(d, l, part){
   }
   return out;
 }
-function slideScriptText(d, l, part, secs){
-  const all = slideScriptSections(d, l, part);
-  const keys = Object.keys(all).map(Number).filter(k=>!secs || secs.includes(k)).sort();
-  return keys.map(k=>all[k]).join("\n\n");
-}
 // Section scripts: PRESENTER_NOTES["day::title"].s1 … s4 = {on, say, ask} for ① Core Principles,
 // ② Step-by-Step, ③ Best Practices & Pitfalls, ④ Go Deeper (used for the "On this page" summary when
 // a slide is split over pages).
@@ -16028,10 +15636,6 @@ function slideScript(d, l, part){
   const talk = [secs[1], secs[3], secs[4]].filter(Boolean).join("\n\n");
   const ask = key==="p1" ? (n.ask || (l.singleSlide ? n.wrap : "")) : (n.wrap || n.ask || "");
   return {why: n.say || "", talk, walk, ask, scenario: (key==="p2" || l.singleSlide) ? (n.scenario || "") : "", hand: false};
-}
-function slideScriptText(d, l, part){
-  const s = slideScript(d, l, part);
-  return [s.why, s.talk, s.walk.join("\n"), s.ask].filter(Boolean).join("\n\n");
 }
 /* When a long slide is split over pages, each page gets its own part of the slide's script:
    page 1 opens with the why and the explanation, the pages that show the steps (slide 1) or the
@@ -16326,6 +15930,7 @@ function renderAdminStudio(){
   const expDraft = d.lessons.filter(l=>bundle[l.h] && bundle[l.h].status!=="published").length;
   const props = state.studioProposals && state.studioProposals.dayId===dayId ? state.studioProposals.items : null;
   const gap = Math.max(0, TARGET_TOPICS - pubTopics - pendingNew);
+  const scripts = d.lessons.filter(l=>(window.SLIDE_SCRIPTS||{})[`${d.id}::${l.h}`]).length;   // hand-written, in js/days/dayN/scripts.js
   return `
     <p class="eyebrow">Admin Only</p>
     <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Content Studio</h1>
@@ -16393,74 +15998,6 @@ function renderAdminStudio(){
 `;
 }
 
-function trainerDiscussionHtml(l){
-  if(l.fourPart) return l.fourPart.discussionCase ? `<p>${esc(l.fourPart.discussionCase)}</p>` : "";
-  const fp = deriveFourPartStructure(l);
-  const parts = [];
-  if(fp.discussionCase.example) parts.push(renderExample(fp.discussionCase.example));
-  if(fp.discussionCase.table) parts.push(renderTable(fp.discussionCase.table));
-  return parts.join("");
-}
-function setCuesDay(id){ state.cuesDay = id; render(); }
-window.setCuesDay = setCuesDay;
-function renderAdminTrainerCues(){
-  const dayId = state.cuesDay || 1;
-  const d = DAYS.find(x=>x.id===dayId) || DAYS[0];
-  const lessonBlocks = d.lessons.map((l,i)=>{
-    return `
-      <details class="cue-item" ${i===0?"open":""}>
-        <summary><span class="cue-num">${String(i+1).padStart(2,"0")}</span>${esc(l.h)}<span class="cue-steps">${slideLabel(d, i)}</span></summary>
-        <div class="cue-body">
-          ${l.singleSlide ? renderPresenterNote(d, l, 1) : `<div class="pn-part">Part 1</div>${renderPresenterNote(d, l, 1)}<div class="pn-part">Part 2</div>${renderPresenterNote(d, l, 2)}`}
-        </div>
-      </details>`;
-  }).join("");
-  const crisisSets = Object.keys(typeof CRISIS_SCENARIO_SETS!=="undefined" ? CRISIS_SCENARIO_SETS : {});
-  return `
-    <p class="eyebrow">Admin Only</p>
-    <h1 style="color:var(--navy);font-size:26px;margin:6px 0 4px;">Trainer Cues &amp; Discussion Points</h1>
-    <p style="color:var(--ink-soft);font-size:13px;max-width:75ch;margin:0 0 18px;">Everything trainer-facing lives here and nowhere else — trainees (and your screen-share) only ever see the clean lesson. Keep this tab open in a second window while you run the session.</p>
-    <div class="cues-day-tabs">
-      ${DAYS.map(x=>`<button class="${x.id===d.id?'active':''}" onclick="setCuesDay(${x.id})">${ftName(x.id)}</button>`).join("")}
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 10px;">
-      <h2 style="color:var(--navy);font-size:19px;margin:0;">${ftName(d.id)} — ${esc(d.title)}</h2>
-      <button class="btn btn-navy btn-sm" onclick="downloadDayScriptsPdf(${d.id})">⬇ Download ${ftName(d.id)} Speaker Notes (PDF)</button>
-    </div>
-    ${d.id===1 ? `<div class="card" style="padding:14px 18px;margin-bottom:12px;">${renderMeetClientTrainerGuide()}</div>` : ""}
-    ${d.discussionQuestion ? `
-      <div class="card discussion-card" style="margin-bottom:12px;">
-        <div class="discussion-tag">💬 End-of-Day Discussion Checkpoint</div>
-        <p class="discussion-q">${esc(d.discussionQuestion)}</p>
-        <p class="discussion-note">Pause the self-paced flow after the Practice Lab and raise this live with the cohort.</p>
-        <p class="discussion-note"><b>Say:</b> "Before we close ${ftName(d.id)}, let's step back and talk about this together." <b>Then ask the question above.</b> Take 2–3 answers, connect each one to a lesson from today, and close with: "Hold onto those examples — we'll build on them tomorrow."</p>
-      </div>` : ""}
-    <div class="card" style="padding:6px 0;margin-bottom:18px;">${lessonBlocks || `<p style="padding:14px 18px;color:var(--ink-soft);">No trainer cues for this day.</p>`}</div>
-    ${d.id===1 ? `
-      <div class="card" style="padding:16px 18px;margin-bottom:12px;">
-        <div class="tc-tag">🧑‍🏫 Practice Lab — Answer Key (Attention to Detail)</div>
-        <p style="font-size:13px;">Graded automatically against these planted errors — spot-check a few submissions by hand.</p>
-        <ul>${(typeof ATTENTION_TO_DETAIL_ANSWERS!=="undefined"?ATTENTION_TO_DETAIL_ANSWERS:[]).map(a=>`<li style="font-size:12.8px;margin-bottom:6px;">${esc(a)}</li>`).join("")}</ul>
-      </div>` : ""}
-    <div class="card" style="padding:16px 18px;margin-bottom:12px;">
-      <div class="tc-tag">🧑‍🏫 Practice Lab — Trainer Checkpoint</div>
-      <p style="font-size:13px;">Once a day's Practice Lab exercise is finished, pause for a live debrief — have trainees walk through what they did, why, and where their judgment differed from the model answer.</p>
-      <p style="font-size:13px;"><b>Inbox triage (Eisenhower) tool:</b> the inbox now generates on the first click (about 15–30 seconds). The old deliberate "first click fails" resilience test is switched off; it can be re-enabled in the code (IZ_SIMULATE_FIRST_FAILURE).</p>
-    </div>
-    <div class="card" style="padding:16px 18px;">
-      <div class="tc-tag">🧑‍🏫 Crisis Roleplay Scripts &amp; Answer Keys</div>
-      <p style="font-size:13px;margin:0 0 10px;">Full scripts and model answers for the crisis roleplays — hidden from trainees.</p>
-      ${crisisSets.map(k=>`
-        <details class="cue-item"><summary>${esc(k)} scenarios (${CRISIS_SCENARIO_SETS[k].length})</summary>
-          <div class="cue-body">${CRISIS_SCENARIO_SETS[k].map(sc=>`<div style="margin-bottom:14px;"><b>${esc(sc.title)}</b>${renderCrScenarioBody(k, sc.id)}</div>`).join("")}</div>
-        </details>`).join("")}
-      ${typeof DAY6_CRISIS_SCENARIOS!=="undefined" ? `
-        <details class="cue-item"><summary>Day 6 scenarios (${DAY6_CRISIS_SCENARIOS.length})</summary>
-          <div class="cue-body">${DAY6_CRISIS_SCENARIOS.map(sc=>`<div style="margin-bottom:14px;"><b>${esc(sc.title)}</b>${renderD6CrScenarioBody(sc.id)}</div>`).join("")}</div>
-        </details>` : ""}
-    </div>
-  `;
-}
 function setAdminTab(t){ state.adminTab=t; render(); }
 window.setAdminTab = setAdminTab;
 function setSopDay(d){ state.sopDay=d; render(); }
@@ -19027,7 +18564,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.04-1324";
+var APP_BUILD = "ft-2026.10.04-1347";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -19070,25 +18607,24 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-process.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-activities.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/attendance.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/portal-link.js?v=1"></script>
-<script src="/js/portal-link.js?v=2"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-updates.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-process.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-rules.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-activities.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/attendance.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/portal-link.js?v=ft-2026.10.04-1347"></script>
 <!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js) and the Trainee blueprint (Orientation, /blueprint.pdf) rebuilt after every deploy -->
-<script src="/js/blueprint-content.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/lsh-blueprint-course.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/lsh-blueprint.js?v=ft-2026.10.04-1324"></script>
-<script src="/js/lsh-dashboard.js?v=ft-2026.10.04-1324"></script>
+<script src="/js/blueprint-content.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/lsh-blueprint-course.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/lsh-blueprint.js?v=ft-2026.10.04-1347"></script>
+<script src="/js/lsh-dashboard.js?v=ft-2026.10.04-1347"></script>
 </body>
 </html>

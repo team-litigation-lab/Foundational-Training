@@ -291,8 +291,9 @@ python3 build/build.py ../EA-PA-TRAINING
 The script:
 - swaps the EA/PA days for this program's lessons from `build/lessons/`: it drops the EA/PA day files (`js/days/dayN/lessons.js`, `notes.js`, `scripts.js`) and puts the lessons where the EA/PA page builds `DAYS`
 - switches off what only fits the EA/PA days: the divider slide before each topic (`noDividers`), and the saved-place migrations keyed to EA/PA topic titles (`DAY_LAYOUTS`, `QC_OPTION_MOVES` are left empty)
-- drops the EA/PA-only heavy content
+- drops the EA/PA-only heavy content, and EA/PA's lesson slide background (the navy LSH template in its `eapa-updates.js`): the lessons here are deck pages, and the Orientation has its own background
 - applies the branding
+- loads `js/portal-gate.js` and `js/portal-link.js` once each, stamped with this build's version
 - adds `js/ft-updates.js`
 
 Every edit checks that its anchor exists, so the build stops with an error if the EA/PA portal changed that part. Update the anchor in `build.py` and run it again. Rebuild when EA/PA ships new engine features.

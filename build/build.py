@@ -84,7 +84,6 @@ rep("EA/PA Upskill Program", "Foundational Training Program", min_count=0)
 rep("LSH EA/PA — Platform Orientation", "LSH Foundational Training — Platform Orientation")
 rep('doc.save("LSH_EA-PA_Platform_Orientation.pdf")', 'doc.save("LSH_FT_Platform_Orientation.pdf")')
 rep("LSH-EAPA-", "LSH-FT-")
-rep(" of 10</b>", " of ${DAYS.length}</b>")
 rep("Day ${d.id} of 10<", "${ftLabel(d)}<")
 # No Knowledge Checks: the last slide finishes the lesson (js/ft-updates.js handles the click).
 rep("Continue to Knowledge Check &rarr;", "✓ Finish lesson")
@@ -128,10 +127,11 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
 s = re.sub(r'<script src="/?js/request-budget\.js[^"]*"></script>\n?', '', s)
 s = re.sub(r'<script>\s*/\*[^<]*?Server request meter.*?RequestBudget\.start\(.*?</script>\n?', '', s, flags=re.S)
 # 🏠 Main Portal button for admins (js/portal-link.js), last before </body>.
+s = re.sub(r'<script src="/js/portal-link\.js[^"]*"></script>\n?', '', s)   # the engine's page may carry it already: once, here
 k = s.rfind("</body>")
 if k < 0:
     sys.exit("MISSING: </body>")
-s = s[:k] + '<script src="/js/portal-link.js?v=2"></script>\n' + s[k:]
+s = s[:k] + f'<script src="/js/portal-link.js?v={build_tag}"></script>\n' + s[k:]
 # 🧭 Blueprints (js/blueprint-content.js: this program's Trainer blueprint; js/lsh-blueprint-course.js and js/lsh-blueprint.js:
 # the same files in every LSH course), after this program's scripts. The engine's page may carry them already: move them here.
 s = re.sub(r'<!-- 🧭 Blueprints:[^\n]*-->\n|<script src="/js/(blueprint-content|lsh-blueprint-course|lsh-blueprint)\.js\?v=[^"]*"></script>\n', "", s)
@@ -154,6 +154,8 @@ if "window.portalGate" not in s:
     rep("function renderLogin(){\n  return `", "function renderLogin(){\n  if(window.portalGate && window.portalGate.active()) return window.portalGate.renderCard();\n  return `")
     rep("  startUpdateChecks();\n  await loadAll();\n", "  startUpdateChecks();\n  await loadAll();\n  if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees come in from the LSH Training Portal\n")
     rep("</head>", f'<script src="/js/portal-gate.js?v={build_tag}"></script>\n</head>', count=1)
+# This program's copy of the gate file: its version follows the build, so a change here reaches open pages.
+s = re.sub(r'<script src="/js/portal-gate\.js\?v=[^"]*"></script>', f'<script src="/js/portal-gate.js?v={build_tag}"></script>', s)
 
 # 🛡 Trainees never see an Admin entry: with the Portal as the only way in, the Admin button (and the "Sign In as Trainer" button on
 # trainer-only pages) is shown only to someone already signed in as an admin. Direct visitors use the sign-in note's admin link.
@@ -177,6 +179,11 @@ _btn = '''`<button class="${state.view===\'admin\'?\'active\':\'\'}" onclick="op
 if "state.portalOnly && !state.isAdmin" not in u and _btn in u:
     u = u.replace(_btn, '((state.portalOnly && !state.isAdmin) ? "" : ' + _btn + ")")
 u = name_days(u)
+# EA/PA's lesson slide background (navy LSH template, img/lesson-bg/) is for its own days: the lessons here are
+# full-page deck images on the page, and the Orientation has the trainers' background (js/ft-slides.js).
+u, n = re.subn(r'/\* ===== Lesson slide background: the LSH slide template =====.*?\n\}\)\(\);\n', '', u, count=1, flags=re.S)
+if "lesson-bg" in u:
+    sys.exit("MISSING: the lesson slide background block in eapa-updates.js")
 # The Canva deck in the slides window (see ft_engine_patches.py).
 sys.path.insert(0, B)
 from ft_engine_patches import apply as ft_engine_patches

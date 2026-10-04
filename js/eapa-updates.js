@@ -1346,6 +1346,10 @@ function renderTimeMgmtSection(){
     </div>
     <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="checkTmTasks()">Check My Plan</button>
     <div id="tmTasksResult" style="margin-top:8px;font-size:13px;"></div>
+    <div class="card lab-notes-card">
+      <label for="tmNotes"><span>📝 My Notes</span><small>Saved automatically · not graded · included in Download My Work</small></label>
+      <textarea id="tmNotes" placeholder="Jot down your thinking as you plan: what you'd block on the calendar first, who gets the catering request, what you'll tell the partner, questions for Elias…"></textarea>
+    </div>
     <label style="font-size:12.8px;font-weight:600;color:var(--navy);display:block;margin:18px 0 5px;">Now write your reply to the partner in task 5: acknowledge the request, explain the conflict briefly and offer a realistic alternative.</label>
     <textarea id="tmPushback" style="width:100%;min-height:120px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;" placeholder="Hi …"></textarea>
     <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="checkTmPushback(this)">Get Review</button>
@@ -1353,7 +1357,9 @@ function renderTimeMgmtSection(){
 }
 function setTmTask(i,v){ toolState.tm = toolState.tm || {}; toolState.tm[i] = v; }
 async function checkTmTasks(){
-  const got = toolState.tm || {};
+  // choices brought back after a reload are only in the dropdowns, so read those too
+  const got = toolState.tm = toolState.tm || {};
+  TM_TASKS.forEach((_,i)=>{ const el = document.getElementById("tmTask"+i); if(el && el.value) got[i] = el.value; });
   if(TM_TASKS.some((_,i)=>!got[i])){ toast(`Choose how you'll handle all ${TM_TASKS.length} tasks first.`); return; }
   let correct = 0;
   const rows = TM_TASKS.map((x,i)=>{ const ok = got[i]===TM_ACTIONS[x.want]; if(ok) correct++;
@@ -1391,21 +1397,12 @@ window.initColdCalling4 = function(body){
   toolState.intakeCall = toolState.intakeCall || {step:"pick", personaId:null, chatHistory:[], startedAt:null};
   const partTM = renderTimeMgmtSection();
   const partA = renderColdCallingSection('B').replace("margin:32px 0 10px;", "margin:0 0 10px;");
-  const partB = `
-    <h3 style="margin:0 0 10px;color:var(--navy);font-size:15px;">C. Lead Generation Practice</h3>
-    <div class="card" style="padding:16px 18px;margin-bottom:12px;background:#F8F9FC;">
-      <p style="font-size:13px;color:#37394A;margin:0;">${esc(LEAD_GEN_SCENARIO.text)}</p>
-    </div>
-    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 10px;">Write your plan: at least 3 specific lead sources you'd actually use, your qualifying criteria (what makes a lead worth pursuing), and your first-contact approach.</p>
-    <textarea id="leadGenDraft" style="width:100%;min-height:160px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;" placeholder="Lead sources...&#10;&#10;Qualifying criteria...&#10;&#10;First-contact approach..."></textarea>
-    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="reviewLeadGenPlan()">Get Review</button>
-    <div id="leadGenResult" style="margin-top:14px;"></div>
-  `;
+  const partB = renderLeadGenSection();
   const partC = renderIntakeCallSection().replace(">C. Live Intake Call Simulator<", ">D. Live Intake Call Simulator<");
   const partD = renderEmailOutreachSection().replace(">D. Email Outreach Simulator<", ">E. Email Outreach Simulator<");
   body.innerHTML = renderToolWizard(4, [
     {label:"Prioritize the Day", html:partTM},
-    {label:"Cold-Calling Log", html:partA},
+    {label:"Prospect Call Log", html:partA},
     {label:"Lead Generation Practice", html:partB},
     {label:"Live Intake Call Simulator", html:partC},
     {label:"Email Outreach Simulator", html:partD}
@@ -2214,7 +2211,7 @@ const SOP_LAB_ACTIVITIES = {
   dossier1:["Client Dossier","Preference Trackers","ACT Email","Gatekeeping Practice"],
   forcemultiplier2:["Anticipate the Real Need","Prompt Engineering","The Full Scenario","Inbox Triage"],
   calendar:["Calendar Conflict Resolver","Daily Briefing Prompt","Proactive EA Tasks","Travel Management"],
-  coldcalling4:["Prioritize the Day","Cold-Calling Log","Lead Generation Practice","Live Intake Call Simulator","Email Outreach Simulator"],
+  coldcalling4:["Prioritize the Day","Prospect Call Log","Lead Generation Practice","Live Intake Call Simulator","Email Outreach Simulator"],
   insurance5:["Classify the Risk","Match the Strategy","Home Binder","Crisis Roleplay"],
   projectcompliance6:["Compliance Risk","Operational Warning Signs","Recovery Memo","Crisis Roleplay","Compliance Audit Simulation"],
   financial:["Trust Ledger Reconciliation","Invoice & Bill Audit","Invoice Follow-Up","Attention to Detail Test"],
@@ -2282,7 +2279,7 @@ function sopRunOfShow(dRaw){
     const inBlock = qcs.filter(q=>q.afterIndex>=i && q.afterIndex<j);
     add(Math.round((j-i)*perTopic + inBlock.length*1.5), {title:`Teach topics ${i+1}–${j} of ${n}`, do:[
       `Present each topic's two parts (principles & steps, then best practices & pitfalls). Longer topics continue on a second page — press Next.`,
-      `Use your notes for each slide: the Trainer Cue, Applied Discussion Case and the Say / Ask / Listen for / If quiet script. Take one or two answers per topic, not a round-robin.`,
+      `Use each slide's notes in Presenter view: On this slide, the script (Say / Ask) and the scenario for the room. Take one or two answers per topic, not a round-robin.`,
       inBlock.length ? `Quick Check${inBlock.length>1?"s":""} after topic${inBlock.length>1?"s":""} ${inBlock.map(q=>q.afterIndex+1).join(", ")}: let the room answer first, then reveal (the answer and rationale are in your notes).` : "",
       `Topics: ${d.lessons.slice(i,j).map((l,k)=>`${i+k+1}. ${esc(l.h)}`).join(" · ")}`].filter(Boolean),
       watch:"Silence usually means the example is too abstract — use the Applied Discussion Case from your notes."});
@@ -3172,3 +3169,499 @@ if(document.querySelector(".topbar")) render();
 .eval-section li.eval-profile-pt b{color:var(--navy);}
 `; document.head.appendChild(st);
 })();
+
+/* ===== Calmer auto-update + lab notes card =====
+   A new deploy used to reload any page where nobody was typing, so a trainee choosing from
+   dropdowns or reading a lab saw the page flash and reload within seconds. Now the reload waits
+   until the page has been left alone (no clicks, keys or scrolling) for 2 minutes; until then the
+   banner's Update now button is there. */
+(function(){
+  const UPDATE_IDLE_MS = 2*60*1000;
+  let lastActivityAt = Date.now();
+  ["keydown","pointerdown","wheel","touchstart","input","change"].forEach(ev=>
+    document.addEventListener(ev, ()=>{ lastActivityAt = Date.now(); }, {capture:true, passive:true}));
+  if(typeof updateIsSafe === "function"){
+    const __uis = updateIsSafe;
+    updateIsSafe = function(){ return Date.now()-lastActivityAt >= UPDATE_IDLE_MS && __uis.apply(this, arguments); };
+  }
+  if(typeof showUpdateBanner === "function"){
+    const __sub = showUpdateBanner;
+    showUpdateBanner = function(){
+      __sub.apply(this, arguments);
+      const span = document.querySelector("#updateBanner span");
+      if(span && !state.presenting) span.textContent = "✨ A new version of the portal is ready. It updates on its own once you've paused for a couple of minutes, and your work is saved. Or click Update now.";
+    };
+  }
+  const st = document.createElement("style"); st.id = "lab-notes-card"; st.textContent = `
+.card.lab-notes-card{padding:14px 16px;margin:16px 0 4px;background:#FBFAF6;border:1px solid #E7E1D2;border-left:4px solid var(--navy);}
+.lab-notes-card label{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 8px;}
+.lab-notes-card label span{font-size:13.5px;font-weight:700;color:var(--navy);}
+.lab-notes-card label small{font-size:11.5px;color:var(--ink-soft);}
+.lab-notes-card textarea{width:100%;min-height:110px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;box-sizing:border-box;}
+`; document.head.appendChild(st);
+})();
+
+/* ===== Day 4: the Prospective Client Intake Call Log becomes real simulated calls =====
+   Each prospect row has a 📞 Call button. The trainee rings the prospect and talks to them by voice or
+   by typing (the same call engine as the Live Intake Call Simulator), then logs the call in its row.
+   Each prospect picks up differently: a busy referral, a guarded web lead, a not-ready prospect,
+   a voicemail and a gatekeeper. Review My Calls grades every call and the log together (one attempt).
+   Openers are fixed, so a call costs one AI request per reply and none to start. */
+const OB_FIRM = "Thorne & Partners Law Group";
+const OB_PROSPECTS = [
+  {kind:"live", display:"Alex Kim", answer:"Alex Kim.",
+   brief:"Referred by a long-time client; busy at work; will push for a legal opinion.",
+   context:`You are Alex Kim. You run a small distribution company. A former business partner is refusing to honor a buyout agreement you both signed six months ago. Priya Shah, a long-time client of ${OB_FIRM}, referred you, and you're expecting a call, but you're on the warehouse floor with about two minutes to spare. You're direct and a little impatient: if the caller rambles, say you're busy. At some point ask "So do I have a case or not?" (a good coordinator doesn't answer that and offers the consultation with an attorney instead). You can do Thursday at 12:30 PM or any weekday after 5:30 PM, you prefer a video call, and you want the confirmation by text.`},
+  {kind:"live", display:"Maria Lopez", answer:"Hello?",
+   brief:"Web inquiry two days ago; guarded about an unknown number; worried about confidentiality and cost.",
+   context:`You are Maria Lopez. Two days ago you filled in the contact form on ${OB_FIRM}'s website after being let go from your job, which you believe was retaliation for reporting a safety issue to your manager. You don't recognize the number, so you're guarded at first: ask who's calling and how they got your number. You're anxious about two things: whether this is confidential (your former employer must not find out) and what a consultation costs, since you're out of work. If the coordinator is warm, explains what the consultation is and that fees are discussed with the attorney, without guessing amounts or promising outcomes, you relax and agree to book. You're free Tuesday or Wednesday mornings and want the confirmation by email.`},
+  {kind:"live", display:"John Carter", answer:"John Carter speaking.",
+   brief:"Vague email about forming an LLC; friendly but not ready to book.",
+   context:`You are John Carter. Last week you emailed ${OB_FIRM} a vague question about "maybe forming an LLC". You're friendly but not ready: no business plan, no partners decided, no timeline. If pushed to book a consultation, politely decline. You'd welcome a short email overview of what forming an LLC involves, and you'd say "call me in a month or so". A good coordinator pins that down to an actual date. You'll happily chat about hypotheticals if allowed.`},
+  {kind:"voicemail", display:"Emily Davis", answer:"Hi, you've reached Emily Davis. I can't take your call right now. Please leave your name, number and a short message after the tone, and I'll call you back.",
+   brief:"Referred for estate planning; the call goes to voicemail.",
+   context:`Voicemail. Emily Davis was referred to ${OB_FIRM} for estate planning (a will and a trust for a blended family). Others may hear a voicemail, so a good message gives the caller's name, the firm, a light reason ("following up on your referral to our office"), a callback number, good times to reach them and what happens next. It is under about 30 seconds and leaves out private details (no "estate", "will", "trust" or family details).`},
+  {kind:"gatekeeper", display:"Tanya · Wong Property Holdings", answer:"Wong Property Holdings, this is Tanya. How can I help you?",
+   brief:"Office manager screens calls; David must sign a commercial lease by Friday.",
+   context:`You are Tanya, office manager for David Wong at Wong Property Holdings. David is in back-to-back meetings. David asked a colleague to find a lawyer to review a commercial lease he must sign by Friday, and that colleague contacted ${OB_FIRM}. You don't know that, and you screen calls protectively: you assume it's a sales call. If the coordinator says clearly who they are, that David's office asked for the call, and that it's about the lease deadline on Friday, you become helpful: you can't interrupt his meeting, but you offer David's 15-minute window today at 4:45 PM or tomorrow at 8:15 AM and ask for a callback number. If the coordinator is vague, pushy or overshares, take a message and end the call politely.`}
+];
+const obState = ()=>{ toolState.ob = toolState.ob || {calls:{}, active:null}; return toolState.ob; };
+async function obLoad(){
+  const ob = obState();
+  if(ob.loaded) return;
+  ob.loaded = true;   // once per lab visit (toolState starts fresh each time a lab opens)
+  try{ const v = await storeGet("outbound-calls"); if(v && v.calls && !Object.keys(obState().calls).length){ obState().calls = v.calls; obPaintAll(); } }catch(e){}
+}
+function obSave(){ try{ storeSet("outbound-calls", {calls:obState().calls}); }catch(e){} }
+function obTranscript(i){ return ((obState().calls[i]||{}).history||[]).filter(m=>!m.pending).map(m=>(m.role==="them" ? (OB_PROSPECTS[i].kind==="gatekeeper" ? "TANYA" : OB_PROSPECTS[i].kind==="voicemail" ? "VOICEMAIL GREETING" : COLD_LEADS[i].name.toUpperCase()) : "YOU")+": "+m.text).join("\n"); }
+function obRowBtn(i){
+  const c = obState().calls[i], ob = obState();
+  if(ob.active===i) return `<span class="ob-live">● On the call</span>`;
+  return c && c.done
+    ? `<button type="button" class="ob-call-btn ob-done" onclick="obStartCall(${i})" title="Call ${esc(COLD_LEADS[i].name)} again (replaces this call)">✓ Called · ${esc(VoiceCall._fmt(c.ms||0))}<span>Call again</span></button>`
+    : `<button type="button" class="ob-call-btn" onclick="obStartCall(${i})">📞 Call</button>`;
+}
+function obPaintAll(){
+  COLD_LEADS.forEach((_,i)=>{ const td = document.getElementById("obBtn"+i); if(td) td.innerHTML = obRowBtn(i); });
+  const area = document.getElementById("obCallArea"); if(area) area.innerHTML = obCallAreaHtml();
+}
+function obCallAreaHtml(){
+  const ob = obState();
+  if(ob.active==null){
+    const last = ob.lastEnded;
+    const n = COLD_LEADS.filter((_,i)=>(ob.calls[i]||{}).done).length;
+    return last!=null && ob.calls[last]
+      ? `<div class="ob-after">📋 Call with <b>${esc(COLD_LEADS[last].name)}</b> ended. Now log it in their row: outcome, follow-up date and notes (who you spoke to, what was agreed, how they want the confirmation). ${n<COLD_LEADS.length ? `Then call the next prospect.` : `All ${COLD_LEADS.length} calls done: click Review My Calls.`}</div>`
+      : "";
+  }
+  const i = ob.active, l = COLD_LEADS[i];
+  return `<div class="card ob-call-card">
+      <div class="rp-session-tag">📞 Outbound call · ${esc(l.company)} · ${esc(l.phone)}</div>
+      ${VoiceCall.panel("outbound")}
+      <div class="vc-transcript-label">Live transcript</div>
+      <div class="cr-chat-window" id="obCallWindow">${obWindowHtml(i)}</div>
+      <div class="cr-chat-input-row">
+        <textarea id="obCallInput" placeholder="${OB_PROSPECTS[i].kind==="voicemail" ? "Leave your voicemail — speak it, or type it here…" : "Speak your reply — or type it here…"}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();obSend();}"></textarea>
+        <button class="btn btn-orange btn-sm" onclick="obSend()">Send</button>
+      </div>
+      <div style="margin-top:10px;"><button class="btn btn-navy btn-sm" onclick="obHangup()">📞 Hang Up</button></div>
+    </div>`;
+}
+function obWindowHtml(i){
+  return ((obState().calls[i]||{}).history||[]).map(m=>`<div class="cr-msg ${m.role==='them'?'cr-client':'cr-ea'}">${esc(m.text)}</div>`).join("");
+}
+function obRefreshWindow(){ const w = document.getElementById("obCallWindow"), ob = obState(); if(w && ob.active!=null){ w.innerHTML = obWindowHtml(ob.active); w.scrollTop = w.scrollHeight; } }
+function obStartCall(i){
+  const ob = obState();
+  if(ob.active!=null && ob.active!==i){ if(!confirm(`End the call with ${COLD_LEADS[ob.active].name} first?`)) return; obHangup(); }
+  const p = OB_PROSPECTS[i];
+  ob.active = i; ob.lastEnded = null;
+  ob.calls[i] = {history:[{role:"them", text:p.answer + (p.kind==="voicemail" ? " (beep)" : "")}], startedAt:Date.now(), done:false};
+  VoiceCall.start("outbound", {name:p.display, subtitle:`Calling ${COLD_LEADS[i].phone} · ${COLD_LEADS[i].company}`, inputId:"obCallInput",
+    send:()=>obSend(), onHangup:()=>obHangup(true)});
+  obPaintAll();
+  VoiceCall.say("outbound", p.answer);
+  const area = document.getElementById("obCallArea"); if(area) area.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+async function obSend(){
+  const ob = obState(), i = ob.active; if(i==null) return;
+  const input = document.getElementById("obCallInput"); if(!input) return;
+  const text = input.value.trim(); if(!text) return;
+  const c = ob.calls[i], p = OB_PROSPECTS[i];
+  c.history.push({role:"you", text}); input.value = "";
+  if(p.kind==="voicemail"){
+    c.history.push({role:"them", text:"(Message saved. The call has ended.)"});
+    obRefreshWindow();
+    setTimeout(()=>{ if(obState().active===i) obHangup(); }, 1200);
+    return;
+  }
+  c.history.push({role:"them", text:"…", pending:true});
+  obRefreshWindow();
+  VoiceCall.thinking("outbound");
+  const prompt = `You are roleplaying the person who picks up an outbound phone call in a training simulation for a legal Executive/Personal Assistant trainee. The trainee is the intake coordinator at ${OB_FIRM}, calling to set up a consultation. Stay fully in character. No narration, no stage directions, no meta-commentary.
+
+WHO YOU ARE AND WHAT YOU KNOW:
+${p.context}
+
+CALL SO FAR:
+${obTranscript(i)}
+
+Reply with your next line only: 1-3 short sentences, natural spoken English. React to how well the coordinator is doing: clear, polite, specific and within scope earns trust and cooperation; vague, pushy, rambling or anything resembling legal advice earns pushback or a quick goodbye. Never volunteer every fact at once; give details when asked. When the call has naturally finished (a time is agreed and confirmed, a message is taken, or you've said goodbye), end your line with [HANGS UP].`;
+  let reply;
+  try{ reply = String(await callAIText(prompt, 200, undefined, "chat")||"").trim().replace(/^["“]+|["”]+$/g,""); }
+  catch(e){ reply = "[Connection issue — try sending again.]"; }
+  if(obState().active!==i) return;
+  const hangs = /\[\s*hangs? up\s*\]/i.test(reply);
+  reply = reply.replace(/\[\s*hangs? up\s*\]/ig, "").trim() || "Okay, bye.";
+  c.history = c.history.filter(m=>!m.pending);
+  c.history.push({role:"them", text:reply});
+  obRefreshWindow();
+  VoiceCall.say("outbound", reply);
+  if(hangs){
+    c.history.push({role:"them", text:"(They hung up.)"});
+    setTimeout(()=>{ if(obState().active===i) obHangup(); }, 2500 + reply.split(/\s+/).length*420);
+  }
+}
+function obHangup(alreadyHungUp){
+  const ob = obState(), i = ob.active; if(i==null) return;
+  if(!alreadyHungUp && VoiceCall.active && VoiceCall.active.key==="outbound") VoiceCall.hangup(true);
+  const c = ob.calls[i];
+  c.ms = Date.now()-c.startedAt;
+  c.done = c.history.some(m=>m.role==="you");
+  if(!c.done) delete ob.calls[i];
+  ob.active = null; ob.lastEnded = c.done ? i : null;
+  const d = document.getElementById("logDate"+i);
+  if(c.done && d && !d.value){ const t = new Date(); d.value = String(t.getMonth()+1).padStart(2,"0")+"/"+String(t.getDate()).padStart(2,"0"); d.dispatchEvent(new Event("input", {bubbles:true})); }
+  obSave(); obPaintAll();
+}
+function obLogOf(i){
+  const v = (k)=>((document.getElementById(k+i)||{}).value||"").trim();
+  return {date:v("logDate"), outcome:v("logOutcome"), followup:v("logFollowup"), notes:v("logNotes")};
+}
+async function obReview(btn){
+  const ob = obState();
+  if(ob.active!=null){ toast("Hang up the current call first."); return; }
+  const done = COLD_LEADS.map((_,i)=>i).filter(i=>(ob.calls[i]||{}).done);
+  if(!done.length){ toast("Make at least one call first: click 📞 Call next to a prospect."); return; }
+  const unlogged = done.filter(i=>!obLogOf(i).outcome);
+  if(unlogged.length){ toast(`Log the outcome for ${unlogged.map(i=>COLD_LEADS[i].name).join(", ")} first.`); return; }
+  if(!(await useLabAttempt(4, "reviewOutboundCalls"))) return;
+  const el = document.getElementById("obReview");
+  btn.disabled = true; btn.textContent = "Reviewing…";
+  el.innerHTML = `<div class="ai-loading">Reviewing your ${done.length} call${done.length>1?"s":""} and your log…</div>`;
+  const context = `The trainee is the intake coordinator at ${OB_FIRM} (Elias Thorne's firm), making outbound calls to prospective clients to book consultations. Reference opening line: "Hi, I'm [Your Name] from [Firm]. I wanted to see if we could schedule a brief consultation to discuss [the matter you were referred about]." What each prospect knew (hidden from the trainee during the call):\n` +
+    done.map(i=>`- ${COLD_LEADS[i].name} (${COLD_LEADS[i].company}): ${OB_PROSPECTS[i].context}`).join("\n");
+  const submission = done.map(i=>{ const g = obLogOf(i); return `=== CALL: ${COLD_LEADS[i].name} (${COLD_LEADS[i].company}) ===\n${obTranscript(i)}\n--- THE TRAINEE'S LOG ENTRY ---\nDate called: ${g.date||"(blank)"} | Outcome: ${g.outcome||"(blank)"} | Follow-up: ${g.followup||"(blank)"} | Notes: ${g.notes||"(blank)"}`; }).join("\n\n");
+  try{
+    const report = await runRubricEvaluation(`Outbound Prospect Calls (${done.length} call${done.length>1?"s":""}) and Call Log`, context, submission,
+      "Grade the calls and the log together. Accuracy: the log matches what actually happened on each call (correct outcome, a specific follow-up date when one was agreed, notes that capture who they spoke to, the agreed time and the confirmation channel); nothing in the log contradicts the transcript. Presence: a clear opening (name, firm, reason, and checking it's a good time), concise and warm, adapts to each person (brief with a busy caller, reassuring with an anxious one, respectful with a gatekeeper), and handles objections without pressure. Risk: no legal advice or predictions ('do I have a case' is redirected to the attorney consultation); no guessing at fees; confidentiality respected (no matter details to a gatekeeper or in a voicemail). Efficiency: every live call ends with a concrete next step (a booked time confirmed back, or a dated follow-up), and the voicemail is short with a callback number. Name the call each strength or blindspot refers to.");
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Your Calls &amp; Log</b>` + renderEvaluationReport(report, 4);
+    await bumpPracticeProgress("coldcalling4", report.totalScore);
+    if(report.totalScore>=85) burstConfetti();
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }finally{ btn.disabled = false; btn.textContent = "Review My Calls"; }
+}
+function obPdfLines(){
+  const ob = obState(), out = [];
+  COLD_LEADS.forEach((l,i)=>{ const c = ob.calls[i]; if(c && c.done) out.push("", `Call with ${l.name} (${VoiceCall._fmt(c.ms||0)}):`, ...obTranscript(i).split("\n").map(s=>"   "+s)); });
+  return out.length ? ["---", "## Call transcripts", ...out] : [];
+}
+Object.assign(window, {obStartCall, obSend, obHangup, obReview, obPdfLines});
+renderColdCallingSection = function(letter){
+  obLoad();
+  return `
+    <h3 style="margin:${letter==='A'?'0':'32px'} 0 10px;color:var(--navy);font-size:15px;">${letter}. Prospective Client Intake Call Log</h3>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 6px;">Call each prospect: click <b>📞 Call</b>. They pick up like real people: some are busy, some are wary, one goes to voicemail and one has an assistant who screens calls. Speak (Chrome or Edge) or type your side. After each call, log it in the prospect's row.</p>
+    <p style="font-size:12.8px;color:var(--ink-soft);margin:0 0 12px;">Reference opening line: <i>"Hi, I'm [Your Name] from ${esc(OB_FIRM)}. I wanted to see if we could schedule a brief consultation to discuss [the matter you were referred about]."</i></p>
+    <div class="card" style="padding:14px 16px;overflow-x:auto;">
+      <table class="log-table ob-table">
+        <thead><tr><th>Prospect</th><th>Matter Type</th><th>Phone</th><th>Call</th><th>Date Called</th><th>Outcome</th><th>Follow-up</th><th>Notes</th></tr></thead>
+        <tbody>
+          ${COLD_LEADS.map((l,i)=>`
+            <tr>
+              <td>${esc(l.name)}</td><td>${esc(l.company)}</td><td>${esc(l.phone)}</td>
+              <td id="obBtn${i}">${obRowBtn(i)}</td>
+              <td><input type="text" id="logDate${i}" placeholder="MM/DD"></td>
+              <td><input type="text" id="logOutcome${i}" placeholder="e.g. Booked Thu 12:30"></td>
+              <td><input type="text" id="logFollowup${i}" placeholder="MM/DD"></td>
+              <td><input type="text" id="logNotes${i}" placeholder="Who, what was agreed, how to confirm"></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <div id="obCallArea">${obCallAreaHtml()}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn btn-ghost btn-sm" onclick="saveCallLog()">Save Log</button>
+      <button class="btn btn-navy btn-sm" onclick="obReview(this)">Review My Calls</button>
+      <button class="btn btn-ghost btn-sm" onclick="downloadCallsPdf()">⬇ Download My Work</button>
+    </div>
+    <div id="obReview" style="margin-top:12px;"></div>
+  `;
+};
+(function(){
+  // the call box isn't a lab answer: don't autosave or restore it
+  if(typeof labFieldKey === "function"){ const __lfk = labFieldKey; labFieldKey = function(el){ return el && el.id==="obCallInput" ? null : __lfk(el); }; }
+  const t = PRACTICE_TOOLS.find(x=>x.id==="coldcalling4");
+  if(t) t.desc = "Sort a real Monday's tasks with the time-management tools and push back on an impossible deadline, then make five simulated calls to prospective clients (a busy referral, a wary web lead, a not-ready prospect, a voicemail and a gatekeeper) and log each one, source and build a lead list for a new practice and write the plan, handle a live intake call and run an email outreach sequence.";
+  const st = document.createElement("style"); st.id = "ob-calls"; st.textContent = `
+.ob-table td:nth-child(3),.ob-table td:nth-child(4){white-space:nowrap;}
+.ob-call-btn{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:8px;padding:5px 11px;font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer;line-height:1.25;}
+.ob-call-btn:hover{filter:brightness(1.15);}
+.ob-call-btn.ob-done{background:#EEF6F0;border-color:#9CC9AA;color:#24603A;}
+.ob-call-btn.ob-done span{font-size:11px;font-weight:500;color:var(--ink-soft);}
+.ob-live{font-size:12.5px;font-weight:700;color:var(--orange-deep);}
+.card.ob-call-card{padding:16px 18px;margin-top:12px;border-left:4px solid var(--orange);}
+.ob-call-card .rp-session-tag{margin-bottom:10px;}
+.ob-after{margin-top:12px;padding:10px 14px;border-radius:10px;background:#F3F6FB;border:1px solid #D5DEEC;font-size:13px;color:#37394A;line-height:1.5;}
+`; document.head.appendChild(st);
+})();
+
+/* ===== Day 4: Lead Generation becomes a sourcing and list-building simulation =====
+   Step 1 picks where to look within a 6-hour weekly budget; step 2 sorts twelve raw leads
+   (with a conflict, a duplicate, a competitor, an out-of-area company and a do-not-contact among
+   them); both are scored on the page with no AI request. Step 3 is the written plan, AI-reviewed
+   with the trainee's own sources and list as context. */
+const LG_SCENARIO = "Thorne & Partners is launching a Data Privacy & Cybersecurity practice on June 1. Elias wants 10–15 qualified prospects in the pipeline before launch. The ideal client: a company with 50–2,000 employees and operations in New York that holds customer, patient or financial data, ideally with a trigger such as a recent breach, NYDFS regulation, fast growth or a new data-heavy product. The firm can't approach anyone adverse to an existing client until Conflicts clears it.";
+const LG_BUDGET = 6;
+const LG_SOURCES = [
+  {id:"lgSrc0", t:"Ask the general counsels of existing clients for introductions", h:1, v:2, why:"warm introductions from people who already trust the firm convert best"},
+  {id:"lgSrc1", t:"Work the NYDFS list of regulated insurers, banks and money transmitters, filtered by size", h:2, v:2, why:"NYDFS cybersecurity rules give every one of them a real, recurring need"},
+  {id:"lgSrc2", t:"Set alerts for data-breach notices filed with the New York Attorney General", h:1, v:2, why:"a reported breach is the strongest trigger there is"},
+  {id:"lgSrc3", t:"Track New York tech and fintech funding announcements", h:1.5, v:1, why:"fast-growing companies take on data risk quickly — useful, though less urgent than a breach or regulation"},
+  {id:"lgSrc4", t:"Pull registrations for the firm's own privacy webinar next month", h:1, v:2, why:"people who signed up have already raised their hand"},
+  {id:"lgSrc5", t:"Buy a list of 50,000 CEO email addresses", h:0.5, v:-2, why:"unverified bulk lists bring spam complaints and attorney-advertising risk, and almost no fits"},
+  {id:"lgSrc6", t:"Scrape social profiles for personal cell numbers", h:2, v:-2, why:"it breaks platform terms and people's privacy — the worst look for a privacy practice"},
+  {id:"lgSrc7", t:"Work the room at a general business mixer", h:3, v:0, why:"low yield for the time: few attendees fit the ideal client"}
+];
+const LG_DECISIONS = ["Hot — contact this week","Warm — contact this month","Nurture — webinar and newsletter","Hold — run a conflicts check first","Skip — not a fit","Skip — duplicate","Skip — asked not to be contacted"];
+const LG_LEADS = [
+  {co:"Harbor Point Health", meta:"220 employees · clinics in Brooklyn and Queens", src:"NY AG breach notice", note:"Filed a breach notice last week: patient records exposed. Contact: Dana Ruiz, General Counsel.", best:0, ok:[1], why:"right size, patient data, a fresh breach and the decision-maker's name"},
+  {co:"Lumen Pay", meta:"140 employees · Manhattan · NYDFS money-transmitter license", src:"Funding announcement", note:"Closed a $40M Series B last month and is hiring a compliance team. Contact: Raj Mehta, COO.", best:0, ok:[1], why:"regulated by NYDFS and growing fast: a need now"},
+  {co:"Greenline Insurance Brokers", meta:"90 employees · Albany · NYDFS-regulated", src:"NYDFS list", note:"No known incident. Contact: Carla Shaw, CFO.", best:1, ok:[2], why:"a clear fit with a standing regulatory need but no urgent trigger"},
+  {co:"Meridian Logistics", meta:"800 employees · Newark and Manhattan", src:"Funding announcement", note:"Expanding its customer-tracking app. Also the defendant in Harlow v. Meridian, a Thorne & Partners matter.", best:3, ok:[], why:"adverse to a current client: nobody contacts them until Conflicts clears it"},
+  {co:"Brightside Dental", meta:"6 employees · one office in Yonkers", src:"Webinar registration", note:"Dr. Kim registered for the privacy webinar.", best:2, ok:[4], why:"interested but far below the size the practice targets: keep them warm, don't spend call time"},
+  {co:"Harbor Point Health", meta:"220 employees · Brooklyn", src:"Webinar registration", note:"Dana Ruiz, General Counsel, registered for the webinar.", best:5, ok:[], why:"already on the list from the breach notice: merge the two and note the webinar sign-up"},
+  {co:"Quillon & Webb LLP", meta:"Law firm · Manhattan", src:"Webinar registration", note:"A partner in their privacy group registered for the webinar.", best:4, ok:[], why:"a competing law firm, not a prospective client"},
+  {co:"Atlas Fitness Clubs", meta:"600 employees · 14 NYC locations · member payment data", src:"Client GC introduction", note:"Sofia Grant, GC at an existing client: \"Atlas's CEO asked me for a privacy lawyer before their app launch.\"", best:0, ok:[], why:"a warm introduction with an active need and a deadline"},
+  {co:"Northwind Analytics", meta:"300 employees · Toronto only", src:"Funding announcement", note:"Raised $25M; no U.S. offices or customers yet.", best:4, ok:[2], why:"no New York operations, so outside the practice's market for now"},
+  {co:"Cobalt Credit Union", meta:"450 employees · Buffalo · NYDFS-regulated", src:"NYDFS list", note:"Replied to the firm's last mailing: \"Please remove us from your list.\"", best:6, ok:[], why:"they asked not to be contacted: respect it and record it"},
+  {co:"Verde Market", meta:"900 employees · NYC grocery chain · loyalty app", src:"Chamber of Commerce directory", note:"Customer data through the loyalty app; no known trigger.", best:2, ok:[1], why:"a good fit with no trigger yet: nurture until one appears"},
+  {co:"Elm Street Pediatrics", meta:"70 employees · Staten Island", src:"Website inquiry", note:"Office manager asked about staff privacy training after a phishing incident last month.", best:0, ok:[1], why:"inbound interest, patient data and a recent incident: call this week"}
+];
+function lgPicked(){ return LG_SOURCES.filter(s=>{ const el = document.getElementById(s.id); return el && el.checked; }); }
+function lgHours(){ return lgPicked().reduce((a,s)=>a+s.h, 0); }
+function lgUpdateBudget(){
+  const h = lgHours(), el = document.getElementById("lgBudget");
+  if(el){ el.textContent = `${h} of ${LG_BUDGET} hours used`; el.className = "lg-budget" + (h>LG_BUDGET ? " over" : ""); }
+}
+function lgBestSourceValue(){
+  let best = 0; const n = LG_SOURCES.length;
+  for(let m=0;m<(1<<n);m++){ let h=0,v=0; for(let i=0;i<n;i++) if(m&(1<<i)){ h+=LG_SOURCES[i].h; v+=LG_SOURCES[i].v; } if(h<=LG_BUDGET && v>best) best=v; }
+  return best;
+}
+function lgScoreSources(){
+  const v = lgPicked().reduce((a,s)=>a+s.v, 0);
+  return Math.max(0, Math.round(v/lgBestSourceValue()*100));
+}
+function lgCheckSources(){
+  const picked = lgPicked();
+  if(!picked.length){ toast("Tick the sources you'd use this week first."); return; }
+  if(lgHours() > LG_BUDGET){ toast(`That's ${lgHours()} hours. You have ${LG_BUDGET} a week: drop a source.`); return; }
+  const score = lgScoreSources();
+  document.getElementById("lgSrcResult").innerHTML = `<b style="color:${score>=80?'var(--success)':'var(--danger)'};">Sourcing: ${score}%</b><ul class="lg-fb">${LG_SOURCES.map(s=>{
+    const on = picked.includes(s), good = s.v>0;
+    const mark = on ? (s.v>0 ? "✅" : s.v<0 ? "❌" : "➖") : (s.v===2 ? "⚠️" : "·");
+    return (on || s.v===2) ? `<li>${mark} <b>${esc(s.t)}</b>${on ? "" : " (not picked)"}: ${esc(s.why)}.</li>` : "";
+  }).join("")}</ul>`;
+}
+function lgCheckList(){
+  const got = LG_LEADS.map((_,i)=>(document.getElementById("lgLead"+i)||{}).value||"");
+  const missing = got.filter(v=>!v).length;
+  if(missing){ toast(`Decide on all ${LG_LEADS.length} leads first (${missing} left).`); return; }
+  let pts = 0;
+  const rows = LG_LEADS.map((l,i)=>{
+    const k = LG_DECISIONS.indexOf(got[i]), full = k===l.best, half = l.ok.includes(k);
+    pts += full ? 1 : half ? 0.5 : 0;
+    return `<li>${full?"✅":half?"🟡":"❌"} <b>${i+1}. ${esc(l.co)}</b>: ${esc(LG_DECISIONS[l.best])} (${esc(l.why)}).</li>`;
+  });
+  const listScore = Math.round(pts/LG_LEADS.length*100);
+  const srcScore = lgPicked().length && lgHours()<=LG_BUDGET ? lgScoreSources() : 0;
+  const score = Math.round(listScore*0.75 + srcScore*0.25);
+  document.getElementById("lgListResult").innerHTML = `<b style="color:${listScore>=80?'var(--success)':'var(--danger)'};">Lead list: ${listScore}%</b> <span style="color:var(--ink-soft);">· with sourcing, ${score}% for this activity</span><ul class="lg-fb">${rows.join("")}</ul>`;
+  bumpPracticeProgress("coldcalling4", score);
+  if(score>=90) burstConfetti();
+}
+function lgListSummary(){
+  const by = {};
+  LG_LEADS.forEach((l,i)=>{ const v = (document.getElementById("lgLead"+i)||{}).value; if(v) (by[v] = by[v] || []).push(l.co); });
+  return Object.keys(by).map(k=>`${k}: ${by[k].join(", ")}`).join("\n");
+}
+async function lgReviewPlan(){
+  const draft = ((document.getElementById("leadGenDraft")||{}).value||"").trim();
+  const el = document.getElementById("leadGenResult");
+  if(draft.length < 40){ toast("Write out a fuller plan first."); return; }
+  if(!(await useLabAttempt(4, "reviewLeadGenPlan"))) return;
+  el.innerHTML = `<div class="ai-loading">Reviewing your lead generation plan…</div>`;
+  try{
+    const report = await runRubricEvaluation("Lead Generation Plan (Data Privacy & Cybersecurity launch)",
+      `SCENARIO: ${LG_SCENARIO}\n\nSOURCES THE TRAINEE PICKED (6-hour weekly budget): ${lgPicked().map(s=>s.t).join("; ") || "(none picked)"}\n\nTHE TRAINEE'S LEAD LIST DECISIONS:\n${lgListSummary() || "(not built yet)"}`,
+      draft,
+      `Does the plan name at least 3 specific lead sources and say why each fits this practice (breach notices, NYDFS-regulated companies, client introductions and webinar sign-ups are strong; bought lists and scraped personal numbers are not)? Does it define real qualifying criteria that match the scenario (size, New York operations, data held, a trigger, a reachable decision-maker) and include a conflicts check before first contact and respect for do-not-contact requests? Does it describe a concrete first-contact approach that differs by lead temperature (hot this week, warm this month, nurture through the webinar), with a reason to talk that isn't a generic pitch? Credit a plan that is consistent with the trainee's own list.`);
+    el.innerHTML = `<b style="font-size:13px;color:var(--navy);display:block;margin-bottom:8px;">Evaluation Report — Your Plan</b>` + renderEvaluationReport(report, 4);
+    await bumpPracticeProgress("coldcalling4", report.totalScore);
+    if(report.totalScore>=85) burstConfetti();
+  }catch(e){
+    el.innerHTML = renderAiErrorBlock(e, "Couldn't get feedback");
+  }
+}
+function lgPdfLines(){
+  return ["Sources picked: " + (lgPicked().map(s=>`${s.t} (${s.h} h)`).join("; ") || "(none)"), "Lead list:", ...(lgListSummary() || "(not built)").split("\n").map(s=>"   "+s)];
+}
+function renderLeadGenSection(){
+  return `
+    <h3 style="margin:0 0 10px;color:var(--navy);font-size:15px;">C. Lead Generation Practice</h3>
+    <div class="card" style="padding:16px 18px;margin-bottom:16px;background:#F8F9FC;">
+      <p style="font-size:13px;color:#37394A;margin:0;">${esc(LG_SCENARIO)}</p>
+    </div>
+    <div class="lg-step"><span>Step 1</span> Pick your sources</div>
+    <p class="lg-hint">You have ${LG_BUDGET} hours a week for prospecting. Tick the sources you'd work this week.</p>
+    <div class="lg-sources">${LG_SOURCES.map(s=>`
+      <label class="lg-src"><input type="checkbox" id="${s.id}" onchange="lgUpdateBudget()"><span>${esc(s.t)}</span><em>${s.h} h</em></label>`).join("")}
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" onclick="lgCheckSources()">Check My Sources</button>
+      <span id="lgBudget" class="lg-budget">0 of ${LG_BUDGET} hours used</span>
+    </div>
+    <div id="lgSrcResult" style="margin-top:8px;font-size:13px;"></div>
+    <div class="lg-step" style="margin-top:22px;"><span>Step 2</span> Build the lead list</div>
+    <p class="lg-hint">Your sources turned up these ${LG_LEADS.length} raw leads. Decide what to do with each one, using the ideal client above.</p>
+    <div class="lg-leads">${LG_LEADS.map((l,i)=>`
+      <div class="lg-lead">
+        <div class="lg-lead-top"><b>${i+1}. ${esc(l.co)}</b><span class="lg-chip">${esc(l.src)}</span></div>
+        <div class="lg-meta">${esc(l.meta)}</div>
+        <p>${esc(l.note)}</p>
+        <select id="lgLead${i}"><option value="">Decide…</option>${LG_DECISIONS.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join("")}</select>
+      </div>`).join("")}
+    </div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="lgCheckList()">Check My List</button>
+    <div id="lgListResult" style="margin-top:8px;font-size:13px;"></div>
+    <div class="lg-step" style="margin-top:22px;"><span>Step 3</span> Write the plan for Elias</div>
+    <p class="lg-hint">Using your sources and list: your lead sources and why, your qualifying criteria, and your first-contact approach for hot, warm and nurture leads.</p>
+    <textarea id="leadGenDraft" style="width:100%;min-height:160px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-family:inherit;resize:vertical;" placeholder="Lead sources and why...&#10;&#10;Qualifying criteria...&#10;&#10;First-contact approach (hot / warm / nurture)..."></textarea>
+    <button class="btn btn-navy btn-sm" style="margin-top:10px;" onclick="lgReviewPlan()">Get Review</button>
+    <div id="leadGenResult" style="margin-top:14px;"></div>`;
+}
+Object.assign(window, {lgUpdateBudget, lgCheckSources, lgCheckList, lgReviewPlan, lgPdfLines, reviewLeadGenPlan:lgReviewPlan});
+(function(){
+  if(typeof LEAD_GEN_SCENARIO !== "undefined") LEAD_GEN_SCENARIO.text = LG_SCENARIO;   // the Download My Work PDF quotes it
+  // ticks restored after a reload update the hours counter too
+  document.addEventListener("change", e=>{ if(e.target && /^lgSrc\d/.test(e.target.id||"")) lgUpdateBudget(); });
+  const st = document.createElement("style"); st.id = "lead-gen-sim"; st.textContent = `
+.lg-step{font-size:14px;font-weight:700;color:var(--navy);margin:0 0 4px;}
+.lg-step span{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--orange);border-radius:999px;padding:2px 9px;margin-right:6px;vertical-align:1px;}
+.lg-hint{font-size:12.8px;color:var(--ink-soft);margin:0 0 10px;}
+.lg-sources{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:8px;}
+.lg-src{display:flex;align-items:flex-start;gap:9px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:13px;line-height:1.4;cursor:pointer;}
+.lg-src:has(input:checked){border-color:var(--navy);background:#F3F6FB;}
+.lg-src input{margin-top:3px;flex-shrink:0;}
+.lg-src span{flex:1;}
+.lg-src em{font-style:normal;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
+.lg-budget{font-size:12.8px;font-weight:600;color:var(--ink-soft);}
+.lg-budget.over{color:var(--danger);}
+.lg-leads{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;}
+.lg-lead{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#fff;display:flex;flex-direction:column;gap:4px;}
+.lg-lead-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.lg-lead-top b{font-size:13.5px;color:var(--navy);flex:1;min-width:0;}
+.lg-chip{font-size:10.5px;font-weight:600;color:#5c3d17;background:#FFF3E3;border:1px solid #F3C9A0;border-radius:999px;padding:1px 8px;white-space:nowrap;}
+.lg-meta{font-size:12px;color:var(--ink-soft);}
+.lg-lead p{font-size:12.8px;line-height:1.45;color:#37394A;margin:2px 0 6px;flex:1;}
+.lg-lead select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:12.8px;font-family:inherit;background:#fff;}
+.lg-fb{margin:8px 0 0;padding-left:20px;font-size:12.8px;line-height:1.5;}
+@media (max-width:520px){ .lg-sources,.lg-leads{grid-template-columns:1fr;} }
+`; document.head.appendChild(st);
+})();
+
+/* ===== Day 6: the 15-case Compliance Audit keeps its answers and names what's missing =====
+   The Clean / Issue Found choices lived only in memory, so a reload (for a new version, or a closed
+   tab) wiped them while the written actions waited in the autosave. Now the whole audit is saved
+   (`c6-audit`) and put back when the lab opens. The checks read the boxes on screen too, and when
+   something is missing they name the cases and jump to the first one. */
+(function(){
+  if(typeof initProjectCompliance6 !== "function") return;
+  const ACTION_MIN = 250;
+  let saveTimer = null;
+  const save = ()=>{ clearTimeout(saveTimer); saveTimer = setTimeout(()=>{ try{ storeSet("c6-audit", toolState.c6audit); }catch(e){} }, 500); };
+  const sync = ()=>{
+    const ca = toolState.c6audit; if(!ca) return;
+    COMPLIANCE_AUDIT_CASES.forEach((_,i)=>{
+      if(ca.verdicts[i]!=="issue") return;
+      const a = document.getElementById("caAction"+i), r = document.getElementById("caRisk"+i);
+      if(a && a.value.length > (ca.actions[i]||"").length) ca.actions[i] = a.value;
+      if(r && r.value && !ca.risks[i]) ca.risks[i] = r.value;
+    });
+  };
+  const flagged = (test)=>COMPLIANCE_AUDIT_CASES.map((c,i)=>({c,i})).filter(({i})=>toolState.c6audit.verdicts[i]==="issue" && test(i));
+  const point = (list, what)=>{
+    const names = list.map(({c})=>"Case "+c.id);
+    toast(`${what}: ${names.slice(0,6).join(", ")}${names.length>6 ? ` and ${names.length-6} more` : ""}.`);
+    const card = document.getElementById("caCard"+list[0].i);
+    if(card){ card.scrollIntoView({behavior:"smooth", block:"center"}); card.classList.remove("ca-missing"); void card.offsetWidth; card.classList.add("ca-missing"); }
+  };
+  // true when everything a check needs is there; otherwise says what's missing and where
+  const ready = (needAllVerdicts)=>{
+    sync();
+    const ca = toolState.c6audit;
+    if(needAllVerdicts){
+      const open = COMPLIANCE_AUDIT_CASES.map((c,i)=>({c,i})).filter(({i})=>!ca.verdicts[i]);
+      if(open.length){ point(open, `Mark Clean or Issue Found on every case first (${open.length} left)`); return false; }
+      const noRisk = flagged(i=>!ca.risks[i]);
+      if(noRisk.length){ point(noRisk, "Pick a risk level for"); return false; }
+    }
+    const short = flagged(i=>(ca.actions[i]||"").length < ACTION_MIN);
+    if(short.length){ point(short, `Each flagged case needs a Proposed Next Action of ${ACTION_MIN}+ characters. Still short`); return false; }
+    return true;
+  };
+
+  const __init = initProjectCompliance6;
+  initProjectCompliance6 = function(body){
+    const r = __init.apply(this, arguments);
+    storeGet("c6-audit").then(v=>{
+      const ca = toolState.c6audit;
+      if(!v || !v.verdicts || !ca || Object.keys(ca.verdicts).length) return;
+      toolState.c6audit = {verdicts:v.verdicts||{}, risks:v.risks||{}, actions:v.actions||{}};
+      const q = document.getElementById("complianceAuditQueue");
+      if(q) q.innerHTML = renderComplianceAuditQueue();
+    }).catch(()=>{});
+    return r;
+  };
+  const __verdict = setComplianceVerdict;
+  window.setComplianceVerdict = setComplianceVerdict = function(i, v){ sync(); __verdict.apply(this, arguments); save(); };
+  const __risk = setComplianceRisk;
+  window.setComplianceRisk = setComplianceRisk = function(){ __risk.apply(this, arguments); save(); };
+  const __action = setComplianceAction;
+  window.setComplianceAction = setComplianceAction = function(i, val){
+    __action.apply(this, arguments); save();
+    const counter = document.getElementById("caActionCounter"+i);
+    if(counter){
+      let badge = counter.nextElementSibling;
+      if(val.length >= ACTION_MIN && !badge){ counter.insertAdjacentHTML("afterend", `<span style="font-size:11px;color:var(--navy);font-weight:600;">✓ Action Drafted</span>`); }
+      else if(val.length < ACTION_MIN && badge){ badge.remove(); }
+    }
+    const card = document.getElementById("caCard"+i); if(card) card.classList.remove("ca-missing");
+  };
+  const __check = checkComplianceAudit;
+  window.checkComplianceAudit = checkComplianceAudit = async function(){ if(!ready(true)) return; return __check.apply(this, arguments); };
+  const __review = reviewComplianceAuditResponse;
+  window.reviewComplianceAuditResponse = reviewComplianceAuditResponse = async function(){
+    sync();
+    if(!Object.values(toolState.c6audit.verdicts).includes("issue")) return __review.apply(this, arguments);   // its own "flag a case first" message
+    if(!ready(false)) return;
+    return __review.apply(this, arguments);
+  };
+  const st = document.createElement("style"); st.id = "c6-audit-missing"; st.textContent = `
+.audit-card.ca-missing{animation:caPulse 1.6s ease-out 1;border-color:var(--orange);box-shadow:0 0 0 3px rgba(224,122,47,.25);}
+@keyframes caPulse{0%{box-shadow:0 0 0 0 rgba(224,122,47,.55);}100%{box-shadow:0 0 0 3px rgba(224,122,47,.25);}}
+`; document.head.appendChild(st);
+})();
+
