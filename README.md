@@ -114,6 +114,7 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 - **🛠 Trainer blueprint** (admins only, never at a public address): a tab on 🧭 Orientation.
   - **The slides:** a cover and 11 slides covering signing in, trainees and the Trainee Audit, Open Lessons, the Curriculum, Presenter view, Activities, the facilitator's feedback style, Monitoring Sheets, Process Questions, Task Trackers, Attendance and Trainee view.
   - **⬇ Download PDF:** a landscape PDF, one page per slide, stamped with the build and the deployment.
+  - **Numbering:** the cover is the Cover (★), then the slides are 1 to N everywhere: the contents buttons, the counter under the slide (`Cover · 11 slides`, then `1 / 11` to `11 / 11`), each slide's header and footer, and the PDF's page footers. The cover isn't counted, so nothing says 12.
   - **Files:** the slides are in `js/blueprint-content.js`. `js/lsh-blueprint.js` is the same file on every LSH platform, and `js/lsh-blueprint-course.js` is the same on every LSH course: change either in one, copy it to all. `build/build.py` adds the three after this program's scripts.
   - **Test:** `.github/scripts/blueprint.cjs`.
 

@@ -7,6 +7,9 @@
 // - a trainer's 🧭 Orientation has the Trainee / Trainer blueprint tabs; 🛠 Trainer blueprint opens the
 //   trainer deck with both tabs, ◀ ▶ and the keys go through every slide, each fits on a laptop and on a
 //   phone, Esc closes it, and the Trainee tab goes back to Orientation;
+// - the slide numbers match everywhere: the cover is the Cover (the counter reads "Cover · N slides"), then
+//   slides 1 to N on the contents buttons, the counter, each slide's header and footer, and the PDF's page
+//   footers ("Cover", then "1 / N" to "N / N"); nothing ever shows N + 1 (a 15-slide deck used to say "16 / 16");
 // - ⬇ Download PDF saves the Trainer blueprint: a page a slide, stamped with the build and the deployment;
 // - the Trainee blueprint (/blueprint.pdf) is republished after every deploy: once for a new deployment
 //   id, not again for the same one, and again when the deployment changes with APP_BUILD left as it was.
@@ -45,18 +48,40 @@ async function open(browser, viewport, admin) {
 async function walk(page, label) {
     return page.evaluate(async (label) => {
         const out = [];
-        const total = Number(document.getElementById('lbp-count').textContent.split('/')[1]);
+        // the cover and the slides (not from the counter: on the cover it reads "Cover · N slides", with no '/')
+        const total = LSHBlueprint.decks()[LSHBlueprint.current().deck].slides.length + 1, n = total - 1;
+        const nums = (s) => (s.match(/\d+/g) || []).map(Number);
         for (let i = 0; i < total; i++) {
             LSHBlueprint.go(i, true); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
             const slide = document.getElementById('lbp-slide'), card = slide.firstElementChild;
-            if (!card) { out.push(`${label} slide ${i + 1}: nothing drawn`); continue; }
+            const name = i === 0 ? `${label} cover` : `${label} slide ${i}`;
+            if (!card) { out.push(`${name}: nothing drawn`); continue; }
             const over = [card, ...card.querySelectorAll('.lbp-main, .lbp-points, .lbp-side, .lbp-contents')].filter(e => e.scrollHeight - e.clientHeight > 2 || e.scrollWidth - e.clientWidth > 2);
-            if (over.length) out.push(`${label} slide ${i + 1}: cut off (${over.map(e => e.className).join(', ')})`);
+            if (over.length) out.push(`${name}: cut off (${over.map(e => e.className).join(', ')})`);
             const sr = slide.getBoundingClientRect(), stage = document.getElementById('lbp-stage').getBoundingClientRect();
-            if (sr.left < stage.left - 1 || sr.right > stage.right + 1 || sr.top < stage.top - 1 || sr.bottom > stage.bottom + 1) out.push(`${label} slide ${i + 1}: bigger than the screen`);
-            if ([...card.querySelectorAll('.lbp-foot, .lbp-points li:last-child, .lbp-tip')].some(e => e.getBoundingClientRect().bottom > sr.bottom + 1)) out.push(`${label} slide ${i + 1}: runs past the bottom of the slide`);
+            if (sr.left < stage.left - 1 || sr.right > stage.right + 1 || sr.top < stage.top - 1 || sr.bottom > stage.bottom + 1) out.push(`${name}: bigger than the screen`);
+            if ([...card.querySelectorAll('.lbp-foot, .lbp-points li:last-child, .lbp-tip')].some(e => e.getBoundingClientRect().bottom > sr.bottom + 1)) out.push(`${name}: runs past the bottom of the slide`);
+            // the numbers: the Cover (★), then 1 to n on the counter, the highlighted contents button, the slide's header and footer
+            const count = document.getElementById('lbp-count').textContent.trim();
+            const on = (document.querySelector('#lbp-toc button.on') || {}).textContent || '';
+            const foot = card.querySelector('.lbp-foot span:last-child'), kicker = card.querySelector('.lbp-head .lbp-kicker');
+            const shown = { counter: count, footer: foot ? foot.textContent.trim() : '', header: kicker ? kicker.textContent.trim() : '' };
+            if (i === 0) {
+                if (count !== `Cover · ${n} slides`) out.push(`${name}: the counter reads "${count}", not "Cover · ${n} slides"`);
+                if (on.trim() !== '★') out.push(`${name}: the highlighted contents button is "${on}", not ★`);
+            } else {
+                if (count !== `${i} / ${n}`) out.push(`${name}: the counter reads "${count}", not "${i} / ${n}"`);
+                if (on.trim() !== String(i)) out.push(`${name}: the highlighted contents button is "${on}", not ${i}`);
+                if (shown.footer !== `${i} / ${n}`) out.push(`${name}: the footer reads "${shown.footer}", not "${i} / ${n}"`);
+                if (!shown.header.endsWith(`· ${i} of ${n}`)) out.push(`${name}: the header reads "${shown.header}", not "… · ${i} of ${n}"`);
+            }
+            Object.entries(shown).forEach(([where, text]) => { if (nums(text).some(x => x > n)) out.push(`${name}: the ${where} shows a number past the last slide (${n}): "${text}"`); });
+            if (i === n) {
+                const last = [...document.querySelectorAll('#lbp-toc button')].pop();
+                if (!last || count !== `${last.textContent.trim()} / ${n}`) out.push(`${name} (the last): the counter "${count}" doesn't match the last contents button "${last ? last.textContent.trim() : ''}"`);
+            }
         }
-        return { out, total };
+        return { out, total, n };
     }, label);
 }
 (async () => {
@@ -76,15 +101,27 @@ async function walk(page, label) {
     const tabs = await page.evaluate(() => [...document.querySelectorAll('.lbp-or-tabs button')].map(b => b.textContent.trim()));
     if (tabs.join('|') !== '🧭 Trainee blueprint|🛠 Trainer blueprint') fail(`Orientation's blueprint tabs: ${tabs.join('|')}`);
     await page.click('#lbp-or-trainer'); await page.waitForTimeout(400);
-    const a = await page.evaluate(() => ({ open: LSHBlueprint.isOpen(), deck: document.getElementById('lbp-slide').dataset.deck, tabs: [...document.querySelectorAll('#lbp-tabs button')].filter(b => b.offsetParent).map(b => b.textContent.trim()), sub: document.getElementById('lbp-sub').textContent, build: APP_BUILD }));
+    const a = await page.evaluate(() => ({ open: LSHBlueprint.isOpen(), deck: document.getElementById('lbp-slide').dataset.deck, tabs: [...document.querySelectorAll('#lbp-tabs button')].filter(b => b.offsetParent).map(b => b.textContent.trim()), sub: document.getElementById('lbp-sub').textContent, build: APP_BUILD, n: (LSHBlueprint.decks().trainer || { slides: [] }).slides.length, count: document.getElementById('lbp-count').textContent.trim() }));
     if (!a.open || a.deck !== 'trainer' || a.tabs.join() !== 'Trainer blueprint,Trainee blueprint') fail(`🛠 Trainer blueprint didn't open the trainer deck with both tabs: ${JSON.stringify(a)}`);
     if (!a.sub.includes(`build ${a.build}`) || !a.sub.includes('deploy dep-aaaa')) fail(`the Trainer blueprint's header doesn't show the build and deployment: ${a.sub}`);
+    // the cover isn't counted: it's the Cover, then the slides are 1 to n (a 15-slide deck says 15, never 16)
+    if (a.count !== `Cover · ${a.n} slides`) fail(`the Trainer blueprint opened with the counter reading "${a.count}", not "Cover · ${a.n} slides"`);
     await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
-    if (!(await page.textContent('#lbp-count')).startsWith('3 /')) fail('← → didn\'t move through the trainer deck');
+    const two = (await page.textContent('#lbp-count')).trim();
+    if (two !== `2 / ${a.n}`) fail(`← → didn't move through the trainer deck: after → → the counter reads "${two}", not "2 / ${a.n}"`);
+    // the last contents button goes to the last slide, numbered the same: "n / n" on the counter and the footer; → goes no further
+    await page.click('#lbp-toc button:last-child'); await page.keyboard.press('ArrowRight');
+    const end = await page.evaluate(() => ({ button: [...document.querySelectorAll('#lbp-toc button')].pop().textContent.trim(), counter: document.getElementById('lbp-count').textContent.trim(), footer: (document.querySelector('#lbp-slide .lbp-foot span:last-child') || {}).textContent }));
+    if (end.button !== String(a.n) || end.counter !== `${a.n} / ${a.n}` || end.footer !== `${a.n} / ${a.n}`) fail(`the last slide should read "${a.n} / ${a.n}", like its contents button ${a.n}: ${JSON.stringify(end)}`);
     const w = await walk(page, 'trainer 1366px'); w.out.forEach(fail);
     const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#lbp-pdf-btn')]);
     const pdf = inspect(fs.readFileSync(await dl.path()));
-    if (!/_Blueprint_Trainer\.pdf$/.test(dl.suggestedFilename()) || !pdf.pdf || pdf.pages !== w.total) fail(`the Trainer blueprint PDF: ${dl.suggestedFilename()}, ${pdf.pages} pages for ${w.total} slides`);
+    if (!/_Blueprint_Trainer\.pdf$/.test(dl.suggestedFilename()) || !pdf.pdf || pdf.pages !== w.total) fail(`the Trainer blueprint PDF: ${dl.suggestedFilename()}, ${pdf.pages} pages for a cover and ${w.n} slides`);
+    // its page footers: "Cover", then "1 / n" to "n / n", in order (never "n+1 / n+1")
+    const lines = pdf.text.split('\n').map(x => x.trim()), feet = lines.filter(x => /^\d+ \/ \d+$/.test(x));
+    const want = Array.from({ length: w.n }, (_, k) => `${k + 1} / ${w.n}`);
+    if (!lines.includes('Cover') || feet.join(', ') !== want.join(', ')) fail(`the Trainer blueprint PDF's page footers should be Cover, then 1 / ${w.n} to ${w.n} / ${w.n}; they are: ${lines.includes('Cover') ? 'Cover' : '(no Cover)'}, ${feet.join(', ')}`);
+    if (!pdf.text.includes(`${w.n} / ${w.n}`) || pdf.text.includes(`${w.n + 1} / ${w.n + 1}`)) fail(`the Trainer blueprint PDF's last page should say ${w.n} / ${w.n}, and no page ${w.n + 1} / ${w.n + 1}`);
     if (!pdf.text.includes(`build ${a.build}`) || !pdf.text.includes('deploy dep-aaaa')) fail('the Trainer blueprint PDF isn\'t stamped with the build and the deployment');
     const titles = await page.evaluate(() => LSHBlueprint.decks().trainer.slides.map(s => s.title.replace(/[^\x00-\xff]/g, '').trim()));
     const missing = titles.filter(x => !pdf.text.includes(x)); if (missing.length) fail(`the Trainer blueprint PDF is missing: ${missing.join(' | ')}`);
@@ -120,5 +157,5 @@ async function walk(page, label) {
 
     await browser.close();
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log(`Blueprint test passed (Trainer blueprint: ${w.total} slides and its PDF, build and deployment stamped; trainees can't open it; the Trainee blueprint republished once per deploy).`);
+    console.log(`Blueprint test passed (Trainer blueprint: a cover and ${w.n} slides, numbered Cover then 1 / ${w.n} to ${w.n} / ${w.n} on screen and in its PDF, build and deployment stamped; trainees can't open it; the Trainee blueprint republished once per deploy).`);
 })().catch(e => { console.error(e); process.exit(1); });
