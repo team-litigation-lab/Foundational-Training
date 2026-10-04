@@ -285,6 +285,8 @@ window.renderDay = function(id){
         <p style="color:var(--ink-soft);font-size:14px;">This lesson's deck hasn't been added to the platform yet.</p>
       </div>`;
   }
+  // this program's lessons have no Knowledge Check: a saved or linked quiz view opens the slides instead
+  if(state.dayViewMode === "knowledgeCheck" && !(d.quiz||[]).length) state.dayViewMode = "slides";
   return __ftRenderDay(id);
 };
 

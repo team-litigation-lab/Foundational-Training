@@ -223,7 +223,6 @@ function renderCheckPanel(){
 }
 
 /* ---------- editing ---------- */
-function colsFor(sheet){ return sheet==="tracker" ? mainCols(FTT.data) : OTHER[sheet].cols.map((c,i)=>Object.assign({i},c)); }
 function selectCell(sheet, r, k, scroll){
   if(sheet==="tracker" && FTT.sheet!=="tracker"){ FTT.sheet = "tracker"; }
   FTT.sel = sheet==="tracker" ? {sheet, r, k} : {sheet, r:+r, c:+k};

@@ -264,11 +264,6 @@ const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
 
-const botPost = (title, body)=>`<div class="ftr-dc">
-    <div class="ftr-dc-head"><span class="ftr-dc-av">🤖</span><b>LSH BOT</b><i>APP</i><span class="ftr-dc-ch"># training-reminders</span></div>
-    <div class="ftr-dc-title">${esc(title)}</div>
-    <div class="ftr-dc-embed">${body}</div></div>`;
-
 const habitCard = h=>`<div class="ftr-chan ftr-test">
       <div class="ftr-part-h">${h.icon} ${esc(h.name)}</div>
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
@@ -610,17 +605,6 @@ body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *)
 body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-stakes{background:#363B57;border:1px solid rgba(246,199,154,.35);}
 body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
-.ftr-dc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-family:'gg sans','Noto Sans',Arial,sans-serif;font-weight:400;color:#313338;}
-.ftr-dc-head{display:flex;align-items:center;gap:8px;font-size:14px;}
-.ftr-dc-head b{color:#060607;}
-.ftr-dc-head i{font-style:normal;font-size:10px;font-weight:700;background:#5865F2;color:#fff;border-radius:3px;padding:1px 4px;}
-.ftr-dc-av{width:32px;height:32px;border-radius:50%;background:#7dd3fc;display:flex;align-items:center;justify-content:center;font-size:17px;}
-.ftr-dc-ch{margin-left:auto;font-size:13px;color:#5c5e66;}
-.ftr-dc-title{margin:8px 0 6px;font-size:16px;}
-.ftr-dc-embed{border-left:4px solid #3aa3e3;background:#f8f9fb;border-radius:4px;padding:10px 14px;font-size:15px;line-height:1.5;text-align:left;}
-.ftr-dc-embed ul, .ftr-dc-embed ol{margin:2px 0 0!important;padding-left:20px!important;}
-.ftr-dc-embed li{margin:2px 0!important;text-align:left!important;}
-.ftr-dc-sub{margin-top:2px;}
 .ftr-lessons{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;margin-top:10px;}
 .ftr-lesson{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:10px;background:#fff;color:var(--ink);text-decoration:none;}
 .ftr-lesson:hover{border-color:var(--orange);box-shadow:var(--shadow);}
@@ -651,18 +635,12 @@ body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
 @media (max-width:620px){ .ftr-def{grid-template-columns:1fr;} }
 .ftr-status{margin-top:14px;} .ftr-status .ftr-when{margin-top:6px!important;}
 .ftr-copyrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:0;} .ftr-copyrow .ftr-code{overflow-wrap:anywhere;}
-.ftr-shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:12px;}
 .ftr-to{background:var(--bg);border-radius:10px;padding:8px 12px;font-size:15px;display:flex;flex-direction:column;gap:2px;} .ftr-to b{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);} .ftr-to span{overflow-wrap:anywhere;}
-.ftr-shots figure{margin:0;} .ftr-shots a{display:flex;align-items:center;justify-content:center;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:6px;height:280px;box-shadow:var(--shadow);}
-.ftr-shots img{max-width:100%;max-height:100%;object-fit:contain;}
 .ftr-rule b{display:block;font-size:17px;color:var(--danger);} .ftr-rule span{display:block;margin-top:4px;font-size:15px;color:var(--ink);}
 .ftr-chan,.ftr-part{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;}
 .ftr-chan-h{font-size:17px;color:#5865F2;font-weight:800;} .ftr-chan p{margin:6px 0 10px;font-size:15px;color:var(--ink-soft);}
 .ftr-aux{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding:8px 0;font-size:15px;}
 .ftr-aux code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;font-weight:800;background:var(--navy);color:#fff;border-radius:6px;padding:3px 10px;}
-.ftr-chat{margin-top:10px;background:#313338;color:#dbdee1;border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:6px;}
-.ftr-chat b{color:#f2f3f5;margin-right:6px;} .ftr-chat i{font-style:normal;font-size:10px;font-weight:800;background:#5865F2;color:#fff;border-radius:3px;padding:1px 4px;margin-right:6px;}
-.ftr-at{background:rgba(88,101,242,.3);color:#c9cdfb;border-radius:3px;padding:0 2px;}
 .ftr-todos{padding:6px 14px;margin-top:14px;}
 .ftr-todos-top{display:flex;align-items:center;justify-content:space-between;gap:14px;}
 .ftr-todos-top .ftr-sub{margin:0 !important;text-align:left;}
@@ -691,7 +669,6 @@ body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
 .ftr-part-h{font-size:17px;color:var(--navy);font-weight:800;} .ftr-part-h span{display:inline-block;margin-right:8px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--orange-deep);border-radius:999px;padding:2px 9px;vertical-align:2px;}
 .ftr-part ol{margin:10px 0 0;padding-left:20px;font-size:15.5px;line-height:1.5;} .ftr-part li{margin-bottom:4px;}
 .ftr-tip{margin:8px 0 0;font-size:14.5px;color:var(--ink-soft);}
-.ftr-soon{margin:0;color:var(--ink-soft);font-size:15px;}
 @media (max-width:520px){ .ftr-todo{flex-wrap:wrap;} .ftr-todo .btn{margin-left:38px;} }
 `; document.head.appendChild(s); })();
 })();
