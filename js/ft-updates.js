@@ -744,34 +744,6 @@ window.moduleCard = function(d){
       : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}
   </div>`;
 };
-// ☰ Topics: the lesson's topics (its divider slides) in a pop-up card, each with its number of pages.
-function ftShowTopics(id){
-  const d = DAYS.find(x=>x.id===id); if(!d) return;
-  const topics = ftTopics(d), n = (d.sections||[]).length;
-  const prog = state.progress[d.id], unlocked = dayUnlocked(d.id) && n;
-  const status = prog && prog.done ? "done" : (unlocked ? "open" : "locked");
-  const overlay = document.createElement("div");
-  overlay.className = "overlay topics-overlay";
-  overlay.innerHTML = `
-    <div class="card topics-modal" role="dialog" aria-modal="true" aria-label="${esc(d.title)} topics">
-      <div class="module-head topics-modal-head">
-        <div class="mh-day">${topics.length} topics &middot; ${n} pages${status==="done" ? " &middot; Finished" : (status==="locked" ? " &middot; 🔒 Locked" : "")}</div>
-        <div class="mh-title">${esc(d.title)}</div>
-        <button type="button" class="topics-close" aria-label="Close" onclick="this.closest('.overlay').remove()">✕</button>
-      </div>
-      <ul class="topics-modal-list">${topics.map((t,k)=>{ const pages = (k < topics.length-1 ? topics[k+1].at : n) - t.at; return `<li>${esc(t.h)} <span class="tm-pages">${pages} page${pages===1?"":"s"}</span></li>`; }).join("")}</ul>
-      <div class="topics-modal-foot">
-        <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.overlay').remove()">Close</button>
-        ${status!=="locked" || state.isAdmin ? `<button type="button" class="btn btn-navy btn-sm" onclick="this.closest('.overlay').remove(); goto('day',${d.id})">${status==="done" ? "Review" : "Start"}</button>` : `<span class="topics-locked-note">🔒 Your trainer opens this lesson</span>`}
-      </div>
-    </div>`;
-  overlay.addEventListener("click", e=>{ if(e.target===overlay) overlay.remove(); });
-  const onKey = e=>{ if(e.key==="Escape"){ overlay.remove(); document.removeEventListener("keydown", onKey); } };
-  document.addEventListener("keydown", onKey);
-  document.body.appendChild(overlay);
-  if(typeof fitTopicsModal === "function") fitTopicsModal(overlay);   // the whole list on one screen
-}
-window.ftShowTopics = ftShowTopics;
 window.renderDashboard = function(){
   const done = DAYS.filter(d=>state.progress[d.id] && state.progress[d.id].done).length;
   const pct = Math.round(done / FT_TOTAL_DAYS * 100);
