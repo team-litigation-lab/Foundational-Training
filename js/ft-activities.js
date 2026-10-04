@@ -40,7 +40,6 @@ if (typeof PERSONAL_KEYS !== "undefined" && !PERSONAL_KEYS.includes("activity-dr
 
 function daState(){ return state.da || (state.da = {byDay:{}, loadedAt:0, open:null, subs:null, adminDay:1, adminSub:"manage", edit:null}); }
 function daNewId(){ return "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function daDay(id){ return DA_GROUPS.find(d => d.id === id); }
 function daActs(dayId){ return ((daState().byDay[dayId] || {}).items) || []; }
 function daFindAct(actId){ for(const d of DA_GROUPS){ const a = daActs(d.id).find(x => x.id === actId); if(a) return {act:a, dayId:d.id}; } return null; }
 function daFmtSize(n){ return n > 1048576 ? (n/1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n/1024)) + " KB"; }
