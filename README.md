@@ -120,21 +120,21 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 ## Process Questions and the Knowledge Checks
 
-Every lesson's process questions are its **Knowledge Check**, answered in writing on the platform and graded like the EA/PA Knowledge Checks. All seven answer sheets are in `PROCESS_SETS` (`js/ft-process.js`):
+Every lesson's process questions are its **Knowledge Check**, answered in writing on the platform and graded like the EA/PA Knowledge Checks. All seven answer sheets are in `PROCESS_SETS` (`js/ft-process.js`), with every question from the curriculum's full lists: 74 in all. The curriculum also has a shorter list after "If time is limited, use only five…"; that note is for the live classroom discussion, so the Knowledge Checks use the full lists.
 
 | Lesson | Answer sheet | Knowledge Check |
 |---|---|---|
 | 1 Virtual Assistant Essentials | VA Essentials | 10 questions |
-| 2 Law Firm Communication | Law Firm Communications Training | 5 |
-| 3 Personal Injury Process Flow | PI Workflow and Reception Training, questions 1–2 | 2 |
-| 4 Receptionist Training | the same sheet, questions 3–5 | 3 |
+| 2 Law Firm Communication | Law Firm Communications Training | 12 |
+| 3 Personal Injury Process Flow | PI Workflow and Reception Training, questions 1–3 | 3 |
+| 4 Receptionist Training | the same sheet, questions 4–10 | 7 |
 | 5 Calendaring & Appointment Setting | — | none: the lesson finishes as before |
-| 6 Intake Specialist Training | Intake Specialist Training | 5 |
-| 7 Claims Specialist Training | Claims Specialist Training | 7 |
-| 8 Medical Records Specialist Training | Medical Records Specialist Training | 5 |
-| 9 Lien Negotiator Training | Lien Negotiator | 5 |
+| 6 Intake Specialist Training | Intake Specialist Training | 10 |
+| 7 Claims Specialist Training | Claims Specialist Training | 10 |
+| 8 Medical Records Specialist Training | Medical Records Specialist Training | 10 |
+| 9 Lien Negotiator Training | Lien Negotiator | 12 |
 
-A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1], 4:[2,3,4]}`).
+A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}`).
 
 **The Knowledge Check** (`#/kc`):
 - **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
