@@ -142,6 +142,9 @@ s = s[:k] + ('<!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js)
 # The LSH dashboard layout (js/lsh-dashboard.js, the same file in every LSH course repo) loads last of all.
 k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/lsh-dashboard.js?v={build_tag}"></script>\n' + s[k:]
+# The lesson cards' buttons as one full-width grid with lines (js/ft-card-grid.js) wrap the finished card, so after it.
+k = s.rfind("</body>")
+s = s[:k] + f'<script src="/js/ft-card-grid.js?v={build_tag}"></script>\n' + s[k:]
 
 
 # 🔐 Trainees sign in on the LSH Training Portal only (js/portal-gate.js). The gate file loads in <head>, before the engine,
