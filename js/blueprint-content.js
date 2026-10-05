@@ -11,7 +11,7 @@ window.LSH_BLUEPRINT = {
     sub: 'Running the 18-day Foundational Training program: the trainer side of the platform',
     slides: [
       { icon: '🔑', title: 'Signing in as a trainer', points: [
-          'Admin sign-in with the trainer passphrase. Trainees don\'t sign in here: they open the program from the LSH Training Portal.',
+          'Admin sign-in with the admin password. Trainees don\'t sign in here: they open the program from the LSH Training Portal.',
           'Your top bar has 🧭 Orientation, 👁 Trainee view and 🏠 Main Portal (back to the Training Portal\'s Training Directory).',
           'Admin is your trainer dashboard: the Trainee Audit and every trainer tab.',
           'Every lesson is open to you, so you can preview it before you teach it.'],
