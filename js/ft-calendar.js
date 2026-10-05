@@ -39,7 +39,7 @@ const hh = m => C.fmt(m);
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim"]);
 
-const S = {aiBusy:{}, id:null, data:null, loading:false, err:"", scn:0, events:[], result:null, timer:null, saved:null, drag:null, sel:null};
+const S = {guide:null, aiBusy:{}, id:null, data:null, loading:false, err:"", scn:0, events:[], result:null, timer:null, saved:null, drag:null, sel:null};
 const scn = () => C.SCENARIOS[S.scn];
 function setScn(i){ S.scn = i; S.sel = null; S.result = null; S.events = C.clean((S.data && S.data.drafts[scn().id]) || []); }
 const uid = () => "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -136,15 +136,29 @@ function taskFeedback(s, ai, r){
 function feedbackPanel(s, sub, r){
   const busy = !!S.aiBusy[subKey(sub)] && !sub.ai, fin = released(r);
   return `<div class="cs-fb"><div class="cs-fb-hd"><h3>Feedback on your ${e(s.short)} submission</h3><span class="cs-pill ${fin ? "ok" : "warn"}">${fin ? "Final feedback" : "Waiting for your trainer"}</span></div>
-    ${aiBlock(sub.ai, busy)}${sub.ai && !sub.ai.error ? taskFeedback(s, sub.ai, fin ? r : null) : ""}
-    ${fin ? finalHTML(s, r) + `<div class="cs-fb-btns"><button class="btn btn-navy btn-sm" onclick="FTCalSim.download('${e(s.id)}')">⬇ Download my feedback</button><button class="btn btn-ghost btn-sm" onclick="FTCalSim.print('${e(s.id)}')">🖨 Print / save as PDF</button></div>`
-      : `<p class="cs-hint">Your trainer will go through this feedback with you, add anything the AI missed and their own notes. The final feedback, with a copy you can download, appears here when they release it.</p>`}</div>`;
+    ${aiBlock(sub.ai, busy)}${sub.ai && !sub.ai.error && !fin ? taskFeedback(s, sub.ai, null) : ""}
+    ${fin ? finalHTML(s, r, sub) + `<div class="cs-fb-btns"><button class="btn btn-navy btn-sm" onclick="FTCalSim.download('${e(s.id)}')">⬇ Download my feedback</button><button class="btn btn-ghost btn-sm" onclick="FTCalSim.print('${e(s.id)}')">🖨 Print / save as PDF</button></div>`
+      : `<p class="cs-hint">Your trainer will go through this feedback with you, add anything the AI missed and their own notes. The finalized feedback report, with a copy you can download, appears here when they finish.</p>`}</div>`;
 }
-function finalHTML(s, r){
-  const extra = (r.extra || []).filter(Boolean);
-  return `<div class="cs-final"><div class="cs-final-hd">👤 Trainer’s final feedback${r.score != null ? ` · <b>${e(r.score)} / 100</b>` : ""}</div>
-    ${extra.length ? `<div class="cs-lab">Also missed</div><ul class="cs-ul">${extra.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
-    ${r.comment ? `<div class="cs-lab">Trainer’s insights</div><p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}</div>`;
+// The finalized report's three parts, from the facts of the rules plus the AI's wording: done correctly, needs improvement, missed.
+function reportSections(s, sub, r){
+  const ai = sub.ai && !sub.ai.error ? sub.ai : null, by = Object.fromEntries(((ai && ai.items) || []).map(x => [x.id, x]));
+  const g = C.review(s, C.clean(sub.events)), out = {correct:[], improve:[], missed:[]};
+  s.tasks.forEach(t => { const a = by[t.id], gi = g.items.find(z => z.id === t.id);
+    const bucket = !gi.found ? "missed" : gi.perfect ? "correct" : "improve";
+    out[bucket].push({title:t.title, text:(a && a.feedback) || (gi.perfect ? "Every rule is met." : gi.checks.filter(c => !c.ok).map(c => c.why).join(" ")), note:r && r.tasks && r.tasks[t.id] || ""}); });
+  ((r && r.extra) || []).filter(Boolean).forEach(x => out.missed.push({title:"Added by your trainer", text:x, note:""}));
+  return out;
+}
+const SECTION = [["correct", "✅", "Done correctly"], ["improve", "🔧", "Needs improvement"], ["missed", "❗", "Missed requirements"]];
+function reportHTML(s, sub, r){
+  const sec = reportSections(s, sub, r);
+  return SECTION.map(([k, ic, title]) => `<div class="cs-rep ${k}"><div class="cs-rep-hd">${ic} ${title} <span class="cs-count">${sec[k].length}</span></div>${sec[k].length ? sec[k].map(x => `<div class="cs-fbi"><div class="cs-fbi-hd"><b>${e(x.title)}</b></div><p>${e(x.text)}</p>${x.note ? `<p class="cs-tn">👤 ${e(x.note)}</p>` : ""}</div>`).join("") : '<p class="cs-hint">Nothing here.</p>'}</div>`).join("");
+}
+function finalHTML(s, r, sub){
+  return `<div class="cs-final"><div class="cs-final-hd">📄 Final feedback report${r.score != null ? ` · trainer score <b>${e(r.score)} / 100</b>` : ""}${r.releasedAt ? ` · ${e(new Date(r.releasedAt).toLocaleDateString())}` : ""}</div>
+    ${reportHTML(s, sub, r)}
+    ${r.comment ? `<div class="cs-rep insight"><div class="cs-rep-hd">👤 Trainer’s insights</div><p>${e(r.comment).replace(/\n/g, "<br>")}</p></div>` : ""}</div>`;
 }
 // The automated review's panel (also used on the trainer's screen). `notes`: the trainer's comment on each task, if any.
 function reviewHTML(g, notes){
@@ -339,12 +353,15 @@ function wire(){
 }
 
 /* ---------- AI feedback ---------- */
-function aiPrompt(s, events, g){
+// The trainer's own rules, guidelines and notes for the AI review (Admin → 📅 Calendar Scores → 📘): for every week, and per week.
+async function loadGuide(){ try{ S.guide = (await sharedGet("settings:calsim-guidelines")) || {}; }catch(err){ S.guide = S.guide || {}; } return S.guide; }
+function guideText(s, guide){ guide = guide || {}; return [guide.all, guide[s.id]].map(x => String(x || "").trim()).filter(Boolean).join("\n"); }
+function aiPrompt(s, events, g, guide){
   const fixed = s.fixed.filter(f => f.kind !== "lunch").map(f => `- ${f.title}: ${C.DAYS[f.day]} ${hh(f.start)}–${hh(f.end)}${f.buffer ? ` (keep ${f.buffer} minutes free before and after for travel)` : ""}`).join("\n");
   const rules = s.tasks.map(k => `- [${k.id}] ${k.title} (${k.dur} min): ${k.note}`).join("\n");
   const cal = events.length ? events.map(x => `- "${x.title}": ${C.DAYS[x.day]} ${hh(x.start)}–${hh(x.start + x.dur)}${x.meet ? ", Google Meet added" : ""}${x.remind ? ", email reminder 1 day before" : ""}${x.desc ? `, description: "${x.desc}"` : ", NO description"}${x.guests ? `, guests: ${x.guests}` : ""}`).join("\n") : "(no events)";
   const facts = g.items.map(i => `- [${i.id}] ${i.title}: ${i.found ? `matched the event "${i.event.title}"` : "NOT FOUND on the calendar"}; ${i.perfect ? "every check passes" : "problems: " + i.checks.filter(c => !c.ok).map(c => c.why).join(" ")}`).join("\n");
-  return `You are a legal-support trainer giving feedback on a trainee's calendar exercise (${s.title}; track: ${trackOf().title}). The trainee put each task on the attorney's calendar. Judge ONLY against the rules and notes below. Do not invent rules, and never give legal advice.
+  return `You are a legal-support trainer giving feedback on a trainee's calendar exercise (${s.title}; track: ${trackOf().title}). The trainee put each task on the attorney's calendar. Judge ONLY against the rules, notes and guidelines below. Do not invent rules, and never give legal advice.
 
 GENERAL RULES: Eastern Time; business hours 9:00 AM to 5:00 PM; leave ${s.gap} minutes between events (lunch excluded); every event needs a title and a description; add Google Meet to video calls; set an email reminder 1 day before external appointments when the task says so.
 
@@ -354,7 +371,7 @@ ${fixed}
 TASKS AND THEIR NOTES (the rules):
 ${rules}
 
-THE TRAINEE'S CALENDAR:
+${guideText(s, guide) ? `TRAINER'S OWN RULES, GUIDELINES AND NOTES (set by the trainer for this exercise: treat them as rules and judge the calendar against them too):\n${guideText(s, guide)}\n\n` : ""}THE TRAINEE'S CALENDAR:
 ${cal}
 
 AUTOMATED CHECK RESULTS (facts: trust them over your own reading):
@@ -366,9 +383,9 @@ Return ONLY a JSON object, no other text:
 {"summary":"two or three sentences on the calendar overall","items":[{"id":"<task id>","status":"met|partial|missed","feedback":"..."} ... one per task, in order],"strengths":["..."],"improve":["..."]}`;
 }
 async function generateAI(s, events, feature){
-  const g = C.review(s, events), at = new Date().toISOString();
+  const g = C.review(s, events), at = new Date().toISOString(), guide = await loadGuide();
   try{
-    const raw = await callAIJson(aiPrompt(s, events, g), 2400, 120000, feature || "grading");
+    const raw = await callAIJson(aiPrompt(s, events, g, guide), 2400, 120000, feature || "grading");
     const got = Array.isArray(raw && raw.items) ? raw.items : [];
     if(!got.length) throw new Error("it returned no feedback");
     const items = s.tasks.map((t, k) => { const it = got.find(z => z && z.id === t.id) || got[k] || {}, gi = g.items.find(z => z.id === t.id);
@@ -392,14 +409,14 @@ async function submit(){
     const ai = await generateAI(s, S.events); S.aiBusy.preview = false; S.previewAI = {scn:s.id, ai}; repaint();
     return;
   }
-  const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), events:S.events.map(x => Object.assign({}, x)), auto:{pct:au.pct, score:au.score, max:au.max}};
+  const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), events:S.events.map(x => Object.assign({}, x)), auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true};
   S.data.submissions.push(sub);
   if(S.data.submissions.length > 20) S.data.submissions = S.data.submissions.slice(-20);
   const key = subKey(sub); S.aiBusy[key] = true;
   clearTimeout(S.timer); repaint(); toast("Calendar submitted. The AI is checking it against the rules…");
   await sharedSet("calsim:" + S.id, S.data);                       // the submission is safe before the AI answers
   const ai = await generateAI(s, sub.events);
-  sub.ai = ai; delete S.aiBusy[key];
+  sub.ai = ai; delete sub.aiPending; delete S.aiBusy[key];
   S.saved = "saving"; paintSave(); repaint();
   S.saved = (await sharedSet("calsim:" + S.id, S.data)) === false ? "fail" : "ok"; paintSave();
   toast(ai.error ? "Submitted. The AI check wasn’t available; your trainer will review it." : "AI feedback is ready below. Your trainer will go through it with you.");
@@ -427,13 +444,11 @@ function feedbackDoc(s, sub, r, name){
 .meta{color:#4b5563;font-size:13.5px;margin-bottom:10px;} .score{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0;} .score div{background:#f1f5f9;border-radius:10px;padding:8px 14px;} .score b{font-size:22px;display:block;color:#0b1730;}
 table{border-collapse:collapse;width:100%;font-size:14px;} th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:left;vertical-align:top;} th{background:#f8fafc;} .met{color:#166534;font-weight:700;} .partial{color:#92400e;font-weight:700;} .missed{color:#991b1b;font-weight:700;}
 .tn{color:#14532d;} ul{margin:4px 0 4px 20px;padding:0;} @media print{body{margin:0;} h2{break-after:avoid;} tr{break-inside:avoid;}}</style></head><body>
-<h1>Calendar feedback: ${e(s.title)}</h1><div class="meta">${name ? "Trainee: <b>" + e(name) + "</b> · " : ""}${e(trackOf().title)} · submitted ${e(new Date(sub.at).toLocaleString())}${r && r.at ? " · final feedback " + e(new Date(r.at).toLocaleDateString()) : ""}</div>
+<h1>Final feedback report: ${e(s.title)}</h1><div class="meta">${name ? "Trainee: <b>" + e(name) + "</b> · " : ""}${e(trackOf().title)} · submitted ${e(new Date(sub.at).toLocaleString())}${r && r.at ? " · final feedback " + e(new Date(r.at).toLocaleDateString()) : ""}</div>
 <div class="score"><div>Automated review<b>${g.pct}%</b></div>${r && r.score != null ? `<div>Trainer score<b>${e(r.score)} / 100</b></div>` : ""}</div>
 ${ai && ai.summary ? `<h2>Overview</h2><p>${e(ai.summary)}</p>` : ""}
 ${ai && ai.strengths.length ? `<h2>What’s working</h2><ul>${li(ai.strengths)}</ul>` : ""}${ai && ai.improve.length ? `<h2>Work on next</h2><ul>${li(ai.improve)}</ul>` : ""}
-<h2>Task by task</h2><table><tr><th>Task</th><th>Result</th><th>Feedback</th></tr>${s.tasks.map(t => { const a = by[t.id], gi = g.items.find(z => z.id === t.id), st = a ? a.status : (gi.perfect ? "met" : gi.found ? "partial" : "missed"), n = r && r.tasks && r.tasks[t.id];
-  return `<tr><td><b>${e(t.title)}</b><br><small>${e(t.note)}</small></td><td class="${st}">${(STATUS[st] || ["", st])[1]}</td><td>${a && a.feedback ? e(a.feedback) : (gi.perfect ? "Every rule is met." : e(gi.checks.filter(c => !c.ok).map(c => c.why).join(" ")))}${n ? `<br><span class="tn">Trainer: ${e(n)}</span>` : ""}</td></tr>`; }).join("")}</table>
-${r && (r.extra || []).filter(Boolean).length ? `<h2>Also missed (added by your trainer)</h2><ul>${li(r.extra)}</ul>` : ""}
+${(() => { const sec = reportSections(s, sub, r); return SECTION.map(([k, ic, title]) => `<h2>${ic} ${title} (${sec[k].length})</h2>` + (sec[k].length ? sec[k].map(x => `<p><b>${e(x.title)}</b><br>${e(x.text)}${x.note ? `<br><span class="tn">Trainer: ${e(x.note)}</span>` : ""}</p>`).join("") : "<p>Nothing here.</p>")).join(""); })()}
 ${r && r.comment ? `<h2>Trainer’s insights</h2><p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}
 <h2>The calendar you submitted</h2><table><tr><th>When</th><th>Event</th><th>Details</th></tr>${events.map(x => `<tr><td>${C.DAYS[x.day]}<br>${hh(x.start)} – ${hh(x.start + x.dur)}</td><td><b>${e(x.title)}</b></td><td>${x.meet ? "📹 Google Meet<br>" : ""}${x.remind ? "🔔 Email reminder 1 day before<br>" : ""}${x.guests ? "Guests: " + e(x.guests) + "<br>" : ""}${e(x.desc)}</td></tr>`).join("") || "<tr><td colspan=3>No events.</td></tr>"}</table>
 <p class="meta">Eastern Time · LSH Foundational Training · Calendar Management</p></body></html>`;
@@ -488,16 +503,16 @@ window.addEventListener("message", ev => {
 });
 
 /* ---------- admin: every trainee's submitted calendars, and the trainer's review ---------- */
-const A = {rows:null, loading:false, open:{}, closed:{}, view:{}};
+const A = {guide:null, auto:true, sig:"", tick:0, timer:null, stale:false, rows:null, loading:false, open:{}, closed:{}, view:{}};
 async function loadAdmin(){
-  A.loading = true;
+  A.loading = true; if(!A.guide) A.guide = (await sharedGet("settings:calsim-guidelines").catch(() => null)) || {};
   try{
     const keys = (await sharedList("calsim:")) || [], ids = keys.map(k => String(k).replace(/^calsim:/, ""));
     const people = await sharedGetMany(ids.map(id => "trainee:" + id));
     const rows = ids.map((id, i) => { const r = people[i]; return {id, name:(r && r.name) || id, batch:(r && r.batch) || "", archived:!!(r && r.archived)}; }).filter(x => !x.archived);
     const recs = await ftGetMany(rows.map(x => "calsim:" + x.id));
     rows.forEach((x, i) => { x.d = norm(recs[i]); });
-    A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || "")); A.sig = sigOf(A.rows);
   }catch(err){ A.rows = []; }
   A.loading = false;
   if(state.view === "admin" && state.adminTab === "calscores") render();
@@ -516,7 +531,9 @@ function renderAdminScores(){
   if(!A.rows) return `<div class="card" style="padding:24px;">Loading the calendars…</div>`;
   const groups = {}; A.rows.forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
+  startPoll();
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
+    ${feedHTML()}${guideHTML()}
     <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
       ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
@@ -525,13 +542,52 @@ function renderAdminScores(){
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has used the Calendar Scheduler yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.refresh()">Refresh</button></div></div>`;
 }
+// 📡 Live feed: new submissions and their AI feedback show up here on their own, so the trainer can open them while the trainee waits.
+const sigOf = rows => rows.map(r => r.id + ":" + r.d.submissions.map(z => z.at + (z.ai ? (z.ai.error ? "e" : "a") : z.aiPending ? "p" : "n") + (r.d.reviews[subKey(z)] ? (released(r.d.reviews[subKey(z)]) ? "R" : "D") : "")).join(",")).join("|");
+const aiState = z => z.ai ? (z.ai.error ? ["warn", "AI check failed"] : ["ok", "AI feedback ready"]) : (z.aiPending && Date.now() - new Date(z.at).getTime() < 180000 ? ["warn", "🤖 AI checking…"] : ["warn", "No AI feedback"]);
+function feedHTML(){
+  const all = []; A.rows.forEach(x => x.d.submissions.forEach(z => all.push({x, z})));
+  all.sort((a, b) => b.z.at.localeCompare(a.z.at));
+  return `<div class="cs-feed"><div class="cs-feed-hd"><b>📡 Live submissions</b><label class="cs-feed-auto"><input type="checkbox" ${A.auto ? "checked" : ""} onchange="FTCalAdmin.auto(this.checked)"> update on its own</label>${A.stale ? '<button class="btn btn-primary btn-sm" onclick="FTCalAdmin.refresh()">New activity: refresh</button>' : ""}</div>
+    ${all.length ? all.slice(0, 5).map(({x, z}) => { const s = C.SCENARIOS.find(q => q.id === z.scn), st = aiState(z), r = x.d.reviews[subKey(z)];
+      return `<div class="cs-feed-row"><span><b>${e(x.name)}</b> · ${e(s ? s.short : z.scn)} · ${e(new Date(z.at).toLocaleTimeString())}</span><span class="cs-pill ${st[0]}">${st[1]}</span>${released(r) ? '<span class="cs-pill ok">Report finalized</span>' : ""}<button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live('${e(x.id)}','${e(subKey(z))}')">🖥 Open live review</button></div>`; }).join("") : '<p class="cs-hint">Nothing submitted yet. New submissions and their AI feedback appear here as they happen.</p>'}</div>`;
+}
+const GUIDE_KEYS = [["all", "All weeks"]];
+function guideHTML(){
+  const g = A.guide || {};
+  return `<details class="cs-guide"><summary>📘 Rules, guidelines and notes for the AI review</summary>
+    <p class="cs-hint">Write the rules, guidelines or notes the AI should hold the trainees to, beyond each task’s built-in rules (what a good appointment looks like, wording for titles and descriptions, what to always set, common mistakes). The AI applies them when it reviews a submission.</p>
+    ${GUIDE_KEYS.concat(C.SCENARIOS.map(q => [q.id, q.title])).map(([k, name]) => `<label class="cs-rv-t">${e(name)}<textarea id="csg_${e(k)}" rows="3" maxlength="3000" class="cs-rv-ta">${e(g[k] || "")}</textarea></label>`).join("")}
+    <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.saveGuide()">💾 Save rules and notes</button></details>`;
+}
+function startPoll(){ if(!A.timer) A.timer = setInterval(pollAdmin, 10000); }
+async function pollAdmin(){
+  if(document.hidden || !A.auto || state.view !== "admin" || state.adminTab !== "calscores" || !A.rows || A.loading) return;
+  try{
+    // Two requests a poll: the list of trainees with a record, and their records in one batch (names only for a trainee not seen yet).
+    const keys = (await sharedList("calsim:")) || [], ids = keys.map(k => String(k).replace(/^calsim:/, ""));
+    const known = Object.fromEntries(A.rows.map(r => [r.id, r])), fresh = ids.filter(id => !known[id]);
+    const people = fresh.length ? await sharedGetMany(fresh.map(id => "trainee:" + id)) : [], recs = await ftGetMany(ids.map(id => "calsim:" + id));
+    const rows = ids.map((id, i) => { const old = known[id], p = old ? null : people[fresh.indexOf(id)]; return {id, name:old ? old.name : ((p && p.name) || id), batch:old ? old.batch : ((p && p.batch) || ""), archived:!old && !!(p && p.archived), d:norm(recs[i])}; }).filter(x => !x.archived);
+    rows.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    const sig = sigOf(rows); if(sig === A.sig) return;
+    rows.forEach(r => { const o = known[r.id], n = r.d.submissions; if(!o){ if(n.length) toast(`${r.name} submitted a calendar.`); return; }
+      if(n.length > o.d.submissions.length) toast(`${r.name} just submitted a calendar.`);
+      n.forEach(z => { const oz = o.d.submissions.find(q => q.at === z.at); if(oz && !oz.ai && z.ai && !z.ai.error) toast(`AI feedback is ready for ${r.name}.`); }); });
+    A.rows = rows; A.sig = sig;
+    const f = document.activeElement;
+    if(f && /^(TEXTAREA|INPUT)$/.test(f.tagName) && f.closest(".cs-admin")){ A.stale = true; const hd = document.querySelector(".cs-feed-hd"); if(hd && !hd.querySelector(".btn")) hd.insertAdjacentHTML("beforeend", '<button class="btn btn-primary btn-sm" onclick="FTCalAdmin.refresh()">New activity: refresh</button>'); return; }
+    A.stale = false; if(!L) render();
+  }catch(err){}
+}
+
 function detailHTML(x){
   const list = x.d.submissions.slice().reverse().map((z, i) => {
     const s = C.SCENARIOS.find(q => q.id === z.scn); if(!s) return "";
     const events = C.clean(z.events), k = subKey(z), key = x.id + "|" + k, shown = !!A.view[key], r = x.d.reviews[k], g = C.review(s, events), rel = released(r);
     const tk = s.tasks.map(t => `<label class="cs-rv-t">${e(t.title)} <input type="text" maxlength="400" id="csrt_${e(key)}_${e(t.id)}" value="${r && r.tasks ? e(r.tasks[t.id] || "") : ""}" placeholder="Your comment on this task (optional)"></label>`).join("");
     return `<div class="cs-sub"><div class="cs-sub-hd">📤 <b>${e(s.title)}</b> · submitted ${e(new Date(z.at).toLocaleString())} · ${events.length} event${events.length === 1 ? "" : "s"} for ${s.tasks.length} tasks · <span class="cs-pill ${g.passed ? "ok" : ""}">🤖 Automated: ${g.pct}%</span>
-      <span class="cs-pill ${z.ai && !z.ai.error ? "ok" : "warn"}">${z.ai ? (z.ai.error ? "AI check failed" : "AI feedback ready") : "No AI feedback yet"}</span>
+      <span class="cs-pill ${aiState(z)[0]}">${aiState(z)[1]}</span>
       ${i === 0 ? '<span class="cs-pill ok">latest</span>' : ""}${rel ? `<span class="cs-pill ok">Released${r.score != null ? ": " + e(r.score) + "/100" : ""}</span>` : r ? '<span class="cs-pill warn">Draft saved</span>' : '<span class="cs-pill warn">To review</span>'}
       <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live('${e(x.id)}','${e(k)}')">🖥 Live review</button>
       <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.view('${e(key)}')">${shown ? "Hide details" : "👁 View calendar and feedback"}</button></div>
@@ -544,8 +600,8 @@ function detailHTML(x){
         <label class="cs-rv-t">Also missed: points the AI left out (one per line)<textarea id="csrx_${e(key)}" rows="3" class="cs-rv-ta">${r ? e((r.extra || []).join("\n")) : ""}</textarea></label>
         <div class="cs-rv-ts">${tk}</div>
         <div class="cs-m-btns"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}',false)">💾 Save draft</button>
-          <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}',true)">${rel ? "✅ Update released feedback" : "✅ Release final feedback to the trainee"}</button>${rel ? `<button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.withdraw('${e(x.id)}','${e(k)}')">↩ Withdraw (back to draft)</button>` : ""}</div>
-        <p class="cs-hint">The trainee sees the AI feedback as soon as they submit. They see your score, insights, extra points and task comments, and can download a copy, only after you release.</p>` : ""}</div>`;
+          <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}',true)">${rel ? "📄 Update the final report" : "📄 Finalize and generate the report"}</button>${rel ? `<button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.withdraw('${e(x.id)}','${e(k)}')">↩ Withdraw (back to draft)</button>` : ""}</div>
+        <p class="cs-hint">The trainee sees the AI feedback as soon as they submit. When you finalize, they get the finalized report (done correctly, needs improvement, missed requirements, your additions and insights) to review and download.</p>` : ""}</div>`;
   }).join("");
   const ext = x.d.external.slice().reverse().map(z => `<div class="cs-att-ext">🔗 ${e(new Date(z.at).toLocaleString())} · ${e(z.title)} · <b>${Math.round(z.score)}/${Math.round(z.max)}</b></div>`).join("");
   const runs = x.d.autos.length ? `<div class="cs-att-ext">🤖 ${x.d.autos.length} automated review run${x.d.autos.length === 1 ? "" : "s"} while practicing: ${C.SCENARIOS.map(q => { const b = x.d.autos.filter(a => a.scn === q.id).reduce((m, a) => Math.max(m, a.pct), -1); return b < 0 ? "" : `${e(q.short)} best ${b}%`; }).filter(Boolean).join(", ")}</div>` : "";
@@ -575,14 +631,19 @@ window.FTCalAdmin = {
   row(id){ A.open[id] = !A.open[id]; render(); },
   batch(b){ A.closed[b] = !A.closed[b]; render(); },
   view(k){ A.view[k] = !A.view[k]; render(); },
-  refresh(){ A.rows = null; render(); },
+  refresh(){ A.rows = null; A.stale = false; render(); },
+  auto(on){ A.auto = !!on; },
+  async saveGuide(){
+    const g = {}; GUIDE_KEYS.concat(C.SCENARIOS.map(q => [q.id])).forEach(([k]) => { const v = String((document.getElementById("csg_" + k) || {}).value || "").trim().slice(0, 3000); if(v) g[k] = v; });
+    try{ if(await sharedSet("settings:calsim-guidelines", g) === false) throw new Error("save"); A.guide = g; S.guide = g; toast("Rules and notes saved: the AI uses them from the next submission."); }catch(err){ toast("Couldn’t save. Check your connection."); }
+  },
   async review(id, k, key, release){
     const g = n => (document.getElementById(n) || {}).value;
     const s = C.SCENARIOS.find(q => q.id === k.split("|")[0]);
     try{
       const patch = reviewPatch(id, k, release, {score:g("csrs_" + key), comment:g("csrc_" + key), extra:g("csrx_" + key), tasks:Object.fromEntries(s.tasks.map(t => [t.id, g("csrt_" + key + "_" + t.id)]))});
       await saveReview(id, k, patch, release ? true : null);
-      toast(release ? "Final feedback released: the trainee can see it and download a copy." : "Draft saved."); render();
+      toast(release ? "Final report generated: the trainee can review it and download a copy." : "Draft saved."); render();
     }catch(err){ toast(err && /score/i.test(err.message) ? err.message : "Couldn’t save. Check your connection."); }
   },
   async withdraw(id, k){ try{ await persist(id, d => { if(d.reviews[k]) d.reviews[k].released = false; }); toast("Back to draft: the trainee no longer sees your feedback."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); } },
@@ -597,20 +658,33 @@ window.FTCalAdmin = {
     const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return;
     const r = row.d.reviews[k] || {};
     L = {id, k, step:0, name:row.name, s, z, events:C.clean(z.events), g:C.review(s, C.clean(z.events)), tasks:Object.assign({}, r.tasks || {}), extra:(r.extra || []).join("\n"), comment:r.comment || "", score:r.score != null ? r.score : "", released:released(r)};
-    paintLive(); document.body.classList.add("cs-live-open");
+    paintLive(); document.body.classList.add("cs-live-open"); startLivePoll();
   },
   liveGo(n){ liveSync(); L.step = Math.max(0, Math.min(L.s.tasks.length + 1, n)); paintLive(); },
-  liveClose(){ liveSync(); const m = document.getElementById("csLive"); if(m) m.remove(); document.body.classList.remove("cs-live-open"); L = null; render(); },
+  liveClose(){ liveSync(); clearInterval(L && L.timer); const m = document.getElementById("csLive"); if(m) m.remove(); document.body.classList.remove("cs-live-open"); L = null; render(); },
   async liveSave(release){
     liveSync();
     try{
       const patch = reviewPatch(L.id, L.k, release, {score:L.score, comment:L.comment, extra:L.extra, tasks:L.tasks});
       await saveReview(L.id, L.k, patch, release ? true : null);
-      L.released = L.released || !!release; toast(release ? "Final feedback released to the trainee." : "Draft saved."); paintLive();
+      L.released = L.released || !!release; toast(release ? "Final report generated: the trainee can review it and download a copy." : "Draft saved."); paintLive();
     }catch(err){ toast(err && /score/i.test(err.message) ? err.message : "Couldn’t save. Check your connection."); }
   }
 };
 let L = null;
+const aiPendingNow = () => !!L && !L.z.ai && aiState(L.z)[1].indexOf("checking") >= 0;
+// While the AI is still writing, the open live review picks its feedback up as soon as the trainee's browser has saved it.
+function startLivePoll(){
+  if(!aiPendingNow()) return;
+  L.timer = setInterval(async () => {
+    if(!L || document.hidden) return;
+    try{
+      const d = norm(await sharedGet("calsim:" + L.id)), z = d.submissions.find(q => subKey(q) === L.k); if(!z) return;
+      const row = A.rows.find(r => r.id === L.id); if(row) row.d = d;
+      if(z.ai || !aiPendingNow()){ liveSync(); L.z = z; clearInterval(L.timer); A.sig = row ? sigOf(A.rows) : A.sig; paintLive(); toast(z.ai && !z.ai.error ? "The AI feedback has arrived." : "The AI check didn’t finish."); }
+    }catch(err){}
+  }, 4000);
+}
 function liveSync(){
   if(!L) return; const q = id => document.getElementById(id);
   const t = L.s.tasks[L.step - 1];
@@ -626,14 +700,15 @@ function paintLive(){
   if(st === 0){
     body = `<h2>${e(L.name)} · ${e(s.title)}</h2>
       <div class="cs-live-score"><b>${L.g.pct}%</b><span>automated review · ${L.g.done} of ${n} tasks perfect</span></div>
-      ${ai ? aiBlock(ai) : `<p class="cs-hint">${L.z.ai ? "The AI check wasn’t available. Go through the rule results task by task." : "No AI feedback was saved for this submission. Go through the rule results task by task, or generate it from the list."}</p>`}`;
+      ${ai ? aiBlock(ai) : aiPendingNow() ? `<div class="cs-ai"><b>🤖 AI feedback</b><p class="cs-hint cs-pulse">The AI is checking the calendar against the rules and notes… it will appear here as soon as it’s ready. The rule results below are already in.</p></div>` : `<p class="cs-hint">${L.z.ai ? "The AI check wasn’t available. Go through the rule results task by task." : "No AI feedback was saved for this submission. Go through the rule results task by task, or generate it from the list."}</p>`}
+      <div class="cs-live-sum">${["correct", "improve", "missed"].map((k, i) => { const n = reportSections(s, L.z, null)[k].length; return `<span class="cs-chip2 ${["met", "partial", "missed"][i]}">${["✅ Done correctly", "🔧 Needs improvement", "❗ Missed"][i]}: ${n}</span>`; }).join(" ")}</div>`;
   }else if(t){
     const stt = a && STATUS[a.status] || (gi.perfect ? STATUS.met : gi.found ? STATUS.partial : STATUS.missed);
     body = `<div class="cs-live-k">Task ${st} of ${n}</div><h2>${e(t.title)} <span class="cs-chip2 ${a ? e(a.status) : (gi.perfect ? "met" : gi.found ? "partial" : "missed")}">${stt[0]} ${stt[1]}</span></h2>
       <div class="cs-live-rule"><b>The rule:</b> ${e(t.note)}</div>
       ${gi.found ? `<div class="cs-live-ev">On the calendar: <b>${e(gi.event.title)}</b> · ${C.DAYS[gi.event.day]} ${hh(gi.event.start)} – ${hh(gi.event.start + gi.event.dur)}</div>` : `<div class="cs-live-ev bad">Not found on the calendar.</div>`}
       <ul class="cs-live-checks">${gi.checks.map(c => `<li class="${c.ok ? "ok" : "bad"}">${c.ok ? "✓" : "✗"} <b>${e(c.label)}</b>${c.ok ? "" : ": " + e(c.why)}</li>`).join("")}</ul>
-      ${a && a.feedback ? `<div class="cs-live-ai">🤖 ${e(a.feedback)}</div>` : ""}
+      ${a && a.feedback ? `<div class="cs-live-ai">🤖 ${e(a.feedback)}</div>` : (aiPendingNow() ? `<div class="cs-live-ai cs-pulse">🤖 The AI is still writing its feedback on this task…</div>` : "")}
       <label class="cs-rv-t">👤 Your note on this task (the trainee sees it when you release)<textarea id="cslNote" rows="3" class="cs-rv-ta">${e(L.tasks[t.id] || "")}</textarea></label>`;
   }else{
     const bad = L.g.items.filter(x => !x.perfect).length;
@@ -641,7 +716,7 @@ function paintLive(){
       <label class="cs-rv-t">Also missed: one point per line<textarea id="cslExtra" rows="4" class="cs-rv-ta">${e(L.extra)}</textarea></label>
       <label class="cs-rv-t">Your written insights<textarea id="cslComment" rows="4" class="cs-rv-ta">${e(L.comment)}</textarea></label>
       <div class="cs-rv"><label>Score (0–100) <input type="number" min="0" max="100" id="cslScore" value="${e(L.score)}" placeholder="${L.g.pct}"></label></div>
-      <div class="cs-m-btns"><button class="btn btn-ghost" onclick="FTCalAdmin.liveSave(false)">💾 Save draft</button><button class="btn btn-primary" onclick="FTCalAdmin.liveSave(true)">✅ ${L.released ? "Update released feedback" : "Release final feedback"}</button></div>
+      <div class="cs-m-btns"><button class="btn btn-ghost" onclick="FTCalAdmin.liveSave(false)">💾 Save draft</button><button class="btn btn-primary" onclick="FTCalAdmin.liveSave(true)">📄 ${L.released ? "Update the final report" : "Finalize and generate the report"}</button></div>
       ${L.released ? '<p class="cs-hint">Released: the trainee can see this and download a copy.</p>' : ""}`;
   }
   m.innerHTML = `<div class="cs-live-bar"><b>🖥 Live review · ${e(L.name)} · ${e(s.short)}</b><button class="btn btn-navy btn-sm" onclick="FTCalAdmin.liveClose()">✕ Close</button></div>
@@ -745,6 +820,9 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-live-checks{list-style:none;margin:6px 0;padding:0;font-size:15px;} .cs-live-checks li{padding:2px 0;} .cs-live-checks .ok{color:#166534;} .cs-live-checks .bad{color:#991b1b;} .cs-live-ai{background:#eff6ff;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:16.5px;}
 .cs-live-nav{display:flex;justify-content:space-between;gap:10px;} .cs-live-nav .btn{min-width:120px;font-size:15px;}
 @media (max-width:980px){ .cs-live-body{grid-template-columns:1fr;} }
+.cs-rep{border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:8px 12px;margin:8px 0;background:#fff;} .cs-rep-hd{font-weight:800;font-size:14.5px;color:var(--navy);} .cs-rep.correct{border-left:5px solid #16a34a;} .cs-rep.improve{border-left:5px solid #f59e0b;} .cs-rep.missed{border-left:5px solid #dc2626;} .cs-rep.insight{border-left:5px solid #039be5;} .cs-rep p{margin:3px 0;font-size:14px;}
+.cs-feed{background:#f8fafc;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:10px 14px;margin:8px 0 12px;} .cs-feed-hd{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px;} .cs-feed-auto{font-size:12.5px;color:var(--ink-soft);cursor:pointer;} .cs-feed-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:5px 0;border-top:1px solid var(--line,#e5e7eb);font-size:13.5px;}
+.cs-guide{border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:8px 14px;margin:0 0 12px;} .cs-guide summary{cursor:pointer;font-weight:700;color:var(--navy);} .cs-live-sum{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;} .cs-pulse{animation:cspulse 1.4s ease-in-out infinite;} @keyframes cspulse{50%{opacity:.45;}}
 @media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .cs-tray{position:static;max-height:none;} }
 `; document.head.appendChild(st); })();
 })();
