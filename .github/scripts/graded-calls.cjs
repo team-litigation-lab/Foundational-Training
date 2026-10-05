@@ -5,6 +5,7 @@
 // graded calls sees "—" and "No graded call yet".
 // Usage: node .github/scripts/graded-calls.cjs [baseUrl]   (with .github/scripts/server.mjs running; needs Playwright)
 const { chromium } = require('playwright');
+const signIn = require('./sign-in.cjs');   // the trainee signs in (the name + batch form is gone)
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const failures = []; const fail = (m) => failures.push(m);
 
@@ -14,8 +15,7 @@ const failures = []; const fail = (m) => failures.push(m);
     page.on('pageerror', e => fail(`page error: ${e.message}`));
     const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    await page.fill('#loginFirstInput', 'Gina'); await page.fill('#loginLastInput', 'Grade'); await page.fill('#loginBatchInput', 'CIG' + String(Date.now()).slice(-6));   // a new trainee each run
-    await page.click('#loginSubmitBtn'); await page.waitForTimeout(1200);
+    await signIn(page, 'Gina', 'Grade', 'CIG' + String(Date.now()).slice(-6));   // a new trainee each run
     const id = await page.evaluate(() => state.traineeId);
     const rec = await page.evaluate(async (key) => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json())).value || '{}'), 'trainee:' + id);
     rec.approved = true; await put('trainee:' + id, rec);
