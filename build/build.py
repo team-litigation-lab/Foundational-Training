@@ -132,7 +132,7 @@ s = re.sub(r'<script src="/js/portal-link\.js[^"]*"></script>\n?', '', s)   # th
 k = s.rfind("</body>")
 if k < 0:
     sys.exit("MISSING: </body>")
-s = s[:k] + f'<script src="/js/portal-link.js?v={build_tag}"></script>\n' + s[k:]
+s = s[:k] + f'<script src="/js/portal-link.js?v={build_tag}"></script>\n<script src="/js/show-password.js?v=1"></script>\n' + s[k:]
 # 🧭 Blueprints (js/blueprint-content.js: this program's Trainer blueprint; js/lsh-blueprint-course.js and js/lsh-blueprint.js:
 # the same files in every LSH course), after this program's scripts. The engine's page may carry them already: move them here.
 s = re.sub(r'<!-- 🧭 Blueprints:[^\n]*-->\n|<script src="/js/(blueprint-content|lsh-blueprint-course|lsh-blueprint)\.js\?v=[^"]*"></script>\n', "", s)
