@@ -1,6 +1,6 @@
 // Local stand-in for Cloudflare: serves the site through worker.js with an in-memory KV store, so the
 // browser tests run without an account. The same as the EA/PA portal's, with this Worker's bindings:
-// LSH_KV (worker.js adds the "ft:" prefix itself) and ASSETS. No ADMIN_PASSPHRASE, so the Worker runs in
+// LSH_KV (worker.js adds the "ft:" prefix itself) and ASSETS. No MASTER_ADMIN_PASSWORD, so the Worker runs in
 // open mode (no sign-in tokens), and no Gemini keys, so the AI features answer "No AI key is configured"
 // and nothing outside this machine is called (GEMINI_RELAY is only used after a Gemini call).
 // Usage: node .github/scripts/server.mjs [port]   (run from the repository root)

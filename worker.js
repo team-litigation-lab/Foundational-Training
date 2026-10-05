@@ -16,22 +16,22 @@
  *   GEMINI_MODEL       — optional: first model for grading and trainer tools (default gemini-3.8-flash).
  *                        Live chat always starts on gemini-3.5-flash-lite (the free tier's daily limit
  *                        is ~500 requests there, 20 on the Flash models); see geminiModels.
- *   ADMIN_PASSPHRASE   — trainer/admin sign-in (or MASTER_ADMIN_PASSWORD, the Portal's master admin password, when this isn't set). Setting this switches the portal
+ *   MASTER_ADMIN_PASSWORD — admin sign-in (the LSH Training Portal's master admin password: one password on every platform). Setting this switches the portal
  *                        into SECURE MODE: every storage and AI request must carry
  *                        a signed session token.
- *   SESSION_SECRET     — optional; signs session tokens (defaults to ADMIN_PASSPHRASE)
+ *   SESSION_SECRET     — optional; signs session tokens (defaults to MASTER_ADMIN_PASSWORD)
  *   PORTAL_SSO_SECRET  — optional; the secret the LSH Training Portal signs its trainee launch tickets with
  *                        (the same value is set on the portal). Setting it makes the Main Portal the only
  *                        way for a trainee in: /api/auth/trainee then refuses a name + batch typed on this
  *                        site, and /api/auth/portal signs them in from the portal's ticket instead.
- *                        Admins still use ADMIN_PASSPHRASE. Not set = the old name + batch sign-in.
+ *                        Admins still use MASTER_ADMIN_PASSWORD. Not set = the old name + batch sign-in.
  *
  * Daily Task Tracker: each trainee's sheet is tracker:<id> (the trainee edits it); the daily check,
  * notes review and trainer comments are trackerreview:<id> (trainees read it, only admins write it).
  * The check runs on the cron in wrangler.json (after the training day, Pacific time), and on demand
  * from Admin → 📋 Task Trackers. The rules are shared with the page: js/ft-tracker-rules.js.
  *
- * Without ADMIN_PASSPHRASE the Worker runs in the old open mode so nothing breaks
+ * Without MASTER_ADMIN_PASSWORD the Worker runs in the old open mode so nothing breaks
  * before you've configured it (the Admin screen shows a warning).
  */
 import "./js/ft-tracker-rules.js";
@@ -64,9 +64,8 @@ async function hmac(secret, msg) {
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(msg));
   return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-// The trainer/admin passphrase: ADMIN_PASSPHRASE, or else MASTER_ADMIN_PASSWORD (the LSH Training Portal's master admin password,
-// so one password signs an admin in on the Portal and here without setting up a second one).
-function adminPass(env) { return env.ADMIN_PASSPHRASE || env.MASTER_ADMIN_PASSWORD || ""; }
+// The admin password: MASTER_ADMIN_PASSWORD, the LSH Training Portal's master admin password (one password signs an admin in on the Portal and on every platform).
+function adminPass(env) { return env.MASTER_ADMIN_PASSWORD || ""; }
 function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
@@ -504,7 +503,7 @@ export default {
         if (!secure) return json({ error: "not-configured" }, 501);
         const { passphrase } = await request.json();
         await new Promise((r) => setTimeout(r, 400)); // slow down guessing
-        if (!safeEqual(String(passphrase || ""), adminPass(env))) return json({ error: "Incorrect passphrase" }, 401);
+        if (!safeEqual(String(passphrase || "").trim(), adminPass(env).trim())) return json({ error: "Incorrect password" }, 401);
         return json({ token: await makeToken(env, "a", "admin", 12) });
       }
       // The trainee's session for a name + batch: their record id (new or legacy form) and token.
