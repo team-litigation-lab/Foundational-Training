@@ -12,5 +12,21 @@
       "medical records"
     ],
     "added": "2026-10-05"
+  },
+  {
+    "file": "kb/files/7391653e-advanced-protocols-packaging-audits-subrogation-cuts-dv-cms-analytics.docx.pdf",
+    "title": "Advanced Protocols: Packaging Audits, Subrogation Cuts, DV & CMS Analytics",
+    "summary": "Case Management supplement: demand package audits and exhibit indexing, ERISA and Medicare subrogation negotiation, diminished value and loss of use claims, and CMS data-stale analytics.",
+    "section": "Demand Phase",
+    "tags": [
+      "demand",
+      "subrogation",
+      "ERISA",
+      "Medicare",
+      "diminished value",
+      "CMS",
+      "case management"
+    ],
+    "added": "2026-10-05"
   }
 ]
