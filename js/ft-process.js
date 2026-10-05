@@ -97,7 +97,7 @@ const PROCESS_SETS = [
     "Analyze the net sheet’s function in summarizing what the client will receive after deductions. Why must it match the closing statement exactly?",
     "Judge whether the net sheet should be presented before or after lien negotiations are finalized and why.",
     "Assess whether it’s appropriate for the legal team to pressure clients to accept settlements. Where is the ethical boundary?"]}
-];
+].filter(set=>DAYS.find(d=>d.id===set.lesson));   // a lesson taken off the platform (build/lessons/off/) takes its set with it
 window.FT_PROCESS_SETS = PROCESS_SETS;
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const e = v => esc(String(v == null ? "" : v));
