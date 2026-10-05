@@ -19,8 +19,6 @@ The training platform for the *Revised 18-Day Foundational Training Program* (Tr
 
 **📚 Knowledge Base page (`kb.html`).** A separate page, `/kb.html`, for the LSH Knowledge Base (the `lsh-knowledge-base` repo: its own Worker with D1 and R2 storage; nothing from it is copied here). It shows the deployed Knowledge Base in a frame, with a link to open it in a new tab. Until it's deployed, `KB_URL` at the top of the page's script is empty and the page says so; set it to the Worker's `https://` address. The page isn't linked from the top bar yet.
 
-**📖 Legal Glossary (`glossary.html`).** A standalone, searchable glossary of about 700 US legal terms and Latin phrases, with an area filter (civil procedure, evidence, contracts, torts and injury, criminal, property, family, estates, business, immigration, employment, insurance, Latin) and an A–Z jump bar. The terms are one `RAW` list at the top of the page's script (`Term | Area | Meaning`, one per line); add or edit terms there. It is linked from the header of `kb.html`.
-
 Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`). Lessons are named by their training title, not by day.
 
 The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
