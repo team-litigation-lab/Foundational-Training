@@ -223,7 +223,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
 
-**All simulators.** Every live simulator on the LSH Training Portal: Call, Calendaring, Email Workspace, Email Replies, Docket System, Medical Records Requests and Court E-Filing. These are open any time, and the section links to the portal's Simulators hub.
+**One simulator for everything.** Every simulator button on this page (the mock calls, the old Calendaring tool and the Call Simulator section) opens the Training Portal's main Call Simulator (`call.html`): `portalHref()` in `js/ft-simulators.js` always returns that page, whatever page it is asked for. The Portal's other simulators (calendaring, email workspace, email replies, docket, medical records, e-filing) are no longer linked from here. It stays open any time.
 
 **How the tools open**
 - **Open here** runs the tool in a full-window panel (✕ Close or Esc returns to the page). **New tab ↗** opens it in its own tab.

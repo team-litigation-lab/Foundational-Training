@@ -12,10 +12,10 @@
        and Training Library, and the LSH Training Portal's Call and
        Calendaring simulators (these get program=FT and the trainee's name
        and batch, so scores are saved for the trainer).
-     • Open here: a CMS tool fills the window (✕ Close comes back). The Portal's simulators (calls, calendaring, …) open in their own tab
+     • Open here: a CMS tool fills the window (✕ Close comes back). The Portal's Call Simulator opens in its own tab
        (Open ↗), where the trainee's Portal sign-in works. New tab ↗: its own tab.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
-     • 🧰 All simulators: every live portal simulator, open any time.
+     • 📞 Call Simulator: the Portal's main simulator, open any time. Every simulator button here goes to it.
      • The dashboard has a Simulators card (like the Training Portal's) that opens this page.
    ============================================================ */
 (function(){
@@ -29,15 +29,10 @@ const TOOLS = {
   calendar: {icon:"📅", name:"Calendaring Simulator", page:"calendar.html", desc:"More practice: a week of scheduling requests to put on the calendar, checked for conflicts and details."}
 };
 
-// Every live simulator on the LSH Training Portal (its hub: /simulators.html), open to practice any time.
+// One simulator for everything: every simulator button on this page opens the Training Portal's main Call Simulator (call.html).
+// The other Portal simulators (calendaring, email, docket, records, e-filing) are not linked from here.
 const PORTAL_ALL = [
-  {id:"call", icon:"📞", name:"Call Simulator", page:"call.html", desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
-  {id:"calendar", icon:"🗓", name:"Calendaring", page:"calendar.html", desc:"A real week full of conflicts: move, shorten or remove events under real rules, then check your plan."},
-  {id:"email", icon:"✉️", name:"Email Workspace", page:"email.html", desc:"A Gmail-style practice inbox: triage, label, reply, forward and report phishing."},
-  {id:"replies", icon:"📨", name:"Email Replies", page:"email-replies.html", desc:"One email at a time, answered like at work: an upset client, an adjuster, a lien letter, your attorney."},
-  {id:"docket", icon:"⚖️", name:"Docket System", page:"docket.html", desc:"Court notices and mail arrive in an inbox: docket them and calendar every deadline they trigger."},
-  {id:"records", icon:"🗂", name:"Medical Records Requests", page:"records.html", desc:"Request records and itemized bills, then handle what comes back: rejections, invoices, silence."},
-  {id:"efiling", icon:"🏛", name:"Court E-Filing", page:"efiling.html", desc:"Fix the documents, then file through federal and state e-filing and see if the clerk accepts it."}
+  {id:"call", icon:"📞", name:"Call Simulator", page:"call.html", desc:"Live phone calls with realistic callers. You answer by voice or typing, write the call note, then get a scored debrief."}
 ];
 
 // The Training Guide's mock calls and demos (its own names), the lesson each belongs to,
@@ -99,6 +94,7 @@ function cmsHref(params, extra){
   return CMS + "?" + q + (extra ? "&" + extra : "");
 }
 function portalHref(page, line, random){
+  page = "call.html";   // every simulator is redirected to the main Call Simulator, whatever page was asked for
   const q = new URLSearchParams({program:"FT"});
   if(line) q.set("line", line);
   if(random) q.set("random", "1");   // a random caller on this line, unknown until the debrief   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
@@ -150,8 +146,8 @@ function renderSimulators(){
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
     ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each call is a random caller on that line.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
-    <section class="fts-group"><h2>🧰 All simulators</h2>
-      <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
+    <section class="fts-group"><h2>📞 Call Simulator</h2>
+      <p class="fts-sub">The main simulator for all your practice, open any time on the LSH Training Portal.</p>
       <div class="fts-grid fts-all">${PORTAL_ALL.map(t=>`<div class="card fts-card">
         <h3>${t.icon} ${esc(t.name)}</h3><p class="fts-note">${esc(t.desc)}</p>
         <div class="fts-tool-act"><button class="btn btn-navy btn-sm" onclick="ftsOpenPortal('${t.id}')">Open ↗</button><a class="btn btn-ghost btn-sm" href="${esc(portalHref(t.page))}" target="_blank" rel="noopener">New tab ↗</a></div>
@@ -217,7 +213,7 @@ window.renderDashboard = function(){
   if(!state.traineeId && !state.isAdmin) return html;
   const card = `<div class="fts-banner" role="link" tabindex="0" onclick="goto('simulators')" onkeydown="if(event.key==='Enter') goto('simulators')">
       <span class="fts-banner-ic">🛠</span>
-      <span class="fts-banner-tx"><b>Simulators</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
+      <span class="fts-banner-tx"><b>Simulators</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the main Call Simulator.</span></span>
       <span class="fts-banner-go">Open →</span></div>`;
   return html.replace('<div class="module-grid">', card + '<div class="module-grid">');
 };
