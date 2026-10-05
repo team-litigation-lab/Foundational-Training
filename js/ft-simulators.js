@@ -45,8 +45,9 @@ const PORTAL_ALL = [
 // The Training Guide's mock calls and demos (its own names), the lesson each belongs to,
 // the CMS program it opens in, and the Training Library cases that fit it.
 const ACTIVITIES = [
-  // Mock calls: one button, a random call on this line in the Call Simulator (random=1). The caller and their case stay
-  // unknown until the debrief: the trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
+  // Mock calls: the line in the CMS Call Simulator, its numbered graded calls (random=1, which the Portal passes on as
+  // mode=graded) or its practice calls. On a graded call the caller and their case stay unknown until the debrief: the
+  // trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
   {kind:"call", lesson:4, cms:"reception", title:"Reception Mock Calls", cases:[], tools:[]},
   {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[], tools:["gcal"]},   // and plot the appointment: the Google Calendar Simulator
   {kind:"call", lesson:6, cms:"intake", title:"Intake Mock Calls", note:"Work in the case’s Intake tab while you take the call.", cases:[], tools:[]},
@@ -82,6 +83,7 @@ const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
 function keyHref(key, a){
   if(/^MC-\d+$/.test(key)) return cmsHref({program:a.cms, mock:key});
   if(key==="random") return portalHref("call.html", a.title, true);
+  if(key==="practice") return portalHref("call.html", a.title);
   const t = TOOLS[key];
   if(t.cms) return cmsHref({program: key==="drill" ? "reception" : a.cms}, t.cms);
   return portalHref(t.page, key==="call" ? a.title : "");
@@ -100,14 +102,40 @@ function cmsHref(params, extra){
   const q = addWho(new URLSearchParams(Object.assign({}, params, {from:"standard"})));
   return CMS + "?" + q + (extra ? "&" + extra : "");
 }
+/* ---------- graded calls (the CMS Call Simulator) ----------
+   The main Call Simulator is the CMS's. A graded call taken there (Graded call 1, 2… on the line; the caller is unknown
+   until the debrief) counts here,
+   in its lesson: the Training Portal keeps the trainee's graded calls in callsim:<id> (its /api/call-results), and
+   Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls show their best graded score on the mock-call card,
+   the lesson card and the dashboard. Read once a page load, and again when the trainee comes back to the tab (at most every
+   two minutes), so a call just taken shows up. */
+const CALL_LESSONS = [4, 5, 6];
+let callsimAt = 0, callsimLoading = null;
+function ftLoadCallsim(){
+  if(!isTrainee() || !state.traineeId || callsimLoading) return callsimLoading;
+  callsimAt = Date.now();
+  callsimLoading = sharedGet("callsim:" + state.traineeId).then(v=>{
+    state.ftCallsim = v && typeof v === "object" ? v : { best: {} }; callsimLoading = null;
+    if(state.view === "dashboard" || state.view === "simulators") render();
+  }).catch(()=>{ state.ftCallsim = { best: {} }; callsimLoading = null; });
+  return callsimLoading;
+}
+const callBest = (lesson)=> (state.ftCallsim && state.ftCallsim.best && state.ftCallsim.best["lesson" + lesson]) || null;
+window.addEventListener("focus", ()=>{ if(state.ftCallsim && Date.now() - callsimAt > 120000 && (state.view === "dashboard" || state.view === "simulators")) ftLoadCallsim(); });
+function gradedLine(lesson){
+  const b = callBest(lesson);
+  return b ? `<p class="fts-graded">🎯 Graded calls: best <b>${b.score}%</b> · ${b.calls} call${b.calls === 1 ? "" : "s"}. Counts toward this lesson.</p>`
+    : `<p class="fts-graded">🎯 No graded call yet. A graded call counts toward this lesson.</p>`;
+}
 function portalHref(page, line, random){
   const q = new URLSearchParams({program:"FT"});
   if(line) q.set("line", line);
-  if(random) q.set("random", "1");   // a random caller on this line, unknown until the debrief   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
+  if(random) q.set("random", "1");   // the line's graded calls first (numbered; the caller unknown until the debrief). The Call Simulator opens on this mock call's calls (its line = the activity's title)
   return PORTAL + page + "?" + addWho(q);
 }
 function keyName(key, a){
-  if(key==="random") return "📞 Random call";
+  if(key==="random") return "🎯 Graded call";
+  if(key==="practice") return "📞 Practice call";
   const c = a.cases.find(x=>x[0]===key);
   return c ? `${c[0]} · ${c[1]}` : TOOLS[key].name;
 }
@@ -126,9 +154,10 @@ function renderCard(a, i){
     <div class="fts-kicker">${esc(lessonTitle(a.lesson))}${open ? "" : " · opens with this lesson"}</div>
     <h3>${esc(a.title)}</h3>
     ${a.note ? `<p class="fts-note">${esc(a.note)}</p>` : ""}
-    <p class="fts-note">A caller phones in about one of the firm’s cases. Get their name, verify them, find their file in the CMS and handle the call. Who called, and about which case, is in your debrief.</p>
+    <p class="fts-note">In the CMS Call Simulator: a caller phones in about one of the firm’s cases. Get their name, verify them, find their file in the CMS and handle the call. Who called, and about which case, is in your debrief.</p>
+    ${isTrainee() ? gradedLine(a.lesson) : ""}
     <div class="fts-tool-act">${open
-      ? `<button class="btn btn-navy" onclick="ftsOpen(${i},'random')">📞 Take a random call</button><a class="btn btn-ghost btn-sm" href="${esc(keyHref("random", a))}" target="_blank" rel="noopener">New tab ↗</a>`
+      ? `<button class="btn btn-navy" onclick="ftsOpen(${i},'random')">🎯 Take a graded call</button><button class="btn btn-ghost btn-sm" onclick="ftsOpen(${i},'practice')">📞 Practice a caller</button>`
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div>
     ${a.tools.map(id=>row(`${TOOLS[id].icon} ${esc(TOOLS[id].name)}`, TOOLS[id].desc, id)).join("")}
   </div>`;
@@ -156,7 +185,7 @@ function renderSimulators(){
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
     ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management), the <b>Litigation Week</b> (Case Management) and the <b>Executive Week</b> (EA / PA). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
       <div class="fts-grid">${FTCalSimCards()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
-    ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each call is a random caller on that line.")}
+    ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each line has its practice calls, and numbered graded calls that count toward the lesson.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
     <section class="fts-group"><h2>🧰 All simulators</h2>
       <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
@@ -217,6 +246,7 @@ window.render = function(){
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-sims">${renderSimulators()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
+  if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
   if(!isTrainee() || state.ftOpenDays) return;
   ftLoadOpenDays().then(()=>{ if(state.view==="simulators") render(); }).catch(()=>{});
 };
@@ -229,7 +259,18 @@ window.renderDashboard = function(){
       <span class="fts-banner-ic">🛠</span>
       <span class="fts-banner-tx"><b>Simulators</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
       <span class="fts-banner-go">Open →</span></div>`;
-  return html.replace('<div class="module-grid">', card + '<div class="module-grid">');
+  if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
+  // the dashboard band: the best graded call in each of lessons 4–6, averaged
+  const bests = CALL_LESSONS.map(callBest).filter(Boolean);
+  const stat = isTrainee() ? `<div class="card stat fts-calls-stat" title="Your best graded call in Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls"><div class="num">${bests.length ? Math.round(bests.reduce((n, b)=>n + b.score, 0) / bests.length) + "%" : "—"}</div><div class="lbl">Graded calls · ${bests.length} / ${CALL_LESSONS.length} lessons</div></div>` : "";
+  return html.replace('<div class="module-grid">', card + '<div class="module-grid">').replace(/(<div class="lbl">Lessons finished<\/div><\/div>)/, "$1" + stat);
+};
+// a mock-call lesson's card shows its best graded call
+const __callCard = window.moduleCard;
+window.moduleCard = function(d){
+  const html = __callCard.apply(this, arguments), b = CALL_LESSONS.includes(d.id) && isTrainee() ? callBest(d.id) : null;
+  if(!b) return html;
+  return html.replace(/(<div class="mh-day">)([\s\S]*?)(<\/div>)/, (m, a, t, c)=>`${a}${t.replace(/^&nbsp;$/, "")}${t && t !== "&nbsp;" ? " &middot; " : ""}📞 ${b.score}%${c}`);
 };
 const __topbar = window.renderTopbar;
 window.renderTopbar = function(){
@@ -263,6 +304,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-banner:hover{transform:translateY(-2px);} .fts-banner:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
 .fts-banner-ic{width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.18);border:1px solid rgba(253,186,116,.45);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
 .fts-banner-tx{flex:1;min-width:0;} .fts-banner-tx b{display:block;font-size:16px;} .fts-banner-tx span{font-size:13px;color:#c7d2fe;}
+.fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
 .fts-banner-go{background:#f97316;color:#0f172a;font-weight:800;font-size:12px;border-radius:999px;padding:8px 16px;white-space:nowrap;}
 @media (max-width:520px){ .fts-banner{flex-wrap:wrap;} .fts-banner-go{margin-left:64px;} }
 #fts-panel{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#f8fafc);flex-direction:column;}
