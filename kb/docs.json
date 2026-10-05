@@ -44,5 +44,20 @@
       "troubleshooting"
     ],
     "added": "2026-10-05"
+  },
+  {
+    "file": "kb/files/661590d9-litigation-and-adr-case-management-training-handout.docx.pdf",
+    "title": "Litigation & ADR Case Management: Operations & Training Guide",
+    "summary": "Operations manual for litigation case managers: core roles and responsibilities, and the Alternative Dispute Resolution track (mediation, arbitration, settlement conferences) with the key dates and deadlines to track.",
+    "section": "Case Management",
+    "tags": [
+      "case management",
+      "litigation",
+      "ADR",
+      "mediation",
+      "arbitration",
+      "deadlines"
+    ],
+    "added": "2026-10-05"
   }
 ]
