@@ -252,6 +252,7 @@ body.audience-mode > *:not(#audienceRoot):not(.aud-hint){display:none !important
 function goToSlide(i){   // any slide can be opened — nothing is locked
   state.slideDir = i>(state.lessonSlide||0) ? "next" : "prev";
   state.lessonSlide = i; state.slidePage = 0;
+  if(i > (state.maxSlideReached||0)){ state.maxSlideReached = i; state.slideProgress = state.slideProgress || {}; state.slideProgress[state.dayId] = i; storeSet("slide-progress", state.slideProgress); }
   refreshLessonSlide();
 }
 function nextSlide(){
