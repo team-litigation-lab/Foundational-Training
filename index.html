@@ -8414,24 +8414,8 @@ function afterRender(){
 
 /* ---------- login gate (for monitoring — see honesty note on Admin) ---------- */
 function renderLogin(){
-  if(window.portalGate && window.portalGate.active()) return window.portalGate.renderCard();
-  return `
-    <div class="login-shell">
-      <div class="login-card">
-        <img src="${LOGO_FULL_SRC}" alt="Legal Support Help" style="width:150px;height:auto;margin-bottom:22px;">
-        <h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Welcome to Foundational Training Program</h1>
-        <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 22px;">Enter your name to begin. This identifies your progress on the training record — no password needed.</p>
-        <div class="login-name-row">
-          <input type="text" id="loginLastInput" placeholder="Last name" autocomplete="family-name" onkeydown="if(event.key==='Enter') document.getElementById('loginFirstInput').focus();">
-          <input type="text" id="loginFirstInput" placeholder="First name(s)" autocomplete="given-name" onkeydown="if(event.key==='Enter') document.getElementById('loginBatchInput').focus();">
-        </div>
-        <div class="login-hint">Enter your name exactly as it should appear on your Certificate of Completion.</div>
-        <input type="text" id="loginBatchInput" placeholder="Batch (e.g. B050225)" style="margin-top:10px;" onkeydown="if(event.key==='Enter') submitLogin();">
-        <button id="loginSubmitBtn" class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;margin-top:14px;" onclick="submitLogin()">Begin Training</button>
-        <button class="btn btn-ghost" style="width:100%;justify-content:center;padding:11px;margin-top:12px;border:1.5px solid var(--line);" onclick="openAdmin()">🛡 Sign in as Administrator</button>
-        <div style="margin-top:10px;font-size:11.5px;color:var(--ink-soft);">Admins go straight to the admin dashboard — no trainee name or batch needed.</div>
-      </div>
-    </div>`;
+  // No name + batch form: trainees are signed in automatically from the LSH Training Portal (js/portal-gate.js); admins type the admin password.
+  return window.portalGate ? window.portalGate.renderCard() : "";
 }
 async function submitLogin(){
   if(state.loginBusy) return;
