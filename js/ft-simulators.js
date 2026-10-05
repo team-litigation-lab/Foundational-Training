@@ -12,7 +12,8 @@
        and Training Library, and the LSH Training Portal's Call and
        Calendaring simulators (these get program=FT and the trainee's name
        and batch, so scores are saved for the trainer).
-     • Open here: the tool fills the window (✕ Close comes back). New tab ↗: its own tab.
+     • Open here: a CMS tool fills the window (✕ Close comes back). The Portal's simulators (calls, calendaring, …) open in their own tab
+       (Open ↗), where the trainee's Portal sign-in works. New tab ↗: its own tab.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
      • 🧰 All simulators: every live portal simulator, open any time.
      • The dashboard has a Simulators card (like the Training Portal's) that opens this page.
@@ -114,7 +115,7 @@ function activityOpen(a){ return state.isAdmin || state.adminPreview || window.d
 function renderCard(a, i){
   const open = activityOpen(a);
   const acts = key => open
-    ? `<button class="btn btn-navy btn-sm" onclick="ftsOpen(${i},'${key}')">Open here</button><a class="btn btn-ghost btn-sm" href="${esc(keyHref(key, a))}" target="_blank" rel="noopener">New tab ↗</a>`
+    ? `<button class="btn btn-navy btn-sm" onclick="ftsOpen(${i},'${key}')">${String(keyHref(key, a)).indexOf(PORTAL) === 0 ? "Open ↗" : "Open here"}</button><a class="btn btn-ghost btn-sm" href="${esc(keyHref(key, a))}" target="_blank" rel="noopener">New tab ↗</a>`
     : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`;
   const row = (title, desc, key)=>`<div class="fts-tool">
       <div class="fts-tool-txt"><b>${title}</b><span>${esc(desc)}</span></div>
@@ -153,7 +154,7 @@ function renderSimulators(){
       <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
       <div class="fts-grid fts-all">${PORTAL_ALL.map(t=>`<div class="card fts-card">
         <h3>${t.icon} ${esc(t.name)}</h3><p class="fts-note">${esc(t.desc)}</p>
-        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" onclick="ftsOpenPortal('${t.id}')">Open here</button><a class="btn btn-ghost btn-sm" href="${esc(portalHref(t.page))}" target="_blank" rel="noopener">New tab ↗</a></div>
+        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" onclick="ftsOpenPortal('${t.id}')">Open ↗</button><a class="btn btn-ghost btn-sm" href="${esc(portalHref(t.page))}" target="_blank" rel="noopener">New tab ↗</a></div>
       </div>`).join("")}</div></section>`;
 }
 
@@ -180,6 +181,10 @@ window.ftsOpenPortal = function(id){
   const t = PORTAL_ALL.find(x=>x.id===id); if(t) ftsShow(portalHref(t.page), t.name);
 };
 function ftsShow(url, name){
+  // A Portal page needs the Portal sign-in cookie, which the browser doesn't send into a frame inside this site (it showed the
+  // Portal's login box): it opens in its own tab, where the trainee is already signed in. The CMS lets Standard trainees in
+  // with just their name, so its pages still open here.
+  if(String(url).indexOf(PORTAL) === 0){ window.open(url, "_blank", "noopener"); return; }
   const p = ftsPanel();
   p.querySelector("#fts-panel-title").textContent = name;
   p.querySelector("#fts-panel-link").href = url;
