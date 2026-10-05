@@ -1,7 +1,7 @@
 // Graded calls from the CMS Call Simulator count in their lesson (js/ft-simulators.js): with the trainee's callsim:<id>
 // (kept by the Training Portal) the dashboard band shows the best graded calls of lessons 4–6 averaged, a mock-call lesson's
 // card its best graded call, and the Simulators' mock-call cards each lesson's best score, with 🎯 Take a graded call (a
-// random caller: random=1) and 📞 Practice a caller (the line, no random) going to the Call Simulator; a trainee without
+// line's numbered graded calls: random=1) and 📞 Practice a caller (the line's practice calls, no random=1) going to the Call Simulator; a trainee without
 // graded calls sees "—" and "No graded call yet".
 // Usage: node .github/scripts/graded-calls.cjs [baseUrl]   (with .github/scripts/server.mjs running; needs Playwright)
 const { chromium } = require('playwright');

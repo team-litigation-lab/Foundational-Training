@@ -45,8 +45,9 @@ const PORTAL_ALL = [
 // The Training Guide's mock calls and demos (its own names), the lesson each belongs to,
 // the CMS program it opens in, and the Training Library cases that fit it.
 const ACTIVITIES = [
-  // Mock calls: one button, a random call on this line in the Call Simulator (random=1). The caller and their case stay
-  // unknown until the debrief: the trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
+  // Mock calls: the line in the CMS Call Simulator, its numbered graded calls (random=1, which the Portal passes on as
+  // mode=graded) or its practice calls. On a graded call the caller and their case stay unknown until the debrief: the
+  // trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
   {kind:"call", lesson:4, cms:"reception", title:"Reception Mock Calls", cases:[], tools:[]},
   {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[], tools:["gcal"]},   // and plot the appointment: the Google Calendar Simulator
   {kind:"call", lesson:6, cms:"intake", title:"Intake Mock Calls", note:"Work in the case’s Intake tab while you take the call.", cases:[], tools:[]},
@@ -102,7 +103,8 @@ function cmsHref(params, extra){
   return CMS + "?" + q + (extra ? "&" + extra : "");
 }
 /* ---------- graded calls (the CMS Call Simulator) ----------
-   The main Call Simulator is the CMS's. A graded call taken there (a random caller, unknown until the debrief) counts here,
+   The main Call Simulator is the CMS's. A graded call taken there (Graded call 1, 2… on the line; the caller is unknown
+   until the debrief) counts here,
    in its lesson: the Training Portal keeps the trainee's graded calls in callsim:<id> (its /api/call-results), and
    Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls show their best graded score on the mock-call card,
    the lesson card and the dashboard. Read once a page load, and again when the trainee comes back to the tab (at most every
@@ -128,7 +130,7 @@ function gradedLine(lesson){
 function portalHref(page, line, random){
   const q = new URLSearchParams({program:"FT"});
   if(line) q.set("line", line);
-  if(random) q.set("random", "1");   // a random caller on this line, unknown until the debrief   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
+  if(random) q.set("random", "1");   // the line's graded calls first (numbered; the caller unknown until the debrief). The Call Simulator opens on this mock call's calls (its line = the activity's title)
   return PORTAL + page + "?" + addWho(q);
 }
 function keyName(key, a){
@@ -178,7 +180,7 @@ function renderSimulators(){
   };
   return `<div class="fts-hero"><h1>🛠 Simulators</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
-    ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each call is a random caller on that line.")}
+    ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each line has its practice calls, and numbered graded calls that count toward the lesson.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
     <section class="fts-group"><h2>🧰 All simulators</h2>
       <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
