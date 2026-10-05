@@ -70,6 +70,8 @@ Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/r
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
+> **The Calendaring Simulators run on the Main Portal, built on the Google Calendar Simulator** (Training-Portal repo: `simulators/gcal.html`, `gcal-data.js`, `gcal.js`; branch `claude/gcal-tracks`). 🎓 Standard Training is the original Google Calendar Simulator, unchanged (no task list); ⚖️ Litigation Week (Case Management, `?track=cm`) and 🏢 Executive Week (EA / PA, `?track=ea`) are clones of it with their own week, callers, rules and request types. The cards here (`ftsCalsim`) open them through `calsim.html?track=…`, which launches the simulator. The in-repo scheduler described below (`js/ft-calendar.js`) is the earlier version.
+
 ## 📅 Calendaring Simulators (drag-and-drop, Google Calendar style)
 
 One calendaring practice area for Lesson 5 (Calendaring & Appointment Setting), at `#/calsim`, shown on **🛠 Simulators** as **📅 Calendaring Simulators** with the lesson's Calendar Management Mock Calls beside it. It has three tracks (`TRACKS` in `js/ft-calsim-core.js`):
