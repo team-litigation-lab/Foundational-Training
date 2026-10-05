@@ -5,10 +5,13 @@
        the tasks to put on the calendar; the trainee builds their own calendar: drag on an empty part of the week to
        add an event, drag an event to move it, drag its bottom edge to resize it, double-click to rename it, ✕ to
        delete it. Events that clash, break a court's travel time or fall outside business hours show in red.
-     • 📤 Submit calendar to my trainer saves the week as it stands. A trainer opens it in Admin → 📅 Calendar Scores,
-       sees the week, and gives it a score out of 100 and a comment, which the trainee sees on this page.
-     • Saved in the trainee's `calsim:<id>` record: {v:2, drafts:{scenario:[events]}, submissions:[{scn, at, events}],
-       reviews:{"<scn>|<at>": {score, comment, by, at}}, external:[...]}. The Worker keeps `reviews` from being changed
+     • At the bottom: 💾 Save changes (saves now), 🤖 Run automated review (FTCalCore.review: the attorney's rules, scored
+       out of 100, with what to fix) and 📤 Submit calendar to my trainer. A trainer opens a submission in Admin → 📅
+       Calendar Scores, sees the week and its automated review, and adds manual feedback: a score out of 100, an overall
+       comment and a comment on each task, which the trainee sees on this page. Scores are kept per trainee.
+     • It is part of the Calendar Management Training Practice Lab on 🛠 Simulators (js/ft-simulators.js).
+     • Saved in the trainee's `calsim:<id>` record: {v:2, drafts:{scenario:[events]}, autos:[{scn, at, pct, score, max}], submissions:[{scn, at, events, auto}],
+       reviews:{"<scn>|<at>": {score, comment, tasks:{taskId: comment}, by, at}}, external:[...]}. The Worker keeps `reviews` from being changed
        by the trainee.
      • Connected simulators: the Portal's Calendaring Simulator opens from here with program=FT, the trainee's name and
        batch. A simulator that finishes with postMessage({type:"lsh-sim-result", sim:"calendar", score, max, title})
@@ -29,15 +32,15 @@ const hh = m => C.fmt(m);
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim"]);
 
-const S = {id:null, data:null, loading:false, err:"", scn:0, events:[], timer:null, saved:null, drag:null, sel:null};
+const S = {id:null, data:null, loading:false, err:"", scn:0, events:[], result:null, timer:null, saved:null, drag:null, sel:null};
 const scn = () => C.SCENARIOS[S.scn];
 const uid = () => "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 /* ---------- the trainee's saved record ---------- */
-const blank = () => ({v:2, drafts:{}, submissions:[], reviews:{}, external:[]});
+const blank = () => ({v:2, drafts:{}, autos:[], submissions:[], reviews:{}, external:[]});
 function norm(d){
   d = d || blank();
-  d.drafts = d.drafts || {}; d.submissions = d.submissions || []; d.reviews = d.reviews || {}; d.external = d.external || [];
+  d.drafts = d.drafts || {}; d.autos = d.autos || []; d.submissions = d.submissions || []; d.reviews = d.reviews || {}; d.external = d.external || [];
   // Records from the first version of the scheduler held placements, not events: they have nothing to show here.
   d.submissions = d.submissions.filter(x => Array.isArray(x.events));
   Object.keys(d.drafts).forEach(k => { if(!Array.isArray(d.drafts[k])) delete d.drafts[k]; });
@@ -50,7 +53,7 @@ async function load(){
   catch(err){ S.data = blank(); S.err = "Couldn’t load your saved work. You can still practice; check your connection to save."; }
   S.loading = false;
   S.events = C.clean(S.data.drafts[scn().id]);
-  if(state.view === "calsim") render();
+  if(state.view === "calsim" || state.view === "simulators") render();
 }
 function queueSave(){
   if(!isTrainee() || !S.data) return;
@@ -62,7 +65,15 @@ function paintSave(){
   const el = document.getElementById("csSave"); if(!el) return;
   el.textContent = !isTrainee() ? "Trainer preview: nothing is saved." : S.saved === "saving" ? "Saving…" : S.saved === "fail" ? "⚠ Not saved. Check your connection." : S.saved === "ok" ? "All changes saved" : "";
 }
+async function saveNow(){
+  changed();
+  if(!isTrainee() || !S.data){ toast("Trainer preview: nothing is saved."); return; }
+  clearTimeout(S.timer); S.saved = "saving"; paintSave();
+  const ok = await sharedSet("calsim:" + S.id, S.data); S.saved = ok === false ? "fail" : "ok"; paintSave();
+  toast(ok === false ? "Couldn’t save. Check your connection and try again." : "Changes saved.");
+}
 function changed(){
+  S.result = null;
   if(S.data){ S.data.drafts[scn().id] = S.events.map(x => Object.assign({}, x)); queueSave(); }
 }
 const subs = id => S.data ? S.data.submissions.filter(x => x.scn === id) : [];
@@ -97,15 +108,27 @@ function tasksHTML(){
     ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span><p>${e(r.note)}</p></div>`).join("")}</div>`;
 }
 function reviewBox(r){
-  return r ? `<div class="cs-review"><b>👤 Trainer review: ${e(r.score)} / 100</b>${r.comment ? `<p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}</div>` : "";
+  const tn = r && r.tasks ? Object.keys(r.tasks).filter(k => r.tasks[k]) : [];
+  return r ? `<div class="cs-review"><b>👤 Trainer feedback: ${e(r.score)} / 100</b>${r.comment ? `<p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}${tn.length ? `<ul>${tn.map(k => { const t = scn().tasks.concat(C.SCENARIOS.flatMap(q => q.tasks)).find(q => q.id === k); return `<li><b>${e(t ? t.title : k)}:</b> ${e(r.tasks[k])}</li>`; }).join("")}</ul>` : ""}</div>` : "";
 }
+// The automated review's panel (also used on the trainer's screen). `notes`: the trainer's comment on each task, if any.
+function reviewHTML(g, notes){
+  notes = notes || {};
+  return `<div class="cs-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? "✅ Meets the attorney’s rules" : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} tasks perfect</span></div>
+    ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b> <span>${i.pts} / ${i.weight}</span></div>
+      ${i.perfect ? "" : `<ul>${i.checks.filter(c => !c.ok).map(c => `<li><b>${e(c.label)}:</b> ${e(c.why)}</li>`).join("")}</ul>`}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
+    ${g.extras.filter(x => x.why.length).length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${g.extras.filter(x => x.why.length).map(x => `<li><b>${e(x.title)}</b> (${C.DAYS[x.day].slice(0, 3)} ${hh(x.start)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}</div>`;
+}
+function resultHTML(){ return S.result ? reviewHTML(S.result) + `<p class="cs-hint">Fix what’s marked, then run the review again. Submit when you’re happy with it.</p>` : ""; }
+const bestAuto = id => (S.data ? S.data.autos : []).filter(a => a.scn === id).reduce((m, a) => Math.max(m, a.pct), -1);
 function historyHTML(){
   if(!S.data) return "";
   const rows = C.SCENARIOS.map(s => {
     const list = subs(s.id), last = list[list.length - 1];
-    if(!last) return `<div class="cs-hist-row"><span class="cs-pill">${e(s.title.split(" · ")[0])}: not submitted</span></div>`;
-    const r = S.data.reviews[subKey(last)];
-    return `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.title.split(" · ")[0])} submitted ${e(new Date(last.at).toLocaleString())}</span>${r ? "" : `<span class="cs-pill">Waiting for your trainer’s review</span>`}${reviewBox(r)}</div>`;
+    const ba = bestAuto(s.id), autoPill = ba >= 0 ? `<span class="cs-pill ${ba >= C.PASS ? "ok" : ""}">🤖 ${e(s.title.split(" · ")[0])} automated review: best ${ba}%</span>` : "";
+    if(!last) return `<div class="cs-hist-row"><span class="cs-pill">${e(s.title.split(" · ")[0])}: not submitted</span>${autoPill}</div>`;
+    const r = S.data.reviews[subKey(last)], au = C.review(s, last.events);
+    return `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.title.split(" · ")[0])} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${r ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${reviewBox(r)}</div>`;
   }).join("");
   const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Simulator")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
   return `<div class="cs-hist">${rows}${ext}</div>`;
@@ -121,9 +144,13 @@ function renderPage(){
     <div class="card cs-brief">${e(s.brief)}</div>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
     <div class="cs-main">${tasksHTML()}<div><div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to rename · ✕ deletes. Red means a clash, missing travel time or outside 9 to 5.</p></div></div>
-    <div class="cs-actions"><button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit calendar to my trainer</button>
+    <div class="cs-actions"><button class="btn btn-navy" onclick="FTCalSim.save()">💾 Save changes</button>
+      <button class="btn btn-navy" onclick="FTCalSim.review()">🤖 Run automated review</button>
+      <button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit to my trainer</button>
       <button class="btn btn-ghost" onclick="FTCalSim.add()">＋ Add event</button>
       <button class="btn btn-ghost" onclick="FTCalSim.reset()">↺ Clear my events</button><span class="cs-save" id="csSave"></span></div>
+    <p class="cs-hint">The automated review checks your calendar against the attorney’s rules (conflicts, travel time, business hours, each task’s days and times) and tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
+    <div id="csResultBox">${resultHTML()}</div>
     ${historyHTML()}
     <div class="card cs-more"><b>🔗 Also graded for your trainer</b><p>The Portal’s Calendaring Simulator is another week of scheduling conflicts. It opens in its own tab with your name and batch, so its score is saved for your trainer too.</p>
       <a class="btn btn-ghost btn-sm" href="${e(portalHref())}" target="_blank" rel="noopener">Open the Portal’s Calendaring Simulator ↗</a></div></div>`;
@@ -137,6 +164,7 @@ function repaint(){
   const gw = document.querySelector(".cs-gridwrap"); if(!gw){ render(); return; }
   gw.innerHTML = gridHTML();
   const h = document.querySelector(".cs-hist"); if(h) h.outerHTML = historyHTML();
+  const box = document.getElementById("csResultBox"); if(box) box.innerHTML = resultHTML();
   paintSave();
 }
 
@@ -257,15 +285,29 @@ function submit(){
   const flagged = Object.keys(C.flags(s, S.events)).length;
   if(!confirm(`Submit this calendar for ${s.title.split(" · ")[0]} to your trainer?` + (S.events.length < s.tasks.length ? `\n\nYou have ${S.events.length} event${S.events.length === 1 ? "" : "s"} for ${s.tasks.length} tasks.` : "") + (flagged ? `\n\n${flagged} event${flagged === 1 ? " is" : "s are"} marked red (a clash, missing travel time or outside business hours).` : "") + (subs(s.id).length ? "\n\nThis replaces your earlier submission (your trainer keeps both)." : ""))) return;
   if(S.data && isTrainee()){
-    S.data.submissions.push({scn:s.id, at:new Date().toISOString(), events:S.events.map(x => Object.assign({}, x))});
+    const au = C.review(s, S.events);
+    S.data.submissions.push({scn:s.id, at:new Date().toISOString(), events:S.events.map(x => Object.assign({}, x)), auto:{pct:au.pct, score:au.score, max:au.max}});
     if(S.data.submissions.length > 20) S.data.submissions = S.data.submissions.slice(-20);
     queueSave();
   }
-  repaint();
+  S.result = C.review(s, S.events); repaint();
   toast(isTrainee() ? "Calendar submitted to your trainer." : "Trainer preview: nothing was submitted.");
 }
+function runReview(){
+  const s = scn();
+  if(!S.events.length){ toast("Add your events to the calendar first."); return; }
+  const g = C.review(s, S.events); S.result = g;
+  if(S.data && isTrainee()){
+    S.data.autos.push({scn:s.id, at:new Date().toISOString(), pct:g.pct, score:g.score, max:g.max});
+    if(S.data.autos.length > 30) S.data.autos = S.data.autos.slice(-30);
+    queueSave();
+  }
+  repaint();
+  const box = document.getElementById("csResultBox"); if(box && box.scrollIntoView) box.scrollIntoView({behavior:"smooth", block:"nearest"});
+  toast(g.passed ? `Automated review: ${g.pct}%. It meets the attorney’s rules.` : `Automated review: ${g.pct}%. See what to fix below.`);
+}
 window.FTCalSim = {
-  submit,
+  submit, save:saveNow, review:runReview,
   add(){
     if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
     const t = ask("What is this event? (it goes on Monday at 9:00 AM; drag it where it belongs)"); if(!t) return;
@@ -275,14 +317,17 @@ window.FTCalSim = {
   pick(i){ S.scn = i; S.sel = null; S.events = C.clean((S.data && S.data.drafts[scn().id]) || []); render(); },
   open(){ goto("calsim"); }
 };
-// The card on the Simulators page (js/ft-simulators.js).
+// The scheduler's card in the Calendar Management Training Practice Lab on the Simulators page (js/ft-simulators.js).
 window.FTCalSimCard = function(){
-  const unlocked = open(), n = S.data ? S.data.submissions.length : 0;
-  return `<section class="fts-group"><h2>📅 Calendar Scheduler</h2><p class="fts-sub">A drag-and-drop calendaring simulator for Lesson ${LESSON}. Build the week, submit it, and your trainer reviews it.</p>
-    <div class="fts-grid"><div class="card fts-card ${unlocked ? "" : "fts-locked"}"><div class="fts-kicker">Calendaring &amp; Appointment Setting Training${unlocked ? "" : " · opens with this lesson"}</div>
-      <h3>Drag &amp; Drop Schedule</h3><p class="fts-note">Put a week of tasks on the attorney’s calendar: respect the hearings, travel time, lunch and each client’s limits. Two weeks to practice. Submit each one for your trainer’s review.${n ? ` You have submitted <b>${n}</b>.` : ""}</p>
-      <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="FTCalSim.open()">📅 Open the scheduler</button>` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div></div></section>`;
+  const unlocked = open();
+  const mine = S.data ? C.SCENARIOS.map(sc => { const l = subs(sc.id).pop(), r = l && S.data.reviews[subKey(l)], b = bestAuto(sc.id);
+    return b < 0 && !l ? "" : `<div class="fts-note">${e(sc.title.split(" · ")[0])}: ${b >= 0 ? `🤖 best ${b}%` : ""}${l ? ` · 📤 submitted` : ""}${r ? ` · 👤 trainer ${e(r.score)}/100` : ""}</div>`; }).join("") : "";
+  return `<div class="card fts-card ${unlocked ? "" : "fts-locked"}"><div class="fts-kicker">Calendaring &amp; Appointment Setting Training${unlocked ? "" : " · opens with this lesson"}</div>
+    <h3>📅 Drag &amp; Drop Calendar Scheduler</h3><p class="fts-note">Build the attorney’s week: put each task on the calendar around the hearings, travel time, lunch and each client’s limits. Save your changes, run the automated review against the attorney’s rules, then submit it for your trainer’s feedback. Two weeks to practice.</p>${mine}
+    <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="FTCalSim.open()">📅 Open the scheduler</button>` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
 };
+// The scheduler's scores are in the trainee's record: read it when the Simulators page opens, so the card shows them.
+window.FTCalSimLoad = function(){ if(isTrainee() && !S.data && !S.loading) load(); };
 
 /* ---------- results from the connected simulators (Portal, CMS) ---------- */
 window.addEventListener("message", ev => {
@@ -311,6 +356,14 @@ async function loadAdmin(){
   A.loading = false;
   if(state.view === "admin" && state.adminTab === "calscores") render();
 }
+// One trainee's scores, per week: the automated review of their latest submission and the trainer's score for it.
+function scoresOf(x){
+  return C.SCENARIOS.map(s => {
+    const last = x.d.submissions.filter(z => z.scn === s.id).pop(); if(!last) return "";
+    const au = C.review(s, last.events).pct, r = x.d.reviews[subKey(last)];
+    return `<span class="cs-pill">${e(s.title.split(" · ")[0])}: 🤖 ${au}%${r ? ` · 👤 ${e(r.score)}/100` : ""}</span>`;
+  }).join("");
+}
 const unreviewed = x => x.d.submissions.filter(z => !x.d.reviews[subKey(z)]).length;
 function renderAdminScores(){
   if(!A.rows && !A.loading) loadAdmin();
@@ -318,10 +371,10 @@ function renderAdminScores(){
   const groups = {}; A.rows.forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
-    <p class="cs-hint">Each trainee’s submitted calendars. Open one with 👁 View calendar to see exactly what they built, then give it a score out of 100 and a comment: they see your review on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
+    <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
       ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
-        ${n ? `<span class="cs-pill ok">📤 ${n} submitted</span>` : `<span class="cs-pill">Not submitted</span>`}${u ? `<span class="cs-pill warn">${u} to review</span>` : n ? `<span class="cs-pill ok">All reviewed</span>` : ""}</div>
+        ${n ? `<span class="cs-pill ok">📤 ${n} submitted</span>` : `<span class="cs-pill">Not submitted</span>`}${scoresOf(x)}${u ? `<span class="cs-pill warn">${u} to review</span>` : n ? `<span class="cs-pill ok">All reviewed</span>` : ""}</div>
         ${A.open[x.id] ? detailHTML(x) : ""}</div>`; }).join("")}</section>`).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has used the Calendar Scheduler yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.refresh()">Refresh</button></div></div>`;
@@ -329,18 +382,22 @@ function renderAdminScores(){
 function detailHTML(x){
   const list = x.d.submissions.slice().reverse().map((z, i) => {
     const s = C.SCENARIOS.find(q => q.id === z.scn); if(!s) return "";
-    const events = C.clean(z.events), k = subKey(z), key = x.id + "|" + k, shown = !!A.view[key], r = x.d.reviews[k], fl = Object.keys(C.flags(s, events)).length;
-    return `<div class="cs-sub"><div class="cs-sub-hd">📤 <b>${e(s.title)}</b> · submitted ${e(new Date(z.at).toLocaleString())} · ${events.length} event${events.length === 1 ? "" : "s"} for ${s.tasks.length} tasks${fl ? ` · <span class="cs-flag">${fl} flagged</span>` : ""}
-      ${i === 0 ? '<span class="cs-pill ok">latest</span>' : ""}${r ? `<span class="cs-pill ok">Reviewed: ${e(r.score)}/100</span>` : '<span class="cs-pill warn">To review</span>'}
-      <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.view('${e(key)}')">${shown ? "Hide calendar" : "👁 View calendar"}</button></div>
+    const events = C.clean(z.events), k = subKey(z), key = x.id + "|" + k, shown = !!A.view[key], r = x.d.reviews[k], g = C.review(s, events);
+    const tk = s.tasks.map(t => `<label class="cs-rv-t">${e(t.title)} <input type="text" maxlength="400" id="csrt_${e(key)}_${e(t.id)}" value="${r && r.tasks ? e(r.tasks[t.id] || "") : ""}" placeholder="Your comment on this task (optional)"></label>`).join("");
+    return `<div class="cs-sub"><div class="cs-sub-hd">📤 <b>${e(s.title)}</b> · submitted ${e(new Date(z.at).toLocaleString())} · ${events.length} event${events.length === 1 ? "" : "s"} for ${s.tasks.length} tasks · <span class="cs-pill ${g.passed ? "ok" : ""}">🤖 Automated: ${g.pct}%</span>
+      ${i === 0 ? '<span class="cs-pill ok">latest</span>' : ""}${r ? `<span class="cs-pill ok">Feedback given: ${e(r.score)}/100</span>` : '<span class="cs-pill warn">To review</span>'}
+      <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.view('${e(key)}')">${shown ? "Hide calendar" : "👁 View calendar and review"}</button></div>
       ${shown ? `<div class="cs-gridwrap">${gridHTML(s, events, true)}</div>
-        <ul class="cs-evlist">${events.slice().sort((a, b) => a.day - b.day || a.start - b.start).map(q => `<li><b>${C.DAYS[q.day].slice(0, 3)} ${hh(q.start)} – ${hh(q.start + q.dur)}</b> ${e(q.title)}</li>`).join("") || "<li>No events.</li>"}</ul>
+        <div class="cs-lab">🤖 Automated review (the attorney’s rules)</div>${reviewHTML(g, r && r.tasks)}
+        <div class="cs-lab">👤 Manual feedback</div>
         <div class="cs-rv"><label>Score (0–100) <input type="number" min="0" max="100" id="csrs_${e(key)}" value="${r ? e(r.score) : ""}"></label>
-          <label class="cs-rv-c">Comment to the trainee <textarea id="csrc_${e(key)}" rows="3">${r ? e(r.comment) : ""}</textarea></label>
-          <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}')">${r ? "Update review" : "Save review"}</button></div>` : ""}</div>`;
+          <label class="cs-rv-c">Overall comment to the trainee <textarea id="csrc_${e(key)}" rows="3">${r ? e(r.comment) : ""}</textarea></label></div>
+        <div class="cs-rv-ts">${tk}</div>
+        <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}')">${r ? "Update feedback" : "Save feedback"}</button>` : ""}</div>`;
   }).join("");
   const ext = x.d.external.slice().reverse().map(z => `<div class="cs-att-ext">🔗 ${e(new Date(z.at).toLocaleString())} · ${e(z.title)} · <b>${Math.round(z.score)}/${Math.round(z.max)}</b></div>`).join("");
-  return `<div class="cs-atts">${list || '<div class="fp-muted">Nothing submitted yet.</div>'}${ext}</div>`;
+  const runs = x.d.autos.length ? `<div class="cs-att-ext">🤖 ${x.d.autos.length} automated review run${x.d.autos.length === 1 ? "" : "s"} while practicing: ${C.SCENARIOS.map(q => { const b = x.d.autos.filter(a => a.scn === q.id).reduce((m, a) => Math.max(m, a.pct), -1); return b < 0 ? "" : `${e(q.title.split(" · ")[0])} best ${b}%`; }).filter(Boolean).join(", ")}</div>` : "";
+  return `<div class="cs-atts">${list || '<div class="fp-muted">Nothing submitted yet.</div>'}${runs}${ext}</div>`;
 }
 window.FTCalAdmin = {
   row(id){ A.open[id] = !A.open[id]; render(); },
@@ -348,14 +405,15 @@ window.FTCalAdmin = {
   view(k){ A.view[k] = !A.view[k]; render(); },
   refresh(){ A.rows = null; render(); },
   async review(id, k, key){
+    const sd = Object.fromEntries(((C.SCENARIOS.find(q => q.id === k.split("|")[0]) || {}).tasks || []).map(t => [t.id, String((document.getElementById("csrt_" + key + "_" + t.id) || {}).value || "").trim().slice(0, 400)]).filter(p => p[1]));
     const sc = Number((document.getElementById("csrs_" + key) || {}).value), cm = String((document.getElementById("csrc_" + key) || {}).value || "").trim().slice(0, 2000);
     if(!isFinite(sc) || sc < 0 || sc > 100 || (document.getElementById("csrs_" + key) || {}).value === ""){ toast("Enter a score from 0 to 100."); return; }
     const row = A.rows.find(r => r.id === id); if(!row) return;
     try{
       const fresh = norm(await sharedGet("calsim:" + id));      // the trainee may have saved since this screen loaded
-      fresh.reviews[k] = {score:Math.round(sc), comment:cm, by:state.adminName || "Trainer", at:new Date().toISOString()};
+      fresh.reviews[k] = {score:Math.round(sc), comment:cm, tasks:sd, by:state.adminName || "Trainer", at:new Date().toISOString()};
       if(await sharedSet("calsim:" + id, fresh) === false) throw new Error("save");
-      row.d = fresh; toast("Review saved."); render();
+      row.d = fresh; toast("Feedback saved."); render();
     }catch(err){ toast("Couldn’t save the review. Check your connection."); }
   }
 };
@@ -428,7 +486,11 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-more{padding:14px 18px;} .cs-more p{margin:4px 0 10px;font-size:13.5px;color:var(--ink-soft);} .cs-more a{text-decoration:none;}
 .cs-admin{padding:16px 18px;} .cs-atts{margin:6px 0 10px 18px;} .cs-att-ext{font-size:13px;margin:4px 0;}
 .cs-sub,.cs-sub *{text-transform:none;letter-spacing:normal;} .cs-sub{border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:8px 12px;margin:6px 0;} .cs-sub-hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;} .cs-sub .cs-gridwrap{margin:8px 0;}
-.cs-ro{background:#fb923c;color:#1f2937;border:1px solid #ea580c;z-index:3;} .cs-flag{color:#b91c1c;font-weight:700;}
+.cs-ro{background:#fb923c;color:#1f2937;border:1px solid #ea580c;z-index:3;} .cs-flag{color:#b91c1c;font-weight:700;} .cs-result{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-left:6px solid #f97316;border-radius:12px;padding:14px 16px;margin:0 0 14px;} .cs-result.ok{border-left-color:#16a34a;}
+.cs-score{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px;} .cs-score b{font-size:32px;color:var(--navy);} .cs-score span{font-weight:700;color:var(--ink-soft);}
+.cs-item{border-top:1px solid var(--line,#e5e7eb);padding:8px 0;font-size:13.5px;} .cs-item-hd{display:flex;gap:6px;align-items:baseline;} .cs-item-hd span{margin-left:auto;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
+.cs-item.ok .cs-item-hd{color:#166534;} .cs-item.bad .cs-item-hd{color:#991b1b;} .cs-item ul{margin:4px 0 0 22px;padding:0;color:#7f1d1d;font-size:13px;} .cs-tnote{margin-top:4px;font-size:13px;color:#14532d;background:#f0fdf4;border-radius:6px;padding:4px 8px;}
+.cs-review ul{margin:6px 0 0 20px;padding:0;font-size:13px;color:#14532d;} .cs-rv-ts{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px;} .cs-rv-t{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv-t input{padding:6px 8px;font:inherit;font-weight:400;}
 .cs-evlist{margin:6px 0 10px 18px;padding:0;font-size:13px;} .cs-rv{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0 4px;} .cs-rv label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv input{width:90px;padding:6px 8px;} .cs-rv-c{flex:1 1 280px;} .cs-rv textarea{width:100%;padding:6px 8px;font:inherit;}
 @media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .cs-tray{position:static;max-height:none;} }
 `; document.head.appendChild(st); })();

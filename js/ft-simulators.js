@@ -142,13 +142,17 @@ function renderCard(a, i){
   </div>`;
 }
 function renderSimulators(){
+  // The Calendar Management Training Practice Lab: the lesson's mock calls and the drag-and-drop Calendar Scheduler together.
+  const labIdx = window.FTCalSimCard ? ACTIVITIES.findIndex(a=>a.kind==="call" && a.lesson===5) : -1;
+  if(window.FTCalSimLoad) FTCalSimLoad();
   const group = (kind, h, sub)=>{
-    const cards = ACTIVITIES.map((a,i)=>a.kind===kind ? renderCard(a,i) : "").join("");
+    const cards = ACTIVITIES.map((a,i)=>a.kind===kind && i!==labIdx ? renderCard(a,i) : "").join("");
     return `<section class="fts-group"><h2>${h}</h2><p class="fts-sub">${sub}</p><div class="fts-grid">${cards}</div></section>`;
   };
   return `<div class="fts-hero"><h1>🛠 Simulators</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
-    ${window.FTCalSimCard ? FTCalSimCard() : ""}
+    ${labIdx >= 0 ? `<section class="fts-group"><h2>🧪 Calendar Management Training Practice Lab</h2><p class="fts-sub">Practice for Lesson 5 (Calendaring &amp; Appointment Setting). Your calendar scores are saved to your own record for your trainer.</p>
+      <div class="fts-grid">${FTCalSimCard()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
     ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each call is a random caller on that line.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
     <section class="fts-group"><h2>🧰 All simulators</h2>
