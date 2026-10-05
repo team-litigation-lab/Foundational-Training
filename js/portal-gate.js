@@ -49,7 +49,7 @@ var notice = "";
 function esc(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
 window.portalGate = {
-  active: function(){ return typeof state !== "undefined" && state.portalOnly === true; },
+  active: function(){ return true; },
   // Headers for the trainee sign-in call: a signed-in trainee's own token lets the Worker renew their session.
   headers: function(){
     var h = {"Content-Type":"application/json"};
@@ -59,7 +59,7 @@ window.portalGate = {
   // Runs at boot, once the engine has loaded: learns whether the Portal is the only way in, then signs in whoever arrived with a ticket.
   init: async function(){
     try{ await authStatus(); }catch(e){}
-    if(!ticket || !state.portalOnly){ uncover(150); return; }
+    if(!ticket){ uncover(150); return; }
     var t = ticket; ticket = "";
     // Arriving from the Portal lands on the dashboard (it has its own "Resume where you left off" button) instead of
     // jumping straight into the last slide: the engine's automatic resume is skipped once, then restored for that button.
@@ -153,21 +153,15 @@ window.portalGate = {
       + '#gate-box .go{display:block;width:100%;box-sizing:border-box;padding:12px;border-radius:6px;border:0;background:var(--acc);color:#0f2148;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:center;text-decoration:none;cursor:pointer}'
       + '#gate-box .go:hover{background:var(--acc-h)}'
       + '</style>'
-      + '<div id="gate-box" class="'+(startTab === "admin" ? "admin" : "")+'"><div class="gb">'
+      + '<div id="gate-box" class="admin"><div class="gb">'
       +   '<div class="brand"><img src="/favicon.png" alt="" onerror="this.style.display=\'none\'"><div><h1>Legal Support Help</h1><span>Training Interface Access</span></div></div>'
-      +   '<div class="tabs"><button type="button" class="tab'+(startTab === "admin" ? "" : " on")+'" data-t="trainee" onclick="portalGate.tab(\'trainee\')">Trainee Portal</button>'
-      +   '<button type="button" class="tab'+(startTab === "admin" ? " on" : "")+'" data-t="admin" onclick="portalGate.tab(\'admin\')">Admin Portal</button></div>'
-      +   '<div class="pane'+(startTab === "admin" ? "" : " on")+'" data-p="trainee">'
-      +     '<p style="font-weight:700;color:#fff;margin-bottom:6px">'+program+'</p>'
+      +   '<div class="pane on" data-p="admin">'
       +     (msg ? '<p class="err">'+esc(msg)+'</p>' : '')
-      +     '<p>You sign in once, on the LSH Training Portal, and open this training from there. There is no separate sign-in here.</p>'
-      +     '<a class="go" href="'+PORTAL_HOME+'">Go to the LSH Training Portal</a>'
-      +   '</div>'
-      +   '<div class="pane'+(startTab === "admin" ? " on" : "")+'" data-p="admin">'
-      +     '<p>Trainers and administrators sign in here with the admin password, on every platform.</p>'
+      +     '<p>Administrators sign in with the admin password. Trainees are signed in automatically when they open this training from the LSH Training Portal.</p>'
       +     '<div id="gate-aerr" class="err" style="display:none;margin:0 0 10px;font-size:12px"></div>'
       +     '<label for="gate-apass">Admin password</label><input id="gate-apass" type="password" autocomplete="off" onkeydown="if(event.key===\'Enter\')portalGate.admin()">'
       +     '<button type="button" class="go" onclick="portalGate.admin()">Sign in</button>'
+      +     '<p style="margin:14px 0 0;font-size:12px;text-align:center"><a href="'+PORTAL_HOME+'" style="color:#94a3b8">Trainee? Open this from the LSH Training Portal</a></p>'
       +   '</div>'
       + '</div></div>';
   }
