@@ -33,13 +33,13 @@ const S = {id:null, data:null, loading:false, err:"", scn:0, place:{}, result:nu
 const scn = () => C.SCENARIOS[S.scn];
 
 /* ---------- the trainee's saved record ---------- */
-const blank = () => ({v:1, drafts:{}, attempts:[], external:[]});
+const blank = () => ({v:1, drafts:{}, attempts:[], submissions:[], external:[]});
 async function load(){
   if(!isTrainee()){ S.data = blank(); return; }
   S.loading = true; S.err = ""; S.id = state.traineeId;
   try{
     const d = (await sharedGet("calsim:" + S.id)) || blank();
-    d.drafts = d.drafts || {}; d.attempts = d.attempts || []; d.external = d.external || [];
+    d.drafts = d.drafts || {}; d.attempts = d.attempts || []; d.submissions = d.submissions || []; d.external = d.external || [];
     S.data = d;
   }catch(err){ S.data = blank(); S.err = "Couldn’t load your saved work. You can still practice; check your connection to save."; }
   S.loading = false;
@@ -66,20 +66,22 @@ function regrade(a){ const s = C.SCENARIOS.find(x => x.id === a.scn); return s ?
 
 /* ---------- the page ---------- */
 const hh = m => C.fmt(m);
-function blockHTML(ev, req, bad){
+function blockHTML(ev, req, bad, ro){
   const k = ev.kind || "";
   const style = `top:${px(ev.start)}px;height:${Math.max(px(ev.end) - px(ev.start), 12)}px;`;
   const pad = ev.buffer ? `<div class="cs-buf" style="top:${px(ev.start - ev.buffer)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div><div class="cs-buf" style="top:${px(ev.end)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div>` : "";
+  if(req && ro) return pad + `<div class="cs-ev cs-ro ${bad ? "cs-bad" : ""}"><b>${e(ev.title)}</b><span>${hh(ev.start)} – ${hh(ev.end)}</span></div>`;
   if(req) return pad + `<div class="cs-ev cs-req ${bad ? "cs-bad" : ""} ${S.sel === ev.id ? "cs-sel" : ""}" data-req="${ev.id}" tabindex="0" role="button" aria-label="${e(ev.title)}, ${C.DAYS[ev.day]} ${hh(ev.start)}. Arrow keys move it, Delete removes it." style="${style}"><b>${e(ev.title)}</b><span>${hh(ev.start)} – ${hh(ev.end)}</span></div>`;
   return pad + `<div class="cs-ev cs-fixed cs-${k}" style="${style}" title="${e(ev.note || ev.title)}"><b>${e(ev.title)}</b><span>${hh(ev.start)} – ${hh(ev.end)}</span></div>`;
 }
-function gridHTML(){
-  const s = scn(), evs = C.eventsOf(s, S.place);
+function gridHTML(s, place, ro){
+  s = s || scn(); place = place || S.place;
+  const evs = C.eventsOf(s, place);
   const bad = id => { const me = evs.find(x => x.id === id); return me.start < C.OPEN || me.end > C.CLOSE || evs.some(o => o.id !== id && C.overlap(me, o, 0)); };
   const times = []; for(let m = TOP; m < BOTTOM; m += 60) times.push(`<div class="cs-time" style="top:${px(m) - 7}px">${hh(m)}</div>`);
   const cols = C.DAYS.map((name, d) => {
     const blocks = s.fixed.filter(f => f.day === d).map(f => blockHTML(f, false)).join("")
-      + s.requests.filter(r => S.place[r.id] && S.place[r.id].day === d).map(r => blockHTML({id:r.id, title:r.title, day:d, start:S.place[r.id].start, end:S.place[r.id].start + r.dur}, true, bad(r.id))).join("");
+      + s.requests.filter(r => place[r.id] && place[r.id].day === d).map(r => blockHTML({id:r.id, title:r.title, day:d, start:place[r.id].start, end:place[r.id].start + r.dur}, true, bad(r.id), ro)).join("");
     return `<div class="cs-colwrap"><div class="cs-dayhd">${name}</div><div class="cs-col" data-day="${d}" style="height:${px(BOTTOM)}px">${blocks}</div></div>`;
   }).join("");
   return `<div class="cs-grid"><div class="cs-times"><div class="cs-dayhd">&nbsp;</div><div class="cs-timecol" style="height:${px(BOTTOM)}px">${times.join("")}</div></div>${cols}</div>`;
@@ -99,9 +101,10 @@ function resultHTML(){
       ${i.perfect ? "" : `<ul>${i.checks.filter(c => !c.ok).map(c => `<li><b>${e(c.label)}:</b> ${e(c.why)}</li>`).join("")}</ul>`}</div>`).join("")}
     <p class="cs-hint">${g.passed && g.pct === 100 ? "Perfect schedule." : "Fix what’s marked, then check again. Every attempt is saved for your trainer."}</p></div>`;
 }
+function subOf(id){ return S.data ? S.data.submissions.filter(x => x.scn === id).pop() : null; }
 function historyHTML(){
   if(!S.data) return "";
-  const rows = C.SCENARIOS.map(s => { const n = S.data.attempts.filter(a => a.scn === s.id).length, b = bestOf(s.id); return `<span class="cs-pill ${b >= C.PASS ? "ok" : ""}">${e(s.title.split(" · ")[0])}: ${n ? `best ${b}% · ${n} attempt${n === 1 ? "" : "s"}` : "not tried"}</span>`; }).join("");
+  const rows = C.SCENARIOS.map(s => { const n = S.data.attempts.filter(a => a.scn === s.id).length, b = bestOf(s.id), sb = subOf(s.id); return `<span class="cs-pill ${b >= C.PASS ? "ok" : ""}">${e(s.title.split(" · ")[0])}: ${n ? `best ${b}% · ${n} attempt${n === 1 ? "" : "s"}` : "not tried"}</span>${sb ? `<span class="cs-pill ok">📤 ${e(s.title.split(" · ")[0])} submitted ${e(new Date(sb.at).toLocaleDateString())}</span>` : ""}`; }).join("");
   const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Simulator")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
   return `<div class="cs-hist">${rows}${ext}</div>`;
 }
@@ -117,6 +120,7 @@ function renderPage(){
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
     <div class="cs-main">${trayHTML()}<div class="cs-gridwrap">${gridHTML()}</div></div>
     <div class="cs-actions"><button class="btn btn-navy" onclick="FTCalSim.check()">✅ Check my schedule</button>
+      <button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit calendar to my trainer</button>
       <button class="btn btn-ghost" onclick="FTCalSim.reset()">↺ Clear the week</button><span class="cs-save" id="csSave"></span></div>
     ${resultHTML()}${historyHTML()}
     <div class="card cs-more"><b>🔗 Also graded for your trainer</b><p>The Portal’s Calendaring Simulator is a second week of scheduling conflicts. It opens in its own tab with your name and batch, so its score is saved for your trainer too.</p>
@@ -235,8 +239,24 @@ function check(){
   const el = document.getElementById("csResult"); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"nearest"});
   toast(g.passed ? `Passed: ${g.pct}%` : `${g.pct}%. Fix what’s marked and try again.`);
 }
+function submit(){
+  const s = scn();
+  if(!Object.keys(S.place).length){ toast("Put at least one request on the calendar before submitting."); return; }
+  const left = s.requests.filter(r => !S.place[r.id]).length;
+  const prev = subOf(s.id);
+  if(!confirm(`Submit this calendar for ${s.title.split(" · ")[0]} to your trainer?` + (left ? `\n\n${left} request${left === 1 ? " is" : "s are"} still not scheduled.` : "") + (prev ? "\n\nThis replaces your earlier submission (your trainer keeps both)." : ""))) return;
+  const g = C.grade(s, S.place);
+  if(S.data && isTrainee()){
+    S.data.submissions.push({scn:s.id, at:new Date().toISOString(), place:Object.assign({}, S.place), score:g.score, max:g.max, pct:g.pct});
+    if(S.data.submissions.length > 20) S.data.submissions = S.data.submissions.slice(-20);
+    queueSave();
+  }
+  S.result = g; repaint();
+  document.querySelector(".cs-actions").insertAdjacentHTML("afterend", resultHTML());
+  toast(isTrainee() ? "Calendar submitted to your trainer." : "Trainer preview: nothing was submitted.");
+}
 window.FTCalSim = {
-  check,
+  check, submit,
   reset(){ S.place = {}; S.result = null; S.sel = null; if(S.data){ S.data.drafts[scn().id] = {}; queueSave(); } repaint(); },
   pick(i){ S.scn = i; S.result = null; S.sel = null; S.place = C.clean(scn(), (S.data && S.data.drafts[scn().id]) || {}); render(); },
   open(){ goto("calsim"); }
@@ -263,7 +283,7 @@ window.addEventListener("message", ev => {
 });
 
 /* ---------- admin: every trainee's scores ---------- */
-const A = {rows:null, loading:false, open:{}, closed:{}};
+const A = {rows:null, loading:false, open:{}, closed:{}, view:{}};
 async function loadAdmin(){
   A.loading = true;
   try{
@@ -271,7 +291,7 @@ async function loadAdmin(){
     const people = await sharedGetMany(ids.map(id => "trainee:" + id));
     const rows = ids.map((id, i) => { const r = people[i]; return {id, name:(r && r.name) || id, batch:(r && r.batch) || "", archived:!!(r && r.archived)}; }).filter(x => !x.archived);
     const recs = await ftGetMany(rows.map(x => "calsim:" + x.id));
-    rows.forEach((x, i) => { x.d = recs[i] || blank(); x.d.attempts = x.d.attempts || []; x.d.external = x.d.external || []; });
+    rows.forEach((x, i) => { x.d = recs[i] || blank(); x.d.attempts = x.d.attempts || []; x.d.submissions = x.d.submissions || []; x.d.external = x.d.external || []; });
     A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }catch(err){ A.rows = []; }
   A.loading = false;
@@ -284,11 +304,11 @@ function renderAdminScores(){
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
   const best = (x, id) => x.d.attempts.filter(a => a.scn === id).reduce((m, a) => Math.max(m, regrade(a).pct), -1);
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
-    <p class="cs-hint">Each trainee’s Calendar Scheduler attempts. Scores are worked out again from the saved calendar, not read from a saved number. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
+    <p class="cs-hint">Each trainee’s submitted calendars (👁 View calendar shows exactly what they submitted) and practice attempts. Scores are worked out again from the saved calendar, not read from a saved number. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
       ${A.closed[b] ? "" : groups[b].map(x => `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
         ${C.SCENARIOS.map(s => { const v = best(x, s.id); return `<span class="cs-pill ${v >= C.PASS ? "ok" : ""}">${e(s.title.split(" · ")[0])}: ${v < 0 ? "not tried" : v + "%"}</span>`; }).join("")}
-        <span class="fp-muted">${x.d.attempts.length} attempt${x.d.attempts.length === 1 ? "" : "s"}</span></div>
+        <span class="fp-muted">${x.d.attempts.length} attempt${x.d.attempts.length === 1 ? "" : "s"}</span>${x.d.submissions.length ? `<span class="cs-pill ok">📤 ${x.d.submissions.length} submitted</span>` : `<span class="cs-pill">Not submitted</span>`}</div>
         ${A.open[x.id] ? attemptsHTML(x) : ""}</div>`).join("")}</section>`).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has tried the Calendar Scheduler yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.refresh()">Refresh</button></div></div>`;
@@ -301,11 +321,19 @@ function attemptsHTML(x){
       ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} ${e(i.title)} <span>${i.pts} / ${i.weight}</span></div>${i.perfect ? "" : `<ul>${i.checks.filter(c => !c.ok).map(c => `<li>${e(c.why)}</li>`).join("")}</ul>`}</div>`).join("")}</details>`;
   }).join("");
   const ext = x.d.external.slice().reverse().map(z => `<div class="cs-att-ext">🔗 ${e(new Date(z.at).toLocaleString())} · ${e(z.title)} · <b>${Math.round(z.score)}/${Math.round(z.max)}</b></div>`).join("");
-  return `<div class="cs-atts">${rows || '<div class="fp-muted">No attempts.</div>'}${ext}</div>`;
+  const subs = x.d.submissions.slice().reverse().map((z, i) => {
+    const s = C.SCENARIOS.find(q => q.id === z.scn); if(!s) return "";
+    const place = C.clean(s, z.place), g = C.grade(s, place), k = x.id + "|" + z.at, shown = !!A.view[k];
+    return `<div class="cs-sub"><div class="cs-sub-hd">📤 <b>${e(s.title)}</b> · submitted ${e(new Date(z.at).toLocaleString())} · <b>${g.pct}%</b> ${g.passed ? "✅" : ""} · ${Object.keys(place).length} of ${s.requests.length} scheduled${i === 0 ? ' <span class="cs-pill ok">latest</span>' : ""}
+      <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.view('${e(k)}')">${shown ? "Hide calendar" : "👁 View calendar"}</button></div>
+      ${shown ? `<div class="cs-gridwrap">${gridHTML(s, place, true)}</div><div class="cs-sub-g">${g.items.map(it => `<div class="cs-item ${it.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${it.perfect ? "✓" : "✗"} ${e(it.title)} <span>${it.pts} / ${it.weight}</span></div>${it.perfect ? "" : `<ul>${it.checks.filter(c => !c.ok).map(c => `<li>${e(c.why)}</li>`).join("")}</ul>`}</div>`).join("")}</div>` : ""}</div>`;
+  }).join("");
+  return `<div class="cs-atts"><div class="cs-lab">📤 Submitted calendars</div>${subs || '<div class="fp-muted">Nothing submitted yet.</div>'}<div class="cs-lab">Practice attempts</div>${rows || '<div class="fp-muted">No attempts.</div>'}${ext}</div>`;
 }
 window.FTCalAdmin = {
   row(id){ A.open[id] = !A.open[id]; render(); },
   batch(b){ A.closed[b] = !A.closed[b]; render(); },
+  view(k){ A.view[k] = !A.view[k]; render(); },
   refresh(){ A.rows = null; render(); }
 };
 
@@ -376,7 +404,7 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-item.ok .cs-item-hd{color:#166534;} .cs-item.bad .cs-item-hd{color:#991b1b;} .cs-item ul{margin:4px 0 0 22px;padding:0;color:#7f1d1d;font-size:13px;}
 .cs-hist{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;} .cs-pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700;margin:0 4px 0 6px;} .cs-hist .cs-pill{margin:0;} .cs-pill.ok{background:#dcfce7;color:#166534;}
 .cs-more{padding:14px 18px;} .cs-more p{margin:4px 0 10px;font-size:13.5px;color:var(--ink-soft);} .cs-more a{text-decoration:none;}
-.cs-admin{padding:16px 18px;} .cs-atts{margin:6px 0 10px 18px;} .cs-att{margin:4px 0;font-size:13px;} .cs-att summary{cursor:pointer;} .cs-att-ext{font-size:13px;margin:4px 0;}
+.cs-admin{padding:16px 18px;} .cs-lab{margin:10px 0 4px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);} .cs-sub,.cs-sub *{text-transform:none;letter-spacing:normal;} .cs-sub{border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:8px 12px;margin:6px 0;} .cs-sub-hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;} .cs-sub .cs-gridwrap{margin:8px 0;} .cs-ro{background:#fb923c;color:#1f2937;border:1px solid #ea580c;z-index:3;} .cs-ro.cs-bad{background:#fecaca;border-color:#dc2626;} .btn-orange{background:#f97316;color:#111827;font-weight:800;border:0;} .cs-atts{margin:6px 0 10px 18px;} .cs-att{margin:4px 0;font-size:13px;} .cs-att summary{cursor:pointer;} .cs-att-ext{font-size:13px;margin:4px 0;}
 @media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .cs-tray{position:static;max-height:none;} }
 `; document.head.appendChild(st); })();
 })();
