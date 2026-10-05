@@ -169,7 +169,7 @@ function candidateIds(name, batch) {
 // settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 function canRead(tok, key) {
@@ -205,6 +205,14 @@ async function traineeWrite(env, tok, key, value) {
     // Process Questions (js/ft-process.js): the trainee's own answer sheets.
     if (value.length > 400000) return "The answers are too large to save";
     await kv.put(key, value); return null;
+  }
+  if (key === `calsim:${id}`) {
+    // Calendar Scheduler (js/ft-calendar.js): the trainee's draft calendars and submissions. The trainer's reviews
+    // (score and comment) are never the trainee's to write: they keep whatever the record already has.
+    if (value.length > 200000) return "The calendar record is too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    incoming.reviews = (existing && existing.reviews) || {};
+    await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `feedback:${id}`) {
     // Trainees (auto-review) may add days and mark reviews read — never rewrite a trainer's review.

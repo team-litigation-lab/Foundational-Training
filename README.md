@@ -70,6 +70,21 @@ Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/r
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
+## 📅 Calendaring Simulators (drag-and-drop, Google Calendar style)
+
+One calendaring practice area for Lesson 5 (Calendaring & Appointment Setting), at `#/calsim`, shown on **🛠 Simulators** as **📅 Calendaring Simulators** with the lesson's Calendar Management Mock Calls beside it. It has three tracks (`TRACKS` in `js/ft-calsim-core.js`):
+- **🎓 Standard Training** (Foundational · Calendar Management): two weeks, Attorney Rivera (core) and Attorney Chen (trial week).
+- **⚖️ Litigation Week** (Case Management): a deposition, a hearing and a mediation are fixed; prep, debrief, client and expert calls go around them.
+- **🏢 Executive Week** (EA / PA): board meeting, investor call, offsite visit and all-hands are fixed; prep, focus time, interviews and meetings go around them.
+
+- **Files:** `js/ft-calsim-core.js` (tracks, weeks, the attorney's rules, `review()`; no page code, so `node` can test it) and `js/ft-calendar.js` (the page and the admin tab). Both load before `js/ft-simulators.js`. Every week is checked to have a perfect answer. Add a week or a track by adding to `SCENARIOS` / `TRACKS`.
+- **Google Calendar set-up:** Eastern Time, a 15-minute grid, a 15-minute gap between events (`gap`), and an event editor like Google's (double-click or drag out a new event): title, guests, **Google Meet**, an **email reminder 1 day before** and a description. The week lists the tasks to schedule; the trainee builds their own calendar: drag on an empty spot to add, drag to move, drag the bottom edge to resize, ✕ deletes (keyboard: arrows move, Shift+arrows resize, Enter edits, Delete removes). Events that clash, break a court's travel time, break the 15-minute gap or fall outside 9 to 5 show red.
+- **At the bottom of the calendar:** **💾 Save changes** (saves now; it also autosaves), **🤖 Run automated review**, **📤 Submit to my trainer**.
+- **Automated review (the attorney's rules):** `FTCalCore.review()` matches each event to a task by its name (60% of the task's words), then checks each task: on the calendar, no conflict, the gap and travel buffer, business hours, long enough, a description, Google Meet and the reminder where the task calls for them, and its own rules (days, time window, finish before / start after an event, travel buffer). Each task is worth its weight; the week is scored out of 100 and 80% passes.
+- **Manual feedback from the trainer:** **Admin → 📅 Calendar Scores** lists trainees by batch. Open a submission to see the calendar as submitted, its automated review, and the feedback form: a score out of 100, an overall comment and a comment on each task. The trainee sees it on their page. `worker.js` lets a trainee write their drafts, review runs and submissions but always keeps the trainer's `reviews` as they were.
+- **Scores per trainee:** all in the trainee's own `calsim:<id>` record (`drafts`, `autos`, `submissions` with their automated score, `reviews`). The admin tab shows, per trainee and week, the automated % of their latest submission and the trainer's score; the automated score is always worked out again from the saved calendar.
+- **The Portal's own calendar simulators** (its hub cards "Calendaring" and "Google Calendar Simulator") live in the Portal repo, not here: **🧰 All simulators** shows them as one **Calendaring Simulators (Portal)** link, opened with `program=FT`, the trainee's name and batch. Any simulator (Portal or CMS) that sends this page `postMessage({type:"lsh-sim-result", sim:"calendar", score, max, title})` has the result added to the same record. **The Portal and CMS don't send that yet, and their hub cards still need the rename there.**
+
 ## Training Orientation and Rules
 
 **Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
