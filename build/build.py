@@ -86,6 +86,7 @@ rep('doc.save("LSH_EA-PA_Platform_Orientation.pdf")', 'doc.save("LSH_FT_Platform
 rep("LSH-EAPA-", "LSH-FT-")
 rep("Day ${d.id} of 10<", "${ftLabel(d)}<")
 # No Knowledge Checks: the last slide finishes the lesson (js/ft-updates.js handles the click).
+rep("  return Math.max(0, Math.min(last, maxR, total-1));", "  // Any slide can be opened (nothing is locked), so the saved place wins even when it is past the furthest slide reached with Next.\n  return Math.max(0, Math.min(last, total-1));")
 rep("Continue to Knowledge Check &rarr;", "✓ Finish lesson")
 rep("🎉 That's everything for Day ${d.id} — the Knowledge Check is the last step to mark this day complete.",
     "🎉 That's everything for this lesson — click Finish lesson to mark it complete.")
@@ -131,7 +132,7 @@ s = re.sub(r'<script src="/js/portal-link\.js[^"]*"></script>\n?', '', s)   # th
 k = s.rfind("</body>")
 if k < 0:
     sys.exit("MISSING: </body>")
-s = s[:k] + f'<script src="/js/portal-link.js?v={build_tag}"></script>\n' + s[k:]
+s = s[:k] + f'<script src="/js/portal-link.js?v={build_tag}"></script>\n<script src="/js/show-password.js?v=1"></script>\n' + s[k:]
 # 🧭 Blueprints (js/blueprint-content.js: this program's Trainer blueprint; js/lsh-blueprint-course.js and js/lsh-blueprint.js:
 # the same files in every LSH course), after this program's scripts. The engine's page may carry them already: move them here.
 s = re.sub(r'<!-- 🧭 Blueprints:[^\n]*-->\n|<script src="/js/(blueprint-content|lsh-blueprint-course|lsh-blueprint)\.js\?v=[^"]*"></script>\n', "", s)
@@ -142,6 +143,9 @@ s = s[:k] + ('<!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js)
 # The LSH dashboard layout (js/lsh-dashboard.js, the same file in every LSH course repo) loads last of all.
 k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/lsh-dashboard.js?v={build_tag}"></script>\n' + s[k:]
+# The lesson cards' buttons as one full-width grid with lines (js/ft-card-grid.js) wrap the finished card, so after it.
+k = s.rfind("</body>")
+s = s[:k] + f'<script src="/js/ft-card-grid.js?v={build_tag}"></script>\n' + s[k:]
 
 
 # 🔐 Trainees sign in on the LSH Training Portal only (js/portal-gate.js). The gate file loads in <head>, before the engine,

@@ -25,7 +25,7 @@ async function workerChecks() {
         ['surprise-task-day2', JSON.stringify({ title: 'An EA/PA task' })]
     ]);
     const env = {
-        ADMIN_PASSPHRASE: 'ci-pass', SESSION_SECRET: 'ci-secret',
+        MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret',
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) }
     };
     const call = async (p, body, token) => {

@@ -11,13 +11,13 @@ The training platform for the *Revised 18-Day Foundational Training Program* (Tr
 
 **🏠 Main Portal (admins):** while an admin is signed in, the top bar has **🏠 Main Portal** and the Admin screen has **← Back to Main Portal** (next to Log out). Both open the LSH Training Portal's Training Directory (`https://cm-training-activity.pages.dev/programs.html`), where admins open each program. Trainees and the 👁 Trainee view don't show them. It's `js/portal-link.js`, the same file in every LSH course repo (EA-PA-TRAINING, Case-Management-Training, propertydamageclaimstraining, Foundational-Training); change it in all of them.
 
-**🔐 Trainees sign in on the Main Portal only.** A trainee logs in once, on the LSH Training Portal, and opens this program from there: this site shows them no sign-in form. The Portal sends them here with a signed, short-lived ticket (`https://<this site>/?ticket=<ticket>`); `js/portal-gate.js` posts it to `/api/auth/portal`, the Worker checks it, and the trainee is registered, approved and resumed exactly as before (same `trainee:<id>` records, so every current registration, progress and approval is kept). Someone who opens this site's link directly sees a note with a **Go to the LSH Training Portal** button instead of a form, and the Worker refuses a name + batch typed here (`/api/auth/trainee` answers 403 `portal-required`), except to renew the session of a trainee already signed in on that device. **Admins sign in on the Portal too:** the Portal's launch step sends them here with an admin ticket (`{r: "a", exp}`), so they open the admin screen without the password. Only someone who opens this link directly is asked for it, through the small *Sign in with your passphrase* link on that note (and 🛡 Admin), which uses `ADMIN_PASSPHRASE` or `MASTER_ADMIN_PASSWORD`. Every future LSH program gets this by loading the same `js/portal-gate.js` and the same Worker endpoints; it is the same file in every course repo.
+**🔐 Trainees sign in on the Main Portal only.** A trainee logs in once, on the LSH Training Portal, and opens this program from there: this site shows them no sign-in form. The Portal sends them here with a signed, short-lived ticket (`https://<this site>/?ticket=<ticket>`); `js/portal-gate.js` posts it to `/api/auth/portal`, the Worker checks it, and the trainee is registered, approved and resumed exactly as before (same `trainee:<id>` records, so every current registration, progress and approval is kept). Someone who opens this site's link directly sees a note with a **Go to the LSH Training Portal** button instead of a form, and the Worker refuses a name + batch typed here (`/api/auth/trainee` answers 403 `portal-required`), except to renew the session of a trainee already signed in on that device. **Admins always type the admin password here** (`MASTER_ADMIN_PASSWORD`, the Portal's master admin password): the Portal's launch step sends them to this site's *Admin Portal* tab (`?admin=1`), and an admin ticket never signs anyone in (the Worker answers 403 `admin-password`). Every future LSH program gets this by loading the same `js/portal-gate.js` and the same Worker endpoints; it is the same file in every course repo.
   - **Turning it on** needs the same secret on both sides: `wrangler secret put PORTAL_SSO_SECRET` here and on the Portal. Until it is set here, `/api/auth/status` reports `portalOnly: false` and the old name + batch form stays, so nothing locks anyone out before the Portal is ready.
   - **The ticket** (the Portal makes one when a trainee opens a program; good for 10 minutes at most, so a copied link is no use later): `payload = base64url(JSON.stringify({first, last, b: <batch>, exp: Date.now() + 5*60*1000}))`, `ticket = payload + "." + base64url(HMAC-SHA256(key = "portal-sso:" + PORTAL_SSO_SECRET, message = payload))`. `first`, `last` and `b` are the trainee's name and batch as registered on the Portal, which must be the same as their records here (the trainee id is made from them). The Portal must sign the ticket on its server, never in the browser, or the secret is public.
   - **Needs the Portal's side** (EA-PA / `cm-training-activity` repo, not this one): its program cards for trainees open this site with a fresh ticket. The *Go to the LSH Training Portal* button here opens `PORTAL_HOME` in `js/portal-gate.js`; change it if the trainees' portal page isn't the site's home page.
   - The Worker side is `portalOnly`, `readPortalTicket` and `/api/auth/portal` in `worker.js`; `build/build.py` patches the engine's sign-in screen, request and boot to call the gate.
 
-Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`); Lesson 9 is still its Canva deck until its PDF is added. Lessons are named by their training title, not by day.
+Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`). Lessons are named by their training title, not by day.
 
 The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
 
@@ -34,11 +34,14 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 6 | Intake Specialist Training | ✅ the deck's pages as slides (105, from its PDF in two parts) |
 | 7 | Claims Specialist Training | ✅ the deck's pages as slides (77, from its PDF) |
 | 8 | Medical Records Specialist Training | ✅ the deck's pages as slides (55, from its PDF) |
-| 9 | Lien Negotiator Training | ✅ deck, then Word Game 1 (playable) |
+
+**Lien Negotiator Training** (id 9) is off the standard training: it becomes a separate training. Its file is `build/lessons/off/lesson09.js` (the Canva deck and Word Game 1, `ft/day17/word-game-1.html`); its Process Questions sheet and its Simulators demo (Reduction Request, Settlement Release Forms and Closing Statement) stay in `js/ft-process.js` and `js/ft-simulators.js`, which show only the items of lessons on the platform, so they come back with the lesson.
 
 Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skips. To bring one back, move its file into `build/lessons/` and rebuild; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
 
 Each lesson card has **▶ Video Presentation** (the lesson's `video`: its AI Assisted Discussion video from the curriculum), which plays in the pop-out viewer. Lessons are finished from their last slide (✓ Finish lesson). **Videos stay locked** (🔒 Video Presentation) until a trainer unlocks them in **Admin → 📅 Open Lessons → 🎬 Unlock Videos**, for all batches or one batch (`settings:openvideos`, same shape as `settings:opendays`). Trainers and 👁 Trainee view always see them.
+
+The card's buttons form **one full-width grid with lines** (`js/ft-card-grid.js`, loaded after `js/lsh-dashboard.js`): Start / Review fills the top row edge to edge and ▶ Video Presentation the row under it, separated by thin lines like a table (the same look as the EA/PA day cards). The Training Orientation and Rules card keeps its navy Start, also edge to edge.
 
 ### Virtual Assistant Essentials: the deck's own pages
 
@@ -48,7 +51,7 @@ Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each pag
 
 ### Native slides (rebuilt from a deck)
 
-**Topic dividers.** Lessons 1, 2, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 9 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
+**Topic dividers.** Lessons 1, 2, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 8 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
 - **Where topics start:** `FT_TOPICS` in `js/ft-updates.js`, with each topic's first page by page id. Lesson 1 has 10 topics, Lesson 2 has 11, Lesson 4 has 5 and Lesson 7 has 12.
 - **Adding pages:** new pages don't move the dividers. To start a topic somewhere else, change its page id there.
 - **Canva lessons:** a lesson that is one Canva deck has no dividers, because the deck has its own title page.
@@ -69,7 +72,7 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
 
 **Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
 
-- **It isn't one of the program's 9 lessons.**
+- **It isn't one of the program's 8 lessons.**
   - It's always open, for every trainee and batch.
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
@@ -120,21 +123,20 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 ## Process Questions and the Knowledge Checks
 
-Every lesson's process questions are its **Knowledge Check**, answered in writing on the platform and graded like the EA/PA Knowledge Checks. All seven answer sheets are in `PROCESS_SETS` (`js/ft-process.js`):
+Every lesson's process questions are its **Knowledge Check**, answered in writing on the platform and graded like the EA/PA Knowledge Checks. All seven answer sheets are in `PROCESS_SETS` (`js/ft-process.js`), with every question from the curriculum's full lists: 74 in all. The curriculum also has a shorter list after "If time is limited, use only five…"; that note is for the live classroom discussion, so the Knowledge Checks use the full lists.
 
 | Lesson | Answer sheet | Knowledge Check |
 |---|---|---|
 | 1 Virtual Assistant Essentials | VA Essentials | 10 questions |
-| 2 Law Firm Communication | Law Firm Communications Training | 5 |
-| 3 Personal Injury Process Flow | PI Workflow and Reception Training, questions 1–2 | 2 |
-| 4 Receptionist Training | the same sheet, questions 3–5 | 3 |
+| 2 Law Firm Communication | Law Firm Communications Training | 12 |
+| 3 Personal Injury Process Flow | PI Workflow and Reception Training, questions 1–3 | 3 |
+| 4 Receptionist Training | the same sheet, questions 4–10 | 7 |
 | 5 Calendaring & Appointment Setting | — | none: the lesson finishes as before |
-| 6 Intake Specialist Training | Intake Specialist Training | 5 |
-| 7 Claims Specialist Training | Claims Specialist Training | 7 |
-| 8 Medical Records Specialist Training | Medical Records Specialist Training | 5 |
-| 9 Lien Negotiator Training | Lien Negotiator | 5 |
+| 6 Intake Specialist Training | Intake Specialist Training | 10 |
+| 7 Claims Specialist Training | Claims Specialist Training | 10 |
+| 8 Medical Records Specialist Training | Medical Records Specialist Training | 10 |
 
-A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1], 4:[2,3,4]}`).
+A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}`).
 
 **The Knowledge Check** (`#/kc`):
 - **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
@@ -218,7 +220,6 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 | LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | MC-01, MC-02, MC-12 | Training Library |
 | Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | MC-01, MC-15, MC-08 | Training Library |
 | LV (Lien Verification) Request Demo | Medical Records Specialist | MC-09, MC-15, MC-05 | Training Library |
-| Reduction Request, Settlement Release Forms and Closing Statement Demo | Lien Negotiator | MC-11, MC-06 | Training Library |
 
 Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
 
@@ -341,7 +342,7 @@ Every edit checks that its anchor exists, so the build stops with an error if th
 - **PR previews** (Cloudflare runs `wrangler preview` for non-production branches) use their own KV namespace, `LSH_KV2` (`previews` in `wrangler.json`), so testing a PR never touches live trainee data. Cron triggers don't run on previews.
 - `.assetsignore` keeps the Worker, config, build files and Markdown out of the served files.
 - Secrets:
-  - `ADMIN_PASSPHRASE`: trainer sign-in. If it isn't set, `MASTER_ADMIN_PASSWORD` (the LSH Training Portal's master admin password) is used instead, so one password works on both. It turns on secure mode, which the trainer-only notes need.
+  - `MASTER_ADMIN_PASSWORD`: admin sign-in (the LSH Training Portal's master admin password: one password on every platform); setting it switches on secure mode. Set it as a Secret.
   - `SESSION_SECRET` (optional)
   - `GEMINI_API_KEY5` … `GEMINI_API_KEY9`: the Gemini key pool behind every AI feature (live chat, grading, the tracker's notes review, trainer tools). Each request starts on the next key in turn, so the load is spread across all of them; a key that hits its limit rests (a minute for a per-minute limit, an hour for a daily one) and the next key takes over. Create each key in its **own** Google Cloud project: keys in the same project share one quota. `/version` shows which pool keys are set.
   - `GEMINI_API_KEY`, `GEMINI_API_KEY1`, `GEMINI_API_KEY2` (optional): used only after every pool key.
@@ -384,4 +385,4 @@ node .github/scripts/server.mjs 8787 &      # the site through worker.js, with a
 node .github/scripts/requests.cjs http://localhost:8787/
 ```
 
-`server.mjs` runs the Worker in open mode (no passphrase) and with no AI keys, so nothing outside your computer is called. The requests test takes about a minute.
+`server.mjs` runs the Worker in open mode (no admin password) and with no AI keys, so nothing outside your computer is called. The requests test takes about a minute.

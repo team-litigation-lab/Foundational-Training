@@ -40,6 +40,15 @@ PATCHES = [
      """.aud-wait b{font-family:'Fraunces',Georgia,serif;font-size:30px;color:#F0C08A;}
 .aud-deck-note{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;background:#161829;border-radius:8px;color:#fff;font-size:30px;line-height:1.4;text-align:center;}
 .aud-deck-note b{font-family:'Fraunces',Georgia,serif;font-size:44px;color:#F0C08A;}"""),
+    # Opening a slide from the progress dots counts as reached: the place saved when the lesson is left (or the
+    # page reloads for an update) is that slide, not an older "furthest reached with Next".
+    ('''  state.lessonSlide = i; state.slidePage = 0;
+  refreshLessonSlide();
+}''',
+     '''  state.lessonSlide = i; state.slidePage = 0;
+  if(i > (state.maxSlideReached||0)){ state.maxSlideReached = i; state.slideProgress = state.slideProgress || {}; state.slideProgress[state.dayId] = i; storeSet("slide-progress", state.slideProgress); }
+  refreshLessonSlide();
+}'''),
 ]
 
 

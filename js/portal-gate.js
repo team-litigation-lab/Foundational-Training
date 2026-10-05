@@ -7,9 +7,8 @@
    is signed in, registered and waiting for approval exactly as before.
    Someone who opens this program's link directly sees a short note
    with a button back to the Portal instead of a form. Admins sign in on the
-   Portal too and arrive with their own ticket, so they aren't asked for the
-   passphrase; it stays only for someone who opens the link directly (the
-   small 🛡 link on that note).
+   Portal too, but every platform asks an admin for the admin password: no
+   ticket signs an admin in (the Admin Portal tab on that note).
    It turns on when the Worker has PORTAL_SSO_SECRET (/api/auth/status
    says portalOnly); until then the old name + batch form stays, so
    nothing locks anyone out before the secret is set on both sides.
@@ -79,7 +78,7 @@ window.portalGate = {
       var j = await r.json().catch(function(){ return {}; });
       if(j.code === "admin-password"){ wantAdmin = true; uncover(0); return; }   // administrators always type the admin password: straight to that prompt
       if(!r.ok || !j.token){ notice = j.error || "We couldn't sign you in from the LSH Training Portal. Open the program from the Portal again."; uncover(0); return; }
-      if(j.admin){ setAdminToken(j.token); uncover(250); return; }                                        // an admin signed in on the Portal: no passphrase here (boot picks up the token)
+      if(j.admin){ setAdminToken(j.token); uncover(250); return; }                                        // an admin signed in on the Portal: no password here (boot picks up the token)
       if(state.traineeId && state.traineeId === j.id){ setTraineeToken(j.token); uncover(250); return; }   // already signed in as them
       if(state.traineeId){ try{ await logout(); }catch(e){} }                               // someone else was signed in on this device
       setTraineeToken(j.token);

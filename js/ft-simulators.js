@@ -82,7 +82,7 @@ const ACTIVITIES = [
     ["MC-11", "Ngozi Okonkwo", "$90,000 settlement; hospital lien $14,600 (reduction to $9,000 requested); Anthem Blue Shield ERISA subrogation $9,215."],
     ["MC-06", "James Wilson", "$42,000 settlement; health-fund lien reduced $6,480 → $4,320; chiropractor LOP $4,200 still pending; settlement statement in draft."]],
     tools:["library"]}
-];
+].filter(a=>DAYS.find(d=>d.id===a.lesson));   // a lesson taken off the platform (build/lessons/off/) takes its demos with it
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["simulators"]);
 
