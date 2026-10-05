@@ -319,8 +319,29 @@ export class GeminiRelay {
   }
 }
 
-async function callGemini(env, rawBody) {
+// The shared AI gateway (the Main Portal's /api/ai-gateway): when AI_GATEWAY_SECRET is set on this Worker, every AI call goes there
+// and draws from the Portal's one master key pool and one shared budget (module "standard") with the other programs, the CMS and the
+// Portal's simulators. Without the secret this Worker still uses its own GEMINI_API_KEY pool, as before.
+const gatewayOn = (env) => !!String((env && env.AI_GATEWAY_SECRET) || "").trim();
+async function viaGateway(env, req, user) {
+  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
+  const messages = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "model" : "user", text: toText(m.content) }));
+  let r, data = null;
+  try {
+    r = await fetch(String(env.PORTAL_URL || "https://cm-training-activity.pages.dev").replace(/\/+$/, "") + "/api/ai-gateway", {
+      method: "POST", headers: { "Content-Type": "application/json", "X-Gateway-Key": String(env.AI_GATEWAY_SECRET).trim() },
+      body: JSON.stringify({ module: "standard", user: String(user || "worker").slice(0, 80), system: toText(req.system), messages, maxTokens: Math.min(Math.max(Number(req.max_tokens) || 1024, 128), 4096) })
+    });
+    data = await r.json().catch(() => null);
+  } catch (e) { return json({ error: { message: "The shared AI gateway is unreachable: " + (e && e.message || e) } }, 502); }
+  if (data && data.success) return json({ content: [{ type: "text", text: data.text }], model: data.model, stop_reason: "end_turn", provider: "gemini-gateway" });
+  const status = r.status === 429 ? 429 : (r.status === 401 || r.status === 501) ? 502 : (r.status || 502);
+  return json({ error: { message: (status === 429 ? "rate limit (shared AI budget): " : "") + ((data && data.error) || "AI gateway error " + r.status) } }, status);
+}
+
+async function callGemini(env, rawBody, user) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
+  if (gatewayOn(env)) return await viaGateway(env, req, user);
   // Keys in turn (see geminiKeyOrder): when a key's free-tier limit is used up (429) or the key is
   // rejected, it rests and the next key takes the request.
   const keys = geminiKeyOrder(env);
@@ -597,8 +618,8 @@ export default {
       // (the path keeps its old name so pages already open in browsers keep working)
       if (path === "/api/claude" || path === "/api/ai") {
         const body = await request.text();
-        if (!hasGemini(env)) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
-        return await callGemini(env, body);
+        if (!hasGemini(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
+        return await callGemini(env, body, tok && tok.id);
       }
 
       /* ---------- Daily Task Tracker: run the daily check now (admin) ---------- */
