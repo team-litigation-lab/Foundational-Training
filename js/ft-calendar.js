@@ -31,6 +31,12 @@ const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const open = () => state.isAdmin || state.adminPreview || (typeof dayUnlocked === "function" ? dayUnlocked(LESSON) : true);
 const hh = m => C.fmt(m);
+// The week is shown with real dates, like Google Calendar: this week's Monday (next Monday on a weekend).
+const WEEK = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); const w = d.getDay(); d.setDate(d.getDate() + (w === 0 ? 1 : w === 6 ? 2 : 1 - w)); return d; })();
+const dayDate = i => { const d = new Date(WEEK); d.setDate(d.getDate() + i); return d; };
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const rangeLabel = () => { const a = dayDate(0), b = dayDate(4); return a.getMonth() === b.getMonth() ? `${MONTHS[a.getMonth()]} ${a.getFullYear()}` : `${MONTHS[a.getMonth()].slice(0, 3)} – ${MONTHS[b.getMonth()].slice(0, 3)} ${b.getFullYear()}`; };
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim"]);
 
@@ -88,7 +94,7 @@ function blockHTML(ev, mine, why, ro){
   const style = `top:${px(ev.start)}px;height:${Math.max(px(ev.start + len) - px(ev.start), 12)}px;`;
   const pad = ev.buffer ? `<div class="cs-buf" style="top:${px(ev.start - ev.buffer)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div><div class="cs-buf" style="top:${px(ev.end)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div>` : "";
   const icons = (ev.meet ? " 📹" : "") + (ev.remind ? " 🔔" : "");
-  const label = `<b>${e(ev.title || "(no name)")}</b><span>${hh(ev.start)} – ${hh(ev.start + len)}${icons}</span>`;
+  const label = len <= 30 ? `<b>${e(ev.title || "(no title)")}<em>, ${hh(ev.start)}${icons}</em></b>` : `<b>${e(ev.title || "(no title)")}</b><span>${hh(ev.start)} – ${hh(ev.start + len)}${icons}</span>`;
   if(!mine) return pad + `<div class="cs-ev cs-fixed cs-${k}" style="${style}" title="${e(ev.note || ev.title)}">${label}</div>`;
   const cls = `cs-ev cs-req ${why ? "cs-bad" : ""} ${S.sel === ev.id ? "cs-sel" : ""}`;
   if(ro) return `<div class="cs-ev cs-ro ${why ? "cs-bad" : ""}" style="${style}" title="${e(why ? why.join("; ") : "")}">${label}</div>`;
@@ -96,18 +102,32 @@ function blockHTML(ev, mine, why, ro){
 }
 function gridHTML(s, events, ro){
   s = s || scn(); events = events || S.events;
-  const fl = C.flags(s, events);
-  const times = []; for(let m = TOP; m < BOTTOM; m += 60) times.push(`<div class="cs-time" style="top:${px(m) - 7}px">${hh(m)}</div>`);
+  const fl = C.flags(s, events), now = new Date(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const times = []; for(let m = TOP + 60; m < BOTTOM; m += 60) times.push(`<div class="cs-time" style="top:${px(m) - 7}px">${hh(m)}</div>`);
   const cols = C.DAYS.map((name, d) => {
+    const dt = dayDate(d), today = sameDay(dt, now);
     const blocks = s.fixed.filter(f => f.day === d).map(f => blockHTML(f, false)).join("")
-      + events.filter(x => x.day === d).map(x => blockHTML({id:x.id, title:x.title, day:d, start:x.start, end:x.start + x.dur, meet:x.meet, remind:x.remind}, true, fl[x.id], ro)).join("");
-    return `<div class="cs-colwrap"><div class="cs-dayhd">${name}</div><div class="cs-col" data-day="${d}" style="height:${px(BOTTOM)}px">${blocks}</div></div>`;
+      + events.filter(x => x.day === d).map(x => blockHTML({id:x.id, title:x.title, day:d, start:x.start, end:x.start + x.dur, meet:x.meet, remind:x.remind}, true, fl[x.id], ro)).join("")
+      + (today && !ro && nowMin >= TOP && nowMin < BOTTOM ? `<div class="gc-now" style="top:${px(nowMin)}px"></div>` : "");
+    return `<div class="cs-colwrap"><div class="cs-dayhd" title="${e(name)}"><span class="${today ? "gc-todayname" : ""}">${name.slice(0, 3).toUpperCase()}</span><b class="${today ? "gc-today" : ""}">${dt.getDate()}</b></div><div class="cs-col" data-day="${d}" style="height:${px(BOTTOM)}px">${blocks}</div></div>`;
   }).join("");
   return `<div class="cs-grid"><div class="cs-times"><div class="cs-dayhd cs-et" title="Eastern Time">ET</div><div class="cs-timecol" style="height:${px(BOTTOM)}px">${times.join("")}</div></div>${cols}</div>`;
 }
+// The toolbar above the week and the left rail (Create, a month, then the tasks), as in Google Calendar.
+function toolbarHTML(){
+  return `<div class="gc-bar"><span class="gc-logo">📅</span><span class="gc-brand">Calendar</span><span class="gc-range">${e(rangeLabel())}</span><span class="gc-view">Week</span><span class="gc-tz">Eastern Time</span></div>`;
+}
+function miniMonthHTML(){
+  const m0 = dayDate(0), first = new Date(m0.getFullYear(), m0.getMonth(), 1), start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  const head = ["M","T","W","T","F","S","S"].map(x => `<i>${x}</i>`).join(""), now = new Date(); let cells = "";
+  for(let r = 0; r < 6; r++){ const row = []; for(let c = 0; c < 7; c++){ const d = new Date(start); d.setDate(start.getDate() + r * 7 + c);
+    const inWeek = d >= dayDate(0) && d <= dayDate(4), cls = [d.getMonth() !== m0.getMonth() ? "out" : "", sameDay(d, now) ? "today" : "", inWeek ? "wk" : ""].join(" ");
+    row.push(`<span class="${cls}">${d.getDate()}</span>`); } cells += `<div class="gc-mrow">${row.join("")}</div>`; if(r >= 3 && new Date(start.getTime() + (r + 1) * 7 * 864e5).getMonth() !== m0.getMonth()) break; }
+  return `<div class="gc-mini"><div class="gc-mini-hd">${MONTHS[m0.getMonth()]} ${m0.getFullYear()}</div><div class="gc-mrow gc-mdow">${head}</div>${cells}</div>`;
+}
 function tasksHTML(){
   const s = scn();
-  return `<div class="cs-tray" id="csTray"><h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
+  return `<div class="cs-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()"><svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>Create</button>${miniMonthHTML()}<h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
     <p class="cs-hint">Put each of these on the week as an event, named after the task, with a description. Drag on an empty part of the calendar to add one.</p>
     ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span>${(r.needs || {}).meet ? '<span class="cs-dur cs-chip">📹 Google Meet</span>' : ""}${(r.needs || {}).remind ? '<span class="cs-dur cs-chip">🔔 Reminder</span>' : ""}<p>${e(r.note)}</p></div>`).join("")}</div>`;
 }
@@ -150,7 +170,7 @@ function renderPage(){
     <p class="cs-blurb">${e(tk.blurb)}</p>
     <div class="card cs-brief">${e(s.brief)}</div>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
-    <div class="cs-main">${tasksHTML()}<div><div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Eastern Time. Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to edit its details · ✕ deletes. Red means a clash, missing travel time or outside 9 to 5.</p></div></div>
+    <div class="cs-main">${tasksHTML()}<div class="gc-shell">${toolbarHTML()}<div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Eastern Time. Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to edit its details · ✕ deletes. Red means a clash, missing travel time or outside 9 to 5.</p></div></div>
     <div class="cs-actions"><button class="btn btn-navy" onclick="FTCalSim.save()">💾 Save changes</button>
       <button class="btn btn-navy" onclick="FTCalSim.review()">🤖 Run automated review</button>
       <button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit to my trainer</button>
@@ -237,19 +257,28 @@ function endDrag(){
 function closeModal(){ const m = document.getElementById("csModal"); if(m) m.remove(); }
 function editor(x, isNew, done){
   closeModal();
+  const opts = (from, to, sel, f) => { let o = ""; for(let m = from; m <= to; m += C.STEP) o += `<option value="${m}" ${m === sel ? "selected" : ""}>${f(m)}</option>`; return o; };
   const m = document.createElement("div"); m.id = "csModal"; m.className = "cs-modal";
   m.innerHTML = `<div class="cs-dlg" role="dialog" aria-modal="true" aria-label="Event details">
+    <div class="cs-m-hd"><span class="cs-m-grip"></span><button class="cs-m-x" data-m="no" aria-label="Close">✕</button></div>
     <input id="csmTitle" class="cs-m-title" maxlength="80" placeholder="Add title" value="${e(x.title)}">
-    <div class="cs-m-when">🕘 ${C.DAYS[x.day]} · ${hh(x.start)} – ${hh(x.start + x.dur)} · Eastern Time</div>
-    <label class="cs-m-row">👥 <input id="csmGuests" maxlength="200" placeholder="Add guests (email addresses)" value="${e(x.guests)}"></label>
-    <label class="cs-m-row"><input type="checkbox" id="csmMeet" ${x.meet ? "checked" : ""}> 📹 Add Google Meet video conferencing</label>
-    <label class="cs-m-row"><input type="checkbox" id="csmRemind" ${x.remind ? "checked" : ""}> 🔔 Email notification · 1 day before</label>
-    <label class="cs-m-row cs-m-top">≡ <textarea id="csmDesc" rows="4" maxlength="300" placeholder="Add description">${e(x.desc)}</textarea></label>
-    <div class="cs-m-btns">${isNew ? "" : `<button class="btn btn-ghost btn-sm" data-m="del">🗑 Delete</button>`}<span></span><button class="btn btn-ghost btn-sm" data-m="no">Cancel</button><button class="btn btn-navy btn-sm" data-m="ok">Save</button></div></div>`;
+    <div class="cs-m-tabs"><span class="on">Event</span></div>
+    <div class="cs-m-row"><i class="cs-m-ic">🕘</i><select id="csmDay">${C.DAYS.map((n, i) => `<option value="${i}" ${i === x.day ? "selected" : ""}>${n.slice(0, 3)}, ${MONTHS[dayDate(i).getMonth()].slice(0, 3)} ${dayDate(i).getDate()}</option>`).join("")}</select>
+      <select id="csmStart">${opts(TOP, BOTTOM - C.STEP, x.start, hh)}</select><span>–</span><select id="csmEnd">${opts(TOP + C.STEP, BOTTOM, x.start + x.dur, hh)}</select></div>
+    <div class="cs-m-sub">Eastern Time · Does not repeat</div>
+    <label class="cs-m-row"><i class="cs-m-ic">👥</i><input id="csmGuests" maxlength="200" placeholder="Add guests (email addresses)" value="${e(x.guests)}"></label>
+    <div class="cs-m-row"><i class="cs-m-ic">📹</i><button type="button" id="csmMeetBtn" class="cs-meet ${x.meet ? "on" : ""}">${x.meet ? "Join with Google Meet" : "Add Google Meet video conferencing"}</button><button type="button" id="csmMeetOff" class="cs-m-link" ${x.meet ? "" : "hidden"}>Remove</button><input type="checkbox" id="csmMeet" hidden ${x.meet ? "checked" : ""}></div>
+    <label class="cs-m-row"><i class="cs-m-ic">🔔</i><input type="checkbox" id="csmRemind" ${x.remind ? "checked" : ""}> Email notification · 1 day before</label>
+    <label class="cs-m-row cs-m-top"><i class="cs-m-ic">≡</i><textarea id="csmDesc" rows="4" maxlength="300" placeholder="Add description">${e(x.desc)}</textarea></label>
+    <div class="cs-m-btns">${isNew ? "" : `<button class="cs-gbtn" data-m="del">🗑 Delete</button>`}<span></span><button class="cs-gbtn cs-gblue" data-m="ok">Save</button></div></div>`;
   document.body.appendChild(m);
-  const q = sel => m.querySelector(sel), title = q("#csmTitle");
+  const q = sel => m.querySelector(sel), title = q("#csmTitle"), st = q("#csmStart"), en = q("#csmEnd");
+  const setMeet = on => { q("#csmMeet").checked = on; const b = q("#csmMeetBtn"); b.classList.toggle("on", on); b.textContent = on ? "Join with Google Meet" : "Add Google Meet video conferencing"; q("#csmMeetOff").hidden = !on; };
+  q("#csmMeetBtn").onclick = () => setMeet(true); q("#csmMeetOff").onclick = () => setMeet(false);
+  st.onchange = () => { if(+en.value <= +st.value) en.value = String(Math.min(BOTTOM, +st.value + C.STEP)); };
   const save = () => { const t = title.value.trim(); if(!t){ toast("Add a title."); title.focus(); return; }
-    const v = {title:t.slice(0, 80), guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
+    if(+en.value <= +st.value){ toast("The event has to end after it starts."); return; }
+    const v = {title:t.slice(0, 80), day:+q("#csmDay").value, start:+st.value, dur:+en.value - +st.value, guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
   m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
   m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
   title.focus();
@@ -257,6 +286,12 @@ function editor(x, isNew, done){
 function onUp(ev){
   const d = S.drag; if(!d || ev.pointerId !== d.pid) return;
   const cur = d.cur; endDrag();
+  if(!d.moved && d.mode === "new" && d.anchor){
+    if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
+    const base = {id:uid(), title:"", day:d.anchor.day, start:Math.min(d.anchor.start, BOTTOM - 60), dur:60, desc:"", guests:"", meet:false, remind:false};
+    editor(base, true, v => { if(!v) return; S.events.push(Object.assign(base, v)); S.sel = base.id; changed(); repaint(); });
+    return;
+  }
   if(!d.moved){ if(d.mode !== "new" && d.id){ S.sel = d.id; repaint(); const el = document.querySelector(`.cs-req[data-ev="${CSS.escape(d.id)}"]`); if(el) el.focus(); } return; }
   if(!cur){ repaint(); return; }
   if(d.mode === "new"){
@@ -531,5 +566,49 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-m-row{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3c4043;} .cs-m-row input[type=text],.cs-m-row input:not([type]){flex:1;border:0;border-bottom:1px solid #dadce0;padding:5px 2px;font:inherit;outline:none;} .cs-m-top{align-items:flex-start;} .cs-m-row textarea{flex:1;border:1px solid #dadce0;border-radius:8px;padding:6px 8px;font:inherit;resize:vertical;}
 .cs-m-btns{display:flex;gap:8px;align-items:center;} .cs-m-btns span{flex:1;}
 @media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .cs-tray{position:static;max-height:none;} }
+/* ---- Google Calendar look ---- */
+.cs-wrap{font-family:"Google Sans",Roboto,"Segoe UI",Arial,sans-serif;}
+.cs-main{grid-template-columns:256px minmax(0,1fr);gap:16px;}
+.cs-tray{border:0;border-radius:0;background:transparent;padding:0 4px 0 0;}
+.gc-create{display:flex;align-items:center;gap:12px;border:0;background:#fff;border-radius:24px;padding:0 24px 0 16px;height:48px;font:500 14px "Google Sans",Roboto,Arial,sans-serif;color:#3c4043;cursor:pointer;box-shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);margin:0 0 14px;} .gc-create:hover{background:#f1f3f4;box-shadow:0 1px 3px rgba(60,64,67,.3),0 4px 8px 3px rgba(60,64,67,.15);}
+.gc-mini{margin:0 0 14px;padding:0 4px;font-size:11px;color:#3c4043;} .gc-mini-hd{font:500 14px "Google Sans",Roboto,Arial,sans-serif;margin:0 0 6px;}
+.gc-mrow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:1px;} .gc-mrow span,.gc-mrow i{font-style:normal;line-height:24px;height:24px;} .gc-mdow i{font-size:10px;color:#70757a;}
+.gc-mrow span.out{color:#9aa0a6;} .gc-mrow span.wk{background:#e8f0fe;} .gc-mrow span.wk:nth-child(1){border-radius:12px 0 0 12px;} .gc-mrow span.today{background:#1a73e8;color:#fff;border-radius:50%;width:24px;justify-self:center;font-weight:700;}
+.cs-tray h3{font:500 14px "Google Sans",Roboto,Arial,sans-serif;color:#3c4043;margin:10px 0 4px;}
+.cs-task{border:1px solid #dadce0;border-left:4px solid #1a73e8;border-radius:8px;} .cs-task b{color:#202124;font-weight:500;} .cs-dur{background:#e8f0fe;color:#1967d2;} .cs-chip{background:#e6f4ea;color:#137333;}
+.gc-shell{background:#fff;border:1px solid #dadce0;border-radius:8px;padding:0 0 4px;min-width:0;} .gc-shell .cs-legend{padding:0 14px;}
+.gc-bar{display:flex;align-items:center;gap:14px;padding:10px 16px;border-bottom:1px solid #dadce0;flex-wrap:wrap;} .gc-logo{font-size:22px;} .gc-brand{font:400 20px "Google Sans",Roboto,Arial,sans-serif;color:#5f6368;margin-right:12px;} .gc-range{font:400 20px "Google Sans",Roboto,Arial,sans-serif;color:#3c4043;}
+.gc-view{margin-left:auto;border:1px solid #dadce0;border-radius:4px;padding:6px 14px;font:500 14px "Google Sans",Roboto,Arial,sans-serif;color:#3c4043;} .gc-tz{font-size:12px;color:#70757a;}
+.cs-gridwrap{border:0;border-radius:0;padding:0;background:#fff;} .cs-sub .cs-gridwrap{border:1px solid #dadce0;}
+.cs-grid{grid-template-columns:56px repeat(5,minmax(112px,1fr));}
+.cs-dayhd{height:62px;line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-bottom:1px solid #dadce0;border-left:1px solid #dadce0;font-weight:500;color:#70757a;} .cs-dayhd span{font-size:11px;letter-spacing:.8px;font-weight:500;} .cs-dayhd b{font:400 26px "Google Sans",Roboto,Arial,sans-serif;color:#3c4043;width:46px;height:46px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.cs-dayhd b.gc-today{background:#1a73e8;color:#fff;} .gc-todayname{color:#1a73e8;}
+.cs-dayhd.cs-et{border-left:0;font-size:10px;color:#70757a;justify-content:flex-end;padding-bottom:6px;}
+.cs-times{border-right:0;} .cs-time{font-size:10px;color:#70757a;text-transform:uppercase;right:8px;}
+.cs-col{border-left:1px solid #dadce0;cursor:pointer;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent ${SH * 4 - 1}px,#dadce0 ${SH * 4 - 1}px,#dadce0 ${SH * 4}px);}
+.cs-col::before,.cs-col::after{background:rgba(60,64,67,.06);}
+.cs-ev{border-radius:4px;left:2px;right:6px;padding:2px 8px;font-size:12px;font-weight:500;line-height:1.25;box-shadow:none;}
+.cs-ev b{font-weight:500;} .cs-ev b em{font-style:normal;font-weight:400;opacity:.9;} .cs-ev span{font-weight:400;font-size:11px;}
+.cs-fixed{background:#f1f3f4;color:#3c4043;border:1px solid #fff;border-left:4px solid #9aa0a6;cursor:default;} .cs-court{background:#3f51b5;color:#fff;border:1px solid #fff;border-left:4px solid #283593;}
+.cs-lunch{background:repeating-linear-gradient(45deg,#f8f9fa,#f8f9fa 6px,#eceff1 6px,#eceff1 12px);color:#5f6368;border-left-color:#bdc1c6;}
+.cs-req{background:#039be5;border:1px solid #fff;border-left:4px solid #0277bd;box-shadow:0 1px 2px rgba(60,64,67,.3);} .cs-req:hover{box-shadow:0 1px 3px rgba(60,64,67,.4),0 2px 6px 2px rgba(60,64,67,.15);}
+.cs-req.cs-bad,.cs-ro.cs-bad{background:#d50000;border-left-color:#9b0000;} .cs-ro{background:#039be5;border:1px solid #fff;border-left:4px solid #0277bd;}
+.cs-x{background:rgba(255,255,255,.25);color:#fff;border-radius:50%;} .cs-x:hover{background:rgba(255,255,255,.5);color:#fff;}
+.cs-rs{height:8px;background:none;} .cs-req:hover .cs-rs::after{content:"";display:block;width:24px;height:2px;border-radius:2px;background:rgba(255,255,255,.8);margin:4px auto 0;}
+.gc-now{position:absolute;left:-6px;right:0;height:2px;background:#ea4335;z-index:6;pointer-events:none;} .gc-now::before{content:"";position:absolute;left:0;top:-5px;width:12px;height:12px;border-radius:50%;background:#ea4335;}
+.cs-prev.ok{background:rgba(26,115,232,.25);border:2px solid #1a73e8;color:#174ea6;}
+/* the event editor, like Google Calendar's */
+.cs-modal{background:rgba(32,33,36,.35);}
+.cs-dlg{width:min(448px,100%);border-radius:8px;padding:0 24px 16px;gap:14px;box-shadow:0 24px 38px 3px rgba(0,0,0,.14),0 9px 46px 8px rgba(0,0,0,.12),0 11px 15px -7px rgba(0,0,0,.2);font-family:"Google Sans",Roboto,Arial,sans-serif;}
+.cs-m-hd{display:flex;justify-content:space-between;align-items:center;margin:0 -24px;padding:8px 8px 0;background:#f1f3f4;border-radius:8px 8px 0 0;height:36px;box-sizing:border-box;} .cs-m-grip{width:20px;height:6px;margin-left:12px;background:radial-gradient(circle,#9aa0a6 1.5px,transparent 2px) 0 0/6px 6px;}
+.cs-m-x{border:0;background:none;font-size:16px;color:#5f6368;cursor:pointer;width:32px;height:32px;border-radius:50%;} .cs-m-x:hover{background:#e0e3e6;}
+.cs-m-title{margin:6px 0 0 36px;width:calc(100% - 36px);font:400 22px "Google Sans",Roboto,Arial,sans-serif;border-bottom:2px solid #1a73e8;}
+.cs-m-tabs{margin-left:36px;} .cs-m-tabs span{display:inline-block;background:#e8f0fe;color:#1967d2;border-radius:4px;padding:5px 12px;font:500 13px "Google Sans",Roboto,Arial,sans-serif;}
+.cs-m-row{gap:12px;} .cs-m-ic{width:24px;text-align:center;font-style:normal;color:#5f6368;} .cs-m-row select{border:0;background:#f1f3f4;border-radius:4px;padding:7px 8px;font:inherit;color:#3c4043;cursor:pointer;} .cs-m-row select:hover{background:#e8eaed;}
+.cs-m-sub{margin:-8px 0 0 36px;font-size:12px;color:#70757a;}
+.cs-meet{border:0;background:#1a73e8;color:#fff;border-radius:4px;padding:8px 16px;font:500 14px "Google Sans",Roboto,Arial,sans-serif;cursor:pointer;} .cs-meet:hover{background:#1765cc;} .cs-meet.on{background:#188038;} .cs-m-link{border:0;background:none;color:#1a73e8;font:500 13px "Google Sans",Roboto,Arial,sans-serif;cursor:pointer;}
+.cs-m-row textarea{border:0;background:#f1f3f4;border-radius:4px;} .cs-m-row input:not([type=checkbox]){background:#f1f3f4;border:0;border-radius:4px;padding:8px;border-bottom:0;}
+.cs-gbtn{border:0;background:none;color:#5f6368;border-radius:4px;padding:9px 18px;font:500 14px "Google Sans",Roboto,Arial,sans-serif;cursor:pointer;} .cs-gbtn:hover{background:#f1f3f4;} .cs-gblue{background:#1a73e8;color:#fff;border-radius:18px;padding:9px 24px;} .cs-gblue:hover{background:#1765cc;}
+@media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .gc-view,.gc-tz{margin-left:0;} }
 `; document.head.appendChild(st); })();
 })();
