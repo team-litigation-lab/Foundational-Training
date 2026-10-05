@@ -1,7 +1,8 @@
 /* ============================================================
-   📅 Calendar Scheduler: a drag-and-drop calendaring simulator, reviewed by the trainer.
+   📅 Calendaring Simulators: drag-and-drop, Google Calendar style, with an automated review and trainer feedback.
    Loaded after js/ft-calsim-core.js (the weeks) and before js/ft-simulators.js. Route: #/calsim.
-     • The week is a Monday to Friday grid in 30-minute steps. The attorney's fixed events are locked. The brief lists
+     • Three tracks (FTCalCore.TRACKS): Standard Training, Litigation Week (Case Management) and Executive Week (EA / PA).
+     • The week is a Monday to Friday grid in 15-minute steps (Eastern Time). The attorney's fixed events are locked. The brief lists
        the tasks to put on the calendar; the trainee builds their own calendar: drag on an empty part of the week to
        add an event, drag an event to move it, drag its bottom edge to resize it, double-click to rename it, ✕ to
        delete it. Events that clash, break a court's travel time or fall outside business hours show in red.
@@ -23,8 +24,9 @@ if(!C) return;
 const PORTAL = "https://cm-training-activity.pages.dev/simulators/";
 const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const LESSON = 5;                         // Calendaring & Appointment Setting Training
-const TOP = 8 * 60, BOTTOM = 18 * 60, SH = 24;   // the grid shows 8:00 AM to 6:00 PM; one 30-minute slot is SH pixels
+const TOP = 8 * 60, BOTTOM = 18 * 60, SH = 14;   // the grid shows 8:00 AM to 6:00 PM; one 15-minute slot is SH pixels
 const px = min => (min - TOP) / C.STEP * SH;
+const trackOf = () => C.trackOf(scn().track);
 const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const open = () => state.isAdmin || state.adminPreview || (typeof dayUnlocked === "function" ? dayUnlocked(LESSON) : true);
@@ -34,6 +36,7 @@ window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim"]);
 
 const S = {id:null, data:null, loading:false, err:"", scn:0, events:[], result:null, timer:null, saved:null, drag:null, sel:null};
 const scn = () => C.SCENARIOS[S.scn];
+function setScn(i){ S.scn = i; S.sel = null; S.result = null; S.events = C.clean((S.data && S.data.drafts[scn().id]) || []); }
 const uid = () => "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 /* ---------- the trainee's saved record ---------- */
@@ -84,7 +87,8 @@ function blockHTML(ev, mine, why, ro){
   const k = ev.kind || "", len = (ev.end || ev.start + ev.dur) - ev.start;
   const style = `top:${px(ev.start)}px;height:${Math.max(px(ev.start + len) - px(ev.start), 12)}px;`;
   const pad = ev.buffer ? `<div class="cs-buf" style="top:${px(ev.start - ev.buffer)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div><div class="cs-buf" style="top:${px(ev.end)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div>` : "";
-  const label = `<b>${e(ev.title || "(no name)")}</b><span>${hh(ev.start)} – ${hh(ev.start + len)}</span>`;
+  const icons = (ev.meet ? " 📹" : "") + (ev.remind ? " 🔔" : "");
+  const label = `<b>${e(ev.title || "(no name)")}</b><span>${hh(ev.start)} – ${hh(ev.start + len)}${icons}</span>`;
   if(!mine) return pad + `<div class="cs-ev cs-fixed cs-${k}" style="${style}" title="${e(ev.note || ev.title)}">${label}</div>`;
   const cls = `cs-ev cs-req ${why ? "cs-bad" : ""} ${S.sel === ev.id ? "cs-sel" : ""}`;
   if(ro) return `<div class="cs-ev cs-ro ${why ? "cs-bad" : ""}" style="${style}" title="${e(why ? why.join("; ") : "")}">${label}</div>`;
@@ -96,16 +100,16 @@ function gridHTML(s, events, ro){
   const times = []; for(let m = TOP; m < BOTTOM; m += 60) times.push(`<div class="cs-time" style="top:${px(m) - 7}px">${hh(m)}</div>`);
   const cols = C.DAYS.map((name, d) => {
     const blocks = s.fixed.filter(f => f.day === d).map(f => blockHTML(f, false)).join("")
-      + events.filter(x => x.day === d).map(x => blockHTML({id:x.id, title:x.title, day:d, start:x.start, end:x.start + x.dur}, true, fl[x.id], ro)).join("");
+      + events.filter(x => x.day === d).map(x => blockHTML({id:x.id, title:x.title, day:d, start:x.start, end:x.start + x.dur, meet:x.meet, remind:x.remind}, true, fl[x.id], ro)).join("");
     return `<div class="cs-colwrap"><div class="cs-dayhd">${name}</div><div class="cs-col" data-day="${d}" style="height:${px(BOTTOM)}px">${blocks}</div></div>`;
   }).join("");
-  return `<div class="cs-grid"><div class="cs-times"><div class="cs-dayhd">&nbsp;</div><div class="cs-timecol" style="height:${px(BOTTOM)}px">${times.join("")}</div></div>${cols}</div>`;
+  return `<div class="cs-grid"><div class="cs-times"><div class="cs-dayhd cs-et" title="Eastern Time">ET</div><div class="cs-timecol" style="height:${px(BOTTOM)}px">${times.join("")}</div></div>${cols}</div>`;
 }
 function tasksHTML(){
   const s = scn();
   return `<div class="cs-tray" id="csTray"><h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
-    <p class="cs-hint">Put each of these on the week as an event. Drag on an empty part of the calendar to add one.</p>
-    ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span><p>${e(r.note)}</p></div>`).join("")}</div>`;
+    <p class="cs-hint">Put each of these on the week as an event, named after the task, with a description. Drag on an empty part of the calendar to add one.</p>
+    ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span>${(r.needs || {}).meet ? '<span class="cs-dur cs-chip">📹 Google Meet</span>' : ""}${(r.needs || {}).remind ? '<span class="cs-dur cs-chip">🔔 Reminder</span>' : ""}<p>${e(r.note)}</p></div>`).join("")}</div>`;
 }
 function reviewBox(r){
   const tn = r && r.tasks ? Object.keys(r.tasks).filter(k => r.tasks[k]) : [];
@@ -125,25 +129,28 @@ function historyHTML(){
   if(!S.data) return "";
   const rows = C.SCENARIOS.map(s => {
     const list = subs(s.id), last = list[list.length - 1];
-    const ba = bestAuto(s.id), autoPill = ba >= 0 ? `<span class="cs-pill ${ba >= C.PASS ? "ok" : ""}">🤖 ${e(s.title.split(" · ")[0])} automated review: best ${ba}%</span>` : "";
-    if(!last) return `<div class="cs-hist-row"><span class="cs-pill">${e(s.title.split(" · ")[0])}: not submitted</span>${autoPill}</div>`;
+    const ba = bestAuto(s.id), autoPill = ba >= 0 ? `<span class="cs-pill ${ba >= C.PASS ? "ok" : ""}">🤖 ${e(s.short)} automated review: best ${ba}%</span>` : "";
+    if(!last) return `<div class="cs-hist-row"><span class="cs-pill">${e(s.short)}: not submitted</span>${autoPill}</div>`;
     const r = S.data.reviews[subKey(last)], au = C.review(s, last.events);
-    return `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.title.split(" · ")[0])} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${r ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${reviewBox(r)}</div>`;
+    return `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.short)} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${r ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${reviewBox(r)}</div>`;
   }).join("");
   const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Simulator")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
   return `<div class="cs-hist">${rows}${ext}</div>`;
 }
 function renderPage(){
   const s = scn();
-  const tabs = C.SCENARIOS.map((x, i) => `<button class="cs-tab ${i === S.scn ? "active" : ""}" onclick="FTCalSim.pick(${i})">${e(x.title)} <i>${e(x.level)}</i></button>`).join("");
-  if(!open()) return `<div class="cs-wrap"><h1>📅 Calendar Scheduler</h1><div class="card" style="padding:20px;">🔒 This simulator opens with Lesson ${LESSON}, Calendaring &amp; Appointment Setting.</div></div>`;
-  return `<div class="cs-wrap"><div class="cs-top"><div><h1>📅 Calendar Scheduler</h1>
-      <p class="cs-lead">Build the attorney’s week by drag and drop, then submit it to your trainer.</p></div>
+  const tk = trackOf();
+  const tabs = C.TRACKS.map(x => `<button class="cs-tab ${x.id === tk.id ? "active" : ""}" onclick="FTCalSim.open('${x.id}')">${x.icon} ${e(x.title)} <i>${e(x.where)}</i></button>`).join("")
+    + `</div>` + (C.SCENARIOS.filter(x => x.track === tk.id).length > 1 ? `<div class="cs-tabs cs-weeks">` + C.SCENARIOS.map((x, i) => x.track === tk.id ? `<button class="cs-tab cs-wk ${i === S.scn ? "active" : ""}" onclick="FTCalSim.pick(${i})">${e(x.title)} <i>${e(x.level)}</i></button>` : "").join("") : "");
+  if(!open()) return `<div class="cs-wrap"><h1>📅 Calendaring Simulators</h1><div class="card" style="padding:20px;">🔒 This simulator opens with Lesson ${LESSON}, Calendaring &amp; Appointment Setting.</div></div>`;
+  return `<div class="cs-wrap"><div class="cs-top"><div><h1>📅 Calendaring Simulators</h1>
+      <p class="cs-lead">${tk.icon} <b>${e(tk.title)}</b> · ${e(tk.where)}. Build the week in a Google Calendar style, run the automated review, then submit it to your trainer.</p></div>
       <div><button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button></div></div>
     <div class="cs-tabs">${tabs}</div>
+    <p class="cs-blurb">${e(tk.blurb)}</p>
     <div class="card cs-brief">${e(s.brief)}</div>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
-    <div class="cs-main">${tasksHTML()}<div><div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to rename · ✕ deletes. Red means a clash, missing travel time or outside 9 to 5.</p></div></div>
+    <div class="cs-main">${tasksHTML()}<div><div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Eastern Time. Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to edit its details · ✕ deletes. Red means a clash, missing travel time or outside 9 to 5.</p></div></div>
     <div class="cs-actions"><button class="btn btn-navy" onclick="FTCalSim.save()">💾 Save changes</button>
       <button class="btn btn-navy" onclick="FTCalSim.review()">🤖 Run automated review</button>
       <button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit to my trainer</button>
@@ -226,7 +233,27 @@ function endDrag(){
   if(d && d.ghost) d.ghost.remove(); if(d && d.prev) d.prev.remove();
   return d;
 }
-function ask(msg, def){ const v = prompt(msg, def || ""); return v == null ? null : v.trim().slice(0, 80); }
+// The event editor, as in Google Calendar: title, when, guests, Google Meet, an email reminder and a description.
+function closeModal(){ const m = document.getElementById("csModal"); if(m) m.remove(); }
+function editor(x, isNew, done){
+  closeModal();
+  const m = document.createElement("div"); m.id = "csModal"; m.className = "cs-modal";
+  m.innerHTML = `<div class="cs-dlg" role="dialog" aria-modal="true" aria-label="Event details">
+    <input id="csmTitle" class="cs-m-title" maxlength="80" placeholder="Add title" value="${e(x.title)}">
+    <div class="cs-m-when">🕘 ${C.DAYS[x.day]} · ${hh(x.start)} – ${hh(x.start + x.dur)} · Eastern Time</div>
+    <label class="cs-m-row">👥 <input id="csmGuests" maxlength="200" placeholder="Add guests (email addresses)" value="${e(x.guests)}"></label>
+    <label class="cs-m-row"><input type="checkbox" id="csmMeet" ${x.meet ? "checked" : ""}> 📹 Add Google Meet video conferencing</label>
+    <label class="cs-m-row"><input type="checkbox" id="csmRemind" ${x.remind ? "checked" : ""}> 🔔 Email notification · 1 day before</label>
+    <label class="cs-m-row cs-m-top">≡ <textarea id="csmDesc" rows="4" maxlength="300" placeholder="Add description">${e(x.desc)}</textarea></label>
+    <div class="cs-m-btns">${isNew ? "" : `<button class="btn btn-ghost btn-sm" data-m="del">🗑 Delete</button>`}<span></span><button class="btn btn-ghost btn-sm" data-m="no">Cancel</button><button class="btn btn-navy btn-sm" data-m="ok">Save</button></div></div>`;
+  document.body.appendChild(m);
+  const q = sel => m.querySelector(sel), title = q("#csmTitle");
+  const save = () => { const t = title.value.trim(); if(!t){ toast("Add a title."); title.focus(); return; }
+    const v = {title:t.slice(0, 80), guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
+  m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
+  m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
+  title.focus();
+}
 function onUp(ev){
   const d = S.drag; if(!d || ev.pointerId !== d.pid) return;
   const cur = d.cur; endDrag();
@@ -234,15 +261,16 @@ function onUp(ev){
   if(!cur){ repaint(); return; }
   if(d.mode === "new"){
     if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
-    const title = ask("What is this event? (for example: Mediation prep: Garcia)");
-    if(!title){ repaint(); return; }
-    const x = {id:uid(), title, day:cur.day, start:cur.start, dur:cur.dur}; S.events.push(x); S.sel = x.id;
+    const base = {id:uid(), title:"", day:cur.day, start:cur.start, dur:cur.dur, desc:"", guests:"", meet:false, remind:false};
+    repaint();
+    editor(base, true, v => { if(!v) return; S.events.push(Object.assign(base, v)); S.sel = base.id; changed(); repaint(); });
+    return;
   }else{ Object.assign(d.x, {day:cur.day, start:cur.start, dur:cur.dur}); S.sel = d.id; }
   changed(); repaint();
 }
 function onCancel(){ endDrag(); repaint(); }
 const evOf = id => S.events.find(x => x.id === id);
-function rename(id){ const x = evOf(id); if(!x) return; const t = ask("Event name", x.title); if(t){ x.title = t; changed(); repaint(); } }
+function rename(id){ const x = evOf(id); if(!x) return; editor(x, false, (v, del) => { if(del){ remove(id); return; } if(!v) return; Object.assign(x, v); changed(); repaint(); }); }
 function remove(id){ S.events = S.events.filter(x => x.id !== id); if(S.sel === id) S.sel = null; changed(); repaint(); }
 function wire(){
   const app = document.getElementById("app"); if(!app || app.dataset.csWired) return;
@@ -283,7 +311,7 @@ function submit(){
   const s = scn();
   if(!S.events.length){ toast("Add your events to the calendar before submitting."); return; }
   const flagged = Object.keys(C.flags(s, S.events)).length;
-  if(!confirm(`Submit this calendar for ${s.title.split(" · ")[0]} to your trainer?` + (S.events.length < s.tasks.length ? `\n\nYou have ${S.events.length} event${S.events.length === 1 ? "" : "s"} for ${s.tasks.length} tasks.` : "") + (flagged ? `\n\n${flagged} event${flagged === 1 ? " is" : "s are"} marked red (a clash, missing travel time or outside business hours).` : "") + (subs(s.id).length ? "\n\nThis replaces your earlier submission (your trainer keeps both)." : ""))) return;
+  if(!confirm(`Submit this calendar for ${s.short} to your trainer?` + (S.events.length < s.tasks.length ? `\n\nYou have ${S.events.length} event${S.events.length === 1 ? "" : "s"} for ${s.tasks.length} tasks.` : "") + (flagged ? `\n\n${flagged} event${flagged === 1 ? " is" : "s are"} marked red (a clash, missing travel time or outside business hours).` : "") + (subs(s.id).length ? "\n\nThis replaces your earlier submission (your trainer keeps both)." : ""))) return;
   if(S.data && isTrainee()){
     const au = C.review(s, S.events);
     S.data.submissions.push({scn:s.id, at:new Date().toISOString(), events:S.events.map(x => Object.assign({}, x)), auto:{pct:au.pct, score:au.score, max:au.max}});
@@ -310,21 +338,24 @@ window.FTCalSim = {
   submit, save:saveNow, review:runReview,
   add(){
     if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
-    const t = ask("What is this event? (it goes on Monday at 9:00 AM; drag it where it belongs)"); if(!t) return;
-    const x = {id:uid(), title:t, day:0, start:C.OPEN, dur:60}; S.events.push(x); S.sel = x.id; changed(); repaint();
+    const x = {id:uid(), title:"", day:0, start:C.OPEN, dur:60, desc:"", guests:"", meet:false, remind:false};
+    editor(x, true, v => { if(!v) return; S.events.push(Object.assign(x, v)); S.sel = x.id; changed(); repaint(); });
   },
   reset(){ if(S.events.length && !confirm("Remove all of your events from this week?")) return; S.events = []; S.sel = null; changed(); repaint(); },
-  pick(i){ S.scn = i; S.sel = null; S.events = C.clean((S.data && S.data.drafts[scn().id]) || []); render(); },
-  open(){ goto("calsim"); }
+  pick(i){ setScn(i); render(); },
+  // open the scheduler on a track (its first week), or where it was
+  open(track){ if(track){ const i = C.SCENARIOS.findIndex(x => x.track === track); if(i >= 0 && i !== S.scn) setScn(i); } if(state.view === "calsim") render(); else goto("calsim"); }
 };
-// The scheduler's card in the Calendar Management Training Practice Lab on the Simulators page (js/ft-simulators.js).
-window.FTCalSimCard = function(){
+// The cards of the Calendaring Simulators on the Simulators page (js/ft-simulators.js): one per track, with the trainee's scores.
+window.FTCalSimCards = function(){
   const unlocked = open();
-  const mine = S.data ? C.SCENARIOS.map(sc => { const l = subs(sc.id).pop(), r = l && S.data.reviews[subKey(l)], b = bestAuto(sc.id);
-    return b < 0 && !l ? "" : `<div class="fts-note">${e(sc.title.split(" · ")[0])}: ${b >= 0 ? `🤖 best ${b}%` : ""}${l ? ` · 📤 submitted` : ""}${r ? ` · 👤 trainer ${e(r.score)}/100` : ""}</div>`; }).join("") : "";
-  return `<div class="card fts-card ${unlocked ? "" : "fts-locked"}"><div class="fts-kicker">Calendaring &amp; Appointment Setting Training${unlocked ? "" : " · opens with this lesson"}</div>
-    <h3>📅 Drag &amp; Drop Calendar Scheduler</h3><p class="fts-note">Build the attorney’s week: put each task on the calendar around the hearings, travel time, lunch and each client’s limits. Save your changes, run the automated review against the attorney’s rules, then submit it for your trainer’s feedback. Two weeks to practice.</p>${mine}
-    <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="FTCalSim.open()">📅 Open the scheduler</button>` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
+  return C.TRACKS.map(tk => {
+    const mine = S.data ? C.SCENARIOS.filter(sc => sc.track === tk.id).map(sc => { const l = subs(sc.id).pop(), r = l && S.data.reviews[subKey(l)], b = bestAuto(sc.id);
+      return b < 0 && !l ? "" : `<div class="fts-note">${e(sc.short)}: ${b >= 0 ? `🤖 best ${b}%` : ""}${l ? ` · 📤 submitted` : ""}${r ? ` · 👤 trainer ${e(r.score)}/100` : ""}</div>`; }).join("") : "";
+    return `<div class="card fts-card ${unlocked ? "" : "fts-locked"}"><div class="fts-kicker">${e(tk.where)}${unlocked ? "" : " · opens with Lesson " + LESSON}</div>
+      <h3>${tk.icon} ${e(tk.title)}</h3><p class="fts-note">${e(tk.blurb)}</p>${mine}
+      <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="FTCalSim.open('${tk.id}')">📅 Open →</button>` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
+  }).join("");
 };
 // The scheduler's scores are in the trainee's record: read it when the Simulators page opens, so the card shows them.
 window.FTCalSimLoad = function(){ if(isTrainee() && !S.data && !S.loading) load(); };
@@ -361,7 +392,7 @@ function scoresOf(x){
   return C.SCENARIOS.map(s => {
     const last = x.d.submissions.filter(z => z.scn === s.id).pop(); if(!last) return "";
     const au = C.review(s, last.events).pct, r = x.d.reviews[subKey(last)];
-    return `<span class="cs-pill">${e(s.title.split(" · ")[0])}: 🤖 ${au}%${r ? ` · 👤 ${e(r.score)}/100` : ""}</span>`;
+    return `<span class="cs-pill">${e(s.short)}: 🤖 ${au}%${r ? ` · 👤 ${e(r.score)}/100` : ""}</span>`;
   }).join("");
 }
 const unreviewed = x => x.d.submissions.filter(z => !x.d.reviews[subKey(z)]).length;
@@ -396,7 +427,7 @@ function detailHTML(x){
         <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}')">${r ? "Update feedback" : "Save feedback"}</button>` : ""}</div>`;
   }).join("");
   const ext = x.d.external.slice().reverse().map(z => `<div class="cs-att-ext">🔗 ${e(new Date(z.at).toLocaleString())} · ${e(z.title)} · <b>${Math.round(z.score)}/${Math.round(z.max)}</b></div>`).join("");
-  const runs = x.d.autos.length ? `<div class="cs-att-ext">🤖 ${x.d.autos.length} automated review run${x.d.autos.length === 1 ? "" : "s"} while practicing: ${C.SCENARIOS.map(q => { const b = x.d.autos.filter(a => a.scn === q.id).reduce((m, a) => Math.max(m, a.pct), -1); return b < 0 ? "" : `${e(q.title.split(" · ")[0])} best ${b}%`; }).filter(Boolean).join(", ")}</div>` : "";
+  const runs = x.d.autos.length ? `<div class="cs-att-ext">🤖 ${x.d.autos.length} automated review run${x.d.autos.length === 1 ? "" : "s"} while practicing: ${C.SCENARIOS.map(q => { const b = x.d.autos.filter(a => a.scn === q.id).reduce((m, a) => Math.max(m, a.pct), -1); return b < 0 ? "" : `${e(q.short)} best ${b}%`; }).filter(Boolean).join(", ")}</div>` : "";
   return `<div class="cs-atts">${list || '<div class="fp-muted">Nothing submitted yet.</div>'}${runs}${ext}</div>`;
 }
 window.FTCalAdmin = {
@@ -464,15 +495,15 @@ main.main-calsim{max-width:1180px;margin:0 auto;padding:22px 16px 40px;}
 .cs-grid{display:grid;grid-template-columns:54px repeat(5,minmax(112px,1fr));min-width:660px;}
 .cs-dayhd{height:28px;line-height:28px;text-align:center;font-weight:800;font-size:13px;color:var(--navy);}
 .cs-timecol{position:relative;} .cs-time{position:absolute;right:6px;font-size:10.5px;color:var(--ink-soft);}
-.cs-col{position:relative;cursor:cell;touch-action:pan-y;border-left:1px solid var(--line,#e5e7eb);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent ${SH * 2 - 1}px,#e5e7eb ${SH * 2 - 1}px,#e5e7eb ${SH * 2}px),repeating-linear-gradient(to bottom,transparent 0,transparent ${SH - 1}px,#f1f5f9 ${SH - 1}px,#f1f5f9 ${SH}px);}
-.cs-col::before,.cs-col::after{content:"";position:absolute;left:0;right:0;background:rgba(100,116,139,.12);pointer-events:none;} .cs-col::before{top:0;height:${SH * 2}px;} .cs-col::after{top:${px(17 * 60)}px;bottom:0;}
+.cs-col{position:relative;cursor:cell;touch-action:pan-y;border-left:1px solid #dadce0;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent ${SH * 4 - 1}px,#dadce0 ${SH * 4 - 1}px,#dadce0 ${SH * 4}px);}
+.cs-col::before,.cs-col::after{content:"";position:absolute;left:0;right:0;background:rgba(100,116,139,.12);pointer-events:none;} .cs-col::before{top:0;height:${SH * 4}px;} .cs-col::after{top:${px(17 * 60)}px;bottom:0;}
 .cs-ev{position:absolute;left:3px;right:3px;border-radius:7px;padding:2px 6px;overflow:hidden;font-size:11.5px;line-height:1.2;box-sizing:border-box;z-index:2;}
 .cs-ev b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .cs-ev span{display:block;font-size:10.5px;opacity:.85;white-space:nowrap;}
-.cs-fixed{background:#e2e8f0;color:#334155;border:1px solid #cbd5e1;cursor:not-allowed;} .cs-court{background:#1e3a8a;color:#fff;border-color:#1e3a8a;}
+.cs-fixed{background:#e8eaed;color:#3c4043;border:1px solid #dadce0;cursor:not-allowed;} .cs-court{background:#3f51b5;color:#fff;border-color:#3f51b5;}
 .cs-lunch{background:repeating-linear-gradient(45deg,#f1f5f9,#f1f5f9 6px,#e2e8f0 6px,#e2e8f0 12px);color:#64748b;}
 .cs-buf{position:absolute;left:3px;right:3px;background:repeating-linear-gradient(135deg,rgba(30,58,138,.14),rgba(30,58,138,.14) 4px,transparent 4px,transparent 8px);border-radius:6px;z-index:1;pointer-events:none;}
-.cs-req{background:#fb923c;color:#1f2937;border:1px solid #ea580c;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.2);padding-right:18px;}
-.cs-req:focus-visible{outline:3px solid #fdba74;outline-offset:1px;} .cs-req.cs-sel{box-shadow:0 0 0 2px var(--navy);} .cs-req.cs-bad,.cs-ro.cs-bad{background:#fecaca;border-color:#dc2626;} .cs-req.cs-lifted{opacity:.35;}
+.cs-req{background:#039be5;color:#fff;border:1px solid #0288d1;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.2);padding-right:18px;}
+.cs-req:focus-visible{outline:3px solid #fdba74;outline-offset:1px;} .cs-req.cs-sel{box-shadow:0 0 0 2px var(--navy);} .cs-req.cs-bad,.cs-ro.cs-bad{background:#d93025;border-color:#b3261e;color:#fff;} .cs-req.cs-lifted{opacity:.35;}
 .cs-x{position:absolute;top:1px;right:2px;width:16px;height:16px;border:0;border-radius:4px;background:rgba(0,0,0,.12);color:#111;font-size:10px;line-height:16px;padding:0;cursor:pointer;} .cs-x:hover{background:rgba(0,0,0,.3);color:#fff;}
 .cs-rs{position:absolute;left:0;right:0;bottom:0;height:8px;cursor:ns-resize;touch-action:none;background:linear-gradient(transparent,rgba(0,0,0,.18));}
 .cs-prev{position:absolute;left:3px;right:3px;border-radius:7px;z-index:5;pointer-events:none;font-size:10.5px;font-weight:700;padding:2px 6px;box-sizing:border-box;}
@@ -486,12 +517,18 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-more{padding:14px 18px;} .cs-more p{margin:4px 0 10px;font-size:13.5px;color:var(--ink-soft);} .cs-more a{text-decoration:none;}
 .cs-admin{padding:16px 18px;} .cs-atts{margin:6px 0 10px 18px;} .cs-att-ext{font-size:13px;margin:4px 0;}
 .cs-sub,.cs-sub *{text-transform:none;letter-spacing:normal;} .cs-sub{border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:8px 12px;margin:6px 0;} .cs-sub-hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;} .cs-sub .cs-gridwrap{margin:8px 0;}
-.cs-ro{background:#fb923c;color:#1f2937;border:1px solid #ea580c;z-index:3;} .cs-flag{color:#b91c1c;font-weight:700;} .cs-result{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-left:6px solid #f97316;border-radius:12px;padding:14px 16px;margin:0 0 14px;} .cs-result.ok{border-left-color:#16a34a;}
+.cs-ro{background:#039be5;color:#fff;border:1px solid #0288d1;z-index:3;} .cs-flag{color:#b91c1c;font-weight:700;} .cs-result{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-left:6px solid #f97316;border-radius:12px;padding:14px 16px;margin:0 0 14px;} .cs-result.ok{border-left-color:#16a34a;}
 .cs-score{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px;} .cs-score b{font-size:32px;color:var(--navy);} .cs-score span{font-weight:700;color:var(--ink-soft);}
 .cs-item{border-top:1px solid var(--line,#e5e7eb);padding:8px 0;font-size:13.5px;} .cs-item-hd{display:flex;gap:6px;align-items:baseline;} .cs-item-hd span{margin-left:auto;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
 .cs-item.ok .cs-item-hd{color:#166534;} .cs-item.bad .cs-item-hd{color:#991b1b;} .cs-item ul{margin:4px 0 0 22px;padding:0;color:#7f1d1d;font-size:13px;} .cs-tnote{margin-top:4px;font-size:13px;color:#14532d;background:#f0fdf4;border-radius:6px;padding:4px 8px;}
 .cs-review ul{margin:6px 0 0 20px;padding:0;font-size:13px;color:#14532d;} .cs-rv-ts{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px;} .cs-rv-t{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv-t input{padding:6px 8px;font:inherit;font-weight:400;}
 .cs-evlist{margin:6px 0 10px 18px;padding:0;font-size:13px;} .cs-rv{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0 4px;} .cs-rv label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv input{width:90px;padding:6px 8px;} .cs-rv-c{flex:1 1 280px;} .cs-rv textarea{width:100%;padding:6px 8px;font:inherit;}
+.cs-blurb{margin:0 0 12px;font-size:13.5px;color:var(--ink-soft);max-width:820px;} .cs-weeks{margin-top:-4px;} .cs-wk{font-size:12.5px;padding:6px 14px;} .cs-et{font-size:11px;color:var(--ink-soft);} .cs-chip{background:#e0f2fe;color:#075985;margin-left:4px;}
+.cs-modal{position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;}
+.cs-dlg{width:min(460px,100%);background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:12px;}
+.cs-m-title{border:0;border-bottom:2px solid #1a73e8;font-size:21px;padding:4px 2px 6px;outline:none;color:#202124;width:100%;} .cs-m-when{font-size:13.5px;color:#3c4043;}
+.cs-m-row{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3c4043;} .cs-m-row input[type=text],.cs-m-row input:not([type]){flex:1;border:0;border-bottom:1px solid #dadce0;padding:5px 2px;font:inherit;outline:none;} .cs-m-top{align-items:flex-start;} .cs-m-row textarea{flex:1;border:1px solid #dadce0;border-radius:8px;padding:6px 8px;font:inherit;resize:vertical;}
+.cs-m-btns{display:flex;gap:8px;align-items:center;} .cs-m-btns span{flex:1;}
 @media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .cs-tray{position:static;max-height:none;} }
 `; document.head.appendChild(st); })();
 })();

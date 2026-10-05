@@ -26,13 +26,13 @@ const TOOLS = {
   drill:    {icon:"☎️", name:"Front Desk Drill (CMS)", cms:"drill=1", desc:"Scored incoming calls on the Training Library cases: find the file, verify the caller, handle or route the call."},
   library:  {icon:"📚", name:"Training Library (all 20 cases)", cms:"library=1", desc:"Every mock case in the CMS, with the firm directory and front-desk rules."},
   call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"Practice calls on these same cases: a caller phones in, you answer by voice or typing, write the call note, and get a scored debrief."},
-  calendar: {icon:"📅", name:"Calendaring Simulator", page:"calendar.html", desc:"More practice: a week of scheduling requests to put on the calendar, checked for conflicts and details."}
+  calendar: {icon:"📅", name:"Calendaring Simulators", page:"calendar.html", desc:"More practice: a week of scheduling tasks to put on the calendar, checked for conflicts and details."}
 };
 
 // Every live simulator on the LSH Training Portal (its hub: /simulators.html), open to practice any time.
 const PORTAL_ALL = [
   {id:"call", icon:"📞", name:"Call Simulator", page:"call.html", desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
-  {id:"calendar", icon:"🗓", name:"Calendaring", page:"calendar.html", desc:"A real week full of conflicts: move, shorten or remove events under real rules, then check your plan."},
+  {id:"calendar", icon:"🗓", name:"Calendaring Simulators (Portal)", page:"calendar.html", desc:"The Portal’s own calendaring practice: Standard Training, Litigation Week (Case Management) and Executive Week (EA / PA). Your trainer’s Calendar Management practice lab is the one above."},
   {id:"email", icon:"✉️", name:"Email Workspace", page:"email.html", desc:"A Gmail-style practice inbox: triage, label, reply, forward and report phishing."},
   {id:"replies", icon:"📨", name:"Email Replies", page:"email-replies.html", desc:"One email at a time, answered like at work: an upset client, an adjuster, a lien letter, your attorney."},
   {id:"docket", icon:"⚖️", name:"Docket System", page:"docket.html", desc:"Court notices and mail arrive in an inbox: docket them and calendar every deadline they trigger."},
@@ -142,8 +142,8 @@ function renderCard(a, i){
   </div>`;
 }
 function renderSimulators(){
-  // The Calendar Management Training Practice Lab: the lesson's mock calls and the drag-and-drop Calendar Scheduler together.
-  const labIdx = window.FTCalSimCard ? ACTIVITIES.findIndex(a=>a.kind==="call" && a.lesson===5) : -1;
+  // The Calendaring Simulators: one card per track (Standard Training, Litigation Week, Executive Week), with the Lesson 5 mock calls.
+  const labIdx = window.FTCalSimCards ? ACTIVITIES.findIndex(a=>a.kind==="call" && a.lesson===5) : -1;
   if(window.FTCalSimLoad) FTCalSimLoad();
   const group = (kind, h, sub)=>{
     const cards = ACTIVITIES.map((a,i)=>a.kind===kind && i!==labIdx ? renderCard(a,i) : "").join("");
@@ -151,8 +151,8 @@ function renderSimulators(){
   };
   return `<div class="fts-hero"><h1>🛠 Simulators</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
-    ${labIdx >= 0 ? `<section class="fts-group"><h2>🧪 Calendar Management Training Practice Lab</h2><p class="fts-sub">Practice for Lesson 5 (Calendaring &amp; Appointment Setting). Your calendar scores are saved to your own record for your trainer.</p>
-      <div class="fts-grid">${FTCalSimCard()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
+    ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management), the <b>Litigation Week</b> (Case Management) and the <b>Executive Week</b> (EA / PA). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
+      <div class="fts-grid">${FTCalSimCards()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
     ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each call is a random caller on that line.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
     <section class="fts-group"><h2>🧰 All simulators</h2>
