@@ -42,23 +42,11 @@ const PORTAL_ALL = [
 // The Training Guide's mock calls and demos (its own names), the lesson each belongs to,
 // the CMS program it opens in, and the Training Library cases that fit it.
 const ACTIVITIES = [
-  {kind:"call", lesson:4, cms:"reception", title:"Reception Mock Calls", cases:[
-    ["MC-01", "Maria Santos", "Client calls about her next appointment; a “cousin” asks about the settlement."],
-    ["MC-06", "James Wilson", "Settled: he asks when his check is ready and wants a friend to pick it up."],
-    ["MC-10", "Sofia Morales (minor)", "Only the parent on file is the guardian; the other parent and the school are not."],
-    ["MC-16", "Hannah Pierce", "Client says she’s changing lawyers; her new firm calls for the file."]],
-    tools:["drill","library","call"]},
-  {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[
-    ["MC-01", "Maria Santos", "Next client check-in 10/20/2026; updated City Spine & Rehab records after 10/31/2026."],
-    ["MC-05", "Linda Garcia", "In litigation: deposition 10/06/2026 at 10:00 AM, prep with the client 10/02/2026 at 2:00 PM; defense counsel calls to move the deposition."],
-    ["MC-08", "Tomás Rivera", "Surgery scheduled; call the client after surgery (10/15/2026). Spanish-speaking; his daughter is authorized."]],
-    tools:["calendar","call"]},
-  {kind:"call", lesson:6, cms:"intake", title:"Intake Mock Calls", note:"Work in the case’s Intake tab while you take the call.", cases:[
-    ["MC-02", "Derek Thompson", "Grocery-store slip and fall; retainer still out. The store’s insurer wants a recorded statement."],
-    ["MC-13", "Nicole Adams", "Potential client with the statute of limitations weeks away (10/20/2026): urgent routing, no advice."],
-    ["MC-12", "William Harris", "Early investigation: the body shop charges storage and the client wants a rental car."],
-    ["MC-19", "Samuel Boateng", "Pedestrian hit by a city bus; government-claim notice deadline."]],
-    tools:["call"]},
+  // Mock calls: one button, a random call on this line in the Call Simulator (random=1). The caller and their case stay
+  // unknown until the debrief: the trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
+  {kind:"call", lesson:4, cms:"reception", title:"Reception Mock Calls", cases:[], tools:[]},
+  {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[], tools:[]},
+  {kind:"call", lesson:6, cms:"intake", title:"Intake Mock Calls", note:"Work in the case’s Intake tab while you take the call.", cases:[], tools:[]},
   {kind:"demo", lesson:6, cms:"intake", title:"Saving Intake Packet and Extracted Intake Documents Demo", note:"Open the case, click “Work on a practice copy”, then save the documents to the case.", cases:[
     ["MC-02", "Derek Thompson", "Intake questionnaire; retainer and HIPAA sent by e-sign, not yet signed; client’s photos of the spill."],
     ["MC-13", "Nicole Adams", "Intake questionnaire; conflict check pending; store adjuster emails the client forwarded."]],
@@ -90,6 +78,7 @@ const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
 // key: a tool id, or a Training Library case id ("MC-04")
 function keyHref(key, a){
   if(/^MC-\d+$/.test(key)) return cmsHref({program:a.cms, mock:key});
+  if(key==="random") return portalHref("call.html", a.title, true);
   const t = TOOLS[key];
   if(t.cms) return cmsHref({program: key==="drill" ? "reception" : a.cms}, t.cms);
   return portalHref(t.page, key==="call" ? a.title : "");
@@ -108,12 +97,14 @@ function cmsHref(params, extra){
   const q = addWho(new URLSearchParams(Object.assign({}, params, {from:"standard"})));
   return CMS + "?" + q + (extra ? "&" + extra : "");
 }
-function portalHref(page, line){
+function portalHref(page, line, random){
   const q = new URLSearchParams({program:"FT"});
-  if(line) q.set("line", line);   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
+  if(line) q.set("line", line);
+  if(random) q.set("random", "1");   // a random caller on this line, unknown until the debrief   // the Call Simulator opens on this mock call's calls (its line = the activity's title)
   return PORTAL + page + "?" + addWho(q);
 }
 function keyName(key, a){
+  if(key==="random") return "📞 Random call";
   const c = a.cases.find(x=>x[0]===key);
   return c ? `${c[0]} · ${c[1]}` : TOOLS[key].name;
 }
@@ -128,6 +119,15 @@ function renderCard(a, i){
   const row = (title, desc, key)=>`<div class="fts-tool">
       <div class="fts-tool-txt"><b>${title}</b><span>${esc(desc)}</span></div>
       <div class="fts-tool-act">${acts(key)}</div></div>`;
+  if(a.kind==="call") return `<div class="card fts-card fts-call ${open?"":"fts-locked"}">
+    <div class="fts-kicker">${esc(lessonTitle(a.lesson))}${open ? "" : " · opens with this lesson"}</div>
+    <h3>${esc(a.title)}</h3>
+    ${a.note ? `<p class="fts-note">${esc(a.note)}</p>` : ""}
+    <p class="fts-note">A caller phones in about one of the firm’s cases. Get their name, verify them, find their file in the CMS and handle the call. Who called, and about which case, is in your debrief.</p>
+    <div class="fts-tool-act">${open
+      ? `<button class="btn btn-navy" onclick="ftsOpen(${i},'random')">📞 Take a random call</button><a class="btn btn-ghost btn-sm" href="${esc(keyHref("random", a))}" target="_blank" rel="noopener">New tab ↗</a>`
+      : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div>
+  </div>`;
   const cases = a.cases.map(c=>row(`<span class="fts-mc">${esc(c[0])}</span> ${esc(c[1])}`, c[2], c[0])).join("");
   const tools = a.tools.map(id=>row(`${TOOLS[id].icon} ${esc(TOOLS[id].name)}`, TOOLS[id].desc, id)).join("");
   return `<div class="card fts-card ${open?"":"fts-locked"}">
@@ -147,7 +147,7 @@ function renderSimulators(){
   };
   return `<div class="fts-hero"><h1>🛠 Simulators</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
-    ${group("call", "📞 Mock calls", "In a mock call you handle a call on one of these cases for your trainer. Practice the calls here first.")}
+    ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each call is a random caller on that line.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
     <section class="fts-group"><h2>🧰 All simulators</h2>
       <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
