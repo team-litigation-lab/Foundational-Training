@@ -12,6 +12,7 @@
 //    📒 Monitoring Sheets and ✍️ Process Questions read the trainees' sheets with get-many, not one request each.
 // Usage: node .github/scripts/requests.cjs [baseUrl]   (with .github/scripts/server.mjs running; needs Playwright)
 const { chromium } = require('playwright');
+const signIn = require('./sign-in.cjs');   // the trainee signs in (the name + batch form is gone)
 const path = require('path'); const { pathToFileURL } = require('url');
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const failures = []; const fail = (m) => failures.push(m);
@@ -78,8 +79,7 @@ async function workerChecks() {
     const since = (t, f) => log.filter(x => x.at >= t && (!f || f(x)));
     const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    await page.fill('#loginFirstInput', 'Req'); await page.fill('#loginLastInput', 'Count'); await page.fill('#loginBatchInput', 'CIREQ');
-    await page.click('#loginSubmitBtn'); await page.waitForTimeout(1200);
+    await signIn(page, 'Req', 'Count', 'CIREQ');
     const me = await page.evaluate(() => 'trainee:' + state.traineeId);   // their record (kept here: a sign-out clears state.traineeId)
     const setApproved = (on) => page.evaluate(async ([on, key]) => {
         const r = await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json());

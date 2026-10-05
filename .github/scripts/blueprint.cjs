@@ -15,6 +15,7 @@
 //   id, not again for the same one, and again when the deployment changes with APP_BUILD left as it was.
 // Usage: node .github/scripts/blueprint.cjs [baseUrl]   (with server.mjs running; needs `npm i playwright jspdf@4.2.1`)
 const { chromium } = require('playwright');
+const signIn = require('./sign-in.cjs');   // the trainee signs in (the name + batch form is gone)
 const fs = require('fs'); const path = require('path'); const zlib = require('zlib');
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const JSPDF = fs.readFileSync(path.join(path.dirname(require.resolve('jspdf')), 'jspdf.umd.min.js'));
@@ -39,8 +40,7 @@ async function open(browser, viewport, admin) {
     await page.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/jspdf\/4\.2\.1\/jspdf\.umd\.min\.js/, r => r.fulfill({ contentType: 'text/javascript', body: JSPDF }));
     await page.route(/\/version$/, r => r.fulfill({ contentType: 'text/plain', body: `Portal build deployed: test\nDeployment: ${deployment}\n` }));
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    await page.fill('#loginFirstInput', 'Blue'); await page.fill('#loginLastInput', admin ? 'Trainer' : 'Print'); await page.fill('#loginBatchInput', 'CIBP');
-    await page.click('#loginSubmitBtn'); await page.waitForTimeout(1200);
+    await signIn(page, 'Blue', admin ? 'Trainer' : 'Print', 'CIBP');
     if (admin) await page.evaluate(() => { state.isAdmin = true; goto('orientation'); render(); });
     await page.waitForTimeout(300);
     return page;
