@@ -226,12 +226,12 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 **🛠 Simulators** (top bar, and the **Simulators** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`).
 
-**Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. A **mock call** card has one button, **📞 Take a random call**: the Training Portal's Call Simulator with `&line=<the card's title>&random=1` picks a random caller on that line. The caller's name, case and what's scored stay hidden until the debrief, so the trainee gets the name, verifies the caller and finds the file in the CMS, as on a real call; **🔀 Next random call** in the debrief takes another. A **demo** card lists its example cases. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
+**Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. A **mock call** card has **📞 Take a random call** (Calendar Management's card also has the 📅 Google Calendar Simulator, to plot the appointments): the Training Portal's Call Simulator with `&line=<the card's title>&random=1` picks a random caller on that line. The caller's name, case and what's scored stay hidden until the debrief, so the trainee gets the name, verifies the caller and finds the file in the CMS, as on a real call; **🔀 Next random call** in the debrief takes another. A **demo** card lists its example cases. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
 
 | Activity | Lesson | Example cases | Also |
 |---|---|---|---|
 | Reception Mock Calls | Receptionist Training | — (a random call) | 📞 Take a random call: Call Simulator, 7 reception calls |
-| Calendar Management Mock Calls | Calendaring & Appointment Setting | — (a random call) | 📞 Take a random call: Call Simulator, 4 calendar calls |
+| Calendar Management Mock Calls | Calendaring & Appointment Setting | — (a random call) | 📞 Take a random call: Call Simulator, 4 calendar calls · 📅 Google Calendar Simulator (the Portal's `simulators/gcal.html`): plot the appointments on the attorney's calendar and check them |
 | Intake Mock Calls | Intake Specialist | — (a random call) | 📞 Take a random call: Call Simulator, 3 intake calls |
 | Saving Intake Packet and Extracted Intake Documents Demo | Intake Specialist | MC-02, MC-13 | Training Library |
 | LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | MC-01, MC-02, MC-12 | Training Library |
@@ -240,7 +240,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
 
-**All simulators.** Every live simulator on the LSH Training Portal: Call, Calendaring, Email Workspace, Email Replies, Docket System, Medical Records Requests and Court E-Filing. These are open any time, and the section links to the portal's Simulators hub.
+**All simulators.** Every live simulator on the LSH Training Portal: Call, Google Calendar, Calendaring, Email Workspace, Email Replies, Docket System, Medical Records Requests and Court E-Filing. These are open any time, and the section links to the portal's Simulators hub.
 
 **How the tools open**
 - **Open here** runs the tool in a full-window panel (✕ Close or Esc returns to the page). **New tab ↗** opens it in its own tab.
