@@ -214,6 +214,8 @@ window.ftsOpen = function(i, id){
   const a = ACTIVITIES[i]; if(!a || !activityOpen(a)) return;
   ftsShow(keyHref(id, a), `${keyName(id, a)} — ${a.title}`);
 };
+// The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
+window.ftsCalsim = function(track, scores){ window.open(portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
 window.ftsOpenPortal = function(id){
   const t = PORTAL_ALL.find(x=>x.id===id); if(t) ftsShow(portalHref(t.page), t.name);
 };
