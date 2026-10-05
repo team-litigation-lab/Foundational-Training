@@ -207,9 +207,12 @@ async function traineeWrite(env, tok, key, value) {
     await kv.put(key, value); return null;
   }
   if (key === `calsim:${id}`) {
-    // Calendar Scheduler (js/ft-calendar.js): the trainee's drafts and attempts. Scores are worked out again from the saved calendars.
-    if (value.length > 200000) return "The calendar attempts are too large to save";
-    await kv.put(key, value); return null;
+    // Calendar Scheduler (js/ft-calendar.js): the trainee's draft calendars and submissions. The trainer's reviews
+    // (score and comment) are never the trainee's to write: they keep whatever the record already has.
+    if (value.length > 200000) return "The calendar record is too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    incoming.reviews = (existing && existing.reviews) || {};
+    await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `feedback:${id}`) {
     // Trainees (auto-review) may add days and mark reviews read — never rewrite a trainer's review.
