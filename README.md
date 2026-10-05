@@ -17,8 +17,6 @@ The training platform for the *Revised 18-Day Foundational Training Program* (Tr
   - **Needs the Portal's side** (EA-PA / `cm-training-activity` repo, not this one): its program cards for trainees open this site with a fresh ticket. The *Go to the LSH Training Portal* button here opens `PORTAL_HOME` in `js/portal-gate.js`; change it if the trainees' portal page isn't the site's home page.
   - The Worker side is `portalOnly`, `readPortalTicket` and `/api/auth/portal` in `worker.js`; `build/build.py` patches the engine's sign-in screen, request and boot to call the gate.
 
-**📚 Knowledge Base page (`kb.html`).** A separate page, `/kb.html`, with a searchable library of SOPs, manuals and guides (search covers title, summary, section and tags; PDFs open in a reader on the page and can be downloaded). It's static: the files are in `kb/files/` and listed in `kb/docs.json`, so it needs no backend. Add a document with `python3 build/add_kb_doc.py <file> --title "…" --summary "…" --section "…" --tags "a,b"` (running it again for the same file updates the entry), then commit. It is separate from the `lsh-knowledge-base` repo (a Worker with D1 and R2 storage); nothing from that is used here. The page isn't linked from the top bar yet.
-
 Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`); Lesson 9 is still its Canva deck until its PDF is added. Lessons are named by their training title, not by day.
 
 The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
