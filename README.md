@@ -225,6 +225,8 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
 
+**Graded calls count in their lesson.** The main Call Simulator is the CMS's (every Call Simulator link opens it, signed in through the Portal). A mock-call card has **🎯 Take a graded call** (a random caller, unknown until the debrief: `random=1`) and **📞 Practice a caller** (the line, no grading). A graded call taken there is kept by the Training Portal (its `/api/call-results`) in this program's store as `callsim:<trainee id>`, which the Worker lets the trainee read but never write. Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls then show their best graded call on the mock-call card ("🎯 Graded calls: best 82% · 2 calls") and on the lesson card ("📞 82%"), and the dashboard band shows the three lessons' best graded calls averaged ("Graded calls · 2 / 3 lessons"). It's read once a page load and again when the trainee comes back to the tab (at most every two minutes).
+
 **All simulators.** Every live simulator on the LSH Training Portal: Call, Google Calendar, Calendaring, Email Workspace, Email Replies, Docket System, Medical Records Requests and Court E-Filing. These are open any time, and the section links to the portal's Simulators hub.
 
 **How the tools open**

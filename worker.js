@@ -172,9 +172,11 @@ const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|openda
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
+// callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
+// The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || key.startsWith(`actup:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
+  return OWN(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);

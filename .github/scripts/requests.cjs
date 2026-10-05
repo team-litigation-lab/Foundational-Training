@@ -2,6 +2,7 @@
 // a month, shared by every LSH site), so an open page must ask sparingly. The EA/PA portal's test, for this program.
 // 1. /api/storage/get-many (worker.js, in secure mode): a trainee gets their own and public records only, an Admin
 //    every one, the records are this program's ("ft:" keys, never another course's), and more than 100 keys are refused.
+//    A trainee reads their own graded calls (callsim:<id>, kept by the Training Portal), never another's, and can't write them.
 // 2. In a browser (checks sped up with window.EAPA_POLL): a signed-in trainee's page reads the tasks for every open
 //    lesson in one request, reads their record about once per check, reads the open lessons (both settings in one
 //    request) and checks for a new version rarely, and asks nothing while the tab is in the background (catching up
@@ -46,6 +47,14 @@ async function workerChecks() {
     if ((await call('/api/storage/get-many', { keys }, null)).status !== 401) fail('get-many works without signing in');
     if ((await call('/api/storage/get-many', { keys: Array.from({ length: 101 }, (_, i) => 'k' + i) }, a)).status !== 400) fail('get-many takes more than 100 keys');
     if ((await call('/api/storage/get-many', { keys: [] }, a)).status !== 400) fail('get-many takes no keys');
+    // graded calls (callsim:<id>, kept by the Training Portal): a trainee reads their own, never another's, and never writes it
+    store.set('ft:callsim:ana-cruz--b1', JSON.stringify({ best: { lesson4: { score: 90, calls: 1 } } }));
+    store.set('ft:callsim:ben-diaz--b1', JSON.stringify({ best: { lesson4: { score: 40, calls: 1 } } }));
+    const own = await call('/api/storage/get', { key: 'callsim:ana-cruz--b1' }, t);
+    if (own.status !== 200 || !own.body || !/"score":90/.test(own.body.value || '')) fail(`a trainee can't read their graded calls: ${JSON.stringify(own)}`);
+    if ((await call('/api/storage/get', { key: 'callsim:ben-diaz--b1' }, t)).status !== 403) fail('a trainee can read another trainee\'s graded calls');
+    const write = await call('/api/storage/set', { key: 'callsim:ana-cruz--b1', value: JSON.stringify({ best: { lesson4: { score: 100, calls: 9 } } }) }, t);
+    if (write.status !== 403 || /"score":100/.test(store.get('ft:callsim:ana-cruz--b1'))) fail(`a trainee could write their own graded calls: ${JSON.stringify(write)}`);
 }
 
 (async () => {
