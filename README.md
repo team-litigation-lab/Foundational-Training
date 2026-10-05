@@ -19,7 +19,7 @@ The training platform for the *Revised 18-Day Foundational Training Program* (Tr
 
 **📚 Knowledge Base page (`kb.html`).** A separate page, `/kb.html`, for the LSH Knowledge Base (the `lsh-knowledge-base` repo: its own Worker with D1 and R2 storage; nothing from it is copied here). It shows the deployed Knowledge Base in a frame, with a link to open it in a new tab. Until it's deployed, `KB_URL` at the top of the page's script is empty and the page says so; set it to the Worker's `https://` address. The page isn't linked from the top bar yet.
 
-Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`); Lesson 9 is still its Canva deck until its PDF is added. Lessons are named by their training title, not by day.
+Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`). Lessons are named by their training title, not by day.
 
 The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
 
@@ -36,7 +36,8 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 6 | Intake Specialist Training | ✅ the deck's pages as slides (105, from its PDF in two parts) |
 | 7 | Claims Specialist Training | ✅ the deck's pages as slides (77, from its PDF) |
 | 8 | Medical Records Specialist Training | ✅ the deck's pages as slides (55, from its PDF) |
-| 9 | Lien Negotiator Training | ✅ deck, then Word Game 1 (playable) |
+
+**Lien Negotiator Training** (id 9) is off the standard training: it becomes a separate training. Its file is `build/lessons/off/lesson09.js` (the Canva deck and Word Game 1, `ft/day17/word-game-1.html`); its Process Questions sheet and its Simulators demo (Reduction Request, Settlement Release Forms and Closing Statement) stay in `js/ft-process.js` and `js/ft-simulators.js`, which show only the items of lessons on the platform, so they come back with the lesson.
 
 Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skips. To bring one back, move its file into `build/lessons/` and rebuild; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
 
@@ -52,7 +53,7 @@ Lesson 1 shows the "I. Virtual Assistant Essentials" deck page by page: each pag
 
 ### Native slides (rebuilt from a deck)
 
-**Topic dividers.** Lessons 1, 2, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 9 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
+**Topic dividers.** Lessons 1, 2, 4 and 7, the lessons rebuilt page by page, open each topic with a divider slide, as in the EA/PA and CM courses. It shows *Lesson N of 8 · the lesson*, *Topic N of M* and the topic's title. The day intro lists the topics, and Presenter view's cue names the topic and how many pages it has.
 - **Where topics start:** `FT_TOPICS` in `js/ft-updates.js`, with each topic's first page by page id. Lesson 1 has 10 topics, Lesson 2 has 11, Lesson 4 has 5 and Lesson 7 has 12.
 - **Adding pages:** new pages don't move the dividers. To start a topic somewhere else, change its page id there.
 - **Canva lessons:** a lesson that is one Canva deck has no dividers, because the deck has its own title page.
@@ -73,7 +74,7 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
 
 **Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
 
-- **It isn't one of the program's 9 lessons.**
+- **It isn't one of the program's 8 lessons.**
   - It's always open, for every trainee and batch.
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
@@ -136,7 +137,6 @@ Every lesson's process questions are its **Knowledge Check**, answered in writin
 | 6 Intake Specialist Training | Intake Specialist Training | 10 |
 | 7 Claims Specialist Training | Claims Specialist Training | 10 |
 | 8 Medical Records Specialist Training | Medical Records Specialist Training | 10 |
-| 9 Lien Negotiator Training | Lien Negotiator | 12 |
 
 A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}`).
 
@@ -222,7 +222,6 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 | LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | MC-01, MC-02, MC-12 | Training Library |
 | Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | MC-01, MC-15, MC-08 | Training Library |
 | LV (Lien Verification) Request Demo | Medical Records Specialist | MC-09, MC-15, MC-05 | Training Library |
-| Reduction Request, Settlement Release Forms and Closing Statement Demo | Lien Negotiator | MC-11, MC-06 | Training Library |
 
 Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
 

@@ -6,7 +6,7 @@
      • It isn't one of the program's lessons: it's always open, and it doesn't count toward
        "Lessons finished", the certificate or the admin stats. It isn't in DAYS; DAYS.find and
        DAYS.some also look at it (by id, ORIENT_ID), so the lesson view, Presenter view, routes
-       (#/day/12) and names find it, while DAYS.length, map and filter still count the 9 lessons.
+       (#/day/12) and names find it, while DAYS.length, map and filter still count the 8 lessons.
      • A slide's html is built when it's shown (a getter), so the file name in the Reading Task
        has the trainee's name and the Copy buttons work.
      • The parts follow the Setting of Expectations: what training is (pass it; hard on purpose; trainers are your first clients);

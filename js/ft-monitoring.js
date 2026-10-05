@@ -25,8 +25,7 @@ const MON_DEFAULT_TOPICS = ["Virtual Assistant Essentials - Day 1", "Virtual Ass
   "Reception Training Day 1", "Reception Training Day 2", "Reception Training Day 3", "Calendar Management Training",
   "Intake Training Day 1", "Intake Training Day 2", "Intake Training Day 3",
   "Insurance Communication Training Day 1", "Insurance Communication Training Day 2", "Insurance Communication Training Day 3",
-  "Provider Communication Training Day 1", "Provider Communication Training Day 2", "Provider Communication Training Day 3", "Provider Communication Training Day 4",
-  "Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
+  "Provider Communication Training Day 1", "Provider Communication Training Day 2", "Provider Communication Training Day 3", "Provider Communication Training Day 4"];
 const RATINGS = ["I really don’t get this. I need extra help.", "I think I can do this on my own but I am still not sure.",
   "I am confident that I can do this on my own.", "I definitely can do this and I can teach this to others!"];
 const slug = t => String(t).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "topic";

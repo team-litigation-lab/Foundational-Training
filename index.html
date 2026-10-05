@@ -2437,7 +2437,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
-<script src="/js/portal-gate.js?v=ft-2026.10.05-0900"></script>
+<script src="/js/portal-gate.js?v=ft-2026.10.05-1626"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -4761,29 +4761,10 @@ const DAY8 = {
   }
 ]
 };
-
-const DAY9 = {
-  id: 9,
-  title: "Lien Negotiator Training",
-  video: "https://drive.google.com/file/d/1Kc6H6thd7wa0LRr20UFiQpi08HyEDV8R/view",
-  heading: "Lien Negotiator Training",
-  sections: [
-    {
-      "id": "deck",
-      "h": "Lien Negotiator Training",
-      "html": "<div class=\"canva-frame\" id=\"lessonDeck9\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Lien Negotiator Training (Canva)\"\n    src=\"https://www.canva.com/design/DAGnZvhR1f0/MwQoc19VDCyrQNI1BLSvuA/view?embed\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span></span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"lessonDeck9\">⛶ Full screen</button>\n    <a class=\"btn btn-primary\" href=\"https://www.canva.com/design/DAGnZvhR1f0/MwQoc19VDCyrQNI1BLSvuA/view\" target=\"_blank\" rel=\"noopener noreferrer\">Open in Canva ↗</a>\n  </div>\n</div>"
-    },
-    {
-      "id": "word-game-1",
-      "h": "Word Game 1",
-      "html": "<div class=\"canva-frame\" id=\"wordGame1Frame\">\n  <iframe\n    loading=\"lazy\"\n    title=\"Word Game 1\"\n    src=\"/ft/day17/word-game-1.html\"\n    allowfullscreen=\"allowfullscreen\"\n    allow=\"fullscreen\">\n  </iframe>\n</div>\n<div class=\"actions\">\n  <span>Goal: Form as many words as possible on the grid in 4 minutes.</span>\n  <div class=\"btn-row\">\n    <button class=\"btn ghost\" type=\"button\" data-fullscreen=\"wordGame1Frame\">⛶ Full screen</button>\n  </div>\n</div>"
-    }
-  ]
-};
 function ftName(v){ const one = x=>{ const d = DAYS.find(d=>d.id===Number(x)); return d ? d.title : String(x); };
   return Array.isArray(v) ? v.map(one).join(", ") : String(v).split(/,\s*/).map(one).join(", "); }
 
-const DAYS = [DAY1, DAY2, DAY3, DAY4, DAY5, DAY6, DAY7, DAY8, DAY9];
+const DAYS = [DAY1, DAY2, DAY3, DAY4, DAY5, DAY6, DAY7, DAY8];
 function ftLabel(d){ return d.label || `Lesson ${d.id} of ${DAYS.filter(x=>!x.label).length}`; }
 DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; d.noDividers = true; });
 const DAY_FILES = {};
@@ -18534,7 +18515,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.05-grid";
+var APP_BUILD = "ft-2026.10.05-1626";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18577,26 +18558,26 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-tracker-rules.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-tracker.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-monitoring.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-process.js?v=ft-2026.10.05-kc2"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-activities.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/attendance.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/portal-link.js?v=ft-2026.10.05-0900"></script>
-<!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js) and the Trainee blueprint (Orientation, /blueprint.pdf) rebuilt after every deploy -->
-<script src="/js/blueprint-content.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/lsh-blueprint-course.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/lsh-blueprint.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/lsh-dashboard.js?v=ft-2026.10.05-0900"></script>
-<script src="/js/ft-card-grid.js?v=ft-2026.10.05-grid"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-updates.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-tracker-rules.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-tracker.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-monitoring.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-process.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-rules.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-activities.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/attendance.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/portal-link.js?v=ft-2026.10.05-1626"></script>
 <script src="/js/show-password.js?v=1"></script>
+<!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js) and the Trainee blueprint (Orientation, /blueprint.pdf) rebuilt after every deploy -->
+<script src="/js/blueprint-content.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/lsh-blueprint-course.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/lsh-blueprint.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/lsh-dashboard.js?v=ft-2026.10.05-1626"></script>
+<script src="/js/ft-card-grid.js?v=ft-2026.10.05-1626"></script>
 </body>
 </html>
