@@ -92,5 +92,22 @@
       "case management"
     ],
     "added": "2026-10-05"
+  },
+  {
+    "file": "kb/files/083ae9c0-the-pi-lifecycle-case-managers-roadmap.docx.pdf",
+    "title": "The Personal Injury Lifecycle: Case Manager's Roadmap",
+    "summary": "Master operational guide mapping the whole personal injury lifecycle for case managers: compliance, retainers and time logging, CMS and verification portals, liability systems, PIP/MedPay mechanics, property damage recovery, firm staff collaboration and the chronological file stages.",
+    "section": "Case Management",
+    "tags": [
+      "case management",
+      "PI lifecycle",
+      "roadmap",
+      "compliance",
+      "CMS",
+      "PIP",
+      "MedPay",
+      "property damage"
+    ],
+    "added": "2026-10-05"
   }
 ]
