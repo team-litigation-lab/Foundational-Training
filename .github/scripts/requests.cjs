@@ -11,6 +11,12 @@
 //    📒 Monitoring Sheets and ✍️ Process Questions read the trainees' sheets with get-many, not one request each.
 // Usage: node .github/scripts/requests.cjs [baseUrl]   (with .github/scripts/server.mjs running; needs Playwright)
 const { chromium } = require('playwright');
+// The sign-in form is gone (trainees arrive from the Portal with a ticket, which the Portal's gate turns into these three hidden
+// fields and a submitLogin() call). This local server has no Portal secret, so do the same step by hand.
+const signIn = (page, first, last, batch) => page.evaluate(([f, l, b]) => {
+    ['loginFirstInput', f, 'loginLastInput', l, 'loginBatchInput', b].forEach((v, i, a) => { if (i % 2) return; const el = document.createElement('input'); el.type = 'hidden'; el.id = v; el.value = a[i + 1]; document.body.appendChild(el); });
+    return window.submitLogin();
+}, [first, last, batch]);
 const path = require('path'); const { pathToFileURL } = require('url');
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const failures = []; const fail = (m) => failures.push(m);
@@ -69,8 +75,7 @@ async function workerChecks() {
     const since = (t, f) => log.filter(x => x.at >= t && (!f || f(x)));
     const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    await page.fill('#loginFirstInput', 'Req'); await page.fill('#loginLastInput', 'Count'); await page.fill('#loginBatchInput', 'CIREQ');
-    await page.click('#loginSubmitBtn'); await page.waitForTimeout(1200);
+    await signIn(page, 'Req', 'Count', 'CIREQ'); await page.waitForTimeout(1200);
     const me = await page.evaluate(() => 'trainee:' + state.traineeId);   // their record (kept here: a sign-out clears state.traineeId)
     const setApproved = (on) => page.evaluate(async ([on, key]) => {
         const r = await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json());
