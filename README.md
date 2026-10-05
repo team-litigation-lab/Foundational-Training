@@ -70,6 +70,15 @@ Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/r
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
+## 📅 Calendar Scheduler (drag-and-drop, graded)
+
+A native calendaring simulator for Lesson 5 (Calendaring & Appointment Setting), at `#/calsim`; its card is the first thing on **🛠 Simulators** and it unlocks with the lesson.
+- **Files:** `js/ft-calsim-core.js` (the scenarios and the grader, no page code, so `node` can test it) and `js/ft-calendar.js` (the page, the admin tab). Both load before `js/ft-simulators.js`.
+- **How it plays:** a Monday to Friday week in 30-minute steps. The attorney's fixed events are locked (courts show their travel time striped). The trainee drags each request from the inbox onto the week (mouse, touch, or keyboard: Enter places it, arrows move it, Delete removes it), drags placed events to move them, and drops one back on the inbox to take it off. Two weeks: Rivera (core) and Chen (advanced); both are checked to have a perfect answer.
+- **Grading:** ✅ Check my schedule scores out of 100 (80% passes). Each request has checks (scheduled, no conflict or missing travel buffer, business hours 9 to 5, and its own rules: days, time window, finish before an event, travel buffer), worth its weight times the share that pass. Rules are data in `SCENARIOS`; add a week by adding an entry.
+- **Saved for the trainer:** `calsim:<id>` (a trainee-owned key in `worker.js`) holds the draft calendar and up to 30 attempts with their placements. **Admin → 📅 Calendar Scores** lists every trainee by batch with their best score and each attempt's per-request checks. The score is worked out again from the saved placements, so a typed-in number can't change it.
+- **Connected simulators:** the page and the Simulators page open the Portal's Calendaring Simulator with `program=FT`, the trainee's name and batch (its scores are saved on the Portal for the trainer, as before). Any simulator (Portal or CMS) that sends this page `postMessage({type:"lsh-sim-result", sim:"calendar", score, max, title})` has the result added to the same `calsim:` record, shown beside the scheduler's scores. **The Portal and CMS don't send that yet: it's a small change in those repos.**
+
 ## Training Orientation and Rules
 
 **Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
