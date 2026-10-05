@@ -6,38 +6,43 @@
 <meta name="robots" content="noindex">
 <title>LSH Knowledge Base</title>
 <link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap">
 <style>
-:root{--bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5B6075}
+:root{--bg:#EEF0F6;--ink:#111827;--navy:#0f2148;--navy-deep:#081226;--orange:#f97316;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5b6477;
+--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--serif:"IBM Plex Serif",Georgia,serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+header{background:var(--navy-deep);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px}
 header img{width:32px;height:32px;border-radius:6px}
-header b{font-size:17px}
+header .brand b{display:block;font-size:16px;letter-spacing:.01em}
+header .brand small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#aab6cf}
 header a.back{margin-left:auto;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:14px}
 header a.back:hover{background:rgba(255,255,255,.12)}
 main{max-width:900px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:8px 0 4px}
+h1{font-family:var(--serif);font-size:clamp(26px,3.4vw,34px);margin:8px 0 6px;color:var(--navy)}
 .sub{color:var(--muted);margin:0 0 14px}
-#q{width:100%;padding:10px 12px;font:inherit;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+#q{width:100%;padding:10px 12px;font:inherit;font-family:var(--sans);border:1px solid var(--line);border-radius:10px;background:var(--paper)}
 h2{font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:22px 0 8px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
-.card h3{margin:0 0 4px;font-size:17px}
+.card h3{margin:0 0 4px;font-size:17px;color:var(--navy)}
 .card p{margin:0 0 8px;color:var(--muted);font-size:15px}
 .tags span{display:inline-block;background:var(--bg);border-radius:20px;padding:1px 10px;font-size:12px;margin:0 4px 4px 0}
-.btn{display:inline-block;background:var(--orange);color:#fff;text-decoration:none;font-weight:600;border-radius:8px;padding:6px 14px;font-size:14px;margin-right:6px}
-.btn.alt{background:var(--navy)}
+.btn{display:inline-block;background:var(--orange);color:#1b1206;text-decoration:none;font-weight:600;border-radius:8px;padding:6px 14px;font-size:14px;margin-right:6px}
+.btn.alt{background:var(--navy);color:#fff}
 .meta{font-size:12px;color:var(--muted);margin-left:4px}
 #viewer{position:fixed;inset:0;background:rgba(27,30,46,.7);display:none;flex-direction:column;padding:12px;z-index:5}
 #viewer.on{display:flex}
 #viewer .bar{display:flex;gap:8px;justify-content:space-between;align-items:center;color:#fff;padding:0 4px 8px}
-#viewer button{background:var(--orange);color:#fff;border:0;border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}
+#viewer button{background:var(--orange);color:#1b1206;font-family:var(--sans);border:0;border-radius:8px;padding:6px 14px;font:inherit;cursor:pointer}
 #viewer iframe{flex:1;border:0;border-radius:10px;background:#fff}
 </style>
 </head>
 <body>
 <header>
-  <img src="/favicon.png" alt="">
-  <b>LSH Knowledge Base</b>
+  <img src="/favicon.png" alt="" width="32" height="32">
+  <span class="brand"><b>LSH Knowledge Base</b><small>The LSH VA community library</small></span>
   <a class="back" href="/">← Foundational Training</a>
 </header>
 <main>
