@@ -118,15 +118,41 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
   - **Files:** the slides are in `js/blueprint-content.js`. `js/lsh-blueprint.js` is the same file on every LSH platform, and `js/lsh-blueprint-course.js` is the same on every LSH course: change either in one, copy it to all. `build/build.py` adds the three after this program's scripts.
   - **Test:** `.github/scripts/blueprint.cjs`.
 
-## Process Questions
+## Process Questions and the Knowledge Checks
 
-Each lesson's answer sheet is answered on the platform: **✍️ Process Questions** (`#/process`, `js/ft-process.js`). It opens from the lesson's last slide, which lists the questions and the naming convention (lesson cards show only Start and ▶ Video Presentation). The Virtual Assistant Essentials sheet has 10 questions. Add another lesson's questions to `PROCESS_SETS`.
+Every lesson's process questions are its **Knowledge Check**, answered in writing on the platform and graded like the EA/PA Knowledge Checks. All seven answer sheets are in `PROCESS_SETS` (`js/ft-process.js`):
 
-- **Answering:** trainees answer each question; the answers save as they type (`process:<id>`, the trainee's own). **Submit My Answers** marks the sheet submitted.
-- **Saving to Google Drive with the proper name** (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`, with the trainee's first name):
-  - **📄 Save to My Google Drive** copies the answers and opens a new Google Doc already given that name, in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
-  - **⬇ Download as Word** gives a .doc with that name, to upload to the trainee folder.
-- **Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet (submitted or not, how many answered, the answers), with the line for the ranking report, in the facilitator's words. For example: "Process Questions Responses: COMPLETE; however, Item #7 under the Virtual Assistant Essentials answer sheet was left unanswered." or "Out of N expected answer sheets, X were submitted. The following answer sheets are missing: …".
+| Lesson | Answer sheet | Knowledge Check |
+|---|---|---|
+| 1 Virtual Assistant Essentials | VA Essentials | 10 questions |
+| 2 Law Firm Communication | Law Firm Communications Training | 5 |
+| 3 Personal Injury Process Flow | PI Workflow and Reception Training, questions 1–2 | 2 |
+| 4 Receptionist Training | the same sheet, questions 3–5 | 3 |
+| 5 Calendaring & Appointment Setting | — | none: the lesson finishes as before |
+| 6 Intake Specialist Training | Intake Specialist Training | 5 |
+| 7 Claims Specialist Training | Claims Specialist Training | 7 |
+| 8 Medical Records Specialist Training | Medical Records Specialist Training | 5 |
+| 9 Lien Negotiator Training | Lien Negotiator | 5 |
+
+A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1], 4:[2,3,4]}`).
+
+**The Knowledge Check** (`#/kc`):
+- **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
+- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type and are the same as the lesson's ✍️ Process Questions sheet.
+- **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity, with a line of feedback. The total is a percentage.
+- **Passing:** 70% passes and finishes the lesson. A retake keeps the best score.
+- **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
+- **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
+
+**The ✍️ Process Questions page** (`#/process`) keeps every sheet in one place, for saving it with the proper name:
+- **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
+- **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
+- **When a sheet counts as submitted:** when the trainee presses **Submit My Answers**, or when a Knowledge Check is graded with all of the sheet's questions answered.
+
+**Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet:
+- whether it's submitted, how many questions are answered, and the answers;
+- the trainee's best Knowledge Check score per lesson (e.g. `L2 76%`);
+- the line for the ranking report, in the facilitator's words, for example "Process Questions Responses: COMPLETE; however, Item #7 under the Virtual Assistant Essentials answer sheet was left unanswered."
 
 ## Training Monitoring Sheet
 
@@ -270,7 +296,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
-| `js/ft-process.js` | Process Questions: each lesson's answer sheet, answered on the platform, saved to Google Drive or Word with the proper name; Admin → ✍️ Process Questions. |
+| `js/ft-process.js` | Process Questions and the Knowledge Checks: each lesson's answer sheet, answered on the platform and graded (70% passes the lesson), saved to Google Drive or Word with the proper name; Admin → ✍️ Process Questions. |
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-orientation.js` | Admin → 🧭 Orientation: this program's platform orientation slides, which are also the Blueprint PDF (`/blueprint.pdf`). |

@@ -25,7 +25,46 @@ const PROCESS_SETS = [
     "Appraise the effectiveness of formal vs. informal communication strategies when working with different types of attorneys.",
     "Analyze the key cultural values in U.S. professional settings (e.g., directness, time orientation, individualism) and compare them with typical Filipino and Latin American values.",
     "Provide a scenario where a VA’s culturally influenced approach leads to miscommunication with a U.S.-based attorney. What were the causes?",
-    "Critique the statement: “Filipino and Latin American Legal VAs should completely adopt American communication styles to be effective.”"]}
+    "Critique the statement: “Filipino and Latin American Legal VAs should completely adopt American communication styles to be effective.”"]},
+  {id:"law-firm-communication", lesson:2, title:"Law Firm Communication", file:"Law_Firm_Communications_Training_Process_Question_Answers", questions:[
+    "Evaluate the pros and cons of using softphones in high-confidentiality legal settings. What security risks must be considered?",
+    "Judge whether scripted calls are more effective than freeform conversations in maintaining professionalism and compliance.",
+    "Break down the difference between confidential information and privileged communication. Why is this distinction important?",
+    "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff.",
+    "Evaluate the risks of providing incomplete or incorrect information to each type of entity. Which scenario could be most legally damaging?"]},
+  // one answer sheet for two lessons: questions 1–2 are Personal Injury Process Flow's, 3–5 Receptionist Training's
+  {id:"pi-workflow-reception", lesson:3, title:"PI Workflow and Reception Training", file:"PI_Workflow_and_Reception_Training_Process_Questions", kc:{3:[0,1], 4:[2,3,4]}, questions:[
+    "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
+    "Examine how missing documentation (e.g., police reports, medical records) at the intake or treatment stage could affect the value and outcome of a case.",
+    "Analyze the role of a receptionist in shaping a law firm’s first impression. What verbal and non-verbal cues matter most?",
+    "Analyze the differences in tone, legal boundaries, and urgency when dealing with each of the following: a worried client vs. an insurance adjuster vs. a court clerk.",
+    "Assess the importance of call screening and note-taking before a transfer. When is it appropriate to escalate versus handle the call independently?"]},
+  {id:"intake-specialist", lesson:6, title:"Intake Specialist Training", file:"Intake_Specialist_Training_Process_Question_Answers", questions:[
+    "Analyze the role of supporting documents (e.g., police reports, medical records, photos) in establishing liability and damages.",
+    "Evaluate the challenges of collecting documents from third parties (e.g., hospitals, police departments). How can Legal VAs overcome them?",
+    "Analyze the components typically included in a standard personal injury intake packet. What legal or strategic purpose does each serve?",
+    "Evaluate the importance of customizing intake packets by case type (e.g., auto accident vs. slip and fall). When is a generic packet insufficient?",
+    "Analyze the differences between retainer and contingency fee arrangements in personal injury cases. How do they affect client onboarding and case expectations?"]},
+  {id:"claims-specialist", lesson:7, title:"Claims Specialist Training", file:"Claims_Specialist_Training_Process_Question_Answers", questions:[
+    "Evaluate the consequences of failing to open a UM/UIM claim in time. What are the procedural and legal risks?",
+    "Assess the impact of a delayed or poorly written LOR on the efficiency of a claim’s progress.",
+    "Break down a case scenario: the claimant was partially at fault. How does comparative liability affect coverage decisions?",
+    "Analyze how personal auto insurance and rideshare company insurance interact in accident claims involving Uber or Lyft.",
+    "Assess the advantages and limitations of pursuing a claim through a rideshare company’s insurance vs. the driver’s personal policy.",
+    "Judge how much automation (e.g., calendar reminders, templates) is appropriate in the claim process without losing the personal touch.",
+    "Evaluate the ethical and legal responsibilities of notifying the client when a case is dropped."]},
+  {id:"medical-records-specialist", lesson:8, title:"Medical Records Specialist Training", file:"Medical_Records_Specialist_Training_Process_Question_Answers", questions:[
+    "Evaluate the impact of delayed or missing records on the ability to prepare a strong demand letter or settlement package.",
+    "Evaluate the consequences of mishandling PHI in a legal setting. What are the ethical, legal, and financial implications?",
+    "Analyze the difference between medical liens and letters of protection. How do both impact case settlement?",
+    "Evaluate the role of the Legal VA in tracking and communicating lien balances. Why is accuracy critical in lien resolution?",
+    "Analyze the difference between medical bills, treatment records, diagnostic reports, and discharge summaries. What role does each play in a demand letter?"]},
+  {id:"lien-negotiator", lesson:9, title:"Lien Negotiator Training", file:"Lien_Negotiator_Process_Questions_Answers", questions:[
+    "Analyze the specific responsibilities of a lien negotiator in relation to the post-settlement process. How do they interact with attorneys, clients, and providers?",
+    "Analyze the typical factors providers consider when agreeing to a medical bill reduction (e.g., settlement amount, client hardship).",
+    "Assess how persuasive documentation (e.g., settlement amount, lien summary, client hardship letter) influences negotiation outcomes.",
+    "Analyze how the closing statement reflects the full financial breakdown of a personal injury case.",
+    "Analyze the net sheet’s function in summarizing what the client will receive after deductions. Why must it match the closing statement exactly?"]}
 ];
 window.FT_PROCESS_SETS = PROCESS_SETS;
 const has = v => String(v == null ? "" : v).trim().length > 0;
@@ -160,18 +199,23 @@ window.FTProcess = {
   reload(){ FP.id = null; FP.err = ""; render(); }
 };
 
-/* ---------- the lesson: its last slide, and a button on its card ---------- */
-PROCESS_SETS.forEach(set=>{
-  const d = DAYS.find(x=>x.id===set.lesson); if(!d || d.sections.some(s=>s.id==="process-questions")) return;
+/* ---------- the lesson: its last slide ---------- */
+// Which questions each lesson's Knowledge Check asks: a set's own lesson, or (kc) split across lessons.
+const kcLessons = set => set.kc ? Object.keys(set.kc).map(Number) : [set.lesson];
+const kcQuestionsFor = lessonId => PROCESS_SETS.flatMap(set => kcLessons(set).includes(lessonId)
+  ? (set.kc ? set.kc[lessonId] : set.questions.map((_,i)=>i)).map(i=>({set, i, q:set.questions[i]})) : []);
+window.ftKcQuestions = kcQuestionsFor;
+PROCESS_SETS.forEach(set=>kcLessons(set).forEach(lessonId=>{
+  const d = DAYS.find(x=>x.id===lessonId); if(!d || d.sections.some(s=>s.id==="process-questions")) return;
   d.sections.push({id:"process-questions", h:"Process Questions", get html(){
     const audience = typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE;
-    return `<div class="fp-slide"><p class="fp-lead">Answer these questions in complete sentences, on the platform, and submit your answers.</p>
-      <ol class="fp-slide-qs">${set.questions.map(q=>`<li>${e(q)}</li>`).join("")}</ol>
+    return `<div class="fp-slide"><p class="fp-lead">These are this lesson's Knowledge Check. Answer each one in complete sentences on the platform: each answer is graded, and 70% passes the lesson.</p>
+      <ol class="fp-slide-qs">${kcQuestionsFor(lessonId).map(x=>`<li value="${x.i+1}">${e(x.q)}</li>`).join("")}</ol>
       <p class="fp-lead"><b>Naming convention:</b> <code>${e(fileName(set, audience ? "VA’s first name" : ""))}</code></p>
-      ${audience ? "" : `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" onclick="goto('process')">✍️ Answer the Process Questions</button></div>`}</div>`;
+      ${audience ? "" : `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" onclick="FTKc.open(${lessonId})">📝 Take the Knowledge Check</button></div>`}</div>`;
   }});
   d.lessons = d.sections.map(x=>({h:x.h}));
-});
+}));
 // Lesson cards show only Start and ▶ Video Presentation: the Process Questions open from the lesson's last slide.
 
 /* ---------- admin: every trainee's answer sheets ---------- */
@@ -209,7 +253,7 @@ function renderAdminProcess(){
     ${FPA.rows.length ? keys.map(b=>{ const closed = !!FPA.closed[b];
       return `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTProcessAdmin.batch(${e(JSON.stringify(b))})">${closed?"▸":"▾"} <b>📁 ${e(b ? "Batch "+b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length===1?"":"s"}</span></div>
       ${closed ? "" : groups[b].map(x=>{ const open = !!FPA.open[x.id], sub = PROCESS_SETS.filter(s=>((x.p.sets||{})[s.id]||{}).submittedAt).length;
-        return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTProcessAdmin.row('${x.id}')">${open?"▾":"▸"} <b>${e(x.name)}</b> <span class="fp-pill ${sub===PROCESS_SETS.length?"ok":sub?"mid":"bad"}">${sub} of ${PROCESS_SETS.length} submitted</span></div>
+        return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTProcessAdmin.row('${x.id}')">${open?"▾":"▸"} <b>${e(x.name)}</b> <span class="fp-pill ${sub===PROCESS_SETS.length?"ok":sub?"mid":"bad"}">${sub} of ${PROCESS_SETS.length} submitted</span> ${kcPills(x.p)}</div>
           ${open ? `<pre class="fp-report">${e(reportLine(x))}</pre>
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
@@ -259,8 +303,144 @@ window.renderDashboard = function(){
   return __dash.apply(this, arguments);
 };
 
+/* ---------- the Knowledge Check: each lesson's process questions, graded like EA/PA's ----------
+   A lesson with process questions ends with a Knowledge Check (#/kc): the lesson's questions, answered in
+   writing (the same answers as the ✍️ Process Questions sheet). The AI scores each answer out of 10 for
+   accuracy, depth and clarity, with a line of feedback; the total is a percentage, 70% passes and
+   finishes the lesson, and a retake keeps the best score (state.progress, so it reaches the trainee's
+   record like EA/PA's Knowledge Check scores). Lessons without process questions finish as before. */
+const KC_PASS = 70;
+const KC = {grading:false, shown:{}};
+window.EXTRA_ROUTE_VIEWS = window.EXTRA_ROUTE_VIEWS.concat(["kc"]);
+const kcRec = id => ((FP.data && FP.data.kc) || {})[id] || null;
+const kcTone = sc => sc >= 7 ? "ok" : sc >= 5 ? "mid" : "low";
+function kcReport(id, r){
+  const tier = gradeTierFor(r.pct), color = GRADE_TIER_COLOR[tier] || "var(--ink-soft)", qs = kcQuestionsFor(id);
+  return `<div class="eval-report kc-report">
+    <div class="eval-report-header">
+      <div class="eval-score-ring" style="--ring-color:${color};"><span>${r.pct}</span></div>
+      <div><div class="eval-tier" style="color:${color};">${r.pct >= KC_PASS ? "Passed · " + e(displayTier(tier)) : `Not yet · ${KC_PASS}% passes`}</div>
+        <div class="eval-subscore-row">${(r.items||[]).map(it=>`<span>Q${it.i+1} ${it.score}/10</span>`).join("")}</div></div>
+    </div>
+    ${mindsetNote(r.pct)}
+    ${r.summary ? `<div class="eval-section"><b>Overall</b><p style="margin:4px 0 0;">${e(r.summary)}</p></div>` : ""}
+    <p class="fp-muted" style="margin:8px 0 0;">Graded ${e(new Date(r.at).toLocaleString())} · ${qs.length} question${qs.length===1?"":"s"} · feedback is under each answer below.</p>
+  </div>`;
+}
+function renderKc(){
+  const id = Number(state.dayId), d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
+  const back = `<a class="back-link" onclick="goto('dashboard')">&larr; Back to roadmap</a>`;
+  if(!d || !qs.length) return `${back}<div class="card" style="padding:28px;">This lesson has no Knowledge Check.</div>`;
+  const intro = `<p class="eyebrow">Knowledge Check</p><h1>${e(d.title)}</h1>
+    <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity; <b>${KC_PASS}% passes</b> and finishes the lesson. Retakes keep your best score.</p>`;
+  if(state.isAdmin && !state.adminPreview) return `${back}<div class="kc-hero">${intro}</div>
+    <div class="card kc-card"><ol class="fp-qs">${qs.map(x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`).join("")}</ol>
+    <p class="fp-muted">Trainees take this Knowledge Check. Their scores are in Admin → ✍️ Process Questions.</p></div>`;
+  if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
+  if(FP.err) return `${back}<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
+  if(!FP.data) return `${back}<div class="card" style="padding:28px;">Loading your answers…</div>`;
+  const rec = kcRec(id), shown = KC.shown[id] || (rec && rec.last), prog = state.progress[id] || {};
+  return `${back}
+    <div class="kc-hero">${intro}
+      ${rec && rec.attempts ? `<div class="kc-stats">Best score <b>${rec.best}%</b> · ${rec.attempts} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
+    ${shown ? kcReport(id, shown) : ""}
+    <div class="card kc-card">
+      <ol class="fp-qs">${qs.map(x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
+        return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
+          <textarea rows="5" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
+          ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}</li>`; }).join("")}</ol>
+      <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
+        <span class="fp-save" id="fpSave"></span></div>
+      <p class="fp-muted">Your answers save as you type, and they're the same as your ✍️ Process Questions sheet for this lesson.</p>
+    </div>`;
+}
+window.FTKc = {
+  open(id){ state.dayId = Number(id); KC.shown[id] = null; goto("kc"); window.scrollTo(0, 0); },
+  async submit(id){
+    if(KC.grading) return;
+    if(!state.traineeId || (state.isAdmin && !state.adminPreview)){ toast("Trainees take the Knowledge Check."); return; }
+    const d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
+    const ans = x => String((sheet(x.set.id).answers||[])[x.i] || "").trim();
+    const short = qs.filter(x=>ans(x).split(/\s+/).filter(Boolean).length < 5).map(x=>"Q"+(x.i+1));
+    if(short.length){ toast(`Answer every question in complete sentences first (${short.join(", ")}).`); return; }
+    KC.grading = true;
+    const btn = document.getElementById("kcSubmit"); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
+    const prompt = `You are grading a trainee Legal Virtual Assistant's written answers to the process questions of the "${d.title}" lesson in Legal Support Help's Foundational Training. The trainees are VAs (mostly in the Philippines and Latin America) learning to support U.S. personal injury law firms.
+
+Grade each answer from 0 to 10, rigorously and realistically:
+- Accuracy: correct about U.S. law-firm practice and the personal injury workflow; no wrong legal or procedural statements.
+- Depth: answers every part of the question (both the "what" and the "why"), with reasons or a concrete example.
+- Clarity: complete sentences in a professional tone.
+Scale: 9-10 thorough and correct; 7-8 good with minor gaps; 5-6 partly answers or stays shallow; 3-4 mostly vague or off target; 0-2 blank, irrelevant or wrong. A one-line or generic answer can't score above 4. Don't reward length alone.
+For each answer, write one or two sentences of feedback in a growth voice ("not yet", "add ..."): what's strong and the most important thing missing. Don't give legal advice.
+
+QUESTIONS AND ANSWERS:
+${qs.map((x,k)=>`${k+1}. QUESTION: ${x.q}\n   ANSWER: ${ans(x).replace(/\s+/g, " ")}`).join("\n")}
+
+Return ONLY a JSON object, no other text:
+{"items":[{"n":1,"score":<integer 0-10>,"feedback":"..."}, ... one per question, in order], "summary":"two sentences on the response overall"}`;
+    try{
+      const raw = await callAIJson(prompt, 1800, undefined, "grading");
+      const got = Array.isArray(raw && raw.items) ? raw.items : [];
+      const items = qs.map((x,k)=>{ const it = got.find(g=>Number(g && g.n)===k+1) || got[k] || {};
+        return {sid:x.set.id, i:x.i, score:Math.max(0, Math.min(10, Math.round(Number(it.score)||0))), feedback:String(it.feedback||"").slice(0, 600)}; });
+      if(!got.length) throw new Error("The grader didn't return scores. Please submit again.");
+      const pct = Math.round(items.reduce((a,b)=>a+b.score, 0) / (10*items.length) * 100);
+      const r = {pct, items, summary:String((raw && raw.summary)||"").slice(0, 600), at:new Date().toISOString()};
+      FP.data.kc = FP.data.kc || {};
+      const rec = FP.data.kc[id] = FP.data.kc[id] || {attempts:0, best:0, last:null};
+      rec.attempts++; rec.best = Math.max(rec.best||0, pct); rec.last = r;
+      // the answer sheet counts as submitted once all its questions are answered
+      [...new Set(qs.map(x=>x.set))].forEach(set=>{ const x = sheet(set.id); if(answered(set, x) === set.questions.length) x.submittedAt = r.at; });
+      queueSave();
+      const prev = state.progress[id] || {};
+      state.progress[id] = Object.assign({}, prev, {score:Math.max(prev.score||0, pct), kcAttempts:rec.attempts}, pct >= KC_PASS ? {done:true, date:prev.done && prev.date ? prev.date : r.at} : {});
+      await storeSet("day-progress", state.progress);
+      try{ syncToLedger(); }catch(err){}
+      KC.shown[id] = r;
+      if(pct >= KC_PASS){ toast(`✓ ${pct}% · ${ftName(id)} finished.`); if(pct >= 85) burstConfetti(); }
+      else toast(`${pct}%: not yet. Read the feedback under each answer, improve them and submit again.`);
+    }catch(err){
+      toast((err && err.message) ? "Couldn't grade your answers: " + err.message : "Couldn't grade your answers. Please try again.");
+    }finally{
+      KC.grading = false; render(); window.scrollTo(0, 0);
+    }
+  }
+};
+// Finishing a lesson that has process questions opens its Knowledge Check instead.
+const __finish = window.finishTrainingForDay;
+window.finishTrainingForDay = function(id){ return kcQuestionsFor(Number(id)).length ? FTKc.open(Number(id)) : __finish.apply(this, arguments); };
+window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrainingForDay(state.dayId); };
+// the page, beside ✍️ Process Questions
+const __kcRender = window.render;
+window.render = function(){
+  if(state.view!=="kc") return __kcRender.apply(this, arguments);
+  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __kcRender.apply(this, arguments); }
+  const app = document.getElementById("app");
+  app.innerHTML = renderTopbar() + `<main class="main-process">${renderKc()}</main>` + renderFooter();
+  if(typeof afterRender === "function") afterRender();
+};
+// a lesson card shows its Knowledge Check score
+const __card = window.moduleCard;
+window.moduleCard = function(d){
+  const html = __card.apply(this, arguments), p = state.progress[d.id];
+  if(!kcQuestionsFor(d.id).length || !p || !p.score) return html;
+  return html.replace(/(<div class="mh-day">)([\s\S]*?)(<\/div>)/, (m, a, b, c)=>`${a}${p.done ? "Finished" : "Knowledge Check"} &middot; ${p.done ? "" : "best "}${p.score}%${c}`);
+};
+function kcPills(p){
+  const lessons = [...new Set(PROCESS_SETS.flatMap(kcLessons))].sort((a,b)=>a-b);
+  const kc = (p && p.kc) || {};
+  return lessons.filter(l=>kc[l]).map(l=>`<span class="fp-pill ${kc[l].best>=KC_PASS?"ok":"mid"}" title="${e(ftName(l))} Knowledge Check, best score">L${l} ${kc[l].best}%</span>`).join(" ");
+}
+
 (function(){ const s = document.createElement("style"); s.id = "ft-process"; s.textContent = `
 main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
+.kc-hero{margin:0 0 14px;} .kc-hero h1{margin:2px 0 6px;color:var(--navy);font-size:28px;} .kc-hero p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;}
+.kc-stats{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13.5px;color:var(--navy);}
+.kc-card{padding:16px 18px;} .kc-report{margin-bottom:14px;}
+.kc-fb{margin-top:6px;border-radius:8px;padding:8px 10px;font-size:14px;line-height:1.45;border-left:4px solid;}
+.kc-fb b{margin-right:6px;} .kc-fb.kc-ok{background:var(--success-bg);border-color:var(--success);} .kc-fb.kc-mid{background:#FEF7C3;border-color:#C9A227;} .kc-fb.kc-low{background:var(--danger-bg);border-color:var(--danger);}
+
 .fp-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .fp-hero p{margin:0 0 14px;color:var(--ink-soft);font-size:15px;}
 .fp-save{margin-left:6px;font-size:13px;color:var(--success);}
 .fp-muted{color:var(--ink-soft);font-size:13.5px;} .fp-link{cursor:pointer;color:var(--orange-deep);font-weight:700;}
