@@ -66,6 +66,31 @@ async function hmac(secret, msg) {
 }
 // The admin password: MASTER_ADMIN_PASSWORD, the LSH Training Portal's master admin password (one password signs an admin in on the Portal and on every platform).
 function adminPass(env) { return env.MASTER_ADMIN_PASSWORD || ""; }
+// The admin password is compared as a person types it. Both the stored and the typed password are read without spaces or line
+// breaks around them, quotes pasted around the whole password, invisible characters (zero-width spaces, soft hyphens) or curly
+// quotes and long dashes: a secret pasted into Cloudflare with any of these signs in from a saved (autofilled) password but could
+// never be typed.
+const PASS_INVISIBLE = /[\u00AD\u180E\u200B-\u200F\u2028-\u202F\u205F-\u206F\uFEFF]/g;
+const PASS_CURLY = /[\u2018\u2019\u201A\u201B\u2032\u201C\u201D\u201E\u201F\u2033\u2010-\u2015\u2212]/;
+function cleanPass(v) {
+  return String(v || "").normalize("NFKC").replace(PASS_INVISIBLE, "")
+    .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'").replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"').replace(/[\u2010-\u2015\u2212]/g, "-").trim();
+}
+const PASS_QUOTED = /^(["'`])([\s\S]*)\1$/;
+function normPass(v) { const t = cleanPass(v), q = t.match(PASS_QUOTED); return q ? q[2].trim() : t; }
+// What /version says about the stored password (never the password itself).
+function adminPassStatus(env) {
+  const raw = String(env.MASTER_ADMIN_PASSWORD || "");
+  if (!raw) return "not set (open mode)";
+  if (!normPass(raw)) return "MASTER_ADMIN_PASSWORD is set but holds no password, only quotes, spaces or invisible characters: not accepted";
+  const ignored = [];
+  if (raw !== raw.trim()) ignored.push("spaces or a line break around it");
+  if (new RegExp(PASS_INVISIBLE.source).test(raw)) ignored.push("invisible characters");
+  if (PASS_CURLY.test(raw)) ignored.push("curly quotes or long dashes");
+  if (PASS_QUOTED.test(cleanPass(raw))) ignored.push("quotes around it");
+  const odd = /[^\x20-\x7E]/.test(normPass(raw)) ? "; it has a character that isn't on a standard keyboard (an accented or look-alike letter): it must be typed exactly" : "";
+  return "MASTER_ADMIN_PASSWORD" + (ignored.length ? ` (had ${ignored.join(", ")}: ignored)` : "") + odd;
+}
 function secretOf(env) { return env.SESSION_SECRET || adminPass(env); }
 async function makeToken(env, role, subject, hours) {
   const exp = Date.now() + hours * 3600 * 1000;
@@ -468,7 +493,7 @@ export default {
         const html = await page.text();
         const m = html.match(/APP_BUILD = "([^"]+)"/);
         const deployment = (env.CF_VERSION_METADATA && env.CF_VERSION_METADATA.id) || "unknown";
-        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nDeployment: ${deployment}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAI provider: ${hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
+        return new Response(`Portal build deployed: ${m ? m[1] : "unknown (old index.html — no build tag)"}\nDeployment: ${deployment}\nWorker: secure-mode worker.js\nSecure mode: ${adminPass(env) ? "ON" : "OFF"}\nAdmin password: ${adminPassStatus(env)}\nAI provider: ${hasGemini(env) ? "Google Gemini (chat starts on " + geminiModels(env, "chat")[0] + ", grading and trainer tools on " + geminiModels(env, "grading")[0] + ")" : "none — add GEMINI_API_KEY5"}\nAI key pool: ${[...GEMINI_POOL, ...GEMINI_SPARE].map((n) => `${n} ${env[n] ? (geminiKeyNames(env).includes(n) ? "set" : "set (same key as another)") : "not set"}${resting(n, "*") ? " (resting)" : ""}`).join(", ")}\n`, { headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" } });
       }
       if (path.includes("/trainer/")) {
         // Trainer-only files (facilitator's notes): served only with an admin token in secure mode.
@@ -503,7 +528,8 @@ export default {
         if (!secure) return json({ error: "not-configured" }, 501);
         const { passphrase } = await request.json();
         await new Promise((r) => setTimeout(r, 400)); // slow down guessing
-        if (!safeEqual(String(passphrase || "").trim(), adminPass(env).trim())) return json({ error: "Incorrect password" }, 401);
+        const given = normPass(passphrase), want = normPass(adminPass(env));
+        if (!given || !want || !safeEqual(given, want)) return json({ error: "Incorrect password" }, 401);
         return json({ token: await makeToken(env, "a", "admin", 12) });
       }
       // The trainee's session for a name + batch: their record id (new or legacy form) and token.
