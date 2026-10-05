@@ -209,13 +209,13 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 **🛠 Simulators** (top bar, and the **Simulators** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`).
 
-**Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
+**Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. A **mock call** card has one button, **📞 Take a random call**: the Training Portal's Call Simulator with `&line=<the card's title>&random=1` picks a random caller on that line. The caller's name, case and what's scored stay hidden until the debrief, so the trainee gets the name, verifies the caller and finds the file in the CMS, as on a real call; **🔀 Next random call** in the debrief takes another. A **demo** card lists its example cases. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
 
 | Activity | Lesson | Example cases | Also |
 |---|---|---|---|
-| Reception Mock Calls | Receptionist Training | MC-01, MC-06, MC-10, MC-16 | Front Desk Drill (scored calls on these cases), Training Library, Call Simulator (7 reception calls) |
-| Calendar Management Mock Calls | Calendaring & Appointment Setting | MC-01, MC-05, MC-08 | Calendaring, Call Simulator (4 calendar calls) |
-| Intake Mock Calls | Intake Specialist | MC-02, MC-13, MC-12, MC-19 | Call Simulator (3 intake calls) |
+| Reception Mock Calls | Receptionist Training | — (a random call) | 📞 Take a random call: Call Simulator, 7 reception calls |
+| Calendar Management Mock Calls | Calendaring & Appointment Setting | — (a random call) | 📞 Take a random call: Call Simulator, 4 calendar calls |
+| Intake Mock Calls | Intake Specialist | — (a random call) | 📞 Take a random call: Call Simulator, 3 intake calls |
 | Saving Intake Packet and Extracted Intake Documents Demo | Intake Specialist | MC-02, MC-13 | Training Library |
 | LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | MC-01, MC-02, MC-12 | Training Library |
 | Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | MC-01, MC-15, MC-08 | Training Library |
@@ -343,6 +343,7 @@ Every edit checks that its anchor exists, so the build stops with an error if th
 - `.assetsignore` keeps the Worker, config, build files and Markdown out of the served files.
 - Secrets:
   - `MASTER_ADMIN_PASSWORD`: admin sign-in (the LSH Training Portal's master admin password: one password on every platform); setting it switches on secure mode. Set it as a Secret.
+  - `AI_GATEWAY_SECRET`: optional (a Secret; the same value as on the Portal). When set, every AI call goes to the Main Portal's shared AI gateway (`/api/ai-gateway`): one master key pool and one shared budget for every call flow, counted per program. Without it this Worker uses its own `GEMINI_API_KEY` pool.
   - `SESSION_SECRET` (optional)
   - `GEMINI_API_KEY5` … `GEMINI_API_KEY9`: the Gemini key pool behind every AI feature (live chat, grading, the tracker's notes review, trainer tools). Each request starts on the next key in turn, so the load is spread across all of them; a key that hits its limit rests (a minute for a per-minute limit, an hour for a daily one) and the next key takes over. Create each key in its **own** Google Cloud project: keys in the same project share one quota. `/version` shows which pool keys are set.
   - `GEMINI_API_KEY`, `GEMINI_API_KEY1`, `GEMINI_API_KEY2` (optional): used only after every pool key.
