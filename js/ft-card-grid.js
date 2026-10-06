@@ -21,10 +21,12 @@
     return card.outerHTML;
   };
   moduleCard.__grid = true;
-  const line = "#C5CAD8", thick = "2px";   // the gridlines: thick and visible on the white card
+  const line = "#D3D7E2", thick = "1px";   // the gridlines between the cells: thin lines, visible on the white card
+  const frame = "#D6DAE5";                  // the thick rounded frame around the card (like the EA/PA day cards)
   const st = document.createElement("style"); st.id = "ft-card-grid"; st.textContent = `
-/* gridlines: the card's outer border and a line between every cell (header | middle | Start | bottom row) */
-.dash-main .module-card.mc-clean, .dash-main .module-card.ftr-card{border:${thick} solid ${line} !important;}
+/* gridlines: a thick rounded frame around the card and a thin line between every cell (header | middle | Start | bottom row) */
+.dash-main .module-card.mc-clean, .dash-main .module-card.ftr-card{border:8px solid ${frame} !important;border-radius:22px !important;}
+.dash-main .module-card.mc-clean:hover, .dash-main .module-card.ftr-card:hover{border-color:#CCD1DE !important;}
 .dash-main .module-card.mc-clean .module-head, .dash-main .module-card.ftr-card .module-head{border-bottom:${thick} solid ${line} !important;}
 .dash-main .module-card.mc-clean > .mc-grid{display:grid;grid-template-columns:repeat(2,1fr);margin:auto 0 0 !important;border-top:${thick} solid ${line};}
 .dash-main .module-card.mc-clean .mc-grid > button{margin:0 !important;width:auto !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:1;}
