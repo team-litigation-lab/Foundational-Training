@@ -28,6 +28,8 @@ jobs:
           node-version: 22
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
+      - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
+        run: node .github/scripts/gemini-keys.mjs
       - name: Build the Worker without deploying (wrangler dry run)
         run: npx --yes wrangler@4 deploy --dry-run --outdir "$RUNNER_TEMP/dist"
 
