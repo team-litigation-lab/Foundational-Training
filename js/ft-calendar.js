@@ -5,7 +5,9 @@
      • The week is a Monday to Friday grid in 15-minute steps (Eastern Time). The attorney's fixed events are locked. The brief lists
        the tasks to put on the calendar; the trainee builds their own calendar: drag on an empty part of the week to
        add an event, drag an event to move it, drag its bottom edge to resize it, double-click to rename it, ✕ to
-       delete it. Events that clash, break a court's travel time or fall outside business hours show in red.
+       delete it. The event editor has Google Calendar's color picker: the attorney's rule (FTCalCore.COLOR_RULE) colors an
+       event by its length (30 minutes Tangerine, 45 Blueberry, 1 hour Tomato); the trainee picks it and the review checks it.
+       Events that clash, break a court's travel time or fall outside business hours show in red with ⚠.
      • At the bottom: 💾 Save changes (saves now), 🤖 Run automated review (FTCalCore.review: the attorney's rules, scored
        out of 100, with what to fix) and 📤 Submit calendar to my trainer. A trainer opens a submission in Admin → 📅
        Calendar Scores, sees the week and its automated review, and adds manual feedback: a score out of 100, an overall
@@ -99,12 +101,14 @@ function blockHTML(ev, mine, why, ro){
   const k = ev.kind || "", len = (ev.end || ev.start + ev.dur) - ev.start;
   const style = `top:${px(ev.start)}px;height:${Math.max(px(ev.start + len) - px(ev.start), 12)}px;`;
   const pad = ev.buffer ? `<div class="cs-buf" style="top:${px(ev.start - ev.buffer)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div><div class="cs-buf" style="top:${px(ev.end)}px;height:${(ev.buffer / C.STEP) * SH}px;"></div>` : "";
-  const icons = (ev.meet ? " 📹" : "") + (ev.remind ? " 🔔" : "");
-  const label = len <= 30 ? `<b>${e(ev.title || "(no title)")}<em>, ${hh(ev.start)}${icons}</em></b>` : `<b>${e(ev.title || "(no title)")}</b><span>${hh(ev.start)} – ${hh(ev.start + len)}${icons}</span>`;
+  const icons = (ev.meet ? " 📹" : "") + (ev.remind ? " 🔔" : ""), warn = mine && why ? "⚠ " : "";
+  const label = len <= 30 ? `<b>${warn}${e(ev.title || "(no title)")}<em>, ${hh(ev.start)}${icons}</em></b>` : `<b>${warn}${e(ev.title || "(no title)")}</b><span>${hh(ev.start)} – ${hh(ev.start + len)}${icons}</span>`;
   if(!mine) return pad + `<div class="cs-ev cs-fixed cs-${k}" style="${style}" title="${e(ev.note || ev.title)}">${label}</div>`;
+  // The trainee's chosen color (a problem shows red instead, with ⚠); no color is the calendar's default blue.
+  const col = !why && C.colorOf(ev.color), paint = col ? `background:${col.hex};border-left-color:${col.edge};` : "";
   const cls = `cs-ev cs-req ${why ? "cs-bad" : ""} ${S.sel === ev.id ? "cs-sel" : ""}`;
-  if(ro) return `<div class="cs-ev cs-ro ${why ? "cs-bad" : ""} ${ev.hl ? "cs-hl" : ""}" style="${style}" title="${e(why ? why.join("; ") : "")}">${label}</div>`;
-  return `<div class="${cls}" data-ev="${e(ev.id)}" tabindex="0" role="button" title="${e(why ? why.join("; ") : "Drag to move, drag the bottom edge to resize, double-click to rename")}" aria-label="${e(ev.title)}, ${C.DAYS[ev.day]} ${hh(ev.start)}. Arrow keys move it, Shift plus arrow resizes, Enter renames, Delete removes it." style="${style}">${label}<button class="cs-x" data-del="${e(ev.id)}" aria-label="Delete ${e(ev.title)}" tabindex="-1">✕</button><i class="cs-rs" data-rs="${e(ev.id)}"></i></div>`;
+  if(ro) return `<div class="cs-ev cs-ro ${why ? "cs-bad" : ""} ${ev.hl ? "cs-hl" : ""}" style="${style}${paint}" title="${e(why ? why.join("; ") : col ? col.name : "")}">${label}</div>`;
+  return `<div class="${cls}" data-ev="${e(ev.id)}" tabindex="0" role="button" title="${e(why ? why.join("; ") : (col ? col.name + ". " : "") + "Drag to move, drag the bottom edge to resize, double-click to edit")}" aria-label="${e(ev.title)}, ${C.DAYS[ev.day]} ${hh(ev.start)}${col ? ", " + e(col.name) : ""}. Arrow keys move it, Shift plus arrow resizes, Enter edits, Delete removes it." style="${style}${paint}">${label}<button class="cs-x" data-del="${e(ev.id)}" aria-label="Delete ${e(ev.title)}" tabindex="-1">✕</button><i class="cs-rs" data-rs="${e(ev.id)}"></i></div>`;
 }
 function gridHTML(s, events, ro, hl){
   s = s || scn(); events = events || S.events;
@@ -113,7 +117,7 @@ function gridHTML(s, events, ro, hl){
   const cols = C.DAYS.map((name, d) => {
     const dt = dayDate(d), today = sameDay(dt, now);
     const blocks = s.fixed.filter(f => f.day === d).map(f => blockHTML(f, false)).join("")
-      + events.filter(x => x.day === d).map(x => blockHTML({id:x.id, title:x.title, day:d, start:x.start, end:x.start + x.dur, meet:x.meet, remind:x.remind, hl:hl === x.id}, true, fl[x.id], ro)).join("")
+      + events.filter(x => x.day === d).map(x => blockHTML({id:x.id, title:x.title, day:d, start:x.start, end:x.start + x.dur, meet:x.meet, remind:x.remind, color:x.color, hl:hl === x.id}, true, fl[x.id], ro)).join("")
       + (today && !ro && nowMin >= TOP && nowMin < BOTTOM ? `<div class="gc-now" style="top:${px(nowMin)}px"></div>` : "");
     return `<div class="cs-colwrap"><div class="cs-dayhd" title="${e(name)}"><span class="${today ? "gc-todayname" : ""}">${name.slice(0, 3).toUpperCase()}</span><b class="${today ? "gc-today" : ""}">${dt.getDate()}</b></div><div class="cs-col" data-day="${d}" style="height:${px(BOTTOM)}px">${blocks}</div></div>`;
   }).join("");
@@ -135,6 +139,7 @@ function tasksHTML(){
   const s = scn();
   return `<div class="cs-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()"><svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>Create</button>${miniMonthHTML()}<h3>📋 Your tasks <span class="cs-count">${s.tasks.length} to schedule</span></h3>
     <p class="cs-hint">Put each of these on the week as an event, named after the task, with a description. Drag on an empty part of the calendar to add one.</p>
+    <p class="cs-hint cs-rule">🎨 <b>Attorney’s color rule:</b> ${e(C.COLOR_RULE_TEXT)}</p>
     ${s.tasks.map(r => `<div class="cs-task"><b>${e(r.title)}</b><span class="cs-dur">${r.dur} min</span>${(r.needs || {}).meet ? '<span class="cs-dur cs-chip">📹 Google Meet</span>' : ""}${(r.needs || {}).remind ? '<span class="cs-dur cs-chip">🔔 Reminder</span>' : ""}<p>${e(r.note)}</p></div>`).join("")}</div>`;
 }
 const STATUS = {met:["✅", "Met"], partial:["◐", "Partly met"], missed:["✗", "Missed"]};
@@ -227,15 +232,15 @@ function renderPage(){
       <div><button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button></div></div>
     <div class="cs-tabs">${tabs}</div>
     <p class="cs-blurb">${e(tk.blurb)}</p>
-    <div class="card cs-brief">${e(s.brief)}</div>
+    <div class="card cs-brief">${e(s.brief)} ${e(C.COLOR_RULE_TEXT)}</div>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
-    <div class="cs-main">${tasksHTML()}<div class="gc-shell">${toolbarHTML()}<div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Eastern Time. Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to edit its details · ✕ deletes. Red means a clash, missing travel time or outside 9 to 5.</p></div></div>
+    <div class="cs-main">${tasksHTML()}<div class="gc-shell">${toolbarHTML()}<div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">Eastern Time. Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click to edit its details (title, time, guests, Google Meet, reminder, color, description) · ✕ deletes. Red with ⚠ means a clash, missing travel time or outside 9 to 5.</p></div></div>
     <div class="cs-actions"><button class="btn btn-navy" onclick="FTCalSim.save()">💾 Save changes</button>
       <button class="btn btn-navy" onclick="FTCalSim.review()">🤖 Run automated review</button>
       <button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit to my trainer</button>
       <button class="btn btn-ghost" onclick="FTCalSim.add()">＋ Add event</button>
       <button class="btn btn-ghost" onclick="FTCalSim.reset()">↺ Clear my events</button><span class="cs-save" id="csSave"></span></div>
-    <p class="cs-hint">The automated review checks your calendar against the attorney’s rules (conflicts, travel time, business hours, each task’s days and times) and tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
+    <p class="cs-hint">The automated review checks your calendar against the attorney’s rules (conflicts, travel time, business hours, each task’s days and times, the color for its length) and tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
     <div id="csResultBox">${resultHTML()}</div>
     ${historyHTML()}
     <div class="card cs-more"><b>🔗 Also graded for your trainer</b><p>The Portal’s Calendaring Simulator is another week of scheduling conflicts. It opens in its own tab with your name and batch, so its score is saved for your trainer too.</p>
@@ -328,16 +333,20 @@ function editor(x, isNew, done){
     <label class="cs-m-row"><i class="cs-m-ic">👥</i><input id="csmGuests" maxlength="200" placeholder="Add guests (email addresses)" value="${e(x.guests)}"></label>
     <div class="cs-m-row"><i class="cs-m-ic">📹</i><button type="button" id="csmMeetBtn" class="cs-meet ${x.meet ? "on" : ""}">${x.meet ? "Join with Google Meet" : "Add Google Meet video conferencing"}</button><button type="button" id="csmMeetOff" class="cs-m-link" ${x.meet ? "" : "hidden"}>Remove</button><input type="checkbox" id="csmMeet" hidden ${x.meet ? "checked" : ""}></div>
     <label class="cs-m-row"><i class="cs-m-ic">🔔</i><input type="checkbox" id="csmRemind" ${x.remind ? "checked" : ""}> Email notification · 1 day before</label>
+    <div class="cs-m-row"><i class="cs-m-ic">🎨</i><div class="cs-colors" role="radiogroup" aria-label="Event color"><button type="button" class="cs-sw cs-sw-def ${x.color ? "" : "on"}" data-c="" role="radio" aria-checked="${x.color ? "false" : "true"}" title="Default color" aria-label="Default color"></button>${C.COLORS.map(c => `<button type="button" class="cs-sw ${x.color === c.id ? "on" : ""}" data-c="${c.id}" role="radio" aria-checked="${x.color === c.id ? "true" : "false"}" style="background:${c.hex}" title="${c.name}" aria-label="${c.name}"></button>`).join("")}</div><span class="cs-m-cname" id="csmColorName">${e((C.colorOf(x.color) || {}).name || "Default color")}</span><input type="hidden" id="csmColor" value="${e(x.color || "")}"></div>
     <label class="cs-m-row cs-m-top"><i class="cs-m-ic">≡</i><textarea id="csmDesc" rows="4" maxlength="300" placeholder="Add description">${e(x.desc)}</textarea></label>
     <div class="cs-m-btns">${isNew ? "" : `<button class="cs-gbtn" data-m="del">🗑 Delete</button>`}<span></span><button class="cs-gbtn cs-gblue" data-m="ok">Save</button></div></div>`;
   document.body.appendChild(m);
   const q = sel => m.querySelector(sel), title = q("#csmTitle"), st = q("#csmStart"), en = q("#csmEnd");
   const setMeet = on => { q("#csmMeet").checked = on; const b = q("#csmMeetBtn"); b.classList.toggle("on", on); b.textContent = on ? "Join with Google Meet" : "Add Google Meet video conferencing"; q("#csmMeetOff").hidden = !on; };
   q("#csmMeetBtn").onclick = () => setMeet(true); q("#csmMeetOff").onclick = () => setMeet(false);
+  m.querySelectorAll(".cs-sw").forEach(b => { b.onclick = () => { const id = b.dataset.c; q("#csmColor").value = id;
+    m.querySelectorAll(".cs-sw").forEach(o => { o.classList.toggle("on", o === b); o.setAttribute("aria-checked", o === b ? "true" : "false"); });
+    q("#csmColorName").textContent = (C.colorOf(id) || {}).name || "Default color"; }; });
   st.onchange = () => { if(+en.value <= +st.value) en.value = String(Math.min(BOTTOM, +st.value + C.STEP)); };
   const save = () => { const t = title.value.trim(); if(!t){ toast("Add a title."); title.focus(); return; }
     if(+en.value <= +st.value){ toast("The event has to end after it starts."); return; }
-    const v = {title:t.slice(0, 80), day:+q("#csmDay").value, start:+st.value, dur:+en.value - +st.value, guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
+    const v = {title:t.slice(0, 80), day:+q("#csmDay").value, start:+st.value, dur:+en.value - +st.value, guests:q("#csmGuests").value.trim().slice(0, 200), meet:q("#csmMeet").checked, remind:q("#csmRemind").checked, color:C.colorOf(q("#csmColor").value) ? q("#csmColor").value : "", desc:q("#csmDesc").value.trim().slice(0, 300)}; closeModal(); done(v); };
   m.addEventListener("click", ev => { const b = ev.target.closest("[data-m]"); if(b){ const k = b.dataset.m; if(k === "ok") save(); else if(k === "del"){ closeModal(); done(null, true); } else{ closeModal(); done(null); } } else if(ev.target === m){ closeModal(); done(null); } });
   m.addEventListener("keydown", ev => { if(ev.key === "Escape"){ ev.stopPropagation(); closeModal(); done(null); } else if(ev.key === "Enter" && ev.target === title){ ev.preventDefault(); save(); } });
   title.focus();
@@ -347,7 +356,7 @@ function onUp(ev){
   const cur = d.cur; endDrag();
   if(!d.moved && d.mode === "new" && d.anchor){
     if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
-    const base = {id:uid(), title:"", day:d.anchor.day, start:Math.min(d.anchor.start, BOTTOM - 60), dur:60, desc:"", guests:"", meet:false, remind:false};
+    const base = {id:uid(), title:"", day:d.anchor.day, start:Math.min(d.anchor.start, BOTTOM - 60), dur:60, desc:"", guests:"", meet:false, remind:false, color:""};
     editor(base, true, v => { if(!v) return; S.events.push(Object.assign(base, v)); S.sel = base.id; changed(); repaint(); });
     return;
   }
@@ -355,7 +364,7 @@ function onUp(ev){
   if(!cur){ repaint(); return; }
   if(d.mode === "new"){
     if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
-    const base = {id:uid(), title:"", day:cur.day, start:cur.start, dur:cur.dur, desc:"", guests:"", meet:false, remind:false};
+    const base = {id:uid(), title:"", day:cur.day, start:cur.start, dur:cur.dur, desc:"", guests:"", meet:false, remind:false, color:""};
     repaint();
     editor(base, true, v => { if(!v) return; S.events.push(Object.assign(base, v)); S.sel = base.id; changed(); repaint(); });
     return;
@@ -407,11 +416,11 @@ function guideText(s, guide){ guide = guide || {}; return [guide.all, guide[s.id
 function aiPrompt(s, events, g, guide){
   const fixed = s.fixed.filter(f => f.kind !== "lunch").map(f => `- ${f.title}: ${C.DAYS[f.day]} ${hh(f.start)}–${hh(f.end)}${f.buffer ? ` (keep ${f.buffer} minutes free before and after for travel)` : ""}`).join("\n");
   const rules = s.tasks.map(k => `- [${k.id}] ${k.title} (${k.dur} min): ${k.note}`).join("\n");
-  const cal = events.length ? events.map(x => `- "${x.title}": ${C.DAYS[x.day]} ${hh(x.start)}–${hh(x.start + x.dur)}${x.meet ? ", Google Meet added" : ""}${x.remind ? ", email reminder 1 day before" : ""}${x.desc ? `, description: "${x.desc}"` : ", NO description"}${x.guests ? `, guests: ${x.guests}` : ""}`).join("\n") : "(no events)";
+  const cal = events.length ? events.map(x => `- "${x.title}": ${C.DAYS[x.day]} ${hh(x.start)}–${hh(x.start + x.dur)}${x.meet ? ", Google Meet added" : ""}${x.remind ? ", email reminder 1 day before" : ""}, color: ${(C.colorOf(x.color) || {}).name || "default (none chosen)"}${x.desc ? `, description: "${x.desc}"` : ", NO description"}${x.guests ? `, guests: ${x.guests}` : ""}`).join("\n") : "(no events)";
   const facts = g.items.map(i => `- [${i.id}] ${i.title}: ${i.found ? `matched the event "${i.event.title}"` : "NOT FOUND on the calendar"}; ${i.perfect ? "every check passes" : "problems: " + i.checks.filter(c => !c.ok).map(c => c.why).join(" ")}`).join("\n");
   return `You are a legal-support trainer giving feedback on a trainee's calendar exercise (${s.title}; track: ${trackOf().title}). The trainee put each task on the attorney's calendar. Judge ONLY against the rules, notes and guidelines below. Do not invent rules, and never give legal advice.
 
-GENERAL RULES: Eastern Time; business hours 9:00 AM to 5:00 PM; leave ${s.gap} minutes between events (lunch excluded); every event needs a title and a description; add Google Meet to video calls; set an email reminder 1 day before external appointments when the task says so.
+GENERAL RULES: Eastern Time; business hours 9:00 AM to 5:00 PM; leave ${s.gap} minutes between events (lunch excluded); every event needs a title and a description; add Google Meet to video calls; set an email reminder 1 day before external appointments when the task says so; the attorney's color rule: ${C.COLOR_RULE_TEXT} (other lengths have no color rule).
 
 FIXED EVENTS ON THE CALENDAR:
 ${fixed}
@@ -498,7 +507,7 @@ ${ai && ai.summary ? `<h2>Overview</h2><p>${e(ai.summary)}</p>` : ""}
 ${ai && ai.strengths.length ? `<h2>What’s working</h2><ul>${li(ai.strengths)}</ul>` : ""}${ai && ai.improve.length ? `<h2>Work on next</h2><ul>${li(ai.improve)}</ul>` : ""}
 ${(() => { const sec = reportSections(s, sub, r); return SECTION.map(([k, ic, title]) => `<h2>${ic} ${title} (${sec[k].length})</h2>` + (sec[k].length ? sec[k].map(x => `<p><b>${e(x.title)}</b><br>${e(x.text)}${x.note ? `<br><span class="tn">Trainer: ${e(x.note)}</span>` : ""}</p>`).join("") : "<p>Nothing here.</p>")).join(""); })()}
 ${r && r.comment ? `<h2>Trainer’s insights</h2><p>${e(r.comment).replace(/\n/g, "<br>")}</p>` : ""}
-<h2>The calendar you submitted</h2><table><tr><th>When</th><th>Event</th><th>Details</th></tr>${events.map(x => `<tr><td>${C.DAYS[x.day]}<br>${hh(x.start)} – ${hh(x.start + x.dur)}</td><td><b>${e(x.title)}</b></td><td>${x.meet ? "📹 Google Meet<br>" : ""}${x.remind ? "🔔 Email reminder 1 day before<br>" : ""}${x.guests ? "Guests: " + e(x.guests) + "<br>" : ""}${e(x.desc)}</td></tr>`).join("") || "<tr><td colspan=3>No events.</td></tr>"}</table>
+<h2>The calendar you submitted</h2><table><tr><th>When</th><th>Event</th><th>Details</th></tr>${events.map(x => `<tr><td>${C.DAYS[x.day]}<br>${hh(x.start)} – ${hh(x.start + x.dur)}</td><td><b>${e(x.title)}</b></td><td>${x.meet ? "📹 Google Meet<br>" : ""}${x.remind ? "🔔 Email reminder 1 day before<br>" : ""}${C.colorOf(x.color) ? "🎨 " + e(C.colorOf(x.color).name) + "<br>" : ""}${x.guests ? "Guests: " + e(x.guests) + "<br>" : ""}${e(x.desc)}</td></tr>`).join("") || "<tr><td colspan=3>No events.</td></tr>"}</table>
 <p class="meta">Eastern Time · LSH Foundational Training · Calendar Management</p></body></html>`;
 }
 function finalOf(scnId){
@@ -516,7 +525,7 @@ window.FTCalSim = {
     w.document.open(); w.document.write(feedbackDoc(f.s, f.sub, f.r, f.name)); w.document.close(); w.focus(); setTimeout(() => { try{ w.print(); }catch(err){} }, 400); }, save:saveNow, review:runReview,
   add(){
     if(S.events.length >= C.MAXEV){ toast("That’s the most events a week can hold."); return; }
-    const x = {id:uid(), title:"", day:0, start:C.OPEN, dur:60, desc:"", guests:"", meet:false, remind:false};
+    const x = {id:uid(), title:"", day:0, start:C.OPEN, dur:60, desc:"", guests:"", meet:false, remind:false, color:""};
     editor(x, true, v => { if(!v) return; S.events.push(Object.assign(x, v)); S.sel = x.id; changed(); repaint(); });
   },
   reset(){ if(S.events.length && !confirm("Remove all of your events from this week?")) return; S.events = []; S.sel = null; changed(); repaint(); },
@@ -854,7 +863,7 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-modal{position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;}
 .cs-dlg{width:min(460px,100%);background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:12px;}
 .cs-m-title{border:0;border-bottom:2px solid #1a73e8;font-size:21px;padding:4px 2px 6px;outline:none;color:#202124;width:100%;} .cs-m-when{font-size:13.5px;color:#3c4043;}
-.cs-m-row{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3c4043;} .cs-m-row input[type=text],.cs-m-row input:not([type]){flex:1;border:0;border-bottom:1px solid #dadce0;padding:5px 2px;font:inherit;outline:none;} .cs-m-top{align-items:flex-start;} .cs-m-row textarea{flex:1;border:1px solid #dadce0;border-radius:8px;padding:6px 8px;font:inherit;resize:vertical;}
+.cs-m-row{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3c4043;} .cs-colors{display:flex;gap:6px;flex-wrap:wrap;} .cs-sw{width:20px;height:20px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #dadce0;cursor:pointer;padding:0;} .cs-sw.on{box-shadow:0 0 0 2px #1a73e8;} .cs-sw:focus-visible{outline:2px solid #1a73e8;outline-offset:2px;} .cs-sw-def{background:#039be5;} .cs-m-cname{font-size:12.5px;color:#5f6368;} .cs-rule{background:#fff7ed;border-left:3px solid #f4511e;border-radius:6px;padding:6px 8px;} .cs-rule b{color:#9a3412;} .cs-req.cs-bad,.cs-ro.cs-bad{outline:2px dashed #fde68a;outline-offset:-3px;} .cs-m-row input[type=text],.cs-m-row input:not([type]){flex:1;border:0;border-bottom:1px solid #dadce0;padding:5px 2px;font:inherit;outline:none;} .cs-m-top{align-items:flex-start;} .cs-m-row textarea{flex:1;border:1px solid #dadce0;border-radius:8px;padding:6px 8px;font:inherit;resize:vertical;}
 .cs-m-btns{display:flex;gap:8px;align-items:center;} .cs-m-btns span{flex:1;}
 .cs-ai,.cs-fb{background:#f8fafc;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:12px 14px;margin:8px 0;flex-basis:100%;} .cs-ai p{margin:4px 0;font-size:14px;} .cs-fb{background:#fff;border-left:5px solid #039be5;} .cs-fb-hd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;} .cs-fb-hd h3{margin:0;font-size:16px;color:var(--navy);}
 .cs-ul{margin:4px 0 6px 20px;padding:0;font-size:13.5px;} .cs-ul.ok{color:#166534;} .cs-fbt{margin-top:6px;} .cs-fbi{border-top:1px solid var(--line,#e5e7eb);padding:6px 0;font-size:13.5px;} .cs-fbi-hd{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;} .cs-fbi p{margin:3px 0 0 20px;} .cs-tn{color:#14532d;}
