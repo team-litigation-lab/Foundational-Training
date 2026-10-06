@@ -201,7 +201,20 @@ function historyHTML(){
     return `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.short)} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${released(r) ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${feedbackPanel(s, last, r)}</div>`;
   }).join("");
   const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Simulator")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
-  return `<div class="cs-hist">${pv}${rows}${ext}</div>`;
+  return `<div class="cs-hist">${evalHTML()}${pv}${rows}${ext}</div>`;
+}
+// The trainee's own space for this week: the calendar as submitted, the automated review, and the AI review set up by the trainer's rules.
+function evalHTML(){
+  const s = scn(), list = subs(s.id), last = list[list.length - 1];
+  const head = `<div class="cs-eval-hd"><h2>📋 My submitted evaluation · ${e(s.short)}</h2></div>`;
+  if(!last) return `<div class="card cs-eval">${head}<p class="cs-hint">Nothing submitted for ${e(s.short)} yet. Build the week, then press <b>📤 Submit to my trainer</b>: your submitted calendar and the AI review appear here.</p></div>`;
+  const au = C.review(s, last.events), key = subKey(last), busy = !!S.aiBusy[key] && !last.ai, r = S.data.reviews[key];
+  const evs = C.clean(last.events);
+  return `<div class="card cs-eval">${head}
+    <div class="cs-hist-row"><span class="cs-pill ok">📤 Submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span><span class="cs-pill">${evs.length} of ${s.tasks.length} tasks scheduled</span>${list.length > 1 ? `<span class="cs-pill">Submission ${list.length} of ${list.length}</span>` : ""}${released(r) ? `<span class="cs-pill ok">👤 Trainer ${e(r.score)}/100</span>` : ""}</div>
+    <div class="cs-eval-cols"><div><h3>Calendar as submitted</h3><div class="gc-shell"><div class="cs-gridwrap">${gridHTML(s, evs, true)}</div></div></div>
+      <div><h3>🤖 AI review</h3>${aiBlock(last.ai, busy) || `<p class="cs-hint">No AI review for this submission.</p>`}${last.ai && !last.ai.error ? taskFeedback(s, last.ai, null) : ""}
+        <h3>Rule-by-rule review</h3>${reviewHTML(au)}</div></div></div>`;
 }
 function renderPage(){
   const s = scn();
@@ -824,6 +837,7 @@ main.main-calsim{max-width:1180px;margin:0 auto;padding:22px 16px 40px;}
 .cs-ghost{position:fixed;z-index:9500;pointer-events:none;background:#f97316;color:#111827;border-radius:8px;padding:4px 8px;font-size:12px;box-shadow:0 8px 20px rgba(0,0,0,.3);opacity:.92;overflow:hidden;box-sizing:border-box;}
 body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important;}
 .cs-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0;} .cs-save{font-size:12.5px;color:var(--ink-soft);}
+.cs-eval{padding:14px 16px;} .cs-eval-hd h2{margin:0 0 8px;font-size:18px;color:var(--navy);} .cs-eval h3{font-size:15px;margin:10px 0 6px;color:var(--navy);} .cs-eval-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:8px;} @media(max-width:900px){.cs-eval-cols{grid-template-columns:1fr;}}
 .cs-hist{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;} .cs-hist-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .cs-pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700;margin:0 4px 0 6px;} .cs-hist .cs-pill{margin:0;} .cs-pill.ok{background:#dcfce7;color:#166534;} .cs-pill.warn{background:#fef3c7;color:#92400e;}
 .cs-review{flex-basis:100%;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;font-size:13.5px;} .cs-review p{margin:4px 0 0;color:#14532d;}
