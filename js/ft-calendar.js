@@ -211,7 +211,7 @@ function evalHTML(){
   const au = C.review(s, last.events), key = subKey(last), busy = !!S.aiBusy[key] && !last.ai, r = S.data.reviews[key];
   const evs = C.clean(last.events);
   return `<div class="card cs-eval">${head}
-    <div class="cs-hist-row"><span class="cs-pill ok">📤 Submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span><span class="cs-pill">${evs.length} of ${s.tasks.length} tasks scheduled</span>${list.length > 1 ? `<span class="cs-pill">Submission ${list.length} of ${list.length}</span>` : ""}${released(r) ? `<span class="cs-pill ok">👤 Trainer ${e(r.score)}/100</span>` : ""}</div>
+    <div class="cs-hist-row"><span class="cs-pill ok">📤 Submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill">${last.source === "portal" ? "🏠 Main Portal simulator" : "🎓 Standard simulator"}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span><span class="cs-pill">${evs.length} of ${s.tasks.length} tasks scheduled</span>${list.length > 1 ? `<span class="cs-pill">Submission ${list.length} of ${list.length}</span>` : ""}${released(r) ? `<span class="cs-pill ok">👤 Trainer ${e(r.score)}/100</span>` : ""}</div>
     <div class="cs-eval-cols"><div><h3>Calendar as submitted</h3><div class="gc-shell"><div class="cs-gridwrap">${gridHTML(s, evs, true)}</div></div></div>
       <div><h3>🤖 AI review</h3>${aiBlock(last.ai, busy) || `<p class="cs-hint">No AI review for this submission.</p>`}${last.ai && !last.ai.error ? taskFeedback(s, last.ai, null) : ""}
         <h3>Rule-by-rule review</h3>${reviewHTML(au)}</div></div></div>`;
@@ -457,17 +457,24 @@ async function submit(){
     const ai = await generateAI(s, S.events); S.aiBusy.preview = false; S.previewAI = {scn:s.id, ai}; repaint();
     return;
   }
-  const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), events:S.events.map(x => Object.assign({}, x)), auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true};
+  const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), source:"standard", events:S.events.map(x => Object.assign({}, x)), auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true};
+  toast("Calendar submitted. The AI is checking it against the rules…");
+  const ai = await reviewSubmission(sub, s);
+  toast(ai.error ? "Submitted. The AI check wasn’t available; your trainer will review it." : "AI feedback is ready below. Your trainer will go through it with you.");
+}
+// The one AI review every submission gets, whichever simulator it came from (Standard Training here, or the Main Portal's Google Calendar Simulator):
+// the same prompt (aiPrompt), the same rules and the trainer's notes, the same result (summary, a status per task, strengths, what to work on).
+async function reviewSubmission(sub, s){
   S.data.submissions.push(sub);
   if(S.data.submissions.length > 20) S.data.submissions = S.data.submissions.slice(-20);
   const key = subKey(sub); S.aiBusy[key] = true;
-  clearTimeout(S.timer); repaint(); toast("Calendar submitted. The AI is checking it against the rules…");
+  clearTimeout(S.timer); if(state.view === "calsim") repaint();
   await sharedSet("calsim:" + S.id, S.data);                       // the submission is safe before the AI answers
   const ai = await generateAI(s, sub.events);
   sub.ai = ai; delete sub.aiPending; delete S.aiBusy[key];
-  S.saved = "saving"; paintSave(); repaint();
+  S.saved = "saving"; paintSave(); if(state.view === "calsim") repaint();
   S.saved = (await sharedSet("calsim:" + S.id, S.data)) === false ? "fail" : "ok"; paintSave();
-  toast(ai.error ? "Submitted. The AI check wasn’t available; your trainer will review it." : "AI feedback is ready below. Your trainer will go through it with you.");
+  return ai;
 }
 function runReview(){
   const s = scn();
@@ -539,11 +546,28 @@ window.FTCalSimCards = function(){
 window.FTCalSimLoad = function(){ if(isTrainee() && !S.data && !S.loading) load(); };
 
 /* ---------- results from the connected simulators (Portal, CMS) ---------- */
+const portalEvents = list => (Array.isArray(list) ? list : []).map((x, i) => { if(!x || typeof x !== "object") return null;
+  const start = Number(x.start), dur = x.dur != null ? Number(x.dur) : Number(x.end) - start;
+  return {id:String(x.id || "p" + i), title:x.title, day:Number(x.day), start, dur, desc:x.desc || x.description, guests:Array.isArray(x.guests) ? x.guests.join(", ") : x.guests, meet:!!x.meet, remind:!!x.remind}; }).filter(Boolean);
 window.addEventListener("message", ev => {
   const d = ev.data;
   if(!d || d.type !== "lsh-sim-result" || d.sim !== "calendar" || !isTrainee()) return;
   if(ev.origin !== new URL(PORTAL).origin && ev.origin !== new URL(CMS).origin) return;
   const score = Number(d.score), max = Number(d.max);
+  // A result that carries the calendar itself ({week, events:[{title, day 0-4, start (minutes), dur or end, desc, guests, meet, remind}], at?}) is a submission:
+  // it gets the same AI review as a Standard Training one and shows on the trainer's Trainee Evaluations page.
+  const sc = C.SCENARIOS.find(q => q.id === (d.week || d.scn)), evs = sc && C.clean(portalEvents(d.events));
+  if(sc && evs && evs.length){
+    const ingest = async () => {
+      const at = isFinite(Date.parse(d.at)) ? new Date(d.at).toISOString() : new Date().toISOString();
+      if(S.data.submissions.some(z => z.scn === sc.id && z.at === at)) return;
+      const au = C.review(sc, evs);
+      toast("The Main Portal calendar was sent to your trainer. The AI is checking it…");
+      await reviewSubmission({scn:sc.id, at, source:"portal", events:evs, auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true}, sc);
+      toast("AI feedback is ready on your Calendar Simulator page.");
+    };
+    if(S.data) ingest(); else load().then(ingest);
+  }
   if(!isFinite(score) || !isFinite(max) || max <= 0 || score < 0 || score > max) return;
   const add = () => { S.data.external.push({title:String(d.title || "Calendaring Simulator").slice(0, 80), source:ev.origin, score, max, at:new Date().toISOString()});
     if(S.data.external.length > 30) S.data.external = S.data.external.slice(-30); queueSave(); if(state.view === "calsim") repaint(); };
@@ -552,7 +576,7 @@ window.addEventListener("message", ev => {
 
 /* ---------- admin: every trainee's submitted calendars, and the trainer's review ---------- */
 const onAdminScores = () => (state.view === "admin" && state.adminTab === "calscores") || (state.view === "calreview" && state.isAdmin);
-const A = {guide:null, auto:true, sig:"", tick:0, timer:null, stale:false, rows:null, loading:false, open:{}, closed:{}, view:{}};
+const A = {guide:null, auto:true, sig:"", tick:0, timer:null, stale:false, rows:null, loading:false, open:{}, closed:{}, view:{}, q:"", f:"all", busy:{}, bulk:false};
 async function loadAdmin(){
   A.loading = true; if(!A.guide) A.guide = (await sharedGet("settings:calsim-guidelines").catch(() => null)) || {};
   try{
@@ -583,10 +607,10 @@ function renderAdminScores(){
   startPoll();
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
     <p class="cs-hint"><b>The Calendaring Simulators now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training scores on the Portal ↗</button> Grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older calendars saved here are listed below.</p>
-    ${state.view === "calreview" ? "" : `<p class="cs-hint"><button class="btn btn-primary btn-sm" onclick="goto('calreview')">📋 Open the Trainee Evaluations page</button></p>`}${feedHTML()}${guideHTML()}
+    ${state.view === "calreview" ? feedHTML() + setupHTML() + evalBoardHTML() : `<p class="cs-hint"><button class="btn btn-primary btn-sm" onclick="goto('calreview')">📋 Open the Trainee Evaluations page</button></p>` + feedHTML() + guideHTML()}
     <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
-      ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
+      ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow" id="csrow_${e(x.id)}"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
         ${n ? `<span class="cs-pill ok">📤 ${n} submitted</span>` : `<span class="cs-pill">Not submitted</span>`}${scoresOf(x)}${u ? `<span class="cs-pill warn">${u} to review</span>` : n ? `<span class="cs-pill ok">All reviewed</span>` : ""}</div>
         ${A.open[x.id] ? detailHTML(x) : ""}</div>`; }).join("")}</section>`).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has used the Calendar Scheduler yet.</div>`}
@@ -602,10 +626,60 @@ function feedHTML(){
     ${all.length ? all.slice(0, 5).map(({x, z}) => { const s = C.SCENARIOS.find(q => q.id === z.scn), st = aiState(z), r = x.d.reviews[subKey(z)];
       return `<div class="cs-feed-row"><span><b>${e(x.name)}</b> · ${e(s ? s.short : z.scn)} · ${e(new Date(z.at).toLocaleTimeString())}</span><span class="cs-pill ${st[0]}">${st[1]}</span>${released(r) ? '<span class="cs-pill ok">Report finalized</span>' : ""}<button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live('${e(x.id)}','${e(subKey(z))}')">🖥 Open live review</button></div>`; }).join("") : '<p class="cs-hint">Nothing submitted yet. New submissions and their AI feedback appear here as they happen.</p>'}</div>`;
 }
+const SRC = z => z.source === "portal" ? "🏠 Main Portal" : "🎓 Standard";
+const evalRows = () => { const out = []; (A.rows || []).forEach(x => x.d.submissions.forEach(z => { const s = C.SCENARIOS.find(q => q.id === z.scn); if(s) out.push({x, z, s, k:subKey(z)}); })); return out.sort((a, b) => b.z.at.localeCompare(a.z.at)); };
+const needsAI = z => !z.ai || !!z.ai.error;
+const checking = z => aiState(z)[1].indexOf("checking") >= 0;
+function boardMatch(r){
+  const q = (A.q || "").trim().toLowerCase(), rv = r.x.d.reviews[r.k];
+  if(q && (r.x.name + " " + r.x.batch + " " + r.s.title + " " + SRC(r.z)).toLowerCase().indexOf(q) < 0) return false;
+  return A.f === "noai" ? needsAI(r.z) : A.f === "toreview" ? !released(rv) : A.f === "final" ? released(rv) : A.f === "portal" ? r.z.source === "portal" : A.f === "standard" ? r.z.source !== "portal" : true;
+}
+// 📋 The evaluations board: every submitted calendar, from either simulator, with its AI review and the trainer's feedback state.
+function boardBody(){
+  const all = evalRows(), rows = all.filter(boardMatch);
+  const n = f => all.filter(f).length, chip = (c, t) => `<span class="cs-pill ${c}">${t}</span>`;
+  const ext = (A.rows || []).filter(x => x.d.external.length);
+  return `<div class="cs-bd-sum">${chip("", `📤 ${all.length} evaluation${all.length === 1 ? "" : "s"}`)}${chip("ok", `🤖 AI review ready: ${n(r => !needsAI(r.z))}`)}${chip(n(r => needsAI(r.z)) ? "warn" : "", `Needs an AI review: ${n(r => needsAI(r.z))}`)}${chip(n(r => !released(r.x.d.reviews[r.k])) ? "warn" : "", `Waiting for your feedback: ${n(r => !released(r.x.d.reviews[r.k]))}`)}${chip("ok", `📄 Finalized: ${n(r => released(r.x.d.reviews[r.k]))}`)}</div>
+    ${rows.length ? `<div class="cs-bd-wrap"><table class="cs-bd"><thead><tr><th>Trainee</th><th>Week</th><th>Simulator</th><th>Submitted</th><th>Automated</th><th>🤖 AI review</th><th>👤 Your feedback</th><th></th></tr></thead><tbody>${rows.map(r => {
+      const st = aiState(r.z), busy = !!A.busy[r.x.id + "|" + r.k], rv = r.x.d.reviews[r.k], au = C.review(r.s, C.clean(r.z.events)).pct;
+      const tr = released(rv) ? ["ok", "📄 Finalized" + (rv.score != null ? " · " + e(rv.score) + "/100" : "")] : rv ? ["warn", "Draft saved"] : ["warn", "To review"];
+      return `<tr><td><b>${e(r.x.name)}</b><div class="cs-sm">${e(r.x.batch ? "Batch " + r.x.batch : "")}</div></td><td>${e(r.s.short)}</td><td>${SRC(r.z)}</td><td>${e(new Date(r.z.at).toLocaleString())}</td><td>${au}%</td>
+        <td><span class="cs-pill ${busy ? "warn" : st[0]}">${busy ? "🤖 Generating…" : st[1]}</span>${!busy && !checking(r.z) ? `<button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.gen('${e(r.x.id)}','${e(r.k)}')">${needsAI(r.z) ? "🤖 Generate" : "↻ Regenerate"}</button>` : ""}</td>
+        <td><span class="cs-pill ${tr[0]}">${tr[1]}</span></td>
+        <td class="cs-bd-act"><button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live('${e(r.x.id)}','${e(r.k)}')">🖥 Open review</button><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.detail('${e(r.x.id)}')">Details</button></td></tr>`; }).join("")}</tbody></table></div>`
+      : `<p class="cs-hint">${all.length ? "No evaluation matches this filter." : "No evaluation has been submitted yet. When a trainee submits a calendar (here or from the Main Portal’s Google Calendar Simulator), it appears here with its AI review."}</p>`}
+    ${ext.length ? `<div class="cs-bd-ext"><b>🏠 Main Portal scores</b> <span class="cs-hint">(score only: a result that includes the calendar becomes an evaluation above)</span>${ext.map(x => `<div class="cs-sm"><b>${e(x.name)}</b>: ${x.d.external.slice(-3).reverse().map(z => `${e(z.title)} ${Math.round(z.score)}/${Math.round(z.max)}`).join(" · ")}</div>`).join("")}</div>` : ""}`;
+}
+function evalBoardHTML(){
+  return `<div class="cs-board" id="csBoard"><div class="cs-bd-hd"><h3>📋 Submitted evaluations</h3>
+    <div class="cs-bd-tools"><input type="search" id="csBdQ" placeholder="Search trainee, batch or week…" value="${e(A.q)}" oninput="FTCalAdmin.filter()"><select id="csBdF" onchange="FTCalAdmin.filter()">${[["all", "All evaluations"], ["noai", "Needs an AI review"], ["toreview", "Waiting for my feedback"], ["final", "Finalized"], ["standard", "🎓 Standard simulator"], ["portal", "🏠 Main Portal simulator"]].map(([v, l]) => `<option value="${v}" ${A.f === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <button class="btn btn-primary btn-sm" id="csBdAll" onclick="FTCalAdmin.genAll()" ${A.bulk ? "disabled" : ""}>🤖 Generate all missing AI reviews</button></div></div>
+    <div id="csBoardBody">${boardBody()}</div></div>`;
+}
+const paintBoard = () => { const b = document.getElementById("csBoardBody"); if(b) b.innerHTML = boardBody(); const a = document.getElementById("csBdAll"); if(a) a.disabled = A.bulk; };
+function setupHTML(){
+  return `<div class="cs-setup"><h3>🤖 AI review set-up</h3>
+    <p class="cs-hint">One AI review for every simulator: Standard Training here and the Main Portal’s Google Calendar Simulator are reviewed by the <b>same AI, with the same prompt, rules and layout</b> (an overview, a status and feedback on each task, strengths and what to work on). Your rules and notes below apply to both. The review runs when the trainee submits; use <b>Generate</b> on an evaluation to write or redo one.</p>
+    <div class="cs-bd-tools"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.testAI()">🔌 Test the AI connection</button></div>${guideHTML(true)}</div>`;
+}
+// Write (or redo) the AI review of one submission from the trainer's side, then save it on the trainee's record.
+async function genOne(id, k, quiet){
+  const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return false;
+  const bk = id + "|" + k; A.busy[bk] = true; paintBoard();
+  const ai = await generateAI(s, C.clean(z.events), "trainer");
+  try{
+    await persist(id, d => { const t = d.submissions.find(q => subKey(q) === k); if(t){ t.ai = ai; delete t.aiPending; } });
+  }catch(err){ delete A.busy[bk]; paintBoard(); if(!quiet) toast("Couldn’t save. Check your connection."); return false; }
+  delete A.busy[bk]; A.sig = sigOf(A.rows); paintBoard();
+  if(L && L.id === id && L.k === k){ liveSync(); L.z = row.d.submissions.find(q => subKey(q) === k) || L.z; paintLive(); }
+  if(!quiet) toast(ai.error ? "The AI check wasn’t available (" + ai.error + ")." : "AI review ready.");
+  return !ai.error;
+}
 const GUIDE_KEYS = [["all", "All weeks"]];
-function guideHTML(){
+function guideHTML(open){
   const g = A.guide || {};
-  return `<details class="cs-guide"><summary>📘 Rules, guidelines and notes for the AI review</summary>
+  return `<details class="cs-guide" ${open ? "open" : ""}><summary>📘 Rules, guidelines and notes for the AI review</summary>
     <p class="cs-hint">Write the rules, guidelines or notes the AI should hold the trainees to, beyond each task’s built-in rules (what a good appointment looks like, wording for titles and descriptions, what to always set, common mistakes). The AI applies them when it reviews a submission.</p>
     ${GUIDE_KEYS.concat(C.SCENARIOS.map(q => [q.id, q.title])).map(([k, name]) => `<label class="cs-rv-t">${e(name)}<textarea id="csg_${e(k)}" rows="3" maxlength="3000" class="cs-rv-ta">${e(g[k] || "")}</textarea></label>`).join("")}
     <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.saveGuide()">💾 Save rules and notes</button></details>`;
@@ -697,10 +771,23 @@ window.FTCalAdmin = {
     }catch(err){ toast(err && /score/i.test(err.message) ? err.message : "Couldn’t save. Check your connection."); }
   },
   async withdraw(id, k){ try{ await persist(id, d => { if(d.reviews[k]) d.reviews[k].released = false; }); toast("Back to draft: the trainee no longer sees your feedback."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); } },
-  async regen(id, k){
-    const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return;
-    toast("Asking the AI…"); const ai = await generateAI(s, C.clean(z.events), "trainer");
-    try{ await persist(id, d => { const t = d.submissions.find(q => subKey(q) === k); if(t) t.ai = ai; }); toast(ai.error ? "The AI check wasn’t available." : "AI feedback updated."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); }
+  async regen(id, k){ toast("Asking the AI…"); await genOne(id, k); render(); },
+  gen(id, k){ toast("Asking the AI…"); return genOne(id, k); },
+  filter(){ A.q = (document.getElementById("csBdQ") || {}).value || ""; A.f = (document.getElementById("csBdF") || {}).value || "all"; paintBoard(); },
+  detail(id){ const row = A.rows.find(r => r.id === id); if(!row) return; A.open[id] = true; A.closed[row.batch] = false; render(); const el = document.getElementById("csrow_" + id); if(el && el.scrollIntoView) el.scrollIntoView({behavior:"smooth", block:"start"}); },
+  async genAll(){
+    if(A.bulk) return;
+    const todo = evalRows().filter(r => needsAI(r.z) && !checking(r.z));
+    if(!todo.length){ toast("Every evaluation already has an AI review."); return; }
+    if(!confirm(`Write the AI review for ${todo.length} evaluation${todo.length === 1 ? "" : "s"}? It uses the same rules and notes as a trainee’s own submission.`)) return;
+    A.bulk = true; paintBoard(); let ok = 0;
+    for(let i = 0; i < todo.length; i++){ toast(`Writing AI reviews: ${i + 1} of ${todo.length}…`); if(await genOne(todo[i].x.id, todo[i].k, true)) ok++; }
+    A.bulk = false; paintBoard(); toast(`${ok} of ${todo.length} AI review${todo.length === 1 ? "" : "s"} written${ok < todo.length ? ". The rest weren’t available: try Generate on each." : "."}`);
+  },
+  async testAI(){
+    toast("Testing the AI…");
+    try{ const r = await callAIJson('Return ONLY this JSON object: {"ok":true}', 60, 25000, "grading"); toast(r && r.ok ? "✅ The AI is connected: reviews will be written." : "The AI answered, but not as expected."); }
+    catch(err){ toast("The AI isn’t available: " + String((err && err.message) || "try again").slice(0, 120)); }
   },
 
   /* ----- 🖥 Live review: the trainer talks the feedback through as it shows on screen, step by step ----- */
@@ -852,6 +939,9 @@ main.main-calsim{max-width:1180px;margin:0 auto;padding:22px 16px 40px;}
 .cs-ghost{position:fixed;z-index:9500;pointer-events:none;background:#f97316;color:#111827;border-radius:8px;padding:4px 8px;font-size:12px;box-shadow:0 8px 20px rgba(0,0,0,.3);opacity:.92;overflow:hidden;box-sizing:border-box;}
 body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important;}
 .cs-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0;} .cs-save{font-size:12.5px;color:var(--ink-soft);}
+.cs-setup,.cs-board{border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:14px 16px;margin:12px 0;background:#fff;} .cs-setup h3,.cs-board h3{margin:0 0 6px;color:var(--navy);font-size:17px;}
+.cs-bd-hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;} .cs-bd-tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0;} .cs-bd-tools input,.cs-bd-tools select{border:1px solid var(--line,#d1d5db);border-radius:10px;padding:7px 10px;font-size:13px;}
+.cs-bd-sum{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;} .cs-bd-sum .cs-pill{margin:0;} .cs-bd-wrap{overflow-x:auto;} .cs-bd{width:100%;border-collapse:collapse;font-size:13px;} .cs-bd th{text-align:left;background:#f8fafc;padding:7px 9px;border-bottom:2px solid #e5e7eb;white-space:nowrap;} .cs-bd td{padding:8px 9px;border-bottom:1px solid #eef0f3;vertical-align:middle;} .cs-bd .cs-pill{margin:0 6px 0 0;} .cs-sm{font-size:12px;color:var(--ink-soft);} .cs-bd-act{white-space:nowrap;} .cs-bd-act .btn{margin-right:4px;} .cs-bd-ext{margin-top:10px;}
 .cs-rvhero{background:linear-gradient(120deg,#0b1730,#12306b);color:#dbe4f7;border-radius:22px;padding:28px 32px;margin-bottom:16px;} .cs-rvhero h1{color:#fff;margin:10px 0;font-size:34px;} .cs-rvhero p{margin:0;max-width:760px;line-height:1.6;font-size:15px;} .cs-rvhero b{color:#fff;} .cs-rvkick{display:inline-block;border:1px solid #7c5a45;background:rgba(249,115,22,.12);color:#fdba74;border-radius:999px;padding:5px 14px;font:700 12px/1 monospace;letter-spacing:.06em;}
 .cs-eval{padding:14px 16px;} .cs-eval-hd h2{margin:0 0 8px;font-size:18px;color:var(--navy);} .cs-eval h3{font-size:15px;margin:10px 0 6px;color:var(--navy);} .cs-eval-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:8px;} @media(max-width:900px){.cs-eval-cols{grid-template-columns:1fr;}}
 .cs-hist{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;} .cs-hist-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
