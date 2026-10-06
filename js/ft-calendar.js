@@ -43,7 +43,7 @@ const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() ==
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const rangeLabel = () => { const a = dayDate(0), b = dayDate(4); return a.getMonth() === b.getMonth() ? `${MONTHS[a.getMonth()]} ${a.getFullYear()}` : `${MONTHS[a.getMonth()].slice(0, 3)} – ${MONTHS[b.getMonth()].slice(0, 3)} ${b.getFullYear()}`; };
 
-window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim"]);
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim", "calreview"]);
 
 const S = {guide:null, aiBusy:{}, id:null, data:null, loading:false, err:"", scn:0, events:[], result:null, timer:null, saved:null, drag:null, sel:null};
 const scn = () => C.SCENARIOS[S.scn];
@@ -551,6 +551,7 @@ window.addEventListener("message", ev => {
 });
 
 /* ---------- admin: every trainee's submitted calendars, and the trainer's review ---------- */
+const onAdminScores = () => (state.view === "admin" && state.adminTab === "calscores") || (state.view === "calreview" && state.isAdmin);
 const A = {guide:null, auto:true, sig:"", tick:0, timer:null, stale:false, rows:null, loading:false, open:{}, closed:{}, view:{}};
 async function loadAdmin(){
   A.loading = true; if(!A.guide) A.guide = (await sharedGet("settings:calsim-guidelines").catch(() => null)) || {};
@@ -563,7 +564,7 @@ async function loadAdmin(){
     A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || "")); A.sig = sigOf(A.rows);
   }catch(err){ A.rows = []; }
   A.loading = false;
-  if(state.view === "admin" && state.adminTab === "calscores") render();
+  if(onAdminScores()) render();
 }
 // One trainee's scores, per week: the automated review of their latest submission and the trainer's score for it.
 function scoresOf(x){
@@ -582,7 +583,7 @@ function renderAdminScores(){
   startPoll();
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
     <p class="cs-hint"><b>The Calendaring Simulators now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training scores on the Portal ↗</button> Grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older calendars saved here are listed below.</p>
-    ${feedHTML()}${guideHTML()}
+    ${state.view === "calreview" ? "" : `<p class="cs-hint"><button class="btn btn-primary btn-sm" onclick="goto('calreview')">📋 Open the Trainee Evaluations page</button></p>`}${feedHTML()}${guideHTML()}
     <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
       ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
@@ -611,7 +612,7 @@ function guideHTML(){
 }
 function startPoll(){ if(!A.timer) A.timer = setInterval(pollAdmin, 10000); }
 async function pollAdmin(){
-  if(document.hidden || !A.auto || state.view !== "admin" || state.adminTab !== "calscores" || !A.rows || A.loading) return;
+  if(document.hidden || !A.auto || !onAdminScores() || !A.rows || A.loading) return;
   try{
     // Two requests a poll: the list of trainees with a record, and their records in one batch (names only for a trainee not seen yet).
     const keys = (await sharedList("calsim:")) || [], ids = keys.map(k => String(k).replace(/^calsim:/, ""));
@@ -775,9 +776,23 @@ function paintLive(){
         <div class="cs-live-nav"><button class="btn btn-ghost" ${st === 0 ? "disabled" : ""} onclick="FTCalAdmin.liveGo(${st - 1})">← Back</button><button class="btn btn-navy" ${st === n + 1 ? "disabled" : ""} onclick="FTCalAdmin.liveGo(${st + 1})">Next →</button></div></div></div>`;
 }
 
+/* ---------- 📋 Trainee Evaluations: the trainer's own page (#/calreview) ---------- */
+function renderReviewPage(){
+  const hero = `<div class="cs-rvhero"><span class="cs-rvkick">TRAINERS · CALENDAR MANAGEMENT</span><h1>Trainee Evaluations</h1>
+    <p>Calendars your trainees submit from the Calendar Simulator, with the AI review written from the attorney’s rules and your own rules and notes. Open one, go through the feedback with the trainee as it comes in, add what the AI missed and your own insights, then <b>finalize the report</b>: the trainee sees it under <b>My submitted evaluation</b> and can download it.</p></div>`;
+  if(!state.isAdmin) return `<div class="cs-wrap">${hero}<div class="card" style="padding:18px 20px;">This page is for trainers. Sign in as an admin (Admin Portal tab) to review your trainees’ calendars. <button class="btn btn-ghost btn-sm" onclick="goto('dashboard')">← Back</button></div></div>`;
+  return `<div class="cs-wrap"><div class="cs-top"><div></div><div><button class="btn btn-ghost btn-sm" onclick="goto('admin')">← Admin</button></div></div>${hero}${renderAdminScores()}</div>`;
+}
+
 /* ---------- wiring into the engine ---------- */
 const __render = window.render;
 window.render = function(){
+  if(state.view === "calreview"){
+    const app = document.getElementById("app");
+    app.innerHTML = renderTopbar() + `<main class="main-calsim">${renderReviewPage()}</main>` + renderFooter();
+    try{ afterRender(); }catch(err){}
+    return;
+  }
   if(state.view !== "calsim"){ S.entered = false; return __render.apply(this, arguments); }
   if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
@@ -837,6 +852,7 @@ main.main-calsim{max-width:1180px;margin:0 auto;padding:22px 16px 40px;}
 .cs-ghost{position:fixed;z-index:9500;pointer-events:none;background:#f97316;color:#111827;border-radius:8px;padding:4px 8px;font-size:12px;box-shadow:0 8px 20px rgba(0,0,0,.3);opacity:.92;overflow:hidden;box-sizing:border-box;}
 body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important;}
 .cs-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0;} .cs-save{font-size:12.5px;color:var(--ink-soft);}
+.cs-rvhero{background:linear-gradient(120deg,#0b1730,#12306b);color:#dbe4f7;border-radius:22px;padding:28px 32px;margin-bottom:16px;} .cs-rvhero h1{color:#fff;margin:10px 0;font-size:34px;} .cs-rvhero p{margin:0;max-width:760px;line-height:1.6;font-size:15px;} .cs-rvhero b{color:#fff;} .cs-rvkick{display:inline-block;border:1px solid #7c5a45;background:rgba(249,115,22,.12);color:#fdba74;border-radius:999px;padding:5px 14px;font:700 12px/1 monospace;letter-spacing:.06em;}
 .cs-eval{padding:14px 16px;} .cs-eval-hd h2{margin:0 0 8px;font-size:18px;color:var(--navy);} .cs-eval h3{font-size:15px;margin:10px 0 6px;color:var(--navy);} .cs-eval-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:8px;} @media(max-width:900px){.cs-eval-cols{grid-template-columns:1fr;}}
 .cs-hist{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;} .cs-hist-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .cs-pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700;margin:0 4px 0 6px;} .cs-hist .cs-pill{margin:0;} .cs-pill.ok{background:#dcfce7;color:#166534;} .cs-pill.warn{background:#fef3c7;color:#92400e;}
