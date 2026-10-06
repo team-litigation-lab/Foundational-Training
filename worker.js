@@ -544,9 +544,14 @@ export default {
       if (!path.startsWith("/api/")) {
         const res = await env.ASSETS.fetch(request);
         const type = res.headers.get("Content-Type") || "";
-        if (!type.includes("text/html")) return res;
-        // Never let browsers or the edge keep an old copy of the portal page.
         const h = new Headers(res.headers);
+        if (!type.includes("text/html")) {
+          // Scripts, styles and data: the browser may keep a copy but must re-check it (a cheap 304)
+          // on every load, so a trainee never runs an old file even if its ?v= tag wasn't bumped.
+          if (res.status === 200 || res.status === 304) h.set("Cache-Control", "no-cache");
+          return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+        }
+        // Never let browsers or the edge keep an old copy of the portal page.
         h.set("Cache-Control", "no-cache, no-store, must-revalidate");
         return new Response(res.body, { status: res.status, headers: h });
       }
