@@ -28,11 +28,14 @@
   const line = "#D3D7E2";   // the thin lines between a day card's cells
   const frame = "#D6DAE5";  // the thick rounded frame around every card
   const st = document.createElement("style"); st.id = "lsh-card-frame"; st.textContent = `
-/* the frame: every card on a page (not a box inside a card or a slide, not a modal, not the small progress tiles) */
+/* the frame: every card on a page (not a box inside a card or a slide, not a modal, not the small progress tiles).
+   The card floats: a soft shadow spreads out under it, and it lifts a little more on hover. */
 main .card:not(.card .card):not(.stat):not(.module-card):not(.topics-modal):not(.overlay *):not(.dash-side *):not(.lesson-stage *):not(.lesson-slide *):not(#lessonSlideWrap *),
-.dash-main .module-card{border:8px solid ${frame} !important;border-radius:22px !important;}
+.dash-main .module-card{border:6px solid ${frame} !important;border-radius:22px !important;box-shadow:0 18px 36px -14px rgba(38,43,69,.38), 0 6px 14px -6px rgba(38,43,69,.16), 0 0 0 1px rgba(38,43,69,.04) !important;}
 main .card:not(.card .card):not(.stat):not(.module-card):not(.topics-modal):not(.overlay *):not(.dash-side *):not(.lesson-stage *):not(.lesson-slide *):not(#lessonSlideWrap *):hover,
-.dash-main .module-card:hover{border-color:#CCD1DE !important;}
+.dash-main .module-card:hover{border-color:#CCD1DE !important;box-shadow:0 26px 44px -16px rgba(38,43,69,.44), 0 10px 18px -8px rgba(38,43,69,.18), 0 0 0 1px rgba(38,43,69,.05) !important;}
+.dash-main .module-card{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;}
+.dash-main .module-card:hover{transform:translateY(-4px);}
 /* a day card: thin lines between the header, the middle and the button cells */
 .dash-main .module-card .module-head{border-bottom:1px solid ${line} !important;}
 .dash-main .module-card.mc-clean > .mc-grid{display:grid;grid-template-columns:repeat(2,1fr);margin:auto 0 0 !important;border-top:1px solid ${line};}
