@@ -26,15 +26,12 @@ const TOOLS = {
   drill:    {icon:"☎️", name:"Front Desk Drill (CMS)", cms:"drill=1", desc:"Scored incoming calls on the Training Library cases: find the file, verify the caller, handle or route the call."},
   library:  {icon:"📚", name:"Training Library (all 20 cases)", cms:"library=1", desc:"Every mock case in the CMS, with the firm directory and front-desk rules."},
   call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"Practice calls on these same cases: a caller phones in, you answer by voice or typing, write the call note, and get a scored debrief."},
-  calendar: {icon:"📅", name:"Calendaring Simulators", page:"calendar.html", desc:"More practice: a week of scheduling tasks to put on the calendar, checked for conflicts and details."},
-  gcal:     {icon:"📅", name:"Standard Training: Google Calendar Simulator", page:"gcal.html", desc:"Plot the callers’ appointments on the attorney’s calendar, as in Google Calendar: the right title and description, Google Meet for video calls, an email reminder a day before, under the attorney’s rules. Then check your calendar."}
 };
 
 // Every live simulator on the LSH Training Portal (its hub: /simulators.html), open to practice any time.
 const PORTAL_ALL = [
   {id:"call", icon:"📞", name:"Call Simulator", page:"call.html", desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
-  {id:"gcal", icon:"📅", name:"Standard Training: Google Calendar Simulator", page:"gcal.html", desc:"The attorney’s calendar, as in Google Calendar: book, move and cancel callers’ appointments under the attorney’s rules, then check your calendar."},
-  {id:"calendar", icon:"🗓", name:"Calendaring Simulators (Portal)", page:"calendar.html", desc:"The Portal’s own calendaring practice: Standard Training, Litigation Week (Case Management) and Executive Week (EA / PA). Your trainer’s Calendar Management practice lab is the one above."},
+  {id:"calsim", icon:"📅", name:"Calendaring Simulators", page:"calsim.html", desc:"The Google Calendar Simulator for each program: Standard Training (callers’ appointments), the Litigation Week and the Executive Week, plus a week full of conflicts to fix."},
   {id:"email", icon:"✉️", name:"Email Workspace", page:"email.html", desc:"A Gmail-style practice inbox: triage, label, reply, forward and report phishing."},
   {id:"replies", icon:"📨", name:"Email Replies", page:"email-replies.html", desc:"One email at a time, answered like at work: an upset client, an adjuster, a lien letter, your attorney."},
   {id:"docket", icon:"⚖️", name:"Docket System", page:"docket.html", desc:"Court notices and mail arrive in an inbox: docket them and calendar every deadline they trigger."},
@@ -49,7 +46,7 @@ const ACTIVITIES = [
   // mode=graded) or its practice calls. On a graded call the caller and their case stay unknown until the debrief: the
   // trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
   {kind:"call", lesson:4, cms:"reception", title:"Reception Mock Calls", cases:[], tools:[]},
-  {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[], tools:["gcal"]},   // and plot the appointment: the Google Calendar Simulator
+  {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[], tools:[]},   // (the appointment is plotted in the Calendaring Simulators above: Standard Training is the Google Calendar Simulator)
   {kind:"call", lesson:6, cms:"intake", title:"Intake Mock Calls", note:"Work in the case’s Intake tab while you take the call.", cases:[], tools:[]},
   {kind:"demo", lesson:6, cms:"intake", title:"Saving Intake Packet and Extracted Intake Documents Demo", note:"Open the case, click “Work on a practice copy”, then save the documents to the case.", cases:[
     ["MC-02", "Derek Thompson", "Intake questionnaire; retainer and HIPAA sent by e-sign, not yet signed; client’s photos of the spill."],
