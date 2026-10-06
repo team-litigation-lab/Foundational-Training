@@ -282,7 +282,10 @@ const GEMINI_SPARE = ["GEMINI_API_KEY", "GEMINI_API_KEY1", "GEMINI_API_KEY2"];  
 const geminiKeyNames = (env) => [...GEMINI_POOL, ...GEMINI_SPARE].filter((n, i, a) => env[n] && a.findIndex((m) => env[m] === env[n]) === i);
 const hasGemini = (env) => geminiKeyNames(env).length > 0;
 // Per Worker instance: which key the next request starts on, and keys resting after a limit.
-// A per-minute limit rests the key for a minute; a daily limit for an hour; a rejected key for 10 minutes.
+// A per-minute limit rests the key for a minute; a daily limit for an hour; a rejected key for 10 minutes; a key out of
+// credits or with billing off for an hour on every model (the next key may have them).
+// (Google's ordinary rate-limit message says "check your plan and billing details": that alone is only a rate limit.)
+const GEMINI_NO_CREDITS = /credit|prepa(?:y|id)|payment|insufficient|spend(?:ing)?[ _-]?(?:cap|limit)|free tier|enable billing|billing (?:account|is (?:not |in)?active|is disabled|disabled|not enabled)/i;
 let geminiTurn = Math.floor(Math.random() * 1000);
 const geminiRest = new Map();   // "<key name>|<model>" or "<key name>|*" → rest until (ms)
 const resting = (name, model) => Math.max(geminiRest.get(name + "|*") || 0, geminiRest.get(name + "|" + model) || 0) > Date.now();
@@ -352,8 +355,8 @@ async function viaGateway(env, req, user) {
 async function callGemini(env, rawBody, user) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
   if (gatewayOn(env)) return await viaGateway(env, req, user);
-  // Keys in turn (see geminiKeyOrder): when a key's free-tier limit is used up (429) or the key is
-  // rejected, it rests and the next key takes the request.
+  // Keys in turn (see geminiKeyOrder): when a key's free-tier limit is used up (429), the key is
+  // rejected, or it is out of credits or has billing off, it rests and the next key takes the request.
   const keys = geminiKeyOrder(env);
   if (!keys.length) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
   const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
@@ -386,11 +389,14 @@ async function callGemini(env, rawBody, user) {
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify(body)
       });
-      let r = await send(p);
-      let data = await r.json().catch(() => ({}));
-      if (r.status === 400 && /thinking/i.test((data.error && data.error.message) || "")) {   // model doesn't accept that setting → send without it
-        delete p.generationConfig.thinkingConfig; r = await send(p); data = await r.json().catch(() => ({}));
-      }
+      let r, data;
+      try {
+        r = await send(p);
+        data = await r.json().catch(() => ({}));
+        if (r.status === 400 && /thinking/i.test((data.error && data.error.message) || "")) {   // model doesn't accept that setting → send without it
+          delete p.generationConfig.thinkingConfig; r = await send(p); data = await r.json().catch(() => ({}));
+        }
+      } catch (e) { last = { status: 502, msg: "Gemini unreachable: " + (e && e.message || e) }; continue; }   // next key
       if (r.ok) {
         const cand = (data.candidates || [])[0] || {};
         const text = ((cand.content && cand.content.parts) || []).filter((x) => !x.thought).map((x) => x.text || "").join("");
@@ -399,6 +405,11 @@ async function callGemini(env, rawBody, user) {
       }
       const msg = (data.error && data.error.message) || `Gemini error ${r.status}`;
       last = { status: r.status, msg };
+      if (r.status === 402 || (GEMINI_NO_CREDITS.test(msg) && [400, 403, 429].includes(r.status))) {   // out of credits or billing off: the next key
+        geminiRest.set(name + "|*", Date.now() + 3600000);
+        last = { status: 502, msg: "a Gemini key is out of credits or has billing off: " + msg };
+        continue;
+      }
       if (r.status === 429) {
         limit = last;
         geminiRest.set(name + "|" + model, Date.now() + (/per.?day|daily/i.test(msg) ? 3600000 : 60000));
