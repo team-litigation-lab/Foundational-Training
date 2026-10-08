@@ -10,8 +10,8 @@
 :root{--bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;min-height:100vh;position:relative}
-/* The photo behind the page, at 30% (the 70% that's left is the page's own background showing through). */
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:url("/img/kb-bg.webp") center/cover no-repeat;opacity:.3;pointer-events:none}
+/* The photo behind the page, at 35% (the rest is the page's own background showing through). */
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:url("/img/kb-bg.webp") center/cover no-repeat;opacity:.35;pointer-events:none}
 header{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px}
 header img{width:32px;height:32px;border-radius:6px}
 header b{font-size:17px}

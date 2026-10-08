@@ -734,6 +734,10 @@ window.finishTrainingForDay = ftFinishDay;
 window.goToKnowledgeCheckWithInterstitial = function(){ ftFinishDay(state.dayId); };
 
 /* ---------- 5. dashboard, day cards, top bar ---------- */
+/* One icon per lesson, shown in the middle of its card. The engine's DAY_ICONS is the
+   EA/PA course's ten-day set, and js/lsh-dashboard.js only draws an icon for a lesson
+   that has a theme, which these don't, so the cards' middle was empty. */
+const FT_LESSON_ICONS = {1:"🧑‍💻",2:"💬",3:"⚖️",4:"☎️",5:"📅",6:"📝",7:"🧾",8:"🏥"};
 // A lesson card shows its title only (no list of its slides).
 window.moduleCard = function(d){
   const prog = state.progress[d.id];
@@ -747,6 +751,7 @@ window.moduleCard = function(d){
       <div class="mh-title">${esc(d.title)}</div>
     </div>
     <div class="module-body">
+      ${FT_LESSON_ICONS[d.id] ? `<div class="module-icon">${FT_LESSON_ICONS[d.id]}</div>` : ""}
       ${typeof feedbackButton==="function" ? feedbackButton(d.id) : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
