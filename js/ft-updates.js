@@ -32,7 +32,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
   .topbar .brand{flex:0 1000000 auto;min-width:74px;container-type:normal;flex-wrap:wrap;height:46px;overflow:hidden;}
   .topbar .brand-text{flex:0 0 auto;overflow:visible;}
 }
-@media(max-width:760px){.topbar .brand-text b,.topbar .brand-text span{white-space:normal;line-height:1.2;}}  /* phones: a second line */
+@media(max-width:760px){.topbar .brand-text span{display:none;} .topbar .brand-text b{white-space:normal;line-height:1.2;}}  /* phones: the title alone (as index.html intends), on a second line if it needs one */
 
 /* curriculum section slides */
 .ft-section h4{margin-bottom:14px;}
