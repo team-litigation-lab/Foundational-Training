@@ -17,7 +17,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 |---|---|
 | 🏠 **Main Portal** | The LSH Training Portal (`https://cm-training-activity.pages.dev/`). It replaces the Portal link (← Training Directory) that `js/portal-link.js` adds, which is hidden here. |
 | 📚 **Modules** | This program's landing page (the dashboard): the Standard Foundational Training and its lessons. The lessons list is also at `#/modules`. |
-| ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Admins go to **Admin → ✍️ Process Questions** (every trainee's). The questions aren't a slide in the lessons; finishing a lesson opens its 📝 Knowledge Check (`#/kc`), which also saves the answer sheet with its proper name (Google Drive, Word, the trainee folder). |
+| ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Its **own feature**, with its own button in the top bar — not a page of 📚 Training Modules and not a tab of 🛡 Admin Master Control. Admins open the same button and get every trainee's sheets. The questions aren't a slide in the lessons; finishing a lesson routes here, to that lesson's sheet, and its graded view (`#/kc`) also saves the answer sheet with its proper name (Google Drive, Word, the trainee folder). |
 | 🛠 **Practice Lab** | `#/simulators`: the trainee's real-time 🟢 Practice Sessions at their own 🏛 law firm (`#/firm`, `#/session`), the 🧑‍🏫 activities done live with the trainer, demo preparation and Skill Building (see *Practice Lab* below). |
 | 👤 **My Dashboard ▾** | A trainee's own pages: 🎯 My Focus, 🏅 My Performance (`#/scorecard`, the trainee's grades from every grading system), 🗒 My Notes, 📋 Task Tracker and 📒 Monitoring Sheet. Admins get **🏅 Scorecards** here instead: Admin → Scorecards, every approved trainee's in one table. |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
@@ -198,23 +198,23 @@ Every lesson's process questions are its **Knowledge Check**, answered in writin
 
 A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}`).
 
-**The process questions aren't in the slides any more**: they are the Knowledge Check. The lesson's **✓ Finish lesson** opens it, and so does **📝 Submit for Grading** on the lesson's sheet on the ✍️ Process Questions page.
+**The process questions aren't in the slides any more**: they are the Knowledge Check, and they live in their own feature. The lesson's **✓ Finish lesson** routes to **✍️ Process Questions** at that lesson's answer sheet, where **📝 Submit for Grading** grades it.
 
 **The Knowledge Check** (`#/kc`):
 - **Opening it:** ✓ Finish lesson on the lesson's last slide, or 📝 Submit for Grading on the Process Questions page.
 - **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type and are the same as the lesson's ✍️ Process Questions sheet.
 - **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity. Its feedback, per answer and overall, is written in the **facilitator's feedback DNA** (`js/ft-facilitator-dna.js`, Michelle's evaluations): a verdict label, the strength with specifics, then "However, improvement is needed in …" naming exactly what was missed. The total is a percentage.
-- **The trainer's review:** in **Admin → ✍️ Process Questions**, open a trainee and a lesson's Knowledge Check: the graded attempt (the answers, each answer's score and feedback, the overall evaluation), and the trainer's comment on each answer, an overall comment and a **final score**. Saved in `kcreview:<id>` (admins write it; the trainee reads it). The trainee sees *🧑‍🏫 Your trainer's review* on the Knowledge Check, and the trainer's notes under each answer. A trainer's score is final: it replaces the graded best (higher or lower) in their progress and on the Scorecard, and 70% or more finishes the lesson.
+- **The trainer's review:** in **✍️ Process Questions** (the top bar, as an admin), open a trainee and a lesson's Knowledge Check: the graded attempt (the answers, each answer's score and feedback, the overall evaluation), and the trainer's comment on each answer, an overall comment and a **final score**. Saved in `kcreview:<id>` (admins write it; the trainee reads it). The trainee sees *🧑‍🏫 Your trainer's review* on the Knowledge Check, and the trainer's notes under each answer. A trainer's score is final: it replaces the graded best (higher or lower) in their progress and on the Scorecard, and 70% or more finishes the lesson.
 - **Passing:** 70% passes and finishes the lesson. A retake keeps the best score.
 - **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
 - **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
 
-**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet, but it has no tab in Training Modules: the Knowledge Check is the same questions.
+**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet. Both belong to the ✍️ Process Questions feature — its own button in the top bar, with no page under 📚 Training Modules and no tab in 🛡 Admin Master Control.
 - **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
 - **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
 - **📝 Submit for Grading** (one button per lesson for a sheet shared by two lessons, with the best score so far) grades the sheet as that lesson's Knowledge Check. A sheet counts as submitted when a Knowledge Check is graded with all of its questions answered.
 
-**Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet:
+**✍️ Process Questions, opened as an admin,** lists batch → trainee → each answer sheet:
 - whether it's submitted, how many questions are answered, and the answers;
 - the trainee's best Knowledge Check score per lesson (e.g. `L2 76%`), and **📝 Knowledge Checks: graded, then your review** (above);
 - the line for the ranking report, in the facilitator's words, for example "Process Questions Responses: COMPLETE; however, Item #7 under the Virtual Assistant Essentials answer sheet was left unanswered."
@@ -284,7 +284,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## 🛠 Practice Lab: real-time Practice Sessions at the trainee's own law firm
 
-**🛠 Practice Lab** (a section of the top bar) opens `#/simulators` (`js/ft-simulators.js`). Instead of simulators, the trainee does the real work, live, for their own law firm and on their own cases. The page: 🏛 their firm, 🟢 Practice Sessions, 🧑‍🏫 With your trainer, 🖥 Demo preparation and 🧪 Skill Building. The separate simulator cards are gone (the Calendaring Simulators card, the mock-call cards and *All simulators*): the CMS Call Simulator and the Google Calendar Simulator are tools inside their sessions, and the **Calendar Management Mock Calls are part of the Calendaring Practice Lab**. The main landing page has no Practice Lab / Simulators card.
+**🛠 Practice Lab** (a section of the top bar) opens `#/simulators` (`js/ft-simulators.js`). Instead of simulators, the trainee does the real work, live, for their own law firm and on their own cases. The page: 🏛 their firm, 🟢 Practice Sessions, 🧑‍🏫 With your trainer and 🧪 Skill Building. The separate simulator cards are gone (the Calendaring Simulators card, the mock-call cards and *All simulators*): the CMS Call Simulator and the Google Calendar Simulator are tools inside their sessions, and the **Calendar Management Mock Calls are part of the Calendaring Practice Lab**. The main landing page has no Practice Lab / Simulators card.
 
 ### 🏛 Law Firm Profiles and assignments (`js/ft-firms.js`)
 
@@ -315,9 +315,9 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 The trainee–trainer activities (the demos and the live mock calls with the trainer) are recorded by the trainer: **Admin → 🧑‍🏫 Trainer Inputs** is a grid of trainees × activities; a cell takes the result (Not yet, Passed, Redo), a score, the date and a comment. **✏️ Edit the activities** changes the list (`settings:trainer-acts`, one per line: `title | lesson | kind`; the starting list is the Training Guide's live mock calls and its demos, including the Saving Intake Packet and Extracted Intake Documents Demo). The trainee sees each result under *🧑‍🏫 With your trainer*, and it reaches the Scorecard.
 
-### 🖥 Demo preparation and 🧪 Skill Building
+### 🧪 Skill Building
 
-**🖥 Demo preparation:** one card per demo in the Training Guide, with the training CMS's Training Library cases that fit it (`ACTIVITIES` in `js/ft-simulators.js`; a case opens with `?program=…&mock=MC-xx`, view only, and **Work on a practice copy** makes it editable). Each case's one-line description is taken from `mock-cases.js`.
+The 🖥 Demo preparation cards are gone: every demo is done live with the trainer under 🧑‍🏫 **With your trainer**, so a card per demo only repeated them.
 
 **🧪 Skill Building** (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
 
@@ -383,7 +383,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
-| `js/ft-process.js` | Process Questions and the Knowledge Checks: each lesson's answer sheet, answered on the platform and graded (70% passes the lesson), saved to Google Drive or Word with the proper name; Admin → ✍️ Process Questions. |
+| `js/ft-process.js` | Process Questions and the Knowledge Checks: its own feature (its own top-bar button; no Training Modules page, no Admin tab). Each lesson's answer sheet, answered on the platform and graded (70% passes the lesson), saved to Google Drive or Word with the proper name; admins see every trainee's sheets on the same page. |
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-orientation.js` | Admin → 🧭 Orientation: this program's platform orientation slides, which are also the Blueprint PDF (`/blueprint.pdf`). |

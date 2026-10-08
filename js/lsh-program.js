@@ -5,8 +5,9 @@
    top bar shows exactly those five:
 
      🏠 Main Portal            the LSH Training Portal (the program's own home, its lessons, is 📚 Modules)
-     📚 Training Modules       #/modules: the lessons, and the program's training pages (Activities, Process
-                               Questions, Task Tracker…), which share a bar of tabs under the top bar
+     📚 Training Modules       #/modules: the lessons, and the program's training pages (Task Tracker, My Notes…),
+                               which share a bar of tabs under the top bar. ✍️ Process Questions is not one of
+                               them: it is its own feature, with its own button in the bar
      🛠 Practice Lab           the Practice Lab Sessions, connected with the simulators (#/simulators)
      🏅 Scorecard              #/scorecard: the trainee's grades, collected from every grading system on the
                                platform; admins get Admin → 🏅 Scorecards, every trainee's in one table
@@ -61,7 +62,7 @@ const PORTAL_HOME = "https://cm-training-activity.pages.dev/";
 const MY_VIEWS = ["notes", "tracker", "monitoring", "scorecard"];
 function barSection(){
   const v = state.view, sec = section();
-  if(v === "process" || (v === "admin" && state.adminTab === "process")) return "process";
+  if(v === "process" || v === "kc") return "process";
   if(!adminOn() && MY_VIEWS.includes(v)) return "mydash";
   if(sec === "home" || sec === "modules") return "modules";
   return sec;
@@ -92,7 +93,7 @@ window.renderTopbar = function(){
   const moved = new Set(CFG.modules.map(m => m.view).filter(v => v && !keep.has(v)).concat(CFG.labViews, ["modules"])), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
   [...nav.children].forEach(b => { const v = viewOf(b); if((v && moved.has(v)) || runs.has(onc(b))) b.remove(); });
   const btn = (id, label, onclick, title) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}"${title ? ` title="${title}"` : ""}>${label}</button>`;
-  const processGo = adminOn() ? "state.adminTab='process'; goto('admin')" : "goto('process')";
+  const processGo = "goto('process')";   // one feature, one page: an admin sees every trainee's sheets there
   const secs = btn("modules", "📚 Modules", "goto('dashboard')", "The Standard Foundational Training: its lessons")
     + btn("process", "✍️ Process Questions", processGo, adminOn() ? "Every trainee's answer sheets" : "Each lesson's answer sheet")
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")

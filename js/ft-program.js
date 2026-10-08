@@ -4,7 +4,8 @@
    Loaded just before js/lsh-program.js.
    Every grade the platform gives a trainee, one source each:
      ✍️ Knowledge Checks        kcreview:<id>, the trainer's final score, else state.progress[lesson].score, the best attempt
-                                (js/ft-process.js; 70% passes)
+                                (js/ft-process.js; 70% passes). ✍️ Process Questions is its own feature: its own
+                                button in the top bar, no page under 📚 Training Modules and no Admin tab.
      🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
@@ -30,13 +31,13 @@ window.LSH_PROGRAM = {
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
-  moduleViews: ["day", "kc", "process"],   // a lesson, its Knowledge Check and the answer sheets (no tab of their own: the Knowledge Check has them) are in Training Modules too
+  moduleViews: ["day"],   // 📚 Training Modules holds the lessons. ✍️ Process Questions (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
   labViews: ["simulators", "calsim", "firm", "session"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "attendance", "firms"],
-    modules: ["opendays", "curriculum", "process", "trackers", "monitor", "drivetrackers", "fbstyle"],
+    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],
     lab: ["calscores", "sessions", "trainerinputs"],
     scorecard: ["scorecards"]
   },

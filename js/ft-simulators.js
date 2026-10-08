@@ -3,11 +3,6 @@
    Loaded after js/ft-updates.js. A section of the top bar (js/lsh-program.js).
      • 🏛 the trainee's law firm (js/ft-firms.js), then 🟢 Practice Sessions and 🧑‍🏫 With your trainer
        (js/ft-sessions.js): real work in the CMS on the trainee's own cases, checked against their firm's rules.
-     • 🖥 Demo preparation: one card per demo in the Training Guide, with the training CMS's Training
-       Library cases that fit it (MC-01 …, fictional PI files in the CaseManagementTraining repo,
-       mock-cases.js). A case opens in the CMS with ?mock=MC-xx (view only; "Work on a practice copy"
-       makes it editable). Case facts below are from mock-cases.js: if a case changes there, update its
-       line here.
      • 🧪 Skill Building: the daily typing and spelling tests.
      • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
        (js/lsh-tool-links.js). The Call Simulator is the CMS's. New tab ↗: its own tab.
@@ -16,75 +11,10 @@
    ============================================================ */
 (function(){
 const PORTAL = "https://cm-training-activity.pages.dev/simulators/";
-const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
-
-const TOOLS = {
-  drill:    {icon:"☎️", name:"Front Desk Drill (CMS)", cms:"drill=1", desc:"Scored incoming calls on the Training Library cases: find the file, verify the caller, handle or route the call."},
-  library:  {icon:"📚", name:"Training Library (all 20 cases)", cms:"library=1", desc:"Every mock case in the CMS, with the firm directory and front-desk rules."},
-  call:     {icon:"📞", name:"Call Simulator", desc:"Practice calls on these same cases: a caller phones in, you answer by voice or typing, write the call note, and get a scored debrief."},
-};
-
-// The Training Guide's demos (its own names), the lesson each belongs to,
-// the CMS program it opens in, and the Training Library cases that fit it.
-const ACTIVITIES = [
-  {kind:"demo", lesson:6, cms:"intake", title:"Saving Intake Packet and Extracted Intake Documents Demo", note:"Open the case, click “Work on a practice copy”, then save the documents to the case.", cases:[
-    ["MC-02", "Derek Thompson", "Intake questionnaire; retainer and HIPAA sent by e-sign, not yet signed; client’s photos of the spill."],
-    ["MC-13", "Nicole Adams", "Intake questionnaire; conflict check pending; store adjuster emails the client forwarded."]],
-    tools:["library"]},
-  {kind:"demo", lesson:7, cms:"cm", title:"LOR Uploading and Sending Demo (1P & 3P)", note:"Open the case, click “Work on a practice copy”, then record the insurance and save the LORs.", cases:[
-    ["MC-01", "Maria Santos", "3P: Keystone Mutual Insurance (Kyle Brandt). 1P: UM/UIM with Harbor Point Insurance."],
-    ["MC-02", "Derek Thompson", "3P: Allied Retail Casualty; the LOR goes out once the retainer is signed."],
-    ["MC-12", "William Harris", "3P: Keystone Mutual Insurance (Stacy Owens); adjuster not yet assigned, liability pending."]],
-    tools:["library"]},
-  {kind:"demo", lesson:8, cms:"cm", title:"Sending MedLOR and Requesting Medical Bills & Records Demo", note:"Open the case, click “Work on a practice copy”, then work from its treatment providers.", cases:[
-    ["MC-01", "Maria Santos", "QuickCare Urgent Care, City Spine & Rehab and Motion Physical Therapy; HIPAA signed."],
-    ["MC-15", "Patricia Lewis", "St. Mary’s Hospital, Heritage Rehabilitation Center and CareFirst Home Health; her son holds a POA."],
-    ["MC-08", "Tomás Rivera", "St. Mary’s Hospital and Riverton Orthopedic Associates; surgery scheduled."]],
-    tools:["library"]},
-  {kind:"demo", lesson:8, cms:"cm", title:"LV (Lien Verification) Request Demo", note:"Open the case, click “Work on a practice copy”, then work from its Liens.", cases:[
-    ["MC-09", "Emily Nguyen", "Letter of Protection to Premier Knee & Sports Medicine ($7,850); the provider threatens collections."],
-    ["MC-15", "Patricia Lewis", "Medicare (BCRC) lien; the conditional payment amount is pending."],
-    ["MC-05", "Linda Garcia", "Medicare (BCRC) lien, $21,344."]],
-    tools:["library"]},
-  {kind:"demo", lesson:9, cms:"cm", title:"Reduction Request, Settlement Release Forms and Closing Statement Demo", note:"Open the case, click “Work on a practice copy”, then work from its Liens and Finance.", cases:[
-    ["MC-11", "Ngozi Okonkwo", "$90,000 settlement; hospital lien $14,600 (reduction to $9,000 requested); Anthem Blue Shield ERISA subrogation $9,215."],
-    ["MC-06", "James Wilson", "$42,000 settlement; health-fund lien reduced $6,480 → $4,320; chiropractor LOP $4,200 still pending; settlement statement in draft."]],
-    tools:["library"]}
-].filter(a=>DAYS.find(d=>d.id===a.lesson));   // a lesson taken off the platform (build/lessons/off/) takes its demos with it
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["simulators"]);
 
 const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
-// key: a tool id, or a Training Library case id ("MC-04")
-function keyHref(key, a){
-  if(/^MC-\d+$/.test(key)) return cmsHref({program:a.cms, mock:key});
-  const t = TOOLS[key];
-  if(t.cms) return cmsHref({program: key==="drill" ? "reception" : a.cms}, t.cms);
-  return callsHref(a.title);
-}
-// The Call Simulator is the CMS's: opened straight there (not through the Portal's call.html), so the trainee's ticket
-// (js/lsh-tool-links.js) signs them in with no log-in page. Graded calls still reach callsim:<id> (the CMS reports them to
-// the Portal's /api/call-results). line = the mock call's title; mode=graded lists the line's graded calls first.
-function callsHref(line, graded){
-  const q = new URLSearchParams({calls:"1", program:"FT", from:"standard"});
-  if(line) q.set("line", line);
-  if(graded) q.set("mode", "graded");
-  return CMS + "?" + addWho(q);
-}
-// The trainee's name and batch go with the link, so their scores are saved for the trainer.
-function addWho(q){
-  if(isTrainee()){
-    const name = state.certName || state.traineeName;
-    if(name) q.set("name", name);
-    if(state.traineeBatch) q.set("batch", state.traineeBatch);
-  }
-  return q;
-}
-// from=standard: the CMS lets Standard trainees in with just their name (no CMS account).
-function cmsHref(params, extra){
-  const q = addWho(new URLSearchParams(Object.assign({}, params, {from:"standard"})));
-  return CMS + "?" + q + (extra ? "&" + extra : "");
-}
 /* ---------- graded calls (the CMS Call Simulator) ----------
    The main Call Simulator is the CMS's. A graded call taken there (Graded call 1, 2… on the line; the caller is unknown
    until the debrief) counts here,
@@ -113,35 +43,17 @@ window.ftsGradedLine = function(lesson){
     : `<p class="fts-graded">🎯 No graded call yet. A graded call counts toward this lesson.</p>`;
 };
 window.addEventListener("focus", ()=>{ if(state.ftCallsim && Date.now() - callsimAt > 120000 && (state.view === "dashboard" || state.view === "simulators")) ftLoadCallsim(); });
+// The trainee's name and batch go with the link, so their scores are saved for the trainer.
+function addWho(q){
+  if(isTrainee()){
+    const name = state.certName || state.traineeName;
+    if(name) q.set("name", name);
+    if(state.traineeBatch) q.set("batch", state.traineeBatch);
+  }
+  return q;
+}
 // The Portal's Calendaring Simulators (the Google Calendar Simulator): their own tab, with the trainee's name and batch.
 function portalHref(page){ return PORTAL + page + "?" + addWho(new URLSearchParams({program:"FT"})); }
-function keyName(key, a){
-  const c = a.cases.find(x=>x[0]===key);
-  return c ? `${c[0]} · ${c[1]}` : TOOLS[key].name;
-}
-function lessonTitle(id){ const d = DAYS.find(x=>x.id===id); return d ? d.title : ""; }
-function activityOpen(a){ return state.isAdmin || state.adminPreview || window.dayUnlocked(a.lesson); }
-
-function renderCard(a, i){
-  const open = activityOpen(a);
-  const acts = key => open
-    ? `<button class="btn btn-navy btn-sm" onclick="ftsOpen(${i},'${key}')">${String(keyHref(key, a)).indexOf(PORTAL) === 0 ? "Open ↗" : "Open here"}</button><a class="btn btn-ghost btn-sm" href="${esc(keyHref(key, a))}" target="_blank" rel="noopener">New tab ↗</a>`
-    : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`;
-  const row = (title, desc, key)=>`<div class="fts-tool">
-      <div class="fts-tool-txt"><b>${title}</b><span>${esc(desc)}</span></div>
-      <div class="fts-tool-act">${acts(key)}</div></div>`;
-  const cases = a.cases.map(c=>row(`<span class="fts-mc">${esc(c[0])}</span> ${esc(c[1])}`, c[2], c[0])).join("");
-  const tools = a.tools.map(id=>row(`${TOOLS[id].icon} ${esc(TOOLS[id].name)}`, TOOLS[id].desc, id)).join("");
-  return `<div class="card fts-card ${open?"":"fts-locked"}">
-    <div class="fts-kicker">${esc(lessonTitle(a.lesson))}${open ? "" : " · opens with this lesson"}</div>
-    <h3>${esc(a.title)}</h3>
-    ${a.note ? `<p class="fts-note">${esc(a.note)}</p>` : ""}
-    <div class="fts-label">Example cases · CMS Training Library</div>
-    ${cases}
-    <div class="fts-label">Practice tools</div>
-    ${tools}
-  </div>`;
-}
 // 🧪 Practice Lab: Skill Building — the daily Typing and Spelling Tests (FT_SKILL_TESTS, js/ft-rules.js): the tools to
 // use, when, the screenshot's file name and a sample. The Training Orientation and Rules slide points here.
 function renderSkills(){
@@ -166,7 +78,8 @@ window.ftsGotoSkills = function(){
 };
 
 // The Practice Lab: real-time Practice Sessions at the trainee's own firm (js/ft-sessions.js, js/ft-firms.js), the activities
-// done live with the trainer, demo preparation on the CMS's cases, and Skill Building. The simulators' cards (the
+// done live with the trainer, and Skill Building. The demo-preparation cards are gone: the demos are done live with the
+// trainer (🧑‍🏫 With your trainer), so a card per demo only repeated them. The simulators' cards (the
 // separate Calendaring Simulators, the mock-call lines and All simulators) are gone: the calls and the Google Calendar
 // Simulator are tools inside their sessions (the Calendar Management Mock Calls are part of the Calendaring Practice Lab).
 function firmBanner(){
@@ -177,7 +90,6 @@ function firmBanner(){
     <span class="fts-banner-go">${f ? "My firm & rules →" : "Open →"}</span></div>`;
 }
 function renderSimulators(){
-  const demos = ACTIVITIES.map(renderCard).join("");
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
       <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
     ${firmBanner()}
@@ -185,11 +97,7 @@ function renderSimulators(){
       <div class="fts-grid">${FTSessions.cards()}</div></section>
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
-    ${demos ? demoGroup(demos) : ""}
     ${renderSkills()}`;
-}
-function demoGroup(cards){
-  return `<section class="fts-group"><h2>🖥 Demo preparation</h2><p class="fts-sub">Before a demo with your trainer, practice its steps on these CMS cases (open one, then “Work on a practice copy”).</p><div class="fts-grid">${cards}</div></section>`;
 }
 
 // Open here: the tool fills the window in its own panel, outside the page, so the page
@@ -207,10 +115,6 @@ function ftsPanel(){
   document.body.appendChild(p);
   return p;
 }
-window.ftsOpen = function(i, id){
-  const a = ACTIVITIES[i]; if(!a || !activityOpen(a)) return;
-  ftsShow(keyHref(id, a), `${keyName(id, a)} — ${a.title}`);
-};
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsShowTool = (url, name)=>ftsShow(url, name);
 window.ftsCalsim = function(track, scores){ window.open(portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
@@ -280,14 +184,10 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-kicker{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--orange-deep);}
 .fts-note{margin:0;font-size:13.5px;color:var(--ink-soft);}
 .fts-label{margin-top:4px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
-.fts-tool-txt span.fts-mc{display:inline-block;margin-top:0;color:#fff;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;font-weight:800;background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;margin-right:4px;vertical-align:1px;}
 .fts-locked{opacity:.65;} #fts-skills{scroll-margin-top:84px;}
 .fts-file{align-self:flex-start;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;background:#f1f5f9;color:var(--navy);border-radius:6px;padding:4px 8px;overflow-wrap:anywhere;}
 .fts-sample{margin:0;} .fts-sample img{display:block;width:100%;height:auto;border:1px solid var(--line,#e5e7eb);border-radius:8px;}
 .fts-sample figcaption{margin-top:4px;font-size:12px;color:var(--ink-soft);}
-.fts-tool{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line,#e5e7eb);padding-top:10px;flex-wrap:wrap;}
-.fts-tool-txt{flex:1 1 200px;min-width:0;} .fts-tool-txt b{display:block;font-size:14.5px;color:var(--ink,#111827);}
-.fts-tool-txt span{display:block;font-size:13px;color:var(--ink-soft);margin-top:2px;}
 .fts-tool-act{display:flex;gap:8px;flex-wrap:wrap;}
 .fts-tool-act a.btn{text-decoration:none;}
 .fts-all .fts-card h3{font-size:16px;} .fts-sub a{color:var(--orange-deep);font-weight:700;}

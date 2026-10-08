@@ -7,7 +7,8 @@
      On a laptop or desktop they grow into the height that's left, so the dashboard fills the screen
      with no empty space under it.
    - Progress stats: one small band right under the day cards (not a side column, not above the days).
-   - Top bar: the LSH mark in its white square, the same logo on every LSH site (courses and the Training Portal).
+   - Top bar: the standard LSH logo, at the Training Portal's top-bar size, so the logo reads as clearly
+     here as it does on the Portal.
    Loaded last, after the course's own update files.
    ============================================================ */
 (function(){
@@ -68,9 +69,10 @@
     };
     renderDashboard.__band = true;
   }
-  /* 4. Top bar: the LSH mark in its white square (the universal logo: the courses and the Training Portal show the same one). */
-  if(typeof brandMark === "function" && typeof LOGO_ICON_SRC !== "undefined"){
-    brandMark = function(){ return `<img class="brand-mark" src="${LOGO_ICON_SRC}" alt="Legal Support Help">`; };
+  /* 4. Top bar: the standard LSH logo (js/lsh-logo-dark.png, the same file the Training Portal uses), at the
+     Portal's top-bar size — see the .brand-mark rules below. The square mark (favicon.png) stays the favicon. */
+  if(typeof brandMark === "function" && typeof LOGO_FULL_SRC !== "undefined"){
+    brandMark = function(){ return `<img class="brand-mark brand-logo" src="${LOGO_FULL_SRC}" alt="Legal Support Help">`; };
   }
   /* 5. The banner heading and tagline each fit on one line at the compact sizes. */
   if(typeof fitHeroText === "function"){
@@ -164,9 +166,17 @@
   .dash-hero h1{white-space:nowrap;font-size:29px !important;}
   .dash-hero p{white-space:nowrap;max-width:none !important;font-size:14px !important;}
 }
-/* the Legal Support Help logo (navy background) sits straight on the navy top bar */
-.brand-mark.brand-logo{width:auto;height:46px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
-@media(max-width:760px){.brand-mark.brand-logo{width:auto;height:38px;}}
+/* The top bar follows the Training Portal's: a taller bar, so the standard LSH logo is as visible here as it is
+   there. The logo is drawn for a navy background, so it sits straight on the navy bar — no white square behind it. */
+.topbar-inner{padding:16px 20px;}
+.brand{gap:14px;}
+.brand-mark.brand-logo{width:auto;height:60px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
+.brand-mark:not(.brand-logo){width:60px;height:60px;}
+@media(max-width:760px){
+  .topbar-inner{padding:11px 12px;}
+  .brand-mark.brand-logo{width:auto;height:44px;}
+  .brand-mark:not(.brand-logo){width:44px;height:44px;}
+}
 img[alt="Legal Support Help"]{border-radius:8px;}
 
 .module-card.mc-clean .module-body{flex:1 1 auto;min-height:12px;}
