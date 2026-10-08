@@ -16,12 +16,12 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | Section | What it holds |
 |---|---|
 | 🏠 **Main Portal** | The program's home (the dashboard): the hub for every part of the training. |
-| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: 📝 Activities, ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them. Its badge adds up their badges (new activity feedback, new focus items). |
+| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them. Its badge adds up their badges (new focus items). |
 | 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
 | 🏅 **Scorecard** | `#/scorecard`: the trainee's grades, collected from every grading system on the platform. Admins get **Admin Master Control → 🏅 Scorecards**: every approved trainee's in one table (by batch; click a trainee for the details). |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
 
-Blueprint, Training Directory, 👁 Trainee view, ⧉ and ⛶ stay at the end of the top bar. Between 961 and 1400 px wide, *Training Modules* and *Admin Master Control* shorten to *Modules* and *Admin* so the bar stays on one row.
+Blueprint, Training Directory, 👁 Trainee view, ⧉ and ⛶ stay at the end of the top bar. **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback, Attendance · 📚 Training Modules: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Training Modules* and *Admin Master Control* shorten to *Modules* and *Admin* so the bar stays on one row.
 
 **What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Training Modules pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
 
@@ -97,7 +97,7 @@ Document images are in `ft/claims/img/`, the Receptionist deck's photos in `ft/r
 
 A lesson without its deck shows on the dashboard as *Coming soon* and can't be opened by trainees. To add one, put its Canva view link in `build/lessons/lessonNN.js` (same shape as the others) and rebuild.
 
-> **The Calendaring Simulators run on the Main Portal, built on the Google Calendar Simulator** (Training-Portal repo: `simulators/gcal.html`, `gcal-data.js`, `gcal.js`; branch `claude/gcal-tracks`). 🎓 Standard Training is the original Google Calendar Simulator, unchanged (no task list); ⚖️ Litigation Week (Case Management, `?track=cm`) and 🏢 Executive Week (EA / PA, `?track=ea`) are clones of it with their own week, callers, rules and request types. The cards here (`ftsCalsim`) open them through `calsim.html?track=…`, which launches the simulator. The in-repo scheduler described below (`js/ft-calendar.js`) is the earlier version.
+> **The Calendaring Simulators run on the Main Portal, built on the Google Calendar Simulator** (Training-Portal repo: `simulators/gcal.html`, `gcal-data.js`, `gcal.js`; branch `claude/gcal-tracks`). 🎓 Standard Training is the original Google Calendar Simulator, unchanged (no task list); ⚖️ Litigation Week (Case Management, `?track=cm`) and 🏢 Executive Week (EA / PA, `?track=ea`) are clones of it with their own week, callers, rules and request types. The cards here (`ftsCalsim`) open them through `calsim.html?track=…`, which launches the simulator. The in-repo scheduler described below (`js/ft-calendar.js`) is the earlier version. **Evaluations are on the Portal too:** trainers open **📋 Trainee Evaluations** (Admin → 📅 Calendar Scores, `ftsEvaluations()`) on the Portal's `gcal-review.html` (each trainee's submitted calendar with its AI review, the trainer's feedback and the report sent to the trainee, and the trainees' calendars to score), and trainees open **📋 My Evaluations** on their calendar cards (`my-evaluations.html`). The in-repo scheduler's own AI review and evaluations table were not carried over.
 
 ## 📅 Calendaring Simulators (drag-and-drop, Google Calendar style)
 
@@ -291,34 +291,24 @@ Each case's one-line description is taken from `mock-cases.js`. If a case change
 - Portal simulators get `program=FT` with the trainee's name and batch, so scores are saved for the trainer.
 - The **Call Simulator** has a Foundational pack of 14 calls on the same CMS cases (Training Portal, `simulators/call-pack-ft.js`). Each mock call card opens it on that card's calls (`&line=Reception Mock Calls`, etc.). A call's brief shows the case file with a link to open it in the CMS, and after the call the trainee writes the note it requires.
 
-## Activities and the facilitator's feedback style
+## The facilitator's feedback style
 
-`js/ft-activities.js` (wired in like the Tracker and Simulators, no edits to the generated page):
+`js/ft-activities.js` (wired in like the Tracker and Simulators, no edits to the generated page). It used to hold **📝 Activities** too: daily activities by program day (Day 0 to Day 18) that trainees answered and trainers reviewed, with scored rubrics. That page, its Admin tab and its Scorecard row were taken off, because the 🛠 Practice Lab and the ✍️ Knowledge Checks cover that work. What trainees sent and the feedback on it stay stored (`activities:dayN`, `actsub:<trainee>`), and the feedback already sent is still offered to 🗣 Feedback Style as examples.
 
-- **📝 Activities** (top bar): trainers add activities for each program day (**Admin → 📝 Activities → Set activities**, Day 0 to Day 18). Each activity has:
-  - a title and instructions (paste from your document; `**bold**`, `- ` bullets and links work);
-  - attached files (up to 4 MB each);
-  - how trainees answer (written, file upload or both);
-  - private notes on what a strong answer includes;
-  - **Visible to trainees** and an optional **Batch** (empty = all batches).
-
-  Trainees see the visible activities for their batch, newest day first, answer (drafts autosave), attach a file and submit.
-- **Review submissions:** ✨ Draft with AI writes a review from the private notes; the trainer edits it and sends it. The trainee gets a badge on 📝 Activities and reads it on the activity page. Resubmitting keeps the earlier feedback and waits for a new review.
-- **Scored rubrics** (optional, per activity, private): in the activity form, open **📊 Scored rubric** and paste the rubric table from Word/Docs (or upload it as .txt/.tsv): one row per criterion, then what earns 5, 4, 3, 2 and 1 points. Add one **graded example**, an evaluation you wrote (Criteria · Score · Evaluation), with the trainee's name removed. From then on, ✨ Draft with AI scores every submission for that activity criterion by criterion, the way the example does: a score out of 5 and a 2–4 sentence evaluation in the facilitator's style (specific facts from the answer, exact omissions, quoted typos). The review shows each criterion's score and evaluation to edit, with the **Total Score** and **Final Rating** (total ÷ number of criteria) recalculated; the trainee sees the same table. Stored in `actadmin:scoring` (trainer-only).
-- **The facilitator's DNA** (`js/ft-facilitator-dna.js`) is the default voice of every AI reviewer: activity drafts, trainer review drafts, graded exercises, and the Worker's nightly Task Tracker notes review.
+- **The facilitator's DNA** (`js/ft-facilitator-dna.js`) is the default voice of every AI reviewer: trainer review drafts, graded exercises, and the Worker's nightly Task Tracker notes review.
   - It was written from the facilitator's own evaluations (the B082826 Week 1–3 ranking reports and a Scheduling Activity Review).
   - Its main rules: open with a verdict label ("Good, with Improvements Needed.", "Needs Improvement."…); give the strength with exact counts, items, dates and times; then "However, improvement is needed in …" with the specific components; grade the severity; and tie the fix to its purpose.
   - It keeps no trainee names; its examples are generic.
   - It's used until a trainer saves another voice in 🗣 Feedback Style (saved with `v2`: edited, learned, restored or switched off). **🧬 Go back to the facilitator's DNA** restores it. The page (`fbEffective`) and the Worker (`facilitatorVoice`) resolve the voice the same way.
 - **Admin → 🗣 Feedback Style** learns how the facilitator writes feedback:
-  - **Import** takes the reviews the trainer wrote or edited (trainer reviews and activity reviews). More examples can be pasted, or uploaded as .docx / .xlsx reports or .txt files. Each feedback passage in a Word table or Excel cell becomes an example; JSZip from cdnjs opens the files.
+  - **Import** takes the reviews the trainer wrote or edited (trainer reviews, and the feedback sent on the old activities). More examples can be pasted, or uploaded as .docx / .xlsx reports or .txt files. Each feedback passage in a Word table or Excel cell becomes an example; JSZip from cdnjs opens the files.
   - **Learn the style** makes a style guide plus generic voice examples, which can be edited or switched off.
-  - While it's on, AI feedback is written in that voice: activity drafts, trainer review drafts, graded exercises, and the Worker's nightly **Task Tracker notes review** (`facilitatorVoice` in `worker.js`). Ratings, scores and the tracker check itself don't change.
+  - While it's on, AI feedback is written in that voice: trainer review drafts, graded exercises, and the Worker's nightly **Task Tracker notes review** (`facilitatorVoice` in `worker.js`). Ratings, scores and the tracker check itself don't change.
 
 Storage (`ft:` prefix, rules in `worker.js`):
-- Trainers publish, everyone reads: `activities:dayN`, `actfile:*`, `settings:feedback-style`.
-- Each trainee's own: `actsub:<trainee>` and `actup:<trainee>:*`. The Monitoring Sheet: `monitor:<trainee>`; its discussions: `settings:monitor` (trainers write, everyone reads). Trainees can't write the trainer's feedback.
-- Trainer-only: `actadmin:rubrics`, `admin:fbstyle-samples`.
+- Trainers publish, everyone reads: `settings:feedback-style` (and the old `activities:dayN`, `actfile:*`).
+- Each trainee's own: the old `actsub:<trainee>` and `actup:<trainee>:*`. The Monitoring Sheet: `monitor:<trainee>`; its discussions: `settings:monitor` (trainers write, everyone reads). Trainees can't write the trainer's feedback.
+- Trainer-only: `admin:fbstyle-samples` (and the old `actadmin:rubrics`, `actadmin:scoring`).
 
 ## How the program works
 
@@ -364,7 +354,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-simulators.js` | The 🛠 Practice Lab page (`#/simulators`): the guide's mock calls and demos, with their practice tools. |
 | `js/lsh-program.js` | The program layout (the same file in every LSH course repo): the five sections in the top bar, 📚 Training Modules (`#/modules`) and its tabs, 🏅 Scorecard (`#/scorecard`) and Admin Master Control → 🏅 Scorecards. |
 | `js/ft-program.js` | This program's setup for the layout: the Training Modules pages, the Practice Lab's pages and what the Scorecard collects. |
-| `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
+| `js/ft-activities.js` | Admin → 🗣 Feedback Style (the 📝 Activities page was taken off). |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
 | `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |

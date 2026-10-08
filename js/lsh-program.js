@@ -224,6 +224,26 @@ function renderAdminScores(){
     </tbody></table></div>` : `<p class="sc-empty">No approved trainees${AS.batch ? " in this batch" : ""} yet.</p>`}
     <p class="sc-how">${HOW}</p></div>`;
 }
+// The Admin screen's tabs, grouped in the same sections: a row of sections, then the open section's tabs (one row each,
+// scrolling sideways on a phone) instead of every tab in one long bar. A tab not in LSH_PROGRAM.adminGroups goes to
+// Admin Master Control, so a new tab is never lost.
+const GROUPS = [
+  {id:"admin", label:"🛡 Admin Master Control"}, {id:"modules", label:"📚 Training Modules"},
+  {id:"lab", label:"🛠 Practice Lab"}, {id:"scorecard", label:"🏅 Scorecard"}
+];
+const groupOf = tab => { const g = CFG.adminGroups || {}; return Object.keys(g).find(k => (g[k] || []).includes(tab)) || "admin"; };
+function groupTabs(out){
+  const a = out.indexOf('<div class="admin-tabs"'); if(a < 0) return out;
+  const b = out.indexOf("</div>", a) + 6;
+  const t = document.createElement("template"); t.innerHTML = out.slice(a, b);
+  const tabs = [...t.content.querySelectorAll(".admin-tab-btn")].map(x => ({id:((x.getAttribute("onclick") || "").match(/setAdminTab\('([^']+)'\)/) || [])[1], html:x.outerHTML})).filter(x => x.id);
+  if(!tabs.length) return out;
+  const cur = groupOf(state.adminTab || "audit");
+  const secs = GROUPS.map(g => ({g, tabs:tabs.filter(x => groupOf(x.id) === g.id)})).filter(x => x.tabs.length);
+  const bar = `<div class="admin-tabs lp-admin-tabs"><div class="lp-admin-secs">${secs.map(x => `<button type="button" class="lp-admin-sec${x.g.id === cur ? " active" : ""}" onclick="setAdminTab('${x.tabs[0].id}')">${x.g.label}<span>${x.tabs.length}</span></button>`).join("")}</div>
+    <div class="lp-admin-row">${(secs.find(x => x.g.id === cur) || secs[0]).tabs.map(x => x.html).join("")}</div></div>`;
+  return out.slice(0, a) + bar + out.slice(b);
+}
 const __admin = window.renderAdmin;
 window.renderAdmin = function(){
   const tab = `<button class="admin-tab-btn ${state.adminTab === "scorecards" ? "active" : ""}" onclick="setAdminTab('scorecards')">🏅 Scorecards</button>`;
@@ -232,11 +252,11 @@ window.renderAdmin = function(){
     const out = __admin.apply(this, arguments);
     state.adminTab = "scorecards";
     const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    return out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>" + renderAdminScores();
+    return groupTabs(out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>" + renderAdminScores());
   }
   const out = __admin.apply(this, arguments);
   const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-  return end > 0 ? out.slice(0, end) + tab + out.slice(end) : out;
+  return groupTabs(end > 0 ? out.slice(0, end) + tab + out.slice(end) : out);
 };
 
 window.lshProgram = {
@@ -257,6 +277,21 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 .lp-tabs-h{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-deep);white-space:nowrap;margin-right:6px;}
 .lp-tab{font:inherit;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent;background:none;color:#4A5070;border-radius:999px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
 .lp-tab:hover{background:#ECEEF5;color:var(--navy);} .lp-tab.active{background:var(--navy);color:#fff;}
+/* the Admin screen's tabs, grouped: the sections, then the open section's tabs */
+.admin-tabs.lp-admin-tabs{display:block !important;border-bottom:1px solid var(--line);margin-bottom:20px;white-space:normal;overflow:visible;}
+.lp-admin-secs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+.lp-admin-sec{font:inherit;font-size:13.5px;font-weight:700;border:1px solid #DDE1EC;background:#fff;color:var(--navy);border-radius:999px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+.lp-admin-sec span{font-size:11px;font-weight:800;background:#ECEEF5;color:#4A5070;border-radius:999px;padding:1px 7px;}
+.lp-admin-sec:hover{border-color:#353B57;} .lp-admin-sec.active{background:var(--navy);border-color:var(--navy);color:#fff;} .lp-admin-sec.active span{background:rgba(255,255,255,.2);color:#fff;}
+.lp-admin-row{display:flex;gap:8px;flex-wrap:wrap;}
+@media(max-width:760px){
+  /* a phone: the four sections in a 2 × 2 grid, the open section's tabs as buttons that wrap, so all of them show */
+  .lp-admin-secs{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .lp-admin-sec{font-size:12.5px;padding:7px 8px;justify-content:center;white-space:normal;text-align:center;line-height:1.2;}
+  .lp-admin-row{gap:6px;padding:4px 0 10px;}
+  .lp-admin-row .admin-tab-btn{font-size:13px;padding:6px 11px;border:1px solid #DDE1EC !important;border-radius:999px;background:#fff;}
+  .lp-admin-row .admin-tab-btn.active{background:#FFF3E6;border-color:var(--orange) !important;color:var(--navy);}
+}
 /* the Training Modules and Scorecard pages */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-head{margin-bottom:18px;} .lp-head h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .lp-head > p{margin:0;color:var(--ink-soft);font-size:15px;}
