@@ -21,7 +21,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | 🏅 **Scorecard** | `#/scorecard`: the trainee's grades, collected from every grading system on the platform. Admins get **Admin Master Control → 🏅 Scorecards**: every approved trainee's in one table (by batch; click a trainee for the details). |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
 
-Blueprint, Training Directory, 👁 Trainee view, ⧉ and ⛶ stay at the end of the top bar. Between 961 and 1400 px wide, *Training Modules* and *Admin Master Control* shorten to *Modules* and *Admin* so the bar stays on one row.
+Blueprint, Training Directory, 👁 Trainee view, ⧉ and ⛶ stay at the end of the top bar. **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback, Attendance · 📚 Training Modules: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Training Modules* and *Admin Master Control* shorten to *Modules* and *Admin* so the bar stays on one row.
 
 **What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Training Modules pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
 
