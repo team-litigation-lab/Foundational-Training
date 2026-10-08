@@ -11,6 +11,7 @@
      🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
+     🧰 Portal simulators       simresults:<id>, the best result per Training Portal simulator (written by the Portal's /api/sim-results)
      📝 Activities              actsub:<id>, the trainer's scored rubric on feedback that was sent (js/ft-activities.js)
    ============================================================ */
 (function(){
@@ -76,6 +77,9 @@ window.LSH_PROGRAM = {
     {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
       about:"Your Daily Task Tracker and Training Monitoring Sheet in your VA Output folder: the system’s checks, or your trainer’s score where they gave one.",
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
+    {id:"portalsims", icon:"🧰", label:"Portal simulators", key:"simresults:",
+      about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
+      items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))},
     {id:"activities", icon:"📝", label:"Activities", key:"actsub:",
       about:"Your trainer’s feedback on the daily activities. A scored rubric counts toward your score; a rating alone shows here.",
       items: ctx => {

@@ -177,7 +177,8 @@ const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemp
 //   kcreview:<id>     the trainer's review of each Knowledge Check (js/ft-process.js)
 //   assign:<id>       the trainee's law firm and cases (js/ft-firms.js)
 //   labreview:<id>    the trainer's review of each Practice Session, and the trainer-led activities' results (js/ft-sessions.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id}`];
+//   simresults:<id>   the trainee's results on the Training Portal's simulators opened from this program (the Portal writes it)
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id}`, `simresults:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {

@@ -2,11 +2,13 @@
    Training tools open signed in: no CMS log-in page
    The same file in every LSH course repo (Foundational-Training, Case-Management-Training).
    A trainee signed in on this program opens the CMS (cases, Training Library, Call Simulator,
-   drills) already signed in. The CMS takes the LSH Training Portal's signed ticket (?ticket=,
-   its guest-access.js and /api/portal-login); this program's Worker holds the same secret
+   drills) and the LSH Training Portal's simulators (the Google Calendar Simulator, Medical Records
+   Requests, …) already signed in. Both take the Portal's signed ticket (?ticket=: the CMS's
+   guest-access.js and /api/portal-login; the Portal's functions/_middleware.js before a simulator
+   page is sent); this program's Worker holds the same secret
    (PORTAL_SSO_SECRET), so /api/auth/tool-ticket signs a fresh ticket for the trainee who is
    signed in here (good for 5 minutes, so a copied link is no use later) and the link carries it.
-     • Every link and window.open to the CMS gets the ticket on the way out (click, middle-click,
+     • Every link and window.open to the CMS or a Portal simulator gets the ticket on the way out (click, middle-click,
        New tab ↗), and LSHToolLinks.ticketed(url) gives a frame's address with it.
      • Admins and the 👁 Trainee view are left alone: an admin's ticket never signs anyone in
        (admins type the admin password), and a preview isn't a trainee.
@@ -16,7 +18,9 @@
    ============================================================ */
 (function(){
 const CMS_HOSTS = [/^([a-z0-9-]+\.)?lshcasemanagementtraining-trainingcrm\.pages\.dev$/];   // the CMS and its preview addresses
-const isTool = (url)=>{ try{ const u = new URL(url, location.href); return CMS_HOSTS.some(re=>re.test(u.hostname)); }catch(e){ return false; } };
+const PORTAL_HOSTS = [/^([a-z0-9-]+\.)?cm-training-activity\.pages\.dev$/];                  // the LSH Training Portal: its simulator pages
+const isTool = (url)=>{ try{ const u = new URL(url, location.href);
+  return CMS_HOSTS.some(re=>re.test(u.hostname)) || (PORTAL_HOSTS.some(re=>re.test(u.hostname)) && /^\/simulators(\.html|\/|$)/.test(u.pathname)); }catch(e){ return false; } };
 const signedTrainee = ()=> typeof state === "object" && !!state.traineeId && !state.isAdmin && !state.adminPreview && !!state.authToken;
 
 let cached = null, cachedAt = 0, pending = null;
