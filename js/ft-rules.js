@@ -355,7 +355,7 @@ const SLIDES = [
   ["tests", "Skill Building: Typing and Spelling Tests", ()=>`
     <div class="ftr-why"><b>Why?</b> LSH’s clients look for VAs who type at least 60 WPM (words per minute), so as an initiative you practice typing every day, twice a day. The daily spelling test improves your listening comprehension, vocabulary and spelling. The results you save show your progress through the training.</div>
     <div class="ftr-goal"><b>🧪 Your Tests Are in the Practice Lab</b>
-      <p>Open <b>🛠 Simulators → 🧪 Practice Lab: Skill Building</b>. It has the tools to use for each test, when to take them, how to name your screenshots and a sample of each.</p></div>
+      <p>Open <b>🛠 Practice Lab → 🧪 Practice Lab: Skill Building</b>. It has the tools to use for each test, when to take them, how to name your screenshots and a sample of each.</p></div>
     ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="ftsGotoSkills()">🧪 Open the Practice Lab</button></div>`}`],
   ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`
     <div class="ftr-why"><b>Why?</b> Your To-Dos help the audit team review your work easily, and keep a clear record of what you completed each day. Set your To-Do every day, for the session you’re in. Don’t miss this routine.</div>
