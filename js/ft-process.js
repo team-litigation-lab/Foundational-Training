@@ -122,7 +122,9 @@ async function load(id){
   try{ FP.data = (await sharedGet("process:"+id)) || {v:1, sets:{}}; if(!FP.data.sets) FP.data.sets = {}; }
   catch(err){ FP.err = "Couldn't load your answers. Check your connection and try again."; }
   FP.loading = false;
-  if(["process","dashboard","day"].includes(state.view)) render();
+  // "kc" too: a trainee who opens a Knowledge Check before their answers are in would otherwise
+  // be left on "Loading your answers…" with no boxes to write in until they navigated away.
+  if(["process","kc","dashboard","day"].includes(state.view)) render();
 }
 function sheet(sid){ const s = FP.data.sets; return s[sid] || (s[sid] = {answers:[], submittedAt:"", updatedAt:""}); }
 function queueSave(){
