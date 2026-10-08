@@ -37,9 +37,25 @@ function uncover(delay){
 if(ticket){
   try{
     cover = document.createElement("div");
-    cover.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:#eef1f6;display:flex;align-items:center;justify-content:center;font:600 15px Arial,Helvetica,sans-serif;color:#0f2148";
-    cover.textContent = "Opening your training…";
+    cover.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:#eef1f6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font:600 15px Arial,Helvetica,sans-serif;color:#0f2148";
+    // A spinner and a line that moves on, so a slow sign-in reads as "working"
+    // rather than a frozen grey screen. The program is a large page and the
+    // sign-in is a few calls to the server, so this can be a few seconds on a
+    // slow connection.
+    cover.innerHTML = '<style>@keyframes lsh-spin{to{transform:rotate(360deg)}}</style>'
+      + '<div style="width:34px;height:34px;border:3px solid #d3d9e6;border-top-color:#DB8437;border-radius:50%;animation:lsh-spin .8s linear infinite"></div>'
+      + '<div id="portal-cover-msg">Opening your training…</div>';
     document.documentElement.appendChild(cover);
+    var steps = [
+      [3500, "Signing you in…"],
+      [7000, "Almost there — loading your program…"]
+    ];
+    steps.forEach(function(s){
+      setTimeout(function(){
+        var m = cover && cover.querySelector("#portal-cover-msg");
+        if(m) m.textContent = s[1];
+      }, s[0]);
+    });
     setTimeout(function(){ uncover(0); }, 10000);   // never leave the cover on if something goes wrong
   }catch(e){ cover = null; }
 }

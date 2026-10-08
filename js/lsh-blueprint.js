@@ -325,10 +325,15 @@
     // Our own jsPDF, whatever else the page has on window.jspdf (html2pdf bundles its own).
     async function loadJsPdf() {
         if (JsPDF) return JsPDF;
-        const before = window.jspdf;
+        const had = 'jspdf' in window, before = window.jspdf;
         await loadScript(JSPDF_SRC);
         JsPDF = window.jspdf && window.jspdf.jsPDF;
-        if (before !== undefined) window.jspdf = before;
+        // Put window.jspdf back exactly as it was, deleting it when the page had
+        // none. This deck loads jsPDF 4.2.1; the engine's certificates and
+        // handouts use 2.5.1 via ensureJsPdf(), and since jsPDF is no longer
+        // pre-loaded in the page head, leaving 4.2.1 behind would make
+        // ensureJsPdf() hand the engine the wrong version.
+        if (had) window.jspdf = before; else delete window.jspdf;
         if (!JsPDF) throw new Error('The PDF maker did not load. Try again.');
         return JsPDF;
     }
