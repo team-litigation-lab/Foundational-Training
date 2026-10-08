@@ -1,7 +1,7 @@
 /* ============================================================
    📅 Calendaring Simulators: drag-and-drop, Google Calendar style, with an automated review and trainer feedback.
    Loaded after js/ft-calsim-core.js (the weeks) and before js/ft-simulators.js. Route: #/calsim.
-     • Three tracks (FTCalCore.TRACKS): Standard Training, Litigation Week (Case Management) and Executive Week (EA / PA).
+     • One track (FTCalCore.TRACKS): Standard Training.
      • The week is a Monday to Friday grid in 15-minute steps (Eastern Time). The attorney's fixed events are locked. The brief lists
        the tasks to put on the calendar; the trainee builds their own calendar: drag on an empty part of the week to
        add an event, drag an event to move it, drag its bottom edge to resize it, double-click to rename it, ✕ to

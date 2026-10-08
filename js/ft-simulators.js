@@ -31,7 +31,7 @@ const TOOLS = {
 // Every live simulator on the LSH Training Portal (its hub: /simulators.html), open to practice any time.
 const PORTAL_ALL = [
   {id:"call", icon:"📞", name:"Call Simulator", page:"call.html", desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
-  {id:"calsim", icon:"📅", name:"Calendaring Simulators", page:"calsim.html", desc:"The Google Calendar Simulator for each program: Standard Training (callers’ appointments), the Litigation Week and the Executive Week, plus a week full of conflicts to fix."},
+  {id:"calsim", icon:"📅", name:"Calendaring Simulators", page:"calsim.html", desc:"The Google Calendar Simulator for Standard Training (callers’ appointments), plus a week full of conflicts to fix."},
   {id:"email", icon:"✉️", name:"Email Workspace", page:"email.html", desc:"A Gmail-style practice inbox: triage, label, reply, forward and report phishing."},
   {id:"replies", icon:"📨", name:"Email Replies", page:"email-replies.html", desc:"One email at a time, answered like at work: an upset client, an adjuster, a lien letter, your attorney."},
   {id:"docket", icon:"⚖️", name:"Docket System", page:"docket.html", desc:"Court notices and mail arrive in an inbox: docket them and calendar every deadline they trigger."},
@@ -194,7 +194,7 @@ window.ftsGotoSkills = function(){
 };
 
 function renderSimulators(){
-  // The Calendaring Simulators: one card per track (Standard Training, Litigation Week, Executive Week), with the Lesson 5 mock calls.
+  // The Calendaring Simulators: the Standard Training card, with the Lesson 5 mock calls.
   const labIdx = window.FTCalSimCards ? ACTIVITIES.findIndex(a=>a.kind==="call" && a.lesson===5) : -1;
   if(window.FTCalSimLoad) FTCalSimLoad();
   const group = (kind, h, sub)=>{
@@ -204,7 +204,7 @@ function renderSimulators(){
   return `<div class="fts-hero"><h1>🛠 Practice Lab Sessions</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
     ${renderSkills()}
-    ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management), the <b>Litigation Week</b> (Case Management) and the <b>Executive Week</b> (EA / PA). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
+    ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
       <div class="fts-grid">${FTCalSimCards()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
     ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each line has its practice calls, and numbered graded calls that count toward the lesson.")}
     ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
