@@ -166,7 +166,7 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 - **The page:** 12 slides with ← → (or the arrow keys), **⛶ Present full screen**, **🖨 Print** and **⬇ Download PDF** (`LSH_FT_Platform_Orientation.pdf`). Nothing private is on it: no facilitator's notes, answers or trainee data. Trainees and 👁 Trainee view don't see it.
 - **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; simulators; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
-- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Trainees open it from the **📘 Platform Blueprint** card on their dashboard (Handouts isn't part of this program), and anyone signed in from the **📘 Platform Blueprint** button in the top bar, before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
+- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Anyone signed in opens it from the **📘 Platform Blueprint** button in the top bar (Handouts isn't part of this program), before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
   - **It republishes itself after every deploy.** The published copy (`blueprint:pdf`, `blueprint:meta`) is matched against the build and the Worker's deployment id (`/version`, from `version_metadata` in `wrangler.json`). The first admin page open after a deploy rebuilds it in the background (`js/lsh-blueprint-course.js`).
 - **🛠 Trainer blueprint** (admins only, never at a public address): a tab on 🧭 Orientation.
   - **The slides:** a cover and 11 slides covering signing in, trainees and the Trainee Audit, Open Lessons, the Curriculum, Presenter view, Activities, the facilitator's feedback style, Monitoring Sheets, Process Questions, Task Trackers, Attendance and Trainee view.
@@ -261,7 +261,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## Simulators
 
-**🛠 Practice Lab** (top bar, and the **Practice Lab** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
+**🛠 Practice Lab** (top bar) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
 
 **🧪 Practice Lab: Skill Building** comes first on the page (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
 

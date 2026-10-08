@@ -54,15 +54,14 @@ window.orientSlides = function(){
      <div class="or-bp">
        <div class="or-bp-main">
          ${box(1,"Progress track",`📌 and Lessons 1–${N} · ✓ = finished`,"or-hero")}
-         ${box(2,"🛠 Simulators","Mock calls, demos and every LSH simulator")}
-         ${box(3,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
-         ${box(4,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
+         ${box(2,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
+         ${box(3,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
        </div>
        <div class="or-bp-side">
-         ${box(5,"📒 Monitoring Sheet","How many entries you've filled in","dark")}
-         ${box(6,"📋 Task Tracker today","Today's check and what to fix","dark")}
-         ${box(7,"Your progress","Program complete · lessons finished","dark")}
-         ${box(8,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
+         ${box(4,"📒 Monitoring Sheet","How many entries you've filled in","dark")}
+         ${box(5,"📋 Task Tracker today","Today's check and what to fix","dark")}
+         ${box(6,"Your progress","Program complete · lessons finished · graded calls","dark")}
+         ${box(7,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
        </div>
      </div>`},
    {k:"Navigation", h:"Getting around", body:`
