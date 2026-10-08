@@ -419,6 +419,17 @@ The script:
 
 Every edit checks that its anchor exists, so the build stops with an error if the EA/PA portal changed that part. Update the anchor in `build.py` and run it again. Rebuild when EA/PA ships new engine features.
 
+### ⚡ First-load speed (`build/ft_perf_patches.py`)
+
+Opening a program from the Training Directory used to sit on a blank cover for several seconds. The engine-level reasons were: jsPDF (~90 KB) and the Google Fonts sheet both blocking the first paint from the page head, `loadAll()` reading 28 storage keys one `await` at a time, and boot fetching `trainee:<id>` twice in a row over the network. `build/ft_perf_patches.py` fixes all four, and `build.py` applies it. First paint on a 1.6 Mbps / 150 ms connection: 1432 ms → 904 ms (headless Chromium, gzipped, median of 7).
+
+Two things to know:
+
+- **These are engine changes, so they belong in `EA-PA-TRAINING`'s own `index.html`.** Every LSH platform is built from that engine, so every course is slow in the same way until it is fixed there. Each patch is skipped when the engine already carries it (the same `if … not in s` idiom as the portal-gate block), so once EA/PA ships them this file becomes a no-op and can go.
+- **Don't add `<link rel="preload">` for the scripts at the end of `index.html`.** It was tried and measured: preloading all 32 makes those downloads compete with the document, which is what produces the first paint, and first paint got *worse* (1908 ms; `fetchpriority="low"` gave 1184 ms; none at all, 904 ms).
+
+`js/lsh-blueprint.js` loads its own jsPDF 4.2.1 and now deletes `window.jspdf` afterwards when the page had none, instead of only restoring a previous value. With jsPDF no longer pre-loaded in the head, leaving 4.2.1 behind would make `ensureJsPdf()` hand the engine's certificates and handouts the wrong version. It's the same file on every LSH platform, so copy it across.
+
 ## Adding a day
 
 1. Create `build/days/dayNN.js` (e.g. `day02.js`) like `day01.js`: `id`, `title`, `heading` (as the curriculum writes it) and `sections`, one per curriculum section, each `{id, h, html}`.

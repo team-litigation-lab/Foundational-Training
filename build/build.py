@@ -12,6 +12,9 @@ if the EA/PA portal changed that part: update the anchor here and run it again.
 """
 import os, re, sys, datetime
 
+B_ = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, B_)   # build/ on the path, for the patch modules imported below
+
 B = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(B)
 if len(sys.argv) != 2:
@@ -193,6 +196,13 @@ if "state.portalOnly && !state.isAdmin" not in s:
         '''${(state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view===\'admin\'?\'active\':\'\'}" onclick="openAdmin()">🛡 Admin</button>`}''')
     rep('''<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>''',
         '''${(state.portalOnly && !state.isAdmin) ? "" : `<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>`}''')
+
+# ⚡ First-load speed (build/ft_perf_patches.py): nothing blocking in the page head,
+# loadAll()'s reads batched, and the trainee's record fetched once instead of twice.
+# Each patch is skipped when the engine already carries it, so this stops being
+# needed once EA-PA-TRAINING has them. See that file for why and for the numbers.
+from ft_perf_patches import apply as ft_perf_patches
+s = ft_perf_patches(s, sys.exit)
 
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.
