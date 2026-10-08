@@ -9,7 +9,30 @@ The training platform for the *Revised 18-Day Foundational Training Program* (Tr
 - trainee feedback and certificates
 - 🖥 Presenter view and 👁 Trainee view
 
-**🏠 Main Portal (admins):** while an admin is signed in, the top bar has **🏠 Main Portal** and the Admin screen has **← Back to Main Portal** (next to Log out). Both open the LSH Training Portal's Training Directory (`https://cm-training-activity.pages.dev/programs.html`), where admins open each program. Trainees and the 👁 Trainee view don't show them. It's `js/portal-link.js`, the same file in every LSH course repo (EA-PA-TRAINING, Case-Management-Training, propertydamageclaimstraining, Foundational-Training); change it in all of them.
+## 🧭 Program layout: the five sections (the main setup for every LSH program)
+
+Every LSH program is organised in the same five sections, and the top bar shows exactly those five (`js/lsh-program.js`, the same file in every LSH course repo; change it in all of them):
+
+| Section | What it holds |
+|---|---|
+| 🏠 **Main Portal** | The program's home (the dashboard): the hub for every part of the training. |
+| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: 📝 Activities, ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them. Its badge adds up their badges (new activity feedback, new focus items). |
+| 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
+| 🏅 **Scorecard** | `#/scorecard`: the trainee's grades, collected from every grading system on the platform. Admins get **Admin Master Control → 🏅 Scorecards**: every approved trainee's in one table (by batch; click a trainee for the details). |
+| 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
+
+Blueprint, Training Directory, 👁 Trainee view, ⧉ and ⛶ stay at the end of the top bar. Between 961 and 1400 px wide, *Training Modules* and *Admin Master Control* shorten to *Modules* and *Admin* so the bar stays on one row.
+
+**What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Training Modules pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
+
+- ✍️ **Knowledge Checks:** each lesson's best attempt (70% passes).
+- 🎯 **Graded calls:** the best graded call on each mock-call line (`callsim:<id>`).
+- 📅 **Calendaring Simulators:** each week's trainer score once released, until then the best automated review; plus each connected simulator's best result (`calsim:<id>`).
+- 📝 **Activities:** the trainer's scored rubric on feedback that was sent (a rating alone is shown, not counted) (`actsub:<id>`).
+
+A grading system's score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each counts the same. A trainee's records are read in one get-many when the Scorecard opens. Since 🏠 Main Portal is now the program's home, the admins' link back to the LSH Training Portal (`js/portal-link.js`) reads **← Training Directory** here, like the trainees'.
+
+**Back to the LSH Training Portal (admins):** while an admin is signed in, the top bar has **🏠 Main Portal** and the Admin screen has **← Back to Main Portal** (next to Log out); in this program `js/lsh-program.js` relabels them **← Training Directory** and **← Back to Training Directory** (🏠 Main Portal is the program's home section). Both open the LSH Training Portal's Training Directory (`https://cm-training-activity.pages.dev/programs.html`), where admins open each program. Trainees and the 👁 Trainee view don't show them. It's `js/portal-link.js`, the same file in every LSH course repo (EA-PA-TRAINING, Case-Management-Training, propertydamageclaimstraining, Foundational-Training); change it in all of them.
 
 **🔐 Trainees sign in on the Main Portal only.** A trainee logs in once, on the LSH Training Portal, and opens this program from there: this site shows them no sign-in form. The Portal sends them here with a signed, short-lived ticket (`https://<this site>/?ticket=<ticket>`); `js/portal-gate.js` posts it to `/api/auth/portal`, the Worker checks it, and the trainee is registered, approved and resumed exactly as before (same `trainee:<id>` records, so every current registration, progress and approval is kept). Someone who opens this site's link directly sees a note with a **Go to the LSH Training Portal** button instead of a form, and the Worker refuses a name + batch typed here (`/api/auth/trainee` answers 403 `portal-required`), except to renew the session of a trainee already signed in on that device. **Admins always type the admin password here** (`MASTER_ADMIN_PASSWORD`, the Portal's master admin password): the Portal's launch step sends them to this site's *Admin Portal* tab (`?admin=1`), and an admin ticket never signs anyone in (the Worker answers 403 `admin-password`). Every future LSH program gets this by loading the same `js/portal-gate.js` and the same Worker endpoints; it is the same file in every course repo.
   - **Turning it on** needs the same secret on both sides: `wrangler secret put PORTAL_SSO_SECRET` here and on the Portal. Until it is set here, `/api/auth/status` reports `portalOnly: false` and the old name + batch form stays, so nothing locks anyone out before the Portal is ready.
@@ -238,7 +261,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## Simulators
 
-**🛠 Simulators** (top bar, and the **Simulators** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`).
+**🛠 Practice Lab** (top bar, and the **Practice Lab** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
 
 **Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. A **mock call** card has **🎯 Take a graded call** and **📞 Practice a caller** (Calendar Management's card also has the 📅 Google Calendar Simulator, to plot the appointments): the CMS Call Simulator opens on that line (`&line=<the card's title>`), with its numbered graded calls first (`&random=1`) or its practice calls. On a graded call (Graded call 1, 2…, the same for everyone) the caller's name, case and what's scored stay hidden until the debrief, so the trainee gets the name, verifies the caller and finds the file in the CMS, as on a real call; **🎯 Next: Graded call 2** in the debrief takes the next one. A **demo** card lists its example cases. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
 
@@ -334,7 +357,9 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-orientation.js` | Admin → 🧭 Orientation: this program's platform orientation slides, which are also the Blueprint PDF (`/blueprint.pdf`). |
-| `js/ft-simulators.js` | The 🛠 Simulators page: the guide's mock calls and demos, with their practice tools. |
+| `js/ft-simulators.js` | The 🛠 Practice Lab page (`#/simulators`): the guide's mock calls and demos, with their practice tools. |
+| `js/lsh-program.js` | The program layout (the same file in every LSH course repo): the five sections in the top bar, 📚 Training Modules (`#/modules`) and its tabs, 🏅 Scorecard (`#/scorecard`) and Admin Master Control → 🏅 Scorecards. |
+| `js/ft-program.js` | This program's setup for the layout: the Training Modules pages, the Practice Lab's pages and what the Scorecard collects. |
 | `js/ft-activities.js` | 📝 Activities (trainee tab, Admin → 📝 Activities) and Admin → 🗣 Feedback Style. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
 | `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |

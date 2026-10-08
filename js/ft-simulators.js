@@ -178,7 +178,7 @@ function renderSimulators(){
     const cards = ACTIVITIES.map((a,i)=>a.kind===kind && i!==labIdx ? renderCard(a,i) : "").join("");
     return `<section class="fts-group"><h2>${h}</h2><p class="fts-sub">${sub}</p><div class="fts-grid">${cards}</div></section>`;
   };
-  return `<div class="fts-hero"><h1>🛠 Simulators</h1>
+  return `<div class="fts-hero"><h1>🛠 Practice Lab Sessions</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
     ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management), the <b>Litigation Week</b> (Case Management) and the <b>Executive Week</b> (EA / PA). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
       <div class="fts-grid">${FTCalSimCards()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
@@ -254,7 +254,7 @@ window.renderDashboard = function(){
   if(!state.traineeId && !state.isAdmin) return html;
   const card = `<div class="fts-banner" role="link" tabindex="0" onclick="goto('simulators')" onkeydown="if(event.key==='Enter') goto('simulators')">
       <span class="fts-banner-ic">🛠</span>
-      <span class="fts-banner-tx"><b>Simulators</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
+      <span class="fts-banner-tx"><b>Practice Lab</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
       <span class="fts-banner-go">Open →</span></div>`;
   if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
   // the dashboard band: the best graded call in each of lessons 4–6, averaged
