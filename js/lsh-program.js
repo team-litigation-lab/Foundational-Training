@@ -5,8 +5,8 @@
    top bar shows exactly those five:
 
      🏠 Main Portal            the program's home (the dashboard): the hub for every part of the training
-     📚 Training Modules       #/modules: the lessons, and the program's training pages (Process Questions,
-                               Task Tracker…), which share a bar of tabs under the top bar
+     📚 Training Modules       #/modules: the lessons, and the program's training pages (Task Tracker,
+                               Monitoring Sheet…), which share a bar of tabs under the top bar
      🛠 Practice Lab           the Practice Lab Sessions, connected with the simulators (#/simulators)
      🏅 Scorecard              #/scorecard: the trainee's grades, collected from every grading system on the
                                platform; admins get Admin → 🏅 Scorecards, every trainee's in one table

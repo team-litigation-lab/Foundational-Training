@@ -16,7 +16,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | Section | What it holds |
 |---|---|
 | 🏠 **Main Portal** | The program's home (the dashboard): the hub for every part of the training. |
-| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them (no Lessons tab: 📚 Training Modules on the top bar opens the lessons). Its badge adds up their badges (new focus items). |
+| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them (no Lessons tab: 📚 Training Modules on the top bar opens the lessons). Its badge adds up their badges (new focus items). |
 | 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
 | 🏅 **Scorecard** | `#/scorecard`: the trainee's grades, collected from every grading system on the platform. Admins get **Admin Master Control → 🏅 Scorecards**: every approved trainee's in one table (by batch; click a trainee for the details). |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
@@ -194,16 +194,16 @@ A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2
 
 **The Knowledge Check** (`#/kc`):
 - **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
-- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type and are the same as the lesson's ✍️ Process Questions sheet.
+- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type, into the lesson's answer sheet.
 - **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity, with a line of feedback. The total is a percentage.
 - **Passing:** 70% passes and finishes the lesson. A retake keeps the best score.
 - **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
 - **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
 
-**The ✍️ Process Questions page** (`#/process`) keeps every sheet in one place, for saving it with the proper name:
+**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet, but it has no tab in Training Modules: the Knowledge Check is the same questions.
 - **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
 - **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
-- **When a sheet counts as submitted:** when the trainee presses **Submit My Answers**, or when a Knowledge Check is graded with all of the sheet's questions answered.
+- **When a sheet counts as submitted:** when a Knowledge Check is graded with all of the sheet's questions answered (or, on the `#/process` page, when the trainee presses **Submit My Answers**).
 
 **Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet:
 - whether it's submitted, how many questions are answered, and the answers;
