@@ -214,6 +214,8 @@ window.ftsOpen = function(i, id){
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsShowTool = (url, name)=>ftsShow(url, name);
 window.ftsCalsim = function(track, scores){ window.open(portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
+// Trainee Evaluations (trainers: the submissions with their AI review and feedback, and the trainees' calendars) and My Evaluations (a trainee's own calendars and the reports their trainer sent) are on the Portal.
+window.ftsEvaluations = function(track, mine){ window.open(portalHref(mine ? "my-evaluations.html" : "gcal-review.html") + (track && !mine ? "&track=" + encodeURIComponent(track) : ""), "_blank", "noopener"); };
 function ftsShow(url, name){
   // A Portal page needs the Portal sign-in cookie, which the browser doesn't send into a frame inside this site (it showed the
   // Portal's login box): it opens in its own tab, where the trainee is already signed in. The CMS lets Standard trainees in

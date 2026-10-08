@@ -68,7 +68,6 @@ window.orientSlides = function(){
      <div class="or-nav">
        ${[["Dashboard","Your home: your lessons, progress and certificate."],
           ["🛠 Practice Lab","Your firm, your real-time Practice Sessions, the activities with your trainer, and Skill Building."],
-          ["📝 Activities","Your trainer's activities for each day. Answer, attach a file and submit."],
           ["📋 Task Tracker","Your LSH Daily Task Tracker in your VA Output folder: its link, and each day's output links."],
           ["📒 Monitoring Sheet","Your Monitoring Sheet in your VA Output folder: one entry per classroom discussion."],
           ["✍️ Process Questions","Each lesson's Knowledge Check: answer, then 📝 Submit for Grading."],
@@ -82,8 +81,8 @@ window.orientSlides = function(){
    {k:"Practice Lab", h:"Practice Lab: the real tasks, for your own law firm", body:`
      <div class="or-3">${pill("🏛","Your firm","Your trainer assigns your law firm and your cases. Learn its rules: every session is checked against them.")}${pill("🟢","Practice Sessions","Reception, calendaring, intake, the PI process, claims and ChartSwap records requests: done live in the CMS, recorded and submitted.")}${pill("🧑‍🏫","With your trainer","Demos and live mock calls with your trainer, who records your result.")}</div>
      <div class="or-note">Each session opens with its lesson. It's checked automatically against your case and your firm's rules, evaluated, and reviewed by your trainer. The CMS opens already signed in.</div>`},
-   {k:"Feedback", h:"Activities, feedback & your growth", body:`
-     <div class="or-3">${pill("📝","Activities","Your trainer posts activities by day. Answer in writing or upload a file; your draft saves as you type.")}${pill("💬","Trainer feedback","Reviews come back on the activity page (watch for the 📝 badge). A lesson's 💬 Trainer feedback shows on its card.")}${pill("🎯","Focus","Your trainer's priorities for you and what to work on next. Tick items off as you go.")}</div>`},
+   {k:"Feedback", h:"Feedback & your growth", body:`
+     <div class="or-3">${pill("🏅","Scorecard","Every grade in one place: your Knowledge Checks, graded calls and calendaring, with your trainer's scores.")}${pill("💬","Trainer feedback","Your Practice Lab work comes back with your trainer's feedback. A lesson's 💬 Trainer feedback shows on its card.")}${pill("🎯","Focus","Your trainer's priorities for you and what to work on next. Tick items off as you go.")}</div>`},
    {k:"Certificate", h:"Earning your certificate", body:`
      <div class="or-cert"><div class="or-ribbon">🏅</div><div>
        <p class="or-lead" style="margin-top:0">Finish all <b>${N} lessons</b> and your <b>Certificate of Completion</b> unlocks — download it as a PDF from your dashboard.</p>

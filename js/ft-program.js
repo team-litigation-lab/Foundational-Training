@@ -12,19 +12,17 @@
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
      🧰 Portal simulators       simresults:<id>, the best result per Training Portal simulator (written by the Portal's /api/sim-results)
-     📝 Activities              actsub:<id>, the trainer's scored rubric on feedback that was sent (js/ft-activities.js)
+   (The Daily Activities page was taken off: the Practice Lab and the Knowledge Checks cover that work.)
    ============================================================ */
 (function(){
 const title = id => { const d = DAYS.find(x => x.id === id); return d ? d.title : "Lesson " + id; };
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
-const ACT_DAYS = Array.from({length:19}, (_, i) => "activities:day" + i);   // the Training Guide's Day 0 to Day 18
 const CALL_LESSONS = [4, 5, 6];   // Reception, Calendar Management and Intake Mock Calls (as in js/ft-simulators.js)
 
 window.LSH_PROGRAM = {
   // 📚 Training Modules: the lessons, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
-    {view:"activities", icon:"📝", label:"Activities", about:"Each day’s activity: answer it and get your trainer’s feedback.", badge:() => typeof window.daUnreadCount === "function" ? window.daUnreadCount() : 0},
     {view:"process", icon:"✍️", label:"Process Questions", about:"Each lesson’s answer sheet, and the Knowledge Checks that grade it."},
     {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
     {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
@@ -35,7 +33,14 @@ window.LSH_PROGRAM = {
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day", "kc"],          // a lesson and its Knowledge Check are in Training Modules too
   labViews: ["simulators", "calsim", "firm", "session"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm (and the older Calendaring Simulators page)
-  shared: ACT_DAYS.concat(["settings:trainer-acts"]),   // the activities' titles, and the trainer-led activities' names
+  shared: ["settings:trainer-acts"],   // the trainer-led activities' names
+  // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
+  adminGroups: {
+    admin: ["audit", "batches", "tfeedback", "attendance", "firms"],
+    modules: ["opendays", "curriculum", "process", "trackers", "monitor", "drivetrackers", "fbstyle"],
+    lab: ["calscores", "sessions", "trainerinputs"],
+    scorecard: ["scorecards"]
+  },
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
       about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",
@@ -79,19 +84,7 @@ window.LSH_PROGRAM = {
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
     {id:"portalsims", icon:"🧰", label:"Portal simulators", key:"simresults:",
       about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
-      items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))},
-    {id:"activities", icon:"📝", label:"Activities", key:"actsub:",
-      about:"Your trainer’s feedback on the daily activities. A scored rubric counts toward your score; a rating alone shows here.",
-      items: ctx => {
-        const items = (ctx.rec["actsub:"] || {}).items || {}, names = {};
-        ACT_DAYS.forEach(k => (((ctx.shared[k] || {}).items) || []).forEach(a => { names[a.id] = a.title; }));
-        return Object.keys(items).map(id => ({id, sub:items[id]})).filter(x => x.sub && x.sub.feedback && x.sub.feedback.status === "sent").map(({id, sub}) => {
-          const fb = sub.feedback, sc = fb.scores || [], name = names[id] || "Activity";
-          if(!sc.length) return {name, pct:null, note:fb.rating ? "Rated " + fb.rating : "Feedback sent"};
-          const total = sc.reduce((n, x) => n + (Number(x.score) || 0), 0), max = sc.length * 5;
-          return {name, pct:Math.round(total / max * 100), note:`${total}/${max} on the rubric${fb.rating ? " · " + fb.rating : ""}`};
-        });
-      }}
+      items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))}
   ]
 };
 })();

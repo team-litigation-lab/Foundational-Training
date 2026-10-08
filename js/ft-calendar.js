@@ -541,7 +541,7 @@ window.FTCalSimCards = function(){
       return b < 0 && !l ? "" : `<div class="fts-note">${e(sc.short)}: ${b >= 0 ? `🤖 best ${b}%` : ""}${l ? ` · 📤 submitted` : ""}${r ? ` · 👤 trainer ${e(r.score)}/100` : ""}</div>`; }).join("") : "";
     return `<div class="card fts-card ${unlocked ? "" : "fts-locked"}"><div class="fts-kicker">${e(tk.where)}${unlocked ? "" : " · opens with Lesson " + LESSON}</div>
       <h3>${tk.icon} ${e(tk.title)}</h3><p class="fts-note">${e(tk.blurb)}</p>${mine}
-      <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="ftsCalsim('${tk.id}')">📅 Open on the Portal ↗</button>` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
+      <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="ftsCalsim('${tk.id}')">📅 Open on the Portal ↗</button>${isTrainee() ? ` <button class="btn btn-ghost btn-sm" onclick="ftsEvaluations('', true)" title="Your calendars in progress, the ones you submitted, and the reports your trainer sent you">📋 My Evaluations ↗</button>` : ""}` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
   }).join("");
 };
 // The scheduler's scores are in the trainee's record: read it when the Simulators page opens, so the card shows them.
@@ -590,7 +590,7 @@ function renderAdminScores(){
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
   startPoll();
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
-    <p class="cs-hint"><b>The Calendaring Simulators now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training scores on the Portal ↗</button> Grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older calendars saved here are listed below.</p>
+    <p class="cs-hint"><b>The Calendaring Simulators now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsEvaluations()">📋 Open Trainee Evaluations on the Portal ↗</button> <button class="btn btn-ghost btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training scores on the Portal ↗</button> Trainee Evaluations has each trainee's submitted calendar with its AI review, your own feedback and the report you send to them; grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older calendars saved here are listed below.</p>
     ${feedHTML()}${guideHTML()}
     <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
