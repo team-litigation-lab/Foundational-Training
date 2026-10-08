@@ -170,6 +170,29 @@ function renderCard(a, i){
     ${tools}
   </div>`;
 }
+// 🧪 Practice Lab: Skill Building — the daily Typing and Spelling Tests (FT_SKILL_TESTS, js/ft-rules.js): the tools to
+// use, when, the screenshot's file name and a sample. The Training Orientation and Rules slide points here.
+function renderSkills(){
+  const tests = window.FT_SKILL_TESTS || [];
+  if(!tests.length) return "";
+  return `<section class="fts-group" id="fts-skills"><h2>🧪 Practice Lab: Skill Building</h2>
+      <p class="fts-sub">Your daily Typing and Spelling Tests. LSH’s clients look for VAs who type at least 60 WPM. Take each test with the tool below, screenshot the result with the date and time showing, and save it in your training subfolder, named exactly as shown. Missed a test? Make it up during your idle time; extra rounds are welcome.</p>
+      <div class="fts-grid">${tests.map(t=>`<div class="card fts-card">
+        <h3>${t.icon} ${esc(t.name)}</h3>
+        <p class="fts-note"><b>When:</b> ${esc(t.when)}</p>
+        <div class="fts-label">Tools to use</div>
+        <div class="fts-tool-act">${t.links.map((l,i)=>`<a class="btn ${i ? "btn-ghost" : "btn-navy"} btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0])} ↗</a>`).join("")}</div>
+        <div class="fts-label">Save it as</div>
+        <code class="fts-file">${esc(t.file)}</code>
+        <figure class="fts-sample"><a href="${esc(t.sample)}" target="_blank" rel="noopener"><img src="${esc(t.sample)}" alt="Sample ${esc(t.name.toLowerCase())} screenshot" loading="lazy"></a><figcaption>Sample: the whole screen, with the date and time showing.</figcaption></figure>
+      </div>`).join("")}</div></section>`;
+}
+// The orientation slide's "Open the Practice Lab": 🛠 Simulators, scrolled to Skill Building.
+window.ftsGotoSkills = function(){
+  goto("simulators");
+  setTimeout(()=>{ const el = document.getElementById("fts-skills"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 60);
+};
+
 function renderSimulators(){
   // The Calendaring Simulators: one card per track (Standard Training, Litigation Week, Executive Week), with the Lesson 5 mock calls.
   const labIdx = window.FTCalSimCards ? ACTIVITIES.findIndex(a=>a.kind==="call" && a.lesson===5) : -1;
@@ -178,8 +201,9 @@ function renderSimulators(){
     const cards = ACTIVITIES.map((a,i)=>a.kind===kind && i!==labIdx ? renderCard(a,i) : "").join("");
     return `<section class="fts-group"><h2>${h}</h2><p class="fts-sub">${sub}</p><div class="fts-grid">${cards}</div></section>`;
   };
-  return `<div class="fts-hero"><h1>🛠 Simulators</h1>
+  return `<div class="fts-hero"><h1>🛠 Practice Lab Sessions</h1>
       <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
+    ${renderSkills()}
     ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management), the <b>Litigation Week</b> (Case Management) and the <b>Executive Week</b> (EA / PA). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
       <div class="fts-grid">${FTCalSimCards()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
     ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each line has its practice calls, and numbered graded calls that count toward the lesson.")}
@@ -213,6 +237,8 @@ window.ftsOpen = function(i, id){
 };
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsCalsim = function(track, scores){ window.open(portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
+// Trainee Evaluations (trainers: the submissions with their AI review and feedback, and the trainees' calendars) and My Evaluations (a trainee's own calendars and the reports their trainer sent) are on the Portal.
+window.ftsEvaluations = function(track, mine){ window.open(portalHref(mine ? "my-evaluations.html" : "gcal-review.html") + (track && !mine ? "&track=" + encodeURIComponent(track) : ""), "_blank", "noopener"); };
 window.ftsOpenPortal = function(id){
   const t = PORTAL_ALL.find(x=>x.id===id); if(t) ftsShow(portalHref(t.page), t.name);
 };
@@ -254,7 +280,7 @@ window.renderDashboard = function(){
   if(!state.traineeId && !state.isAdmin) return html;
   const card = `<div class="fts-banner" role="link" tabindex="0" onclick="goto('simulators')" onkeydown="if(event.key==='Enter') goto('simulators')">
       <span class="fts-banner-ic">🛠</span>
-      <span class="fts-banner-tx"><b>Simulators</b><span>Practice for your mock calls and demos on the CMS’s example cases, plus the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
+      <span class="fts-banner-tx"><b>Practice Lab</b><span>The typing and spelling tests, practice for your mock calls and demos on the CMS’s example cases, and the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
       <span class="fts-banner-go">Open →</span></div>`;
   if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
   // the dashboard band: the best graded call in each of lessons 4–6, averaged
@@ -290,7 +316,10 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-note{margin:0;font-size:13.5px;color:var(--ink-soft);}
 .fts-label{margin-top:4px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
 .fts-tool-txt span.fts-mc{display:inline-block;margin-top:0;color:#fff;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;font-weight:800;background:var(--navy);color:#fff;border-radius:4px;padding:1px 6px;margin-right:4px;vertical-align:1px;}
-.fts-locked{opacity:.65;}
+.fts-locked{opacity:.65;} #fts-skills{scroll-margin-top:84px;}
+.fts-file{align-self:flex-start;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;background:#f1f5f9;color:var(--navy);border-radius:6px;padding:4px 8px;overflow-wrap:anywhere;}
+.fts-sample{margin:0;} .fts-sample img{display:block;width:100%;height:auto;border:1px solid var(--line,#e5e7eb);border-radius:8px;}
+.fts-sample figcaption{margin-top:4px;font-size:12px;color:var(--ink-soft);}
 .fts-tool{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line,#e5e7eb);padding-top:10px;flex-wrap:wrap;}
 .fts-tool-txt{flex:1 1 200px;min-width:0;} .fts-tool-txt b{display:block;font-size:14.5px;color:var(--ink,#111827);}
 .fts-tool-txt span{display:block;font-size:13px;color:var(--ink-soft);margin-top:2px;}

@@ -23,6 +23,17 @@ const FT_TOTAL_DAYS = DAYS.length;
 DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quickChecks = []; });
 
 (function(){ const s = document.createElement("style"); s.id = "ft-layer"; s.textContent = `
+/* top bar: the course name shows in full or not at all, never cut to "…" */
+.topbar .brand-text b,.topbar .brand-text span{max-width:none;text-overflow:clip;}
+@media(min-width:761px) and (max-width:1180px){.topbar .brand{flex:0 0 auto;}}  /* tablets: the search box has its own row */
+@media(min-width:1181px){
+  /* the title still gives way first (eapa-updates.js), but as a whole: when it doesn't fit beside the logo it wraps
+     below it, out of sight (instead of a container query that hides it only once it is cut down to 170px) */
+  .topbar .brand{flex:0 1000000 auto;min-width:74px;container-type:normal;flex-wrap:wrap;height:46px;overflow:hidden;}
+  .topbar .brand-text{flex:0 0 auto;overflow:visible;}
+}
+@media(max-width:760px){.topbar .brand-text span{display:none;} .topbar .brand-text b{white-space:normal;line-height:1.2;}}  /* phones: the title alone (as index.html intends), on a second line if it needs one */
+
 /* curriculum section slides */
 .ft-section h4{margin-bottom:14px;}
 .ft-body{font-size:15.5px;line-height:1.6;color:var(--ink);text-align:left;}
@@ -771,7 +782,7 @@ window.renderDashboard = function(){
   </div>
   <div class="dash-layout">
     <div class="dash-main">
-      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open lessons for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin → Open Lessons</a>.</div>` : ""}
+      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open lessons for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin Master Control → Open Lessons</a>.</div>` : ""}
       <div class="module-grid">${DAYS.map(d=>moduleCard(d)).join("")}</div>
       <div class="hero-actions bottom-actions">
         ${resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : ""}

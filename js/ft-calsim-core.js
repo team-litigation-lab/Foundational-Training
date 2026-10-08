@@ -5,11 +5,14 @@
      • Three tracks, each a set up like a Google Calendar: Standard Training (the Foundational / Calendar Management
        weeks), Litigation Week (Case Management) and Executive Week (EA / PA). A week has the attorney's (or executive's)
        fixed events and the tasks the trainee must put on the calendar.
-     • The trainee's events are {id, title, day, start, dur, desc, meet, remind, guests}: a title, a description, Google
-       Meet for video calls, an email reminder a day before, and guests, as in Google Calendar.
+     • The trainee's events are {id, title, day, start, dur, desc, meet, remind, guests, color}: a title, a description,
+       Google Meet for video calls, an email reminder a day before, guests and a color (Google Calendar's eleven event
+       colors; "" is the calendar's default), as in Google Calendar.
+     • The attorney's color rule (COLOR_RULE): an event is colored by how long it is: 30 minutes Tangerine, 45 minutes
+       Blueberry, 1 hour Tomato. The trainee picks the color; the review checks it.
      • review() is the automated review: it matches the events to the tasks by their names, then checks every task
        against the attorney's rules (days, time window, before/after an event, travel buffer, 15-minute gap between
-       events, and the details a task calls for: description, Google Meet, email reminder). Scored out of 100,
+       events, and the details a task calls for: description, Google Meet, email reminder, the color rule). Scored out of 100,
        80% passes. A trainer's manual feedback comes on top.
    ============================================================ */
 (function(root){
@@ -17,6 +20,25 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const OPEN = 9 * 60, CLOSE = 17 * 60, STEP = 15, MAXEV = 60, PASS = 80;
 const t = (h, m) => h * 60 + (m || 0);
 function fmt(min){ const h = Math.floor(min / 60), m = min % 60; return (h % 12 || 12) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? " AM" : " PM"); }
+// Google Calendar's event colors (name, fill and the darker left edge). An event's `color` is one of these ids or "" (the default).
+const COLORS = [
+  {id:"tomato", name:"Tomato", hex:"#d50000", edge:"#9b0000"},
+  {id:"flamingo", name:"Flamingo", hex:"#e67c73", edge:"#b35a52"},
+  {id:"tangerine", name:"Tangerine", hex:"#f4511e", edge:"#b83a12"},
+  {id:"banana", name:"Banana", hex:"#f6bf26", edge:"#b98f14"},
+  {id:"sage", name:"Sage", hex:"#33b679", edge:"#23875a"},
+  {id:"basil", name:"Basil", hex:"#0b8043", edge:"#075a2f"},
+  {id:"peacock", name:"Peacock", hex:"#039be5", edge:"#0277bd"},
+  {id:"blueberry", name:"Blueberry", hex:"#3f51b5", edge:"#283593"},
+  {id:"lavender", name:"Lavender", hex:"#7986cb", edge:"#5c6bc0"},
+  {id:"grape", name:"Grape", hex:"#8e24aa", edge:"#6a1b7f"},
+  {id:"graphite", name:"Graphite", hex:"#616161", edge:"#424242"}
+];
+const colorOf = id => COLORS.find(c => c.id === id) || null;
+// The attorney's color rule: the color an event must have for its length (no rule for other lengths).
+const COLOR_RULE = {30:"tangerine", 45:"blueberry", 60:"tomato"};
+const COLOR_RULE_TEXT = "Color each event by how long it is: 30 minutes Tangerine, 45 minutes Blueberry, 1 hour Tomato.";
+const colorFor = dur => COLOR_RULE[dur] || null;
 const lunch = [0, 1, 2, 3, 4].map(d => ({id:"lunch" + d, title:"Lunch (out of office)", day:d, start:t(12), end:t(13), kind:"lunch"}));
 
 const TRACKS = [
@@ -132,7 +154,7 @@ function clean(events){
     && Number.isInteger(x.day) && x.day >= 0 && x.day <= 4 && Number.isInteger(x.start) && x.start % STEP === 0 && x.start >= t(8)
     && Number.isInteger(x.dur) && x.dur >= STEP && x.dur % STEP === 0 && x.start + x.dur <= t(18))
     .slice(0, MAXEV).map(x => ({id:x.id.slice(0, 24), title:String(x.title || "").slice(0, 80), day:x.day, start:x.start, dur:x.dur,
-      desc:String(x.desc || "").slice(0, 300), guests:String(x.guests || "").slice(0, 200), meet:!!x.meet, remind:!!x.remind}));
+      desc:String(x.desc || "").slice(0, 300), guests:String(x.guests || "").slice(0, 200), meet:!!x.meet, remind:!!x.remind, color:colorOf(x.color) ? x.color : ""}));
 }
 
 /* ---------- the automated review ---------- */
@@ -160,6 +182,9 @@ function checks(scn, k, x, evs){
   add(!hit && !near, "No conflict", hit ? `Overlaps “${hit.title}” on ${DAYS[hit.day]}.` : near ? nearWhy(scn, near) : "");
   add(me.start >= OPEN && me.end <= CLOSE, "Business hours (9:00 AM to 5:00 PM)", `Runs ${fmt(me.start)} to ${fmt(me.end)}, outside business hours.`);
   add(x.dur >= k.dur, "Long enough", `Booked for ${x.dur} minutes; this needs ${k.dur}.`);
+  // The attorney's color rule goes by the event's length as booked (or the task's, when the booked length has no rule).
+  const len = colorFor(x.dur) ? x.dur : k.dur, want = colorOf(colorFor(len));
+  if(want){ const have = colorOf(x.color); add(x.color === want.id, "Right color for its length", `${have ? have.name : "The default color"} on a ${x.dur}-minute event${x.dur === len ? "" : " (a " + len + "-minute task)"}: it should be ${want.name}. ${COLOR_RULE_TEXT}`); }
   add(String(x.desc || "").trim().length >= 5, "Description added", "Add a description to the event (what it is for, who is involved).");
   if(nd.meet) add(x.meet, "Google Meet added", "This is a video call: add Google Meet to the event.");
   if(nd.remind) add(x.remind, "Email reminder a day before", "Set an email notification 1 day before the event.");
@@ -190,6 +215,6 @@ function review(scn, events){
   return {score:Math.round(got), max, pct, passed:pct >= PASS, items, extras, done:items.filter(i => i.perfect).length};
 }
 
-const api = {DAYS, OPEN, CLOSE, STEP, MAXEV, PASS, TRACKS, SCENARIOS, trackOf, fmt, overlap, endOf, all, flags, clean, match, review};
+const api = {DAYS, OPEN, CLOSE, STEP, MAXEV, PASS, TRACKS, SCENARIOS, COLORS, COLOR_RULE, COLOR_RULE_TEXT, colorOf, colorFor, trackOf, fmt, overlap, endOf, all, flags, clean, match, review};
 if(typeof module !== "undefined" && module.exports) module.exports = api; else root.FTCalCore = api;
 })(typeof window !== "undefined" ? window : globalThis);

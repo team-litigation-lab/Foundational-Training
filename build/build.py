@@ -76,6 +76,15 @@ if not (n1 and n2 and n3):
     sys.exit(f"MISSING heavy-asset anchors: {n1} {n2} {n3}")
 
 # ---------- 3. branding ----------
+# The standardized LSH logo (the same files as the Training Portal's): the full logo, js/lsh-logo-dark.png, and the
+# square mark, favicon.png. Both have a white outline, so they read on navy and on white.
+import base64
+def data_uri(path):
+    return "data:image/png;base64," + base64.b64encode(open(os.path.join(ROOT, path), "rb").read()).decode()
+s, n1 = re.subn(r'const LOGO_FULL_DATAURI = "data:image/png;base64,[^"]*";', lambda m: f'const LOGO_FULL_DATAURI = "{data_uri("js/lsh-logo-dark.png")}";', s, count=1)
+s, n2 = re.subn(r'const LOGO_ICON_DATAURI = "data:image/png;base64,[^"]*";', lambda m: f'const LOGO_ICON_DATAURI = "{data_uri("favicon.png")}";', s, count=1)
+if not (n1 and n2):
+    sys.exit(f"MISSING logo anchors: {n1} {n2}")
 rep("<title>LSH EA/PA Upskill Program</title>", "<title>LSH Foundational Training Program</title>")
 rep('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Training</span>', '<b>LSH Foundational Training</b><span>Standard Foundational Training</span>')
 rep("LSH EA / PA Upskill Program", "LSH Foundational Training Program")
@@ -148,6 +157,15 @@ s = s[:k] + f'<script src="/js/lsh-dashboard.js?v={build_tag}"></script>\n' + s[
 # The lesson cards' buttons as one full-width grid with lines (js/ft-card-grid.js) wrap the finished card, so after it.
 k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/ft-card-grid.js?v={build_tag}"></script>\n' + s[k:]
+# Every card framed (js/lsh-card-frame.js, the same file in every LSH course repo), after the card files.
+# The engine's page may carry it (or the hub files below) already: once, here.
+s = re.sub(r'<script src="/js/(lsh-card-frame|ft-program|lsh-program)\.js\?v=[^"]*"></script>\n?', '', s)
+k = s.rfind("</body>")
+s = s[:k] + f'<script src="/js/lsh-card-frame.js?v={build_tag}"></script>\n' + s[k:]
+# The LSH program layout (js/lsh-program.js, the same file in every LSH course repo: the five sections), last of all,
+# after this program's setup for it (js/ft-program.js: the Training Modules pages and what the Scorecard collects).
+k = s.rfind("</body>")
+s = s[:k] + f'<script src="/js/ft-program.js?v={build_tag}"></script>\n<script src="/js/lsh-program.js?v={build_tag}"></script>\n' + s[k:]
 
 
 # 🔐 Trainees sign in on the LSH Training Portal only (js/portal-gate.js). The gate file loads in <head>, before the engine,
