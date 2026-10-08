@@ -30,6 +30,13 @@ window.LSH_PROGRAM = {
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day", "kc"],          // a lesson and its Knowledge Check are in Training Modules too
   labViews: ["simulators", "calsim"],  // 🛠 Practice Lab: the Simulators page and the Calendaring Simulators
+  // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
+  adminGroups: {
+    admin: ["audit", "batches", "tfeedback", "attendance"],
+    modules: ["opendays", "curriculum", "process", "activities", "trackers", "monitor", "fbstyle"],
+    lab: ["calscores"],
+    scorecard: ["scorecards"]
+  },
   shared: ACT_DAYS,   // the activities' titles
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks",
