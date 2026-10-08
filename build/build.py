@@ -77,6 +77,21 @@ s, n2 = re.subn(r'const ELIAS_VOICE_NOTE_AUDIO_DATAURI = "[^"]*";', 'const ELIAS
 s, n3 = re.subn(r'const CLIENT_AVATAR_SRC = \(.*?\n', 'const CLIENT_AVATAR_SRC = "";\n', s, count=1)
 if not (n1 and n2 and n3):
     sys.exit(f"MISSING heavy-asset anchors: {n1} {n2} {n3}")
+# The page background photo: the EA/PA portal carries its own portrait inline, as ~88 KB of base64 in
+# body::before (with a top offset so the top bar never covered her head). This program's background is the
+# gavel and law books, served as a file (img/ft-page-bg.webp) rather than inlined: 86 KB smaller here, and
+# the browser caches it. Everything else about the rule - fixed, behind the page - stays as it is.
+s, n4 = re.subn(
+    r'(body::before\{\s*\n\s*content:"";position:fixed;inset:0;z-index:0;pointer-events:none;\s*\n)'
+    r'.*?\n\}',
+    lambda m: m.group(1) + '  background-image:url("/img/ft-page-bg.webp");\n'
+              '  background-size:cover;background-position:center;\n'
+              '  opacity:.2;\n  will-change:transform;\n}',
+    s, count=1, flags=re.S)
+s, n5 = re.subn(r'/\* Page background photo: faint, fixed, behind everything \*/',
+                '/* Page background photo: the gavel and law books (img/ft-page-bg.webp), faint, fixed, behind every page */', s, count=1)
+if not (n4 and n5):
+    sys.exit(f"MISSING page-background anchors: {n4} {n5}")
 
 # ---------- 3. branding ----------
 # The standardized LSH logo (the same files as the Training Portal's): the full logo, js/lsh-logo-dark.png, and the
