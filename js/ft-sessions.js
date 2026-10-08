@@ -13,7 +13,9 @@
                                     Google Calendar Simulator, under the firm's calendar rules
      📋 Intake Mock Calls           lesson 6: the CMS's intake line on the trainee's intake case; the intake summary
      ⚖️ PI Process Flow             lesson 3: the trainee's case: its phase, team, dates and next steps
-     🧾 Claims: LORs (1P & 3P)       lesson 7: the trainee's claims case: the carriers, claims and LOR dates
+     (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 📚 Resource Library's
+      LOR Drafting Activity, js/ft-lor.js — the trainee drafts the 1P and 3P letters in the firm's own
+      templates, with no CMS case file.)
      🩺 Medical Records: ChartSwap  lesson 8: a ChartSwap records request for the trainee's records case
    Records:
      sessions:<id>      the trainee's own: {ack: {firm, at}, live: {sid, startedAt}, runs: {<session|case>: run}}
@@ -101,19 +103,6 @@ const SESSIONS = [
       ["Phase", same(a.phase, c.phase), c.phase], ["Attorney", near(a.attorney, c.attorney), c.attorney], ["Case manager", near(a.cm, c.cm), c.cm],
       ["Date of the accident", toISO(c.dol) === a.dol, c.dol], ["Statute of limitations", toISO(c.sol) === a.sol, c.sol],
       ["At least two next steps, each with who does it", String(a.next || "").split("\n").filter(x => x.trim().length > 8).length >= 2, ""]] : []},
-  {id:"claims", icon:"🧾", title:"Claims: LORs to the 1P and 3P carriers", lesson:7, area:"claims",
-    about:"Open your claims case in the CMS (Work on a practice copy), record its claims and send the letters of representation the way your firm requires. Then record what you sent here.",
-    tools: c => c ? [[`🗂 ${c.id} in the CMS`, FF().caseHref(c, "cm")]] : [],
-    fields: f => [["carrier3", "3P carrier", "text"], ["claim3", "3P claim number", "text"], ["adjuster3", "3P adjuster", "text"], ["limits3", "3P policy limits", "text"],
-      ["type1", "1P coverage", "select", ["None on file", "UM/UIM", "PIP", "MedPay", "UM/UIM and MedPay"]], ["carrier1", "1P carrier", "text"], ["claim1", "1P claim number", "text"],
-      ["sent", "LORs sent on", "date"], ["follow", "Follow-up date for an unacknowledged LOR", "date"]],
-    check: (a, c, f) => { if(!c) return []; const b = (c.bi || [])[0] || {}, p = (c.pipum || [])[0];
-      const gap = a.sent && a.follow ? Math.round((new Date(a.follow) - new Date(a.sent)) / 86400000) : -1;
-      return [["3P carrier", near(a.carrier3, b.carrier), b.carrier], ["3P claim number", norm(a.claim3) === norm(b.claim), b.claim], ["3P adjuster", near(a.adjuster3, b.adjuster), b.adjuster],
-        ["3P policy limits", norm(a.limits3).replace(/ /g, "") === norm(b.limits).replace(/ /g, ""), b.limits],
-        ["1P coverage", p ? near(a.type1, p.type) || near(a.carrier1, p.carrier) : a.type1 === "None on file", p ? `${p.type} · ${p.carrier}` : "None on file"],
-        ["1P claim", !p || !has(p.claim) || norm(a.claim1) === norm(p.claim), p ? p.claim : ""],
-        ["A follow-up date within a week of the LORs", gap >= 1 && gap <= 7, "1 to 7 days after"]]; }},
   {id:"records", icon:"🩺", title:"Medical Records: ChartSwap request", lesson:8, area:"records",
     about:"Request your records case’s medical records the way your firm does: through ChartSwap when the provider uses it. Find what you need in the CMS file, then fill in the ChartSwap request here.",
     tools: c => c ? [[`🗂 ${c.id} in the CMS`, FF().caseHref(c, "cm")]] : [],
@@ -200,7 +189,7 @@ ${Object.entries(run.answers).map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.jo
 The automated checks against the case file and the firm's rules (${pct}%):
 ${checks.map(x => `- ${x.ok ? "PASS" : "MISS"}: ${x.label}${!x.ok && x.want ? ` (expected: ${x.want})` : ""}`).join("\n")}
 The firm's rules for this work:
-${((f.rules || {})[{reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", claims:"claims", records:"records"}[s.id]] || []).map(x => "- " + x).join("\n")}
+${((f.rules || {})[{reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", records:"records"}[s.id]] || []).map(x => "- " + x).join("\n")}
 
 Write the evaluation the way the facilitator writes it (her feedback DNA, below): a verdict label, then "Demonstrated … understanding of …" naming exactly what was done correctly, then "However, improvement is needed in …" naming each missed item with the correct value, then the habit or rule that prevents it, tying it to the firm's rules. 3-5 sentences, third person, using the trainee's work only.
 
@@ -274,7 +263,7 @@ function renderSession(){
   if(!f) return `${back}<div class="card" style="padding:24px;">Your trainer hasn’t assigned your law firm yet.</div>`;
   const run = preview ? null : runOf(s, c), rv = run ? reviewOf(keyOf(s, c)) : null;
   const started = run && run.startedAt && !run.submittedAt, done = run && run.submittedAt;
-  const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", claims:"claims", records:"records"}[s.id];
+  const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", records:"records"}[s.id];
   return `${back}
     <div class="fss-hero"><p class="lp-eyebrow">🟢 Practice Session · ${e(f.name)}</p><h1>${s.icon} ${e(s.title)}</h1><p>${e(s.about)}</p>
       ${c ? `<p class="fss-case">🗂 Case <b>${e(c.id)}</b> · ${e(c.client.name)} · ${e(c.type)}</p>` : ""}

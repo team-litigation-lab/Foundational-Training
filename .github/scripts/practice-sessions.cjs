@@ -35,9 +35,35 @@ const failures = []; const fail = (m) => failures.push(m);
     if (land) fail(`the landing page still has ${land} Simulators / Blueprint card(s)`);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText }));
-    if (lab.sessions !== 6) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 6)`);
+    // Five Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
+    // 📚 Resource Library's LOR Drafting Activity, which has no CMS case file and no firm case.
+    if (lab.sessions !== 5) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 5)`);
     if (/All simulators|📅 Calendaring Simulators\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
+    if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
+    if (!/Resource Library/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 📚 Resource Library / LOR Drafting Activity');
     if (!/Waiting for your firm/.test(lab.text)) fail('without a firm the sessions should wait for one');
+
+    // 3b. the LOR Drafting Activity: a standalone activity, the trainer assigns the case, the trainee drafts and downloads
+    await page.evaluate(() => goto('lor')); await page.waitForTimeout(1200);
+    const lor0 = await page.evaluate(() => document.querySelector('main').innerText);
+    if (!/Do not create a case file in the CMS/i.test(lor0.replace(/\s+/g, ' '))) fail('the LOR activity does not tell trainees to keep it out of the CMS');
+    if (!/hasn’t assigned your case yet|hasn't assigned your case yet/.test(lor0)) fail('with no case assigned the LOR activity should say so');
+    await put('lorassign:' + id, { case: 1 });
+    await page.evaluate(() => { FTLor.reload(); }); await page.waitForTimeout(1500);
+    const lor = await page.evaluate(() => {
+      const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      document.querySelectorAll('.lorl-box').forEach(b => b.click());
+      return { fields: document.querySelectorAll('.lorl-in, .lorl-ta').length, boxes: document.querySelectorAll('.lorl-box').length,
+               ticked: document.querySelectorAll('.lorl-box.on').length, dateOk: (document.querySelector('.lorl-auto') || {}).textContent === today,
+               notes: document.querySelectorAll('.lor-notes dd').length, text: document.querySelector('main').innerText };
+    });
+    if (!lor.fields) fail('the LOR letter has no fields to fill in');
+    if (lor.boxes !== 3 || lor.ticked !== 3) fail(`the 1P letter's tick boxes don't work (${lor.ticked} of ${lor.boxes} ticked)`);
+    if (!lor.dateOk) fail('the letter is not dated today');
+    if (!lor.notes) fail('the assigned case notes are not on the page');
+    if (!/Sandy Van, Esq\./.test(lor.text)) fail('the letter is not the firm\'s template');
+    const lor3 = await page.evaluate(() => { FTLor.tab('lor3p'); return document.querySelector('main').innerText; });
+    if (!/AFFIDAVIT OF INSURANCE COVERAGE/.test(lor3)) fail('the 3P letter has no affidavit');
 
     // 1. Admin → 🏛 Law Firms
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'firms'; goto('admin'); }); await page.waitForTimeout(2500);
@@ -130,5 +156,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the six sessions checked against the case and the firm, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard).');
+    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Resource Library\'s LOR Drafting Activity, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard).');
 })().catch(e => { console.error(e); process.exit(1); });

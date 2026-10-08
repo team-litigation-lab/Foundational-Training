@@ -32,7 +32,7 @@ window.LSH_PROGRAM = {
   ],
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Training Modules holds the lessons. ✍️ Process Questions (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 📚 Resource Library's LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {

@@ -284,7 +284,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## 🛠 Practice Lab: real-time Practice Sessions at the trainee's own law firm
 
-**🛠 Practice Lab** (a section of the top bar) opens `#/simulators` (`js/ft-simulators.js`). Instead of simulators, the trainee does the real work, live, for their own law firm and on their own cases. The page: 🏛 their firm, 🟢 Practice Sessions, 🧑‍🏫 With your trainer and 🧪 Skill Building. The separate simulator cards are gone (the Calendaring Simulators card, the mock-call cards and *All simulators*): the CMS Call Simulator and the Google Calendar Simulator are tools inside their sessions, and the **Calendar Management Mock Calls are part of the Calendaring Practice Lab**. The main landing page has no Practice Lab / Simulators card.
+**🛠 Practice Lab** (a section of the top bar) opens `#/simulators` (`js/ft-simulators.js`). Instead of simulators, the trainee does the real work, live, for their own law firm and on their own cases. The page: 🏛 their firm, 🟢 Practice Sessions, 📚 Resource Library, 🧑‍🏫 With your trainer and 🧪 Skill Building. The separate simulator cards are gone (the Calendaring Simulators card, the mock-call cards and *All simulators*): the CMS Call Simulator and the Google Calendar Simulator are tools inside their sessions, and the **Calendar Management Mock Calls are part of the Calendaring Practice Lab**. The main landing page has no Practice Lab / Simulators card.
 
 ### 🏛 Law Firm Profiles and assignments (`js/ft-firms.js`)
 
@@ -302,7 +302,6 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 | 📅 Calendaring Practice Lab | Calendaring & Appointment Setting | the Calendar Management mock call (CMS), then the Google Calendar Simulator | the appointment: caller and case, a weekday inside the firm's hours, on the 15-minute grid, the firm's color for its length, Meet and the reminder, a description |
 | 📋 Intake Mock Calls | Intake Specialist | the CMS's Intake line, on the trainee's intake case (Intake tab) | the intake: name, DOB, DOL, case type, 3P carrier, the statute of limitations under the firm's state, injuries, the conflict check and a decision |
 | ⚖️ PI Process Flow | Personal Injury Process Flow | the trainee's case in the CMS | its phase, attorney, case manager, DOL, SOL and the next steps with who does each |
-| 🧾 Claims: LORs (1P & 3P) | Claims Specialist | the trainee's claims case (practice copy) | 3P carrier, claim, adjuster and limits, 1P coverage and claim, the follow-up date |
 | 🩺 Medical Records: ChartSwap request | Medical Records Specialist | the trainee's records case | a ChartSwap-style request: requesting firm and records email, patient and DOB, a treating provider and its first date of service, the firm's record types, a legal purpose, the HIPAA authorization (hold the request when it isn't signed yet) and who signs (the guardian or POA when the file has one) |
 
 - **Real time:** ▶ Start the session starts a clock and opens the tools (the CMS signed in: see *Training tools open signed in*); the trainee records their work on the session's form as they go and **📤 Submits for review**.
@@ -310,6 +309,28 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 - **Admin → 🟢 Practice Sessions:** **📡 Live now** (sessions in progress, refreshed every 20 s while the tab is open and visible; it can be paused), then every trainee's sessions by batch: what they recorded, the checks, the AI's evaluation and the trainer's **score and comment** (final).
 - **Graded calls** still count in their lesson: the Reception, Calendaring and Intake sessions show the lesson's best graded call from the CMS Call Simulator (`callsim:<id>`, below).
 - **Records:** `sessions:<id>` (the trainee's runs, answers, checks and the AI's evaluation), `labreview:<id>` (the trainer's reviews and inputs; admins write it, the trainee reads it).
+
+### 📚 Resource Library → LOR Drafting Activity
+
+**The Claims Specialist Practice Session is gone.** The Claims Specialist work is now the **LOR Drafting Activity** (`#/lor`, `js/ft-lor.js`), under 📚 **Resource Library** in the Practice Lab. It is a **standalone activity**: it never becomes a case file, and the page says so at the top, for trainees and trainers alike — *do not create a case file in the CMS for this activity, and do not link it to any case file*. The trainee drafts the letters here and uploads the files they download into the Smart Advocate demo by hand.
+
+- **The trainer assigns the case.** `#/lor` as an admin lists every approved trainee by batch with a case picker (one of the 18 cases of *Case Notes For Drafting Activity (SA Demo)*). Saved in `lorassign:<id>` — admins write it, the trainee reads it. Changing a trainee's case keeps whatever they have already drafted. Until a case is assigned the trainee is told to ask their trainer for one.
+- **The case notes** are on the page, the 1P set beside the 3P set, with **⬇ Download my case notes (PDF)**.
+- **Two editors**, one per activity: *Activity 1 — LOR Drafting for 1P* and *Activity 2 — LOR Drafting for 3P* (with its Affidavit of Insurance Coverage). Each shows the firm's template exactly as the `.docx` has it. **Only what the firm highlighted in yellow is editable**; everything else is fixed text.
+  - **The date is auto-generated** and is always the current date — the day the letter is drafted — as a CMS template editor does it.
+  - **"SENT VIA FACSIMILE AND E-MAIL" is typed by hand**, not offered as a placeholder: it carries the template's own wording and the trainee edits it to match how the letter actually goes out.
+  - A highlighted run longer than a line (the 3P letter's property-damage paragraph) is a textarea.
+  - **The 1P letter's three tick boxes work**, and a tick comes out as `[X]` in the download. For this activity every type of claim is ticked.
+  - Answers save as the trainee types, in `lor:<id>` (their own record).
+- **⬇ Download** gives the edited letter as a **PDF** or a **Word** file, named by the trainers' convention — `INS – <carrier> - LOR mm.dd.yyyy (VA's name)` for 1P, `… - LOR with Affidavit …` for 3P — with the carrier taken from the assigned case and the date from today.
+- **The templates are generated, not typed.** `build/lor/make_lor_data.py` reads the three files the trainers sent (kept in `build/lor/source/`, which `build` keeps out of the deployed site) and writes `js/ft-lor-data.js`. When the trainers send new templates or new case notes, run it again rather than editing the output:
+
+  ```
+  python3 build/lor/make_lor_data.py build/lor/source/Case_Notes_For_Drafting_Activity_SA_Demo.docx \
+      build/lor/source/1P_LOR.docx build/lor/source/3P_LOR_with_Affidavit.docx
+  ```
+
+  It fails rather than writing a template with no highlighted fields, so a file that lost its yellow never reaches trainees silently.
 
 ### 🧑‍🏫 Trainer Inputs: what can't be simulated
 
@@ -387,9 +408,11 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-orientation.js` | Admin → 🧭 Orientation: this program's platform orientation slides, which are also the Blueprint PDF (`/blueprint.pdf`). |
-| `js/ft-simulators.js` | The 🛠 Practice Lab page (`#/simulators`): the firm banner, the sessions' cards, demo preparation and Skill Building. |
+| `js/ft-simulators.js` | The 🛠 Practice Lab page (`#/simulators`): the firm banner, the sessions' cards, the 📚 Resource Library and Skill Building. |
 | `js/ft-firms.js` | 🏛 Law Firm Profiles, each trainee's firm and cases (Admin → 🏛 Law Firms), and 🏛 My Firm; `ftAdminTab()` for this program's admin tabs. |
 | `js/ft-sessions.js` | 🟢 Practice Sessions (`#/session`) with their checks, the AI's evaluation and the trainer's review (Admin → 🟢 Practice Sessions), and 🧑‍🏫 Trainer Inputs. |
+| `js/ft-lor.js` | 📚 Resource Library → the LOR Drafting Activity (`#/lor`): the assigned case, the two letter templates, the downloads, and the trainer's case assignment. |
+| `js/ft-lor-data.js` | Generated by `build/lor/make_lor_data.py`: the 18 cases and the two templates, exactly as the trainers' files have them. Never hand-edited. |
 | `js/ft-cases-data.js`, `build/make_cases.cjs` | The Training Library's case facts the sessions check against, generated from the CMS's `mock-cases.js`. |
 | `js/ft-drive.js` | The Task Tracker and the Monitoring Sheet in the trainee's Google Drive: the links, the checks, Admin → 📁 Drive Trackers. |
 | `js/lsh-tool-links.js` | Training tools open signed in: a fresh ticket on every CMS link (the same file in every LSH course repo). |

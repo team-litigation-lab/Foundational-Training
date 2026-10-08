@@ -3,6 +3,8 @@
    Loaded after js/ft-updates.js. A section of the top bar (js/lsh-program.js).
      • 🏛 the trainee's law firm (js/ft-firms.js), then 🟢 Practice Sessions and 🧑‍🏫 With your trainer
        (js/ft-sessions.js): real work in the CMS on the trainee's own cases, checked against their firm's rules.
+     • 📚 Resource Library: the standalone activities — the LOR Drafting Activity (js/ft-lor.js), which
+       replaced the Claims Specialist Practice Session. They are worked on here and never become a CMS case file.
      • 🧪 Skill Building: the daily typing and spelling tests.
      • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
        (js/lsh-tool-links.js). The Call Simulator is the CMS's. New tab ↗: its own tab.
@@ -95,6 +97,8 @@ function renderSimulators(){
     ${firmBanner()}
     ${window.FTSessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
       <div class="fts-grid">${FTSessions.cards()}</div></section>
+    ${window.ftLorCard ? `<section class="fts-group"><h2>📚 Resource Library</h2><p class="fts-sub">Standalone activities you work on here, on this platform. They never become a case file in the CMS.</p>
+      <div class="fts-grid">${ftLorCard()}</div></section>` : ""}
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
     ${renderSkills()}`;
