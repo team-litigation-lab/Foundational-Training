@@ -10,6 +10,7 @@
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
      🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
+     📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
      📝 Activities              actsub:<id>, the trainer's scored rubric on feedback that was sent (js/ft-activities.js)
    ============================================================ */
 (function(){
@@ -24,8 +25,8 @@ window.LSH_PROGRAM = {
   modules: [
     {view:"activities", icon:"📝", label:"Activities", about:"Each day’s activity: answer it and get your trainer’s feedback.", badge:() => typeof window.daUnreadCount === "function" ? window.daUnreadCount() : 0},
     {view:"process", icon:"✍️", label:"Process Questions", about:"Each lesson’s answer sheet, and the Knowledge Checks that grade it."},
-    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your daily task sheet, checked against the tracker rules."},
-    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet, with feedback on each entry."},
+    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
+    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
@@ -72,6 +73,9 @@ window.LSH_PROGRAM = {
     {id:"trainer", icon:"🧑‍🏫", label:"With your trainer", key:"labreview:",
       about:"The demos and mock calls you do live with your trainer, as your trainer recorded them.",
       items: ctx => typeof window.ftTrainerItems === "function" ? window.ftTrainerItems(ctx) : []},
+    {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
+      about:"Your Daily Task Tracker and Training Monitoring Sheet in your VA Output folder: the system’s checks, or your trainer’s score where they gave one.",
+      items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
     {id:"activities", icon:"📝", label:"Activities", key:"actsub:",
       about:"Your trainer’s feedback on the daily activities. A scored rubric counts toward your score; a rating alone shows here.",
       items: ctx => {

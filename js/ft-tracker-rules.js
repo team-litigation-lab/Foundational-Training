@@ -4,7 +4,10 @@
    trainee types) and by worker.js (the automatic daily check). Keep it
    plain JavaScript with no imports so both can load it.
    Add a rule to RULES to extend the daily check; each rule returns
-   {pass, pct, detail, flags:[{row, col, msg}]}.
+   {pass, pct, detail, flags:[{row, col, msg}]} (or null when it doesn't apply).
+   The trainee's tracker is a Google Sheet in their VA Output folder (js/ft-drive.js): fromSheetCsv turns the
+   sheet (its CSV export) into the same workbook, so the same rules check it; gradeMonitorText checks the
+   Training Monitoring Sheet's text the same way (rule-based, no AI).
    ============================================================ */
 (function(root){
   const TZ = "America/Los_Angeles";      // training days follow the firm's time zone
@@ -95,6 +98,13 @@
          : missing.length ? `${missing.length} of ${rows.length} open task${rows.length === 1 ? "" : "s"} ha${missing.length === 1 ? "s" : "ve"} no note for ${fmtDate(D)}.`
          : `All ${rows.length} open task${rows.length === 1 ? "" : "s"} have a note for ${fmtDate(D)}.`;
        return {pass: missing.length === 0, pct, detail, flags};
+     }},
+    {id: "output-links", label: "The day's output links submitted (VA Output folder)",
+     run(t, D){
+       if(!t || !t.drive) return null;   // only for a tracker kept in Google Drive (js/ft-drive.js)
+       const links = (((t.drive.days || {})[D] || {}).links || []).filter((l) => /^https:\/\/(drive|docs)\.google\.com\//.test(String(l.url || "")));
+       return links.length ? {pass: true, pct: 100, detail: `${links.length} output link${links.length === 1 ? "" : "s"} submitted for ${fmtDate(D)}.`, flags: []}
+         : {pass: false, pct: 0, detail: `No output links submitted for ${fmtDate(D)}.`, flags: []};
      }}
   ];
 
@@ -105,7 +115,7 @@
   function checkDay(t, D){
     const st = startDate(t);
     if(st && D < st) return {date: D, na: true, pass: true, pct: null, rules: [], flags: []};
-    const rules = RULES.map((rule) => Object.assign({id: rule.id, label: rule.label}, rule.run(t, D)));
+    const rules = RULES.map((rule) => { const x = rule.run(t, D); return x && Object.assign({id: rule.id, label: rule.label}, x); }).filter(Boolean);
     const pct = rules.length ? Math.round(rules.reduce((a, r) => a + r.pct, 0) / rules.length) : 100;
     return {date: D, pass: rules.every((r) => r.pass), pct, rules, flags: [].concat(...rules.map((r) => r.flags))};
   }
@@ -128,6 +138,92 @@
     };
   }
 
-  root.FTTrackerRules = {TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
+  /* ---------- the tracker and the Monitoring Sheet kept in Google Drive ---------- */
+  // A Google Sheets / Docs link → its id and tab (gid), and the export address the Worker reads.
+  function googleFile(url){
+    const u = String(url || ""), id = (u.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || u.match(/[?&]id=([a-zA-Z0-9_-]{20,})/) || [])[1] || "";
+    const gid = (u.match(/[#&?]gid=(\d+)/) || [])[1] || "0";
+    const kind = /docs\.google\.com\/spreadsheets/.test(u) ? "sheet" : /docs\.google\.com\/document/.test(u) ? "doc" : /drive\.google\.com\/drive\/(u\/\d+\/)?folders/.test(u) ? "folder" : id ? "file" : "";
+    return {id, gid, kind,
+      exportUrl: kind === "sheet" ? `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}` : kind === "doc" ? `https://docs.google.com/document/d/${id}/export?format=txt` : ""};
+  }
+  function parseCsv(text){
+    const rows = []; let row = [], cell = "", q = false;
+    const s = String(text || "").replace(/^\uFEFF/, "");
+    for(let i = 0; i < s.length; i++){
+      const c = s[i];
+      if(q){ if(c === '"'){ if(s[i + 1] === '"'){ cell += '"'; i++; } else q = false; } else cell += c; continue; }
+      if(c === '"') q = true; else if(c === ",") { row.push(cell); cell = ""; } else if(c === "\n" || c === "\r"){ if(c === "\r" && s[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; } else cell += c;
+    }
+    if(cell || row.length){ row.push(cell); rows.push(row); }
+    return rows;
+  }
+  const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  // "10/8/2026", "10/08", "2026-10-08", "Oct 8, 2026", "October 8" → "2026-10-08" (a date without a year takes `year`)
+  function isoDate(v, year){
+    const t = String(v || "").trim(); let m;
+    const out = (y, mo, d) => (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) ? `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}` : "";
+    if((m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return out(m[1], +m[2], +m[3]);
+    if((m = t.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/))) return out(m[3] ? (m[3].length === 2 ? "20" + m[3] : m[3]) : year, +m[1], +m[2]);
+    if((m = t.match(/^(?:[A-Za-z]+,?\s+)?([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?$/)) && MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) >= 0) return out(m[3] || year, MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1, +m[2]);
+    return "";
+  }
+  // The trainee's Daily Task Tracker sheet (the LSH sample's layout) → the workbook the rules check.
+  // The header row is the one with "Task Details"; the Daily Notes columns are the dated headers between
+  // "Accountable VA" and "VA Notes"; "⬇ FOR COMPLETION ⬇" / "RECURRING" / "COMPLETED" rows start the sections.
+  function fromSheetCsv(csv, opts){
+    const o = opts || {}, rows = parseCsv(csv), year = (o.today || ptDate()).slice(0, 4);
+    const hi = rows.findIndex((r) => r.some((c) => /task\s*details/i.test(c)));
+    if(hi < 0) return null;
+    const head = rows[hi].map((c) => String(c || "").trim()), find = (re) => head.findIndex((c) => re.test(c));
+    const col = {dateReceived: find(/date\s*received/i), type: find(/type\s*of\s*task/i), details: find(/task\s*details/i), va: find(/accountable/i),
+      vaNotes: find(/va\s*notes/i), deadline: find(/deadline/i), status: find(/^status/i), completedOn: find(/completion/i)};
+    const from = col.va >= 0 ? col.va + 1 : col.details + 1, to = col.vaNotes > from ? col.vaNotes : head.length;
+    const dateCols = [];
+    for(let i = from; i < to; i++){ const d = isoDate(head[i], year) || isoDate((rows[hi - 1] || [])[i], year); if(d) dateCols.push([i, d]); }
+    let section = "completion"; const out = [];
+    rows.slice(hi + 1).forEach((r) => {
+      const line = r.join(" ");
+      if(/for\s*completion/i.test(line) && !has(r[col.details])){ section = "completion"; return; }
+      if(/recurring/i.test(line) && !has(r[col.details])){ section = "recurring"; return; }
+      if(/completed/i.test(line) && !has(r[col.details]) && !has(r[col.type])){ section = "completed"; return; }
+      const get = (k) => col[k] >= 0 ? String(r[col[k]] || "").trim() : "";
+      const row = taskRow(section, {dateReceived: isoDate(get("dateReceived"), year), type: get("type"), details: get("details"), va: get("va"),
+        vaNotes: get("vaNotes"), deadline: get("deadline"), status: get("status"), completedOn: isoDate(get("completedOn"), year), notes: {}});
+      dateCols.forEach(([i, d]) => { if(has(r[i])) row.notes[d] = String(r[i]).trim(); });
+      if(isTask(row)) out.push(row);
+    });
+    return {v: 1, source: "drive", startDate: o.startDate || "", tracker: {noteDates: dateCols.map((x) => x[1]), rows: out}};
+  }
+  // The Training Monitoring Sheet's text (a Google Doc's text, or a sheet's CSV joined into lines), checked per discussion:
+  // its title found, a date, 5 takeaways (lines of 4+ words), questions, and the understanding rated.
+  // The classroom discussions (the Hubstaff To-Dos), until a trainer sets the list (settings:monitor). js/ft-monitoring.js uses it too.
+  const MONITOR_TOPICS = ["Virtual Assistant Essentials - Day 1", "Virtual Assistant Essentials - Day 2",
+    "Reception Training Day 1", "Reception Training Day 2", "Reception Training Day 3", "Calendar Management Training",
+    "Intake Training Day 1", "Intake Training Day 2", "Intake Training Day 3",
+    "Insurance Communication Training Day 1", "Insurance Communication Training Day 2", "Insurance Communication Training Day 3",
+    "Provider Communication Training Day 1", "Provider Communication Training Day 2", "Provider Communication Training Day 3", "Provider Communication Training Day 4"];
+  const RATING_HINTS = ["really don", "on my own but", "confident that i can", "can teach this"];
+  function gradeMonitorText(text, topics){
+    const lines = String(text || "").split(/\r?\n/).map((l) => l.replace(/^[\s,]+|[\s,]+$/g, "")).filter(Boolean);
+    const low = lines.map((l) => l.toLowerCase());
+    const starts = (topics || []).map((t) => ({t, at: low.findIndex((l) => l.includes(String(t.title || t).toLowerCase()))})).filter((x) => x.at >= 0).sort((a, b) => a.at - b.at);
+    const entries = starts.map((x, k) => {
+      const seg = lines.slice(x.at + 1, k + 1 < starts.length ? starts[k + 1].at : lines.length), segLow = seg.map((l) => l.toLowerCase());
+      const qi = segLow.findIndex((l) => /question/.test(l)), ri = segLow.findIndex((l) => /rate your understanding|understanding/.test(l));
+      const ti = segLow.findIndex((l) => /takeaway/.test(l));
+      const words = (l) => l.replace(/^\s*(\d+[.)]|[-•*])\s*/, "").split(/\s+/).filter(Boolean).length;
+      const take = seg.slice(ti >= 0 ? ti + 1 : 0, qi > ti ? qi : (ri > ti ? ri : seg.length)).filter((l) => words(l) >= 4);
+      const qs = qi >= 0 ? seg.slice(qi + 1, ri > qi ? ri : seg.length).filter((l) => words(l) >= 2) : [];
+      const rated = segLow.some((l) => RATING_HINTS.some((h) => l.includes(h)) && /[x✓✔☑☒■●▣]|\bselected\b|\(x\)|\[x\]/i.test(l)) || segLow.some((l) => /^rating\s*[:\-]\s*[1-4]/.test(l));
+      const checks = [["Date", seg.some((l) => isoDate(l.replace(/^date\s*[:\-]?\s*/i, ""), "2000") || /\b\d{1,2}\/\d{1,2}(\/\d{2,4})?\b/.test(l))],
+        ["5 takeaways", take.length >= 5], ["Questions", qs.length >= 1], ["Understanding rated", rated]];
+      return {topic: x.t.title || x.t, takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
+    });
+    const pct = entries.length ? Math.round(entries.reduce((a, x) => a + x.pct, 0) / entries.length) : 0;
+    return {pct, found: entries.length, total: (topics || []).length, entries};
+  }
+
+  root.FTTrackerRules = {MONITOR_TOPICS, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
     ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, reviewPrompt};
 })(typeof globalThis !== "undefined" ? globalThis : this);
