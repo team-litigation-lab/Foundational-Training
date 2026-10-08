@@ -232,24 +232,14 @@ window.FTProcess = {
   reload(){ FP.id = null; FP.err = ""; render(); }
 };
 
-/* ---------- the lesson: its last slide ---------- */
+/* ---------- a lesson's Knowledge Check questions ---------- */
 // Which questions each lesson's Knowledge Check asks: a set's own lesson, or (kc) split across lessons.
 const kcLessons = set => set.kc ? Object.keys(set.kc).map(Number) : [set.lesson];
 const kcQuestionsFor = lessonId => PROCESS_SETS.flatMap(set => kcLessons(set).includes(lessonId)
   ? (set.kc ? set.kc[lessonId] : set.questions.map((_,i)=>i)).map(i=>({set, i, q:set.questions[i]})) : []);
 window.ftKcQuestions = kcQuestionsFor;
-PROCESS_SETS.forEach(set=>kcLessons(set).forEach(lessonId=>{
-  const d = DAYS.find(x=>x.id===lessonId); if(!d || d.sections.some(s=>s.id==="process-questions")) return;
-  d.sections.push({id:"process-questions", h:"Process Questions", get html(){
-    const audience = typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE;
-    return `<div class="fp-slide"><p class="fp-lead">These are this lesson's Knowledge Check. Answer each one in complete sentences on the platform: each answer is graded, and 70% passes the lesson.</p>
-      <ol class="fp-slide-qs">${kcQuestionsFor(lessonId).map(x=>`<li value="${x.i+1}">${e(x.q)}</li>`).join("")}</ol>
-      <p class="fp-lead"><b>Naming convention:</b> <code>${e(fileName(set, audience ? "VA’s first name" : ""))}</code></p>
-      ${audience ? "" : `<div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" onclick="FTKc.open(${lessonId})">📝 Take the Knowledge Check</button></div>`}</div>`;
-  }});
-  d.lessons = d.sections.map(x=>({h:x.h}));
-}));
-// Lesson cards show only Start and ▶ Video Presentation: the Process Questions open from the lesson's last slide.
+// The Process Questions aren't a slide in the lessons: they open from ✍️ Process Questions in the top bar
+// (js/lsh-program.js), and finishing a lesson opens its Knowledge Check (finishTrainingForDay, below).
 
 /* ---------- admin: every trainee's answer sheets ---------- */
 const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}};
