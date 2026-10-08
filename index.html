@@ -88,7 +88,7 @@ button{font-family:inherit;cursor:pointer;}
   box-shadow:0 2px 16px rgba(0,0,0,.15);
 }
 .topbar-inner{
-  max-width:1400px;margin:0 auto;padding:10px 20px;
+  max-width:1400px;margin:0 auto;padding:14px 20px;
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   flex-wrap:wrap;row-gap:10px;
 }
@@ -122,7 +122,7 @@ button{font-family:inherit;cursor:pointer;}
 .search-results .sr-empty{padding:14px;font-size:var(--font-sub);color:var(--ink-soft);text-align:center;}
 
 .brand{display:flex;align-items:center;gap:12px;cursor:pointer;flex:0 0 auto;min-width:0;}
-.brand-mark{width:40px;height:40px;flex:0 0 auto;object-fit:contain;background:#fff;padding:3px;border-radius:7px;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+.brand-mark{width:48px;height:48px;flex:0 0 auto;object-fit:contain;background:#fff;padding:3px;border-radius:7px;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.25);}
 /* the Legal Support Help logo (navy background) sits straight on the navy top bar */
 .brand-mark.brand-logo{width:auto;height:46px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
 .brand-text{display:flex;flex-direction:column;line-height:1.15;min-width:0;}
@@ -1617,10 +1617,10 @@ main.has-presenter{padding-right:calc(clamp(170px,16vw,250px) + 16px);}
   html{-webkit-text-size-adjust:100%;}
   body{font-size:15px;}
   /* compact top bar with a Menu button */
-  .topbar-inner{padding:8px 12px;flex-wrap:nowrap;gap:10px;}
+  .topbar-inner{padding:10px 12px;flex-wrap:nowrap;gap:10px;}
   .brand-text span{display:none;}
   .brand-text b{font-size:14px;max-width:170px;}
-  .brand-mark{width:34px;height:34px;}
+  .brand-mark{width:40px;height:40px;}
   .brand-mark.brand-logo{width:auto;height:38px;}
   .mobile-menu-btn{display:flex;align-items:center;gap:6px;margin-left:auto;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:10px;padding:8px 12px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;}
   .mobile-menu-btn span{font-size:13px;}
@@ -6028,7 +6028,7 @@ function completionRibbonSvg(pct, done){
   </svg>`;
 }
 function brandMark(){
-  return `<img class="brand-mark brand-logo" src="${LOGO_FULL_SRC}" alt="Legal Support Help">`;
+  return `<img class="brand-mark" src="${LOGO_ICON_SRC}" alt="LSH logo">`;
 }
 
 /* ---------- top bar ---------- */

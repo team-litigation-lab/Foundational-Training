@@ -7,7 +7,7 @@
      On a laptop or desktop they grow into the height that's left, so the dashboard fills the screen
      with no empty space under it.
    - Progress stats: one small band right under the day cards (not a side column, not above the days).
-   - Top bar: the Legal Support Help logo for dark backgrounds.
+   - Top bar: the LSH mark in its white square, the same logo on every LSH site (courses and the Training Portal).
    Loaded last, after the course's own update files.
    ============================================================ */
 (function(){
@@ -68,9 +68,9 @@
     };
     renderDashboard.__band = true;
   }
-  /* 4. Top bar: the Legal Support Help logo (the course's full logo). */
-  if(typeof brandMark === "function" && typeof LOGO_FULL_SRC !== "undefined"){
-    brandMark = function(){ return `<img class="brand-mark brand-logo" src="${LOGO_FULL_SRC}" alt="Legal Support Help">`; };
+  /* 4. Top bar: the LSH mark in its white square (the universal logo: the courses and the Training Portal show the same one). */
+  if(typeof brandMark === "function" && typeof LOGO_ICON_SRC !== "undefined"){
+    brandMark = function(){ return `<img class="brand-mark" src="${LOGO_ICON_SRC}" alt="Legal Support Help">`; };
   }
   /* 5. The banner heading and tagline each fit on one line at the compact sizes. */
   if(typeof fitHeroText === "function"){
