@@ -565,8 +565,8 @@ document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState 
 const __ftGoto = window.goto;
 window.goto = function(view){ const r = __ftGoto.apply(this, arguments); if(view==="dashboard") ftRefreshOpenDays(60000); return r; };
 
-/* The admin tabs that list every trainee's sheet (📋 Task Trackers, 📒 Monitoring Sheets, ✍️ Process Questions)
-   read them with sharedGetMany, 20 keys to a request (the requests sent together), not one request per key:
+/* The pages that list every trainee's sheet (📋 Task Trackers and 📒 Monitoring Sheets in the Admin screen,
+   ✍️ Process Questions in its own feature) read them with sharedGetMany, 20 keys to a request (the requests sent together), not one request per key:
    a sheet can be up to about 1 MB, so this keeps each answer from the Worker a sensible size. Values come back
    in the order asked (null when missing). */
 async function ftGetMany(keys, per){

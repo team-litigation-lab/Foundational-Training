@@ -1,22 +1,24 @@
 /* ============================================================
    Process Questions — each lesson's answer sheet, answered on the platform
-   Loaded after js/ft-monitoring.js. Trainees answer them in the lesson's 📝 Knowledge Check (#/kc, from its
-   last slide), which also saves the sheet with its proper name. The ✍️ Process Questions page (#/process)
-   has no tab: the Knowledge Check is the same questions.
+   Loaded after js/ft-monitoring.js. ✍️ Process Questions is its own feature, with its own button in the top
+   bar (#/process): it is not a page of 📚 Training Modules and it has no tab in 🛡 Admin Master Control.
+   A lesson's last slide (✓ Finish lesson) routes here, to that lesson's answer sheet, instead of opening a
+   Knowledge Check inside the lesson. The graded view (#/kc) belongs to this feature too, not to the modules.
      • Trainees answer each question (saved to process:<id> as they type) and
        submit the sheet. They can save it to their Google Drive with the
        proper name: 📄 Save to My Google Drive copies the answers and opens a
        new Google Doc already named with the sheet's naming convention (in
        their trainee folder once they've saved its link), or ⬇ Download as
        Word gives a file with that name to upload.
-     • Admin → ✍️ Process Questions: batch → trainee → each answer sheet
-       (submitted or not, how many answered, the answers), and the line for
-       the ranking report ("Out of N expected answer sheets, X were submitted").
+     • Admins open the same ✍️ Process Questions button and get every trainee's
+       sheets: batch → trainee → each answer sheet (submitted or not, how many
+       answered, the answers), and the line for the ranking report ("Out of N
+       expected answer sheets, X were submitted"). There is no Admin tab for it.
      • The Process Questions are the Knowledge Check: 📝 Submit for Grading on a sheet grades it (#/kc), in
        the facilitator's feedback DNA (js/ft-facilitator-dna.js), and the trainer adds their own review
-       (Admin → ✍️ Process Questions: a comment per answer, an overall comment and a final score), saved in
-       kcreview:<id>, which the trainee reads but never writes. The questions are no longer a slide: the
-       lesson's ✓ Finish lesson opens its Knowledge Check.
+       (✍️ Process Questions as an admin: a comment per answer, an overall comment and a final score), saved
+       in kcreview:<id>, which the trainee reads but never writes. The questions are no longer a slide: the
+       lesson's ✓ Finish lesson opens ✍️ Process Questions at that lesson's sheet.
      • PROCESS_SETS: one per lesson. Add a lesson's questions there.
    ============================================================ */
 (function(){
@@ -120,7 +122,9 @@ async function load(id){
   try{ FP.data = (await sharedGet("process:"+id)) || {v:1, sets:{}}; if(!FP.data.sets) FP.data.sets = {}; }
   catch(err){ FP.err = "Couldn't load your answers. Check your connection and try again."; }
   FP.loading = false;
-  if(["process","dashboard","day"].includes(state.view)) render();
+  // "kc" too: a trainee who opens a Knowledge Check before their answers are in would otherwise
+  // be left on "Loading your answers…" with no boxes to write in until they navigated away.
+  if(["process","kc","dashboard","day"].includes(state.view)) render();
 }
 function sheet(sid){ const s = FP.data.sets; return s[sid] || (s[sid] = {answers:[], submittedAt:"", updatedAt:""}); }
 function queueSave(){
@@ -160,7 +164,7 @@ function setCard(set){
   const open = FP.open[set.id] != null ? FP.open[set.id] : true;
   const name = fileName(set);
   if(locked) return `<div class="card fp-set fp-locked"><div class="fp-head"><b>${e(set.title)}</b><span class="fp-st st-none">🔒 Opens with the lesson</span></div></div>`;
-  return `<details class="card fp-set" ${open?"open":""} ontoggle="FTProcess.toggle('${set.id}', this.open)">
+  return `<details class="card fp-set" id="fpSet-${set.id}" ${open?"open":""} ontoggle="FTProcess.toggle('${set.id}', this.open)">
     <summary class="fp-head"><b>${e(set.title)}</b><span class="fp-count" id="fpCount-${set.id}">${answered(set, x)} of ${set.questions.length} answered</span><span class="fp-st st-${s.k}" id="fpSt-${set.id}">${s.t}</span></summary>
     <div class="fp-body">
       <div class="fp-name"><span>Naming convention</span><code>${e(name)}</code>
@@ -180,7 +184,10 @@ function setCard(set){
 }
 function renderPage(){
   if(!state.traineeId && !state.isAdmin) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
-  if(state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Trainees answer the Process Questions here. See every trainee’s answers in <a class="fp-link" onclick="state.adminTab='process'; goto('admin')">Admin → ✍️ Process Questions</a>.</div>`;
+  // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
+  if(state.isAdmin && !state.adminPreview) return `<div class="fp-hero"><h1>✍️ Process Questions</h1>
+      <p>Every trainee’s answer sheets and Knowledge Checks, by batch. Trainees answer the questions on this same page.</p></div>
+    ${renderAdminProcess()}`;
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   loadReview();
   if(FP.err) return `<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
@@ -196,6 +203,15 @@ function renderPage(){
 }
 
 window.FTProcess = {
+  // ✍️ Process Questions, at one lesson's answer sheet: where a lesson's ✓ Finish lesson sends the trainee.
+  openLesson(lesson){
+    const sets = PROCESS_SETS.filter(s => kcLessons(s).includes(Number(lesson)));
+    if(!sets.length) return;
+    PROCESS_SETS.forEach(s => { FP.open[s.id] = sets.includes(s); });
+    goto("process");
+    const id = sets[0].id;
+    setTimeout(() => { const el = document.getElementById("fpSet-" + id); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); else window.scrollTo(0, 0); }, 80);
+  },
   set(sid, i, v){
     const x = sheet(sid); x.answers[i] = v; x.updatedAt = new Date().toISOString(); queueSave();
     const set = PROCESS_SETS.find(s=>s.id===sid), c = document.getElementById("fpCount-"+sid), st = document.getElementById("fpSt-"+sid);
@@ -265,7 +281,7 @@ async function loadAdmin(){
     FPA.rows = rows.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
   }catch(err){ FPA.rows = []; }
   FPA.loading = false;
-  if(state.view==="admin" && state.adminTab==="process") render();
+  if(state.view==="process") render();
 }
 // The ranking report's line, in the facilitator's words.
 function reportLine(x){
@@ -353,21 +369,6 @@ window.render = function(){
   paintSave();
   try{ afterRender(); }catch(err){}
 };
-const __admin = window.renderAdmin;
-window.renderAdmin = function(){
-  const tab = `<button class="admin-tab-btn ${state.adminTab==="process"?"active":""}" onclick="setAdminTab('process')">✍️ Process Questions</button>`;
-  if(state.adminTab==="process"){
-    state.adminTab = "opendays";                   // borrow the tab bar…
-    let out = __admin.apply(this, arguments);
-    state.adminTab = "process";
-    const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-    const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + tab + "</div>";
-    return bar + renderAdminProcess();
-  }
-  const out = __admin.apply(this, arguments);
-  const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
-  return end > 0 ? out.slice(0, end) + tab + out.slice(end) : out;
-};
 // A trainee's answers load with the dashboard, so the lesson card and the slide know them.
 const __dash = window.renderDashboard;
 window.renderDashboard = function(){
@@ -445,7 +446,7 @@ function renderKc(){
     <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; <b>${KC_PASS}% passes</b> and finishes the lesson. Retakes keep your best score, and your trainer adds their own review.</p>`;
   if(state.isAdmin && !state.adminPreview) return `${back}<div class="kc-hero">${intro}</div>
     <div class="card kc-card"><ol class="fp-qs">${qs.map(x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`).join("")}</ol>
-    <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are in Admin → ✍️ Process Questions.</p></div>`;
+    <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are under ✍️ Process Questions in the top bar.</p></div>`;
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   if(FP.err) return `${back}<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `${back}<div class="card" style="padding:28px;">Loading your answers…</div>`;
@@ -541,9 +542,10 @@ Return ONLY a JSON object, no other text:
     }
   }
 };
-// Finishing a lesson that has process questions opens its Knowledge Check instead.
+// Finishing a lesson that has process questions routes to ✍️ Process Questions (its own feature, its own button in
+// the top bar), opening that lesson's answer sheet — rather than a Knowledge Check inside the lesson.
 const __finish = window.finishTrainingForDay;
-window.finishTrainingForDay = function(id){ return kcQuestionsFor(Number(id)).length ? FTKc.open(Number(id)) : __finish.apply(this, arguments); };
+window.finishTrainingForDay = function(id){ return kcQuestionsFor(Number(id)).length ? FTProcess.openLesson(Number(id)) : __finish.apply(this, arguments); };
 window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrainingForDay(state.dayId); };
 // the page, beside ✍️ Process Questions
 const __kcRender = window.render;

@@ -168,11 +168,14 @@ async function workerChecks() {
     t0 = Date.now();
     await page.evaluate(async () => { await loadAdminLedger(); });
     if (since(t0, x => x.path === '/api/storage/get').length) fail('opening the Trainee Audit still reads the trainees one at a time');
-    // 📋 Task Trackers, 📒 Monitoring Sheets, ✍️ Process Questions: the list, the trainees, their sheets
+    // 📋 Task Trackers and 📒 Monitoring Sheets (Admin tabs) and ✍️ Process Questions (its own page, no
+    // Admin tab): the list, the trainees, their sheets. Each reads the sheets with get-many, not one by one.
     await page.evaluate(() => goto('admin')).catch(e => fail(`opening Admin: ${e.message}`)); await page.waitForTimeout(1500);
-    for (const [tab, sheets, label] of [['trackers', 'tracker|trackerreview', 'Task Trackers'], ['monitor', 'monitor', 'Monitoring Sheets'], ['process', 'process', 'Process Questions']]) {
+    for (const [tab, sheets, label] of [['trackers', 'tracker|trackerreview', 'Task Trackers'], ['monitor', 'monitor', 'Monitoring Sheets'], ['#process', 'process', 'Process Questions']]) {
+        // settle whatever the page before this one started, so the window below counts only this page's requests
+        await page.waitForTimeout(1200);
         t0 = Date.now();
-        await page.evaluate((tab) => setAdminTab(tab), tab).catch(e => fail(`opening ${label}: ${e.message}`));
+        await page.evaluate((tab) => tab.charAt(0) === '#' ? goto(tab.slice(1)) : setAdminTab(tab), tab).catch(e => fail(`opening ${label}: ${e.message}`));
         await page.waitForTimeout(1500);
         const one = since(t0, x => x.path === '/api/storage/get' && new RegExp(`^(trainee|${sheets}):`).test(x.key));
         if (one.length) fail(`${label} reads ${one.length} records one at a time: ${JSON.stringify(one.map(x => x.key))}`);
@@ -184,5 +187,5 @@ async function workerChecks() {
 
     await browser.close();
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log(`Server requests test passed (get-many rules and the "ft:" prefix; a trainee's page: ${all.length} requests in 8 s of sped-up checks, the tasks for all ${nDays} lessons in one, none in the background or on a quick tab switch; a dead server doesn't sign anyone out or lock their lessons; the Trainee Audit in 2 requests; the Task Trackers, Monitoring Sheets and Process Questions tabs with get-many).`);
+    console.log(`Server requests test passed (get-many rules and the "ft:" prefix; a trainee's page: ${all.length} requests in 8 s of sped-up checks, the tasks for all ${nDays} lessons in one, none in the background or on a quick tab switch; a dead server doesn't sign anyone out or lock their lessons; the Trainee Audit in 2 requests; the Task Trackers and Monitoring Sheets tabs and the Process Questions page with get-many).`);
 })().catch(e => { console.error(e); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); });

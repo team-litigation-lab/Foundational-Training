@@ -59,7 +59,7 @@ window.LSH_BLUEPRINT = {
       { icon: '✍️', title: 'Process Questions', points: [
           'Each lesson\'s answer sheet, by batch and trainee: submitted or not, how many answered, the answers.',
           'A ready line for the ranking report, in the facilitator\'s words.'],
-        where: 'Admin → ✍️ Process Questions.',
+        where: '✍️ Process Questions in the top bar (its own feature — it is not a tab of this Admin screen).',
         tip: 'Copy the ranking line straight into the weekly report.' },
       { icon: '📋', title: 'Task Trackers', points: [
           'Every trainee\'s Daily Task Tracker, checked each evening against the tracker\'s rules: a ✅ or ❌ per rule and the day\'s %.',
