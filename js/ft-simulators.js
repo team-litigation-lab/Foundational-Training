@@ -30,7 +30,7 @@ const TOOLS = {
 
 // Every live simulator on the LSH Training Portal (its hub: /simulators.html), open to practice any time.
 const PORTAL_ALL = [
-  {id:"call", icon:"📞", name:"Call Simulator", page:"call.html", desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
+  {id:"call", icon:"📞", name:"Call Simulator", cms:true, desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
   {id:"calsim", icon:"📅", name:"Calendaring Simulators", page:"calsim.html", desc:"The Google Calendar Simulator for each program: Standard Training (callers’ appointments), the Litigation Week and the Executive Week, plus a week full of conflicts to fix."},
   {id:"email", icon:"✉️", name:"Email Workspace", page:"email.html", desc:"A Gmail-style practice inbox: triage, label, reply, forward and report phishing."},
   {id:"replies", icon:"📨", name:"Email Replies", page:"email-replies.html", desc:"One email at a time, answered like at work: an upset client, an adjuster, a lien letter, your attorney."},
@@ -79,11 +79,21 @@ const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
 // key: a tool id, or a Training Library case id ("MC-04")
 function keyHref(key, a){
   if(/^MC-\d+$/.test(key)) return cmsHref({program:a.cms, mock:key});
-  if(key==="random") return portalHref("call.html", a.title, true);
-  if(key==="practice") return portalHref("call.html", a.title);
+  if(key==="random") return callsHref(a.title, true);
+  if(key==="practice") return callsHref(a.title);
   const t = TOOLS[key];
   if(t.cms) return cmsHref({program: key==="drill" ? "reception" : a.cms}, t.cms);
-  return portalHref(t.page, key==="call" ? a.title : "");
+  if(key==="call") return callsHref(a.title);
+  return portalHref(t.page);
+}
+// The Call Simulator is the CMS's: opened straight there (not through the Portal's call.html), so the trainee's ticket
+// (js/lsh-tool-links.js) signs them in with no log-in page. Graded calls still reach callsim:<id> (the CMS reports them to
+// the Portal's /api/call-results). line = the mock call's title; mode=graded lists the line's graded calls first.
+function callsHref(line, graded){
+  const q = new URLSearchParams({calls:"1", program:"FT", from:"standard"});
+  if(line) q.set("line", line);
+  if(graded) q.set("mode", "graded");
+  return CMS + "?" + addWho(q);
 }
 // The trainee's name and batch go with the link, so their scores are saved for the trainer.
 function addWho(q){
@@ -212,7 +222,7 @@ function renderSimulators(){
       <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
       <div class="fts-grid fts-all">${PORTAL_ALL.map(t=>`<div class="card fts-card">
         <h3>${t.icon} ${esc(t.name)}</h3><p class="fts-note">${esc(t.desc)}</p>
-        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" onclick="ftsOpenPortal('${t.id}')">Open ↗</button><a class="btn btn-ghost btn-sm" href="${esc(portalHref(t.page))}" target="_blank" rel="noopener">New tab ↗</a></div>
+        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" onclick="ftsOpenPortal('${t.id}')">Open ↗</button><a class="btn btn-ghost btn-sm" href="${esc(t.cms ? callsHref() : portalHref(t.page))}" target="_blank" rel="noopener">New tab ↗</a></div>
       </div>`).join("")}</div></section>`;
 }
 
@@ -238,7 +248,7 @@ window.ftsOpen = function(i, id){
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsCalsim = function(track, scores){ window.open(portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
 window.ftsOpenPortal = function(id){
-  const t = PORTAL_ALL.find(x=>x.id===id); if(t) ftsShow(portalHref(t.page), t.name);
+  const t = PORTAL_ALL.find(x=>x.id===id); if(t) ftsShow(t.cms ? callsHref() : portalHref(t.page), t.name);
 };
 function ftsShow(url, name){
   // A Portal page needs the Portal sign-in cookie, which the browser doesn't send into a frame inside this site (it showed the
@@ -248,7 +258,10 @@ function ftsShow(url, name){
   const p = ftsPanel();
   p.querySelector("#fts-panel-title").textContent = name;
   p.querySelector("#fts-panel-link").href = url;
-  p.querySelector(".fts-panel-body").innerHTML = `<iframe id="ftsIframe" src="${esc(url)}" title="${esc(name)}" allow="microphone; clipboard-read; clipboard-write; fullscreen" allowfullscreen></iframe>`;
+  p.querySelector(".fts-panel-body").innerHTML = `<iframe id="ftsIframe" title="${esc(name)}" allow="microphone; clipboard-read; clipboard-write; fullscreen" allowfullscreen></iframe>`;
+  // the frame's address carries the trainee's ticket, so the CMS opens signed in (js/lsh-tool-links.js)
+  const f = p.querySelector("#ftsIframe");
+  (window.LSHToolLinks ? LSHToolLinks.ticketed(url) : Promise.resolve(url)).then(u=>{ if(f.isConnected) f.src = u; });
   p.classList.add("open"); document.body.classList.add("fts-panel-open");
 }
 window.ftsClose = function(){

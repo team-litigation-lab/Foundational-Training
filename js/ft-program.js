@@ -3,7 +3,8 @@
    the pages under 📚 Training Modules, what the 🏅 Scorecard collects and the 🛠 Practice Lab's pages.
    Loaded just before js/lsh-program.js.
    Every grade the platform gives a trainee, one source each:
-     ✍️ Knowledge Checks        state.progress[lesson].score, the best attempt (js/ft-process.js; 70% passes)
+     ✍️ Knowledge Checks        kcreview:<id>, the trainer's final score, else state.progress[lesson].score, the best attempt
+                                (js/ft-process.js; 70% passes)
      🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
@@ -32,10 +33,12 @@ window.LSH_PROGRAM = {
   labViews: ["simulators", "calsim"],  // 🛠 Practice Lab: the Simulators page and the Calendaring Simulators
   shared: ACT_DAYS,   // the activities' titles
   sources: [
-    {id:"kc", icon:"✍️", label:"Knowledge Checks",
-      about:"Each lesson’s process questions, graded out of 100. Your best attempt counts; 70% passes the lesson.",
+    {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
+      about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",
       items: ctx => DAYS.filter(d => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(d.id).length).map(d => {
-        const p = ctx.progress[d.id] || {};
+        const p = ctx.progress[d.id] || {}, rv = (((ctx.rec["kcreview:"] || {}).lessons) || {})[d.id];
+        const t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
+        if(t != null) return {name:d.title, pct:t, note:`${t >= 70 ? "Passed" : "Not yet · 70% passes"} · trainer’s final score`};
         if(typeof p.score !== "number") return {name:d.title, pct:null, note:"Not taken yet"};
         return {name:d.title, pct:p.score, note:`${p.score >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`};
       })},
