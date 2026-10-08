@@ -7,19 +7,17 @@
      🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
-     📝 Activities              actsub:<id>, the trainer's scored rubric on feedback that was sent (js/ft-activities.js)
+   (The Daily Activities page was taken off: the Practice Lab and the Knowledge Checks cover that work.)
    ============================================================ */
 (function(){
 const title = id => { const d = DAYS.find(x => x.id === id); return d ? d.title : "Lesson " + id; };
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
-const ACT_DAYS = Array.from({length:19}, (_, i) => "activities:day" + i);   // the Training Guide's Day 0 to Day 18
 const CALL_LESSONS = [4, 5, 6];   // Reception, Calendar Management and Intake Mock Calls (as in js/ft-simulators.js)
 
 window.LSH_PROGRAM = {
   // 📚 Training Modules: the lessons, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
-    {view:"activities", icon:"📝", label:"Activities", about:"Each day’s activity: answer it and get your trainer’s feedback.", badge:() => typeof window.daUnreadCount === "function" ? window.daUnreadCount() : 0},
     {view:"process", icon:"✍️", label:"Process Questions", about:"Each lesson’s answer sheet, and the Knowledge Checks that grade it."},
     {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your daily task sheet, checked against the tracker rules."},
     {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet, with feedback on each entry."},
@@ -33,11 +31,10 @@ window.LSH_PROGRAM = {
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "attendance"],
-    modules: ["opendays", "curriculum", "process", "activities", "trackers", "monitor", "fbstyle"],
+    modules: ["opendays", "curriculum", "process", "trackers", "monitor", "fbstyle"],
     lab: ["calscores"],
     scorecard: ["scorecards"]
   },
-  shared: ACT_DAYS,   // the activities' titles
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks",
       about:"Each lesson’s process questions, graded out of 100. Your best attempt counts; 70% passes the lesson.",
@@ -67,18 +64,6 @@ window.LSH_PROGRAM = {
         (d.external || []).forEach(x => { const pct = x.max > 0 ? Math.round(x.score / x.max * 100) : null; const k = x.title || "Simulator";
           if(pct != null && (!ext[k] || pct > ext[k].pct)) ext[k] = {name:k, pct, note:"Connected simulator · best result"}; });
         return out.concat(Object.values(ext));
-      }},
-    {id:"activities", icon:"📝", label:"Activities", key:"actsub:",
-      about:"Your trainer’s feedback on the daily activities. A scored rubric counts toward your score; a rating alone shows here.",
-      items: ctx => {
-        const items = (ctx.rec["actsub:"] || {}).items || {}, names = {};
-        ACT_DAYS.forEach(k => (((ctx.shared[k] || {}).items) || []).forEach(a => { names[a.id] = a.title; }));
-        return Object.keys(items).map(id => ({id, sub:items[id]})).filter(x => x.sub && x.sub.feedback && x.sub.feedback.status === "sent").map(({id, sub}) => {
-          const fb = sub.feedback, sc = fb.scores || [], name = names[id] || "Activity";
-          if(!sc.length) return {name, pct:null, note:fb.rating ? "Rated " + fb.rating : "Feedback sent"};
-          const total = sc.reduce((n, x) => n + (Number(x.score) || 0), 0), max = sc.length * 5;
-          return {name, pct:Math.round(total / max * 100), note:`${total}/${max} on the rubric${fb.rating ? " · " + fb.rating : ""}`};
-        });
       }}
   ]
 };

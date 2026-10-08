@@ -43,13 +43,6 @@ window.LSH_BLUEPRINT = {
           '← Page / Page → step through the deck; resizing or full screen never sends it back to page 1.'],
         where: 'A lesson → 🖥 Presenter view.',
         tip: 'Open it 15 minutes early, and share the slides window, not your screen.' },
-      { icon: '📝', title: 'Activities', points: [
-          'Set each day\'s activities (Day 0 to Day 18): instructions, files, how trainees answer, and private notes on a strong answer.',
-          'Make an activity visible to trainees, for all batches or one.',
-          'Review each submission: ✨ Draft with AI writes a review from your private notes; edit it and send it.',
-          'An optional scored rubric (5 to 1 points per criterion) grades it the same way every time.'],
-        where: 'Admin → 📝 Activities.',
-        tip: 'Write the private notes first: they make the AI drafts far better.' },
       { icon: '🗣', title: 'The facilitator\'s feedback style', points: [
           'Every AI review is written in the facilitator\'s voice: a verdict, the strength with exact details, then what to improve.',
           'Import the reviews you wrote, or upload past reports, and Learn the style to update the voice.',
