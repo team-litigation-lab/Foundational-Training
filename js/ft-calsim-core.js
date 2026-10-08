@@ -2,9 +2,8 @@
    Calendaring Simulators: the tracks, the weeks and the automated review (no page code here, so it can be tested
    with node). Loaded before js/ft-calendar.js, which is the drag-and-drop page.
      • Times are minutes from midnight (Eastern Time); days are 0 (Mon) to 4 (Fri); the grid works in 15-minute steps.
-     • Three tracks, each a set up like a Google Calendar: Standard Training (the Foundational / Calendar Management
-       weeks), Litigation Week (Case Management) and Executive Week (EA / PA). A week has the attorney's (or executive's)
-       fixed events and the tasks the trainee must put on the calendar.
+     • One track, set up like a Google Calendar: Standard Training (the Foundational / Calendar Management weeks).
+       A week has the attorney's fixed events and the tasks the trainee must put on the calendar.
      • The trainee's events are {id, title, day, start, dur, desc, meet, remind, guests, color}: a title, a description,
        Google Meet for video calls, an email reminder a day before, guests and a color (Google Calendar's eleven event
        colors; "" is the calendar's default), as in Google Calendar.
@@ -43,8 +42,6 @@ const lunch = [0, 1, 2, 3, 4].map(d => ({id:"lunch" + d, title:"Lunch (out of of
 
 const TRACKS = [
   {id:"standard", icon:"🎓", title:"Standard Training", where:"Foundational · Calendar Management", blurb:"The attorney’s calendar in a Google Calendar look-alike: book each task under the attorney’s rules (title, description, Google Meet for video calls, an email reminder a day before, Eastern time, 15-minute gaps), then check the calendar."},
-  {id:"litigation", icon:"⚖️", title:"Litigation Week", where:"Case Management", blurb:"A litigation attorney’s week: a deposition, a hearing and a mediation are fixed, and the prep, debrief, client and expert calls have to fall in the right order around them."},
-  {id:"executive", icon:"🏢", title:"Executive Week", where:"EA / PA", blurb:"An executive’s week: a board meeting, an investor call, an offsite visit and an all-hands are fixed. Protect prep and focus time, book the interviews and meetings, and keep every gap."}
 ];
 
 const SCENARIOS = [
@@ -84,44 +81,6 @@ const SCENARIOS = [
     {id:"clientcall", title:"Client call: Reyes", dur:30, weight:15, rules:{days:[0, 3], from:t(13)}, needs:{meet:true, remind:true}, note:"Reyes can only talk Monday or Thursday afternoons. Video call with an email reminder the day before."},
     {id:"demand", title:"Demand letter review", dur:30, weight:15, rules:{days:[0, 1, 2]}, note:"Needs to go out by Wednesday: schedule it Monday to Wednesday."}
    ]},
-  {id:"litigation", track:"litigation", short:"Litigation Week", title:"Litigation Week · Case Management", level:"Litigation", gap:15,
-   brief:"Attorney Okafor is in litigation this week: the Nguyen deposition, a motion to compel hearing and the Brooks mediation are fixed. Put the prep, the debrief, the client and the expert calls around them in the right order, with a 15-minute gap between events and the details each one needs. Then submit it to your trainer.",
-   fixed:[
-    {id:"team", title:"Litigation team meeting", day:0, start:t(9, 30), end:t(10, 30), kind:"fixed"},
-    {id:"depo", title:"Deposition: Nguyen", day:1, start:t(10), end:t(12), kind:"fixed"},
-    {id:"hearing", title:"Court: motion to compel hearing", day:2, start:t(9), end:t(11), kind:"court", buffer:30, note:"Travel: keep 30 minutes free before and after."},
-    {id:"mediation", title:"Mediation: Brooks", day:3, start:t(14), end:t(16), kind:"fixed"},
-    {id:"review", title:"Friday case review", day:4, start:t(9), end:t(10), kind:"fixed"}
-   ].concat(lunch),
-   tasks:[
-    {id:"deposprep", title:"Deposition prep: Nguyen", dur:90, weight:15, rules:{beforeEvent:{id:"depo", gap:15}}, note:"Finish before the Nguyen deposition starts on Tuesday: Monday is the only day."},
-    {id:"hearprep", title:"Motion to compel hearing prep", dur:60, weight:15, rules:{beforeEvent:{id:"hearing", gap:30}}, note:"Done at least 30 minutes before the Wednesday hearing (the attorney can’t start before 9:00)."},
-    {id:"debrief", title:"Hearing debrief", dur:30, weight:10, rules:{afterEvent:{id:"hearing", gap:30}, days:[2]}, note:"The same day as the hearing, at least 30 minutes after it ends (travel back)."},
-    {id:"clientcall", title:"Client call: Brooks", dur:45, weight:15, rules:{days:[0, 1, 2], from:t(13)}, needs:{meet:true, remind:true}, note:"Ms. Brooks is only free Monday to Wednesday afternoons. Video call with an email reminder the day before."},
-    {id:"medprep", title:"Mediation prep: Brooks", dur:90, weight:15, rules:{beforeEvent:{id:"mediation", gap:15}}, note:"Finish before the Thursday mediation, with a 15-minute gap."},
-    {id:"expert", title:"Expert witness call: Dr. Patel", dur:30, weight:10, rules:{days:[2, 3], from:t(13), to:t(16)}, needs:{meet:true}, note:"Dr. Patel is free Wednesday or Thursday afternoons, 1:00 to 4:00 PM. Video call: add Google Meet."},
-    {id:"discovery", title:"Discovery responses review", dur:60, weight:10, rules:{beforeDay:4}, note:"The responses are due Friday: finish before Friday."},
-    {id:"sol", title:"Statute of limitations check: Hale file", dur:30, weight:10, rules:{from:t(9), to:t(12)}, note:"Morning, before lunch: the attorney reads dates when fresh."}
-   ]},
-  {id:"executive", track:"executive", short:"Executive Week", title:"Executive Week · EA / PA", level:"Executive", gap:15,
-   brief:"You support Ms. Alvarez, the CEO. The board meeting, the investor call, the offsite client visit and the all-hands are fixed. Protect prep and focus time, book the interviews and meetings she has asked for, keep 15 minutes between events, and fill in each event’s details. Then submit the calendar to your trainer.",
-   fixed:[
-    {id:"standup", title:"Leadership stand-up", day:0, start:t(9), end:t(10), kind:"fixed"},
-    {id:"board", title:"Board meeting", day:1, start:t(9), end:t(12), kind:"fixed"},
-    {id:"investor", title:"Investor call", day:2, start:t(14), end:t(15, 30), kind:"fixed"},
-    {id:"offsite", title:"Offsite: client site visit", day:3, start:t(10), end:t(12), kind:"court", buffer:30, note:"Travel: keep 30 minutes free before and after."},
-    {id:"allhands", title:"All-hands", day:4, start:t(11), end:t(12), kind:"fixed"}
-   ].concat(lunch),
-   tasks:[
-    {id:"boardprep", title:"Board meeting prep", dur:90, weight:20, rules:{beforeEvent:{id:"board", gap:15}}, note:"Finish before the Tuesday board meeting, with a 15-minute gap."},
-    {id:"cfo", title:"1:1 with the CFO", dur:45, weight:10, rules:{days:[0, 2]}, note:"The CFO is only available Monday and Wednesday."},
-    {id:"investorprep", title:"Investor call prep", dur:30, weight:10, rules:{beforeEvent:{id:"investor", gap:15}}, note:"Done at least 15 minutes before the Wednesday investor call."},
-    {id:"interview", title:"VP Marketing candidate interview", dur:60, weight:15, rules:{days:[3, 4], from:t(13)}, needs:{meet:true, remind:true}, note:"The candidate is free Thursday or Friday afternoons. Video interview: add Google Meet and the email reminder for the day before."},
-    {id:"qreview", title:"Quarterly review with Ops team", dur:90, weight:10, rules:{days:[2, 4], from:t(9), to:t(12)}, note:"Wednesday or Friday morning, finished before lunch."},
-    {id:"press", title:"Press interview", dur:30, weight:10, rules:{days:[1, 2, 3], from:t(14), to:t(16)}, needs:{meet:true, remind:true}, note:"The reporter can do Tuesday to Thursday, 2:00 to 4:00 PM. Video call with an email reminder the day before."},
-    {id:"focus", title:"Executive focus time", dur:120, weight:10, rules:{from:t(9), to:t(12)}, note:"A protected two-hour block in the morning, with no meetings."},
-    {id:"debrief", title:"Offsite debrief with Chief of Staff", dur:30, weight:15, rules:{afterEvent:{id:"offsite", gap:30}}, note:"After the Thursday offsite visit, at least 30 minutes after it ends (Thursday or Friday)."}
-   ]}
 ];
 const trackOf = id => TRACKS.find(x => x.id === id);
 
