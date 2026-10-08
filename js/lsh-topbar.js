@@ -3,6 +3,8 @@
    Buttons that do the same kind of thing share one menu instead of
    each taking a slot in the top bar, the way the Training Portal's
    admin bar keeps everything else under ⚙ System Management:
+     • 📁 Case File ▾ the course's case material: Case File (Claim File),
+                      📁 Documents and 🗂 Workspace; named after its Case File
      • 📚 Guides ▾    Notes, Handouts, Orientation, Facilitator Guide,
                       Platform Blueprint (whichever this page has)
      • 📋 My Sheets ▾ Task Tracker and Monitoring Sheet
@@ -11,7 +13,8 @@
    a single one stays as it is. The bar re-renders often and other files add to
    it (portal-link.js, the Blueprint button), so this sorts whatever
    is on screen after each change. The buttons themselves move into
-   the menu, so their own onclick still runs.
+   the menu, so their own onclick still runs. A menu's name is in
+   .lsh-grp-word, so a course short of room can show its icon alone.
    The same file is in every LSH course repo (EA-PA-TRAINING,
    Case-Management-Training, propertydamageclaimstraining,
    medsumanddemandtraining, Foundational-Training). Change it in all of them.
@@ -19,6 +22,9 @@
 (function(){
 "use strict";
 var GROUPS = [
+  { id: "case", label: function(box){ var f = [].find.call(box.lastChild.children, function(b){ return viewOf(b) === "clientprofile"; }); return "📁 " + (f ? f.textContent.replace(/^[^A-Za-z]+/, "").trim() : "Case File"); },
+    title: "The case file, its documents and your workspace",
+    match: function(b){ return /^(clientprofile|casedocs|workspace)$/.test(viewOf(b)); } },
   { id: "guides", label: "📚 Guides", title: "Notes, handouts and guides",
     match: function(b){ return /^(notes|handouts|orientation|facilitatorguide)$/.test(viewOf(b)) || b.matches(".nav-blueprint, #lbp-open-btn"); } },
   { id: "sheets", label: "📋 My Sheets", title: "Your Task Tracker and Monitoring Sheet",
@@ -67,7 +73,7 @@ function groupBox(nav, g){
     e.stopPropagation();
     var open = !box.classList.contains("open");
     closeAll();
-    if(typeof window.mdCloseTopMenus === "function") window.mdCloseTopMenus();   // Medsum's More ▾ / 🧰 Tools ▾
+    if(typeof window.mdCloseTopMenus === "function") window.mdCloseTopMenus();   // Medsum's 🧰 Tools ▾
     if(open){ box.classList.add("open"); box.firstChild.setAttribute("aria-expanded", "true"); }
   });
   box.lastChild.addEventListener("click", function(){ closeAll(); });
@@ -79,7 +85,9 @@ function label(box, g){
   var items = box.lastChild.children;
   var on = [].some.call(items, function(b){ return b.classList.contains("active"); });
   var total = [].reduce.call(box.lastChild.querySelectorAll(".nav-badge"), function(t, b){ return t + (parseInt(b.textContent, 10) || 0); }, 0);
-  var html = g.label + " ▾" + (total ? '<span class="nav-badge">' + total + "</span>" : "");
+  // "📚 Guides": the word is its own span, so a tight bar can show the icon alone (the button's title names it)
+  var name = typeof g.label === "function" ? g.label(box) : g.label, sp = name.indexOf(" ");
+  var html = name.slice(0, sp) + '<span class="lsh-grp-word">' + name.slice(sp) + "</span> ▾" + (total ? '<span class="nav-badge">' + total + "</span>" : "");
   var btn = box.firstChild;
   if(btn.innerHTML !== html) btn.innerHTML = html;
   btn.classList.toggle("active", on);
