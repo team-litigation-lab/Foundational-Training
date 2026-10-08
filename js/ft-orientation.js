@@ -45,7 +45,7 @@ window.orientSlides = function(){
    {k:"Roadmap", h:`Your ${N}-lesson roadmap`, body:`<div class="or-days">${orientTile()}${DAYS.map(tile).join("")}</div>
      <p class="or-foot">Start with 📌 Training Orientation and Rules. Your trainer opens each lesson for your batch; a 🔒 lesson opens when it's time.</p>`},
    {k:"A lesson", h:"How every lesson works", body:`
-     <div class="or-flow">${step(1,"🖥","Lesson slides","The training deck, full width. ⛶ Full screen any time; your place is saved.")}<i>→</i>${step(2,"▶","Video Presentation","The lesson's AI Assisted Discussion video. 🔒 until your trainer unlocks it.")}<i>→</i>${step(3,"✍️","Process Questions","Answer the lesson's answer sheet on the platform, then save it with the proper name.")}<i>→</i>${step(4,"✓","Finish lesson","On the last slide. The lesson's circle on your dashboard turns ✓.")}<i>→</i>${step(5,"🔓","Next lesson","Opens when your trainer opens it for your batch.")}</div>
+     <div class="or-flow">${step(1,"🖥","Lesson slides","The training deck, full width. ⛶ Full screen any time; your place is saved.")}<i>→</i>${step(2,"▶","Video Presentation","The lesson's AI Assisted Discussion video. 🔒 until your trainer unlocks it.")}<i>→</i>${step(3,"📝","Knowledge Check","Answer the lesson's process questions on the platform, then save them with the proper name.")}<i>→</i>${step(4,"✓","Finish lesson","On the last slide. The lesson's circle on your dashboard turns ✓.")}<i>→</i>${step(5,"🔓","Next lesson","Opens when your trainer opens it for your batch.")}</div>
      <div class="or-note">There are <b>no quizzes</b>: you finish each lesson from its last slide. Missed something? Every open lesson stays on your dashboard — press <b>Review</b> to go back to it any time.</div>`},
    {k:"Discussions", h:"Classroom discussions with your trainer", body:`
      <div class="or-3">${pill("🖥","Follow the shared slides","Your trainer presents each lesson live. They're the same slides you have on the platform — nothing extra to install.")}${pill("📷","Cameras on","Your camera stays on for the whole discussion. Meeting schedules are sent on the discussion's date and time — keep your notifications on.")}${pill("📒","Then your Monitoring Sheet","After each discussion: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.")}</div>
@@ -54,15 +54,14 @@ window.orientSlides = function(){
      <div class="or-bp">
        <div class="or-bp-main">
          ${box(1,"Progress track",`📌 and Lessons 1–${N} · ✓ = finished`,"or-hero")}
-         ${box(2,"🛠 Simulators","Mock calls, demos and every LSH simulator")}
-         ${box(3,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
-         ${box(4,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
+         ${box(2,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
+         ${box(3,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
        </div>
        <div class="or-bp-side">
-         ${box(5,"📒 Monitoring Sheet","How many entries you've filled in","dark")}
-         ${box(6,"📋 Task Tracker today","Today's check and what to fix","dark")}
-         ${box(7,"Your progress","Program complete · lessons finished","dark")}
-         ${box(8,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
+         ${box(4,"📒 Monitoring Sheet","How many entries you've filled in","dark")}
+         ${box(5,"📋 Task Tracker today","Today's check and what to fix","dark")}
+         ${box(6,"Your progress","Program complete · lessons finished · graded calls","dark")}
+         ${box(7,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
        </div>
      </div>`},
    {k:"Navigation", h:"Getting around", body:`
@@ -71,7 +70,7 @@ window.orientSlides = function(){
           ["🛠 Simulators","Mock calls and demos on the CMS's mock case files, plus every LSH simulator."],
           ["📋 Task Tracker","Your LSH Daily Task Tracker. Every open task gets a Daily Note each day."],
           ["📒 Monitoring Sheet","One entry per classroom discussion: takeaways, questions, your understanding."],
-          ["✍️ Process Questions","A lesson's answer sheet. Open it from the lesson's last slide."],
+          ["📝 Knowledge Check","A lesson's process questions, graded. Open it from the lesson's last slide."],
           ["My Notes","Your private notes — download them as a PDF."],
           ["🎯 Focus","Your trainer's feedback and what to work on next."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
      </div>

@@ -16,7 +16,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | Section | What it holds |
 |---|---|
 | 🏠 **Main Portal** | The program's home (the dashboard): the hub for every part of the training. |
-| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them. Its badge adds up their badges (new focus items). |
+| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them (no Lessons tab: 📚 Training Modules on the top bar opens the lessons). Its badge adds up their badges (new focus items). |
 | 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
 | 🏅 **Scorecard** | `#/scorecard`: the trainee's grades, collected from every grading system on the platform. Admins get **Admin Master Control → 🏅 Scorecards**: every approved trainee's in one table (by batch; click a trainee for the details). |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
@@ -168,7 +168,7 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 - **The page:** 12 slides with ← → (or the arrow keys), **⛶ Present full screen**, **🖨 Print** and **⬇ Download PDF** (`LSH_FT_Platform_Orientation.pdf`). Nothing private is on it: no facilitator's notes, answers or trainee data. Trainees and 👁 Trainee view don't see it.
 - **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; simulators; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
-- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Trainees open it from the **📘 Platform Blueprint** card on their dashboard (Handouts isn't part of this program), and anyone signed in from the **📘 Platform Blueprint** button in the top bar, before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
+- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Anyone signed in opens it from the **📘 Platform Blueprint** button in the top bar (Handouts isn't part of this program), before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
   - **It republishes itself after every deploy.** The published copy (`blueprint:pdf`, `blueprint:meta`) is matched against the build and the Worker's deployment id (`/version`, from `version_metadata` in `wrangler.json`). The first admin page open after a deploy rebuilds it in the background (`js/lsh-blueprint-course.js`).
 - **🛠 Trainer blueprint** (admins only, never at a public address): a tab on 🧭 Orientation.
   - **The slides:** a cover and 11 slides covering signing in, trainees and the Trainee Audit, Open Lessons, the Curriculum, Presenter view, Activities, the facilitator's feedback style, Monitoring Sheets, Process Questions, Task Trackers, Attendance and Trainee view.
@@ -196,16 +196,16 @@ A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2
 
 **The Knowledge Check** (`#/kc`):
 - **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
-- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type and are the same as the lesson's ✍️ Process Questions sheet.
+- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type, into the lesson's answer sheet.
 - **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity, with a line of feedback. The total is a percentage.
 - **Passing:** 70% passes and finishes the lesson. A retake keeps the best score.
 - **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
 - **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
 
-**The ✍️ Process Questions page** (`#/process`) keeps every sheet in one place, for saving it with the proper name:
+**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet, but it has no tab in Training Modules: the Knowledge Check is the same questions.
 - **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
 - **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
-- **When a sheet counts as submitted:** when the trainee presses **Submit My Answers**, or when a Knowledge Check is graded with all of the sheet's questions answered.
+- **When a sheet counts as submitted:** when a Knowledge Check is graded with all of the sheet's questions answered (or, on the `#/process` page, when the trainee presses **Submit My Answers**).
 
 **Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet:
 - whether it's submitted, how many questions are answered, and the answers;
@@ -263,7 +263,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## Simulators
 
-**🛠 Practice Lab** (top bar, and the **Practice Lab** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
+**🛠 Practice Lab** (top bar) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
 
 **🧪 Practice Lab: Skill Building** comes first on the page (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
 

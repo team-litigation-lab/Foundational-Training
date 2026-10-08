@@ -1,7 +1,8 @@
 /* ============================================================
    Process Questions — each lesson's answer sheet, answered on the platform
-   Loaded after js/ft-monitoring.js. ✍️ Process Questions (#/process), the
-   lesson's last slide, and a button on its lesson card.
+   Loaded after js/ft-monitoring.js. Trainees answer them in the lesson's 📝 Knowledge Check (#/kc, from its
+   last slide), which also saves the sheet with its proper name. The ✍️ Process Questions page (#/process)
+   has no tab: the Knowledge Check is the same questions.
      • Trainees answer each question (saved to process:<id> as they type) and
        submit the sheet. They can save it to their Google Drive with the
        proper name: 📄 Save to My Google Drive copies the answers and opens a
@@ -383,8 +384,24 @@ function renderKc(){
           ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}</li>`; }).join("")}</ol>
       <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
         <span class="fp-save" id="fpSave"></span></div>
-      <p class="fp-muted">Your answers save as you type, and they're the same as your ✍️ Process Questions sheet for this lesson.</p>
-    </div>`;
+      <p class="fp-muted">Your answers save as you type.</p>
+    </div>
+    ${kcSave(qs)}`;
+}
+// Saving the lesson's answer sheet with its proper name (to Google Drive or as a Word file), on the Knowledge Check page.
+function kcSave(qs){
+  const sets = [...new Set(qs.map(x=>x.set))];
+  return `<div class="card kc-card kc-save"><h3>📄 Save your answer sheet</h3>
+    ${sets.map(set=>`<div class="fp-name"><span>Naming convention</span><code>${e(fileName(set))}</code>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.copyName('${set.id}')">📋 Copy</button></div>
+      <div class="fp-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.toDrive('${set.id}')">📄 Save to My Google Drive</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.word('${set.id}')">⬇ Download as Word</button>
+        ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}</div>`).join("")}
+    <label class="kc-folder" for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
+    <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>
+    <p class="fp-muted"><b>📄 Save to My Google Drive</b> copies your answers and opens a new Google Doc already given that name${FP.data.folder ? ", in your trainee folder" : ""}. Paste them in with Ctrl+V. <b>⬇ Download as Word</b> gives you the file with the same name, to upload to your trainee folder.</p>
+  </div>`;
 }
 window.FTKc = {
   open(id){ state.dayId = Number(id); KC.shown[id] = null; goto("kc"); window.scrollTo(0, 0); },
@@ -470,6 +487,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .kc-hero{margin:0 0 14px;} .kc-hero h1{margin:2px 0 6px;color:var(--navy);font-size:28px;} .kc-hero p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;}
 .kc-stats{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13.5px;color:var(--navy);}
 .kc-card{padding:16px 18px;} .kc-report{margin-bottom:14px;}
+.kc-save{margin-top:14px;} .kc-save h3{margin:0 0 10px;color:var(--navy);font-size:17px;} .kc-save .fp-actions{margin:8px 0 12px;} .kc-folder{display:block;margin:4px 0 6px;font-size:14.5px;color:var(--navy);}
 .kc-fb{margin-top:6px;border-radius:8px;padding:8px 10px;font-size:14px;line-height:1.45;border-left:4px solid;}
 .kc-fb b{margin-right:6px;} .kc-fb.kc-ok{background:var(--success-bg);border-color:var(--success);} .kc-fb.kc-mid{background:#FEF7C3;border-color:#C9A227;} .kc-fb.kc-low{background:var(--danger-bg);border-color:var(--danger);}
 
