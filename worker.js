@@ -168,15 +168,22 @@ function candidateIds(name, batch) {
 // settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
 // settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`];
+// settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines|firms|trainer-acts)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
+// The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
+//   kcreview:<id>     the trainer's review of each Knowledge Check (js/ft-process.js)
+//   assign:<id>       the trainee's law firm and cases (js/ft-firms.js)
+//   labreview:<id>    the trainer's review of each Practice Session, and the trainer-led activities' results (js/ft-sessions.js)
+//   simresults:<id>   the trainee's results on the Training Portal's simulators opened from this program (the Portal writes it)
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id}`, `simresults:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
+  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
@@ -215,6 +222,20 @@ async function traineeWrite(env, tok, key, value) {
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     incoming.reviews = (existing && existing.reviews) || {};
     await kv.put(key, JSON.stringify(incoming)); return null;
+  }
+  if (key === `drive:${id}`) {
+    // The trainee's Google Drive links (js/ft-drive.js): their VA Output folder, Task Tracker sheet, Monitoring Sheet
+    // and each day's output links. The checks and the trainer's scores are in trackerreview:<id> (Worker and admins).
+    if (value.length > 200000) return "The links are too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    await kv.put(key, value); return null;
+  }
+  if (key === `sessions:${id}`) {
+    // Practice Sessions (js/ft-sessions.js): the trainee's own runs, answers and automated checks. The trainer's
+    // reviews are in labreview:<id>, which only admins write.
+    if (value.length > 400000) return "The sessions record is too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    await kv.put(key, value); return null;
   }
   if (key === `feedback:${id}`) {
     // Trainees (auto-review) may add days and mark reviews read — never rewrite a trainer's review.
@@ -457,6 +478,77 @@ function facilitatorVoice(saved) {
   const ex = (st.examples || []).slice(0, 3).map((x, i) => `(${i + 1}) ${String(x).slice(0, 900)}`).join("\n");
   return `\n\nVOICE: write the way this program's facilitator writes feedback. Keep the requested format and keep the judgement evidence-based; the voice changes wording only.\nFacilitator style guide:\n${String(st.guide).slice(0, 3500)}${ex ? `\nExamples of the facilitator's voice (match tone and phrasing; do not reuse their content):\n${ex}` : ""}`;
 }
+/* ---------- the tracker and the Monitoring Sheet kept in Google Drive (js/ft-drive.js) ----------
+   The trainee saves their Google links (drive:<id>). The Worker reads each file's export (a sheet as CSV, a doc as text),
+   which works when the file is shared "Anyone with the link can view", checks it with the same rules
+   (TR.fromSheetCsv + TR.checkDay; TR.gradeMonitorText) and writes the result into trackerreview:<id> (days[D] for the
+   tracker, monitor for the Monitoring Sheet), keeping the trainer's comment and score. */
+async function fetchGoogle(url) {
+  if (!url) throw new Error("link");
+  const res = await fetch(url, { redirect: "follow" });
+  const text = await res.text();
+  if (!res.ok || /^\s*<(!doctype|html)/i.test(text.slice(0, 200))) throw new Error("not-shared");
+  return text;
+}
+const DRIVE_UNREADABLE = "The system can't open this file. In Google Drive, share it as “Anyone with the link can view”, and check that the link is the file's own link.";
+async function checkDrive(env, id, D, o = {}) {
+  const kv = kvOf(env);
+  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+  if (!drive || (!drive.tracker && !drive.monitor)) return null;
+  const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  if (!cur.days) cur.days = {};
+  const at = new Date().toISOString(), voice = o.voice != null ? o.voice : facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+  const out = { id };
+  if (drive.tracker) {
+    let res, review = "";
+    try {
+      const f = TR.googleFile(drive.tracker);
+      if (f.kind !== "sheet") throw new Error("kind");
+      const t = TR.fromSheetCsv(await fetchGoogle(f.exportUrl), { today: D, startDate: drive.startDate || "" });
+      if (!t) throw new Error("layout");
+      t.drive = drive;
+      res = TR.checkDay(t, D);
+      if (!res.na && o.ai !== false) {
+        const p = TR.reviewPrompt(t, D, o.criteria || TR.DEFAULT_CRITERIA, rec && rec.name);
+        try { review = await aiText(env, p.system + voice, p.prompt, 400); } catch (e) { review = ""; }
+      }
+    } catch (e) {
+      const why = e.message === "layout" ? "The sheet has no tracker header row (Date Received, Type of Task, Task Details …): link the Daily Task Tracker tab."
+        : e.message === "kind" ? "The Task Tracker link must be a Google Sheets link (docs.google.com/spreadsheets/…)." : DRIVE_UNREADABLE;
+      res = { date: D, pass: false, pct: 0, flags: [], rules: [{ id: "sheet", label: "Your Task Tracker sheet can be read", pass: false, pct: 0, detail: why, flags: [] }] };
+    }
+    if (!res.na) {
+      const prev = cur.days[D] || {};
+      cur.days[D] = Object.assign({}, res, { source: "drive", review: review || prev.review || "", checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
+      out.tracker = cur.days[D].pct;
+    }
+  }
+  if (drive.monitor && o.monitor !== false) {
+    const prev = cur.monitor || {};
+    let g, review = "", error = "";
+    try {
+      const f = TR.googleFile(drive.monitor);
+      let text = await fetchGoogle(f.exportUrl);
+      if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+      const set = JSON.parse((await kv.get("settings:monitor")) || "null");
+      const topics = (set && Array.isArray(set.topics) && set.topics.length ? set.topics : TR.MONITOR_TOPICS).map((t) => typeof t === "string" ? { title: t } : t);
+      g = TR.gradeMonitorText(text, topics);
+      if (o.ai !== false && g.found) {
+        try {
+          review = await aiText(env, "You are a training supervisor at Legal Support Help reviewing a trainee virtual assistant's Training Monitoring Sheet. Never mention that you are an AI." + voice,
+            `Trainee: ${(rec && rec.name) || "Trainee"}\nThe sheet's entries (one per classroom discussion: the date, 5 major takeaways, 3 questions, and how well they understand it):\n${text.slice(0, 9000)}\n\nThe automated check found ${g.found} of ${g.total} discussions, ${g.pct}% complete.\nReview it: are the takeaways specific to each discussion and in complete sentences, are questions real, which entries are missing or incomplete (name them). At most 6 short bullet points, under 140 words. No greeting, no sign-off.`, 500);
+        } catch (e) { review = ""; }
+      }
+    } catch (e) { error = e.message === "not-shared" || e.message === "link" ? DRIVE_UNREADABLE : "The Monitoring Sheet link must be a Google Docs or Google Sheets link."; }
+    cur.monitor = Object.assign({}, g || { pct: 0, found: 0, total: 0, entries: [] }, { error, review: review || (error ? "" : prev.review || ""), checkedAt: at, comment: prev.comment || "", commentAt: prev.commentAt || "", trainerScore: prev.trainerScore != null ? prev.trainerScore : null });
+    out.monitor = cur.monitor.pct;
+  }
+  cur.updatedAt = at;
+  await kv.put(rk, JSON.stringify(cur));
+  return out;
+}
+
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -485,6 +577,14 @@ async function runTrackerChecks(env, opts) {
     cur.updatedAt = new Date().toISOString();
     await kv.put(rk, JSON.stringify(cur));
     done.push({ id, pct: res.pct, flags: res.flags.length });
+  }
+  // the trainees whose tracker and Monitoring Sheet are in Google Drive
+  const driveKeys = o.id ? [`drive:${o.id}`] : await listAll(env, "drive:");
+  for (const k of driveKeys) {
+    const id = k.slice("drive:".length);
+    const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+    if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
+    try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
   }
   return { date: D, checked: done.length, results: done };
 }
@@ -666,6 +766,22 @@ export default {
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
 
+      /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
+         A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
+         ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. Trainees only:
+         an admin's ticket never signs anyone in. Good for 5 minutes. */
+      if (path === "/api/auth/tool-ticket") {
+        if (tok.role !== "t" || !portalSecret(env)) return json({ error: "not-available" }, tok.role !== "t" ? 403 : 501);
+        const rec = JSON.parse((await kv.get(`trainee:${tok.id}`)) || "null");
+        if (!rec || rec.approved !== true || rec.archived) return json({ error: "not-approved" }, 403);
+        const words = String(rec.name || "").trim().split(/\s+/).filter(Boolean);
+        const first = String(rec.firstName || words[0] || "").trim(), last = String(rec.lastName || words.slice(1).join(" ") || "").trim();
+        if (!first || !last) return json({ error: "no-name" }, 400);
+        const payload = btoa(String.fromCharCode(...enc.encode(JSON.stringify({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }))))
+          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        return json({ ticket: `${payload}.${await hmac("portal-sso:" + portalSecret(env), payload)}` });
+      }
+
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
       if (path === "/api/checkin") {
         const b = await request.json().catch(() => ({}));
@@ -687,6 +803,23 @@ export default {
         if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
         const b = await request.json().catch(() => ({}));
         return json(await runTrackerChecks(env, { id: b.id || null, date: b.date || null, force: true }));
+      }
+
+      /* ---------- the Drive tracker and Monitoring Sheet: check now (the trainee's own, at most every 3 minutes; an admin's for anyone) ---------- */
+      if (path === "/api/drive/check") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        if (tok.role !== "a") {
+          const last = JSON.parse((await kv.get(`trackerreview:${id}`)) || "null");
+          const t = last && last.selfCheckAt ? Date.parse(last.selfCheckAt) : 0;
+          if (Date.now() - t < 3 * 60 * 1000) return json({ error: "Checked a moment ago. Try again in a few minutes.", code: "wait" }, 429);
+        }
+        const critRaw = await kv.get("settings:trackercriteria");
+        const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), { criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA });
+        if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
+        if (tok.role !== "a") { const cur = JSON.parse((await kv.get(`trackerreview:${id}`)) || "{}"); cur.selfCheckAt = new Date().toISOString(); await kv.put(`trackerreview:${id}`, JSON.stringify(cur)); }
+        return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */

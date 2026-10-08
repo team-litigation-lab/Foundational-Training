@@ -129,7 +129,11 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-rules.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-calsim-core.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-calendar.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-cases-data.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-firms.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-simulators.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-sessions.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-drive.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-facilitator-dna.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-orientation.js?v={build_tag}"></script>'
@@ -159,13 +163,14 @@ k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/ft-card-grid.js?v={build_tag}"></script>\n' + s[k:]
 # Every card framed (js/lsh-card-frame.js, the same file in every LSH course repo), after the card files.
 # The engine's page may carry it (or the hub files below) already: once, here.
-s = re.sub(r'<script src="/js/(lsh-card-frame|ft-program|lsh-program)\.js\?v=[^"]*"></script>\n?', '', s)
+s = re.sub(r'<script src="/js/(lsh-card-frame|ft-program|lsh-program|lsh-tool-links)\.js\?v=[^"]*"></script>\n?', '', s)
 k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/lsh-card-frame.js?v={build_tag}"></script>\n' + s[k:]
 # The LSH program layout (js/lsh-program.js, the same file in every LSH course repo: the five sections), last of all,
 # after this program's setup for it (js/ft-program.js: the Training Modules pages and what the Scorecard collects).
 k = s.rfind("</body>")
-s = s[:k] + f'<script src="/js/ft-program.js?v={build_tag}"></script>\n<script src="/js/lsh-program.js?v={build_tag}"></script>\n' + s[k:]
+s = s[:k] + f'<script src="/js/ft-program.js?v={build_tag}"></script>\n<script src="/js/lsh-program.js?v={build_tag}"></script>\n' \
+    + f'<script src="/js/lsh-tool-links.js?v={build_tag}"></script>\n' + s[k:]
 
 
 # 🔐 Trainees sign in on the LSH Training Portal only (js/portal-gate.js). The gate file loads in <head>, before the engine,

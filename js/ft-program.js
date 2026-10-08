@@ -3,10 +3,15 @@
    the pages under 📚 Training Modules, what the 🏅 Scorecard collects and the 🛠 Practice Lab's pages.
    Loaded just before js/lsh-program.js.
    Every grade the platform gives a trainee, one source each:
-     ✍️ Knowledge Checks        state.progress[lesson].score, the best attempt (js/ft-process.js; 70% passes)
+     ✍️ Knowledge Checks        kcreview:<id>, the trainer's final score, else state.progress[lesson].score, the best attempt
+                                (js/ft-process.js; 70% passes)
      🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
+     🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
+     🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
+     📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
+     🧰 Portal simulators       simresults:<id>, the best result per Training Portal simulator (written by the Portal's /api/sim-results)
    (The Daily Activities page was taken off: the Practice Lab and the Knowledge Checks cover that work.)
    ============================================================ */
 (function(){
@@ -18,27 +23,30 @@ window.LSH_PROGRAM = {
   // 📚 Training Modules: the lessons, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
-    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your daily task sheet, checked against the tracker rules."},
-    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet, with feedback on each entry."},
+    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
+    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day", "kc", "process"],   // a lesson, its Knowledge Check and the answer sheets (no tab of their own: the Knowledge Check has them) are in Training Modules too
-  labViews: ["simulators", "calsim"],  // 🛠 Practice Lab: the Simulators page and the Calendaring Simulators
+  labViews: ["simulators", "calsim", "firm", "session"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm (and the older Calendaring Simulators page)
+  shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "attendance"],
-    modules: ["opendays", "curriculum", "process", "trackers", "monitor", "fbstyle"],
-    lab: ["calscores"],
+    admin: ["audit", "batches", "tfeedback", "attendance", "firms"],
+    modules: ["opendays", "curriculum", "process", "trackers", "monitor", "drivetrackers", "fbstyle"],
+    lab: ["calscores", "sessions", "trainerinputs"],
     scorecard: ["scorecards"]
   },
   sources: [
-    {id:"kc", icon:"✍️", label:"Knowledge Checks",
-      about:"Each lesson’s process questions, graded out of 100. Your best attempt counts; 70% passes the lesson.",
+    {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
+      about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",
       items: ctx => DAYS.filter(d => typeof window.ftKcQuestions === "function" && window.ftKcQuestions(d.id).length).map(d => {
-        const p = ctx.progress[d.id] || {};
+        const p = ctx.progress[d.id] || {}, rv = (((ctx.rec["kcreview:"] || {}).lessons) || {})[d.id];
+        const t = rv && rv.score != null && rv.score !== "" && isFinite(Number(rv.score)) ? Number(rv.score) : null;
+        if(t != null) return {name:d.title, pct:t, note:`${t >= 70 ? "Passed" : "Not yet · 70% passes"} · trainer’s final score`};
         if(typeof p.score !== "number") return {name:d.title, pct:null, note:"Not taken yet"};
         return {name:d.title, pct:p.score, note:`${p.score >= 70 ? "Passed" : "Not yet · 70% passes"} · ${plural(p.kcAttempts || 1, "attempt")}`};
       })},
@@ -63,7 +71,19 @@ window.LSH_PROGRAM = {
         (d.external || []).forEach(x => { const pct = x.max > 0 ? Math.round(x.score / x.max * 100) : null; const k = x.title || "Simulator";
           if(pct != null && (!ext[k] || pct > ext[k].pct)) ext[k] = {name:k, pct, note:"Connected simulator · best result"}; });
         return out.concat(Object.values(ext));
-      }}
+      }},
+    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:",
+      about:"Your live Practice Sessions at your firm: your trainer’s score once they review one, until then its automated checks.",
+      items: ctx => typeof window.ftSessionItems === "function" ? window.ftSessionItems(ctx) : []},
+    {id:"trainer", icon:"🧑‍🏫", label:"With your trainer", key:"labreview:",
+      about:"The demos and mock calls you do live with your trainer, as your trainer recorded them.",
+      items: ctx => typeof window.ftTrainerItems === "function" ? window.ftTrainerItems(ctx) : []},
+    {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
+      about:"Your Daily Task Tracker and Training Monitoring Sheet in your VA Output folder: the system’s checks, or your trainer’s score where they gave one.",
+      items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
+    {id:"portalsims", icon:"🧰", label:"Portal simulators", key:"simresults:",
+      about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
+      items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))}
   ]
 };
 })();

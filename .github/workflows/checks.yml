@@ -32,6 +32,8 @@ jobs:
         run: node .github/scripts/gemini-keys.mjs
       - name: Documents served from R2 (ranges, 304s, static assets as the fallback)
         run: node .github/scripts/r2-docs.mjs
+      - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
+        run: node .github/scripts/drive.cjs
       - name: Build the Worker without deploying (wrangler dry run)
         run: npx --yes wrangler@4 deploy --dry-run --outdir "$RUNNER_TEMP/dist"
 
@@ -63,3 +65,7 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/blueprint.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Practice Sessions (firms and case assignment, the sessions' checks, the trainer's review and inputs, the Scorecard)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/practice-sessions.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }

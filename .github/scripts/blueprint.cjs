@@ -96,10 +96,11 @@ async function walk(page, label) {
     let page = await open(browser, { width: 1366, height: 768 }, false);
     const t = await page.evaluate(() => ({ opened: LSHBlueprint.open('trainer'), isOpen: LSHBlueprint.isOpen(), tabs: !!document.querySelector('.lbp-or-tabs') }));
     if (t.opened || t.isOpen || t.tabs) fail(`a trainee could reach the Trainer blueprint: ${JSON.stringify(t)}`);
-    // Foundational: Handouts isn't part of this program, so the top bar has 📘 Platform Blueprint (the dashboard has no card for it)
-    const bp = await page.evaluate(() => { goto('dashboard'); render(); const b = document.querySelector('.nav-blueprint'); return { btn: b ? b.getAttribute('onclick') : null, card: [...document.querySelectorAll('main .card, main [role=link]')].some(x => /Platform Blueprint/.test(x.textContent)) }; });
-    if (!bp.btn || !bp.btn.includes('/blueprint.pdf')) fail(`a trainee's top bar has no 📘 Platform Blueprint button opening /blueprint.pdf: ${bp.btn}`);
-    if (bp.card) fail(`the dashboard still has a Platform Blueprint card (it's on the top bar)`);
+    // Foundational: the main landing page shows neither a Platform Blueprint nor a Practice Lab / Simulators card;
+    // the 📘 Platform Blueprint button stays in the top bar, opening /blueprint.pdf
+    const dash = await page.evaluate(() => { goto('dashboard'); render(); const b = document.querySelector('.nav-blueprint'); return { cards: [...document.querySelectorAll('.fts-banner')].map(x => x.textContent.trim().slice(0, 40)), btn: b ? b.getAttribute('onclick') : null }; });
+    if (dash.cards.length) fail(`a trainee's landing page still shows the Blueprint or Simulators card: ${JSON.stringify(dash.cards)}`);
+    if (!dash.btn || !dash.btn.includes('/blueprint.pdf')) fail(`a trainee's top bar has no 📘 Platform Blueprint button opening /blueprint.pdf: ${dash.btn}`);
     await page.context().close();
 
     // ---- a trainer, on a laptop ----

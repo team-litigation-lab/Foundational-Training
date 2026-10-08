@@ -160,9 +160,11 @@ async function workerChecks() {
     // the Trainee Audit: every trainee in two requests
     t0 = Date.now();
     const n = await page.evaluate(async () => { await loadAdminLedgerQuiet(); return state.adminData.length; });
-    const ledger = since(t0, x => x.path.startsWith('/api/storage/'));
+    // the audit's own requests: the trainee list and the trainee records (a background check of the page, e.g. the open
+    // lessons' tasks on the sped-up timers, can land in the same moment and isn't the audit's)
+    const ledger = since(t0, x => x.path.startsWith('/api/storage/') && (x.path === '/api/storage/list' || /(^|\] |,)trainee:/.test(x.key)));
     if (n < 6) fail(`the Trainee Audit has ${n} trainees (expected at least 6)`);
-    if (ledger.length !== 2) fail(`the Trainee Audit took ${ledger.length} requests (expected 2: the list, then get-many): ${JSON.stringify(ledger.map(x => x.path))}`);
+    if (ledger.length !== 2) fail(`the Trainee Audit took ${ledger.length} requests (expected 2: the list, then get-many): ${JSON.stringify(since(t0, x => x.path.startsWith('/api/storage/')).map(x => x.path + ' ' + x.key.slice(0, 120)))}`);
     t0 = Date.now();
     await page.evaluate(async () => { await loadAdminLedger(); });
     if (since(t0, x => x.path === '/api/storage/get').length) fail('opening the Trainee Audit still reads the trainees one at a time');

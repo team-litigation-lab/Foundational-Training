@@ -18,7 +18,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | 🏠 **Main Portal** | The LSH Training Portal (`https://cm-training-activity.pages.dev/`). It replaces the Portal link (← Training Directory) that `js/portal-link.js` adds, which is hidden here. |
 | 📚 **Modules** | This program's landing page (the dashboard): the Standard Foundational Training and its lessons. The lessons list is also at `#/modules`. |
 | ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Admins go to **Admin → ✍️ Process Questions** (every trainee's). The questions aren't a slide in the lessons; finishing a lesson opens its 📝 Knowledge Check (`#/kc`), which also saves the answer sheet with its proper name (Google Drive, Word, the trainee folder). |
-| 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
+| 🛠 **Practice Lab** | `#/simulators`: the trainee's real-time 🟢 Practice Sessions at their own 🏛 law firm (`#/firm`, `#/session`), the 🧑‍🏫 activities done live with the trainer, demo preparation and Skill Building (see *Practice Lab* below). |
 | 👤 **My Dashboard ▾** | A trainee's own pages: 🎯 My Focus, 🏅 My Performance (`#/scorecard`, the trainee's grades from every grading system), 🗒 My Notes, 📋 Task Tracker and 📒 Monitoring Sheet. Admins get **🏅 Scorecards** here instead: Admin → Scorecards, every approved trainee's in one table. |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
 
@@ -26,10 +26,13 @@ Blueprint (in 📚 Guides ▾ with 🧭 Orientation for admins), 👁 Trainee vi
 
 **What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Training Modules pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
 
-- ✍️ **Knowledge Checks:** each lesson's best attempt (70% passes).
+- ✍️ **Knowledge Checks:** each lesson's best attempt, or the trainer's final score once they give one (`kcreview:<id>`; 70% passes).
+- 🟢 **Practice Sessions:** each session's trainer score, until then its automated checks (`sessions:<id>`, `labreview:<id>`).
+- 🧑‍🏫 **With your trainer:** the trainer-led activities' recorded results (`labreview:<id>`).
+- 🧰 **Portal simulators:** the best result on each Training Portal simulator opened from this program, written by the Portal (`simresults:<id>`, the trainee reads it, only the Portal writes it).
+- 📋 **Task Tracker & Monitoring Sheet:** the Drive files' checks, or the trainer's score where given (`trackerreview:<id>`).
 - 🎯 **Graded calls:** the best graded call on each mock-call line (`callsim:<id>`).
 - 📅 **Calendaring Simulators:** each week's trainer score once released, until then the best automated review; plus each connected simulator's best result (`calsim:<id>`).
-- 📝 **Activities:** the trainer's scored rubric on feedback that was sent (a rating alone is shown, not counted) (`actsub:<id>`).
 
 A grading system's score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each counts the same. A trainee's records are read in one get-many when the Scorecard opens.
 
@@ -123,7 +126,7 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   The same fields are on the submission's detail in the admin tab (**↻ Regenerate** the AI feedback there). A trainee writes their own record, so the AI text is stored by their browser; the automated score is always worked out again from the saved calendar, and `worker.js` keeps the trainer's `reviews` out of the trainee's reach.
 - **📋 My submitted evaluation (trainee's own space):** under the calendar, `evalHTML()` shows the selected week's latest submission: the calendar as submitted (read-only grid), the automated review, the AI review (summary, strengths, what to work on, per-task status) and the trainer's score once released. It updates by itself when the AI finishes.
 - **Scores per trainee:** all in the trainee's own `calsim:<id>` record (`drafts`, `autos`, `submissions` with their automated score, `reviews`). The admin tab shows, per trainee and week, the automated % of their latest submission and the trainer's score; the automated score is always worked out again from the saved calendar.
-- **The Portal's own calendar simulators** (its hub cards "Calendaring" and "Google Calendar Simulator") live in the Portal repo, not here: **🧰 All simulators** shows them as one **Calendaring Simulators (Portal)** link, opened with `program=FT`, the trainee's name and batch. Any simulator (Portal or CMS) that sends this page `postMessage({type:"lsh-sim-result", sim:"calendar", score, max, title})` has the result added to the same record. **The Portal and CMS don't send that yet, and their hub cards still need the rename there.**
+- **The Portal's own calendar simulators** (its hub cards "Calendaring" and "Google Calendar Simulator") live in the Portal repo, not here: **🧰 All simulators** shows them as one **Calendaring Simulators (Portal)** link, opened with `program=FT`, the trainee's name and batch. Any simulator (Portal or CMS) that sends this page `postMessage({type:"lsh-sim-result", sim:"calendar", score, max, title})` has the result added to the same record. Results saved on the Portal's simulators now also reach the trainee's record here directly: see *Portal simulators* on the Scorecard (`simresults:<id>`).
 
 ## Training Orientation and Rules
 
@@ -168,8 +171,8 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
 Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/PA portal and the other LSH courses. It's a screen-shareable blueprint of the platform for the first session. It's not the 📌 Training Orientation and Rules lesson above.
 
 - **The page:** 12 slides with ← → (or the arrow keys), **⛶ Present full screen**, **🖨 Print** and **⬇ Download PDF** (`LSH_FT_Platform_Orientation.pdf`). Nothing private is on it: no facilitator's notes, answers or trainee data. Trainees and 👁 Trainee view don't see it.
-- **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; simulators; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
-- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Anyone signed in opens it from the **📘 Platform Blueprint** button in the top bar (Handouts isn't part of this program), before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
+- **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; the Practice Lab; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
+- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. **The main landing page shows no Blueprint card** (nor a Simulators card): anyone signed in opens it from the **📘 Platform Blueprint** button in the top bar, before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
   - **It republishes itself after every deploy.** The published copy (`blueprint:pdf`, `blueprint:meta`) is matched against the build and the Worker's deployment id (`/version`, from `version_metadata` in `wrangler.json`). The first admin page open after a deploy rebuilds it in the background (`js/lsh-blueprint-course.js`).
 - **🛠 Trainer blueprint** (admins only, never at a public address): a tab on 🧭 Orientation.
   - **The slides:** a cover and 11 slides covering signing in, trainees and the Trainee Audit, Open Lessons, the Curriculum, Presenter view, Activities, the facilitator's feedback style, Monitoring Sheets, Process Questions, Task Trackers, Attendance and Trainee view.
@@ -195,10 +198,13 @@ Every lesson's process questions are its **Knowledge Check**, answered in writin
 
 A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}`).
 
+**The process questions aren't in the slides any more**: they are the Knowledge Check. The lesson's **✓ Finish lesson** opens it, and so does **📝 Submit for Grading** on the lesson's sheet on the ✍️ Process Questions page.
+
 **The Knowledge Check** (`#/kc`):
-- **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
-- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type, into the lesson's answer sheet.
-- **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity, with a line of feedback. The total is a percentage.
+- **Opening it:** ✓ Finish lesson on the lesson's last slide, or 📝 Submit for Grading on the Process Questions page.
+- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type and are the same as the lesson's ✍️ Process Questions sheet.
+- **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity. Its feedback, per answer and overall, is written in the **facilitator's feedback DNA** (`js/ft-facilitator-dna.js`, Michelle's evaluations): a verdict label, the strength with specifics, then "However, improvement is needed in …" naming exactly what was missed. The total is a percentage.
+- **The trainer's review:** in **Admin → ✍️ Process Questions**, open a trainee and a lesson's Knowledge Check: the graded attempt (the answers, each answer's score and feedback, the overall evaluation), and the trainer's comment on each answer, an overall comment and a **final score**. Saved in `kcreview:<id>` (admins write it; the trainee reads it). The trainee sees *🧑‍🏫 Your trainer's review* on the Knowledge Check, and the trainer's notes under each answer. A trainer's score is final: it replaces the graded best (higher or lower) in their progress and on the Scorecard, and 70% or more finishes the lesson.
 - **Passing:** 70% passes and finishes the lesson. A retake keeps the best score.
 - **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
 - **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
@@ -206,16 +212,30 @@ A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2
 **Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet, but it has no tab in Training Modules: the Knowledge Check is the same questions.
 - **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
 - **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
-- **When a sheet counts as submitted:** when a Knowledge Check is graded with all of the sheet's questions answered (or, on the `#/process` page, when the trainee presses **Submit My Answers**).
+- **📝 Submit for Grading** (one button per lesson for a sheet shared by two lessons, with the best score so far) grades the sheet as that lesson's Knowledge Check. A sheet counts as submitted when a Knowledge Check is graded with all of its questions answered.
 
 **Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet:
 - whether it's submitted, how many questions are answered, and the answers;
-- the trainee's best Knowledge Check score per lesson (e.g. `L2 76%`);
+- the trainee's best Knowledge Check score per lesson (e.g. `L2 76%`), and **📝 Knowledge Checks: graded, then your review** (above);
 - the line for the ranking report, in the facilitator's words, for example "Process Questions Responses: COMPLETE; however, Item #7 under the Virtual Assistant Essentials answer sheet was left unanswered."
 
-## Training Monitoring Sheet
+## 📁 The Task Tracker and the Monitoring Sheet in the trainee's Google Drive
 
-Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Monitoring Sheet** in the top bar (`#/monitoring`, `js/ft-monitoring.js`).
+Trainees keep their **LSH Daily Task Tracker** (a Google Sheet) and their **Training Monitoring Sheet** (a Google Doc or Sheet) in their **VA Output folder**, not on the platform (`js/ft-drive.js`, which replaces the trainee pages of 📋 Task Tracker and 📒 Monitoring Sheet; the on-platform sheets below stay for admins and earlier records).
+
+- **📁 My Drive links** (on both pages): the VA Output folder, the Task Tracker sheet and the Monitoring Sheet. Each file is shared as **"Anyone with the link can view"** so the system can read it. Saved in `drive:<id>` (the trainee's own).
+- **Each training day** (📋 Task Tracker): the links to the day's outputs (typing and spelling test screenshots, documents …), **📤 Submit the day's links**.
+- **Graded automatically:** every night on the Worker's cron and on **✅ Check now** (`/api/drive/check`; a trainee at most every 3 minutes, an admin for anyone), the Worker reads each file's export (a sheet as CSV, a doc as text) and checks:
+  - **the tracker** with the same rules as before (`fromSheetCsv` in `js/ft-tracker-rules.js` turns the sheet into the workbook: the header row with *Task Details*, the dated Daily Notes columns between *Accountable VA* and *VA Notes*, the ⬇ FOR COMPLETION / RECURRING / COMPLETED sections): every open task has its Daily Note for the day, and the day's output links are in (`output-links`). Plus the notes review, in the facilitator's voice.
+  - **the Monitoring Sheet**, per discussion (`gradeMonitorText`): its title found, a date, 5 takeaways, questions, the understanding rated (a marked statement, e.g. `[x] I am confident…`). Plus a short review in the facilitator's voice.
+  - A file it can't read (not shared, or not a Sheets/Docs link) gets a check that says how to share it.
+- **The trainer's input:** **Admin → 📁 Drive Trackers**: batch → trainee → their links, each day's output links and check, and the Monitoring Sheet's check, each with the trainer's **score and comment** (the trainee sees them under the check). Everything is in `trackerreview:<id>` (`days[<date>]`, `monitor`); a new check keeps the trainer's score and comment.
+- **Dashboard and Scorecard:** the dashboard's cards show today's tracker check and the Monitoring Sheet's entries found; the Scorecard's *Task Tracker & Monitoring Sheet* averages the tracker days (the trainer's score where given) and the Monitoring Sheet.
+- **Test:** `.github/scripts/drive.cjs`.
+
+## Training Monitoring Sheet (on the platform: earlier records)
+
+Trainees used to fill in their **Training Monitoring Sheet** on the platform: **📒 Monitoring Sheet** (`#/monitoring`, `js/ft-monitoring.js`). It now lives in their Drive (above); this is the admin tab and the earlier records.
 
 - **Like the Word sheet**, which is embedded in full at the top of the page (Drive preview, with Download ↗): one entry per classroom discussion, each with:
   - the date;
@@ -235,9 +255,9 @@ Trainees fill in their **Training Monitoring Sheet** on the platform: **📒 Mon
   - Stored in `settings:monitor`, which everyone reads and trainers write.
   - Until it's set, the list is the 18 classroom discussions from the Hubstaff To-Dos.
 
-## Daily Task Tracker
+## Daily Task Tracker (on the platform: earlier records)
 
-Each trainee has an **LSH Daily Task Tracker** on the platform (📋 Task Tracker in the top bar), laid out like the Google Sheets sample: the status counts, Date Received, Type of Task, Task Details, Accountable VA, the dated **Daily Notes** columns, VA Notes, Deadline, Status and Actual Completion Date, with the For Completion / Recurring / Completed sections and the Client-VA Specific Tasks Index, Links & Access (no passwords), Directory and Time Zone tabs. It saves to the trainee's account as they type (`tracker:<id>`).
+Trainees now keep their tracker in their Drive (above). Before that, each trainee had an **LSH Daily Task Tracker** on the platform (📋 Task Tracker in the top bar), laid out like the Google Sheets sample: the status counts, Date Received, Type of Task, Task Details, Accountable VA, the dated **Daily Notes** columns, VA Notes, Deadline, Status and Actual Completion Date, with the For Completion / Recurring / Completed sections and the Client-VA Specific Tasks Index, Links & Access (no passwords), Directory and Time Zone tabs. It saves to the trainee's account as they type (`tracker:<id>`).
 
 - **The daily check** runs on the Worker's cron (`wrangler.json`, 02:00 UTC: 7 PM Pacific daylight time, 6 PM in winter) for every approved trainee, and live on the page while the trainee types. The result is a ✅/❌ per rule, the day's %, and every flagged cell (red on the sheet). Rule for now: every open task has a Daily Note for the day. Rules live in `js/ft-tracker-rules.js`, shared by the page and the Worker; add one to `RULES` to extend the check.
 - **Notes review:** the Worker also writes a short review of the day's notes against the criteria in **Admin → 📋 Task Trackers** (`settings:trackercriteria`). It uses the Gemini key pool (`GEMINI_API_KEY5` … `GEMINI_API_KEY9`); trainees see it as "Notes review".
@@ -262,35 +282,50 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 - **Google Sheet:** the LSH Training Portal keeps the attendance Google Sheet's **Platform Attendance** tab in step, both ways: everything here (automatic Time Ins included) goes to the sheet every 15 minutes, and edits made in the sheet to Training, Time In, Time Out, Status or Notes come back here straight away. See the Training Portal's README.
 - **Storage:** `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for trainees with no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at, by}}}`. `checkin:<YYYY-MM-DD>:<trainee id>` = `{timeIn, at, name, batch, training}` is the automatic Time In (each trainee's own key, so a room signing in at once never overwrites one another; its KV metadata carries the same for the portal; kept 40 days). The Worker lets only admins read and write these records. To change the statuses or their colors, edit `STATUSES`.
 
-## Simulators
+## 🛠 Practice Lab: real-time Practice Sessions at the trainee's own law firm
 
-**🛠 Practice Lab** (top bar) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
+**🛠 Practice Lab** (a section of the top bar) opens `#/simulators` (`js/ft-simulators.js`). Instead of simulators, the trainee does the real work, live, for their own law firm and on their own cases. The page: 🏛 their firm, 🟢 Practice Sessions, 🧑‍🏫 With your trainer, 🖥 Demo preparation and 🧪 Skill Building. The separate simulator cards are gone (the Calendaring Simulators card, the mock-call cards and *All simulators*): the CMS Call Simulator and the Google Calendar Simulator are tools inside their sessions, and the **Calendar Management Mock Calls are part of the Calendaring Practice Lab**. The main landing page has no Practice Lab / Simulators card.
 
-**🧪 Practice Lab: Skill Building** comes first on the page (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
+### 🏛 Law Firm Profiles and assignments (`js/ft-firms.js`)
 
-**Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. A **mock call** card has **🎯 Take a graded call** and **📞 Practice a caller** (Calendar Management's card also has the 📅 Google Calendar Simulator, to plot the appointments): the CMS Call Simulator opens on that line (`&line=<the card's title>`), with its numbered graded calls first (`&random=1`) or its practice calls. On a graded call (Graded call 1, 2…, the same for everyone) the caller's name, case and what's scored stay hidden until the debrief, so the trainee gets the name, verifies the caller and finds the file in the CMS, as on a real call; **🎯 Next: Graded call 2** in the debrief takes the next one. A **demo** card lists its example cases. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
+- **Firm profiles** (`settings:firms`, admins write, everyone reads): name, location and state, time zone, hours, main line and greeting, attorneys and team, the firm's **rules by area** (general, reception and calls, calendar, intake, claims, medical records), its calendar **color rule** by length, statute of limitations (years), LOR deadline, records vendor (**ChartSwap**) and the record types it requests, records email, and its **caseload**: Training Library cases in the CMS. Until an admin saves them, three starting profiles are used: **LSH Training Law Group** (the CMS's own firm and rules, Georgia, MC-01–MC-20), **Harbor & Pine Injury Law** (Florida, PIP, MC-21–MC-36) and **Summit Trial Attorneys** (California, Pacific time, MC-37–MC-52). All fictional.
+- **Assignments** (`assign:<id>`, admins write, the trainee reads): each trainee's firm and a case in each practice area: **PI Process Flow**, **Intake**, **Claims**, **Medical Records**.
+- **Admin → 🏛 Law Firms:** edit, add or delete firms (↺ restores the starting ones); then each batch's trainees with their firm and cases (from the firm's caseload). *Assign this firm to all* and **🎲 Spread cases** (each trainee in the batch gets different cases, the ones that fit the area first) fill a batch at once; **💾 Save all changes**.
+- **🏛 My Firm** (`#/firm`): the trainee's firm, its rules (✓ *I've read and understood my firm's rules*, saved in `sessions:<id>`) and their cases, each opening in the CMS.
+- **The case facts** the sessions check against are `js/ft-cases-data.js`, generated from the CMS's Training Library: `node build/make_cases.cjs <CaseManagementTraining/mock-cases.js>` (run it again when the cases change).
 
-| Activity | Lesson | Example cases | Also |
+### 🟢 Practice Sessions (`js/ft-sessions.js`)
+
+| Session | Lesson | Done in | Recorded and checked |
 |---|---|---|---|
-| Reception Mock Calls | Receptionist Training | — (the line's calls) | 🎯 Take a graded call · 📞 Practice a caller: Call Simulator, 7 reception calls |
-| Calendar Management Mock Calls | Calendaring & Appointment Setting | — (the line's calls) | 🎯 Take a graded call · 📞 Practice a caller: Call Simulator, 4 calendar calls · 📅 Google Calendar Simulator (the Portal's `simulators/gcal.html`): plot the appointments on the attorney's calendar and check them |
-| Intake Mock Calls | Intake Specialist | — (the line's calls) | 🎯 Take a graded call · 📞 Practice a caller: Call Simulator, 3 intake calls |
-| Saving Intake Packet and Extracted Intake Documents Demo | Intake Specialist | MC-02, MC-13 | Training Library |
-| LOR Uploading and Sending Demo (1P & 3P) | Claims Specialist | MC-01, MC-02, MC-12 | Training Library |
-| Sending MedLOR and Requesting Medical Bills & Records Demo | Medical Records Specialist | MC-01, MC-15, MC-08 | Training Library |
-| LV (Lien Verification) Request Demo | Medical Records Specialist | MC-09, MC-15, MC-05 | Training Library |
+| ☎️ Reception Mock Calls | Receptionist Training | the CMS Call Simulator's Reception line (graded or practice calls), the Front Desk Drill | the call note: the firm's greeting, a complete message, the case and need, routed to someone on the firm's team, the caller verified, initials |
+| 📅 Calendaring Practice Lab | Calendaring & Appointment Setting | the Calendar Management mock call (CMS), then the Google Calendar Simulator | the appointment: caller and case, a weekday inside the firm's hours, on the 15-minute grid, the firm's color for its length, Meet and the reminder, a description |
+| 📋 Intake Mock Calls | Intake Specialist | the CMS's Intake line, on the trainee's intake case (Intake tab) | the intake: name, DOB, DOL, case type, 3P carrier, the statute of limitations under the firm's state, injuries, the conflict check and a decision |
+| ⚖️ PI Process Flow | Personal Injury Process Flow | the trainee's case in the CMS | its phase, attorney, case manager, DOL, SOL and the next steps with who does each |
+| 🧾 Claims: LORs (1P & 3P) | Claims Specialist | the trainee's claims case (practice copy) | 3P carrier, claim, adjuster and limits, 1P coverage and claim, the follow-up date |
+| 🩺 Medical Records: ChartSwap request | Medical Records Specialist | the trainee's records case | a ChartSwap-style request: requesting firm and records email, patient and DOB, a treating provider and its first date of service, the firm's record types, a legal purpose, the HIPAA authorization (hold the request when it isn't signed yet) and who signs (the guardian or POA when the file has one) |
 
-Each case's one-line description is taken from `mock-cases.js`. If a case changes there, update its line in `ACTIVITIES`.
+- **Real time:** ▶ Start the session starts a clock and opens the tools (the CMS signed in: see *Training tools open signed in*); the trainee records their work on the session's form as they go and **📤 Submits for review**.
+- **Then:** (1) the automated checks against the case file and the firm's rules, a % per session (80% passes); (2) the AI's evaluation in the facilitator's feedback DNA; (3) the trainer's review. The trainee can do a session again.
+- **Admin → 🟢 Practice Sessions:** **📡 Live now** (sessions in progress, refreshed every 20 s while the tab is open and visible; it can be paused), then every trainee's sessions by batch: what they recorded, the checks, the AI's evaluation and the trainer's **score and comment** (final).
+- **Graded calls** still count in their lesson: the Reception, Calendaring and Intake sessions show the lesson's best graded call from the CMS Call Simulator (`callsim:<id>`, below).
+- **Records:** `sessions:<id>` (the trainee's runs, answers, checks and the AI's evaluation), `labreview:<id>` (the trainer's reviews and inputs; admins write it, the trainee reads it).
 
-**Graded calls count in their lesson.** The main Call Simulator is the CMS's (every Call Simulator link opens it, signed in through the Portal). A mock-call card has **🎯 Take a graded call** (the line's numbered graded calls, the caller unknown until the debrief: `random=1`, which the Portal passes on as `mode=graded`) and **📞 Practice a caller** (the line's practice calls, no grading). A graded call taken there is kept by the Training Portal (its `/api/call-results`) in this program's store as `callsim:<trainee id>`, which the Worker lets the trainee read but never write. Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls then show their best graded call on the mock-call card ("🎯 Graded calls: best 82% · 2 calls") and on the lesson card ("📞 82%"), and the dashboard band shows the three lessons' best graded calls averaged ("Graded calls · 2 / 3 lessons"). It's read once a page load and again when the trainee comes back to the tab (at most every two minutes).
+### 🧑‍🏫 Trainer Inputs: what can't be simulated
 
-**All simulators.** Every live simulator on the LSH Training Portal: Call, Google Calendar, Calendaring, Email Workspace, Email Replies, Docket System, Medical Records Requests and Court E-Filing. These are open any time, and the section links to the portal's Simulators hub.
+The trainee–trainer activities (the demos and the live mock calls with the trainer) are recorded by the trainer: **Admin → 🧑‍🏫 Trainer Inputs** is a grid of trainees × activities; a cell takes the result (Not yet, Passed, Redo), a score, the date and a comment. **✏️ Edit the activities** changes the list (`settings:trainer-acts`, one per line: `title | lesson | kind`; the starting list is the Training Guide's live mock calls and its demos, including the Saving Intake Packet and Extracted Intake Documents Demo). The trainee sees each result under *🧑‍🏫 With your trainer*, and it reaches the Scorecard.
 
-**How the tools open**
-- **Open here** runs the tool in a full-window panel (✕ Close or Esc returns to the page). **New tab ↗** opens it in its own tab.
-- For trainees, a mock call or demo card opens with its lesson (Admin → 📅 Open Lessons). Trainers see every card.
-- Portal simulators get `program=FT` with the trainee's name and batch, so scores are saved for the trainer.
-- The **Call Simulator** has a Foundational pack of 14 calls on the same CMS cases (Training Portal, `simulators/call-pack-ft.js`). Each mock call card opens it on that card's calls (`&line=Reception Mock Calls`, etc.). A call's brief shows the case file with a link to open it in the CMS, and after the call the trainee writes the note it requires.
+### 🖥 Demo preparation and 🧪 Skill Building
+
+**🖥 Demo preparation:** one card per demo in the Training Guide, with the training CMS's Training Library cases that fit it (`ACTIVITIES` in `js/ft-simulators.js`; a case opens with `?program=…&mock=MC-xx`, view only, and **Work on a practice copy** makes it editable). Each case's one-line description is taken from `mock-cases.js`.
+
+**🧪 Skill Building** (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
+
+**Graded calls count in their lesson.** The main Call Simulator is the CMS's: every link opens it directly (`?calls=1&program=FT&line=<line>`, `&mode=graded` for the line's graded calls), signed in with the trainee's ticket. A graded call taken there is reported by the CMS to the Training Portal (its `/api/call-results`), which keeps it in this program's store as `callsim:<trainee id>`; the Worker lets the trainee read it but never write it. Reception (lesson 4), Calendar Management (5) and Intake (6) then show their best graded call on the session card ("🎯 Graded calls: best 82% · 2 calls") and on the lesson card ("📞 82%"), and the dashboard band shows the three lessons' best graded calls averaged. It's read once a page load and again when the trainee comes back to the tab (at most every two minutes).
+
+### 🔐 Training tools open signed in (no CMS log-in page)
+
+Every link to the training CMS (cases, the Training Library, the Call Simulator, the Front Desk Drill) and to the Training Portal's simulator pages (the Google Calendar Simulator, Medical Records Requests, …) opens it already signed in. `js/lsh-tool-links.js` (the same file in every LSH course repo) adds a fresh ticket to the link on the way out (`?ticket=`: clicks, middle-clicks, New tab ↗, `window.open`, and the Open here frame through `LSHToolLinks.ticketed(url)`). The ticket is signed by this Worker (`/api/auth/tool-ticket`) with the Portal's `PORTAL_SSO_SECRET`, in the Portal's own format (`{first, last, b, exp}`, good for 5 minutes), so the CMS signs the trainee in through its existing Portal sign-in (`guest-access.js`, `/api/portal-login`). Trainees only: admins and 👁 Trainee view are left alone (an admin's ticket never signs anyone in), and without the secret the link opens as it was. The Portal signs the trainee in from the ticket before a simulator page is sent (its `functions/_middleware.js`, Training-Portal repo), and there a signed-in trainee always practices as their own account.
 
 ## The facilitator's feedback style
 
@@ -352,11 +387,16 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-orientation.js` | Admin → 🧭 Orientation: this program's platform orientation slides, which are also the Blueprint PDF (`/blueprint.pdf`). |
-| `js/ft-simulators.js` | The 🛠 Practice Lab page (`#/simulators`): the guide's mock calls and demos, with their practice tools. |
+| `js/ft-simulators.js` | The 🛠 Practice Lab page (`#/simulators`): the firm banner, the sessions' cards, demo preparation and Skill Building. |
+| `js/ft-firms.js` | 🏛 Law Firm Profiles, each trainee's firm and cases (Admin → 🏛 Law Firms), and 🏛 My Firm; `ftAdminTab()` for this program's admin tabs. |
+| `js/ft-sessions.js` | 🟢 Practice Sessions (`#/session`) with their checks, the AI's evaluation and the trainer's review (Admin → 🟢 Practice Sessions), and 🧑‍🏫 Trainer Inputs. |
+| `js/ft-cases-data.js`, `build/make_cases.cjs` | The Training Library's case facts the sessions check against, generated from the CMS's `mock-cases.js`. |
+| `js/ft-drive.js` | The Task Tracker and the Monitoring Sheet in the trainee's Google Drive: the links, the checks, Admin → 📁 Drive Trackers. |
+| `js/lsh-tool-links.js` | Training tools open signed in: a fresh ticket on every CMS link (the same file in every LSH course repo). |
 | `js/lsh-program.js` | The program layout (the same file in every LSH course repo): the five sections in the top bar, 📚 Training Modules (`#/modules`) and its tabs, 🏅 Scorecard (`#/scorecard`) and Admin Master Control → 🏅 Scorecards. |
 | `js/ft-program.js` | This program's setup for the layout: the Training Modules pages, the Practice Lab's pages and what the Scorecard collects. |
 | `js/ft-activities.js` | Admin → 🗣 Feedback Style (the 📝 Activities page was taken off). |
-| `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the sheet, the check panel, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too. |
+| `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the on-platform sheet, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too, with the Drive sheet's reader (`fromSheetCsv`) and the Monitoring Sheet's check (`gradeMonitorText`). |
 | `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 | `.github/workflows/checks.yml`, `.github/scripts/` | The checks on every pull request (see *Checks*): `check-site.mjs` (syntax, files, JSON), `server.mjs` (the site through `worker.js` with an in-memory KV, for local runs) and `requests.cjs` (how often a page asks the server). |
@@ -439,6 +479,8 @@ The document-heavy folders (`ft/`, `trainer/`) are kept in **Cloudflare R2**, th
 `.github/workflows/checks.yml` runs on every pull request and every push to `main`. A red **Checks** status means something is broken, and the log says what:
 
 - **Syntax, files and build:** every `.js` file and inline script parses, every local file the pages load is in the repository, and every JSON file parses (`.github/scripts/check-site.mjs`, the EA/PA portal's); the Worker builds (`wrangler deploy --dry-run`).
+- **The Drive trackers** (`.github/scripts/drive.cjs`, no browser): the Worker reads a tracker sheet and a Monitoring Sheet (Google's export answered by the test), checks them, keeps the trainer's input on a new check, makes a trainee wait 3 minutes between checks and explains a file that isn't shared.
+- **Practice Sessions** (`.github/scripts/practice-sessions.cjs`): the starting firms, a firm and different cases for two trainees, My Firm, the six sessions (a ChartSwap request filled from the case passes, a wrong color misses), the trainer's review and inputs, the Knowledge Check's trainer score and the Scorecard. Also in the browser job: `graded-calls.cjs` and `blueprint.cjs` (no Blueprint or Simulators card on the landing page; the top bar's Blueprint button stays).
 - **Server requests** (`.github/scripts/requests.cjs`): `get-many` gives a trainee only their own and public records and an Admin every one, reads this program's `ft:` records only, and refuses more than 100 keys. In a browser, with the checks sped up: a trainee's page reads the tasks for every open lesson in one request, their record about once per check, and the open lessons in one request; checks for a new version rarely; and asks nothing while the tab is in the background (catching up when it's back) or on a quick switch to another tab and back. A server that doesn't answer doesn't sign the trainee out or lock their lessons; a revoke does. The Trainee Audit reads every trainee in two requests, and Task Trackers, Monitoring Sheets and Process Questions read the trainees' sheets with get-many.
 
 To run them locally (Node 22; the browser test needs Playwright: `npm install playwright` and `npx playwright install chromium`):
