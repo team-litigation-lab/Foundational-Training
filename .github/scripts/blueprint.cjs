@@ -3,7 +3,7 @@
 // node_modules in place of cdnjs; /version is answered by the test so the deployment can change.
 // Checks:
 // - a trainee has no Trainer blueprint (it doesn't open, and Orientation isn't theirs), and has the 📘 Platform
-//   Blueprint card (the Trainee blueprint PDF) on the dashboard;
+//   Blueprint button (the Trainee blueprint PDF) on the top bar, and no Blueprint card on the dashboard;
 // - a trainer's 🧭 Orientation has the Trainee / Trainer blueprint tabs; 🛠 Trainer blueprint opens the
 //   trainer deck with both tabs, ◀ ▶ and the keys go through every slide, each fits on a laptop and on a
 //   phone, Esc closes it, and the Trainee tab goes back to Orientation;

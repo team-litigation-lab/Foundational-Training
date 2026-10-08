@@ -54,14 +54,14 @@ window.orientSlides = function(){
      <div class="or-bp">
        <div class="or-bp-main">
          ${box(1,"Progress track",`📌 and Lessons 1–${N} · ✓ = finished`,"or-hero")}
-         ${box(3,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
-         ${box(4,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
+         ${box(2,"Lesson cards","Start / Review · ▶ Video Presentation · 💬 trainer feedback","or-cards")}
+         ${box(3,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
        </div>
        <div class="or-bp-side">
-         ${box(5,"📒 Monitoring Sheet","Your Drive sheet's entries found","dark")}
-         ${box(6,"📋 Task Tracker today","Today's check of your Drive tracker","dark")}
-         ${box(7,"Your progress","Program complete · lessons finished","dark")}
-         ${box(8,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
+         ${box(4,"📒 Monitoring Sheet","Your Drive sheet's entries found","dark")}
+         ${box(5,"📋 Task Tracker today","Today's check of your Drive tracker","dark")}
+         ${box(6,"Your progress","Program complete · lessons finished · graded calls","dark")}
+         ${box(7,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
        </div>
      </div>`},
    {k:"Navigation", h:"Getting around", body:`
@@ -70,7 +70,7 @@ window.orientSlides = function(){
           ["🛠 Practice Lab","Your firm, your real-time Practice Sessions, the activities with your trainer, and Skill Building."],
           ["📋 Task Tracker","Your LSH Daily Task Tracker in your VA Output folder: its link, and each day's output links."],
           ["📒 Monitoring Sheet","Your Monitoring Sheet in your VA Output folder: one entry per classroom discussion."],
-          ["✍️ Process Questions","Each lesson's Knowledge Check: answer, then 📝 Submit for Grading."],
+          ["📝 Knowledge Check","A lesson's process questions, graded in your facilitator's style. Open it from the lesson's last slide."],
           ["My Notes","Your private notes — download them as a PDF."],
           ["🎯 Focus","Your trainer's feedback and what to work on next."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
      </div>

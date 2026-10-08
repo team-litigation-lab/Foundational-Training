@@ -611,6 +611,40 @@ async function checkIn(kv, id, training) {
   return { ok: true, date: et.date, timeIn: v.timeIn };
 }
 
+/* ---------- documents in R2 ---------- */
+// The document-heavy folders (ft/, trainer/) are served from R2: the DOCUMENTS binding,
+// bucket lshtraining, under courses/ft/ (uploaded by .github/workflows/r2-docs.yml on every push to main).
+// wrangler.json's assets.run_worker_first sends these paths through the Worker. A file that isn't in R2
+// (not uploaded yet, or no DOCUMENTS binding) still comes from the Worker's static assets, as before.
+const R2_DOCS = "courses/ft";
+const R2_DOC_DIRS = ["/ft/", "/trainer/"];
+async function docFromR2(env, request, path) {
+  if (!env.DOCUMENTS || (request.method !== "GET" && request.method !== "HEAD") || !R2_DOC_DIRS.some((d) => path.startsWith(d))) return null;
+  try {
+    const obj = await env.DOCUMENTS.get(R2_DOCS + decodeURIComponent(path), { onlyIf: request.headers, range: request.headers });
+    if (!obj) return null;
+    const h = new Headers();
+    obj.writeHttpMetadata(h);
+    h.set("ETag", obj.httpEtag);
+    h.set("Accept-Ranges", "bytes");
+    // The browser may keep a copy but re-checks it (a cheap 304), so an updated document shows at once.
+    h.set("Cache-Control", "no-cache");
+    if (!("body" in obj)) return new Response(null, { status: 304, headers: h });
+    let status = 200;
+    if (obj.range && request.headers.has("Range")) {
+      const r = obj.range;
+      const start = r.suffix !== undefined ? Math.max(0, obj.size - r.suffix) : r.offset || 0;
+      const len = r.suffix !== undefined ? obj.size - start : r.length !== undefined ? r.length : obj.size - start;
+      h.set("Content-Range", `bytes ${start}-${start + len - 1}/${obj.size}`);
+      h.set("Content-Length", String(len));
+      status = 206;
+    } else h.set("Content-Length", String(obj.size));
+    return new Response(request.method === "HEAD" ? null : obj.body, { status, headers: h });
+  } catch (e) {
+    return null; // R2 unavailable or a bad path: fall back to the static assets
+  }
+}
+
 export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
@@ -653,7 +687,7 @@ export default {
         return new Response(res.body, { status: res.status, headers: h });
       }
       if (!path.startsWith("/api/")) {
-        const res = await env.ASSETS.fetch(request);
+        const res = (await docFromR2(env, request, path)) || (await env.ASSETS.fetch(request));
         const type = res.headers.get("Content-Type") || "";
         const h = new Headers(res.headers);
         if (!type.includes("text/html")) {

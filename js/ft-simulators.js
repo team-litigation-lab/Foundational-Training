@@ -291,11 +291,11 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-tool-act{display:flex;gap:8px;flex-wrap:wrap;}
 .fts-tool-act a.btn{text-decoration:none;}
 .fts-all .fts-card h3{font-size:16px;} .fts-sub a{color:var(--orange-deep);font-weight:700;}
+.fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
 .fts-banner{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#0b1730,#13284f);color:#fff;border-radius:18px;padding:18px 22px;margin-bottom:18px;cursor:pointer;box-shadow:0 10px 24px -14px rgba(8,18,38,.6);transition:transform .15s;}
 .fts-banner:hover{transform:translateY(-2px);} .fts-banner:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
 .fts-banner-ic{width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.18);border:1px solid rgba(253,186,116,.45);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
 .fts-banner-tx{flex:1;min-width:0;} .fts-banner-tx b{display:block;font-size:16px;} .fts-banner-tx span{font-size:13px;color:#c7d2fe;}
-.fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
 .fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
 .fts-banner-go{background:#f97316;color:#0f172a;font-weight:800;font-size:12px;border-radius:999px;padding:8px 16px;white-space:nowrap;}
 @media (max-width:520px){ .fts-banner{flex-wrap:wrap;} .fts-banner-go{margin-left:64px;} }

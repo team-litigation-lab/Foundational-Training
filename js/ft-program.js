@@ -23,7 +23,6 @@ window.LSH_PROGRAM = {
   // 📚 Training Modules: the lessons, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
-    {view:"process", icon:"✍️", label:"Process Questions", about:"Each lesson’s answer sheet, and the Knowledge Checks that grade it."},
     {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
     {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
@@ -31,7 +30,7 @@ window.LSH_PROGRAM = {
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
-  moduleViews: ["day", "kc"],          // a lesson and its Knowledge Check are in Training Modules too
+  moduleViews: ["day", "kc", "process"],   // a lesson, its Knowledge Check and the answer sheets (no tab of their own: the Knowledge Check has them) are in Training Modules too
   labViews: ["simulators", "calsim", "firm", "session"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
