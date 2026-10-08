@@ -3,8 +3,9 @@
    Buttons that do the same kind of thing share one menu instead of
    each taking a slot in the top bar, the way the Training Portal's
    admin bar keeps everything else under ⚙ System Management:
-     • 📁 Case File ▾ the course's case material: Case File (Claim File),
-                      📁 Documents and 🗂 Workspace; named after its Case File
+     • 📁 Case File   one tab for the course's case material: the Case File
+                      (Claim File), 📁 Documents and 🗂 Workspace share a row of
+                      tabs at the top of their pages instead of a slot each
      • 📚 Guides ▾    Notes, Handouts, Orientation, Facilitator Guide,
                       Platform Blueprint (whichever this page has)
      • 📋 My Sheets ▾ Task Tracker and Monitoring Sheet
@@ -22,9 +23,6 @@
 (function(){
 "use strict";
 var GROUPS = [
-  { id: "case", label: function(box){ var f = [].find.call(box.lastChild.children, function(b){ return viewOf(b) === "clientprofile"; }); return "📁 " + (f ? f.textContent.replace(/^[^A-Za-z]+/, "").trim() : "Case File"); },
-    title: "The case file, its documents and your workspace",
-    match: function(b){ return /^(clientprofile|casedocs|workspace)$/.test(viewOf(b)); } },
   { id: "guides", label: "📚 Guides", title: "Notes, handouts and guides",
     match: function(b){ return /^(notes|handouts|orientation|facilitatorguide)$/.test(viewOf(b)) || b.matches(".nav-blueprint, #lbp-open-btn"); } },
   { id: "sheets", label: "📋 My Sheets", title: "Your Task Tracker and Monitoring Sheet",
@@ -33,6 +31,52 @@ var GROUPS = [
     match: function(b){ return /^(togglePageFullscreen|openInNewTab)\(/.test(b.getAttribute("onclick") || ""); } }
 ];
 function viewOf(b){ var m = /goto\('([a-z]+)'/.exec(b.getAttribute("onclick") || ""); return m ? m[1] : ""; }
+
+// 📁 Case File: one tab in the bar; its pages share a row of tabs (Case File · Documents · Workspace) at the top.
+var CASE_VIEWS = ["clientprofile", "casedocs", "workspace"];
+function mergeCase(nav){
+  var tabs = CASE_VIEWS.map(function(v){ return [].find.call(nav.children, function(b){ return b.tagName === "BUTTON" && viewOf(b) === v; }); }).filter(Boolean);
+  if(tabs.length < 2) return;
+  tabs.forEach(function(b){ if(!b.hasAttribute("data-lsh-label")) b.setAttribute("data-lsh-label", b.innerHTML); });
+  // the page you're on (the app's state.view; the Case File tab's own highlight below would otherwise read as it)
+  var cur = (typeof state !== "undefined" && state) ? state.view : null;
+  var on = tabs.filter(function(b){ return cur ? viewOf(b) === cur : b.classList.contains("active"); })[0];
+  var main = tabs[0], word = main.getAttribute("data-lsh-label").replace(/^[^A-Za-z<]+/, "");
+  var html = "📁 " + word;
+  if(main.innerHTML !== html) main.innerHTML = html;
+  main.title = tabs.map(function(b){ return b.textContent.replace(/^[^A-Za-z]+/, "").trim(); }).join(" · ");
+  main.classList.toggle("active", !!on);
+  tabs.slice(1).forEach(function(b){ if(b.style.display !== "none") b.style.display = "none"; });
+  // the row of tabs on these pages, above the page itself
+  var page = document.querySelector("main");
+  var row = page && page.querySelector(":scope > .lsh-subtabs");
+  if(!on || !page){ if(row) row.remove(); return; }
+  hideBack(page, tabs);
+  var want = tabs.map(function(b){ return viewOf(b) + (b === on ? "*" : ""); }).join(",");
+  if(row && row.getAttribute("data-k") === want) return;
+  if(row) row.remove();
+  row = document.createElement("div");
+  row.className = "lsh-subtabs"; row.setAttribute("role", "tablist"); row.setAttribute("data-k", want);
+  tabs.forEach(function(b){
+    var t = document.createElement("button");
+    t.type = "button"; t.setAttribute("role", "tab"); t.innerHTML = b.getAttribute("data-lsh-label");
+    if(b === on){ t.className = "on"; t.setAttribute("aria-selected", "true"); }
+    t.addEventListener("click", function(){ b.click(); });
+    row.appendChild(t);
+  });
+  var slot = page.querySelector(":scope > #navBackSlot");
+  page.insertBefore(row, slot ? slot.nextSibling : page.firstChild);
+}
+// "← Back to Documents" on the Case File page is the tab next to it: hidden. A way back anywhere else stays.
+function hideBack(page, tabs){
+  var slot = page.querySelector(":scope > #navBackSlot"), back = slot && slot.querySelector(".nav-back");
+  if(!slot) return;
+  var to = back ? back.textContent.replace(/^.*Back to\s*/, "").trim().toLowerCase() : "";
+  var names = tabs.map(function(b){ return b.textContent.replace(/^[^A-Za-z]+/, "").trim().toLowerCase(); });
+  var sibling = !!to && names.some(function(n){ return n && (to.indexOf(n) >= 0 || n.indexOf(to) >= 0); });
+  var want = sibling ? "none" : "";
+  if(slot.style.display !== want) slot.style.display = want;
+}
 
 var css = document.createElement("style");
 css.id = "lsh-topbar-css";
@@ -46,6 +90,9 @@ css.textContent = ".lsh-grp{position:relative;display:flex;}"
   /* the two icon buttons read as words inside the menu */
   + ".lsh-grp-menu button[data-lsh-word]::after{content:attr(data-lsh-word);font-size:13.5px;}"
   + ".lsh-grp-menu .bp-long{display:inline !important;} .lsh-grp-menu .bp-word{display:inline !important;}"
+  + ".lsh-subtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:6px;background:#fff;border:1px solid rgba(31,37,71,.12);border-radius:12px;width:fit-content;max-width:100%;}"
+  + ".lsh-subtabs button{border:0;background:transparent;color:#1F2547;font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;}"
+  + ".lsh-subtabs button:hover{background:#F3F4F9;} .lsh-subtabs button.on{background:#1F2547;color:#fff;}"
   /* phones (☰ Menu open): the menus open in place, under their button */
   + "@media(max-width:760px){.topbar.nav-open .lsh-grp{flex-direction:column;align-items:stretch;}"
   + ".topbar.nav-open .lsh-grp-menu{position:static;box-shadow:none;background:rgba(255,255,255,.06);margin:2px 0 4px 12px;}"
@@ -96,6 +143,7 @@ function label(box, g){
 function organize(){
   var nav = document.querySelector(".topbar .nav");
   if(!nav) return;
+  mergeCase(nav);
   GROUPS.forEach(function(g){
     var box = nav.querySelector('.lsh-grp[data-grp="' + g.id + '"]');
     var loose = [].filter.call(nav.children, function(b){ return b.tagName === "BUTTON" && g.match(b); });
@@ -125,7 +173,7 @@ function schedule(){
 function start(){
   organize();
   new MutationObserver(function(records){
-    if(records.some(function(r){ return r.target.closest && r.target.closest(".topbar") || [].some.call(r.addedNodes, function(n){ return n.querySelector && n.querySelector(".topbar"); }); })) schedule();
+    if(records.some(function(r){ return r.target.closest && (r.target.closest(".topbar") || r.target.closest("#navBackSlot")) || [].some.call(r.addedNodes, function(n){ return n.querySelector && n.querySelector(".topbar"); }); })) schedule();
   }).observe(document.body, {childList:true, subtree:true});
   document.addEventListener("click", function(e){ if(!e.target.closest || !e.target.closest(".lsh-grp")) closeAll(); }, true);
   document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeAll(); });
