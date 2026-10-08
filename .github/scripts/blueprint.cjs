@@ -3,7 +3,7 @@
 // node_modules in place of cdnjs; /version is answered by the test so the deployment can change.
 // Checks:
 // - a trainee has no Trainer blueprint (it doesn't open, and Orientation isn't theirs), and has the 📘 Platform
-//   Blueprint card (the Trainee blueprint PDF) on the dashboard;
+//   Blueprint button (the Trainee blueprint PDF) on the top bar, and no Blueprint card on the dashboard;
 // - a trainer's 🧭 Orientation has the Trainee / Trainer blueprint tabs; 🛠 Trainer blueprint opens the
 //   trainer deck with both tabs, ◀ ▶ and the keys go through every slide, each fits on a laptop and on a
 //   phone, Esc closes it, and the Trainee tab goes back to Orientation;
@@ -96,9 +96,10 @@ async function walk(page, label) {
     let page = await open(browser, { width: 1366, height: 768 }, false);
     const t = await page.evaluate(() => ({ opened: LSHBlueprint.open('trainer'), isOpen: LSHBlueprint.isOpen(), tabs: !!document.querySelector('.lbp-or-tabs') }));
     if (t.opened || t.isOpen || t.tabs) fail(`a trainee could reach the Trainer blueprint: ${JSON.stringify(t)}`);
-    // Foundational: Handouts isn't part of this program, so the dashboard has the 📘 Platform Blueprint card
-    const card = await page.evaluate(() => { goto('dashboard'); render(); const b = [...document.querySelectorAll('.fts-banner')].find(x => /Platform Blueprint/.test(x.textContent)); return b ? b.getAttribute('onclick') : null; });
-    if (!card || !card.includes('/blueprint.pdf')) fail(`a trainee's dashboard has no 📘 Platform Blueprint card opening /blueprint.pdf: ${card}`);
+    // Foundational: Handouts isn't part of this program, so the top bar has 📘 Platform Blueprint (the dashboard has no card for it)
+    const bp = await page.evaluate(() => { goto('dashboard'); render(); const b = document.querySelector('.nav-blueprint'); return { btn: b ? b.getAttribute('onclick') : null, card: [...document.querySelectorAll('main .card, main [role=link]')].some(x => /Platform Blueprint/.test(x.textContent)) }; });
+    if (!bp.btn || !bp.btn.includes('/blueprint.pdf')) fail(`a trainee's top bar has no 📘 Platform Blueprint button opening /blueprint.pdf: ${bp.btn}`);
+    if (bp.card) fail(`the dashboard still has a Platform Blueprint card (it's on the top bar)`);
     await page.context().close();
 
     // ---- a trainer, on a laptop ----

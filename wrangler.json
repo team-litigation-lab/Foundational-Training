@@ -5,7 +5,11 @@
   "main": "worker.js",
   "assets": {
     "directory": ".",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/ft/*",
+      "/trainer/*"
+    ]
   },
   "triggers": {
     "crons": [
@@ -16,6 +20,12 @@
     {
       "binding": "LSH_KV",
       "id": "b121aa911590471bbad351d03274d7f4"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "DOCUMENTS",
+      "bucket_name": "lshtraining"
     }
   ],
   "previews": {

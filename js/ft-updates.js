@@ -798,6 +798,9 @@ window.renderDashboard = function(){
     </div></aside>
   </div>`;
 };
+// the feedback card's "Rate <lesson>" button on the light band (js/lsh-dashboard.js makes every button in it white)
+(function(){ const st = document.createElement("style"); st.id = "ft-dash-band"; st.textContent = `
+.dash-main > .dash-side .tfb-dash .btn.btn-ghost{color:var(--navy) !important;background:#fff !important;border:1px solid #E7CDB3 !important;}`; document.head.appendChild(st); })();
 const __ftCertData = window.certData;
 window.certData = function(src){
   const c = __ftCertData.apply(this, arguments);

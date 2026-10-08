@@ -17,7 +17,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 |---|---|
 | 🏠 **Main Portal** | The LSH Training Portal (`https://cm-training-activity.pages.dev/`). It replaces the Portal link (← Training Directory) that `js/portal-link.js` adds, which is hidden here. |
 | 📚 **Modules** | This program's landing page (the dashboard): the Standard Foundational Training and its lessons. The lessons list is also at `#/modules`. |
-| ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Admins go to **Admin → ✍️ Process Questions** (every trainee's). The questions aren't a slide in the lessons; finishing a lesson opens its Knowledge Check. |
+| ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Admins go to **Admin → ✍️ Process Questions** (every trainee's). The questions aren't a slide in the lessons; finishing a lesson opens its 📝 Knowledge Check (`#/kc`), which also saves the answer sheet with its proper name (Google Drive, Word, the trainee folder). |
 | 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
 | 👤 **My Dashboard ▾** | A trainee's own pages: 🎯 My Focus, 🏅 My Performance (`#/scorecard`, the trainee's grades from every grading system), 🗒 My Notes, 📋 Task Tracker and 📒 Monitoring Sheet. Admins get **🏅 Scorecards** here instead: Admin → Scorecards, every approved trainee's in one table. |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
@@ -169,7 +169,7 @@ Admins have **🧭 Orientation** in the top bar (`#/orientation`), as on the EA/
 
 - **The page:** 12 slides with ← → (or the arrow keys), **⛶ Present full screen**, **🖨 Print** and **⬇ Download PDF** (`LSH_FT_Platform_Orientation.pdf`). Nothing private is on it: no facilitator's notes, answers or trainee data. Trainees and 👁 Trainee view don't see it.
 - **The slides** (`js/ft-orientation.js`): welcome; the roadmap (📌 and the lessons, read from `DAYS`); how a lesson works; classroom discussions; the dashboard; getting around (the trainee top bar); daily habits; simulators; activities and feedback; the certificate; ground rules; let's begin. If a trainee-facing feature changes, update its slide.
-- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Trainees open it from the **📘 Platform Blueprint** card on their dashboard (Handouts isn't part of this program), and anyone signed in from the **📘 Platform Blueprint** button in the top bar, before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
+- **The Blueprint PDF** (`/blueprint.pdf`): the same slides as a PDF, for anyone to open or share. Anyone signed in opens it from the **📘 Platform Blueprint** button in the top bar (Handouts isn't part of this program), before ⧉ and ⛶ (`js/blueprint-content.js`; on a laptop screen it reads "📘 Blueprint", and below 1330 px just 📘).
   - **It republishes itself after every deploy.** The published copy (`blueprint:pdf`, `blueprint:meta`) is matched against the build and the Worker's deployment id (`/version`, from `version_metadata` in `wrangler.json`). The first admin page open after a deploy rebuilds it in the background (`js/lsh-blueprint-course.js`).
 - **🛠 Trainer blueprint** (admins only, never at a public address): a tab on 🧭 Orientation.
   - **The slides:** a cover and 11 slides covering signing in, trainees and the Trainee Audit, Open Lessons, the Curriculum, Presenter view, Activities, the facilitator's feedback style, Monitoring Sheets, Process Questions, Task Trackers, Attendance and Trainee view.
@@ -197,16 +197,16 @@ A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2
 
 **The Knowledge Check** (`#/kc`):
 - **Opening it:** it opens from the lesson's last slide (📝 Take the Knowledge Check, under the lesson's questions) and from Continue to Knowledge Check.
-- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type and are the same as the lesson's ✍️ Process Questions sheet.
+- **Answers:** trainees answer in complete sentences (at least five words each). The answers save as they type, into the lesson's answer sheet.
 - **Grading:** the AI scores each answer out of 10 for accuracy, depth and clarity, with a line of feedback. The total is a percentage.
 - **Passing:** 70% passes and finishes the lesson. A retake keeps the best score.
 - **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
 - **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
 
-**The ✍️ Process Questions page** (`#/process`) keeps every sheet in one place, for saving it with the proper name:
+**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet, but it has no tab in Training Modules: the Knowledge Check is the same questions.
 - **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
 - **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
-- **When a sheet counts as submitted:** when the trainee presses **Submit My Answers**, or when a Knowledge Check is graded with all of the sheet's questions answered.
+- **When a sheet counts as submitted:** when a Knowledge Check is graded with all of the sheet's questions answered (or, on the `#/process` page, when the trainee presses **Submit My Answers**).
 
 **Admin → ✍️ Process Questions** lists batch → trainee → each answer sheet:
 - whether it's submitted, how many questions are answered, and the answers;
@@ -264,7 +264,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## Simulators
 
-**🛠 Practice Lab** (top bar, and the **Practice Lab** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
+**🛠 Practice Lab** (top bar) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
 
 **🧪 Practice Lab: Skill Building** comes first on the page (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
 
@@ -403,7 +403,7 @@ Every edit checks that its anchor exists, so the build stops with an error if th
 
 ## 📉 Staying under Cloudflare's monthly request limit
 
-Every request to the Worker (everything under `/api/` and `/version`) counts toward the Cloudflare account's requests. The account is on Workers Paid: **10 million requests a month, shared by every LSH site** (the courses, the CMS, the Training Portal and the rest). Past that, Cloudflare charges for every extra million, so a page that asks too often costs money for every site. Static files (the page, `js/`, images) don't count.
+Every request to the Worker (everything under `/api/` and `/version`) counts toward the Cloudflare account's requests. The account is on Workers Paid: **10 million requests a month, shared by every LSH site** (the courses, the CMS, the Training Portal and the rest). Past that, Cloudflare charges for every extra million, so a page that asks too often costs money for every site. Static files (the page, `js/`) don't count. `ft/` and `trainer/` now come from R2 through the Worker, so each of those files a browser loads (or re-checks) counts too: see *Documents in R2*.
 
 So an open page asks the server sparingly (`POLL` in `index.html`; the open lessons in `js/ft-updates.js`), and not at all while its tab is in the background. When the tab is back, whatever came due runs then; a quick look at another tab (Google Meet) asks nothing:
 
@@ -423,6 +423,16 @@ A trainee's page in view now sends about 4 requests a minute (before: about 24, 
 Lists of records are read with `/api/storage/get-many` (1 to 100 keys, the same rules as `/api/storage/get` for each key, under the `ft:` prefix like every other key), not one request per record: the tasks for every lesson, the Trainee Audit, Rankings and Trainee Feedback, 🕘 Attendance, and the trainees' sheets in 📋 Task Trackers, 📒 Monitoring Sheets and ✍️ Process Questions (20 sheets to a request, since a sheet can be up to about 1 MB). A trainee is signed out as revoked only when the server answers that their record is gone or not approved: a server that doesn't answer (offline, or the request limit) no longer signs anyone out, and their open lessons stay open until it answers again.
 
 The `index.html` part is the EA/PA portal's engine (the same change is in EA-PA-TRAINING), so a rebuild keeps it.
+
+## 🗄 Documents in R2
+
+The document-heavy folders (`ft/`, `trainer/`) are kept in **Cloudflare R2**, the `DOCUMENTS` binding (bucket `lshtraining`, the same bucket the EA/PA course and the CMS use), under `courses/ft/` (e.g. `courses/ft/ft/...`). `wrangler.json`'s `assets.run_worker_first` sends those paths to `worker.js`, and `docFromR2` answers from R2, with byte ranges (PDF viewers) and 304s for a file the browser already has.
+
+- **Uploading:** `.github/workflows/r2-docs.yml` runs on every push to `main` that changes those folders: it uploads the files that changed and removes deleted ones (`.github/scripts/r2-sync.mjs`). **Actions → R2 documents → Run workflow** uploads every file (do this once, after setting the secret). It needs the repository secret `CLOUDFLARE_API_TOKEN` (a Cloudflare API token with *Workers R2 Storage: Edit*); until it's set, the run only prints a notice.
+- **Fallback:** a file that isn't in R2 yet (the upload still running, or the token not set) comes from the Worker's static assets as before, and so does everything if the binding is missing or R2 fails. The files stay in the repository and in the deploy, so nothing breaks while R2 fills; once R2 has them all, the folders can be added to `.assetsignore` to leave them out of the deploy.
+- **Requests:** these files now go through the Worker, so each one a browser loads or re-checks counts toward the account's 10 million Worker requests a month (and is one R2 read; 10 million a month are free). A class of 30 opening a few hundred slide images a day is roughly 100–200 thousand a month.
+- `trainer/` (facilitator notes, curriculum, real client documents) is in the list too, so the Worker's trainer gate always runs. Before, the static assets answered `/trainer/...` themselves and the gate never ran: `trainer/notes.json` was open to anyone with the link.
+- **Checks:** `.github/scripts/r2-docs.mjs` (in *Checks*) serves a document from an in-memory R2: from R2 when it's there, byte ranges, 304s, HEAD, the static assets when it's missing or R2 fails, nothing else read from R2, and the `run_worker_first` list matching the folders.
 
 ## Checks (GitHub Actions)
 

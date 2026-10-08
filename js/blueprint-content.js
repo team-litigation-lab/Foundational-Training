@@ -1,6 +1,6 @@
 /* 🛠 The Foundational Training course's Trainer blueprint (lsh-blueprint.js draws it; lsh-blueprint-course.js
    adds it to 🧭 Orientation). The Trainee blueprint is the Orientation deck (js/ft-orientation.js), published
-   at /blueprint.pdf; trainees get it from the 📘 card on their dashboard (Handouts isn't part of this program).
+   at /blueprint.pdf; trainees open it from 📘 Blueprint on the top bar (Handouts isn't part of this program).
    A slide is { icon, title, points: [...], where, tip }. Change the wording here; the page and the PDF are made
    from it each time, stamped with the deployed build. README → Platform Orientation and the Blueprint PDF. */
 window.LSH_BLUEPRINT = {
@@ -72,28 +72,14 @@ window.LSH_BLUEPRINT = {
           '🕘 Attendance: Time In fills in by itself when a trainee opens the course; tag each status and add notes.',
           'It stays in step with the attendance Google Sheet, both ways, through the Training Portal.',
           '👁 Trainee view shows the platform exactly as trainees see it.',
-          '🧭 Orientation is the Trainee blueprint to share on day one; trainees also have it on their dashboard.'],
+          '🧭 Orientation is the Trainee blueprint to share on day one; trainees also have it under 📘 Blueprint on the top bar.'],
         where: 'Admin → 🕘 Attendance · 👁 Trainee view · 🧭 Orientation.',
         tip: 'The Trainee blueprint PDF republishes itself after every update; nothing to do by hand.' }
     ]
   }
 };
 
-/* Trainees' dashboard: the 📘 Platform Blueprint card (the Trainee blueprint PDF), under the Simulators card. */
-(function () {
-  const dash = window.renderDashboard;
-  if (typeof dash !== 'function') return;
-  window.renderDashboard = function () {
-    const html = dash.apply(this, arguments);
-    if (!state.traineeId || state.isAdmin) return html;
-    const card = `<div class="fts-banner" role="link" tabindex="0" onclick="window.open('/blueprint.pdf','_blank','noopener')" onkeydown="if(event.key==='Enter') window.open('/blueprint.pdf','_blank','noopener')">
-        <span class="fts-banner-ic">📘</span>
-        <span class="fts-banner-tx"><b>Platform Blueprint</b><span>How this platform works: the lessons, the dashboard, your daily habits, the simulators, feedback and the certificate (PDF).</span></span>
-        <span class="fts-banner-go">Open ↗</span></div>`;
-    return html.replace('<div class="module-grid">', card + '<div class="module-grid">');
-  };
-})();
-/* Top bar: 📘 Platform Blueprint, the same PDF, for anyone signed in (before the ⧉ / ⛶ buttons). */
+/* Top bar: 📘 Platform Blueprint, the Trainee blueprint PDF, for anyone signed in (before the ⧉ / ⛶ buttons). */
 (function () {
   const bar = window.renderTopbar;
   if (typeof bar !== 'function') return;

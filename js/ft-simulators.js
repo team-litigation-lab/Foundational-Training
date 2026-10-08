@@ -278,15 +278,11 @@ const __dash = window.renderDashboard;
 window.renderDashboard = function(){
   const html = __dash.apply(this, arguments);
   if(!state.traineeId && !state.isAdmin) return html;
-  const card = `<div class="fts-banner" role="link" tabindex="0" onclick="goto('simulators')" onkeydown="if(event.key==='Enter') goto('simulators')">
-      <span class="fts-banner-ic">🛠</span>
-      <span class="fts-banner-tx"><b>Practice Lab</b><span>The typing and spelling tests, practice for your mock calls and demos on the CMS’s example cases, and the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
-      <span class="fts-banner-go">Open →</span></div>`;
   if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
   // the dashboard band: the best graded call in each of lessons 4–6, averaged
   const bests = CALL_LESSONS.map(callBest).filter(Boolean);
   const stat = isTrainee() ? `<div class="card stat fts-calls-stat" title="Your best graded call in Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls"><div class="num">${bests.length ? Math.round(bests.reduce((n, b)=>n + b.score, 0) / bests.length) + "%" : "—"}</div><div class="lbl">Graded calls · ${bests.length} / ${CALL_LESSONS.length} lessons</div></div>` : "";
-  return html.replace('<div class="module-grid">', card + '<div class="module-grid">').replace(/(<div class="lbl">Lessons finished<\/div><\/div>)/, "$1" + stat);
+  return html.replace(/(<div class="lbl">Lessons finished<\/div><\/div>)/, "$1" + stat);
 };
 // a mock-call lesson's card shows its best graded call
 const __callCard = window.moduleCard;
@@ -326,13 +322,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-tool-act{display:flex;gap:8px;flex-wrap:wrap;}
 .fts-tool-act a.btn{text-decoration:none;}
 .fts-all .fts-card h3{font-size:16px;} .fts-sub a{color:var(--orange-deep);font-weight:700;}
-.fts-banner{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#0b1730,#13284f);color:#fff;border-radius:18px;padding:18px 22px;margin-bottom:18px;cursor:pointer;box-shadow:0 10px 24px -14px rgba(8,18,38,.6);transition:transform .15s;}
-.fts-banner:hover{transform:translateY(-2px);} .fts-banner:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
-.fts-banner-ic{width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.18);border:1px solid rgba(253,186,116,.45);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
-.fts-banner-tx{flex:1;min-width:0;} .fts-banner-tx b{display:block;font-size:16px;} .fts-banner-tx span{font-size:13px;color:#c7d2fe;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
-.fts-banner-go{background:#f97316;color:#0f172a;font-weight:800;font-size:12px;border-radius:999px;padding:8px 16px;white-space:nowrap;}
-@media (max-width:520px){ .fts-banner{flex-wrap:wrap;} .fts-banner-go{margin-left:64px;} }
 #fts-panel{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#f8fafc);flex-direction:column;}
 #fts-panel.open{display:flex;} body.fts-panel-open{overflow:hidden;}
 .fts-panel-bar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 16px;background:var(--card,#fff);border-bottom:1px solid var(--line,#e5e7eb);}
