@@ -71,7 +71,7 @@ window.orientSlides = function(){
           ["🛠 Simulators","Mock calls and demos on the CMS's mock case files, plus every LSH simulator."],
           ["📋 Task Tracker","Your LSH Daily Task Tracker. Every open task gets a Daily Note each day."],
           ["📒 Monitoring Sheet","One entry per classroom discussion: takeaways, questions, your understanding."],
-          ["✍️ Process Questions","A lesson's answer sheet. Open it from the lesson's last slide."],
+          ["✍️ Process Questions","Each lesson's answer sheet: ✍️ Process Questions in the top bar."],
           ["My Notes","Your private notes — download them as a PDF."],
           ["🎯 Focus","Your trainer's feedback and what to work on next."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
      </div>
