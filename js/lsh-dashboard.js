@@ -165,7 +165,7 @@
   .dash-hero p{white-space:nowrap;max-width:none !important;font-size:14px !important;}
 }
 /* the Legal Support Help logo (navy background) sits straight on the navy top bar */
-.brand-mark.brand-logo{width:auto;height:46px;aspect-ratio:250/156;background:none;padding:0;border-radius:6px;box-shadow:none;}
+.brand-mark.brand-logo{width:auto;height:46px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
 @media(max-width:760px){.brand-mark.brand-logo{width:auto;height:38px;}}
 img[alt="Legal Support Help"]{border-radius:8px;}
 

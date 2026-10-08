@@ -14,7 +14,7 @@
        the Training Monitoring Sheet, embedded; Free Upskill Training (after the shift, unpaid, encouraged); auxes (the 2 Discord
        channels, no double stamping, profile status); #training-reminders (its screenshots);
        daily habits (EOD email, trackers, Monitoring Sheet); the EOD template; the Daily Task Tracker part by part, and its filled-in sample, embedded;
-       typing and spelling tests; Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
+       skill building (typing and spelling tests: a pointer to the Practice Lab on 🛠 Simulators); Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; Hubstaff How-To Lessons (links to those slides and the
        VA Guide; HOWTO_LESSONS for more); the Manual Time Adjustment Request; Day 1's
        Reading Task.
@@ -131,6 +131,7 @@ const TESTS = [
    links:[["SpellQuiz (Grade 12)", "https://spellquiz.com/spelling-test/grade-12"], ["Alternative: Spelling-Test.com", "https://spelling-test.com/spelling-exercise#question_16"]],
    file:"Spelling Test [date taken][AM/PM]", sample:"/ft/day1/img/spelling-test-sample.png"}
 ];
+window.FT_SKILL_TESTS = TESTS;   // shown in the Practice Lab (js/ft-simulators.js)
 
 // Paste into Hubstaff one by one, as each session comes up (Day 1: Hubstaff To-Do Set-up).
 const TODOS = [
@@ -349,17 +350,13 @@ const SLIDES = [
     <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
     ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
     ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}</div>`],
-  ["tests", "Typing and Spelling Tests", ()=>`
+  // Skill building (the tests' tools, file names and samples) is in the Practice Lab on 🛠 Simulators
+  // (js/ft-simulators.js, from FT_SKILL_TESTS): the slide only points there.
+  ["tests", "Skill Building: Typing and Spelling Tests", ()=>`
     <div class="ftr-why"><b>Why?</b> LSH’s clients look for VAs who type at least 60 WPM (words per minute), so as an initiative you practice typing every day, twice a day. The daily spelling test improves your listening comprehension, vocabulary and spelling. The results you save show your progress through the training.</div>
-    <div class="ftr-grid">${TESTS.map(t=>`<div class="ftr-chan ftr-test">
-      <div class="ftr-part-h">${t.icon} ${esc(t.name)}</div>
-      <p class="ftr-when"><b>When:</b> ${esc(t.when)}</p>
-      <div class="ftr-links">${t.links.map((l,i)=>`<a class="btn ${i ? "btn-ghost" : "btn-navy"} btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0])} ↗</a>`).join("")}</div>
-      <p class="ftr-when"><b>Save it</b> in your trainee folder, named exactly:</p>
-      <div class="ftr-aux"><code>${esc(t.file)}</code></div>
-      <figure class="ftr-sample"><a href="${esc(t.sample)}" target="_blank"><img src="${esc(t.sample)}" alt="Sample ${esc(t.name.toLowerCase())} screenshot" loading="lazy"></a><figcaption>Sample: The whole screen, with the date and time showing.</figcaption></figure>
-    </div>`).join("")}</div>
-    <p class="ftr-sub ftr-after">Take a screenshot of each result, showing the time and date, and save it in your designated training subfolder, named exactly as above. Missed a test? Make it up during your idle time. You may also take extra rounds during your idle time or after your shift.</p>`],
+    <div class="ftr-goal"><b>🧪 Your Tests Are in the Practice Lab</b>
+      <p>Open <b>🛠 Practice Lab → 🧪 Practice Lab: Skill Building</b>. It has the tools to use for each test, when to take them, how to name your screenshots and a sample of each.</p></div>
+    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="ftsGotoSkills()">🧪 Open the Practice Lab</button></div>`}`],
   ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`
     <div class="ftr-why"><b>Why?</b> Your To-Dos help the audit team review your work easily, and keep a clear record of what you completed each day. Set your To-Do every day, for the session you’re in. Don’t miss this routine.</div>
     <div class="ftr-part">

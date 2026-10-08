@@ -148,7 +148,7 @@ One calendaring practice area for Lesson 5 (Calendaring & Appointment Setting), 
   13. The Daily Task Tracker, part 1: the status counts, the sections and every column.
   14. The Daily Task Tracker, part 2: the other tabs and the daily check.
   15. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
-  16. Typing and spelling tests: clients look for at least 60 WPM; typing twice a day (the 8:00 – 8:10 AM Typing & Spelling Activity and the afternoon), spelling once a day; links, samples and file names; screenshots show the time and date, saved in the training subfolder.
+  16. Skill Building: Typing and Spelling Tests: why (clients look for at least 60 WPM), and a pointer, **🧪 Open the Practice Lab**, to **🛠 Simulators → 🧪 Practice Lab: Skill Building**, where the tests now live (the tools to use, when, file names and samples). The slide keeps its place, so saved slide positions don't shift.
   17. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
   18. Hubstaff To-Dos, part 2: the 19 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
   19. How to create notes in Hubstaff, with the Add Work Notes picture.
@@ -262,6 +262,8 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 ## Simulators
 
 **🛠 Practice Lab** (top bar, and the **Practice Lab** card on the dashboard, like the Training Portal's) opens `#/simulators` (`js/ft-simulators.js`), the *Practice Lab Sessions* page.
+
+**🧪 Practice Lab: Skill Building** comes first on the page (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
 
 **Mock calls and demos.** There is one card for each mock call and demo in the Training Guide, using the guide's name for it. A **mock call** card has **🎯 Take a graded call** and **📞 Practice a caller** (Calendar Management's card also has the 📅 Google Calendar Simulator, to plot the appointments): the CMS Call Simulator opens on that line (`&line=<the card's title>`), with its numbered graded calls first (`&random=1`) or its practice calls. On a graded call (Graded call 1, 2…, the same for everyone) the caller's name, case and what's scored stay hidden until the debrief, so the trainee gets the name, verifies the caller and finds the file in the CMS, as on a real call; **🎯 Next: Graded call 2** in the debrief takes the next one. A **demo** card lists its example cases. Each card's examples are the training CMS's **Training Library** cases: MC-01 … MC-20, the fictional PI files in `CaseManagementTraining/mock-cases.js`. A case opens in the CMS with `?program=…&mock=MC-xx`, view only; **Work on a practice copy** makes it editable.
 
