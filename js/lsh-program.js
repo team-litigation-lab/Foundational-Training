@@ -12,7 +12,7 @@
                                platform; admins get Admin → 🏅 Scorecards, every trainee's in one table
      🛡 Admin Master Control   the Admin screen (admins only, never in 👁 Trainee view)
 
-   The other buttons (Blueprint, Training Directory, 👁 Trainee view, ⧉, ⛶) stay at the end of the top bar.
+   The other buttons (Blueprint, Training Directory, 👁 Trainee view, ⛶ View ▾ with ⧉ and ⛶) stay at the end of the top bar.
    What sits in each section is the program's own: it sets window.LSH_PROGRAM before this file loads
    (js/ft-program.js here):
      { modules: [{view | run, icon, label, about, who?: "trainee" | "admin", badge?()}], moduleViews: [...],
