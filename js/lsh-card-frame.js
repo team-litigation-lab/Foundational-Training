@@ -25,7 +25,7 @@
     };
     moduleCard.__grid = true;
   }
-  const line = "#D3D7E2";   // the thin lines between a day card's cells
+  const line = "#9CA3B8";   // the thin lines between a day card’s cells: dark enough to read as gridlines
   const frame = "#D6DAE5";  // the thick rounded frame around every card
   const st = document.createElement("style"); st.id = "lsh-card-frame"; st.textContent = `
 /* the frame: every card on a page (not a box inside a card or a slide, not a modal, not the small progress tiles).
