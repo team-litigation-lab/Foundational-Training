@@ -632,6 +632,22 @@ export default {
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
 
+      /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
+         A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
+         ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. Trainees only:
+         an admin's ticket never signs anyone in. Good for 5 minutes. */
+      if (path === "/api/auth/tool-ticket") {
+        if (tok.role !== "t" || !portalSecret(env)) return json({ error: "not-available" }, tok.role !== "t" ? 403 : 501);
+        const rec = JSON.parse((await kv.get(`trainee:${tok.id}`)) || "null");
+        if (!rec || rec.approved !== true || rec.archived) return json({ error: "not-approved" }, 403);
+        const words = String(rec.name || "").trim().split(/\s+/).filter(Boolean);
+        const first = String(rec.firstName || words[0] || "").trim(), last = String(rec.lastName || words.slice(1).join(" ") || "").trim();
+        if (!first || !last) return json({ error: "no-name" }, 400);
+        const payload = btoa(String.fromCharCode(...enc.encode(JSON.stringify({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }))))
+          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        return json({ ticket: `${payload}.${await hmac("portal-sso:" + portalSecret(env), payload)}` });
+      }
+
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
       if (path === "/api/checkin") {
         const b = await request.json().catch(() => ({}));
