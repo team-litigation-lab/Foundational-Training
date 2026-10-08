@@ -16,7 +16,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | Section | What it holds |
 |---|---|
 | 🏠 **Main Portal** | The program's home (the dashboard): the hub for every part of the training. |
-| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them. Its badge adds up their badges (new focus items). |
+| 📚 **Training Modules** | `#/modules`: the lessons in order (📌 Training Orientation and Rules first), each with its status and Knowledge Check score, then the training pages: ✍️ Process Questions, 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🎯 My Focus (admins: 🧭 Orientation). Those pages left the top bar; on them a bar of tabs under the top bar moves between them (no Lessons tab: 📚 Training Modules on the top bar opens the lessons). Its badge adds up their badges (new focus items). |
 | 🛠 **Practice Lab** | The Practice Lab Sessions, connected with the simulators (`#/simulators` and the Calendaring Simulators). |
 | 🏅 **Scorecard** | `#/scorecard`: the trainee's grades, collected from every grading system on the platform. Admins get **Admin Master Control → 🏅 Scorecards**: every approved trainee's in one table (by batch; click a trainee for the details). |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
