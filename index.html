@@ -7,8 +7,21 @@
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Fonts don't hold up the first paint: the sheet is fetched as a non-blocking
+     "print" stylesheet, then switched to all once it has arrived. The page is
+     readable in the fallback face for the moment before that happens. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" media="print" onload="this.media='all';this.onload=null">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"></noscript>
+<!-- jsPDF is NOT loaded here. It is ~90 KB over the wire and only certificates,
+     handouts and lab result sheets need it, so ensureJsPdf() pulls it in on the
+     first download instead of blocking every trainee's first paint with it. -->
+<!-- Note for anyone tempted to add <link rel="preload"> for the scripts at the
+     end of this file: it was tried and measured, and it made things worse.
+     Preloading all 32 of them makes those downloads compete with this document
+     for bandwidth, and the document is what produces the first paint. On a
+     1.6 Mbps / 150 ms connection the first paint went from 1424 ms to 1908 ms
+     with preloads, and to 908 ms with none. fetchpriority="low" landed in
+     between (1184 ms). Leave them to the parser. -->
 <style>
 :root{
   --navy:#262B45;
@@ -2437,7 +2450,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
-<script src="/js/portal-gate.js?v=2026.10.08-admin"></script>
+<script src="/js/portal-gate.js?v=2026.10.08-perf"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -5753,26 +5766,38 @@ async function syncToLedger(allowCreate){
   if(existing && strip(existing)===strip(next) && Date.now()-new Date(existing.lastActive||0).getTime() < 10*60*1000) return;
   await sharedSet("trainee:"+state.traineeId, next);
 }
-async function getApprovalStatus(traineeId){
-  const rec = await sharedGet("trainee:"+traineeId);
+function approvalFromRecord(rec){
   if(!rec) return "unknown";
   if(rec.approved===true) return "approved";
   if(rec.approved===false && rec.rejected) return "rejected";
   return "pending";
 }
+async function getApprovalStatus(traineeId){
+  return approvalFromRecord(await sharedGet("trainee:"+traineeId));
+}
 
 const SUBMISSION_INLINE_LIMIT = 200*1024; // 200KB — stored in full; larger files record metadata only
 
 async function loadAll(){
-  const p = await storeGet("day-progress");
+  // These keys don't depend on each other, so they are read together rather
+  // than one await at a time. With window.storage present that turned ~17
+  // serial round trips into one batch; on plain localStorage it costs nothing.
+  // The two batches either side of the migrations keep the original order:
+  // everything below was read before migrateDayOrder() ran, and everything in
+  // the second batch after it.
+  const [p, n, bt, pr, laGlobal, laByDay, aud, lrs, nt, cla, d10w, sb, rph, sp, ls, qa, dom] =
+    await Promise.all([
+      storeGet("day-progress"), storeGet("trainee-name"), storeGet("trainee-batch"),
+      storeGet("practice-progress"), storeGet("lab-attempts-global"), storeGet("lab-attempts-by-day"),
+      storeGet("admin-unlocked-days"), storeGet("lab-attempts-reset-seen"), storeGet("notes"),
+      storeGet("completed-lab-actions"), storeGet("day10-window"), storeGet("submissions"),
+      storeGet("roleplayHistory"), storeGet("slide-progress"), storeGet("last-slide"),
+      storeGet("quick-check-answers"), storeGet("day-order-migrated"),
+    ]);
   state.progress = p || {};
-  const n = await storeGet("trainee-name");
   state.traineeName = n || "";
-  const bt = await storeGet("trainee-batch");
   state.traineeBatch = bt || "";
-  const pr = await storeGet("practice-progress");
   state.practiceProgress = pr || {};
-  const laGlobal = await storeGet("lab-attempts-global");
   if(typeof laGlobal === "number"){
     state.labAttemptsGlobal = laGlobal;
   }else{
@@ -5790,48 +5815,36 @@ async function loadAll(){
   }
   // Per-day repeat counts. Older counts were one shared pool, so they don't carry
   // over — everyone starts with a fresh 3 repeats per day.
-  const laByDay = await storeGet("lab-attempts-by-day");
   state.labAttemptsByDay = (laByDay && typeof laByDay==="object") ? laByDay : {};
   state.labAttemptsGlobal = labAttemptsTotal(state.labAttemptsByDay);
-  const aud = await storeGet("admin-unlocked-days");
   state.adminUnlockedDays = Array.isArray(aud) ? aud : [];
-  const lrs = await storeGet("lab-attempts-reset-seen");
   state.labAttemptsResetSeen = lrs || undefined;
-  const nt = await storeGet("notes");
   state.notes = nt || [];
-  const cla = await storeGet("completed-lab-actions");
   state.completedLabActions = (cla && typeof cla === "object") ? cla : {};
-  const d10w = await storeGet("day10-window");
   state.day10Window = (d10w && typeof d10w === "object") ? d10w : null;
-  const sb = await storeGet("submissions");
   state.submissions = sb || [];
-  const rph = await storeGet("roleplayHistory");
   state.roleplayHistory = rph || [];
-  const sp = await storeGet("slide-progress");
   state.slideProgress = sp || {};
-  const ls = await storeGet("last-slide");
   state.lastSlide = (ls && typeof ls==="object") ? ls : {};
-  const qa = await storeGet("quick-check-answers");
   state.qcAnswers = (qa && typeof qa==="object") ? qa : {};
-  const dom = await storeGet("day-order-migrated");
   state.dayOrderMigrated = (dom && typeof dom==="object") ? dom : {};
   await migrateDayOrder();
   await migrateQuickCheckAnchors();
   await migrateQuickCheckOrder();
-  const lv = await storeGet("last-view");
+  const [lv, tl, tds, isn, rn, cn, wl, ld, tid0] = await Promise.all([
+    storeGet("last-view"), storeGet("task-log"), storeGet("task-day-since"),
+    storeGet("intro-seen"), storeGet("reg-name"), storeGet("cert-name"),
+    storeGet("work-log"), storeGet("lab-drafts"), storeGet("trainee-id"),
+  ]);
   state.lastView = (lv && typeof lv==="object") ? lv : null;
-  const tl = await storeGet("task-log"); state.taskLog = Array.isArray(tl) ? tl : [];
-  state.taskDaySince = (await storeGet("task-day-since")) || {};
-  const isn = await storeGet("intro-seen"); state.introSeen = (isn && typeof isn==="object") ? isn : {};
-  const rn = await storeGet("reg-name");
+  state.taskLog = Array.isArray(tl) ? tl : [];
+  state.taskDaySince = tds || {};
+  state.introSeen = (isn && typeof isn==="object") ? isn : {};
   state.regName = (rn && rn.last) ? rn : null;
-  const cn = await storeGet("cert-name");
   state.certName = (typeof cn==="string") ? cn : "";
-  const wl = await storeGet("work-log");
   state.workLog = Array.isArray(wl) ? wl : [];
-  const ld = await storeGet("lab-drafts");
   state.labDrafts = (ld && typeof ld==="object") ? ld : {};
-  let tid = await storeGet("trainee-id");
+  let tid = tid0;
   if(!tid && state.traineeName){
     tid = generateTraineeId(state.traineeName, state.traineeBatch);
     await storeSet("trainee-id", tid);
@@ -8899,6 +8912,16 @@ window.applyUpdate = applyUpdate;
   if(state.traineeId && (await authStatus()) && !state.authToken){
     if(!(await reauthTrainee())){ state.traineeId = ""; await storeSet("trainee-id", ""); state.view = "login"; render(); return; }
   }
+  // The trainee's own record ("trainee:<id>") and their cloud snapshot
+  // ("progress:<id>") are different keys, so ask for both at once instead of
+  // waiting for the restore to finish first. The record answers both the
+  // approval status and the assigned roleplay below, which used to be two
+  // more round trips for the very same key. cloudRestore only touches
+  // PERSONAL_KEYS, and trainee-id is not one of them, so the id cannot change
+  // underneath this request.
+  const traineeRecordP = state.traineeId
+    ? sharedGet("trainee:"+state.traineeId).catch(()=>null)
+    : Promise.resolve(null);
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
   loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
@@ -8906,17 +8929,16 @@ window.applyUpdate = applyUpdate;
   if(!state.traineeName){
     state.view = "login";
   }else if(state.traineeId){
-    const status = await getApprovalStatus(state.traineeId);
+    const traineeRecord = await traineeRecordP;
+    const status = approvalFromRecord(traineeRecord);
     if(status==="approved"){
       // Returning trainee: reopen the page they were on (refresh / closed tab).
       // A page address in the URL (a duplicated tab, or ⧉ "open in new tab") wins over the bookmark.
       restoreBootRouteHash();
       if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; if(!openRouteFromHash()) resumeWhereLeftOff(state.lastView); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); }
       else if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; state.resumePending = true; setTimeout(()=>{ resumeWhereLeftOff(lv); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); }
-      try{
-        const rec = await sharedGet("trainee:"+state.traineeId);
-        if(rec) state.assignedRoleplay = rec.assignedRoleplay || null;
-      }catch(e){ /* best-effort — don't block app load on this */ }
+      // Already in hand from traineeRecordP above — no second fetch.
+      if(traineeRecord) state.assignedRoleplay = traineeRecord.assignedRoleplay || null;
       startApprovalPolling(state.traineeId);
     }else if(status==="rejected"){
       state.view = "registrationDenied";
@@ -12670,7 +12692,10 @@ function safeDoc(doc){
   doc.__lshSafe = true;
   return doc;
 }
-function buildAndSavePdf(title, subtitle, bodyLines, filenameBase){
+async function buildAndSavePdf(title, subtitle, bodyLines, filenameBase){
+  // jsPDF is fetched on demand (it is no longer in the page head), so make sure
+  // it is here before using it.
+  if(!(await ensureJsPdf())){ toast("Couldn't load the PDF tools — try again."); return; }
   const { jsPDF } = window.jspdf;
   const doc = safeDoc(new jsPDF({unit:"pt", format:"letter"}));
   drawPdfHeader(doc, title, subtitle);
@@ -13067,7 +13092,9 @@ ${n.content}
 }
 window.getAIFeedback = getAIFeedback;
 
-function downloadNotesPdf(){
+async function downloadNotesPdf(){
+  // jsPDF is fetched on demand (it is no longer in the page head).
+  if(!(await ensureJsPdf())){ toast("Couldn't load the PDF tools — try again."); return; }
   const { jsPDF } = window.jspdf;
   const doc = safeDoc(new jsPDF({unit:"pt", format:"letter"}));
   drawPdfHeader(doc, "My Notes & Action Plan", state.traineeName||"LSH Trainee");
@@ -18499,7 +18526,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.08-tabs2";
+var APP_BUILD = "ft-2026.10.08-perf";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
