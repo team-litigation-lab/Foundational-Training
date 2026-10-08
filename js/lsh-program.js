@@ -4,15 +4,16 @@
    propertydamageclaimstraining); change it in all of them. A program is organised in five sections, and the
    top bar shows exactly those five:
 
-     🏠 Main Portal            the program's home (the dashboard): the hub for every part of the training
-     📚 Training Modules       #/modules: the lessons, and the program's training pages (Task Tracker,
-                               Monitoring Sheet…), which share a bar of tabs under the top bar
+     🏠 Main Portal            the LSH Training Portal (the program's own home, its lessons, is 📚 Modules)
+     📚 Training Modules       #/modules: the lessons, and the program's training pages (Activities, Process
+                               Questions, Task Tracker…), which share a bar of tabs under the top bar
      🛠 Practice Lab           the Practice Lab Sessions, connected with the simulators (#/simulators)
      🏅 Scorecard              #/scorecard: the trainee's grades, collected from every grading system on the
                                platform; admins get Admin → 🏅 Scorecards, every trainee's in one table
      🛡 Admin Master Control   the Admin screen (admins only, never in 👁 Trainee view)
 
-   The other buttons (Blueprint, Training Directory, 👁 Trainee view, ⛶ View ▾ with ⧉ and ⛶) stay at the end of the top bar.
+   The top bar itself is set out below (The top bar): Main Portal, Modules, Process Questions, Practice Lab and
+   👤 My Dashboard ▾; Blueprint, 👁 Trainee view and ⛶ View ▾ stay at its end.
    What sits in each section is the program's own: it sets window.LSH_PROGRAM before this file loads
    (js/ft-program.js here):
      { modules: [{view | run, icon, label, about, who?: "trainee" | "admin", badge?()}], moduleViews: [...],
@@ -38,7 +39,7 @@ const tier = pct => pct == null ? "none" : pct >= 85 ? "top" : pct >= 70 ? "ok" 
 const pctTxt = pct => pct == null ? "—" : Math.round(pct) + "%";
 const badgeOf = m => { try{ return m.badge ? Number(m.badge()) || 0 : 0; }catch(err){ return 0; } };
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["modules", "scorecard"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Training Modules", scorecard:"Scorecard"});
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Modules", scorecard:"My Performance"});
 
 /* ---------- the five sections ---------- */
 // The Training Modules pages this viewer has (an admin's own pages, or a trainee's; 👁 Trainee view sees the trainee's).
@@ -52,13 +53,30 @@ function section(){
   if(moduleViews().includes(v)) return "modules";
   return v === "dashboard" ? "home" : "";
 }
-// The bar of tabs under the top bar on the Training Modules pages (not on a lesson or a Knowledge Check). It has no
-// Lessons tab: 📚 Training Modules on the top bar opens the lessons.
-function tabs(){
-  const cur = state.view;
-  const tab = (on, label, onclick, badge) => `<button type="button" class="lp-tab${on ? " active" : ""}" onclick="${onclick}">${label}${badge ? `<span class="nav-badge">${badge}</span>` : ""}</button>`;
-  return `<div class="lp-tabs" role="navigation" aria-label="Training Modules"><div class="lp-tabs-inner"><span class="lp-tabs-h">📚 Training Modules</span>
-    ${pages().map(m => tab(m.view && cur === m.view, `${m.icon} ${e(m.label)}`, m.view ? `goto('${m.view}')` : m.run, badgeOf(m))).join("")}</div></div>`;
+// The top bar: 🏠 Main Portal (the LSH Training Portal) · 📚 Modules (this program's landing page, the lessons) ·
+// ✍️ Process Questions · 🛠 Practice Lab · 👤 My Dashboard ▾ (a trainee's own pages: My Focus, My Performance,
+// My Notes, Task Tracker, Monitoring Sheet) · 🛡 Admin Master Control. An admin gets 🏅 Scorecards (every trainee's)
+// instead of My Dashboard; 👁 Trainee view shows the trainee's bar.
+const PORTAL_HOME = "https://cm-training-activity.pages.dev/";
+const MY_VIEWS = ["notes", "tracker", "monitoring", "scorecard"];
+function barSection(){
+  const v = state.view, sec = section();
+  if(v === "process" || (v === "admin" && state.adminTab === "process")) return "process";
+  if(!adminOn() && MY_VIEWS.includes(v)) return "mydash";
+  if(sec === "home" || sec === "modules") return "modules";
+  return sec;
+}
+function myDashboard(){
+  const focus = typeof window.focusNewCount === "function" ? Number(window.focusNewCount()) || 0 : 0;
+  const cur = state.view, on = MY_VIEWS.includes(cur);
+  const item = (view, label, onclick, n) => `<button type="button" role="menuitem" class="${view && cur === view ? "active" : ""}" onclick="if(window.lshCloseTopMenus) lshCloseTopMenus(); ${onclick}">${label}${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
+  return `<div class="lsh-grp lp-mydash" data-grp="mydash"><button type="button" class="lp-sec${on ? " active" : ""}" aria-haspopup="true" aria-expanded="false" title="My Focus, My Performance, My Notes, Task Tracker and Monitoring Sheet" onclick="lshProgram.menu(this, event)">👤 My Dashboard ▾${focus ? `<span class="nav-badge">${focus}</span>` : ""}</button><div class="lsh-grp-menu" role="menu">`
+    + item("", "🎯 My Focus", "openFocusPanel()", focus)
+    + item("scorecard", "🏅 My Performance", "lshProgram.scorecard()")
+    + item("notes", "🗒 My Notes", "goto('notes')")
+    + item("tracker", "📋 Task Tracker", "goto('tracker')")
+    + item("monitoring", "📒 Monitoring Sheet", "goto('monitoring')")
+    + `</div></div>`;
 }
 const __top = window.renderTopbar;
 window.renderTopbar = function(){
@@ -67,31 +85,26 @@ window.renderTopbar = function(){
   const t = document.createElement("template"); t.innerHTML = html;
   const bar = t.content.querySelector(".topbar"), nav = t.content.querySelector(".topbar .nav");
   if(!bar || !nav) return html;
-  const sec = section(), onc = b => b.getAttribute("onclick") || "";
+  const sec = barSection(), onc = b => b.getAttribute("onclick") || "";
   const viewOf = b => (onc(b).match(/^goto\('([a-z]+)'\)$/) || [])[1];
-  // the training pages' own buttons move under Training Modules, and the simulators' under Practice Lab
-  const moved = new Set(CFG.modules.map(m => m.view).filter(Boolean).concat(CFG.labViews)), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
+  // the training pages' own buttons move into the sections (an admin's 🧭 Orientation stays, for 📚 Guides ▾)
+  const keep = new Set(["orientation"]);
+  const moved = new Set(CFG.modules.map(m => m.view).filter(v => v && !keep.has(v)).concat(CFG.labViews, ["modules"])), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
   [...nav.children].forEach(b => { const v = viewOf(b); if((v && moved.has(v)) || runs.has(onc(b))) b.remove(); });
-  const badge = pages().reduce((n, m) => n + badgeOf(m), 0);
-  const btn = (id, label, onclick, n) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}">${label}${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
-  const secs = btn("modules", `📚 <span class="lp-long">Training </span>Modules`, "goto('modules')", badge) + btn("lab", "🛠 Practice Lab", "goto('simulators')") + btn("scorecard", "🏅 Scorecard", "lshProgram.scorecard()");
+  const btn = (id, label, onclick, title) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}"${title ? ` title="${title}"` : ""}>${label}</button>`;
+  const processGo = adminOn() ? "state.adminTab='process'; goto('admin')" : "goto('process')";
+  const secs = btn("modules", "📚 Modules", "goto('dashboard')", "The Standard Foundational Training: its lessons")
+    + btn("process", "✍️ Process Questions", processGo, adminOn() ? "Every trainee's answer sheets" : "Each lesson's answer sheet")
+    + btn("lab", "🛠 Practice Lab", "goto('simulators')")
+    + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : myDashboard());
+  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal">🏠 Main Portal</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");
-  if(home){ home.textContent = "🏠 Main Portal"; home.classList.add("lp-sec"); home.classList.toggle("active", sec === "home"); home.insertAdjacentHTML("afterend", secs); }
-  else nav.insertAdjacentHTML("afterbegin", secs);
+  if(home) home.insertAdjacentHTML("beforebegin", portal + secs), home.remove();
+  else nav.insertAdjacentHTML("afterbegin", portal + secs);
   const adm = [...nav.children].find(b => onc(b) === "openAdmin()");
   if(adm){ adm.innerHTML = `🛡 Admin<span class="lp-long"> Master Control</span>`; adm.title = "Admin Master Control"; adm.classList.add("lp-sec"); adm.classList.toggle("active", sec === "admin"); }
-  if(sec === "modules" && !CFG.moduleViews.includes(state.view)) bar.insertAdjacentHTML("beforeend", tabs());
   return t.innerHTML;
 };
-// "🏠 Main Portal" is this program's home now, so the admins' link to the LSH Training Portal (js/portal-link.js)
-// reads like the trainees': ← Training Directory.
-let relabelQueued = false;
-function relabel(){
-  relabelQueued = false;
-  document.querySelectorAll(".topbar .nav .nav-portal").forEach(b => { if(b.textContent === "🏠 Main Portal") b.textContent = "← Training Directory"; });
-  document.querySelectorAll("a.admin-portal-link").forEach(a => { if(a.textContent === "← Back to Main Portal") a.textContent = "← Back to Training Directory"; });
-}
-new MutationObserver(() => { if(!relabelQueued){ relabelQueued = true; requestAnimationFrame(relabel); } }).observe(document.body, {childList:true, subtree:true});
 
 /* ---------- 📚 Training Modules (#/modules): the lessons, then the training pages ---------- */
 function lessonRow(d, i, pinned){
@@ -109,7 +122,7 @@ function lessonRow(d, i, pinned){
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview, ps = pages();
-  return `<div class="lp-head"><p class="lp-eyebrow">🏠 Main Portal · Training Modules</p><h1>📚 Training Modules</h1>
+  return `<div class="lp-head"><p class="lp-eyebrow">📚 Modules</p><h1>📚 Modules</h1>
       <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p>
       ${viewer ? `<div class="lp-progress"><div class="lp-bar"><i style="width:${all.length ? Math.round(done / all.length * 100) : 0}%"></i></div><span><b>${done} / ${all.length}</b> lessons finished</span></div>`
         : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}</div>
@@ -166,7 +179,7 @@ function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;
   return `<div class="card sc-hero">
       ${ring(loaded ? sc.overall : null)}
-      <div class="sc-hero-t"><p class="lp-eyebrow">🏠 Main Portal · Scorecard</p><h1>🏅 My Scorecard</h1>
+      <div class="sc-hero-t"><p class="lp-eyebrow">👤 My Dashboard · My Performance</p><h1>🏅 My Performance</h1>
         <p>Every grade the platform gives you, collected from all of its grading systems: ${CFG.sources.map(s => e(s.label)).join(", ")}.</p>
         <div class="sc-facts"><span><b>${sc.done} / ${sc.total}</b> lessons finished</span><span><b>${sc.graded}</b> graded item${sc.graded === 1 ? "" : "s"}</span><span><b>${sc.systems} / ${CFG.sources.length}</b> grading systems with a score</span></div></div>
       <div class="sc-hero-acts"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button></div>
@@ -228,7 +241,7 @@ function renderAdminScores(){
 // scrolling sideways on a phone) instead of every tab in one long bar. A tab not in LSH_PROGRAM.adminGroups goes to
 // Admin Master Control, so a new tab is never lost.
 const GROUPS = [
-  {id:"admin", label:"🛡 Admin Master Control"}, {id:"modules", label:"📚 Training Modules"},
+  {id:"admin", label:"🛡 Admin Master Control"}, {id:"modules", label:"📚 Modules"},
   {id:"lab", label:"🛠 Practice Lab"}, {id:"scorecard", label:"🏅 Scorecard"}
 ];
 const groupOf = tab => { const g = CFG.adminGroups || {}; return Object.keys(g).find(k => (g[k] || []).includes(tab)) || "admin"; };
@@ -262,6 +275,13 @@ window.renderAdmin = function(){
 window.lshProgram = {
   compute, section, mine:() => compute(mineCtx()),
   scorecard(){ if(adminOn()){ state.adminTab = "scorecards"; goto("admin"); } else goto("scorecard"); },
+  // 👤 My Dashboard ▾ opens and closes like js/lsh-topbar.js's menus (which also closes it on a click elsewhere or Esc)
+  menu(btn, ev){
+    if(ev) ev.stopPropagation();
+    const box = btn.parentNode, open = !box.classList.contains("open");
+    if(typeof window.lshCloseTopMenus === "function") window.lshCloseTopMenus();
+    box.classList.toggle("open", open); btn.setAttribute("aria-expanded", open ? "true" : "false");
+  },
   batch(b){ AS.batch = b; render(); },
   refresh(){ AS.rows = null; AS.fresh = true; render(); },
   toggle(id){ AS.open[id] = !AS.open[id]; render(); }
@@ -270,11 +290,9 @@ window.lshProgram = {
 const st = document.createElement("style"); st.id = "lsh-program"; st.textContent = `
 /* the five sections in the top bar; on a narrower screen the long names shorten (Modules, Admin) so it stays one row */
 .topbar .nav button.lp-sec{font-weight:700;}
+/* 🏠 Main Portal is the first section, so js/portal-link.js's own ← Training Directory button isn't shown */
+.topbar .nav .nav-portal{display:none !important;}
 @media(min-width:961px) and (max-width:1400px){ .topbar .nav .lp-long{display:none;} }
-/* the Training Modules pages' bar of tabs: a second row of the (sticky) top bar */
-.lp-tabs{background:#F7F8FB;border-top:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 #E3E6EE;}
-.lp-tabs-inner{max-width:1400px;margin:0 auto;padding:6px 20px;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:thin;}
-.lp-tabs-h{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--orange-deep);white-space:nowrap;margin-right:6px;}
 .lp-tab{font:inherit;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent;background:none;color:#4A5070;border-radius:999px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
 .lp-tab:hover{background:#ECEEF5;color:var(--navy);} .lp-tab.active{background:var(--navy);color:#fff;}
 /* the Admin screen's tabs, grouped: the sections, then the open section's tabs */

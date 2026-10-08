@@ -241,14 +241,14 @@ window.FTProcess = {
   reload(){ FP.id = null; FP.err = ""; render(); }
 };
 
-/* ---------- the lesson: its last slide ---------- */
+/* ---------- a lesson's Knowledge Check questions ---------- */
 // Which questions each lesson's Knowledge Check asks: a set's own lesson, or (kc) split across lessons.
 const kcLessons = set => set.kc ? Object.keys(set.kc).map(Number) : [set.lesson];
 const kcQuestionsFor = lessonId => PROCESS_SETS.flatMap(set => kcLessons(set).includes(lessonId)
   ? (set.kc ? set.kc[lessonId] : set.questions.map((_,i)=>i)).map(i=>({set, i, q:set.questions[i]})) : []);
 window.ftKcQuestions = kcQuestionsFor;
-// The questions aren't a slide any more (they're the Knowledge Check): the lesson's ✓ Finish lesson opens its Knowledge
-// Check (finishTrainingForDay below). A position saved on the old last slide lands on the lesson's last page.
+// The Process Questions aren't a slide in the lessons: they open from ✍️ Process Questions in the top bar
+// (js/lsh-program.js), and finishing a lesson opens its Knowledge Check (finishTrainingForDay, below).
 
 /* ---------- admin: every trainee's answer sheets ---------- */
 const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}};

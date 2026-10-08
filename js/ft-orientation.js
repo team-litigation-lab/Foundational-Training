@@ -70,7 +70,8 @@ window.orientSlides = function(){
           ["🛠 Practice Lab","Your firm, your real-time Practice Sessions, the activities with your trainer, and Skill Building."],
           ["📋 Task Tracker","Your LSH Daily Task Tracker in your VA Output folder: its link, and each day's output links."],
           ["📒 Monitoring Sheet","Your Monitoring Sheet in your VA Output folder: one entry per classroom discussion."],
-          ["📝 Knowledge Check","A lesson's process questions, graded in your facilitator's style. Open it from the lesson's last slide."],
+          ["✍️ Process Questions","Each lesson's answer sheet: ✍️ Process Questions in the top bar."],
+          ["📝 Knowledge Check","A lesson's process questions, graded in your facilitator's style. It opens when you finish the lesson."],
           ["My Notes","Your private notes — download them as a PDF."],
           ["🎯 Focus","Your trainer's feedback and what to work on next."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
      </div>
