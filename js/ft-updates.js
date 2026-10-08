@@ -782,7 +782,7 @@ window.renderDashboard = function(){
   </div>
   <div class="dash-layout">
     <div class="dash-main">
-      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open lessons for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin → Open Lessons</a>.</div>` : ""}
+      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open lessons for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin Master Control → Open Lessons</a>.</div>` : ""}
       <div class="module-grid">${DAYS.map(d=>moduleCard(d)).join("")}</div>
       <div class="hero-actions bottom-actions">
         ${resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : ""}
