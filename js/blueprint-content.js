@@ -86,21 +86,8 @@ window.LSH_BLUEPRINT = {
   }
 };
 
-/* Trainees' dashboard: the 📘 Platform Blueprint card (the Trainee blueprint PDF), under the Simulators card. */
-(function () {
-  const dash = window.renderDashboard;
-  if (typeof dash !== 'function') return;
-  window.renderDashboard = function () {
-    const html = dash.apply(this, arguments);
-    if (!state.traineeId || state.isAdmin) return html;
-    const card = `<div class="fts-banner" role="link" tabindex="0" onclick="window.open('/blueprint.pdf','_blank','noopener')" onkeydown="if(event.key==='Enter') window.open('/blueprint.pdf','_blank','noopener')">
-        <span class="fts-banner-ic">📘</span>
-        <span class="fts-banner-tx"><b>Platform Blueprint</b><span>How this platform works: the lessons, the dashboard, your daily habits, the simulators, feedback and the certificate (PDF).</span></span>
-        <span class="fts-banner-go">Open ↗</span></div>`;
-    return html.replace('<div class="module-grid">', card + '<div class="module-grid">');
-  };
-})();
-/* Top bar: 📘 Platform Blueprint, the same PDF, for anyone signed in (before the ⧉ / ⛶ buttons). */
+/* The main landing page (the dashboard) has no Platform Blueprint card: trainees aren't shown the Blueprint (admins open it from the top bar). */
+/* Top bar: 📘 Platform Blueprint, the same PDF, for admins (before the ⧉ / ⛶ buttons). Trainees and 👁 Trainee view don't get it. */
 (function () {
   const bar = window.renderTopbar;
   if (typeof bar !== 'function') return;
@@ -109,7 +96,7 @@ window.LSH_BLUEPRINT = {
   document.head.appendChild(st);
   window.renderTopbar = function () {
     const html = bar.apply(this, arguments);
-    if (!state.traineeId && !state.isAdmin) return html;
+    if (!state.isAdmin || state.adminPreview) return html;
     const btn = `<button type="button" class="nav-blueprint" onclick="window.open('/blueprint.pdf','_blank','noopener')" title="Platform Blueprint: how this platform works (PDF)">📘<span class="bp-word"> <span class="bp-long">Platform </span>Blueprint</span></button>`;
     const at = html.indexOf('<button type="button" class="nav-fs"');
     return at >= 0 ? html.slice(0, at) + btn + html.slice(at) : html;

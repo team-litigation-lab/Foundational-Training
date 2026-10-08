@@ -8,6 +8,8 @@
      🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
+     🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
+     🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📝 Activities              actsub:<id>, the trainer's scored rubric on feedback that was sent (js/ft-activities.js)
    ============================================================ */
 (function(){
@@ -30,8 +32,8 @@ window.LSH_PROGRAM = {
   ],
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day", "kc"],          // a lesson and its Knowledge Check are in Training Modules too
-  labViews: ["simulators", "calsim"],  // 🛠 Practice Lab: the Simulators page and the Calendaring Simulators
-  shared: ACT_DAYS,   // the activities' titles
+  labViews: ["simulators", "calsim", "firm", "session"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm (and the older Calendaring Simulators page)
+  shared: ACT_DAYS.concat(["settings:trainer-acts"]),   // the activities' titles, and the trainer-led activities' names
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
       about:"Each lesson’s process questions, graded out of 100 in the facilitator’s feedback style. Your best attempt counts, or your trainer’s final score once they give one; 70% passes the lesson.",
@@ -64,6 +66,12 @@ window.LSH_PROGRAM = {
           if(pct != null && (!ext[k] || pct > ext[k].pct)) ext[k] = {name:k, pct, note:"Connected simulator · best result"}; });
         return out.concat(Object.values(ext));
       }},
+    {id:"sessions", icon:"🟢", label:"Practice Sessions", key:"sessions:",
+      about:"Your live Practice Sessions at your firm: your trainer’s score once they review one, until then its automated checks.",
+      items: ctx => typeof window.ftSessionItems === "function" ? window.ftSessionItems(ctx) : []},
+    {id:"trainer", icon:"🧑‍🏫", label:"With your trainer", key:"labreview:",
+      about:"The demos and mock calls you do live with your trainer, as your trainer recorded them.",
+      items: ctx => typeof window.ftTrainerItems === "function" ? window.ftTrainerItems(ctx) : []},
     {id:"activities", icon:"📝", label:"Activities", key:"actsub:",
       about:"Your trainer’s feedback on the daily activities. A scored rubric counts toward your score; a rating alone shows here.",
       items: ctx => {

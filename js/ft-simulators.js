@@ -1,22 +1,18 @@
 /* ============================================================
-   Simulators — the curriculum's mock calls and demos
-   Loaded after js/ft-updates.js. 🛠 Simulators in the top bar (#/simulators).
-     • One card per mock call and demo in the Training Guide, under its lesson.
-     • The examples are the training CMS's Training Library cases (MC-01 …
-       MC-20, fictional PI files in the CaseManagementTraining repo,
-       mock-cases.js). Each card lists the cases that fit it; a case opens
-       in the CMS with ?mock=MC-xx (view only; "Work on a practice copy"
-       makes it editable). Case facts below are from mock-cases.js: if a
-       case changes there, update its line here.
-     • Practice tools: the CMS's Front Desk Drill (calls on the same cases)
-       and Training Library, and the LSH Training Portal's Call and
-       Calendaring simulators (these get program=FT and the trainee's name
-       and batch, so scores are saved for the trainer).
-     • Open here: a CMS tool fills the window (✕ Close comes back). The Portal's simulators (calls, calendaring, …) open in their own tab
-       (Open ↗), where the trainee's Portal sign-in works. New tab ↗: its own tab.
+   🛠 Practice Lab (#/simulators): the trainee's real-time Practice Sessions and the rest of the lab
+   Loaded after js/ft-updates.js. A section of the top bar (js/lsh-program.js).
+     • 🏛 the trainee's law firm (js/ft-firms.js), then 🟢 Practice Sessions and 🧑‍🏫 With your trainer
+       (js/ft-sessions.js): real work in the CMS on the trainee's own cases, checked against their firm's rules.
+     • 🖥 Demo preparation: one card per demo in the Training Guide, with the training CMS's Training
+       Library cases that fit it (MC-01 …, fictional PI files in the CaseManagementTraining repo,
+       mock-cases.js). A case opens in the CMS with ?mock=MC-xx (view only; "Work on a practice copy"
+       makes it editable). Case facts below are from mock-cases.js: if a case changes there, update its
+       line here.
+     • 🧪 Skill Building: the daily typing and spelling tests.
+     • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
+       (js/lsh-tool-links.js). The Call Simulator is the CMS's. New tab ↗: its own tab.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
-     • 🧰 All simulators: every live portal simulator, open any time.
-     • The dashboard has a Simulators card (like the Training Portal's) that opens this page.
+     • The main landing page (the dashboard) has no Simulators or Blueprint card: 🛠 Practice Lab is in the top bar.
    ============================================================ */
 (function(){
 const PORTAL = "https://cm-training-activity.pages.dev/simulators/";
@@ -25,29 +21,12 @@ const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const TOOLS = {
   drill:    {icon:"☎️", name:"Front Desk Drill (CMS)", cms:"drill=1", desc:"Scored incoming calls on the Training Library cases: find the file, verify the caller, handle or route the call."},
   library:  {icon:"📚", name:"Training Library (all 20 cases)", cms:"library=1", desc:"Every mock case in the CMS, with the firm directory and front-desk rules."},
-  call:     {icon:"📞", name:"Call Simulator", page:"call.html", desc:"Practice calls on these same cases: a caller phones in, you answer by voice or typing, write the call note, and get a scored debrief."},
+  call:     {icon:"📞", name:"Call Simulator", desc:"Practice calls on these same cases: a caller phones in, you answer by voice or typing, write the call note, and get a scored debrief."},
 };
 
-// Every live simulator on the LSH Training Portal (its hub: /simulators.html), open to practice any time.
-const PORTAL_ALL = [
-  {id:"call", icon:"📞", name:"Call Simulator", cms:true, desc:"Live phone calls with realistic callers. You answer by voice or typing, then get a scored debrief."},
-  {id:"calsim", icon:"📅", name:"Calendaring Simulators", page:"calsim.html", desc:"The Google Calendar Simulator for each program: Standard Training (callers’ appointments), the Litigation Week and the Executive Week, plus a week full of conflicts to fix."},
-  {id:"email", icon:"✉️", name:"Email Workspace", page:"email.html", desc:"A Gmail-style practice inbox: triage, label, reply, forward and report phishing."},
-  {id:"replies", icon:"📨", name:"Email Replies", page:"email-replies.html", desc:"One email at a time, answered like at work: an upset client, an adjuster, a lien letter, your attorney."},
-  {id:"docket", icon:"⚖️", name:"Docket System", page:"docket.html", desc:"Court notices and mail arrive in an inbox: docket them and calendar every deadline they trigger."},
-  {id:"records", icon:"🗂", name:"Medical Records Requests", page:"records.html", desc:"Request records and itemized bills, then handle what comes back: rejections, invoices, silence."},
-  {id:"efiling", icon:"🏛", name:"Court E-Filing", page:"efiling.html", desc:"Fix the documents, then file through federal and state e-filing and see if the clerk accepts it."}
-];
-
-// The Training Guide's mock calls and demos (its own names), the lesson each belongs to,
+// The Training Guide's demos (its own names), the lesson each belongs to,
 // the CMS program it opens in, and the Training Library cases that fit it.
 const ACTIVITIES = [
-  // Mock calls: the line in the CMS Call Simulator, its numbered graded calls (random=1, which the Portal passes on as
-  // mode=graded) or its practice calls. On a graded call the caller and their case stay unknown until the debrief: the
-  // trainee gets the name, verifies, and finds the file in the CMS, as on a real call.
-  {kind:"call", lesson:4, cms:"reception", title:"Reception Mock Calls", cases:[], tools:[]},
-  {kind:"call", lesson:5, cms:"reception", title:"Calendar Management Mock Calls", cases:[], tools:[]},   // (the appointment is plotted in the Calendaring Simulators above: Standard Training is the Google Calendar Simulator)
-  {kind:"call", lesson:6, cms:"intake", title:"Intake Mock Calls", note:"Work in the case’s Intake tab while you take the call.", cases:[], tools:[]},
   {kind:"demo", lesson:6, cms:"intake", title:"Saving Intake Packet and Extracted Intake Documents Demo", note:"Open the case, click “Work on a practice copy”, then save the documents to the case.", cases:[
     ["MC-02", "Derek Thompson", "Intake questionnaire; retainer and HIPAA sent by e-sign, not yet signed; client’s photos of the spill."],
     ["MC-13", "Nicole Adams", "Intake questionnaire; conflict check pending; store adjuster emails the client forwarded."]],
@@ -79,12 +58,9 @@ const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
 // key: a tool id, or a Training Library case id ("MC-04")
 function keyHref(key, a){
   if(/^MC-\d+$/.test(key)) return cmsHref({program:a.cms, mock:key});
-  if(key==="random") return callsHref(a.title, true);
-  if(key==="practice") return callsHref(a.title);
   const t = TOOLS[key];
   if(t.cms) return cmsHref({program: key==="drill" ? "reception" : a.cms}, t.cms);
-  if(key==="call") return callsHref(a.title);
-  return portalHref(t.page);
+  return callsHref(a.title);
 }
 // The Call Simulator is the CMS's: opened straight there (not through the Portal's call.html), so the trainee's ticket
 // (js/lsh-tool-links.js) signs them in with no log-in page. Graded calls still reach callsim:<id> (the CMS reports them to
@@ -128,21 +104,18 @@ function ftLoadCallsim(){
   return callsimLoading;
 }
 const callBest = (lesson)=> (state.ftCallsim && state.ftCallsim.best && state.ftCallsim.best["lesson" + lesson]) || null;
-window.addEventListener("focus", ()=>{ if(state.ftCallsim && Date.now() - callsimAt > 120000 && (state.view === "dashboard" || state.view === "simulators")) ftLoadCallsim(); });
-function gradedLine(lesson){
+// The best graded call of a mock-call lesson, on its Practice Session's card (js/ft-sessions.js).
+window.ftsGradedLine = function(lesson){
+  if(!CALL_LESSONS.includes(lesson) || !isTrainee()) return "";
+  if(!state.ftCallsim) ftLoadCallsim();
   const b = callBest(lesson);
   return b ? `<p class="fts-graded">🎯 Graded calls: best <b>${b.score}%</b> · ${b.calls} call${b.calls === 1 ? "" : "s"}. Counts toward this lesson.</p>`
     : `<p class="fts-graded">🎯 No graded call yet. A graded call counts toward this lesson.</p>`;
-}
-function portalHref(page, line, random){
-  const q = new URLSearchParams({program:"FT"});
-  if(line) q.set("line", line);
-  if(random) q.set("random", "1");   // the line's graded calls first (numbered; the caller unknown until the debrief). The Call Simulator opens on this mock call's calls (its line = the activity's title)
-  return PORTAL + page + "?" + addWho(q);
-}
+};
+window.addEventListener("focus", ()=>{ if(state.ftCallsim && Date.now() - callsimAt > 120000 && (state.view === "dashboard" || state.view === "simulators")) ftLoadCallsim(); });
+// The Portal's Calendaring Simulators (the Google Calendar Simulator): their own tab, with the trainee's name and batch.
+function portalHref(page){ return PORTAL + page + "?" + addWho(new URLSearchParams({program:"FT"})); }
 function keyName(key, a){
-  if(key==="random") return "🎯 Graded call";
-  if(key==="practice") return "📞 Practice call";
   const c = a.cases.find(x=>x[0]===key);
   return c ? `${c[0]} · ${c[1]}` : TOOLS[key].name;
 }
@@ -157,17 +130,6 @@ function renderCard(a, i){
   const row = (title, desc, key)=>`<div class="fts-tool">
       <div class="fts-tool-txt"><b>${title}</b><span>${esc(desc)}</span></div>
       <div class="fts-tool-act">${acts(key)}</div></div>`;
-  if(a.kind==="call") return `<div class="card fts-card fts-call ${open?"":"fts-locked"}">
-    <div class="fts-kicker">${esc(lessonTitle(a.lesson))}${open ? "" : " · opens with this lesson"}</div>
-    <h3>${esc(a.title)}</h3>
-    ${a.note ? `<p class="fts-note">${esc(a.note)}</p>` : ""}
-    <p class="fts-note">In the CMS Call Simulator: a caller phones in about one of the firm’s cases. Get their name, verify them, find their file in the CMS and handle the call. Who called, and about which case, is in your debrief.</p>
-    ${isTrainee() ? gradedLine(a.lesson) : ""}
-    <div class="fts-tool-act">${open
-      ? `<button class="btn btn-navy" onclick="ftsOpen(${i},'random')">🎯 Take a graded call</button><button class="btn btn-ghost btn-sm" onclick="ftsOpen(${i},'practice')">📞 Practice a caller</button>`
-      : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div>
-    ${a.tools.map(id=>row(`${TOOLS[id].icon} ${esc(TOOLS[id].name)}`, TOOLS[id].desc, id)).join("")}
-  </div>`;
   const cases = a.cases.map(c=>row(`<span class="fts-mc">${esc(c[0])}</span> ${esc(c[1])}`, c[2], c[0])).join("");
   const tools = a.tools.map(id=>row(`${TOOLS[id].icon} ${esc(TOOLS[id].name)}`, TOOLS[id].desc, id)).join("");
   return `<div class="card fts-card ${open?"":"fts-locked"}">
@@ -203,27 +165,31 @@ window.ftsGotoSkills = function(){
   setTimeout(()=>{ const el = document.getElementById("fts-skills"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 60);
 };
 
+// The Practice Lab: real-time Practice Sessions at the trainee's own firm (js/ft-sessions.js, js/ft-firms.js), the activities
+// done live with the trainer, demo preparation on the CMS's cases, and Skill Building. The simulators' cards (the
+// separate Calendaring Simulators, the mock-call lines and All simulators) are gone: the calls and the Google Calendar
+// Simulator are tools inside their sessions (the Calendar Management Mock Calls are part of the Calendaring Practice Lab).
+function firmBanner(){
+  if(!isTrainee() || !window.FTFirms) return "";
+  const f = FTFirms.myFirm();
+  return `<div class="fts-firm" role="link" tabindex="0" onclick="goto('firm')" onkeydown="if(event.key==='Enter') goto('firm')"><span class="fts-banner-ic">🏛</span>
+    <span class="fts-banner-tx"><b>${f ? esc(f.name) : "Your law firm"}</b><span>${f ? `You work for this firm: ${esc(f.location)} · ${esc(f.tz)} time. Every session is on its cases, under its rules.` : "Your trainer assigns your firm and your cases. Its rules are what your sessions are checked against."}</span></span>
+    <span class="fts-banner-go">${f ? "My firm & rules →" : "Open →"}</span></div>`;
+}
 function renderSimulators(){
-  // The Calendaring Simulators: one card per track (Standard Training, Litigation Week, Executive Week), with the Lesson 5 mock calls.
-  const labIdx = window.FTCalSimCards ? ACTIVITIES.findIndex(a=>a.kind==="call" && a.lesson===5) : -1;
-  if(window.FTCalSimLoad) FTCalSimLoad();
-  const group = (kind, h, sub)=>{
-    const cards = ACTIVITIES.map((a,i)=>a.kind===kind && i!==labIdx ? renderCard(a,i) : "").join("");
-    return `<section class="fts-group"><h2>${h}</h2><p class="fts-sub">${sub}</p><div class="fts-grid">${cards}</div></section>`;
-  };
-  return `<div class="fts-hero"><h1>🛠 Practice Lab Sessions</h1>
-      <p>Get ready for your mock calls and demos. In each one you do the task yourself, for your trainer, on one of the CMS’s example case files (MC-01 to MC-20). Practice on those cases here first. Each card unlocks with its lesson. A case opens view only: click “Work on a practice copy” in the CMS to work on it.</p></div>
-    ${renderSkills()}
-    ${labIdx >= 0 ? `<section class="fts-group"><h2>📅 Calendaring Simulators</h2><p class="fts-sub">Practice the calendar on a Google Calendar style week: <b>Standard Training</b> (Foundational · Calendar Management), the <b>Litigation Week</b> (Case Management) and the <b>Executive Week</b> (EA / PA). Save, run the automated review under the attorney’s rules, submit for your trainer’s feedback. Your scores are saved to your own record.</p>
-      <div class="fts-grid">${FTCalSimCards()}${renderCard(ACTIVITIES[labIdx], labIdx)}</div></section>` : ""}
-    ${group("call", "📞 Mock calls", "In a mock call you take a call about one of the firm’s cases for your trainer. Practice here first: each line has its practice calls, and numbered graded calls that count toward the lesson.")}
-    ${group("demo", "🖥 Demos", "In a demo you show your trainer how you do the task, step by step, on one of these cases. Practice the steps here first on a practice copy.")}
-    <section class="fts-group"><h2>🧰 All simulators</h2>
-      <p class="fts-sub">Every simulator on the LSH Training Portal, open for practice any time. <a href="${PORTAL.replace(/simulators\/$/, "simulators.html")}" target="_blank" rel="noopener">Simulators hub ↗</a></p>
-      <div class="fts-grid fts-all">${PORTAL_ALL.map(t=>`<div class="card fts-card">
-        <h3>${t.icon} ${esc(t.name)}</h3><p class="fts-note">${esc(t.desc)}</p>
-        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" onclick="ftsOpenPortal('${t.id}')">Open ↗</button><a class="btn btn-ghost btn-sm" href="${esc(t.cms ? callsHref() : portalHref(t.page))}" target="_blank" rel="noopener">New tab ↗</a></div>
-      </div>`).join("")}</div></section>`;
+  const demos = ACTIVITIES.map(renderCard).join("");
+  return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
+      <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
+    ${firmBanner()}
+    ${window.FTSessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
+      <div class="fts-grid">${FTSessions.cards()}</div></section>
+    <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
+      <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
+    ${demos ? demoGroup(demos) : ""}
+    ${renderSkills()}`;
+}
+function demoGroup(cards){
+  return `<section class="fts-group"><h2>🖥 Demo preparation</h2><p class="fts-sub">Before a demo with your trainer, practice its steps on these CMS cases (open one, then “Work on a practice copy”).</p><div class="fts-grid">${cards}</div></section>`;
 }
 
 // Open here: the tool fills the window in its own panel, outside the page, so the page
@@ -246,10 +212,8 @@ window.ftsOpen = function(i, id){
   ftsShow(keyHref(id, a), `${keyName(id, a)} — ${a.title}`);
 };
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
+window.ftsShowTool = (url, name)=>ftsShow(url, name);
 window.ftsCalsim = function(track, scores){ window.open(portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
-window.ftsOpenPortal = function(id){
-  const t = PORTAL_ALL.find(x=>x.id===id); if(t) ftsShow(t.cms ? callsHref() : portalHref(t.page), t.name);
-};
 function ftsShow(url, name){
   // A Portal page needs the Portal sign-in cookie, which the browser doesn't send into a frame inside this site (it showed the
   // Portal's login box): it opens in its own tab, where the trainee is already signed in. The CMS lets Standard trainees in
@@ -284,20 +248,16 @@ window.render = function(){
   if(!isTrainee() || state.ftOpenDays) return;
   ftLoadOpenDays().then(()=>{ if(state.view==="simulators") render(); }).catch(()=>{});
 };
-// Dashboard: the Simulators card (like the Training Portal's), above the lessons.
+// Dashboard: the graded-calls band (the main landing page has no Simulators card: the Practice Lab is in the top bar).
 const __dash = window.renderDashboard;
 window.renderDashboard = function(){
   const html = __dash.apply(this, arguments);
   if(!state.traineeId && !state.isAdmin) return html;
-  const card = `<div class="fts-banner" role="link" tabindex="0" onclick="goto('simulators')" onkeydown="if(event.key==='Enter') goto('simulators')">
-      <span class="fts-banner-ic">🛠</span>
-      <span class="fts-banner-tx"><b>Practice Lab</b><span>The typing and spelling tests, practice for your mock calls and demos on the CMS’s example cases, and the call, calendaring, email, docketing, medical records and court e-filing simulators.</span></span>
-      <span class="fts-banner-go">Open →</span></div>`;
   if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
   // the dashboard band: the best graded call in each of lessons 4–6, averaged
   const bests = CALL_LESSONS.map(callBest).filter(Boolean);
   const stat = isTrainee() ? `<div class="card stat fts-calls-stat" title="Your best graded call in Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls"><div class="num">${bests.length ? Math.round(bests.reduce((n, b)=>n + b.score, 0) / bests.length) + "%" : "—"}</div><div class="lbl">Graded calls · ${bests.length} / ${CALL_LESSONS.length} lessons</div></div>` : "";
-  return html.replace('<div class="module-grid">', card + '<div class="module-grid">').replace(/(<div class="lbl">Lessons finished<\/div><\/div>)/, "$1" + stat);
+  return html.replace(/(<div class="lbl">Lessons finished<\/div><\/div>)/, "$1" + stat);
 };
 // a mock-call lesson's card shows its best graded call
 const __callCard = window.moduleCard;
@@ -306,14 +266,6 @@ window.moduleCard = function(d){
   if(!b) return html;
   return html.replace(/(<div class="mh-day">)([\s\S]*?)(<\/div>)/, (m, a, t, c)=>`${a}${t.replace(/^&nbsp;$/, "")}${t && t !== "&nbsp;" ? " &middot; " : ""}📞 ${b.score}%${c}`);
 };
-const __topbar = window.renderTopbar;
-window.renderTopbar = function(){
-  const html = __topbar.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin) return html;
-  const btn = `<button class="${state.view==="simulators"?"active":""}" onclick="goto('simulators')">🛠 Simulators</button>`;
-  return html.replace(/(<button[^>]*onclick="goto\('dashboard'\)"[^>]*>[^<]*<\/button>)/, "$1" + btn);
-};
-
 (function(){ const s = document.createElement("style"); s.id = "ft-simulators"; s.textContent = `
 main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;}
@@ -342,6 +294,9 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-banner-ic{width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.18);border:1px solid rgba(253,186,116,.45);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
 .fts-banner-tx{flex:1;min-width:0;} .fts-banner-tx b{display:block;font-size:16px;} .fts-banner-tx span{font-size:13px;color:#c7d2fe;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
+.fts-firm{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#0b1730,#13284f);color:#fff;border-radius:18px;padding:16px 20px;margin-bottom:22px;cursor:pointer;}
+.fts-firm .fts-banner-tx span{font-size:13px;color:#c7d2fe;} .fts-firm:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
+.fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
 .fts-banner-go{background:#f97316;color:#0f172a;font-weight:800;font-size:12px;border-radius:999px;padding:8px 16px;white-space:nowrap;}
 @media (max-width:520px){ .fts-banner{flex-wrap:wrap;} .fts-banner-go{margin-left:64px;} }
 #fts-panel{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#f8fafc);flex-direction:column;}

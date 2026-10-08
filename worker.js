@@ -168,13 +168,16 @@ function candidateIds(name, batch) {
 // settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
 // settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`];
+// settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines|firms|trainer-acts)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
 //   kcreview:<id>     the trainer's review of each Knowledge Check (js/ft-process.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`];
+//   assign:<id>       the trainee's law firm and cases (js/ft-firms.js)
+//   labreview:<id>    the trainer's review of each Practice Session, and the trainer-led activities' results (js/ft-sessions.js)
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
@@ -218,6 +221,13 @@ async function traineeWrite(env, tok, key, value) {
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     incoming.reviews = (existing && existing.reviews) || {};
     await kv.put(key, JSON.stringify(incoming)); return null;
+  }
+  if (key === `sessions:${id}`) {
+    // Practice Sessions (js/ft-sessions.js): the trainee's own runs, answers and automated checks. The trainer's
+    // reviews are in labreview:<id>, which only admins write.
+    if (value.length > 400000) return "The sessions record is too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    await kv.put(key, value); return null;
   }
   if (key === `feedback:${id}`) {
     // Trainees (auto-review) may add days and mark reviews read — never rewrite a trainer's review.
