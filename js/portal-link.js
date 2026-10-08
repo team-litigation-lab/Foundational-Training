@@ -25,6 +25,11 @@ document.head.appendChild(css);
 
 window.goToMainPortal = function(){ location.href = PORTAL_URL; };
 
+// Before the ⧉ / ⛶ buttons, or before ⛶ View ▾ once js/lsh-topbar.js has put them in it (a child of the bar either way).
+function beforeView(nav){
+  return [].find.call(nav.children, function(el){ return el.matches(".nav-fs, .lsh-grp[data-grp='view']"); }) || null;
+}
+
 // The pages re-render often and each course draws its own top bar, so add the
 // buttons to whatever is on screen rather than to each course's templates.
 function paint(){
@@ -38,7 +43,7 @@ function paint(){
       b.type = "button"; b.className = "nav-portal"; b.title = TITLE;
       b.textContent = "← Training Directory";
       b.onclick = window.goToMainPortal;
-      nav.insertBefore(b, nav.querySelector(".nav-fs"));
+      nav.insertBefore(b, beforeView(nav));
     }
     var card = document.querySelector(".login-card");
     if(card && !card.querySelector(".trainee-portal-link")){
@@ -55,7 +60,7 @@ function paint(){
     b.type = "button"; b.className = "nav-portal"; b.title = TITLE;
     b.textContent = "🏠 Main Portal";
     b.onclick = window.goToMainPortal;
-    nav.insertBefore(b, nav.querySelector(".nav-fs"));
+    nav.insertBefore(b, beforeView(nav));
   }
   var out = document.querySelector('button[onclick="adminLogout()"]');
   if(out && out.parentNode && !out.parentNode.querySelector(".admin-portal-link")){
