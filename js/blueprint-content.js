@@ -86,8 +86,8 @@ window.LSH_BLUEPRINT = {
   }
 };
 
-/* The main landing page (the dashboard) has no Platform Blueprint card: trainees aren't shown the Blueprint (admins open it from the top bar). */
-/* Top bar: 📘 Platform Blueprint, the same PDF, for admins (before the ⧉ / ⛶ buttons). Trainees and 👁 Trainee view don't get it. */
+/* The main landing page (the dashboard) has no Platform Blueprint card: the Blueprint opens from the top bar. */
+/* Top bar: 📘 Platform Blueprint, the same PDF, for anyone signed in (before the ⧉ / ⛶ buttons). */
 (function () {
   const bar = window.renderTopbar;
   if (typeof bar !== 'function') return;
@@ -96,7 +96,7 @@ window.LSH_BLUEPRINT = {
   document.head.appendChild(st);
   window.renderTopbar = function () {
     const html = bar.apply(this, arguments);
-    if (!state.isAdmin || state.adminPreview) return html;
+    if (!state.traineeId && !state.isAdmin) return html;
     const btn = `<button type="button" class="nav-blueprint" onclick="window.open('/blueprint.pdf','_blank','noopener')" title="Platform Blueprint: how this platform works (PDF)">📘<span class="bp-word"> <span class="bp-long">Platform </span>Blueprint</span></button>`;
     const at = html.indexOf('<button type="button" class="nav-fs"');
     return at >= 0 ? html.slice(0, at) + btn + html.slice(at) : html;

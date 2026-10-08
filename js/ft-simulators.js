@@ -172,7 +172,7 @@ window.ftsGotoSkills = function(){
 function firmBanner(){
   if(!isTrainee() || !window.FTFirms) return "";
   const f = FTFirms.myFirm();
-  return `<div class="fts-firm" role="link" tabindex="0" onclick="goto('firm')" onkeydown="if(event.key==='Enter') goto('firm')"><span class="fts-banner-ic">🏛</span>
+  return `<div class="fts-banner" role="link" tabindex="0" onclick="goto('firm')" onkeydown="if(event.key==='Enter') goto('firm')"><span class="fts-banner-ic">🏛</span>
     <span class="fts-banner-tx"><b>${f ? esc(f.name) : "Your law firm"}</b><span>${f ? `You work for this firm: ${esc(f.location)} · ${esc(f.tz)} time. Every session is on its cases, under its rules.` : "Your trainer assigns your firm and your cases. Its rules are what your sessions are checked against."}</span></span>
     <span class="fts-banner-go">${f ? "My firm & rules →" : "Open →"}</span></div>`;
 }
@@ -294,8 +294,6 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-banner-ic{width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.18);border:1px solid rgba(253,186,116,.45);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
 .fts-banner-tx{flex:1;min-width:0;} .fts-banner-tx b{display:block;font-size:16px;} .fts-banner-tx span{font-size:13px;color:#c7d2fe;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
-.fts-firm{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#0b1730,#13284f);color:#fff;border-radius:18px;padding:16px 20px;margin-bottom:22px;cursor:pointer;}
-.fts-firm .fts-banner-tx span{font-size:13px;color:#c7d2fe;} .fts-firm:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
 .fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
 .fts-banner-go{background:#f97316;color:#0f172a;font-weight:800;font-size:12px;border-radius:999px;padding:8px 16px;white-space:nowrap;}
 @media (max-width:520px){ .fts-banner{flex-wrap:wrap;} .fts-banner-go{margin-left:64px;} }
