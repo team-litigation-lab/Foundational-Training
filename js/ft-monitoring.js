@@ -119,7 +119,7 @@ function statusOf(x){
 }
 
 /* ---------- the trainee's sheet ---------- */
-const FTM = {id:null, data:null, loading:false, err:"", timer:null, saving:false, savedAt:null, topics:null, open:{}};
+const FTM = {id:null, data:null, loading:false, err:"", timer:null, saving:false, savedAt:null, topics:null};
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["monitoring"]);
 async function loadTopics(){
   const s = await sharedGet("settings:monitor").catch(()=>null);
@@ -151,27 +151,44 @@ function paintSave(ok){
 }
 function paintStatus(tid){
   const t = FTM.topics.find(x=>x.id===tid), s = statusOf(FTM.data.entries[tid], t);
-  const el = document.getElementById("ftmSt-"+tid); if(el){ el.className = "ftm-st st-"+s.k; el.textContent = s.t; }
+  const el = document.getElementById("ftmSt-"+tid); if(el){ el.className = "ftm-c ftm-st st-"+s.k; el.textContent = s.t; }
   const c = document.getElementById("ftmCount"); if(c) c.textContent = countLine();
 }
 function countLine(){
   const done = FTM.topics.filter(t=>statusOf(FTM.data.entries[t.id], t).k==="done").length;
   return `${done} of ${FTM.topics.length} discussions filled`;
 }
-function topicCard(t, i){
-  const x = FTM.data.entries[t.id] || {takeaways:[], questions:[]}, s = statusOf(FTM.data.entries[t.id], t);
-  const open = FTM.open[t.id] != null ? FTM.open[t.id] : (s.k === "part");
-  return `<details class="card ftm-topic" ${open?"open":""} ontoggle="FTMon.toggle('${t.id}', this.open)">
-    <summary><span class="ftm-n">${i+1}</span><b>${e(t.title)}</b><span class="ftm-st st-${s.k}" id="ftmSt-${t.id}">${s.t}</span></summary>
-    <div class="ftm-sheet">
-      <div class="ftm-row"><label class="ftm-date">Date: <input type="date" value="${e(x.date||"")}" oninput="FTMon.set('${t.id}','date',this.value)"></label></div>
-      <div class="ftm-row"><div class="ftm-h">5 Major Takeaways From This Discussion:</div>
-        <ol class="ftm-list">${[0,1,2,3,4].map(k=>`<li><textarea rows="2" placeholder="A complete, specific sentence about what you learned." oninput="FTMon.set('${t.id}','takeaways',this.value,${k})">${e((x.takeaways||[])[k]||"")}</textarea></li>`).join("")}</ol></div>
-      <div class="ftm-row"><div class="ftm-h">3 Questions That You Still Have:</div>
-        <ol class="ftm-list">${[0,1,2].map(k=>`<li><input type="text" placeholder="${k?"":"No questions? Write “None”."}" value="${e((x.questions||[])[k]||"")}" oninput="FTMon.set('${t.id}','questions',this.value,${k})"></li>`).join("")}</ol></div>
-      <div class="ftm-row"><div class="ftm-h">Rate Your Understanding. Choose the statement that best represents your understanding.</div>
-        <div class="ftm-rate" id="ftmRate-${t.id}">${RATINGS.map((r,k)=>`<button type="button" class="${x.rating===k+1?"on":""}" onclick="FTMon.rate('${t.id}',${k+1})">${e(r)}</button>`).join("")}</div></div>
-    </div></details>`;
+// The sheet, Google Sheets style (same look as 📋 Task Tracker, js/ft-tracker.js): column letters, row
+// numbers, and every field a fillable cell — one row per discussion, instead of a card per discussion.
+const MON_RATING_SHORT = ["1 — Need help", "2 — Not sure yet", "3 — Confident", "4 — Can teach it"];
+const monColLetter = i => String.fromCharCode(65 + i);
+const MON_COLS = [
+  {h:"DISCUSSION", w:190}, {h:"DATE", w:112},
+  {h:"TAKEAWAY 1", w:210}, {h:"TAKEAWAY 2", w:210}, {h:"TAKEAWAY 3", w:210}, {h:"TAKEAWAY 4", w:210}, {h:"TAKEAWAY 5", w:210},
+  {h:"QUESTION 1", w:170}, {h:"QUESTION 2", w:170}, {h:"QUESTION 3", w:170},
+  {h:"RATE YOUR UNDERSTANDING", w:210}, {h:"STATUS", w:100}
+];
+function monGrid(){
+  const widths = `<colgroup><col style="width:36px">${MON_COLS.map(c=>`<col style="width:${c.w}px">`).join("")}</colgroup>`;
+  const letters = `<tr class="ftm-letters"><th class="ftm-corner"></th>${MON_COLS.map((c,i)=>`<th>${monColLetter(i)}</th>`).join("")}</tr>`;
+  const head = `<tr class="ftm-headrow"><th class="ftm-rn">1</th>${MON_COLS.map(c=>`<th>${e(c.h)}</th>`).join("")}</tr>`;
+  const body = FTM.topics.map((t, i)=>{
+    const x = FTM.data.entries[t.id] || {takeaways:[], questions:[]}, s = statusOf(FTM.data.entries[t.id], t);
+    const tk = k => e((x.takeaways||[])[k]||""), qs = k => e((x.questions||[])[k]||"");
+    return `<tr class="ftm-r">
+      <th class="ftm-rn">${i+2}</th>
+      <td class="ftm-c ftm-topic-c"><b>${e(t.title)}</b></td>
+      <td class="ftm-c"><input type="date" value="${e(x.date||"")}" oninput="FTMon.set('${t.id}','date',this.value)"></td>
+      ${[0,1,2,3,4].map(k=>`<td class="ftm-c"><textarea rows="2" placeholder="A complete, specific sentence about what you learned." oninput="FTMon.set('${t.id}','takeaways',this.value,${k})">${tk(k)}</textarea></td>`).join("")}
+      ${[0,1,2].map(k=>`<td class="ftm-c"><textarea rows="2" placeholder="${k?"":"No questions? Write “None”."}" oninput="FTMon.set('${t.id}','questions',this.value,${k})">${qs(k)}</textarea></td>`).join("")}
+      <td class="ftm-c"><select oninput="FTMon.rate('${t.id}',this.value?+this.value:0)">
+        <option value=""></option>
+        ${MON_RATING_SHORT.map((r,k)=>`<option value="${k+1}" ${x.rating===k+1?"selected":""} title="${e(RATINGS[k])}">${e(r)}</option>`).join("")}
+      </select></td>
+      <td class="ftm-c ftm-st st-${s.k}" id="ftmSt-${t.id}">${s.t}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="ftm-wrap"><table class="ftm-grid">${widths}<thead>${letters}${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to open your Monitoring Sheet.</div>`;
@@ -194,7 +211,7 @@ function renderPage(){
         <li>Base your takeaways on the discussion.</li></ul>
       <div class="ftm-eg"><div>❌ <b>General:</b> “I learned about auto liability.”</div><div>✅ <b>Specific:</b> “Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage.”</div></div>
     </div>
-    ${FTM.topics.map(topicCard).join("")}`;
+    ${monGrid()}`;
 }
 
 window.FTMon = {
@@ -204,12 +221,8 @@ window.FTMon = {
     queueSave(); paintStatus(tid);
   },
   rate(tid, n){
-    const x = entry(tid); x.rating = x.rating === n ? 0 : n; queueSave();
-    const g = document.getElementById("ftmRate-"+tid);
-    if(g) [...g.children].forEach((b,i)=>b.classList.toggle("on", x.rating === i+1));
-    paintStatus(tid);
+    const x = entry(tid); x.rating = n; queueSave(); paintStatus(tid);
   },
-  toggle(tid, open){ FTM.open[tid] = open; },
   doc(open){ FTM.docOpen = open; },
   reload(){ FTM.id = null; FTM.err = ""; render(); }
 };
@@ -448,23 +461,24 @@ main.main-monitor{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ftm-how{padding:14px 18px;margin-bottom:16px;font-size:15px;} .ftm-how > b{display:block;color:var(--navy);font-size:16px;}
 .ftm-how ul{margin:6px 0 10px;padding-left:20px;} .ftm-how li{margin:3px 0;}
 .ftm-eg{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:6px;}
-.ftm-topic{padding:0;margin-bottom:10px;overflow:hidden;}
-.ftm-topic > summary{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;list-style:none;font-size:15.5px;color:var(--navy);}
-.ftm-topic > summary::-webkit-details-marker{display:none;}
-.ftm-n{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--bg);color:var(--ink-soft);font-size:13px;display:flex;align-items:center;justify-content:center;}
-.ftm-topic > summary b{flex:1;min-width:0;}
-.ftm-st{flex-shrink:0;font-size:12.5px;border-radius:999px;padding:3px 10px;} .st-none{background:var(--bg);color:var(--ink-soft);} .st-part{background:#FEF7C3;color:#7a5d00;} .st-done{background:var(--success-bg);color:var(--success);}
-.ftm-sheet{border-top:1px solid var(--line);}
-.ftm-row{padding:12px 16px;border-top:1px solid var(--line);} .ftm-row:first-child{border-top:0;}
-.ftm-h{font-size:15px;color:var(--ink);margin-bottom:6px;}
-.ftm-date{font-size:15px;} .ftm-date input{font:inherit;font-size:15px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;margin-left:6px;}
-.ftm-list{margin:0;padding-left:24px;} .ftm-list li{margin:6px 0;}
-.ftm-list textarea, .ftm-list input{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
-.ftm-list textarea:focus, .ftm-list input:focus, .ftm-date input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
-.ftm-rate{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--ink);}
-.ftm-rate button{font:inherit;font-style:italic;font-weight:500;font-size:14.5px;text-align:left;padding:10px;background:#fff;border:0;border-left:1px solid var(--ink);cursor:pointer;color:var(--ink);}
-.ftm-rate button:first-child{border-left:0;} .ftm-rate button.on{background:#00ff00;} .ftm-rate button:hover:not(.on){background:#F3F5FB;}
-@media (max-width:640px){ .ftm-rate{grid-template-columns:1fr 1fr;} .ftm-rate button:nth-child(3){border-left:0;} .ftm-rate button:nth-child(n+3){border-top:1px solid var(--ink);} }
+.st-none{background:var(--bg);color:var(--ink-soft);} .st-part{background:#FEF7C3;color:#7a5d00;} .st-done{background:var(--success-bg);color:var(--success);}
+/* the sheet itself: a Google-Sheets-style grid, the same look as 📋 Task Tracker (js/ft-tracker.js) —
+   column letters, row numbers, and every field a fillable cell right in the grid. */
+.ftm-wrap{overflow:auto;max-height:72vh;border:1px solid #dadce0;border-radius:10px;background:#fff;font-family:Arial,Helvetica,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ftm-grid{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:13px;color:#202124;}
+.ftm-grid th, .ftm-grid td{border-right:1px solid #e2e3e3;border-bottom:1px solid #e2e3e3;padding:4px 6px;vertical-align:top;}
+.ftm-letters th{position:sticky;top:0;z-index:3;background:#f8f9fa;color:#5f6368;font-weight:400;font-size:11px;text-align:center;padding:3px;}
+.ftm-corner{left:0;z-index:4 !important;}
+.ftm-rn{position:sticky;left:0;z-index:2;background:#f8f9fa;color:#5f6368;font-weight:400;font-size:11px;text-align:center;}
+.ftm-headrow th{background:#0b2447;color:#fff;font-weight:700;text-align:left;position:sticky;top:21px;z-index:2;font-size:11.5px;}
+.ftm-headrow th.ftm-rn{background:#f8f9fa;color:#5f6368;z-index:3;}
+.ftm-c{background:#fff;}
+.ftm-topic-c{background:#e8f0fe;color:#174ea6;}
+.ftm-c input[type=date]{width:100%;box-sizing:border-box;font:12.5px Arial,sans-serif;padding:4px;border:1px solid var(--line);border-radius:6px;}
+.ftm-c textarea{width:100%;box-sizing:border-box;font:12.5px Arial,sans-serif;padding:4px 6px;border:1px solid var(--line);border-radius:6px;resize:vertical;background:#fff;}
+.ftm-c select{width:100%;box-sizing:border-box;font:12.5px Arial,sans-serif;padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff;}
+.ftm-c textarea:focus, .ftm-c input:focus, .ftm-c select:focus{outline:2px solid #1a73e8;border-color:#1a73e8;}
+td.ftm-c.ftm-st{text-align:center;font-weight:700;font-size:12px;}
 .ftm-link{cursor:pointer;color:var(--orange-deep);font-weight:700;}
 .ftm-admin{padding:18px 20px;margin-bottom:14px;} .ftm-admin h3{margin:0 0 4px;color:var(--navy);}
 .ftm-admin > summary{cursor:pointer;color:var(--navy);font-size:15px;}

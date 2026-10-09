@@ -5405,7 +5405,7 @@ const ELIAS_VOICE_NOTE_AUDIO_SRC = ELIAS_VOICE_NOTE_AUDIO_DATAURI;
 const CLIENT_AVATAR_SRC = "";
 
 const state = {
-  view:"modules",
+  view:"dashboard",
   dayId:null,
   toolId:null,
   quizAnswers:{},
@@ -7269,7 +7269,7 @@ async function loadTraineeRanking(force){
     const ranked = pool.map(x=>({id:x.id, name:x.name, overall:rankOverall(x)})).sort((a,b)=>b.overall-a.overall);
     state.rankData = {at:Date.now(), batch, ranked};
   }catch(e){ state.rankData = {at:Date.now(), error:true, ranked:[]}; }
-  if(state.view==="dashboard" || state.view==="modules") render();
+  if(state.view==="dashboard") render();
 }
 
 /* ---------- Competency profile + "Work on next" (dashboard sidebar) ---------- */
@@ -8296,11 +8296,11 @@ function navBackTarget(){
 // Filled in after the page's history entry is recorded (afterRender), so it names the right page.
 function fillNavBack(){
   const slot = document.getElementById("navBackSlot"); if(!slot) return;
-  const prev = ["login","pendingApproval","registrationDenied","dashboard","modules"].includes(state.view) ? "" : navBackTarget();
+  const prev = ["login","pendingApproval","registrationDenied","dashboard"].includes(state.view) ? "" : navBackTarget();
   const label = prev && routeLabel(prev);
   slot.innerHTML = label ? `<div class="nav-back-row"><button type="button" class="nav-back" onclick="navBack()" title="Go back to the page you were on">← Back to ${esc(label)}</button></div>` : "";
 }
-function navBack(){ if(routeDepth()>0) history.back(); else goto("modules"); }
+function navBack(){ if(routeDepth()>0) history.back(); else goto("dashboard"); }
 window.navBack = navBack;
 function parseRouteHash(){
   const m = String(location.hash||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
@@ -8554,7 +8554,7 @@ async function submitLoginInner(){
   await syncToLedger(true);
   const status = await getApprovalStatus(state.traineeId);
   if(status==="approved"){
-    state.view = "modules";
+    state.view = "dashboard";
     startApprovalPolling(state.traineeId);
     if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; resumeWhereLeftOff(lv); toast("Welcome back — picking up where you left off."); return; }
   }else if(status==="rejected"){
@@ -8598,7 +8598,7 @@ async function recheckApproval(){
   btn.disabled = true; btn.textContent = "Checking…";
   const status = await getApprovalStatus(state.traineeId);
   if(status==="approved"){
-    state.view = "modules";
+    state.view = "dashboard";
     startApprovalPolling(state.traineeId);
     render();
   }else if(status==="rejected"){
@@ -8761,7 +8761,7 @@ async function liveTick(){
       const status = await getApprovalStatus(state.traineeId);
       if(status==="approved"){
         startApprovalPolling(state.traineeId);
-        state.view = "modules"; render();
+        state.view = "dashboard"; render();
         toast("🎉 You're approved — welcome to the program!");
         state.feedbackLoadedAt = 0;
       }else if(status==="rejected" && state.view!=="registrationDenied"){ state.view = "registrationDenied"; render(); }
@@ -8948,7 +8948,7 @@ window.applyUpdate = applyUpdate;
     ? sharedGet("trainee:"+state.traineeId).catch(()=>null)
     : Promise.resolve(null);
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
-  loadPublishedContent().then(()=>{ if(["day","dashboard","modules","admin"].includes(state.view)) render(); });
+  loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
   if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
   if(!state.traineeName){
@@ -14055,7 +14055,7 @@ async function submitTraineeFeedback(){
   if(rec.dayId){ state.tfbGivenDays = state.tfbGivenDays || {}; state.tfbGivenDays[rec.dayId] = true; }
   state.tfbLastSent = rec.at;
   toast("Thank you — your feedback was sent to the training team. 🙏");
-  if(state.view==="dashboard" || state.view==="modules") render();
+  if(state.view==="dashboard") render();
   if(state.view==="day") render();
 }
 Object.assign(window, {openTraineeFeedback, submitTraineeFeedback, tfbSetStar});
@@ -15166,7 +15166,7 @@ async function openDayFeedback(dayId){
     (state.fbReadLocal = state.fbReadLocal || {})[dayId] = f.readAt;
     refreshFocusBadge();
     try{ const raw = await sharedGet("feedback:"+state.traineeId); if(raw && raw.days && raw.days[dayId]){ raw.days[dayId].readAt = f.readAt; await sharedSet("feedback:"+state.traineeId, raw); } }catch(e){}
-    if(state.view==="dashboard" || state.view==="modules") render();
+    if(state.view==="dashboard") render();
   }
 }
 window.openDayFeedback = openDayFeedback;
