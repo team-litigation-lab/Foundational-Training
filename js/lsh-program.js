@@ -135,18 +135,24 @@ function acts(d){
     ? `<span class="lp-act is-locked" title="${e(a.locked)}">🔒 ${e(a.icon)} ${e(a.label)}</span>`
     : `<button type="button" class="lp-act" onclick="${a.go}"${a.note ? ` title="${e(a.note)}"` : ""}>${e(a.icon)} ${e(a.label)}</button>`).join("")}</div>`;
 }
-function lessonRow(d, i, pinned){
-  const p = (state.progress || {})[d.id] || {}, open = dayUnlocked(d.id) && d.sections && d.sections.length, done = !!p.done;
-  const status = done ? `<span class="lp-pill ok">✓ Finished</span>` : !(d.sections && d.sections.length) ? `<span class="lp-pill">Coming soon</span>` : open ? `<span class="lp-pill open">Open</span>` : `<span class="lp-pill">🔒 Locked</span>`;
+function lessonCard(d, i, pinned){
+  const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
+  const status = done ? "done" : open ? "open" : "locked";
   const kc = typeof p.score === "number" ? `<span class="lp-kc t-${tier(p.score)}">✍️ Knowledge Check ${p.score}%</span>` : "";
-  const can = open || (adminOn() && d.sections && d.sections.length);
+  const can = open || (adminOn() && hasSlides);
   const tags = lessonTags(d);
-  return `<div class="lp-lesson${done ? " is-done" : ""}" id="module-${d.id}">
-    <span class="lp-num">${pinned ? "📌" : i + 1}</span>
-    <div class="lp-lesson-t"><b>${e(d.title)}</b><span class="lp-tags">${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}${tags ? " · " + tags : ""}</span></div>
-    ${status}
-    <button class="btn btn-sm ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
-    ${acts(d)}
+  const icon = pinned ? "📌" : ((window.FT_LESSON_ICONS || {})[d.id] || "📘");
+  const label = pinned ? (done ? "✓ Finished" : "📌 Start Here")
+    : `Lesson ${i + 1}${done ? " · ✓ Finished" : !hasSlides ? " · Coming soon" : !open ? " · 🔒 Locked" : ""}`;
+  const theme = pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`;
+  return `<div class="module-card mc-clean mc-${status}" id="module-${d.id}">
+    <div class="module-head"><div class="mh-day">${label}</div><div class="mh-title">${e(d.title)}</div></div>
+    <div class="module-body">
+      <div class="module-icon">${icon}</div>
+      <div class="module-theme">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
+      ${acts(d)}
+    </div>
+    <button class="btn module-start-btn ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
   </div>`;
 }
 // What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
@@ -181,7 +187,7 @@ function renderModules(){
         : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}</div>
     ${homeStats()}
     ${homeActions(done, all.length)}
-    <section class="card lp-lessons"><h2>📖 Lessons</h2>${pinned.map(d => lessonRow(d, 0, true)).join("")}${all.map((d, i) => lessonRow(d, i, false)).join("")}</section>
+    <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main"><div class="module-grid">${pinned.map(d => lessonCard(d, 0, true)).join("")}${all.map((d, i) => lessonCard(d, i, false)).join("")}</div></div></section>
     ${ps.length ? `<section class="lp-pages"><h2>🧰 Training pages</h2><div class="lp-grid">${ps.map(m => { const go = m.view ? `goto('${m.view}')` : m.run, n = badgeOf(m);
       return `<div class="card lp-page" role="link" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'){${go}}"><div class="lp-page-h"><span class="lp-ic">${m.icon}</span><b>${e(m.label)}</b>${n ? `<span class="nav-badge">${n}</span>` : ""}</div><p>${e(m.about || "")}</p><span class="lp-go">Open →</span></div>`; }).join("")}</div></section>` : ""}
     ${homeFeedback()}`;
@@ -387,27 +393,28 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-home-fb .tfb-dash-stars button:hover ~ button{color:#D9DEEA;}
 .lp-progress{display:flex;align-items:center;gap:12px;margin-top:12px;max-width:520px;} .lp-progress span{font-size:13px;color:#4A5070;white-space:nowrap;} .lp-progress b{color:var(--navy);}
 .lp-bar{flex:1;height:8px;border-radius:99px;background:#ECEEF5;overflow:hidden;} .lp-bar i{display:block;height:100%;background:linear-gradient(90deg,#E3A35F,#C9782E);border-radius:99px;}
-.lp-lessons{padding:16px 18px;margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
-.lp-acts{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0 38px;}
-.lp-act{font:inherit;font-size:12px;font-weight:600;border:1px solid #DDE1EC;background:#F7F8FB;color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
+.lp-lessons{margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
+/* the Lessons grid: the same clean module-card look as the EA/PA course's dashboard (see js/lsh-dashboard.js).
+   js/lsh-dashboard.js sizes that card to fill a fixed-height hero row (container-type:size, overflow:hidden) —
+   here the card grows to fit its own content instead, so every lesson's activities stay visible. */
+.lp-lessons .module-card{height:auto;}
+.lp-lessons .module-card.mc-clean .module-body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px 16px 10px;flex:0 1 auto;min-height:0;overflow:visible;container-type:normal;}
+/* the dashboard's module-theme is line-clamped to fit a fixed-height hero card (display:-webkit-box + overflow:hidden,
+   which collapses to 0 height without that fixed height) — here it's plain wrapping text, same specificity so it wins */
+.lp-lessons .module-card.mc-clean .module-theme{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:none;}
+.lp-lessons .module-icon{font-size:30px;line-height:1;}
+.lp-lessons .module-theme{font-size:12.5px;color:var(--ink-soft);}
+.lp-kc{font-weight:700;}
+.lp-acts{flex:0 0 100%;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:4px 0 0;}
+.lp-act{font:inherit;font-size:12px;font-weight:600;line-height:1.35;border:1px solid #DDE1EC;background:#F7F8FB;color:var(--navy);border-radius:14px;padding:6px 12px;max-width:210px;cursor:pointer;}
 .lp-act:hover{background:#ECEEF5;}
 .lp-act.is-locked{opacity:.55;cursor:default;}
-.lp-lesson{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:10px 4px;border-top:1px solid #ECEEF4;}
-.lp-lesson:first-of-type{border-top:0;}
-.lp-num{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;background:#ECEEF5;color:var(--navy);}
-.lp-lesson.is-done .lp-num{background:#E3A35F;color:#1F2645;}
-.lp-lesson-t{flex:1;min-width:0;} .lp-lesson-t b{display:block;color:var(--navy);font-size:15px;line-height:1.3;} .lp-lesson-t span{font-size:12.5px;color:#8A90A6;}
-.lp-kc{font-weight:700;}
-.lp-pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;background:#F3F4F8;color:#6B7088;white-space:nowrap;}
-.lp-pill.ok{background:#E7F5EE;color:#1E7F4F;} .lp-pill.open{background:#FFF3E6;color:var(--orange-deep);}
-.lp-lesson .btn{min-width:84px;}
 .lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:16px;}
 .lp-page{padding:16px 18px;display:flex;flex-direction:column;gap:6px;cursor:pointer;}
 .lp-page:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
 .lp-page-h{display:flex;align-items:center;gap:9px;} .lp-page-h b{flex:1;color:var(--navy);font-size:16px;}
 .lp-ic, .sc-src-ic{width:32px;height:32px;border-radius:10px;background:#FFF3E6;border:1px solid #F7DEC6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 .lp-page p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.45;flex:1;} .lp-go{font-size:12.5px;font-weight:800;color:var(--orange-deep);}
-@media(max-width:600px){ .lp-lesson{flex-wrap:wrap;} .lp-lesson-t{flex-basis:calc(100% - 48px);} .lp-pill{margin-left:48px;} .lp-lesson .btn{margin-left:auto;} }
 /* score colours: 85% and up, 70% (passing) and up, under 70%, nothing yet */
 .t-top{color:#1E7F4F !important;} .t-ok{color:#2F5BA8 !important;} .t-low{color:#B5531A !important;} .t-none{color:#8A90A6 !important;}
 .sc-hero{display:flex;gap:22px;align-items:center;padding:20px 24px;margin-bottom:18px;flex-wrap:wrap;}
