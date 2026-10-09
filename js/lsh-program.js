@@ -38,6 +38,11 @@ const lessons = () => DAYS.filter(d => d && d.sections && d.sections.length);
 const doneIn = p => lessons().filter(d => p && p[d.id] && p[d.id].done).length;
 const tier = pct => pct == null ? "none" : pct >= 85 ? "top" : pct >= 70 ? "ok" : "low";
 const pctTxt = pct => pct == null ? "—" : Math.round(pct) + "%";
+const batchLabel = id => {
+  const v = String(id == null ? "" : id).trim();
+  const m = /^B(\d{2})(\d{2})(\d{2})?(\d{2})(?:-?LSH[A-Z]*-?\d+)?$/i.exec(v.replace(/\s+/g, ""));
+  return m ? "B" + m[1] + m[2] + m[4] : v;
+};
 const badgeOf = m => { try{ return m.badge ? Number(m.badge()) || 0 : 0; }catch(err){ return 0; } };
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["modules", "scorecard"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Modules", scorecard:"My Performance"});
@@ -108,6 +113,14 @@ window.renderTopbar = function(){
 };
 
 /* ---------- 📚 Training Modules (#/modules): the lessons, then the training pages ---------- */
+// A module's own activities, under it: the program says what belongs to each module (window.ftModuleActivities).
+function acts(d){
+  const list = (typeof window.ftModuleActivities === "function" ? window.ftModuleActivities(d.id) : []) || [];
+  if(!list.length) return "";
+  return `<div class="lp-acts">${list.map(a => a.locked
+    ? `<span class="lp-act is-locked" title="${e(a.locked)}">🔒 ${e(a.icon)} ${e(a.label)}</span>`
+    : `<button type="button" class="lp-act" onclick="${a.go}"${a.note ? ` title="${e(a.note)}"` : ""}>${e(a.icon)} ${e(a.label)}</button>`).join("")}</div>`;
+}
 function lessonRow(d, i, pinned){
   const p = (state.progress || {})[d.id] || {}, open = dayUnlocked(d.id) && d.sections && d.sections.length, done = !!p.done;
   const status = done ? `<span class="lp-pill ok">✓ Finished</span>` : !(d.sections && d.sections.length) ? `<span class="lp-pill">Coming soon</span>` : open ? `<span class="lp-pill open">Open</span>` : `<span class="lp-pill">🔒 Locked</span>`;
@@ -118,6 +131,7 @@ function lessonRow(d, i, pinned){
     <div class="lp-lesson-t"><b>${e(d.title)}</b><span>${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}</span></div>
     ${status}
     <button class="btn btn-sm ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
+    ${acts(d)}
   </div>`;
 }
 function renderModules(){
@@ -225,15 +239,15 @@ async function loadAdmin(){
 }
 function renderAdminScores(){
   if(!AS.rows){ if(!AS.loading) loadAdmin(); return `<div class="card" style="padding:28px;text-align:center;color:var(--ink-soft);">Collecting every trainee’s grades…</div>`; }
-  const batches = [...new Set(AS.rows.map(r => r.batch).filter(Boolean))].sort();
-  const rows = AS.rows.filter(r => !AS.batch || r.batch === AS.batch);
+  const batches = [...new Set(AS.rows.map(r => batchLabel(r.batch)).filter(Boolean))].sort();
+  const rows = AS.rows.filter(r => !AS.batch || batchLabel(r.batch) === AS.batch);
   const cell = pct => `<td class="sc-n t-${tier(pct)}">${pctTxt(pct)}</td>`;
   return `<div class="card sc-admin">
     <div class="sc-admin-bar"><div><h2>🏅 Scorecards</h2><p class="sc-about">Each trainee’s grades, collected from all of the platform’s grading systems. Click a trainee for the details.</p></div>
       <span><select onchange="lshProgram.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       <button class="btn btn-ghost btn-sm" onclick="lshProgram.refresh()">↻ Refresh</button></span></div>
     ${rows.length ? `<div class="sc-scroll"><table class="sc-tbl sc-admin-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Lessons</th>${CFG.sources.map(s => `<th>${s.icon} ${e(s.label)}</th>`).join("")}<th>Overall</th></tr></thead><tbody>
-      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td><b>${e(r.name)}</b></td><td>${e(r.batch)}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.map(x => cell(x.avg)).join("")}${cell(r.sc.overall)}</tr>
+      ${rows.map(r => `<tr class="sc-row" onclick="lshProgram.toggle('${e(r.id)}')"><td class="sc-who"><b>${e(r.name)}</b></td><td class="sc-batch" title="${e(r.batch)}">${e(batchLabel(r.batch))}</td><td>${r.sc.done} / ${r.sc.total}</td>${r.sc.rows.map(x => cell(x.avg)).join("")}${cell(r.sc.overall)}</tr>
         ${AS.open[r.id] ? `<tr class="sc-open"><td colspan="${CFG.sources.length + 4}">${detail(r.sc)}</td></tr>` : ""}`).join("")}
     </tbody></table></div>` : `<p class="sc-empty">No approved trainees${AS.batch ? " in this batch" : ""} yet.</p>`}
     <p class="sc-how">${HOW}</p></div>`;
@@ -317,6 +331,10 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-progress{display:flex;align-items:center;gap:12px;margin-top:12px;max-width:520px;} .lp-progress span{font-size:13px;color:#4A5070;white-space:nowrap;} .lp-progress b{color:var(--navy);}
 .lp-bar{flex:1;height:8px;border-radius:99px;background:#ECEEF5;overflow:hidden;} .lp-bar i{display:block;height:100%;background:linear-gradient(90deg,#E3A35F,#C9782E);border-radius:99px;}
 .lp-lessons{padding:16px 18px;margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
+.lp-acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0 38px;}
+.lp-act{font:inherit;font-size:12px;font-weight:600;border:1px solid #DDE1EC;background:#F7F8FB;color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
+.lp-act:hover{background:#ECEEF5;}
+.lp-act.is-locked{opacity:.55;cursor:default;}
 .lp-lesson{display:flex;align-items:center;gap:14px;padding:10px 4px;border-top:1px solid #ECEEF4;}
 .lp-lesson:first-of-type{border-top:0;}
 .lp-num{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;background:#ECEEF5;color:var(--navy);}
@@ -360,6 +378,12 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .sc-admin-tbl th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#6B7088;background:#F7F8FB;white-space:nowrap;}
 .sc-admin-tbl th:nth-child(n+3){text-align:right;} .sc-admin-tbl td:nth-child(3){text-align:right;white-space:nowrap;}
 .sc-row{cursor:pointer;} .sc-row:hover td{background:#F7F8FB;}
+/* 🏅 Scorecards is a wide table: give its page the window, not the 1180px the reading pages use. */
+body:has(.sc-admin) main{max-width:min(1800px, calc(100vw - 32px)) !important;}
+.sc-admin-tbl .sc-who, .sc-admin-tbl .sc-batch{white-space:nowrap;}
+.sc-admin-tbl .sc-batch{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;color:#4A5070;}
+.sc-admin-tbl th:first-child, .sc-admin-tbl th:nth-child(2){white-space:nowrap;}
+.sc-scroll{overflow-x:auto;}
 .sc-open > td{background:#FBFBFD;padding:14px;}
 @media print{ .topbar, .footer-note, .sc-hero-acts{display:none !important;} main.main-lp{padding:0;} .sc-src{break-inside:avoid;} }
 `; document.head.appendChild(st);

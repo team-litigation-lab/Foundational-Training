@@ -20,6 +20,25 @@ const title = id => { const d = DAYS.find(x => x.id === id); return d ? d.title 
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const CALL_LESSONS = [4, 5, 6];   // Reception, Calendar Management and Intake Mock Calls (as in js/ft-simulators.js)
 
+// Each module's own activities, for the row the module gets in 📚 Training Modules (js/lsh-program.js
+// renders whatever this returns). Everything a trainee does for a module is reachable from the module:
+// its Process Questions, its Practice Session, what it is done live with the trainer, and the Resource
+// Library activity that belongs to it. `go` is what to run; `locked` greys it out with the reason.
+window.ftModuleActivities = function(lesson){
+  const l = Number(lesson), out = [];
+  const studied = typeof window.ftModuleStudied === "function" ? window.ftModuleStudied(l) : true;
+  if(typeof window.ftKcQuestions === "function" && window.ftKcQuestions(l).length)
+    out.push({icon:"✍️", label:"Process Questions", go:`FTProcess.openLesson(${l})`,
+      locked: studied ? "" : "Finish the module first"});
+  if(window.FTSessions && typeof FTSessions.forLesson === "function")
+    FTSessions.forLesson(l).forEach(a => out.push(a.kind === "session"
+      ? {icon:a.icon || "🟢", label:a.title, go:`FTSessions.open('${a.id}')`}
+      : {icon:a.icon || "🧑‍🏫", label:a.title, go:"goto('simulators')", note:"with your trainer"}));
+  if(typeof window.ftLorCard === "function" && l === 7)
+    out.push({icon:"📄", label:"LOR Drafting Activity", go:"goto('lor')"});
+  return out;
+};
+
 window.LSH_PROGRAM = {
   // 📚 Training Modules: the lessons, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.

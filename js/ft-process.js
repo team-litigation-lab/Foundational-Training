@@ -138,7 +138,17 @@ function statusOf(set, x){
   if(x && x.submittedAt) return {k:"done", t:"Submitted"};
   return answered(set, x) ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
 }
-const setOpen = set => state.isAdmin || state.adminPreview || (typeof dayUnlocked === "function" ? dayUnlocked(set.lesson) : true);
+// A module's questions open once the trainee has been through the module — they reach its last slide and
+// press ✓ Finish lesson, which marks it "studied" and brings them straight here. Every other module stays
+// locked. The gate can't be the Knowledge Check itself: passing it is what finishes the module, so gating
+// the questions on a finished module would mean the questions could never be answered. A module finished
+// before this existed (done, from an earlier pass) counts as studied too.
+const moduleStudied = lesson => {
+  if(state.isAdmin || state.adminPreview) return true;
+  const p = (state.progress || {})[lesson] || {};
+  return !!(p.studied || p.done);
+};
+window.ftModuleStudied = moduleStudied;
 
 // The answers as a document: the same text goes to the clipboard (for a Google Doc) and into the Word file.
 function docHtml(set, x, first){
@@ -159,29 +169,40 @@ async function copyRich(html, text){
   try{ await navigator.clipboard.writeText(text); return true; }catch(err){ return false; }
 }
 
-function setCard(set){
-  const x = FP.data.sets[set.id] || {answers:[]}, s = statusOf(set, FP.data.sets[set.id]), locked = !setOpen(set);
-  const open = FP.open[set.id] != null ? FP.open[set.id] : true;
-  const name = fileName(set);
-  if(locked) return `<div class="card fp-set fp-locked"><div class="fp-head"><b>${e(set.title)}</b><span class="fp-st st-none">🔒 Opens with the lesson</span></div></div>`;
-  return `<details class="card fp-set" id="fpSet-${set.id}" ${open?"open":""} ontoggle="FTProcess.toggle('${set.id}', this.open)">
-    <summary class="fp-head"><b>${e(set.title)}</b><span class="fp-count" id="fpCount-${set.id}">${answered(set, x)} of ${set.questions.length} answered</span><span class="fp-st st-${s.k}" id="fpSt-${set.id}">${s.t}</span></summary>
+// One card per module: its own questions, its own Knowledge Check, locked until the module is studied.
+// The answers still belong to the answer sheet behind them (PROCESS_SETS), so a sheet that covers two
+// modules — PI Workflow and Reception share one file — keeps its single file and naming convention.
+function moduleCard(lesson){
+  const qs = kcQuestionsFor(lesson);
+  if(!qs.length) return "";
+  const title = ftName(lesson), sets = [...new Set(qs.map(x => x.set))];
+  if(!moduleStudied(lesson))
+    return `<div class="card fp-set fp-locked"><div class="fp-head"><b>${e(title)}</b>
+      <span class="fp-st st-none">🔒 Opens when you finish this module</span></div>
+      <p class="fp-muted fp-lockwhy">Work through the module's slides and press <b>✓ Finish lesson</b> on the last one. It brings you straight back here, to these questions.</p></div>`;
+  const key = "m" + lesson;
+  const open = FP.open[key] != null ? FP.open[key] : true;
+  const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
+  const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
+  const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
+  return `<details class="card fp-set" id="fpSet-${key}" ${open?"open":""} ontoggle="FTProcess.toggle('${key}', this.open)">
+    <summary class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${qs.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Best ${best}%</span>` : ""}</summary>
     <div class="fp-body">
-      <div class="fp-name"><span>Naming convention</span><code>${e(name)}</code>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.copyName('${set.id}')">📋 Copy</button></div>
-      <ol class="fp-qs">${set.questions.map((q,i)=>`<li><div class="fp-q">${e(q)}</div>
-        <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${set.id}',${i},this.value)">${e((x.answers||[])[i]||"")}</textarea></li>`).join("")}</ol>
+      ${sets.map(set => `<div class="fp-name"><span>Naming convention</span><code>${e(fileName(set))}</code>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.copyName('${set.id}')">📋 Copy</button></div>`).join("")}
+      <ol class="fp-qs">${qs.map(x => `<li><div class="fp-q">${e(x.q)}</div>
+        <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`).join("")}</ol>
       <div class="fp-actions">
-        ${kcLessons(set).map(l=>{ const best = kcBest(l); return `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${set.id}', ${l})">📝 ${kcLessons(set).length > 1 ? `Knowledge Check: ${e(ftName(l))}` : "Submit for Grading"}${best != null ? ` · ${best}%` : ""}</button>`; }).join("")}
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.toDrive('${set.id}')">📄 Save to My Google Drive</button>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.word('${set.id}')">⬇ Download as Word</button>
+        <button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>
+        ${sets.map(set => `<button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.toDrive('${set.id}')">📄 Save to My Google Drive</button>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.word('${set.id}')">⬇ Download as Word</button>`).join("")}
         ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}
       </div>
-      ${x.submittedAt ? `<p class="fp-muted">Submitted ${e(new Date(x.submittedAt).toLocaleString())}.</p>` : ""}
-      <p class="fp-muted">These questions are this lesson’s <b>Knowledge Check</b>: <b>📝 Submit for Grading</b> grades each answer (70% passes the lesson), and your trainer adds their own review.</p>
-      <p class="fp-muted"><b>📄 Save to My Google Drive</b> copies your answers and opens a new Google Doc already named <b>${e(name)}</b>${FP.data.folder ? " in your trainee folder" : ""}. Paste them in with Ctrl+V. <b>⬇ Download as Word</b> gives you the file with the same name, to upload to your trainee folder.</p>
+      <p class="fp-muted">These are this module's <b>Knowledge Check</b>: <b>📝 Submit for Grading</b> scores each answer out of 10 in your facilitator's own feedback style (${KC_PASS}% passes the module), and your trainer adds their review on top.</p>
+      ${sets.length > 1 ? `<p class="fp-muted">The answers belong to ${sets.length} answer sheets; each has its own file name above.</p>` : ""}
     </div></details>`;
 }
+
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
   // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
@@ -195,24 +216,23 @@ function renderPage(){
   const preview = (state.adminPreview && !state.traineeId)
     ? `<div class="card fp-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it, with every lesson unlocked. Nothing you type here is saved, and grading needs a trainee's own account.</div>` : "";
   return `${preview}<div class="fp-hero"><h1>✍️ Process Questions · Knowledge Checks</h1>
-      <p>Each lesson’s process questions are its Knowledge Check. Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is graded, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
+      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module; answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
     <div class="card fp-folder">
       <label for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
       <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
         <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>
     </div>
-    ${PROCESS_SETS.map(setCard).join("")}`;
+    ${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleCard(d.id)).join("")}`;
 }
 
 window.FTProcess = {
   // ✍️ Process Questions, at one lesson's answer sheet: where a lesson's ✓ Finish lesson sends the trainee.
   openLesson(lesson){
-    const sets = PROCESS_SETS.filter(s => kcLessons(s).includes(Number(lesson)));
-    if(!sets.length) return;
-    PROCESS_SETS.forEach(s => { FP.open[s.id] = sets.includes(s); });
+    const l = Number(lesson);
+    if(!kcQuestionsFor(l).length) return;
+    DAYS.forEach(d => { FP.open["m" + d.id] = d.id === l; });   // this module's card open, the rest folded away
     goto("process");
-    const id = sets[0].id;
-    setTimeout(() => { const el = document.getElementById("fpSet-" + id); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); else window.scrollTo(0, 0); }, 80);
+    setTimeout(() => { const el = document.getElementById("fpSet-m" + l); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); else window.scrollTo(0, 0); }, 80);
   },
   set(sid, i, v){
     const x = sheet(sid); x.answers[i] = v; x.updatedAt = new Date().toISOString(); queueSave();
@@ -546,7 +566,16 @@ Return ONLY a JSON object, no other text:
 // Finishing a lesson that has process questions routes to ✍️ Process Questions (its own feature, its own button in
 // the top bar), opening that lesson's answer sheet — rather than a Knowledge Check inside the lesson.
 const __finish = window.finishTrainingForDay;
-window.finishTrainingForDay = function(id){ return kcQuestionsFor(Number(id)).length ? FTProcess.openLesson(Number(id)) : __finish.apply(this, arguments); };
+window.finishTrainingForDay = async function(id){
+  const l = Number(id);
+  if(!kcQuestionsFor(l).length) return __finish.apply(this, arguments);
+  // Going through the module is what unlocks its questions, so record it before routing there.
+  if(state.traineeId && !state.isAdmin && !(state.progress[l] || {}).studied){
+    state.progress[l] = Object.assign({}, state.progress[l], {studied:true, studiedAt:new Date().toISOString()});
+    try{ await storeSet("day-progress", state.progress); }catch(err){}
+  }
+  return FTProcess.openLesson(l);
+};
 window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrainingForDay(state.dayId); };
 // the page, beside ✍️ Process Questions
 const __kcRender = window.render;
@@ -586,6 +615,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-folder{padding:12px 16px;margin-bottom:14px;font-size:15px;} .fp-folder label{display:block;margin-bottom:6px;color:var(--navy);}
 .fp-folder-row{display:flex;gap:8px;} .fp-folder-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fp-set{padding:0;margin-bottom:12px;overflow:hidden;} .fp-locked{opacity:.65;}
+.fp-locked .fp-head{cursor:default;} .fp-lockwhy{margin:0;padding:0 16px 12px;font-size:13px;}
 .fp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;cursor:pointer;list-style:none;font-size:16px;color:var(--navy);}
 .fp-head::-webkit-details-marker{display:none;} .fp-head b{flex:1;min-width:0;}
 .fp-count{font-size:13px;color:var(--ink-soft);}
