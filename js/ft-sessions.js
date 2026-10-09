@@ -13,7 +13,7 @@
                                     Google Calendar Simulator, under the firm's calendar rules
      📋 Intake Mock Calls           lesson 6: the CMS's intake line on the trainee's intake case; the intake summary
      ⚖️ PI Process Flow             lesson 3: the trainee's case: its phase, team, dates and next steps
-     (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 📚 Resource Library's
+     (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 🧰 Drafting Tools'
       LOR Drafting Activity, js/ft-lor.js — the trainee drafts the 1P and 3P letters in the firm's own
       templates, with no CMS case file.)
      🩺 Medical Records: ChartSwap  lesson 8: a ChartSwap records request for the trainee's records case

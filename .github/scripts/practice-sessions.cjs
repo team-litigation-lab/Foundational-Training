@@ -36,11 +36,13 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText }));
     // Five Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
-    // 📚 Resource Library's LOR Drafting Activity, which has no CMS case file and no firm case.
+    // 🧰 Drafting Tools' LOR Drafting Activity, which has no CMS case file and no firm case.
     if (lab.sessions !== 5) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 5)`);
     if (/All simulators|📅 Calendaring Simulators\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
     if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
-    if (!/Resource Library/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 📚 Resource Library / LOR Drafting Activity');
+    if (!/Drafting Tools/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 🧰 Drafting Tools / LOR Drafting Activity');
+    if (!/Templates in this tool/i.test(lab.text)) fail('the drafting tool\'s card does not list the templates it carries');
+    if (!/LOR Drafting for 1P/.test(lab.text) || !/Drafting for 3P/.test(lab.text)) fail('the drafting tool\'s card does not name its two templates');
     if (!/Waiting for your firm/.test(lab.text)) fail('without a firm the sessions should wait for one');
 
     // 3b. the LOR Drafting Activity: a standalone activity, the trainer assigns the case, the trainee drafts and downloads
@@ -62,8 +64,49 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!lor.dateOk) fail('the letter is not dated today');
     if (!lor.notes) fail('the assigned case notes are not on the page');
     if (!/Sandy Van, Esq\./.test(lor.text)) fail('the letter is not the firm\'s template');
+    // the file name: the trainers' convention filled in, editable, and what the PDF is actually saved as
+    const nm = await page.evaluate(() => {
+      const box = document.getElementById('lorFile');
+      return { val: box ? box.value : '', reset: !!(document.getElementById('lorFileReset') || {}).disabled,
+               help: (document.getElementById('lorFileHelp') || {}).textContent || '' };
+    });
+    const mmddyyyy = (d => [d.getMonth() + 1, d.getDate()].map(n => String(n).padStart(2, '0')).join('.') + '.' + d.getFullYear())(new Date());
+    if (!nm.val) fail('the LOR tool has no file-name box');
+    if (!/^INS – /.test(nm.val)) fail(`the file name does not follow the convention: ${nm.val}`);
+    if (nm.val.indexOf(mmddyyyy) < 0) fail(`the file name is not dated today (${mmddyyyy}): ${nm.val}`);
+    if (/mm\.dd\.yyyy|VA’s name|1P Insurance Provider/.test(nm.val)) fail(`the convention's tokens were not filled in: ${nm.val}`);
+    if (!nm.reset) fail('Reset to the convention should start disabled, with nothing edited yet');
+    if (nm.help.indexOf('mm.dd.yyyy') < 0) fail('the help line does not show the convention');
+    // edit it: the typed name is what the download uses, and it survives a reload
+    const edited = await page.evaluate(() => {
+      const box = document.getElementById('lorFile');
+      box.value = 'INS - My Own Name 01.02.2030'; box.dispatchEvent(new Event('input', { bubbles: true }));
+      return { reset: !!(document.getElementById('lorFileReset') || {}).disabled };
+    });
+    if (edited.reset) fail('Reset to the convention stays disabled after the name is edited');
+    await page.waitForTimeout(1400);
+    const saved = await get('lor:' + id);
+    if (!saved || !saved.letters || !saved.letters.lor1p || saved.letters.lor1p.file !== 'INS - My Own Name 01.02.2030') fail(`the edited file name wasn't saved: ${JSON.stringify(saved && saved.letters && saved.letters.lor1p)}`);
+    // the downloads come out under that name. Checked through the name the download layer is handed and
+    // through the Word download's own anchor: jsPDF comes off a CDN, so the PDF is not fetched here.
+    const dl = await page.evaluate(() => {
+      const names = [];
+      const click = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () { if (this.download) names.push(this.download); };
+      try { FTLor.word('lor1p'); } finally { HTMLAnchorElement.prototype.click = click; }
+      return { handed: FTLor.fileName('lor1p'), names };
+    });
+    if (dl.handed !== 'INS - My Own Name 01.02.2030') fail(`the download is handed the wrong name: ${dl.handed}`);
+    if (dl.names[0] !== 'INS - My Own Name 01.02.2030.doc') fail(`the download was not named as edited: ${JSON.stringify(dl.names)}`);
+    // reset puts the convention back
+    await page.evaluate(() => FTLor.resetName('lor1p')); await page.waitForTimeout(300);
+    const back = await page.evaluate(() => (document.getElementById('lorFile') || {}).value || '');
+    if (!/^INS – /.test(back) || back.indexOf(mmddyyyy) < 0) fail(`Reset did not put the convention back: ${back}`);
+
     const lor3 = await page.evaluate(() => { FTLor.tab('lor3p'); return document.querySelector('main').innerText; });
     if (!/AFFIDAVIT OF INSURANCE COVERAGE/.test(lor3)) fail('the 3P letter has no affidavit');
+    const nm3 = await page.evaluate(() => (document.getElementById('lorFile') || {}).value || '');
+    if (!/LOR with Affidavit/.test(nm3)) fail(`the 3P letter's file name is not its own convention: ${nm3}`);
 
     // 1. Admin → 🏛 Law Firms
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'firms'; goto('admin'); }); await page.waitForTimeout(2500);
@@ -209,5 +252,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Resource Library\'s LOR Drafting Activity, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
+    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });
