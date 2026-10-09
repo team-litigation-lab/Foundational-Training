@@ -5507,7 +5507,7 @@ function setTraineeToken(t){ state.authToken = t||""; try{ t ? localStorage.setI
 function setAdminToken(t){ state.adminToken = t||""; try{ t ? sessionStorage.setItem("lsh_admin_token", t) : sessionStorage.removeItem("lsh_admin_token"); }catch(e){} }
 async function authStatus(){
   if(typeof state.secureMode === "boolean") return state.secureMode;
-  try{ const r = await fetch("/api/auth/status", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); const j = r.ok ? await r.json() : {}; state.secureMode = !!j.secure; state.portalOnly = !!j.portalOnly; }
+  try{ const r = await fetch("/api/auth/status", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); const j = r.ok ? await r.json() : {}; state.secureMode = !!j.secure; state.portalOnly = !!j.portalOnly; state.portalSecret = j.portalSecret !== false; }
   catch(e){ state.secureMode = false; }
   return state.secureMode;
 }
