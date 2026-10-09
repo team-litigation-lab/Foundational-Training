@@ -759,49 +759,11 @@ window.moduleCard = function(d){
       : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}
   </div>`;
 };
-window.renderDashboard = function(){
-  const done = DAYS.filter(d=>state.progress[d.id] && state.progress[d.id].done).length;
-  const pct = Math.round(done / FT_TOTAL_DAYS * 100);
-  const cert = state.traineeId ? certData() : null;
-  return `
-  <div class="dash-top">
-    <div class="dash-hero">
-      <div class="dash-hero-text">
-        <p class="eyebrow">LSH TRAINING PROGRAM</p>
-        <h1><span class="hl"><svg class="hero-spark hero-spark-lead" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg>Standard Foundational Training<svg class="hero-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg></span></h1>
-        <p>Build the foundation every legal VA needs: how U.S. law firms work, the roles in a case, and how to communicate like a pro.</p>
-      </div>
-      <div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>
-    </div>
-    <div class="step-timeline">
-      ${DAYS.map((d,i)=>{
-        const prog = state.progress[d.id], unlocked = dayUnlocked(d.id) && d.sections.length;
-        const st = (prog&&prog.done ? "st-done" : (unlocked ? "st-open" : "st-locked"));
-        return `<div class="step-node">
-          <div class="step-circle ${st}" onclick="${unlocked?`scrollToModule(${d.id})`:""}" title="${esc(d.title)}">${prog&&prog.done?"✓":(d.short||d.id)}</div>
-          ${i<DAYS.length-1?`<div class="step-dash ${prog&&prog.done?"filled":""}"></div>`:""}
-        </div>`;
-      }).join("")}
-    </div>
-  </div>
-  <div class="dash-layout">
-    <div class="dash-main">
-      ${state.isAdmin && !state.adminPreview ? `<div class="card" style="padding:14px 18px;margin-bottom:14px;font-size:14px;">📅 Open lessons for a batch in <a style="cursor:pointer;color:var(--orange-deep);font-weight:700;" onclick="state.adminTab='opendays'; goto('admin')">Admin Master Control → Open Lessons</a>.</div>` : ""}
-      <div class="module-grid">${DAYS.map(d=>moduleCard(d)).join("")}</div>
-      <div class="hero-actions bottom-actions">
-        ${resumeLabel() ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${esc(resumeLabel())}</span></button>` : ""}
-        ${cert ? (done === FT_TOTAL_DAYS
-          ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
-          : `<span class="cert-hero-locked" title="Finish all ${FT_TOTAL_DAYS} lessons to unlock">🎓 Certificate · ${done}/${FT_TOTAL_DAYS} lessons finished</span>`) : ""}
-      </div>
-    </div>
-    <aside class="dash-side"><div class="dash-side-inner">
-      <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
-      <div class="card stat"><div class="num">${done} / ${FT_TOTAL_DAYS}</div><div class="lbl">Lessons finished</div></div>
-      ${typeof renderFeedbackDashCard==="function" ? renderFeedbackDashCard() : ""}
-    </div></aside>
-  </div>`;
-};
+// There is only one landing-page format now: js/lsh-program.js's renderModules() (📚 Modules), the same
+// hero/ribbon/step-timeline layout every LSH course uses. This file used to carry its own copy of that
+// page (eyebrow, hero, step-timeline, module grid, sidebar stats) as window.renderDashboard; it was never
+// reachable once lsh-program.js's render() wrapper existed (it always routes "dashboard" to 📚 Modules), so
+// it was deleted rather than kept as dead code with its own, different-looking hero.
 // the feedback card's "Rate <lesson>" button on the light band (js/lsh-dashboard.js makes every button in it white)
 (function(){ const st = document.createElement("style"); st.id = "ft-dash-band"; st.textContent = `
 .dash-main > .dash-side .tfb-dash .btn.btn-ghost{color:var(--navy) !important;background:#fff !important;border:1px solid #E7CDB3 !important;}`; document.head.appendChild(st); })();

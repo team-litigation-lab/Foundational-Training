@@ -437,17 +437,7 @@ window.renderAdmin = function(){
   const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
   return end > 0 ? out.slice(0, end) + tab + out.slice(end) : out;
 };
-// Dashboard: how much of the sheet the trainee has filled.
-const __dash = window.renderDashboard;
-window.renderDashboard = function(){
-  const html = __dash.apply(this, arguments);
-  if(!state.traineeId || state.isAdmin) return html;
-  if(FTM.id!==state.traineeId && !FTM.loading){ load(state.traineeId); return html; }
-  if(!FTM.data || !FTM.topics) return html;
-  const done = FTM.topics.filter(t=>statusOf(FTM.data.entries[t.id], t).k==="done").length;
-  const card = `<div class="card stat ftm-dash" onclick="goto('monitoring')" style="cursor:pointer;"><div class="num">${done} / ${FTM.topics.length}</div><div class="lbl">📒 Monitoring Sheet filled</div></div>`;
-  return html.replace('<aside class="dash-side"><div class="dash-side-inner">', '<aside class="dash-side"><div class="dash-side-inner">' + card);
-};
+// The landing page's Monitoring Sheet stat comes from Drive data instead (js/ft-drive.js's LSH_HOME_STATS entry).
 
 (function(){ const s = document.createElement("style"); s.id = "ft-monitoring"; s.textContent = `
 main.main-monitor{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}

@@ -29,7 +29,7 @@ function load(force){
   D.loading = sharedGetMany(["drive:" + id, "trackerreview:" + id]).then(v => {
     D.id = id; D.drive = v[0] && typeof v[0] === "object" ? v[0] : {days:{}}; if(!D.drive.days) D.drive.days = {};
     D.review = v[1] && typeof v[1] === "object" ? v[1] : {days:{}}; if(!D.review.days) D.review.days = {};
-  }).catch(() => {}).then(() => { D.loading = null; if(["tracker", "monitoring", "dashboard"].includes(state.view)) render(); });
+  }).catch(() => {}).then(() => { D.loading = null; if(["tracker", "monitoring", "dashboard", "modules"].includes(state.view)) render(); });
   return D.loading;
 }
 window.addEventListener("focus", () => { if(isTrainee() && D.id && ["tracker", "monitoring"].includes(state.view)) load(); });
@@ -134,21 +134,17 @@ window.render = function(){
   app.innerHTML = renderTopbar() + `<main class="main-fdr">${state.view === "tracker" ? renderTrackerPage() : renderMonitorPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
-// the dashboard: today's tracker check and the Monitoring Sheet's, from Drive (in place of the on-platform sheets' cards)
-const __dash = window.renderDashboard;
-window.renderDashboard = function(){
-  let html = __dash.apply(this, arguments);
-  if(!isTrainee()) return html;
-  html = html.replace(/<div class="card stat ftt-dash"[\s\S]*?<\/div><\/div>/, "").replace(/<div class="card stat ftm-dash"[\s\S]*?<\/div><\/div>/, "");
+// 📚 Modules, the landing page: today's Task Tracker check and the Monitoring Sheet's, from Drive.
+(window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
+  if(!isTrainee()) return "";
   load();
-  if(D.id !== state.traineeId) return html;
+  if(D.id !== state.traineeId) return "";
   const t = D.review.days[today()], m = D.review.monitor;
   const card = (cls, view, num, tone, lbl) => `<div class="card stat ${cls}" onclick="goto('${view}')" style="cursor:pointer;"><div class="num ${tone}">${num}</div><div class="lbl">${lbl}</div></div>`;
   const tone = p => p == null ? "" : p >= 100 ? "ok" : p >= 60 ? "mid" : "bad";
-  const cards = card("fdr-dash", "tracker", t ? t.pct + "%" : "—", tone(t && t.pct), D.drive.tracker ? "📋 Task Tracker today" : "📋 Task Tracker · add your link")
+  return card("fdr-dash", "tracker", t ? t.pct + "%" : "—", tone(t && t.pct), D.drive.tracker ? "📋 Task Tracker today" : "📋 Task Tracker · add your link")
     + card("fdr-dash", "monitoring", m && !m.error ? `${m.found} / ${m.total}` : "—", "", D.drive.monitor ? "📒 Monitoring Sheet entries" : "📒 Monitoring Sheet · add your link");
-  return html.replace('<aside class="dash-side"><div class="dash-side-inner">', '<aside class="dash-side"><div class="dash-side-inner">' + cards);
-};
+});
 
 /* ---------- Admin → 📁 Drive Trackers: links, checks and the trainer's score and comment ---------- */
 const DA = {rows:null, loading:false, batch:"", open:{}, busy:{}};

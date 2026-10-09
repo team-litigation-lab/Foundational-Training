@@ -490,25 +490,8 @@ Object.defineProperty(DAYS, "some", {configurable:true, writable:true, value:fun
 const __unlocked = window.dayUnlocked;
 window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlocked.apply(this, arguments); };
 
-// Dashboard: its card comes first in the lessons row, before Virtual Assistant Essentials.
-function orientCard(){
-  const done = !!(state.progress && state.progress[ORIENT_ID] && state.progress[ORIENT_ID].done);
-  return `
-  <div class="module-card mc-${done ? "done" : "open"} ftr-card" id="module-${ORIENT_ID}">
-    <div class="module-head">
-      <div class="mh-day">${done ? "Finished" : "📌 Start Here"}</div>
-      <div class="mh-title">${esc(ORIENT.title)}</div>
-    </div>
-    <div class="module-body"><p class="ftr-card-sub">The rules and your daily routine for the whole training.</p></div>
-    <button class="btn module-start-btn btn-navy" onclick="goto('day',${ORIENT_ID})">${done ? "Review" : "Start"}</button>
-  </div>`;
-}
-const __dash = window.renderDashboard;
-window.renderDashboard = function(){
-  const html = __dash.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return html;
-  return html.replace('<div class="module-grid">', '<div class="module-grid">' + orientCard());
-};
+// Dashboard: window.FT_ORIENTATION (set above) is shown pinned ahead of the lesson grid by
+// js/lsh-program.js's renderModules(), the only landing-page format now.
 
 (function(){ const s = document.createElement("style"); s.id = "ft-rules"; s.textContent = `
 /* inside a slide (.ft-body): buttons and links keep their own colors */
