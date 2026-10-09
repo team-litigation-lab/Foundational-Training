@@ -58,7 +58,7 @@ const HOME = "modules";
 const atHome = v => ["dashboard", "home"].concat(window.LSH_HOME_ALIASES || []).includes(v);
 const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview);
 const __goto = window.goto;
-window.goto = function(view){ if(atHome(view) && signedIn()) arguments[0] = HOME; return __goto.apply(this, arguments); };
+window.goto = function(view){ if(atHome(view)) arguments[0] = HOME; return __goto.apply(this, arguments); };
 
 /* ---------- the five sections ---------- */
 // The Modules pages this viewer has (an admin's own pages, or a trainee's; 👁 Trainee view sees the trainee's).
@@ -277,8 +277,9 @@ function renderScorecard(){
 const __render = window.render;
 window.render = function(){
   // Anything that still sets a home view directly (the engine's sign-in, a resume, a page this program
-  // has turned off) lands on 📚 Modules, so there is one landing page however the trainee got here.
-  if(atHome(state.view) && signedIn()){ state.view = HOME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
+  // has turned off) lands on 📚 Modules, so there is one landing page however the trainee got here — signed
+  // in or not (renderModules() already has its own "not signed in" note instead of a personal progress bar).
+  if(atHome(state.view)){ state.view = HOME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
   const v = state.view;
   if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
