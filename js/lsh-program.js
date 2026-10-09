@@ -195,7 +195,8 @@ function renderModules(){
           <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p></div>
         ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
       </div>
-      ${viewer ? stepTimeline(all) : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}
+      ${stepTimeline(all)}
+      ${viewer ? "" : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}
     </div>
     ${pinned.length ? `<div class="dash-main lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
     ${homeStats()}
