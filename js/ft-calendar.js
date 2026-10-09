@@ -788,7 +788,7 @@ function paintLive(){
 const __render = window.render;
 window.render = function(){
   if(state.view !== "calsim"){ S.entered = false; return __render.apply(this, arguments); }
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-calsim">${renderPage()}</main>` + renderFooter();
   wire(); paintSave();

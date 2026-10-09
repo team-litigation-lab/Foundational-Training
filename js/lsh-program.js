@@ -82,7 +82,7 @@ function myDashboard(){
 const __top = window.renderTopbar;
 window.renderTopbar = function(){
   const html = __top.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin) return html;
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return html;
   const t = document.createElement("template"); t.innerHTML = html;
   const bar = t.content.querySelector(".topbar"), nav = t.content.querySelector(".topbar .nav");
   if(!bar || !nav) return html;
@@ -195,7 +195,7 @@ window.render = function(){
   const v = state.view;
   if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + (v === "modules" ? `<main class="main-lp">${renderModules()}</main>` : `<main class="main-lp">${renderScorecard()}</main>`) + renderFooter();
   try{ afterRender(); }catch(err){}

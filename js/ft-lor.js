@@ -59,6 +59,7 @@ function paintSave(ok){
   if(el) el.textContent = L.saving ? "Saving…" : (ok === false ? "⚠ Not saved. Check your connection." : (L.savedAt ? "All changes saved" : ""));
 }
 function queueSave(){
+  if(!state.traineeId) return;   // 👁 Trainee view: a preview with no trainee to save to
   L.draft.updatedAt = new Date().toISOString();
   clearTimeout(L.timer); L.saving = true; paintSave();
   L.timer = setTimeout(async () => {
@@ -209,13 +210,15 @@ function editor(no){
     <p class="lor-muted lor-naming">Upload the file you download into the Smart Advocate demo yourself. File name: <code>${e(fileNameFor(tpl, no))}</code></p></section>`;
 }
 function renderPage(){
-  if(!state.traineeId && !state.isAdmin) return `<div class="card" style="padding:28px;">Sign in to open the LOR Drafting Activity.</div>`;
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to open the LOR Drafting Activity.</div>`;
   if(adminOn()) return renderAdmin();
   if(L.id !== state.traineeId && !L.loading) load(state.traineeId);
   if(L.err) return `<div class="card" style="padding:28px;">${e(L.err)} <button class="btn btn-ghost btn-sm" onclick="FTLor.reload()">Try again</button></div>`;
   if(!L.draft) return `<div class="card" style="padding:28px;">Loading your drafting activity…</div>`;
   const no = myCaseNo();
-  return `<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
+  const preview = (state.adminPreview && !state.traineeId)
+    ? `<div class="card lor-preview-note">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved; a trainee drafts on their own account.</div>` : "";
+  return `${preview}<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
       <p>Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you.</p></div>
     ${notice()}${objective()}${caseCard(no)}${no ? editor(no) : ""}`;
 }
@@ -341,7 +344,7 @@ window.FTLor = {
 const __render = window.render;
 window.render = function(){
   if(state.view !== "lor") return __render.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-lor">${renderPage()}</main>` + renderFooter();
   paintSave();
@@ -367,6 +370,7 @@ window.ftLorCard = function(){
 
 (function(){ const s = document.createElement("style"); s.id = "ft-lor"; s.textContent = `
 main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
+.lor-preview-note{padding:10px 14px;margin:0 0 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:13.5px;}
 .lor-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;}
 .lor-hero p{margin:0 0 16px;color:var(--ink-soft);font-size:15px;max-width:760px;}
 .lor-eyebrow{margin:0 0 2px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);}

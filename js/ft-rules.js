@@ -506,7 +506,7 @@ function orientCard(){
 const __dash = window.renderDashboard;
 window.renderDashboard = function(){
   const html = __dash.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin) return html;
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return html;
   return html.replace('<div class="module-grid">', '<div class="module-grid">' + orientCard());
 };
 

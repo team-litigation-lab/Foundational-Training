@@ -150,7 +150,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !document.fulls
 const __render = window.render;
 window.render = function(){
   if(state.view!=="simulators"){ ftsClose(); return __render.apply(this, arguments); }
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-sims">${renderSimulators()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
@@ -162,7 +162,7 @@ window.render = function(){
 const __dash = window.renderDashboard;
 window.renderDashboard = function(){
   const html = __dash.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin) return html;
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return html;
   if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
   // the dashboard band: the best graded call in each of lessons 4–6, averaged
   const bests = CALL_LESSONS.map(callBest).filter(Boolean);

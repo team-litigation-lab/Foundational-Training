@@ -154,7 +154,28 @@ const failures = []; const fail = (m) => failures.push(m);
     if (avg.sessions == null) fail(`the Scorecard's Practice Sessions: ${JSON.stringify(sc)}`);
     if (avg.kc !== 82) fail(`the Scorecard's Knowledge Checks: ${JSON.stringify(sc)}`);
 
+    // 7. 👁 Trainee view: an admin previewing the portal is not a signed-out visitor. The engine sets
+    //    isAdmin=false and adminPreview=true there, so a "!traineeId && !isAdmin" guard would read it
+    //    as signed out — the top bar lost its sections and every program page bounced to the dashboard.
+    await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; render(); }); await page.waitForTimeout(600);
+    await page.evaluate(() => { state.traineeId = ''; setAdminViewMode('trainee'); }); await page.waitForTimeout(1200);
+    const tv = await page.evaluate(() => ({ isAdmin: state.isAdmin, preview: state.adminPreview,
+        bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
+    if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
+    ['Modules', 'Process Questions', 'Practice Lab', 'My Dashboard'].forEach(n => {
+        if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
+    });
+    for (const [view, what] of [['process', 'Process Questions'], ['simulators', 'the Practice Lab'], ['lor', 'the LOR Drafting Activity']]) {
+        const got = await page.evaluate(async (v) => { goto(v); await new Promise(r => setTimeout(r, 1200)); return state.view; }, view);
+        if (got !== view) fail(`Trainee view can't open ${what}: goto('${view}') landed on '${got}'`);
+    }
+    const typing = await page.evaluate(() => document.querySelectorAll('main textarea').length);
+    await page.evaluate(async () => { goto('process'); await new Promise(r => setTimeout(r, 1200)); });
+    const boxes = await page.evaluate(() => document.querySelectorAll('main textarea').length);
+    if (!boxes) fail('Trainee view: Process Questions has no boxes for a trainee to type in');
+    if (!await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions does not say it is a preview');
+
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Resource Library\'s LOR Drafting Activity, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard).');
+    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Resource Library\'s LOR Drafting Activity, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, and Trainee view reaching all of it).');
 })().catch(e => { console.error(e); process.exit(1); });

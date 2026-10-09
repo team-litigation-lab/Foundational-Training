@@ -128,6 +128,7 @@ async function load(id){
 }
 function sheet(sid){ const s = FP.data.sets; return s[sid] || (s[sid] = {answers:[], submittedAt:"", updatedAt:""}); }
 function queueSave(){
+  if(!state.traineeId) return;   // 👁 Trainee view: a preview with no trainee to save to
   FP.data.updatedAt = new Date().toISOString();
   clearTimeout(FP.timer); FP.saving = true; paintSave();
   FP.timer = setTimeout(async ()=>{ const ok = await sharedSet("process:"+FP.id, FP.data); FP.saving = false; FP.savedAt = ok === false ? null : new Date(); paintSave(ok); }, 1000);
@@ -183,7 +184,7 @@ function setCard(set){
     </div></details>`;
 }
 function renderPage(){
-  if(!state.traineeId && !state.isAdmin) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
   // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
   if(state.isAdmin && !state.adminPreview) return `<div class="fp-hero"><h1>✍️ Process Questions</h1>
       <p>Every trainee’s answer sheets and Knowledge Checks, by batch. Trainees answer the questions on this same page.</p></div>
@@ -192,7 +193,9 @@ function renderPage(){
   loadReview();
   if(FP.err) return `<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `<div class="card" style="padding:28px;">Loading your answers…</div>`;
-  return `<div class="fp-hero"><h1>✍️ Process Questions · Knowledge Checks</h1>
+  const preview = (state.adminPreview && !state.traineeId)
+    ? `<div class="card fp-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it, with every lesson unlocked. Nothing you type here is saved, and grading needs a trainee's own account.</div>` : "";
+  return `${preview}<div class="fp-hero"><h1>✍️ Process Questions · Knowledge Checks</h1>
       <p>Each lesson’s process questions are its Knowledge Check. Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is graded, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
     <div class="card fp-folder">
       <label for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
@@ -363,7 +366,7 @@ window.FTProcessAdmin = {
 const __render = window.render;
 window.render = function(){
   if(state.view!=="process") return __render.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-process">${renderPage()}</main>` + renderFooter();
   paintSave();
@@ -551,7 +554,7 @@ window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrai
 const __kcRender = window.render;
 window.render = function(){
   if(state.view!=="kc") return __kcRender.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __kcRender.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __kcRender.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-process">${renderKc()}</main>` + renderFooter();
   if(typeof afterRender === "function") afterRender();
@@ -578,6 +581,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .kc-fb{margin-top:6px;border-radius:8px;padding:8px 10px;font-size:14px;line-height:1.45;border-left:4px solid;}
 .kc-fb b{margin-right:6px;} .kc-fb.kc-ok{background:var(--success-bg);border-color:var(--success);} .kc-fb.kc-mid{background:#FEF7C3;border-color:#C9A227;} .kc-fb.kc-low{background:var(--danger-bg);border-color:var(--danger);}
 
+.fp-preview{padding:10px 14px;margin:0 0 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:13.5px;}
 .fp-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .fp-hero p{margin:0 0 14px;color:var(--ink-soft);font-size:15px;}
 .fp-save{margin-left:6px;font-size:13px;color:var(--success);}
 .fp-muted{color:var(--ink-soft);font-size:13.5px;} .fp-link{cursor:pointer;color:var(--orange-deep);font-weight:700;}

@@ -174,7 +174,7 @@ function topicCard(t, i){
     </div></details>`;
 }
 function renderPage(){
-  if(!state.traineeId && !state.isAdmin) return `<div class="card" style="padding:28px;">Sign in to open your Monitoring Sheet.</div>`;
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to open your Monitoring Sheet.</div>`;
   if(state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Trainees fill in their own sheet here. See every trainee’s sheet, with the automated feedback, in <a class="ftm-link" onclick="state.adminTab='monitor'; goto('admin')">Admin → 📒 Monitoring Sheets</a>.</div>`;
   if(FTM.id !== state.traineeId && !FTM.loading) load(state.traineeId);
   if(FTM.err) return `<div class="card" style="padding:28px;">${e(FTM.err)} <button class="btn btn-ghost btn-sm" onclick="FTMon.reload()">Try again</button></div>`;
@@ -394,7 +394,7 @@ window.FTMonAdmin = {
 const __render = window.render;
 window.render = function(){
   if(state.view!=="monitoring") return __render.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-monitor">${renderPage()}</main>` + renderFooter();
   paintSave();
