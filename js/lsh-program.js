@@ -208,10 +208,9 @@ function renderModules(){
         ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
       </div>
       ${stepTimeline(all)}
-      ${viewer ? "" : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}
     </div>
     ${homeActions(done, all.length)}
-    <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main lp-lessons-row">
+    <section class="lp-lessons"><div class="dash-main lp-lessons-row">
       ${pinned.length ? `<div class="lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
       <div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div>
     </div></section>
@@ -404,8 +403,6 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 /* the Modules and Scorecard pages */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
-.lp-note{margin-top:8px !important;font-size:13.5px !important;}
-.dash-top .lp-note{color:#C9CDE3 !important;}
 /* .dash-hero-ribbon has order:-1 to sit in the grid's narrow first column (140px); without it (a plain admin,
    not previewing, gets no completion ribbon) the lone .dash-hero-text falls into that 140px column instead
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not. */
@@ -440,7 +437,7 @@ main.main-lp .dash-hero-text{grid-column:2;}
 .lp-home-stats .rank-list li .sc{color:var(--orange-deep);}
 .lp-home-stats .rank-list li.me{background:#FFF3E6;color:var(--navy);}
 .lp-home-stats .rank-list li.gap{color:var(--ink-soft);}
-.lp-lessons{margin-bottom:22px;} .lp-lessons h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
+.lp-lessons{margin-bottom:22px;}
 /* the Lessons grid: the same clean module-card look as the EA/PA course's dashboard (see js/lsh-dashboard.js).
    js/lsh-dashboard.js sizes that card to fill a fixed-height hero row (container-type:size, overflow:hidden) —
    here the card grows to fit its own content instead, so every lesson's activities stay visible. */
