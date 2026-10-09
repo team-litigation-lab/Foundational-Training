@@ -102,15 +102,25 @@ function fileNameFor(tpl, no){
 
 /* ---------- the letter, as the firm wrote it ---------- */
 // A run of fixed text: the firm's own wording, never editable. Tabs and line breaks are kept.
+// What Word gave the run: bold, italic, underline, its own size and face where it differs.
+function runStyle(r){
+  const st = [];
+  if(r.sz) st.push("font-size:" + r.sz + "pt");
+  if(r.ff) st.push("font-family:'" + String(r.ff).replace(/'/g, "") + "',Arial,Helvetica,sans-serif");
+  return st.join(";");
+}
+function runClass(r){ return (r.b ? " b" : "") + (r.i ? " i" : "") + (r.u ? " u" : ""); }
+
 function fixed(run, ctx){
   let html = "";
   String(run.x).split(/(\t|\n|☐)/).forEach(part => {
-    if(part === "\t") html += `<span class="lorl-tab"></span>`;
+    if(part === "\t") html += "\u0001";   // a tab: the paragraph decides what it means (tabbedRow)
     else if(part === "\n") html += "<br>";
     else if(part === "☐") html += box(ctx);
     else if(part) html += e(part);
   });
-  return run.b ? `<b>${html}</b>` : html;
+  const cls = runClass(run), st = runStyle(run);
+  return (cls || st) ? `<span class="lorl-r${cls}"${st ? ` style="${st}"` : ""}>${html}</span>` : html;
 }
 // A tick box. They work: the trainee ticks them, and the tick goes into the download.
 function box(ctx){
@@ -124,25 +134,87 @@ function field(run, ctx){
   const set = v != null && String(v).trim() !== "";
   const arg = `'${ctx.tpl.id}','${run.f}'`;
   if(run.k === "date")
-    return `<span class="lorl-auto" title="Auto-generated: the letter is dated the day it is drafted">${e(letterDate())}</span>`;
+    return `<span class="lorl-auto${runClass(run)}" style="${runStyle(run)}" title="Auto-generated: the letter is dated the day it is drafted">${e(letterDate())}</span>`;
   if(run.k === "manual")
     // "SENT VIA FACSIMILE AND E-MAIL": edited by hand, so it carries the template's own wording to start with.
-    return `<input class="lorl-in lorl-manual" value="${e(v != null ? v : run.ph)}" size="${Math.max(18, run.ph.length)}"
-      aria-label="Sent via" oninput="FTLor.set(${arg}, this.value)">`;
+    return `<input class="lorl-in lorl-manual${runClass(run)}" value="${e(v != null ? v : run.ph)}" size="${Math.max(18, run.ph.length)}"
+      aria-label="Sent via" style="${runStyle(run)}" oninput="FTLor.set(${arg}, this.value)">`;
   if(run.k === "long")
     return `<textarea class="lorl-ta${set ? " set" : ""}" rows="5" placeholder="${e(run.ph)}" aria-label="Highlighted paragraph to review"
       oninput="FTLor.set(${arg}, this.value); FTLor.grow(this)">${e(v || "")}</textarea>`;
-  return `<input class="lorl-in${set ? " set" : ""}" value="${e(v || "")}" placeholder="${e(run.ph)}"
-    size="${Math.max(12, Math.min(64, run.ph.length))}" aria-label="${e(run.ph)}" oninput="FTLor.set(${arg}, this.value)">`;
+  return `<input class="lorl-in${runClass(run)}${set ? " set" : ""}" value="${e(v || "")}" placeholder="${e(run.ph)}"
+    size="${Math.max(12, Math.min(64, run.ph.length))}" aria-label="${e(run.ph)}" style="${runStyle(run)}" oninput="FTLor.set(${arg}, this.value)">`;
+}
+// A list item's marker: a bullet, or the next number in that list. Each of Word's lists counts on its
+// own, so the two bulleted lines inside the affidavit don't take numbers from the list around them.
+function listMark(b, count){
+  if(b.nf === "bullet") return "•";
+  const k = b.ni || "1";
+  count[k] = (count[k] || 0) + 1;
+  return count[k] + ".";
+}
+// A paragraph's own indents and alignment, in the inches Word measured them in.
+function paraStyle(b){
+  const st = [], d = b.ind || {};
+  if(b.jc) st.push("text-align:" + (b.jc === "both" ? "justify" : b.jc));
+  if(d.l) st.push("margin-left:" + d.l + "in");
+  if(d.r > 0) st.push("margin-right:" + d.r + "in");
+  if(d.fi) st.push("text-indent:" + d.fi + "in");
+  else if(d.ha) st.push("text-indent:-" + d.ha + "in");
+  return st.join(";");
+}
+// Word's tab stops are positions on the line, which CSS has no equivalent for: a line that uses them
+// becomes a grid whose columns end at those stops, which is what the stops were there to produce.
+function tabbedRow(b, parts, style){
+  const d = b.ind || {}, start = (d.l || 0) + (d.fi || 0) - (d.ha || 0);
+  const cols = [];
+  let at = start;
+  for(let i = 0; i < parts.length - 1; i++){
+    const stop = (b.tabs || []).find(t => t > at + 0.01);
+    const next = stop != null ? stop : at + 0.5;
+    cols.push("minmax(" + (next - at).toFixed(3) + "in,max-content)");
+    at = next;
+  }
+  cols.push("auto");
+  return `<p class="lorl-p lorl-tabrow" style="${style};display:grid;grid-template-columns:${cols.join(" ")};text-indent:0;margin-left:${(d.l || 0)}in;">`
+    + parts.map(x => `<span>${x || ""}</span>`).join("") + `</p>`;
+}
+// The firm's letterhead, from the document's own header: the VAN LAW FIRM logo and the bar under it
+// (img/vanlaw-logo.png and img/vanlaw-rule.png, lifted out of the .docx), the attorneys and where each
+// is admitted, the four offices, and the website. Word floats these as positioned text boxes; here
+// they are laid out as the letterhead reads — logo and attorneys above, the offices in four columns.
+function letterhead(h){
+  if(!h || !(h.offices || []).length) return "";
+  const office = o => `<div class="lorh-off"><b>${e(o.city)}</b>
+    ${(o.physical || []).length ? `<span class="lorh-lbl">Physical Address:</span>${o.physical.map(x => `<span>${e(x)}</span>`).join("")}` : ""}
+    ${(o.mailing || []).length ? `<span class="lorh-lbl">Mailing Address:</span>${o.mailing.map(x => `<span>${e(x)}</span>`).join("")}` : ""}
+    ${o.phone ? `<span>${e(o.phone)}</span>` : ""}${o.email ? `<span>${e(o.email)}</span>` : ""}</div>`;
+  return `<div class="lorh">
+    <div class="lorh-top">
+      <img class="lorh-logo" src="/img/vanlaw-logo.png" alt="Van Law Firm" width="313" height="167">
+      <div class="lorh-atts">${(h.attorneys || []).map(a => `<div><b>${e(a.n)}</b><span>${e(a.a)}</span></div>`).join("")}</div>
+    </div>
+    <img class="lorh-rule" src="/img/vanlaw-rule.png" alt="" width="1502" height="35">
+    <div class="lorh-offs">${(h.offices || []).map(office).join("")}</div>
+    ${h.site ? `<div class="lorh-site">${e(h.site)}</div>` : ""}
+  </div>`;
 }
 function renderLetter(tpl){
   const ctx = {tpl, L: letter(tpl.id), box: 0};
-  return `<div class="lorl">` + tpl.blocks.map(b => {
+  const pg = tpl.page || {}, m = pg.m || {};
+  const page = `width:${pg.w || 8.5}in;padding:${m.top || 1}in ${m.right || 1}in ${m.bottom || 1}in ${m.left || 1}in;`
+    + (pg.sz ? `font-size:${pg.sz}pt;` : "");
+  const count = {};
+  return `<div class="lorl" style="${page}">` + letterhead(tpl.head) + tpl.blocks.map(b => {
     if(b.t === "tbl")
       return `<table class="lorl-tbl"><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${e(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-    const inner = b.runs.map(r => r.f ? field(r, ctx) : fixed(r, ctx)).join("");
-    const cls = "lorl-p" + (b.n ? " lorl-num" : "") + (b.c ? " lorl-mid" : "");
-    return `<p class="${cls}">${inner || "&nbsp;"}</p>`;
+    const style = paraStyle(b);
+    let html = b.runs.map(r => r.f ? field(r, ctx) : fixed(r, ctx)).join("");
+    if(b.n) html = `<span class="lorl-n">${listMark(b, count)}</span> ` + html;
+    // a line laid out on tab stops: split it where the tabs are and put each piece on its stop
+    if((b.tabs || []).length && html.indexOf("\u0001") >= 0) return tabbedRow(b, html.split("\u0001"), style);
+    const cls = "lorl-p" + (b.n ? " lorl-numbered" : "");
+    return `<p class="${cls}" style="${style}">${html.replace(/\u0001/g, `<span class="lorl-tab"></span>`) || "&nbsp;"}</p>`;
   }).join("") + `</div>`;
 }
 
@@ -267,12 +339,159 @@ function renderAdmin(){
 const pdfSafe = s => String(s == null ? "" : s).replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
   .replace(/[–—]/g, "-").replace(/☐/g, "[  ]").replace(/☒|☑/g, "[X]")
   .replace(/[^\x00-\xff]/g, "").replace(/ {2,}/g, m => m);
+// The letter as a PDF, laid out the way the document is: its page and margins, each paragraph's
+// alignment and indents, each run's bold, italic and underline, and the tab stops as columns.
+// The built-in Helvetica stands in for Arial — the same metrics, and the only sans-serif jsPDF
+// carries without embedding a font file.
+const PT = 72;                       // points to an inch
+function pdfRuns(tpl, b, d, n){
+  // A paragraph as a list of {t, b, i, u, sz} pieces, with the fields filled in and the boxes ticked.
+  const out = [];
+  b.runs.forEach(r => {
+    let t;
+    if(r.f) t = r.k === "date" ? letterDate() : (r.k === "manual" ? (d.fields[r.f] != null ? d.fields[r.f] : r.ph) : (d.fields[r.f] || r.ph));
+    else t = String(r.x).replace(/☐/g, () => (d.checks["cb" + (n.i++)] ? "[X]" : "[  ]"));
+    if(t !== "") out.push({t:pdfSafe(t), b:!!r.b, i:!!r.i, u:!!r.u, sz:r.sz || (tpl.page || {}).sz || 12});
+  });
+  return out;
+}
+// An image from the site, as a data URL jsPDF can place.
+async function imgData(src){
+  try{
+    const blob = await (await fetch(src)).blob();
+    return await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.onerror = () => r(null); f.readAsDataURL(blob); });
+  }catch(err){ return null; }
+}
+// The letterhead at the top of the PDF, the same one the page shows: the logo, the attorneys, the
+// bar, the offices and the website. Returns the y the letter itself starts at.
+async function pdfLetterhead(doc, h, L, R, TOP, PW){
+  if(!h || !(h.offices || []).length) return TOP;
+  const W = PW - L - R;
+  let y = TOP;
+  const logo = await imgData("/img/vanlaw-logo.png"), rule = await imgData("/img/vanlaw-rule.png");
+  const logoW = 115, logoH = logo ? logoW * 167 / 313 : 0;
+  if(logo) doc.addImage(logo, "PNG", L, y, logoW, logoH);
+  // the attorneys, in two columns on the right
+  doc.setFont("helvetica", "normal");
+  const atts = h.attorneys || [], half = Math.ceil(atts.length / 2);
+  [atts.slice(0, half), atts.slice(half)].forEach((col, c) => {
+    let ay = y + 6;
+    const right = L + W - (1 - c) * (W * 0.26);
+    col.forEach(a => {
+      doc.setFontSize(6.4).setFont("helvetica", "bold").text(a.n, right, ay, {align:"right"});
+      doc.setFontSize(5.6).setFont("helvetica", "normal").text(a.a, right, ay + 5.2, {align:"right"});
+      ay += 11.4;
+    });
+  });
+  y += Math.max(logoH, 6 + half * 11.4) + 4;
+  if(rule){ doc.addImage(rule, "PNG", L, y, W, W * 35 / 1502); y += W * 35 / 1502 + 5; }
+  // the four offices, side by side
+  const colW = W / (h.offices.length || 1);
+  let deepest = y;
+  h.offices.forEach((o, i) => {
+    let oy = y, x = L + i * colW;
+    const line = (t, bold, italic) => { doc.setFont("helvetica", bold ? "bold" : italic ? "italic" : "normal").setFontSize(5.4).text(t, x, oy); oy += 6.1; };
+    doc.setFontSize(5.8); line(o.city, true);
+    if((o.physical || []).length){ line("Physical Address:", false, true); o.physical.forEach(t => line(t, true)); }
+    if((o.mailing || []).length){ line("Mailing Address:", false, true); o.mailing.forEach(t => line(t, true)); }
+    if(o.phone) line(o.phone, true);
+    if(o.email) line(o.email, true);
+    deepest = Math.max(deepest, oy);
+  });
+  y = deepest + 2;
+  if(h.site){ doc.setFont("helvetica", "bold").setFontSize(6.4).setTextColor(196, 98, 45).text(h.site, L + W / 2, y, {align:"center"}); doc.setTextColor(0, 0, 0); y += 10; }
+  return y + 4;
+}
+async function makeLetterPdf(name, tpl, d){
+  if(typeof ensureJsPdf !== "function" || !(await ensureJsPdf())){ toast("Couldn’t load the PDF maker. Check your connection and try again."); return; }
+  const {jsPDF} = window.jspdf, doc = new jsPDF({unit:"pt", format:"letter"});
+  const pg = tpl.page || {}, m = pg.m || {}, PW = doc.internal.pageSize.getWidth(), PH = doc.internal.pageSize.getHeight();
+  const L = (m.left || 1) * PT, R = (m.right || 1) * PT, TOP = (m.top || 1) * PT, BOT = PH - (m.bottom || 1) * PT;
+  const base = pg.sz || 12;
+  let y = await pdfLetterhead(doc, tpl.head, L, R, TOP, PW);
+  const face = r => { doc.setFont("helvetica", r.b && r.i ? "bolditalic" : r.b ? "bold" : r.i ? "italic" : "normal").setFontSize(r.sz); };
+  const w = r => { face(r); return doc.getTextWidth(r.t); };
+  const newPage = h => { if(y + h > BOT){ doc.addPage(); y = TOP; } };
+  // one line of pieces, drawn left to right from x, underlining the runs that carry it
+  const drawLine = (pieces, x, lead, gap) => {
+    newPage(lead);
+    let cx = x;
+    pieces.forEach(r => {
+      if(!r.t) return;
+      face(r);
+      doc.text(r.t, cx, y);
+      const tw = doc.getTextWidth(r.t);
+      if(r.u) doc.setLineWidth(0.6).line(cx, y + 1.6, cx + tw, y + 1.6);
+      cx += tw + (gap && !r.t.trim() ? gap : 0);
+    });
+    y += lead;
+  };
+  // break a run list to a width, keeping each word's own formatting
+  const wrap = (pieces, width) => {
+    const words = [];
+    pieces.forEach(r => String(r.t).split(/(\s+)/).forEach(t => { if(t !== "") words.push(Object.assign({}, r, {t})); }));
+    const lines = []; let line = [], used = 0;
+    words.forEach(word => {
+      const ww = w(word);
+      if(used + ww > width && line.length && word.t.trim()){ lines.push(line); line = []; used = 0; }
+      if(!line.length && !word.t.trim()) return;        // no leading space on a wrapped line
+      line.push(word); used += ww;
+    });
+    if(line.length) lines.push(line);
+    return lines.length ? lines : [[]];
+  };
+  const count = {}; let n = {i:0};
+  tpl.blocks.forEach(b => {
+    if(b.t === "tbl"){
+      b.rows.forEach(row => drawLine([{t:pdfSafe(row.filter(Boolean).join("   ")), sz:base}], L, base * 1.2));
+      return;
+    }
+    let pieces = pdfRuns(tpl, b, d, n);
+    const ind = b.ind || {}, lead = base * 1.18;
+    if(b.n) pieces = [{t:listMark(b, count) + " ", sz:base}].concat(pieces);
+    if(!pieces.length){ y += lead; return; }            // a blank line in the letter is a blank line here
+    const left = L + (ind.l || 0) * PT, right = R + Math.max(0, ind.r || 0) * PT;
+    const width = PW - left - right;
+    // a line on tab stops: each piece starts at its stop
+    if((b.tabs || []).length && pieces.some(r => r.t.indexOf("\t") >= 0)){
+      const parts = []; let cur = [];
+      pieces.forEach(r => String(r.t).split("\t").forEach((t, k) => { if(k){ parts.push(cur); cur = []; } if(t) cur.push(Object.assign({}, r, {t})); }));
+      parts.push(cur);
+      let at = (ind.l || 0) + (ind.fi || 0) - (ind.ha || 0);
+      newPage(lead);
+      parts.forEach((part, k) => {
+        let cx = L + at * PT;
+        part.forEach(r => { face(r); doc.text(r.t, cx, y); const tw = doc.getTextWidth(r.t); if(r.u) doc.setLineWidth(0.6).line(cx, y + 1.6, cx + tw, y + 1.6); cx += tw; });
+        const stop = (b.tabs || []).find(t => t > at + 0.01);
+        at = stop != null ? stop : at + Math.max(0.5, (cx - (L + at * PT)) / PT);
+      });
+      y += lead;
+      return;
+    }
+    const first = (ind.fi || 0) * PT - (ind.ha || 0) * PT;
+    const lines = wrap(pieces, width - Math.max(0, first));
+    lines.forEach((line, k) => {
+      const lw = line.reduce((t, r) => t + w(r), 0);
+      const indent = k ? 0 : Math.max(0, first);
+      let x = left + indent, gap = 0;
+      if(b.jc === "center") x = left + (width - lw) / 2;
+      else if(b.jc === "right") x = left + width - lw;
+      else if(b.jc === "both" && k < lines.length - 1){
+        const spaces = line.filter(r => !r.t.trim()).length;
+        if(spaces) gap = Math.max(0, (width - indent - lw) / spaces);
+      }
+      drawLine(line, x, lead, gap);
+    });
+  });
+  doc.save(name.replace(/[\\/:*?"<>|]/g, "") + ".pdf");
+}
+// The case notes stay a plain list: they are notes, not a letter.
 async function makePdf(name, lines){
   if(typeof ensureJsPdf !== "function" || !(await ensureJsPdf())){ toast("Couldn’t load the PDF maker. Check your connection and try again."); return; }
   const {jsPDF} = window.jspdf, doc = new jsPDF({unit:"pt", format:"letter"});
   const M = 64, W = doc.internal.pageSize.getWidth() - M * 2, BOT = doc.internal.pageSize.getHeight() - M;
   let y = M;
-  doc.setFont("times", "normal").setFontSize(11);
+  doc.setFont("helvetica", "normal").setFontSize(11);
   lines.forEach(line => {
     const txt = pdfSafe(line);
     if(!txt.trim()){ y += 11; return; }
@@ -284,6 +503,7 @@ async function makePdf(name, lines){
   });
   doc.save(name.replace(/[\\/:*?"<>|]/g, "") + ".pdf");
 }
+
 // A Word file the trainee can keep editing: an HTML document Word opens as its own.
 function makeWord(name, lines){
   const body = lines.map(l => l.trim() ? `<p>${e(l).replace(/ {2,}/g, m => "&nbsp;".repeat(m.length))}</p>` : "<p>&nbsp;</p>").join("");
@@ -312,7 +532,7 @@ window.FTLor = {
   },
   async pdf(tid){
     const tpl = TEMPLATES.find(t => t.id === tid);
-    await makePdf(fileNameFor(tpl, myCaseNo()), letterLines(tpl));
+    await makeLetterPdf(fileNameFor(tpl, myCaseNo()), tpl, letter(tid));
   },
   word(tid){
     const tpl = TEMPLATES.find(t => t.id === tid);
@@ -400,14 +620,35 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-steps ol{margin:10px 0 6px;padding-left:20px;} .lor-steps li{font-size:13.5px;margin-bottom:5px;}
 .lor-steps code,.lor-naming code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;background:#F1F5F9;border-radius:5px;padding:2px 6px;overflow-wrap:anywhere;}
 /* the letter itself: the firm's page, with only the highlighted parts editable */
-.lor-paper{padding:40px 44px;background:#fff;}
-.lorl{font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;color:#111;}
-.lorl-p{margin:0 0 9px;text-align:justify;}
-.lorl-mid{text-align:center;font-weight:700;}
-.lorl-num{display:list-item;list-style:decimal;margin-left:26px;text-align:justify;}
-.lorl-tab{display:inline-block;width:34px;}
+.lor-paper{padding:18px;background:#EEF0F6;overflow-x:auto;}
+/* The letter is the document: its page width, its margins, its font and its single line spacing,
+   so what the trainee edits on screen is what the firm's .docx looks like. */
+.lorl{font-family:Arial,Helvetica,sans-serif;font-size:12pt;line-height:1.15;color:#000;background:#fff;
+  margin:0 auto;box-sizing:border-box;box-shadow:0 1px 3px rgba(15,23,42,.14);}
+.lorl-p{margin:0;min-height:1.15em;}
+.lorl-numbered{padding-left:.4in;text-indent:-.4in;}
+.lorl-n{display:inline-block;min-width:.3in;}
+.lorl-r.b,.lorl-in.b{font-weight:700;} .lorl-r.i,.lorl-in.i{font-style:italic;} .lorl-r.u,.lorl-in.u{text-decoration:underline;}
+.lorl-tabrow > span{min-width:0;white-space:nowrap;}
+.lorl-tabrow > span:last-child{white-space:normal;}
+.lorl-tab{display:inline-block;width:.5in;}
+/* The letterhead, from the document's header */
+.lorh{margin:0 0 14px;}
+.lorh-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+.lorh-logo{width:1.6in;height:auto;flex:none;}
+.lorh-atts{display:grid;grid-template-columns:repeat(2,auto);gap:0 18px;text-align:right;margin-left:auto;}
+.lorh-atts > div{margin-bottom:1px;}
+.lorh-atts b{display:block;font-size:7.6pt;line-height:1.15;}
+.lorh-atts span{display:block;font-size:6.6pt;line-height:1.15;color:#333;}
+.lorh-rule{display:block;width:100%;height:auto;margin:6px 0 5px;}
+.lorh-offs{display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;}
+.lorh-off{font-size:6.4pt;line-height:1.22;}
+.lorh-off b{display:block;font-size:6.8pt;}
+.lorh-off span{display:block;}
+.lorh-lbl{font-style:italic;}
+.lorh-site{text-align:center;font-size:7.4pt;font-weight:700;color:#C4622D;margin-top:4px;}
 .lorl-tbl{border-collapse:collapse;margin:6px 0;} .lorl-tbl td{padding:2px 8px 2px 0;font-size:13.5px;}
-.lorl-in,.lorl-ta{font:inherit;color:#0B3B8C;font-weight:700;background:#FEF9C3;border:0;border-bottom:1.5px solid #EAB308;border-radius:3px 3px 0 0;padding:1px 5px;max-width:100%;}
+.lorl-in,.lorl-ta{font:inherit;color:#0B3B8C;font-weight:inherit;background:#FEF9C3;border:0;border-bottom:1.5px solid #EAB308;border-radius:3px 3px 0 0;padding:1px 5px;max-width:100%;}
 .lorl-in:focus,.lorl-ta:focus{outline:2px solid #F97316;outline-offset:1px;background:#FFFBEB;}
 .lorl-in::placeholder,.lorl-ta::placeholder{color:#8A7B2F;font-weight:500;font-style:italic;}
 .lorl-in.set,.lorl-ta.set{background:#ECFDF5;border-bottom-color:#34D399;}
