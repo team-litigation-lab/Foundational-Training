@@ -9,6 +9,9 @@
 
      • The trainer assigns one case per trainee (Assign cases, admins only) out of the 18 in
        "Case Notes For Drafting Activity (SA Demo)". Until they do, the trainee sees what to ask for.
+     • The trainer's own page carries the whole activity under the assigning panel, working: they pick any
+       case, fill the fields, tick the boxes and download both letters, so the set-up can be checked before
+       the cases go out. It is a test copy — it is never written to storage and no trainee ever sees it.
      • The trainee reads their case notes on the page and can download them as a PDF.
      • Two editors, one per activity, showing the firm's templates exactly as they are. What the firm
        highlighted in yellow is what the trainee fills in; everything else is fixed text they can't edit:
@@ -41,9 +44,18 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 /* ---------- the trainee's drafts and the case their trainer assigned ---------- */
 const L = {id:null, draft:null, assign:null, loading:false, err:"", timer:null, saving:false, savedAt:null, tab:TEMPLATES[0].id};
 const blank = () => ({v:1, letters:{}, updatedAt:""});
+// 🧑‍🏫 The trainer's test copy. An admin drafts on this one, never on a trainee's: it lives for the
+// visit only, is never written to storage, and toggling to 👁 Trainee view leaves it where it is.
+let scratch = null;
+function useScratch(){
+  if(!scratch) scratch = blank();
+  if(L.draft !== scratch){ L.draft = scratch; L.id = null; L.err = ""; L.savedAt = null; }
+}
 function letter(tid){ const ls = L.draft.letters; return ls[tid] || (ls[tid] = {fields:{}, checks:{}, updatedAt:""}); }
 
 async function load(id){
+  // 👁 Trainee view and the trainer's test copy: no account to read, so nothing to ask the server for.
+  if(!id){ L.id = id; L.err = ""; L.assign = null; if(!L.draft) L.draft = blank(); return; }
   L.loading = true; L.err = ""; L.id = id;
   try{
     const [d, a] = await Promise.all([sharedGet("lor:" + id), sharedGet("lorassign:" + id)]);
@@ -56,10 +68,13 @@ async function load(id){
 }
 function paintSave(ok){
   const el = document.getElementById("lorSave");
-  if(el) el.textContent = L.saving ? "Saving…" : (ok === false ? "⚠ Not saved. Check your connection." : (L.savedAt ? "All changes saved" : ""));
+  if(!el) return;
+  // 🧑‍🏫 the trainer's test copy and 👁 Trainee view: there is no trainee account to save to.
+  if(!state.traineeId || adminOn()){ el.textContent = "Test copy — nothing here is saved."; return; }
+  el.textContent = L.saving ? "Saving…" : (ok === false ? "⚠ Not saved. Check your connection." : (L.savedAt ? "All changes saved" : ""));
 }
 function queueSave(){
-  if(!state.traineeId) return;   // 👁 Trainee view: a preview with no trainee to save to
+  if(!state.traineeId || adminOn()) return;   // 🧑‍🏫 the trainer's test copy and 👁 Trainee view: no trainee to save to
   L.draft.updatedAt = new Date().toISOString();
   clearTimeout(L.timer); L.saving = true; paintSave();
   L.timer = setTimeout(async () => {
@@ -178,8 +193,9 @@ function caseCard(no){
   const c = caseOf(no);
   if(!c) return `<div class="card lor-wait"><b>Your trainer hasn’t assigned your case yet.</b><p>The cases are handed out one per trainee. Ask your trainer to assign yours; your case notes and both letters open here as soon as they do.</p></div>`;
   const side = (ttl, key) => `<div class="lor-notes"><div class="lor-notes-h">${ttl}</div><dl>${noteRows(c, key).map(([k, v]) => `<div><dt>${e(k)}</dt><dd>${e(v)}</dd></div>`).join("")}</dl></div>`;
-  return `<section class="card lor-case"><div class="lor-case-h"><div><p class="lor-eyebrow">Your assigned case</p><h2>${e(caseName(no))}</h2></div>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.casePdf()">⬇ Download my case notes (PDF)</button></div>
+  const mine = !adminOn();
+  return `<section class="card lor-case"><div class="lor-case-h"><div><p class="lor-eyebrow">${mine ? "Your assigned case" : "Test copy · the case you are drafting"}</p><h2>${e(caseName(no))}</h2></div>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.casePdf()">⬇ Download ${mine ? "my" : "the"} case notes (PDF)</button></div>
     <p class="lor-muted">Draft both letters from these notes. Replace every placeholder with the right detail, drop the brackets, and keep the capitalisation the placeholder uses.</p>
     <div class="lor-notes-grid">${side("For 1P LOR Drafting", "p1")}${side("For 3P LOR Drafting", "p3")}</div></section>`;
 }
@@ -242,6 +258,8 @@ async function loadAdmin(){
 }
 function renderAdmin(){
   if(!A.rows && !A.loading) loadAdmin();
+  useScratch();                       // draft on the test copy, never on a trainee's
+  const no = myCaseNo();
   const opts = no => CASES.map((c, i) => `<option value="${i + 1}"${no === i + 1 ? " selected" : ""}>${e(caseName(i + 1))}</option>`).join("");
   const groups = {}; (A.rows || []).forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
@@ -257,9 +275,12 @@ function renderAdmin(){
             <span class="lor-astate">${x.a && x.a.case ? `assigned${x.a.at ? " " + e(new Date(x.a.at).toLocaleDateString()) : ""}` : ""}</span></div>`).join("")}</div>`).join("")}
       <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.refreshAdmin()">Refresh</button></div></section>
     <section class="card lor-preview"><h2>👁 The activity as a trainee sees it</h2>
-      <p class="lor-muted">Pick a case to read its notes and both letters.</p>
-      <select aria-label="Preview a case" onchange="FTLor.preview(this.value)">${opts(myCaseNo())}</select>
-      ${caseCard(myCaseNo())}</section>`;
+      <p class="lor-muted">The whole activity, working, so you can check the set-up before you hand the cases out:
+        read the notes, fill the highlighted fields, tick the boxes and download both letters exactly as a trainee does.
+        A test copy — nothing you type here is saved, and no trainee sees it.</p>
+      <label class="lor-pick">Draft as <select aria-label="Draft as which case" onchange="FTLor.preview(this.value)">${opts(no)}</select>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.clearTest()">Clear what I typed</button></label></section>
+    ${objective()}${caseCard(no)}${editor(no)}`;
 }
 
 /* ---------- downloads ---------- */
@@ -301,6 +322,7 @@ window.FTLor = {
   refreshAdmin(){ A.rows = null; render(); },
   tab(id){ L.tab = id; render(); window.scrollTo(0, 0); },
   preview(v){ state.lorPreviewCase = Number(v) || 1; render(); },
+  clearTest(){ scratch = null; useScratch(); render(); toast("Cleared the test copy."); },
   grow(el){ el.style.height = "auto"; el.style.height = Math.min(520, el.scrollHeight + 2) + "px"; },
   set(tid, f, v){ letter(tid).fields[f] = v; letter(tid).updatedAt = new Date().toISOString(); queueSave(); },
   tick(tid, id){ const d = letter(tid); d.checks[id] = !d.checks[id]; queueSave(); render(); },
@@ -358,7 +380,7 @@ window.ftLorCard = function(){
   // request budget is untouched. The card names the case as soon as the read comes back.
   if(isTrainee() && L.id !== state.traineeId && !L.loading) load(state.traineeId);
   const no = isTrainee() && L.draft ? myCaseNo() : null;
-  const note = !open ? "" : adminOn() ? "Assign each trainee a case."
+  const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 LOR Drafting Activity</h3>
@@ -426,6 +448,7 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-arow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #EDEFF5;}
 .lor-aname{flex:0 0 200px;font-weight:600;color:var(--navy);font-size:13.5px;}
 .lor-arow select,.lor-preview select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #D7DBE7;border-radius:8px;background:#fff;max-width:100%;}
+.lor-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:13.5px;font-weight:700;color:var(--navy);}
 .lor-astate{font-size:12px;color:var(--ink-soft);}
 @media(max-width:620px){ .lor-paper{padding:20px 16px;} .lor-aname{flex:1 1 100%;} }
 `; document.head.appendChild(s); })();
