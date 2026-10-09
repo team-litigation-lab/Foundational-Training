@@ -173,26 +173,33 @@ function homeFeedback(){
 // the same header the EA/PA-style dashboard shows above its lessons (js/ft-updates.js's retired renderDashboard).
 function stepTimeline(all){
   if(!all.length) return "";
-  return `<div class="dash-top lp-timeline"><div class="step-timeline">${all.map((d, i) => {
+  return `<div class="step-timeline">${all.map((d, i) => {
     const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
     const st = done ? "st-done" : open ? "st-open" : "st-locked", can = open || (adminOn() && hasSlides);
     return `<div class="step-node">
       <div class="step-circle ${st}" ${can ? `onclick="scrollToModule(${d.id})"` : ""} title="${e(d.title)}">${done ? "✓" : i + 1}</div>
       ${i < all.length - 1 ? `<div class="step-dash ${done ? "filled" : ""}"></div>` : ""}
     </div>`;
-  }).join("")}</div></div>`;
+  }).join("")}</div>`;
 }
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview, ps = pages();
-  return `<div class="lp-head"><p class="lp-eyebrow">📚 Modules</p><h1>📚 Modules</h1>
-      <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p>
-      ${viewer ? `<div class="lp-progress"><div class="lp-bar"><i style="width:${all.length ? Math.round(done / all.length * 100) : 0}%"></i></div><span><b>${done} / ${all.length}</b> lessons finished</span></div>`
-        : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}</div>
-    ${viewer ? stepTimeline(all) : ""}
+  const pct = all.length ? Math.round(done / all.length * 100) : 0;
+  // The standard hero header (js/ft-updates.js's retired renderDashboard): eyebrow, title, tagline and the
+  // completion ribbon, with the step-timeline below it in the same navy card.
+  return `<div class="dash-top">
+      <div class="dash-hero">
+        <div class="dash-hero-text"><p class="eyebrow">📚 Standard Foundational Training</p><h1>Modules</h1>
+          <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p></div>
+        ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
+      </div>
+      ${viewer ? stepTimeline(all) : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}
+    </div>
+    ${pinned.length ? `<div class="dash-main lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
     ${homeStats()}
     ${homeActions(done, all.length)}
-    <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main"><div class="module-grid">${pinned.map(d => lessonCard(d, 0, true)).join("")}${all.map((d, i) => lessonCard(d, i, false)).join("")}</div></div></section>
+    <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main"><div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div></div></section>
     ${ps.length ? `<section class="lp-pages"><h2>🧰 Training pages</h2><div class="lp-grid">${ps.map(m => { const go = m.view ? `goto('${m.view}')` : m.run, n = badgeOf(m);
       return `<div class="card lp-page" role="link" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'){${go}}"><div class="lp-page-h"><span class="lp-ic">${m.icon}</span><b>${e(m.label)}</b>${n ? `<span class="nav-badge">${n}</span>` : ""}</div><p>${e(m.about || "")}</p><span class="lp-go">Open →</span></div>`; }).join("")}</div></section>` : ""}
     ${homeFeedback()}`;
@@ -380,12 +387,12 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 }
 /* the Modules and Scorecard pages */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
-.lp-head{margin-bottom:18px;} .lp-head h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .lp-head > p{margin:0;color:var(--ink-soft);font-size:15px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 .lp-note{margin-top:8px !important;font-size:13.5px !important;}
-/* the step-timeline's navy bar, on its own (the dash-top hero it's normally part of has an eyebrow/title/ribbon above it) */
-.lp-timeline{padding:16px 34px;margin:16px 0 0;}
-.lp-timeline .step-timeline{border-top:0;padding:0;}
+.dash-top .lp-note{color:#C9CDE3 !important;}
+/* the pinned orientation card, its own row above the numbered lessons (not part of their grid) */
+.lp-orient{display:flex;justify-content:center;margin:18px 0 0;}
+.lp-orient .module-card{max-width:280px;width:100%;}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 /* the program's own stat cards (the dashboard's side band used to hold these) */
 .lp-home-stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
@@ -399,19 +406,23 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-home-fb .tfb-dash-stars button{color:#D9DEEA;}
 .lp-home-fb .tfb-dash-stars:hover button{color:#E3A35F;}
 .lp-home-fb .tfb-dash-stars button:hover ~ button{color:#D9DEEA;}
-.lp-progress{display:flex;align-items:center;gap:12px;margin-top:12px;max-width:520px;} .lp-progress span{font-size:13px;color:#4A5070;white-space:nowrap;} .lp-progress b{color:var(--navy);}
-.lp-bar{flex:1;height:8px;border-radius:99px;background:#ECEEF5;overflow:hidden;} .lp-bar i{display:block;height:100%;background:linear-gradient(90deg,#E3A35F,#C9782E);border-radius:99px;}
 .lp-lessons{margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
 /* the Lessons grid: the same clean module-card look as the EA/PA course's dashboard (see js/lsh-dashboard.js).
    js/lsh-dashboard.js sizes that card to fill a fixed-height hero row (container-type:size, overflow:hidden) —
    here the card grows to fit its own content instead, so every lesson's activities stay visible. */
-.lp-lessons .module-card{height:auto;}
-.lp-lessons .module-card.mc-clean .module-body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px 16px 10px;flex:0 1 auto;min-height:0;overflow:visible;container-type:normal;}
+.lp-lessons .module-card, .lp-orient .module-card{height:auto;}
+/* every card in a row matches the tallest one, and every header reserves room for a 3-line title, so a short
+   title ("Receptionist Training") and a long one ("Calendaring & Appointment Setting Training") still line up:
+   the icon sits at the same height across the row and the Start button sits flush with the card bottom. */
+.lp-lessons .module-grid{align-items:stretch;}
+.lp-lessons .module-card.mc-clean .module-head, .lp-orient .module-card.mc-clean .module-head{min-height:92px;}
+.lp-lessons .module-card.mc-clean .module-start-btn, .lp-orient .module-card.mc-clean .module-start-btn{margin-top:auto;}
+.lp-lessons .module-card.mc-clean .module-body, .lp-orient .module-card.mc-clean .module-body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px 16px 10px;flex:0 1 auto;min-height:0;overflow:visible;container-type:normal;}
 /* the dashboard's module-theme is line-clamped to fit a fixed-height hero card (display:-webkit-box + overflow:hidden,
    which collapses to 0 height without that fixed height) — here it's plain wrapping text, same specificity so it wins */
-.lp-lessons .module-card.mc-clean .module-theme{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:none;}
-.lp-lessons .module-icon{font-size:30px;line-height:1;}
-.lp-lessons .module-theme{font-size:12.5px;color:var(--ink-soft);}
+.lp-lessons .module-card.mc-clean .module-theme, .lp-orient .module-card.mc-clean .module-theme{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:none;}
+.lp-lessons .module-icon, .lp-orient .module-icon{font-size:30px;line-height:1;}
+.lp-lessons .module-theme, .lp-orient .module-theme{font-size:12.5px;color:var(--ink-soft);}
 .lp-kc{font-weight:700;}
 .lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:16px;}
 .lp-page{padding:16px 18px;display:flex;flex-direction:column;gap:6px;cursor:pointer;}
