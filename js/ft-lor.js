@@ -19,9 +19,11 @@
      • Two tools, one per letter, each its own card in the Practice Lab and its own page: #/lorfp (1P) and
        #/lortp (3P with its Affidavit), with a link across between them. The trainer's hub #/lor keeps both
        behind a tab row, for testing. Each shows the firm's template exactly as it is. What the firm
-       highlighted in yellow is what the trainee fills in, and the firm's own wording sits IN the box,
-       highlighted, rather than behind it as a ghost placeholder — the trainee types over it, and an
-       untouched box downloads as that same wording. Everything else is fixed text they can't edit:
+       highlighted in yellow is what the trainee fills in. The document's own words — "[PLS UPDATE ...]"
+       and the rest — are the box's TEXT, never a placeholder hint: the activity gauges whether the
+       trainee follows the instructions and proofreads, so a box they don't replace ships as it stands,
+       a box they clear stays clear, and nothing on the page marks which boxes they have dealt with.
+       Everything else is fixed text they can't edit:
          – the letter's date is auto-generated and always the current date, as a CMS template editor does
          – "SENT VIA FACSIMILE AND E-MAIL" is typed by hand (it is the one highlighted line that is not
            a placeholder: the trainee edits the wording to match how the letter actually goes out)
@@ -155,26 +157,29 @@ function box(ctx){
   return `<button type="button" role="checkbox" aria-checked="${on}" class="lorl-box${on ? " on" : ""}" title="Tick this claim"
     onclick="FTLor.tick('${ctx.tpl.id}','${id}')">${on ? "☒" : "☐"}</button>`;
 }
+// What a highlighted box holds. The document's own words — "[PLS UPDATE ...]" and the rest — are the
+// box's starting TEXT, not a hint behind an empty box: a trainee who doesn't replace them ships them,
+// and that is the point of the exercise. The moment they touch a box their text stands, empty included;
+// nothing is ever put back for them. Touched is "the key exists", so clearing a box keeps it clear.
+const touched = (fields, f) => Object.prototype.hasOwnProperty.call(fields, f);
+const valueOf = (fields, run) => touched(fields, run.f)
+  ? String(fields[run.f] == null ? "" : fields[run.f]) : String(run.ph);
+
 // A field the firm highlighted in yellow: what the trainee fills in from their case notes.
 function field(run, ctx){
-  const v = ctx.L.fields[run.f];
-  const set = v != null && String(v).trim() !== "";
+  const v = valueOf(ctx.L.fields, run);
   const arg = `'${ctx.tpl.id}','${run.f}'`;
   if(run.k === "date")
     return `<span class="lorl-auto" title="Auto-generated: the letter is dated the day it is drafted">${e(letterDate())}</span>`;
   if(run.k === "manual")
-    // "SENT VIA FACSIMILE AND E-MAIL": edited by hand, so it carries the template's own wording to start with.
-    return `<input class="lorl-in lorl-manual" value="${e(v != null ? v : run.ph)}" size="${Math.max(18, run.ph.length)}"
+    // "SENT VIA FACSIMILE AND E-MAIL": edited by hand to match how the letter actually goes out.
+    return `<input class="lorl-in lorl-manual" value="${e(v)}" size="${Math.max(18, run.ph.length)}"
       aria-label="Sent via" oninput="FTLor.set(${arg}, this.value)">`;
-  // The firm's own wording is IN the box, highlighted, exactly as the .docx has it — not a ghost
-  // placeholder behind an empty box. The trainee types over it; until they do, the letter reads as the
-  // template reads, and the download already falls back to the same wording (letterLines below).
-  const shown = set ? v : run.ph;
   if(run.k === "long")
-    return `<textarea class="lorl-ta${set ? " set" : ""}" rows="5" placeholder="${e(run.ph)}" aria-label="Highlighted paragraph to review"
-      oninput="FTLor.set(${arg}, this.value); FTLor.grow(this)">${e(shown)}</textarea>`;
-  return `<input class="lorl-in${set ? " set" : ""}" value="${e(shown)}" placeholder="${e(run.ph)}"
-    size="${Math.max(12, Math.min(64, String(shown).length + 1))}" aria-label="${e(run.ph)}" oninput="FTLor.set(${arg}, this.value)">`;
+    return `<textarea class="lorl-ta" rows="5" aria-label="Highlighted paragraph to review"
+      oninput="FTLor.set(${arg}, this.value); FTLor.grow(this)">${e(v)}</textarea>`;
+  return `<input class="lorl-in" value="${e(v)}"
+    size="${Math.max(12, Math.min(64, v.length + 1))}" aria-label="${e(run.ph)}" oninput="FTLor.set(${arg}, this.value)">`;
 }
 // A "label<tab>value" line of the Re: block: one fixed run that ends on a tab, then the field.
 // "Re:\tYour Insured:\t" also carries the Re: gutter, which sits in its own column.
@@ -226,9 +231,7 @@ function letterLines(tpl){
     let s = "";
     b.runs.forEach(r => {
       if(r.f){
-        if(r.k === "date") s += letterDate();
-        else if(r.k === "manual") s += (d.fields[r.f] != null ? d.fields[r.f] : r.ph);
-        else s += (d.fields[r.f] || r.ph);
+        s += r.k === "date" ? letterDate() : valueOf(d.fields, r);
         return;
       }
       s += String(r.x).replace(/☐/g, () => (d.checks["cb" + (n++)] ? "[X]" : "[  ]"));
@@ -539,8 +542,6 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lorl-def-g,.lorl-def-l{white-space:nowrap;}
 .lorl-in,.lorl-ta{font:inherit;color:#111;background:#FEF9C3;border:0;border-bottom:1.5px solid #EAB308;border-radius:3px 3px 0 0;padding:1px 5px;max-width:100%;}
 .lorl-in:focus,.lorl-ta:focus{outline:2px solid #F97316;outline-offset:1px;background:#FFFBEB;}
-.lorl-in::placeholder,.lorl-ta::placeholder{color:#8A7B2F;font-weight:500;font-style:italic;}
-.lorl-in.set,.lorl-ta.set{background:#ECFDF5;border-bottom-color:#34D399;}
 .lorl-manual{color:#111;}
 .lorl-ta{display:block;width:100%;margin:4px 0;line-height:1.5;resize:vertical;text-align:left;}
 .lorl-auto{background:#E0E7FF;border-bottom:1.5px dashed #6366F1;border-radius:3px 3px 0 0;padding:1px 5px;font-weight:700;color:#312E81;}
