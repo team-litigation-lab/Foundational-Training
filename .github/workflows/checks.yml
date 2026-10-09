@@ -41,6 +41,32 @@ jobs:
       - name: Build the Worker without deploying (wrangler dry run)
         run: npx --yes wrangler@4 deploy --dry-run --outdir "$RUNNER_TEMP/dist"
 
+  rebuild:
+    # The platform is generated from the EA/PA engine (build/build.py), and every edit there checks that its
+    # anchor still exists. Nothing used to run that build, so when the engine reworded or moved a part this
+    # script anchors on, the break sat unnoticed until someone next needed a rebuild. This job runs it on
+    # every change, against the engine's main, so a drifted anchor is a red check here instead.
+    # It does not commit anything: index.html and js/eapa-updates.js in the repository stay as they are, and
+    # the rebuild happens only in the runner.
+    name: The platform still builds from the engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Clone the EA/PA engine
+        # Outside the working copy on purpose: check-site.mjs walks the whole repository, so an engine
+        # checked out inside it would be scanned too and report the engine's own files as missing.
+        run: git clone --depth 1 https://github.com/team-litigation-lab/EA-PA-TRAINING.git "$RUNNER_TEMP/engine"
+      - name: Rebuild from the engine (a missing anchor fails here)
+        run: python3 build/build.py "$RUNNER_TEMP/engine"
+      - name: The rebuilt page parses and loads only files that exist
+        run: node .github/scripts/check-site.mjs
+      - name: What a rebuild would change (for the log; not a failure)
+        run: git --no-pager diff --stat -- index.html js/eapa-updates.js || true
+
   smoke:
     name: Server requests in a browser
     runs-on: ubuntu-latest
