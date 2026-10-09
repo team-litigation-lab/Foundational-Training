@@ -145,11 +145,11 @@ function lessonCard(d, i, pinned){
   const label = pinned ? (done ? "✓ Finished" : "📌 Start Here")
     : `Lesson ${i + 1}${done ? " · ✓ Finished" : !hasSlides ? " · Coming soon" : !open ? " · 🔒 Locked" : ""}`;
   const theme = pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`;
-  return `<div class="module-card mc-clean mc-${status}" id="module-${d.id}">
-    <div class="module-head"><div class="mh-day">${label}</div><div class="mh-title">${e(d.title)}</div></div>
+  return `<div class="module-card mc-clean mc-${status} lp-lesson" id="module-${d.id}">
+    <div class="module-head"><div class="mh-day">${label}</div><div class="lp-lesson-t"><b class="mh-title">${e(d.title)}</b></div></div>
     <div class="module-body">
       <div class="module-icon">${icon}</div>
-      <div class="module-theme">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
+      <div class="module-theme lp-tags">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
       ${acts(d)}
     </div>
     <button class="btn module-start-btn ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
