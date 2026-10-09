@@ -12,6 +12,9 @@
      • The trainer's own page carries the whole activity under the assigning panel, working: they pick any
        case, fill the fields, tick the boxes and download both letters, so the set-up can be checked before
        the cases go out. It is a test copy — it is never written to storage and no trainee ever sees it.
+       👁 Trainee view shows the same activity working, as a trainee who HAS a case sees it (a previewing
+       trainer has no assignment of their own to read), with the case picker in the preview strip. Both
+       views draft on the one test copy, so a letter started in either is still there in the other.
      • The trainee reads their case notes on the page and can download them as a PDF.
      • Two editors, one per activity, showing the firm's templates exactly as they are. What the firm
        highlighted in yellow is what the trainee fills in; everything else is fixed text they can't edit:
@@ -35,6 +38,9 @@ const CASES = window.FT_LOR_CASES, TEMPLATES = window.FT_LOR_TEMPLATES;
 const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const adminOn = () => !!state.isAdmin && !state.adminPreview;
+// 👁 Trainee view with no trainee account of its own. There is no assignment to read, so the page stands
+// in for a trainee who has one: it shows the activity working, on whichever case is being previewed.
+const previewOnly = () => !!state.adminPreview && !state.traineeId;
 // Said on the page itself, not only here: this activity never becomes a case file in the CMS.
 const NO_CASE_FILE = "Do <b>not</b> create a case file in the CMS for this activity, and do not link it to any case file. This is a standalone drafting exercise: you draft the two letters here, download them, and upload them into the Smart Advocate demo yourself.";
 
@@ -55,7 +61,7 @@ function letter(tid){ const ls = L.draft.letters; return ls[tid] || (ls[tid] = {
 
 async function load(id){
   // 👁 Trainee view and the trainer's test copy: no account to read, so nothing to ask the server for.
-  if(!id){ L.id = id; L.err = ""; L.assign = null; if(!L.draft) L.draft = blank(); return; }
+  if(!id){ L.err = ""; L.assign = null; useScratch(); L.id = id; return; }
   L.loading = true; L.err = ""; L.id = id;
   try{
     const [d, a] = await Promise.all([sharedGet("lor:" + id), sharedGet("lorassign:" + id)]);
@@ -70,6 +76,7 @@ function paintSave(ok){
   const el = document.getElementById("lorSave");
   if(!el) return;
   // 🧑‍🏫 the trainer's test copy and 👁 Trainee view: there is no trainee account to save to.
+  if(previewOnly()){ el.textContent = "👁 Trainee view — nothing here is saved."; return; }
   if(!state.traineeId || adminOn()){ el.textContent = "Test copy — nothing here is saved."; return; }
   el.textContent = L.saving ? "Saving…" : (ok === false ? "⚠ Not saved. Check your connection." : (L.savedAt ? "All changes saved" : ""));
 }
@@ -86,12 +93,13 @@ function queueSave(){
 /* ---------- the assigned case ---------- */
 // The case number a trainer assigned, 1-based as the trainers count them; null when they haven't yet.
 function myCaseNo(){
-  if(adminOn()) return Number(state.lorPreviewCase) || 1;    // an admin reading the page sees case 1
+  if(adminOn() || previewOnly()) return Number(state.lorPreviewCase) || 1;   // a trainer reading the page, in either view
   const n = L.assign && Number(L.assign.case);
   return n >= 1 && n <= CASES.length ? n : null;
 }
 const caseOf = no => (no ? CASES[no - 1] : null) || null;
 const caseName = no => { const c = caseOf(no); return c ? `Case ${no} · ${c.p1["Client’s Name"] || "—"} · ${c.p1["Date of Loss"] || ""}` : `Case ${no}`; };
+const caseOptions = sel => CASES.map((c, i) => `<option value="${i + 1}"${sel === i + 1 ? " selected" : ""}>${e(caseName(i + 1))}</option>`).join("");
 // The template's own order for the notes, so the page reads like the file the trainers sent.
 const P1_KEYS = ["Client’s Name", "Date of Loss", "Insurance Company Name", "Policy Number", "Claim Number", "Adjuster Name and Address", "Email"];
 const P3_KEYS = ["Client’s Name", "Date of Loss", "Defendant Insurance Company Name", "Policy Number", "Claim Number", "Adjuster Name and Address", "Fax Number", "Defendant Insured Name", "Defendant Driver’s Name"];
@@ -232,8 +240,10 @@ function renderPage(){
   if(L.err) return `<div class="card" style="padding:28px;">${e(L.err)} <button class="btn btn-ghost btn-sm" onclick="FTLor.reload()">Try again</button></div>`;
   if(!L.draft) return `<div class="card" style="padding:28px;">Loading your drafting activity…</div>`;
   const no = myCaseNo();
-  const preview = (state.adminPreview && !state.traineeId)
-    ? `<div class="card lor-preview-note">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved; a trainee drafts on their own account.</div>` : "";
+  const preview = previewOnly()
+    ? `<div class="card lor-preview-note">👁 <b>Trainee view</b> — the page as a trainee with a case assigned sees it, working: fill the
+        highlighted fields, tick the boxes and download both letters. Nothing you type here is saved; a trainee drafts on their own account.
+        <label class="lor-pick lor-pick-note">Previewing <select aria-label="Preview a case" onchange="FTLor.preview(this.value)">${caseOptions(no)}</select></label></div>` : "";
   return `${preview}<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
       <p>Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you.</p></div>
     ${notice()}${objective()}${caseCard(no)}${no ? editor(no) : ""}`;
@@ -260,7 +270,7 @@ function renderAdmin(){
   if(!A.rows && !A.loading) loadAdmin();
   useScratch();                       // draft on the test copy, never on a trainee's
   const no = myCaseNo();
-  const opts = no => CASES.map((c, i) => `<option value="${i + 1}"${no === i + 1 ? " selected" : ""}>${e(caseName(i + 1))}</option>`).join("");
+  const opts = caseOptions;
   const groups = {}; (A.rows || []).forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
   return `<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
@@ -379,7 +389,7 @@ window.ftLorCard = function(){
   // Read here, not on the dashboard: the Practice Lab is where the card is, so the dashboard's
   // request budget is untouched. The card names the case as soon as the read comes back.
   if(isTrainee() && L.id !== state.traineeId && !L.loading) load(state.traineeId);
-  const no = isTrainee() && L.draft ? myCaseNo() : null;
+  const no = previewOnly() || (isTrainee() && L.draft) ? myCaseNo() : null;
   const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
@@ -449,6 +459,8 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-aname{flex:0 0 200px;font-weight:600;color:var(--navy);font-size:13.5px;}
 .lor-arow select,.lor-preview select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #D7DBE7;border-radius:8px;background:#fff;max-width:100%;}
 .lor-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:13.5px;font-weight:700;color:var(--navy);}
+.lor-pick-note{color:#3730A3;margin-top:8px;}
+.lor-pick-note select{font:inherit;font-size:13px;font-weight:600;padding:4px 8px;border:1px solid #C7D2FE;border-radius:8px;background:#fff;max-width:100%;}
 .lor-astate{font-size:12px;color:var(--ink-soft);}
 @media(max-width:620px){ .lor-paper{padding:20px 16px;} .lor-aname{flex:1 1 100%;} }
 `; document.head.appendChild(s); })();
