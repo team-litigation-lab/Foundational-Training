@@ -5993,10 +5993,12 @@ function dayLabDone(dayId){
   const pp = state.practiceProgress || {};
   return tools.every(t=>pp[t.id] && (pp[t.id].runs||0) >= 1);
 }
-/* Every day, lesson and Practice Lab is open to every trainee — there are no locks.
-   dayReached() keeps the old "where the trainee has got to" rule, only to highlight
-   the trainee's current day on the dashboard. */
-function dayUnlocked(id){ return true; }
+/* Each day unlocks once the day before it has been cleared — same rule dayReached()
+   already implements: complete the previous day's Practice Lab (any score), or its
+   Knowledge Check when that day has no Practice Lab yet. Admins and trainers can
+   always open any day (dayReached() handles that), and a day a trainee already
+   started is never re-locked. */
+function dayUnlocked(id){ return dayReached(id); }
 function dayReached(id){
   if(id <= 1) return true;
   if(state.isAdmin) return true;   // locks are for trainees only
