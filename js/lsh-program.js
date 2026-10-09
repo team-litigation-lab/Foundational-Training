@@ -453,6 +453,26 @@ main.main-lp .dash-hero-text{grid-column:2;}
 .lp-lessons .module-card.mc-clean .module-theme, .lp-orient .module-card.mc-clean .module-theme{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:none;}
 .lp-lessons .module-icon, .lp-orient .module-icon{font-size:30px;line-height:1;}
 .lp-lessons .module-theme, .lp-orient .module-theme{font-size:12.5px;color:var(--ink-soft);}
+/* Compact layout (laptops and up): the hero banner, the 8 lesson cards and the stat band all fit in one
+   screen with no scrolling, the same way js/lsh-dashboard.js's compact rules do for the retired dashboard. */
+@media(min-width:761px){
+  main.main-lp{padding:12px 16px 18px;}
+  .lp-lessons{margin-bottom:10px;}
+  .lp-lessons-row{gap:10px;}
+  .lp-lessons .module-grid, .lp-orient{gap:10px;}
+  .lp-lessons .module-card.mc-clean .module-head, .lp-orient .module-card.mc-clean .module-head{min-height:0;padding:7px 10px;}
+  .lp-lessons .module-card.mc-clean .mh-day, .lp-orient .module-card.mc-clean .mh-day{font-size:9.5px;}
+  .lp-lessons .module-card.mc-clean .mh-title, .lp-orient .module-card.mc-clean .mh-title{font-size:12px;line-height:1.2;}
+  .lp-lessons .module-card.mc-clean .module-body, .lp-orient .module-card.mc-clean .module-body{padding:8px 12px 4px;gap:4px;}
+  .lp-lessons .module-icon, .lp-orient .module-icon{font-size:20px;}
+  .lp-lessons .module-theme, .lp-orient .module-theme{font-size:11px;}
+  .lp-lessons .module-card.mc-clean .module-start-btn, .lp-orient .module-card.mc-clean .module-start-btn{padding:7px;font-size:13px;margin:0 10px 8px;width:calc(100% - 20px);}
+  .lp-home-acts{margin:8px 0 0;}
+  .lp-home-stats{margin:10px 0 0;gap:6px;}
+  .lp-home-stats .card.stat{padding:6px 10px;}
+  .lp-home-stats .card.stat .num{font-size:16px;}
+  .lp-home-stats .card.stat .lbl{font-size:10.5px;}
+}
 .lp-kc{font-weight:700;}
 .sc-src-ic{width:32px;height:32px;border-radius:10px;background:#FFF3E6;border:1px solid #F7DEC6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 /* score colours: 85% and up, 70% (passing) and up, under 70%, nothing yet */
