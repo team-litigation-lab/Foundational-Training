@@ -5675,10 +5675,31 @@ async function resolveTraineeId(name, batch){
 
 /** Mirrors this trainee's progress into shared storage so the Admin
  *  Dashboard can see it. Called after anything that changes progress. */
+/* BATCH IDs — B + the date the batch started, as MMDDYY: B100926 for 9 October 2026. The same rule on every
+   LSH platform (canonicalBatch in the CMS's functions/_utils.js, and in worker.js here). Whatever is typed —
+   any capitals, spaces or dashes, the B left off, a four-digit year, or the older long forms B09102026 and
+   B09102026-LSHTRAINEE-001 — reads as that one form, so B100926, "b 10-09-26" and B10092026 are the same
+   batch. A Batch ID given out before as B + DDMMYY reads the same as before. "" when it isn't a real date. */
+const batchRealDay = (mm, dd, yy) => { const d = new Date(Date.UTC(2000+yy, mm-1, dd)); return mm>=1 && mm<=12 && dd>=1 && d.getUTCMonth()===mm-1; };
+function canonicalBatch(raw){
+  const v = String(raw||"").toUpperCase().replace(/[\s\-]/g, "");
+  const m = /^B?(\d{2})(\d{2})(\d{4}|\d{2})(?:LSH[A-Z]*\d+)?$/.exec(v);
+  if(!m) return "";
+  const yy = m[3].slice(-2);
+  if(!batchRealDay(+m[1], +m[2], +yy) && !batchRealDay(+m[2], +m[1], +yy)) return "";
+  return "B" + m[1] + m[2] + yy;
+}
+window.canonicalBatch = canonicalBatch;
+// The Batch ID to show and group by: in its one form, or, for an older code that isn't a date (B1, a guest
+// account's), as it was typed — so a trainee registered under one keeps their records. A new registration
+// has to give a real Batch ID (submitLogin, and worker.js refuses it server-side).
 function cleanBatch(b){
+  const c = canonicalBatch(b);
+  if(c) return c;
   const v = String(b||"").trim();
   return /^[A-Za-z0-9][A-Za-z0-9 _\-]{0,23}$/.test(v) ? v : "";
 }
+const BATCH_HINT = "Enter your Batch ID as B and the date your batch started (MMDDYY) — for example B100926 for 9 October 2026.";
 function cleanName(n){
   const v = String(n||"").trim().replace(/\s+/g," ");
   return (v.length<=60 && /^[\p{L}][\p{L}\p{M} .'’\-]*$/u.test(v)) ? v : "";
@@ -8460,12 +8481,15 @@ async function submitLoginInner(){
   const isNewSession = !state.traineeId;
   const batchInput = document.getElementById("loginBatchInput");
   const batchVal = batchInput ? batchInput.value.trim() : "";
-  if(isNewSession && !batchVal){ toast("Enter your batch to continue."); return; }
-  if(isNewSession && !cleanBatch(batchVal)){ toast("Enter a valid batch code, e.g. B050225 (letters, numbers, spaces or dashes, max 24)."); return; }
+  if(isNewSession && !batchVal){ toast("Enter your Batch ID to continue."); return; }
+  if(isNewSession && !cleanBatch(batchVal)){ toast(BATCH_HINT); return; }
   let resolved = null;
   if(isNewSession){
     const au = (await authStatus()) ? await traineeAuth(v, batchVal) : null;   // throws on a server error → handled above
     resolved = au ? {id:au.id, existing:au.existing} : await resolveTraineeId(v, batchVal);
+    // Registering for the first time: the Batch ID has to be a real one. A trainee whose records are already
+    // here signs in with the Batch ID they registered under, even an older code that isn't a date.
+    if(!resolved.existing && !canonicalBatch(batchVal)){ toast(BATCH_HINT); return; }
   }
   state.traineeName = v;
   await storeSet("trainee-name", v);
@@ -8473,8 +8497,8 @@ async function submitLoginInner(){
   if(isNewSession){
     state.traineeId = resolved.id;
     await storeSet("trainee-id", state.traineeId);
-    state.traineeBatch = batchVal;
-    await storeSet("trainee-batch", batchVal);
+    state.traineeBatch = cleanBatch(batchVal) || batchVal;   // kept in its one form
+    await storeSet("trainee-batch", state.traineeBatch);
   }
   // If this name already has a record (e.g. they logged out and are logging
   // back in), restore their real progress before syncing — otherwise the

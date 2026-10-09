@@ -75,7 +75,7 @@ async function workerChecks() {
     const since = (t, f) => log.filter(x => x.at >= t && (!f || f(x)));
     const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    await signIn(page, 'Req', 'Count', 'CIREQ'); await page.waitForTimeout(1200);
+    await signIn(page, 'Req', 'Count', 'B100926'); await page.waitForTimeout(1200);
     const me = await page.evaluate(() => 'trainee:' + state.traineeId);   // their record (kept here: a sign-out clears state.traineeId)
     const setApproved = (on) => page.evaluate(async ([on, key]) => {
         const r = await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json());

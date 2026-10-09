@@ -21,7 +21,7 @@ const failures = []; const fail = (m) => failures.push(m);
     const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
     const get = (key) => page.evaluate(async (key) => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json())).value || 'null'), key);
     await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
-    const batch = 'CIPS' + String(Date.now()).slice(-6);
+    const batch = 'B100926';   // a real Batch ID: B + the date the batch started (MMDDYY)
     await signIn(page, 'Pia', 'Session', batch);
     const id = await page.evaluate(() => state.traineeId);
     const rec = await get('trainee:' + id); rec.approved = true; await put('trainee:' + id, rec);

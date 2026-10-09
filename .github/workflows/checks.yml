@@ -28,6 +28,8 @@ jobs:
           node-version: 22
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
+      - name: Batch IDs are B + MMDDYY (the page and the Worker read them the same way; older codes keep working)
+        run: node .github/scripts/batch-id.cjs
       - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
         run: node .github/scripts/gemini-keys.mjs
       - name: Documents served from R2 (ranges, 304s, static assets as the fallback)
