@@ -115,7 +115,7 @@ rep("Day ${d.id} of 10<", "${ftLabel(d)}<")
 # No Knowledge Checks: the last slide finishes the lesson (js/ft-updates.js handles the click).
 rep("  return Math.max(0, Math.min(last, maxR, total-1));", "  // Any slide can be opened (nothing is locked), so the saved place wins even when it is past the furthest slide reached with Next.\n  return Math.max(0, Math.min(last, total-1));")
 rep("Continue to Knowledge Check &rarr;", "✓ Finish lesson")
-rep("🎉 That's everything for Day ${d.id} — the Knowledge Check is the last step to mark this day complete.",
+rep("🎉 That's everything for Day ${d.id}: the Knowledge Check is the last step",
     "🎉 That's everything for this lesson — click Finish lesson to mark it complete.")
 # Lessons are named by their title, not "Day N".
 def name_days(text):
@@ -135,6 +135,10 @@ if not n:
 s, n = re.subn(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', f'<script src="/js/eapa-updates.js?v={build_tag}"></script>', s, count=1)
 # 🕘 Attendance (js/attendance.js) is the same file in every LSH course; it loads in the list below, not where the EA/PA page has it.
 s = re.sub(r'<script src="/?js/attendance\.js[^"]*"></script>\n?', '', s)
+# The engine's graded-calls band (js/graded-calls.js) is the EA/PA one and isn't in this repository: this
+# program draws its own from the same callsim:<id> record (js/ft-simulators.js, .fts-calls-stat), so the
+# engine's file would put a second card in the band and 404 here.
+s = re.sub(r'<script src="/?js/graded-calls\.js[^"]*"></script>\n?', '', s)
 m = re.search(r'<script src="/js/eapa-updates\.js\?v=[^"]*"></script>', s)
 if not (n and m):
     sys.exit("MISSING: eapa-updates.js script tag")
