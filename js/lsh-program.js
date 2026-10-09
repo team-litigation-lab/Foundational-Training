@@ -5,11 +5,10 @@
    top bar shows exactly those five:
 
      🏠 Main Portal            the LSH Training Portal (the program's own home, its lessons, is 📚 Modules)
-     📚 Modules                #/modules: the program's landing page — every way into the platform opens it.
-                               The lessons, and the program's training pages (Task Tracker, My Notes…), which
-                               share a bar of tabs under the top bar. ✍️ Process Questions is not one of them:
-                               it is its own feature, with its own button in the bar. 📚 Modules is the button's
-                               name on every LSH platform: no platform calls its landing page anything else
+     📚 Modules                #/dashboard: the program's own landing page (its own renderDashboard()),
+                               not replaced here. ✍️ Process Questions is its own feature, with its own
+                               button in the bar. 📚 Modules is the button's name on every LSH platform:
+                               no platform calls its landing page anything else
      🛠 Practice Lab           the Practice Lab Sessions, connected with the simulators (#/simulators)
      🏅 Scorecard              #/scorecard: the trainee's grades, collected from every grading system on the
                                platform; admins get Admin → 🏅 Scorecards, every trainee's in one table
@@ -45,25 +44,13 @@ const batchLabel = id => {
   const m = /^B(\d{2})(\d{2})(\d{2})?(\d{2})(?:-?LSH[A-Z]*-?\d+)?$/i.exec(v.replace(/\s+/g, ""));
   return m ? "B" + m[1] + m[2] + m[4] : v;
 };
-window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["modules", "scorecard"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Modules", scorecard:"My Performance"});
-
-/* ---------- 📚 Modules is the landing page: every way in opens it ---------- */
-// One home, one name for it. Signing in (from the Portal or on this platform), coming back to a saved
-// session, the brand mark, a Back button and an old #/dashboard link all open 📚 Modules, instead of a
-// second, half-empty home page beside it. A program names the views it used as a home before this in
-// window.LSH_HOME_ALIASES (js/ft-updates.js lists the pages this program has turned off); the engine's
-// own dashboard is always one.
-const HOME = "modules";
-const atHome = v => ["dashboard", "home"].concat(window.LSH_HOME_ALIASES || []).includes(v);
-const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview);
-const __goto = window.goto;
-window.goto = function(view){ if(atHome(view) && signedIn()) arguments[0] = HOME; return __goto.apply(this, arguments); };
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["scorecard"]);
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {scorecard:"My Performance"});
 
 /* ---------- the five sections ---------- */
 // The Modules pages this viewer has (an admin's own pages, or a trainee's; 👁 Trainee view sees the trainee's).
 const pages = () => CFG.modules.filter(m => !m.who || m.who === (adminOn() ? "admin" : "trainee"));
-const moduleViews = () => ["modules"].concat(CFG.moduleViews, pages().map(m => m.view).filter(Boolean));
+const moduleViews = () => [].concat(CFG.moduleViews, pages().map(m => m.view).filter(Boolean));
 function section(){
   const v = state.view;
   if(v === "scorecard" || (v === "admin" && state.adminTab === "scorecards")) return "scorecard";
@@ -108,11 +95,11 @@ window.renderTopbar = function(){
   const viewOf = b => (onc(b).match(/^goto\('([a-z]+)'\)$/) || [])[1];
   // the training pages' own buttons move into the sections (an admin's 🧭 Orientation stays, for 📚 Guides ▾)
   const keep = new Set(["orientation"]);
-  const moved = new Set(CFG.modules.map(m => m.view).filter(v => v && !keep.has(v)).concat(CFG.labViews, ["modules"])), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
+  const moved = new Set(CFG.modules.map(m => m.view).filter(v => v && !keep.has(v)).concat(CFG.labViews)), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
   [...nav.children].forEach(b => { const v = viewOf(b); if((v && moved.has(v)) || runs.has(onc(b))) b.remove(); });
   const btn = (id, label, onclick, title) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}"${title ? ` title="${title}"` : ""}>${label}</button>`;
   const processGo = "goto('process')";   // one feature, one page: an admin sees every trainee's sheets there
-  const secs = btn("modules", "📚 Modules", "goto('modules')", "The Standard Foundational Training: its lessons")
+  const secs = btn("modules", "📚 Modules", "goto('dashboard')", "The Standard Foundational Training: its lessons")
     + btn("process", "✍️ Process Questions", processGo, adminOn() ? "Every trainee's answer sheets" : "Each lesson's answer sheet")
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")
     + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : myDashboard());
@@ -124,97 +111,6 @@ window.renderTopbar = function(){
   if(adm){ adm.innerHTML = `🛡 Admin<span class="lp-long"> Master Control</span>`; adm.title = "Admin Master Control"; adm.classList.add("lp-sec"); adm.classList.toggle("active", sec === "admin"); }
   return t.innerHTML;
 };
-
-/* ---------- 📚 Modules (#/modules): the lessons, then the training pages ---------- */
-function lessonCard(d, i, pinned){
-  const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
-  const status = done ? "done" : open ? "open" : "locked";
-  const kc = typeof p.score === "number" ? `<span class="lp-kc t-${tier(p.score)}">✍️ Knowledge Check ${p.score}%</span>` : "";
-  const can = open || (adminOn() && hasSlides);
-  const tags = lessonTags(d);
-  const icon = pinned ? "📌" : ((typeof FT_LESSON_ICONS !== "undefined" ? FT_LESSON_ICONS[d.id] : null) || "📘");
-  const label = pinned ? (done ? "✓ Finished" : "📌 Start Here")
-    : `Lesson ${i + 1}${done ? " · ✓ Finished" : !hasSlides ? " · Coming soon" : !open ? " · 🔒 Locked" : ""}`;
-  const theme = pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`;
-  return `<div class="module-card mc-clean mc-${status} lp-lesson" id="module-${d.id}">
-    <div class="module-head"><div class="mh-day">${label}</div><div class="lp-lesson-t"><b class="mh-title">${e(d.title)}</b></div></div>
-    <div class="module-body">
-      <div class="module-icon">${icon}</div>
-      <div class="module-theme lp-tags">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
-    </div>
-    <button class="btn module-start-btn ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
-  </div>`;
-}
-// What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
-// card, a badge on a lesson card) registers it here instead: window.LSH_HOME_STATS holds () => HTML for the
-// row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
-// beside that lesson's Knowledge Check score. js/ft-simulators.js registers the graded calls in both.
-const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
-const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
-
-// Resume, the certificate and the feedback card: the landing page carries them, so nothing a trainee
-// needs is left on a home page they no longer open.
-function homeActions(done, total){
-  const resume = typeof window.resumeLabel === "function" ? resumeLabel() : "";
-  const cert = (typeof window.certData === "function" && state.traineeId) ? certData() : null;
-  const html = (resume ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${e(resume)}</span></button>` : "")
-    + (cert ? (cert.eligible
-      ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
-      : `<span class="cert-hero-locked" title="Finish the lessons to unlock your certificate">🎓 Certificate · ${done}/${total} lessons finished</span>`) : "");
-  return html ? `<div class="lp-home-acts">${html}</div>` : "";
-}
-// The compact stat band the sibling courses show under their lessons (their dashboard's dash-side-inner):
-// program %, best/avg competency, average quiz score, days completed, the feedback card and the ranking
-// card, plus whatever else a file registers in window.LSH_HOME_STATS (e.g. js/ft-simulators.js's graded-calls tile).
-function statsBand(done, total){
-  const pct = total ? Math.round(done / total * 100) : 0;
-  const ocs = typeof overallCompetencyScore === "function" ? overallCompetencyScore() : { score: 0, tier: null };
-  const avgC = typeof averageCompetencyScore === "function" ? averageCompetencyScore().score : 0;
-  const quiz = typeof avgScore === "function" ? avgScore() : 0;
-  const fb = typeof window.renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : "";
-  const rank = typeof window.renderRankingCard === "function" ? renderRankingCard() : "";
-  return `<div class="lp-home-stats">
-    <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
-    <div class="card stat"><div class="num">${ocs.score}%</div><div class="lbl">${ocs.tier ? `Best Competency — ${e(displayTier(ocs.tier))}` : "Best Competency Score"}<span style="display:block;font-weight:400;margin-top:2px;">Avg across all attempts: ${avgC}%</span></div></div>
-    <div class="card stat"><div class="num">${quiz}%</div><div class="lbl">Average quiz score</div></div>
-    <div class="card stat"><div class="num">${done} / ${total}</div><div class="lbl">Lessons completed</div></div>
-    ${fb}${rank}${hooks("LSH_HOME_STATS")}
-  </div>`;
-}
-// The step-timeline: one circle per lesson (not the pinned orientation), done/open/locked, click to jump to its card —
-// the same header the EA/PA-style dashboard shows above its lessons (js/ft-updates.js's retired renderDashboard).
-function stepTimeline(all){
-  if(!all.length) return "";
-  return `<div class="step-timeline">${all.map((d, i) => {
-    const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
-    const st = done ? "st-done" : open ? "st-open" : "st-locked", can = open || (adminOn() && hasSlides);
-    return `<div class="step-node">
-      <div class="step-circle ${st}" ${can ? `onclick="scrollToModule(${d.id})"` : ""} title="${e(d.title)}">${done ? "✓" : i + 1}</div>
-      ${i < all.length - 1 ? `<div class="step-dash ${done ? "filled" : ""}"></div>` : ""}
-    </div>`;
-  }).join("")}</div>`;
-}
-function renderModules(){
-  const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
-  const viewer = isTrainee() || !!state.adminPreview;
-  const pct = all.length ? Math.round(done / all.length * 100) : 0;
-  // The standard hero header (js/ft-updates.js's retired renderDashboard): eyebrow, title, tagline and the
-  // completion ribbon, with the step-timeline below it in the same navy card.
-  return `<div class="dash-top">
-      <div class="dash-hero">
-        <div class="dash-hero-text"><p class="eyebrow">LEGAL FOUNDATIONAL TRAINING ACCELERATOR</p>
-          <h1><span class="hl"><svg class="hero-spark hero-spark-lead" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg>Foundational Training Professional Development Workshop<svg class="hero-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg></span></h1></div>
-        ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
-      </div>
-      ${stepTimeline(all)}
-    </div>
-    ${homeActions(done, all.length)}
-    <section class="lp-lessons"><div class="dash-main lp-lessons-row">
-      ${pinned.length ? `<div class="lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
-      <div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div>
-    </div></section>
-    ${statsBand(done, all.length)}`;
-}
 
 /* ---------- 🏅 the Scorecard: every grading system's items, its average, and the overall ---------- */
 function compute(ctx){
@@ -274,22 +170,19 @@ function renderScorecard(){
 }
 
 /* ---------- the pages ---------- */
+// 📚 Modules is the engine's own dashboard (index.html's renderDashboard()) — this file no longer
+// replaces it. Only 🏅 My Performance is this file's own page.
 const __render = window.render;
 window.render = function(){
-  // Anything that still sets a home view directly (the engine's sign-in, a resume, a page this program
-  // has turned off) lands on 📚 Modules, so there is one landing page however the trainee got here.
-  if(atHome(state.view) && signedIn()){ state.view = HOME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
   const v = state.view;
-  if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
-  if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
-  // 📚 Modules is the landing page for every viewer, signed in or not (renderModules() already has its own
-  // "not signed in" note instead of a personal progress bar) — only 🏅 My Performance still needs an identity
-  // to compute, so that one alone falls back to the old dashboard/login flow when there isn't one.
-  if(v === "scorecard" && !state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(v !== "scorecard") return __render.apply(this, arguments);
+  if(adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
+  // 🏅 My Performance needs an identity to compute; with none, fall back to the dashboard/login flow.
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + (v === "modules" ? `<main class="main-lp">${renderModules()}</main>` : `<main class="main-lp">${renderScorecard()}</main>`) + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-lp">${renderScorecard()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
-  if(v === "scorecard" && isTrainee()) loadMine(SC.id !== state.traineeId || Date.now() - SC.at > 60000);
+  if(isTrainee()) loadMine(SC.id !== state.traineeId || Date.now() - SC.at > 60000);
 };
 
 /* ---------- 🛡 Admin Master Control → 🏅 Scorecards: every trainee's, in one table ---------- */
@@ -399,81 +292,9 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
   .lp-admin-row .admin-tab-btn{font-size:13px;padding:6px 11px;border:1px solid #DDE1EC !important;border-radius:999px;background:#fff;}
   .lp-admin-row .admin-tab-btn.active{background:#FFF3E6;border-color:var(--orange) !important;color:var(--navy);}
 }
-/* the Modules and Scorecard pages */
+/* the Scorecard page (📚 Modules is the engine's own dashboard again — see render() above) */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
-/* .dash-hero-ribbon has order:-1 to sit in the grid's narrow first column (140px); without it (a plain admin,
-   not previewing, gets no completion ribbon) the lone .dash-hero-text falls into that 140px column instead
-   and wraps one word per line. Pin it to the wide column explicitly, ribbon or not. */
-main.main-lp .dash-hero-text{grid-column:2;}
-/* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
-.dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
-.lp-lessons-row .module-grid{flex:1;min-width:0;}
-/* 8 lessons read as a balanced 4x2 block beside the orientation card, not 5+3 (narrower screens keep the
-   existing responsive auto-fill/stacked behavior below — this only applies once there's room for it) */
-@media(min-width:1001px){.lp-lessons-row .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
-.lp-orient{flex:0 0 220px;display:flex;}
-.lp-orient .module-card{width:100%;}
-@media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
-.lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
-/* the compact stat band under the lessons (the sibling courses' dashboard side band, here a plain row of
-   cards instead of its own dark panel — see statsBand() in js/lsh-program.js) */
-.lp-home-stats{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 0;}
-.lp-home-stats .card.stat{flex:1 1 128px;padding:10px 12px;min-width:0;}
-.lp-home-stats .card.stat .num{font-size:21px;font-weight:800;color:var(--navy);line-height:1.1;}
-.lp-home-stats .card.stat .lbl{font-size:11.5px;color:var(--ink-soft);}
-.lp-home-stats .tfb-dash, .lp-home-stats .rank-card{flex:1.6 1 190px;}
-/* the feedback and ranking cards were built for the dashboard's dark side band: here they sit on white cards */
-.lp-home-stats .tfb-dash .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep);}
-.lp-home-stats .tfb-dash .sub{font-size:13.5px;color:var(--ink-soft);line-height:1.45;}
-.lp-home-stats .tfb-dash-stars button{color:#D9DEEA;}
-.lp-home-stats .tfb-dash-stars:hover button{color:#E3A35F;}
-.lp-home-stats .tfb-dash-stars button:hover ~ button{color:#D9DEEA;}
-.lp-home-stats .rank-card .lbl{color:var(--navy);font-weight:700;}
-.lp-home-stats .rank-card .num span{font-size:13px;color:var(--ink-soft);font-family:inherit;font-weight:400;}
-.lp-home-stats .rank-card .sub{font-size:11px;color:var(--ink-soft);margin-top:6px;}
-.lp-home-stats .rank-list li{color:var(--ink);}
-.lp-home-stats .rank-list li .sc{color:var(--orange-deep);}
-.lp-home-stats .rank-list li.me{background:#FFF3E6;color:var(--navy);}
-.lp-home-stats .rank-list li.gap{color:var(--ink-soft);}
-.lp-lessons{margin-bottom:22px;}
-/* the Lessons grid: the same clean module-card look as the EA/PA course's dashboard (see js/lsh-dashboard.js).
-   js/lsh-dashboard.js sizes that card to fill a fixed-height hero row (container-type:size, overflow:hidden) —
-   here the card grows to fit its own content instead, so every lesson's activities stay visible. */
-.lp-lessons .module-card, .lp-orient .module-card{height:auto;}
-/* every card in a row matches the tallest one, and every header reserves room for a 3-line title, so a short
-   title ("Receptionist Training") and a long one ("Calendaring & Appointment Setting Training") still line up:
-   the icon sits at the same height across the row and the Start button sits flush with the card bottom. */
-.lp-lessons .module-grid{align-items:stretch;}
-.lp-lessons .module-card.mc-clean .module-head, .lp-orient .module-card.mc-clean .module-head{min-height:92px;}
-.lp-lessons .module-card.mc-clean .module-start-btn, .lp-orient .module-card.mc-clean .module-start-btn{margin-top:auto;}
-.lp-lessons .module-card.mc-clean .module-body, .lp-orient .module-card.mc-clean .module-body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:16px 16px 10px;flex:0 1 auto;min-height:0;overflow:visible;container-type:normal;}
-/* the dashboard's module-theme is line-clamped to fit a fixed-height hero card (display:-webkit-box + overflow:hidden,
-   which collapses to 0 height without that fixed height) — here it's plain wrapping text, same specificity so it wins */
-.lp-lessons .module-card.mc-clean .module-theme, .lp-orient .module-card.mc-clean .module-theme{display:block;-webkit-line-clamp:unset;overflow:visible;max-width:none;}
-.lp-lessons .module-icon, .lp-orient .module-icon{font-size:30px;line-height:1;}
-.lp-lessons .module-theme, .lp-orient .module-theme{font-size:12.5px;color:var(--ink-soft);}
-/* Compact layout (laptops and up): the hero banner, the 8 lesson cards and the stat band all fit in one
-   screen with no scrolling, the same way js/lsh-dashboard.js's compact rules do for the retired dashboard. */
-@media(min-width:761px){
-  main.main-lp{padding:12px 16px 18px;}
-  .lp-lessons{margin-bottom:10px;}
-  .lp-lessons-row{gap:10px;}
-  .lp-lessons .module-grid, .lp-orient{gap:10px;}
-  .lp-lessons .module-card.mc-clean .module-head, .lp-orient .module-card.mc-clean .module-head{min-height:0;padding:7px 10px;}
-  .lp-lessons .module-card.mc-clean .mh-day, .lp-orient .module-card.mc-clean .mh-day{font-size:9.5px;}
-  .lp-lessons .module-card.mc-clean .mh-title, .lp-orient .module-card.mc-clean .mh-title{font-size:12px;line-height:1.2;}
-  .lp-lessons .module-card.mc-clean .module-body, .lp-orient .module-card.mc-clean .module-body{padding:8px 12px 4px;gap:4px;}
-  .lp-lessons .module-icon, .lp-orient .module-icon{font-size:20px;}
-  .lp-lessons .module-theme, .lp-orient .module-theme{font-size:11px;}
-  .lp-lessons .module-card.mc-clean .module-start-btn, .lp-orient .module-card.mc-clean .module-start-btn{padding:7px;font-size:13px;margin:0 10px 8px;width:calc(100% - 20px);}
-  .lp-home-acts{margin:8px 0 0;}
-  .lp-home-stats{margin:10px 0 0;gap:6px;}
-  .lp-home-stats .card.stat{padding:6px 10px;}
-  .lp-home-stats .card.stat .num{font-size:16px;}
-  .lp-home-stats .card.stat .lbl{font-size:10.5px;}
-}
-.lp-kc{font-weight:700;}
 .sc-src-ic{width:32px;height:32px;border-radius:10px;background:#FFF3E6;border:1px solid #F7DEC6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 /* score colours: 85% and up, 70% (passing) and up, under 70%, nothing yet */
 .t-top{color:#1E7F4F !important;} .t-ok{color:#2F5BA8 !important;} .t-low{color:#B5531A !important;} .t-none{color:#8A90A6 !important;}
