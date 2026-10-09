@@ -165,7 +165,7 @@ window.portalGate = {
       + '#gate-box.admin{--acc:#ef4444;--acc-h:#f87171;--glow:#3b0d0d}'
       + '#gate-box .gb{width:420px;max-width:100%;margin:auto;background:rgba(255,255,255,.03);border:1px solid #1e2c4d;border-top:3px solid var(--acc);border-radius:12px;padding:32px;box-shadow:0 30px 80px rgba(0,0,0,.5)}'
       + '#gate-box .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}'
-      + '#gate-box .brand img{width:44px;height:44px;border-radius:8px;background:#fff;padding:3px;box-sizing:border-box;border:2px solid var(--acc)}'
+      + '#gate-box .brand img{height:44px;width:auto;border-radius:8px;background:#fff;padding:4px 8px;box-sizing:border-box;border:2px solid var(--acc)}'
       + '#gate-box .brand h1{font-size:16px;font-weight:900;text-transform:uppercase;margin:0;letter-spacing:.04em}'
       + '#gate-box .brand span{display:block;font-size:10px;color:var(--acc);font-weight:700;letter-spacing:.06em}'
       + '#gate-box .tabs{display:flex;gap:6px;margin-bottom:20px;background:#0d1c3d;border-radius:8px;padding:4px}'
@@ -182,7 +182,7 @@ window.portalGate = {
       + '#gate-box .go:hover{background:var(--acc-h)}'
       + '</style>'
       + '<div id="gate-box" class="admin"><div class="gb">'
-      +   '<div class="brand"><img src="/favicon.png" alt="" onerror="this.style.display=\'none\'"><div><h1>Legal Support Help</h1><span>Training Interface Access</span></div></div>'
+      +   '<div class="brand"><img src="'+((typeof LOGO_FULL_SRC !== "undefined") ? LOGO_FULL_SRC : "/favicon.png")+'" alt="" onerror="this.style.display=\'none\'"><div><h1>Legal Support Help</h1><span>Training Interface Access</span></div></div>'
       +   '<div class="pane on" data-p="admin">'
       +     (msg ? '<p class="err">'+esc(msg)+'</p>' : '')
       +     '<p>Administrators sign in with the admin password. Trainees are signed in automatically when they open this training from the LSH Training Portal.</p>'
