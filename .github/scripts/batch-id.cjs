@@ -70,7 +70,9 @@ const pageCanonical = pageScope.canonicalBatch, pageClean = pageScope.cleanBatch
     // 5: signing in through the Worker
     const store = new Map([['ft:trainee:old-hand--b1', JSON.stringify({ id: 'old-hand--b1', name: 'Old Hand', batch: 'B1', approved: true })]]);
     const env = {
-        MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret',
+        // Signing in by name + batch now only exists with PORTAL_ONLY=off: trainees come in from the LSH
+        // Training Portal (sso.cjs covers that). The Batch ID rule is what guards this path when it is used.
+        MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off',
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) }
     };
     const signIn = async (name, batch) => {

@@ -122,7 +122,16 @@ function safeEqual(a, b) {
 const PORTAL_TICKET_MAX_MS = 10 * 60 * 1000;
 // The Portal secret, without any space or line break pasted around it (the Portal does the same).
 function portalSecret(env) { return String(env.PORTAL_SSO_SECRET || "").trim(); }
-function portalOnly(env) { return !!(adminPass(env) && portalSecret(env)); }
+/* Single sign-on: the LSH Training Portal is the only way a trainee gets in, on every LSH platform. The same
+   rule as the CMS (portalOnly in its functions/_portal.js): on as soon as this program has an admin password,
+   whether or not the Portal secret is set yet. A name + batch typed at /api/auth/trainee is refused — the
+   sign-in screen hasn't offered that form since js/portal-gate.js took it over — and only a trainee already
+   signed in on this device can renew their session that way.
+   PORTAL_SSO_SECRET (the same value as the Portal's) is what lets a Portal ticket be checked, so until it is
+   set here no trainee can be signed in at all: /api/auth/portal says so plainly (portal-secret-missing) and
+   /api/auth/status reports portalSecret false, which the sign-in screen shows an administrator.
+   PORTAL_ONLY=off is the way back to the old name + batch sign-in; leave it unset in production. */
+function portalOnly(env) { return !!(adminPass(env) && String(env.PORTAL_ONLY || "").trim().toLowerCase() !== "off"); }
 // why (optional) gets why a ticket was refused: "format", "signature" (the Portal and this program don't share the same secret) or "expired".
 async function readPortalTicket(env, ticket, why = {}) {
   if (!portalSecret(env)) { why.r = "format"; return null; }
@@ -731,7 +740,7 @@ export default {
       if (!kv && path.startsWith("/api/storage")) return json({ error: "LSH_KV namespace is not bound on this Worker." }, 500);
 
       /* ---------- auth ---------- */
-      if (path === "/api/auth/status") return json({ secure, portalOnly: portalOnly(env) });
+      if (path === "/api/auth/status") return json({ secure, portalOnly: portalOnly(env), portalSecret: !!portalSecret(env) });
       if (path === "/api/auth/admin") {
         if (!secure) return json({ error: "not-configured" }, 501);
         const { passphrase } = await request.json();
@@ -780,6 +789,9 @@ export default {
       if (path === "/api/auth/portal") {
         // The Main Portal's sign-in: a signed ticket carries who the trainee is (their name and batch as registered there).
         if (!portalOnly(env)) return json({ error: "not-configured" }, 501);
+        // Single sign-on is on, but this Worker has no PORTAL_SSO_SECRET, so no ticket can be checked and nobody
+        // can be signed in. Say which setting is missing rather than letting it read as an expired link.
+        if (!portalSecret(env)) return json({ error: "This program isn't connected to the LSH Training Portal yet. Please tell your administrator: PORTAL_SSO_SECRET needs to be set on this program's Worker, to the same value as the Portal's.", code: "portal-secret-missing" }, 503);
         const { ticket } = await request.json().catch(() => ({}));
         const why = {};
         const who = await readPortalTicket(env, ticket, why);

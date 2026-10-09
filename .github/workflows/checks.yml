@@ -30,6 +30,8 @@ jobs:
         run: node .github/scripts/check-site.mjs
       - name: Batch IDs are B + MMDDYY (the page and the Worker read them the same way; older codes keep working)
         run: node .github/scripts/batch-id.cjs
+      - name: Single sign-on (the Portal is the only way a trainee gets in; a missing PORTAL_SSO_SECRET says so)
+        run: node .github/scripts/sso.cjs
       - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
         run: node .github/scripts/gemini-keys.mjs
       - name: Documents served from R2 (ranges, 304s, static assets as the fallback)

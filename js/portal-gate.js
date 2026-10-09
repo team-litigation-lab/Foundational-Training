@@ -9,9 +9,11 @@
    with a button back to the Portal instead of a form. Admins sign in on the
    Portal too, but every platform asks an admin for the admin password: no
    ticket signs an admin in (the Admin Portal tab on that note).
-   It turns on when the Worker has PORTAL_SSO_SECRET (/api/auth/status
-   says portalOnly); until then the old name + batch form stays, so
-   nothing locks anyone out before the secret is set on both sides.
+   Single sign-on is how every LSH platform works now: there is no name +
+   batch form on a program's own site any more, whatever the Worker is
+   configured with. The Worker needs PORTAL_SSO_SECRET (the Portal's value)
+   to check a ticket; until it is set, this screen tells an administrator so
+   in as many words, instead of a trainee meeting a dead end.
    Existing registrations and saved sessions are untouched.
    The same file is in every LSH course repo; change it in all of them.
    ============================================================ */
@@ -61,6 +63,7 @@ if(ticket){
 }
 var pending = null;     // the trainee the Portal vouched for, until their registration has been processed
 var notice = "";
+var secretMissing = false;   // single sign-on is on but this Worker has no PORTAL_SSO_SECRET: nobody can be signed in
 
 function esc(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
@@ -75,6 +78,10 @@ window.portalGate = {
   // Runs at boot, once the engine has loaded: learns whether the Portal is the only way in, then signs in whoever arrived with a ticket.
   init: async function(){
     try{ await authStatus(); }catch(e){}
+    try{
+      var st = await fetch("/api/auth/status").then(function(r){ return r.json(); });
+      secretMissing = !!(st && st.portalOnly && st.portalSecret === false);
+    }catch(e){}
     // The Portal sends an administrator here as /?admin=1 (no ticket: admins type the admin password). A trainee session
     // saved in this browser (an earlier test, a shared computer) is signed out first, so the admin password prompt shows
     // instead of that trainee's dashboard.
@@ -181,6 +188,7 @@ window.portalGate = {
       +   '<div class="pane on" data-p="admin">'
       +     (msg ? '<p class="err">'+esc(msg)+'</p>' : '')
       +     '<p>Administrators sign in with the admin password. Trainees are signed in automatically when they open this training from the LSH Training Portal.</p>'
+      +     (secretMissing ? '<p class="err">This program isn\'t connected to the LSH Training Portal yet: set PORTAL_SSO_SECRET on its Worker, to the same value as the Portal\'s. Until then no trainee can be signed in.</p>' : '')
       +     '<div id="gate-aerr" class="err" style="display:none;margin:0 0 10px;font-size:12px"></div>'
       +     '<label for="gate-apass">Admin password</label><input id="gate-apass" type="password" autocomplete="off" onkeydown="if(event.key===\'Enter\')portalGate.admin()">'
       +     '<button type="button" class="go" onclick="portalGate.admin()">Sign in</button>'
