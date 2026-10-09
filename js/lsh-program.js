@@ -413,6 +413,9 @@ main.main-lp .dash-hero-text{grid-column:2;}
 /* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
 .dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
 .lp-lessons-row .module-grid{flex:1;min-width:0;}
+/* 8 lessons read as a balanced 4x2 block beside the orientation card, not 5+3 (narrower screens keep the
+   existing responsive auto-fill/stacked behavior below — this only applies once there's room for it) */
+@media(min-width:1001px){.lp-lessons-row .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
 .lp-orient{flex:0 0 220px;display:flex;}
 .lp-orient .module-card{width:100%;}
 @media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
