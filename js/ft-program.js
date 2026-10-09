@@ -36,6 +36,8 @@ window.ftModuleActivities = function(lesson){
       : {icon:a.icon || "🧑‍🏫", label:a.title, go:"goto('simulators')", note:"with your trainer"}));
   if(typeof window.ftLorCard === "function" && l === 7)
     out.push({icon:"📄", label:"LOR Drafting Activity", go:"goto('lor')"});
+  if(typeof window.ftMedlorCard === "function" && l === 8)
+    out.push({icon:"🏥", label:"Medical Provider LOR Drafting Activity", go:"goto('medlor')"});
   return out;
 };
 
@@ -51,7 +53,7 @@ window.LSH_PROGRAM = {
   ],
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Modules holds the lessons. ✍️ Process Questions (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "medlor"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity and Medical Provider LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
