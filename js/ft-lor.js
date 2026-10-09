@@ -259,12 +259,13 @@ function caseCard(no){
 function steps(tpl){
   const common = [
     "Replace every placeholder with the right detail from your case notes, and remove the brackets.",
+    "Keep the capitalisation the placeholder uses — ALL CAPS stays ALL CAPS, regular text stays regular.",
     "Review each highlighted item: not all of them need changing, but each one has to be checked against your notes.",
     "Attention line: write <b>Attention: Claims Department</b> when no adjuster is assigned; otherwise use the adjuster’s name.",
     "The date is filled in for you and is always today — the day you draft the letter.",
     "Check spelling, grammar, punctuation and the recipient’s address block. The body of the letter is the firm’s and is not yours to reformat."];
   const ticks = "For this activity, tick <b>all</b> types of claims. (In real cases, which claims you open depends on the client’s available coverage.)";
-  const list = tpl.id === "lor1p" ? common.slice(0, 3).concat(ticks, common.slice(3)) : common;
+  const list = tpl.id === "lor1p" ? common.slice(0, 4).concat(ticks, common.slice(4)) : common;
   return `<details class="card lor-steps"><summary>📋 Instructions for this activity</summary><ol>${list.map(x => `<li>${x}</li>`).join("")}</ol>
     <p class="lor-muted">Save it as <code>${e(tpl.naming)}</code> in your assigned Assessment/Activities folder.</p></details>`;
 }

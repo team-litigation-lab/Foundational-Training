@@ -325,6 +325,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
   - **The date is auto-generated** and is always the current date — the day the letter is drafted — as a CMS template editor does it.
   - **"SENT VIA FACSIMILE AND E-MAIL" is typed by hand**, not offered as a placeholder: it carries the template's own wording and the trainee edits it to match how the letter actually goes out.
   - A highlighted run longer than a line (the 3P letter's property-damage paragraph) is a textarea.
+  - **The instruction panel mirrors the trainers' own sheet** (*LOR DRAFTING ACTIVITIES - version 2.18.2026*, in `build/lor/source/`) step for step, including keeping the capitalisation a placeholder uses. Its step 1, *open the template from the training GC*, has no counterpart: here the template is the page.
   - **The 1P letter's three tick boxes work**, and a tick comes out as `[X]` in the download. For this activity every type of claim is ticked.
   - Answers save as the trainee types, in `lor:<id>` (their own record).
 - **⬇ Download** gives the edited letter as a **PDF** or a **Word** file, named by the trainers' convention — `INS – <carrier> - LOR mm.dd.yyyy (VA's name)` for 1P, `… - LOR with Affidavit …` for 3P — with the carrier taken from the assigned case and the date from today.
