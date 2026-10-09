@@ -533,19 +533,6 @@ window.FTCalSim = {
   // open the scheduler on a track (its first week), or where it was
   open(track){ if(track){ const i = C.SCENARIOS.findIndex(x => x.track === track); if(i >= 0 && i !== S.scn) setScn(i); } if(state.view === "calsim") render(); else goto("calsim"); }
 };
-// The cards of the Calendaring Simulators on the Simulators page (js/ft-simulators.js): one per track, with the trainee's scores.
-window.FTCalSimCards = function(){
-  const unlocked = open();
-  return C.TRACKS.map(tk => {
-    const mine = S.data ? C.SCENARIOS.filter(sc => sc.track === tk.id).map(sc => { const l = subs(sc.id).pop(), r = l && S.data.reviews[subKey(l)], b = bestAuto(sc.id);
-      return b < 0 && !l ? "" : `<div class="fts-note">${e(sc.short)}: ${b >= 0 ? `🤖 best ${b}%` : ""}${l ? ` · 📤 submitted` : ""}${r ? ` · 👤 trainer ${e(r.score)}/100` : ""}</div>`; }).join("") : "";
-    return `<div class="card fts-card ${unlocked ? "" : "fts-locked"}"><div class="fts-kicker">${e(tk.where)}${unlocked ? "" : " · opens with Lesson " + LESSON}</div>
-      <h3>${tk.icon} ${e(tk.title)}</h3><p class="fts-note">${e(tk.blurb)}</p>${mine}
-      <div class="fts-tool-act">${unlocked ? `<button class="btn btn-navy" onclick="ftsCalsim('${tk.id}')">📅 Open on the Portal ↗</button>${isTrainee() ? ` <button class="btn btn-ghost btn-sm" onclick="ftsEvaluations('', true)" title="Your calendars in progress, the ones you submitted, and the reports your trainer sent you">📋 My Evaluations ↗</button>` : ""}` : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
-  }).join("");
-};
-// The scheduler's scores are in the trainee's record: read it when the Simulators page opens, so the card shows them.
-window.FTCalSimLoad = function(){ if(isTrainee() && !S.data && !S.loading) load(); };
 
 /* ---------- results from the connected simulators (Portal, CMS) ---------- */
 window.addEventListener("message", ev => {
@@ -849,20 +836,19 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 .cs-eval{padding:14px 16px;} .cs-eval-hd h2{margin:0 0 8px;font-size:18px;color:var(--navy);} .cs-eval h3{font-size:15px;margin:10px 0 6px;color:var(--navy);} .cs-eval-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:8px;} @media(max-width:900px){.cs-eval-cols{grid-template-columns:1fr;}}
 .cs-hist{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;} .cs-hist-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .cs-pill{display:inline-block;background:#eef2ff;color:#1e3a8a;border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700;margin:0 4px 0 6px;} .cs-hist .cs-pill{margin:0;} .cs-pill.ok{background:#dcfce7;color:#166534;} .cs-pill.warn{background:#fef3c7;color:#92400e;}
-.cs-review{flex-basis:100%;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;font-size:13.5px;} .cs-review p{margin:4px 0 0;color:#14532d;}
 .cs-more{padding:14px 18px;} .cs-more p{margin:4px 0 10px;font-size:13.5px;color:var(--ink-soft);} .cs-more a{text-decoration:none;}
 .cs-admin{padding:16px 18px;} .cs-atts{margin:6px 0 10px 18px;} .cs-att-ext{font-size:13px;margin:4px 0;}
 .cs-sub,.cs-sub *{text-transform:none;letter-spacing:normal;} .cs-sub{border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:8px 12px;margin:6px 0;} .cs-sub-hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;} .cs-sub .cs-gridwrap{margin:8px 0;}
-.cs-ro{background:#039be5;color:#fff;border:1px solid #0288d1;z-index:3;} .cs-flag{color:#b91c1c;font-weight:700;} .cs-result{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-left:6px solid #f97316;border-radius:12px;padding:14px 16px;margin:0 0 14px;} .cs-result.ok{border-left-color:#16a34a;}
+.cs-ro{background:#039be5;color:#fff;border:1px solid #0288d1;z-index:3;} .cs-result{background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-left:6px solid #f97316;border-radius:12px;padding:14px 16px;margin:0 0 14px;} .cs-result.ok{border-left-color:#16a34a;}
 .cs-score{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px;} .cs-score b{font-size:32px;color:var(--navy);} .cs-score span{font-weight:700;color:var(--ink-soft);}
 .cs-item{border-top:1px solid var(--line,#e5e7eb);padding:8px 0;font-size:13.5px;} .cs-item-hd{display:flex;gap:6px;align-items:baseline;} .cs-item-hd span{margin-left:auto;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
 .cs-item.ok .cs-item-hd{color:#166534;} .cs-item.bad .cs-item-hd{color:#991b1b;} .cs-item ul{margin:4px 0 0 22px;padding:0;color:#7f1d1d;font-size:13px;} .cs-tnote{margin-top:4px;font-size:13px;color:#14532d;background:#f0fdf4;border-radius:6px;padding:4px 8px;}
-.cs-review ul{margin:6px 0 0 20px;padding:0;font-size:13px;color:#14532d;} .cs-rv-ts{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px;} .cs-rv-t{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv-t input{padding:6px 8px;font:inherit;font-weight:400;}
-.cs-evlist{margin:6px 0 10px 18px;padding:0;font-size:13px;} .cs-rv{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0 4px;} .cs-rv label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv input{width:90px;padding:6px 8px;} .cs-rv-c{flex:1 1 280px;} .cs-rv textarea{width:100%;padding:6px 8px;font:inherit;}
+.cs-rv-ts{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px;} .cs-rv-t{display:flex;flex-direction:column;gap:2px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv-t input{padding:6px 8px;font:inherit;font-weight:400;}
+.cs-rv{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:8px 0 4px;} .cs-rv label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink-soft);} .cs-rv input{width:90px;padding:6px 8px;} .cs-rv-c{flex:1 1 280px;} .cs-rv textarea{width:100%;padding:6px 8px;font:inherit;}
 .cs-blurb{margin:0 0 12px;font-size:13.5px;color:var(--ink-soft);max-width:820px;} .cs-weeks{margin-top:-4px;} .cs-wk{font-size:12.5px;padding:6px 14px;} .cs-et{font-size:11px;color:var(--ink-soft);} .cs-chip{background:#e0f2fe;color:#075985;margin-left:4px;}
 .cs-modal{position:fixed;inset:0;z-index:9800;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;}
 .cs-dlg{width:min(460px,100%);background:#fff;border-radius:16px;padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:12px;}
-.cs-m-title{border:0;border-bottom:2px solid #1a73e8;font-size:21px;padding:4px 2px 6px;outline:none;color:#202124;width:100%;} .cs-m-when{font-size:13.5px;color:#3c4043;}
+.cs-m-title{border:0;border-bottom:2px solid #1a73e8;font-size:21px;padding:4px 2px 6px;outline:none;color:#202124;width:100%;}
 .cs-m-row{display:flex;gap:8px;align-items:center;font-size:13.5px;color:#3c4043;} .cs-colors{display:flex;gap:6px;flex-wrap:wrap;} .cs-sw{width:20px;height:20px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #dadce0;cursor:pointer;padding:0;} .cs-sw.on{box-shadow:0 0 0 2px #1a73e8;} .cs-sw:focus-visible{outline:2px solid #1a73e8;outline-offset:2px;} .cs-sw-def{background:#039be5;} .cs-m-cname{font-size:12.5px;color:#5f6368;} .cs-rule{background:#fff7ed;border-left:3px solid #f4511e;border-radius:6px;padding:6px 8px;} .cs-rule b{color:#9a3412;} .cs-req.cs-bad,.cs-ro.cs-bad{outline:2px dashed #fde68a;outline-offset:-3px;} .cs-m-row input[type=text],.cs-m-row input:not([type]){flex:1;border:0;border-bottom:1px solid #dadce0;padding:5px 2px;font:inherit;outline:none;} .cs-m-top{align-items:flex-start;} .cs-m-row textarea{flex:1;border:1px solid #dadce0;border-radius:8px;padding:6px 8px;font:inherit;resize:vertical;}
 .cs-m-btns{display:flex;gap:8px;align-items:center;} .cs-m-btns span{flex:1;}
 .cs-ai,.cs-fb{background:#f8fafc;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:12px 14px;margin:8px 0;flex-basis:100%;} .cs-ai p{margin:4px 0;font-size:14px;} .cs-fb{background:#fff;border-left:5px solid #039be5;} .cs-fb-hd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;} .cs-fb-hd h3{margin:0;font-size:16px;color:var(--navy);}

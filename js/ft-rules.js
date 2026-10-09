@@ -590,7 +590,7 @@ body.ft-orient #lessonSlideWrap .btn-ghost{background:transparent !important;col
 body.ft-orient #lessonSlideWrap .btn-ghost:hover{background:rgba(255,255,255,.1) !important;}
 body.ft-orient #lessonSlideWrap .btn-navy{background:var(--orange) !important;color:#fff !important;border-color:var(--orange) !important;}
 body.ft-orient #lessonSlideWrap .ftr-copied{color:#9BE7B0 !important;border-color:#9BE7B0 !important;}
-body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan, .ftr-lesson, .ftr-eg, .ftr-to) :is(p, li, span:not(.ftr-todo-n):not(.ftr-part-h > span), small, b, em, .ftr-when, .ftr-tip, .ftr-def span, .ftr-todo-tx, .ftr-soon, .ftr-embed-bar, figcaption){color:#E7EAF3 !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan, .ftr-lesson, .ftr-eg, .ftr-to) :is(p, li, span:not(.ftr-todo-n):not(.ftr-part-h > span), small, b, em, .ftr-when, .ftr-tip, .ftr-def span, .ftr-todo-tx, .ftr-embed-bar, figcaption){color:#E7EAF3 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-part-h, .ftr-def b, .ftr-lesson b, .ftr-chan-h){color:#fff !important;}
 body.ft-orient #lessonSlideWrap .ftr-chan-h{color:#F6C79A !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-def, .ftr-aux, .ftr-todo){border-top-color:rgba(255,255,255,.14) !important;}
@@ -619,8 +619,6 @@ body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
 .ftr-test{display:flex;flex-direction:column;gap:8px;} .ftr-test .ftr-aux{border-top:0;padding:0;}
 .ftr-when{margin:0!important;font-size:15px!important;color:var(--ink)!important;}
 .ftr-links{display:flex;gap:8px;flex-wrap:wrap;} .ftr-links a.btn{text-decoration:none;}
-.ftr-sample{margin:4px 0 0;} .ftr-sample img{display:block;width:100%;border:1px solid var(--line);border-radius:8px;}
-.ftr-sample figcaption{margin-top:4px;font-size:14px;color:var(--ink-soft);}
 .ftr-after{margin-top:14px;}
 .ftr-list{margin:0;padding-left:20px;font-size:15px;line-height:1.5;} .ftr-list li{margin-bottom:4px;}
 .ftr-aux small{font-size:14px;color:var(--ink-soft);} .ftr-aux a.btn{text-decoration:none;flex-shrink:0;}

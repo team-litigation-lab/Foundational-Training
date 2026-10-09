@@ -106,7 +106,6 @@ const PROCESS_SETS = [
     "Judge whether the net sheet should be presented before or after lien negotiations are finalized and why.",
     "Assess whether it’s appropriate for the legal team to pressure clients to accept settlements. Where is the ethical boundary?"]}
 ].filter(set=>DAYS.find(d=>d.id===set.lesson));   // a lesson taken off the platform (build/lessons/off/) takes its set with it
-window.FT_PROCESS_SETS = PROCESS_SETS;
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
@@ -405,7 +404,6 @@ const kcReview = id => (KR.id === state.traineeId && KR.data && KR.data.lessons[
 const trainerScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.max(0, Math.min(100, Math.round(Number(r.score)))) : null;
 // The lesson's Knowledge Check score: the trainer's when they gave one, else the best graded attempt.
 function kcBest(id){ const t = trainerScore(kcReview(id)); if(t != null) return t; const r = kcRec(id); return r && r.attempts ? r.best : null; }
-window.ftKcFinal = kcBest;
 // A trainer's score reaches the lesson's progress (and the trainee's record): a passing one finishes the lesson.
 function applyReviews(){
   let changed = false;
@@ -584,7 +582,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-preview{padding:10px 14px;margin:0 0 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:13.5px;}
 .fp-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .fp-hero p{margin:0 0 14px;color:var(--ink-soft);font-size:15px;}
 .fp-save{margin-left:6px;font-size:13px;color:var(--success);}
-.fp-muted{color:var(--ink-soft);font-size:13.5px;} .fp-link{cursor:pointer;color:var(--orange-deep);font-weight:700;}
+.fp-muted{color:var(--ink-soft);font-size:13.5px;}
 .fp-folder{padding:12px 16px;margin-bottom:14px;font-size:15px;} .fp-folder label{display:block;margin-bottom:6px;color:var(--navy);}
 .fp-folder-row{display:flex;gap:8px;} .fp-folder-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fp-set{padding:0;margin-bottom:12px;overflow:hidden;} .fp-locked{opacity:.65;}
@@ -594,15 +592,11 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-st{font-size:12.5px;border-radius:999px;padding:3px 10px;} .fp-st.st-none{background:var(--bg);color:var(--ink-soft);} .fp-st.st-part{background:#FEF7C3;color:#7a5d00;} .fp-st.st-done{background:var(--success-bg);color:var(--success);}
 .fp-body{border-top:1px solid var(--line);padding:12px 16px 16px;}
 .fp-name{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:14px;}
-.fp-name span{font-weight:800;color:var(--orange-deep);} .fp-name code, .fp-slide code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere;}
+.fp-name span{font-weight:800;color:var(--orange-deep);} .fp-name code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}
 .fp-qs textarea{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
 .fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
 .fp-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;} .fp-actions a.btn{text-decoration:none;}
-.fp-slide .fp-lead{font-size:15.5px;margin:0 0 10px;} .fp-slide-qs{margin:0 0 12px;padding-left:34px !important;font-size:15px;} .fp-slide-qs li{margin:5px 0;}
-.lesson-card .fp-slide ol{list-style:decimal;} .lesson-card .fp-slide ol > li{padding-left:2px;text-align:left;}
-.lesson-stage #lessonSlideWrap .lesson-card .fp-slide ol > li::before, .lesson-card .fp-slide ol > li::before{content:none;display:none;}
-.lesson-stage #lessonSlideWrap .lesson-card .fp-slide li{text-align:left;}
 .fp-admin{padding:18px 20px;} .fp-admin h3{margin:0 0 4px;color:var(--navy);}
 .fp-batch{margin-top:12px;} .fp-batch-hd{cursor:pointer;padding:6px 0;color:var(--navy);font-size:15px;}
 .fp-arow{border:1px solid var(--line);border-radius:10px;margin:6px 0;padding:8px 12px;background:#fff;}

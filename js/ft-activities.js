@@ -17,22 +17,11 @@
    ============================================================ */
 
 // This file's state, and the feedback card its sample shows in.
-function daState(){ return state.da || (state.da = {byDay:{}, loadedAt:0, open:null, subs:null, adminDay:1, adminSub:"manage", edit:null}); }
-function daScoreTotals(scores){
-  const n = scores.length, total = scores.reduce((a, x) => a + (Number(x.score) || 0), 0);
-  return {total, max: n * 5, finalRating: n ? Math.round(total / n * 100) / 100 : 0};
-}
-function daScoresTable(fb){
-  const t = daScoreTotals(fb.scores);
-  return `<table class="da-score"><thead><tr><th>Criteria</th><th>Score</th><th>Evaluation</th></tr></thead><tbody>
-    ${fb.scores.map((x, i) => `<tr><td><b>${i + 1}. ${esc(x.criterion)}</b></td><td class="da-score-n">${Number(x.score) || 0}/5</td><td>${esc(x.evaluation || "")}</td></tr>`).join("")}
-    </tbody></table>
-    <div class="da-score-tot"><span>Total Score: <b>${t.total}/${t.max}</b></span><span>Final Rating: <b>${t.finalRating.toFixed(2)}/5.00</b></span></div>`;
-}
+function daState(){ return state.da || (state.da = {}); }
 function daFeedbackCard(fb, title){
   const list = (h, arr) => (arr || []).length ? `<div class="da-fb-l"><b>${h}</b><ul>${arr.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : "";
   return `<div class="card da-fb"><div class="da-fb-h"><span>💬 ${esc(title)}</span>${fb.rating ? `<span class="pill ${fb.rating === "Strong" ? "pill-done" : fb.rating === "Needs Support" ? "pill-locked" : "pill-open"}">${esc(fb.rating)}</span>` : ""}</div>
-    ${fb.summary ? `<p>${esc(fb.summary)}</p>` : ""}${(fb.scores || []).length ? daScoresTable(fb) : ""}${list("What worked", fb.strengths)}${list("Not yet — build on this", fb.areasToBuild)}${list("Next steps", fb.nextSteps)}
+    ${fb.summary ? `<p>${esc(fb.summary)}</p>` : ""}${list("What worked", fb.strengths)}${list("Not yet — build on this", fb.areasToBuild)}${list("Next steps", fb.nextSteps)}
     ${fb.sentAt ? `<div class="da-note">Sent ${fmtDate(fb.sentAt)}</div>` : ""}</div>`;
 }
 
@@ -249,40 +238,14 @@ Object.assign(window, {fbAddPasted, fbUpload, fbRemove, fbImport, fbLearn, fbTog
 (function(){
   const css = `
 .admin-tabs{flex-wrap:wrap;row-gap:4px;} .admin-tab-btn{white-space:nowrap;flex:0 0 auto;}
-.da-day{margin-bottom:22px;} .da-day-h{color:var(--navy);font-size:16px;margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
-.da-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
-.da-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:16px 18px;cursor:pointer;font:inherit;border:1px solid var(--line);}
-.da-card:hover:not([disabled]){border-color:var(--orange);} .da-card.locked{opacity:.6;cursor:not-allowed;}
-.da-card-t{font-weight:800;color:var(--navy);font-size:15px;} .da-card-m{font-size:12.5px;color:var(--ink-soft);}
-.da-body{padding:18px 22px;margin-bottom:14px;font-size:14.5px;line-height:1.6;} .da-body p{margin:0 0 10px;} .da-body ul{margin:0 0 10px;padding-left:22px;}
-.da-files{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
-.da-answer{padding:18px 22px;margin-bottom:14px;} .da-textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:12px;border:1px solid var(--line);border-radius:10px;min-height:200px;}
-.da-upload{margin-top:12px;font-size:14px;} .da-note{font-size:12.5px;color:var(--ink-soft);}
+.da-note{font-size:12.5px;color:var(--ink-soft);}
 .da-fb{padding:16px 20px;margin-bottom:14px;border-left:4px solid var(--orange);} .da-fb p{margin:6px 0 8px;font-size:14.5px;}
-.da-score{width:100%;border-collapse:collapse;margin:8px 0;font-size:13.5px;} .da-score th,.da-score td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
-.da-score th{background:#F4F6FB;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);} .da-score td:first-child{width:28%;} .da-score-n{white-space:nowrap;font-weight:800;color:var(--navy);width:70px;}
-.da-score textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;} .da-score select{font:inherit;padding:3px 6px;}
-.da-score-tot{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;margin:6px 0 10px;} .da-score-tot b{color:var(--navy);}
-.da-score-edit{margin-bottom:12px;} .da-desc{font-weight:500;font-size:12px;color:var(--ink-soft);margin-top:4px;} .da-desc summary{cursor:pointer;} .da-desc div{margin:3px 0;}
-.da-scoring{margin:6px 0 12px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;} .da-scoring summary{cursor:pointer;}
-.da-crit{margin:4px 0 0 18px;padding:0;font-size:13px;} .da-crit li{margin:2px 0;}
 .da-fb-h{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:800;color:var(--navy);} .da-fb-l{font-size:14px;} .da-fb-l ul{margin:4px 0 8px;padding-left:22px;}
-.da-prev{margin-bottom:14px;} .da-prev summary{cursor:pointer;font-weight:700;color:var(--navy);margin-bottom:8px;}
-.da-subtabs,.da-review-bar,.da-daychips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
-.da-subtabs button,.da-review-bar > button:not(.btn),.da-daychips button{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:999px;padding:6px 14px;cursor:pointer;}
-.da-subtabs button.active,.da-review-bar > button.active,.da-daychips button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
-.da-daychips b{background:var(--orange);color:#fff;border-radius:999px;padding:0 6px;font-size:11px;margin-left:3px;}
-.da-review-bar select{font:inherit;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);}
-.da-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;} .da-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:10px;}
-.da-row-t{font-weight:700;flex:1 1 220px;} .da-row-m{font-size:12.5px;color:var(--ink-soft);} .da-row-b{display:flex;gap:4px;}
-.da-form,.fbs-card{padding:18px 20px;margin-bottom:14px;} .da-form label,.fbs-card label,.da-rev-f label{display:block;font-weight:700;font-size:13px;color:var(--navy);margin:0 0 10px;}
-.da-form label span,.fbs-card label span,.da-rev-f label span{font-weight:500;color:var(--ink-soft);}
-.da-form input[type=text],.da-form textarea,.fbs-card textarea,.da-rev-f textarea,.da-rev-f select{display:block;width:100%;box-sizing:border-box;margin-top:4px;font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;}
-.da-form-row{margin:0 0 12px;font-size:13px;} .da-check{display:inline-flex !important;gap:6px;align-items:center;font-weight:600 !important;margin:4px 14px 0 0 !important;}
+.da-check{display:inline-flex !important;gap:6px;align-items:center;font-weight:600 !important;margin:4px 14px 0 0 !important;}
 .da-chip{display:inline-flex;gap:6px;align-items:center;background:#F3F5FB;border-radius:999px;padding:3px 10px;font-size:12.5px;margin:4px 6px 4px 0;} .da-chip button{border:0;background:none;cursor:pointer;color:var(--ink-soft);}
-.da-rev{padding:16px 18px;margin-bottom:12px;} .da-rev-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px;}
-.da-rev summary{cursor:pointer;font-weight:700;color:var(--navy);font-size:13px;} .da-rev-a{background:#F8F9FC;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:14px;max-height:320px;overflow:auto;}
-.da-rev-f{margin-top:10px;} .da-rev-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;} @media(max-width:900px){.da-rev-3{grid-template-columns:1fr;}}
+.fbs-card{padding:18px 20px;margin-bottom:14px;} .fbs-card label{display:block;font-weight:700;font-size:13px;color:var(--navy);margin:0 0 10px;}
+.fbs-card label span{font-weight:500;color:var(--ink-soft);}
+.fbs-card textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;}
 .fbs-h{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;color:var(--navy);} .fbs-traits{margin:0 0 10px;}
 .fbs-sample{border-top:1px solid var(--line);padding:8px 0;font-size:13px;display:grid;gap:4px;}`;
   const el = document.createElement("style"); el.id = "da-css"; el.textContent = css; document.head.appendChild(el);

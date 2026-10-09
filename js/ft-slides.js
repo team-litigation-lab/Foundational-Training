@@ -79,7 +79,6 @@ const css = `
 .cs-do > b, .cs-dont > b{display:block;font-size:13px;font-weight:800;letter-spacing:.04em;margin-bottom:6px;}
 .cs-do > b{color:var(--success);} .cs-dont > b{color:var(--danger);}
 .cs-do ul, .cs-dont ul{margin:0;padding-left:18px;} .cs-do li, .cs-dont li{margin:3px 0;font-size:14.5px;}
-.cs-code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px dashed var(--line);border-radius:8px;padding:2px 8px;}
 .cs-tip, .cs-warn, .cs-note{display:flex;gap:10px;align-items:flex-start;border-radius:14px;padding:12px 16px;font-size:14.5px;line-height:1.5;}
 .cs-tip{background:#FBF1E6;border-left:4px solid var(--orange);}
 .cs-warn{background:var(--danger-bg);border-left:4px solid var(--danger);}

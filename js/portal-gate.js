@@ -151,7 +151,7 @@ window.portalGate = {
         + '<button id="loginSubmitBtn" class="btn btn-primary" style="display:none"></button>'
         + '</div></div>';
     }
-    var startTab = wantAdmin ? "admin" : "trainee"; wantAdmin = false;   // /?admin=1 (and the Portal's admin launch): the Admin Portal tab
+    wantAdmin = false;   // /?admin=1 (and the Portal's admin launch) is handled above; the gate itself always opens on its own tabs
     var msg = notice; notice = "";
     var program = esc(String(document.title||"Training Program").replace(/^LSH\s+/,""));
     return '<style>'
