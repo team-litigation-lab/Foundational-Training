@@ -387,6 +387,18 @@ Storage (`ft:` prefix, rules in `worker.js`):
 - **Log-in credentials are never on the platform.** Wherever the guide lists a username or password, trainers get a link to the credentials document instead. The import stops if any credential would be written.
 - **Drive files** open in a draggable pop-out viewer, the same one as the LSH Training Portal's Recorded Lectures. Videos ask "Do you want to watch…?" first.
 
+## 🎨 Colours and backgrounds
+
+Every flat brand colour on the platform is painted as a **gradient**, and the pages that used to be a flat cream sheet now carry a **courtroom photograph** behind them. Both live in `js/ft-theme.js`, which the build loads last so it comes after every stylesheet it paints over.
+
+- **The gradients.** The palette tokens in `index.html` (`--navy`, `--orange`, `--success`, …) keep their flat values, because they are also used for text, borders and shadows, where a gradient is not a legal value. `ft-theme.js` adds a parallel set of `--grad-*` tokens and hands them to the surfaces as a `background-image`, which sits on top of each rule's own `background-color`. Each gradient keeps the colour it replaces as its **middle stop**, so nothing gets lighter or darker overall and the text on it keeps the contrast it had. A surface the file doesn't name still looks the way it always did, since the flat colour underneath is the fallback.
+  - The file lists the surfaces by the token they were painted with, so changing the palette changes the gradients with it in one place. The lists came from every rule in `index.html` and `js/*.js` that paints a surface in a brand colour.
+  - `!important` is applied **per selector**, never to a whole list: a token's list is split into a plain rule and, only where one is needed, a forced one. A blanket `!important` would also beat the rules that repaint a surface somewhere else — the lesson card's Start button, which `js/lsh-card-frame.js` turns from navy into a pale strip with navy text, is the case that catches it.
+  - The one-off warm and cool tints are too many and too varied to name a gradient for each, so they get a **sheen** instead: a wash that lightens the top-left and deepens the bottom-right of whatever colour is already there.
+- **The photographs** (`img/bg-courtroom.webp`, `bg-flag-law.webp`, `bg-chamber.webp`, `bg-scales.webp`, `bg-gavel-book.webp`) sit under a cream wash on the pages that were a flat `#FFFDF8` sheet: a lesson's opening page and its native slides, the Platform Orientation slides, the SOP slides and the certificate (the faintest wash of the three, so the printed sheet stays clean). A lesson's photo is picked from its number, so every page of a lesson shows the same one and neighbouring lessons differ. The white boxes sitting straight on a cream page are let through a little, so the photograph reads as the page's background instead of a border around a slab.
+- **The slides that already have a background of their own are untouched**: the Canva decks (`body.ft-fit`) and the Orientation deck with the trainers' design (`body.ft-orient`) both set their own background with `!important` on a more specific selector, so they win over everything in this file. That is by design — don't "fix" it.
+- **The standalone pages** carry the same palette in their own `<style>`, since they don't load the platform's scripts: `glossary.html` (with `bg-flag-law.webp` behind it), `kb.html` (which already had `kb-bg.webp`) and `ft/day17/word-game-1.html`, whose warm paper palette gets its own gradients and `bg-gavel-book.webp` behind the grain.
+
 ## Files
 
 | Path | What it is |
@@ -419,6 +431,7 @@ Storage (`ft:` prefix, rules in `worker.js`):
 | `js/lsh-program.js` | The program layout (the same file in every LSH course repo): the five sections in the top bar, 📚 Training Modules (`#/modules`) and its tabs, 🏅 Scorecard (`#/scorecard`) and Admin Master Control → 🏅 Scorecards. |
 | `js/ft-program.js` | This program's setup for the layout: the Training Modules pages, the Practice Lab's pages and what the Scorecard collects. |
 | `js/ft-activities.js` | Admin → 🗣 Feedback Style (the 📝 Activities page was taken off). |
+| `js/ft-theme.js` | The gradient theme and the photographs behind the cream pages (see *Colours and backgrounds*). Loads last, after every stylesheet it paints over. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the on-platform sheet, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too, with the Drive sheet's reader (`fromSheetCsv`) and the Monitoring Sheet's check (`gradeMonitorText`). |
 | `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
@@ -438,7 +451,7 @@ The script:
 - drops the EA/PA-only heavy content, and EA/PA's lesson slide background (the navy LSH template in its `eapa-updates.js`): the lessons here are deck pages, and the Orientation has its own background
 - applies the branding
 - loads `js/portal-gate.js` and `js/portal-link.js` once each, stamped with this build's version
-- adds `js/ft-updates.js`
+- adds `js/ft-updates.js`, and `js/ft-theme.js` last of all (the gradient theme has to come after every stylesheet it paints over)
 
 Every edit checks that its anchor exists, so the build stops with an error if the EA/PA portal changed that part. Update the anchor in `build.py` and run it again. Rebuild when EA/PA ships new engine features.
 

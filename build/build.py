@@ -191,6 +191,10 @@ s = s[:k] + f'<script src="/js/lsh-card-frame.js?v={build_tag}"></script>\n' + s
 k = s.rfind("</body>")
 s = s[:k] + f'<script src="/js/ft-program.js?v={build_tag}"></script>\n<script src="/js/lsh-program.js?v={build_tag}"></script>\n' \
     + f'<script src="/js/lsh-tool-links.js?v={build_tag}"></script>\n' + s[k:]
+# The gradient theme and the photographs behind the cream pages (js/ft-theme.js). It overrides the
+# backgrounds every stylesheet above sets, so it has to be the last file on the page.
+k = s.rfind("</body>")
+s = s[:k] + f'<script src="/js/ft-theme.js?v={build_tag}"></script>\n' + s[k:]
 
 
 # 🔐 Trainees sign in on the LSH Training Portal only (js/portal-gate.js). The gate file loads in <head>, before the engine,

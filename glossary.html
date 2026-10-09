@@ -7,10 +7,18 @@
 <title>Legal Glossary (US Law) · LSH Knowledge Base</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <style>
-:root{--bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5A6075}
+:root{--bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5A6075;
+  /* The gradients the flat colours are painted with, and the photograph behind the page.
+     Each gradient keeps its flat colour as the middle stop, so the text on it keeps its contrast. */
+  --grad-navy:linear-gradient(135deg,#333A5E 0%,#262B45 52%,#1A1E33 100%);
+  --grad-orange:linear-gradient(135deg,#EFA560 0%,#DB8437 50%,#C06E22 100%);
+  --grad-page:linear-gradient(160deg,#F5F7FC 0%,#EEF0F6 45%,#E3E7F2 100%);
+  --grad-paper:linear-gradient(165deg,#FFFFFF 0%,#FDFDFF 55%,#F6F8FD 100%)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-header{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;position:sticky;top:0;z-index:5}
+body{margin:0;background:var(--bg);background-image:var(--grad-page);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;position:relative}
+/* The photograph behind the page, at 20% (the rest is the page's own gradient showing through). */
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:url("/img/bg-flag-law.webp") center/cover no-repeat;opacity:.2;pointer-events:none}
+header{background:var(--navy);background-image:var(--grad-navy);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;position:sticky;top:0;z-index:5}
 header img{width:32px;height:32px;border-radius:6px}
 header b{font-size:17px}
 header a.back{margin-left:auto;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:14px}
@@ -18,23 +26,23 @@ header a.back:hover{background:rgba(255,255,255,.12)}
 main{max-width:900px;margin:0 auto;padding:16px}
 h1{font-size:22px;margin:8px 0 4px}
 .sub{color:var(--muted);margin:0 0 12px;font-size:14px}
-.tools{position:sticky;top:53px;z-index:4;background:var(--bg);padding:8px 0}
+.tools{position:sticky;top:53px;z-index:4;background:var(--bg);background-image:var(--grad-page);padding:8px 0}
 input[type=search]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--paper)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chips button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
-.chips button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.chips button.on{background:var(--navy);background-image:var(--grad-navy);color:#fff;border-color:var(--navy)}
 .az{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
 .az a{font-size:13px;text-decoration:none;color:var(--navy);padding:2px 6px;border-radius:6px;border:1px solid var(--line);background:var(--paper)}
 .az a.off{opacity:.35;pointer-events:none}
 .count{font-size:13px;color:var(--muted);margin:4px 0}
 h2.l{margin:20px 0 6px;font-size:18px;color:var(--orange);border-bottom:2px solid var(--line);padding-bottom:2px}
-.t{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:6px 0}
+.t{background:var(--paper);background-image:var(--grad-paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:6px 0}
 .t dt{font-weight:700}
-.t dt i{font-weight:400;font-style:normal;font-size:12px;color:#fff;background:var(--navy);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
+.t dt i{font-weight:400;font-style:normal;font-size:12px;color:#fff;background:var(--navy);background-image:var(--grad-navy);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
 .t dd{margin:2px 0 0}
 .none{padding:24px;text-align:center;color:var(--muted)}
 .disc{font-size:13px;color:var(--muted);margin-top:24px;border-top:1px solid var(--line);padding-top:10px}
-mark{background:#FFE7C2}
+mark{background:#FFE7C2;background-image:linear-gradient(135deg,#FFF0D8 0%,#FFE7C2 55%,#F7D8A6 100%)}
 </style>
 </head>
 <body>
