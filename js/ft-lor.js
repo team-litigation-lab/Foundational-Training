@@ -343,39 +343,100 @@ function renderPage(){
 }
 
 /* ---------- the trainer: who gets which case ---------- */
-const A = {rows:null, loading:false, open:{}};
+// rows: the approved, live trainees; archived: the ones taken off the list, kept so they can be restored.
+// pick: which trainee each batch folder is showing (the batch is one row, the trainee a dropdown).
+const A = {rows:null, archived:null, loading:false, open:{}, pick:{}, archOpen:false, busy:false};
 async function loadAdmin(){
   A.loading = true;
   try{
     const keys = (await sharedList("trainee:")) || [];
     const ids = keys.map(k => String(k).replace(/^trainee:/, ""));
     const people = await (window.ftGetMany ? ftGetMany(ids.map(id => "trainee:" + id)) : sharedGetMany(ids.map(id => "trainee:" + id)));
-    const rows = ids.map((id, i) => ({id, rec: people[i] || {}})).filter(x => x.rec && !x.rec.archived && x.rec.approved)
-      .map(x => ({id:x.id, name:x.rec.name || x.id, batch:x.rec.batch || ""}));
+    const all = ids.map((id, i) => ({id, rec: people[i] || {}})).filter(x => x.rec && x.rec.approved)
+      .map(x => ({id:x.id, name:x.rec.name || x.id, batch:x.rec.batch || "", rec:x.rec, archived:!!x.rec.archived}));
+    const rows = all.filter(x => !x.archived);
     const assigns = await (window.ftGetMany ? ftGetMany(rows.map(x => "lorassign:" + x.id)) : sharedGetMany(rows.map(x => "lorassign:" + x.id)));
     rows.forEach((x, i) => { x.a = assigns[i] || null; });
-    A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  }catch(err){ A.rows = []; }
+    const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
+    A.rows = rows.sort(byName);
+    A.archived = all.filter(x => x.archived).sort(byName);
+  }catch(err){ A.rows = []; A.archived = []; }
   A.loading = false;
   if(state.view === "lor") render();
+}
+// Batches, newest first, with "no batch set" last — the order the folders are listed in.
+function batchKeys(rows){
+  const groups = {}; (rows || []).forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
+  return {groups, keys: Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}))};
+}
+const batchName = b => b ? "Batch " + b : "No batch set";
+// Which trainee a batch folder is showing: the one picked, else the first still waiting for a case.
+function picked(b, list){
+  const id = A.pick[b];
+  if(id && list.some(x => x.id === id)) return id;
+  return ((list.find(x => !(x.a && x.a.case)) || list[0]) || {}).id || "";
+}
+// Archiving writes the same two fields the engine's Batch Folders write, so both views agree.
+async function setArchived(list, on){
+  const at = new Date().toISOString();
+  for(const x of list){
+    const rec = Object.assign({}, x.rec, {id:x.id});
+    if(on){ rec.archived = true; rec.archivedAt = at; } else { rec.archived = false; delete rec.archivedAt; }
+    if(await sharedSet("trainee:" + x.id, rec) === false) throw new Error("save");
+  }
+  // keep the engine's own admin ledger in step when it is loaded, so Batch Folders shows the same thing
+  if(Array.isArray(state.adminData)) list.forEach(x => {
+    const r = state.adminData.find(r => r && r.id === x.id);
+    if(r){ if(on){ r.archived = true; r.archivedAt = at; } else { r.archived = false; delete r.archivedAt; } }
+  });
 }
 function renderAdmin(){
   if(!A.rows && !A.loading) loadAdmin();
   useScratch();                       // draft on the test copy, never on a trainee's
   const no = myCaseNo();
   const opts = no => CASES.map((c, i) => `<option value="${i + 1}"${no === i + 1 ? " selected" : ""}>${e(caseName(i + 1))}</option>`).join("");
-  const groups = {}; (A.rows || []).forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
-  const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
+  const {groups, keys} = batchKeys(A.rows);
+  // One row per batch folder: the trainee is a dropdown, so a long batch doesn't fill the screen.
+  // Each name carries its own case, so you can see who still needs one without opening anything.
+  const folder = b => {
+    const list = groups[b], id = picked(b, list), who = list.find(x => x.id === id) || {};
+    const done = list.filter(x => x.a && x.a.case).length;
+    return `<div class="lor-batch"><div class="lor-bhead">
+        <b>📁 ${e(batchName(b))}</b>
+        <span class="lor-bcount">${list.length} trainee${list.length === 1 ? "" : "s"} · ${done} of ${list.length} assigned</span>
+        <button class="btn btn-ghost btn-sm lor-arch" type="button" ${A.busy ? "disabled" : ""}
+          onclick="FTLor.archiveBatch(${JSON.stringify(b).replace(/"/g, "&quot;")})"
+          title="Archive every trainee in this batch. Nothing is deleted — restore them below.">📦 Archive batch</button>
+      </div>
+      <div class="lor-arow">
+        <select class="lor-who" aria-label="Trainee in ${e(batchName(b))}" onchange="FTLor.pick(${JSON.stringify(b).replace(/"/g, "&quot;")}, this.value)">
+          ${list.map(x => `<option value="${e(x.id)}"${x.id === id ? " selected" : ""}>${e(x.name)} — ${x.a && x.a.case ? e(caseName(Number(x.a.case))) : "no case yet"}</option>`).join("")}
+        </select>
+        <select aria-label="Case for ${e(who.name || "the trainee")}" ${A.busy ? "disabled" : ""}
+          onchange="FTLor.assign('${e(id)}', this.value, this)"><option value="">— not assigned —</option>${opts(who.a && Number(who.a.case))}</select>
+        <span class="lor-astate">${who.a && who.a.case ? `assigned${who.a.at ? " " + e(new Date(who.a.at).toLocaleDateString()) : ""}` : ""}</span>
+        <button class="btn btn-ghost btn-sm lor-arch" type="button" ${A.busy ? "disabled" : ""}
+          onclick="FTLor.archiveTrainee('${e(id)}')"
+          title="Archive this trainee only. Nothing is deleted — restore them below.">📦 Archive</button>
+      </div></div>`;
+  };
+  const arch = batchKeys(A.archived);
   return `<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
       <p>Hand each trainee one of the ${CASES.length} cases. They draft both letters on this page and download them to upload into the Smart Advocate demo themselves.</p></div>
     ${notice()}
     <section class="card lor-assign"><h2>🧑‍🏫 Assign cases</h2>
-      <p class="lor-muted">One case per trainee. A trainee sees their case notes and both templates as soon as you assign one; changing it keeps whatever they have already drafted.</p>
+      <p class="lor-muted">One case per trainee. A trainee sees their case notes and both templates as soon as you assign one; changing it keeps whatever they have already drafted.
+        Pick the trainee in their batch folder; each name shows the case they already have.</p>
       ${!A.rows ? `<p class="lor-muted">Loading the trainees…</p>` : !A.rows.length ? `<p class="lor-muted">No approved trainee yet.</p>`
-        : keys.map(b => `<div class="lor-batch"><b>📁 ${e(b ? "Batch " + b : "No batch set")}</b>
-          ${groups[b].map(x => `<div class="lor-arow"><span class="lor-aname">${e(x.name)}</span>
-            <select aria-label="Case for ${e(x.name)}" onchange="FTLor.assign('${e(x.id)}', this.value, this)"><option value="">— not assigned —</option>${opts(x.a && Number(x.a.case))}</select>
-            <span class="lor-astate">${x.a && x.a.case ? `assigned${x.a.at ? " " + e(new Date(x.a.at).toLocaleDateString()) : ""}` : ""}</span></div>`).join("")}</div>`).join("")}
+        : keys.map(folder).join("")}
+      ${!(A.archived || []).length ? "" : `<details class="lor-archived" ${A.archOpen ? "open" : ""} ontoggle="FTLor.archOpen(this.open)">
+        <summary>📦 Archived <span class="lor-bcount">${A.archived.length} trainee${A.archived.length === 1 ? "" : "s"}</span></summary>
+        <p class="lor-muted">Archived trainees keep every record and leave the lists above. They are archived everywhere, not only here.</p>
+        ${arch.keys.map(b => `<div class="lor-arow"><span class="lor-aname">📁 ${e(batchName(b))}</span>
+          <span class="lor-astate">${arch.groups[b].map(x => e(x.name)).join(", ")}</span>
+          <button class="btn btn-ghost btn-sm" type="button" ${A.busy ? "disabled" : ""}
+            onclick="FTLor.restoreBatch(${JSON.stringify(b).replace(/"/g, "&quot;")})">↩ Restore</button></div>`).join("")}
+      </details>`}
       <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.refreshAdmin()">Refresh</button></div></section>
     <section class="card lor-preview"><h2>👁 The activity as a trainee sees it</h2>
       <p class="lor-muted">The whole activity, working, so you can check the set-up before you hand the cases out:
@@ -570,7 +631,36 @@ function makeWord(name, lines){
 
 window.FTLor = {
   reload(){ L.id = null; L.draft = null; L.err = ""; render(); },
-  refreshAdmin(){ A.rows = null; render(); },
+  refreshAdmin(){ A.rows = null; A.archived = null; render(); },
+  pick(b, id){ A.pick[b] = id; render(); },
+  archOpen(on){ A.archOpen = !!on; },
+  async archiveBatch(b){
+    const list = ((A.rows || []).filter(x => x.batch === b));
+    if(!list.length){ toast("Nothing to archive in this batch."); return; }
+    if(!confirm(`Archive ${batchName(b)} (${list.length} trainee${list.length === 1 ? "" : "s"})?\n\nThey leave this list and the other admin lists. Nothing is deleted — every record is kept, and you can restore them under 📦 Archived.`)) return;
+    A.busy = true; render();
+    try{ await setArchived(list, true); delete A.pick[b]; toast(`${batchName(b)} archived.`); }
+    catch(err){ toast("Couldn’t archive that batch. Check your connection."); }
+    A.busy = false; A.rows = null; A.archived = null; render();
+  },
+  async archiveTrainee(id){
+    const x = (A.rows || []).find(r => r.id === id);
+    if(!x){ toast("That trainee is no longer on the list."); return; }
+    if(!confirm(`Archive ${x.name}?\n\nThey leave this list and the other admin lists. Nothing is deleted — their records are kept, and you can restore them under 📦 Archived.`)) return;
+    A.busy = true; render();
+    try{ await setArchived([x], true); if(A.pick[x.batch] === id) delete A.pick[x.batch]; toast(`${x.name} archived.`); }
+    catch(err){ toast("Couldn’t archive that trainee. Check your connection."); }
+    A.busy = false; A.rows = null; A.archived = null; render();
+  },
+  async restoreBatch(b){
+    const list = ((A.archived || []).filter(x => x.batch === b));
+    if(!list.length){ toast("Nothing to restore in this batch."); return; }
+    if(!confirm(`Restore ${batchName(b)} (${list.length} trainee${list.length === 1 ? "" : "s"})? They show up again in every admin list.`)) return;
+    A.busy = true; render();
+    try{ await setArchived(list, false); toast(`${batchName(b)} restored.`); }
+    catch(err){ toast("Couldn’t restore that batch. Check your connection."); }
+    A.busy = false; A.rows = null; A.archived = null; render();
+  },
   tab(id){ L.tab = id; render(); window.scrollTo(0, 0); },
   preview(v){ state.lorPreviewCase = Number(v) || 1; render(); },
   clearTest(){ scratch = null; useScratch(); render(); toast("Cleared the test copy."); },
@@ -740,6 +830,16 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-assign,.lor-preview{padding:18px;margin-bottom:18px;}
 .lor-assign h2,.lor-preview h2{margin:0 0 4px;color:var(--navy);font-size:19px;}
 .lor-batch{margin-top:12px;} .lor-batch > b{color:var(--navy);font-size:14px;}
+/* one row per batch folder: its name and counts, then the trainee and case dropdowns under it */
+.lor-bhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.lor-bhead > b{color:var(--navy);font-size:14px;}
+.lor-bcount{font-size:12px;color:var(--ink-soft);}
+.lor-bhead .lor-arch{margin-left:auto;}
+.lor-arch{color:var(--danger);}
+.lor-who{flex:0 0 260px;max-width:100%;}
+.lor-archived{margin-top:14px;border-top:1px solid #EDEFF5;padding-top:10px;}
+.lor-archived summary{cursor:pointer;font-weight:800;color:var(--navy);font-size:14px;}
+@media(max-width:620px){ .lor-bhead .lor-arch{margin-left:0;} .lor-who{flex:1 1 100%;} }
 .lor-arow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #EDEFF5;}
 .lor-aname{flex:0 0 200px;font-weight:600;color:var(--navy);font-size:13.5px;}
 .lor-arow select,.lor-preview select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #D7DBE7;border-radius:8px;background:#fff;max-width:100%;}
