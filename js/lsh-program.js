@@ -276,18 +276,18 @@ function renderScorecard(){
 /* ---------- the pages ---------- */
 const __render = window.render;
 window.render = function(){
-  // Anything that still sets a home view directly (the engine's sign-in, a resume, a page this program
-  // has turned off) lands on 📚 Modules, so there is one landing page however the trainee got here.
-  if(atHome(state.view) && signedIn()){ state.view = HOME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
+  // 📚 Modules (the Workshop redesign's own landing page) is retired in favour of the Standard
+  // Foundational Training dashboard (js/ft-updates.js's renderDashboard — locked lesson cards, the
+  // program's original hero) — "modules" is now a plain alias of "dashboard", not its own page.
+  if(state.view === "modules") state.view = "dashboard";
   const v = state.view;
-  if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
+  if(v !== "scorecard") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
-  // 📚 Modules is the landing page for every viewer, signed in or not (renderModules() already has its own
-  // "not signed in" note instead of a personal progress bar) — only 🏅 My Performance still needs an identity
-  // to compute, so that one alone falls back to the old dashboard/login flow when there isn't one.
+  // 🏅 My Performance still needs an identity to compute, so it falls back to the dashboard/login
+  // flow when there isn't one.
   if(v === "scorecard" && !state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + (v === "modules" ? `<main class="main-lp">${renderModules()}</main>` : `<main class="main-lp">${renderScorecard()}</main>`) + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-lp">${renderScorecard()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   if(v === "scorecard" && isTrainee()) loadMine(SC.id !== state.traineeId || Date.now() - SC.at > 60000);
 };
