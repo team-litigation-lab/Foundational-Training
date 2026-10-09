@@ -198,10 +198,12 @@ function renderModules(){
       ${stepTimeline(all)}
       ${viewer ? "" : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}
     </div>
-    ${pinned.length ? `<div class="dash-main lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
     ${homeStats()}
     ${homeActions(done, all.length)}
-    <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main"><div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div></div></section>
+    <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main lp-lessons-row">
+      ${pinned.length ? `<div class="lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
+      <div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div>
+    </div></section>
     ${ps.length ? `<section class="lp-pages"><h2>🧰 Training pages</h2><div class="lp-grid">${ps.map(m => { const go = m.view ? `goto('${m.view}')` : m.run, n = badgeOf(m);
       return `<div class="card lp-page" role="link" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'){${go}}"><div class="lp-page-h"><span class="lp-ic">${m.icon}</span><b>${e(m.label)}</b>${n ? `<span class="nav-badge">${n}</span>` : ""}</div><p>${e(m.about || "")}</p><span class="lp-go">Open →</span></div>`; }).join("")}</div></section>` : ""}
     ${homeFeedback()}`;
@@ -273,7 +275,10 @@ window.render = function(){
   const v = state.view;
   if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
-  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  // 📚 Modules is the landing page for every viewer, signed in or not (renderModules() already has its own
+  // "not signed in" note instead of a personal progress bar) — only 🏅 My Performance still needs an identity
+  // to compute, so that one alone falls back to the old dashboard/login flow when there isn't one.
+  if(v === "scorecard" && !state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + (v === "modules" ? `<main class="main-lp">${renderModules()}</main>` : `<main class="main-lp">${renderScorecard()}</main>`) + renderFooter();
   try{ afterRender(); }catch(err){}
@@ -396,9 +401,12 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
    not previewing, gets no completion ribbon) the lone .dash-hero-text falls into that 140px column instead
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not. */
 main.main-lp .dash-hero-text{grid-column:2;}
-/* the pinned orientation card, its own row above the numbered lessons (not part of their grid) */
-.lp-orient{display:flex;justify-content:center;margin:18px 0 0;}
-.lp-orient .module-card{max-width:280px;width:100%;}
+/* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
+.dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
+.lp-lessons-row .module-grid{flex:1;min-width:0;}
+.lp-orient{flex:0 0 220px;display:flex;}
+.lp-orient .module-card{width:100%;}
+@media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 /* the program's own stat cards (the dashboard's side band used to hold these) */
 .lp-home-stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
