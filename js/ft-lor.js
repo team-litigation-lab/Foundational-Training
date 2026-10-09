@@ -250,7 +250,7 @@ function renderPage(){
 }
 
 /* ---------- the trainer: who gets which case ---------- */
-const A = {rows:null, loading:false, open:{}};
+const A = {rows:null, loading:false, busy:false, open:{}};
 async function loadAdmin(){
   A.loading = true;
   try{
@@ -271,19 +271,24 @@ function renderAdmin(){
   useScratch();                       // draft on the test copy, never on a trainee's
   const no = myCaseNo();
   const opts = caseOptions;
+  const left = (A.rows || []).filter(x => !(x.a && Number(x.a.case))).length;
   const groups = {}; (A.rows || []).forEach(x => { (groups[x.batch] = groups[x.batch] || []).push(x); });
   const keys = Object.keys(groups).sort((a, b) => (a === "") - (b === "") || b.localeCompare(a, undefined, {numeric:true}));
   return `<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
       <p>Hand each trainee one of the ${CASES.length} cases. They draft both letters on this page and download them to upload into the Smart Advocate demo themselves.</p></div>
     ${notice()}
     <section class="card lor-assign"><h2>🧑‍🏫 Assign cases</h2>
-      <p class="lor-muted">One case per trainee. A trainee sees their case notes and both templates as soon as you assign one; changing it keeps whatever they have already drafted.</p>
+      <p class="lor-muted">One case per trainee. A trainee sees their case notes and both templates as soon as you assign one; changing it keeps whatever they have already drafted.
+        <b>Hand a case to the … without one</b> fills every blank in one go, spread so no two trainees in a batch share a case — it never touches a case you have already handed out, and you can still change any of them afterwards.</p>
       ${!A.rows ? `<p class="lor-muted">Loading the trainees…</p>` : !A.rows.length ? `<p class="lor-muted">No approved trainee yet.</p>`
         : keys.map(b => `<div class="lor-batch"><b>📁 ${e(b ? "Batch " + b : "No batch set")}</b>
           ${groups[b].map(x => `<div class="lor-arow"><span class="lor-aname">${e(x.name)}</span>
             <select aria-label="Case for ${e(x.name)}" onchange="FTLor.assign('${e(x.id)}', this.value, this)"><option value="">— not assigned —</option>${opts(x.a && Number(x.a.case))}</select>
             <span class="lor-astate">${x.a && x.a.case ? `assigned${x.a.at ? " " + e(new Date(x.a.at).toLocaleDateString()) : ""}` : ""}</span></div>`).join("")}</div>`).join("")}
-      <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.refreshAdmin()">Refresh</button></div></section>
+      <div class="lor-aff"><button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.refreshAdmin()">Refresh</button>
+        ${!A.rows || !A.rows.length ? "" : `<button class="btn btn-navy btn-sm" type="button" onclick="FTLor.assignRest()"${A.busy || !left ? " disabled" : ""}>${
+            A.busy ? "Handing them out…" : left ? `Hand a case to the ${left} without one` : "Everyone has a case"}</button>
+          <span class="lor-astate">${A.rows.length - left} of ${A.rows.length} assigned</span>`}</div></section>
     <section class="card lor-preview"><h2>👁 The activity as a trainee sees it</h2>
       <p class="lor-muted">The whole activity, working, so you can check the set-up before you hand the cases out:
         read the notes, fill the highlighted fields, tick the boxes and download both letters exactly as a trainee does.
@@ -358,6 +363,28 @@ window.FTLor = {
               noteRows(c, "p3").map(([k, v]) => `  • ${k}: ${v}`),
               ["", "This is a standalone drafting activity. Do not create a case file in the CMS for it."]);
     await makePdf(`Case Notes - ${caseName(no)}`, lines);
+  },
+  // Fill the blanks in one go. A case already handed out is never touched, and within a batch the
+  // least-used case wins, so no two trainees share one while there are cases left to give.
+  async assignRest(){
+    const rows = A.rows || [], todo = rows.filter(x => !(x.a && Number(x.a.case)));
+    if(!todo.length){ toast("Every trainee already has a case."); return; }
+    if(!confirm(`Hand a case to the ${todo.length} trainee${todo.length === 1 ? "" : "s"} who don’t have one yet?\n\nThe cases you have already handed out are left exactly as they are, and you can still change any of them afterwards.`)) return;
+    const used = {};
+    rows.forEach(x => { const b = used[x.batch] || (used[x.batch] = {}); const n = x.a && Number(x.a.case); if(n) b[n] = (b[n] || 0) + 1; });
+    A.busy = true; render();
+    let ok = 0, bad = 0;
+    for(const x of todo){
+      const b = used[x.batch] || (used[x.batch] = {});
+      let pick = 1;
+      for(let i = 2; i <= CASES.length; i++) if((b[i] || 0) < (b[pick] || 0)) pick = i;
+      const rec = {case:pick, at:new Date().toISOString(), by:"trainer"};
+      if(await sharedSet("lorassign:" + x.id, rec) === false){ bad++; continue; }
+      x.a = rec; b[pick] = (b[pick] || 0) + 1; ok++;
+    }
+    A.busy = false; render();
+    toast(bad ? `Handed out ${ok}. ${bad} didn’t save — Refresh, then hand out the rest again.`
+              : `✓ Handed a case to ${ok} trainee${ok === 1 ? "" : "s"}.`);
   },
   async assign(id, v, el){
     const no = Number(v) || 0;
@@ -459,6 +486,7 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-aname{flex:0 0 200px;font-weight:600;color:var(--navy);font-size:13.5px;}
 .lor-arow select,.lor-preview select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #D7DBE7;border-radius:8px;background:#fff;max-width:100%;}
 .lor-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:13.5px;font-weight:700;color:var(--navy);}
+.lor-aff{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;}
 .lor-pick-note{color:#3730A3;margin-top:8px;}
 .lor-pick-note select{font:inherit;font-size:13px;font-weight:600;padding:4px 8px;border:1px solid #C7D2FE;border-radius:8px;background:#fff;max-width:100%;}
 .lor-astate{font-size:12px;color:var(--ink-soft);}
