@@ -61,7 +61,7 @@ function renderTrackerPage(){
   if(D.id !== state.traineeId){ load(); return `<div class="card fdr-card">Loading your tracker links…</div>`; }
   const d = day(), links = dayLinks(d), res = D.review.days[d];
   const days = [...new Set([today()].concat(Object.keys(D.drive.days), Object.keys(D.review.days)))].sort().reverse().slice(0, 15);
-  return `<div class="fdr-hero"><p class="lp-eyebrow">📚 Training Modules · Task Tracker</p><h1>📋 Daily Task Tracker</h1>
+  return `<div class="fdr-hero"><p class="lp-eyebrow">📚 Modules · Task Tracker</p><h1>📋 Daily Task Tracker</h1>
       <p>Keep your LSH Daily Task Tracker in your VA Output folder and update it before the end of every shift. Each day, add the links to that day’s outputs. The system checks your tracker every night (and when you press ✅ Check now): every open task needs its Daily Note for the day, and the day needs its output links. Your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>🗓 ${e(TR.fmtDate(d))}</h2>
@@ -82,7 +82,7 @@ function linkRow(l, i){
 function renderMonitorPage(){
   if(D.id !== state.traineeId){ load(); return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`; }
   const m = D.review.monitor;
-  return `<div class="fdr-hero"><p class="lp-eyebrow">📚 Training Modules · Monitoring Sheet</p><h1>📒 Training Monitoring Sheet</h1>
+  return `<div class="fdr-hero"><p class="lp-eyebrow">📚 Modules · Monitoring Sheet</p><h1>📒 Training Monitoring Sheet</h1>
       <p>Fill in your Training Monitoring Sheet in your VA Output folder as soon as a discussion is fully covered: the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it every night and when you press ✅ Check now; your trainer adds their score and comments.</p>
       <p><a class="btn btn-ghost btn-sm" href="${e((window.FT_MONITOR_DOC || {}).open || "#")}" target="_blank" rel="noopener noreferrer">📄 The Monitoring Sheet template ↗</a></p></div>
     ${linksCard()}

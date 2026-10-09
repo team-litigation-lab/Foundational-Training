@@ -270,21 +270,21 @@ window.renderDayIntro = function(d){
           <div class="di-box"><b>🗺 What this lesson covers</b><ol class="di-topics">${(ftTopics(d).length ? ftTopics(d) : d.sections).map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
         </div>
       </div></div>
-      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">${ftTopics(d).length ? `${ftTopics(d).length} topics · ${d.sections.length} pages` : `${d.sections.length} parts`}</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
+      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('modules')">← 📚 Modules</button><span class="slide-counter">${ftTopics(d).length ? `${ftTopics(d).length} topics · ${d.sections.length} pages` : `${d.sections.length} parts`}</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
     </div>`;
 };
 const __ftRenderDay = window.renderDay;
 window.renderDay = function(id){
   const d = DAYS.find(x=>x.id===id);
   if(!d) return __ftRenderDay(id);
-  const head = `<a class="back-link" onclick="goto('dashboard')">&larr; Back to roadmap</a>`;
+  const head = `<a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>`;
   if(!dayUnlocked(id)){
     return `${head}
       <div class="card ft-empty-day">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">${esc(ftName(id))} is locked</h2>
         <p style="color:var(--ink-soft);font-size:14px;">${esc(dayLockReason(id))}</p>
-        <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('dashboard')">Back to the roadmap</button>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('modules')">Back to Modules</button>
       </div>`;
   }
   if(!d.sections.length){
@@ -812,13 +812,16 @@ window.certData = function(src){
   return c;
 };
 // EA/PA-only screens (client profile, practice labs, roleplays, handouts, random tasks,
-// facilitator guide) aren't part of this program: they open the dashboard.
+// facilitator guide) aren't part of this program: they open 📚 Modules, this platform's landing page.
 // (🧭 Orientation stays, with this program's slides: js/ft-orientation.js.)
 const FT_OFF_VIEWS = {clientprofile:"renderClientProfile", practice:"renderPracticeHub", tool:"renderTool", handouts:"renderHandouts",
   crisisroleplay:"renderCrisisRoleplayHub", openroleplay:"renderOpenRoleplay", tasks:"renderTasksPage", facilitatorguide:"renderFacilitatorGuide"};
 Object.keys(FT_OFF_VIEWS).forEach(v=>{ window[FT_OFF_VIEWS[v]] = function(){ state.view = "dashboard"; return renderDashboard(); }; });
 const __ftGotoOff = window.goto;
 window.goto = function(view){ if(FT_OFF_VIEWS[view]) arguments[0] = "dashboard"; return __ftGotoOff.apply(this, arguments); };
+// These, and the engine's own dashboard, are aliases of 📚 Modules (#/modules): js/lsh-program.js sends
+// every one of them there, so the sign-in, a saved link and a Back button all land on the same page.
+window.LSH_HOME_ALIASES = Object.keys(FT_OFF_VIEWS).concat("dashboard");
 const __ftTopbar = window.renderTopbar;
 window.renderTopbar = function(){
   return __ftTopbar.apply(this, arguments)

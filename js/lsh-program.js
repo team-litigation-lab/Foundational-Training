@@ -5,9 +5,11 @@
    top bar shows exactly those five:
 
      🏠 Main Portal            the LSH Training Portal (the program's own home, its lessons, is 📚 Modules)
-     📚 Training Modules       #/modules: the lessons, and the program's training pages (Task Tracker, My Notes…),
-                               which share a bar of tabs under the top bar. ✍️ Process Questions is not one of
-                               them: it is its own feature, with its own button in the bar
+     📚 Modules                #/modules: the program's landing page — every way into the platform opens it.
+                               The lessons, and the program's training pages (Task Tracker, My Notes…), which
+                               share a bar of tabs under the top bar. ✍️ Process Questions is not one of them:
+                               it is its own feature, with its own button in the bar. 📚 Modules is the button's
+                               name on every LSH platform: no platform calls its landing page anything else
      🛠 Practice Lab           the Practice Lab Sessions, connected with the simulators (#/simulators)
      🏅 Scorecard              #/scorecard: the trainee's grades, collected from every grading system on the
                                platform; admins get Admin → 🏅 Scorecards, every trainee's in one table
@@ -47,8 +49,20 @@ const badgeOf = m => { try{ return m.badge ? Number(m.badge()) || 0 : 0; }catch(
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["modules", "scorecard"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Modules", scorecard:"My Performance"});
 
+/* ---------- 📚 Modules is the landing page: every way in opens it ---------- */
+// One home, one name for it. Signing in (from the Portal or on this platform), coming back to a saved
+// session, the brand mark, a Back button and an old #/dashboard link all open 📚 Modules, instead of a
+// second, half-empty home page beside it. A program names the views it used as a home before this in
+// window.LSH_HOME_ALIASES (js/ft-updates.js lists the pages this program has turned off); the engine's
+// own dashboard is always one.
+const HOME = "modules";
+const atHome = v => ["dashboard", "home"].concat(window.LSH_HOME_ALIASES || []).includes(v);
+const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview);
+const __goto = window.goto;
+window.goto = function(view){ if(atHome(view) && signedIn()) arguments[0] = HOME; return __goto.apply(this, arguments); };
+
 /* ---------- the five sections ---------- */
-// The Training Modules pages this viewer has (an admin's own pages, or a trainee's; 👁 Trainee view sees the trainee's).
+// The Modules pages this viewer has (an admin's own pages, or a trainee's; 👁 Trainee view sees the trainee's).
 const pages = () => CFG.modules.filter(m => !m.who || m.who === (adminOn() ? "admin" : "trainee"));
 const moduleViews = () => ["modules"].concat(CFG.moduleViews, pages().map(m => m.view).filter(Boolean));
 function section(){
@@ -99,7 +113,7 @@ window.renderTopbar = function(){
   [...nav.children].forEach(b => { const v = viewOf(b); if((v && moved.has(v)) || runs.has(onc(b))) b.remove(); });
   const btn = (id, label, onclick, title) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}"${title ? ` title="${title}"` : ""}>${label}</button>`;
   const processGo = "goto('process')";   // one feature, one page: an admin sees every trainee's sheets there
-  const secs = btn("modules", "📚 Modules", "goto('dashboard')", "The Standard Foundational Training: its lessons")
+  const secs = btn("modules", "📚 Modules", "goto('modules')", "The Standard Foundational Training: its lessons")
     + btn("process", "✍️ Process Questions", processGo, adminOn() ? "Every trainee's answer sheets" : "Each lesson's answer sheet")
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")
     + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : myDashboard());
@@ -112,7 +126,7 @@ window.renderTopbar = function(){
   return t.innerHTML;
 };
 
-/* ---------- 📚 Training Modules (#/modules): the lessons, then the training pages ---------- */
+/* ---------- 📚 Modules (#/modules): the lessons, then the training pages ---------- */
 // A module's own activities, under it: the program says what belongs to each module (window.ftModuleActivities).
 function acts(d){
   const list = (typeof window.ftModuleActivities === "function" ? window.ftModuleActivities(d.id) : []) || [];
@@ -126,13 +140,37 @@ function lessonRow(d, i, pinned){
   const status = done ? `<span class="lp-pill ok">✓ Finished</span>` : !(d.sections && d.sections.length) ? `<span class="lp-pill">Coming soon</span>` : open ? `<span class="lp-pill open">Open</span>` : `<span class="lp-pill">🔒 Locked</span>`;
   const kc = typeof p.score === "number" ? `<span class="lp-kc t-${tier(p.score)}">✍️ Knowledge Check ${p.score}%</span>` : "";
   const can = open || (adminOn() && d.sections && d.sections.length);
-  return `<div class="lp-lesson${done ? " is-done" : ""}">
+  const tags = lessonTags(d);
+  return `<div class="lp-lesson${done ? " is-done" : ""}" id="module-${d.id}">
     <span class="lp-num">${pinned ? "📌" : i + 1}</span>
-    <div class="lp-lesson-t"><b>${e(d.title)}</b><span>${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}</span></div>
+    <div class="lp-lesson-t"><b>${e(d.title)}</b><span class="lp-tags">${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}${tags ? " · " + tags : ""}</span></div>
     ${status}
     <button class="btn btn-sm ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
     ${acts(d)}
   </div>`;
+}
+// What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
+// card, a badge on a lesson card) registers it here instead: window.LSH_HOME_STATS holds () => HTML for the
+// row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
+// beside that lesson's Knowledge Check score. js/ft-simulators.js registers the graded calls in both.
+const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
+const homeStats = () => { const h = hooks("LSH_HOME_STATS"); return h ? `<div class="lp-home-stats">${h}</div>` : ""; };
+const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
+
+// Resume, the certificate and the feedback card: the landing page carries them, so nothing a trainee
+// needs is left on a home page they no longer open.
+function homeActions(done, total){
+  const resume = typeof window.resumeLabel === "function" ? resumeLabel() : "";
+  const cert = (typeof window.certData === "function" && state.traineeId) ? certData() : null;
+  const html = (resume ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${e(resume)}</span></button>` : "")
+    + (cert ? (cert.eligible
+      ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
+      : `<span class="cert-hero-locked" title="Finish the lessons to unlock your certificate">🎓 Certificate · ${done}/${total} lessons finished</span>`) : "");
+  return html ? `<div class="lp-home-acts">${html}</div>` : "";
+}
+function homeFeedback(){
+  const fb = typeof window.renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : "";
+  return fb ? `<section class="lp-home-fb">${fb}</section>` : "";
 }
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
@@ -141,9 +179,12 @@ function renderModules(){
       <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p>
       ${viewer ? `<div class="lp-progress"><div class="lp-bar"><i style="width:${all.length ? Math.round(done / all.length * 100) : 0}%"></i></div><span><b>${done} / ${all.length}</b> lessons finished</span></div>`
         : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}</div>
+    ${homeStats()}
+    ${homeActions(done, all.length)}
     <section class="card lp-lessons"><h2>📖 Lessons</h2>${pinned.map(d => lessonRow(d, 0, true)).join("")}${all.map((d, i) => lessonRow(d, i, false)).join("")}</section>
     ${ps.length ? `<section class="lp-pages"><h2>🧰 Training pages</h2><div class="lp-grid">${ps.map(m => { const go = m.view ? `goto('${m.view}')` : m.run, n = badgeOf(m);
-      return `<div class="card lp-page" role="link" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'){${go}}"><div class="lp-page-h"><span class="lp-ic">${m.icon}</span><b>${e(m.label)}</b>${n ? `<span class="nav-badge">${n}</span>` : ""}</div><p>${e(m.about || "")}</p><span class="lp-go">Open →</span></div>`; }).join("")}</div></section>` : ""}`;
+      return `<div class="card lp-page" role="link" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'){${go}}"><div class="lp-page-h"><span class="lp-ic">${m.icon}</span><b>${e(m.label)}</b>${n ? `<span class="nav-badge">${n}</span>` : ""}</div><p>${e(m.about || "")}</p><span class="lp-go">Open →</span></div>`; }).join("")}</div></section>` : ""}
+    ${homeFeedback()}`;
 }
 
 /* ---------- 🏅 the Scorecard: every grading system's items, its average, and the overall ---------- */
@@ -206,6 +247,9 @@ function renderScorecard(){
 /* ---------- the pages ---------- */
 const __render = window.render;
 window.render = function(){
+  // Anything that still sets a home view directly (the engine's sign-in, a resume, a page this program
+  // has turned off) lands on 📚 Modules, so there is one landing page however the trainee got here.
+  if(atHome(state.view) && signedIn()){ state.view = HOME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
   const v = state.view;
   if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
@@ -323,11 +367,24 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
   .lp-admin-row .admin-tab-btn{font-size:13px;padding:6px 11px;border:1px solid #DDE1EC !important;border-radius:999px;background:#fff;}
   .lp-admin-row .admin-tab-btn.active{background:#FFF3E6;border-color:var(--orange) !important;color:var(--navy);}
 }
-/* the Training Modules and Scorecard pages */
+/* the Modules and Scorecard pages */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-head{margin-bottom:18px;} .lp-head h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .lp-head > p{margin:0;color:var(--ink-soft);font-size:15px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 .lp-note{margin-top:8px !important;font-size:13.5px !important;}
+.lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
+/* the program's own stat cards (the dashboard's side band used to hold these) */
+.lp-home-stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
+.lp-home-stats .card.stat{padding:10px 16px;min-width:150px;}
+.lp-home-stats .card.stat .num{font-size:24px;font-weight:800;color:var(--navy);line-height:1.1;}
+.lp-home-stats .card.stat .lbl{font-size:12px;color:var(--ink-soft);}
+.lp-home-fb{max-width:420px;margin-top:24px;}
+/* the feedback card was built for the dashboard's dark side band: on this page it sits on a white card */
+.lp-home-fb .tfb-dash .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep);}
+.lp-home-fb .tfb-dash .sub{font-size:13.5px;color:var(--ink-soft);line-height:1.45;}
+.lp-home-fb .tfb-dash-stars button{color:#D9DEEA;}
+.lp-home-fb .tfb-dash-stars:hover button{color:#E3A35F;}
+.lp-home-fb .tfb-dash-stars button:hover ~ button{color:#D9DEEA;}
 .lp-progress{display:flex;align-items:center;gap:12px;margin-top:12px;max-width:520px;} .lp-progress span{font-size:13px;color:#4A5070;white-space:nowrap;} .lp-progress b{color:var(--navy);}
 .lp-bar{flex:1;height:8px;border-radius:99px;background:#ECEEF5;overflow:hidden;} .lp-bar i{display:block;height:100%;background:linear-gradient(90deg,#E3A35F,#C9782E);border-radius:99px;}
 .lp-lessons{padding:16px 18px;margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}

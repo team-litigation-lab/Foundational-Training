@@ -86,15 +86,16 @@ window.portalGate = {
     if(wantAdmin && state.traineeId && !state.adminToken){ try{ await logout(); }catch(e){} }
     if(!ticket){ uncover(150); return; }
     var t = ticket; ticket = "";
-    // Arriving from the Portal lands on the dashboard (it has its own "Resume where you left off" button) instead of
-    // jumping straight into the last slide: the engine's automatic resume is skipped once, then restored for that button.
+    // Arriving from the Portal lands on 📚 Modules, the platform's landing page (it has its own "Resume where you
+    // left off" button) instead of jumping straight into the last slide: the engine's automatic resume is skipped
+    // once, then restored for that button.
     var resumeOrig = window.resumeWhereLeftOff;
     if(typeof resumeOrig === "function"){
       window.resumeWhereLeftOff = function(){
         window.resumeWhereLeftOff = resumeOrig;
         state.resumePending = false;
         if(state.view === "login" || state.view === "pendingApproval") return;
-        state.view = "clientprofile";
+        state.view = "modules";
         render();
       };
     }
