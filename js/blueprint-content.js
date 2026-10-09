@@ -1,6 +1,6 @@
 /* 🛠 The Foundational Training course's Trainer blueprint (lsh-blueprint.js draws it; lsh-blueprint-course.js
    adds it to 🧭 Orientation). The Trainee blueprint is the Orientation deck (js/ft-orientation.js), published
-   at /blueprint.pdf; trainees open it from 📘 Blueprint on the top bar (Handouts isn't part of this program).
+   at /blueprint.pdf; admins open it from 📘 Blueprint on the top bar (Handouts isn't part of this program).
    A slide is { icon, title, points: [...], where, tip }. Change the wording here; the page and the PDF are made
    from it each time, stamped with the deployed build. README → Platform Orientation and the Blueprint PDF. */
 window.LSH_BLUEPRINT = {
@@ -72,14 +72,16 @@ window.LSH_BLUEPRINT = {
           '🕘 Attendance: Time In fills in by itself when a trainee opens the course; tag each status and add notes.',
           'It stays in step with the attendance Google Sheet, both ways, through the Training Portal.',
           '👁 Trainee view shows the platform exactly as trainees see it.',
-          '🧭 Orientation is the Trainee blueprint to share on day one; trainees also have it under 📘 Blueprint on the top bar.'],
+          '🧭 Orientation is the Trainee blueprint to share on day one; 📘 Blueprint on the top bar is the same deck as a PDF, yours to share.'],
         where: 'Admin → 🕘 Attendance · 👁 Trainee view · 🧭 Orientation.',
         tip: 'The Trainee blueprint PDF republishes itself after every update; nothing to do by hand.' }
     ]
   }
 };
 
-/* Top bar: 📘 Platform Blueprint, the Trainee blueprint PDF, for anyone signed in (before the ⧉ / ⛶ buttons). */
+/* Top bar: 📘 Platform Blueprint, the Trainee blueprint PDF, for admins only (before the ⧉ / ⛶ buttons).
+   Like 🧭 Orientation, it is a trainer's screen-shareable blueprint: trainees and 👁 Trainee view don't see it,
+   and the trainer shares it on day one. The PDF itself holds nothing private, so /blueprint.pdf stays open. */
 (function () {
   const bar = window.renderTopbar;
   if (typeof bar !== 'function') return;
@@ -88,7 +90,7 @@ window.LSH_BLUEPRINT = {
   document.head.appendChild(st);
   window.renderTopbar = function () {
     const html = bar.apply(this, arguments);
-    if (!state.traineeId && !state.isAdmin && !state.adminPreview) return html;
+    if (!state.isAdmin || state.adminPreview) return html;
     const btn = `<button type="button" class="nav-blueprint" onclick="window.open('/blueprint.pdf','_blank','noopener')" title="Platform Blueprint: how this platform works (PDF)">📘<span class="bp-word"> <span class="bp-long">Platform </span>Blueprint</span></button>`;
     const at = html.indexOf('<button type="button" class="nav-fs"');
     return at >= 0 ? html.slice(0, at) + btn + html.slice(at) : html;
