@@ -6,7 +6,7 @@ const DAY15 = {
     {
       "id": "s1",
       "h": "Entire Day: Recorded Demonstration - Sending MedLOR (Medical Letter of Representation) and Requesting for Medical Bills & Records",
-      "html": "<h3>Demo Metrics</h3>\n<div class=\"shots\"><figure><a href=\"/ft/day15/img/image19.png\" target=\"_blank\"><img src=\"/ft/day15/img/image19.png\" alt=\"\" loading=\"lazy\"></a></figure></div>"
+      "html": "<h3>Demo Metrics</h3>\n<div class=\"shots\"><figure><a href=\"/ft/day15/img/image55.png\" target=\"_blank\"><img src=\"/ft/day15/img/image55.png\" alt=\"\" loading=\"lazy\"></a></figure></div>"
     },
     {
       "id": "s2",

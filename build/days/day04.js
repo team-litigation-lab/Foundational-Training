@@ -16,7 +16,7 @@ const DAY4 = {
     {
       "id": "s3",
       "h": "PM: Reception Mock Calls",
-      "html": "<p><b>Reception Mock Calls Metrics</b></p>\n<div class=\"shots\"><figure><a href=\"/ft/day4/img/image4.png\" target=\"_blank\"><img src=\"/ft/day4/img/image4.png\" alt=\"\" loading=\"lazy\"></a></figure></div>\n<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>"
+      "html": "<p><b>Reception Mock Calls Metrics</b></p>\n<div class=\"shots\"><figure><a href=\"/ft/day4/img/image7.png\" target=\"_blank\"><img src=\"/ft/day4/img/image7.png\" alt=\"\" loading=\"lazy\"></a></figure></div>\n<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>"
     }
   ]
 };
