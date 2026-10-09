@@ -113,7 +113,6 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .step-timeline .step-circle{width:38px;height:38px;font-size:14px;}
 .step-timeline .step-dash{flex:1 1 8px;min-width:6px;width:auto;}
 @media (max-width:900px){ .step-timeline{flex-wrap:wrap;row-gap:10px;} }
-.ft-hero-title{font-family:'Fraunces',Georgia,serif;}
 .ft-open-days{padding:18px 20px;margin-bottom:18px;}
 .ft-open-days h3{margin:0 0 4px;color:var(--navy);}
 .ft-open-days .ft-od-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;}

@@ -105,7 +105,7 @@ A lesson without its deck shows on the dashboard as *Coming soon* and can't be o
 
 ## 📅 Calendaring Simulators (drag-and-drop, Google Calendar style)
 
-One calendaring practice area for Lesson 5 (Calendaring & Appointment Setting), at `#/calsim`, shown on **🛠 Simulators** as **📅 Calendaring Simulators** with the lesson's Calendar Management Mock Calls beside it. It has one track (`TRACKS` in `js/ft-calsim-core.js`):
+One calendaring practice area for Lesson 5 (Calendaring & Appointment Setting), at `#/calsim`. The Calendaring Simulators themselves now run on the Main Portal, so 🛠 Practice Lab no longer shows a card for this page: it is reached from **Admin → 📅 Calendar Scores** and from the links a trainee already has, and it keeps the calendars saved here before the move. It has one track (`TRACKS` in `js/ft-calsim-core.js`):
 - **🎓 Standard Training** (Foundational · Calendar Management): two weeks, Attorney Rivera (core) and Attorney Chen (trial week).
 
 The Litigation Week (Case Management) and Executive Week (EA / PA) calendars were removed from here: they belong to those programs, not Standard Training.

@@ -194,7 +194,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-sample figcaption{margin-top:4px;font-size:12px;color:var(--ink-soft);}
 .fts-tool-act{display:flex;gap:8px;flex-wrap:wrap;}
 .fts-tool-act a.btn{text-decoration:none;}
-.fts-all .fts-card h3{font-size:16px;} .fts-sub a{color:var(--orange-deep);font-weight:700;}
+.fts-sub a{color:var(--orange-deep);font-weight:700;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
 .fts-banner{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#0b1730,#13284f);color:#fff;border-radius:18px;padding:18px 22px;margin-bottom:18px;cursor:pointer;box-shadow:0 10px 24px -14px rgba(8,18,38,.6);transition:transform .15s;}
 .fts-banner:hover{transform:translateY(-2px);} .fts-banner:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}

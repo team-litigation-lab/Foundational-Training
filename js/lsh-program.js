@@ -294,8 +294,6 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
 /* 🏠 Main Portal is the first section, so js/portal-link.js's own ← Training Directory button isn't shown */
 .topbar .nav .nav-portal{display:none !important;}
 @media(min-width:961px) and (max-width:1400px){ .topbar .nav .lp-long{display:none;} }
-.lp-tab{font:inherit;font-size:13px;font-weight:600;white-space:nowrap;border:1px solid transparent;background:none;color:#4A5070;border-radius:999px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-.lp-tab:hover{background:#ECEEF5;color:var(--navy);} .lp-tab.active{background:var(--navy);color:#fff;}
 /* the Admin screen's tabs, grouped: the sections, then the open section's tabs */
 .admin-tabs.lp-admin-tabs{display:block !important;border-bottom:1px solid var(--line);margin-bottom:20px;white-space:normal;overflow:visible;}
 .lp-admin-secs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
