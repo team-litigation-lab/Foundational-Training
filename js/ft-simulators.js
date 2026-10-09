@@ -32,7 +32,7 @@ function ftLoadCallsim(){
   callsimAt = Date.now();
   callsimLoading = sharedGet("callsim:" + state.traineeId).then(v=>{
     state.ftCallsim = v && typeof v === "object" ? v : { best: {} }; callsimLoading = null;
-    if(state.view === "dashboard" || state.view === "simulators") render();
+    if(state.view === "modules" || state.view === "dashboard" || state.view === "simulators") render();
   }).catch(()=>{ state.ftCallsim = { best: {} }; callsimLoading = null; });
   return callsimLoading;
 }
@@ -45,7 +45,7 @@ window.ftsGradedLine = function(lesson){
   return b ? `<p class="fts-graded">🎯 Graded calls: best <b>${b.score}%</b> · ${b.calls} call${b.calls === 1 ? "" : "s"}. Counts toward this lesson.</p>`
     : `<p class="fts-graded">🎯 No graded call yet. A graded call counts toward this lesson.</p>`;
 };
-window.addEventListener("focus", ()=>{ if(state.ftCallsim && Date.now() - callsimAt > 120000 && (state.view === "dashboard" || state.view === "simulators")) ftLoadCallsim(); });
+window.addEventListener("focus", ()=>{ if(state.ftCallsim && Date.now() - callsimAt > 120000 && (state.view === "modules" || state.view === "dashboard" || state.view === "simulators")) ftLoadCallsim(); });
 // The trainee's name and batch go with the link, so their scores are saved for the trainer.
 function addWho(q){
   if(isTrainee()){
@@ -159,7 +159,20 @@ window.render = function(){
   if(!isTrainee() || state.ftOpenDays) return;
   ftLoadOpenDays().then(()=>{ if(state.view==="simulators") render(); }).catch(()=>{});
 };
-// Dashboard: the graded-calls band (the main landing page has no Simulators card: the Practice Lab is in the top bar).
+// 📚 Modules, the landing page: the graded-calls stat under the progress bar, and a mock-call lesson's best
+// graded call beside its row (js/lsh-program.js renders both). The page has no Simulators card: the Practice
+// Lab is in the top bar.
+(window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
+  if(!isTrainee()) return "";
+  if(!state.ftCallsim) ftLoadCallsim();
+  const bests = CALL_LESSONS.map(callBest).filter(Boolean);
+  return `<div class="card stat fts-calls-stat" title="Your best graded call in Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls"><div class="num">${bests.length ? Math.round(bests.reduce((n, b)=>n + b.score, 0) / bests.length) + "%" : "—"}</div><div class="lbl">Graded calls · ${bests.length} / ${CALL_LESSONS.length} lessons</div></div>`;
+});
+(window.LSH_HOME_LESSON_TAGS = window.LSH_HOME_LESSON_TAGS || []).push(function(d){
+  const b = CALL_LESSONS.includes(d.id) && isTrainee() ? callBest(d.id) : null;
+  return b ? `<span class="lp-kc fts-call-tag">📞 ${b.score}%</span>` : "";
+});
+// The engine's dashboard keeps the same two (it is no longer a page a trainee opens, but nothing here breaks it).
 const __dash = window.renderDashboard;
 window.renderDashboard = function(){
   const html = __dash.apply(this, arguments);

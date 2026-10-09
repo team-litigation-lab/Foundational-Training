@@ -140,14 +140,23 @@ function lessonRow(d, i, pinned){
   const status = done ? `<span class="lp-pill ok">✓ Finished</span>` : !(d.sections && d.sections.length) ? `<span class="lp-pill">Coming soon</span>` : open ? `<span class="lp-pill open">Open</span>` : `<span class="lp-pill">🔒 Locked</span>`;
   const kc = typeof p.score === "number" ? `<span class="lp-kc t-${tier(p.score)}">✍️ Knowledge Check ${p.score}%</span>` : "";
   const can = open || (adminOn() && d.sections && d.sections.length);
-  return `<div class="lp-lesson${done ? " is-done" : ""}">
+  const tags = lessonTags(d);
+  return `<div class="lp-lesson${done ? " is-done" : ""}" id="module-${d.id}">
     <span class="lp-num">${pinned ? "📌" : i + 1}</span>
-    <div class="lp-lesson-t"><b>${e(d.title)}</b><span>${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}</span></div>
+    <div class="lp-lesson-t"><b>${e(d.title)}</b><span class="lp-tags">${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}${tags ? " · " + tags : ""}</span></div>
     ${status}
     <button class="btn btn-sm ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
     ${acts(d)}
   </div>`;
 }
+// What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
+// card, a badge on a lesson card) registers it here instead: window.LSH_HOME_STATS holds () => HTML for the
+// row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
+// beside that lesson's Knowledge Check score. js/ft-simulators.js registers the graded calls in both.
+const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
+const homeStats = () => { const h = hooks("LSH_HOME_STATS"); return h ? `<div class="lp-home-stats">${h}</div>` : ""; };
+const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
+
 // Resume, the certificate and the feedback card: the landing page carries them, so nothing a trainee
 // needs is left on a home page they no longer open.
 function homeActions(done, total){
@@ -170,6 +179,7 @@ function renderModules(){
       <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p>
       ${viewer ? `<div class="lp-progress"><div class="lp-bar"><i style="width:${all.length ? Math.round(done / all.length * 100) : 0}%"></i></div><span><b>${done} / ${all.length}</b> lessons finished</span></div>`
         : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}</div>
+    ${homeStats()}
     ${homeActions(done, all.length)}
     <section class="card lp-lessons"><h2>📖 Lessons</h2>${pinned.map(d => lessonRow(d, 0, true)).join("")}${all.map((d, i) => lessonRow(d, i, false)).join("")}</section>
     ${ps.length ? `<section class="lp-pages"><h2>🧰 Training pages</h2><div class="lp-grid">${ps.map(m => { const go = m.view ? `goto('${m.view}')` : m.run, n = badgeOf(m);
@@ -363,6 +373,11 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 .lp-note{margin-top:8px !important;font-size:13.5px !important;}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
+/* the program's own stat cards (the dashboard's side band used to hold these) */
+.lp-home-stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
+.lp-home-stats .card.stat{padding:10px 16px;min-width:150px;}
+.lp-home-stats .card.stat .num{font-size:24px;font-weight:800;color:var(--navy);line-height:1.1;}
+.lp-home-stats .card.stat .lbl{font-size:12px;color:var(--ink-soft);}
 .lp-home-fb{max-width:420px;margin-top:24px;}
 /* the feedback card was built for the dashboard's dark side band: on this page it sits on a white card */
 .lp-home-fb .tfb-dash .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep);}
