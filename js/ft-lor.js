@@ -16,9 +16,13 @@
        trainer has no assignment of their own to read), with the case picker in the preview strip. Both
        views draft on the one test copy, so a letter started in either is still there in the other.
      • The trainee reads their case notes on the page and can download them as a PDF.
-     • Two tools, one per letter, each its own card in the Practice Lab and its own page: #/lorfp (1P) and
-       #/lortp (3P with its Affidavit), with a link across between them. The trainer's hub #/lor keeps both
-       behind a tab row, for testing. Each shows the firm's template exactly as it is. What the firm
+     • Four tools, one per letter, each its own card in the Practice Lab and its own page, paired:
+       #/lorfp (1P) with #/lortp (3P with its Affidavit), and #/lormed (MedLOR with the Unsworn
+       Declaration of Custodian of Records) with #/lorlien (Lien Balance Verification). Each links across
+       to its own pair. The trainer's hub #/lor keeps all four behind a tab row, for testing.
+       The two insurance letters are drafted from the case the trainer assigned. The two medical letters
+       are not: no provider is assigned for them, the trainee addresses and fills them in entirely, so
+       they open with no assignment and show no case notes. Each shows the firm's template exactly as it is. What the firm
        highlighted in yellow is what the trainee fills in. The document's own words — "[PLS UPDATE ...]"
        and the rest — are the box's TEXT, never a placeholder hint: the activity gauges whether the
        trainee follows the instructions and proofreads, so a box they don't replace ships as it stands,
@@ -50,18 +54,30 @@ const previewOnly = () => !!state.adminPreview && !state.traineeId;
 // Said on the page itself, not only here: this activity never becomes a case file in the CMS.
 const NO_CASE_FILE = "Do <b>not</b> create a case file in the CMS for this activity, and do not link it to any case file. This is a standalone drafting exercise: you draft the two letters here, download them, and upload them into the Smart Advocate demo yourself.";
 
-window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["lor", "lorfp", "lortp"]);
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["lor", "lorfp", "lortp", "lormed", "lorlien"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
-  lor:"LOR Drafting Activity", lorfp:"1P LOR Drafting", lortp:"3P LOR Drafting"});
+  lor:"LOR Drafting Activity", lorfp:"1P LOR Drafting", lortp:"3P LOR Drafting",
+  lormed:"MedLOR Drafting", lorlien:"Lien Balance Verification"});
 // Each letter is its own tool with its own page. #/lor stays the trainer's hub (assign + test copy).
-const VIEW_TPL = {lorfp:"lor1p", lortp:"lor3p"};                       // page -> the letter it drafts
-const TPL_VIEW = {lor1p:"lorfp", lor3p:"lortp"};                       // and back again
-const LOR_VIEWS = ["lor", "lorfp", "lortp"];
+// Route names carry no digits: the router's hash matches [a-z]+ only.
+const VIEW_TPL = {lorfp:"lor1p", lortp:"lor3p", lormed:"lormed", lorlien:"lorlien"};   // page -> its letter
+const TPL_VIEW = {lor1p:"lorfp", lor3p:"lortp", lormed:"lormed", lorlien:"lorlien"};   // and back again
+// The two halves of each activity, so a tool links to its own pair and not to any other letter.
+const PAIR = {lor1p:"lor3p", lor3p:"lor1p", lormed:"lorlien", lorlien:"lormed"};
+// The insurance letters are drafted from the case the trainer assigned. The medical letters are not:
+// the trainee addresses and fills those in entirely themselves, so they open without an assignment.
+const CASE_LED = {lor1p:1, lor3p:1};
+const LOR_VIEWS = ["lor", "lorfp", "lortp", "lormed", "lorlien"];
 const onLor = () => LOR_VIEWS.indexOf(state.view) >= 0;
-const SHORT = {lor1p:"1P LOR", lor3p:"3P LOR with Affidavit"};
+const SHORT = {lor1p:"1P LOR", lor3p:"3P LOR with Affidavit", lormed:"MedLOR with Unsworn COR",
+               lorlien:"Lien Balance Verification"};
 const shortOf = t => SHORT[t.id] || String(t.title).split(":")[0];
 const BLURB = {lor1p:"The Letter of Representation for your client’s own carrier, in the firm’s template.",
-               lor3p:"The Letter of Representation for the defendant’s carrier, with the Affidavit of Insurance Coverage."};
+               lor3p:"The Letter of Representation for the defendant’s carrier, with the Affidavit of Insurance Coverage.",
+               lormed:"The Letter of Representation to a medical provider, requesting records and billing, with the Unsworn Declaration of Custodian of Records.",
+               lorlien:"The request to a provider to verify what is still owed on your client’s lien."};
+// The medical letters are named after whoever the trainee addressed them to.
+const MED_FILE = {lormed:"MedLOR", lorlien:"Lien Balance Verification"};
 
 /* ---------- the trainee's drafts and the case their trainer assigned ---------- */
 const L = {id:null, draft:null, assign:null, loading:false, err:"", timer:null, saving:false, savedAt:null, tab:TEMPLATES[0].id};
@@ -130,9 +146,25 @@ function noteRows(c, side){
 const letterDate = () => new Date().toLocaleDateString("en-US", {year:"numeric", month:"long", day:"numeric"});
 const fileDate = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${p(d.getMonth() + 1)}.${p(d.getDate())}.${d.getFullYear()}`; };
 // The trainers' naming convention, with this case's carrier, today's date and the VA's name filled in.
+// The run the template marks as its addressee (generator: "who").
+function whoRun(tpl){
+  for(const b of tpl.blocks){
+    if(b.t !== "p") continue;
+    for(const r of b.runs) if(r.f === tpl.who) return r;
+  }
+  return null;
+}
 function fileNameFor(tpl, no){
   const c = caseOf(no) || {p1:{}, p3:{}};
   const who = String(state.certName || state.traineeName || "VA’s name").replace(/[\\/:*?"<>|]/g, "").trim();
+  if(MED_FILE[tpl.id]){
+    // No provider is assigned for these: the name comes from the address line of the letter itself,
+    // read by the same rule as the page and the download, so the file is named after what it says.
+    const fields = (L.draft && letter(tpl.id).fields) || {};
+    const run = tpl.who && whoRun(tpl);
+    const addressee = run ? valueOf(fields, run).replace(/\s+/g, " ").trim() : "";
+    return `MED – ${(addressee || "Provider").slice(0, 60)} - ${MED_FILE[tpl.id]} ${fileDate()} (${who})`;
+  }
   const ins = tpl.id === "lor1p" ? (c.p1["Insurance Company Name"] || "1P Insurance Provider")
                                  : (c.p3["Defendant Insurance Company Name"] || "3P Insurance Provider");
   const what = tpl.id === "lor1p" ? "LOR" : "LOR with Affidavit";
@@ -176,7 +208,7 @@ function field(run, ctx){
     return `<input class="lorl-in lorl-manual" value="${e(v)}" size="${Math.max(18, run.ph.length)}"
       aria-label="Sent via" oninput="FTLor.set(${arg}, this.value)">`;
   if(run.k === "long")
-    return `<textarea class="lorl-ta" rows="5" aria-label="Highlighted paragraph to review"
+    return `<textarea class="lorl-ta" rows="${Math.max(2, Math.min(8, v.split("\n").length))}" aria-label="Highlighted paragraph to review"
       oninput="FTLor.set(${arg}, this.value); FTLor.grow(this)">${e(v)}</textarea>`;
   return `<input class="lorl-in" value="${e(v)}"
     size="${Math.max(12, Math.min(64, v.length + 1))}" aria-label="${e(run.ph)}" oninput="FTLor.set(${arg}, this.value)">`;
@@ -260,6 +292,7 @@ function caseCard(no){
     <div class="lor-notes-grid">${side("For 1P LOR Drafting", "p1")}${side("For 3P LOR Drafting", "p3")}</div></section>`;
 }
 function steps(tpl){
+  if(!CASE_LED[tpl.id]) return medSteps(tpl);
   const common = [
     "Replace every placeholder with the right detail from your case notes, and remove the brackets.",
     "Keep the capitalisation the placeholder uses — ALL CAPS stays ALL CAPS, regular text stays regular.",
@@ -272,10 +305,25 @@ function steps(tpl){
   return `<details class="card lor-steps"><summary>📋 Instructions for this activity</summary><ol>${list.map(x => `<li>${x}</li>`).join("")}</ol>
     <p class="lor-muted">Save it as <code>${e(tpl.naming)}</code> in your assigned Assessment/Activities folder.</p></details>`;
 }
+// The medical letters have no trainers' instruction sheet of their own yet — these follow the shape of
+// the LOR sheet, minus the parts that are about insurance (the Attention: Claims Department rule and
+// the claims to be opened). Replace them with the trainers' wording when they send it.
+function medSteps(tpl){
+  const med = [
+    "Address the letter yourself: the provider, the attention line, the address block, the fax and the email are all yours to fill in.",
+    "Fill in your client’s details — name, date of birth, SS number and date of loss.",
+    "Keep the capitalisation the letter uses — ALL CAPS stays ALL CAPS, regular text stays regular.",
+    "The date is filled in for you and is always today — the day you draft the letter.",
+    "Check spelling, grammar, punctuation and the address block. The body of the letter is the firm’s and is not yours to reformat."];
+  const req = "Tick the records you are asking the provider for.";
+  const list = tpl.id === "lormed" ? med.slice(0, 2).concat(req, med.slice(2)) : med;
+  return `<details class="card lor-steps"><summary>📋 Instructions for this activity</summary><ol>${list.map(x => `<li>${x}</li>`).join("")}</ol>
+    <p class="lor-muted">Save it as <code>${e(tpl.naming)}</code> in your assigned Assessment/Activities folder.</p></details>`;
+}
 function editor(no){
   const only = VIEW_TPL[state.view] || "";          // a tool of its own: this letter, no tab row
   const tpl = TEMPLATES.find(t => t.id === (only || L.tab)) || TEMPLATES[0];
-  const other = TEMPLATES.find(t => t.id !== tpl.id);
+  const other = TEMPLATES.find(t => t.id === PAIR[tpl.id]) || TEMPLATES.find(t => t.id !== tpl.id);
   const head = only
     ? `<p class="lor-other">The other half of the activity: <button type="button" class="lor-link" onclick="goto('${TPL_VIEW[other.id]}')">${e(shortOf(other))} →</button></p>`
     : `<div class="lsh-subtabs lor-tabs" role="tablist">${TEMPLATES.map(t =>
@@ -307,11 +355,13 @@ function renderPage(){
   const test = adminOn() ? `<div class="card lor-preview-note">🧑‍🏫 <b>Test copy</b> — the activity as a trainee does it. Nothing you type here is saved.
       <label class="lor-pick lor-pick-note">Drafting <select aria-label="Draft as which case" onchange="FTLor.preview(this.value)">${caseOptions(no)}</select>
         <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.clearTest()">Clear what I typed</button></label></div>` : "";
+  const caseLed = !only || CASE_LED[only.id];
   return `${preview}${test}<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p>
       <h1>${only ? e(shortOf(only)) + " Drafting" : "LOR Drafting Activity"}</h1>
-      <p>${only ? e(BLURB[only.id]) + " Draft it from the case your trainer assigned you, then download it."
-                : "Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you."}</p></div>
-    ${notice()}${objective()}${caseCard(no)}${no ? editor(no) : ""}`;
+      <p>${!only ? "Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you."
+                 : e(BLURB[only.id]) + (caseLed ? " Draft it from the case your trainer assigned you, then download it."
+                                                : " You address it and fill it in yourself, then download it.")}</p></div>
+    ${notice()}${caseLed ? objective() + caseCard(no) : ""}${caseLed && !no ? "" : editor(no)}`;
 }
 
 /* ---------- the trainer: who gets which case ---------- */
@@ -479,7 +529,10 @@ window.render = function(){
 // One card per letter: 1P and 3P are separate tools, each opening its own page.
 function lorCard(view, open, no){
   const tpl = TEMPLATES.find(t => t.id === VIEW_TPL[view]) || TEMPLATES[0];
-  const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
+  const caseLed = CASE_LED[tpl.id];
+  const note = !open ? ""
+    : adminOn() ? (caseLed ? "Assign each trainee a case, and draft a test copy yourself." : "Draft a test copy yourself.")
+    : !caseLed ? "You address this one and fill it in yourself — no case is assigned for it."
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 ${e(shortOf(tpl))} Drafting</h3>
@@ -494,7 +547,8 @@ window.ftLorCard = function(){
   // request budget is untouched. The cards name the case as soon as the read comes back.
   if(isTrainee() && L.id !== state.traineeId && !L.loading) load(state.traineeId);
   const no = previewOnly() || (isTrainee() && L.draft) ? myCaseNo() : null;
-  return lorCard("lorfp", open, no) + lorCard("lortp", open, no);
+  return lorCard("lorfp", open, no) + lorCard("lortp", open, no)
+       + lorCard("lormed", open, no) + lorCard("lorlien", open, no);
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-lor"; s.textContent = `

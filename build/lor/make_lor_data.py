@@ -2,7 +2,14 @@
 """Builds js/ft-lor-data.js from the three files the trainers sent for the LOR Drafting Activity.
 
 Usage:
-  python3 build/lor/make_lor_data.py <Case_Notes_For_Drafting_Activity_SA_Demo.docx> <1P_LOR.docx> <3P_LOR_with_Affidavit.docx>
+  python3 build/lor/make_lor_data.py <Case_Notes_For_Drafting_Activity_SA_Demo.docx> \
+      <1P_LOR.docx> <3P_LOR_with_Affidavit.docx> <MedLOR_with_Unsworn_COR.docx> <Lien_Balance_Verification.docx>
+
+Four templates: the two insurance letters, drafted from the trainee's assigned case, and the two medical
+letters, where the trainee supplies everything themselves (there is no provider to assign). The medical
+templates came as 30 per-provider copies of the same two letters; the copies differ only in the header
+block, which the trainee fills in anyway, so one of each is kept here (Apache Health Center's, which sits
+in the majority variant of both).
 
 The two letter templates are read block by block, exactly as Word has them, so the firm's wording is
 carried over untouched. The only thing the activity treats specially is what the firm highlighted in
@@ -55,9 +62,28 @@ def runs_of(p):
     return merged
 
 
-def template(path, tid, title, naming):
+SALUTATION = "to whom it may concern"
+
+
+def head_end(children):
+    """Where the letterhead stops: the salutation. Everything above it — who the letter goes to, the
+       client it is about — is the variable part of these letters."""
+    for i, ch in enumerate(children):
+        if ch.tag.replace(W, "") != "p": continue
+        txt = "".join(t.text or "" for t in ch.iter(W + "t")).strip().lower()
+        if txt.startswith(SALUTATION): return i
+    return 0
+
+
+def template(path, tid, title, naming, head=False):
+    """head=True: the whole letterhead is the trainee's to fill in, highlighted or not. The medical
+       letters came as 30 per-provider copies with the provider merged in, and the two mark that block
+       inconsistently — the MedLOR highlights it white, the Lien BV not at all — so neither marking is
+       a statement about what the trainee supplies. They supply all of it, in both."""
+    children = list(body_of(path))
+    stop = head_end(children) if head else 0
     blocks, n = [], 0
-    for i, child in enumerate(body_of(path)):
+    for i, child in enumerate(children):
         tag = child.tag.replace(W, "")
         if tag == "tbl":
             blocks.append({"t": "tbl", "rows": [
@@ -67,13 +93,15 @@ def template(path, tid, title, naming):
         if tag != "p": continue
         runs = []
         for r in runs_of(child):
-            if not r["hl"]:
+            # In the letterhead the trainee fills everything in; below it, only what the firm highlighted.
+            # Whitespace-only runs stay as they are either way: they are spacing, not something to type.
+            if not r["hl"] and not (i < stop and r["x"].strip()):
                 runs.append({"x": r["x"], "b": True} if r["b"] else {"x": r["x"]})
                 continue
             n += 1
-            if i == 0: k = "date"
+            if i == 0: k = "date"   # the letter's date is the first thing in the document
             elif r["x"].strip().upper().startswith("SENT VIA"): k = "manual"
-            elif len(r["x"]) > LONG_FIELD: k = "long"
+            elif "\n" in r["x"] or len(r["x"]) > LONG_FIELD: k = "long"
             else: k = "field"
             runs.append({"f": "f%d" % n, "ph": r["x"], "k": k})
         blk = {"t": "p", "runs": runs}
@@ -83,7 +111,11 @@ def template(path, tid, title, naming):
             jc = pPr.find(W + "jc")
             if jc is not None and jc.get(W + "val") == "center": blk["c"] = 1
         blocks.append(blk)
-    return {"id": tid, "title": title, "naming": naming, "blocks": blocks}
+    # The addressee — the carrier on the insurance letters, the provider on the medical ones — is the
+    # first ordinary field in every one of these templates, after the date and the "SENT VIA" line.
+    # The page names the downloaded file after whatever the trainee types there.
+    who = next((r["f"] for b in blocks if b["t"] == "p" for r in b["runs"] if r.get("k") == "field"), "")
+    return {"id": tid, "title": title, "naming": naming, "who": who, "blocks": blocks}
 
 
 def cases(path):
@@ -102,12 +134,16 @@ def cases(path):
     return out
 
 
-def main(notes, p1, p3, dest="js/ft-lor-data.js"):
+def main(notes, p1, p3, med, lien, dest="js/ft-lor-data.js"):
     cs = cases(notes)
     ts = [template(p1, "lor1p", "Activity 1: Letter of Representation / LOR Drafting for 1P",
                    "INS – 1P Insurance Provider - LOR mm.dd.yyyy (VA's name)"),
           template(p3, "lor3p", "Activity 2: Letter of Representation (LOR) Drafting for 3P",
-                   "INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yyyy (VA's name)")]
+                   "INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yyyy (VA's name)"),
+          template(med, "lormed", "Activity 3: Medical Letter of Representation with Unsworn COR",
+                   "MED – Provider - MedLOR mm.dd.yyyy (VA's name)", head=True),
+          template(lien, "lorlien", "Activity 4: Lien Balance Verification",
+                   "MED – Provider - Lien Balance Verification mm.dd.yyyy (VA's name)", head=True)]
     if not cs: sys.exit("No cases found in " + notes)
     for t in ts:
         if not any(r.get("f") for b in t["blocks"] if b["t"] == "p" for r in b["runs"]):
@@ -121,5 +157,5 @@ def main(notes, p1, p3, dest="js/ft-lor-data.js"):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4: sys.exit(__doc__)
+    if len(sys.argv) < 6: sys.exit(__doc__)
     main(*sys.argv[1:])
