@@ -1,9 +1,9 @@
 /* ============================================================
-   📚 Resource Library — LOR Drafting Activity (#/lor)
+   🧰 Drafting Tools — LOR Drafting Activity (#/lor)
    Loaded after js/ft-lor-data.js (the case notes and the two templates) and after js/ft-sessions.js.
    A section of 🛠 Practice Lab, and the activity that replaced the Claims Specialist Practice Session.
 
-   A STANDALONE activity. The trainee drafts the two letters here, on the page, and downloads them to
+   A TOOL, and a STANDALONE activity. The trainee drafts the two letters here, on the page, and downloads them to
    upload into the Smart Advocate demo by hand. Nothing here opens or touches the CMS: the page says so
    in as many words, and no card, link or session points at a case file — see NO_CASE_FILE below.
 
@@ -17,8 +17,14 @@
            a placeholder: the trainee edits the wording to match how the letter actually goes out)
          – the 1P letter's three tick boxes work; for this activity every type of claim is ticked
        Answers save as the trainee types.
-     • ⬇ Download gives the edited letter as a PDF or a Word file, named by the trainers' convention
-       (INS – 1P Insurance Provider - LOR mm.dd.yyyy (VA's name)), ready to upload into the SA demo.
+     • ⬇ Download gives the edited letter as a PDF (or a Word file), ready to upload into the SA demo.
+       The file name is the trainers' own convention for that template (tpl.naming), with its tokens filled
+       in — mm.dd.yyyy is today, (VA's name) is the trainee, "1P/3P Insurance Provider" is the carrier on the
+       assigned case — and it sits in a box the trainee can edit. What is in the box is what the file is
+       called; ↺ Reset puts the convention back. Their own name saves with the draft (letters.<id>.file).
+     • The tool is template-driven: it draws whatever is in js/ft-lor-data.js. A records-request letter or a
+       HIPAA authorisation added there gets its tab, its fields and its own naming convention with no change
+       to this file — run build/lor/make_lor_data.py over the new .docx.
 
    Shared storage keys (rules in worker.js):
      lor:<traineeId>        the trainee's own drafts (they read and write their own)
@@ -90,14 +96,28 @@ function noteRows(c, side){
 /* ---------- the letter's date: auto-generated, always today ---------- */
 const letterDate = () => new Date().toLocaleDateString("en-US", {year:"numeric", month:"long", day:"numeric"});
 const fileDate = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${p(d.getMonth() + 1)}.${p(d.getDate())}.${d.getFullYear()}`; };
-// The trainers' naming convention, with this case's carrier, today's date and the VA's name filled in.
+// What a file name may not carry.
+const BAD_CHARS = /[\\/:*?"<>|]/g;
+// The trainers' naming convention for this template, straight off the activity sheet (tpl.naming), with its
+// tokens filled in: mm.dd.yyyy is today, (VA's name) is the trainee, and "1P/3P Insurance Provider" is the
+// carrier on the assigned case. A template added later — a records request, a HIPAA authorisation — is named
+// from its own convention the same way, with nothing here to change.
+function conventionName(tpl, no){
+  const c = caseOf(no) || {};
+  const who = String(state.certName || state.traineeName || "VA’s name").replace(BAD_CHARS, "").trim() || "VA’s name";
+  const carrier = n => { const set = c[n === "1" ? "p1" : "p3"] || {}; return set["Insurance Company Name"] || set["Defendant Insurance Company Name"] || ""; };
+  return String(tpl.naming || tpl.title || "Letter")
+    .replace(/mm\.dd\.yyyy/gi, fileDate())
+    .replace(/\(\s*VA[’']s name\s*\)/gi, "(" + who + ")")
+    .replace(/([13])P Insurance Provider/g, (m, n) => carrier(n) || m)
+    .trim();
+}
+// What the download is called: the name the trainee typed, when they have typed one, and otherwise the
+// convention — which stays current, so the date is today's every time they come back.
 function fileNameFor(tpl, no){
-  const c = caseOf(no) || {p1:{}, p3:{}};
-  const who = String(state.certName || state.traineeName || "VA’s name").replace(/[\\/:*?"<>|]/g, "").trim();
-  const ins = tpl.id === "lor1p" ? (c.p1["Insurance Company Name"] || "1P Insurance Provider")
-                                 : (c.p3["Defendant Insurance Company Name"] || "3P Insurance Provider");
-  const what = tpl.id === "lor1p" ? "LOR" : "LOR with Affidavit";
-  return `INS – ${ins} - ${what} ${fileDate()} (${who})`;
+  const own = L.draft ? letter(tpl.id).file : "";
+  const name = String(own == null ? "" : own).replace(BAD_CHARS, "").trim();
+  return name || conventionName(tpl, no);
 }
 
 /* ---------- the letter, as the firm wrote it ---------- */
@@ -270,16 +290,27 @@ function steps(tpl){
 function editor(no){
   const tabs = TEMPLATES.map(t => `<button type="button" class="${L.tab === t.id ? "on" : ""}" onclick="FTLor.tab('${t.id}')">${e(t.title.split(":")[0])}</button>`).join("");
   const tpl = TEMPLATES.find(t => t.id === L.tab) || TEMPLATES[0];
+  const custom = fileNameFor(tpl, no) !== conventionName(tpl, no);
   return `<section class="lor-ed"><div class="lsh-subtabs lor-tabs" role="tablist">${tabs}</div>
     <h2 class="lor-ed-h">${e(tpl.title)}</h2>
     ${steps(tpl)}
     <div class="card lor-paper">${renderLetter(tpl)}</div>
+    <div class="lor-file">
+      <label class="lor-file-l" for="lorFile">File name</label>
+      <div class="lor-file-row">
+        <input id="lorFile" class="lor-file-in" type="text" spellcheck="false" autocomplete="off" aria-describedby="lorFileHelp"
+               value="${e(fileNameFor(tpl, no))}" oninput="FTLor.name('${tpl.id}', this.value)">
+        <span class="lor-file-ext">.pdf</span>
+        <button class="btn btn-ghost btn-sm" type="button" id="lorFileReset" onclick="FTLor.resetName('${tpl.id}')"${custom ? "" : " disabled"}>↺ Reset to the convention</button>
+      </div>
+      <p class="lor-muted" id="lorFileHelp">The trainers’ convention, filled in for you: <code>${e(tpl.naming || "")}</code>. Edit it if your trainer asks for a different name — what is in the box is what the file is called.</p>
+    </div>
     <div class="lor-actions">
       <button class="btn btn-navy" type="button" onclick="FTLor.pdf('${tpl.id}')">⬇ Download the letter (PDF)</button>
       <button class="btn btn-ghost" type="button" onclick="FTLor.word('${tpl.id}')">⬇ Download as Word</button>
       <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.copyName('${tpl.id}')">📋 Copy the file name</button>
       <span class="lor-save" id="lorSave"></span></div>
-    <p class="lor-muted lor-naming">Upload the file you download into the Smart Advocate demo yourself. File name: <code>${e(fileNameFor(tpl, no))}</code></p></section>`;
+    <p class="lor-muted lor-naming">Upload the file you download into the Smart Advocate demo yourself.</p></section>`;
 }
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to open the LOR Drafting Activity.</div>`;
@@ -290,7 +321,7 @@ function renderPage(){
   const no = myCaseNo();
   const preview = (state.adminPreview && !state.traineeId)
     ? `<div class="card lor-preview-note">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved; a trainee drafts on their own account.</div>` : "";
-  return `${preview}<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
+  return `${preview}<div class="lor-hero"><p class="lor-eyebrow">🧰 Drafting Tools</p><h1>LOR Drafting Activity</h1>
       <p>Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you.</p></div>
     ${notice()}${objective()}${caseCard(no)}${no ? editor(no) : ""}`;
 }
@@ -524,6 +555,16 @@ window.FTLor = {
   grow(el){ el.style.height = "auto"; el.style.height = Math.min(520, el.scrollHeight + 2) + "px"; },
   set(tid, f, v){ letter(tid).fields[f] = v; letter(tid).updatedAt = new Date().toISOString(); queueSave(); },
   tick(tid, id){ const d = letter(tid); d.checks[id] = !d.checks[id]; queueSave(); render(); },
+  // Typing in the file-name box must not re-render: that would take the cursor out of it. Only the
+  // Reset button's state changes, and it changes by hand.
+  name(tid, v){
+    const d = letter(tid); d.file = v; d.updatedAt = new Date().toISOString(); queueSave();
+    const btn = document.getElementById("lorFileReset"), tpl = TEMPLATES.find(t => t.id === tid);
+    if(btn && tpl) btn.disabled = fileNameFor(tpl, myCaseNo()) === conventionName(tpl, myCaseNo());
+  },
+  resetName(tid){ letter(tid).file = ""; queueSave(); render(); },
+  // What a download of this letter is called — what ⬇ Download (PDF), ⬇ Download as Word and 📋 Copy all use.
+  fileName(tid){ const tpl = TEMPLATES.find(t => t.id === tid); return tpl ? fileNameFor(tpl, myCaseNo()) : ""; },
   copyName(tid){
     const tpl = TEMPLATES.find(t => t.id === tid);
     const name = fileNameFor(tpl, myCaseNo());
@@ -571,7 +612,9 @@ window.render = function(){
   try{ afterRender(); }catch(err){}
   document.querySelectorAll(".lorl-ta").forEach(FTLor.grow);
 };
-// 📚 Resource Library in the Practice Lab, where the Claims Specialist session used to be.
+// 🧰 Drafting Tools in the Practice Lab, where the Claims Specialist session used to be. A tool, not a
+// one-off: it draws every template in js/ft-lor-data.js, so a records request or a HIPAA authorisation added
+// there shows up here with no change to this card.
 window.ftLorCard = function(){
   const open = state.isAdmin || state.adminPreview || (typeof dayUnlocked === "function" ? dayUnlocked(7) : true);
   // Read here, not on the dashboard: the Practice Lab is where the card is, so the dashboard's
@@ -582,9 +625,11 @@ window.ftLorCard = function(){
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 LOR Drafting Activity</h3>
-    <p class="fts-note">Draft the Letter of Representation for the 1P and the 3P carrier from your assigned case, in the firm's own templates, then download them to upload into the Smart Advocate demo. A standalone activity — no CMS case file.</p>
+    <p class="fts-note">Fill in the firm’s own template on the page and download the finished letter as a <b>PDF</b>, named by the trainers’ convention — which you can edit before you download. Upload it into the Smart Advocate demo yourself: nothing here becomes a CMS case file.</p>
     ${note ? `<p class="fss-case">${note}</p>` : ""}
-    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="goto('lor')">Open the activity</button>`
+    <div class="fts-label">Templates in this tool</div>
+    <ul class="fts-tpl">${TEMPLATES.map(t => `<li>${e(String(t.title).replace(/^Activity \d+:\s*/, ""))}</li>`).join("")}</ul>
+    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="goto('lor')">Open the tool</button>`
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
 };
 
@@ -657,6 +702,15 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lorl-auto{background:#E0E7FF;border-bottom:1.5px dashed #6366F1;border-radius:3px 3px 0 0;padding:1px 5px;font-weight:700;color:#312E81;}
 .lorl-box{font:inherit;font-size:17px;line-height:1;background:none;border:0;color:#111;cursor:pointer;padding:0 2px;border-radius:4px;}
 .lorl-box:hover{background:#FEF3C7;} .lorl-box.on{color:#047857;} .lorl-box:focus-visible{outline:2px solid #F97316;}
+.lor-file{margin:16px 0 0;padding:14px 16px;background:#F8FAFC;border:1px solid var(--line,#E5E7EB);border-radius:12px;}
+.lor-file-l{display:block;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+.lor-file-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.lor-file-in{flex:1;min-width:min(100%,260px);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;color:var(--navy);
+  background:#fff;border:1px solid var(--line,#CBD5E1);border-radius:8px;padding:9px 11px;}
+.lor-file-in:focus{outline:2px solid var(--orange-deep,#C2410C);outline-offset:1px;border-color:var(--orange-deep,#C2410C);}
+.lor-file-ext{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;font-weight:700;color:var(--ink-soft);}
+.lor-file #lorFileHelp{margin:8px 0 0;}
+.lor-file code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;background:#E2E8F0;border-radius:5px;padding:2px 6px;overflow-wrap:anywhere;}
 .lor-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0 6px;}
 .lor-save{font-size:12.5px;color:var(--ink-soft);}
 .lor-naming{margin:0;}
