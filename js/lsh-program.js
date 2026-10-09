@@ -390,6 +390,10 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 .lp-note{margin-top:8px !important;font-size:13.5px !important;}
 .dash-top .lp-note{color:#C9CDE3 !important;}
+/* .dash-hero-ribbon has order:-1 to sit in the grid's narrow first column (140px); without it (a plain admin,
+   not previewing, gets no completion ribbon) the lone .dash-hero-text falls into that 140px column instead
+   and wraps one word per line. Pin it to the wide column explicitly, ribbon or not. */
+main.main-lp .dash-hero-text{grid-column:2;}
 /* the pinned orientation card, its own row above the numbered lessons (not part of their grid) */
 .lp-orient{display:flex;justify-content:center;margin:18px 0 0;}
 .lp-orient .module-card{max-width:280px;width:100%;}
