@@ -11,7 +11,9 @@ const failures = []; const fail = (m) => failures.push(m);
     const worker = (await import(pathToFileURL(path.join(process.cwd(), 'worker.js')).href)).default;
     const TR = globalThis.FTTrackerRules, D = TR.ptDate(), [y, m, d] = D.split('-'), us = `${+m}/${+d}/${y}`;
     const store = new Map(), id = 'dee-drive--b9';
-    const env = { MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret',
+    // PORTAL_ONLY=off so this test can mint a trainee token by name + batch; trainees really come in from
+    // the LSH Training Portal (sso.cjs). What's checked here is the Drive trackers, not the sign-in.
+    const env = { MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off',
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) } };
     store.set('ft:trainee:' + id, JSON.stringify({ id, name: 'Dee Drive', batch: 'B9', approved: true }));
     const SHEET = 'https://docs.google.com/spreadsheets/d/1TrackerSheetIdForTheCiTest0001/edit#gid=7', DOC = 'https://docs.google.com/document/d/1MonitorDocIdForTheCiTest000001/edit';
