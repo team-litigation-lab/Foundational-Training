@@ -388,11 +388,11 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-progress{display:flex;align-items:center;gap:12px;margin-top:12px;max-width:520px;} .lp-progress span{font-size:13px;color:#4A5070;white-space:nowrap;} .lp-progress b{color:var(--navy);}
 .lp-bar{flex:1;height:8px;border-radius:99px;background:#ECEEF5;overflow:hidden;} .lp-bar i{display:block;height:100%;background:linear-gradient(90deg,#E3A35F,#C9782E);border-radius:99px;}
 .lp-lessons{padding:16px 18px;margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
-.lp-acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0 38px;}
+.lp-acts{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0 38px;}
 .lp-act{font:inherit;font-size:12px;font-weight:600;border:1px solid #DDE1EC;background:#F7F8FB;color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
 .lp-act:hover{background:#ECEEF5;}
 .lp-act.is-locked{opacity:.55;cursor:default;}
-.lp-lesson{display:flex;align-items:center;gap:14px;padding:10px 4px;border-top:1px solid #ECEEF4;}
+.lp-lesson{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:10px 4px;border-top:1px solid #ECEEF4;}
 .lp-lesson:first-of-type{border-top:0;}
 .lp-num{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;background:#ECEEF5;color:var(--navy);}
 .lp-lesson.is-done .lp-num{background:#E3A35F;color:#1F2645;}
