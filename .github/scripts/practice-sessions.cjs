@@ -243,12 +243,6 @@ const failures = []; const fail = (m) => failures.push(m);
     const want = await page.evaluate((l) => ftName(l), pick);
     if (after.open.indexOf(want) < 0) fail(`the module just finished (${want}) is not the one that opened: ${JSON.stringify(after.open)}`);
     if (!after.boxes) fail('the finished module has no boxes to answer in');
-    await page.evaluate(async () => { goto('modules'); await new Promise(r => setTimeout(r, 1400)); });
-    const claims = await page.evaluate(() => { const r = [...document.querySelectorAll('.lp-lesson')]
-        .find(x => /Claims Specialist/.test((x.querySelector('.lp-lesson-t b') || {}).textContent || ''));
-        return r ? [...r.querySelectorAll('.lp-act')].map(a => a.textContent.trim()).join(' | ') : ''; });
-    if (!/LOR Drafting Activity/.test(claims)) fail(`the Claims module doesn't carry its LOR Drafting Activity: ${claims}`);
-    if (!/Process Questions/.test(claims)) fail(`the Claims module doesn't carry its Process Questions: ${claims}`);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }

@@ -127,14 +127,6 @@ window.renderTopbar = function(){
 };
 
 /* ---------- 📚 Modules (#/modules): the lessons, then the training pages ---------- */
-// A module's own activities, under it: the program says what belongs to each module (window.ftModuleActivities).
-function acts(d){
-  const list = (typeof window.ftModuleActivities === "function" ? window.ftModuleActivities(d.id) : []) || [];
-  if(!list.length) return "";
-  return `<div class="lp-acts">${list.map(a => a.locked
-    ? `<span class="lp-act is-locked" title="${e(a.locked)}">🔒 ${e(a.icon)} ${e(a.label)}</span>`
-    : `<button type="button" class="lp-act" onclick="${a.go}"${a.note ? ` title="${e(a.note)}"` : ""}>${e(a.icon)} ${e(a.label)}</button>`).join("")}</div>`;
-}
 function lessonCard(d, i, pinned){
   const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
   const status = done ? "done" : open ? "open" : "locked";
@@ -150,7 +142,6 @@ function lessonCard(d, i, pinned){
     <div class="module-body">
       <div class="module-icon">${icon}</div>
       <div class="module-theme lp-tags">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
-      ${acts(d)}
     </div>
     <button class="btn module-start-btn ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
   </div>`;
@@ -178,6 +169,19 @@ function homeFeedback(){
   const fb = typeof window.renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : "";
   return fb ? `<section class="lp-home-fb">${fb}</section>` : "";
 }
+// The step-timeline: one circle per lesson (not the pinned orientation), done/open/locked, click to jump to its card —
+// the same header the EA/PA-style dashboard shows above its lessons (js/ft-updates.js's retired renderDashboard).
+function stepTimeline(all){
+  if(!all.length) return "";
+  return `<div class="dash-top lp-timeline"><div class="step-timeline">${all.map((d, i) => {
+    const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
+    const st = done ? "st-done" : open ? "st-open" : "st-locked", can = open || (adminOn() && hasSlides);
+    return `<div class="step-node">
+      <div class="step-circle ${st}" ${can ? `onclick="scrollToModule(${d.id})"` : ""} title="${e(d.title)}">${done ? "✓" : i + 1}</div>
+      ${i < all.length - 1 ? `<div class="step-dash ${done ? "filled" : ""}"></div>` : ""}
+    </div>`;
+  }).join("")}</div></div>`;
+}
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview, ps = pages();
@@ -185,6 +189,7 @@ function renderModules(){
       <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p>
       ${viewer ? `<div class="lp-progress"><div class="lp-bar"><i style="width:${all.length ? Math.round(done / all.length * 100) : 0}%"></i></div><span><b>${done} / ${all.length}</b> lessons finished</span></div>`
         : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}</div>
+    ${viewer ? stepTimeline(all) : ""}
     ${homeStats()}
     ${homeActions(done, all.length)}
     <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main"><div class="module-grid">${pinned.map(d => lessonCard(d, 0, true)).join("")}${all.map((d, i) => lessonCard(d, i, false)).join("")}</div></div></section>
@@ -378,6 +383,9 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-head{margin-bottom:18px;} .lp-head h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .lp-head > p{margin:0;color:var(--ink-soft);font-size:15px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 .lp-note{margin-top:8px !important;font-size:13.5px !important;}
+/* the step-timeline's navy bar, on its own (the dash-top hero it's normally part of has an eyebrow/title/ribbon above it) */
+.lp-timeline{padding:16px 34px;margin:16px 0 0;}
+.lp-timeline .step-timeline{border-top:0;padding:0;}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 /* the program's own stat cards (the dashboard's side band used to hold these) */
 .lp-home-stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
@@ -405,10 +413,6 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-lessons .module-icon{font-size:30px;line-height:1;}
 .lp-lessons .module-theme{font-size:12.5px;color:var(--ink-soft);}
 .lp-kc{font-weight:700;}
-.lp-acts{flex:0 0 100%;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:4px 0 0;}
-.lp-act{font:inherit;font-size:12px;font-weight:600;line-height:1.35;border:1px solid #DDE1EC;background:#F7F8FB;color:var(--navy);border-radius:14px;padding:6px 12px;max-width:210px;cursor:pointer;}
-.lp-act:hover{background:#ECEEF5;}
-.lp-act.is-locked{opacity:.55;cursor:default;}
 .lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:16px;}
 .lp-page{padding:16px 18px;display:flex;flex-direction:column;gap:6px;cursor:pointer;}
 .lp-page:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
