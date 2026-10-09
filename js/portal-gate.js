@@ -78,10 +78,8 @@ window.portalGate = {
   // Runs at boot, once the engine has loaded: learns whether the Portal is the only way in, then signs in whoever arrived with a ticket.
   init: async function(){
     try{ await authStatus(); }catch(e){}
-    try{
-      var st = await fetch("/api/auth/status").then(function(r){ return r.json(); });
-      secretMissing = !!(st && st.portalOnly && st.portalSecret === false);
-    }catch(e){}
+    // authStatus() above has already asked the Worker; it costs no request of its own.
+    try{ secretMissing = !!(state.portalOnly && state.portalSecret === false); }catch(e){}
     // The Portal sends an administrator here as /?admin=1 (no ticket: admins type the admin password). A trainee session
     // saved in this browser (an earlier test, a shared computer) is signed out first, so the admin password prompt shows
     // instead of that trainee's dashboard.
