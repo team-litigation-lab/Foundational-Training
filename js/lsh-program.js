@@ -141,7 +141,7 @@ function lessonCard(d, i, pinned){
   const kc = typeof p.score === "number" ? `<span class="lp-kc t-${tier(p.score)}">✍️ Knowledge Check ${p.score}%</span>` : "";
   const can = open || (adminOn() && hasSlides);
   const tags = lessonTags(d);
-  const icon = pinned ? "📌" : ((window.FT_LESSON_ICONS || {})[d.id] || "📘");
+  const icon = pinned ? "📌" : ((typeof FT_LESSON_ICONS !== "undefined" ? FT_LESSON_ICONS[d.id] : null) || "📘");
   const label = pinned ? (done ? "✓ Finished" : "📌 Start Here")
     : `Lesson ${i + 1}${done ? " · ✓ Finished" : !hasSlides ? " · Coming soon" : !open ? " · 🔒 Locked" : ""}`;
   const theme = pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`;
