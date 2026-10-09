@@ -175,7 +175,39 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!boxes) fail('Trainee view: Process Questions has no boxes for a trainee to type in');
     if (!await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions does not say it is a preview');
 
+    // 8. Process Questions, one set per module: every module locked until the trainee finishes it,
+    //    ✓ Finish lesson marks it studied and brings them to that module's questions, and each module
+    //    row in 📚 Training Modules carries its own activities.
+    // step 7 emptied the trainee to test the preview: put the real one back and leave preview
+    await page.evaluate((tid) => { state.isAdmin = false; state.adminPreview = false; state.traineeId = tid;
+        try { sessionStorage.removeItem('lsh_admin_preview'); } catch (e) {} }, id);
+    await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2200);
+    await page.evaluate(async () => { goto('process'); await new Promise(r => setTimeout(r, 1600)); });
+    // One card per module, and a module only opens once it has been finished. Earlier steps already
+    // passed one module's Knowledge Check, so count from what is locked now rather than from zero.
+    const before = await page.evaluate(() => ({ sets: document.querySelectorAll('.fp-set').length, locked: document.querySelectorAll('.fp-locked').length }));
+    if (!before.sets) fail('Process Questions shows no modules');
+    if (!before.locked) fail('no module is locked, so the per-module lock is doing nothing');
+    const pick = await page.evaluate(() => (DAYS.find(d => window.ftKcQuestions(d.id).length && !window.ftModuleStudied(d.id)) || {}).id);
+    if (!pick) fail('no unfinished module with questions to test the lock with');
+    await page.evaluate(async (l) => { await window.finishTrainingForDay(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
+    if (!await page.evaluate((l) => !!(state.progress[l] || {}).studied, pick)) fail('✓ Finish lesson did not mark the module studied');
+    if (await page.evaluate(() => state.view) !== 'process') fail('✓ Finish lesson did not open that module\'s Process Questions');
+    const after = await page.evaluate(() => ({ locked: document.querySelectorAll('.fp-locked').length,
+        open: [...document.querySelectorAll('.fp-set:not(.fp-locked) .fp-head b')].map(x => x.textContent),
+        boxes: document.querySelectorAll('main textarea').length }));
+    if (after.locked !== before.locked - 1) fail(`finishing one module should unlock exactly that one: was ${before.locked} locked, now ${JSON.stringify(after)}`);
+    const want = await page.evaluate((l) => ftName(l), pick);
+    if (after.open.indexOf(want) < 0) fail(`the module just finished (${want}) is not the one that opened: ${JSON.stringify(after.open)}`);
+    if (!after.boxes) fail('the finished module has no boxes to answer in');
+    await page.evaluate(async () => { goto('modules'); await new Promise(r => setTimeout(r, 1400)); });
+    const claims = await page.evaluate(() => { const r = [...document.querySelectorAll('.lp-lesson')]
+        .find(x => /Claims Specialist/.test((x.querySelector('.lp-lesson-t b') || {}).textContent || ''));
+        return r ? [...r.querySelectorAll('.lp-act')].map(a => a.textContent.trim()).join(' | ') : ''; });
+    if (!/LOR Drafting Activity/.test(claims)) fail(`the Claims module doesn't carry its LOR Drafting Activity: ${claims}`);
+    if (!/Process Questions/.test(claims)) fail(`the Claims module doesn't carry its Process Questions: ${claims}`);
+
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Resource Library\'s LOR Drafting Activity, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, and Trainee view reaching all of it).');
+    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Resource Library\'s LOR Drafting Activity, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });

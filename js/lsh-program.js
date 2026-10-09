@@ -108,6 +108,14 @@ window.renderTopbar = function(){
 };
 
 /* ---------- 📚 Training Modules (#/modules): the lessons, then the training pages ---------- */
+// A module's own activities, under it: the program says what belongs to each module (window.ftModuleActivities).
+function acts(d){
+  const list = (typeof window.ftModuleActivities === "function" ? window.ftModuleActivities(d.id) : []) || [];
+  if(!list.length) return "";
+  return `<div class="lp-acts">${list.map(a => a.locked
+    ? `<span class="lp-act is-locked" title="${e(a.locked)}">🔒 ${e(a.icon)} ${e(a.label)}</span>`
+    : `<button type="button" class="lp-act" onclick="${a.go}"${a.note ? ` title="${e(a.note)}"` : ""}>${e(a.icon)} ${e(a.label)}</button>`).join("")}</div>`;
+}
 function lessonRow(d, i, pinned){
   const p = (state.progress || {})[d.id] || {}, open = dayUnlocked(d.id) && d.sections && d.sections.length, done = !!p.done;
   const status = done ? `<span class="lp-pill ok">✓ Finished</span>` : !(d.sections && d.sections.length) ? `<span class="lp-pill">Coming soon</span>` : open ? `<span class="lp-pill open">Open</span>` : `<span class="lp-pill">🔒 Locked</span>`;
@@ -118,6 +126,7 @@ function lessonRow(d, i, pinned){
     <div class="lp-lesson-t"><b>${e(d.title)}</b><span>${pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`}${kc ? " · " : ""}${kc}</span></div>
     ${status}
     <button class="btn btn-sm ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
+    ${acts(d)}
   </div>`;
 }
 function renderModules(){
@@ -317,6 +326,10 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-progress{display:flex;align-items:center;gap:12px;margin-top:12px;max-width:520px;} .lp-progress span{font-size:13px;color:#4A5070;white-space:nowrap;} .lp-progress b{color:var(--navy);}
 .lp-bar{flex:1;height:8px;border-radius:99px;background:#ECEEF5;overflow:hidden;} .lp-bar i{display:block;height:100%;background:linear-gradient(90deg,#E3A35F,#C9782E);border-radius:99px;}
 .lp-lessons{padding:16px 18px;margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
+.lp-acts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0 38px;}
+.lp-act{font:inherit;font-size:12px;font-weight:600;border:1px solid #DDE1EC;background:#F7F8FB;color:var(--navy);border-radius:999px;padding:4px 10px;cursor:pointer;}
+.lp-act:hover{background:#ECEEF5;}
+.lp-act.is-locked{opacity:.55;cursor:default;}
 .lp-lesson{display:flex;align-items:center;gap:14px;padding:10px 4px;border-top:1px solid #ECEEF4;}
 .lp-lesson:first-of-type{border-top:0;}
 .lp-num{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;background:#ECEEF5;color:var(--navy);}

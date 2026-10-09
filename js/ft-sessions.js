@@ -313,6 +313,13 @@ const DEFAULT_ACTS = [
 const T = {acts:null};
 const acts = () => T.acts || DEFAULT_ACTS;
 const STATUSES = ["Not yet", "Passed", "Redo"];
+// What this module's live work is: its Practice Session and anything done with the trainer.
+// Used by 📚 Training Modules to show each module's activities next to it (js/ft-program.js).
+FTSessions.forLesson = function(lesson){
+  const l = Number(lesson);
+  return SESSIONS.filter(x => x.lesson === l).map(x => ({kind:"session", id:x.id, icon:x.icon, title:x.title}))
+    .concat(acts().filter(x => Number(x.lesson) === l).map(x => ({kind:"trainer", id:x.id, icon:"🧑‍🏫", title:x.title})));
+};
 FTSessions.trainerCards = function(){
   if(isTrainee()) load();
   const mine = ((S.review || {}).acts) || {};
