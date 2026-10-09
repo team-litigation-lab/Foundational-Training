@@ -6091,7 +6091,7 @@ function orientSlides(){
    {k:"Roadmap", h:"Your 10-day roadmap", body:`<div class="or-days">${DAYS.map(dayTile).join("")}</div>
      <p class="or-foot">Days open one at a time — each builds on the one before.</p>`},
    {k:"A day", h:"How every day works", body:`
-     <div class="or-flow">${step(1,"🖥","Lesson slides","One topic at a time. Next / Previous at the bottom; your place is saved.")}<i>→</i>${step(2,"✔","Quick Checks","Short questions between topics. Pick, change your mind, then Check Answer.")}<i>→</i>${step(3,"🧪","Practice Lab","Do the real task. Graded with written feedback. Auto-saves as you type.")}<i>→</i>${step(4,"📝","Knowledge Check","Pass at 70% to mark the day complete ✓.")}<i>→</i>${step(5,"🔓","Next day opens","Finishing the Practice Lab unlocks tomorrow.")}</div>
+     <div class="or-flow">${step(1,"🖥","Lesson slides","One topic at a time, with Quick Checks between them. Next / Previous at the bottom; your place is saved.")}<i>→</i>${step(2,"📝","Knowledge Check","Pass at 70% to mark the day complete ✓.")}<i>→</i>${step(3,"🧪","Practice Lab","Do the real task. Graded with written feedback — or “coming soon” on days without one yet.")}<i>→</i>${step(4,"🔓","Next day opens","Finishing the Practice Lab unlocks tomorrow.")}</div>
      <div class="or-note">Didn't pass the Knowledge Check? That's a <b>“not yet”</b>, not a “no” — you can still move on, and retake it any time. Your best score counts.</div>`},
    {k:"Dashboard", h:"Your dashboard at a glance", body:`
      <div class="or-bp">
@@ -9047,6 +9047,15 @@ function renderDay(id){
     `;
   }
 
+  if(state.dayViewMode==="practiceLab"){
+    return `
+      ${compactHead}
+      <h2 class="section-title">Practice Lab</h2>
+      ${renderPracticeLabSlide(d)}
+      <button class="btn btn-ghost btn-sm" style="margin-top:16px;" onclick="backToKnowledgeCheckFromPracticeLab()">&larr; Back to Knowledge Check</button>
+    `;
+  }
+
   return `
     ${compactHead}
     ${renderDaySlideshow(d)}
@@ -9075,7 +9084,6 @@ function buildDaySlides(d){
     if((d.quickChecks||[]).some(q=>q.afterIndex===i)) slides.push({type:"quickCheck", lessonIndex:i});
   });
   if(d.recapVideo) slides.push({type:"video"});   // the recap slide only shows once a video link is set
-  if(relatedTools(d.id).length) slides.push({type:"practiceLab"});
   if(d.discussionQuestion && trainerInline()) slides.push({type:"discussion"});
   return slides;
 }
@@ -9186,6 +9194,7 @@ function renderVideoPlaceholder(d){
 }
 function renderPracticeLabSlide(d){
   const tools = relatedTools(d.id);
+  if(!tools.length) return renderPracticeLabComingSoon(d);
   return `
     <div class="card" style="padding:20px 22px;background:#FFFBF3;border-color:var(--orange-soft);">
       <b style="color:var(--navy);font-size:14px;">⚖ Practice What You Just Learned</b>
@@ -9202,6 +9211,16 @@ function renderPracticeLabSlide(d){
       <div class="tc-tag">🧑‍🏫 Trainer Checkpoint</div>
       <p>Once the exercise above is finished, pause here for a live debrief with your trainer — walk through what you did, why, and where your judgment differed from the model answer. This is where the real learning happens, not just in the exercise itself.</p>
     </div>` : ""}
+  `;
+}
+function renderPracticeLabComingSoon(d){
+  return `
+    <div class="video-placeholder">
+      <div class="vp-play">🧪</div>
+      <div class="vp-label">PRACTICE LAB — COMING SOON</div>
+      <div class="vp-title">${ftName(d.id)}: ${esc(d.title)}</div>
+      <p class="vp-note">This day's hands-on Practice Lab hasn't been built yet. Check back soon — in the meantime, you're still cleared to move on to the next day.</p>
+    </div>
   `;
 }
 function renderDiscussionSlide(d){
@@ -9376,6 +9395,17 @@ function goToKnowledgeCheckWithInterstitial(){
   window.scrollTo({top:0, behavior:"smooth"});
 }
 window.goToKnowledgeCheckWithInterstitial = goToKnowledgeCheckWithInterstitial;
+function goToPracticeLabWithInterstitial(){
+  state.dayViewMode = "practiceLab";
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+window.goToPracticeLabWithInterstitial = goToPracticeLabWithInterstitial;
+function backToKnowledgeCheckFromPracticeLab(){
+  state.dayViewMode = "knowledgeCheck";
+  render();
+}
+window.backToKnowledgeCheckFromPracticeLab = backToKnowledgeCheckFromPracticeLab;
 function prevSlide(){
   if((state.lessonSlide||0) > 0){
     state.slideDir = "prev";
@@ -9909,6 +9939,7 @@ function renderQuizResult(d){
       ${renderQuizNextStep(d, lastPassed)}
       ${renderQuickDayFeedback(d.id)}
       <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="goToPracticeLabWithInterstitial()">🧪 Go to Practice Lab</button>
         <button class="btn btn-ghost" onclick="retakeQuiz(${d.id})">Retake Quiz</button>
         <button class="btn btn-ghost" onclick="downloadQuizResultPdf(${d.id})">⬇ Download PDF</button>
         <button class="btn btn-ghost" onclick="returnToLessonCard(${d.id})">Return to Progress</button>
@@ -13930,9 +13961,9 @@ function sopLiveSections(d){
   sec.push({h:"Session plan (auto-built from the portal)", type:"table", headers:["Segment","Time","What happens"], rows:[
     ["Open & recap", "5 min", `Welcome, recap yesterday's Focus items, state today's objective: ${d.objective||d.title}.`],
     ["Topics 1–"+lessons.length, `~${Math.round(lessons.length*2.5)} min`, "Screen-share the lesson slides; run them in 🖥 Presenter view (each slide's notes, script and scenario are in its notes panel)."],
-    ["Practice Lab", "15–20 min", tools.length ? `${tools.map(t=>t.title).join(", ")} — trainees complete it live; debrief afterwards.` : "No Practice Lab for this day."],
     ["End-of-day discussion", "5–10 min", d.discussionQuestion || "Open discussion on the day's hardest topic."],
-    ["Knowledge Check", "10 min", `${d.quiz.length} questions · 70% marks the day complete (not required to move on).`]
+    ["Knowledge Check", "10 min", `${d.quiz.length} questions · 70% marks the day complete (not required to move on).`],
+    ["Practice Lab", "15–20 min", tools.length ? `${tools.map(t=>t.title).join(", ")} — trainees complete it live; debrief afterwards.` : "Coming soon — no Practice Lab built for this day yet."]
   ]});
   sec.push({h:`Topics covered in the portal (${lessons.length})`, type:"table", headers:["#","Topic","Key teaching point","Trainer cue"], rows:
     lessons.map((l,i)=>{ const {principles} = lessonParts(l); return [String(i+1), l.h + (l.__extra?" (added in Content Studio)":""), scriptShort(principles[0]||"", 160), scriptShort(l.trainerCue||"—", 140)]; })});
