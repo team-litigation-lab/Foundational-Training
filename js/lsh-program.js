@@ -45,7 +45,6 @@ const batchLabel = id => {
   const m = /^B(\d{2})(\d{2})(\d{2})?(\d{2})(?:-?LSH[A-Z]*-?\d+)?$/i.exec(v.replace(/\s+/g, ""));
   return m ? "B" + m[1] + m[2] + m[4] : v;
 };
-const badgeOf = m => { try{ return m.badge ? Number(m.badge()) || 0 : 0; }catch(err){ return 0; } };
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["modules", "scorecard"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Modules", scorecard:"My Performance"});
 
@@ -151,7 +150,6 @@ function lessonCard(d, i, pinned){
 // row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
 // beside that lesson's Knowledge Check score. js/ft-simulators.js registers the graded calls in both.
 const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
-const homeStats = () => { const h = hooks("LSH_HOME_STATS"); return h ? `<div class="lp-home-stats">${h}</div>` : ""; };
 const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
 
 // Resume, the certificate and the feedback card: the landing page carries them, so nothing a trainee
@@ -165,9 +163,23 @@ function homeActions(done, total){
       : `<span class="cert-hero-locked" title="Finish the lessons to unlock your certificate">🎓 Certificate · ${done}/${total} lessons finished</span>`) : "");
   return html ? `<div class="lp-home-acts">${html}</div>` : "";
 }
-function homeFeedback(){
+// The compact stat band the sibling courses show under their lessons (their dashboard's dash-side-inner):
+// program %, best/avg competency, average quiz score, days completed, the feedback card and the ranking
+// card, plus whatever else a file registers in window.LSH_HOME_STATS (e.g. js/ft-simulators.js's graded-calls tile).
+function statsBand(done, total){
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const ocs = typeof overallCompetencyScore === "function" ? overallCompetencyScore() : { score: 0, tier: null };
+  const avgC = typeof averageCompetencyScore === "function" ? averageCompetencyScore().score : 0;
+  const quiz = typeof avgScore === "function" ? avgScore() : 0;
   const fb = typeof window.renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : "";
-  return fb ? `<section class="lp-home-fb">${fb}</section>` : "";
+  const rank = typeof window.renderRankingCard === "function" ? renderRankingCard() : "";
+  return `<div class="lp-home-stats">
+    <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
+    <div class="card stat"><div class="num">${ocs.score}%</div><div class="lbl">${ocs.tier ? `Best Competency — ${e(displayTier(ocs.tier))}` : "Best Competency Score"}<span style="display:block;font-weight:400;margin-top:2px;">Avg across all attempts: ${avgC}%</span></div></div>
+    <div class="card stat"><div class="num">${quiz}%</div><div class="lbl">Average quiz score</div></div>
+    <div class="card stat"><div class="num">${done} / ${total}</div><div class="lbl">Lessons completed</div></div>
+    ${fb}${rank}${hooks("LSH_HOME_STATS")}
+  </div>`;
 }
 // The step-timeline: one circle per lesson (not the pinned orientation), done/open/locked, click to jump to its card —
 // the same header the EA/PA-style dashboard shows above its lessons (js/ft-updates.js's retired renderDashboard).
@@ -184,7 +196,7 @@ function stepTimeline(all){
 }
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
-  const viewer = isTrainee() || !!state.adminPreview, ps = pages();
+  const viewer = isTrainee() || !!state.adminPreview;
   const pct = all.length ? Math.round(done / all.length * 100) : 0;
   // The standard hero header (js/ft-updates.js's retired renderDashboard): eyebrow, title, tagline and the
   // completion ribbon, with the step-timeline below it in the same navy card.
@@ -192,21 +204,18 @@ function renderModules(){
       <div class="dash-hero">
         <div class="dash-hero-text"><p class="eyebrow">LEGAL FOUNDATIONAL TRAINING ACCELERATOR</p>
           <h1><span class="hl"><svg class="hero-spark hero-spark-lead" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg>Foundational Training Professional Development Workshop<svg class="hero-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg></span></h1>
-          <p>The ${all.length} lessons of this training, in order, and the pages you work in alongside them.</p></div>
+          <p>The ${all.length} lessons of this training, in order.</p></div>
         ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
       </div>
       ${stepTimeline(all)}
       ${viewer ? "" : `<p class="lp-note">Trainees see the lessons open for their batch: open them in 🛡 Admin Master Control → 📅 Open Lessons.</p>`}
     </div>
-    ${homeStats()}
     ${homeActions(done, all.length)}
     <section class="lp-lessons"><h2>📖 Lessons</h2><div class="dash-main lp-lessons-row">
       ${pinned.length ? `<div class="lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
       <div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div>
     </div></section>
-    ${ps.length ? `<section class="lp-pages"><h2>🧰 Training pages</h2><div class="lp-grid">${ps.map(m => { const go = m.view ? `goto('${m.view}')` : m.run, n = badgeOf(m);
-      return `<div class="card lp-page" role="link" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'){${go}}"><div class="lp-page-h"><span class="lp-ic">${m.icon}</span><b>${e(m.label)}</b>${n ? `<span class="nav-badge">${n}</span>` : ""}</div><p>${e(m.about || "")}</p><span class="lp-go">Open →</span></div>`; }).join("")}</div></section>` : ""}
-    ${homeFeedback()}`;
+    ${statsBand(done, all.length)}`;
 }
 
 /* ---------- 🏅 the Scorecard: every grading system's items, its average, and the overall ---------- */
@@ -408,19 +417,27 @@ main.main-lp .dash-hero-text{grid-column:2;}
 .lp-orient .module-card{width:100%;}
 @media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
-/* the program's own stat cards (the dashboard's side band used to hold these) */
-.lp-home-stats{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0;}
-.lp-home-stats .card.stat{padding:10px 16px;min-width:150px;}
-.lp-home-stats .card.stat .num{font-size:24px;font-weight:800;color:var(--navy);line-height:1.1;}
-.lp-home-stats .card.stat .lbl{font-size:12px;color:var(--ink-soft);}
-.lp-home-fb{max-width:420px;margin-top:24px;}
-/* the feedback card was built for the dashboard's dark side band: on this page it sits on a white card */
-.lp-home-fb .tfb-dash .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep);}
-.lp-home-fb .tfb-dash .sub{font-size:13.5px;color:var(--ink-soft);line-height:1.45;}
-.lp-home-fb .tfb-dash-stars button{color:#D9DEEA;}
-.lp-home-fb .tfb-dash-stars:hover button{color:#E3A35F;}
-.lp-home-fb .tfb-dash-stars button:hover ~ button{color:#D9DEEA;}
-.lp-lessons{margin-bottom:22px;} .lp-lessons h2, .lp-pages h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
+/* the compact stat band under the lessons (the sibling courses' dashboard side band, here a plain row of
+   cards instead of its own dark panel — see statsBand() in js/lsh-program.js) */
+.lp-home-stats{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 0;}
+.lp-home-stats .card.stat{flex:1 1 128px;padding:10px 12px;min-width:0;}
+.lp-home-stats .card.stat .num{font-size:21px;font-weight:800;color:var(--navy);line-height:1.1;}
+.lp-home-stats .card.stat .lbl{font-size:11.5px;color:var(--ink-soft);}
+.lp-home-stats .tfb-dash, .lp-home-stats .rank-card{flex:1.6 1 190px;}
+/* the feedback and ranking cards were built for the dashboard's dark side band: here they sit on white cards */
+.lp-home-stats .tfb-dash .lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep);}
+.lp-home-stats .tfb-dash .sub{font-size:13.5px;color:var(--ink-soft);line-height:1.45;}
+.lp-home-stats .tfb-dash-stars button{color:#D9DEEA;}
+.lp-home-stats .tfb-dash-stars:hover button{color:#E3A35F;}
+.lp-home-stats .tfb-dash-stars button:hover ~ button{color:#D9DEEA;}
+.lp-home-stats .rank-card .lbl{color:var(--navy);font-weight:700;}
+.lp-home-stats .rank-card .num span{font-size:13px;color:var(--ink-soft);font-family:inherit;font-weight:400;}
+.lp-home-stats .rank-card .sub{font-size:11px;color:var(--ink-soft);margin-top:6px;}
+.lp-home-stats .rank-list li{color:var(--ink);}
+.lp-home-stats .rank-list li .sc{color:var(--orange-deep);}
+.lp-home-stats .rank-list li.me{background:#FFF3E6;color:var(--navy);}
+.lp-home-stats .rank-list li.gap{color:var(--ink-soft);}
+.lp-lessons{margin-bottom:22px;} .lp-lessons h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
 /* the Lessons grid: the same clean module-card look as the EA/PA course's dashboard (see js/lsh-dashboard.js).
    js/lsh-dashboard.js sizes that card to fill a fixed-height hero row (container-type:size, overflow:hidden) —
    here the card grows to fit its own content instead, so every lesson's activities stay visible. */
@@ -438,12 +455,7 @@ main.main-lp .dash-hero-text{grid-column:2;}
 .lp-lessons .module-icon, .lp-orient .module-icon{font-size:30px;line-height:1;}
 .lp-lessons .module-theme, .lp-orient .module-theme{font-size:12.5px;color:var(--ink-soft);}
 .lp-kc{font-weight:700;}
-.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:16px;}
-.lp-page{padding:16px 18px;display:flex;flex-direction:column;gap:6px;cursor:pointer;}
-.lp-page:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
-.lp-page-h{display:flex;align-items:center;gap:9px;} .lp-page-h b{flex:1;color:var(--navy);font-size:16px;}
-.lp-ic, .sc-src-ic{width:32px;height:32px;border-radius:10px;background:#FFF3E6;border:1px solid #F7DEC6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-.lp-page p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.45;flex:1;} .lp-go{font-size:12.5px;font-weight:800;color:var(--orange-deep);}
+.sc-src-ic{width:32px;height:32px;border-radius:10px;background:#FFF3E6;border:1px solid #F7DEC6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
 /* score colours: 85% and up, 70% (passing) and up, under 70%, nothing yet */
 .t-top{color:#1E7F4F !important;} .t-ok{color:#2F5BA8 !important;} .t-low{color:#B5531A !important;} .t-none{color:#8A90A6 !important;}
 .sc-hero{display:flex;gap:22px;align-items:center;padding:20px 24px;margin-bottom:18px;flex-wrap:wrap;}
