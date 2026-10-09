@@ -181,8 +181,13 @@ async function workerChecks() {
         await page.waitForTimeout(1500);
         const one = since(t0, x => x.path === '/api/storage/get' && new RegExp(`^(trainee|${sheets}):`).test(x.key));
         if (one.length) fail(`${label} reads ${one.length} records one at a time: ${JSON.stringify(one.map(x => x.key))}`);
-        const got = since(t0, x => x.path === '/api/storage/get-many');
-        if (!got.length || got.length > 3) fail(`${label} took ${got.length} get-many requests (expected 2: the trainees, then their sheets)`);
+        // Count only the get-many calls that carry THIS page's sheets. Timing alone was not enough: a
+        // get-many the previous tab started could still land inside this window and be counted here,
+        // which made the check fail at random. A leaked call carries the other tab's keys, so it no
+        // longer matches. That the sheets aren't read one at a time is the `one` check above.
+        const sheetRe = new RegExp(`(^|,)(${sheets}):`);
+        const got = since(t0, x => x.path === '/api/storage/get-many' && sheetRe.test(x.key));
+        if (!got.length || got.length > 3) fail(`${label} read its sheets in ${got.length} get-many request(s) (expected 1; a big batch splits at 20 keys): ${JSON.stringify(got.map(x => x.key.slice(0, 60)))}`);
         const shown = await page.evaluate((names) => names.filter(nm => document.body.innerText.includes(nm + ' Tester')).length, names);
         if (shown !== names.length) fail(`${label} lists ${shown} of the ${names.length} trainees`);
     }
