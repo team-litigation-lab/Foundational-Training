@@ -1,5 +1,5 @@
 /* ============================================================
-   📚 Resource Library — LOR Drafting Activity (#/lor)
+   📚 Resource Library — LOR Drafting Activity (#/lorfp, #/lortp, and the trainer's hub #/lor)
    Loaded after js/ft-lor-data.js (the case notes and the two templates) and after js/ft-sessions.js.
    A section of 🛠 Practice Lab, and the activity that replaced the Claims Specialist Practice Session.
 
@@ -16,8 +16,12 @@
        trainer has no assignment of their own to read), with the case picker in the preview strip. Both
        views draft on the one test copy, so a letter started in either is still there in the other.
      • The trainee reads their case notes on the page and can download them as a PDF.
-     • Two editors, one per activity, showing the firm's templates exactly as they are. What the firm
-       highlighted in yellow is what the trainee fills in; everything else is fixed text they can't edit:
+     • Two tools, one per letter, each its own card in the Practice Lab and its own page: #/lorfp (1P) and
+       #/lortp (3P with its Affidavit), with a link across between them. The trainer's hub #/lor keeps both
+       behind a tab row, for testing. Each shows the firm's template exactly as it is. What the firm
+       highlighted in yellow is what the trainee fills in, and the firm's own wording sits IN the box,
+       highlighted, rather than behind it as a ghost placeholder — the trainee types over it, and an
+       untouched box downloads as that same wording. Everything else is fixed text they can't edit:
          – the letter's date is auto-generated and always the current date, as a CMS template editor does
          – "SENT VIA FACSIMILE AND E-MAIL" is typed by hand (it is the one highlighted line that is not
            a placeholder: the trainee edits the wording to match how the letter actually goes out)
@@ -44,8 +48,18 @@ const previewOnly = () => !!state.adminPreview && !state.traineeId;
 // Said on the page itself, not only here: this activity never becomes a case file in the CMS.
 const NO_CASE_FILE = "Do <b>not</b> create a case file in the CMS for this activity, and do not link it to any case file. This is a standalone drafting exercise: you draft the two letters here, download them, and upload them into the Smart Advocate demo yourself.";
 
-window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["lor"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {lor:"LOR Drafting Activity"});
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["lor", "lorfp", "lortp"]);
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
+  lor:"LOR Drafting Activity", lorfp:"1P LOR Drafting", lortp:"3P LOR Drafting"});
+// Each letter is its own tool with its own page. #/lor stays the trainer's hub (assign + test copy).
+const VIEW_TPL = {lorfp:"lor1p", lortp:"lor3p"};                       // page -> the letter it drafts
+const TPL_VIEW = {lor1p:"lorfp", lor3p:"lortp"};                       // and back again
+const LOR_VIEWS = ["lor", "lorfp", "lortp"];
+const onLor = () => LOR_VIEWS.indexOf(state.view) >= 0;
+const SHORT = {lor1p:"1P LOR", lor3p:"3P LOR with Affidavit"};
+const shortOf = t => SHORT[t.id] || String(t.title).split(":")[0];
+const BLURB = {lor1p:"The Letter of Representation for your client’s own carrier, in the firm’s template.",
+               lor3p:"The Letter of Representation for the defendant’s carrier, with the Affidavit of Insurance Coverage."};
 
 /* ---------- the trainee's drafts and the case their trainer assigned ---------- */
 const L = {id:null, draft:null, assign:null, loading:false, err:"", timer:null, saving:false, savedAt:null, tab:TEMPLATES[0].id};
@@ -70,7 +84,7 @@ async function load(id){
     L.assign = (a && typeof a === "object") ? a : null;
   }catch(err){ L.err = "Couldn’t load your drafting activity. Check your connection and try again."; }
   L.loading = false;
-  if(state.view === "lor" || state.view === "simulators") render();
+  if(onLor() || state.view === "simulators") render();
 }
 function paintSave(ok){
   const el = document.getElementById("lorSave");
@@ -152,21 +166,56 @@ function field(run, ctx){
     // "SENT VIA FACSIMILE AND E-MAIL": edited by hand, so it carries the template's own wording to start with.
     return `<input class="lorl-in lorl-manual" value="${e(v != null ? v : run.ph)}" size="${Math.max(18, run.ph.length)}"
       aria-label="Sent via" oninput="FTLor.set(${arg}, this.value)">`;
+  // The firm's own wording is IN the box, highlighted, exactly as the .docx has it — not a ghost
+  // placeholder behind an empty box. The trainee types over it; until they do, the letter reads as the
+  // template reads, and the download already falls back to the same wording (letterLines below).
+  const shown = set ? v : run.ph;
   if(run.k === "long")
     return `<textarea class="lorl-ta${set ? " set" : ""}" rows="5" placeholder="${e(run.ph)}" aria-label="Highlighted paragraph to review"
-      oninput="FTLor.set(${arg}, this.value); FTLor.grow(this)">${e(v || "")}</textarea>`;
-  return `<input class="lorl-in${set ? " set" : ""}" value="${e(v || "")}" placeholder="${e(run.ph)}"
-    size="${Math.max(12, Math.min(64, run.ph.length))}" aria-label="${e(run.ph)}" oninput="FTLor.set(${arg}, this.value)">`;
+      oninput="FTLor.set(${arg}, this.value); FTLor.grow(this)">${e(shown)}</textarea>`;
+  return `<input class="lorl-in${set ? " set" : ""}" value="${e(shown)}" placeholder="${e(run.ph)}"
+    size="${Math.max(12, Math.min(64, String(shown).length + 1))}" aria-label="${e(run.ph)}" oninput="FTLor.set(${arg}, this.value)">`;
+}
+// A "label<tab>value" line of the Re: block: one fixed run that ends on a tab, then the field.
+// "Re:\tYour Insured:\t" also carries the Re: gutter, which sits in its own column.
+function defRow(b){
+  if(b.t === "tbl" || b.n || b.c || !b.runs || b.runs.length < 2) return null;
+  const head = b.runs[0];
+  if(head.f || typeof head.x !== "string") return null;
+  const parts = head.x.split("\t");
+  if(parts.length < 2 || parts[parts.length - 1] !== "") return null;   // it has to END on a tab
+  const rest = b.runs.slice(1);
+  if(!rest.some(r => r.f) || rest.some(r => !r.f && String(r.x).indexOf("\t") >= 0)) return null;
+  return {gutter: parts.slice(0, -2).join(" "), label: parts[parts.length - 2], bold: !!head.b, rest};
 }
 function renderLetter(tpl){
   const ctx = {tpl, L: letter(tpl.id), box: 0};
-  return `<div class="lorl">` + tpl.blocks.map(b => {
-    if(b.t === "tbl")
-      return `<table class="lorl-tbl"><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${e(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  const bold = (on, txt) => on ? `<b>${e(txt)}</b>` : e(txt);
+  const out = [];
+  for(let i = 0; i < tpl.blocks.length; i++){
+    // a run of label/value lines: one grid, so every value starts at the same place
+    const group = [];
+    for(let j = i, r; j < tpl.blocks.length && (r = defRow(tpl.blocks[j])); j++) group.push(r);
+    if(group.length > 1){
+      const gut = group.some(r => r.gutter);
+      out.push(`<div class="lorl-defs${gut ? " lorl-defs-gut" : ""}">` + group.map(r =>
+          (gut ? `<span class="lorl-def-g">${r.gutter ? bold(r.bold, r.gutter) : ""}</span>` : "")
+          + `<span class="lorl-def-l">${bold(r.bold, r.label)}</span>`
+          + `<span class="lorl-def-v">${r.rest.map(x => x.f ? field(x, ctx) : fixed(x, ctx)).join("")}</span>`
+        ).join("") + `</div>`);
+      i += group.length - 1;
+      continue;
+    }
+    const b = tpl.blocks[i];
+    if(b.t === "tbl"){
+      out.push(`<table class="lorl-tbl"><tbody>${b.rows.map(r => `<tr>${r.map(c => `<td>${e(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      continue;
+    }
     const inner = b.runs.map(r => r.f ? field(r, ctx) : fixed(r, ctx)).join("");
     const cls = "lorl-p" + (b.n ? " lorl-num" : "") + (b.c ? " lorl-mid" : "");
-    return `<p class="${cls}">${inner || "&nbsp;"}</p>`;
-  }).join("") + `</div>`;
+    out.push(`<p class="${cls}">${inner || "&nbsp;"}</p>`);
+  }
+  return `<div class="lorl">` + out.join("") + `</div>`;
 }
 
 /* ---------- the letter as plain text (what the PDF and the Word file are made from) ---------- */
@@ -220,9 +269,14 @@ function steps(tpl){
     <p class="lor-muted">Save it as <code>${e(tpl.naming)}</code> in your assigned Assessment/Activities folder.</p></details>`;
 }
 function editor(no){
-  const tabs = TEMPLATES.map(t => `<button type="button" class="${L.tab === t.id ? "on" : ""}" onclick="FTLor.tab('${t.id}')">${e(t.title.split(":")[0])}</button>`).join("");
-  const tpl = TEMPLATES.find(t => t.id === L.tab) || TEMPLATES[0];
-  return `<section class="lor-ed"><div class="lsh-subtabs lor-tabs" role="tablist">${tabs}</div>
+  const only = VIEW_TPL[state.view] || "";          // a tool of its own: this letter, no tab row
+  const tpl = TEMPLATES.find(t => t.id === (only || L.tab)) || TEMPLATES[0];
+  const other = TEMPLATES.find(t => t.id !== tpl.id);
+  const head = only
+    ? `<p class="lor-other">The other half of the activity: <button type="button" class="lor-link" onclick="goto('${TPL_VIEW[other.id]}')">${e(shortOf(other))} →</button></p>`
+    : `<div class="lsh-subtabs lor-tabs" role="tablist">${TEMPLATES.map(t =>
+        `<button type="button" class="${tpl.id === t.id ? "on" : ""}" onclick="FTLor.tab('${t.id}')">${e(shortOf(t))}</button>`).join("")}</div>`;
+  return `<section class="lor-ed">${head}
     <h2 class="lor-ed-h">${e(tpl.title)}</h2>
     ${steps(tpl)}
     <div class="card lor-paper">${renderLetter(tpl)}</div>
@@ -235,8 +289,9 @@ function editor(no){
 }
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to open the LOR Drafting Activity.</div>`;
-  if(adminOn()) return renderAdmin();
-  if(L.id !== state.traineeId && !L.loading) load(state.traineeId);
+  if(adminOn() && state.view === "lor") return renderAdmin();
+  if(adminOn()) useScratch();                       // a tool's own page, drafted as a test copy
+  else if(L.id !== state.traineeId && !L.loading) load(state.traineeId);
   if(L.err) return `<div class="card" style="padding:28px;">${e(L.err)} <button class="btn btn-ghost btn-sm" onclick="FTLor.reload()">Try again</button></div>`;
   if(!L.draft) return `<div class="card" style="padding:28px;">Loading your drafting activity…</div>`;
   const no = myCaseNo();
@@ -244,8 +299,14 @@ function renderPage(){
     ? `<div class="card lor-preview-note">👁 <b>Trainee view</b> — the page as a trainee with a case assigned sees it, working: fill the
         highlighted fields, tick the boxes and download both letters. Nothing you type here is saved; a trainee drafts on their own account.
         <label class="lor-pick lor-pick-note">Previewing <select aria-label="Preview a case" onchange="FTLor.preview(this.value)">${caseOptions(no)}</select></label></div>` : "";
-  return `${preview}<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p><h1>LOR Drafting Activity</h1>
-      <p>Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you.</p></div>
+  const only = VIEW_TPL[state.view] && TEMPLATES.find(t => t.id === VIEW_TPL[state.view]);
+  const test = adminOn() ? `<div class="card lor-preview-note">🧑‍🏫 <b>Test copy</b> — the activity as a trainee does it. Nothing you type here is saved.
+      <label class="lor-pick lor-pick-note">Drafting <select aria-label="Draft as which case" onchange="FTLor.preview(this.value)">${caseOptions(no)}</select>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.clearTest()">Clear what I typed</button></label></div>` : "";
+  return `${preview}${test}<div class="lor-hero"><p class="lor-eyebrow">📚 Resource Library</p>
+      <h1>${only ? e(shortOf(only)) + " Drafting" : "LOR Drafting Activity"}</h1>
+      <p>${only ? e(BLURB[only.id]) + " Draft it from the case your trainer assigned you, then download it."
+                : "Draft a Letter of Representation for both the 1P and the 3P carrier, from the case your trainer assigned you."}</p></div>
     ${notice()}${objective()}${caseCard(no)}${no ? editor(no) : ""}`;
 }
 
@@ -264,7 +325,7 @@ async function loadAdmin(){
     A.rows = rows.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   }catch(err){ A.rows = []; }
   A.loading = false;
-  if(state.view === "lor") render();
+  if(onLor()) render();
 }
 function renderAdmin(){
   if(!A.rows && !A.loading) loadAdmin();
@@ -402,7 +463,7 @@ window.FTLor = {
 /* ---------- wiring into the engine ---------- */
 const __render = window.render;
 window.render = function(){
-  if(state.view !== "lor") return __render.apply(this, arguments);
+  if(!onLor()) return __render.apply(this, arguments);
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-lor">${renderPage()}</main>` + renderFooter();
@@ -411,20 +472,25 @@ window.render = function(){
   document.querySelectorAll(".lorl-ta").forEach(FTLor.grow);
 };
 // 📚 Resource Library in the Practice Lab, where the Claims Specialist session used to be.
-window.ftLorCard = function(){
-  const open = state.isAdmin || state.adminPreview || (typeof dayUnlocked === "function" ? dayUnlocked(7) : true);
-  // Read here, not on the dashboard: the Practice Lab is where the card is, so the dashboard's
-  // request budget is untouched. The card names the case as soon as the read comes back.
-  if(isTrainee() && L.id !== state.traineeId && !L.loading) load(state.traineeId);
-  const no = previewOnly() || (isTrainee() && L.draft) ? myCaseNo() : null;
+// One card per letter: 1P and 3P are separate tools, each opening its own page.
+function lorCard(view, open, no){
+  const tpl = TEMPLATES.find(t => t.id === VIEW_TPL[view]) || TEMPLATES[0];
   const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
-    <h3>📄 LOR Drafting Activity</h3>
-    <p class="fts-note">Draft the Letter of Representation for the 1P and the 3P carrier from your assigned case, in the firm's own templates, then download them to upload into the Smart Advocate demo. A standalone activity — no CMS case file.</p>
+    <h3>📄 ${e(shortOf(tpl))} Drafting</h3>
+    <p class="fts-note">${e(BLURB[tpl.id])} Draft it from your assigned case, then download it to upload into the Smart Advocate demo yourself. A standalone activity — no CMS case file.</p>
     ${note ? `<p class="fss-case">${note}</p>` : ""}
-    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="goto('lor')">Open the activity</button>`
+    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="goto('${view}')">Open the activity</button>`
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
+}
+window.ftLorCard = function(){
+  const open = state.isAdmin || state.adminPreview || (typeof dayUnlocked === "function" ? dayUnlocked(7) : true);
+  // Read here, not on the dashboard: the Practice Lab is where the cards are, so the dashboard's
+  // request budget is untouched. The cards name the case as soon as the read comes back.
+  if(isTrainee() && L.id !== state.traineeId && !L.loading) load(state.traineeId);
+  const no = previewOnly() || (isTrainee() && L.draft) ? myCaseNo() : null;
+  return lorCard("lorfp", open, no) + lorCard("lortp", open, no);
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-lor"; s.textContent = `
@@ -460,13 +526,17 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-steps code,.lor-naming code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;background:#F1F5F9;border-radius:5px;padding:2px 6px;overflow-wrap:anywhere;}
 /* the letter itself: the firm's page, with only the highlighted parts editable */
 .lor-paper{padding:40px 44px;background:#fff;}
-.lorl{font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;color:#111;}
+.lorl{font-family:Arial,Helvetica,sans-serif;font-size:13.5px;line-height:1.5;color:#111;font-weight:400;}
+.lorl b{font-weight:700;}
 .lorl-p{margin:0 0 9px;text-align:justify;}
 .lorl-mid{text-align:center;font-weight:700;}
 .lorl-num{display:list-item;list-style:decimal;margin-left:26px;text-align:justify;}
 .lorl-tab{display:inline-block;width:34px;}
 .lorl-tbl{border-collapse:collapse;margin:6px 0;} .lorl-tbl td{padding:2px 8px 2px 0;font-size:13.5px;}
-.lorl-in,.lorl-ta{font:inherit;color:#0B3B8C;font-weight:700;background:#FEF9C3;border:0;border-bottom:1.5px solid #EAB308;border-radius:3px 3px 0 0;padding:1px 5px;max-width:100%;}
+.lorl-defs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 12px;align-items:baseline;margin:0 0 9px;}
+.lorl-defs-gut{grid-template-columns:max-content max-content minmax(0,1fr);}
+.lorl-def-g,.lorl-def-l{white-space:nowrap;}
+.lorl-in,.lorl-ta{font:inherit;color:#111;background:#FEF9C3;border:0;border-bottom:1.5px solid #EAB308;border-radius:3px 3px 0 0;padding:1px 5px;max-width:100%;}
 .lorl-in:focus,.lorl-ta:focus{outline:2px solid #F97316;outline-offset:1px;background:#FFFBEB;}
 .lorl-in::placeholder,.lorl-ta::placeholder{color:#8A7B2F;font-weight:500;font-style:italic;}
 .lorl-in.set,.lorl-ta.set{background:#ECFDF5;border-bottom-color:#34D399;}
@@ -487,6 +557,8 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-arow select,.lor-preview select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #D7DBE7;border-radius:8px;background:#fff;max-width:100%;}
 .lor-pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:13.5px;font-weight:700;color:var(--navy);}
 .lor-aff{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.lor-other{margin:0 0 12px;font-size:13.5px;color:var(--ink-soft);}
+.lor-link{border:0;background:none;font:inherit;font-weight:700;color:var(--orange-deep);cursor:pointer;padding:0;text-decoration:underline;}
 .lor-pick-note{color:#3730A3;margin-top:8px;}
 .lor-pick-note select{font:inherit;font-size:13px;font-weight:600;padding:4px 8px;border:1px solid #C7D2FE;border-radius:8px;background:#fff;max-width:100%;}
 .lor-astate{font-size:12px;color:var(--ink-soft);}

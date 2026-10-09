@@ -34,8 +34,10 @@ window.ftModuleActivities = function(lesson){
     FTSessions.forLesson(l).forEach(a => out.push(a.kind === "session"
       ? {icon:a.icon || "🟢", label:a.title, go:`FTSessions.open('${a.id}')`}
       : {icon:a.icon || "🧑‍🏫", label:a.title, go:"goto('simulators')", note:"with your trainer"}));
-  if(typeof window.ftLorCard === "function" && l === 7)
-    out.push({icon:"📄", label:"LOR Drafting Activity", go:"goto('lor')"});
+  if(typeof window.ftLorCard === "function" && l === 7){
+    out.push({icon:"📄", label:"1P LOR Drafting", go:"goto('lorfp')"});
+    out.push({icon:"📄", label:"3P LOR Drafting", go:"goto('lortp')"});
+  }
   return out;
 };
 
