@@ -21,10 +21,10 @@
 
    2. THE PHOTOS BEHIND THE CREAM PAGES. The pages that were a flat cream sheet
       (#FFFDF8) — a lesson's opening page and its native slides, the Platform
-      Orientation slides, the SOP slides and the certificate — now carry one of
-      the five courtroom photographs in img/, under a cream wash that keeps the
-      text as readable as it was. A lesson's photo is picked from its number, so
-      every page of a lesson shows the same one and neighbouring lessons differ.
+      Orientation slides and the certificate — now carry one of the five
+      courtroom photographs in img/, under a cream wash that keeps the text as
+      readable as it was. A lesson's photo is picked from its number, so every
+      page of a lesson shows the same one and neighbouring lessons differ.
 
       The slides that already have a background of their own are untouched: the
       Canva decks (body.ft-fit) and the Orientation deck with the trainers'
@@ -209,7 +209,12 @@ body{background-attachment:fixed;}
    A lesson's opening page and its native slides. The Canva decks
    (body.ft-fit) and the Orientation deck (body.ft-orient) set their own
    background with !important on a more specific selector, so they are not
-   touched by this. */
+   touched by this.
+
+   .sopx-slide is the engine's SOP Reference present mode. Nothing shows it in
+   this program — ftAdminTab() in js/ft-firms.js replaces the engine's admin tab
+   bar and SOP Reference isn't one of the five tabs — so it is here only so the
+   page matches if that tab ever comes back. */
 .lesson-stage #lessonSlideWrap,
 .lesson-stage .lesson-slide > .card,
 .lesson-stage .lesson-slide .lesson-card,
