@@ -31,7 +31,9 @@ async function workerChecks() {
         ['surprise-task-day2', JSON.stringify({ title: 'An EA/PA task' })]
     ]);
     const env = {
-        MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret',
+        // PORTAL_ONLY=off so this test can mint a trainee token by name + batch; trainees really come in
+        // from the LSH Training Portal (sso.cjs). What's checked here is the storage rules, not the sign-in.
+        MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off',
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) }
     };
     const call = async (p, body, token) => {
