@@ -152,7 +152,7 @@ function renderMyFirm(){
 const __render = window.render;
 window.render = function(){
   if(state.view !== "firm") return __render.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ff">${renderMyFirm()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}

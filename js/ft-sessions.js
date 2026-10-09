@@ -291,7 +291,7 @@ function clock(){
 const __render = window.render;
 window.render = function(){
   if(state.view !== "session") return __render.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   if(!S.cur && S.data && S.data.live) S.cur = S.data.live.sid;
   if(!S.cur){ state.view = "simulators"; return window.render(); }
   const app = document.getElementById("app");
