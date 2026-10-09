@@ -144,6 +144,12 @@ window.addEventListener("focus", () => { if(isTrainee() && S.id && Date.now() - 
 async function save(){ if(!S.data) return false; S.data.updatedAt = new Date().toISOString(); return sharedSet("sessions:" + S.id, S.data); }
 const keyOf = (s, c) => s.id + "|" + (c ? c.id : "-");
 const caseFor = s => s.area ? (FF().myCases(s.area)[0] || null) : null;
+// An admin has no assigned case, so the preview borrows the first firm's first case. The session
+// page and its tool buttons have to agree on which case that is: a tool's link is built from it
+// (🗂 MC-01 in the CMS), and a tool is opened by its position in the same list.
+const previewFirm = () => FF().firms()[0] || null;
+const previewCase = s => { const f = previewFirm(); return s.area && f ? (FF().caseById((f.cases || [])[0]) || null) : null; };
+const sessionCase = s => isTrainee() ? caseFor(s) : previewCase(s);
 const runOf = (s, c) => (S.data && S.data.runs[keyOf(s, c)]) || null;
 const reviewOf = key => ((S.review || {}).sessions || {})[key] || null;
 const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
@@ -161,7 +167,8 @@ window.FTSessions = {
     save(); render();
   },
   tool(i){
-    const s = sessionById(S.cur), c = caseFor(s), t = (s.tools(c) || [])[i]; if(!t) return;
+    const s = sessionById(S.cur); if(!s) return;
+    const c = sessionCase(s), t = (s.tools(c) || [])[i]; if(!t) return;
     if(t[1] === "calsim:standard"){ if(window.ftsCalsim) ftsCalsim("standard"); return; }
     if(window.ftsShowTool) ftsShowTool(t[1], `${t[0].replace(/^\S+\s/, "")} · ${s.title}`); else window.open(t[1], "_blank");
   },
@@ -259,7 +266,7 @@ function renderSession(){
   if(!s){ return `${back}<div class="card fss-card" style="padding:24px;">Pick a session in the Practice Lab.</div>`; }
   const preview = !isTrainee();
   if(!preview){ load(); if(!S.data) return `${back}<div class="card" style="padding:24px;">Loading your session…</div>`; }
-  const f = preview ? FF().firms()[0] : FF().myFirm(), c = preview ? (s.area ? FF().caseById((f.cases || [])[0]) : null) : caseFor(s);
+  const f = preview ? previewFirm() : FF().myFirm(), c = sessionCase(s);
   if(!f) return `${back}<div class="card" style="padding:24px;">Your trainer hasn’t assigned your law firm yet.</div>`;
   const run = preview ? null : runOf(s, c), rv = run ? reviewOf(keyOf(s, c)) : null;
   const started = run && run.startedAt && !run.submittedAt, done = run && run.submittedAt;
