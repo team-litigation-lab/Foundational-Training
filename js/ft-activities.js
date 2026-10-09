@@ -1,7 +1,7 @@
 /* ============================================================
    FACILITATOR FEEDBACK STYLE (Foundational Training)
    ------------------------------------------------------------
-   🗣 Feedback Style (Admin → 📚 Training Modules): learns how the facilitator writes feedback — from
+   🗣 Feedback Style (Admin → 📚 Modules): learns how the facilitator writes feedback — from
    pasted or uploaded examples, and from the feedback already sent on the Daily Activities this
    platform used to have — and every AI feedback in the portal (Practice Lab grading, daily reviews,
    and the Worker's Task Tracker notes review) is then written in that voice.
@@ -268,5 +268,5 @@ window.renderAdmin = function(){
   const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
   return end > 0 ? out.slice(0, end) + tabs + out.slice(end) : out;
 };
-// An old link to the Activities page (#/activities) opens Training Modules.
+// An old link to the Activities page (#/activities) opens Modules.
 if(/^#\/activities\b/.test(location.hash)) location.hash = "#/modules";

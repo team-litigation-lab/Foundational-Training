@@ -2449,7 +2449,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
-<script src="/js/portal-gate.js?v=2026.10.08-perf"></script>
+<script src="/js/portal-gate.js?v=2026.10.09-modules"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -5405,7 +5405,7 @@ const ELIAS_VOICE_NOTE_AUDIO_SRC = ELIAS_VOICE_NOTE_AUDIO_DATAURI;
 const CLIENT_AVATAR_SRC = "";
 
 const state = {
-  view:"clientprofile",
+  view:"modules",
   dayId:null,
   toolId:null,
   quizAnswers:{},
@@ -6378,7 +6378,7 @@ function renderClientProfile(){
 
 
 function renderTopbar(){
-  let views = [["dashboard","Dashboard"],["tasks","🎲 Tasks"],["clientprofile","Client Profile"],["practice","Practice Lab"],["crisisroleplay","🔥 Live Roleplay"],["notes","My Notes"],["handouts","Handouts"]];
+  let views = [["dashboard","📚 Modules"],["tasks","🎲 Tasks"],["clientprofile","Client Profile"],["practice","Practice Lab"],["crisisroleplay","🔥 Live Roleplay"],["notes","My Notes"],["handouts","Handouts"]];
   if(state.isAdmin){
     // Admin is a trainer monitoring dashboard, not a trainee workspace — hide
     // the trainee-facing-only views that have no role here.
@@ -7014,7 +7014,7 @@ Open immediately with the specific, in-character problem itself — never a gene
 
 function renderOpenRoleplay(){
   const s = state.rpSession;
-  if(!s) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">No active roleplay — head back to the dashboard to start one.</div>`;
+  if(!s) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">No active roleplay — head back to 📚 Modules to start one.</div>`;
   const elapsed = Math.floor((Date.now()-s.startedAt)/1000);
   const mm = String(Math.floor(elapsed/60)).padStart(2,"0");
   const ss = String(elapsed%60).padStart(2,"0");
@@ -7024,7 +7024,7 @@ function renderOpenRoleplay(){
   }
 
   return `
-    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Dashboard</button>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Modules</button>
     <div class="rp-session-header">
       <div>
         <div class="rp-session-tag">${s.category.icon} ${esc(s.category.label)} · ${esc(s.mode.label)}${s.persona ? ` · with ${esc(s.persona.label)}` : ""}${s.isQuickPractice ? ` · 🎲 Quick Practice` : ""}</div>
@@ -7201,7 +7201,7 @@ function renderRapidDelegationPart(s){
   const task = s.rapidTasks[s.rapidIndex];
   const done = s.rapidIndex >= s.rapidTasks.length;
   return `
-    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Dashboard</button>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Modules</button>
     <div class="rp-session-header">
       <div>
         <div class="rp-session-tag">${s.category.icon} Part 2: Rapid Delegation</div>
@@ -7267,7 +7267,7 @@ async function loadTraineeRanking(force){
     const ranked = pool.map(x=>({id:x.id, name:x.name, overall:rankOverall(x)})).sort((a,b)=>b.overall-a.overall);
     state.rankData = {at:Date.now(), batch, ranked};
   }catch(e){ state.rankData = {at:Date.now(), error:true, ranked:[]}; }
-  if(state.view==="dashboard") render();
+  if(state.view==="dashboard" || state.view==="modules") render();
 }
 
 /* ---------- Competency profile + "Work on next" (dashboard sidebar) ---------- */
@@ -8272,7 +8272,7 @@ function syncRouteHash(){
 function routeDepth(){ const st = history.state; return (st && typeof st.lshDepth==="number") ? st.lshDepth : 0; }
 function routeTrail(){ try{ const t = JSON.parse(sessionStorage.getItem("lsh_route_trail")||"[]"); return Array.isArray(t) ? t : []; }catch(e){ return []; } }
 function routeTrailSet(depth, h){ const t = routeTrail().slice(0, depth); t[depth] = h; try{ sessionStorage.setItem("lsh_route_trail", JSON.stringify(t.slice(-60))); }catch(e){} }
-const ROUTE_LABELS = {dashboard:"Dashboard", practice:"Practice Lab", notes:"My Notes", clientprofile:"Client Profile", handouts:"Handouts",
+const ROUTE_LABELS = {dashboard:"Modules", practice:"Practice Lab", notes:"My Notes", clientprofile:"Client Profile", handouts:"Handouts",
   tasks:"Tasks", crisisroleplay:"Live Roleplay", orientation:"Orientation", facilitatorguide:"Facilitator Guide"};
 function routeLabel(h){
   const m = String(h||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
@@ -8287,18 +8287,18 @@ function navBackTarget(){
   const prev = routeTrail()[d-1] || "";
   if(!prev || prev===routeHash()) return "";
   // The page already has a link back to this place (Day → roadmap, activity → Practice Lab).
-  if(state.view==="day" && prev==="#/dashboard") return "";
+  if(state.view==="day" && (prev==="#/dashboard" || prev==="#/modules")) return "";
   if(state.view==="tool" && prev==="#/practice") return "";
   return prev;
 }
 // Filled in after the page's history entry is recorded (afterRender), so it names the right page.
 function fillNavBack(){
   const slot = document.getElementById("navBackSlot"); if(!slot) return;
-  const prev = ["login","pendingApproval","registrationDenied","dashboard"].includes(state.view) ? "" : navBackTarget();
+  const prev = ["login","pendingApproval","registrationDenied","dashboard","modules"].includes(state.view) ? "" : navBackTarget();
   const label = prev && routeLabel(prev);
   slot.innerHTML = label ? `<div class="nav-back-row"><button type="button" class="nav-back" onclick="navBack()" title="Go back to the page you were on">← Back to ${esc(label)}</button></div>` : "";
 }
-function navBack(){ if(routeDepth()>0) history.back(); else goto("dashboard"); }
+function navBack(){ if(routeDepth()>0) history.back(); else goto("modules"); }
 window.navBack = navBack;
 function parseRouteHash(){
   const m = String(location.hash||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
@@ -8552,7 +8552,7 @@ async function submitLoginInner(){
   await syncToLedger(true);
   const status = await getApprovalStatus(state.traineeId);
   if(status==="approved"){
-    state.view = "clientprofile";
+    state.view = "modules";
     startApprovalPolling(state.traineeId);
     if(state.lastView && RESUMABLE_VIEWS.includes(state.lastView.view) && state.lastView.view!=="clientprofile"){ const lv = state.lastView; resumeWhereLeftOff(lv); toast("Welcome back — picking up where you left off."); return; }
   }else if(status==="rejected"){
@@ -8596,7 +8596,7 @@ async function recheckApproval(){
   btn.disabled = true; btn.textContent = "Checking…";
   const status = await getApprovalStatus(state.traineeId);
   if(status==="approved"){
-    state.view = "clientprofile";
+    state.view = "modules";
     startApprovalPolling(state.traineeId);
     render();
   }else if(status==="rejected"){
@@ -8759,7 +8759,7 @@ async function liveTick(){
       const status = await getApprovalStatus(state.traineeId);
       if(status==="approved"){
         startApprovalPolling(state.traineeId);
-        state.view = "clientprofile"; render();
+        state.view = "modules"; render();
         toast("🎉 You're approved — welcome to the program!");
         state.feedbackLoadedAt = 0;
       }else if(status==="rejected" && state.view!=="registrationDenied"){ state.view = "registrationDenied"; render(); }
@@ -8946,7 +8946,7 @@ window.applyUpdate = applyUpdate;
     ? sharedGet("trainee:"+state.traineeId).catch(()=>null)
     : Promise.resolve(null);
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
-  loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
+  loadPublishedContent().then(()=>{ if(["day","dashboard","modules","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
   if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
   if(!state.traineeName){
@@ -9018,7 +9018,7 @@ function renderDay(id){
   if(!d) return `<p>Day not found.</p>`;
   if(!dayUnlocked(id)){
     return `
-      <a class="back-link" onclick="goto('dashboard')">&larr; Back to roadmap</a>
+      <a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>
       <div class="card" style="padding:40px;text-align:center;">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">${ftName(id)} is locked</h2>
@@ -9030,7 +9030,7 @@ function renderDay(id){
   }
   const prog = state.progress[id];
   const compactHead = `
-    <a class="back-link" onclick="goto('dashboard')">&larr; Back to roadmap</a>
+    <a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>
     <div class="day-head-compact">
       <span class="dhc-eyebrow">${ftLabel(d)}</span>
       <span class="dhc-title">${esc(d.title)}</span>
@@ -9245,7 +9245,7 @@ function renderDayIntro(d){
         ${warm.length ? `<div class="di-warm"><b>🧠 Warm-up — what do you already know?</b> <span>Not graded. Just notice what you're unsure about.</span>
           ${warm.map((q,k)=>warmupQuestionHtml(d.id,q,k)).join("")}</div>` : ""}
       </div></div>
-      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('dashboard')">← Dashboard</button><span class="slide-counter">Objectives</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start ${ftName(d.id)} →</button></div>
+      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('modules')">← 📚 Modules</button><span class="slide-counter">Objectives</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start ${ftName(d.id)} →</button></div>
     </div>`;
 }
 /* Warm-up: the trainee picks an answer first; only then do we show whether it was right
@@ -14022,7 +14022,7 @@ async function submitTraineeFeedback(){
   if(rec.dayId){ state.tfbGivenDays = state.tfbGivenDays || {}; state.tfbGivenDays[rec.dayId] = true; }
   state.tfbLastSent = rec.at;
   toast("Thank you — your feedback was sent to the training team. 🙏");
-  if(state.view==="dashboard") render();
+  if(state.view==="dashboard" || state.view==="modules") render();
   if(state.view==="day") render();
 }
 Object.assign(window, {openTraineeFeedback, submitTraineeFeedback, tfbSetStar});
@@ -15133,7 +15133,7 @@ async function openDayFeedback(dayId){
     (state.fbReadLocal = state.fbReadLocal || {})[dayId] = f.readAt;
     refreshFocusBadge();
     try{ const raw = await sharedGet("feedback:"+state.traineeId); if(raw && raw.days && raw.days[dayId]){ raw.days[dayId].readAt = f.readAt; await sharedSet("feedback:"+state.traineeId, raw); } }catch(e){}
-    if(state.view==="dashboard") render();
+    if(state.view==="dashboard" || state.view==="modules") render();
   }
 }
 window.openDayFeedback = openDayFeedback;
@@ -18549,7 +18549,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.09-grad";
+var APP_BUILD = "ft-2026.10.09-modules";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18592,39 +18592,39 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.05-1744"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.08-banners"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-updates.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/ft-slides.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.08-drive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.08-drive"></script>
-<script src="/js/ft-process.js?v=ft-2026.10.08-merge4"></script>
+<script src="/js/ft-process.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/ft-rules.js?v=ft-2026.10.08-drive"></script>
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
 <script src="/js/ft-firms.js?v=ft-2026.10.08-firms"></script>
 <script src="/js/ft-simulators.js?v=ft-2026.10.08-merge3"></script>
-<script src="/js/ft-sessions.js?v=ft-2026.10.08-firms"></script>
+<script src="/js/ft-sessions.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-lor.js?v=ft-2026.10.09-lortest"></script>
-<script src="/js/ft-drive.js?v=ft-2026.10.08-drive"></script>
+<script src="/js/ft-drive.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
-<script src="/js/ft-activities.js?v=ft-2026.10.08-noact"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.08-merge4"></script>
+<script src="/js/ft-activities.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/attendance.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
 <!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js) and the Trainee blueprint (Orientation, /blueprint.pdf) rebuilt after every deploy -->
-<script src="/js/blueprint-content.js?v=ft-2026.10.08-mydash2"></script>
+<script src="/js/blueprint-content.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/lsh-blueprint-course.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/lsh-blueprint.js?v=ft-2026.10.08-perf"></script>
 <script src="/js/lsh-dashboard.js?v=ft-2026.10.08-0100"></script>
 <script src="/js/ft-card-grid.js?v=ft-2026.10.06-frame"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.08-lines"></script>
 <script src="/js/lsh-topbar.js?v=2"></script>
-<script src="/js/ft-program.js?v=ft-2026.10.08-merge4"></script>
-<script src="/js/lsh-program.js?v=ft-2026.10.08-mydash2"></script>
+<script src="/js/ft-program.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/lsh-program.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/lsh-tool-links.js?v=ft-2026.10.08-portal"></script>
 <script src="/js/ft-theme.js?v=ft-2026.10.09-grad"></script>
 </body>

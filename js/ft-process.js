@@ -1,7 +1,7 @@
 /* ============================================================
    Process Questions — each lesson's answer sheet, answered on the platform
    Loaded after js/ft-monitoring.js. ✍️ Process Questions is its own feature, with its own button in the top
-   bar (#/process): it is not a page of 📚 Training Modules and it has no tab in 🛡 Admin Master Control.
+   bar (#/process): it is not a page of 📚 Modules and it has no tab in 🛡 Admin Master Control.
    A lesson's last slide (✓ Finish lesson) routes here, to that lesson's answer sheet, instead of opening a
    Knowledge Check inside the lesson. The graded view (#/kc) belongs to this feature too, not to the modules.
      • Trainees answer each question (saved to process:<id> as they type) and
@@ -461,7 +461,7 @@ function kcReport(id, r){
 }
 function renderKc(){
   const id = Number(state.dayId), d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
-  const back = `<a class="back-link" onclick="goto('dashboard')">&larr; Back to roadmap</a>`;
+  const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>`;
   if(!d || !qs.length) return `${back}<div class="card" style="padding:28px;">This lesson has no Knowledge Check.</div>`;
   const intro = `<p class="eyebrow">Knowledge Check</p><h1>${e(d.title)}</h1>
     <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; <b>${KC_PASS}% passes</b> and finishes the lesson. Retakes keep your best score, and your trainer adds their own review.</p>`;

@@ -13,6 +13,7 @@ window.LSH_BLUEPRINT = {
       { icon: '🔑', title: 'Signing in as a trainer', points: [
           'Admin sign-in with the admin password. Trainees don\'t sign in here: they open the program from the LSH Training Portal.',
           'Your top bar has 🏠 Main Portal (the LSH Training Portal), 📚 Modules, ✍️ Process Questions, 🛠 Practice Lab, 🏅 Scorecards, 📚 Guides (🧭 Orientation, Blueprint) and 👁 Trainee view.',
+          '📚 Modules is the landing page: every sign-in, trainer or trainee, opens it, and it is called Modules on every LSH platform.',
           'Admin is your trainer dashboard: the Trainee Audit and every trainer tab.',
           'Every lesson is open to you, so you can preview it before you teach it.'],
         where: 'Admin sign-in · Admin in the top bar.',
