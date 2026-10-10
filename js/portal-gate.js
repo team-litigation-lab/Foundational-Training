@@ -132,16 +132,16 @@ window.portalGate = {
       var res = await fetch("/api/auth/admin", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({passphrase:i.value})});
       if(!res.ok){ say("Incorrect password."); return; }
       var j = await res.json();
-      setAdminToken(j.token); state.isAdmin = true; goto("admin");
+      setAdminToken(j.token); state.isAdmin = true; goto("modules");
     }catch(err){ say("Couldn't reach the server. Please try again."); }
   },
   // What the sign-in screen shows. With a Portal ticket it registers the trainee (the engine's own steps) on their way in.
   renderCard: function(){
     var logo = (typeof LOGO_FULL_SRC !== "undefined") ? '<img src="'+LOGO_FULL_SRC+'" alt="Legal Support Help" style="width:150px;height:auto;margin-bottom:22px;">' : "";
-    if(state.isAdmin){            // an admin who came in from the Portal (or is signed in): straight to the admin screen
-      setTimeout(function(){ if(state.isAdmin && state.view === "login") goto("admin"); }, 0);
+    if(state.isAdmin){            // an admin who came in from the Portal (or is signed in): 📚 Modules, like every other viewer
+      setTimeout(function(){ if(state.isAdmin && state.view === "login") goto("modules"); }, 0);
       return '<div class="login-shell"><div class="login-card">'+logo
-        + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Opening the admin screen…</h1></div></div>';
+        + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Opening the training…</h1></div></div>';
     }
     if(pending){
       var p = pending;
