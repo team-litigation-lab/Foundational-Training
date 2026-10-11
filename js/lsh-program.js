@@ -136,6 +136,10 @@ function lessonCard(d, i, pinned){
   const label = pinned ? (done ? "✓ Finished" : "📌 Start Here")
     : `Lesson ${i + 1}${done ? " · ✓ Finished" : !hasSlides ? " · Coming soon" : !open ? " · 🔒 Locked" : ""}`;
   const theme = pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`;
+  // Start, Topics (the pop-up list) and Finish Training, the same row the EA/PA course's day cards show.
+  const small = [];
+  if((d.lessons || []).length && typeof showDayTopics === "function") small.push(`<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${d.lessons.length}</span></button>`);
+  if(status === "open" && typeof finishTrainingForDay === "function") small.push(`<button type="button" class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); finishTrainingForDay(${d.id})">✓ Finish Training</button>`);
   return `<div class="module-card mc-clean mc-${status} lp-lesson" id="module-${d.id}">
     <div class="module-head"><div class="mh-day">${label}</div><div class="lp-lesson-t"><b class="mh-title">${e(d.title)}</b></div></div>
     <div class="module-body">
@@ -143,6 +147,7 @@ function lessonCard(d, i, pinned){
       <div class="module-theme lp-tags">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
     </div>
     <button class="btn module-start-btn ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
+    ${small.length ? (small.length > 1 ? `<div class="mc-row">${small.join("")}</div>` : small[0]) : ""}
   </div>`;
 }
 // What the program adds to the landing page. A file that used to hang something on the dashboard (a stat

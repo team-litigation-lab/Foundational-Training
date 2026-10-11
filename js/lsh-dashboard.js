@@ -215,11 +215,11 @@ img[alt="Legal Support Help"]{border-radius:8px;}
 .dash-main .module-card.mc-clean .mh-title{text-transform:none;letter-spacing:0;font-weight:700;color:var(--navy);}
 .dash-main .module-card.mc-clean .module-start-btn{background:#ECEEF5;border:1px solid #DDE1EC;color:var(--navy);border-radius:10px;box-shadow:none;font-weight:700;letter-spacing:.01em;}
 .dash-main .module-card.mc-clean .module-start-btn:hover, .dash-main .module-card.mc-clean:hover .module-start-btn{background:#353B57;border-color:#353B57;color:#fff;}
-.dash-main .module-card.mc-clean .mc-row{display:flex;gap:8px;margin:0 14px 12px;}
-.dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:1 1 0;min-width:0;width:auto !important;margin:0 !important;background:#F3F4F8;border:1px solid #F3F4F8;color:#4A5070;font-weight:600;border-radius:9px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-@media(min-width:1001px) and (max-width:1340px){ .dash-main .module-card.mc-clean .mc-row{flex-direction:column;gap:5px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:0 0 auto !important;padding-top:5px;padding-bottom:5px;} }
-@media(max-width:1600px){ .dash-main .module-card.mc-clean .mc-row{gap:6px;margin:0 10px 10px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{font-size:11.5px;padding-left:4px;padding-right:4px;} .dash-main .module-card.mc-clean .mc-row .module-topics-btn{flex:0 1 auto;padding-left:8px;padding-right:8px;} }
-.dash-main .module-card.mc-clean .mc-row .module-finish-btn:hover{background:#E9EBF2;border-color:#E9EBF2;color:var(--navy);}
+.dash-main .module-card.mc-clean .mc-row,.lp-lessons .module-card.mc-clean .mc-row{display:flex;gap:8px;margin:0 14px 12px;}
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn,.lp-lessons .module-card.mc-clean .mc-row .module-finish-btn{flex:1 1 0;min-width:0;width:auto !important;margin:0 !important;background:#F3F4F8;border:1px solid #F3F4F8;color:#4A5070;font-weight:600;border-radius:9px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media(min-width:1001px) and (max-width:1340px){ .dash-main .module-card.mc-clean .mc-row,.lp-lessons .module-card.mc-clean .mc-row{flex-direction:column;gap:5px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn,.lp-lessons .module-card.mc-clean .mc-row .module-finish-btn{flex:0 0 auto !important;padding-top:5px;padding-bottom:5px;} }
+@media(max-width:1600px){ .dash-main .module-card.mc-clean .mc-row,.lp-lessons .module-card.mc-clean .mc-row{gap:6px;margin:0 10px 10px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn,.lp-lessons .module-card.mc-clean .mc-row .module-finish-btn{font-size:11.5px;padding-left:4px;padding-right:4px;} .dash-main .module-card.mc-clean .mc-row .module-topics-btn,.lp-lessons .module-card.mc-clean .mc-row .module-topics-btn{flex:0 1 auto;padding-left:8px;padding-right:8px;} }
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn:hover,.lp-lessons .module-card.mc-clean .mc-row .module-finish-btn:hover{background:#E9EBF2;border-color:#E9EBF2;color:var(--navy);}
 .dash-main .module-card.mc-clean > :last-child{margin-bottom:12px;}
 .dash-main .module-card.mc-clean .module-theme{color:#6B7088;}
 /* the scores band: light, so it doesn't compete with the lessons */
