@@ -123,7 +123,7 @@ async function load(id){
   FP.loading = false;
   // "kc" too: a trainee who opens a Knowledge Check before their answers are in would otherwise
   // be left on "Loading your answers…" with no boxes to write in until they navigated away.
-  if(["process","kc","dashboard","day"].includes(state.view)) render();
+  if(["process","kc","dashboard","modules","day"].includes(state.view)) render();
 }
 function sheet(sid){ const s = FP.data.sets; return s[sid] || (s[sid] = {answers:[], submittedAt:"", updatedAt:""}); }
 function queueSave(){
@@ -391,13 +391,12 @@ window.render = function(){
   paintSave();
   try{ afterRender(); }catch(err){}
 };
-// A trainee's answers load with the dashboard, so the lesson card and the slide know them.
-const __dash = window.renderDashboard;
-window.renderDashboard = function(){
+// A trainee's answers load with 📚 Modules, the landing page, so the lesson card and the slide know them.
+(window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
   if(state.traineeId && !state.isAdmin && FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   if(state.traineeId && !state.isAdmin) loadReview();
-  return __dash.apply(this, arguments);
-};
+  return "";
+});
 
 /* ---------- the Knowledge Check: each lesson's process questions, graded like EA/PA's ----------
    A lesson with process questions ends with a Knowledge Check (#/kc): the lesson's questions, answered in

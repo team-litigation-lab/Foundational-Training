@@ -13211,7 +13211,7 @@ function openAdmin(){
     if(await authStatus()){
       try{
         const res = await fetch("/api/auth/admin", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({passphrase:v})});
-        if(res.ok){ const j = await res.json(); setAdminToken(j.token); state.isAdmin=true; overlay.remove(); goto("admin"); }
+        if(res.ok){ const j = await res.json(); setAdminToken(j.token); state.isAdmin=true; overlay.remove(); goto("modules"); }
         else toast("Incorrect password.");
       }catch(e){ toast("Couldn't reach the server — try again."); }
       return;

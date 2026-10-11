@@ -172,17 +172,6 @@ window.render = function(){
   const b = CALL_LESSONS.includes(d.id) && isTrainee() ? callBest(d.id) : null;
   return b ? `<span class="lp-kc fts-call-tag">📞 ${b.score}%</span>` : "";
 });
-// The engine's dashboard keeps the same two (it is no longer a page a trainee opens, but nothing here breaks it).
-const __dash = window.renderDashboard;
-window.renderDashboard = function(){
-  const html = __dash.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin && !state.adminPreview) return html;
-  if(isTrainee() && !state.ftCallsim) ftLoadCallsim();
-  // the dashboard band: the best graded call in each of lessons 4–6, averaged
-  const bests = CALL_LESSONS.map(callBest).filter(Boolean);
-  const stat = isTrainee() ? `<div class="card stat fts-calls-stat" title="Your best graded call in Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls"><div class="num">${bests.length ? Math.round(bests.reduce((n, b)=>n + b.score, 0) / bests.length) + "%" : "—"}</div><div class="lbl">Graded calls · ${bests.length} / ${CALL_LESSONS.length} lessons</div></div>` : "";
-  return html.replace(/(<div class="lbl">Lessons finished<\/div><\/div>)/, "$1" + stat);
-};
 // a mock-call lesson's card shows its best graded call
 const __callCard = window.moduleCard;
 window.moduleCard = function(d){

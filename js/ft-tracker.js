@@ -543,17 +543,7 @@ window.renderAdmin = function(){
   const end = out.indexOf("</div>", out.indexOf("admin-tabs"));
   return end > 0 ? out.slice(0, end) + tab + out.slice(end) : out;
 };
-// the dashboard shows today's check for the trainee
-const __dash = window.renderDashboard;
-window.renderDashboard = function(){
-  const html = __dash.apply(this, arguments);
-  if(!state.traineeId || state.isAdmin) return html;
-  if(FTT.id!==state.traineeId && !FTT.loading){ load(state.traineeId); return html; }
-  if(!FTT.data) return html;
-  const c = liveCheck(today());
-  const card = `<div class="card stat ftt-dash" onclick="goto('tracker')" style="cursor:pointer;"><div class="num ${c.pct>=100?"ok":c.pct>=60?"mid":"bad"}">${c.pct}%</div><div class="lbl">📋 Task Tracker today${c.flags.length?` · ⚑ ${c.flags.length} to fix`:" · all set"}</div></div>`;
-  return html.replace('<aside class="dash-side"><div class="dash-side-inner">', '<aside class="dash-side"><div class="dash-side-inner">' + card);
-};
+// The landing page's Task Tracker stat comes from Drive data instead (js/ft-drive.js's LSH_HOME_STATS entry).
 
 /* ---------- styles: Google Sheets look ---------- */
 (function(){ const s = document.createElement("style"); s.id = "ft-tracker"; s.textContent = `
