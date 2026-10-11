@@ -1,20 +1,10 @@
 /* ============================================================
-   Lesson cards (Foundational Training only): the cards show Start and ▶ Video Presentation, not the ☰ Topics button
-   js/lsh-dashboard.js adds to every course's cards. The grid of buttons with lines and the thick rounded frame
-   around every card are in js/lsh-card-frame.js (the same in every LSH course repo), loaded after this file.
-   The Training Orientation and Rules card keeps its navy Start, edge to edge.
+   Lesson cards (Foundational Training only): sizes the lesson icon to fill the room between
+   the title and the buttons, the way the other LSH courses' theme line does. Buttons
+   themselves (Start / Topics / Finish Training / Video) are left as js/lsh-dashboard.js and
+   js/lsh-card-frame.js (the same in every LSH course repo) build them.
    ============================================================ */
 (function(){
-  if(typeof moduleCard !== "function" || moduleCard.__ftOnly) return;
-  const __card = moduleCard;
-  moduleCard = function(d){
-    const html = __card.apply(this, arguments); if(html.indexOf("module-topics-btn") < 0) return html;
-    const t = document.createElement("template"); t.innerHTML = html.trim();
-    const card = t.content.firstElementChild; if(!card) return html;
-    card.querySelectorAll(".module-topics-btn").forEach(n=>n.remove());
-    return card.outerHTML;
-  };
-  moduleCard.__ftOnly = true;
   const st = document.createElement("style"); st.id = "ft-card-grid"; st.textContent = `
 /* The lesson's icon fills the room between the title and the buttons. js/lsh-dashboard.js
    sizes it for a card that also carries a theme line; these cards show the icon alone,

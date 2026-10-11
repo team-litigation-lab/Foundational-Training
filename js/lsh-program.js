@@ -126,30 +126,6 @@ window.renderTopbar = function(){
 };
 
 /* ---------- 📚 Modules (#/modules): the lessons, then the training pages ---------- */
-function lessonCard(d, i, pinned){
-  const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
-  const status = done ? "done" : open ? "open" : "locked";
-  const kc = typeof p.score === "number" ? `<span class="lp-kc t-${tier(p.score)}">✍️ Knowledge Check ${p.score}%</span>` : "";
-  const can = open || (adminOn() && hasSlides);
-  const tags = lessonTags(d);
-  const icon = pinned ? "📌" : ((typeof FT_LESSON_ICONS !== "undefined" ? FT_LESSON_ICONS[d.id] : null) || "📘");
-  const label = pinned ? (done ? "✓ Finished" : "📌 Start Here")
-    : `Lesson ${i + 1}${done ? " · ✓ Finished" : !hasSlides ? " · Coming soon" : !open ? " · 🔒 Locked" : ""}`;
-  const theme = pinned ? "Start here · not counted as a lesson" : `${d.sections.length} slide${d.sections.length === 1 ? "" : "s"}`;
-  // Start, Topics (the pop-up list) and Finish Training, the same row the EA/PA course's day cards show.
-  const small = [];
-  if((d.lessons || []).length && typeof showDayTopics === "function") small.push(`<button type="button" class="btn btn-ghost btn-sm module-finish-btn module-topics-btn" onclick="event.stopPropagation(); showDayTopics(${d.id})">☰ Topics <span>· ${d.lessons.length}</span></button>`);
-  if(status === "open" && typeof finishTrainingForDay === "function") small.push(`<button type="button" class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); finishTrainingForDay(${d.id})">✓ Finish Training</button>`);
-  return `<div class="module-card mc-clean mc-${status} lp-lesson" id="module-${d.id}">
-    <div class="module-head"><div class="mh-day">${label}</div><div class="lp-lesson-t"><b class="mh-title">${e(d.title)}</b></div></div>
-    <div class="module-body">
-      <div class="module-icon">${icon}</div>
-      <div class="module-theme lp-tags">${theme}${kc ? " · " + kc : ""}${tags ? " · " + tags : ""}</div>
-    </div>
-    <button class="btn module-start-btn ${done ? "btn-ghost" : "btn-navy"}" ${can ? "" : "disabled"} onclick="goto('day',${d.id})">${done ? "Review" : "Start"}</button>
-    ${small.length ? (small.length > 1 ? `<div class="mc-row">${small.join("")}</div>` : small[0]) : ""}
-  </div>`;
-}
 // What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
 // card, a badge on a lesson card) registers it here instead: window.LSH_HOME_STATS holds () => HTML for the
 // row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
@@ -203,23 +179,37 @@ function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview;
   const pct = all.length ? Math.round(done / all.length * 100) : 0;
-  // The standard hero header (js/ft-updates.js's retired renderDashboard): eyebrow, title, tagline and the
-  // completion ribbon, with the step-timeline below it in the same navy card.
+  // The old dash-layout structure (js/ft-updates.js's retired renderDashboard, restored at the user's
+  // request): hero + step-timeline on top, then day cards (moduleCard(), with js/lsh-dashboard.js's Start /
+  // Topics / Finish Training row) beside a stats sidebar — not the newer lp-lessons band-below-cards layout.
   return `<div class="dash-top">
       <div class="dash-hero">
-        <div class="dash-hero-text"><p class="eyebrow">LEGAL FOUNDATIONAL TRAINING ACCELERATOR</p>
-          <h1><span class="hl"><svg class="hero-spark hero-spark-lead" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg>Foundational Training Professional Development Workshop<svg class="hero-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg></span></h1></div>
+        <div class="dash-hero-text"><p class="eyebrow">STANDARD FOUNDATIONAL TRAINING</p>
+          <h1><span class="hl"><svg class="hero-spark hero-spark-lead" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg>Foundational Training Professional Development Workshop<svg class="hero-spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24.5 15.5 L38 20 L24.5 24.5 L20 38 L15.5 24.5 L2 20 L15.5 15.5 Z" fill="#F0C08A"/><path d="M33 3 L34.6 7.4 L39 9 L34.6 10.6 L33 15 L31.4 10.6 L27 9 L31.4 7.4 Z" fill="#fff"/><circle cx="6" cy="33" r="2.4" fill="#B5651F"/></svg></span></h1>
+          <p>Build the foundation every legal VA needs: how U.S. law firms work, the roles in a case, and how to communicate like a pro.</p>
+        </div>
         ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
       </div>
       ${stepTimeline(all)}
     </div>
-    ${homeActions(done, all.length)}
-    <section class="lp-lessons"><div class="dash-main lp-lessons-row">
-      ${pinned.length ? `<div class="lp-orient">${pinned.map(d => lessonCard(d, 0, true)).join("")}</div>` : ""}
-      <div class="module-grid">${all.map((d, i) => lessonCard(d, i, false)).join("")}</div>
-    </div></section>
-    ${statsBand(done, all.length)}`;
+    <div class="dash-layout">
+      <div class="dash-main">
+        ${pinned.map(d => moduleCard(d)).join("")}
+        <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
+        ${homeActions(done, all.length)}
+      </div>
+      <aside class="dash-side"><div class="dash-side-inner">
+        <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
+        <div class="card stat"><div class="num">${done} / ${all.length}</div><div class="lbl">Lessons finished</div></div>
+        ${typeof renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : ""}
+        ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
+        ${hooks("LSH_HOME_STATS")}
+      </div></aside>
+    </div>`;
 }
+// Exposed globally so a direct, non-routed call (e.g. js/ft-updates.js's FT_OFF_VIEWS fallbacks, which call
+// renderDashboard() by name instead of going through render()) still reaches this page, not the raw engine's.
+window.renderModules = renderModules;
 
 /* ---------- 🏅 the Scorecard: every grading system's items, its average, and the overall ---------- */
 function compute(ctx){
@@ -293,7 +283,7 @@ window.render = function(){
   // to compute, so that one alone falls back to the old dashboard/login flow when there isn't one.
   if(v === "scorecard" && !state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + (v === "modules" ? `<main class="main-lp">${renderModules()}</main>` : `<main class="main-lp">${renderScorecard()}</main>`) + renderFooter();
+  app.innerHTML = renderTopbar() + (v === "modules" ? `<main class="main-dash">${renderModules()}</main>` : `<main class="main-lp">${renderScorecard()}</main>`) + renderFooter();
   try{ afterRender(); }catch(err){}
   if(v === "scorecard" && isTrainee()) loadMine(SC.id !== state.traineeId || Date.now() - SC.at > 60000);
 };
@@ -421,6 +411,9 @@ main.main-lp .dash-hero-text{grid-column:2;}
 .lp-orient{flex:0 0 220px;display:flex;}
 .lp-orient .module-card{width:100%;}
 @media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
+/* 8 lessons read as a balanced 4x2 block (the dash-layout cards, restored at the user's request), not the
+   base engine's 5-across grid — narrower screens keep the existing responsive auto-fill/stacked behavior. */
+@media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 /* the compact stat band under the lessons (the sibling courses' dashboard side band, here a plain row of
    cards instead of its own dark panel — see statsBand() in js/lsh-program.js) */
