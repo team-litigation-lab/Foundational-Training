@@ -401,8 +401,9 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 /* .dash-hero-ribbon has order:-1 to sit in the grid's narrow first column (140px); without it (a plain admin,
    not previewing, gets no completion ribbon) the lone .dash-hero-text falls into that 140px column instead
-   and wraps one word per line. Pin it to the wide column explicitly, ribbon or not. */
-main.main-lp .dash-hero-text{grid-column:2;}
+   and wraps one word per line. Pin it to the wide column explicitly, ribbon or not — on both the Scorecard's
+   main-lp and the Modules page's main-dash. */
+main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
 /* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
 .dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
 .lp-lessons-row .module-grid{flex:1;min-width:0;}
