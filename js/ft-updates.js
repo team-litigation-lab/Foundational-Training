@@ -752,6 +752,7 @@ window.moduleCard = function(d){
       ${typeof feedbackButton==="function" ? feedbackButton(d.id) : ""}
     </div>
     <button class="btn module-start-btn ${status==="locked"?"btn-ghost":"btn-navy"}" ${status==="locked"&&!(state.isAdmin&&d.sections.length)?"disabled":""} onclick="goto('day',${d.id})">${status==="done"?"Review":(state.isAdmin&&status==="locked"&&d.sections.length?"Open":"Start")}</button>
+    ${status==="open" && typeof finishTrainingForDay==="function" ? `<button type="button" class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); finishTrainingForDay(${d.id})">✓ Finish Training</button>` : ""}
     ${d.video ? (ftVideoUnlocked(d.id)
       ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>`
       : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}
@@ -759,9 +760,12 @@ window.moduleCard = function(d){
 };
 // There is only one landing-page format now: js/lsh-program.js's renderModules() (📚 Modules), the same
 // hero/ribbon/step-timeline layout every LSH course uses. This file used to carry its own copy of that
-// page (eyebrow, hero, step-timeline, module grid, sidebar stats) as window.renderDashboard; it was never
-// reachable once lsh-program.js's render() wrapper existed (it always routes "dashboard" to 📚 Modules), so
-// it was deleted rather than kept as dead code with its own, different-looking hero.
+// page (eyebrow, hero, step-timeline, module grid, sidebar stats) as window.renderDashboard. render()
+// itself never reaches it any more (lsh-program.js's wrapper always routes "dashboard" to 📚 Modules
+// first), but a few things below (FT_OFF_VIEWS' fallbacks) still call renderDashboard() directly by name,
+// bypassing render() entirely — so it has to keep meaning something, or they'd fall through to the raw
+// EA/PA engine's own renderDashboard() baked into index.html (its literal, unpatched EA/PA hero).
+window.renderDashboard = function(){ return typeof renderModules === "function" ? renderModules() : ""; };
 // the feedback card's "Rate <lesson>" button on the light band (js/lsh-dashboard.js makes every button in it white)
 (function(){ const st = document.createElement("style"); st.id = "ft-dash-band"; st.textContent = `
 .dash-main > .dash-side .tfb-dash .btn.btn-ghost{color:var(--navy) !important;background:#fff !important;border:1px solid #E7CDB3 !important;}`; document.head.appendChild(st); })();

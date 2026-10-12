@@ -96,4 +96,21 @@ window.orientSlides = function(){
      <p class="or-lead" style="text-align:center;margin-top:26px">Questions before we start?</p>`}
   ];
 };
+// A trainee opens 🧭 Orientation too, as their "Trainee blueprint" tab (js/lsh-blueprint-course.js calls
+// goto('orientation') for it) — but the EA/PA engine's own render() only calls renderOrientation() for an
+// admin; a trainee (state.isAdmin false) falls through to its raw, unbranded renderDashboard() instead
+// (the literal "Executive Assistant/ Personal Assistant" hero and day grid), which flickers back in every
+// time orientGo() can't find #orStage and falls back to a full render(). Trainees see the same slides here.
+const __orientRender = window.render;
+window.render = function(){
+  if(state.view === "orientation" && !state.isAdmin){
+    const app = document.getElementById("app");
+    app.innerHTML = renderTopbar() + `<main><div id="navBackSlot"></div>${renderOrientation().replace("Admin · for screen sharing", "Your guide to the platform")}</main>`
+      + (state.traineeId ? `<button type="button" class="tfb-fab" onclick="openTraineeFeedback(null)" title="Share feedback about the platform, lessons or facilitator" aria-label="Share feedback">💬<span class="fab-label"> Feedback</span></button>` : "")
+      + renderFooter();
+    if(typeof afterRender === "function") afterRender();
+    return;
+  }
+  return __orientRender.apply(this, arguments);
+};
 })();
