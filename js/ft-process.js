@@ -48,10 +48,11 @@ const PROCESS_SETS = [
     "Evaluate the risks of providing incomplete or incorrect information to each type of entity. Which scenario could be most legally damaging?",
     "Assess how understanding each party's role in a case helps the Legal VA communicate more effectively and ethically."]},
   // one answer sheet for two lessons: questions 1–3 are Personal Injury Process Flow's, 4–10 Receptionist Training's
-  {id:"pi-workflow-reception", lesson:3, title:"PI Workflow and Reception Training", file:"PI_Workflow_and_Reception_Training_Process_Questions", kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}, questions:[
+  {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_Process_Question_Answers", questions:[
     "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
     "Examine how missing documentation (e.g., police reports, medical records) at the intake or treatment stage could affect the value and outcome of a case.",
-    "Evaluate how efficient case intake impacts the strength and pace of a personal injury claim. What are the potential legal and financial consequences of a disorganized intake?",
+    "Evaluate how efficient case intake impacts the strength and pace of a personal injury claim. What are the potential legal and financial consequences of a disorganized intake?"]},
+  {id:"reception-training", lesson:4, title:"Receptionist Training", file:"Receptionist_Training_Process_Question_Answers", questions:[
     "Analyze the role of a receptionist in shaping a law firm’s first impression. What verbal and non-verbal cues matter most?",
     "Evaluate how poor receptionist behavior can affect client trust and case intake efficiency.",
     "Assess the importance of triaging calls and visitors correctly. What are the consequences of misdirecting a client or opposing counsel?",
