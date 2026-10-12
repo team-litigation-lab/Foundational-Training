@@ -97,7 +97,8 @@ async function walk(page, label) {
     const t = await page.evaluate(() => ({ opened: LSHBlueprint.open('trainer'), isOpen: LSHBlueprint.isOpen(), tabs: !!document.querySelector('.lbp-or-tabs') }));
     if (t.opened || t.isOpen || t.tabs) fail(`a trainee could reach the Trainer blueprint: ${JSON.stringify(t)}`);
     // Foundational: the main landing page shows neither a Platform Blueprint nor a Practice Lab / Simulators card,
-    // and the 📘 Platform Blueprint button is admins only (like 🧭 Orientation), so a trainee's top bar has none
+    // and there is no separate 📘 Platform Blueprint top bar button at all — 🧭 Orientation is the one
+    // screen-shareable blueprint, for admins only — so a trainee's top bar has none
     const dash = await page.evaluate(() => { goto('dashboard'); render(); const b = document.querySelector('.nav-blueprint'); return { cards: [...document.querySelectorAll('.fts-banner')].map(x => x.textContent.trim().slice(0, 40)), btn: b ? b.getAttribute('onclick') : null }; });
     if (dash.cards.length) fail(`a trainee's landing page still shows the Blueprint or Simulators card: ${JSON.stringify(dash.cards)}`);
     if (dash.btn) fail(`a trainee's top bar still has the 📘 Platform Blueprint button: ${dash.btn}`);
@@ -105,17 +106,10 @@ async function walk(page, label) {
 
     // ---- a trainer, on a laptop ----
     page = await open(browser, { width: 1366, height: 768 }, true);
-    // the admin keeps the 📘 Platform Blueprint button, opening /blueprint.pdf, and 👁 Trainee view hides it again
-    // (read in place: the top bar is on every page, so this leaves the Orientation page below untouched)
-    const adminBtn = await page.evaluate(() => {
-      const btn = () => { const b = document.querySelector('.nav-blueprint'); return b ? b.getAttribute('onclick') : null; };
-      const own = btn(), view = state.view;
-      state.adminPreview = true; render(); const asTrainee = btn();
-      state.adminPreview = false; state.view = view; render();
-      return { own, asTrainee };
-    });
-    if (!adminBtn.own || !adminBtn.own.includes('/blueprint.pdf')) fail(`an admin's top bar has no 📘 Platform Blueprint button opening /blueprint.pdf: ${adminBtn.own}`);
-    if (adminBtn.asTrainee) fail('👁 Trainee view still shows the 📘 Platform Blueprint button');
+    // an admin has no 📘 Platform Blueprint top bar button either — the PDF still publishes at /blueprint.pdf
+    // (checked below), it's just not linked from the top bar any more; 🧭 Orientation is the one blueprint
+    const adminBtn = await page.evaluate(() => { const b = document.querySelector('.nav-blueprint'); return b ? b.getAttribute('onclick') : null; });
+    if (adminBtn) fail(`an admin's top bar still has the 📘 Platform Blueprint button: ${adminBtn}`);
     const tabs = await page.evaluate(() => [...document.querySelectorAll('.lbp-or-tabs button')].map(b => b.textContent.trim()));
     if (tabs.join('|') !== '🧭 Trainee blueprint|🛠 Trainer blueprint') fail(`Orientation's blueprint tabs: ${tabs.join('|')}`);
     await page.click('#lbp-or-trainer'); await page.waitForTimeout(400);

@@ -501,7 +501,13 @@ function updateSlidePageUi(){
   const next = stage.querySelector(".slide-nav .btn-primary");
   if(next){
     const label = next.dataset.base || next.innerHTML; next.dataset.base = label;
-    next.innerHTML = (state.slidePages||1) > 1 && (state.slidePage||0) < state.slidePages-1 ? "Next page &rarr;" : label;
+    const baseOnclick = next.dataset.baseOnclick || next.getAttribute("onclick") || ""; next.dataset.baseOnclick = baseOnclick;
+    const morePages = (state.slidePages||1) > 1 && (state.slidePage||0) < state.slidePages-1;
+    next.innerHTML = morePages ? "Next page &rarr;" : label;
+    // On the slide's last page the button does whatever it was rendered to do (Next slide, or on the
+    // lesson's last slide, ✓ Finish lesson); on an earlier page it only turns the page, so a paginated
+    // last slide doesn't skip its remaining pages straight to Finish lesson / Process Questions.
+    next.setAttribute("onclick", morePages ? `showSlidePage(${(state.slidePage||0)+1})` : baseOnclick);
   }
   const prev = stage.querySelector(".slide-nav .btn-ghost");
   if(prev && (state.lessonSlide||0) === 0) prev.disabled = !((state.slidePage||0) > 0);
