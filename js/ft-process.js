@@ -112,6 +112,21 @@ const firstName = () => String(state.certName || state.traineeName || "").replac
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
 const folderId = url => { const m = String(url||"").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(url||"").match(/[?&]id=([a-zA-Z0-9_-]{10,})/); return m ? m[1] : ""; };
+// An admin can reword a question (a typo, a clearer phrasing) without a new deploy: "processq:overrides" holds
+// {[set.id]: {[questionIndex]: "the edited wording"}}, loaded once and read by every question shown, trainee
+// and admin alike (PROCESS_SETS itself — the question bank's own text — never changes at runtime).
+let QOV = null, QOV_loading = false;
+function loadQOV(){
+  if(QOV || QOV_loading) return;
+  QOV_loading = true;
+  sharedGet("processq:overrides").then(v=>{ QOV = (v && typeof v === "object") ? v : {}; QOV_loading = false; if(state.view==="process" || state.view==="kc") render(); })
+    .catch(()=>{ QOV = {}; QOV_loading = false; });
+}
+function qtext(set, i){
+  if(!QOV) loadQOV();
+  const o = QOV && QOV[set.id];
+  return (o && has(o[i])) ? o[i] : set.questions[i];
+}
 
 /* ---------- the trainee's answers ---------- */
 const FP = {id:null, data:null, loading:false, err:"", timer:null, saving:false, savedAt:null, open:{}};
@@ -154,10 +169,10 @@ window.ftModuleStudied = moduleStudied;
 function docHtml(set, x, first){
   const name = String(state.certName || state.traineeName || first || "");
   return `<h2>${e(set.title)} — Process Questions</h2><p><b>Name:</b> ${e(name)}<br><b>Date:</b> ${e(new Date().toLocaleDateString())}</p>` +
-    set.questions.map((q,i)=>`<p><b>${i+1}. ${e(q)}</b></p><p>${e(((x||{}).answers||[])[i]||"").replace(/\n/g, "<br>")}</p>`).join("");
+    set.questions.map((q,i)=>`<p><b>${i+1}. ${e(qtext(set,i))}</b></p><p>${e(((x||{}).answers||[])[i]||"").replace(/\n/g, "<br>")}</p>`).join("");
 }
 function docText(set, x){
-  return `${set.title} — Process Questions\n\n` + set.questions.map((q,i)=>`${i+1}. ${q}\n${((x||{}).answers||[])[i]||""}\n`).join("\n");
+  return `${set.title} — Process Questions\n\n` + set.questions.map((q,i)=>`${i+1}. ${qtext(set,i)}\n${((x||{}).answers||[])[i]||""}\n`).join("\n");
 }
 async function copyRich(html, text){
   try{
@@ -283,13 +298,13 @@ window.FTProcess = {
 // Which questions each lesson's Knowledge Check asks: a set's own lesson, or (kc) split across lessons.
 const kcLessons = set => set.kc ? Object.keys(set.kc).map(Number) : [set.lesson];
 const kcQuestionsFor = lessonId => PROCESS_SETS.flatMap(set => kcLessons(set).includes(lessonId)
-  ? (set.kc ? set.kc[lessonId] : set.questions.map((_,i)=>i)).map(i=>({set, i, q:set.questions[i]})) : []);
+  ? (set.kc ? set.kc[lessonId] : set.questions.map((_,i)=>i)).map(i=>({set, i, q:qtext(set,i)})) : []);
 window.ftKcQuestions = kcQuestionsFor;
 // The Process Questions aren't a slide in the lessons: they open from ✍️ Process Questions in the top bar
 // (js/lsh-program.js), and finishing a lesson opens its Knowledge Check (finishTrainingForDay, below).
 
 /* ---------- admin: every trainee's answer sheets ---------- */
-const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}};
+const FPA = {rows:null, loading:false, open:{}, sheetOpen:{}, closed:{}, kcOpen:{}, qeditOpen:false};
 async function loadAdmin(){
   FPA.loading = true;
   try{
@@ -320,6 +335,13 @@ function renderAdminProcess(){
   const keys = Object.keys(groups).sort((a,b)=>(a==="")-(b==="") || b.localeCompare(a, undefined, {numeric:true}));
   return `<div class="card fp-admin"><h3>✍️ Process Questions</h3>
     <p class="fp-muted">Each trainee’s answer sheets, by batch: submitted or not, how many questions are answered, and the answers. The line under each trainee is written for the ranking report.</p>
+    <div class="fp-qedit"><div class="fp-qedit-hd" onclick="FTProcessAdmin.toggleQEdit()">${FPA.qeditOpen?"▾":"▸"} ✏️ Edit question wording</div>
+      ${FPA.qeditOpen ? `<p class="fp-muted">A typo or a clearer phrasing — not the number of questions, or which lesson they belong to. Changes apply right away, to every trainee.</p>
+        ${PROCESS_SETS.map(s=>`<div class="fp-qedit-set"><b>${e(s.title)}</b>
+          <ol>${s.questions.map((q,i)=>`<li><textarea rows="2" data-qset="${s.id}" data-qidx="${i}">${e(qtext(s,i))}</textarea></li>`).join("")}</ol>
+        </div>`).join("")}
+        <button class="btn btn-navy btn-sm" type="button" onclick="FTProcessAdmin.saveQuestions(this)">💾 Save question wording</button>` : ""}
+    </div>
     ${FPA.rows.length ? keys.map(b=>{ const closed = !!FPA.closed[b];
       return `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTProcessAdmin.batch(${e(JSON.stringify(b))})">${closed?"▸":"▾"} <b>📁 ${e(b ? "Batch "+b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length===1?"":"s"}</span></div>
       ${closed ? "" : groups[b].map(x=>{ const open = !!FPA.open[x.id], sub = PROCESS_SETS.filter(s=>((x.p.sets||{})[s.id]||{}).submittedAt).length;
@@ -329,7 +351,7 @@ function renderAdminProcess(){
             ${kcAdmin(x)}
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
               return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span></div>
-                ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(q)}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
+                ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has started the Process Questions yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTProcessAdmin.refresh()">Refresh</button></div></div>`;
 }
@@ -378,7 +400,21 @@ window.FTProcessAdmin = {
   batch(b){ FPA.closed[b] = !FPA.closed[b]; render(); },
   refresh(){ FPA.rows = null; render(); },
   copy(id){ const x = FPA.rows.find(r=>r.id===id); if(!x) return;
-    (navigator.clipboard ? navigator.clipboard.writeText(reportLine(x)) : Promise.reject()).then(()=>toast("Copied."), ()=>toast("Couldn’t copy. Select the text instead.")); }
+    (navigator.clipboard ? navigator.clipboard.writeText(reportLine(x)) : Promise.reject()).then(()=>toast("Copied."), ()=>toast("Couldn’t copy. Select the text instead.")); },
+  toggleQEdit(){ FPA.qeditOpen = !FPA.qeditOpen; render(); },
+  async saveQuestions(btn){
+    const box = btn.closest(".fp-qedit"), next = {};
+    box.querySelectorAll("textarea[data-qset]").forEach(t=>{
+      const sid = t.getAttribute("data-qset"), i = Number(t.getAttribute("data-qidx")), set = PROCESS_SETS.find(s=>s.id===sid);
+      const v = t.value.trim();
+      if(set && has(v) && v !== set.questions[i]) (next[sid] = next[sid] || {})[i] = v;
+    });
+    btn.disabled = true;
+    try{
+      if(await sharedSet("processq:overrides", next) === false) throw new Error("save");
+      QOV = next; toast("✓ Question wording saved — every trainee sees it now."); render();
+    }catch(err){ toast("Couldn’t save. Check your connection."); btn.disabled = false; }
+  }
 };
 
 /* ---------- wiring into the engine ---------- */
@@ -627,6 +663,12 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
 .fp-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px;} .fp-actions a.btn{text-decoration:none;}
 .fp-admin{padding:18px 20px;} .fp-admin h3{margin:0 0 4px;color:var(--navy);}
+.fp-qedit{border:1px solid var(--line);border-radius:10px;margin:14px 0;padding:10px 14px;background:var(--bg);}
+.fp-qedit-hd{cursor:pointer;color:var(--navy);font-size:15px;font-weight:600;}
+.fp-qedit-set{margin:12px 0;} .fp-qedit-set > b{color:var(--navy);}
+.fp-qedit-set ol{margin:6px 0 0;padding-left:22px;} .fp-qedit-set li{margin:8px 0;}
+.fp-qedit-set textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
+.fp-qedit-set textarea:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
 .fp-batch{margin-top:12px;} .fp-batch-hd{cursor:pointer;padding:6px 0;color:var(--navy);font-size:15px;}
 .fp-arow{border:1px solid var(--line);border-radius:10px;margin:6px 0;padding:8px 12px;background:#fff;}
 .fp-arow-hd{cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px;color:var(--navy);}
