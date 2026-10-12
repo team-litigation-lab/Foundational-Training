@@ -179,9 +179,12 @@ function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview;
   const pct = all.length ? Math.round(done / all.length * 100) : 0;
-  // The old dash-layout structure (js/ft-updates.js's retired renderDashboard, restored at the user's
-  // request): hero + step-timeline on top, then day cards (moduleCard(), with js/lsh-dashboard.js's Start /
-  // Topics / Finish Training row) beside a stats sidebar — not the newer lp-lessons band-below-cards layout.
+  // The standard cross-course structure every LSH training site uses (Case Management, Medsum & Demand,
+  // Property Damage Claims, EA/PA): hero + step-timeline, then the day cards (moduleCard(), with
+  // js/lsh-dashboard.js's Start / Topics / Finish Training row), then one stats band under the cards —
+  // not a side column. js/lsh-dashboard.js's own renderDashboard() patch builds this same shape by moving
+  // .dash-side to sit right after .module-grid; renderModules() is written in that shape directly, since
+  // render() calls it instead of renderDashboard().
   return `<div class="dash-top">
       <div class="dash-hero">
         <div class="dash-hero-text"><p class="eyebrow">STANDARD FOUNDATIONAL TRAINING</p>
@@ -192,19 +195,17 @@ function renderModules(){
       </div>
       ${stepTimeline(all)}
     </div>
-    <div class="dash-layout">
-      <div class="dash-main">
-        ${pinned.map(d => moduleCard(d)).join("")}
-        <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
-        ${homeActions(done, all.length)}
-      </div>
-      <aside class="dash-side"><div class="dash-side-inner">
+    <div class="dash-main">
+      ${pinned.map(d => moduleCard(d)).join("")}
+      <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
+      <div class="dash-side"><div class="dash-side-inner">
         <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
         <div class="card stat"><div class="num">${done} / ${all.length}</div><div class="lbl">Lessons finished</div></div>
         ${typeof renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : ""}
         ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
         ${hooks("LSH_HOME_STATS")}
-      </div></aside>
+      </div></div>
+      ${homeActions(done, all.length)}
     </div>`;
 }
 // Exposed globally so a direct, non-routed call (e.g. js/ft-updates.js's FT_OFF_VIEWS fallbacks, which call
@@ -411,8 +412,8 @@ main.main-lp .dash-hero-text{grid-column:2;}
 .lp-orient{flex:0 0 220px;display:flex;}
 .lp-orient .module-card{width:100%;}
 @media(max-width:820px){.lp-lessons-row{flex-direction:column;} .lp-orient{flex-basis:auto;}}
-/* 8 lessons read as a balanced 4x2 block (the dash-layout cards, restored at the user's request), not the
-   base engine's 5-across grid — narrower screens keep the existing responsive auto-fill/stacked behavior. */
+/* 8 lessons read as a balanced 4x2 block, not the shared five-across default (js/lsh-dashboard.js) — narrower
+   screens keep its existing responsive auto-fill/stacked behavior. */
 @media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 /* the compact stat band under the lessons (the sibling courses' dashboard side band, here a plain row of
