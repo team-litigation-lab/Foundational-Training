@@ -87,7 +87,7 @@
             ".match-zone:nth-child(4n+2) .match-zone-label", ".module-topic-list li::before",
             ".nav button.active", ".nav-badge", ".or-num", ".qcheck-card .qc-tag .dot",
             ".quiz-dot.active", ".slide-dot.active", ".sopx-list li::before", ".sopx-s-chips b",
-            ".tfb-fab:hover", ".tool-card:hover .tool-open-btn", ".trainee-chip .dot",
+            ".tfb-fab:hover", ".tool-card:hover .tool-open-btn",
             ".update-banner button", ".vc-avatar", ".vc-btn.vc-on", ".vp-play", ".wizard-dot.active",
             ".wizard-tab.active .wt-n", ".won-new", "body.ft-orient #lessonSlideWrap .btn-navy!"
         ],

@@ -15,9 +15,18 @@
    is on screen after each change. The buttons themselves move into
    the menu, so their own onclick still runs. A menu's name is in
    .lsh-grp-word, so a course short of room can show its icon alone.
+   The universal bar, the same on every LSH program and every program yet to come:
+     • the page header: the mark, then the page's own name in capitals, and
+       nothing beside it (no "LSH" in front of it, no strapline under it);
+     • no 🔍 search box, no ⧉ / ⛶ (so no ⛶ View ▾) and no "Set your name"
+       chip — the Training Portal signs everyone in and out.
+   A course whose engine still draws any of those three gets them taken out
+   here (stripRetired), so a new program copied from an older engine starts
+   with the universal bar anyway.
    The same file is in every LSH course repo (EA-PA-TRAINING,
    Case-Management-Training, propertydamageclaimstraining,
-   medsumanddemandtraining, Foundational-Training). Change it in all of them.
+   medsumanddemandtraining, Foundational-Training) and in every new one.
+   Change it in all of them.
    ============================================================ */
 (function(){
 "use strict";
@@ -133,7 +142,12 @@ function label(box, g){
   btn.classList.toggle("active", on);
 }
 
+// The universal bar has no search box, no ⧉ / ⛶ and no name chip (see the top of this file).
+var RETIRED = ".topbar .topbar-search, .topbar .nav-fs, .topbar .trainee-chip";
+function stripRetired(){ [].forEach.call(document.querySelectorAll(RETIRED), function(el){ el.remove(); }); }
+
 function organize(){
+  stripRetired();
   var nav = document.querySelector(".topbar .nav");
   if(!nav) return;
   mergeCase(nav);
