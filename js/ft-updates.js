@@ -268,7 +268,7 @@ window.renderDayIntro = function(d){
           <div class="di-box"><b>🗺 What this lesson covers</b><ol class="di-topics">${(ftTopics(d).length ? ftTopics(d) : d.sections).map(x=>`<li>${esc(x.h)}</li>`).join("")}</ol></div>
         </div>
       </div></div>
-      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('modules')">← 📚 Modules</button><span class="slide-counter">${ftTopics(d).length ? `${ftTopics(d).length} topics · ${d.sections.length} pages` : `${d.sections.length} parts`}</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
+      <div class="slide-nav"><button class="btn btn-ghost" onclick="goto('modules')">← 📚 Dashboard</button><span class="slide-counter">${ftTopics(d).length ? `${ftTopics(d).length} topics · ${d.sections.length} pages` : `${d.sections.length} parts`}</span><button class="btn btn-primary" onclick="startDayFromIntro(${d.id})">Start lesson →</button></div>
     </div>`;
 };
 const __ftRenderDay = window.renderDay;

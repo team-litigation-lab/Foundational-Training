@@ -10,7 +10,7 @@
        each practice area: PI Process Flow, Intake, Claims and Medical Records. Different trainees can get
        different firms and different cases. Admin → 🏛 Law Firms: the profiles, then each batch's trainees
        with their firm and cases (🎲 Spread cases gives each trainee in the batch different cases).
-     • 🏛 My Firm (#/firm, under 🛠 Practice Lab): the trainee's firm profile and rules, to read and
+     • 🏛 My Firm (#/firm): 📁 Client Profile in the top bar — the trainee's firm profile and rules, to read and
        acknowledge (✓ I've read my firm's rules, saved in sessions:<id>), and their assigned cases, each
        opening in the CMS (signed in: js/lsh-tool-links.js).
      • Every Practice Session (js/ft-sessions.js) is set at the trainee's firm, on their assigned case, and
@@ -120,7 +120,7 @@ window.FTFirms = {AREAS, RULE_AREAS, GCAL, firms, firmById, myFirm, myCases, cas
 
 /* ---------- 🏛 My Firm (#/firm) ---------- */
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["firm"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {firm:"My Firm"});
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {firm:"Client Profile"});
 function rulesHtml(f){
   return RULE_AREAS.filter(([k]) => (f.rules[k] || []).length).map(([k, label]) => `<div class="ff-rules"><h4>${e(label)}</h4><ol>${f.rules[k].map(x => `<li>${e(x)}</li>`).join("")}</ol></div>`).join("");
 }
@@ -139,7 +139,7 @@ function renderMyFirm(){
   if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Your trainer hasn’t assigned your law firm yet. Once they do, its profile, its rules and your cases show here, and every Practice Session is set at that firm.</p></div>`;
   const ack = window.FTSessions && FTSessions.ack();
   const acked = ack && ack.firm === f.id;
-  return `<div class="ff-hero"><p class="lp-eyebrow">🛠 Practice Lab · My Firm</p><h1>🏛 ${e(f.name)}</h1>
+  return `<div class="ff-hero"><p class="lp-eyebrow">📁 Client Profile · My Firm</p><h1>🏛 ${e(f.name)}</h1>
       <p>You work for this firm during your training: every Practice Session is on its cases and checked against its rules. Learn its rules before your sessions.</p></div>
     <div class="card ff-card">${firmFacts(f)}</div>
     <div class="card ff-card"><h2>📏 The firm’s rules</h2>${rulesHtml(f)}

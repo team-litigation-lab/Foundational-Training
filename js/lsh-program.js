@@ -1,26 +1,34 @@
 /* ============================================================
    The LSH program layout: the main setup for every LSH program. The same file in every LSH course repo
    (Foundational-Training, EA-PA-TRAINING, Case-Management-Training, medsumanddemandtraining,
-   propertydamageclaimstraining); change it in all of them. A program is organised in five sections, and the
-   top bar shows exactly those five:
+   propertydamageclaimstraining); change it in all of them. A program is organised in sections, and the top bar
+   shows exactly those sections, named and ordered as the platform spec sets them out:
 
-     🏠 Main Portal            the LSH Training Portal (the program's own home, its lessons, is 📚 Modules)
-     📚 Modules                #/modules: the program's landing page — every way into the platform opens it.
-                               The lessons, and the program's training pages (Task Tracker, My Notes…), which
-                               share a bar of tabs under the top bar. ✍️ Process Questions is not one of them:
-                               it is its own feature, with its own button in the bar. 📚 Modules is the button's
-                               name on every LSH platform: no platform calls its landing page anything else
+     📚 Dashboard              #/modules: the program's landing page — every way into the platform opens it.
+                               The modules (its lessons), and the program's training pages (Task Tracker,
+                               Monitoring Sheet, My Notes, My Performance), which share a bar of tabs under
+                               the top bar. ✍️ Knowledge Check is not one of them: it is its own feature
+     📁 Client Profile         the program's own case material (caseProfile below): the client, firm and case
+                               files the trainee works on
      🛠 Practice Lab           the Practice Lab Sessions, connected with the simulators (#/simulators)
-     🏅 Scorecard              #/scorecard: the trainee's grades, collected from every grading system on the
-                               platform; admins get Admin → 🏅 Scorecards, every trainee's in one table
-     🛡 Admin Master Control   the Admin screen (admins only, never in 👁 Trainee view)
+     ✍️ Knowledge Check        #/process: each module's answer sheet, graded out of 100 (70% passes); an admin
+                               sees every trainee's
+     🎯 Focus                  a trainee's focus panel: their trainer's feedback and what to work on next
+     🏅 Scorecards             an admin's: every trainee's scorecard in one table. A trainee's own grades are
+                               🏅 My Performance (#/scorecard), a page under 📚 Dashboard
+     👁 Switch View            an admin sees the program exactly as a trainee does, and switches back
+     🛡 Admin                  the Admin screen (admins only, never in the trainee view)
+     🏠 Main Portal            the LSH Training Portal: it signs everyone in, and it holds the log out
 
-   The top bar itself is set out below (The top bar): Main Portal, Modules, Process Questions, Practice Lab and
-   👤 My Dashboard ▾; 👁 Trainee view stays at its end.
+   So a trainee's bar is 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check · 🎯 Focus ·
+   🏠 Main Portal, and a trainer's is 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check ·
+   🏅 Scorecards · 👁 Switch View · 🛡 Admin · 🏠 Main Portal. Nothing else belongs in the bar: no search box,
+   no full screen, no log out.
    What sits in each section is the program's own: it sets window.LSH_PROGRAM before this file loads
    (js/ft-program.js here):
      { modules: [{view | run, icon, label, about, who?: "trainee" | "admin", badge?()}], moduleViews: [...],
-       labViews: [...], pinned?(): [lessons shown first], shared: ["public key", …],
+       labViews: [...], caseProfile: {view, views: [...], title} | null (📁 Client Profile),
+       pinned?(): [lessons shown first], shared: ["public key", …],
        sources: [{id, icon, label, about, key?, items(ctx)}] }
    A scorecard source with a key (e.g. "callsim:") has the trainee's record key + id read for it; items(ctx) gets
    ctx = {id, progress, rec: {<key>: that record}, shared: {<public key>: record}} and returns
@@ -32,7 +40,7 @@
    ============================================================ */
 (function(){
 if(typeof window.renderTopbar !== "function" || window.lshProgram) return;
-const CFG = Object.assign({modules:[], moduleViews:[], labViews:["simulators"], pinned:() => [], shared:[], sources:[]}, window.LSH_PROGRAM || {});
+const CFG = Object.assign({modules:[], moduleViews:[], labViews:["simulators"], caseProfile:null, pinned:() => [], shared:[], sources:[]}, window.LSH_PROGRAM || {});
 const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const adminOn = () => !!state.isAdmin && !state.adminPreview;
@@ -46,11 +54,11 @@ const batchLabel = id => {
   return m ? "B" + m[1] + m[2] + m[4] : v;
 };
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["modules", "scorecard"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Modules", scorecard:"My Performance"});
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {modules:"Dashboard", scorecard:"My Performance"});
 
-/* ---------- 📚 Modules is the landing page: every way in opens it ---------- */
+/* ---------- 📚 Dashboard is the landing page: every way in opens it ---------- */
 // One home, one name for it. Signing in (from the Portal or on this platform), coming back to a saved
-// session, the brand mark, a Back button and an old #/dashboard link all open 📚 Modules, instead of a
+// session, the brand mark, a Back button and an old #/dashboard link all open 📚 Dashboard, instead of a
 // second, half-empty home page beside it. A program names the views it used as a home before this in
 // window.LSH_HOME_ALIASES (js/ft-updates.js lists the pages this program has turned off); the engine's
 // own dashboard is always one.
@@ -60,42 +68,37 @@ const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview
 const __goto = window.goto;
 window.goto = function(view){ if(atHome(view)) arguments[0] = HOME; return __goto.apply(this, arguments); };
 
-/* ---------- the five sections ---------- */
-// The Modules pages this viewer has (an admin's own pages, or a trainee's; 👁 Trainee view sees the trainee's).
+/* ---------- the sections ---------- */
+// The 📚 Dashboard pages this viewer has (an admin's own pages, or a trainee's; the trainee view sees the trainee's).
 const pages = () => CFG.modules.filter(m => !m.who || m.who === (adminOn() ? "admin" : "trainee"));
 const moduleViews = () => ["modules"].concat(CFG.moduleViews, pages().map(m => m.view).filter(Boolean));
+const CASE = CFG.caseProfile && CFG.caseProfile.view ? CFG.caseProfile : null;
+const caseViews = () => (CASE && CASE.views) || (CASE ? [CASE.view] : []);
 function section(){
   const v = state.view;
-  if(v === "scorecard" || (v === "admin" && state.adminTab === "scorecards")) return "scorecard";
+  if(v === "admin" && state.adminTab === "scorecards") return "scorecard";
+  if(v === "scorecard") return adminOn() ? "scorecard" : "modules";   // a trainee's 🏅 My Performance is a 📚 Dashboard page
   if(v === "admin") return "admin";
+  if(caseViews().includes(v)) return "case";
   if(CFG.labViews.includes(v)) return "lab";
   if(moduleViews().includes(v)) return "modules";
   return v === "dashboard" ? "home" : "";
 }
-// The top bar: 🏠 Main Portal (the LSH Training Portal) · 📚 Modules (this program's landing page, the lessons) ·
-// ✍️ Process Questions · 🛠 Practice Lab · 👤 My Dashboard ▾ (a trainee's own pages: My Focus, My Performance,
-// My Notes, Task Tracker, Monitoring Sheet) · 🛡 Admin Master Control. An admin gets 🏅 Scorecards (every trainee's)
-// instead of My Dashboard; 👁 Trainee view shows the trainee's bar.
+// The top bar, in the order the spec sets: 📚 Dashboard · 📁 Client Profile · 🛠 Practice Lab · ✍️ Knowledge Check ·
+// then 🎯 Focus for a trainee, or 🏅 Scorecards (every trainee's) · 👁 Switch View · 🛡 Admin for a trainer, and
+// 🏠 Main Portal last. A trainee's own pages (My Performance, My Notes, Task Tracker, Monitoring Sheet) are
+// 📚 Dashboard pages, so the bar stays the six buttons the spec lists.
 const PORTAL_HOME = "https://cm-training-activity.pages.dev/";
-const MY_VIEWS = ["notes", "tracker", "monitoring", "scorecard"];
 function barSection(){
   const v = state.view, sec = section();
   if(v === "process" || v === "kc") return "process";
-  if(!adminOn() && MY_VIEWS.includes(v)) return "mydash";
   if(sec === "home" || sec === "modules") return "modules";
   return sec;
 }
-function myDashboard(){
-  const focus = typeof window.focusNewCount === "function" ? Number(window.focusNewCount()) || 0 : 0;
-  const cur = state.view, on = MY_VIEWS.includes(cur);
-  const item = (view, label, onclick, n) => `<button type="button" role="menuitem" class="${view && cur === view ? "active" : ""}" onclick="if(window.lshCloseTopMenus) lshCloseTopMenus(); ${onclick}">${label}${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
-  return `<div class="lsh-grp lp-mydash" data-grp="mydash"><button type="button" class="lp-sec${on ? " active" : ""}" aria-haspopup="true" aria-expanded="false" title="My Focus, My Performance, My Notes, Task Tracker and Monitoring Sheet" onclick="lshProgram.menu(this, event)">👤 My Dashboard ▾${focus ? `<span class="nav-badge">${focus}</span>` : ""}</button><div class="lsh-grp-menu" role="menu">`
-    + item("", "🎯 My Focus", "openFocusPanel()", focus)
-    + item("scorecard", "🏅 My Performance", "lshProgram.scorecard()")
-    + item("notes", "🗒 My Notes", "goto('notes')")
-    + item("tracker", "📋 Task Tracker", "goto('tracker')")
-    + item("monitoring", "📒 Monitoring Sheet", "goto('monitoring')")
-    + `</div></div>`;
+// 🎯 Focus: the trainee's own button in the bar, with the count of what their trainer has not seen them act on.
+function focusBtn(){
+  const n = typeof window.focusNewCount === "function" ? Number(window.focusNewCount()) || 0 : 0;
+  return `<button type="button" class="lp-sec lp-focus" onclick="openFocusPanel()" title="Your trainer’s feedback and what to work on next">🎯 Focus${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
 }
 const __top = window.renderTopbar;
 window.renderTopbar = function(){
@@ -106,32 +109,50 @@ window.renderTopbar = function(){
   if(!bar || !nav) return html;
   const sec = barSection(), onc = b => b.getAttribute("onclick") || "";
   const viewOf = b => (onc(b).match(/^goto\('([a-z]+)'\)$/) || [])[1];
-  // the training pages' own buttons move into the sections (an admin's 🧭 Orientation stays, for 📚 Guides ▾)
-  const keep = new Set(["orientation"]);
-  const moved = new Set(CFG.modules.map(m => m.view).filter(v => v && !keep.has(v)).concat(CFG.labViews, ["modules"])), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
+  // the training pages' own buttons move into the sections: the bar holds the spec's buttons and nothing else,
+  // so an admin's 🧭 Orientation is a 📚 Dashboard page like the rest (orientation is centralised on the Portal)
+  const moved = new Set(CFG.modules.map(m => m.view).filter(Boolean).concat(CFG.labViews, caseViews(), ["modules"])), runs = new Set(CFG.modules.map(m => m.run).filter(Boolean));
   [...nav.children].forEach(b => { const v = viewOf(b); if((v && moved.has(v)) || runs.has(onc(b))) b.remove(); });
   const btn = (id, label, onclick, title) => `<button type="button" class="lp-sec${sec === id ? " active" : ""}" onclick="${onclick}"${title ? ` title="${title}"` : ""}>${label}</button>`;
   const processGo = "goto('process')";   // one feature, one page: an admin sees every trainee's sheets there
-  const secs = btn("modules", "📚 Modules", "goto('modules')", "The Standard Foundational Training: its lessons")
-    + btn("process", "✍️ Process Questions", processGo, adminOn() ? "Every trainee's answer sheets" : "Each lesson's answer sheet")
+  const secs = btn("modules", "📚 Dashboard", "goto('modules')", "The Standard Foundational Training: its modules")
+    + (CASE ? btn("case", "📁 Client Profile", `goto('${CASE.view}')`, CASE.title || "") : "")
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")
-    + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : myDashboard());
-  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal">🏠 Main Portal</button>`;
+    + btn("process", "✍️ Knowledge Check", processGo, adminOn() ? "Every trainee's answer sheets" : "Each module's answer sheet, graded out of 100")
+    + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : focusBtn());
+  const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal — it holds the log out">🏠 Main Portal</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");
-  if(home) home.insertAdjacentHTML("beforebegin", portal + secs), home.remove();
-  else nav.insertAdjacentHTML("afterbegin", portal + secs);
+  if(home) home.insertAdjacentHTML("beforebegin", secs), home.remove();
+  else nav.insertAdjacentHTML("afterbegin", secs);
   const adm = [...nav.children].find(b => onc(b) === "openAdmin()");
-  if(adm){ adm.innerHTML = `🛡 Admin<span class="lp-long"> Master Control</span>`; adm.title = "Admin Master Control"; adm.classList.add("lp-sec"); adm.classList.toggle("active", sec === "admin"); }
+  if(adm){ adm.innerHTML = "🛡 Admin"; adm.title = "Admin Master Control"; adm.classList.add("lp-sec"); adm.classList.toggle("active", sec === "admin"); }
+  // the spec's order ends the bar 👁 Switch View · 🛡 Admin · 🏠 Main Portal
+  const sw = [...nav.children].find(b => b.classList.contains("nav-viewswitch"));
+  if(sw && adm) nav.insertBefore(sw, adm);
+  nav.insertAdjacentHTML("beforeend", portal);
   return t.innerHTML;
 };
 
-/* ---------- 📚 Modules (#/modules): the lessons, then the training pages ---------- */
+/* ---------- 📚 Dashboard (#/modules): the modules, then the training pages ---------- */
 // What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
 // card, a badge on a lesson card) registers it here instead: window.LSH_HOME_STATS holds () => HTML for the
 // row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
 // beside that lesson's Knowledge Check score. js/ft-simulators.js registers the graded calls in both.
 const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
 const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
+
+// 📚 Dashboard's own pages (CFG.modules, this viewer's): one row of links under the modules. The top bar
+// carries only the buttons the platform spec lists, so this row is how these pages are reached.
+function pagesRow(){
+  const items = pages().filter(m => m.view || m.run);
+  if(!items.length) return "";
+  return `<div class="lp-pages">${items.map(m => {
+    const n = typeof m.badge === "function" ? (Number(m.badge()) || 0) : 0;
+    const go = m.run ? m.run : `goto('${m.view}')`;
+    const on = m.view && state.view === m.view;
+    return `<button type="button" class="btn btn-ghost lp-page${on ? " active" : ""}" onclick="${go}" title="${e(m.about || "")}">${e(m.icon || "")} ${e(m.label || "")}${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
+  }).join("")}</div>`;
+}
 
 // Resume, the certificate and the feedback card: the landing page carries them, so nothing a trainee
 // needs is left on a home page they no longer open.
@@ -205,6 +226,7 @@ function renderModules(){
         ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
         ${hooks("LSH_HOME_STATS")}
       </div></div>
+      ${pagesRow()}
       ${homeActions(done, all.length)}
     </div>`;
 }
@@ -260,7 +282,7 @@ function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;
   return `<div class="card sc-hero">
       ${ring(loaded ? sc.overall : null)}
-      <div class="sc-hero-t"><p class="lp-eyebrow">👤 My Dashboard · My Performance</p><h1>🏅 My Performance</h1>
+      <div class="sc-hero-t"><p class="lp-eyebrow">📚 Dashboard · My Performance</p><h1>🏅 My Performance</h1>
         <p>Every grade the platform gives you, collected from all of its grading systems: ${CFG.sources.map(s => e(s.label)).join(", ")}.</p>
         <div class="sc-facts"><span><b>${sc.done} / ${sc.total}</b> lessons finished</span><span><b>${sc.graded}</b> graded item${sc.graded === 1 ? "" : "s"}</span><span><b>${sc.systems} / ${CFG.sources.length}</b> grading systems with a score</span></div></div>
       <div class="sc-hero-acts"><button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button></div>
@@ -273,13 +295,13 @@ function renderScorecard(){
 const __render = window.render;
 window.render = function(){
   // Anything that still sets a home view directly (the engine's sign-in, a resume, a page this program
-  // has turned off) lands on 📚 Modules, so there is one landing page however the trainee got here — signed
+  // has turned off) lands on 📚 Dashboard, so there is one landing page however the trainee got here — signed
   // in or not (renderModules() already has its own "not signed in" note instead of a personal progress bar).
   if(atHome(state.view)){ state.view = HOME; try{ if(typeof syncRouteHash === "function") syncRouteHash(); }catch(err){} }
   const v = state.view;
   if(v !== "scorecard" && v !== "modules") return __render.apply(this, arguments);
   if(v === "scorecard" && adminOn()){ state.adminTab = "scorecards"; state.view = "admin"; return __render.apply(this, arguments); }
-  // 📚 Modules is the landing page for every viewer, signed in or not (renderModules() already has its own
+  // 📚 Dashboard is the landing page for every viewer, signed in or not (renderModules() already has its own
   // "not signed in" note instead of a personal progress bar) — only 🏅 My Performance still needs an identity
   // to compute, so that one alone falls back to the old dashboard/login flow when there isn't one.
   if(v === "scorecard" && !state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
@@ -329,7 +351,7 @@ function renderAdminScores(){
 // scrolling sideways on a phone) instead of every tab in one long bar. A tab not in LSH_PROGRAM.adminGroups goes to
 // Admin Master Control, so a new tab is never lost.
 const GROUPS = [
-  {id:"admin", label:"🛡 Admin Master Control"}, {id:"modules", label:"📚 Modules"},
+  {id:"admin", label:"🛡 Admin Master Control"}, {id:"modules", label:"📚 Dashboard"},
   {id:"lab", label:"🛠 Practice Lab"}, {id:"scorecard", label:"🏅 Scorecard"}
 ];
 const groupOf = tab => { const g = CFG.adminGroups || {}; return Object.keys(g).find(k => (g[k] || []).includes(tab)) || "admin"; };
@@ -363,24 +385,16 @@ window.renderAdmin = function(){
 window.lshProgram = {
   compute, section, mine:() => compute(mineCtx()),
   scorecard(){ if(adminOn()){ state.adminTab = "scorecards"; goto("admin"); } else goto("scorecard"); },
-  // 👤 My Dashboard ▾ opens and closes like js/lsh-topbar.js's menus (which also closes it on a click elsewhere or Esc)
-  menu(btn, ev){
-    if(ev) ev.stopPropagation();
-    const box = btn.parentNode, open = !box.classList.contains("open");
-    if(typeof window.lshCloseTopMenus === "function") window.lshCloseTopMenus();
-    box.classList.toggle("open", open); btn.setAttribute("aria-expanded", open ? "true" : "false");
-  },
   batch(b){ AS.batch = b; render(); },
   refresh(){ AS.rows = null; AS.fresh = true; render(); },
   toggle(id){ AS.open[id] = !AS.open[id]; render(); }
 };
 
 const st = document.createElement("style"); st.id = "lsh-program"; st.textContent = `
-/* the five sections in the top bar; on a narrower screen the long names shorten (Modules, Admin) so it stays one row */
+/* the sections in the top bar */
 .topbar .nav button.lp-sec{font-weight:700;}
-/* 🏠 Main Portal is the first section, so js/portal-link.js's own ← Training Directory button isn't shown */
+/* 🏠 Main Portal ends the bar, so js/portal-link.js's own ← Training Directory button isn't shown */
 .topbar .nav .nav-portal{display:none !important;}
-@media(min-width:961px) and (max-width:1400px){ .topbar .nav .lp-long{display:none;} }
 /* the Admin screen's tabs, grouped: the sections, then the open section's tabs */
 .admin-tabs.lp-admin-tabs{display:block !important;border-bottom:1px solid var(--line);margin-bottom:20px;white-space:normal;overflow:visible;}
 .lp-admin-secs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
@@ -396,13 +410,13 @@ const st = document.createElement("style"); st.id = "lsh-program"; st.textConten
   .lp-admin-row .admin-tab-btn{font-size:13px;padding:6px 11px;border:1px solid #DDE1EC !important;border-radius:999px;background:#fff;}
   .lp-admin-row .admin-tab-btn.active{background:#FFF3E6;border-color:var(--orange) !important;color:var(--navy);}
 }
-/* the Modules and Scorecard pages */
+/* the Dashboard and Scorecard pages */
 main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .lp-eyebrow{font-size:11px !important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--orange-deep) !important;margin:0 0 4px !important;}
 /* .dash-hero-ribbon has order:-1 to sit in the grid's narrow first column (140px); without it (a plain admin,
    not previewing, gets no completion ribbon) the lone .dash-hero-text falls into that 140px column instead
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not — on both the Scorecard's
-   main-lp and the Modules page's main-dash. */
+   main-lp and the Dashboard page's main-dash. */
 main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
 /* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
 .dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
@@ -417,6 +431,10 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
    screens keep its existing responsive auto-fill/stacked behavior. */
 @media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
+/* 📚 Dashboard's own pages (Task Tracker, Monitoring Sheet, My Notes, My Performance; an admin's Orientation) */
+.lp-pages{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:22px 0 0;}
+.lp-pages .lp-page{display:inline-flex;align-items:center;gap:7px;}
+.lp-pages .lp-page.active{border-color:var(--orange);color:var(--navy);background:#FFF3E6;}
 /* the compact stat band under the lessons (the sibling courses' dashboard side band, here a plain row of
    cards instead of its own dark panel — see statsBand() in js/lsh-program.js) */
 .lp-home-stats{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 0;}

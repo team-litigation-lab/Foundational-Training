@@ -1,11 +1,13 @@
 /* ============================================================
    This program's setup for the LSH program layout (js/lsh-program.js, the same file in every LSH course repo):
-   the pages under 📚 Modules, what the 🏅 Scorecard collects and the 🛠 Practice Lab's pages.
+   the pages under 📚 Dashboard, what 📁 Client Profile opens, what the 🏅 Scorecard collects and the
+   🛠 Practice Lab's pages.
    Loaded just before js/lsh-program.js.
    Every grade the platform gives a trainee, one source each:
      ✍️ Knowledge Checks        kcreview:<id>, the trainer's final score, else state.progress[lesson].score, the best attempt
-                                (js/ft-process.js; 70% passes). ✍️ Process Questions is its own feature: its own
-                                button in the top bar, no page under 📚 Modules and no Admin tab.
+                                (js/ft-process.js; 70% passes). ✍️ Knowledge Check (the process questions) is its
+                                own feature: its own button in the top bar, no page under 📚 Dashboard and no
+                                Admin tab.
      🎯 Graded calls            callsim:<id>, the best graded call on each mock-call line (js/ft-simulators.js)
      📅 Calendaring Simulators  calsim:<id>, the trainer's released score on the latest submission of a week,
                                 else the best automated review; plus connected simulators' results (js/ft-calendar.js)
@@ -20,7 +22,7 @@ const title = id => { const d = DAYS.find(x => x.id === id); return d ? d.title 
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const CALL_LESSONS = [4, 5, 6];   // Reception, Calendar Management and Intake Mock Calls (as in js/ft-simulators.js)
 
-// Each module's own activities, for the row the module gets in 📚 Modules (js/lsh-program.js
+// Each module's own activities, for the row the module gets in 📚 Dashboard (js/lsh-program.js
 // renders whatever this returns). Everything a trainee does for a module is reachable from the module:
 // its Process Questions, its Practice Session, what it is done live with the trainer, and the Resource
 // Library activity that belongs to it. `go` is what to run; `locked` greys it out with the reason.
@@ -40,17 +42,21 @@ window.ftModuleActivities = function(lesson){
 };
 
 window.LSH_PROGRAM = {
-  // 📚 Modules: the lessons, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
+  // 📚 Dashboard: the modules, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
     {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
     {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
+    {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
+  // 📁 Client Profile: this program's case material — the trainee's firm, its rules and the case files
+  // assigned to them (js/ft-firms.js). Each program points this at its own.
+  caseProfile: {view:"firm", views:["firm"], title:"Your firm, its rules and the case files assigned to you"},
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
-  moduleViews: ["day"],   // 📚 Modules holds the lessons. ✍️ Process Questions (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
+  moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
   labViews: ["simulators", "calsim", "firm", "session", "lor"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)

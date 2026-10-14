@@ -1,6 +1,6 @@
 /* ============================================================
    Process Questions — each lesson's answer sheet, answered on the platform
-   Loaded after js/ft-monitoring.js. ✍️ Process Questions is its own feature, with its own button in the top
+   Loaded after js/ft-monitoring.js. ✍️ Knowledge Check (the process questions) is its own feature, with its own button in the top
    bar (#/process): it is not a page of 📚 Modules and it has no tab in 🛡 Admin Master Control.
    A lesson's last slide (✓ Finish lesson) routes here, to that lesson's answer sheet, instead of opening a
    Knowledge Check inside the lesson. The graded view (#/kc) belongs to this feature too, not to the modules.
@@ -10,7 +10,7 @@
        new Google Doc already named with the sheet's naming convention (in
        their trainee folder once they've saved its link), or ⬇ Download as
        Word gives a file with that name to upload.
-     • Admins open the same ✍️ Process Questions button and get every trainee's
+     • Admins open the same ✍️ Knowledge Check button and get every trainee's
        sheets: batch → trainee → each answer sheet (submitted or not, how many
        answered, the answers), and the line for the ranking report ("Out of N
        expected answer sheets, X were submitted"). There is no Admin tab for it.
@@ -18,7 +18,7 @@
        the facilitator's feedback DNA (js/ft-facilitator-dna.js), and the trainer adds their own review
        (✍️ Process Questions as an admin: a comment per answer, an overall comment and a final score), saved
        in kcreview:<id>, which the trainee reads but never writes. The questions are no longer a slide: the
-       lesson's ✓ Finish lesson opens ✍️ Process Questions at that lesson's sheet.
+       lesson's ✓ Finish lesson opens ✍️ Knowledge Check at that lesson's sheet.
      • PROCESS_SETS: one per lesson. Add a lesson's questions there.
    ============================================================ */
 (function(){
@@ -222,8 +222,8 @@ function moduleCard(lesson){
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
   // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
-  if(state.isAdmin && !state.adminPreview) return `<div class="fp-hero"><h1>✍️ Process Questions</h1>
-      <p>Every trainee’s answer sheets and Knowledge Checks, by batch. Trainees answer the questions on this same page.</p></div>
+  if(state.isAdmin && !state.adminPreview) return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
+      <p>Every trainee’s answer sheets, by batch, and the Knowledge Check each one is graded as. Trainees answer the process questions on this same page.</p></div>
     ${renderAdminProcess()}`;
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   loadReview();
@@ -231,7 +231,7 @@ function renderPage(){
   if(!FP.data) return `<div class="card" style="padding:28px;">Loading your answers…</div>`;
   const preview = (state.adminPreview && !state.traineeId)
     ? `<div class="card fp-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it, with every lesson unlocked. Nothing you type here is saved, and grading needs a trainee's own account.</div>` : "";
-  return `${preview}<div class="fp-hero"><h1>✍️ Process Questions · Knowledge Checks</h1>
+  return `${preview}<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module; answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
     <div class="card fp-folder">
       <label for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
@@ -301,7 +301,7 @@ const kcLessons = set => set.kc ? Object.keys(set.kc).map(Number) : [set.lesson]
 const kcQuestionsFor = lessonId => PROCESS_SETS.flatMap(set => kcLessons(set).includes(lessonId)
   ? (set.kc ? set.kc[lessonId] : set.questions.map((_,i)=>i)).map(i=>({set, i, q:qtext(set,i)})) : []);
 window.ftKcQuestions = kcQuestionsFor;
-// The Process Questions aren't a slide in the lessons: they open from ✍️ Process Questions in the top bar
+// The Process Questions aren't a slide in the lessons: they open from ✍️ Knowledge Check in the top bar
 // (js/lsh-program.js), and finishing a lesson opens its Knowledge Check (finishTrainingForDay, below).
 
 /* ---------- admin: every trainee's answer sheets ---------- */
@@ -428,7 +428,7 @@ window.render = function(){
   paintSave();
   try{ afterRender(); }catch(err){}
 };
-// A trainee's answers load with 📚 Modules, the landing page, so the lesson card and the slide know them.
+// A trainee's answers load with 📚 Dashboard, the landing page, so the lesson card and the slide know them.
 (window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
   if(state.traineeId && !state.isAdmin && FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   if(state.traineeId && !state.isAdmin) loadReview();
@@ -503,7 +503,7 @@ function renderKc(){
     <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; <b>${KC_PASS}% passes</b> and finishes the lesson. Retakes keep your best score, and your trainer adds their own review.</p>`;
   if(state.isAdmin && !state.adminPreview) return `${back}<div class="kc-hero">${intro}</div>
     <div class="card kc-card"><ol class="fp-qs">${qs.map(x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`).join("")}</ol>
-    <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are under ✍️ Process Questions in the top bar.</p></div>`;
+    <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are under ✍️ Knowledge Check in the top bar.</p></div>`;
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   if(FP.err) return `${back}<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `${back}<div class="card" style="padding:28px;">Loading your answers…</div>`;
@@ -599,7 +599,7 @@ Return ONLY a JSON object, no other text:
     }
   }
 };
-// Finishing a lesson that has process questions routes to ✍️ Process Questions (its own feature, its own button in
+// Finishing a lesson that has process questions routes to ✍️ Knowledge Check (its own feature, its own button in
 // the top bar), opening that lesson's answer sheet — rather than a Knowledge Check inside the lesson.
 const __finish = window.finishTrainingForDay;
 window.finishTrainingForDay = async function(id){
@@ -613,7 +613,7 @@ window.finishTrainingForDay = async function(id){
   return FTProcess.openLesson(l);
 };
 window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrainingForDay(state.dayId); };
-// the page, beside ✍️ Process Questions
+// the page, beside ✍️ Knowledge Check
 const __kcRender = window.render;
 window.render = function(){
   if(state.view!=="kc") return __kcRender.apply(this, arguments);

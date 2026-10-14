@@ -286,7 +286,7 @@ function narratorAfterRender(pageOnly){
   if(key!==__lastNarrKey){ __lastNarrKey = key; Narrator.afterSlideChange(); } else Narrator.paint();
 }
 function renderTopbar(){
-  let views = [["dashboard","📚 Modules"],["tasks","🎲 Tasks"],["clientprofile","Client Profile"],["practice","Practice Lab"],["crisisroleplay","🔥 Live Roleplay"],["notes","My Notes"],["handouts","Handouts"]];
+  let views = [["dashboard","📚 Dashboard"],["tasks","🎲 Tasks"],["clientprofile","Client Profile"],["practice","Practice Lab"],["crisisroleplay","🔥 Live Roleplay"],["notes","My Notes"],["handouts","Handouts"]];
   if(state.isAdmin){
     // Admin is a trainer monitoring dashboard, not a trainee workspace — hide
     // the trainee-facing-only views that have no role here.
@@ -308,9 +308,9 @@ function renderTopbar(){
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
           ${state.adminPreview
-            ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('admin')" title="Return to the admin (trainer) view">🛡 Back to Admin view</button>`
+            ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('admin')" title="Switch back to the admin (trainer) view">👁 Switch View</button>`
             : ((state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`)}
-          ${state.isAdmin ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="See the portal exactly as a trainee does — no trainer tools or admin pages">👁 Trainee view</button>` : ""}
+          ${state.isAdmin ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="Switch to the trainee view — the program exactly as a trainee sees it, with no trainer tools or admin pages">👁 Switch View</button>` : ""}
         </div>
         <div class="trainee-chip" onclick="promptName()">
           <span class="dot"></span> ${state.traineeName ? esc(state.traineeName) : "Set your name"}
@@ -524,7 +524,7 @@ function setAdminViewMode(mode){
     try{ sessionStorage.setItem("lsh_admin_preview","1"); }catch(e){}
     const back = ["admin","orientation","facilitatorguide"].includes(state.view) ? "dashboard" : state.view;
     if(state.view==="day") render(); else goto(back);
-    toast("👁 Trainee view — this is what trainees see. Use “Back to Admin view” to return.");
+    toast("👁 Trainee view — this is what trainees see. 👁 Switch View takes you back.");
   }else{
     if(!state.adminPreview) return;
     state.adminPreview = false; state.isAdmin = true;
@@ -2332,7 +2332,7 @@ function sopProgramFlow(){
         <li>Sign in to <b>🛡 Admin</b>. In Trainee Audit set the certificate signatories and the daily-review setting.</li>
         <li>Send trainees the portal link. They register with name + batch code; <b>approve them in Trainee Audit</b>.</li>
         <li>Rehearse once: open Day 1 → <b>🖥 Presenter view</b>, share the slides window in a test Meet, step through a few slides.</li>
-        <li>Try <b>👁 Trainee view</b> (top bar) to see exactly what trainees see, then switch back.</li></ol></section>
+        <li>Try <b>👁 Switch View</b> (top bar) to see exactly what trainees see, then switch back.</li></ol></section>
       <section class="card sopf-card"><h3>2 · Kick-off (≈20 min, before Day 1)</h3><ol>
         <li>Admin → <b>🧭 Orientation</b> → <b>Present full screen</b>. It covers the roadmap, how a day works, live sessions, the dashboard, grading and ground rules.</li>
         <li>Share the <b>Blueprint PDF</b> (link on the Orientation page) as the take-home version.</li>
