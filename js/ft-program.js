@@ -49,6 +49,7 @@ window.LSH_PROGRAM = {
     {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
+    {view:"tasks", icon:"🎲", label:"Tasks", who:"trainee", about:"The unannounced tasks your trainer sends during a session: acknowledge, plan and resolve each one before its timer ends. Graded.", badge:() => typeof window.openTasksCount === "function" ? window.openTasksCount() : 0},
     {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
@@ -61,7 +62,7 @@ window.LSH_PROGRAM = {
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "attendance", "firms"],
+    admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],
     lab: ["calscores", "sessions", "trainerinputs"],
     scorecard: ["scorecards"]

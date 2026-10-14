@@ -137,7 +137,9 @@ window.renderTopbar = function(){
 // What the program adds to the landing page. A file that used to hang something on the dashboard (a stat
 // card, a badge on a lesson card) registers it here instead: window.LSH_HOME_STATS holds () => HTML for the
 // row of stat cards under the progress bar, window.LSH_HOME_LESSON_TAGS holds (lesson) => HTML for a tag
-// beside that lesson's Knowledge Check score. js/ft-simulators.js registers the graded calls in both.
+// beside that lesson's Knowledge Check score, and window.LSH_HOME_NOTICES holds () => HTML for anything
+// that needs the trainee's eye the moment they open the page (a live 🎲 task). js/ft-simulators.js
+// registers the graded calls in the first two; js/ft-admin-ops.js registers the task card.
 const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
 const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
 
@@ -217,6 +219,7 @@ function renderModules(){
       ${stepTimeline(all)}
     </div>
     <div class="dash-main">
+      ${hooks("LSH_HOME_NOTICES")}
       ${pinned.map(d => moduleCard(d)).join("")}
       <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
       <div class="dash-side"><div class="dash-side-inner">
