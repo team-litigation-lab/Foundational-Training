@@ -7,7 +7,8 @@
 //      (503 portal-secret-missing) rather than letting it read as an expired link, and /api/auth/status
 //      reports portalSecret false so the sign-in screen can tell an administrator.
 //   4. PORTAL_ONLY=off is the way back to the old name + batch sign-in (the tests use it).
-//   5. An administrator's ticket never signs anyone in: admins type the admin password (403 admin-password).
+//   5. An administrator's ticket (an admin signed in on the Portal) signs them in as a trainer, with no second password,
+//      and only once: the same ticket again is refused (401 used).
 // Usage: node .github/scripts/sso.cjs   (no server, no browser needed)
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -84,12 +85,19 @@ async function ticketFor(payloadObj, secret) {
     const typedOff = await call(off, '/api/auth/trainee', { name: 'Walk In', batch: 'B100926' });
     if (typedOff.status !== 200) fail(`with PORTAL_ONLY=off a name + batch should still sign in: ${JSON.stringify(typedOff)}`);
 
-    // 5. an administrator's ticket never signs anyone in
-    const adminTicket = await call(env, '/api/auth/portal', { ticket: await ticketFor({ r: 'a', exp: Date.now() + 60000 }, SECRET) });
-    if (adminTicket.status !== 403 || !adminTicket.body || adminTicket.body.code !== 'admin-password') {
-        fail(`an administrator's ticket should ask for the admin password (403 admin-password), got ${JSON.stringify(adminTicket)}`);
+    // 5. single sign-on for trainers: an administrator's ticket signs them in as a trainer, once
+    const aTicket = await ticketFor({ r: 'a', n: 'Coach Ana', exp: Date.now() + 60000 }, SECRET);
+    const adminTicket = await call(env, '/api/auth/portal', { ticket: aTicket });
+    if (adminTicket.status !== 200 || !adminTicket.body || !adminTicket.body.admin || !adminTicket.body.token) {
+        fail(`an administrator's ticket should sign them in as a trainer, got ${JSON.stringify(adminTicket)}`);
+    } else {
+        // the token is a trainer's: an admin-only call works with it (a trainee's gets 403)
+        const asAdmin = await call(env, '/api/storage/delete', { key: 'sso-test-nothing' }, { Authorization: 'Bearer ' + adminTicket.body.token });
+        if (asAdmin.status !== 200) fail(`the token from an administrator's ticket isn't a trainer's: ${JSON.stringify(asAdmin)}`);
     }
+    const again = await call(env, '/api/auth/portal', { ticket: aTicket });
+    if (again.status !== 401 || !again.body || again.body.code !== 'used') fail(`an administrator's ticket should work only once, got ${JSON.stringify(again)}`);
 
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and an admin ticket never signs anyone in.');
+    console.log('Single sign-on: the Portal is the only way a trainee gets in, a typed name + batch is refused, a missing PORTAL_SSO_SECRET says so, and a trainer signed in on the Portal gets in with no second password, once per ticket.');
 })().catch(e => { console.error(e); process.exit(1); });

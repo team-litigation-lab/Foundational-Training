@@ -6199,7 +6199,7 @@ function renderOrientation(){
   const s = slides[i];
   return `
     <div class="or-top"><div><p class="eyebrow">Admin · for screen sharing</p><h1 style="color:var(--navy);font-size:24px;margin:4px 0 0;">🧭 Platform Orientation</h1></div>
-      <div class="or-top-actions"><span class="or-tip">Share this tab in Google Meet — nothing private is shown here.</span><span class="bp-status">${state.blueprintMeta && state.blueprintMeta.build ? `📘 Published blueprint: build ${esc(state.blueprintMeta.build)}${state.blueprintMeta.build===APP_BUILD?" (latest)":" — updating…"} · <a href="/blueprint.pdf" target="_blank" rel="noopener">open</a> · <a href="#" onclick="event.preventDefault();republishBlueprint()">rebuild</a>` : `📘 Blueprint PDF publishes automatically after each update`}</span>
+      <div class="or-top-actions"><span class="or-tip">Share this tab in Google Meet — nothing private is shown here.</span>
       <button class="btn btn-ghost btn-sm" onclick="printOrientation()">🖨 Print</button><button class="btn btn-primary btn-sm" id="orPdfBtn" onclick="downloadOrientationPdf()">⬇ Download PDF</button><button class="btn btn-navy btn-sm" onclick="orientFullscreen()">⛶ Present full screen</button></div></div>
     <div class="or-stage" id="orStage">
       <div class="or-slide" id="orSlide">
@@ -12500,7 +12500,6 @@ function renderHandouts(){
     <h1 style="color:var(--navy);font-size:26px;margin:6px 0 10px;">Handouts &amp; Templates</h1>
     <p style="color:var(--ink-soft);font-size:14.5px;max-width:72ch;margin:0 0 16px;">Printable checklists, scripts and ready-to-use templates for each day. Download the PDF to print or fill in, or grab the ready-made Excel workbook for any tracker (opens in Excel or Google Sheets).</p>
     <input class="ho-search" placeholder="Search handouts…" value="${esc(state.hoQuery||"")}" oninput="state.hoQuery=this.value; clearTimeout(window.__hoT); window.__hoT=setTimeout(()=>{render(); const el=document.querySelector('.ho-search'); if(el){ el.focus(); el.setSelectionRange(el.value.length, el.value.length);} },250)">
-    <div class="card ho-bp"><div class="ho-bp-i">📘</div><div><b>Platform Blueprint (PDF)</b><span>How the portal works — the 10-day roadmap, how each day runs, grading, certificate and ground rules. Always the latest version.</span></div><a class="btn btn-primary btn-sm" href="/blueprint.pdf" target="_blank" rel="noopener">⬇ Open PDF</a></div>
     <div class="ho-grid">
     ${list.map(h=>{ const link = handoutLink(h.day); return `
       <div class="card ho-card ${h.day===cur?"current":""}">

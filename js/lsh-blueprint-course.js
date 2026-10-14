@@ -6,8 +6,9 @@
      the published copy is matched against APP_BUILD and the Worker's deployment id (/version),
      and the first admin page open after a deploy republishes it.
    - Trainer blueprint: the course's trainer slides (js/blueprint-content.js), drawn by
-     lsh-blueprint.js. Admins only, never at a public address: 🧭 Orientation → 🛠 Trainer
-     blueprint, with ⬇ Download PDF (stamped with the build and the deployment).
+     lsh-blueprint.js. Admins only, never at a public address, and never linked from the program
+     itself: it opens from #/blueprint, the link on the Main Portal's Blueprint page, with
+     ⬇ Download PDF (stamped with the build and the deployment).
    Load order: blueprint-content.js, this file, lsh-blueprint.js, after the course's own scripts.
    ========================================================= */
 (function () {
@@ -56,25 +57,23 @@
     finally { st.blueprintJob = false; }
   };
 
-  /* ---------- 🧭 Orientation: the Trainee blueprint, with a tab to the Trainer blueprint ---------- */
-  if (typeof window.renderOrientation === 'function') {
-    const base = window.renderOrientation;
-    window.renderOrientation = function () {
-      const html = base.apply(this, arguments);
-      if (!window.LSHBlueprint || !(window.LSH_BLUEPRINT || {}).trainer) return html;
-      return `<div class="lbp-or-tabs" role="tablist">
-          <button type="button" class="on" role="tab" aria-selected="true">🧭 Trainee blueprint</button>
-          <button type="button" role="tab" id="lbp-or-trainer" onclick="LSHBlueprint.open('trainer')">🛠 Trainer blueprint</button>
-          <span>Trainees see the Trainee blueprint (and get it at <a href="/blueprint.pdf" target="_blank" rel="noopener">/blueprint.pdf</a>). The Trainer blueprint is for trainers only.</span>
-        </div>` + html;
-    };
+  /* ---------- No Blueprint in the program: the Main Portal is where the blueprints live ----------
+     A program shows no Blueprint tab, button, card or PDF link — not to trainees, not to trainers. The
+     Trainer blueprint still opens here, but only from its own address, #/blueprint (the link the Main
+     Portal's Blueprint page carries for each program), and only for a signed-in trainer. The Trainee
+     blueprint is still published at /blueprint.pdf after every deploy, for the Portal to link to. */
+  const BP_LINK = /^#\/blueprint\/?$/;
+  let bpPending = BP_LINK.test(location.hash);
+  function openFromLink() {
+    if (!bpPending || !isAdmin() || !window.LSHBlueprint) return;
+    bpPending = false;
+    try { window.LSHBlueprint.open('trainer'); } catch (e) { /* not ready: the next render tries again */ bpPending = true; }
   }
-  const css = document.createElement('style');
-  css.textContent = `.lbp-or-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 14px;padding:6px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px}
-    .lbp-or-tabs button{border:1px solid #e2e8f0;background:#fff;color:#1e293b;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;font-family:inherit}
-    .lbp-or-tabs button.on{background:#0f2148;border-color:#0f2148;color:#fff;box-shadow:inset 0 -3px 0 #f97316;cursor:default}
-    .lbp-or-tabs span{font-size:12px;color:#64748b;margin-left:6px}`;
-  document.head.appendChild(css);
+  window.addEventListener('hashchange', () => { if (BP_LINK.test(location.hash)) { bpPending = true; openFromLink(); } });
+  if (typeof window.render === 'function') {
+    const baseRender = window.render;
+    window.render = function () { const r = baseRender.apply(this, arguments); if (bpPending) setTimeout(openFromLink, 0); return r; };
+  }
 
   /* ---------- the shared Blueprint engine's settings for a course ---------- */
   const c = window.LSH_BLUEPRINT = window.LSH_BLUEPRINT || {};
