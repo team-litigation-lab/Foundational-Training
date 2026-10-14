@@ -133,6 +133,15 @@ function portalSecret(env) { return String(env.PORTAL_SSO_SECRET || "").trim(); 
    PORTAL_ONLY=off is the way back to the old name + batch sign-in; leave it unset in production. */
 function portalOnly(env) { return !!(adminPass(env) && String(env.PORTAL_ONLY || "").trim().toLowerCase() !== "off"); }
 // why (optional) gets why a ticket was refused: "format", "signature" (the Portal and this program don't share the same secret) or "expired".
+// An administrator's Portal ticket signs in once: its signature is remembered for 10 minutes (longer than the ticket
+// lives), and a second use is refused.
+async function useTicketOnce(kv, ticket) {
+  if (!kv) return true;
+  const key = "sso-used:" + String(ticket || "").split(".").pop().slice(0, 43);
+  if (await kv.get(key)) return false;
+  await kv.put(key, "1", { expirationTtl: 600 });
+  return true;
+}
 async function readPortalTicket(env, ticket, why = {}) {
   if (!portalSecret(env)) { why.r = "format"; return null; }
   const parts = String(ticket || "").split(".");
@@ -143,7 +152,7 @@ async function readPortalTicket(env, ticket, why = {}) {
   const exp = Number(t && t.exp);
   if (!exp || Date.now() > exp || exp - Date.now() > PORTAL_TICKET_MAX_MS) { why.r = "expired"; return null; }
   if (t.r === "s") return { system: true };   // the Portal's own server-side tools (sign-in check, registration import): never given to a person
-  if (t.r === "a") return { admin: true };    // an administrator opened this from the Portal: they still sign in here with the admin password
+  if (t.r === "a") return { admin: true, name: String(t.n || "").trim().slice(0, 60) };   // an administrator signed in on the Portal (their own admin account)
   const first = String(t.first || "").trim(), last = String(t.last || "").trim(), batch = String(t.b || "").trim();
   if (!first || !last || !batch) return null;
   return { name: `${first} ${last}`, first, last, batch };
@@ -799,7 +808,13 @@ export default {
           ? "The LSH Training Portal couldn't be verified (code: bad-signature). Please tell your administrator: the Portal and this program need the same sign-in secret."
           : "This sign-in link has expired. Open the program again from the LSH Training Portal.", code: why.r || "format" }, 401);
         if (who.system) return json({ admin: true, token: await makeToken(env, "a", "admin", 12) });
-        if (who.admin) return json({ error: "Administrators sign in with the admin password on every platform.", code: "admin-password" }, 403);
+        if (who.admin) {
+          // Single sign-on for trainers too: an administrator signed in on the Main Portal opens every program as a
+          // trainer, with no second password here. Their ticket works once, so a copy of the link (browser history,
+          // a forwarded URL) can't sign anyone in again inside its 5 minutes.
+          if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
+          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "admin", 12) });
+        }
         const res = await traineeSession(who.name, who.batch, "");
         const out = await res.json();
         // The Portal's approval is the only trainee approval: a trainee it signs in is approved here too

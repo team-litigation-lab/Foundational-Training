@@ -110,9 +110,11 @@ async function walk(page, label) {
     // (checked below), it's just not linked from the top bar any more; 🧭 Orientation is the one blueprint
     const adminBtn = await page.evaluate(() => { const b = document.querySelector('.nav-blueprint'); return b ? b.getAttribute('onclick') : null; });
     if (adminBtn) fail(`an admin's top bar still has the 📘 Platform Blueprint button: ${adminBtn}`);
-    const tabs = await page.evaluate(() => [...document.querySelectorAll('.lbp-or-tabs button')].map(b => b.textContent.trim()));
-    if (tabs.join('|') !== '🧭 Trainee blueprint|🛠 Trainer blueprint') fail(`Orientation's blueprint tabs: ${tabs.join('|')}`);
-    await page.click('#lbp-or-trainer'); await page.waitForTimeout(400);
+    // No Blueprint in the program: Orientation has no blueprint tabs and no link to the blueprint or its PDF;
+    // the Trainer blueprint opens only from its own address, #/blueprint (the Main Portal's Blueprint page links there)
+    const bp = await page.evaluate(() => ({ tabs: !!document.querySelector('.lbp-or-tabs, #lbp-or-trainer'), links: [...document.querySelectorAll('main a[href*="blueprint"], .ho-bp, .bp-status')].length }));
+    if (bp.tabs || bp.links) fail(`the program still shows a Blueprint tab or link: ${JSON.stringify(bp)}`);
+    await page.evaluate(() => { location.hash = '#/blueprint'; }); await page.waitForTimeout(600);
     const a = await page.evaluate(() => ({ open: LSHBlueprint.isOpen(), deck: document.getElementById('lbp-slide').dataset.deck, tabs: [...document.querySelectorAll('#lbp-tabs button')].filter(b => b.offsetParent).map(b => b.textContent.trim()), sub: document.getElementById('lbp-sub').textContent, build: APP_BUILD, n: (LSHBlueprint.decks().trainer || { slides: [] }).slides.length, count: document.getElementById('lbp-count').textContent.trim() }));
     if (!a.open || a.deck !== 'trainer' || a.tabs.join() !== 'Trainer blueprint,Trainee blueprint') fail(`🛠 Trainer blueprint didn't open the trainer deck with both tabs: ${JSON.stringify(a)}`);
     if (!a.sub.includes(`build ${a.build}`) || !a.sub.includes('deploy dep-aaaa')) fail(`the Trainer blueprint's header doesn't show the build and deployment: ${a.sub}`);
@@ -141,7 +143,7 @@ async function walk(page, label) {
     await page.click('#lbp-tabs button[data-deck="trainee"]'); await page.waitForTimeout(300);
     const back = await page.evaluate(() => ({ open: LSHBlueprint.isOpen(), view: state.view }));
     if (back.open || back.view !== 'orientation') fail(`the Trainee blueprint tab should go back to Orientation: ${JSON.stringify(back)}`);
-    await page.click('#lbp-or-trainer'); await page.keyboard.press('Escape');
+    await page.evaluate(() => { location.hash = '#/orientation'; location.hash = '#/blueprint'; }); await page.waitForTimeout(400); await page.keyboard.press('Escape');
     if (await page.evaluate(() => LSHBlueprint.isOpen())) fail('Esc didn\'t close the Trainer blueprint');
 
     // ---- the Trainee blueprint is republished after every deploy ----

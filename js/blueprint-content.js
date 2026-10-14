@@ -1,6 +1,6 @@
 /* 🛠 The Foundational Training course's Trainer blueprint (lsh-blueprint.js draws it; lsh-blueprint-course.js
    adds it to 🧭 Orientation). The Trainee blueprint is the Orientation deck (js/ft-orientation.js), published
-   at /blueprint.pdf; admins open it from 🧭 Orientation (it has no top bar button of its own).
+   at /blueprint.pdf; nothing in the program links to either — the Main Portal's 🧭 Blueprint page does.
    A slide is { icon, title, points: [...], where, tip, shot, shotAlt }: shot is a screenshot of that
    screen (/img/blueprint/*.jpg), shown beside the points on the slide and in the PDF; shotAlt describes it.
    Change the wording here; the page and the PDF are made from it each time, stamped with the deployed build.
@@ -93,7 +93,7 @@ window.LSH_BLUEPRINT = {
           '🕘 Attendance: Time In fills in by itself when a trainee opens the course; tag each status and add notes.',
           'It stays in step with the attendance Google Sheet, both ways, through the Training Portal.',
           '👁 Switch View shows the platform exactly as trainees see it, and switches you back.',
-          '🧭 Orientation is the Trainee blueprint to share on day one, and the same deck as a PDF, yours to share; the Trainer blueprint is 🧭 Orientation → 🛠 Trainer blueprint.'],
+          '🧭 Orientation is the deck to share with trainees on day one. The blueprints themselves live on the Main Portal\'s 🧭 Blueprint page, never inside the program.'],
         where: 'Admin → 🕘 Attendance · 👁 Switch View · 🧭 Orientation.',
         tip: 'The Trainee blueprint PDF republishes itself after every update; nothing to do by hand.',
         shot: '/img/blueprint/attendance.jpg',
