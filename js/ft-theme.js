@@ -236,6 +236,23 @@ body{background-attachment:fixed;}
 .lesson-stage #lessonSlideWrap .fp-section ol > li,
 .lesson-stage #lessonSlideWrap .quiz-opt{background-color:rgba(255,255,255,.80);}
 
+/* ---- §4 visual signposts: the status tokens ------------------------------
+   One set of colour-coded status indicators for the whole platform, from the
+   platform spec: Cyan = In Progress, Emerald = Approved / done, Orange =
+   Flagged / Focus. Before this, four files each carried their own copy of the
+   same amber pair (#FEF7C3 / #7a5d00) for "in progress", so a change meant
+   finding all nine of them. They read these tokens now.
+
+   Red (--danger) is left alone: the spec's three statuses are progress states,
+   not failures, so "not taken" and a failed score keep saying so in red. Each
+   token comes with a -bg and an -ink, the pattern --success / --success-bg
+   already uses, so a pill sets both from one name. */
+:root{
+  --st-progress:#0e7490; --st-progress-bg:#CFFAFE;   /* cyan: in progress, part-done, mid */
+  --st-approved:var(--success); --st-approved-bg:var(--success-bg);  /* emerald: approved, passed, filled */
+  --st-focus:#9a3412; --st-focus-bg:#FFEDD5;         /* orange: flagged, needs attention, focus */
+}
+
 /* The Platform Orientation slides (js/ft-orientation.js), and the certificate,
    which keeps the faintest wash of the three so the printed sheet stays clean. */
 .or-slide{

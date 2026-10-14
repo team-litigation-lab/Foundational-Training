@@ -451,7 +451,7 @@ main.main-monitor{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ftm-how{padding:14px 18px;margin-bottom:16px;font-size:15px;} .ftm-how > b{display:block;color:var(--navy);font-size:16px;}
 .ftm-how ul{margin:6px 0 10px;padding-left:20px;} .ftm-how li{margin:3px 0;}
 .ftm-eg{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:14.5px;display:flex;flex-direction:column;gap:6px;}
-.st-none{background:var(--bg);color:var(--ink-soft);} .st-part{background:#FEF7C3;color:#7a5d00;} .st-done{background:var(--success-bg);color:var(--success);}
+.st-none{background:var(--bg);color:var(--ink-soft);} .st-part{background:var(--st-progress-bg);color:var(--st-progress);} .st-done{background:var(--st-approved-bg);color:var(--st-approved);}
 /* the sheet itself: a Google-Sheets-style grid, the same look as 📋 Task Tracker (js/ft-tracker.js) —
    column letters, row numbers, and every field a fillable cell right in the grid. */
 .ftm-wrap{overflow:auto;max-height:72vh;border:1px solid #dadce0;border-radius:10px;background:#fff;font-family:Arial,Helvetica,sans-serif;box-shadow:0 1px 3px rgba(0,0,0,.06);}
@@ -476,7 +476,7 @@ td.ftm-c.ftm-st{text-align:center;font-weight:700;font-size:12px;}
 .ftm-batch{margin-top:14px;} .ftm-batch-hd{cursor:pointer;padding:8px 0;color:var(--navy);font-size:15px;}
 .ftm-atable{width:100%;border-collapse:collapse;font-size:14.5px;} .ftm-atable th{text-align:left;font-size:12.5px;color:var(--ink-soft);padding:6px 8px;border-bottom:1px solid var(--line);}
 .ftm-atable td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;} .ftm-trow{cursor:pointer;} .ftm-trow:hover{background:#F8F9FC;}
-.ftm-pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:13px;} .ftm-pill.ok{background:var(--success-bg);color:var(--success);} .ftm-pill.mid{background:#FEF7C3;color:#7a5d00;} .ftm-pill.bad{background:var(--danger-bg);color:var(--danger);}
+.ftm-pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:13px;} .ftm-pill.ok{background:var(--st-approved-bg);color:var(--st-approved);} .ftm-pill.mid{background:var(--st-progress-bg);color:var(--st-progress);} .ftm-pill.bad{background:var(--danger-bg);color:var(--danger);}
 .ftm-help{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12.5px;background:var(--danger-bg);color:var(--danger);}
 .ftm-arep{border:1px solid var(--line);border-radius:10px;margin:6px 0;background:#fff;}
 .ftm-arep-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;cursor:pointer;font-size:14.5px;color:var(--navy);}

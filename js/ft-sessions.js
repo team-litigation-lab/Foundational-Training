@@ -495,7 +495,7 @@ main.main-fss{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fss-f input, .fss-f select, .fss-f textarea, .fss-rvform input, .fss-rvform select, .fss-rvform textarea, .fss-acts-edit textarea{font:inherit;font-weight:500;font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;}
 .fss-f legend{margin-bottom:4px;} .fss-check{display:flex;gap:7px;align-items:center;font-size:13.5px;font-weight:500;color:var(--ink);}
 .fss-pill{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;background:#F3F4F8;color:#4A5070;vertical-align:2px;}
-.fss-pill.ok{background:#E7F5EE;color:#1E7F4F;} .fss-pill.mid{background:#FEF7C3;color:#7a5d00;} .fss-pill.live{background:#E7F5EE;color:#1E7F4F;}
+.fss-pill.ok{background:var(--st-approved-bg);color:var(--st-approved);} .fss-pill.mid{background:var(--st-progress-bg);color:var(--st-progress);} .fss-pill.live{background:var(--st-approved-bg);color:var(--st-approved);}
 .fss-checks{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:10px 0;} .fss-checks-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
 .fss-checks ul{list-style:none;margin:8px 0 0;padding:0;font-size:14px;} .fss-checks li{padding:4px 0;border-top:1px solid #F1F2F6;}
 .fss-checks li.ok{color:#1E7F4F;} .fss-checks li.miss{color:#B5531A;} .fss-checks li span{display:block;font-size:12.5px;color:var(--ink-soft);margin-left:18px;}
@@ -511,7 +511,7 @@ main.main-fss{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fss-cellform{background:#F7F8FB;border-radius:10px;padding:12px;margin-top:12px;}
 .fss-acts-edit textarea{width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;}
 .fss-cell{font:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;min-width:70px;}
-.fss-cell.ok{background:#E7F5EE;color:#1E7F4F;border-color:#CDEBDC;} .fss-cell.mid{background:#FEF7C3;color:#7a5d00;}
+.fss-cell.ok{background:var(--st-approved-bg);color:var(--st-approved);border-color:#CDEBDC;} .fss-cell.mid{background:var(--st-progress-bg);color:var(--st-progress);}
 .fss-grid td span{display:block;}
 `; document.head.appendChild(s); })();
 })();
