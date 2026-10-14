@@ -6,9 +6,14 @@
    (?ticket=…); the Worker checks it (/api/auth/portal) and the trainee
    is signed in, registered and waiting for approval exactly as before.
    Someone who opens this program's link directly sees a short note
-   with a button back to the Portal instead of a form. Admins sign in on the
-   Portal too, but every platform asks an admin for the admin password: no
-   ticket signs an admin in (the Admin Portal tab on that note).
+   with a button back to the Portal instead of a form. Trainers are
+   centralised the same way: a trainer signs in once on the Main Portal with
+   their own admin account, and opening any program from there signs them in
+   as a trainer with no second password (the ticket carries r:"a" and their
+   name; the Worker answers { admin:true }, and the ticket works only once).
+   The admin password prompt on that note is the way in only for a trainer
+   who opens this program's own link directly, or before the Portal is wired
+   up: on this site the Portal's master admin password (MASTER_ADMIN_PASSWORD).
    Single sign-on is how every LSH platform works now: there is no name +
    batch form on a program's own site any more, whatever the Worker is
    configured with. The Worker needs PORTAL_SSO_SECRET (the Portal's value)
@@ -80,9 +85,10 @@ window.portalGate = {
     try{ await authStatus(); }catch(e){}
     // authStatus() above has already asked the Worker; it costs no request of its own.
     try{ secretMissing = !!(state.portalOnly && state.portalSecret === false); }catch(e){}
-    // The Portal sends an administrator here as /?admin=1 (no ticket: admins type the admin password). A trainee session
-    // saved in this browser (an earlier test, a shared computer) is signed out first, so the admin password prompt shows
-    // instead of that trainee's dashboard.
+    // /?admin=1 is the Portal's older admin launch, and the way in for a trainer who opens this program's own link:
+    // no ticket, so they type the admin password. (A trainer signed in on the Portal arrives with a ticket instead
+    // and needs no password — handled below.) A trainee session saved in this browser (an earlier test, a shared
+    // computer) is signed out first, so the admin prompt shows instead of that trainee's dashboard.
     if(wantAdmin && state.traineeId && !state.adminToken){ try{ await logout(); }catch(e){} }
     if(!ticket){ uncover(150); return; }
     var t = ticket; ticket = "";
