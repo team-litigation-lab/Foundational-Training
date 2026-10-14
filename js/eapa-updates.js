@@ -24,12 +24,11 @@ window.EAPA_UPDATE_PACK = "z";
 .nav .nav-viewswitch:hover{background:rgba(240,192,138,.28) !important;}
 .view-mode-strip{background:#F0C08A;color:#1F2440;font-size:13px;text-align:center;padding:7px 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
 .view-mode-strip button{font:inherit;font-weight:700;background:#1F2440;color:#fff;border:none;border-radius:999px;padding:4px 12px;cursor:pointer;}
-/* Top-bar search: the input may shrink (the placeholder ends in "…" instead of spilling out of the box) */
-/* Top bar on laptops and desktops: nothing overlaps. The program title gives way first (down to the logo;
-   the text hides when there's no room to read it), then the search box shrinks to its minimum, then the
-   nav wraps its last buttons onto a second line. */
+/* Top bar on laptops and desktops: nothing overlaps. The page header — the mark and the page's name —
+   is what the bar is for, so it keeps its width and the nav wraps its last buttons onto a second line
+   instead. On a narrower screen the name hides altogether (below), leaving the mark. */
 @media(min-width:1181px){
-  .topbar .brand{flex:0 1000000 280px;min-width:40px;container-type:inline-size}
+  .topbar .brand{flex:0 1 370px;min-width:40px;container-type:inline-size}
   .topbar-right{min-width:auto}
   .topbar .nav{flex:0 1 auto;min-width:0;flex-wrap:wrap;column-gap:0;row-gap:4px}
   .topbar .nav>*+*{margin-left:2px}  /* margins, not column-gap: Chrome leaves the gap out of a wrapping row's width */
