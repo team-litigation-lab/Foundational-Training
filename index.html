@@ -250,13 +250,6 @@ button{font-family:inherit;cursor:pointer;}
 .nav button.active{background:var(--orange);color:#241304;}
 .nav button:not(.active):hover{background:rgba(255,255,255,.09);color:#fff;}
 
-.trainee-chip{
-  display:flex;align-items:center;gap:8px;font-size:var(--font-sub);color:#C9CCE6;
-  border:1px solid rgba(255,255,255,.18);padding:6px 10px;border-radius:20px;cursor:pointer;
-  white-space:nowrap;flex:0 0 auto;
-}
-.trainee-chip:hover{border-color:rgba(255,255,255,.4);}
-.trainee-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--orange);}
 
 main{flex:1;max-width:1400px;margin:0 auto;padding:36px 20px 80px;width:100%;animation:pageIn .35s ease both;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
@@ -1623,7 +1616,6 @@ main.has-presenter{padding-right:calc(clamp(170px,16vw,250px) + 16px);}
   .topbar.nav-open .topbar-right{display:flex;flex-direction:column;align-items:stretch;width:100%;gap:10px;padding:4px 0 8px;}
   .topbar.nav-open .nav{flex-direction:column;align-items:stretch;gap:2px;}
   .topbar.nav-open .nav button{text-align:left;padding:12px 12px;font-size:15px;}
-  .topbar.nav-open .trainee-chip{align-self:flex-start;}
   /* page spacing */
   main{padding:18px 12px 56px;}
   main.has-presenter{padding-right:12px;}
@@ -6378,9 +6370,6 @@ function renderTopbar(){
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
           ${(state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`}
         </div>
-        <div class="trainee-chip" onclick="promptName()">
-          <span class="dot"></span> ${state.traineeName ? esc(state.traineeName) : "Set your name"}
-        </div>
       </div>
     </div>
   </div>`;
@@ -8036,43 +8025,6 @@ function goto(view, id){
 }
 window.goto = goto;
 
-async function promptName(){
-  const overlay=document.createElement("div");
-  overlay.className="overlay";
-  overlay.innerHTML=`
-    <div class="card">
-      <h3>Your name</h3>
-      <p>Used on your Training Record PDF and to save your local progress.</p>
-      <input id="nameInput" type="text" placeholder="e.g. Jamie Santos" value="${esc(state.traineeName)}">
-      <div class="row" style="justify-content:space-between;">
-        <button class="btn btn-ghost" id="logoutBtn" style="color:var(--danger);">Log Out</button>
-        <div style="display:flex;gap:10px;">
-          <button class="btn btn-ghost" id="cancelName">Cancel</button>
-          <button class="btn btn-primary" id="saveName">Save</button>
-        </div>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  document.getElementById("nameInput").focus();
-  document.getElementById("cancelName").onclick=()=>overlay.remove();
-  document.getElementById("logoutBtn").onclick=()=>{ overlay.remove(); logout(); };
-  document.getElementById("saveName").onclick=async ()=>{
-    const v=document.getElementById("nameInput").value.trim().replace(/\s+/g," ");
-    if(v && !cleanName(v)){ toast("Enter your real name using letters only (max 60 characters)."); return; }
-    state.traineeName=v;
-    await storeSet("trainee-name", v);
-    if(!state.traineeId && v){
-      state.traineeId = generateTraineeId(v, state.traineeBatch);
-      await storeSet("trainee-id", state.traineeId);
-    }
-    if(state.traineeId) await syncToLedger(true);
-    overlay.remove();
-    render();
-    toast("Saved");
-  };
-  overlay.addEventListener("click",(e)=>{ if(e.target===overlay) overlay.remove(); });
-}
-window.promptName = promptName;
 
 /* ---------- main render dispatcher ---------- */
 function render(){
