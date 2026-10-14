@@ -197,7 +197,7 @@ const failures = []; const fail = (m) => failures.push(m);
     if (avg.sessions == null) fail(`the Scorecard's Practice Sessions: ${JSON.stringify(sc)}`);
     if (avg.kc !== 82) fail(`the Scorecard's Knowledge Checks: ${JSON.stringify(sc)}`);
 
-    // 7. 👁 Trainee view: an admin previewing the portal is not a signed-out visitor. The engine sets
+    // 7. 👁 Switch View (the trainee view): an admin previewing the portal is not a signed-out visitor. The engine sets
     //    isAdmin=false and adminPreview=true there, so a "!traineeId && !isAdmin" guard would read it
     //    as signed out — the top bar lost its sections and every program page bounced to the dashboard.
     await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; render(); }); await page.waitForTimeout(600);
@@ -205,10 +205,14 @@ const failures = []; const fail = (m) => failures.push(m);
     const tv = await page.evaluate(() => ({ isAdmin: state.isAdmin, preview: state.adminPreview,
         bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
     if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
-    ['Modules', 'Process Questions', 'Practice Lab', 'My Dashboard'].forEach(n => {
+    // the trainee's bar, as the platform spec names it (no Scorecards, no Admin, no search, no full screen)
+    ['Dashboard', 'Client Profile', 'Practice Lab', 'Knowledge Check', 'Focus', 'Main Portal'].forEach(n => {
         if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
     });
-    for (const [view, what] of [['process', 'Process Questions'], ['simulators', 'the Practice Lab'], ['lor', 'the LOR Drafting Activity']]) {
+    ['Scorecards', 'Process Questions', 'My Dashboard'].forEach(n => {
+        if (tv.bar.indexOf(n) >= 0) fail(`Trainee view's top bar should not have ${n}: ${tv.bar}`);
+    });
+    for (const [view, what] of [['process', 'the Knowledge Check'], ['simulators', 'the Practice Lab'], ['firm', 'the Client Profile'], ['lor', 'the LOR Drafting Activity']]) {
         const got = await page.evaluate(async (v) => { goto(v); await new Promise(r => setTimeout(r, 1200)); return state.view; }, view);
         if (got !== view) fail(`Trainee view can't open ${what}: goto('${view}') landed on '${got}'`);
     }

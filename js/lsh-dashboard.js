@@ -181,7 +181,6 @@ img[alt="Legal Support Help"]{border-radius:8px;}
 
 .module-card.mc-clean .module-body{flex:1 1 auto;min-height:12px;}
 /* a narrow search box keeps its text inside it (it ran under the Dashboard tab when the top bar was full) */
-.topbar-search input{min-width:0 !important;max-width:100%;box-sizing:border-box;text-overflow:ellipsis;}
 /* a band with fewer boxes (e.g. no ranking) still spans the width */
 @media(min-width:1101px){
   .dash-side-inner:not(:has(> :nth-child(6))){display:flex !important;}

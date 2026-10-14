@@ -45,12 +45,12 @@ window.orientSlides = function(){
    {k:"Roadmap", h:`Your ${N}-lesson roadmap`, body:`<div class="or-days">${orientTile()}${DAYS.map(tile).join("")}</div>
      <p class="or-foot">Start with 📌 Training Orientation and Rules. Your trainer opens each lesson for your batch; a 🔒 lesson opens when it's time.</p>`},
    {k:"A lesson", h:"How every lesson works", body:`
-     <div class="or-flow">${step(1,"🖥","Lesson slides","The training deck, full width. ⛶ Full screen any time; your place is saved.")}<i>→</i>${step(2,"▶","Video Presentation","The lesson's AI Assisted Discussion video. 🔒 until your trainer unlocks it.")}<i>→</i>${step(3,"✓","Finish lesson","On the last slide: it takes you to ✍️ Process Questions, at this lesson's answer sheet.")}<i>→</i>${step(4,"📝","Knowledge Check","Submit the sheet for grading; 70% passes and your circle turns ✓. Your trainer adds a review.")}<i>→</i>${step(5,"🔓","Next lesson","Opens when your trainer opens it for your batch.")}</div>
-     <div class="or-note">A lesson's <b>process questions are its Knowledge Check</b>, not slides. Missed something? Every open lesson stays on 📚 Modules — press <b>Review</b> to go back to it any time.</div>`},
+     <div class="or-flow">${step(1,"🖥","Lesson slides","The training deck, full width. ⛶ Full screen any time; your place is saved.")}<i>→</i>${step(2,"▶","Video Presentation","The lesson's AI Assisted Discussion video. 🔒 until your trainer unlocks it.")}<i>→</i>${step(3,"✓","Finish lesson","On the last slide: it takes you to ✍️ Knowledge Check, at this lesson's answer sheet.")}<i>→</i>${step(4,"📝","Knowledge Check","Submit the sheet for grading; 70% passes and your circle turns ✓. Your trainer adds a review.")}<i>→</i>${step(5,"🔓","Next lesson","Opens when your trainer opens it for your batch.")}</div>
+     <div class="or-note">A lesson's <b>process questions are its Knowledge Check</b>, not slides. Missed something? Every open lesson stays on 📚 Dashboard — press <b>Review</b> to go back to it any time.</div>`},
    {k:"Discussions", h:"Classroom discussions with your trainer", body:`
      <div class="or-3">${pill("🖥","Follow the shared slides","Your trainer presents each lesson live. They're the same slides you have on the platform — nothing extra to install.")}${pill("📷","Cameras on","Your camera stays on for the whole discussion. Meeting schedules are sent on the discussion's date and time — keep your notifications on.")}${pill("📒","Then your Monitoring Sheet","After each discussion: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.")}</div>
      <div class="or-note"><b>Free Upskill Training</b> runs right after your shift, for an hour or so: communication, accent reduction, grammar, email writing and client interviews. Unpaid and not mandatory, but highly encouraged. Missed one? Ask your trainers what was covered, review the materials and do the practice on your own time.</div>`},
-   {k:"Modules", h:"📚 Modules: where every sign-in lands", body:`
+   {k:"Dashboard", h:"📚 Dashboard: where every sign-in lands", body:`
      <div class="or-bp">
        <div class="or-bp-main">
          ${box(1,"Your progress",`📌 and Lessons 1–${N} · how many you have finished`,"or-hero")}
@@ -64,22 +64,22 @@ window.orientSlides = function(){
          ${box(7,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
        </div>
      </div>
-     <p class="or-foot">📚 <b>Modules</b> is the button for it in the top bar — on this platform and on every other LSH platform. Opening the training from the LSH Training Portal brings you straight here.</p>`},
+     <p class="or-foot">📚 <b>Dashboard</b> is the button for it in the top bar — on this platform and on every other LSH platform. Opening the training from the LSH Training Portal brings you straight here.</p>`},
    {k:"Navigation", h:"Getting around", body:`
      <div class="or-nav">
-       ${[["📚 Modules","Your landing page: your lessons, your progress, Resume and your certificate. Every LSH platform calls it Modules."],
-          ["🛠 Practice Lab","Your firm, your real-time Practice Sessions, the activities with your trainer, and Skill Building."],
-          ["📋 Task Tracker","Your LSH Daily Task Tracker in your VA Output folder: its link, and each day's output links."],
-          ["📒 Monitoring Sheet","Your Monitoring Sheet in your VA Output folder: one entry per classroom discussion."],
-          ["✍️ Process Questions","Every lesson's answer sheet, in one place: ✍️ Process Questions in the top bar. Finishing a lesson takes you straight to its sheet."],
-          ["📝 Knowledge Check","A lesson's process questions, graded in your facilitator's style — part of ✍️ Process Questions, not of the lesson."],
-          ["My Notes","Your private notes — download them as a PDF."],
-          ["🎯 Focus","Your trainer's feedback and what to work on next."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
+       ${[["📚 Dashboard","Your landing page: your lessons, your progress, Resume and your certificate — and your own pages underneath them."],
+          ["📁 Client Profile","Your firm, its rules and the case files assigned to you. Every Practice Session is checked against them."],
+          ["🛠 Practice Lab","Your real-time Practice Sessions, the activities with your trainer, and Skill Building."],
+          ["✍️ Knowledge Check","Every lesson's answer sheet, in one place. Finishing a lesson takes you straight to its sheet; 70% passes it, graded in your facilitator's style."],
+          ["🎯 Focus","Your trainer's feedback and what to work on next."],
+          ["🏠 Main Portal","The LSH Training Portal: every program you are in, your evaluations — and where you log out."],
+          ["📋 Task Tracker · 📒 Monitoring Sheet","Your two sheets in your VA Output folder, under 📚 Dashboard."],
+          ["🗒 My Notes · 🏅 My Performance","Your private notes, and every grade the platform gives you — under 📚 Dashboard."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
      </div>
-     <p class="or-foot">On a phone, everything is under <b>☰ Menu</b>. Search (top bar) finds any lesson.</p>`},
+     <p class="or-foot">On a phone, everything is under <b>☰ Menu</b>.</p>`},
    {k:"Daily habits", h:"Your daily habits", body:`
      <div class="or-3">${pill("📋","Daily Task Tracker","Update it in your VA Output folder before the end of every shift, and submit the day's output links. Every open task gets a Daily Note for the day; it's checked every evening.")}${pill("📧","EOD email","Before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day's tasks.")}${pill("⏳","Auxes &amp; Hubstaff","<code>!in</code> and <code>!back</code> in #⏳-timestamps, <code>In</code> in #batch-group-channel. Your Hubstaff To-Dos are named exactly as given.")}</div>
-     <div class="or-note">Every rule and routine is in <b>📌 Training Orientation and Rules</b>, first on 📚 Modules. Open it before Lesson 1.</div>`},
+     <div class="or-note">Every rule and routine is in <b>📌 Training Orientation and Rules</b>, first on 📚 Dashboard. Open it before Lesson 1.</div>`},
    {k:"Practice Lab", h:"Practice Lab: the real tasks, for your own law firm", body:`
      <div class="or-3">${pill("🏛","Your firm","Your trainer assigns your law firm and your cases. Learn its rules: every session is checked against them.")}${pill("🟢","Practice Sessions","Reception, calendaring, intake, the PI process, claims and ChartSwap records requests: done live in the CMS, recorded and submitted.")}${pill("🧑‍🏫","With your trainer","Demos and live mock calls with your trainer, who records your result.")}</div>
      <div class="or-note">Each session opens with its lesson. It's checked automatically against your case and your firm's rules, evaluated, and reviewed by your trainer. The CMS opens already signed in.</div>`},
@@ -87,12 +87,12 @@ window.orientSlides = function(){
      <div class="or-3">${pill("🏅","Scorecard","Every grade in one place: your Knowledge Checks, graded calls and calendaring, with your trainer's scores.")}${pill("💬","Trainer feedback","Your Practice Lab work comes back with your trainer's feedback. A lesson's 💬 Trainer feedback shows on its card.")}${pill("🎯","Focus","Your trainer's priorities for you and what to work on next. Tick items off as you go.")}</div>`},
    {k:"Certificate", h:"Earning your certificate", body:`
      <div class="or-cert"><div class="or-ribbon">🏅</div><div>
-       <p class="or-lead" style="margin-top:0">Finish all <b>${N} lessons</b> and your <b>Certificate of Completion</b> unlocks — download it as a PDF from 📚 Modules.</p>
-       <ul class="or-list"><li>It shows your name <b>exactly as you registered it</b> — check your spelling.</li><li>📚 Modules counts your finished lessons as you go.</li><li>📌 Training Orientation and Rules is where you start. It's always open, and it isn't one of the ${N} lessons.</li></ul></div></div>`},
+       <p class="or-lead" style="margin-top:0">Finish all <b>${N} lessons</b> and your <b>Certificate of Completion</b> unlocks — download it as a PDF from 📚 Dashboard.</p>
+       <ul class="or-list"><li>It shows your name <b>exactly as you registered it</b> — check your spelling.</li><li>📚 Dashboard counts your finished lessons as you go.</li><li>📌 Training Orientation and Rules is where you start. It's always open, and it isn't one of the ${N} lessons.</li></ul></div></div>`},
    {k:"Ground rules", h:"Ground rules", body:`
      <ul class="or-list big"><li>🔒 <b>Confidentiality first</b> — every document is protected by attorney-client privilege. Never paste client, case or medical information into any tool.</li><li>🤖 <b>AI for grammar and spelling only</b> — use your own reasoning and discretion.</li><li>⏱ <b>The 5-minute rule</b> — reply within 5 minutes, and acknowledge every Discord message from your trainer.</li><li>🕗 <b>On time</b> — Hubstaff tracks 8:00 AM – 5:00 PM PST. Breaks: 15 – 30 – 15, or one full hour.</li><li>📛 <b>Naming conventions, strictly</b> — To-Dos, screenshots and files exactly as given.</li></ul>`},
    {k:"Start", h:"Let's begin", body:`
-     <div class="or-flow start">${step(1,"👤","Sign in","Last name, first name(s) and your batch code. Your trainer approves your registration.")}<i>→</i>${step(2,"📌","Start here","Open Training Orientation and Rules: the rules and your daily routine.")}<i>→</i>${step(3,"🚀",`Lesson 1`,`Open ${e(first)} from 📚 Modules and press Start.`)}</div>
+     <div class="or-flow start">${step(1,"👤","Sign in","Last name, first name(s) and your batch code. Your trainer approves your registration.")}<i>→</i>${step(2,"📌","Start here","Open Training Orientation and Rules: the rules and your daily routine.")}<i>→</i>${step(3,"🚀",`Lesson 1`,`Open ${e(first)} from 📚 Dashboard and press Start.`)}</div>
      <p class="or-lead" style="text-align:center;margin-top:26px">Questions before we start?</p>`}
   ];
 };

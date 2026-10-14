@@ -47,7 +47,7 @@
     let cur = 'trainee', at = 0, version = '';
 
     const CSS = `
-    #lbp-page{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;background:#e9eef5;font-family:Inter,'Segoe UI',system-ui,-apple-system,Arial,sans-serif;color:#1e293b}
+    #lbp-page{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;background:#e9eef5;font-family:var(--font-ui);color:#1e293b}
     #lbp-page.open{display:flex}
     #lbp-page *{box-sizing:border-box}
     .lbp-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;background:#0f2148;color:#fff;padding:14px 24px;border-bottom:4px solid #f97316}

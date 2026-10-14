@@ -1,6 +1,6 @@
 /* 🛠 The Foundational Training course's Trainer blueprint (lsh-blueprint.js draws it; lsh-blueprint-course.js
    adds it to 🧭 Orientation). The Trainee blueprint is the Orientation deck (js/ft-orientation.js), published
-   at /blueprint.pdf; admins open it from 📘 Blueprint on the top bar (Handouts isn't part of this program).
+   at /blueprint.pdf; admins open it from 🧭 Orientation (it has no top bar button of its own).
    A slide is { icon, title, points: [...], where, tip, shot, shotAlt }: shot is a screenshot of that
    screen (/img/blueprint/*.jpg), shown beside the points on the slide and in the PDF; shotAlt describes it.
    Change the wording here; the page and the PDF are made from it each time, stamped with the deployed build.
@@ -14,14 +14,14 @@ window.LSH_BLUEPRINT = {
     slides: [
       { icon: '🔑', title: 'Signing in as a trainer', points: [
           'Admin sign-in with the admin password. Trainees don\'t sign in here: they open the program from the LSH Training Portal.',
-          'Your top bar has 🏠 Main Portal (the LSH Training Portal), 📚 Modules, ✍️ Process Questions, 🛠 Practice Lab, 🏅 Scorecards, 📚 Guides (🧭 Orientation, Blueprint) and 👁 Trainee view.',
-          '📚 Modules is the landing page: every sign-in, trainer or trainee, opens it, and it is called Modules on every LSH platform.',
+          'Your top bar: 📚 Dashboard, 📁 Client Profile, 🛠 Practice Lab, ✍️ Knowledge Check, 🏅 Scorecards, 👁 Switch View, 🛡 Admin and 🏠 Main Portal — with 📚 Guides (🧭 Orientation, Blueprint).',
+          '📚 Dashboard is the landing page: every sign-in, trainer or trainee, opens it. A trainee sees the same bar without 🏅 Scorecards, 👁 Switch View and 🛡 Admin, and with 🎯 Focus.',
           'Admin is your trainer dashboard: the Trainee Audit and every trainer tab.',
           'Every lesson is open to you, so you can preview it before you teach it.'],
         where: 'Admin sign-in · Admin in the top bar.',
         tip: 'The facilitator\'s notes, the curriculum and the scripts are only ever sent to a signed-in trainer.',
         shot: '/img/blueprint/signin.jpg',
-        shotAlt: 'The Admin Master Control screen: the top bar with Main Portal, Modules, Process Questions, Practice Lab, Scorecards, Orientation, Admin Master Control, Trainee view and Platform Blueprint, and under it the sections Admin Master Control, Modules, Practice Lab and Scorecard with the Trainee Audit open.' },
+        shotAlt: 'The Admin Master Control screen: the top bar with Dashboard, Client Profile, Practice Lab, Knowledge Check, Scorecards, Switch View, Admin and Main Portal, and under it the sections Admin Master Control, Dashboard, Practice Lab and Scorecard with the Trainee Audit open.' },
       { icon: '✅', title: 'Trainees and the Trainee Audit', points: [
           'Approve new trainees, or reject them. Revoke a trainee to close their access.',
           'The Trainee Audit: each trainee\'s lessons finished, their work and their feedback, by batch.',
@@ -42,7 +42,7 @@ window.LSH_BLUEPRINT = {
         shotAlt: 'The Open Lessons tab: a Batch chooser set to All batches, a tick box for each of the eight lessons, and an Unlock Videos card with the same lessons.' },
       { icon: '📘', title: 'The Curriculum', points: [
           'The whole Training Guide, Day 0 to Day 18: the day-by-day tasks, the links and the facilitator\'s notes.',
-          'Trainers only: it isn\'t on any trainee page, in Trainee view or in the shared slides window.',
+          'Trainers only: it isn\'t on any trainee page, in the trainee view or in the shared slides window.',
           'Where the guide lists a log-in, you get a link to the credentials document instead.'],
         where: 'Admin → 📘 Curriculum.',
         tip: 'Read the next day in the Curriculum the evening before.',
@@ -73,13 +73,13 @@ window.LSH_BLUEPRINT = {
         tip: 'Start with the "Needs extra help" entries.',
         shot: '/img/blueprint/monitor.jpg',
         shotAlt: 'The Monitoring Sheets tab: each trainee\'s sheet by batch, with the Discussions and Key Points list open and the Feedback Rubric below it.' },
-      { icon: '✍️', title: 'Process Questions', points: [
-          'Each lesson\'s answer sheet, by batch and trainee: submitted or not, how many answered, the answers.',
+      { icon: '✍️', title: 'Knowledge Check', points: [
+          'Each module\'s answer sheet, by batch and trainee: submitted or not, how many answered, the answers.',
           'A ready line for the ranking report, in the facilitator\'s words.'],
-        where: '✍️ Process Questions in the top bar (its own feature — it is not a tab of this Admin screen).',
+        where: '✍️ Knowledge Check in the top bar (its own feature — it is not a tab of this Admin screen).',
         tip: 'Copy the ranking line straight into the weekly report.',
         shot: '/img/blueprint/process.jpg',
-        shotAlt: 'The Process Questions page: every trainee\'s answer sheets and Knowledge Checks, by batch.' },
+        shotAlt: 'The Knowledge Check page: every trainee\'s answer sheets, by batch.' },
       { icon: '📋', title: 'Task Trackers', points: [
           'Every trainee\'s Daily Task Tracker, checked each evening against the tracker\'s rules: a ✅ or ❌ per rule and the day\'s %.',
           'A short AI review of the day\'s notes, against your criteria.',
@@ -89,12 +89,12 @@ window.LSH_BLUEPRINT = {
         tip: 'Comment on the first days\' trackers: habits set in week one stick.',
         shot: '/img/blueprint/trackers.jpg',
         shotAlt: 'The Task Trackers tab: each trainee\'s Daily Task Tracker with Run today\'s check now, and the Notes review criteria the evening check uses.' },
-      { icon: '🕘', title: 'Attendance, Trainee view and Orientation', points: [
+      { icon: '🕘', title: 'Attendance, Switch View and Orientation', points: [
           '🕘 Attendance: Time In fills in by itself when a trainee opens the course; tag each status and add notes.',
           'It stays in step with the attendance Google Sheet, both ways, through the Training Portal.',
-          '👁 Trainee view shows the platform exactly as trainees see it.',
-          '🧭 Orientation is the Trainee blueprint to share on day one; 📘 Blueprint on the top bar is the same deck as a PDF, yours to share.'],
-        where: 'Admin → 🕘 Attendance · 👁 Trainee view · 🧭 Orientation.',
+          '👁 Switch View shows the platform exactly as trainees see it, and switches you back.',
+          '🧭 Orientation is the Trainee blueprint to share on day one, and the same deck as a PDF, yours to share; the Trainer blueprint is 🧭 Orientation → 🛠 Trainer blueprint.'],
+        where: 'Admin → 🕘 Attendance · 👁 Switch View · 🧭 Orientation.',
         tip: 'The Trainee blueprint PDF republishes itself after every update; nothing to do by hand.',
         shot: '/img/blueprint/attendance.jpg',
         shotAlt: 'The Attendance tab: the day\'s date, and one table per batch with each trainee\'s training, Time In, Time Out, status tag and notes.' }

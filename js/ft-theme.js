@@ -130,7 +130,7 @@
             ".ftm-mtype", ".ftm-n", ".ftm-rubric code", ".ftr-code", ".ftr-eg", ".ftr-to",
             ".ftr-todo-n", ".iz-quad", ".iz-score-banner", ".kc-stats", ".lesson-compare .cbox",
             ".link-preview-box", ".match-tray", ".pill-tabs", ".practice-sidebar button:hover",
-            ".pref-ref-grid div", ".search-results .sr-item:hover", ".st-none", "body"
+            ".pref-ref-grid div", ".st-none", "body"
         ]
     };
 
