@@ -775,11 +775,12 @@ window.certData = function(src){
   c.eligible = c.passed === FT_TOTAL_DAYS;   // every day finished (no Knowledge Checks in this program)
   return c;
 };
-// EA/PA-only screens (client profile, practice labs, roleplays, handouts, random tasks,
-// facilitator guide) aren't part of this program: they open 📚 Modules, this platform's landing page.
+// EA/PA-only screens (client profile, practice labs, roleplays, handouts, facilitator guide) aren't
+// part of this program: they open 📚 Dashboard, this platform's landing page. 🎲 Tasks is part of it —
+// a trainer sends one from Admin → 🎲 Random Tasks (js/ft-admin-ops.js) and it is graded here.
 // (🧭 Orientation stays, with this program's slides: js/ft-orientation.js.)
 const FT_OFF_VIEWS = {clientprofile:"renderClientProfile", practice:"renderPracticeHub", tool:"renderTool", handouts:"renderHandouts",
-  crisisroleplay:"renderCrisisRoleplayHub", openroleplay:"renderOpenRoleplay", tasks:"renderTasksPage", facilitatorguide:"renderFacilitatorGuide"};
+  crisisroleplay:"renderCrisisRoleplayHub", openroleplay:"renderOpenRoleplay", facilitatorguide:"renderFacilitatorGuide"};
 Object.keys(FT_OFF_VIEWS).forEach(v=>{ window[FT_OFF_VIEWS[v]] = function(){ state.view = "dashboard"; return renderDashboard(); }; });
 const __ftGotoOff = window.goto;
 window.goto = function(view){ if(FT_OFF_VIEWS[view]) arguments[0] = "dashboard"; return __ftGotoOff.apply(this, arguments); };
@@ -789,7 +790,7 @@ window.LSH_HOME_ALIASES = Object.keys(FT_OFF_VIEWS).concat("dashboard");
 const __ftTopbar = window.renderTopbar;
 window.renderTopbar = function(){
   return __ftTopbar.apply(this, arguments)
-    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|tasks|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
+    .replace(/<button class="[^"]*" onclick="goto\('(clientprofile|practice|crisisroleplay|handouts|facilitatorguide)'\)">[\s\S]*?<\/button>/g, "")
     .replace('placeholder="Search days, topics, tools…"', 'placeholder="Search lessons…"');
 };
 

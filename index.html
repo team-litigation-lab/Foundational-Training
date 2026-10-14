@@ -117,9 +117,11 @@ button{font-family:inherit;cursor:pointer;}
 .brand-mark{width:48px;height:48px;flex:0 0 auto;object-fit:contain;background:#fff;padding:3px;border-radius:7px;box-sizing:border-box;box-shadow:0 1px 3px rgba(0,0,0,.25);}
 /* the Legal Support Help logo (navy background) sits straight on the navy top bar */
 .brand-mark.brand-logo{width:auto;height:46px;aspect-ratio:646/397;background:none;padding:0;border-radius:6px;box-shadow:none;}
-.brand-text{display:flex;flex-direction:column;line-height:1.15;min-width:0;}
-.brand-text b{font-family:'Fraunces';font-size:var(--font-body);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;}
-.brand-text span{font-size:var(--font-sub);color:#B9BEDA;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;}
+/* The standard page header, the same on every LSH page: the mark, then the page's own name in
+   capitals — and nothing else beside it. No "LSH" in front of the name, no strapline under it and
+   no search box. */
+.brand-text{display:flex;flex-direction:column;justify-content:center;line-height:1.15;min-width:0;}
+.brand-text b{font-family:var(--font-ui);font-size:16px;font-weight:800;letter-spacing:.075em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(360px, 24vw);}
 
 /* pill tabs (dashboard quick-nav, mirrors reference) */
 .pill-tabs{
@@ -6367,7 +6369,7 @@ function renderTopbar(){
     <div class="topbar-inner">
       <div class="brand" onclick="goto('dashboard')">
         ${brandMark()}
-        <div class="brand-text"><b>LSH Foundational Training</b><span>Standard Foundational Training</span></div>
+        <div class="brand-text"><b>STANDARD FOUNDATIONAL TRAINING</b></div>
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
@@ -14198,26 +14200,6 @@ function renderAdmin(){
       <p>Trainers write each trainee's day-by-day feedback in <b>View Detail → Day-by-Day Feedback → ✍ Write feedback</b>, then click <b>Send to trainee</b>. Trainees only ever see feedback a trainer has sent.</p>
       <label><input type="checkbox" id="fbAutoDraft" ${(state.fbSettings && state.fbSettings.autoDraft)?"checked":""} onchange="saveFeedbackSettings()"> Optional: pre-fill a suggested draft (from the trainee's work) for trainers to edit — never sent automatically</label>
     </div>
-    <div class="card" style="padding:16px 18px;margin-bottom:20px;background:#FFF4E8;border-color:var(--orange-soft);">
-      <b style="color:var(--navy);font-size:13.5px;">🎲 Random Task Injection</b>
-      <p style="font-size:12.5px;color:#5A4A32;margin:6px 0 12px;">Generates one unscripted task grounded in that day's actual lesson material and broadcasts it to every trainee currently on that day — an unannounced, real-time test of what they just learned. Timing is up to you; trigger it whenever fits the live session.</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <select id="surpriseTaskDaySelect" style="padding:7px 10px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;">
-          ${DAYS.map(d=>`<option value="${d.id}">${ftName(d.id)} — ${esc(d.title)}</option>`).join("")}
-        </select>
-        <select id="surpriseTaskDuration" style="padding:7px 10px;border-radius:8px;border:1px solid var(--line);font-size:12.5px;" title="How long the task stays live for trainees">
-          <option value="15">Live for 15 min</option>
-          <option value="30" selected>Live for 30 min</option>
-          <option value="60">Live for 1 hour</option>
-          <option value="120">Live for 2 hours</option>
-        </select>
-        <button class="btn btn-navy btn-sm" onclick="injectSurpriseTask()">🎲 Generate & Broadcast</button>
-        <button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="endSurpriseTaskFromAdmin()">⏹ End Task for This Day</button>
-      </div>
-      <p style="font-size:11.5px;color:#5A4A32;margin:8px 0 0;">Only trainees already registered at broadcast time receive it. It disappears automatically when the live window ends, or immediately when you end it.</p>
-      <div class="tk-admin-note">Trainees track each task in <b>🎲 Tasks</b>: acknowledge → plan → resolve before the timer ends. Resolutions are graded on timeliness, prioritisation, applying the day's lesson, communication and risk; missed tasks score 0. Results appear in each trainee's audit row, their Competency Profile and Rankings.</div>
-      <div id="surpriseTaskInjectResult" style="margin-top:10px;"></div>
-    </div>
 
     <div class="stat-row">
       <div class="card stat"><div class="num">${totalTrainees}</div><div class="lbl">Trainees tracked</div></div>
@@ -15204,32 +15186,6 @@ async function clearAssignedRoleplay(traineeId){
 }
 window.clearAssignedRoleplay = clearAssignedRoleplay;
 
-async function injectSurpriseTask(){
-  const dayId = parseInt(document.getElementById("surpriseTaskDaySelect").value, 10);
-  const day = DAYS.find(d=>d.id===dayId);
-  const resultEl = document.getElementById("surpriseTaskInjectResult");
-  resultEl.innerHTML = `<div class="ai-loading">Generating a task grounded in ${ftName(dayId)}'s material…</div>`;
-  const topicList = day.lessons.map(l=>l.h).join("; ");
-  const prompt = `Generate one unscripted, realistic task delegation for a Legal Executive/Personal Assistant trainee, to be dropped on them unannounced mid-session during live training. It must be answerable correctly ONLY by someone who has actually absorbed today's specific lesson material — not generic advice.
-TODAY'S LESSON TOPICS (${ftName(dayId)}: ${day.title}):
-${topicList}
-CLIENT CONTEXT:
-${CLIENT_DOSSIER_MD}
-Write a short (2-4 sentence), realistic incoming request or situation — the kind that would actually land on an EA/PA's desk — that specifically requires applying one or more of today's topics correctly. Return ONLY the task text itself, nothing else — no preamble, no explanation, no quotation marks around it.`;
-  try{
-    const task = await callAIText(prompt, 400, 150000, "trainer");
-    const mins = parseInt((document.getElementById("surpriseTaskDuration")||{}).value, 10) || 30;
-    const now = Date.now();
-    const prev = await sharedGet("surprise-task-day"+dayId).catch(()=>null);
-    const record = {task: task.trim(), dayId, generatedAt: new Date(now).toISOString(), expiresAt: new Date(now + mins*60000).toISOString(), active: true, history: surpriseTaskHistory(prev, false)};
-    await sharedSet("surprise-task-day"+dayId, record);
-    resultEl.innerHTML = `<div class="card" style="padding:10px 14px;background:#fff;border-color:var(--line);font-size:12.5px;color:#37394A;"><b style="color:var(--navy);">Broadcast live:</b> ${esc(task.trim())}</div>`;
-    toast(`Surprise task broadcast to ${ftName(dayId)} trainees.`);
-  }catch(e){
-    resultEl.innerHTML = renderAiErrorBlock(e, "Couldn't generate a task");
-  }
-}
-window.injectSurpriseTask = injectSurpriseTask;
 /* Previous tasks for a day stay in the record's history (last 20), so a trainee
    who wasn't online when one was sent still gets it logged. */
 function surpriseTaskHistory(prev, endedNow){
@@ -15247,13 +15203,6 @@ async function clearSurpriseTask(dayId){
   toast(`Surprise task cleared for ${ftName(dayId)}.`);
 }
 window.clearSurpriseTask = clearSurpriseTask;
-async function endSurpriseTaskFromAdmin(){
-  const dayId = parseInt(document.getElementById("surpriseTaskDaySelect").value, 10);
-  await clearSurpriseTask(dayId);
-  const el = document.getElementById("surpriseTaskInjectResult");
-  if(el) el.innerHTML = `<div class="card" style="padding:10px 14px;background:#fff;font-size:12.5px;">${ftName(dayId)} surprise task ended — it's gone from every trainee's dashboard on their next refresh check.</div>`;
-}
-window.endSurpriseTaskFromAdmin = endSurpriseTaskFromAdmin;
 function renderAiReviewBlock(rec){
   const r = rec.aiReview;
   const btnLabel = r ? "Regenerate AI Review" : "Generate AI Review";
@@ -18549,6 +18498,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/ft-orientation.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-admin-ops.js?v=ft-2026.10.14-ops"></script>
 <script src="/js/attendance.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>

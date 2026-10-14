@@ -300,7 +300,7 @@ function renderTopbar(){
     <div class="topbar-inner">
       <div class="brand" onclick="goto('dashboard')">
         ${brandMark()}
-        <div class="brand-text"><b>LSH Foundational Training</b><span>Standard Foundational Training</span></div>
+        <div class="brand-text"><b>STANDARD FOUNDATIONAL TRAINING</b></div>
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
@@ -2266,7 +2266,7 @@ function sopRunOfShow(dRaw){
   const perTopic = 2.5, blockTopics = Math.max(8, Math.round(45/perTopic));
   let i = 0, block = 1; const blocks = Math.ceil(n/blockTopics);
   const midBlock = Math.max(1, Math.ceil(blocks/2));
-  const taskStep = {opt:true, title:"Send today's random task", do:[`Admin → <b>Trainee Audit → 🎲 Random Task Injection</b>: choose <b>${ftName(d.id)}</b>, set 15–30 minutes, <b>Generate &amp; Broadcast</b>. Keep teaching — trainees handle it in 🎲 Tasks alongside the session.`, `Anyone who doesn't submit before the timer ends gets it logged as Missed (0).`]};
+  const taskStep = {opt:true, title:"Send today's random task", do:[`Admin → <b>🎲 Random Tasks</b>: choose <b>${ftName(d.id)}</b>, set 15–30 minutes, <b>Write &amp; send</b>. Keep teaching — trainees handle it in 🎲 Tasks alongside the session.`, `Anyone who doesn't submit before the timer ends gets it logged as Missed (0).`]};
   while(i < n){
     const j = Math.min(n, i+blockTopics);
     if(block===midBlock+1) add(0, taskStep);   // right after the break, as teaching resumes
@@ -2362,7 +2362,7 @@ function sopProgramFlow(){
         <tr><td>Share only the slides while I see my notes</td><td>Day → slides → <b>🖥 Presenter view</b></td></tr>
         <tr><td>See the notes, scripts and scenarios for each slide</td><td>Day → slides → <b>🖥 Presenter view</b> (PDF: Admin → SOP Reference)</td></tr>
         <tr><td>Show the day's plan to the room</td><td>Admin → SOP Reference → <b>🎤 Present</b></td></tr>
-        <tr><td>Drop an unannounced task on trainees</td><td>Admin → Trainee Audit → <b>🎲 Random Task Injection</b></td></tr>
+        <tr><td>Drop an unannounced task on trainees</td><td>Admin → <b>🎲 Random Tasks</b></td></tr>
         <tr><td>Approve, reset attempts, write feedback, set focus</td><td>Admin → <b>Trainee Audit</b> → View Detail</td></tr>
         <tr><td>See who is ahead or behind</td><td>Admin → <b>Rankings</b></td></tr>
         <tr><td>Add or improve lesson content</td><td>Admin → <b>Content Studio</b></td></tr>
