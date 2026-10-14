@@ -26,7 +26,8 @@ document.head.appendChild(css);
 
 window.goToMainPortal = function(){ location.href = PORTAL_URL; };
 
-// Before the ⧉ / ⛶ buttons, or before ⛶ View ▾ once js/lsh-topbar.js has put them in it (a child of the bar either way).
+// The ⧉ / ⛶ buttons and the ⛶ View ▾ menu are gone from the bar, so there is normally nothing left to
+// sit before and 🏠 Main Portal ends the bar; a course that still has one keeps the button ahead of it.
 function beforeView(nav){
   return [].find.call(nav.children, function(el){ return el.matches(".nav-fs, .lsh-grp[data-grp='view']"); }) || null;
 }

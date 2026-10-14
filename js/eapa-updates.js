@@ -25,10 +25,6 @@ window.EAPA_UPDATE_PACK = "z";
 .view-mode-strip{background:#F0C08A;color:#1F2440;font-size:13px;text-align:center;padding:7px 14px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
 .view-mode-strip button{font:inherit;font-weight:700;background:#1F2440;color:#fff;border:none;border-radius:999px;padding:4px 12px;cursor:pointer;}
 /* Top-bar search: the input may shrink (the placeholder ends in "…" instead of spilling out of the box) */
-.topbar-search input{flex:1 1 auto;min-width:0;width:100%;text-overflow:ellipsis}
-.topbar-search{min-height:36px}
-.topbar-search .sicon{flex:0 0 auto;display:flex;align-items:center;color:#fff;cursor:text}
-.topbar-search .sicon svg{width:15px;height:15px;display:block}
 /* Top bar on laptops and desktops: nothing overlaps. The program title gives way first (down to the logo;
    the text hides when there's no room to read it), then the search box shrinks to its minimum, then the
    nav wraps its last buttons onto a second line. */
@@ -37,9 +33,7 @@ window.EAPA_UPDATE_PACK = "z";
   .topbar-right{min-width:auto}
   .topbar .nav{flex:0 1 auto;min-width:0;flex-wrap:wrap;column-gap:0;row-gap:4px}
   .topbar .nav>*+*{margin-left:2px}  /* margins, not column-gap: Chrome leaves the gap out of a wrapping row's width */
-  .topbar-search{flex-shrink:100000}
   .trainee-chip{flex-shrink:0}
-  .topbar-search .search-results{min-width:320px}
 }
 @container (max-width:170px){.topbar .brand-text{display:none !important}}
 /* ================= Standard-size, centred slides =================
@@ -310,11 +304,6 @@ function renderTopbar(){
       </div>
       <button type="button" class="mobile-menu-btn" aria-label="Menu" aria-expanded="${state.mobileNavOpen?'true':'false'}" onclick="toggleMobileNav()">${state.mobileNavOpen?'✕':'☰'}<span>Menu</span></button>
       <div class="topbar-right">
-        <div class="topbar-search">
-          <label class="sicon" for="topSearchInput" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg></label>
-          <input type="text" id="topSearchInput" name="topSearchInput" autocomplete="off" placeholder="Search days, topics, tools…" value="${esc(state.searchQuery||'')}" oninput="setTopSearch(this.value)" onkeydown="if(event.key==='Escape') clearTopSearch();">
-          ${state.searchQuery ? `<div class="search-results" id="searchResultsWrap">${renderSearchResults(state.searchQuery)}</div>` : ""}
-        </div>
         <div class="nav">
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
@@ -322,8 +311,6 @@ function renderTopbar(){
             ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('admin')" title="Return to the admin (trainer) view">🛡 Back to Admin view</button>`
             : ((state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`)}
           ${state.isAdmin ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="See the portal exactly as a trainee does — no trainer tools or admin pages">👁 Trainee view</button>` : ""}
-          <button type="button" class="nav-fs" onclick="openInNewTab()" title="Open this page in a new tab (e.g. to review a lesson while you work)">⧉</button>
-          <button type="button" class="nav-fs" onclick="togglePageFullscreen()" title="Full screen (Esc to exit)">⛶</button>
         </div>
         <div class="trainee-chip" onclick="promptName()">
           <span class="dot"></span> ${state.traineeName ? esc(state.traineeName) : "Set your name"}

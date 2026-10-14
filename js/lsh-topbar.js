@@ -9,7 +9,6 @@
      • 📚 Guides ▾    Notes, Handouts, Orientation, Facilitator Guide,
                       Platform Blueprint (whichever this page has)
      • 📋 My Sheets ▾ Task Tracker and Monitoring Sheet
-     • ⛶ View ▾       Full screen and Open in a new tab
    A menu is made only when two or more of its buttons are on the bar;
    a single one stays as it is. The bar re-renders often and other files add to
    it (portal-link.js, the Blueprint button), so this sorts whatever
@@ -26,9 +25,7 @@ var GROUPS = [
   { id: "guides", label: "📚 Guides", title: "Notes, handouts and guides",
     match: function(b){ return /^(notes|handouts|orientation|facilitatorguide)$/.test(viewOf(b)) || b.matches(".nav-blueprint, #lbp-open-btn"); } },
   { id: "sheets", label: "📋 My Sheets", title: "Your Task Tracker and Monitoring Sheet",
-    match: function(b){ return /^(tracker|monitoring)$/.test(viewOf(b)); } },
-  { id: "view", label: "⛶ View", title: "Full screen, or open this page in a new tab",
-    match: function(b){ return /^(togglePageFullscreen|openInNewTab)\(/.test(b.getAttribute("onclick") || ""); } }
+    match: function(b){ return /^(tracker|monitoring)$/.test(viewOf(b)); } }
 ];
 function viewOf(b){ var m = /goto\('([a-z]+)'/.exec(b.getAttribute("onclick") || ""); return m ? m[1] : ""; }
 
@@ -87,8 +84,6 @@ css.textContent = ".lsh-grp{position:relative;display:flex;}"
   + ".topbar .nav .lsh-grp-menu button:hover{background:#F3F4F9 !important;}"
   + ".topbar .nav .lsh-grp-menu button.active{background:#FFF1DE !important;color:#9A5B00 !important;}"
   + ".topbar .nav .lsh-grp-menu .nav-badge{margin-left:auto;}"
-  /* the two icon buttons read as words inside the menu */
-  + ".lsh-grp-menu button[data-lsh-word]::after{content:attr(data-lsh-word);font-size:13.5px;}"
   + ".lsh-grp-menu .bp-long{display:inline !important;} .lsh-grp-menu .bp-word{display:inline !important;}"
   + ".lsh-subtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:6px;background:#fff;border:1px solid rgba(31,37,71,.12);border-radius:12px;width:fit-content;max-width:100%;}"
   + ".lsh-subtabs button{border:0;background:transparent;color:#1F2547;font:inherit;font-size:14px;font-weight:700;padding:8px 14px;border-radius:9px;cursor:pointer;}"
@@ -98,8 +93,6 @@ css.textContent = ".lsh-grp{position:relative;display:flex;}"
   + ".topbar.nav-open .lsh-grp-menu{position:static;box-shadow:none;background:rgba(255,255,255,.06);margin:2px 0 4px 12px;}"
   + ".topbar.nav-open .nav .lsh-grp-menu button{color:#fff !important;} .topbar.nav-open .nav .lsh-grp-menu button:hover{background:rgba(255,255,255,.09) !important;}}";
 document.head.appendChild(css);
-
-var WORDS = { togglePageFullscreen: " Full screen", openInNewTab: " Open in a new tab" };
 
 function closeAll(except){
   document.querySelectorAll(".topbar .lsh-grp.open").forEach(function(g){
@@ -154,8 +147,6 @@ function organize(){
     if(!box.parentNode) nav.insertBefore(box, loose[0]);
     loose.forEach(function(b){
       b.setAttribute("role", "menuitem");
-      var fn = (/^(\w+)\(/.exec(b.getAttribute("onclick") || "") || [])[1];
-      if(WORDS[fn]) b.setAttribute("data-lsh-word", WORDS[fn]);
       b.style.display = "";
       box.lastChild.appendChild(b);
     });

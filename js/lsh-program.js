@@ -16,7 +16,7 @@
      🛡 Admin Master Control   the Admin screen (admins only, never in 👁 Trainee view)
 
    The top bar itself is set out below (The top bar): Main Portal, Modules, Process Questions, Practice Lab and
-   👤 My Dashboard ▾; Blueprint, 👁 Trainee view and ⛶ View ▾ stay at its end.
+   👤 My Dashboard ▾; 👁 Trainee view stays at its end.
    What sits in each section is the program's own: it sets window.LSH_PROGRAM before this file loads
    (js/ft-program.js here):
      { modules: [{view | run, icon, label, about, who?: "trainee" | "admin", badge?()}], moduleViews: [...],
