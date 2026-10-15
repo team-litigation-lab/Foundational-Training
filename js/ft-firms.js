@@ -25,7 +25,7 @@ const CASES = window.FT_CASES || [];
 const caseById = id => CASES.find(c => c.id === id) || null;
 const range = (a, b) => Array.from({length:b - a + 1}, (_, i) => "MC-" + String(a + i).padStart(2, "0"));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 // The practice areas a trainee is assigned cases in (the lessons they practice).
 const AREAS = [
   {id:"pi", icon:"⚖️", label:"PI Process Flow", lesson:3},

@@ -4,7 +4,14 @@
    propertydamageclaimstraining); change it in all of them. A program is organised in sections, and the top bar
    shows exactly those sections, named and ordered as the platform spec sets them out:
 
-     📚 Dashboard              #/modules: the program's landing page — every way into the platform opens it.
+     📚 Dashboard              #/modules: the program's landing page — every way into the platform opens it, in
+                               the trainer view and the trainee view alike. Any arrival with no address of its
+                               own lands here: a Portal ticket, the admin password, a saved session coming back,
+                               the brand mark, a Back button, an old #/dashboard link. No automatic resume jumps
+                               a viewer into the middle of a lesson; the page's own ▶ Resume where you left off
+                               does that when they ask. A real address (#/day/3, #/tool/<id>, a duplicated tab)
+                               still opens that page: it is a link, not a landing. The page fits one screen, with
+                               no page scroll (js/lsh-dashboard.js).
                                The modules (its lessons), and the program's training pages (Task Tracker,
                                Monitoring Sheet, My Notes, My Performance), which share a bar of tabs under
                                the top bar. ✍️ Knowledge Check is not one of them: it is its own feature
@@ -43,7 +50,7 @@ if(typeof window.renderTopbar !== "function" || window.lshProgram) return;
 const CFG = Object.assign({modules:[], moduleViews:[], labViews:["simulators"], caseProfile:null, pinned:() => [], shared:[], sources:[]}, window.LSH_PROGRAM || {});
 const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one: no 🏅 Scorecards, no 🛡 Admin
 const lessons = () => DAYS.filter(d => d && d.sections && d.sections.length);
 const doneIn = p => lessons().filter(d => p && p[d.id] && p[d.id].done).length;
 const tier = pct => pct == null ? "none" : pct >= 85 ? "top" : pct >= 70 ? "ok" : "low";
@@ -67,6 +74,37 @@ const atHome = v => ["dashboard", "home"].concat(window.LSH_HOME_ALIASES || []).
 const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview);
 const __goto = window.goto;
 window.goto = function(view){ if(atHome(view)) arguments[0] = HOME; return __goto.apply(this, arguments); };
+
+/* An arrival with no address of its own lands on 📚 Dashboard — for a trainee and a trainer alike.
+   Signing in, or coming back to a saved session, used to jump straight back into the last lesson or
+   activity; the landing page carries "▶ Resume where you left off", so the viewer now takes that jump
+   when they want it, from the Dashboard, rather than landing in the middle of a lesson. A real address
+   (#/day/3, #/tool/…, a duplicated tab) still opens that page: it is a link, not a landing. */
+const __resume = window.resumeWhereLeftOff;
+if(typeof __resume === "function"){
+  window.resumeWhereLeftOff = function(saved){
+    // automatic: the engine passes the saved view, or is still opening the session (resumePending)
+    if(saved || state.resumePending){
+      state.resumePending = false;
+      suppressResumeToast();
+      goto(HOME);
+      return;
+    }
+    return __resume.apply(this, arguments);   // the viewer pressed ▶ Resume where you left off
+  };
+}
+// the engine says "picking up where you left off" right after that call; on the landing page it would say
+// the opposite of what happened, so the one message is dropped (any other toast still shows).
+function suppressResumeToast(){
+  if(typeof window.toast !== "function") return;
+  const real = window.toast;
+  window.toast = function(msg){
+    window.toast = real;
+    if(/picking up where you left off/i.test(String(msg == null ? "" : msg))) return;
+    return real.apply(this, arguments);
+  };
+  setTimeout(() => { if(window.toast !== real) window.toast = real; }, 1500);
+}
 
 /* ---------- the sections ---------- */
 // The 📚 Dashboard pages this viewer has (an admin's own pages, or a trainee's; the trainee view sees the trainee's).
