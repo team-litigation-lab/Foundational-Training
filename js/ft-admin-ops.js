@@ -188,9 +188,14 @@ function renderAdminRandomTasks(){
 
 /* ============================================================
    🗄 Database Maintenance — clear what is only needed for a while
-   Cleared: the published blueprint PDF (rebuilt by itself on the next admin visit), random tasks
-   that ended over 30 days ago, automatic check-ins over 40 days old (the day's attendance record
-   keeps the times), and records left behind by a trainee who was deleted.
+   The same rules as the Main Portal's own sweep, read onto this program's data:
+     pings over 7 days old                → checkin:<date>:<id> (the day's attendance record keeps the times)
+     live-view copies                     → blueprint:pdf, rebuilt by itself on the next admin visit
+     stopped alerts over 30 days old      → random tasks that ended over 30 days ago
+     live-call records                    → callsim:/simresults: left behind by a deleted trainee only;
+                                            an active trainee's graded calls are never swept
+     sign-in attempt counts               → the lab attempt counts on a trainee with no ping in 30 days
+     online status not seen for 30 days   → nothing to clear: this program stores no presence field
    Kept: trainees, their progress, every grade and review, attendance, firms and case assignments,
    and the settings. Nothing is deleted until you press Clear, and the scan says exactly what would go.
    ============================================================ */
@@ -209,14 +214,14 @@ async function dbScan(){
     const ids = new Set(keys.filter(k => k.indexOf("trainee:") === 0).map(k => k.slice("trainee:".length)));
     const now = Date.now();
     const old = [];   // {key, why}
-    // 1. the published blueprint PDF: rebuilt automatically after every deploy
-    if(keys.includes("blueprint:pdf")) old.push({key:"blueprint:pdf", why:"the published blueprint PDF — rebuilt on the next admin visit"});
-    // 2. automatic check-ins over 40 days old (the day's attendance record keeps the times)
+    // 1. live-view copies: the published blueprint PDF, rebuilt automatically after every deploy
+    if(keys.includes("blueprint:pdf")) old.push({key:"blueprint:pdf", why:"a live-view copy — the published blueprint PDF, rebuilt on the next admin visit"});
+    // 2. pings over 7 days old (the day's attendance record keeps the times)
     keys.filter(k => k.indexOf("checkin:") === 0).forEach(k => {
       const d = (k.match(/^checkin:(\d{4}-\d{2}-\d{2}):/) || [])[1];
-      if(d && now - new Date(d + "T00:00:00Z").getTime() > 40 * DAY) old.push({key:k, why:"an automatic check-in over 40 days old"});
+      if(d && now - new Date(d + "T00:00:00Z").getTime() > 7 * DAY) old.push({key:k, why:"a ping over 7 days old"});
     });
-    // 3. random tasks that ended over 30 days ago
+    // 3. stopped alerts: random tasks that ended over 30 days ago
     const rtKeys = keys.filter(k => /^surprise-task-day\d+$/.test(k));
     const recs = rtKeys.length ? await sharedGetMany(rtKeys) : [];
     rtKeys.forEach((k, i) => {
@@ -224,7 +229,7 @@ async function dbScan(){
       if(!r || rtLive(r)) return;
       const last = Math.max(new Date(r.expiresAt || 0).getTime() || 0, new Date(r.generatedAt || 0).getTime() || 0,
         ...((r.history || []).map(h => new Date(h.expiresAt || h.generatedAt || 0).getTime() || 0)));
-      if(last && now - last > 30 * DAY) old.push({key:k, why:"a random task that ended over 30 days ago"});
+      if(last && now - last > 30 * DAY) old.push({key:k, why:"a stopped alert — a random task that ended over 30 days ago"});
     });
     // 4. records left behind by a deleted trainee
     keys.forEach(k => {
@@ -233,35 +238,65 @@ async function dbScan(){
       if(p === "trainee" || !OWNED.includes(p) || !id || id.indexOf(":") >= 0) return;
       if(!ids.has(id)) old.push({key:k, why:"left behind by a trainee who was deleted"});
     });
-    DB.scan = {at:Date.now(), total:keys.length, groups, trainees:ids.size, old};
+    // 5. sign-in attempt counts: the lab attempt counts on a trainee with no ping in 30 days.
+    // These are counts, not records — Clear writes the trainee back with the counts at zero and
+    // everything else untouched, which is the same thing as ↺ Reset Attempts on the roster.
+    const lastPing = {};
+    keys.forEach(k => {
+      const m = k.match(/^checkin:(\d{4}-\d{2}-\d{2}):(.+)$/);
+      if(!m) return;
+      const t = new Date(m[1] + "T00:00:00Z").getTime();
+      if(isFinite(t) && t > (lastPing[m[2]] || 0)) lastPing[m[2]] = t;
+    });
+    const tKeys = Array.from(ids, id => "trainee:" + id);
+    const tRecs = tKeys.length ? await sharedGetMany(tKeys) : [];
+    const fields = [];
+    tKeys.forEach((k, i) => {
+      const r = tRecs[i], id = k.slice("trainee:".length);
+      if(!r || now - (lastPing[id] || 0) <= 30 * DAY) return;
+      const used = Number(r.labAttemptsGlobal) || 0;
+      const byDay = (r.labAttemptsByDay && typeof r.labAttemptsByDay === "object") ? Object.keys(r.labAttemptsByDay).length : 0;
+      if(!used && !byDay) return;
+      fields.push({key:k, count:used,
+        why:"attempt counts on a trainee with no ping in 30 days — the record itself is kept",
+        patch:Object.assign({}, r, {labAttemptsGlobal:0, labAttemptsByDay:{}, labAttemptsResetAt:new Date().toISOString()})});
+    });
+    DB.scan = {at:Date.now(), total:keys.length, groups, trainees:ids.size, old, fields};
   }catch(err){ DB.err = "Couldn’t read the database — sign in again as Admin and retry."; }
   DB.scanning = false; render();
 }
 async function dbClear(){
   const s = DB.scan;
-  if(!s || !s.old.length || DB.clearing) return;
-  if(!confirm(`Clear ${s.old.length} record${s.old.length === 1 ? "" : "s"}? Trainees, their progress, every grade and review, attendance, the firms and the settings are kept.`)) return;
+  const fields = (s && s.fields) || [];
+  const n = s ? s.old.length + fields.length : 0;
+  if(!s || !n || DB.clearing) return;
+  if(!confirm(`Clear ${n} item${n === 1 ? "" : "s"}? Trainees, their progress, every grade and review, attendance, the firms and the settings are kept${fields.length ? `; ${fields.length} trainee${fields.length === 1 ? "" : "s"} keep their record with the attempt counts back at zero` : ""}.`)) return;
   DB.clearing = true; render();
-  let gone = 0, failed = 0;
+  let gone = 0, failed = 0, reset = 0;
   for(const row of s.old){
     try{ await sharedDelete(row.key); gone++; }catch(err){ failed++; }
   }
+  for(const row of fields){
+    try{ await sharedSet(row.key, row.patch); reset++; }catch(err){ failed++; }
+  }
   DB.clearing = false;
-  DB.done = `Cleared ${gone} record${gone === 1 ? "" : "s"}${failed ? ` · ${failed} couldn’t be cleared` : ""}.`;
+  DB.done = `Cleared ${gone} record${gone === 1 ? "" : "s"}${reset ? ` · reset the attempt counts on ${reset} trainee${reset === 1 ? "" : "s"}` : ""}${failed ? ` · ${failed} couldn’t be cleared` : ""}.`;
   await dbScan();
 }
 
 function renderAdminDbMaint(){
   if(!adminOn()) return `<div class="card" style="padding:28px;">Trainers only.</div>`;
   const s = DB.scan;
+  const fields = (s && s.fields) || [];
+  const n = s ? s.old.length + fields.length : 0;
   const groups = s ? Object.keys(s.groups).sort((a, b) => s.groups[b] - s.groups[a]) : [];
   return `
     <div class="ops-hero">
       <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>🗄 Database Maintenance</h1>
-      <p>Clears the data that is only needed for a while: the published blueprint PDF (it rebuilds itself on the next admin visit), random tasks that ended over 30 days ago, automatic check-ins over 40 days old (the day’s attendance record keeps the times), and records left behind by a trainee who was deleted. <b>Kept:</b> trainees, their progress, every grade and review, attendance, the firms and case assignments, and the settings. The scan below says exactly what would go; nothing is deleted until you press Clear.</p>
+      <p>The same rules as the Main Portal’s own sweep, read onto this program’s data: <b>pings</b> over 7 days old (the day’s attendance record keeps the times), <b>live-view copies</b> (the published blueprint PDF, which rebuilds itself on the next admin visit), <b>stopped alerts</b> — random tasks that ended over 30 days ago, <b>live-call records</b> left behind by a trainee who was deleted, and the <b>attempt counts</b> on a trainee with no ping in 30 days. This program stores no presence field, so there is no online status to clear. <b>Kept:</b> trainees, their progress, every grade and review — an active trainee’s graded calls are never swept — attendance, the firms and case assignments, and the settings. The scan below says exactly what would go; nothing is deleted until you press Clear.</p>
       <div class="ops-row">
         <button class="btn btn-navy btn-sm" onclick="FTOps.dbScan()" ${DB.scanning ? "disabled" : ""}>${DB.scanning ? "Scanning…" : "🔍 Scan the database"}</button>
-        ${s && s.old.length ? `<button class="btn btn-ghost btn-sm ops-danger" onclick="FTOps.dbClear()" ${DB.clearing ? "disabled" : ""}>${DB.clearing ? "Clearing…" : `🗑 Clear ${s.old.length} record${s.old.length === 1 ? "" : "s"}`}</button>` : ""}
+        ${n ? `<button class="btn btn-ghost btn-sm ops-danger" onclick="FTOps.dbClear()" ${DB.clearing ? "disabled" : ""}>${DB.clearing ? "Clearing…" : `🗑 Clear ${n} item${n === 1 ? "" : "s"}`}</button>` : ""}
       </div>
       ${DB.err ? `<p class="ops-err">${e(DB.err)}</p>` : ""}
       ${DB.done ? `<p class="ops-ok">${e(DB.done)}</p>` : ""}
@@ -270,7 +305,7 @@ function renderAdminDbMaint(){
       <div class="lp-home-stats">
         <div class="card stat"><div class="num">${s.total}</div><div class="lbl">Records in this program</div></div>
         <div class="card stat"><div class="num">${s.trainees}</div><div class="lbl">Trainees</div></div>
-        <div class="card stat"><div class="num">${s.old.length}</div><div class="lbl">Only needed for a while</div></div>
+        <div class="card stat"><div class="num">${n}</div><div class="lbl">Only needed for a while</div></div>
       </div>
       <div class="card ops-card">
         <h3>What is stored</h3>
@@ -285,7 +320,14 @@ function renderAdminDbMaint(){
         </tbody></table>${s.old.length > 200 ? `<p class="ops-muted">…and ${s.old.length - 200} more.</p>` : ""}`
         : `<p class="ops-muted">Nothing to clear — everything stored is still needed.</p>`}
       </div>
-      <p class="ops-muted">Scanned ${when(s.at)}. This sweep covers this program only.</p>`}`;
+      ${fields.length ? `<div class="card ops-card">
+        <h3>Counts Clear would reset</h3>
+        <p class="ops-muted">These trainees keep their record, their progress and every grade. Only the attempt counts go back to zero — the same thing as ↺ Reset Attempts on the roster.</p>
+        <table class="ops-table"><thead><tr><th>Trainee</th><th>Attempts used</th><th>Why</th></tr></thead><tbody>
+          ${fields.map(r => `<tr><td class="ops-key">${e(r.key)}</td><td>${e(r.count)}</td><td class="ops-muted">${e(r.why)}</td></tr>`).join("")}
+        </tbody></table>
+      </div>` : ""}
+      <p class="ops-muted">Scanned ${when(s.at)}. These are the Main Portal’s sweep rules applied to this program’s data; the sweep itself covers this program only.</p>`}`;
 }
 
 /* ---------- the three tabs, and what the page calls ---------- */
