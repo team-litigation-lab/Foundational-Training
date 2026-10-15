@@ -7,8 +7,8 @@
      and the first admin page open after a deploy republishes it.
    - Trainer blueprint: the course's trainer slides (js/blueprint-content.js), drawn by
      lsh-blueprint.js. Admins only, never at a public address, and never linked from the program
-     itself: it opens from #/blueprint, the link on the Main Portal's Blueprint page, with
-     ⬇ Download PDF (stamped with the build and the deployment).
+     itself: it opens from #/blueprint, the link on the Main Portal's Blueprint page. It is read on
+     screen (▶ Autoplay plays it by itself); no blueprint offers a PDF download.
    Load order: blueprint-content.js, this file, lsh-blueprint.js, after the course's own scripts.
    ========================================================= */
 (function () {

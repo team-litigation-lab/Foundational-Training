@@ -2,7 +2,8 @@
    🧭 Platform Orientation and the Blueprint PDF (admin)
    Loaded last. The EA/PA engine gives admins 🧭 Orientation (#/orientation):
    a screen-shareable blueprint of the platform for the first session, with
-   ⛶ Present full screen, 🖨 Print and ⬇ Download PDF. The same slides are the
+   ⛶ Present full screen, 🖨 Print and ▶ Autoplay (no PDF download: a blueprint is
+   read on screen). The same slides are the
    Blueprint PDF at /blueprint.pdf: when the build changes, the first admin
    to open the portal rebuilds it and publishes it (blueprint:pdf / blueprint:meta,
    served by worker.js), so the link always has the latest.

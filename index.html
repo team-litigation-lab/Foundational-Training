@@ -6179,12 +6179,12 @@ async function autoPublishBlueprint(){
   }catch(e){ console.warn("blueprint auto-publish skipped:", e); }
   finally{ state.blueprintJob = false; }
 }
-async function republishBlueprint(){ state.blueprintMeta = null; await sharedSet("blueprint:meta", {build:"", at:""}); toast("Rebuilding the blueprint PDF…"); await autoPublishBlueprint(); toast(state.blueprintMeta && state.blueprintMeta.build===APP_BUILD ? "✅ Blueprint PDF updated." : "Couldn't rebuild the blueprint — try Download PDF instead."); }
+async function republishBlueprint(){ state.blueprintMeta = null; await sharedSet("blueprint:meta", {build:"", at:""}); toast("Rebuilding the blueprint PDF…"); await autoPublishBlueprint(); toast(state.blueprintMeta && state.blueprintMeta.build===APP_BUILD ? "✅ Blueprint PDF updated." : "Couldn't rebuild the blueprint — try again in a moment."); }
 window.republishBlueprint = republishBlueprint;
 function printOrientation(){
   const slides = orientSlides();
   const css = [...document.querySelectorAll("style")].map(x=>x.textContent).join("\n");
-  const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print, or use Download PDF."); return; }
+  const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print the orientation blueprint."); return; }
   w.document.write(`<html><head><title>LSH Foundational Training — Platform Orientation</title><style>${css}
     @page{size:1280px 720px;margin:0} body{margin:0;background:#fff} .or-slide.or-export{page-break-after:always;break-after:page}</style></head><body>${
     slides.map((sl,k)=>`<div class="or-slide or-export"><div class="or-kicker">${String(k+1).padStart(2,"0")} · ${esc(sl.k)}</div><h2>${esc(sl.h)}</h2>${sl.body}<img class="or-logo" src="${LOGO_FULL_SRC}" alt=""><div class="or-export-foot">LSH Foundational Training Program · Platform Orientation · ${k+1} / ${slides.length}</div></div>`).join("")
@@ -6200,7 +6200,7 @@ function renderOrientation(){
   return `
     <div class="or-top"><div><p class="eyebrow">Admin · for screen sharing</p><h1 style="color:var(--navy);font-size:24px;margin:4px 0 0;">🧭 Platform Orientation</h1></div>
       <div class="or-top-actions"><span class="or-tip">Share this tab in Google Meet — nothing private is shown here.</span>
-      <button class="btn btn-ghost btn-sm" onclick="printOrientation()">🖨 Print</button><button class="btn btn-primary btn-sm" id="orPdfBtn" onclick="downloadOrientationPdf()">⬇ Download PDF</button><button class="btn btn-navy btn-sm" onclick="orientFullscreen()">⛶ Present full screen</button></div></div>
+      <button class="btn btn-ghost btn-sm" onclick="printOrientation()">🖨 Print</button><button class="btn btn-navy btn-sm" onclick="orientFullscreen()">⛶ Present full screen</button></div></div>
     <div class="or-stage" id="orStage">
       <div class="or-slide" id="orSlide">
         <div class="or-kicker">${String(i+1).padStart(2,"0")} · ${esc(s.k)}</div>
@@ -18457,6 +18457,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/blueprint-content.js?v=ft-2026.10.09-modules"></script>
 <script src="/js/lsh-blueprint-course.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/lsh-blueprint.js?v=ft-2026.10.08-perf"></script>
+<script src="/js/lsh-autoplay.js?v=ft-2026.10.15-autoplay"></script>
 <script src="/js/lsh-dashboard.js?v=ft-2026.10.08-0100"></script>
 <script src="/js/ft-card-grid.js?v=ft-2026.10.06-frame"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.08-lines"></script>
