@@ -1945,5 +1945,825 @@
     }
    }
   }
+ },
+ "6": {
+  "lesson": "Intake Specialist Training",
+  "sections": {
+   "v001": {
+    "time": "3 min",
+    "objective": "Open the Intake Specialist role: the firm's most important process, and the one with the most ways to lose a case.",
+    "talk": [
+     "Tell them Days 7, 8 and 9 are all this deck — discussion, documents, then the SA demo and the mock calls.",
+     "The afternoon is shadowing; the morning is this deck plus the breakout."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day! We are starting Intake Specialist Training.\n\nThis deck carries you through Days 7, 8 and 9: today's discussion and breakout, then the intake documents, then your Smart Advocate demo and your intake mock calls.\n\nPlease take notes as we go — the intake packet documents and the fee arrangements are both graded later. Thank you."
+     }
+    ]
+   },
+   "v002": {
+    "time": "2 min",
+    "objective": "The table of contents: intake specialist, consultation, scheduling."
+   },
+   "v003": {
+    "time": "5 min",
+    "objective": "Converting contacts into clients is the firm's most important process.",
+    "talk": [
+     "Same line as the PI Workflow deck — repeat it deliberately. It is the one claim in this program worth repeating."
+    ]
+   },
+   "v004": {
+    "time": "5 min",
+    "objective": "The goal is quality, not quantity: schedule GOOD leads for consultation.",
+    "talk": [
+     "A bad lead booked costs a consultation slot the attorney cannot get back.",
+     "Ask the room what makes a lead good before you answer: injury, treatment, liability, insurance, and within the statute."
+    ],
+    "keys": [
+     "A good lead has: an injury, treatment either started or intended, a liable party, insurance to claim against, and a date of loss inside the statute."
+    ]
+   },
+   "v005": {
+    "time": "4 min",
+    "objective": "The information collected opens the case — which is why intake digs deep.",
+    "talk": [
+     "Everything they collect is used by somebody else later. Thin intake is re-work for four other roles."
+    ]
+   },
+   "v006": {
+    "time": "4 min",
+    "objective": "Intake shapes the consultation; the end goal is the appointment.",
+    "talk": [
+     "Close the introduction, then move into what a good intake system needs."
+    ]
+   },
+   "v007": {
+    "time": "4 min",
+    "objective": "Requirement 1: capture contact information, and know where leads come from.",
+    "talk": [
+     "Referral, walk-in, web, ad — the source changes the tone, never the questions."
+    ],
+    "keys": [
+     "Capture name and callback number FIRST, before the story. Calls drop."
+    ]
+   },
+   "v008": {
+    "time": "6 min",
+    "objective": "Requirements 2 and 3: pre-screening and conflict checking, before a consultation is booked.",
+    "talk": [
+     "Pre-screening saves the attorney's time; the conflict check protects the firm's ability to take the case at all.",
+     "Flag that conflicts get a whole section of this deck — they are not a formality."
+    ],
+    "pitfalls": [
+     "Booking the consultation first and checking for conflicts afterwards."
+    ]
+   },
+   "v009": {
+    "time": "4 min",
+    "objective": "Requirements 4 and 5: holding the consultation, and collecting key information."
+   },
+   "v010": {
+    "time": "4 min",
+    "objective": "Requirements 6 and 7: the fee agreement signed, then onboarding.",
+    "talk": [
+     "The signed agreement is the first document of the intake packet, and the one everything else depends on."
+    ]
+   },
+   "v011": {
+    "time": "6 min",
+    "objective": "Walk the lead call flow chart out loud — this is the call they will perform on Day 9.",
+    "talk": [
+     "Trace one path end to end: greeting, contact details, screening questions, conflict questions, commitment, appointment.",
+     "Then trace the path where the lead is NOT good, so they know how that call ends politely."
+    ],
+    "keys": [
+     "Every path ends with a commitment or a clear next step — never 'we'll see'."
+    ]
+   },
+   "v012": {
+    "time": "4 min",
+    "objective": "Required information: what the attorney will use it for.",
+    "talk": [
+     "The attorney evaluates needs, determines viability and decides whether to take the case. Thin answers mean a wrong decision."
+    ]
+   },
+   "v013": {
+    "time": "5 min",
+    "objective": "Insurance policy, and the names and contacts of everyone involved.",
+    "talk": [
+     "Car or homeowner's policy, every person involved, and how to reach them.",
+     "Names of all drivers, passengers and employers are also what surfaces a conflict later."
+    ]
+   },
+   "v014": {
+    "time": "5 min",
+    "objective": "Accident description — get their account early, because accounts change.",
+    "talk": [
+     "Record it in their words, early. A later version that contradicts the first is damaging."
+    ],
+    "pitfalls": [
+     "Summarising instead of recording. Write what they said."
+    ]
+   },
+   "v015": {
+    "time": "5 min",
+    "objective": "Injuries and the client's own insurance — ask early.",
+    "talk": [
+     "Aches and pains reported days later are harder to attribute. Ask on the first call.",
+     "Their own insurance matters for UM/UIM and Med Pay, which the Claims Specialist will need."
+    ]
+   },
+   "v016": {
+    "time": "4 min",
+    "objective": "Defendant information and the emergency contact.",
+    "talk": [
+     "Whatever they can get on the defendant. An emergency contact also keeps a quiet client reachable."
+    ]
+   },
+   "v017": {
+    "time": "4 min",
+    "objective": "Witness accounts are most useful when contacted early.",
+    "talk": [
+     "Get names and numbers on the first call; witnesses become unreachable fast."
+    ]
+   },
+   "v018": {
+    "time": "5 min",
+    "objective": "The document checklist — read it against what intake actually receives.",
+    "talk": [
+     "Tell them a packet is often incomplete, and that the SOP is to save what came and flag what did not.",
+     "This is exactly the Day 8 and Day 9 activity."
+    ],
+    "keys": [
+     "Missing documents: extract, rename and save only what is present, follow SOP for the gap, and notify the Case Manager or Attorney. Never contact the client directly unless authorized."
+    ]
+   },
+   "v019": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 1 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v020": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 2 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v021": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 3 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v022": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 4 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v023": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 5 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v024": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 6 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v025": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 7 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v026": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 8 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v027": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 9 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v028": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 10 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape."
+    ]
+   },
+   "v029": {
+    "time": "2 min",
+    "objective": "Sample intake form, page 11 of 11 — walk the fields, do not read them.",
+    "talk": [
+     "Point at the fields that are most often left blank and say why each one matters downstream.",
+     "Tell them the fillable forms for Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall and MVA follow the same shape.",
+     "On Day 9 these fields are filled in the Prototype CMS directly, not on paper."
+    ]
+   },
+   "v030": {
+    "time": "3 min",
+    "objective": "Open the supporting documents section: what proves liability and damages."
+   },
+   "v031": {
+    "time": "5 min",
+    "objective": "Photos, diagrams and the scene.",
+    "talk": [
+     "Photographs of injuries and a sketch of how it happened. Both age badly — ask on the first call."
+    ]
+   },
+   "v032": {
+    "time": "4 min",
+    "objective": "Police exchange sheets, specialist reports, reconstruction reports."
+   },
+   "v033": {
+    "time": "5 min",
+    "objective": "The police or incident report — the official account.",
+    "talk": [
+     "This is the document that most often decides whether liability is contested.",
+     "It is also where the information we may share with an adjuster comes from."
+    ]
+   },
+   "v034": {
+    "time": "5 min",
+    "objective": "Medical records — and the signature we need to request them.",
+    "talk": [
+     "No signed authorization, no records. This is the HIPAA form, and it comes back on Day 13 and Day 14."
+    ]
+   },
+   "v035": {
+    "time": "4 min",
+    "objective": "Insurance policies: we read them to find every coverage that may apply.",
+    "talk": [
+     "Ties straight to the Day 11 Dec Page activity."
+    ]
+   },
+   "v036": {
+    "time": "4 min",
+    "objective": "Incident statement: the client's written account, before, during and after."
+   },
+   "v037": {
+    "time": "4 min",
+    "objective": "Witness statements, recorded as soon as possible."
+   },
+   "v038": {
+    "time": "4 min",
+    "objective": "Video of the incident: canvass for traffic and security cameras.",
+    "talk": [
+     "Footage is overwritten in days. This is the most time-critical item on the list."
+    ]
+   },
+   "v039": {
+    "time": "4 min",
+    "objective": "Bills and insurance papers — the client keeps everything."
+   },
+   "v040": {
+    "time": "4 min",
+    "objective": "Employment records and tax forms, for lost income."
+   },
+   "v041": {
+    "time": "3 min",
+    "objective": "Specialists retained to review evidence and testify."
+   },
+   "v042": {
+    "time": "4 min",
+    "objective": "The daily journal: the client's own record of the experience.",
+    "talk": [
+     "Prompt it at intake. Nobody can reconstruct it later."
+    ]
+   },
+   "v043": {
+    "time": "8 min",
+    "objective": "Open conflicts properly: they arise before a case is accepted, some are non-waivable, and intake does NOT decide.",
+    "talk": [
+     "Say the third line twice: Intake Specialists do not decide conflicts. They surface them and escalate.",
+     "Tell them the nine conflict types that follow are not trivia — missing one can cost the firm the case and more."
+    ],
+    "keys": [
+     "Intake's job on a conflict: ask the questions, record every name, flag it, escalate to the attorney. Never reassure the caller that it is fine."
+    ],
+    "pitfalls": [
+     "A trainee deciding a conflict is 'probably nothing' and booking the consult anyway."
+    ]
+   },
+   "v044": {
+    "time": "5 min",
+    "objective": "Existing or prior representation — the most critical, usually non-waivable.",
+    "talk": [
+     "Defendant driver, at-fault business, property owner. Any of these already with the firm and the call stops."
+    ]
+   },
+   "v045": {
+    "time": "4 min",
+    "objective": "Two drivers from the same collision: the firm cannot represent both."
+   },
+   "v046": {
+    "time": "5 min",
+    "objective": "Multiple claimants from one incident — waivable or not, depending on jurisdiction and the facts.",
+    "talk": [
+     "Limited policy limits are what turns multiple claimants into a real conflict."
+    ]
+   },
+   "v047": {
+    "time": "4 min",
+    "objective": "Insurance carrier conflicts — often missed at intake.",
+    "talk": [
+     "Ask which carrier, every time, on both sides."
+    ]
+   },
+   "v048": {
+    "time": "4 min",
+    "objective": "Former client conflicts, triggered even on an unrelated matter."
+   },
+   "v049": {
+    "time": "4 min",
+    "objective": "Employer–employee conflicts, common on work-injury calls.",
+    "talk": [
+     "Always capture the employer's name. This is the question trainees forget."
+    ]
+   },
+   "v050": {
+    "time": "4 min",
+    "objective": "Government and public entity conflicts, with strict disclosure requirements.",
+    "talk": [
+     "A city, county or state defendant also brings short notice deadlines. Escalate the same day."
+    ]
+   },
+   "v051": {
+    "time": "4 min",
+    "objective": "Medical provider and lien conflicts, which can affect settlement integrity."
+   },
+   "v052": {
+    "time": "4 min",
+    "objective": "Personal conflicts of attorneys or staff — still flagged at intake.",
+    "talk": [
+     "It is not awkward to ask; it is the job."
+    ]
+   },
+   "v053": {
+    "time": "4 min",
+    "objective": "Prior consultation conflicts, even where no representation followed.",
+    "talk": [
+     "Information shared in a consultation is protected. A prior consult with the other side is a conflict."
+    ]
+   },
+   "v054": {
+    "time": "8 min",
+    "objective": "The intake red flags VAs must capture on every call — the practical version of the whole section.",
+    "talk": [
+     "Make them write this list down and read it back. It is the one page from the conflicts section they must carry into a live call."
+    ],
+    "keys": [
+     "Capture on every intake call: names of all drivers, passengers and employers; the insurance companies on both sides; the defendant and any business or property owner; whether the caller has spoken to or been represented by another firm; any prior consultation with our firm."
+    ],
+    "pitfalls": [
+     "Capturing only the caller's own details. The conflict usually hides in the other names."
+    ],
+    "grade": {
+     "deliverable": "Conflict red flags — surfaced and escalated correctly",
+     "ai": {
+      "match": [
+       "All driver, passenger and employer names captured",
+       "Carriers on both sides captured",
+       "Defendant / business / property owner identified",
+       "Prior or current representation asked about",
+       "Prior consultation with our firm asked about",
+       "Flagged and escalated rather than resolved by the trainee"
+      ],
+      "nlp": [
+       "Score capture and escalation separately: capturing a conflict and then reassuring the caller scores zero on escalation.",
+       "Any answer in which the trainee decides a conflict is waivable is a hard fail — that decision is the attorney's."
+      ],
+      "pass": 90
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Names and carriers captured",
+        "weight": 50
+       },
+       {
+        "label": "Flagged and escalated",
+        "weight": 50
+       }
+      ],
+      "rubric": [
+       "Asked the uncomfortable questions without hedging",
+       "Professional deference — escalated rather than ruled",
+       "Kept the caller comfortable while asking"
+      ],
+      "feedback": "Which red flag they let pass…"
+     }
+    }
+   },
+   "v055": {
+    "time": "5 min",
+    "objective": "The training note for Legal VAs — read it aloud, in full.",
+    "talk": [
+     "This page is the boundary of the role. Do not paraphrase it."
+    ]
+   },
+   "v056": {
+    "time": "2 min",
+    "objective": "Open the best practices section."
+   },
+   "v057": {
+    "time": "5 min",
+    "objective": "Name and contact details first, accurately, at the start of the call.",
+    "talk": [
+     "Spell the name back, repeat the number in pairs. Same rule as reception."
+    ]
+   },
+   "v058": {
+    "time": "5 min",
+    "objective": "Active listening in a mostly one-sided conversation.",
+    "talk": [
+     "The lead talks; the VA stays engaged and steers. Silence is not listening."
+    ]
+   },
+   "v059": {
+    "time": "4 min",
+    "objective": "Ask permission and set expectations about the caller's time."
+   },
+   "v060": {
+    "time": "5 min",
+    "objective": "Ask specific questions — be direct about what identifies the case.",
+    "talk": [
+     "Open questions get a story; specific questions get a case. Both are needed, in that order."
+    ]
+   },
+   "v061": {
+    "time": "5 min",
+    "objective": "Get a commitment — never end on an open or uncertain note.",
+    "talk": [
+     "This is the difference between a lead and a scheduled consultation."
+    ]
+   },
+   "v062": {
+    "time": "4 min",
+    "objective": "The commitment script, word for word.",
+    "talk": [
+     "Have each trainee say it once now, so it is ready for the Day 9 mock calls."
+    ],
+    "keys": [
+     "Script: 'Your information will be reviewed by our office and we will follow up with you within today.' Then state when, and who will call."
+    ]
+   },
+   "v063": {
+    "time": "4 min",
+    "objective": "Assess the impact: review intake regularly to improve it."
+   },
+   "v064": {
+    "time": "3 min",
+    "objective": "Open the intake packet section — the documents they will extract, rename and save on Days 8 and 9.",
+    "talk": [
+     "Tell them now: every document on the coming pages has a naming convention, and the name is graded."
+    ]
+   },
+   "v065": {
+    "time": "5 min",
+    "objective": "What the intake packet is, and who sends it.",
+    "talk": [
+     "All the intake documents the firm uses to open a case. The Intake Specialist assembles and sends it."
+    ]
+   },
+   "v066": {
+    "time": "5 min",
+    "objective": "Agreement for Representation: the contract that hires the firm.",
+    "talk": [
+     "Fee terms, scope, and what the client is agreeing to. This is the document the whole packet turns on."
+    ]
+   },
+   "v067": {
+    "time": "4 min",
+    "objective": "Agreement for Representation: exclusivity — no settling or negotiating without the attorney.",
+    "talk": [
+     "Worth saying to the room: this is why a VA never discusses an offer with a client."
+    ]
+   },
+   "v068": {
+    "time": "2 min",
+    "objective": "Sample Agreement for Representation — walk the signature and date blocks.",
+    "talk": [
+     "Point at where the client's signature and date go, because an unsigned agreement is the most common packet defect."
+    ]
+   },
+   "v069": {
+    "time": "4 min",
+    "objective": "Statement of Client's Rights."
+   },
+   "v070": {
+    "time": "2 min",
+    "objective": "Statement of Client's Rights, sample — point at the fields only."
+   },
+   "v071": {
+    "time": "6 min",
+    "objective": "HIPAA Authorization: what it permits and what makes it valid.",
+    "talk": [
+     "This is the single most consequential form in the packet for the Provider Communication role."
+    ],
+    "keys": [
+     "Filling the HIPAA form: the Validity of Authorization date is the date the CLIENT SIGNED, as shown below the document. Relationship to Patient is 'Self'.",
+     "An expired or misdated authorization gets the records request refused."
+    ]
+   },
+   "v072": {
+    "time": "2 min",
+    "objective": "HIPAA Authorization, sample — show the signature date and the validity field."
+   },
+   "v073": {
+    "time": "4 min",
+    "objective": "HITECH: access to records under the Act."
+   },
+   "v074": {
+    "time": "4 min",
+    "objective": "Request for Complete Medical Records, including imaging."
+   },
+   "v075": {
+    "time": "2 min",
+    "objective": "HITECH medical records request, sample."
+   },
+   "v076": {
+    "time": "4 min",
+    "objective": "Affidavit of Consent to Release Police Report Information."
+   },
+   "v077": {
+    "time": "2 min",
+    "objective": "Affidavit of Consent, sample."
+   },
+   "v078": {
+    "time": "4 min",
+    "objective": "Consent to Release Medicare/Medicaid Information.",
+    "talk": [
+     "Medicare and Medicaid come back on Day 17 as government health plans with their own reduction rules."
+    ]
+   },
+   "v079": {
+    "time": "2 min",
+    "objective": "Medicare/Medicaid consent, sample."
+   },
+   "v080": {
+    "time": "4 min",
+    "objective": "Notice of Termination of Representation — used when a client leaves a previous firm.",
+    "talk": [
+     "Its presence in a packet is also a conflict signal. Flag it."
+    ]
+   },
+   "v081": {
+    "time": "2 min",
+    "objective": "Notice of Termination, sample."
+   },
+   "v082": {
+    "time": "5 min",
+    "objective": "Joint Acceptance of Common Legal Representation, after full disclosure.",
+    "talk": [
+     "This is the document behind the multiple-claimant conflict from earlier."
+    ]
+   },
+   "v083": {
+    "time": "4 min",
+    "objective": "Joint Acceptance, continued — advantages, risks and waiver."
+   },
+   "v084": {
+    "time": "2 min",
+    "objective": "Joint Acceptance, sample."
+   },
+   "v085": {
+    "time": "4 min",
+    "objective": "Waiver of Conflict of Interest: the rules it sets out."
+   },
+   "v086": {
+    "time": "4 min",
+    "objective": "Adverse interests — no representing directly conflicting clients."
+   },
+   "v087": {
+    "time": "4 min",
+    "objective": "Business transactions with clients, generally prohibited."
+   },
+   "v088": {
+    "time": "4 min",
+    "objective": "Former clients and related matters."
+   },
+   "v089": {
+    "time": "2 min",
+    "objective": "Conflict of Interest form, sample, page 1."
+   },
+   "v090": {
+    "time": "2 min",
+    "objective": "Conflict of Interest form, sample, page 2.",
+    "talk": [
+     "Note the latest version is the Notice and Waiver of Potential Conflict of Interest — the Day 8 reference set has it."
+    ]
+   },
+   "v091": {
+    "time": "4 min",
+    "objective": "Client Information Sheet: the details the case documentation runs on."
+   },
+   "v092": {
+    "time": "2 min",
+    "objective": "Client Information Sheet, sample."
+   },
+   "v093": {
+    "time": "4 min",
+    "objective": "ISO Claim Search Disclosure Request: the client's insurance claim history.",
+    "talk": [
+     "Prior claims change how an adjuster values this one. Expect it in the packet."
+    ]
+   },
+   "v094": {
+    "time": "2 min",
+    "objective": "ISO Claim Search, sample."
+   },
+   "v095": {
+    "time": "4 min",
+    "objective": "3rd Party Insurance Affidavit and its key sections.",
+    "talk": [
+     "This is the affidavit that rides with a 3P LOR on Day 12."
+    ]
+   },
+   "v096": {
+    "time": "2 min",
+    "objective": "3rd Party Insurance Affidavit, sample."
+   },
+   "v097": {
+    "time": "6 min",
+    "objective": "Retainer fees: an advance payment to secure the attorney's services.",
+    "talk": [
+     "Set up the comparison properly — retainer against contingency is a graded Process Question."
+    ],
+    "keys": [
+     "Retainer — paid up front, drawn down against work performed. Common outside PI."
+    ]
+   },
+   "v098": {
+    "time": "4 min",
+    "objective": "Billable hours: the work attorneys bill to clients."
+   },
+   "v099": {
+    "time": "4 min",
+    "objective": "What is NOT billable: administration, management, training, general email.",
+    "talk": [
+     "Useful for them: it is why clear, specific time entries matter."
+    ]
+   },
+   "v100": {
+    "time": "6 min",
+    "objective": "Contingency fees — and the costs the client may still owe.",
+    "talk": [
+     "Nothing charged unless the case wins, but filing fees, experts and discovery costs can still fall to the client.",
+     "Now run the comparison out loud: how does each arrangement change onboarding and expectations?"
+    ],
+    "keys": [
+     "Contingency — a percentage of the recovery, charged only on a win; case costs may still be the client's.",
+     "Effect on onboarding: contingency removes the up-front barrier, so screening at intake does the filtering; expectations must be set about costs and about timelines."
+    ],
+    "pitfalls": [
+     "Telling a client 'it costs you nothing'. Case costs are not the fee."
+    ],
+    "grade": {
+     "deliverable": "Process Questions — Intake Specialist Training (Priority track, 5 questions)",
+     "file": "Intake_Specialist_Training_Process_Question_Answers_[VA's first name]",
+     "ai": {
+      "match": [
+       "Supporting documents tied to BOTH liability and damages",
+       "Third-party collection: named hurdles (authorization, fees, backlog, portals) AND a stated workaround",
+       "Intake packet components each given a purpose",
+       "Case-type customization: a named example where a generic packet fails",
+       "Retainer vs contingency both defined, with the effect on onboarding"
+      ],
+      "nlp": [
+       "Score per question against the answer anchors; five questions, equal weight.",
+       "On documents, require the split: an answer that only says 'they prove the case' scores half.",
+       "On fees, an answer that says contingency costs the client nothing at all is marked wrong on that item — case costs remain."
+      ],
+      "pass": 80
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Q1 Supporting documents",
+        "weight": 20
+       },
+       {
+        "label": "Q2 Third-party collection",
+        "weight": 20
+       },
+       {
+        "label": "Q3 Packet components",
+        "weight": 20
+       },
+       {
+        "label": "Q4 Case-type customization",
+        "weight": 20
+       },
+       {
+        "label": "Q5 Retainer vs contingency",
+        "weight": 20
+       }
+      ],
+      "rubric": [
+       "Own words",
+       "Used examples from the discussion",
+       "Correct file name and folder",
+       "On time"
+      ],
+      "feedback": "Which of the five to revisit before the Day 9 mock calls…"
+     }
+    }
+   },
+   "v101": {
+    "time": "2 min",
+    "objective": "Contingency fees, sample page."
+   },
+   "v102": {
+    "time": "5 min",
+    "objective": "Consultation scheduling once intake is complete — always against the attorney's calendar.",
+    "talk": [
+     "Back to the Lesson 5 rules: available slots only, no double-booking, confirm the callback number."
+    ],
+    "keys": [
+     "Consults are phone consults between 9:30 AM and 3:00 PM EST, Tuesdays and Thursdays for new clients, max 3 a day, none after 5:00 PM."
+    ]
+   },
+   "v103": {
+    "time": "4 min",
+    "objective": "Calls that need scheduling immediately, or endorsing.",
+    "talk": [
+     "Same-day needs attorney approval. Urgency does not override the rule; it escalates it."
+    ]
+   },
+   "v104": {
+    "time": "3 min",
+    "objective": "Remember! — close on the reminder page.",
+    "talk": [
+     "Then set the breakout and the shadowing."
+    ]
+   },
+   "v105": {
+    "time": "1 hr (breakout) + PM shadowing",
+    "objective": "Close the deck, run the breakout, post the reference set, and set up the afternoon's shadowing.",
+    "talk": [
+     "Post the three handouts, run the five Priority questions, then the Intake Scenario Exercise.",
+     "Post the reference broadcast: insurance providers, the evidence checklist, the fillable forms, the mock intake audio.",
+     "Confirm the shadowing slot with the shadow buddy, give the trainees their times, and correct the TAM wording before they log it."
+    ],
+    "gc": [
+     {
+      "label": "Breakout handouts",
+      "text": "For your breakout session, please go over the following handouts:\n\nIntake Documents to Support the Claim\nhttps://drive.google.com/file/d/1DenG0yNjuWZe9Kc3e5zAnZJOjP4yQB6X/view\n\nIntake Packet\nhttps://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view\n\nIntake Specialist Best Practices\nhttps://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view\n\nThank you."
+     },
+     {
+      "label": "Reference broadcast",
+      "text": "Here are your reference materials for intake. Thanks.\n\nMajor insurance providers: UAIG · State Farm · Progressive · Allstate · Liberty Mutual · Geico · Travelers · USAA\n\nAccident or Injury Claim and Evidence Checklist\nhttps://drive.google.com/file/d/1-a8jF7dTZxdoYv4brVSe9GwGrT9MGFnV/view\n\nFillable Intake Forms [Dog Bite, Medical Malpractice, Premises Liability, Slip & Fall, MVC/MVA]\nhttps://drive.google.com/file/d/1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF/view\n\nMock Intake (non-VLF) recording\nhttps://drive.google.com/file/d/1VMNX0CrUXBtGAf0xkDq8r6sr4NRNDW4S/view\n\nSample Intake Audio Recordings\nhttps://drive.google.com/drive/folders/16o9xsbY9dRIl8-fSBN2B3fNWuEXmo52q\n\nOther Intake-Related Documents\nhttps://drive.google.com/drive/folders/1UrLBiX0ntxzvyxvRkHBhdTevtoP2jLzX"
+     },
+     {
+      "label": "Shadowing — TAM logging",
+      "text": "Reminder for this afternoon's shadowing. When you log it in your TAM, do NOT write \"To-Do: Shadowing\". Use this format:\n\nShadowing [Role/Process] ([VA Name])\n\nFor example: Shadowing Intake Specialist Role (Arlene)\n\nKindly update this section of your TAM after the session. Thanks."
+     },
+     {
+      "label": "If no shadow buddy is available",
+      "text": "Please proceed to watch these intake shadowing videos of Maria Mangaoang. Thank you.\n\nhttps://drive.google.com/file/d/1SC653puBU7dh4tYjQjXcr8KZ4yhYxsLV/view\nhttps://drive.google.com/file/d/16DavSPhSUGF88UnltYxl932dsZsYkQtY/view\nhttps://drive.google.com/file/d/1_dsswdnznMTWJAykRJkJKMCOoGg-c8pw/view"
+     }
+    ],
+    "keys": [
+     "Process Questions: the full list is 10; the Priority track is 5 — supporting evidence, third-party collection, packet components, case-type customization, retainer vs contingency.",
+     "Answer sheet: Intake_Specialist_Training_Process_Question_Answers_[VA's first name], in Assessments/Activities.",
+     "Shadow buddy coordination: send the attendee list with the count of Filipino and Latin American trainees.",
+     "Answer anchor — third-party collection: the hurdles are authorization validity, provider fees, backlog, portal access and wrong-department routing; the workarounds are a valid HIPAA on file, the e-portal where one exists, a logged follow-up cadence, and escalation after two failed attempts."
+    ],
+    "pitfalls": [
+     "Trainees logging 'To-Do: Shadowing' in the TAM — correct it before the session, not after.",
+     "Answers to the packet question that list documents without saying what each one is for."
+    ]
+   }
+  }
  }
 }
