@@ -1201,5 +1201,284 @@
     }
    }
   }
+ },
+ "4": {
+  "lesson": "Receptionist Training",
+  "sections": {
+   "v001": {
+    "time": "3 min",
+    "objective": "Open Receptionist Training: the firm's first impression is a job with rules, not a personality trait.",
+    "talk": [
+     "Tell them the Day 4 mock calls are scored against six metrics, and name them now so they listen for each one.",
+     "Everything in this deck shows up in one of those six."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day! We are starting Reception Training.\n\nYour mock calls will be scored on six metrics:\n• Greeting — 10%\n• Intake Triage — 20%\n• Tone & Empathy — 20%\n• Confidentiality — 20%\n• Data Accuracy — 15%\n• Transfer & Notes — 15%\n\nListen for each of these as we go. Thank you."
+     }
+    ],
+    "keys": [
+     "Reception Mock Call metrics: Greeting 10%, Intake Triage 20%, Tone/Empathy 20%, Confidentiality 20%, Data Accuracy 15%, Transfer/Notes 15%."
+    ]
+   },
+   "v038": {
+    "time": "5 min",
+    "objective": "What to say when they do not know — never guess, never sound new.",
+    "talk": [
+     "A receptionist who guesses creates a liability; one who says 'let me find out' creates confidence.",
+     "Have each trainee say one of the replacement phrases out loud. It has to be automatic by tomorrow."
+    ],
+    "keys": [
+     "Use: 'Let me find out for you.' · 'I'd be happy to look into that.' · 'Great question — let me put you in touch with the best person to answer it.'",
+     "Never use: 'I don't know', 'I'm new here', 'I think…', or any answer about case value, liability or timing."
+    ],
+    "pitfalls": [
+     "Filling a silence with a guess. That is the most common confidentiality failure in the mock calls."
+    ]
+   },
+   "v040": {
+    "time": "6 min",
+    "objective": "Active listening, properly: paraphrase and read the message back word for word.",
+    "talk": [
+     "Reading the message back catches the error while the caller is still on the line.",
+     "Make them practise it on each other now — it is 20% of tomorrow's Tone and Empathy mark and most of Data Accuracy."
+    ],
+    "keys": [
+     "Read back: caller's name spelled out, callback number digit by digit, and the message in their words."
+    ],
+    "pitfalls": [
+     "Paraphrasing the caller's emotion instead of their information."
+    ]
+   },
+   "v042": {
+    "time": "5 min",
+    "objective": "Meticulous note-taking: spell names phonetically, confirm every number.",
+    "talk": [
+     "Spell the name back using phonetics, then repeat the number in pairs.",
+     "Numbers are exact-match in grading — one wrong digit is a wrong field, not a near miss."
+    ],
+    "keys": [
+     "Mandatory fields on a reception call: caller name (spelled), callback number, DOB, DOL, reason for the call, action taken."
+    ],
+    "pitfalls": [
+     "Taking a name by sound alone. Spell it back, every time."
+    ]
+   },
+   "v044": {
+    "time": "6 min",
+    "objective": "Authenticate before sharing anything — the hinge of the confidentiality metric.",
+    "talk": [
+     "Gather the details and authenticate the caller before any information goes out, then transfer.",
+     "A caller who refuses to authenticate gets a message taken, not an answer."
+    ],
+    "keys": [
+     "Authenticate on: full name, date of birth, and one case detail the caller should know. Only then does any case information move."
+    ],
+    "pitfalls": [
+     "Confirming a detail the caller supplies. Confirming is disclosing.",
+     "Accepting 'I'm his wife' as authentication. It is not."
+    ]
+   },
+   "v047": {
+    "time": "4 min",
+    "objective": "Adaptability: take initiative, think on their feet, stay calm under pressure.",
+    "talk": [
+     "Close the best-practice run with the quality that cannot be scripted, then move to payment calls.",
+     "Initiative inside authority: act on the process, escalate the judgement."
+    ]
+   },
+   "v048": {
+    "time": "5 min",
+    "objective": "Payment calls: who asks about money, and what a receptionist may say.",
+    "talk": [
+     "Clients ask about balances; providers ask about treatment bills. Both are money calls and both are restricted.",
+     "Consultation fees and outstanding balances are figures from the system, never from memory."
+    ],
+    "keys": [
+     "Quote only what the system shows, and only to an authenticated caller. Anything about a settlement figure goes to the attorney."
+    ]
+   },
+   "v049": {
+    "time": "5 min",
+    "objective": "Authenticate, then double-check the figures in the system before saying any number.",
+    "talk": [
+     "Accurate figures, clearly and confidently — but only after authentication.",
+     "If the system and the caller disagree, the system wins and the call is escalated."
+    ],
+    "pitfalls": [
+     "Reading a figure off a stale note or an email instead of the system."
+    ]
+   },
+   "v050": {
+    "time": "8 min",
+    "objective": "Walk the payment decision tree end to end — this is the escalation rule in diagram form.",
+    "talk": [
+     "Enquiry → authenticate name and case ID → apply the compliance restriction → route or take a message.",
+     "Ask the room where the tree says stop. That point is the compliance restriction, and it is where most trainees keep talking."
+    ],
+    "keys": [
+     "Handle independently: confirming an appointment, taking a message, giving the firm's own contact details, confirming a document was received.",
+     "Escalate: case value, liability, settlement timing, any figure not in the system, any caller who will not authenticate, any demand from opposing counsel or an adjuster."
+    ],
+    "pitfalls": [
+     "Treating escalation as failure. Escalating correctly scores full marks on Intake Triage."
+    ],
+    "grade": {
+     "deliverable": "Payment-call decision tree — handle or escalate",
+     "ai": {
+      "match": [
+       "Authenticates name and case ID before any figure",
+       "Applies the compliance restriction at the right branch",
+       "Routes to the right owner or takes a message",
+       "Does not state a settlement or case-value figure"
+      ],
+      "nlp": [
+       "Score the branch taken, not the wording: a correct escalation phrased awkwardly is still correct.",
+       "Any answer that discloses a figure before authentication fails the item outright."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Correct branch",
+        "weight": 50
+       },
+       {
+        "label": "Handling of the caller at the stop point",
+        "weight": 50
+       }
+      ],
+      "rubric": [
+       "Calm under pressure",
+       "De-escalation when the caller pushes",
+       "Professional deference — escalates without apologising excessively"
+      ],
+      "feedback": "Where in the tree they went past the stop…"
+     }
+    }
+   },
+   "v051": {
+    "time": "4 min",
+    "objective": "Cold transfers: what they are and why we do not use them.",
+    "talk": [
+     "No warning, high risk of a dropped or disconnected call. Not recommended, and it costs marks on Transfer and Notes."
+    ]
+   },
+   "v052": {
+    "time": "5 min",
+    "objective": "Warm transfers: the standard for this firm.",
+    "talk": [
+     "Introduce both parties, or at least stay on until the call lands.",
+     "This is what Transfer and Notes is scored against tomorrow."
+    ],
+    "keys": [
+     "Warm transfer script: tell the caller who they are going to and why, announce the caller and the reason to the recipient, then release."
+    ]
+   },
+   "v053": {
+    "time": "4 min",
+    "objective": "Conference calls: a warm transfer where the receptionist stays on the line.",
+    "talk": [
+     "Used when the caller needs both parties at once, or when a record of the exchange matters."
+    ]
+   },
+   "v054": {
+    "time": "3 min",
+    "objective": "The closing reminder: tasks vary by client and by firm requirement.",
+    "talk": [
+     "Back to SOP adherence from Lesson 1 — the firm's rule decides, not our habit."
+    ]
+   },
+   "v055": {
+    "time": "1 hr (breakout) + mock call prep",
+    "objective": "Close the deck, set the Receptionist Process Questions and the confidentiality exercise, then move to mock call preparation.",
+    "talk": [
+     "Set the Process Questions, then run the Confidentiality & Call Response exercise.",
+     "Spend what is left of the morning on mock call preparation: scripting, active listening, screening, the tone matrix.",
+     "Tomorrow's five scenarios are new intake, anxious client, adjuster, court clerk, hostile caller — tell them now so they can prepare for all five."
+    ],
+    "gc": [
+     {
+      "label": "Process Questions — Receptionist Training",
+      "text": "Please answer the Receptionist Training Process Questions on your Process Questions page, then upload your answer sheet to your Assessments/Activities folder using the file name shown there:\nReceptionist_Training_Process_Question_Answers_[your first name]\n\nType \"done\" here once uploaded. Thank you."
+     },
+     {
+      "label": "Tomorrow — Reception Mock Calls",
+      "text": "Reminder: tomorrow is your Reception Mock Calls. Five scenarios:\n1. New intake caller\n2. Anxious client\n3. Insurance adjuster\n4. Court clerk\n5. Hostile caller\n\nYou will be scored on: Greeting (10%), Intake Triage (20%), Tone & Empathy (20%), Confidentiality (20%), Data Accuracy (15%), Transfer & Notes (15%).\n\nPrepare your greeting, your authentication questions and your note template in advance. Thank you."
+     },
+     {
+      "label": "Reception Training video with Julio",
+      "text": "For those who have completed their tasks, please watch this training video with one of our virtual receptionists. You will see the VA handling all sorts of calls and general receptionist tasks.\n\nRECEPTION TRAINING WITH JULIO [1:49:49]\nhttps://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view\n\nThen update items #10 and #11 in your monitoring sheet. Thank you."
+     }
+    ],
+    "keys": [
+     "Answer anchors — first impression: verbal cues are tone, pace, clarity, the greeting itself and the read-back; non-verbal are the smile, posture and the pause before answering.",
+     "Answer anchor — misdirecting a caller: sending opposing counsel to the attorney unscreened, or a client to the wrong department, costs privilege and trust; both are confidentiality failures, not routing errors.",
+     "Answer anchor — screening before transfer: screen and note every call; escalate on value, liability, timing or an unauthenticated caller; handle appointments, messages and document confirmations independently."
+    ],
+    "pitfalls": [
+     "Preparing only for the easy scenario. The hostile caller and the adjuster are where the marks are lost.",
+     "No note template ready, so Data Accuracy and Transfer/Notes both suffer."
+    ],
+    "grade": {
+     "deliverable": "Reception Mock Calls — 5 scenarios",
+     "ai": {
+      "match": [
+       "Greeting names the firm and the VA, and offers help",
+       "Collects name, callback number, DOB and DOL",
+       "Authenticates before releasing any case information",
+       "Correct triage: handled or escalated per the decision tree",
+       "Warm transfer performed, with a note recorded"
+      ],
+      "nlp": [
+       "Score the transcript against the six metrics at their stated weights: Greeting 10, Intake Triage 20, Tone/Empathy 20, Confidentiality 20, Data Accuracy 15, Transfer/Notes 15.",
+       "Data Accuracy is exact-match on numbers (callback, DOB, DOL) and phonetic on names.",
+       "Any disclosure of case information to an unauthenticated caller, or any statement of case value or liability, zeroes the Confidentiality metric regardless of the rest.",
+       "Tone and empathy is pre-scored on hedging, interruptions and acknowledgement phrases, then handed to the facilitator — the human mark overrides it."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Greeting",
+        "weight": 10
+       },
+       {
+        "label": "Intake triage",
+        "weight": 20
+       },
+       {
+        "label": "Tone & empathy",
+        "weight": 20
+       },
+       {
+        "label": "Confidentiality",
+        "weight": 20
+       },
+       {
+        "label": "Data accuracy",
+        "weight": 15
+       },
+       {
+        "label": "Transfer & notes",
+        "weight": 15
+       }
+      ],
+      "rubric": [
+       "Call tone — warm and controlled",
+       "Empathy with the anxious client",
+       "De-escalation of the hostile caller",
+       "Professional deference with the court clerk",
+       "Held the line with the adjuster",
+       "Phone etiquette: no dead air, clean close"
+      ],
+      "feedback": "Scenario by scenario: what to drill before the Day 9 intake mock calls…"
+     }
+    }
+   }
+  }
  }
 }
