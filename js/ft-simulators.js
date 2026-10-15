@@ -87,17 +87,10 @@ window.ftsGotoSkills = function(){
 // trainer (🧑‍🏫 With your trainer), so a card per demo only repeated them. The simulators' cards (the
 // separate Calendaring Simulators, the mock-call lines and All simulators) are gone: the calls and the Google Calendar
 // Simulator are tools inside their sessions (the Calendar Management Mock Calls are part of the Calendaring Practice Lab).
-function firmBanner(){
-  if(!isTrainee() || !window.FTFirms) return "";
-  const f = FTFirms.myFirm();
-  return `<div class="fts-banner" role="link" tabindex="0" onclick="goto('firm')" onkeydown="if(event.key==='Enter') goto('firm')"><span class="fts-banner-ic">🏛</span>
-    <span class="fts-banner-tx"><b>${f ? esc(f.name) : "Your law firm"}</b><span>${f ? `You work for this firm: ${esc(f.location)} · ${esc(f.tz)} time. Every session is on its cases, under its rules.` : "Your trainer assigns your firm and your cases. Its rules are what your sessions are checked against."}</span></span>
-    <span class="fts-banner-go">${f ? "My firm & rules →" : "Open →"}</span></div>`;
-}
+// The 🏛 Your law firm banner is gone too: a session links to its firm's profile (🏛 The whole firm profile →).
 function renderSimulators(){
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
       <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
-    ${firmBanner()}
     ${window.FTSessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
       <div class="fts-grid">${FTSessions.cards()}</div></section>
     ${window.ftLorCard ? `<section class="fts-group"><h2>🧰 Drafting Tools</h2><p class="fts-sub">Tools you draft in here, on this platform. You fill in the firm’s own template on the page and download the finished document as a PDF, named by the trainers’ convention — yours to edit before you download. Nothing you draft here becomes a case file in the CMS.</p>
@@ -202,13 +195,7 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-tool-act a.btn{text-decoration:none;}
 .fts-sub a{color:var(--orange-deep);font-weight:700;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
-.fts-banner{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#0b1730,#13284f);color:#fff;border-radius:18px;padding:18px 22px;margin-bottom:18px;cursor:pointer;box-shadow:0 10px 24px -14px rgba(8,18,38,.6);transition:transform .15s;}
-.fts-banner:hover{transform:translateY(-2px);} .fts-banner:focus-visible{outline:3px solid #fdba74;outline-offset:2px;}
-.fts-banner-ic{width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.18);border:1px solid rgba(253,186,116,.45);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
-.fts-banner-tx{flex:1;min-width:0;} .fts-banner-tx b{display:block;font-size:16px;} .fts-banner-tx span{font-size:13px;color:#c7d2fe;}
 .fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
-.fts-banner-go{background:#f97316;color:#0f172a;font-weight:800;font-size:12px;border-radius:999px;padding:8px 16px;white-space:nowrap;}
-@media (max-width:520px){ .fts-banner{flex-wrap:wrap;} .fts-banner-go{margin-left:64px;} }
 #fts-panel{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#f8fafc);flex-direction:column;}
 #fts-panel.open{display:flex;} body.fts-panel-open{overflow:hidden;}
 .fts-panel-bar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 16px;background:var(--card,#fff);border-bottom:1px solid var(--line,#e5e7eb);}

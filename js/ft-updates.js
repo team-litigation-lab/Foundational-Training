@@ -29,7 +29,7 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 @media(min-width:1181px){
   /* the title still gives way first (eapa-updates.js), but as a whole: when it doesn't fit beside the logo it wraps
      below it, out of sight (instead of a container query that hides it only once it is cut down to 170px) */
-  .topbar .brand{flex:0 1000000 auto;min-width:74px;container-type:normal;flex-wrap:wrap;height:46px;overflow:hidden;}
+  .topbar .brand{flex:0 1000000 auto;min-width:74px;container-type:normal;flex-wrap:wrap;height:60px;overflow:hidden;}  /* 60px: the logo's full height (js/lsh-dashboard.js), wordmark included */
   .topbar .brand-text{flex:0 0 auto;overflow:visible;}
 }
 @media(max-width:760px){.topbar .brand-text span{display:none;} .topbar .brand-text b{white-space:normal;line-height:1.2;}}  /* phones: the title alone (as index.html intends), on a second line if it needs one */

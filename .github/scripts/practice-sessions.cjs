@@ -35,6 +35,7 @@ const failures = []; const fail = (m) => failures.push(m);
     if (land) fail(`the landing page still has ${land} Simulators / Blueprint card(s)`);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText }));
+    if (/Your law firm|My firm & rules/.test(lab.text)) fail('the Practice Lab still shows the 🏛 Your law firm banner');
     // Five Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
     // 🧰 Drafting Tools' LOR Drafting Activity, which has no CMS case file and no firm case.
     if (lab.sessions !== 5) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 5)`);
