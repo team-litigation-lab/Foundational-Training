@@ -528,6 +528,20 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn){grid-column:span 1;padding-left:10px;padding-right:10px;}
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn):not(:last-child){border-right:1px solid #9CA3B8 !important;}
 }
+/* …and on a laptop or desktop the scores band is a column on the right of the lesson cards, not a row under
+   them: the top row (orientation card and next-step band) runs the full width, then the lessons take what is
+   left beside the column, so both rows of lessons get the height that the band used to take. */
+@media(min-width:1001px){
+  main.main-dash .dash-main{display:grid !important;grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:auto minmax(0,1fr);column-gap:12px;align-items:stretch;}
+  main.main-dash .dash-main > *{grid-column:1 / -1;}
+  main.main-dash .dash-main > .module-grid{grid-column:1;grid-row:2;min-height:0;}
+  main.main-dash .dash-main > .dash-side{grid-column:2;grid-row:2;margin:0 !important;padding:6px !important;min-height:0;overflow:auto;align-self:stretch;}
+  main.main-dash .dash-side-inner{flex-direction:column !important;flex-wrap:nowrap !important;gap:6px !important;height:100%;}
+  main.main-dash .dash-side-inner > *{flex:1 0 auto !important;min-height:40px;}
+  main.main-dash .dash-side-inner .lbl{font-size:9.5px !important;}
+  main.main-dash .dash-side-inner > .lp-home-acts{flex-direction:column !important;align-items:stretch !important;flex:0 0 auto !important;}
+  main.main-dash .dash-side-inner > .lp-home-acts > *{text-align:center;justify-content:center;}
+}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 .dash-side-inner > .lp-home-acts{margin:0;}
 /* 📚 Dashboard's own pages (Task Tracker, Monitoring Sheet, My Notes, My Performance; an admin's Orientation) */

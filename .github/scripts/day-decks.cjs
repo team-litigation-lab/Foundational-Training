@@ -32,6 +32,9 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   const put = (key, value) => page.evaluate(([key, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: JSON.stringify(value) }) }), [key, value]);
   const get = key => page.evaluate(async key => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then(r => r.json())).value || 'null'), key);
   await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
+  // the tests before this one may have opened lessons for every batch: start from none open, put it back after
+  const openBefore = await get('settings:opendays');
+  await put('settings:opendays', { all: [], batches: {} });
   await signIn(page, 'Della', 'Decks', 'B100926');
   const id = await page.evaluate(() => state.traineeId);
   const rec = await get('trainee:' + id); rec.approved = true; await put('trainee:' + id, rec);
@@ -66,6 +69,7 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   s = await at();
   if (s.open.length !== 18) fail(`an admin can open ${s.open.length} days, not 18`);
   if (!/Lien Negotiator Exercise/.test(s.h)) fail('Day 18 opened on "' + s.h + '"');
+  await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Day decks test passed (18 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; 📋 Day deck in the band; a trainee on their day and the days before, an admin on any; ← / →; one screen).');
