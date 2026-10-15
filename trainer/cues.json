@@ -1479,6 +1479,352 @@
      },
      "act": "reception-live"
     }
+   },
+   "v002": {
+    "time": "4 min",
+    "objective": "The first point of contact, and the range of callers who reach it.",
+    "talk": [
+     "Name the caller types on the slide and say which of the six metrics each one tests."
+    ]
+   },
+   "v003": {
+    "time": "4 min",
+    "objective": "Ready status from the moment the shift starts.",
+    "talk": [
+     "Softphone open, CMS open, note template open — before the first ring, not after it."
+    ],
+    "pitfalls": [
+     "Logging in at start of shift and then setting up for ten minutes."
+    ]
+   },
+   "v004": {
+    "time": "4 min",
+    "objective": "Saving documents from fax and email, and tracking every call.",
+    "talk": [
+     "The call log is the record. A call that is not logged did not happen as far as the file is concerned."
+    ]
+   },
+   "v005": {
+    "time": "4 min",
+    "objective": "Common tasks: inquiry calls on existing clients, and sales calls.",
+    "talk": [
+     "Two very different calls that both open the same way. The screen is what separates them."
+    ]
+   },
+   "v006": {
+    "time": "4 min",
+    "objective": "Common tasks: opposing counsel, medical providers, court staff.",
+    "talk": [
+     "Each of these three has its own rule, and all three are covered page by page ahead."
+    ]
+   },
+   "v007": {
+    "time": "3 min",
+    "objective": "Common tasks: call routing, saving documents and fax."
+   },
+   "v008": {
+    "time": "5 min",
+    "objective": "What a lead is, and what a lead call needs.",
+    "talk": [
+     "A lead is anyone who has expressed interest. Treat every one as the firm's next case."
+    ],
+    "keys": [
+     "On a lead call: name, callback number, date of loss, what happened, whether they have counsel already."
+    ]
+   },
+   "v009": {
+    "time": "5 min",
+    "objective": "Verify at surface level, then transfer to the right department.",
+    "talk": [
+     "Surface verification, not an intake. Do not take the whole story and then transfer it second-hand."
+    ],
+    "pitfalls": [
+     "Conducting a full intake at reception and leaving the specialist nothing to work with."
+    ]
+   },
+   "v010": {
+    "time": "5 min",
+    "objective": "Existing client inquiries: the five things they usually want.",
+    "talk": [
+     "Case updates, loans and payments, appointments, transportation, reaching the attorney.",
+     "Each has an owner. Reception's job is to route, not to answer."
+    ]
+   },
+   "v011": {
+    "time": "6 min",
+    "objective": "When no case appears: the caller may be acting for the client.",
+    "talk": [
+     "Parent, child, sibling, partner — plausible, and still not authorized until the file says so.",
+     "This is the setup for the authorization decision tree later in the deck."
+    ],
+    "pitfalls": [
+     "Accepting a relationship as authority. Only the file decides."
+    ]
+   },
+   "v012": {
+    "time": "5 min",
+    "objective": "Sales calls, and why they are a security matter.",
+    "talk": [
+     "Unsolicited and often harmless, but the same opening is used to probe the firm."
+    ]
+   },
+   "v013": {
+    "time": "6 min",
+    "objective": "Social engineering tactics — read each one aloud.",
+    "talk": [
+     "Claiming prior meetings, pretending to know the attorneys, pressing for a name or a direct line.",
+     "The counter is boring and effective: take a message, confirm nothing."
+    ],
+    "keys": [
+     "Never confirm who works there, who represents whom, or any direct line to an unverified caller. Take a message."
+    ],
+    "pitfalls": [
+     "Correcting a caller who names the wrong attorney — the correction is the disclosure."
+    ]
+   },
+   "v014": {
+    "time": "6 min",
+    "objective": "The ethics rule: lawyers do not communicate with represented opposing parties.",
+    "talk": [
+     "This is a rule of professional conduct, and reception can breach it on the firm's behalf in one sentence."
+    ]
+   },
+   "v015": {
+    "time": "5 min",
+    "objective": "Confirm with the attorney, case manager or paralegal before speaking to opposing counsel.",
+    "talk": [
+     "Permission first, every time. Nobody is annoyed at being asked."
+    ]
+   },
+   "v016": {
+    "time": "6 min",
+    "objective": "Confirm the caller is a licensed attorney, and never discuss case facts.",
+    "talk": [
+     "Three rules on one page: verify, no facts, refer.",
+     "Have the room say the refusal sentence out loud so it exists before the mock call."
+    ],
+    "keys": [
+     "Line to use: 'I'm not able to discuss the case — let me take your details and have the attorney call you back.'"
+    ]
+   },
+   "v017": {
+    "time": "4 min",
+    "objective": "Transfer or take a detailed message, then tag the attorney or paralegal.",
+    "talk": [
+     "The tag is what makes the message land. An untagged note sits unread."
+    ]
+   },
+   "v018": {
+    "time": "5 min",
+    "objective": "Medical provider calls: status, representation, claims, appointments.",
+    "talk": [
+     "Representation can be confirmed. Treatment detail and case value cannot."
+    ],
+    "keys": [
+     "Public information only to a provider: that we represent the client, the firm's contact details, where to send records."
+    ]
+   },
+   "v019": {
+    "time": "4 min",
+    "objective": "Court staff calls on litigation cases.",
+    "talk": [
+     "Formal, prepared, and routed to the litigation team."
+    ]
+   },
+   "v020": {
+    "time": "5 min",
+    "objective": "Treat court calls as urgent: live or warm transfer, then the supervising attorney.",
+    "talk": [
+     "Never a cold transfer and never voicemail without escalating. A court deadline may be on the line."
+    ],
+    "keys": [
+     "If the attorney is unavailable: supervising attorney, then a detailed message with the case number, tagged immediately."
+    ]
+   },
+   "v021": {
+    "time": "6 min",
+    "objective": "Insurance company calls: ALWAYS ask for the claim number and the DOL.",
+    "talk": [
+     "Say it as the rule it is: no claim number and date of loss, no case located, nothing discussed."
+    ],
+    "keys": [
+     "Collect from an adjuster: claim number, date of loss, carrier, adjuster's name and direct line. Then route."
+    ]
+   },
+   "v022": {
+    "time": "5 min",
+    "objective": "What adjusters call about: demand responses, offers, liability decisions, IMEs, recorded statements.",
+    "talk": [
+     "Every one of those is above reception's line. Route them, all of them."
+    ],
+    "pitfalls": [
+     "Agreeing to a recorded statement, or confirming anything about a demand."
+    ]
+   },
+   "v023": {
+    "time": "6 min",
+    "objective": "When they push: it is the firm's policy, and requests go in writing.",
+    "talk": [
+     "Firm policy is a complete answer. Polite, repeatable, and no further explanation is owed.",
+     "This is the de-escalation the adjuster scenario is scored on tomorrow."
+    ],
+    "keys": [
+     "Line to use: 'Any request will need to come in writing — that's the firm's policy. I'll note your call and have the handler follow up.'"
+    ]
+   },
+   "v024": {
+    "time": "5 min",
+    "objective": "Witnesses and the ethical rules on represented parties.",
+    "talk": [
+     "Be cautious; do not interview. Take details and route."
+    ]
+   },
+   "v025": {
+    "time": "4 min",
+    "objective": "The prohibition extends to any represented party, not only the adverse one."
+   },
+   "v026": {
+    "time": "5 min",
+    "objective": "Government and law enforcement calls: reports, FOIA requests, footage and 911 calls.",
+    "talk": [
+     "These calls are routine but time-sensitive. Log and route the same day."
+    ]
+   },
+   "v027": {
+    "time": "4 min",
+    "objective": "Spam and malicious robocalls.",
+    "talk": [
+     "End them without engaging. Never press a key or confirm a name."
+    ]
+   },
+   "v028": {
+    "time": "5 min",
+    "objective": "Mass tort and long-duration cases: Hernia Mesh, Zantac and their kind.",
+    "talk": [
+     "Years long, little visible movement, so the caller is often frustrated before they say hello."
+    ]
+   },
+   "v029": {
+    "time": "6 min",
+    "objective": "What to do on those calls: acknowledge the frustration, listen calmly.",
+    "talk": [
+     "Acknowledge, do not defend. Never promise a timeline on a mass tort.",
+     "This is the de-escalation rubric in the mock calls, in its purest form."
+    ],
+    "keys": [
+     "Acknowledge, confirm the file is active, say what the next step is if it is known, log the call, route to the handler. No timelines."
+    ],
+    "pitfalls": [
+     "Explaining the delay. It reads as an excuse and invites an argument."
+    ]
+   },
+   "v030": {
+    "time": "6 min",
+    "objective": "Authorization versus information: verify the authorized person, and who never gets information.",
+    "talk": [
+     "This is the confidentiality metric in one page. Read the 'never release to' list aloud."
+    ],
+    "keys": [
+     "Verify against the file's authorized-person list — not against how convincing the caller is."
+    ]
+   },
+   "v031": {
+    "time": "8 min",
+    "objective": "Walk the authorization decision tree, branch by branch.",
+    "talk": [
+     "Trace both paths out loud: listed in the CRM, and not listed.",
+     "Ask the room where the tree stops. That stop is where most trainees keep talking."
+    ],
+    "keys": [
+     "Not listed as authorized: take a message, tell them the handler will contact the client, release nothing — not even whether the person is a client."
+    ],
+    "pitfalls": [
+     "Confirming that someone is a client to an unauthorized caller. That alone is a disclosure."
+    ]
+   },
+   "v032": {
+    "time": "4 min",
+    "objective": "Call routing: how calls reach their recipient.",
+    "talk": [
+     "Sets up the cold, warm and conference transfer pages later in the deck."
+    ]
+   },
+   "v033": {
+    "time": "5 min",
+    "objective": "Saving received documents and faxes to the right place.",
+    "talk": [
+     "Same discipline as the SA document work from Day 8 onward: correct folder, correct name, reported."
+    ]
+   },
+   "v034": {
+    "time": "5 min",
+    "objective": "The opening spiel: the firm's name and your name.",
+    "talk": [
+     "Have every trainee say theirs now. It is 10% of tomorrow's mark and the easiest 10% to lose."
+    ],
+    "keys": [
+     "Opening: 'Thank you for calling [firm], this is [name], how may I help you?'"
+    ]
+   },
+   "v035": {
+    "time": "4 min",
+    "objective": "Use the caller's name during the conversation.",
+    "talk": [
+     "Twice is warm; every sentence is odd. Say that explicitly."
+    ]
+   },
+   "v036": {
+    "time": "5 min",
+    "objective": "Sound enthusiastic and professional; stay composed whatever the caller says.",
+    "talk": [
+     "Mind tone and volume, let the caller speak first, and do not take the content personally.",
+     "Composure is what the hostile-caller scenario is scored on."
+    ]
+   },
+   "v037": {
+    "time": "3 min",
+    "objective": "Smiling is the shortcut to the right tone.",
+    "talk": [
+     "It sounds like a cliché and it measurably works. Say it once and move on."
+    ]
+   },
+   "v039": {
+    "time": "4 min",
+    "objective": "The phrases to use instead — practise them aloud.",
+    "talk": [
+     "Each trainee says one. They need to arrive without thinking tomorrow."
+    ]
+   },
+   "v041": {
+    "time": "4 min",
+    "objective": "Repeating the message back also catches the mistake while the caller is still there.",
+    "talk": [
+     "Reassurance and quality control in the same move."
+    ]
+   },
+   "v043": {
+    "time": "5 min",
+    "objective": "Attentiveness: review the notes during the call, use context to get past difficulty.",
+    "talk": [
+     "For an existing client, reading the file while they talk is what makes the call short and useful."
+    ],
+    "pitfalls": [
+     "Asking an existing client questions the file already answers."
+    ]
+   },
+   "v045": {
+    "time": "4 min",
+    "objective": "Adjusting to the situation: manage time, note, email and notify at once.",
+    "talk": [
+     "Multitasking here means the note is written during the call, not after it."
+    ]
+   },
+   "v046": {
+    "time": "4 min",
+    "objective": "Stay calm under pressure and prioritize.",
+    "talk": [
+     "Close the adaptability thread, then move to payment calls."
+    ]
    }
   }
  },
