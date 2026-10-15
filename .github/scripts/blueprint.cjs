@@ -143,8 +143,13 @@ async function walk(page, label) {
     else {
         const tp = inspect(Buffer.from(real.b64, 'base64'));
         if (!tp.pdf || tp.pages !== real.slides + 1) fail(`the Trainee blueprint PDF: ${tp.pages} pages for a cover and ${real.slides} slides`);
-        const titles = await page.evaluate(() => LSH_BLUEPRINT.trainee.slides.map(s => s.title.replace(/[^\x00-\xff]/g, '').trim()));
-        const gone = titles.filter(x => !tp.text.includes(x));
+        // Compare on the letters and digits alone: the PDF writes punctuation in Windows-1252 (an em
+        // dash is one byte this reader can't decode), the engine drops what those fonts can't show,
+        // and a long title is drawn over two lines, so it is two text runs in the file.
+        const key = (x) => x.replace(/[^A-Za-z0-9]+/g, ' ').trim();
+        const hay = key(tp.text);
+        const titles = await page.evaluate(() => LSH_BLUEPRINT.trainee.slides.map(s => s.title));
+        const gone = titles.filter(t => key(t) && !hay.includes(key(t)));
         if (gone.length) fail(`the Trainee blueprint PDF is missing: ${gone.join(' | ')}`);
     }
     // Every blueprint link leads to the Portal's 🧭 Blueprint page: the old #/blueprint address forwards there
