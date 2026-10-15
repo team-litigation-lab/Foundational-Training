@@ -403,6 +403,33 @@ Every flat brand colour on the platform is painted as a **gradient**, and the pa
 - **The slides that already have a background of their own are untouched**: the Canva decks (`body.ft-fit`) and the Orientation deck with the trainers' design (`body.ft-orient`) both set their own background with `!important` on a more specific selector, so they win over everything in this file. That is by design — don't "fix" it.
 - **The standalone pages** carry the same palette in their own `<style>`, since they don't load the platform's scripts: `glossary.html` (with `bg-flag-law.webp` behind it), `kb.html` (which already had `kb-bg.webp`) and `ft/day17/word-game-1.html`, whose warm paper palette gets its own gradients and `bg-gavel-book.webp` behind the grain.
 
+## 🔤 Typography (every LSH page, this program and the next)
+
+One UI font stack across the platform and its satellite pages, written once as a token and used everywhere:
+
+```
+--font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+```
+
+- **Inter first** — it was drawn for screens and UI dashboards, so labels, numbers and dense tables stay sharp.
+- **Then the native OS stack** — San Francisco, Segoe UI, Roboto. A page whose visitor doesn't have Inter renders instantly in the system's own font, with no web-font download and no flash of unstyled text, which is why the satellite pages below load no font file at all.
+
+Where the token lives:
+
+```
+          index.html  ──  :root { --font-ui }  ──  body, .brand-text b, buttons …
+                              │   (the same declaration, page by page,
+                              │    because these pages load none of the
+                              ▼    platform's scripts or stylesheets)
+   glossary.html ·  kb.html  ──  :root { --font-ui }  ──  body, header b
+```
+
+- `index.html` (the platform) declares `--font-ui` in `:root` and `body` inherits it; the display face (`h1`–`h4`, `.display`) stays Fraunces and `.mono` stays IBM Plex Mono — this token is the **UI** font, not the whole type scale.
+- `glossary.html` and `kb.html` declare the same token in their own `:root` and use it for `body` and the brand mark. Nothing else about them changes: the sizes, line heights and layouts are exactly as they were.
+- `ft/day17/word-game-1.html` keeps its own typeset design (Gloock, Marcellus, Zilla Slab on warm paper) on purpose — it is a game board, not a UI surface.
+
+**A new page gets the token, not a new font choice.** Copy the `--font-ui` declaration into its `:root` and point `body` at it; don't add a Google Fonts link for a UI face.
+
 ## Files
 
 | Path | What it is |
