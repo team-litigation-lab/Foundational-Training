@@ -517,6 +517,10 @@ function kcReport(id, r){
     <p class="fp-muted" style="margin:8px 0 0;">Graded ${e(new Date(r.at).toLocaleString())} · ${qs.length} question${qs.length===1?"":"s"} · feedback is under each answer below.</p>
   </div>`;
 }
+// A lesson with process questions is finished on this page, not on the lesson itself. Until now that
+// left the trainee on a graded sheet with a toast and nothing to do next, so the next step from the
+// curriculum (js/ft-next-step.js) is shown here the moment the check passes.
+const root_FTNextStep = () => (window.FTNextStep && typeof window.FTNextStep.compact === "function") ? window.FTNextStep : null;
 function renderKc(){
   const id = Number(state.dayId), d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
   const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>`;
@@ -536,6 +540,7 @@ function renderKc(){
       ${rec && rec.attempts ? `<div class="kc-stats">${trainerScore(kcReview(id)) != null ? `Final score <b>${kcBest(id)}%</b> (your trainer’s) · best graded ${rec.best}%` : `Best score <b>${rec.best}%</b>`} · ${rec.attempts} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
     ${reviewBlock(id)}
     ${shown ? kcReport(id, shown) : ""}
+    ${prog.done && root_FTNextStep() ? root_FTNextStep().compact(id) : ""}
     <div class="card kc-card">
       <ol class="fp-qs">${qs.map(x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>

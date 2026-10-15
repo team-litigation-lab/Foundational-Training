@@ -31,6 +31,10 @@ const failures = []; const fail = (m) => failures.push(m);
     const other = 'oli-other--' + batch.toLowerCase();
     await put('trainee:' + other, { id: other, name: 'Oli Other', batch, approved: true });
     await put('settings:opendays', { all: await page.evaluate(() => DAYS.map(d => d.id)), batches: {} });
+    // The trainee id comes from the fixed name and batch above, so a store an older run of this check
+    // wrote to still holds that run's assign:<id>. Clear it, or "nothing writes one any more" below
+    // would read a record this run never wrote.
+    await put('assign:' + id, null); await put('assign:' + other, null);
     await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
 
     // 3. the landing page and the Practice Lab

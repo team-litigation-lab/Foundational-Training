@@ -220,7 +220,17 @@ Return ONLY JSON: {"summary":"..."}`;
   },
   again(){ const s = sessionById(S.cur); this.start(s.id); },
   // a session's tool links (its graded and practice calls, its case in the CMS), for the checks in .github/scripts
-  links(id){ const s = sessionById(id); return s ? (s.tools(s.area ? caseFor(s) : null) || []).map(t => t[1]) : []; }
+  links(id){ const s = sessionById(id); return s ? (s.tools(s.area ? caseFor(s) : null) || []).map(t => t[1]) : []; },
+  // Can a trainee open this session right now? The Practice Lab card's own gate, in one place, so a
+  // screen that links straight to a session (js/ft-next-step.js) cannot get round the lesson lock or
+  // offer a session that works on a case while no case is handed out.
+  openable(id){
+    const s = sessionById(id); if(!s) return false;
+    if(state.isAdmin || state.adminPreview) return true;
+    if(typeof window.dayUnlocked === "function" && !window.dayUnlocked(s.lesson)) return false;
+    if(!FF().myFirm()) return false;
+    return !(s.area && !caseFor(s));
+  }
 };
 // the Practice Lab page's cards (js/ft-simulators.js)
 FTSessions.cards = function(){
@@ -276,7 +286,8 @@ function renderSession(){
   const preview = !isTrainee();
   if(!preview){ load(); if(!S.data) return `${back}<div class="card" style="padding:24px;">Loading your session…</div>`; }
   const f = preview ? previewFirm() : FF().myFirm(), c = sessionCase(s);
-  if(!f) return `${back}<div class="card" style="padding:24px;">Your trainer hasn’t assigned your law firm yet.</div>`;
+  // Nobody assigns a firm any more (js/ft-firms.js): there is one only when no profile exists at all.
+  if(!f) return `${back}<div class="card" style="padding:24px;">No firm profile is set up yet, so this session has no rules to check your work against.</div>`;
   const run = preview ? null : runOf(s, c), rv = run ? reviewOf(keyOf(s, c)) : null;
   const started = run && run.startedAt && !run.submittedAt, done = run && run.submittedAt;
   const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", records:"records"}[s.id];
@@ -384,7 +395,7 @@ function sessionRow(r, key, run){
       ${tScore(rv) != null ? `<span class="fss-pill ok">🧑‍🏫 ${tScore(rv)}%</span>` : run.submittedAt ? `<span class="fss-pill">to review</span>` : ""}
       <span class="fss-muted">${run.submittedAt ? `${e(new Date(run.submittedAt).toLocaleString())} · ${run.minutes} min · attempt ${run.attempts}` : `started ${e(new Date(run.startedAt).toLocaleTimeString())}`}</span></div>
     ${open ? `<div class="fss-abody">${firm ? `<p class="fss-muted">Firm: ${e(firm.name)}</p>` : ""}
-      ${s ? `<div class="fss-form">${s.fields(firm || FF().firms()[0]).map(x => field(x, run.answers || {}, true)).join("")}</div>` : ""}
+      ${s ? `<div class="fss-form">${s.fields(firm || {}).map(x => field(x, run.answers || {}, true)).join("")}</div>` : ""}
       ${checksHtml(run)}${aiHtml(run)}
       ${run.submittedAt ? `<div class="fss-rvform"><label>Score <input type="number" min="0" max="100" data-score value="${tScore(rv) != null ? tScore(rv) : ""}" placeholder="${run.auto ? run.auto.pct : ""}"> %</label>
         <label class="fss-wide">Your comment<textarea rows="3" data-comment placeholder="Your review: the trainee sees it with the session">${e(rv.comment || "")}</textarea></label>

@@ -170,19 +170,14 @@ window.ftAdminTab = function(id, label, renderTab){
   };
 };
 
-/* ---------- Admin → 🏛 Law Firms: the profiles, then each batch's assignments ---------- */
-const FA = {people:null, loading:false, edit:null};
+/* ---------- Admin → 🏛 Law Firms: the profiles (nobody is assigned to them) ---------- */
+const FA = {loaded:false, loading:false, edit:null};
+// Nothing per-trainee is read here any more — the screen is the firm profiles alone — so this loads
+// those and nothing else. Forced, so an admin always sees what is saved rather than a cached list.
 async function loadAdmin(){
   FA.loading = true;
-  try{
-    await loadFirms(true);
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected)
-      .sort((a, b) => String(a.batch || "").localeCompare(String(b.batch || "")) || String(a.name || "").localeCompare(String(b.name || "")));
-    FA.people = people;
-  }catch(err){ FA.people = []; }
-  FA.loading = false; rerender();
+  try{ await loadFirms(true); }catch(err){}
+  FA.loaded = true; FA.loading = false; rerender();
 }
 const lines = v => String(v || "").split("\n").map(x => x.trim()).filter(Boolean);
 function firmForm(f){
@@ -223,7 +218,7 @@ function parseCases(v){
   return out;
 }
 function renderAdminFirms(){
-  if(!FA.people){ if(!FA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the firms and trainees…</div>`; }
+  if(!FA.loaded){ if(!FA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the firm profiles…</div>`; }
   const fs = firms();
   return `<div class="card ff-admin"><h3>🏛 Law Firm Profiles</h3>
       <p class="ff-muted">Every trainee works for the first firm in this list, automatically. Its rules are what their Practice Sessions are checked against. ${F.firms ? "" : "These are the starting profiles: saving any firm saves them all."}</p>
@@ -240,7 +235,7 @@ async function saveFirms(list){
   F.firms = list; F.at = Date.now(); return true;
 }
 window.FTFirmsAdmin = {
-  refresh(){ FA.people = null; render(); },
+  refresh(){ FA.loaded = false; render(); },
   edit(id){ const f = id ? firmById(id) : null; FA.edit = f ? JSON.parse(JSON.stringify(f)) : {_new:true, id:"", name:"", rules:{}, cases:[], colors:[[30, "Tangerine"], [60, "Tomato"]], solYears:2, lorHours:24, gap:15, vendor:"ChartSwap", recordTypes:["Medical records", "Itemized billing"], tz:"Eastern", start:"09:00", end:"17:00"}; render(); },
   cancel(){ FA.edit = null; render(); },
   async save(btn){
