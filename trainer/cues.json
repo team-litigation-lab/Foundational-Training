@@ -816,6 +816,271 @@
       "feedback": "Which of the five to re-teach before the Day 3 reception work…"
      }
     }
+   },
+   "v002": {
+    "time": "4 min",
+    "objective": "The objective: clarity, confidentiality and effectiveness on every call.",
+    "talk": [
+     "Three words to hold the whole lesson against. Each one is a scored metric later."
+    ]
+   },
+   "v003": {
+    "time": "3 min",
+    "objective": "The agenda: softphones, call handling, law firm call management."
+   },
+   "v007": {
+    "time": "5 min",
+    "objective": "Answer within the first ring — and what that signals.",
+    "talk": [
+     "Speed is the first thing a caller judges. It costs nothing and it is noticed."
+    ]
+   },
+   "v008": {
+    "time": "5 min",
+    "objective": "First impressions form in the first seven seconds to two minutes.",
+    "talk": [
+     "If most of that is hold music, the impression is already made."
+    ],
+    "pitfalls": [
+     "Answering and then immediately asking the caller to hold while the CMS loads."
+    ]
+   },
+   "v009": {
+    "time": "5 min",
+    "objective": "Be ready: adapt to any call in real time.",
+    "talk": [
+     "Hesitation reads as inexperience even when the answer is right. Preparation removes it."
+    ]
+   },
+   "v012": {
+    "time": "5 min",
+    "objective": "Hold time is a last resort.",
+    "talk": [
+     "Offer a callback instead of a long hold when research is needed."
+    ],
+    "keys": [
+     "If it will take more than a moment: take the number, give a time, and call back inside it."
+    ]
+   },
+   "v013": {
+    "time": "5 min",
+    "objective": "Ask permission before a hold or a transfer, and say why.",
+    "talk": [
+     "Permission, reason, reassurance — in that order, every time."
+    ]
+   },
+   "v014": {
+    "time": "5 min",
+    "objective": "Make the caller feel valued: personalise it.",
+    "talk": [
+     "Use their name, acknowledge what they came for, and do not rush them off."
+    ]
+   },
+   "v015": {
+    "time": "5 min",
+    "objective": "Stay mindful and respectful — you never know what will land badly.",
+    "talk": [
+     "Neutral, professional language. No humour about the case, the injury or the delay."
+    ]
+   },
+   "v016": {
+    "time": "5 min",
+    "objective": "Be consistent: inconsistency invites questions you cannot answer.",
+    "talk": [
+     "Two different answers from two VAs costs the firm its credibility on that file."
+    ]
+   },
+   "v017": {
+    "time": "5 min",
+    "objective": "Admit what you do not know rather than guessing.",
+    "talk": [
+     "Then promise the follow-up and own it. That is the whole trust mechanism."
+    ],
+    "keys": [
+     "Line to use: 'I don't want to give you the wrong information — let me check and come back to you by [time].'"
+    ]
+   },
+   "v018": {
+    "time": "5 min",
+    "objective": "Stay in control of the conversation while staying friendly.",
+    "talk": [
+     "Friendly and in control are not in tension. Letting a call wander is what loses both."
+    ]
+   },
+   "v019": {
+    "time": "4 min",
+    "objective": "Own the call: be a responsible, well-guided point of contact."
+   },
+   "v020": {
+    "time": "5 min",
+    "objective": "Recap at the end: summarise the key points.",
+    "talk": [
+     "It catches errors and it tells the caller they were heard."
+    ]
+   },
+   "v021": {
+    "time": "4 min",
+    "objective": "The after-call summary, and documenting it accurately."
+   },
+   "v023": {
+    "time": "5 min",
+    "objective": "Taking notes and updating records during the call.",
+    "talk": [
+     "Across several clients and matters, the note written during the call is the only reliable one."
+    ]
+   },
+   "v025": {
+    "time": "5 min",
+    "objective": "Common outbound: follow-ups on treatment, case status, consultations.",
+    "talk": [
+     "Each follow-up has a purpose. Name it before dialling."
+    ]
+   },
+   "v026": {
+    "time": "5 min",
+    "objective": "Appointment reminders — and everything a reminder must include.",
+    "talk": [
+     "Facility name, kind of appointment, time, address. Missing one makes the reminder useless."
+    ],
+    "keys": [
+     "Reminder must carry: facility, type of appointment, date and time, and the address."
+    ]
+   },
+   "v027": {
+    "time": "5 min",
+    "objective": "Client contact calls: greet, introduce the firm, authenticate.",
+    "talk": [
+     "Authentication on an outbound call too — we called them, but we still confirm who we have."
+    ]
+   },
+   "v028": {
+    "time": "5 min",
+    "objective": "State the purpose clearly and ask the relevant questions.",
+    "talk": [
+     "Listen rather than racing the client through a list."
+    ]
+   },
+   "v029": {
+    "time": "4 min",
+    "objective": "Thank them, and leave a voicemail if needed.",
+    "talk": [
+     "A voicemail to a client carries name, firm, callback and a reason — never case detail."
+    ]
+   },
+   "v030": {
+    "time": "5 min",
+    "objective": "Invoice follow-up: greet, introduce, confirm you have the client.",
+    "talk": [
+     "Money calls need the identity confirmed before anything else is said."
+    ]
+   },
+   "v031": {
+    "time": "5 min",
+    "objective": "Confirm they received the invoice email; offer payment help or a plan.",
+    "talk": [
+     "Offer, never pressure. A payment plan is the firm's to approve."
+    ]
+   },
+   "v032": {
+    "time": "5 min",
+    "objective": "The sample script — read it as written, then have a trainee read it back."
+   },
+   "v033": {
+    "time": "4 min",
+    "objective": "The variant script for when it is not the client on the line.",
+    "talk": [
+     "Nothing about the balance is said to anyone but the client."
+    ]
+   },
+   "v034": {
+    "time": "5 min",
+    "objective": "Document every call on the CRM, with the template given.",
+    "talk": [
+     "Use the template as-is. Consistent notes are what make a file readable by the next person."
+    ]
+   },
+   "v035": {
+    "time": "5 min",
+    "objective": "The email template: reply on the existing REMINDER thread.",
+    "talk": [
+     "Replying on the thread keeps the history in one place and the cc list right."
+    ]
+   },
+   "v036": {
+    "time": "5 min",
+    "objective": "Provider calls: greet, introduce, confirm the right contact person.",
+    "talk": [
+     "The records department, by name, is usually who they actually need."
+    ]
+   },
+   "v038": {
+    "time": "4 min",
+    "objective": "The provider sample script — the records and billing follow-up."
+   },
+   "v039": {
+    "time": "4 min",
+    "objective": "Thank them; leave a voicemail if necessary."
+   },
+   "v041": {
+    "time": "5 min",
+    "objective": "Adjuster calls: completing the call.",
+    "talk": [
+     "Short, factual and within the guardrails on the earlier page."
+    ]
+   },
+   "v042": {
+    "time": "4 min",
+    "objective": "Completing the adjuster call, continued."
+   },
+   "v043": {
+    "time": "5 min",
+    "objective": "Voicemail to an adjuster: name, brief reason, callback time and number.",
+    "talk": [
+     "Brief reason means the subject, not the facts."
+    ],
+    "pitfalls": [
+     "Leaving case detail on an adjuster's voicemail."
+    ]
+   },
+   "v044": {
+    "time": "4 min",
+    "objective": "The adjuster sample script — following up on a liability decision."
+   },
+   "v046": {
+    "time": "5 min",
+    "objective": "Court calls: give the case number and case style, then thank them.",
+    "talk": [
+     "Both identifiers, ready before dialling."
+    ]
+   },
+   "v047": {
+    "time": "4 min",
+    "objective": "The court sample script — coordinating a hearing."
+   },
+   "v049": {
+    "time": "5 min",
+    "objective": "Opposing counsel: confirm what was gathered, give the case reference.",
+    "talk": [
+     "Confirming avoids a second call. It is not an invitation to discuss."
+    ]
+   },
+   "v050": {
+    "time": "5 min",
+    "objective": "Voicemail to opposing counsel: never provide case information.",
+    "talk": [
+     "Name, firm, callback, subject. Nothing else, ever."
+    ]
+   },
+   "v051": {
+    "time": "4 min",
+    "objective": "The opposing counsel sample script."
+   },
+   "v052": {
+    "time": "4 min",
+    "objective": "The opposing counsel voicemail script.",
+    "talk": [
+     "Then close the outbound run on the best-practices page."
+    ]
    }
   }
  },
@@ -3537,6 +3802,311 @@
       "feedback": "Which of the seven to revisit before the Day 12 demo…"
      }
     }
+   },
+   "v002": {
+    "time": "4 min",
+    "objective": "The objective: what a Claims Specialist is responsible for."
+   },
+   "v003": {
+    "time": "4 min",
+    "objective": "The role in the early stages of a PI claim.",
+    "talk": [
+     "Early means everything here: the claims opened in the first days decide what can be recovered later."
+    ]
+   },
+   "v004": {
+    "time": "6 min",
+    "objective": "The workflow — read it as the map of Days 10 to 12.",
+    "talk": [
+     "Determine coverage, open the claims, send the LOR, chase the policy and the liability decision."
+    ]
+   },
+   "v005": {
+    "time": "6 min",
+    "objective": "Determining what coverage exists is the first critical task.",
+    "talk": [
+     "No coverage found, no claim to open. This is detective work before it is paperwork."
+    ]
+   },
+   "v007": {
+    "time": "5 min",
+    "objective": "Opening a claim accurately and efficiently.",
+    "talk": [
+     "Accurately first. A wrong claim number costs more than a slow call."
+    ]
+   },
+   "v008": {
+    "time": "4 min",
+    "objective": "Opening a claim, continued."
+   },
+   "v009": {
+    "time": "4 min",
+    "objective": "Opening a claim, continued."
+   },
+   "v010": {
+    "time": "4 min",
+    "objective": "Opening a claim, continued."
+   },
+   "v011": {
+    "time": "4 min",
+    "objective": "Opening a claim, continued.",
+    "talk": [
+     "Keep the pace up here; the sequence lands on the checklist page next."
+    ]
+   },
+   "v014": {
+    "time": "5 min",
+    "objective": "Determine all insurance involved, then act on what is identified.",
+    "talk": [
+     "Both sides, every vehicle, every potentially liable party."
+    ]
+   },
+   "v015": {
+    "time": "5 min",
+    "objective": "Ask where and how to send supporting documents, and confirm it.",
+    "talk": [
+     "Email, fax or portal — get it from the adjuster, not from assumption."
+    ]
+   },
+   "v017": {
+    "time": "5 min",
+    "objective": "When a claim is already open.",
+    "talk": [
+     "Take the existing number, confirm the adjuster, and do not open a duplicate."
+    ],
+    "pitfalls": [
+     "Opening a second claim on the same loss. It confuses the carrier and delays everything."
+    ]
+   },
+   "v018": {
+    "time": "6 min",
+    "objective": "Wrongful death at the pre-litigation stage.",
+    "talk": [
+     "The claim is opened for the estate, which means the representative's authority has to be established first."
+    ]
+   },
+   "v019": {
+    "time": "5 min",
+    "objective": "At litigation, the role expands to the estate and the heirs."
+   },
+   "v020": {
+    "time": "5 min",
+    "objective": "Claims on behalf of statutory heirs, who may also have personal claims.",
+    "talk": [
+     "More claimants against one policy limit — which is the multiple-claimant conflict from the intake deck."
+    ]
+   },
+   "v021": {
+    "time": "3 min",
+    "objective": "Open the Letter of Representation section."
+   },
+   "v022": {
+    "time": "5 min",
+    "objective": "The retainer agreement as the contract behind the LOR.",
+    "talk": [
+     "The LOR is only truthful because the agreement exists. No signed agreement, no LOR."
+    ]
+   },
+   "v023": {
+    "time": "5 min",
+    "objective": "What the LOR does: notify everyone that counsel represents the client.",
+    "talk": [
+     "From that moment, contact goes through the firm. That is the whole point of sending it fast."
+    ]
+   },
+   "v025": {
+    "time": "5 min",
+    "objective": "Premises liability: LOR and the preservation letter together.",
+    "talk": [
+     "Footage is overwritten in days, so the preservation request is time-critical."
+    ]
+   },
+   "v026": {
+    "time": "5 min",
+    "objective": "Dog bite: the letter goes to the owner; and where the incident happened matters.",
+    "talk": [
+     "Homeowner's or renter's insurance is usually the policy in play."
+    ]
+   },
+   "v027": {
+    "time": "3 min",
+    "objective": "Case specifics, continued."
+   },
+   "v029": {
+    "time": "5 min",
+    "objective": "The note to the carrier, and giving them a time frame.",
+    "talk": [
+     "A stated deadline is what makes a follow-up possible."
+    ]
+   },
+   "v030": {
+    "time": "6 min",
+    "objective": "The policy copy request and the evidence preservation request.",
+    "talk": [
+     "Both go in the LOR as standard. Leaving either out means a second letter later."
+    ],
+    "keys": [
+     "Every LOR asks for: a certified copy of the policy (the Dec Page) and preservation of any video or physical evidence."
+    ]
+   },
+   "v032": {
+    "time": "5 min",
+    "objective": "The acknowledgment letter: the carrier confirms receipt.",
+    "talk": [
+     "Diarise the follow-up from the date the LOR went out, not from the acknowledgment."
+    ]
+   },
+   "v033": {
+    "time": "5 min",
+    "objective": "What the acknowledgment often gives you.",
+    "talk": [
+     "Claim number, adjuster, and sometimes the disclosure statement. Record all of it in SA."
+    ]
+   },
+   "v034": {
+    "time": "6 min",
+    "objective": "Statement of insurance disclosure, and that it varies by jurisdiction.",
+    "talk": [
+     "Some states compel disclosure on request; others do not. Know which one the case is in."
+    ]
+   },
+   "v035": {
+    "time": "3 min",
+    "objective": "Open the Declarations Page section."
+   },
+   "v037": {
+    "time": "5 min",
+    "objective": "The Dec Page as the blueprint of the policy."
+   },
+   "v038": {
+    "time": "3 min",
+    "objective": "Declarations page, sample — walk the fields, do not read them."
+   },
+   "v039": {
+    "time": "3 min",
+    "objective": "Declarations page, sample, continued."
+   },
+   "v041": {
+    "time": "5 min",
+    "objective": "Insured vehicles: year, make, model, and whether our client's vehicle is on it.",
+    "talk": [
+     "If the vehicle is not listed, ask why before assuming there is no coverage."
+    ]
+   },
+   "v042": {
+    "time": "5 min",
+    "objective": "Deductibles: what the insured pays before the policy responds."
+   },
+   "v044": {
+    "time": "5 min",
+    "objective": "Comprehensive: theft, vandalism and other events outside the driver's control."
+   },
+   "v046": {
+    "time": "5 min",
+    "objective": "PIP / 1P coverage and limits, usually easy to obtain.",
+    "talk": [
+     "Easy to get and often the first money into the file. Open it early."
+    ]
+   },
+   "v047": {
+    "time": "4 min",
+    "objective": "Types of policy limits — the structures that follow."
+   },
+   "v050": {
+    "time": "5 min",
+    "objective": "CSL against per-person/per-accident, side by side.",
+    "talk": [
+     "Have the room say which structure is better for a single badly injured claimant, and why."
+    ]
+   },
+   "v053": {
+    "time": "5 min",
+    "objective": "The goal: get the BI carrier to accept liability.",
+    "talk": [
+     "Everything in this section serves that one sentence."
+    ]
+   },
+   "v054": {
+    "time": "5 min",
+    "objective": "Fault, and that the at-fault party holds legal responsibility."
+   },
+   "v055": {
+    "time": "5 min",
+    "objective": "The liability investigation and determination.",
+    "talk": [
+     "The carrier runs its own investigation. Our evidence is what it runs on."
+    ]
+   },
+   "v056": {
+    "time": "5 min",
+    "objective": "The step-by-step table — read the steps, not the whole table."
+   },
+   "v057": {
+    "time": "5 min",
+    "objective": "What liability acceptance means."
+   },
+   "v058": {
+    "time": "4 min",
+    "objective": "What happens next: the case goes on hold while treatment continues.",
+    "talk": [
+     "On hold is not idle — it is the records and bills stage."
+    ]
+   },
+   "v059": {
+    "time": "4 min",
+    "objective": "The next step after acceptance: the demand."
+   },
+   "v060": {
+    "time": "4 min",
+    "objective": "Why acceptance matters to the file."
+   },
+   "v061": {
+    "time": "5 min",
+    "objective": "Get the acceptance in writing, every time.",
+    "talk": [
+     "A verbal acceptance is not an acceptance. Ask for it by email."
+    ],
+    "keys": [
+     "Once liability is admitted, obtain written confirmation and save it to the file."
+    ]
+   },
+   "v065": {
+    "time": "5 min",
+    "objective": "The important considerations table."
+   },
+   "v068": {
+    "time": "4 min",
+    "objective": "Liability disputes."
+   },
+   "v069": {
+    "time": "4 min",
+    "objective": "Liability disputes, continued."
+   },
+   "v070": {
+    "time": "4 min",
+    "objective": "Liability disputes, continued."
+   },
+   "v071": {
+    "time": "5 min",
+    "objective": "Liability acceptance after a lawsuit is filed."
+   },
+   "v072": {
+    "time": "4 min",
+    "objective": "Liability decisions."
+   },
+   "v073": {
+    "time": "4 min",
+    "objective": "Liability decisions, continued.",
+    "talk": [
+     "Then close on the guide table."
+    ]
+   },
+   "v075": {
+    "time": "5 min",
+    "objective": "Liability denied, coverage accepted — and what that combination means.",
+    "talk": [
+     "Read it against the previous page: the two words move independently."
+    ]
    }
   }
  },
