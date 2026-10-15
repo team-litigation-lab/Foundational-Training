@@ -818,5 +818,388 @@
     }
    }
   }
+ },
+ "3": {
+  "lesson": "Personal Injury Process Flow",
+  "sections": {
+   "v001": {
+    "time": "3 min",
+    "objective": "Open the PI Workflow deck: the one map the rest of the 18 days hangs on.",
+    "talk": [
+     "Tell them plainly: every role they will train for sits somewhere on this map.",
+     "By the end of this deck they must be able to name the stages in order, unprompted."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day! We are starting our classroom discussion on the Personal Injury Workflow.\n\nBy the end of this part you should be able to name the stages of a PI case in order, and say what a Legal VA does at each one. Please take notes — this is the first Process Question. Thank you."
+     }
+    ],
+    "pitfalls": [
+     "Trainees who know PI from another firm and assume the stages are named the same. Use our stage names."
+    ]
+   },
+   "v002": {
+    "time": "4 min",
+    "objective": "Set the frame: every claim turns on its own facts, and PI law decides who can be claimed against.",
+    "talk": [
+     "No two claims are identical — which is why SOP matters more than memory.",
+     "PI law governs what creates grounds for a claim and who the claim can be made against."
+    ]
+   },
+   "v003": {
+    "time": "8 min",
+    "objective": "The stage list — have them write it down before anything is explained.",
+    "talk": [
+     "Read the stages in order, then have the room say them back without the slide.",
+     "Mark where each specialist role lives: Reception and Intake at the front, Claims at set-up, Provider Communication through treatment and records, Lien Negotiator after settlement."
+    ],
+    "keys": [
+     "Legal Intake and Consultation → Claims Set-Up and Liability Determination → Treatment → Collecting Medical Bills and Records → Demand → Negotiation → Settlement and Disbursement (→ Litigation where no settlement is reached).",
+     "The short form used elsewhere in this program: Intake → Treatment → Demand → Negotiation → Settlement."
+    ],
+    "pitfalls": [
+     "Putting Demand before records are collected. The package cannot be built without the bills and records."
+    ],
+    "grade": {
+     "deliverable": "PI lifecycle, in order, with the VA's task at each stage",
+     "ai": {
+      "match": [
+       "All stages present and in order",
+       "Intake: documents collected, lead qualified",
+       "Claims set-up: claims opened, LOR sent, policy limits requested",
+       "Treatment: records and bills requested, lien tracking",
+       "Demand: package assembled",
+       "Negotiation and settlement: releases, net sheet, disbursement"
+      ],
+      "nlp": [
+       "Accept the short five-stage form as complete if each stage carries a VA task.",
+       "Order errors are scored separately from missing stages: a complete list in the wrong order caps at 60%.",
+       "An answer that lists stages with no VA task attached scores half — the question asks what the VA does."
+      ],
+      "pass": 80
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Stages correct and in order",
+        "weight": 50
+       },
+       {
+        "label": "VA tasks per stage",
+        "weight": 50
+       }
+      ],
+      "rubric": [
+       "Answered without the slide",
+       "Used our stage names"
+      ],
+      "feedback": "Which stage they could not place…"
+     }
+    }
+   },
+   "v004": {
+    "time": "6 min",
+    "objective": "Legal Intake: converting a contact into a client is the firm's most important process.",
+    "talk": [
+     "This is where the case is won or lost before anyone looks at the law.",
+     "The information collected here is what every later stage runs on — Day 7 and Day 8 are entirely about it."
+    ],
+    "keys": [
+     "Intake collects: client details, date of loss, how it happened, injuries, treatment so far, insurance on both sides, the police report."
+    ],
+    "pitfalls": [
+     "Thinking intake is clerical. It is the firm's sales and evidence function at once."
+    ]
+   },
+   "v005": {
+    "time": "5 min",
+    "objective": "The consultation: what the attorney covers with the client, and where the VA's limit is.",
+    "talk": [
+     "The attorney discusses circumstances and concerns, and sets expectations.",
+     "The VA prepares, schedules and documents — the VA never advises on the merits or the value."
+    ],
+    "pitfalls": [
+     "Answering a client's 'how much is my case worth'. That is the attorney's, always."
+    ]
+   },
+   "v006": {
+    "time": "6 min",
+    "objective": "Investigation and how the firm gets paid: the contingency fee.",
+    "talk": [
+     "Most PI lawyers work on contingency — a share of the settlement, nothing if the case loses, though costs may still apply.",
+     "Contrast with a retainer, which is paid up front. This exact comparison is a Day 7 Process Question."
+    ],
+    "keys": [
+     "Contingency fee — a percentage of the recovery, charged only on a win; the client fronts no legal fee.",
+     "Retainer — paid up front and drawn down; typical of transactional and non-PI matters.",
+     "Effect on onboarding: contingency lowers the barrier to signing, so screening at intake does the filtering a fee would otherwise do."
+    ]
+   },
+   "v007": {
+    "time": "5 min",
+    "objective": "Opening claims: contacting the insurer is one of the first steps, and it is the Claims Specialist's job.",
+    "talk": [
+     "Insurers drive the pace of the whole case, especially in auto claims.",
+     "Days 10 to 12 are this one page in full: opening claims, LORs, and the SA workflow."
+    ]
+   },
+   "v008": {
+    "time": "6 min",
+    "objective": "Claims set-up and liability: secure the documents, then identify every party at fault.",
+    "talk": [
+     "Every possible at-fault party gets a claim opened with their insurer. Missing one loses coverage.",
+     "This is where UM/UIM gets opened — and failing to open it in time is a Day 10 Process Question."
+    ],
+    "keys": [
+     "1P = our client's own insurer. 3P = the at-fault party's insurer. Both get an LOR.",
+     "UM/UIM is opened against our client's own policy where the at-fault party has no or too little coverage. Late opening can forfeit the claim under the policy's notice terms."
+    ],
+    "pitfalls": [
+     "Assuming one defendant means one claim. Multiple liable parties means multiple claims."
+    ]
+   },
+   "v009": {
+    "time": "6 min",
+    "objective": "Policy limits and coverages: request the Dec Pages and read them.",
+    "talk": [
+     "The firm requests the policy information for both plaintiff and defendant, then reads the declarations page.",
+     "The limit decides what the case can recover — this is the Day 11 Policy Disclosure activity."
+    ],
+    "keys": [
+     "On a Dec Page, find: named insured, policy period, BI limits (per person / per accident), PD, UM/UIM, Med Pay or PIP, and any deductible.",
+     "A limit written 25/50/25 means $25,000 per person BI / $50,000 per accident BI / $25,000 PD."
+    ],
+    "pitfalls": [
+     "Reading the per-accident figure as the per-person figure. It overstates the case by double or more."
+    ]
+   },
+   "v010": {
+    "time": "5 min",
+    "objective": "Treatment begins: the client must treat promptly, and the records become the evidence.",
+    "talk": [
+     "Treatment both heals the client and documents the injury — gaps in treatment are read as gaps in injury.",
+     "The Client Communication Specialist keeps that contact going."
+    ],
+    "pitfalls": [
+     "Letting a client go quiet during treatment. A treatment gap is the single most common weakness in a claim."
+    ]
+   },
+   "v011": {
+    "time": "4 min",
+    "objective": "What the client should keep while treating: providers seen, out-of-pocket costs, missed work.",
+    "talk": [
+     "Those three feed the damages side of the demand. A VA who prompts for them early saves weeks later."
+    ]
+   },
+   "v012": {
+    "time": "6 min",
+    "objective": "Collecting bills and records: when requests start, and why timing matters.",
+    "talk": [
+     "Requests begin roughly 4–8 weeks after the date of loss, and in earnest as soon as treatment is complete.",
+     "Days 13 to 17 are this stage: MedLOR, bills and records, lien balance verification."
+    ],
+    "keys": [
+     "Request sequence: MedLOR with the signed HIPAA authorization → bills and records → lien balance verification → the demand package."
+    ],
+    "pitfalls": [
+     "Requesting records before the HIPAA authorization is valid and signed. The provider will refuse and the week is lost."
+    ]
+   },
+   "v013": {
+    "time": "5 min",
+    "objective": "The firm coordinates with providers: all charges accounted for, treatment plan followed.",
+    "talk": [
+     "Chasing a provider is normal work, not an exception — the Day 15 upskill covers assertive follow-ups.",
+     "Every charge must be accounted for before a demand goes out, or the demand understates the case."
+    ]
+   },
+   "v014": {
+    "time": "6 min",
+    "objective": "The demand package: what it is and what it has to prove.",
+    "talk": [
+     "It sets out the case, the injuries and the compensation sought, with the records behind it.",
+     "The goal is to make the adjuster's decision easy and well evidenced."
+    ],
+    "keys": [
+     "A demand package carries: the demand letter, liability evidence (police report, photos), medical records and bills, wage loss proof, and the lien or LOP information."
+    ]
+   },
+   "v015": {
+    "time": "5 min",
+    "objective": "What goes in the letter once everything is gathered.",
+    "talk": [
+     "Medical bills, police report, evidence of fault — then the demand itself.",
+     "Each document in the package does a job: this is the Day 13 'Document Detectives' exercise."
+    ]
+   },
+   "v016": {
+    "time": "5 min",
+    "objective": "The insurer reviews, then negotiation starts.",
+    "talk": [
+     "The firm negotiates toward a satisfactory settlement; the first offer is rarely the last.",
+     "Packages can be submitted by mail, email or e-portal depending on the carrier."
+    ]
+   },
+   "v017": {
+    "time": "5 min",
+    "objective": "Settlement: a voluntary agreement that ends the dispute.",
+    "talk": [
+     "It speeds up resolution and removes the risk of trial for both sides.",
+     "Settlement is where the Lien Negotiator's work begins, not ends — Days 17 and 18."
+    ]
+   },
+   "v018": {
+    "time": "4 min",
+    "objective": "Negotiations: the client is told immediately and the options are discussed.",
+    "talk": [
+     "The firm notifies the client as soon as an offer arrives. Delay here is an ethics problem, not a scheduling one.",
+     "The options come from the attorney's experience; the VA documents and schedules."
+    ],
+    "pitfalls": [
+     "A VA characterising an offer as good or bad to the client. Report it, do not evaluate it."
+    ]
+   },
+   "v019": {
+    "time": "6 min",
+    "objective": "Disbursement: the settlement agreement, the deductions and what reaches the client.",
+    "talk": [
+     "Reductions, liens, costs and fees come off before the client's net.",
+     "The net sheet and the closing statement must match to the cent — that is a Day 18 rule and a graded one."
+    ],
+    "keys": [
+     "Order of operations: gross settlement → attorney's fee → case costs → medical liens and LOPs (after reduction) → net to client.",
+     "The net to client on the net sheet must equal the closing statement exactly."
+    ]
+   },
+   "v020": {
+    "time": "4 min",
+    "objective": "Litigation: what happens when the insurer will not value the injuries properly.",
+    "talk": [
+     "Most claims settle; a suit is filed when they do not.",
+     "Once suit is filed, deadlines become court deadlines — which is why calendaring is its own lesson."
+    ]
+   },
+   "v021": {
+    "time": "6 min",
+    "objective": "Reception: the first point of contact, facing every kind of caller.",
+    "talk": [
+     "Adjusters, opposing counsel, provider staff, courts and anxious clients all come through one line.",
+     "Tie it back to the tone matrix from Law Firm Communication, then forward to the Day 3–4 reception work."
+    ],
+    "keys": [
+     "Reception's four jobs on every call: identify the caller, screen, triage, and document before transferring."
+    ]
+   },
+   "v022": {
+    "time": "5 min",
+    "objective": "Calendar management: missed deadlines can dismiss a case or forfeit a right.",
+    "talk": [
+     "Say the consequence out loud — dismissal, forfeiture. This is why Days 5 and 6 are strict.",
+     "Preview the rules they will be scored on: EST visible, 15-minute buffers, consult days and cut-offs."
+    ],
+    "keys": [
+     "Standing calendar rules: everything in EST, 15-minute buffer before and after, email reminder one day prior, event titled [Meeting Type] – [Client Name]."
+    ]
+   },
+   "v023": {
+    "time": "4 min",
+    "objective": "Appointment Setter: keeps the client pipeline and the attorney's day working.",
+    "talk": [
+     "Mandatory data on every setting call: name, callback number, DOB, DOL. No exceptions."
+    ],
+    "keys": [
+     "Collect on every call: client name, callback number, Date of Birth, Date of Loss."
+    ]
+   },
+   "v024": {
+    "time": "4 min",
+    "objective": "Scheduler: organized scheduling is what lets attorneys meet clients and hit tasks on time.",
+    "talk": [
+     "Close the role list here, then move to the afternoon's work."
+    ]
+   },
+   "v025": {
+    "time": "2 hrs (breakout, 1:00–3:00 PM)",
+    "objective": "Close the deck, then run the afternoon: Process Questions, the confidentiality exercise, the call-listening set and Oscar's data-extraction activity.",
+    "talk": [
+     "Post the sample recordings, then set the Process Questions.",
+     "Run the Confidentiality & Call Response exercise after the questions.",
+     "Finish with the reception activity on VA Oscar's recordings — five data points — then give the CRM/CMS homework."
+    ],
+    "gc": [
+     {
+      "label": "Call listening — sample recordings",
+      "text": "Please listen to the sample call recordings below. Note how the VA greets, screens, triages and documents each call.\n\nhttps://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU\n\nType \"done\" here once finished. Thank you."
+     },
+     {
+      "label": "Reception activity — Oscar's recordings",
+      "text": "Please refer to the provided recordings and complete the assessment activity by extracting the data specified in your assessment sheet. Ensure you extract a total of 5 DATA POINTS from Oscar's recordings. Upload the completed assessment document to your respective trainee folder and work directly from there to finalize it. Thank you.\n\nRecordings: https://drive.google.com/drive/folders/1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn\nActivity sheet: https://docs.google.com/document/d/1qCEqeoGJTf-0OvmP_cdxYJWmqlBU06aU/edit"
+     },
+     {
+      "label": "Homework — CRM/CMS video series",
+      "text": "FOR YOUR HOMEWORK:\nPlease watch the CRM/CMS training videos (Parts 1–5) and then update item #12 in your Monitoring Sheet. Thank you.\n\nhttps://drive.google.com/file/d/1dIR3Hl7ybLnUtOk9ycyCbpXGnjR3FzMs/view\nhttps://drive.google.com/file/d/12HcMi38KO4898qd262UF_z_gB-IzHn0c/view\nhttps://drive.google.com/file/d/1pa7Smlp9ePfOEq9YNjWfW6mmaJaeRyDo/view\nhttps://drive.google.com/file/d/1IiZJ8yq4fo1dQfM8q-2vd3hxxLAn8659/view\nhttps://drive.google.com/file/d/1HppO3mZWuROS1XZijVmGiX_yDDFhtHgk/view\n\nSample SOP for reference:\nhttps://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit"
+     },
+     {
+      "label": "Supplementary — extra reception recordings",
+      "text": "In addition, here are additional reception call recordings of VAs Carlos and Oscar for your future reference. These are supplementary and not part of training hours — review them during idle or personal time. Thank you.\n\nCarlos:\nhttps://drive.google.com/drive/folders/1bP8yBy9WhPgUOnfh-IAvWI4V6UVeYyeI\nhttps://drive.google.com/drive/folders/1S3L8ecBadvrN_AmGpeQD98mY1148Rvof\n\nOscar:\nhttps://drive.google.com/drive/folders/1ZGr22vm6RW4avTBCn8tCfGexkZMfsavX"
+     }
+    ],
+    "keys": [
+     "This lesson's Process Questions (the PI Workflow set) are on the trainee's Process Questions page; the Receptionist Training set belongs to Lesson 4. Each has its own answer sheet and file name.",
+     "PI Workflow answer sheet: PI_Workflow_Process_Question_Answers_[VA's first name], saved in Assessments/Activities.",
+     "Priority track when time is short: the lifecycle with VA tasks, the effect of missing documentation, and the cost of a disorganized intake.",
+     "Answer anchor — missing documentation: without the police report liability is contested; without records the damages cannot be proven, so the demand is understated or delayed and the claim's value drops.",
+     "Answer anchor — disorganized intake: duplicated work, missed deadlines including the UM/UIM notice, lost evidence, and a client who loses confidence; the financial consequence is a lower settlement or a dropped case."
+    ],
+    "pitfalls": [
+     "Listening to the recordings without the activity sheet open, then going back to re-listen.",
+     "Extracting fewer than five data points, or extracting them from Carlos's supplementary recordings instead of Oscar's.",
+     "Working on a local copy instead of the uploaded document in their own folder."
+    ],
+    "grade": {
+     "deliverable": "Reception activity — 5 data points from VA Oscar's recordings",
+     "file": "Completed activity sheet, uploaded in the trainee's own folder and finalized there",
+     "ai": {
+      "match": [
+       "Exactly 5 data points extracted",
+       "Caller name as spoken on the recording",
+       "Callback number, digit for digit",
+       "Date of Loss in mm/dd/yyyy",
+       "Nature of the call / reason as stated",
+       "Action taken or transfer destination"
+      ],
+      "nlp": [
+       "Match names by phonetic and fuzzy similarity against the recording's transcript, not exact spelling — flag a near-miss for the facilitator rather than failing it.",
+       "Numbers are exact-match only: one wrong digit in a callback number or a DOL is wrong, not partial.",
+       "Accept any order of the five fields; score each field independently."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Data accuracy (all 5 fields)",
+        "weight": 60
+       },
+       {
+        "label": "Completeness and sheet format",
+        "weight": 20
+       },
+       {
+        "label": "Listening comprehension",
+        "weight": 20
+       }
+      ],
+      "rubric": [
+       "Worked from the uploaded sheet in their own folder",
+       "Asked before guessing an unclear field",
+       "Submitted within the session"
+      ],
+      "feedback": "Which field they lost and whether it was hearing or recording it…"
+     }
+    }
+   }
+  }
  }
 }
