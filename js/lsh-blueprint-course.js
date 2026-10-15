@@ -1,14 +1,13 @@
 /* =========================================================
    🧭 BLUEPRINTS ON A COURSE PORTAL — the same file on every LSH course (EA/PA, Foundational,
    Case Management, PD Claims, MedSum & Demand); change it in one, copy it to all.
-   - Trainee blueprint: the course's trainee slides (js/blueprint-content.js), drawn by the same
-     engine as the trainer deck, and published for everyone at /blueprint.pdf. It's now rebuilt after EVERY deploy, not only when APP_BUILD is bumped:
+   - Trainee blueprint: the course's trainee slides (js/blueprint-content.js), drawn by the shared
+     engine and published for everyone at /blueprint.pdf, for the Portal's Blueprint page to link. It's now rebuilt after EVERY deploy, not only when APP_BUILD is bumped:
      the published copy is matched against APP_BUILD and the Worker's deployment id (/version),
      and the first admin page open after a deploy republishes it.
-   - Trainer blueprint: the course's trainer slides (js/blueprint-content.js), drawn by
-     lsh-blueprint.js. Admins only, never at a public address, and never linked from the program
-     itself: it opens from #/blueprint, the link on the Main Portal's Blueprint page, with
-     ⬇ Download PDF (stamped with the build and the deployment).
+   - Trainer blueprint: every blueprint link leads to the Main Portal's 🧭 Blueprint page, never
+     to a deck inside a program. A program carries no Blueprint tab, button or card, and the old
+     #/blueprint address now sends whoever opens it to the Portal's Blueprint page.
    Load order: blueprint-content.js, this file, lsh-blueprint.js, after the course's own scripts.
    ========================================================= */
 (function () {
@@ -58,30 +57,30 @@
     finally { st.blueprintJob = false; }
   };
 
-  /* ---------- No Blueprint in the program: the Main Portal is where the blueprints live ----------
-     A program shows no Blueprint tab, button, card or PDF link — not to trainees, not to trainers. The
-     Trainer blueprint still opens here, but only from its own address, #/blueprint (the link the Main
-     Portal's Blueprint page carries for each program), and only for a signed-in trainer. The Trainee
-     blueprint is still published at /blueprint.pdf after every deploy, for the Portal to link to. */
-  const BP_LINK = /^#\/blueprint\/?$/;
-  let bpPending = BP_LINK.test(location.hash);
-  function openFromLink() {
-    if (!bpPending || !isAdmin() || !window.LSHBlueprint) return;
-    bpPending = false;
-    try { window.LSHBlueprint.open('trainer'); } catch (e) { /* not ready: the next render tries again */ bpPending = true; }
+  /* ---------- Every blueprint link goes to the Blueprint, not to the program ----------
+     The blueprints live on the Main Portal, on one 🧭 Blueprint page. A program shows no Blueprint
+     tab, button, card or PDF link — not to trainees, not to trainers — and it opens no deck of its
+     own: the old #/blueprint address is kept only to forward to the Portal's Blueprint page, so an
+     older bookmark or link still lands in the right place. The Trainee blueprint is still published
+     at /blueprint.pdf after every deploy, for the Portal to link to. */
+  const PORTAL_BLUEPRINT = 'https://cm-training-activity.pages.dev/blueprint';
+  // 🧭 Orientation was the trainee-facing deck inside the course; it reads on the Portal now too,
+  // so its old address forwards there as well.
+  const BP_LINK = /^#\/(blueprint|orientation)\/?$/;
+  function toPortalBlueprint() {
+    if (!BP_LINK.test(location.hash)) return;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* older browser: the hash stays */ }
+    location.href = PORTAL_BLUEPRINT;
   }
-  window.addEventListener('hashchange', () => { if (BP_LINK.test(location.hash)) { bpPending = true; openFromLink(); } });
-  if (typeof window.render === 'function') {
-    const baseRender = window.render;
-    window.render = function () { const r = baseRender.apply(this, arguments); if (bpPending) setTimeout(openFromLink, 0); return r; };
-  }
+  window.addEventListener('hashchange', toPortalBlueprint);
+  toPortalBlueprint();
 
   /* ---------- the shared Blueprint engine's settings for a course ---------- */
   const c = window.LSH_BLUEPRINT = window.LSH_BLUEPRINT || {};
   c.logo = c.logo || '/js/lsh-logo-dark.png';
-  // Both decks are drawn by the engine, from blueprint-content.js: the Trainee blueprint and the
-  // Trainer blueprint are one deck in two tabs, on the same cover and the same slide layout.
-  c.role = c.role || (() => (isAdmin() ? 'trainer' : null));
+  // The trainee slides stay in blueprint-content.js: no deck opens here, but /blueprint.pdf is
+  // still built from them for the Portal's Blueprint page to link to.
+  c.role = c.role || (() => null);   // no deck opens inside a program: the Blueprint page on the Portal has them
   c.version = c.version || versionText;
   window.lshBlueprintDeployment = Object.assign(deployment, { reset() { dep = null; } });   // for the test
 })();

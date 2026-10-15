@@ -6367,7 +6367,6 @@ function renderTopbar(){
     // Admin is a trainer monitoring dashboard, not a trainee workspace — hide
     // the trainee-facing-only views that have no role here.
     views = views.filter(([id]) => !["crisisroleplay","notes","handouts","tasks"].includes(id));
-    views.push(["orientation","🧭 Orientation"]);
     views.push(["facilitatorguide","Facilitator Guide"]);
   }
   return `
@@ -8112,7 +8111,7 @@ function bookmarkView(){
    Tabs stay in sync: when one tab saves, the others pick the change up (the
    browser's "storage" event), so an older tab never overwrites newer progress.
    ============================================================ */
-const ROUTE_VIEWS = ["dashboard","practice","notes","clientprofile","handouts","tasks","crisisroleplay","orientation","facilitatorguide"];
+const ROUTE_VIEWS = ["dashboard","practice","notes","clientprofile","handouts","tasks","crisisroleplay","facilitatorguide"];
 const routeViews = ()=>ROUTE_VIEWS.concat(window.EXTRA_ROUTE_VIEWS||[]);   // a course build can add its own pages
 function routeHash(){
   if(state.view==="day" && state.dayId) return "#/day/"+state.dayId;
@@ -18509,7 +18508,6 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-drive.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.15-blueprint"></script>
 <script src="/js/ft-admin-ops.js?v=ft-2026.10.14-ops"></script>
 <script src="/js/attendance.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
