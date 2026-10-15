@@ -10,7 +10,8 @@
 // - the slide numbers match everywhere: the cover is the Cover (the counter reads "Cover · N slides"), then
 //   slides 1 to N on the contents buttons, the counter, each slide's header and footer, and the PDF's page
 //   footers ("Cover", then "1 / N" to "N / N"); nothing ever shows N + 1 (a 15-slide deck used to say "16 / 16");
-// - ⬇ Download PDF saves the Trainer blueprint: a page a slide, stamped with the build and the deployment;
+// - a blueprint has no ⬇ Download PDF button (it is read on screen), but LSHBlueprint.pdf() still makes
+//   the Trainer blueprint: a page a slide, stamped with the build and the deployment;
 // - the Trainee blueprint (/blueprint.pdf) is republished after every deploy: once for a new deployment
 //   id, not again for the same one, and again when the deployment changes with APP_BUILD left as it was.
 // Usage: node .github/scripts/blueprint.cjs [baseUrl]   (with server.mjs running; needs `npm i playwright jspdf@4.2.1`)
@@ -128,7 +129,10 @@ async function walk(page, label) {
     const end = await page.evaluate(() => ({ button: [...document.querySelectorAll('#lbp-toc button')].pop().textContent.trim(), counter: document.getElementById('lbp-count').textContent.trim(), footer: (document.querySelector('#lbp-slide .lbp-foot span:last-child') || {}).textContent }));
     if (end.button !== String(a.n) || end.counter !== `${a.n} / ${a.n}` || end.footer !== `${a.n} / ${a.n}`) fail(`the last slide should read "${a.n} / ${a.n}", like its contents button ${a.n}: ${JSON.stringify(end)}`);
     const w = await walk(page, 'trainer 1366px'); w.out.forEach(fail);
-    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#lbp-pdf-btn')]);
+    // no download button on a blueprint: it is read on screen. The PDF itself still has to be right,
+    // so it is made the way the platform makes it, through LSHBlueprint.pdf().
+    if (await page.$('#lbp-pdf-btn')) fail('the Blueprint viewer still has a ⬇ Download PDF button');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => LSHBlueprint.pdf())]);
     const pdf = inspect(fs.readFileSync(await dl.path()));
     if (!/_Blueprint_Trainer\.pdf$/.test(dl.suggestedFilename()) || !pdf.pdf || pdf.pages !== w.total) fail(`the Trainer blueprint PDF: ${dl.suggestedFilename()}, ${pdf.pages} pages for a cover and ${w.n} slides`);
     // its page footers: "Cover", then "1 / n" to "n / n", in order (never "n+1 / n+1")
