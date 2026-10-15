@@ -285,7 +285,7 @@ function renderAdminDbMaint(){
         </tbody></table>${s.old.length > 200 ? `<p class="ops-muted">…and ${s.old.length - 200} more.</p>` : ""}`
         : `<p class="ops-muted">Nothing to clear — everything stored is still needed.</p>`}
       </div>
-      <p class="ops-muted">Scanned ${when(s.at)}. The Main Portal runs the same sweep across every program.</p>`}`;
+      <p class="ops-muted">Scanned ${when(s.at)}. This sweep covers this program only.</p>`}`;
 }
 
 /* ---------- the three tabs, and what the page calls ---------- */
