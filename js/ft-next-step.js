@@ -57,6 +57,9 @@ const sessionOpen = id => { try{ return root.FTSessions && typeof FTSessions.ope
 // dashboard has actually drawn it, so it is not cleared from the view the lesson was finished on.
 let seen = null, shown = false, shownStudied = false;
 
+// 📋 the day's deck (js/ft-day-decks.js): its instructions, the links to watch, and its placeholders
+const deckBtn = n => root.FTDayDecks && FTDayDecks.dayOpen(n)
+  ? `<button class="btn btn-ghost btn-sm ftn-deck" type="button" onclick="FTDayDecks.open(${Number(n)})">📋 Day ${Number(n)} deck</button>` : "";
 // Where the trainee stands in the curriculum, as a day of the guide.
 function place(){
   const days = (root.FTDays && FTDays.DAYS) || [];
@@ -167,6 +170,7 @@ function card(){
     <div class="ftn-head">
       <span class="ftn-where">${head}</span>
       <h3>Day ${d.day} · ${esc(d.role)}</h3>
+      ${deckBtn(d.day)}
     </div>
     <div class="ftn-now"><span>Your next step</span>${next
       ? (next.go ? `<button class="btn btn-navy btn-sm" type="button" onclick="${next.go}">${esc(next.label)} →</button>`
@@ -233,7 +237,7 @@ function compact(justLesson){
     : next.go ? `<button class="btn btn-navy btn-sm" type="button" onclick="${next.go}">${esc(next.label)} →</button>`
     : `<b class="ftn-live">${esc(next.label)}${next.kind === "lesson" ? " — it opens as soon as that lesson is open for your batch." : " — this one isn’t open to you yet."}</b>`;
   return `<section class="card ftn ftn-just ftn-compact">
-    <div class="ftn-head"><span class="ftn-where">${head}</span><h3>Day ${d.day} · ${esc(d.role)}</h3></div>
+    <div class="ftn-head"><span class="ftn-where">${head}</span><h3>Day ${d.day} · ${esc(d.role)}</h3>${deckBtn(d.day)}</div>
     <div class="ftn-now"><span>Your next step</span>${body}</div>
     <p class="ftn-after">The rest of Day ${d.day} is on <a class="ftn-link" onclick="goto('modules')">📚 Dashboard</a>.</p>
   </section>`;
@@ -246,6 +250,7 @@ root.FTNextStep = {place, nextStep, card, compact};
 .ftn.ftn-just{border-left-color:var(--navy);background:#F6F9FF;}
 .ftn.ftn-done{border-left-color:var(--navy);}
 .ftn-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.ftn-head .ftn-deck{margin-left:auto;align-self:center;padding:3px 12px;font-size:12.5px;}
 .ftn-where{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--orange-deep);}
 .ftn.ftn-just .ftn-where{color:var(--navy);}
 .ftn h3{margin:0;color:var(--navy);font-size:18px;}

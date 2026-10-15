@@ -316,6 +316,20 @@ Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`,
 
 **The monitoring sheet covers all 18 days.** `MONITOR_TOPICS` (`js/ft-tracker-rules.js`, imported by `worker.js` too, so the page and the Worker grade against the same list) now carries **18** classroom discussions: the Lien Negotiator days close the programme and are monitored like the rest. A trainer who has already saved their own list in Admin → 📒 Monitoring Sheets → *Discussions and key points* (`settings:monitor`) keeps it — the 18 are the default, not an overwrite.
 
+## 📋 Day decks (`js/ft-day-decks.js`)
+
+Every training day has its own deck: **Days 1–18**, one slide per part of the day, with the day's instructions and the videos, documents and Canva decks the trainee opens (embedded viewer links, so they open on the platform). A trainee opens it from 📚 Dashboard: **📋 Day N deck** in the next-step band. The deck page (`#/daydeck`) fits one screen: the day picker, the slide (a long slide scrolls inside itself), and Previous / Next (also ← / →), with a button to that day's lesson.
+
+- **Who opens which day:** a trainee opens the deck of the day they are on (the first day with an unfinished lesson) and every day before it, and a later day once the trainer has opened its lessons for the batch. An admin opens any day.
+- **No Process Questions on a slide:** they are answered in ✍️ Knowledge Check only. Each list (and its naming convention) is replaced by a pointer there.
+- **Placeholders:**
+  - the **trainer-slot** boxes stay: a trainer in trainer view sees the facilitator's notes there, and a trainee sees nothing;
+  - **"Link coming"** boxes wherever the guide names material it has no link for yet (`PENDING` in `build/day-decks.cjs`). Checked against the v09.18.2026 guide, there are none on the trainee parts today;
+  - the **last slide of every day, "To be added"**, until there is more for that day (`EXTRA` in the same file).
+- **Left out:** facilitator-only parts, and on Day 1 the Setting of Expectations (written to the trainer), the Training Reminders and the Nitro Pro 12 / Smart Advocate plug-ins installation. The Nitro Pro and Adobe Acrobat Pro how-to homework stays.
+
+The slides are `js/ft-day-decks-data.js`, generated from the day files (`build/days/`): after changing a day file, run `node build/day-decks.cjs`. It refuses to write a deck with an answer key, a facilitator section, log-in details or a Process Questions list in it, and the **Day decks** check fails when the data file is out of date. The data file loads the first time a deck is opened, not with the dashboard.
+
 ## 🔗 Resource links open on the platform, not in a new tab
 
 Everything the guide hands the trainees — the activity instructions, the videos and the resource sheets — opens in the **pop-out viewer** (the draggable, resizable pane with ⛶ Full screen and *Open in a new tab ↗*), so a trainee never loses the page they were on. A link becomes a viewer link by carrying `class="viewer-link"` with `data-kind="doc|video"` and `data-title`; `lvEmbedUrl` (`js/ft-updates.js`) turns the address into its embed form:
@@ -498,7 +512,7 @@ Where the token lives:
 | `build/ft_engine_patches.py` | This program's edits to the EA/PA engine (`js/eapa-updates.js`): the Canva deck in the slides window. |
 | `build/lessons/lessonNN.js` | Each lesson: its Canva deck (one slide per section). This is what trainees see. |
 | `js/ft-slides.js`, `build/slides/` | The design for native slides, and the tools that rebuild a deck as native slides with its scripts. In full screen and the slides window, a native slide (and an orientation slide) fills the screen: no width cap, no presenter column, and the text scales with the screen. |
-| `build/days/dayNN.js` | The curriculum's days as HTML, kept for reference; not built into the trainee pages. |
+| `build/days/dayNN.js` | The curriculum's days as HTML. Not built into the lessons; `build/day-decks.cjs` turns them into the 📋 Day decks (`js/ft-day-decks-data.js`). |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
 | `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |
 | `js/ft-day-activities.js` | **The 18 days and their activities**: which activity belongs to which classroom day, and where it is done (a Practice Session, a trainer-led demo, a platform tool, Drive, the training GC or the room). Read off `trainer/curriculum.json`. |
@@ -563,7 +577,7 @@ Two things to know:
    - Canva: a `.canva-frame` embed with the design's `/view?embed` link.
 2. Put facilitator-only content in `trainer/notes.json` under `"N:<slot>"`, and mark its place in the section with `<div class="trainer-slot" data-slot="N:<slot>"></div>`.
 3. Add the day's activities to `js/ft-day-activities.js` — one `{t, kind, at, id}` per activity the curriculum calls for, in the order it runs them, with `at`/`id` pointing at the Practice Session, trainer-led activity or platform tool where it is done (see *The 18 days and their activities*). The daily tests and the upskill hour are added for you.
-4. Run the build, then open the day for a batch in Admin → 📅 Open Days.
+4. Run `node build/day-decks.cjs` (the day's 📋 Day deck), then the build, then open the day for a batch in Admin → 📅 Open Days.
 
 ## Deploy
 
@@ -617,6 +631,7 @@ The document-heavy folders (`ft/`, `trainer/`) are kept in **Cloudflare R2**, th
 - **Syntax, files and build:** every `.js` file and inline script parses, every local file the pages load is in the repository, and every JSON file parses (`.github/scripts/check-site.mjs`, the EA/PA portal's); the Worker builds (`wrangler deploy --dry-run`).
 - **The Drive trackers** (`.github/scripts/drive.cjs`, no browser): the Worker reads a tracker sheet and a Monitoring Sheet (Google's export answered by the test), checks them, keeps the trainer's input on a new check, makes a trainee wait 3 minutes between checks and explains a file that isn't shared.
 - **Practice Sessions** (`.github/scripts/practice-sessions.cjs`): the starting firms, a firm and different cases for two trainees, My Firm, the six sessions (a ChartSwap request filled from the case passes, a wrong color misses), the trainer's review and inputs, the Knowledge Check's trainer score and the Scorecard. Also in the browser job: `graded-calls.cjs` and `blueprint.cjs` (no Blueprint or Simulators card on the landing page; the top bar's Blueprint button stays).
+- **Day decks** (`.github/scripts/day-decks.cjs`): `js/ft-day-decks-data.js` is what `build/day-decks.cjs` writes today; 18 decks with no facilitator content, log-in details or Process Questions on a slide, each ending on its "To be added" slide; 📋 Day deck in the band opens Day 1 for a new trainee, later days stay locked until reached, an admin opens all 18, ← / → turn the slides, and the page doesn't scroll.
 - **Server requests** (`.github/scripts/requests.cjs`): `get-many` gives a trainee only their own and public records and an Admin every one, reads this program's `ft:` records only, and refuses more than 100 keys. In a browser, with the checks sped up: a trainee's page reads the tasks for every open lesson in one request, their record about once per check, and the open lessons in one request; checks for a new version rarely; and asks nothing while the tab is in the background (catching up when it's back) or on a quick switch to another tab and back. A server that doesn't answer doesn't sign the trainee out or lock their lessons; a revoke does. The Trainee Audit reads every trainee in two requests, and Task Trackers, Monitoring Sheets and Process Questions read the trainees' sheets with get-many.
 
 To run them locally (Node 22; the browser test needs Playwright: `npm install playwright` and `npx playwright install chromium`):
