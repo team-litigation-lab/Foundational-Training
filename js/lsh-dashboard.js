@@ -7,6 +7,9 @@
      On a laptop or desktop they grow into the height that's left, so the dashboard fills the screen
      with no empty space under it.
    - Progress stats: one small band right under the day cards (not a side column, not above the days).
+   - One screen: on a laptop or desktop the whole landing page sits inside one viewport height and the page
+     itself does not scroll — the same for a trainee, a trainer and a trainer in 👁 Trainee view, since the
+     rule keys off the page (main.main-dash) and never off the role. See the block near the end of the CSS.
    - Top bar: the standard LSH logo, at the Training Portal's top-bar size, so the logo reads as clearly
      here as it does on the Portal.
    Loaded last, after the course's own update files.

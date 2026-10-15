@@ -4,7 +4,14 @@
    propertydamageclaimstraining); change it in all of them. A program is organised in sections, and the top bar
    shows exactly those sections, named and ordered as the platform spec sets them out:
 
-     📚 Dashboard              #/modules: the program's landing page — every way into the platform opens it.
+     📚 Dashboard              #/modules: the program's landing page — every way into the platform opens it, in
+                               the trainer view and the trainee view alike. Any arrival with no address of its
+                               own lands here: a Portal ticket, the admin password, a saved session coming back,
+                               the brand mark, a Back button, an old #/dashboard link. No automatic resume jumps
+                               a viewer into the middle of a lesson; the page's own ▶ Resume where you left off
+                               does that when they ask. A real address (#/day/3, #/tool/<id>, a duplicated tab)
+                               still opens that page: it is a link, not a landing. The page fits one screen, with
+                               no page scroll (js/lsh-dashboard.js).
                                The modules (its lessons), and the program's training pages (Task Tracker,
                                Monitoring Sheet, My Notes, My Performance), which share a bar of tabs under
                                the top bar. ✍️ Knowledge Check is not one of them: it is its own feature
