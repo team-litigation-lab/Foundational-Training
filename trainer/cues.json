@@ -1,0 +1,523 @@
+{
+ "1": {
+  "lesson": "Virtual Assistant Essentials",
+  "sections": {
+   "v001": {
+    "time": "4 min",
+    "objective": "Open the batch's first lesson: name what Legal Support Help does, and that from today everything they do is a law firm's work product.",
+    "talk": [
+     "Welcome the batch by name and say which lesson this is — Lesson 1, VA Essentials.",
+     "Two things carry through all 18 days: accuracy and confidentiality. Everything after this builds on them.",
+     "Housekeeping: cameras on for discussions, type 'done' in the GC at the end of every task, and all submissions go to their own Assessments/Activities folder."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day, everyone! Welcome to Day 1 of your Foundational Training. 😊\n\nKindly proceed right away to your first set of tasks for today's session. Thank you.\n\nTopics: Common Terms Used & Auto Liability Insurance\n\nReminders for the whole training:\n• Type \"done\" here in the GC after every task.\n• Save every output in your own Assessments/Activities folder.\n• Follow the file naming convention given for each task — the name is part of the grade."
+     }
+    ],
+    "keys": [
+     "Tools they must have working today: Smart Advocate (SA) access, Nitro Pro (or another PDF editor that merges and edits text), Microsoft Word, Notepad.",
+     "SECURITY SOP: SA is on the 2nd password during training shifts and goes back to the 1st password at end of shift. VAs never change this password themselves."
+    ],
+    "pitfalls": [
+     "Trainees who 'watch' with no notes — tell them now that the monitoring sheet items are graded.",
+     "Someone missing a tool. Settle it today, not on a demo day."
+    ]
+   },
+   "v002": {
+    "time": "4 min",
+    "objective": "Set the bar: by the end they support a U.S. firm professionally — not just finish tasks.",
+    "talk": [
+     "Read the objective, then put it in their words: structure, operations and expectations of U.S. law firms.",
+     "Point out what is coming: legal practice, firm types, areas of law, clientele, U.S. time zones and states, cultural context, the legal system, key terminology.",
+     "Say plainly that every item on that list shows up in a graded activity later."
+    ],
+    "pitfalls": [
+     "Treating the objective slide as a formality. Ask one person to say it back before moving on."
+    ]
+   },
+   "v003": {
+    "time": "4 min",
+    "objective": "Give them the map of the lesson so they can see where each part lands.",
+    "talk": [
+     "Walk the agenda top to bottom, one line each — do not teach it here.",
+     "Flag the two items that become homework tonight: Common Terms and Auto Liability Insurance."
+    ],
+    "pitfalls": [
+     "Teaching the agenda. It is a map; the parts come later."
+    ]
+   },
+   "v004": {
+    "time": "6 min",
+    "objective": "Make cultural alignment concrete: U.S. legal culture, deadlines, confidentiality and tone are the job, not background.",
+    "talk": [
+     "Professionalism, proactivity and cultural awareness are what get a VA kept on a firm.",
+     "Anticipating a need beats waiting to be told — that is the difference between hours renewed and a project ended.",
+     "Confidentiality is covered properly in Lesson 2, but it starts today."
+    ],
+    "pitfalls": [
+     "Hearing 'cultural awareness' as accent training. It is deadlines, directness, and knowing what may not be said."
+    ]
+   },
+   "v020": {
+    "time": "4 min",
+    "objective": "Place the Legal VA in the firm: a skilled remote professional, from admin through legal research.",
+    "talk": [
+     "Why firms hire VAs: streamline operations, raise efficiency, keep attorney hours on legal work.",
+     "A Legal VA is not a generic VA — the work is file work on live cases."
+    ],
+    "pitfalls": [
+     "Thinking 'virtual' means informal. The output is a law firm's work product either way."
+    ]
+   },
+   "v021": {
+    "time": "4 min",
+    "objective": "Show the trade the firm is making: routine work moves to the VA so lawyers keep case preparation and client communication.",
+    "talk": [
+     "Scheduling, email, documents — those are the routine tasks that come across.",
+     "Everything they take off the attorney's desk has to come back right the first time; a correction costs the firm more than the task saved."
+    ],
+    "pitfalls": [
+     "Assuming routine means low stakes. A missed calendar entry is a missed deadline."
+    ]
+   },
+   "v022": {
+    "time": "4 min",
+    "objective": "Benefits 1 and 2 — efficiency and cost — from the firm's side of the table.",
+    "talk": [
+     "Efficiency: a skilled VA finishes faster and more accurately than an untrained in-house hire.",
+     "Cost: no benefits, no office space, no equipment for the firm.",
+     "Say the consequence: they are being paid for throughput and accuracy, and both are measured."
+    ]
+   },
+   "v023": {
+    "time": "4 min",
+    "objective": "Benefits 3 and 4 — specialized skills and flexibility.",
+    "talk": [
+     "Specialized skills: legal research, document preparation, transcription — this is why the 18 days exist.",
+     "Flexibility: VAs often cover outside traditional business hours, and U.S. time zones are the reason."
+    ],
+    "pitfalls": [
+     "Hearing 'flexibility' as 'no fixed schedule'. Shifts are set; coverage is the point."
+    ]
+   },
+   "v024": {
+    "time": "3 min",
+    "objective": "Benefit 5 — better client service, because attorneys get their time back.",
+    "talk": [
+     "The client feels the VA's work even when the client never speaks to the VA.",
+     "Whether a VA may speak to clients at all is firm policy — that comes back in the Lesson 2 scenarios."
+    ]
+   },
+   "v025": {
+    "time": "4 min",
+    "objective": "Open Tasks and Roles: firms run from one attorney to multi-state organizations, and handle nearly every kind of matter.",
+    "talk": [
+     "Everything in this part answers one question for them: what will I actually be asked to do?",
+     "Tell them the five scenarios are coming and will be graded on reasoning, not on guessing the label."
+    ]
+   },
+   "v026": {
+    "time": "4 min",
+    "objective": "Separate Legal Assistant from Paralegal cleanly.",
+    "talk": [
+     "Both support the practice; the duties differ.",
+     "Our VAs work the Legal Assistant side of that line unless a firm says otherwise."
+    ],
+    "keys": [
+     "Legal Assistant — administrative support: calendars, documents, file upkeep, financial and operational tasks.",
+     "Paralegal — substantive legal work delegated by an attorney: research, drafting pleadings, discovery; works under attorney supervision.",
+     "Neither may give legal advice. That line is absolute."
+    ],
+    "pitfalls": [
+     "Using the titles interchangeably on a call with a client or a provider."
+    ]
+   },
+   "v027": {
+    "time": "4 min",
+    "objective": "Make the Legal Assistant's day concrete, and note how close it sits to a legal secretary's.",
+    "talk": [
+     "Appointments, document preparation, financial and operational tasks.",
+     "Ask the room which of those they have done in any job — most have done all of them, just not on a case file."
+    ]
+   },
+   "v028": {
+    "time": "3 min",
+    "objective": "State the hinge of this part: the type of firm changes the job and the environment.",
+    "talk": [
+     "Same title, different firm, different day. Keep this in mind for the scenarios."
+    ]
+   },
+   "v029": {
+    "time": "3 min",
+    "objective": "Give the range — solo attorney up to multi-state, hundreds of staff.",
+    "talk": [
+     "Size drives how specialized or how broad their work will be."
+    ]
+   },
+   "v030": {
+    "time": "3 min",
+    "objective": "Tie task mix to firm type before naming the four categories.",
+    "talk": [
+     "The kind of work follows the kind of firm. Nobody chooses their task mix; the firm's structure does."
+    ]
+   },
+   "v031": {
+    "time": "10 min",
+    "objective": "Land the four task categories, then run the first two Practical Application scenarios against them.",
+    "talk": [
+     "Transactional, Client-Centric, All-Around, Departmentalized — define each in one line.",
+     "Run Scenario 1 and Scenario 2 here. Make them justify the answer before you confirm it."
+    ],
+    "gc": [
+     {
+      "label": "Scenarios 1 and 2",
+      "text": "PRACTICAL APPLICATION — Tasks and Roles\nWhat type of Legal VA task category does each belong to? (Transactional / Client-Centric / All-Around / Departmentalized)\n\nScenario 1: A VA is asked to send a settlement breakdown today, and tomorrow to organize medical records.\n\nScenario 2: A VA works only in the medical records department, retrieving records daily.\n\nType your answer here with one sentence of reasoning. Thank you."
+     }
+    ],
+    "keys": [
+     "Scenario 1 — Transactional Tasks. Different discrete task each day, no single owned function.",
+     "Scenario 2 — Departmentalized Tasks. One department, one repeated function, daily.",
+     "Transactional = task-by-task. Client-Centric = owns the client relationship. All-Around = everything, usually solo/small. Departmentalized = one function inside a larger firm."
+    ],
+    "pitfalls": [
+     "Calling Scenario 1 'All-Around' — All-Around is about breadth of role in a small firm, not a different task each day.",
+     "Answering with the label alone. The reasoning is what is graded."
+    ],
+    "grade": {
+     "deliverable": "Practical Application Scenarios 1–2 (Tasks and Roles)",
+     "ai": {
+      "match": [
+       "Scenario 1: \"Transactional\"",
+       "Scenario 2: \"Departmentalized\"",
+       "reasoning mentions varied/different tasks per day (S1)",
+       "reasoning mentions one department / single repeated function (S2)"
+      ],
+      "nlp": [
+       "Accept semantic equivalents: 'task-based', 'per-task', 'one-off tasks' for Transactional; 'specialized to one unit', 'records department only' for Departmentalized.",
+       "Score label and reasoning separately — a right label with absent or wrong reasoning caps at 50% for that scenario.",
+       "Reject answers that name two categories without choosing one."
+      ],
+      "pass": 80
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Correct category",
+        "weight": 50
+       },
+       {
+        "label": "Quality of reasoning",
+        "weight": 50
+       }
+      ],
+      "rubric": [
+       "Answered in own words, not read from the slide",
+       "Spoke up without being called on",
+       "Accepted correction without argument"
+      ],
+      "feedback": "What their reasoning showed about how they read a task list…"
+     }
+    }
+   },
+   "v032": {
+    "time": "5 min",
+    "objective": "Smaller firms need multi-skilled VAs — that is how hours get built.",
+    "talk": [
+     "In a small firm there is little to delegate, so range is what earns hours.",
+     "This is the setup for Scenario 3; do not give that answer away yet."
+    ]
+   },
+   "v033": {
+    "time": "8 min",
+    "objective": "Name the consequence honestly — a VA judged unskilled loses hours or the project — then run Scenario 3.",
+    "talk": [
+     "Say it straight: the firm's alternative is to work alone. Hours are not guaranteed.",
+     "Run Scenario 3 on the solo attorney practice."
+    ],
+    "gc": [
+     {
+      "label": "Scenario 3",
+      "text": "PRACTICAL APPLICATION — Scenario 3\nYou are assigned to a solo attorney practice. The attorney asks you to answer calls, organize files, schedule appointments, and send billing follow-ups.\n\nQuestion: What does this tell you about the type of law firm and your expected role?\n\nType your answer here. Thank you."
+     }
+    ],
+    "keys": [
+     "Scenario 3 — a Small Law Firm or Solo Practice, and an All-Around role: one VA covering reception, files, calendar and billing follow-up.",
+     "Strong answers also say why: there is no department to hand work to."
+    ],
+    "pitfalls": [
+     "Naming only the role or only the firm type. The question asks for both."
+    ],
+    "grade": {
+     "deliverable": "Practical Application Scenario 3 (Solo Practice)",
+     "ai": {
+      "match": [
+       "\"Solo\" or \"Solo Practice\" or \"Small Law Firm\"",
+       "\"All-Around\" role",
+       "at least two of: calls, files, scheduling, billing"
+      ],
+      "nlp": [
+       "Accept 'one-person firm', 'single attorney' for Solo; 'generalist', 'wears many hats' for All-Around.",
+       "Require both the firm type and the role for full marks."
+      ],
+      "pass": 80
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Firm type identified",
+        "weight": 40
+       },
+       {
+        "label": "Role and reasoning",
+        "weight": 60
+       }
+      ],
+      "rubric": [
+       "Connected it to their own expected workload",
+       "Professional phrasing"
+      ],
+      "feedback": "Notes on how they read the firm from the task list…"
+     }
+    }
+   },
+   "v034": {
+    "time": "5 min",
+    "objective": "Large firms move people between roles; comfort with that transfer is the requirement.",
+    "talk": [
+     "A transfer out of intake into medical records is normal, not a demotion.",
+     "Setup for Scenario 4 — restructuring."
+    ]
+   },
+   "v035": {
+    "time": "10 min",
+    "objective": "Close Tasks and Roles with the flexibility point, then run Scenarios 4 and 5.",
+    "talk": [
+     "When a firm struggles, it keeps the VAs who have handled more than one role.",
+     "Run Scenario 4 (restructuring) and Scenario 5 (client communication restriction) back to back — they both come down to adapting to the firm's SOP."
+    ],
+    "gc": [
+     {
+      "label": "Scenarios 4 and 5",
+      "text": "PRACTICAL APPLICATION — Scenarios 4 and 5\n\nScenario 4: You were originally assigned to the intake department, but the law firm later transferred you to medical records because another department needed support.\nQuestion: Why does this happen, and what quality is the firm looking for?\n\nScenario 5: At one law firm, VAs are not allowed to communicate directly with clients, but at another firm they are allowed to follow up with clients regarding documents.\nQuestion: What lesson should a Legal VA learn from this?\n\nType your answers here. Thank you."
+     }
+    ],
+    "keys": [
+     "Scenario 4 — larger firms restructure departments by workload and staffing. Qualities sought: high flexibility, strong adaptability, proactive willingness to learn new tasks.",
+     "Scenario 5 — every firm has different policies and workflows. Adapt to the client's SOP, follow their rules, never assume procedures are the same across firms.",
+     "SOP ADHERENCE is the takeaway of this whole part: the firm's rule wins over what we were taught elsewhere."
+    ],
+    "pitfalls": [
+     "Reading Scenario 4 as unfair treatment.",
+     "Answering Scenario 5 with 'both are fine' — the lesson is to follow the SOP of the firm you are on, and to verify before acting."
+    ],
+    "grade": {
+     "deliverable": "Practical Application Scenarios 4–5 (Restructuring & SOP Adherence)",
+     "ai": {
+      "match": [
+       "S4: \"restructure\" / workload / staffing needs",
+       "S4: \"flexibility\" AND \"adaptability\"",
+       "S5: \"SOP\"",
+       "S5: 'never assume' / policies differ per firm"
+      ],
+      "nlp": [
+       "Accept 'reorganize', 'reassign', 'department needs' for restructuring; 'willing to learn' counts toward adaptability.",
+       "S5 full marks require both: policies differ by firm AND the VA follows the client's SOP.",
+       "Flag any answer that says a VA may decide for themselves whether to contact a client — that is a hard fail on this item."
+      ],
+      "pass": 80
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Scenario 4 — reason and qualities",
+        "weight": 50
+       },
+       {
+        "label": "Scenario 5 — SOP lesson",
+        "weight": 50
+       }
+      ],
+      "rubric": [
+       "Professional deference when corrected",
+       "No complaining tone about reassignment",
+       "Asked what to do when an SOP is unclear"
+      ],
+      "feedback": "Notes on their attitude to reassignment and to firm rules…"
+     }
+    }
+   },
+   "v036": {
+    "time": "5 min",
+    "objective": "Solo firms: one lawyer, often outside paralegals, personal attention, one or two focus areas.",
+    "talk": [
+     "Solo practitioners may be new or very experienced — do not assume either.",
+     "For a VA: broadest role, closest contact with the attorney, least backup."
+    ],
+    "keys": [
+     "Solo = 1 attorney. May hire outside paralegals and experts. General or specialized. VA role: All-Around."
+    ]
+   },
+   "v037": {
+    "time": "5 min",
+    "objective": "Small / boutique firms: 2–10 attorneys, close collaboration, limited resources.",
+    "talk": [
+     "Boutique means highly specialized and personalized, not small-time.",
+     "Limited resources mean more administrative load on the lawyers — which is exactly where the VA is used."
+    ],
+    "keys": [
+     "Small/boutique = 2–10 attorneys. Autonomy, broad legal topics, resource constraints. VA role: All-Around to Transactional."
+    ]
+   },
+   "v038": {
+    "time": "5 min",
+    "objective": "Medium firms: 50 to several hundred attorneys, partner-level service with real staffing behind it.",
+    "talk": [
+     "Less prestige than large, more autonomy and a more strategic case load.",
+     "For a VA: departments start to exist, so work narrows."
+    ],
+    "keys": [
+     "Medium = 50–several hundred attorneys. VA role: Departmentalized or Client-Centric."
+    ]
+   },
+   "v039": {
+    "time": "5 min",
+    "objective": "Large firms: hundreds to thousands of attorneys, offices nationwide and abroad, fast and complex work.",
+    "talk": [
+     "The largest U.S. firms run upward of 3,000 attorneys.",
+     "For a VA: narrow function, high volume, strict process — and transfers between departments, as in Scenario 4."
+    ],
+    "keys": [
+     "Large = several hundred to thousands of attorneys, multi-office, multi-state and international. VA role: strictly Departmentalized."
+    ],
+    "pitfalls": [
+     "Assuming large firms mean more interesting work. It usually means one slice of the process, done exactly to SOP."
+    ]
+   },
+   "v134": {
+    "time": "6 min",
+    "objective": "Tips 1 and 2 — own the case management system, and account for time like a lawyer.",
+    "talk": [
+     "Master the CMS: shortcuts, tagging, pulling reports and tasks. Self-sufficiency is the value.",
+     "Think like a lawyer: time is the firm's product. Log entries clearly and specifically."
+    ],
+    "keys": [
+     "Our CMS in training is Smart Advocate (SA). From Lesson/Day 9 onward every demo is scored inside SA.",
+     "A good time entry names the system, the party and the task: 'Updated Clio with billing from OrthoSouth — 15 mins'."
+    ],
+    "pitfalls": [
+     "Vague time entries ('worked on case'). They are unbillable and they get noticed."
+    ]
+   },
+   "v135": {
+    "time": "6 min",
+    "objective": "Tips 3 and 4 — be proactive, and keep written communication clean.",
+    "talk": [
+     "Proactive means anticipating the next step: the IME is scheduled, so offer the transport request.",
+     "Clear subject lines and bullet points. 'RECORDS REQUEST: OrthoSouth — Smith, John' tells the reader everything before they open it."
+    ],
+    "keys": [
+     "Subject-line pattern used throughout this training: [Client Name] - [Entity] - [Type of Request]."
+    ],
+    "pitfalls": [
+     "Proactive is not acting outside authority. Offer, then wait for the go-ahead."
+    ]
+   },
+   "v136": {
+    "time": "6 min",
+    "objective": "Tips 5 and 6 — know the PI process, and keep learning past the task list.",
+    "talk": [
+     "The phases: intake → treatment → demand → negotiation → settlement. This is the spine of the whole program.",
+     "Tell them this exact lifecycle is the first Process Question on Reception day, and they will be asked what a VA does at each stage."
+    ],
+    "keys": [
+     "PI case lifecycle: Intake → Treatment → Demand → Negotiation → Settlement.",
+     "Roles against the phases: Reception and Intake at the front, Claims and Provider Communication through treatment, Lien Negotiator after settlement."
+    ],
+    "pitfalls": [
+     "Memorizing the five words without the VA tasks attached to each."
+    ]
+   },
+   "v137": {
+    "time": "5 min",
+    "objective": "The mindset page — read it as a standard, not a poster.",
+    "talk": [
+     "Precision, purpose, professionalism. Anticipate, act, lead quietly.",
+     "Close on the one that is graded every day: bring clarity, calm and confidence to every case you touch."
+    ],
+    "pitfalls": [
+     "Rushing past it. This is the page to come back to when a trainee's attitude slips in week two."
+    ]
+   },
+   "v138": {
+    "time": "10 min",
+    "objective": "Close the lesson and set tonight's homework: both assessments, plus monitoring items #5–7.",
+    "talk": [
+     "Confirm both videos are watched and both reference files are open.",
+     "Give the homework, the folder and the deadline in one message, then take questions.",
+     "While they wait for their teammates, point them at the supplementary Personal Injury articles."
+    ],
+    "gc": [
+     {
+      "label": "Homework — both assessments",
+      "text": "📌 AS YOUR HOMEWORK, which is intended to evaluate your understanding of the common terms frequently used during training and actual tasks, as well as your basic grasp of key auto insurance concepts relevant to future topics like claim creation and coverage review — kindly accomplish the following:\n\nCommon Terms Used – Assessment\nhttps://docs.google.com/document/d/14sz5f3HTQKmryc7Upvlc6qua008rPnmw/edit\n\nAuto Liability Insurance – Assessment\nhttps://docs.google.com/document/d/11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C/edit\n\nPlease upload your completed assessments in the Assessments/Activities subfolder inside your training folder.\nChecking and feedback (including item clarifications and enrichment) will be done tomorrow. 📌"
+     },
+     {
+      "label": "Monitoring sheet items #5–7",
+      "text": "Reminder: kindly update items #5–7 in your monitoring sheet, then type \"done\" here. Thank you."
+     },
+     {
+      "label": "While waiting — supplementary reading",
+      "text": "While waiting for your teammates to complete their tasks, please read through the articles below on Personal Injury. Thanks.\n\nhttps://drive.google.com/file/d/1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4/view\nhttps://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view"
+     }
+    ],
+    "keys": [
+     "Answer keys are in the trainer's Day 1 folder: the Common Terms Assessment key and the Auto Liability Insurance Assessment key. Check both tomorrow morning, with clarification and enrichment.",
+     "Tonight's homework also includes the Softphone instructional video (ONE sample type only) and the PPT review — Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette — with monitoring items #8–9."
+    ],
+    "pitfalls": [
+     "Submissions landing loose in the training folder instead of Assessments/Activities.",
+     "Watching the whole softphone video instead of one sample type, and running out of time."
+    ],
+    "grade": {
+     "deliverable": "Day 1 Homework — Common Terms & Auto Liability Insurance Assessments",
+     "file": "Common Terms and Auto Liability assessments, uploaded in Assessments/Activities",
+     "ai": {
+      "match": [
+       "Both documents submitted in Assessments/Activities",
+       "Common Terms: exact term-to-definition matches against the answer key",
+       "Auto Liability: policy limit stated as per-person / per-accident (e.g. 25/50/25)",
+       "Auto Liability: coverage types named — BI, PD, UM, UIM, Med Pay/PIP, Collision, Comprehensive"
+      ],
+      "nlp": [
+       "Semantic similarity against the answer key per item, not string equality — accept a correct definition in the trainee's own words.",
+       "Normalize abbreviations both ways: BI/Bodily Injury, PD/Property Damage, UM/Uninsured Motorist, UIM/Underinsured Motorist, DOL/Date of Loss, LOR/Letter of Representation.",
+       "Mark an item wrong, not partial, where a coverage is defined as another coverage (UM described as UIM)."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Common Terms accuracy",
+        "weight": 50
+       },
+       {
+        "label": "Auto Liability accuracy",
+        "weight": 50
+       }
+      ],
+      "rubric": [
+       "Submitted on time",
+       "Correct folder and file naming",
+       "Answers in own words rather than copied",
+       "Asked clarifying questions during checking"
+      ],
+      "feedback": "Which terms or coverages to re-teach for this trainee…"
+     }
+    }
+   }
+  }
+ }
+}
