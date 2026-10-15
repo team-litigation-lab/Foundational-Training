@@ -205,14 +205,15 @@ const failures = []; const fail = (m) => failures.push(m);
     const tv = await page.evaluate(() => ({ isAdmin: state.isAdmin, preview: state.adminPreview,
         bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
     if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
-    // the trainee's bar, as the platform spec names it (no Scorecards, no Admin, no search, no full screen)
-    ['Dashboard', 'Client Profile', 'Practice Lab', 'Knowledge Check', 'Focus', 'Main Portal'].forEach(n => {
+    // the trainee's bar, as the platform spec names it (no Client Profile, no Scorecards, no Admin, no search, no full screen)
+    ['Dashboard', 'Practice Lab', 'Knowledge Check', 'Focus', 'Main Portal'].forEach(n => {
         if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
     });
-    ['Scorecards', 'Process Questions', 'My Dashboard'].forEach(n => {
+    ['Client Profile', 'Scorecards', 'Process Questions', 'My Dashboard'].forEach(n => {
         if (tv.bar.indexOf(n) >= 0) fail(`Trainee view's top bar should not have ${n}: ${tv.bar}`);
     });
-    for (const [view, what] of [['process', 'the Knowledge Check'], ['simulators', 'the Practice Lab'], ['firm', 'the Client Profile'], ['lor', 'the LOR Drafting Activity']]) {
+    // My Firm (js/ft-firms.js) is still reachable, just not from its own top bar button any more
+    for (const [view, what] of [['process', 'the Knowledge Check'], ['simulators', 'the Practice Lab'], ['firm', 'My Firm'], ['lor', 'the LOR Drafting Activity']]) {
         const got = await page.evaluate(async (v) => { goto(v); await new Promise(r => setTimeout(r, 1200)); return state.view; }, view);
         if (got !== view) fail(`Trainee view can't open ${what}: goto('${view}') landed on '${got}'`);
     }
