@@ -1,6 +1,6 @@
-/* 🛠 The Foundational Training course's Trainer blueprint (lsh-blueprint.js draws it; lsh-blueprint-course.js
-   adds it to 🧭 Orientation). The Trainee blueprint is the Orientation deck (js/ft-orientation.js), published
-   at /blueprint.pdf; nothing in the program links to either — the Main Portal's 🧭 Blueprint page does.
+/* 🛠 The Foundational Training course's blueprints — Trainee and Trainer (lsh-blueprint.js draws it; lsh-blueprint-course.js
+   wires it in). Both decks live here: the Trainee blueprint is the 🧭 Orientation deck (js/ft-orientation.js
+   opens it), drawn on the same cover and the same slide layout, and published at /blueprint.pdf; nothing in the program links to either — the Main Portal's 🧭 Blueprint page does.
    A slide is { icon, title, points: [...], where, tip, shot, shotAlt }: shot is a screenshot of that
    screen (/img/blueprint/*.jpg), shown beside the points on the slide and in the PDF; shotAlt describes it.
    Change the wording here; the page and the PDF are made from it each time, stamped with the deployed build.
@@ -9,6 +9,99 @@ window.LSH_BLUEPRINT = {
   product: 'Foundational Training',
   site: 'LSH Standard Foundational Training',
   file: 'LSH_FT',
+  trainee: {
+    sub: 'Your guide to the platform: the 18-day Standard Foundational Training, lesson by lesson',
+    slides: [
+      { icon: '👋', title: 'Welcome to the program', points: [
+          'The 18-day program that makes you a Generalist Legal VA: familiar with every role on a personal injury legal team.',
+          'Learn: 18 lessons, each with its training deck and its video presentation.',
+          'Practice: real-time Practice Sessions for your own law firm, on your own case files in the CMS.',
+          'Prove: your daily trackers and your trainer\'s feedback \u2014 and a certificate at the end.',
+          'You\'ll need Chrome or Edge on a computer, a headset with a microphone, your camera for the classroom discussions, and a stable connection.'],
+        where: 'The program opens from the LSH Training Portal; 📚 Dashboard is where you land.',
+        tip: 'Your progress saves to your account, not to the computer you used \u2014 you can pick up on any machine.' },
+      { icon: '🗺', title: 'Your roadmap', points: [
+          '📌 Training Orientation and Rules comes first. It is always open, and it is not one of the 18 lessons.',
+          'Then Lessons 1 to 18, in order, each with its training deck and its Knowledge Check.',
+          'Your trainer opens each lesson for your batch; a 🔒 lesson opens when it is time.',
+          'Every lesson you have finished stays on 📚 Dashboard \u2014 press Review to go back to it any time.'],
+        where: '📚 Dashboard \u2014 the lessons, in order, with your progress above them.',
+        tip: 'Open 📌 Training Orientation and Rules before Lesson 1: every rule and routine is in it.' },
+      { icon: '🖥', title: 'How every lesson works', points: [
+          '1. Lesson slides: the training deck, full width. ⛶ Full screen any time; your place is saved.',
+          '2. Video Presentation: the lesson\'s AI Assisted Discussion video, 🔒 until your trainer unlocks it.',
+          '3. Finish lesson, on the last slide: it takes you to ✍️ Knowledge Check, at this lesson\'s answer sheet.',
+          '4. Knowledge Check: submit the sheet for grading. 70% passes and your circle turns ✓, and your trainer adds a review.',
+          '5. The next lesson opens when your trainer opens it for your batch.'],
+        where: '📚 Dashboard → Start (or Review) on a lesson.',
+        tip: 'A lesson\'s process questions are its Knowledge Check, not slides \u2014 don\'t go looking for them in the deck.' },
+      { icon: '📷', title: 'Classroom discussions', points: [
+          'Your trainer presents each lesson live, on the same slides you have on the platform. Nothing extra to install.',
+          'Cameras on for the whole discussion. Meeting schedules are sent on the discussion\'s date and time \u2014 keep your notifications on.',
+          'After each discussion, fill in your Monitoring Sheet: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.',
+          'Free Upskill Training runs right after your shift, for an hour or so: communication, accent reduction, grammar, email writing and client interviews. Unpaid and not mandatory, but highly encouraged.'],
+        where: 'Discord, on the date and time of the discussion · 📒 Monitoring Sheet under 📚 Dashboard.',
+        tip: 'Missed a Free Upskill session? Ask your trainers what was covered, review the materials and do the practice on your own time.' },
+      { icon: '📚', title: '📚 Dashboard: where every sign-in lands', points: [
+          'Your progress: 📌 and Lessons 1\u201318, and how many you have finished.',
+          'Resume and your certificate: jump back to where you left off, and download the certificate when it is earned.',
+          'The lessons, in order: Start / Review · ✓ Finished · 🔒 until your trainer opens it, each lesson\'s activities underneath.',
+          'Beside them: 📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes, 🎯 My Focus and 💬 Your feedback.'],
+        where: '📚 Dashboard in the top bar \u2014 on this platform and on every other LSH platform.',
+        tip: 'Opening the training from the LSH Training Portal brings you straight here, already signed in.' },
+      { icon: '🧭', title: 'Getting around', points: [
+          '📁 Client Profile: your firm, its rules and the case files assigned to you. Every Practice Session is checked against them.',
+          '🛠 Practice Lab: your real-time Practice Sessions, the activities with your trainer, and Skill Building.',
+          '✍️ Knowledge Check: every lesson\'s answer sheet in one place. 70% passes, graded in your facilitator\'s style.',
+          '🎯 Focus: your trainer\'s feedback and what to work on next.',
+          '🏠 Main Portal: every program you are in, your evaluations \u2014 and where you log out.'],
+        where: 'The top bar, on every page. On a phone, everything is under ☰ Menu.',
+        tip: '📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🏅 My Performance sit under 📚 Dashboard.' },
+      { icon: '📋', title: 'Your daily habits', points: [
+          'Daily Task Tracker: update it in your VA Output folder before the end of every shift, and submit the day\'s output links.',
+          'Every open task gets a Daily Note for the day; the tracker is checked every evening.',
+          'EOD email before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day\'s tasks.',
+          'Auxes and Hubstaff: !in and !back in #⏳-timestamps, In in #batch-group-channel. Your Hubstaff To-Dos are named exactly as given.'],
+        where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your VA Output folder in Drive.',
+        tip: 'Every rule and routine is written out in 📌 Training Orientation and Rules, first on 📚 Dashboard.' },
+      { icon: '🛠', title: 'Practice Lab: the real tasks', points: [
+          'Your firm: your trainer assigns your law firm and your cases. Learn its rules \u2014 every session is checked against them.',
+          'Practice Sessions: reception, calendaring, intake, the PI process, claims and ChartSwap records requests, done live in the CMS, recorded and submitted.',
+          'With your trainer: demos and live mock calls, with your result recorded.',
+          'Each session opens with its lesson, is checked automatically against your case and your firm\'s rules, evaluated, and reviewed by your trainer.'],
+        where: '🛠 Practice Lab in the top bar. The CMS opens already signed in.',
+        tip: 'Read 📁 Client Profile before your first session: the firm\'s rules are what you are graded against.' },
+      { icon: '💬', title: 'Feedback and your growth', points: [
+          '🏅 Scorecard: every grade in one place \u2014 your Knowledge Checks, graded calls and calendaring, with your trainer\'s scores.',
+          'Trainer feedback: your Practice Lab work comes back with your trainer\'s notes, and a lesson\'s 💬 Trainer feedback shows on its card.',
+          '🎯 Focus: your trainer\'s priorities for you and what to work on next. Tick items off as you go.',
+          'A grade below the mark is a "not yet", with what to change \u2014 never a flat no.'],
+        where: '🏅 My Performance and 🎯 Focus under 📚 Dashboard · 💬 on each lesson card.',
+        tip: 'Read the feedback on the day it arrives: it is far easier to act on while the lesson is fresh.' },
+      { icon: '🏅', title: 'Earning your certificate', points: [
+          'Finish all 18 lessons and your Certificate of Completion unlocks \u2014 download it as a PDF from 📚 Dashboard.',
+          'It shows your name exactly as you registered it, so check your spelling.',
+          '📚 Dashboard counts your finished lessons as you go.',
+          '📌 Training Orientation and Rules is where you start. It is always open, and it is not one of the 18 lessons.'],
+        where: '📚 Dashboard \u2014 the certificate sits beside Resume.',
+        tip: 'Name spelt wrong? Tell your trainer before the end of the program, not after the certificate is issued.' },
+      { icon: '🔒', title: 'Ground rules', points: [
+          'Confidentiality first: every document is protected by attorney-client privilege. Never paste client, case or medical information into any tool.',
+          'AI for grammar and spelling only \u2014 use your own reasoning and discretion.',
+          'The 5-minute rule: reply within 5 minutes, and acknowledge every Discord message from your trainer.',
+          'On time: Hubstaff tracks 8:00 AM \u2013 5:00 PM PST. Breaks are 15 \u2013 30 \u2013 15, or one full hour.',
+          'Naming conventions, strictly: To-Dos, screenshots and files exactly as given.'],
+        where: '📌 Training Orientation and Rules, first on 📚 Dashboard.',
+        tip: 'When a rule and a shortcut disagree, follow the rule and raise it with your trainer \u2014 spotting the clash is the job.' },
+      { icon: '🚀', title: "Let's begin", points: [
+          '1. Sign in: last name, first name(s) and your batch code. Your trainer approves your registration.',
+          '2. Open 📌 Training Orientation and Rules: the rules and your daily routine.',
+          '3. Open Lesson 1 from 📚 Dashboard and press Start.',
+          'Questions before we start?'],
+        where: 'The LSH Training Portal → this program → 📚 Dashboard.',
+        tip: 'Stuck on anything? Message your trainer with your name, your batch and a screenshot \u2014 that is everything they need.' }
+    ]
+  },
   trainer: {
     sub: 'Running the 18-day Foundational Training program: the trainer side of the platform',
     slides: [

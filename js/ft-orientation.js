@@ -1,116 +1,71 @@
 /* ============================================================
-   🧭 Platform Orientation and the Blueprint PDF (admin)
-   Loaded last. The EA/PA engine gives admins 🧭 Orientation (#/orientation):
-   a screen-shareable blueprint of the platform for the first session, with
-   ⛶ Present full screen, 🖨 Print and ⬇ Download PDF. The same slides are the
-   Blueprint PDF at /blueprint.pdf: when the build changes, the first admin
-   to open the portal rebuilds it and publishes it (blueprint:pdf / blueprint:meta,
-   served by worker.js), so the link always has the latest.
-   Both come from orientSlides(); this file gives it this program's slides in
-   place of the EA/PA ones: the lessons, how a lesson works, classroom
-   discussions, 📚 Modules (the landing page), the top bar, the daily habits, the Practice Lab,
-   feedback, the certificate, the ground rules and how to start.
-   Trainee-safe: no facilitator's notes, answers or trainee data. The page is
-   for admins only; 👁 Trainee view doesn't show it.
+   🧭 Platform Orientation — the Trainee blueprint, on the standard deck
+   Loaded last. 🧭 Orientation (#/orientation) is the trainee-facing blueprint of this
+   platform, for a trainer to screen-share on day one. It is no longer a deck of its own:
+   the slides live in js/blueprint-content.js (LSH_BLUEPRINT.trainee) and are drawn by
+   js/lsh-blueprint.js, the same engine, cover and slide layout as the Trainer blueprint —
+   so every LSH blueprint, on every platform, reads as one deck.
+   The same slides are the Blueprint PDF at /blueprint.pdf: when the build or the deployment
+   changes, the first admin to open the portal rebuilds it from LSHBlueprint.doc('trainee')
+   and publishes it (blueprint:pdf / blueprint:meta, served by worker.js).
+   Trainee-safe: no facilitator's notes, answers or trainee data.
    ============================================================ */
 (function(){
-const e = (s)=>esc(String(s));
-const pill = (i,t,d)=>`<div class="or-pill"><div>${i}</div><b>${t}</b><span>${d}</span></div>`;
-const step = (n,icon,t,d)=>`<div class="or-step"><div class="or-step-n">${n}</div><div class="or-step-i">${icon}</div><b>${t}</b><span>${d}</span></div>`;
-const box = (n,t,d,cls)=>`<div class="or-box${cls?" "+cls:""}"><span class="or-num">${n}</span><b>${t}</b><em>${d}</em></div>`;
-// A deck lesson is its "deck" slide (plus any extras, like Word Game 1); a lesson rebuilt as
-// native slides has one slide per deck page. The Process Questions slide (ft-process.js) isn't counted.
-function kindOf(d){
-  const secs = (d.sections||[]).filter(x=>x.id!=="process-questions");
-  if(!secs.length) return "Coming soon";
-  if(!secs.some(x=>x.id==="deck")) return `${secs.length} slides`;
-  const extra = secs.filter(x=>x.id!=="deck").map(x=>e(x.h));
-  return "Training deck" + (extra.length ? " + " + extra.join(", ") : "");
-}
-function tile(d){
-  return `<div class="or-day"><span>Lesson ${e(d.short || d.id)}</span><b>${e(d.title)}</b><em>${kindOf(d)}${d.video ? " · ▶ Video" : ""}</em></div>`;
-}
-function orientTile(){
-  const o = window.FT_ORIENTATION; if(!o) return "";
-  return `<div class="or-day"><span>📌 Start here</span><b>${e(o.title)}</b><em>${o.sections.length} slides · always open</em></div>`;
-}
+  const deck = () => (window.LSH_BLUEPRINT && window.LSH_BLUEPRINT.trainee) || null;
 
-window.orientSlides = function(){
-  const N = DAYS.length, first = DAYS[0] ? DAYS[0].title : "Lesson 1", last = DAYS[N-1] ? DAYS[N-1].title : "";
-  return [
-   {k:"Welcome", h:"Welcome to the LSH Standard Foundational Training", body:`
-     <p class="or-lead">The 18-day program that makes you a <b>Generalist Legal VA</b>: familiar with every role on a personal injury legal team, from ${e(first)} to ${e(last)}.</p>
-     <div class="or-3">${pill("📚","Learn",`${N} lessons, each with its training deck and video presentation`)}${pill("🛠","Practice","Real-time Practice Sessions for your own law firm, on your own case files in the CMS")}${pill("✅","Prove","Your daily trackers and your trainer's feedback — and a certificate at the end")}</div>
-     <div class="or-note"><b>You'll need:</b> Chrome or Edge on a computer, a headset with a microphone, your camera for classroom discussions, and a stable connection. Your progress saves to your account automatically.</div>`},
-   {k:"Roadmap", h:`Your ${N}-lesson roadmap`, body:`<div class="or-days">${orientTile()}${DAYS.map(tile).join("")}</div>
-     <p class="or-foot">Start with 📌 Training Orientation and Rules. Your trainer opens each lesson for your batch; a 🔒 lesson opens when it's time.</p>`},
-   {k:"A lesson", h:"How every lesson works", body:`
-     <div class="or-flow">${step(1,"🖥","Lesson slides","The training deck, full width. ⛶ Full screen any time; your place is saved.")}<i>→</i>${step(2,"▶","Video Presentation","The lesson's AI Assisted Discussion video. 🔒 until your trainer unlocks it.")}<i>→</i>${step(3,"✓","Finish lesson","On the last slide: it takes you to ✍️ Knowledge Check, at this lesson's answer sheet.")}<i>→</i>${step(4,"📝","Knowledge Check","Submit the sheet for grading; 70% passes and your circle turns ✓. Your trainer adds a review.")}<i>→</i>${step(5,"🔓","Next lesson","Opens when your trainer opens it for your batch.")}</div>
-     <div class="or-note">A lesson's <b>process questions are its Knowledge Check</b>, not slides. Missed something? Every open lesson stays on 📚 Dashboard — press <b>Review</b> to go back to it any time.</div>`},
-   {k:"Discussions", h:"Classroom discussions with your trainer", body:`
-     <div class="or-3">${pill("🖥","Follow the shared slides","Your trainer presents each lesson live. They're the same slides you have on the platform — nothing extra to install.")}${pill("📷","Cameras on","Your camera stays on for the whole discussion. Meeting schedules are sent on the discussion's date and time — keep your notifications on.")}${pill("📒","Then your Monitoring Sheet","After each discussion: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.")}</div>
-     <div class="or-note"><b>Free Upskill Training</b> runs right after your shift, for an hour or so: communication, accent reduction, grammar, email writing and client interviews. Unpaid and not mandatory, but highly encouraged. Missed one? Ask your trainers what was covered, review the materials and do the practice on your own time.</div>`},
-   {k:"Dashboard", h:"📚 Dashboard: where every sign-in lands", body:`
-     <div class="or-bp">
-       <div class="or-bp-main">
-         ${box(1,"Your progress",`📌 and Lessons 1–${N} · how many you have finished`,"or-hero")}
-         ${box(2,"Resume &amp; certificate","Jump back to where you left off · download your certificate when earned")}
-         ${box(3,"The lessons, in order","Start / Review · ✓ Finished · 🔒 until your trainer opens it · each lesson's activities underneath","or-cards")}
-       </div>
-       <div class="or-bp-side">
-         ${box(4,"📋 Task Tracker","Today's check of your Drive tracker","dark")}
-         ${box(5,"📒 Monitoring Sheet","Your Drive sheet's entries found","dark")}
-         ${box(6,"🗒 My Notes · 🎯 My Focus","Your notes, and your trainer's priorities for you","dark")}
-         ${box(7,"💬 Your feedback","Tell us about the platform, lessons &amp; trainer","dark")}
-       </div>
-     </div>
-     <p class="or-foot">📚 <b>Dashboard</b> is the button for it in the top bar — on this platform and on every other LSH platform. Opening the training from the LSH Training Portal brings you straight here.</p>`},
-   {k:"Navigation", h:"Getting around", body:`
-     <div class="or-nav">
-       ${[["📚 Dashboard","Your landing page: your lessons, your progress, Resume and your certificate — and your own pages underneath them."],
-          ["📁 Client Profile","Your firm, its rules and the case files assigned to you. Every Practice Session is checked against them."],
-          ["🛠 Practice Lab","Your real-time Practice Sessions, the activities with your trainer, and Skill Building."],
-          ["✍️ Knowledge Check","Every lesson's answer sheet, in one place. Finishing a lesson takes you straight to its sheet; 70% passes it, graded in your facilitator's style."],
-          ["🎯 Focus","Your trainer's feedback and what to work on next."],
-          ["🏠 Main Portal","The LSH Training Portal: every program you are in, your evaluations — and where you log out."],
-          ["📋 Task Tracker · 📒 Monitoring Sheet","Your two sheets in your VA Output folder, under 📚 Dashboard."],
-          ["🗒 My Notes · 🏅 My Performance","Your private notes, and every grade the platform gives you — under 📚 Dashboard."]].map(([t,d])=>`<div><b>${t}</b><span>${d}</span></div>`).join("")}
-     </div>
-     <p class="or-foot">On a phone, everything is under <b>☰ Menu</b>.</p>`},
-   {k:"Daily habits", h:"Your daily habits", body:`
-     <div class="or-3">${pill("📋","Daily Task Tracker","Update it in your VA Output folder before the end of every shift, and submit the day's output links. Every open task gets a Daily Note for the day; it's checked every evening.")}${pill("📧","EOD email","Before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day's tasks.")}${pill("⏳","Auxes &amp; Hubstaff","<code>!in</code> and <code>!back</code> in #⏳-timestamps, <code>In</code> in #batch-group-channel. Your Hubstaff To-Dos are named exactly as given.")}</div>
-     <div class="or-note">Every rule and routine is in <b>📌 Training Orientation and Rules</b>, first on 📚 Dashboard. Open it before Lesson 1.</div>`},
-   {k:"Practice Lab", h:"Practice Lab: the real tasks, for your own law firm", body:`
-     <div class="or-3">${pill("🏛","Your firm","Your trainer assigns your law firm and your cases. Learn its rules: every session is checked against them.")}${pill("🟢","Practice Sessions","Reception, calendaring, intake, the PI process, claims and ChartSwap records requests: done live in the CMS, recorded and submitted.")}${pill("🧑‍🏫","With your trainer","Demos and live mock calls with your trainer, who records your result.")}</div>
-     <div class="or-note">Each session opens with its lesson. It's checked automatically against your case and your firm's rules, evaluated, and reviewed by your trainer. The CMS opens already signed in.</div>`},
-   {k:"Feedback", h:"Feedback & your growth", body:`
-     <div class="or-3">${pill("🏅","Scorecard","Every grade in one place: your Knowledge Checks, graded calls and calendaring, with your trainer's scores.")}${pill("💬","Trainer feedback","Your Practice Lab work comes back with your trainer's feedback. A lesson's 💬 Trainer feedback shows on its card.")}${pill("🎯","Focus","Your trainer's priorities for you and what to work on next. Tick items off as you go.")}</div>`},
-   {k:"Certificate", h:"Earning your certificate", body:`
-     <div class="or-cert"><div class="or-ribbon">🏅</div><div>
-       <p class="or-lead" style="margin-top:0">Finish all <b>${N} lessons</b> and your <b>Certificate of Completion</b> unlocks — download it as a PDF from 📚 Dashboard.</p>
-       <ul class="or-list"><li>It shows your name <b>exactly as you registered it</b> — check your spelling.</li><li>📚 Dashboard counts your finished lessons as you go.</li><li>📌 Training Orientation and Rules is where you start. It's always open, and it isn't one of the ${N} lessons.</li></ul></div></div>`},
-   {k:"Ground rules", h:"Ground rules", body:`
-     <ul class="or-list big"><li>🔒 <b>Confidentiality first</b> — every document is protected by attorney-client privilege. Never paste client, case or medical information into any tool.</li><li>🤖 <b>AI for grammar and spelling only</b> — use your own reasoning and discretion.</li><li>⏱ <b>The 5-minute rule</b> — reply within 5 minutes, and acknowledge every Discord message from your trainer.</li><li>🕗 <b>On time</b> — Hubstaff tracks 8:00 AM – 5:00 PM PST. Breaks: 15 – 30 – 15, or one full hour.</li><li>📛 <b>Naming conventions, strictly</b> — To-Dos, screenshots and files exactly as given.</li></ul>`},
-   {k:"Start", h:"Let's begin", body:`
-     <div class="or-flow start">${step(1,"👤","Sign in","Last name, first name(s) and your batch code. Your trainer approves your registration.")}<i>→</i>${step(2,"📌","Start here","Open Training Orientation and Rules: the rules and your daily routine.")}<i>→</i>${step(3,"🚀",`Lesson 1`,`Open ${e(first)} from 📚 Dashboard and press Start.`)}</div>
-     <p class="or-lead" style="text-align:center;margin-top:26px">Questions before we start?</p>`}
-  ];
-};
-// A trainee opens 🧭 Orientation too, as their "Trainee blueprint" tab (js/lsh-blueprint-course.js calls
-// goto('orientation') for it) — but the EA/PA engine's own render() only calls renderOrientation() for an
-// admin; a trainee (state.isAdmin false) falls through to its raw, unbranded renderDashboard() instead
-// (the literal "Executive Assistant/ Personal Assistant" hero and day grid), which flickers back in every
-// time orientGo() can't find #orStage and falls back to a full render(). Trainees see the same slides here.
-const __orientRender = window.render;
-window.render = function(){
-  if(state.view === "orientation" && !state.isAdmin){
-    const app = document.getElementById("app");
-    app.innerHTML = renderTopbar() + `<main><div id="navBackSlot"></div>${renderOrientation().replace("Admin · for screen sharing", "Your guide to the platform")}</main>`
-      + (state.traineeId ? `<button type="button" class="tfb-fab" onclick="openTraineeFeedback(null)" title="Share feedback about the platform, lessons or facilitator" aria-label="Share feedback">💬<span class="fab-label"> Feedback</span></button>` : "")
-      + renderFooter();
-    if(typeof afterRender === "function") afterRender();
-    return;
+  /* The old orientSlides() shape ({k, h, body}), for anything in the engine that still asks
+     for it (a slide count, a resume key). The deck itself is drawn from LSH_BLUEPRINT. */
+  window.orientSlides = function(){
+    const d = deck();
+    return d ? d.slides.map(s => ({ k: s.title, h: s.title, body: '' })) : [];
+  };
+
+  function openDeck(){
+    if(!window.LSHBlueprint) return false;
+    try { window.LSHBlueprint.open('trainee'); return true; } catch(e){ return false; }
   }
-  return __orientRender.apply(this, arguments);
-};
+  window.openOrientationDeck = openDeck;
+
+  /* The 🧭 Orientation page: the launcher for the deck, which opens over it. */
+  window.renderOrientation = function(){
+    const d = deck(), n = d ? d.slides.length : 0;
+    setTimeout(openDeck, 0);
+    return `
+      <div class="or-top"><div><p class="eyebrow">${state.isAdmin ? "Admin · for screen sharing" : "Your guide to the platform"}</p>
+        <h1 style="color:var(--navy);font-size:24px;margin:4px 0 0;">🧭 Platform Orientation</h1></div>
+        <div class="or-top-actions"><span class="or-tip">Share this tab in Google Meet — nothing private is shown here.</span></div></div>
+      <div class="card" style="padding:34px;text-align:center;">
+        <div style="font-size:34px;margin-bottom:8px;">🧭</div>
+        <h2 style="color:var(--navy);margin:0 0 8px;">The Trainee blueprint</h2>
+        <p style="color:var(--ink-soft);font-size:14px;max-width:62ch;margin:0 auto 16px;">
+          ${n} slides on how this platform works, on the standard LSH blueprint deck: ◀ ▶ or the arrow keys to move,
+          the contents strip to jump, ⬇ Download PDF to save it. Esc closes it.</p>
+        <button class="btn btn-primary" onclick="openOrientationDeck()">🧭 Open the blueprint</button>
+      </div>`;
+  };
+
+  /* The Print and Download buttons are the deck's own now. */
+  window.printOrientation = function(){ if(!openDeck() && typeof toast === 'function') toast('The blueprint is still loading — try again in a moment.'); };
+  window.downloadOrientationPdf = function(){ return window.LSHBlueprint ? window.LSHBlueprint.pdf('trainee') : null; };
+  window.buildOrientationPdfDoc = function(){ return window.LSHBlueprint ? window.LSHBlueprint.doc('trainee') : Promise.resolve(null); };
+  /* The arrow keys belong to the deck now: the engine's own handler moves it. This is still here
+     because the page's keydown handler calls it while 🧭 Orientation is the view, and moving again
+     here would skip a slide on every press. */
+  window.orientGo = function(){ if(!(window.LSHBlueprint && window.LSHBlueprint.isOpen())) openDeck(); };
+  window.orientFullscreen = openDeck;
+
+  /* A trainee opens 🧭 Orientation too: the EA/PA engine's render() only calls renderOrientation()
+     for an admin, so a trainee would fall through to its raw, unbranded dashboard. */
+  const base = window.render;
+  window.render = function(){
+    if(state.view === "orientation" && !state.isAdmin){
+      const app = document.getElementById("app");
+      app.innerHTML = renderTopbar() + `<main><div id="navBackSlot"></div>${renderOrientation()}</main>`
+        + (state.traineeId ? `<button type="button" class="tfb-fab" onclick="openTraineeFeedback(null)" title="Share feedback about the platform, lessons or facilitator" aria-label="Share feedback">💬<span class="fab-label"> Feedback</span></button>` : "")
+        + renderFooter();
+      if(typeof afterRender === "function") afterRender();
+      return;
+    }
+    return base.apply(this, arguments);
+  };
 })();
