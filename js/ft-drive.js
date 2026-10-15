@@ -134,7 +134,7 @@ window.render = function(){
   app.innerHTML = renderTopbar() + `<main class="main-fdr">${state.view === "tracker" ? renderTrackerPage() : renderMonitorPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
-// 📚 Modules, the landing page: today's Task Tracker check and the Monitoring Sheet's, from Drive.
+// 📚 Dashboard, the landing page: today's Task Tracker check and the Monitoring Sheet's, from Drive.
 (window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
   if(!isTrainee()) return "";
   load();
