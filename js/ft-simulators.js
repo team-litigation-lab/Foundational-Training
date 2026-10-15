@@ -8,7 +8,8 @@
        trainers' naming convention, which the trainee can edit. Drafted here, never a CMS case file.
      • 🧪 Skill Building: the daily typing and spelling tests.
      • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
-       (js/lsh-tool-links.js). The Call Simulator is the CMS's. New tab ↗: its own tab.
+       (js/lsh-tool-links.js). The Call Simulator is ☎ LSH Ring Channel's (the training phone) and the Calendaring
+       Simulators are the Main Portal's: both open in their own tab, on the trainee's Portal sign-in. New tab ↗: its own tab.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
      • The main landing page (the dashboard) has no Simulators or Blueprint card: 🛠 Practice Lab is in the top bar.
    ============================================================ */
@@ -18,9 +19,9 @@ const PORTAL = "https://cm-training-activity.pages.dev/simulators/";
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["simulators"]);
 
 const isTrainee = ()=> !!state.traineeId && !state.isAdmin;
-/* ---------- graded calls (the CMS Call Simulator) ----------
-   The main Call Simulator is the CMS's. A graded call taken there (Graded call 1, 2… on the line; the caller is unknown
-   until the debrief) counts here,
+/* ---------- graded calls (the Call Simulator on ☎ LSH Ring Channel) ----------
+   The Call Simulator is Ring Channel's: the training phone itself. A graded call taken there (a caller unknown
+   until the debrief, graded on the line's Mock Calls Metrics) counts here,
    in its lesson: the Training Portal keeps the trainee's graded calls in callsim:<id> (its /api/call-results), and
    Reception (lesson 4), Calendar Management (5) and Intake (6) Mock Calls show their best graded score on the mock-call card,
    the lesson card and the dashboard. Read once a page load, and again when the trainee comes back to the tab (at most every

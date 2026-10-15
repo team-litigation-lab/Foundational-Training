@@ -8,10 +8,11 @@
      2. evaluated by the AI in the facilitator's feedback DNA (js/ft-facilitator-dna.js);
      3. reviewed by the trainer: a score and a comment (Admin → 🟢 Practice Sessions), which is final.
    The sessions:
-     ☎️ Reception Mock Calls        lesson 4: the CMS Call Simulator's line + the Front Desk Drill; the call note
-     📅 Calendaring Practice Lab    lesson 5: the Calendar Management mock call (CMS), then the appointment on the
+     ☎️ Reception Mock Calls        lesson 4: the Call Simulator's line on ☎ LSH Ring Channel + the CMS Front Desk Drill;
+                                    the call note
+     📅 Calendaring Practice Lab    lesson 5: the Calendar Management mock call (Ring Channel), then the appointment on the
                                     Google Calendar Simulator, under the firm's calendar rules
-     📋 Intake Mock Calls           lesson 6: the CMS's intake line on the trainee's intake case; the intake summary
+     📋 Intake Mock Calls           lesson 6: Ring Channel's Intake Line on the trainee's intake case; the intake summary
      ⚖️ PI Process Flow             lesson 3: the trainee's case: its phase, team, dates and next steps
      (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 🧰 Drafting Tools'
       LOR Drafting Activity, js/ft-lor.js — the trainee drafts the 1P and 3P letters in the firm's own
@@ -43,19 +44,20 @@ const mins = t => { const m = String(t || "").match(/^(\d{1,2}):(\d\d)/); return
 const fmtDate = iso => { const m = String(iso || "").match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? `${m[2]}/${m[3]}/${m[1]}` : String(iso || ""); };
 const PHASES = ["Intake", "Treating", "Pending Demand", "BI Demanded", "BI Settlement Negotiations", "BI Settled", "UM or UIM Demanded", "UM or UIM Settled", "Litigation Discovery", "Mediation", "Arbitration", "Deposition", "Disbursement"];
 const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
-// The CMS Call Simulator's lines. flow=standard is what picks the Standard Training tab: the CMS reads
-// flow first (its FLOW map: standard \u2192 FT) and only then program, and when neither resolves to a tab it
-// falls back to the program remembered in that browser \u2014 which is how a trainee who had opened the CMS for
-// Case Management work landed on the CM call lines. program=FT isn't a program the CMS's library knows
-// (reception, intake, cm, ea, md, pd), so it never cleared that remembered value; flow=standard does not
-// depend on it. The line and mode still open the call itself.
-const calls = (line, graded) => CMS + "?" + new URLSearchParams(Object.assign({calls:"1", flow:"standard", program:"FT", from:"standard", line}, graded ? {mode:"graded"} : {}));
+/* 📞 Every mock call is taken on ☎ LSH Ring Channel, the training phone (the Call Simulator): the Main Portal opens it
+   signed in — /simulators/call.html → /api/launch?tool=ringchannel&to=calls — on the session's line, with the phone's own
+   keys (mute, hold, transfer), the case files in 🔎 Case lookup, and the trainer able to ring the same phone for a live
+   mock call. A graded call rings at once with a caller the trainee doesn't see first, is graded on the line's Mock Calls
+   Metrics, and counts here in its lesson (the Portal's /api/call-results → callsim:<id>, js/ft-simulators.js).
+   It opens in its own tab (the trainee's Portal sign-in, like the Calendaring Simulators). */
+const PORTAL_SIMS = "https://cm-training-activity.pages.dev/simulators/";
+const calls = (line, graded) => PORTAL_SIMS + "call.html?" + new URLSearchParams(Object.assign({program:"FT", line}, graded ? {mode:"graded"} : {}));
 
 /* ---------- the sessions: tools, the form, and the checks ---------- */
 // field: [name, label, type ("text" | "date" | "time" | "number" | "textarea" | "select" | "checks" | "check"), options?]
 const SESSIONS = [
   {id:"reception", icon:"☎️", title:"Reception Mock Calls", lesson:4,
-    about:"Answer your firm’s front desk live in the CMS Call Simulator: verify the caller, find the file and handle the call the way your firm’s rules say. Then write the call note here.",
+    about:"Answer your firm’s front desk live on the Call Simulator — ☎ LSH Ring Channel, the training phone: the Main Line rings, you answer with your headset, verify the caller, find the file in 🔎 Case lookup and handle the call the way your firm’s rules say. Then write the call note here.",
     tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&flow=reception&drill=1&from=standard"]],
     fields: f => [["greeting", "The greeting you used", "text"], ["caller", "Caller’s name", "text"], ["role", "Caller’s role", "select", ["Client", "Authorized person on the file", "Unauthorized family member or friend", "Medical provider", "Insurance adjuster", "Opposing counsel", "Media", "Other"]],
       ["callback", "Callback number", "text"], ["besttime", "Best time to call back", "text"], ["caseRef", "Case (client name or case number)", "text"], ["need", "What they need", "textarea"],
@@ -68,7 +70,7 @@ const SESSIONS = [
       ["Caller verified first", !!a.verified, ""],
       ["Initials on the note", has(a.initials), ""]]},
   {id:"calendaring", icon:"📅", title:"Calendaring Practice Lab", lesson:5,
-    about:"A caller phones in about one of the firm’s cases (the CMS Call Simulator’s Calendar Management line): get their name, verify them and find the file. Then book the appointment on the Google Calendar Simulator under your firm’s calendar rules, and record it here.",
+    about:"A caller phones in about one of the firm’s cases (the Call Simulator’s Calendar Management line, on ☎ LSH Ring Channel): get their name, verify them and find the file. Then book the appointment on the Google Calendar Simulator under your firm’s calendar rules, and record it here.",
     tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Simulator", "calsim:standard"]],
     fields: f => [["caller", "Who called", "text"], ["caseRef", "Which case (client name or case number)", "text"], ["kind", "Appointment", "text"], ["attorney", "With (attorney)", "select", (f.attorneys || []).map(x => x.name)],
       ["date", "Date", "date"], ["start", "Start time (" + f.tz + ")", "time"], ["length", "Length (minutes)", "number"], ["color", "Event color", "select", FF().GCAL],
@@ -86,7 +88,7 @@ const SESSIONS = [
         ["A description that names the case and the purpose", String(a.desc || "").trim().length >= 20, ""]];
     }},
   {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, area:"intake", program:"intake",
-    about:"Take the intake call live (the CMS Call Simulator’s intake line), working in your intake case’s Intake tab, under your firm’s intake criteria. Then record the intake here.",
+    about:"Take the intake call live (the Call Simulator’s Intake Line, on ☎ LSH Ring Channel), working in your intake case’s Intake tab, under your firm’s intake criteria. Then record the intake here.",
     tools: c => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")]].concat(c ? [[`🗂 ${c.id} in the CMS (Intake)`, FF().caseHref(c, "intake")]] : []),
     fields: f => [["name", "Potential client’s full name", "text"], ["dob", "Date of birth", "date"], ["dol", "Date of the accident (DOL)", "date"], ["type", "Case type", "select", ["MVA", "Slip and Fall", "Premise Liability", "Dog Bite", "Others"]],
       ["injuries", "Injuries and treatment so far", "textarea"], ["carrier", "At-fault party’s carrier (3P)", "text"], ["sol", "Statute of limitations date", "date"],
