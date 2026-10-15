@@ -519,5 +519,304 @@
     }
    }
   }
+ },
+ "2": {
+  "lesson": "Law Firm Communication",
+  "sections": {
+   "v001": {
+    "time": "4 min",
+    "objective": "Open Law Firm Communication: every call a VA takes or makes is the firm speaking.",
+    "talk": [
+     "Frame the day: softphones, call handling, and who we are allowed to say what to.",
+     "Tell them the afternoon is a breakout — Process Questions and the escalation exercise — so they listen for the answers now."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day! We are starting our classroom discussion on Law Firm Communication.\n\nTopics: Softphones · Call Handling · Law Firm Call Management · Attorney-Client Privilege\n\nThis afternoon (1:00–3:00 PM) we go into breakout for the Process Questions and the Escalation Handling exercise. Please take notes as we go — the answers come from this discussion. Thank you."
+     }
+    ],
+    "pitfalls": [
+     "Trainees treating this as a soft topic. It is the one lesson where a mistake is a legal exposure, not a rework."
+    ]
+   },
+   "v004": {
+    "time": "2 min",
+    "objective": "Name the first half: inbound calls — calls that come to the firm.",
+    "talk": [
+     "Inbound is reception's world: whoever picks up decides what happens to that caller.",
+     "Tell them the ten inbound habits are each one page, and the first five decide whether the caller stays."
+    ]
+   },
+   "v005": {
+    "time": "5 min",
+    "objective": "Separate the three inbound roles so they know which hat they are wearing.",
+    "talk": [
+     "Receptionist, Intake Specialist, Appointment Setter — one caller can pass through all three.",
+     "Our program trains all three: Reception on Days 3–4, Intake from Day 7, Calendaring on Days 5–6."
+    ],
+    "keys": [
+     "Receptionist — greets, screens, triages, transfers, documents.",
+     "Intake Specialist — qualifies the lead, asks the intake questions, collects the documents.",
+     "Appointment Setter — confirms availability and plots the attorney's calendar."
+    ]
+   },
+   "v006": {
+    "time": "5 min",
+    "objective": "Show what reception intake really decides: whether this is a good lead.",
+    "talk": [
+     "Determining a good lead is a judgement made in the first minute, on the intake questions.",
+     "A bad screen costs the attorney a consultation slot; a missed good lead costs the firm a case."
+    ],
+    "pitfalls": [
+     "Screening by how upset the caller is rather than by the facts of the matter."
+    ]
+   },
+   "v010": {
+    "time": "6 min",
+    "objective": "Tone is the first impression — and it is role-specific. Start building the tone matrix here.",
+    "talk": [
+     "Callers can hear a smile; they can also hear impatience. Calm and clarity are the default.",
+     "Start the tone matrix now and finish it on the court/adjuster/opposing-counsel pages: the tone changes with who is on the line, the facts never do."
+    ],
+    "keys": [
+     "TONE MATRIX (used in the Process Questions and the Day 4 mock calls):",
+     "Worried client — warm, patient, reassuring; no promises about outcome or value.",
+     "Insurance adjuster — neutral, brief, factual; share only what is allowed.",
+     "Court staff — formal, precise, deferential; case number and case style ready.",
+     "Opposing counsel — correct and minimal; never volunteer anything.",
+     "Medical provider — professional and cooperative; public information only."
+    ],
+    "pitfalls": [
+     "One tone for everyone. A client tone with an adjuster leaks; an adjuster tone with a client sounds cold."
+    ]
+   },
+   "v011": {
+    "time": "4 min",
+    "objective": "Script plus tone is what makes a hard call (past-due invoices) survivable.",
+    "talk": [
+     "The script carries compliance; the tone carries the relationship. They need both.",
+     "This is Process Question 4 — scripted versus freeform. Let them hear the answer forming here."
+    ],
+    "keys": [
+     "Scripted calls win on professionalism and compliance: nothing is improvised that could mislead or disclose.",
+     "Freeform wins on rapport — so the answer is a script as the floor, with the VA's own words on top, never instead."
+    ]
+   },
+   "v022": {
+    "time": "5 min",
+    "objective": "Documentation is part of the call, not paperwork after it.",
+    "talk": [
+     "Document to the firm's preferred method: email, call log, CRM note.",
+     "If it is not in the CMS, it did not happen. From Day 9 they do this in Smart Advocate for real."
+    ],
+    "keys": [
+     "Every note names: who called, what they wanted, what was said, what happens next, and who owns the next step."
+    ],
+    "pitfalls": [
+     "Writing notes from memory at the end of the shift.",
+     "Notes that record the VA's opinion of the caller rather than the facts."
+    ]
+   },
+   "v037": {
+    "time": "6 min",
+    "objective": "Provider calls: public information only — and this is where the privilege line gets tested.",
+    "talk": [
+     "Name, phone number, address: public. Anything else, stop.",
+     "Some providers will ask for private information. The answer is that we will send it through the authorized request, not read it out."
+    ],
+    "keys": [
+     "Confidential information — anything we learn about the client's matter; protected by duty.",
+     "Privileged communication — communication between client and attorney for legal advice; protected from disclosure altogether.",
+     "This distinction is Process Question 3, and it is the one trainees most often get wrong."
+    ],
+    "pitfalls": [
+     "Reading out a date of birth or SSN because the person on the line sounds official."
+    ]
+   },
+   "v040": {
+    "time": "6 min",
+    "objective": "Adjuster calls: the guardrails, before anyone practises one.",
+    "talk": [
+     "Put the two lists on the board before the script. They matter more than the wording.",
+     "This is the same rule they will use on Day 10 when opening claims."
+    ],
+    "keys": [
+     "DO NOT SHARE with an adjuster: Date of Birth, Email address, SSN, VIN.",
+     "MAY SHARE: client's first and last name (no middle name), vehicle information such as the plate number, city and state only, and the law firm's phone number.",
+     "Why it is safe: those items are already in the police report the adjuster has."
+    ],
+    "pitfalls": [
+     "Giving the client's own phone number instead of the firm's.",
+     "Confirming a detail the adjuster reads out — confirming is disclosing."
+    ]
+   },
+   "v045": {
+    "time": "5 min",
+    "objective": "Court calls: formal, prepared, and never substantive.",
+    "talk": [
+     "Confirm the department first, then give the case number and case style.",
+     "Court staff are not a source of advice and we do not argue the matter with them."
+    ],
+    "keys": [
+     "Have ready before dialling: case number, case style, attorney's name, the specific ask."
+    ],
+    "pitfalls": [
+     "Calling the court without the case number in front of them."
+    ]
+   },
+   "v048": {
+    "time": "6 min",
+    "objective": "Opposing counsel: correct, minimal, and nothing volunteered.",
+    "talk": [
+     "Identify the firm, make the single request, confirm what was agreed, end the call.",
+     "Never discuss the facts, the treatment, the demand or the client's situation — not even to be helpful."
+    ],
+    "keys": [
+     "A voicemail to opposing counsel carries name, firm, callback number and the subject only — never case details."
+    ],
+    "pitfalls": [
+     "Being drawn into small talk about the case. That is the most common real-world leak."
+    ],
+    "grade": {
+     "deliverable": "Entity communication matrix — who may be told what",
+     "ai": {
+      "match": [
+       "Adjuster: DOB, email, SSN, VIN listed as never shared",
+       "Adjuster: name, plate, city/state, firm phone listed as shareable",
+       "Provider: public information only",
+       "Opposing counsel: no case details, no volunteered information",
+       "Court: case number and case style"
+      ],
+      "nlp": [
+       "Score per entity; a correct rule for one entity does not carry to another.",
+       "Treat 'I would check with the attorney first' as a correct answer where the item is not on the allowed list.",
+       "Any answer that permits sharing SSN, DOB, email or VIN with an adjuster is a hard fail regardless of composite score."
+      ],
+      "pass": 90
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Accuracy per entity",
+        "weight": 60
+       },
+       {
+        "label": "Judgement when asked for more",
+        "weight": 40
+       }
+      ],
+      "rubric": [
+       "Professional deference — defers to attorney rather than guessing",
+       "Holds the line politely under pressure",
+       "Phone etiquette: identifies firm, confirms, closes"
+      ],
+      "feedback": "How they held the line when the caller pushed…"
+     }
+    }
+   },
+   "v053": {
+    "time": "5 min",
+    "objective": "Close outbound with the preparation habit: name, number, purpose and documents before dialling.",
+    "talk": [
+     "Prepared calls are short calls. Unprepared calls are the ones that need a second call.",
+     "Double-check everything, and have the note half-written before the phone rings."
+    ]
+   },
+   "v024": {
+    "time": "2 min",
+    "objective": "Name the second half: outbound — the firm reaching out, where who we are calling changes everything.",
+    "talk": [
+     "Five audiences: clients, invoices, providers, adjusters, court and opposing counsel.",
+     "Each has its own script and its own limit on what may be said."
+    ]
+   },
+   "v054": {
+    "time": "2 hrs (breakout, 1:00–3:00 PM)",
+    "objective": "Close the deck, then run the breakout: handouts, Process Questions, the escalation exercise, and tonight's homework.",
+    "talk": [
+     "Post the four handouts, then split the group.",
+     "Run the five Priority questions if time is short; the full eleven if the batch is moving well.",
+     "Finish with the Escalation Handling exercise, then give the homework."
+    ],
+    "gc": [
+     {
+      "label": "Breakout handouts",
+      "text": "For your breakout session, please go over the following handouts:\n\nSoftphones\nhttps://drive.google.com/file/d/1QQh6TvcT5YRj-uNQvGpsh5cGdyoEtMdY/view\n\nLaw Firm Call Guide\nhttps://drive.google.com/file/d/11uAKj6HqrSGXnQJ1IdnCc4d-64KVcuUr/view\n\nCall Handling\nhttps://drive.google.com/file/d/1gK2a5X1gY0fxA3I-XTk4AHdL2wwBTqaE/view\n\nAttorney-Client Privilege\nhttps://drive.google.com/file/d/1KogqilWL3R8V4FdPUblq4md9hCHKsUBn/view\n\nThank you."
+     },
+     {
+      "label": "Process Questions — Priority track (5)",
+      "text": "PROCESS QUESTIONS\n\n1. Evaluate the pros and cons of using softphones in high-confidentiality legal settings. What security risks must be considered?\n2. Judge whether scripted calls are more effective than freeform conversations in maintaining professionalism and compliance.\n3. Break down the difference between confidential information and privileged communication. Why is this distinction important?\n4. Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff.\n5. Evaluate the risks of providing incomplete or incorrect information to each type of entity. Which scenario could be most legally damaging?\n\nSave your answers in your Assessments/Activities folder using this file name:\nLaw_Firm_Communications_Training_Process_Question_Answers_[your first name]\n\nType \"done\" here once uploaded. Thank you."
+     },
+     {
+      "label": "Homework — softphones and the PPTs",
+      "text": "📌 To be accomplished outside training hours. 📌\n\nTopic: Softphones\nTask 1 – Watch the instructional video on Softphones. Watch ONE SAMPLE TYPE only for your takeaways on your monitoring sheet; you may continue during idle time.\nhttps://drive.google.com/file/d/15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2/view\n\nTopic: Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette\nTask 2 – Review the following PPT materials, slide by slide.\n2026 VERSION: https://drive.google.com/drive/folders/1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r\nOLD VERSION: https://drive.google.com/drive/folders/1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y\n\nTask 3 – Update items #8–9 in your monitoring sheet. Thank you."
+     }
+    ],
+    "keys": [
+     "Full list is 11 questions; the Priority track is the 5 above. Use the Priority track when time is short.",
+     "Naming convention: Law_Firm_Communications_Training_Process_Question_Answers_[VA's first name]. The file name is graded.",
+     "Escalation Handling exercise runs after the questions — Canva deck in the trainer's Day 1 folder.",
+     "Answer anchors: softphone risk = unsecured wifi, shared devices, call recording and overheard audio at home; privilege vs confidentiality = all privileged communication is confidential, not all confidential information is privileged; most legally damaging = wrong or partial information to opposing counsel or an adjuster, because it can be used against the client."
+    ],
+    "pitfalls": [
+     "Answers copied from the handout wording instead of reasoned out.",
+     "Wrong file name, or saved outside Assessments/Activities — both lose marks before the content is read.",
+     "Running out of time and skipping the escalation exercise. Cut questions, not the exercise."
+    ],
+    "grade": {
+     "deliverable": "Process Questions — Law Firm Communication (Priority track, 5 questions)",
+     "file": "Law_Firm_Communications_Training_Process_Question_Answers_[VA's first name]",
+     "ai": {
+      "match": [
+       "File name matches the convention exactly, with the trainee's first name",
+       "File is in Assessments/Activities",
+       "Q1: names at least two security risks (unsecured network, shared/home device, recording, overheard audio)",
+       "Q2: takes a position AND names compliance or professionalism as the reason",
+       "Q3: states that privileged communication is attorney-client communication for legal advice, and is a subset of confidential information",
+       "Q4: tone differs by entity — warm/reassuring for client, formal/minimal for court and defense counsel",
+       "Q5: names an entity and why the harm is worst there"
+      ],
+      "nlp": [
+       "Semantic scoring per question against the answer anchors, not keyword counting; five questions, equal weight.",
+       "Q3 is the discriminator: an answer that treats the two terms as synonyms scores zero on that item however well written.",
+       "Reward a position plus a reason on Q2 and Q5; an answer that only restates the question scores 25% of the item."
+      ],
+      "pass": 80
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Q1 Softphone security",
+        "weight": 20
+       },
+       {
+        "label": "Q2 Scripted vs freeform",
+        "weight": 20
+       },
+       {
+        "label": "Q3 Privilege vs confidentiality",
+        "weight": 20
+       },
+       {
+        "label": "Q4 Tone by entity",
+        "weight": 20
+       },
+       {
+        "label": "Q5 Risk of wrong information",
+        "weight": 20
+       }
+      ],
+      "rubric": [
+       "Own words, not the handout's",
+       "Reasoned rather than listed",
+       "Correct file name and folder",
+       "Submitted on time"
+      ],
+      "feedback": "Which of the five to re-teach before the Day 3 reception work…"
+     }
+    }
+   }
+  }
  }
 }
