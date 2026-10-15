@@ -1,8 +1,8 @@
-// Graded calls from the CMS Call Simulator count in their lesson (js/ft-simulators.js): with the trainee's callsim:<id>
+// Graded calls from the Call Simulator (☎ LSH Ring Channel) count in their lesson (js/ft-simulators.js): with the trainee's callsim:<id>
 // (kept by the Training Portal) 📚 Modules — the landing page — shows the best graded calls of lessons 4–6 averaged in its
 // stat row, a mock-call lesson's row its best graded call, and the Practice Lab's Reception, Calendaring and Intake
 // sessions each lesson's best score, with the
-// line's graded calls (mode=graded) and its practice calls going straight to the CMS Call Simulator; a trainee without
+// line's graded calls (mode=graded) and its practice calls opening the Call Simulator on Ring Channel, through the Portal; a trainee without
 // graded calls sees "—" and "No graded call yet".
 // Usage: node .github/scripts/graded-calls.cjs [baseUrl]   (with .github/scripts/server.mjs running; needs Playwright)
 const { chromium } = require('playwright');
@@ -40,12 +40,12 @@ const failures = []; const fail = (m) => failures.push(m);
     const cards = await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => ({ h: c.querySelector('h3').innerText, g: (c.querySelector('.fts-graded') || {}).innerText || '' })));
     const by = (t) => cards.find(c => c.h.indexOf(t) >= 0) || {};
     if (!/best 90% · 1 call\b/.test(by('Reception Mock Calls').g) || !/best 82% · 2 calls/.test(by('Calendaring Practice Lab').g) || !/No graded call yet/.test(by('Intake Mock Calls').g)) fail(`the sessions' graded calls: ${JSON.stringify(cards)}`);
-    // their tools: the CMS Call Simulator's graded calls (mode=graded) and practice calls on the session's line
+    // their tools: the Call Simulator's graded calls (mode=graded) and practice calls on the session's line, opened from the Portal
     const links = await page.evaluate(() => ['reception', 'calendaring', 'intake'].map(id => FTSessions.links(id)));
     const lines = ['Reception Mock Calls', 'Calendar Management Mock Calls', 'Intake Mock Calls'];
     links.forEach((l, i) => {
         const line = 'line=' + encodeURIComponent(lines[i]).replace(/%20/g, '+');
-        if (!/calls=1.*mode=graded/.test(l[0]) || l[0].indexOf(line) < 0 || /mode=graded/.test(l[1]) || l[1].indexOf(line) < 0) fail(`the graded and practice links (${lines[i]}): ${JSON.stringify(l)}`);
+        if (!/\/simulators\/call\.html\?.*mode=graded/.test(l[0]) || l[0].indexOf(line) < 0 || /mode=graded/.test(l[1]) || l[1].indexOf(line) < 0) fail(`the graded and practice links (${lines[i]}): ${JSON.stringify(l)}`);
     });
 
     await browser.close();
