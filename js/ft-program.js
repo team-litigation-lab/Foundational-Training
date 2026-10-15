@@ -53,9 +53,9 @@ window.LSH_PROGRAM = {
     {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
-  // 📁 Client Profile: this program's case material — the trainee's firm, its rules and the case files
-  // assigned to them (js/ft-firms.js). Each program points this at its own.
-  caseProfile: {view:"firm", views:["firm"], title:"Your firm, its rules and the case files assigned to you"},
+  // No 📁 Client Profile button in the top bar — My Firm (js/ft-firms.js) is still reachable from the
+  // Practice Lab (labViews below), just not as its own top-level nav item.
+  caseProfile: null,
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
   labViews: ["simulators", "calsim", "firm", "session", "lor"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
