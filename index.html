@@ -10,8 +10,8 @@
 <!-- Fonts don't hold up the first paint: the sheet is fetched as a non-blocking
      "print" stylesheet, then switched to all once it has arrived. The page is
      readable in the fallback face for the moment before that happens. -->
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" media="print" onload="this.media='all';this.onload=null">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap"></noscript>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Roboto:wght@400;500;700&display=swap" media="print" onload="this.media='all';this.onload=null">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&family=Roboto:wght@400;500;700&display=swap"></noscript>
 <!-- jsPDF is NOT loaded here. It is ~90 KB over the wire and only certificates,
      handouts and lab result sheets need it, so ensureJsPdf() pulls it in on the
      first download instead of blocking every trainee's first paint with it. -->
@@ -1074,6 +1074,117 @@ rect.svg-callout-badge{animation:none;}
 .esim-fail-banner ul{margin:8px 0 0;padding-left:18px;}
 .esim-fail-banner li{font-size:var(--font-body);color:#7a352c;margin-bottom:4px;}
 .esim-progress{font-family:'IBM Plex Mono';font-size:var(--font-sub);color:var(--ink-soft);margin-bottom:12px;}
+
+/* ============================================================
+   GMAIL LOOK-ALIKE (.gm-*) — the same skin the Training Portal's email
+   simulators use (its simulators/gmail.css). Every email simulator in the
+   programme mimics Gmail, so a trainee practises in the client they will
+   actually use at work. Generic "M Mail" wordmark; no Google branding.
+   ============================================================ */
+:root{--ft-gmail-skin:1;}   /* the update pack checks this and skips its own copy */
+/* the label rail's own controls: Gmail's colour square is the colour picker itself */
+.gm-lbl .fcolor-input{width:12px;height:12px;padding:0;border:none;background:none;border-radius:3px;cursor:pointer;flex:0 0 auto;appearance:none;-webkit-appearance:none;}
+.gm-lbl .fcolor-input::-webkit-color-swatch-wrapper{padding:0;} .gm-lbl .fcolor-input::-webkit-color-swatch{border:none;border-radius:3px;}
+.gm-lbl .faddbtn{opacity:0;font-size:15px;line-height:1;padding:0 4px;border-radius:4px;color:#444746;flex:0 0 auto;}
+.gm-lbl:hover .faddbtn{opacity:.75;} .gm-lbl .faddbtn:hover{opacity:1;background:rgba(0,0,0,.08);}
+.gm-lbl.dragover{outline:2px dashed #0b57d0;outline-offset:-2px;background:#e8f0fe;}
+.gm-nav .add-label-row{display:flex;gap:6px;padding:6px 8px 6px 16px;}
+.gm-nav .add-label-row input{flex:1;min-width:0;font:inherit;font-size:13px;border:1px solid #dadce0;border-radius:6px;padding:6px 8px;}
+.gm{border:1px solid #dadce0;border-radius:14px;background:#f6f8fc;overflow:hidden;font-family:Roboto,'Segoe UI',Arial,sans-serif;color:#202124;position:relative;outline:none;}
+.gm:focus-visible{box-shadow:0 0 0 2px #0b57d0;}
+.gm svg{width:20px;height:20px;fill:currentColor;flex-shrink:0;}
+.gm-top{display:flex;align-items:center;gap:14px;padding:8px 14px;}
+.gm-logo{display:flex;align-items:center;gap:6px;font-size:20px;color:#444746;min-width:170px;} .gm-logo b{display:inline-flex;width:28px;height:22px;border-radius:4px;background:linear-gradient(135deg,#ea4335 0 25%,#fbbc04 25% 50%,#34a853 50% 75%,#4285f4 75%);color:#fff;font-size:13px;align-items:center;justify-content:center;}
+.gm-search{flex:1;max-width:720px;display:flex;align-items:center;gap:10px;background:#e9eef6;border-radius:24px;padding:10px 16px;color:#444746;}
+.gm-search input{border:none;background:transparent;outline:none;font:inherit;font-size:15px;flex:1;color:#202124;}
+.gm-avatar{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#1F2440;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;}
+.gm-body{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:560px;}
+.gm-nav{padding:4px 10px 12px 8px;}
+.gm-compose{display:inline-flex;align-items:center;gap:10px;background:#c2e7ff;border:none;border-radius:16px;padding:16px 22px;font:inherit;font-weight:600;font-size:14px;color:#001d35;margin:4px 0 14px;cursor:not-allowed;opacity:.85;}
+.gm-folder{display:flex;align-items:center;gap:14px;width:100%;border:none;background:none;font:inherit;font-size:14px;color:#202124;padding:0 12px 0 16px;height:32px;border-radius:0 16px 16px 0;cursor:pointer;text-align:left;}
+.gm-folder:hover{background:#e9eaed;} .gm-folder.on{background:#d3e3fd;font-weight:700;color:#001d35;}
+.gm-folder span{flex:1;} .gm-folder em{font-style:normal;font-size:12px;font-weight:700;}
+.gm-folder small{display:block;font-size:10.5px;color:#5f6368;font-weight:400;margin-top:-3px;}
+.gm-folder.two{height:40px;}
+.gm-main{background:#fff;border-radius:16px;margin:0 12px 12px 0;display:flex;flex-direction:column;min-width:0;}
+.gm-bar{display:flex;align-items:center;gap:4px;padding:6px 10px;border-bottom:1px solid #f1f3f4;min-height:44px;}
+.gm-ib{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;border:none;background:none;color:#444746;cursor:pointer;position:relative;}
+.gm-ib:hover{background:#f1f3f4;} .gm-ib[disabled]{opacity:.35;cursor:default;background:none;}
+.gm-ib[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:38px;left:50%;transform:translateX(-50%);background:#3c4043;color:#fff;font-size:11.5px;padding:4px 8px;border-radius:4px;white-space:nowrap;z-index:5;}
+.gm-count{margin-left:auto;font-size:12px;color:#5f6368;}
+.gm-chk{width:16px;height:16px;accent-color:#0b57d0;cursor:pointer;margin:0 8px;}
+.gm-list{flex:1;overflow:auto;}
+.gm-row{display:flex;align-items:center;gap:4px;padding:0 12px 0 6px;height:40px;border-bottom:1px solid #f1f3f4;cursor:pointer;background:#f2f6fc;position:relative;font-size:14px;}
+.gm-row.unread{background:#fff;} .gm-row.unread .gm-from, .gm-row.unread .gm-subj, .gm-row.unread .gm-time{font-weight:700;color:#202124;}
+.gm-row:hover{box-shadow:inset 1px 0 0 #dadce0,inset -1px 0 0 #dadce0,0 1px 2px 0 rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);z-index:1;}
+.gm-row.focus{box-shadow:inset 3px 0 0 #0b57d0;} .gm-row.sel{background:#c2dbff;}
+.gm-star{color:#5f6368;} .gm-star.on{color:#f4b400;}
+.gm-from{width:190px;flex-shrink:0;color:#202124;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px;}
+.gm-snip{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#5f6368;}
+.gm-subj{color:#202124;}
+.gm-time{width:84px;text-align:right;font-size:12px;color:#5f6368;flex-shrink:0;}
+.gm-tag{font-size:11px;border-radius:4px;padding:1px 6px;margin-right:6px;background:#e8eaed;color:#3c4043;font-weight:600;}
+.gm-hover{display:none;position:absolute;right:8px;top:2px;background:inherit;gap:2px;}
+.gm-row:hover .gm-hover{display:flex;} .gm-row:hover .gm-time{visibility:hidden;}
+.gm-read{flex:1;overflow:auto;padding:4px 0 20px;}
+.gm-read h2{font-family:'Google Sans',Roboto,Arial,sans-serif;font-size:22px;font-weight:400;margin:14px 20px 16px 72px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.gm-read h2 .gm-tag{font-size:12px;font-weight:500;}
+.gm-sender{display:flex;align-items:flex-start;gap:14px;padding:0 20px;}
+.gm-av{width:40px;height:40px;border-radius:50%;background:#e8710a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0;}
+.gm-sender b{font-size:14px;} .gm-sender span{font-size:12px;color:#5f6368;}
+.gm-sender .gm-when{margin-left:auto;font-size:12px;color:#5f6368;white-space:nowrap;}
+.gm-msg{margin:14px 20px 0 74px;font-size:14px;line-height:1.6;color:#222;}
+.gm-msg p{margin:0 0 10px;}
+.gm-replybar{display:flex;gap:10px;margin:22px 20px 0 74px;flex-wrap:wrap;}
+.gm-pill{display:inline-flex;align-items:center;gap:8px;border:1px solid #747775;border-radius:18px;background:#fff;padding:8px 18px;font:inherit;font-size:14px;color:#444746;cursor:pointer;}
+.gm-pill:hover{background:#f1f3f4;}
+.gm-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;color:#5f6368;gap:8px;}
+.gm-done .sun{font-size:64px;} .gm-done b{font-size:20px;color:#202124;font-weight:400;}
+.gm-empty{padding:40px 20px;text-align:center;color:#5f6368;font-size:14px;}
+.gm-menu{position:absolute;z-index:20;background:#fff;border-radius:8px;box-shadow:0 4px 8px 3px rgba(60,64,67,.15),0 1px 3px rgba(60,64,67,.3);padding:8px 0;min-width:260px;top:96px;right:40px;}
+.gm-menu h6{margin:4px 16px 8px;font-size:14px;font-weight:500;color:#202124;}
+.gm-menu button{display:flex;justify-content:space-between;width:100%;border:none;background:none;font:inherit;font-size:14px;padding:8px 16px;cursor:pointer;color:#202124;} .gm-menu button:hover{background:#f1f3f4;} .gm-menu button span{color:#5f6368;}
+.gm-compose-win{position:absolute;right:24px;bottom:0;width:min(460px,90%);background:#fff;border-radius:8px 8px 0 0;box-shadow:0 8px 10px 1px rgba(0,0,0,.14),0 3px 14px 2px rgba(0,0,0,.12);z-index:25;display:flex;flex-direction:column;}
+.gm-cw-h{background:#f2f6fc;border-radius:8px 8px 0 0;padding:10px 14px;font-size:14px;font-weight:500;display:flex;justify-content:space-between;align-items:center;}
+.gm-cw-h button{border:none;background:none;font-size:18px;cursor:pointer;color:#444746;}
+.gm-cw-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #f1f3f4;padding:6px 14px;font-size:14px;color:#5f6368;}
+.gm-cw-row input, .gm-cw-row select{flex:1;border:none;outline:none;font:inherit;font-size:14px;color:#202124;background:transparent;}
+.gm-compose-win textarea{border:none;outline:none;font:inherit;font-size:14px;padding:10px 14px;min-height:130px;resize:vertical;}
+.gm-cw-foot{padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.gm-send{background:#0b57d0;color:#fff;border:none;border-radius:18px;padding:9px 22px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;}
+.gm-snack{position:absolute;left:16px;bottom:16px;background:#3c4043;color:#fff;border-radius:4px;padding:12px 16px;font-size:14px;display:flex;gap:22px;align-items:center;z-index:30;box-shadow:0 3px 5px -1px rgba(0,0,0,.2),0 6px 10px 0 rgba(0,0,0,.14);}
+.gm-snack button{border:none;background:none;color:#a8c7fa;font:inherit;font-weight:600;cursor:pointer;}
+.gm-legend{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;padding:10px 14px;border-top:1px solid #e3e3e3;background:#fff;font-size:12.5px;color:#444746;}
+.gm-legend b{color:#202124;} .gm-legend .gm-kbd{font-family:monospace;background:#f1f3f4;border-radius:3px;padding:0 4px;}
+.gm-legend .gm-submit{margin-left:auto;}
+.gm-progress{height:4px;background:#e8eaed;} .gm-progress i{display:block;height:100%;background:#0b57d0;transition:width .3s;}
+.gm-res-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:8px 0;font-size:13px;flex-wrap:wrap;} .gm-res-row b{color:var(--navy);}
+@media(max-width:860px){.gm-body{grid-template-columns:1fr;} .gm-nav{display:flex;gap:4px;overflow-x:auto;padding:4px 8px;} .gm-nav .gm-compose{display:none;} .gm-folder{width:auto;white-space:nowrap;border-radius:16px;} .gm-folder small{display:none;} .gm-main{margin:0 8px 8px;} .gm-from{width:110px;} .gm-logo{min-width:0;} .gm-logo span{display:none;} .gm-read h2, .gm-msg, .gm-replybar{margin-left:20px;}}
+
+.gm-lblhead{display:flex;align-items:center;justify-content:space-between;padding:14px 12px 4px 16px;font-size:14px;font-weight:600;color:#202124;}
+.gm-lblhead button{border:none;background:none;font-size:20px;line-height:1;cursor:pointer;color:#444746;width:28px;height:28px;border-radius:50%;} .gm-lblhead button:hover{background:#e9eaed;}
+.gm-lbl{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;font:inherit;font-size:13.5px;color:#202124;height:30px;border-radius:0 16px 16px 0;cursor:pointer;text-align:left;padding-right:12px;}
+.gm-lbl:hover{background:#e9eaed;} .gm-lbl.on{background:#d3e3fd;font-weight:700;}
+.gm-lbl i{width:10px;height:10px;border-radius:2px;flex-shrink:0;} .gm-lbl span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} .gm-lbl em{font-style:normal;font-size:12px;color:#5f6368;}
+.gm-chip{display:inline-block;font-size:11.5px;font-weight:600;border-radius:4px;padding:1px 6px;margin-right:6px;color:#fff;vertical-align:1px;}
+.gm-dialog{position:absolute;inset:0;background:rgba(32,33,36,.45);display:flex;align-items:center;justify-content:center;z-index:40;}
+.gm-dialog > div{background:#fff;border-radius:24px;padding:22px 24px;width:min(400px,92%);box-shadow:0 8px 24px rgba(0,0,0,.25);}
+.gm-dialog h6{margin:0 0 14px;font-size:20px;font-weight:400;color:#202124;}
+.gm-dialog label{display:block;font-size:12.5px;color:#444746;margin:10px 0 4px;}
+.gm-dialog input[type=text], .gm-dialog select{width:100%;box-sizing:border-box;font:inherit;font-size:14px;border:1px solid #747775;border-radius:4px;padding:10px;}
+.gm-dialog .row{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+.gm-dialog .row button{border:none;background:none;font:inherit;font-weight:600;color:#0b57d0;padding:9px 16px;border-radius:18px;cursor:pointer;} .gm-dialog .row button.pri{background:#0b57d0;color:#fff;}
+.gm-lblmenu button .ind{display:inline-block;} .gm-lblmenu button.on{background:#e8f0fe;font-weight:700;}
+.gm-loading.err{background:#fce8e6;color:#a50e0e;} .gm-loading button{border:none;background:none;color:#0b57d0;font:inherit;font-weight:600;cursor:pointer;}
+.gm-link{color:#0b57d0;text-decoration:underline;cursor:pointer;}
+.gm-howto b{color:var(--navy);}
+.gm-fail{background:#fce8e6;border:1px solid #f5c2bd;border-radius:14px;padding:18px 20px;color:#7a352c;}
+.gm-fail h3{margin:0 0 6px !important;color:#a50e0e !important;font-size:19px !important;}
+.gm-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 14px;}
+.gm-tiles div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;} .gm-tiles b{display:block;font-size:24px;color:var(--navy);font-family:'Fraunces',Georgia,serif;} .gm-tiles span{font-size:12px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.gm-tiles div.all{background:var(--navy);border-color:var(--navy);} .gm-tiles div.all b, .gm-tiles div.all span{color:#fff;}
+@media(max-width:860px){.gm-lblhead, .gm-lbl{display:none;}}
+
 
 /* differences drill */
 .drill-row{
@@ -6193,12 +6304,12 @@ async function autoPublishBlueprint(){
   }catch(e){ console.warn("blueprint auto-publish skipped:", e); }
   finally{ state.blueprintJob = false; }
 }
-async function republishBlueprint(){ state.blueprintMeta = null; await sharedSet("blueprint:meta", {build:"", at:""}); toast("Rebuilding the blueprint PDF…"); await autoPublishBlueprint(); toast(state.blueprintMeta && state.blueprintMeta.build===APP_BUILD ? "✅ Blueprint PDF updated." : "Couldn't rebuild the blueprint — try Download PDF instead."); }
+async function republishBlueprint(){ state.blueprintMeta = null; await sharedSet("blueprint:meta", {build:"", at:""}); toast("Rebuilding the blueprint PDF…"); await autoPublishBlueprint(); toast(state.blueprintMeta && state.blueprintMeta.build===APP_BUILD ? "✅ Blueprint PDF updated." : "Couldn't rebuild the blueprint — try again in a moment."); }
 window.republishBlueprint = republishBlueprint;
 function printOrientation(){
   const slides = orientSlides();
   const css = [...document.querySelectorAll("style")].map(x=>x.textContent).join("\n");
-  const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print, or use Download PDF."); return; }
+  const w = window.open("", "_blank"); if(!w){ toast("Allow pop-ups to print the orientation blueprint."); return; }
   w.document.write(`<html><head><title>LSH Foundational Training — Platform Orientation</title><style>${css}
     @page{size:1280px 720px;margin:0} body{margin:0;background:#fff} .or-slide.or-export{page-break-after:always;break-after:page}</style></head><body>${
     slides.map((sl,k)=>`<div class="or-slide or-export"><div class="or-kicker">${String(k+1).padStart(2,"0")} · ${esc(sl.k)}</div><h2>${esc(sl.h)}</h2>${sl.body}<img class="or-logo" src="${LOGO_FULL_SRC}" alt=""><div class="or-export-foot">LSH Foundational Training Program · Platform Orientation · ${k+1} / ${slides.length}</div></div>`).join("")
@@ -6214,7 +6325,7 @@ function renderOrientation(){
   return `
     <div class="or-top"><div><p class="eyebrow">Admin · for screen sharing</p><h1 style="color:var(--navy);font-size:24px;margin:4px 0 0;">🧭 Platform Orientation</h1></div>
       <div class="or-top-actions"><span class="or-tip">Share this tab in Google Meet — nothing private is shown here.</span>
-      <button class="btn btn-ghost btn-sm" onclick="printOrientation()">🖨 Print</button><button class="btn btn-primary btn-sm" id="orPdfBtn" onclick="downloadOrientationPdf()">⬇ Download PDF</button><button class="btn btn-navy btn-sm" onclick="orientFullscreen()">⛶ Present full screen</button></div></div>
+      <button class="btn btn-ghost btn-sm" onclick="printOrientation()">🖨 Print</button><button class="btn btn-navy btn-sm" onclick="orientFullscreen()">⛶ Present full screen</button></div></div>
     <div class="or-stage" id="orStage">
       <div class="or-slide" id="orSlide">
         <div class="or-kicker">${String(i+1).padStart(2,"0")} · ${esc(s.k)}</div>
@@ -15918,14 +16029,35 @@ window.refreshAdminData = refreshAdminData;
    phishing attempt. No tiers — the trainee judges every message
    on its own and decides what to do with it.
 
-   UI mirrors common webmail conventions (folder sidebar, list +
-   reading pane, unread bolding, avatar initials, star,
-   hover-reveal actions, a collapsed inline reply that expands)
-   — built with our own styling, not a reproduction of any
-   specific product's branding or trademarked design.
+   The inbox is a Gmail look-alike — the same .gm-* chrome the
+   Training Portal's email simulators use, so every email
+   simulator in the programme behaves like the client the
+   trainee actually works in: top bar with search, Compose, the
+   folder and label rail, list rows with checkbox, star, hover
+   archive / report / mark-unread / snooze, the reader with its
+   action bar, the reply box, the snackbar with Undo and Gmail's
+   keyboard shortcuts. Generic "M Mail" wordmark and our own
+   colours; no Google branding or trademarked artwork.
    ============================================================ */
 
-const ESIM_AVATAR_COLORS = ["#B54A3F","#DB8437","#3F7D58","#3C4268","#6B4FA0","#2C7A7B","#B5651F","#5B6178"];
+const EM_ICON = {
+  archive:'<svg viewBox="0 0 24 24"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+  snooze:'<svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"/></svg>',
+  starOn:'<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>',
+  forward:'<svg viewBox="0 0 24 24"><path d="M14 8V4l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg>',
+  reply:'<svg viewBox="0 0 24 24"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>',
+  inbox:'<svg viewBox="0 0 24 24"><path d="M19 3H4.99c-1.11 0-1.98.89-1.98 2L3 19c0 1.1.88 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19v10z"/></svg>',
+  unread:'<svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>',
+  pencil:'<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 000-1.41l-2.34-2.34a.996.996 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+  refresh:'<svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>',
+  label:'<svg viewBox="0 0 24 24"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"/></svg>',
+  report:'<svg viewBox="0 0 24 24"><path d="M15.73 3H8.27L3 8.27v7.46L8.27 21h7.46L21 15.73V8.27L15.73 3zM19 14.9L14.9 19H9.1L5 14.9V9.1L9.1 5h5.8L19 9.1v5.8zM11 7h2v6h-2zm0 8h2v2h-2z"/></svg>'
+};
+const ESIM_AVATAR_COLORS = ["#e8710a","#0b57d0","#188038","#a50e0e","#9334e6","#007b83","#b06000","#5f6368"];
 function esimAvatar(from){
   const namePart = from.split(/[,<]/)[0].trim();
   const initials = namePart.split(/\s+/).map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase() || "?";
@@ -15941,6 +16073,7 @@ async function initEmailSim(body){
     replies: savedInteractions.replies || {}, archived: savedInteractions.archived || {}, reported: savedInteractions.reported || {},
     linkClicked: savedInteractions.linkClicked || {}, unread:{}, starred: savedInteractions.starred || {}, replyOpen:{},
     searchQuery:"", addingUnder:null, selectedFolder:null,
+    snoozed:{}, sel:{}, replyDraft:{}, open:null, focus:0, menu:null, labelMenu:null, snack:null, undo:null,
     phase:"in_progress", // "in_progress" | "failed" | "evaluating" | "evaluated"
     failReason:null, selected:0, report:null, securityScore:null, filingScore:null
   };
@@ -16037,60 +16170,76 @@ function renderEsimBody(body){
     return;
   }
 
-  // in_progress
+  // in_progress — drawn in the Gmail look-alike chrome (.gm-*)
   const handled = esimHandledCount();
   const filed = esimFiledCount();
+  const total = EMAIL_SIM_MESSAGES.length;
+  const openIdx = e.open;
   body.innerHTML = `
-    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">A real inbox — file every message into a label (drag it, or use the "Move to" menu), and decide whether it needs a reply, an archive, or a phishing report. Nothing is labeled for you. Create your own sub-labels if you want to organize further; the categories below are LSH's baseline convention.</p>
-    <div class="esim-progress">${handled} / ${EMAIL_SIM_MESSAGES.length} processed &middot; ${filed} / ${EMAIL_SIM_MESSAGES.length} filed &middot; ${esimUnreadCount()} unread</div>
-    <div class="esim-searchbar">
-      <span class="esim-search-icon">🔍</span>
-      <input type="text" id="esimSearchInput" placeholder="Search mail" value="${esc(e.searchQuery)}" oninput="setEsimSearch(this.value)">
-    </div>
-    <div class="esim-shell esim-shell-3col">
-      <div class="inbox-sidebar" ondragover="event.preventDefault()" ondrop="folderDrop(event, null)">
-        <div class="folder-item ${e.selectedFolder===null?'active':''}" onclick="selectFolder(null)">
-          <span class="fname">📥 <span>Inbox</span></span>
-          <span class="fcount">${countUnfiled()}</span>
-        </div>
-        <div class="sidebar-section-lbl">Labels</div>
-        ${labelChildren(null).map(l=>renderFolderNode(l)).join("")}
-        ${e.addingUnder==="ROOT" ? renderAddLabelRow(null) : `<button class="add-label-btn" onclick="startAddLabel('ROOT')">+ Add Label</button>`}
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:10px;">A real inbox — file every message under a label (drag it onto a label, or use 🏷 Label in the message), and decide whether it needs a reply, an archive, or a phishing report. Nothing is labeled for you. Create your own sub-labels if you want to organize further; the categories in the rail are LSH's baseline convention.</p>
+    <div class="gm" id="gmShell" tabindex="0" onkeydown="esimKeyDown(event)">
+      <div class="gm-top">
+        <div class="gm-logo"><b>M</b><span>Mail</span></div>
+        <label class="gm-search">${EM_ICON.search}<input type="text" id="esimSearchInput" placeholder="Search mail" value="${esc(e.searchQuery)}" oninput="setEsimSearch(this.value)"></label>
+        <div class="gm-avatar" title="Your mailbox">${esc(esimMeInitials())}</div>
       </div>
-      <div class="esim-list" id="esimListWrap">${renderEsimListRows()}</div>
-      <div class="esim-pane" id="esimPane">
-        ${renderEsimPane(e.selected)}
+      <div class="gm-progress"><i style="width:${Math.round(handled/Math.max(total,1)*100)}%"></i></div>
+      <div class="gm-body">
+        <nav class="gm-nav" ondragover="event.preventDefault()" ondrop="folderDrop(event, null)">
+          <button class="gm-compose" disabled title="You handle the mail that lands here — composing a new message isn’t part of this exercise">${EM_ICON.pencil} Compose</button>
+          <button class="gm-folder ${e.selectedFolder===null?'on':''}" onclick="selectFolder(null)">${EM_ICON.inbox}<span>Inbox</span><em>${esimUnreadCount()||''}</em></button>
+          <button class="gm-folder ${e.selectedFolder==='__starred__'?'on':''}" onclick="selectFolder('__starred__')">${EM_ICON.starOn}<span>Starred</span><em>${Object.values(e.starred).filter(Boolean).length||''}</em></button>
+          <button class="gm-folder ${e.selectedFolder==='__snoozed__'?'on':''}" onclick="selectFolder('__snoozed__')">${EM_ICON.snooze}<span>Snoozed</span><em>${Object.values(e.snoozed||{}).filter(Boolean).length||''}</em></button>
+          <button class="gm-folder ${e.selectedFolder==='__sent__'?'on':''}" onclick="selectFolder('__sent__')">${EM_ICON.forward}<span>Sent</span><em>${Object.keys(e.replies).length||''}</em></button>
+          <button class="gm-folder ${e.selectedFolder==='__archive__'?'on':''}" onclick="selectFolder('__archive__')">${EM_ICON.archive}<span>All mail</span><em>${total}</em></button>
+          <button class="gm-folder ${e.selectedFolder==='__spam__'?'on':''}" onclick="selectFolder('__spam__')">${EM_ICON.report}<span>Spam</span><em>${Object.values(e.reported).filter(Boolean).length||''}</em></button>
+          <div class="gm-lblhead">Labels <button title="Create new label" onclick="startAddLabel('ROOT')">+</button></div>
+          ${labelChildren(null).map(l=>renderFolderNode(l,0)).join("")}
+          ${e.addingUnder==="ROOT" ? renderAddLabelRow(null) : ""}
+        </nav>
+        <section class="gm-main" id="esimPane">${openIdx==null ? renderEsimList() : renderEsimPane(openIdx)}</section>
       </div>
+      <div class="gm-legend">
+        <span><b>File:</b> 🏷 Label (or drag a row onto a label)</span><span><b>Reply</b> · <b>Archive</b> · <b>🚩 Report</b> anything suspicious</span>
+        <span>⌨ <span class="gm-kbd">j</span>/<span class="gm-kbd">k</span> · <span class="gm-kbd">o</span> open · <span class="gm-kbd">u</span> back · <span class="gm-kbd">r</span> reply · <span class="gm-kbd">s</span> star · <span class="gm-kbd">e</span> archive · <span class="gm-kbd">b</span> snooze · <span class="gm-kbd">!</span> report · <span class="gm-kbd">/</span> search · <span class="gm-kbd">z</span> undo</span>
+        <span class="gm-submit">${handled}/${total} processed · ${filed}/${total} filed
+          <button class="btn btn-sm btn-primary" onclick="finishEmailSim()">Finish &amp; Get Evaluation</button></span>
+      </div>
+      ${e.menu!=null ? renderEsimSnoozeMenu(e.menu) : ""}
+      ${e.labelMenu!=null ? renderEsimLabelMenu(e.labelMenu) : ""}
+      ${e.snack ? `<div class="gm-snack"><span>${esc(e.snack)}</span>${e.undo?`<button onclick="esimUndo()">Undo</button>`:""}</div>` : ""}
     </div>
-    <button class="btn btn-primary" style="margin-top:16px;" onclick="finishEmailSim()">Finish &amp; Get Evaluation</button>
     ${renderInboxZeroSection()}
   `;
+  const sh = document.getElementById("gmShell");
+  const act = document.activeElement, tag = (act && act.tagName || "").toLowerCase();
+  if(sh && tag!=="input" && tag!=="textarea") sh.focus({preventScroll:true});
+}
+
+function esimMeInitials(){
+  const n = (toolState.traineeName || (typeof traineeName!=="undefined" ? traineeName : "") || "Me");
+  return String(n).replace(/[^A-Za-z ]/g,"").split(" ").filter(Boolean).map(w=>w[0]).join("").slice(0,2).toUpperCase() || "ME";
 }
 
 /* ---------- sidebar ---------- */
-function renderFolderNode(l){
+function renderFolderNode(l, depth){
   const e = toolState.esim;
   const kids = labelChildren(l.id);
+  const d = depth||0;
   return `
     <div>
-      <div class="folder-item ${e.selectedFolder===l.id?'active':''}" id="folderRow_${l.id}"
-           onclick="selectFolder('${l.id}')"
+      <button class="gm-lbl ${e.selectedFolder===l.id?'on':''}" id="folderRow_${l.id}" style="padding-left:${16+d*14}px"
+           onclick="selectFolder('${l.id}')" title="${esc(labelChainNames(l.id).reverse().join(' / '))}"
            ondragover="event.preventDefault(); event.currentTarget.classList.add('dragover')"
            ondragleave="event.currentTarget.classList.remove('dragover')"
            ondrop="event.currentTarget.classList.remove('dragover'); folderDrop(event,'${l.id}')">
-        <span class="fname">
-          <input type="color" class="fcolor-input" value="${l.color}" onclick="event.stopPropagation()" onchange="changeLabelColor('${l.id}', this.value)">
-          <span>${esc(l.name)}</span>
-        </span>
-        <span style="display:flex;align-items:center;gap:4px;">
-          <span class="fcount">${countInFolder(l.id)}</span>
-          <button class="faddbtn" onclick="event.stopPropagation(); startAddLabel('${l.id}')" title="Add sub-label">+</button>
-        </span>
-      </div>
-      <div class="folder-children">
-        ${kids.map(k=>renderFolderNode(k)).join("")}
-        ${e.addingUnder===l.id ? renderAddLabelRow(l.id) : ""}
-      </div>
+        <input type="color" class="fcolor-input" value="${l.color}" title="Label colour" onclick="event.stopPropagation()" onchange="changeLabelColor('${l.id}', this.value)">
+        <span>${esc(l.name)}</span>
+        <span class="faddbtn" role="button" title="Add sub-label" onclick="event.stopPropagation(); startAddLabel('${l.id}')">+</span>
+        <em>${countInFolder(l.id)||''}</em>
+      </button>
+      ${kids.map(k=>renderFolderNode(k, d+1)).join("")}
+      ${e.addingUnder===l.id ? renderAddLabelRow(l.id) : ""}
     </div>`;
 }
 function renderAddLabelRow(parentId){
@@ -16098,8 +16247,8 @@ function renderAddLabelRow(parentId){
   return `
     <div class="add-label-row">
       <input type="text" id="newLabelInput" placeholder="Label name" autofocus
-             onkeydown="if(event.key==='Enter') confirmAddLabel(${pid}); if(event.key==='Escape') cancelAddLabel();">
-      <button class="btn btn-sm btn-navy" onclick="confirmAddLabel(${pid})">Add</button>
+             onkeydown="event.stopPropagation(); if(event.key==='Enter') confirmAddLabel(${pid}); if(event.key==='Escape') cancelAddLabel();">
+      <button class="btn btn-sm btn-navy" onclick="confirmAddLabel(${pid})">Create</button>
     </div>`;
 }
 function refreshEsimSidebar(){
@@ -16144,9 +16293,11 @@ async function folderDrop(ev, labelId){
   ev.preventDefault();
   const idx = Number(ev.dataTransfer.getData("text/plain"));
   if(Number.isNaN(idx)) return;
+  const prev = toolState.esim.filing[idx];
   toolState.esim.filing[idx] = labelId;
   await storeSet("inbox-filing", toolState.esim.filing);
-  refreshEsimSidebar();
+  const l = labelId ? findLabel(labelId) : null;
+  esimSnack(l ? `Labelled ${l.name}.` : "Moved to Inbox.", ()=>{ toolState.esim.filing[idx] = prev; storeSet("inbox-filing", toolState.esim.filing); });
 }
 window.folderDrop = folderDrop;
 async function moveEmailTo(idx, value){
@@ -16157,55 +16308,180 @@ async function moveEmailTo(idx, value){
 window.moveEmailTo = moveEmailTo;
 
 /* ---------- list ---------- */
-function renderEsimListRows(){
+function esimVisibleIndices(){
   const e = toolState.esim;
   const q = (e.searchQuery||"").toLowerCase();
-  const indices = EMAIL_SIM_MESSAGES.map((_,i)=>i).filter(i=>{
-    const inFolder = e.selectedFolder===null ? (e.filing[i]==null) : e.filing[i]===e.selectedFolder;
+  return EMAIL_SIM_MESSAGES.map((_,i)=>i).filter(i=>{
+    const f = e.selectedFolder;
+    let inFolder;
+    if(f===null) inFolder = e.filing[i]==null && !e.archived[i] && !e.reported[i] && !(e.snoozed||{})[i];
+    else if(f==="__starred__") inFolder = !!e.starred[i];
+    else if(f==="__snoozed__") inFolder = !!(e.snoozed||{})[i];
+    else if(f==="__sent__") inFolder = !!e.replies[i];
+    else if(f==="__archive__") inFolder = true;
+    else if(f==="__spam__") inFolder = !!e.reported[i];
+    else inFolder = e.filing[i]===f;
     if(!inFolder) return false;
     if(!q) return true;
     const m = EMAIL_SIM_MESSAGES[i];
-    return m.from.toLowerCase().includes(q) || m.subj.toLowerCase().includes(q);
+    return (m.from+" "+m.subj+" "+m.body).toLowerCase().includes(q);
   });
-  if(!indices.length) return `<div class="esim-empty">No messages here${q?" matching your search":e.selectedFolder===null?" — nice work filing everything!":". Drag a message here, or use its \"Move to\" menu."}.</div>`;
-  return indices.map(i=>renderEsimRow(EMAIL_SIM_MESSAGES[i],i)).join("");
 }
+function esimFolderName(){
+  const f = toolState.esim.selectedFolder;
+  if(f===null) return "Inbox";
+  const named = {__starred__:"Starred", __snoozed__:"Snoozed", __sent__:"Sent", __archive__:"All mail", __spam__:"Spam"};
+  return named[f] || (findLabel(f) ? findLabel(f).name : "Inbox");
+}
+function renderEsimList(){
+  const e = toolState.esim;
+  const idx = esimVisibleIndices();
+  const selN = Object.keys(e.sel||{}).filter(k=>e.sel[k]).length;
+  return `
+    <div class="gm-bar">
+      <input type="checkbox" class="gm-chk" title="Select all" ${selN&&selN===idx.length?"checked":""} onchange="esimSelectAll(this.checked)">
+      ${selN ? `
+        <button class="gm-ib" data-tip="Archive" onclick="esimBulk('archive')">${EM_ICON.archive}</button>
+        <button class="gm-ib" data-tip="Report as phishing" onclick="esimBulk('report')">${EM_ICON.report}</button>
+        <button class="gm-ib" data-tip="Mark as read" onclick="esimBulk('read')">${EM_ICON.unread}</button>
+        <button class="gm-ib" data-tip="Label as" onclick="esimOpenLabelMenu('sel')">${EM_ICON.label}</button>`
+      : `<button class="gm-ib" data-tip="Refresh" onclick="refreshEsimSidebar()">${EM_ICON.refresh}</button>`}
+      <span class="gm-count">${idx.length ? `1–${idx.length} of ${idx.length}` : ""}</span>
+    </div>
+    <div class="gm-list" id="esimListWrap">${idx.length ? idx.map(i=>renderEsimRow(EMAIL_SIM_MESSAGES[i],i)).join("")
+      : `<div class="gm-empty">No messages here${toolState.esim.searchQuery?" matching your search":toolState.esim.selectedFolder===null?" — nice work, inbox zero":""}.</div>`}</div>`;
+}
+function renderEsimListRows(){ return renderEsimList(); }
 function setEsimSearch(v){
   toolState.esim.searchQuery = v;
-  const wrap = document.getElementById("esimListWrap");
-  if(wrap) wrap.innerHTML = renderEsimListRows();
+  const pane = document.getElementById("esimPane");
+  if(pane && toolState.esim.open==null) pane.innerHTML = renderEsimList();
 }
 window.setEsimSearch = setEsimSearch;
 
 function renderEsimRow(m,i){
   const e = toolState.esim;
-  const active = e.selected===i;
   const unread = !!e.unread[i];
   const starred = !!e.starred[i];
-  const av = esimAvatar(m.from);
+  const lblId = e.filing[i], l = lblId ? findLabel(lblId) : null;
   const senderName = m.from.split(/[,<]/)[0].trim();
-  const preview = m.body.replace(/\{\{LINK:.*?\}\}/g,"link").replace(/\n/g," ").slice(0,54);
+  const preview = m.body.replace(/\{\{LINK:(.*?)\}\}/g,"$1").replace(/\n/g," ").slice(0,120);
   const badges = [];
-  if(e.replies[i]) badges.push('<span class="estatus replied">Replied</span>');
-  if(e.archived[i]) badges.push('<span class="estatus archived">Archived</span>');
-  if(e.reported[i]) badges.push('<span class="estatus reported">Reported</span>');
+  if(e.replies[i]) badges.push('<span class="gm-tag">Replied</span>');
+  if(e.archived[i]) badges.push('<span class="gm-tag">Archived</span>');
+  if(e.reported[i]) badges.push('<span class="gm-tag">Reported</span>');
+  if((e.snoozed||{})[i]) badges.push('<span class="gm-tag">Snoozed</span>');
   return `
-    <div class="esim-row ${active?'active':''} ${unread?'unread':''}" draggable="true" ondragstart="mailDragStart(event,${i})" onclick="selectEsimEmail(${i})">
-      <span class="erow-star ${starred?'on':''}" onclick="event.stopPropagation(); toggleEsimStar(${i})">${starred?"★":"☆"}</span>
-      <span class="erow-avatar" style="background:${av.color};">${esc(av.initials)}</span>
-      <div class="erow-main">
-        <div class="erow-topline"><span class="efrom">${esc(senderName)}</span><span class="emeta">${esc(m.meta)}</span></div>
-        <div class="esubj">${esc(m.subj)}<span class="epreview"> — ${esc(preview)}</span></div>
-        ${badges.length?`<div style="margin-top:3px;">${badges.join(" ")}</div>`:""}
-      </div>
-      <div class="erow-hover-icons">
-        <button title="Archive" onclick="event.stopPropagation(); archiveEsimEmail(${i})">🗄</button>
-        <button title="Report as phishing" onclick="event.stopPropagation(); reportEsimPhishing(${i})">🚩</button>
-      </div>
+    <div class="gm-row ${unread?'unread':''} ${e.focus===i?'focus':''} ${(e.sel||{})[i]?'sel':''}" draggable="true" ondragstart="mailDragStart(event,${i})" onclick="selectEsimEmail(${i})">
+      <input type="checkbox" class="gm-chk" ${(e.sel||{})[i]?"checked":""} onclick="event.stopPropagation(); esimToggleSel(${i}, this.checked)">
+      <span class="gm-star ${starred?'on':''}" title="${starred?'Starred':'Not starred'}" onclick="event.stopPropagation(); toggleEsimStar(${i})">${starred?EM_ICON.starOn:EM_ICON.star}</span>
+      <span class="gm-from">${esc(senderName)}</span>
+      <span class="gm-snip">${l?`<span class="gm-chip" style="background:${l.color}">${esc(l.name)}</span>`:""}${badges.join("")}<span class="gm-subj">${esc(m.subj)}</span> — ${esc(preview)}</span>
+      <span class="gm-time">${esc(m.meta)}</span>
+      <span class="gm-hover">
+        <button class="gm-ib" data-tip="Archive" onclick="event.stopPropagation(); archiveEsimEmail(${i})">${EM_ICON.archive}</button>
+        <button class="gm-ib" data-tip="Report as phishing" onclick="event.stopPropagation(); reportEsimPhishing(${i})">${EM_ICON.report}</button>
+        <button class="gm-ib" data-tip="Mark as ${unread?'read':'unread'}" onclick="event.stopPropagation(); esimToggleRead(${i})">${EM_ICON.unread}</button>
+        <button class="gm-ib" data-tip="Snooze" onclick="event.stopPropagation(); esimOpenSnooze(${i})">${EM_ICON.snooze}</button>
+      </span>
     </div>`;
 }
 function mailDragStart(ev, idx){ ev.dataTransfer.setData("text/plain", String(idx)); }
 window.mailDragStart = mailDragStart;
+
+/* ---------- menus, selection, snackbar ---------- */
+const ESIM_SNOOZE = [["Later today","6:00 PM"],["Tomorrow","Tue, 8:00 AM"],["This weekend","Sat, 8:00 AM"],["Next week","Mon, 8:00 AM"]];
+function esimOpenSnooze(i){ toolState.esim.menu = i; toolState.esim.labelMenu = null; refreshEsimSidebar(); }
+window.esimOpenSnooze = esimOpenSnooze;
+function renderEsimSnoozeMenu(i){
+  return `<div class="gm-menu" onclick="event.stopPropagation()"><h6>Snooze until…</h6>
+    ${ESIM_SNOOZE.map(([a,b],k)=>`<button onclick="esimSnooze(${i},${k})">${a}<span>${b}</span></button>`).join("")}
+    <button style="color:#5f6368;" onclick="esimCloseMenus()">Cancel</button></div>`;
+}
+function esimSnooze(i,k){
+  const e = toolState.esim;
+  e.snoozed = e.snoozed || {}; e.snoozed[i] = ESIM_SNOOZE[k][1]; e.menu = null; e.open = null;
+  esimSnack(`Snoozed until ${ESIM_SNOOZE[k][0].toLowerCase()}, ${ESIM_SNOOZE[k][1]}.`, ()=>{ delete e.snoozed[i]; });
+}
+window.esimSnooze = esimSnooze;
+function esimOpenLabelMenu(target){ toolState.esim.labelMenu = target; toolState.esim.menu = null; refreshEsimSidebar(); }
+window.esimOpenLabelMenu = esimOpenLabelMenu;
+function renderEsimLabelMenu(target){
+  const e = toolState.esim;
+  const cur = typeof target === "number" ? e.filing[target] : null;
+  return `<div class="gm-menu gm-lblmenu" onclick="event.stopPropagation()"><h6>Label as…</h6>
+    <button class="${cur==null?'on':''}" onclick="esimApplyLabel('__inbox__')">Inbox (unfiled)</button>
+    ${flattenLabelsForSelect().map(o=>`<button class="${cur===o.id?'on':''}" onclick="esimApplyLabel('${o.id}')">${esc(o.label)}</button>`).join("")}
+    <button style="color:#0b57d0;" onclick="esimCloseMenus(); startAddLabel('ROOT')">+ Create new label</button>
+    <button style="color:#5f6368;" onclick="esimCloseMenus()">Cancel</button></div>`;
+}
+async function esimApplyLabel(id){
+  const e = toolState.esim, t = e.labelMenu;
+  const targets = t === "sel" ? Object.keys(e.sel||{}).filter(k=>e.sel[k]).map(Number) : [t];
+  const prev = targets.map(i=>({i, v:e.filing[i]}));
+  targets.forEach(i=>{ e.filing[i] = (id==="__inbox__") ? null : id; });
+  if(t==="sel") e.sel = {};
+  e.labelMenu = null;
+  await storeSet("inbox-filing", e.filing);
+  const l = id==="__inbox__" ? null : findLabel(id);
+  esimSnack(`${targets.length} conversation${targets.length>1?"s":""} ${l?`labelled ${l.name}`:"moved to Inbox"}.`, ()=>{ prev.forEach(x=>{ e.filing[x.i]=x.v; }); storeSet("inbox-filing", e.filing); });
+}
+window.esimApplyLabel = esimApplyLabel;
+function esimCloseMenus(){ toolState.esim.menu = null; toolState.esim.labelMenu = null; refreshEsimSidebar(); }
+window.esimCloseMenus = esimCloseMenus;
+function esimToggleSel(i,on){ const e = toolState.esim; e.sel = e.sel||{}; e.sel[i]=on; refreshEsimSidebar(); }
+window.esimToggleSel = esimToggleSel;
+function esimSelectAll(on){ const e = toolState.esim; e.sel = {}; if(on) esimVisibleIndices().forEach(i=>e.sel[i]=true); refreshEsimSidebar(); }
+window.esimSelectAll = esimSelectAll;
+function esimToggleRead(i){ toolState.esim.unread[i] = !toolState.esim.unread[i]; refreshEsimSidebar(); }
+window.esimToggleRead = esimToggleRead;
+function esimBulk(what){
+  const e = toolState.esim;
+  const ids = Object.keys(e.sel||{}).filter(k=>e.sel[k]).map(Number);
+  if(!ids.length) return;
+  const prev = ids.map(i=>({i, archived:!!e.archived[i], reported:!!e.reported[i], unread:!!e.unread[i]}));
+  ids.forEach(i=>{ if(what==="archive"){ e.archived[i]=true; e.unread[i]=false; } else if(what==="report"){ e.reported[i]=true; e.unread[i]=false; } else e.unread[i]=false; });
+  e.sel = {}; saveEsimInteractions();
+  esimSnack(`${ids.length} conversation${ids.length>1?"s":""} ${what==="archive"?"archived":what==="report"?"reported as phishing":"marked as read"}.`,
+    ()=>{ prev.forEach(x=>{ e.archived[x.i]=x.archived; e.reported[x.i]=x.reported; e.unread[x.i]=x.unread; }); saveEsimInteractions(); });
+}
+window.esimBulk = esimBulk;
+function esimSnack(text, undo){
+  const e = toolState.esim;
+  e.snack = text; e.undo = undo || null;
+  clearTimeout(esimSnack.t);
+  esimSnack.t = setTimeout(()=>{ e.snack = null; e.undo = null; refreshEsimSidebar(); }, 6000);
+  refreshEsimSidebar();
+}
+function esimUndo(){
+  const e = toolState.esim;
+  if(e.undo){ e.undo(); e.undo = null; e.snack = null; refreshEsimSidebar(); }
+}
+window.esimUndo = esimUndo;
+function esimKeyDown(ev){
+  const tag = (ev.target.tagName||"").toLowerCase();
+  if(tag==="input" || tag==="textarea"){ if(ev.key==="Escape") ev.target.blur(); return; }
+  const e = toolState.esim, list = esimVisibleIndices(), k = ev.key;
+  if(k==="/"){ ev.preventDefault(); const s = document.getElementById("esimSearchInput"); if(s) s.focus(); return; }
+  if(k==="z"){ ev.preventDefault(); esimUndo(); return; }
+  if(k==="Escape"){ esimCloseMenus(); return; }
+  if(e.open==null && (k==="j"||k==="k")){
+    ev.preventDefault();
+    const at = list.indexOf(e.focus), next = Math.min(list.length-1, Math.max(0, (at<0?0:at) + (k==="j"?1:-1)));
+    e.focus = list[next]; refreshEsimSidebar(); return;
+  }
+  if(k==="u" && e.open!=null){ ev.preventDefault(); backToEsimList(); return; }
+  const i = e.open!=null ? e.open : (list.indexOf(e.focus)>=0 ? e.focus : list[0]);
+  if(i==null) return;
+  if(k==="o"||k==="Enter"){ ev.preventDefault(); if(e.open==null) selectEsimEmail(i); return; }
+  if(k==="s"){ ev.preventDefault(); toggleEsimStar(i); return; }
+  if(k==="e"){ ev.preventDefault(); archiveEsimEmail(i); return; }
+  if(k==="!"){ ev.preventDefault(); reportEsimPhishing(i); return; }
+  if(k==="b"){ ev.preventDefault(); esimOpenSnooze(i); return; }
+  if(k==="l"){ ev.preventDefault(); esimOpenLabelMenu(i); return; }
+  if(k==="r"){ ev.preventDefault(); if(e.open==null) selectEsimEmail(i); openEsimReply(i); return; }
+}
+window.esimKeyDown = esimKeyDown;
 
 /* ---------- reading pane ---------- */
 function renderEsimPane(i){
@@ -16213,91 +16489,83 @@ function renderEsimPane(i){
   const e = toolState.esim;
   const av = esimAvatar(m.from);
   const bodyHtml = esc(m.body).replace(/\{\{LINK:(.*?)\}\}/g, (_, label)=>
-    `<a href="#" class="esim-fake-link" onclick="event.preventDefault(); clickEsimLink(${i})">${esc(label)}</a>`);
+    `<a href="#" class="gm-link" onclick="event.preventDefault(); clickEsimLink(${i})">${esc(label)}</a>`);
   const replyOpen = !!e.replyOpen[i] || !!e.replies[i];
-  const filedId = e.filing[i];
+  const l = e.filing[i] ? findLabel(e.filing[i]) : null;
+  const fromName = m.from.split(/[,<]/)[0].trim();
+  const fromAddr = (m.from.match(/<([^>]+)>/)||[])[1] || "";
   return `
-    <div class="ephead">
-      <h4>${esc(m.subj)}</h4>
-      <div class="ephead-toolbar">
-        <button class="eicon-btn" title="Archive" onclick="archiveEsimEmail(${i})">🗄</button>
-        <button class="eicon-btn" title="Report as phishing" onclick="reportEsimPhishing(${i})">🚩</button>
-        <button class="eicon-btn" title="Star" onclick="toggleEsimStar(${i})">${e.starred[i]?"★":"☆"}</button>
-      </div>
+    <div class="gm-bar">
+      <button class="gm-ib" data-tip="Back to ${esc(esimFolderName())}" onclick="backToEsimList()">${EM_ICON.back}</button>
+      <button class="gm-ib" data-tip="Archive" onclick="archiveEsimEmail(${i})">${EM_ICON.archive}</button>
+      <button class="gm-ib" data-tip="Report as phishing" onclick="reportEsimPhishing(${i})">${EM_ICON.report}</button>
+      <button class="gm-ib" data-tip="Mark as unread" onclick="esimToggleRead(${i}); backToEsimList()">${EM_ICON.unread}</button>
+      <button class="gm-ib" data-tip="Snooze" onclick="esimOpenSnooze(${i})">${EM_ICON.snooze}</button>
+      <button class="gm-ib" data-tip="Label as" onclick="esimOpenLabelMenu(${i})">${EM_ICON.label}</button>
+      <span class="gm-count">${l?esc(l.name):"Unfiled"}</span>
     </div>
-    <div class="ep-sender-row">
-      <span class="erow-avatar" style="background:${av.color};">${esc(av.initials)}</span>
-      <div>
-        <div class="epfrom-name">${esc(m.from)}</div>
-        <div class="epfrom-meta">to me &middot; ${esc(m.meta)}</div>
+    <div class="gm-read">
+      <h2>${esc(m.subj)} ${l?`<span class="gm-tag">${esc(l.name)}</span>`:""}</h2>
+      <div class="gm-sender">
+        <span class="gm-av" style="background:${av.color};">${esc(av.initials)}</span>
+        <div style="min-width:0;"><b>${esc(fromName)}</b> ${fromAddr?`<span>&lt;${esc(fromAddr)}&gt;</span>`:""}<br><span>to me</span></div>
+        <span class="gm-when">${esc(m.meta)}
+          <span class="gm-star ${e.starred[i]?'on':''}" style="cursor:pointer;margin-left:8px;vertical-align:-5px;" onclick="toggleEsimStar(${i})">${e.starred[i]?EM_ICON.starOn:EM_ICON.star}</span></span>
       </div>
-    </div>
-    <div class="epbody">${bodyHtml}</div>
-    <select onchange="moveEmailTo(${i}, this.value)" style="width:100%;margin-bottom:14px;padding:8px 10px;border-radius:7px;border:1px solid var(--line);font-size:12.5px;">
-      <option value="">Move to&hellip;</option>
-      <option value="__inbox__" ${filedId==null?"selected":""}>Inbox (unfiled)</option>
-      ${flattenLabelsForSelect().map(o=>`<option value="${o.id}" ${filedId===o.id?"selected":""}>${esc(o.label)}</option>`).join("")}
-    </select>
-    ${replyOpen ? `
-      <div class="esim-actions">
-        <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;font-style:italic;">Reminder: structure your reply with ACT — Acknowledge, Clarify, Timeline.</p>
-        <textarea id="esimReplyInput" placeholder="Type your reply here…">${esc(e.replies[i]||"")}</textarea>
-        <div class="esim-btn-row">
-          <button class="btn btn-sm btn-navy" onclick="sendEsimReply(${i})">Send</button>
-          <button class="btn btn-sm btn-ghost" onclick="closeEsimReply(${i})">Discard</button>
-        </div>
-      </div>` : `
-      <button class="esim-reply-collapsed" onclick="openEsimReply(${i})">↩ Reply</button>
-    `}
-  `;
+      <div class="gm-msg">${bodyHtml.replace(/\n/g,"<br>")}</div>
+      ${replyOpen ? `
+        <div class="gm-msg" style="margin-top:18px;">
+          <div class="esim-actions">
+            <p style="font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;font-style:italic;">Reminder: structure your reply with ACT — Acknowledge, Clarify, Timeline.</p>
+            <textarea id="esimReplyInput" placeholder="Type your reply here…" oninput="toolState.esim.replyDraft[${i}]=this.value">${esc(e.replies[i]||e.replyDraft[i]||"")}</textarea>
+            <div class="esim-btn-row">
+              <button class="gm-send" onclick="sendEsimReply(${i})">Send</button>
+              <button class="btn btn-sm btn-ghost" onclick="closeEsimReply(${i})">Discard</button>
+            </div>
+          </div>
+        </div>`
+      : `<div class="gm-replybar">
+          <button class="gm-pill" onclick="openEsimReply(${i})">${EM_ICON.reply} Reply</button>
+          <button class="gm-pill" onclick="archiveEsimEmail(${i})">${EM_ICON.archive} Archive</button>
+          <button class="gm-pill" onclick="reportEsimPhishing(${i})">${EM_ICON.report} Report phishing</button>
+        </div>`}
+    </div>`;
 }
+function backToEsimList(){ toolState.esim.open = null; refreshEsimSidebar(); }
+window.backToEsimList = backToEsimList;
 
 function refreshEsimListAndProgress(){
-  const listEl = document.getElementById("esimListWrap");
-  if(listEl) listEl.innerHTML = renderEsimListRows();
-  const progEl = document.querySelector(".esim-progress");
-  if(progEl) progEl.textContent = `${esimHandledCount()} / ${EMAIL_SIM_MESSAGES.length} processed · ${esimFiledCount()} / ${EMAIL_SIM_MESSAGES.length} filed · ${esimUnreadCount()} unread`;
-  const sidebarEl = document.querySelector(".inbox-sidebar");
-  if(sidebarEl){
-    const e = toolState.esim;
-    sidebarEl.innerHTML = `
-      <div class="folder-item ${e.selectedFolder===null?'active':''}" onclick="selectFolder(null)">
-        <span class="fname">📥 <span>Inbox</span></span>
-        <span class="fcount">${countUnfiled()}</span>
-      </div>
-      <div class="sidebar-section-lbl">Labels</div>
-      ${labelChildren(null).map(l=>renderFolderNode(l)).join("")}
-      ${e.addingUnder==="ROOT" ? renderAddLabelRow(null) : `<button class="add-label-btn" onclick="startAddLabel('ROOT')">+ Add Label</button>`}
-    `;
-  }
+  refreshEsimSidebar();
 }
 
 function selectEsimEmail(i){
   toolState.esim.selected = i;
+  toolState.esim.focus = i;
+  toolState.esim.open = i;
   toolState.esim.unread[i] = false;
-  document.getElementById("esimPane").innerHTML = renderEsimPane(i);
-  refreshEsimListAndProgress();
+  refreshEsimSidebar();
 }
 window.selectEsimEmail = selectEsimEmail;
 
 function toggleEsimStar(i){
   toolState.esim.starred[i] = !toolState.esim.starred[i];
   saveEsimInteractions();
-  if(toolState.esim.selected===i) document.getElementById("esimPane").innerHTML = renderEsimPane(i);
-  refreshEsimListAndProgress();
+  refreshEsimSidebar();
 }
 window.toggleEsimStar = toggleEsimStar;
 
 function openEsimReply(i){
   toolState.esim.replyOpen[i] = true;
-  document.getElementById("esimPane").innerHTML = renderEsimPane(i);
+  toolState.esim.open = i;
+  refreshEsimSidebar();
   const ta = document.getElementById("esimReplyInput");
-  if(ta) ta.focus();
+  if(ta){ ta.focus(); ta.selectionStart = ta.selectionEnd = ta.value.length; }
 }
 window.openEsimReply = openEsimReply;
 function closeEsimReply(i){
   toolState.esim.replyOpen[i] = false;
-  document.getElementById("esimPane").innerHTML = renderEsimPane(i);
+  delete toolState.esim.replyDraft[i];
+  refreshEsimSidebar();
 }
 window.closeEsimReply = closeEsimReply;
 
@@ -16326,24 +16594,28 @@ function sendEsimReply(i){
   }
   toolState.esim.replies[i] = text;
   toolState.esim.replyOpen[i] = false;
+  delete toolState.esim.replyDraft[i];
+  toolState.esim.open = null;
   saveEsimInteractions();
-  selectEsimEmail(i);
-  toast("Reply sent");
+  esimSnack("Reply sent.");
 }
 window.sendEsimReply = sendEsimReply;
 
 function archiveEsimEmail(i){
-  toolState.esim.archived[i] = true;
+  const e = toolState.esim;
+  const was = !!e.archived[i];
+  e.archived[i] = true; e.unread[i] = false; e.open = null;
   saveEsimInteractions();
-  selectEsimEmail(i);
+  esimSnack("Conversation archived.", ()=>{ e.archived[i] = was; saveEsimInteractions(); });
 }
 window.archiveEsimEmail = archiveEsimEmail;
 
 function reportEsimPhishing(i){
-  toolState.esim.reported[i] = true;
+  const e = toolState.esim;
+  const was = !!e.reported[i];
+  e.reported[i] = true; e.unread[i] = false; e.open = null;
   saveEsimInteractions();
-  selectEsimEmail(i);
-  toast("Marked as phishing");
+  esimSnack("Reported as phishing and moved to Spam.", ()=>{ e.reported[i] = was; saveEsimInteractions(); });
 }
 window.reportEsimPhishing = reportEsimPhishing;
 
@@ -18512,10 +18784,11 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/attendance.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
-<!-- 🧭 Blueprints: the Trainee and Trainer blueprints (blueprint-content.js), one deck in two tabs, with /blueprint.pdf rebuilt after every deploy -->
+<!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->
 <script src="/js/blueprint-content.js?v=ft-2026.10.15-blueprint"></script>
 <script src="/js/lsh-blueprint-course.js?v=ft-2026.10.15-blueprint"></script>
 <script src="/js/lsh-blueprint.js?v=ft-2026.10.15-blueprint"></script>
+<script src="/js/lsh-autoplay.js?v=ft-2026.10.15-autoplay"></script>
 <script src="/js/lsh-dashboard.js?v=ft-2026.10.15-onescreen"></script>
 <script src="/js/ft-card-grid.js?v=ft-2026.10.06-frame"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.08-lines"></script>

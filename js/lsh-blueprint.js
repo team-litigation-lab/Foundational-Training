@@ -6,7 +6,9 @@
    - the Admin blueprint (optional), for whoever canAdmin() says: the person who runs the platform itself.
    Trainees (and an admin in Trainee view) get the trainee deck only; admins get both as tabs,
    so they can share the Trainee blueprint in Google Meet. ◀ ▶, the ← → keys or the contents strip
-   move through it; Esc closes it. ⬇ Download PDF saves the deck that's showing: a landscape PDF,
+   move through it; Esc closes it. The deck is read on screen — there is no PDF download on a blueprint;
+   LSHBlueprint.pdf() stays for the platform's own publishing, not as a button here. The old wording:
+   a landscape PDF,
    one page a slide, real text (jsPDF from cdnjs, loaded the first time). The PDF is made from the
    deployed platform each time, and its cover and footers carry the platform's version, so a new
    deploy always gives an up-to-date PDF.
@@ -145,7 +147,6 @@
             <div class="lbp-top">
                 <div><h2 id="lbp-title">Blueprint</h2><div class="lbp-sub" id="lbp-sub"></div></div>
                 <div style="display:flex;gap:10px;align-items:center">
-                    <button id="lbp-pdf-btn" type="button" onclick="LSHBlueprint.pdf()">⬇ Download PDF</button>
                     <button id="lbp-close" type="button" onclick="LSHBlueprint.close()">✕ Close</button>
                 </div>
             </div>
