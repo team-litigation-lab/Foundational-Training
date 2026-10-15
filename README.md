@@ -56,7 +56,7 @@ A grading system's score is the average of its graded items; the overall score i
 
 **📖 Legal Glossary (`glossary.html`).** A standalone, searchable glossary of about 700 US legal terms and Latin phrases, with an area filter (civil procedure, evidence, contracts, torts and injury, criminal, property, family, estates, business, immigration, employment, insurance, Latin) and an A–Z jump bar. The terms are one `RAW` list at the top of the page's script (`Term | Area | Meaning`, one per line); add or edit terms there. It is linked from the header of `kb.html`.
 
-Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`). Lessons are named by their training title, not by day.
+Trainees see **the lessons**. Lessons 1–8 show their training deck page by page, each page an image rendered from the deck's PDF (`build/slides/image_lesson.py`); Lesson 9 is the Days 17–18 instructions deck (below). Lessons are named by their training title, not by day.
 
 The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
 
@@ -73,8 +73,9 @@ The curriculum (the Training Guide, with the day-by-day tasks, links and facilit
 | 6 | Intake Specialist Training | ✅ the deck's pages as slides (105, from its PDF in two parts) |
 | 7 | Claims Specialist Training | ✅ the deck's pages as slides (77, from its PDF) |
 | 8 | Medical Records Specialist Training | ✅ the deck's pages as slides (55, from its PDF) |
+| 9 | Lien Negotiator Training | ✅ Days 17–18's instructions as slides (9), with the Canva training deck and Word Game 1 in them |
 
-**Lien Negotiator Training** (id 9) is off the standard training: it becomes a separate training. Its file is `build/lessons/off/lesson09.js` (the Canva deck and Word Game 1, `ft/day17/word-game-1.html`); its Process Questions sheet and its Simulators demo (Reduction Request, Settlement Release Forms and Closing Statement) stay in `js/ft-process.js` and `js/ft-simulators.js`, which show only the items of lessons on the platform, so they come back with the lesson.
+**Lien Negotiator Training** (id 9, `build/lessons/lesson09.js`) is back on the standard training, as the lesson for **Days 17–18**. It had been taken off to become a separate training, which left those two days with no lesson — so nothing on the platform could record them as done, and a trainee could never reach the end of the programme. Its slides are everything the Training Guide asks of the trainee on those two days, in the order they run: Day 17's carryover, Saving Medical Bills & Records and the PM discussion, the Lien Negotiator **Canva deck** at that discussion, **Word Game 1** (`ft/day17/word-game-1.html`), then Day 18's Process Questions, live demo, shadowing and the instructions for requesting a new role. They come from the trainee-facing day files (`build/days/day17.js`, `day18.js`), so no facilitator content is in them — only the trainer-slot placeholders, which a trainer in trainer view sees filled with the Day 17–18 facilitator notes. Its **Process Questions** (the `lien-negotiator` set, 12 questions, `js/ft-process.js`) were already written and come back with it. Like every lesson day it runs Lesson → Activities → Process Questions; when those pass, the programme is complete and 📚 Dashboard shows 🎓.
 
 Onboarding and Setting of Expectations & Tech Set-up (ids 10 and 11) are off the platform: their files are in `build/lessons/off/` (with the Day 0 screenshots still in `ft/day0/img/` and the `d0:*` trainer notes), which the build skips. To bring one back, move its file into `build/lessons/` and rebuild; it keeps its id, so saved progress doesn't shift. `DAYS` follows the file order, and a lesson's `label` / `short` replace "Lesson N of 9" and the dashboard circle's number.
 
@@ -138,7 +139,7 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
 
 **Training Orientation and Rules** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
 
-- **It isn't one of the program's 8 lessons.**
+- **It isn't one of the program's 9 lessons.**
   - It's always open, for every trainee and batch.
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
@@ -284,7 +285,7 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ## 📅 The 18 days and their activities (`js/ft-day-activities.js`)
 
-The program runs on **18 classroom days**; the platform serves **8 lesson decks, named by their training title, not by day**. The two are deliberately different shapes — one lesson covers several days (Receptionist Training is Days 3–5), and Days 17–18 (Lien Negotiator) have no deck on the platform at all. `js/ft-day-activities.js` is the one place that says **which activity belongs to which day**, read off the Training Guide (`trainer/curriculum.json`, Admin → 📘 Curriculum) in the guide's own wording.
+The program runs on **18 classroom days**; the platform serves **9 lesson decks, named by their training title, not by day**. The two are deliberately different shapes — one lesson covers several days (Receptionist Training is Days 3–5; Lien Negotiator Training, Lesson 9, is Days 17–18). `js/ft-day-activities.js` is the one place that says **which activity belongs to which day**, read off the Training Guide (`trainer/curriculum.json`, Admin → 📘 Curriculum) in the guide's own wording.
 
 Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`, where `at` says where it is done — `session` (a 🟢 Practice Session), `trainer` (🧑‍🏫 With your trainer), `tool` (a platform tool: `lor`, `skills`, `process`, `calsim`, `callsim`), `drive` (uploaded to the trainee's Assessments/Activities folder), `gc` (run in the training GC) or `room` (live in the classroom, nothing to submit) — and `id` is the platform record it maps to. The daily Typing and Spelling Tests and the Free Communication Upskill are listed once and added to all 18 days, as the guide repeats them.
 
@@ -306,8 +307,8 @@ Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`,
 | 14 | Provider Communication Training | 8 | 🧑‍🏫 **MedLOR Demo** · 🟢 **Medical Records: ChartSwap request** |
 | 15 | Provider Communication Training | 8 | 🧑‍🏫 MedLOR recorded demonstration (entire day) · Shadowing |
 | 16 | Provider Communication Training | 8 | 🧑‍🏫 **LV (Lien Verification) Request Demo** |
-| 17 | Lien Negotiator Training | — | the LV demo buffer (Saving Medical Bills & Records is off-platform) |
-| 18 | Lien Negotiator Training | — | ✍️ Process Questions (the net sheet, reduction request and closing statement are off-platform) |
+| 17 | Lien Negotiator Training | 9 | the LV demo buffer · Saving Medical Bills & Records (in the Lesson 9 deck) |
+| 18 | Lien Negotiator Training | 9 | ✍️ Process Questions (the net sheet, reduction request and closing statement are done live) |
 
 **What reads it.** The 🟢 Practice Sessions and 🧑‍🏫 With your trainer cards carry their day in the kicker — *Days 4–5 · Receptionist Training*, *Days 14–15 · Demo · Medical Records Specialist Training* — as do the 🧰 LOR Drafting Activity card (*Day 11*) and the 🧪 Skill Building cards (*Days 1–18*). `FTSessions.forDay(n)` lists a day's platform activities, next to the existing `FTSessions.forLesson(l)`. The helpers are `FTDays.of(n)`, `FTDays.items(n)`, `FTDays.forSession(id)`, `FTDays.forAct(id)`, `FTDays.forTool(id)`, `FTDays.forLesson(l)` and `FTDays.label(days)` (which writes *Day 4*, *Days 14–15* or *Days 4, 6 and 9*).
 

@@ -151,14 +151,15 @@ const DAYS = [
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
-  // Days 17–18 are the Lien Negotiator block. It has no deck on the platform (build/lessons/off/lesson09.js
-  // is the Canva embed, not a page-by-page deck), so lessons is empty: the content is in Admin → 📘 Curriculum.
-  {day:17, role:"Lien Negotiator Training", lessons:[], items:[
+  // Days 17–18 are the Lien Negotiator block, taught from Lesson 9 (build/lessons/lesson09.js): a deck of the
+  // two days' instructions, with the Canva training deck and Word Game 1 in it. Being a lesson is what gives the
+  // platform a record of these days being finished — without one, a trainee could never reach the end.
+  {day:17, role:"Lien Negotiator Training", lessons:[9], items:[
     {t:"Buffer Time (2–3 hrs): carryover for the LV Request demo", kind:"Buffer", at:"trainer", id:"lv-demo"},
     {t:"Saving Medical Bills & Records (to ~1:00 PM): the step-by-step process and the sample demo", kind:"Activity", at:"room"},
     {t:"Your own work guide/notes on the naming conventions (MED — Provider — HICF … )", kind:"Activity", at:"room"}
   ]},
-  {day:18, role:"Lien Negotiator Training", lessons:[], items:[
+  {day:18, role:"Lien Negotiator Training", lessons:[9], items:[
     {t:"Digital Handouts (Individual Activity)", kind:"Breakout", at:"gc"},
     {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
     {t:"Exercise", kind:"Exercise", at:"gc"},
