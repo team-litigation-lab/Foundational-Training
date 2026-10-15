@@ -2419,7 +2419,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
 </style>
-<script src="/js/portal-gate.js?v=2026.10.09-modules"></script>
+<script src="/js/portal-gate.js?v=2026.10.15-dashboard"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -6920,7 +6920,7 @@ Open immediately with the specific, in-character problem itself — never a gene
 
 function renderOpenRoleplay(){
   const s = state.rpSession;
-  if(!s) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">No active roleplay — head back to 📚 Modules to start one.</div>`;
+  if(!s) return `<div class="card" style="padding:30px;text-align:center;color:var(--ink-soft);">No active roleplay — head back to 📚 Dashboard to start one.</div>`;
   const elapsed = Math.floor((Date.now()-s.startedAt)/1000);
   const mm = String(Math.floor(elapsed/60)).padStart(2,"0");
   const ss = String(elapsed%60).padStart(2,"0");
@@ -6930,7 +6930,7 @@ function renderOpenRoleplay(){
   }
 
   return `
-    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Modules</button>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Dashboard</button>
     <div class="rp-session-header">
       <div>
         <div class="rp-session-tag">${s.category.icon} ${esc(s.category.label)} · ${esc(s.mode.label)}${s.persona ? ` · with ${esc(s.persona.label)}` : ""}${s.isQuickPractice ? ` · 🎲 Quick Practice` : ""}</div>
@@ -7107,7 +7107,7 @@ function renderRapidDelegationPart(s){
   const task = s.rapidTasks[s.rapidIndex];
   const done = s.rapidIndex >= s.rapidTasks.length;
   return `
-    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Modules</button>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:14px;" onclick="rpExitToHub()">&larr; Back to Dashboard</button>
     <div class="rp-session-header">
       <div>
         <div class="rp-session-tag">${s.category.icon} Part 2: Rapid Delegation</div>
@@ -8140,7 +8140,7 @@ function syncRouteHash(){
 function routeDepth(){ const st = history.state; return (st && typeof st.lshDepth==="number") ? st.lshDepth : 0; }
 function routeTrail(){ try{ const t = JSON.parse(sessionStorage.getItem("lsh_route_trail")||"[]"); return Array.isArray(t) ? t : []; }catch(e){ return []; } }
 function routeTrailSet(depth, h){ const t = routeTrail().slice(0, depth); t[depth] = h; try{ sessionStorage.setItem("lsh_route_trail", JSON.stringify(t.slice(-60))); }catch(e){} }
-const ROUTE_LABELS = {dashboard:"Modules", practice:"Practice Lab", notes:"My Notes", clientprofile:"Client Profile", handouts:"Handouts",
+const ROUTE_LABELS = {dashboard:"Dashboard", practice:"Practice Lab", notes:"My Notes", clientprofile:"Client Profile", handouts:"Handouts",
   tasks:"Tasks", crisisroleplay:"Live Roleplay", orientation:"Orientation", facilitatorguide:"Facilitator Guide"};
 function routeLabel(h){
   const m = String(h||"").match(/^#\/([a-z]+)(?:\/([^/?#]+))?/i);
@@ -8885,7 +8885,7 @@ function renderDay(id){
   if(!d) return `<p>Day not found.</p>`;
   if(!dayUnlocked(id)){
     return `
-      <a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>
+      <a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>
       <div class="card" style="padding:40px;text-align:center;">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">${ftName(id)} is locked</h2>
@@ -8897,7 +8897,7 @@ function renderDay(id){
   }
   const prog = state.progress[id];
   const compactHead = `
-    <a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>
+    <a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>
     <div class="day-head-compact">
       <span class="dhc-eyebrow">${ftLabel(d)}</span>
       <span class="dhc-title">${esc(d.title)}</span>
@@ -18386,7 +18386,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.09-modules";
+var APP_BUILD = "ft-2026.10.15-dashboard";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18429,39 +18429,39 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.09-modules"></script>
-<script src="/js/ft-updates.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
+<script src="/js/ft-updates.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-slides.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.08-drive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.08-drive"></script>
-<script src="/js/ft-process.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-process.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-rules.js?v=ft-2026.10.08-drive"></script>
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
 <script src="/js/ft-firms.js?v=ft-2026.10.08-firms"></script>
-<script src="/js/ft-simulators.js?v=ft-2026.10.09-modules"></script>
-<script src="/js/ft-sessions.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-simulators.js?v=ft-2026.10.15-dashboard"></script>
+<script src="/js/ft-sessions.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-lor.js?v=ft-2026.10.09-lortest"></script>
-<script src="/js/ft-drive.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-drive.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
-<script src="/js/ft-activities.js?v=ft-2026.10.09-modules"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
+<script src="/js/ft-orientation.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-admin-ops.js?v=ft-2026.10.14-ops"></script>
 <script src="/js/attendance.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
 <!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js) and the Trainee blueprint (Orientation, /blueprint.pdf) rebuilt after every deploy -->
-<script src="/js/blueprint-content.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/blueprint-content.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/lsh-blueprint-course.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/lsh-blueprint.js?v=ft-2026.10.08-perf"></script>
 <script src="/js/lsh-dashboard.js?v=ft-2026.10.15-onescreen"></script>
 <script src="/js/ft-card-grid.js?v=ft-2026.10.06-frame"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.08-lines"></script>
 <script src="/js/lsh-topbar.js?v=2"></script>
-<script src="/js/ft-program.js?v=ft-2026.10.09-modules"></script>
+<script src="/js/ft-program.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/lsh-program.js?v=ft-2026.10.15-onescreen"></script>
 <script src="/js/lsh-tool-links.js?v=ft-2026.10.08-portal"></script>
 <script src="/js/ft-theme.js?v=ft-2026.10.09-grad"></script>
