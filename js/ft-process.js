@@ -626,18 +626,21 @@ Return ONLY a JSON object, no other text:
     }
   }
 };
-// Finishing a lesson that has process questions routes to ✍️ Knowledge Check (its own feature, its own button in
-// the top bar), opening that lesson's answer sheet — rather than a Knowledge Check inside the lesson.
+// A day with a lesson runs Lesson → its Activities → its Process Questions, and only then on through the
+// curriculum. So finishing a lesson does NOT jump to ✍️ Knowledge Check: it records the lesson as studied
+// (which is what unlocks its Process Questions) and goes to 📚 Dashboard, where the next-step band
+// (js/ft-next-step.js) puts the day's activities first and the Process Questions after them.
+// A lesson without process questions is finished outright, as before.
 const __finish = window.finishTrainingForDay;
 window.finishTrainingForDay = async function(id){
   const l = Number(id);
   if(!kcQuestionsFor(l).length) return __finish.apply(this, arguments);
-  // Going through the module is what unlocks its questions, so record it before routing there.
   if(state.traineeId && !state.isAdmin && !(state.progress[l] || {}).studied){
     state.progress[l] = Object.assign({}, state.progress[l], {studied:true, studiedAt:new Date().toISOString()});
     try{ await storeSet("day-progress", state.progress); }catch(err){}
   }
-  return FTProcess.openLesson(l);
+  window.FT_JUST_STUDIED = l;                    // the band says "studied — now the activities" on arrival
+  return goto("modules");
 };
 window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrainingForDay(state.dayId); };
 // the page, beside ✍️ Knowledge Check

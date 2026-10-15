@@ -263,9 +263,10 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!boxes) fail('Trainee view: Process Questions has no boxes for a trainee to type in');
     if (!await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions does not say it is a preview');
 
-    // 8. Process Questions, one set per module: every module locked until the trainee finishes it,
-    //    ✓ Finish lesson marks it studied and opens that module's own Process Questions page directly, and
-    //    each module row in 📚 Training Modules carries its own activities.
+    // 8. Process Questions, one set per module: every module locked until the trainee finishes it.
+    //    A lesson day runs Lesson → Activities → Process Questions: ✓ Finish lesson marks the module studied
+    //    (which unlocks its Process Questions) and goes to 📚 Dashboard, where the day's activities come
+    //    first and the Process Questions after them — it no longer jumps straight to the questions.
     // step 7 emptied the trainee to test the preview: put the real one back and leave preview
     await page.evaluate((tid) => { state.isAdmin = false; state.adminPreview = false; state.traineeId = tid;
         try { sessionStorage.removeItem('lsh_admin_preview'); } catch (e) {} }, id);
@@ -280,8 +281,24 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!pick) fail('no unfinished module with questions to test the lock with');
     await page.evaluate(async (l) => { await window.finishTrainingForDay(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
     if (!await page.evaluate((l) => !!(state.progress[l] || {}).studied, pick)) fail('✓ Finish lesson did not mark the module studied');
-    if (await page.evaluate(() => state.view) !== 'process') fail('✓ Finish lesson did not open that module\'s Process Questions');
-    if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`✓ Finish lesson did not open that module's own page: pqLesson=${await page.evaluate(() => state.pqLesson)}`);
+    // Lesson → Activities → Process Questions: finishing the lesson lands on the dashboard, not the questions.
+    if (await page.evaluate(() => state.view) === 'process') fail('✓ Finish lesson still jumps straight to the Process Questions, skipping the day\'s activities');
+    if (!['modules', 'dashboard'].includes(await page.evaluate(() => state.view))) fail(`✓ Finish lesson should go to the Dashboard for the day's activities: view=${await page.evaluate(() => state.view)}`);
+    const band = await page.evaluate(() => { const c = document.querySelector('.ftn'); return c ? {
+        head: (c.querySelector('.ftn-where') || {}).textContent || '',
+        then: (c.querySelector('.ftn-then button') || c.querySelector('.ftn-now button') || {}).textContent || '',
+        order: [...c.querySelectorAll('.ftn-step b')].map(b => b.textContent) } : null; });
+    if (!band) fail('the Dashboard has no next-step band after a lesson is finished');
+    else {
+        if (!/studied/i.test(band.head)) fail(`the band should say the lesson was studied: ${band.head}`);
+        if (!/Process Questions/.test(band.then)) fail(`the band should offer that lesson's Process Questions after the activities: ${band.then}`);
+        // on a lesson day the Process Questions are the last of the day's steps
+        const pq = band.order.map((t, i) => /^Process Questions/.test(t) ? i : -1).filter(i => i >= 0);
+        if (pq.length && pq[pq.length - 1] !== band.order.length - 1 && band.order.slice(pq[0]).some(t => !/^Process Questions/.test(t))) fail(`the Process Questions are not after the day's activities: ${JSON.stringify(band.order)}`);
+    }
+    // and the questions themselves are now open for that module, one click away
+    await page.evaluate(async (l) => { FTProcess.openLesson(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
+    if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`that module's Process Questions page did not open: pqLesson=${await page.evaluate(() => state.pqLesson)}`);
     const opened = await page.evaluate(() => ({ h1: (document.querySelector('.fp-hero h1')||{}).textContent || '', boxes: document.querySelectorAll('main textarea').length }));
     if (!opened.boxes) fail('the finished module has no boxes to answer in');
     const want = await page.evaluate((l) => ftName(l), pick);

@@ -55,7 +55,7 @@ const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayU
 const sessionOpen = id => { try{ return root.FTSessions && typeof FTSessions.openable === "function" ? !!FTSessions.openable(id) : true; }catch(err){ return true; } };
 // The "✓ you just finished this" form belongs to one arrival on 📚 Dashboard: `shown` records that the
 // dashboard has actually drawn it, so it is not cleared from the view the lesson was finished on.
-let seen = null, shown = false;
+let seen = null, shown = false, shownStudied = false;
 
 // Where the trainee stands in the curriculum, as a day of the guide.
 function place(){
@@ -67,22 +67,59 @@ function place(){
   if(closing) return {day: closing, stage: "closing"};
   return {day: days[days.length - 1], stage: "complete"};
 }
-// The one thing to do now: the day's own lesson while it is unfinished, else its first platform step.
+/* A day with a lesson runs in three phases, in this order, and only then on through the curriculum:
+     1. the Lesson                — until it is studied (✓ Finish Training on its last slide)
+     2. the day's Activities      — once studied: its Practice Sessions, tools and classroom work
+     3. the Process Questions     — last, once the activities are done; passing them finishes the lesson
+   "studied" (state.progress[l].studied) is set by ✓ Finish Training and is what unlocks the lesson's
+   Process Questions (js/ft-process.js); "done" is set when they pass. A day with no lesson (Days 17–18,
+   Lien Negotiator) has no phases: it is simply its activities, in the curriculum's order. */
+const studied = l => !!(state.progress && state.progress[l] && state.progress[l].studied);
+const isPQ = x => x.at === "tool" && x.id === "process";
+// The day's steps as the trainee works them: on a lesson day the Process Questions move to the end,
+// after every activity, because that is the order they are done in. Anything else keeps the guide's order.
+function ordered(d){
+  const items = d.items || [];
+  return (d.lessons || []).length ? items.filter(x => !isPQ(x)).concat(items.filter(isPQ)) : items;
+}
+function phaseOf(d){
+  const l = (d.lessons || []).find(x => !done(x));
+  if(l == null) return {phase: "activities", lesson: null};       // a day with no lesson of its own
+  return {phase: studied(l) ? "activities" : "lesson", lesson: l};
+}
+// Not every lesson has Process Questions (Calendaring, Lesson 5, has none): offering a button for a
+// set that doesn't exist would open an empty page, so the step only appears where there are questions.
+const hasPQ = l => { try{ return typeof window.ftKcQuestions === "function" ? window.ftKcQuestions(l).length > 0 : true; }catch(err){ return true; } };
+function pqStep(l){
+  return hasPQ(l) ? {label: `Process Questions: ${lessonTitle(l)}`, go: `FTProcess.openLesson(${l})`} : null;
+}
+// The one thing to do now, and — on a lesson day in its activities phase — the step that follows them.
 function nextStep(spot){
-  const d = spot.day;
-  const lesson = (d.lessons || []).find(l => !done(l));
-  if(lesson){
-    const open = lessonOpen(lesson);
-    return {kind: "lesson", lesson, open,
-      label: open ? `Open Lesson ${lesson}: ${lessonTitle(lesson)}` : `Lesson ${lesson}: ${lessonTitle(lesson)}`,
-      go: open ? `goto('day',${lesson})` : ""};
+  const d = spot.day, ph = phaseOf(d);
+  if(ph.phase === "lesson"){
+    const open = lessonOpen(ph.lesson);
+    return {kind: "lesson", lesson: ph.lesson, open,
+      label: open ? `Open Lesson ${ph.lesson}: ${lessonTitle(ph.lesson)}` : `Lesson ${ph.lesson}: ${lessonTitle(ph.lesson)}`,
+      go: open ? `goto('day',${ph.lesson})` : ""};
   }
-  // The day's real work first: a Practice Session, then a tool that is particular to the day.
-  // The typing and spelling tests run on all 18 days, so they are never the thing to send someone to.
-  const linkable = (d.items || []).filter(x => x.at === "session" || (x.at === "tool" && WHERE.tool[x.id]));
-  const first = linkable.find(x => x.at === "session") || linkable.find(x => x.id !== "skills");
-  if(!first) return null;
-  return {kind: "step", label: first.t, go: goFor(first)};
+  // The day's real work first: a Practice Session, then a tool that is particular to the day. The
+  // typing and spelling tests run on all 18 days, and the Process Questions come after the activities,
+  // so neither is ever the thing to send someone to first.
+  const linkable = (d.items || []).filter(x => x.at === "session" || (x.at === "tool" && WHERE.tool[x.id] && !isPQ(x)));
+  const first = linkable.find(x => x.at === "session" && goFor(x)) || linkable.find(x => x.id !== "skills" && goFor(x));
+  const then = ph.lesson != null ? pqStep(ph.lesson) : null;
+  // Nothing on the platform to click is NOT the same as no activities: most of a day is classroom and
+  // GC work this program can't open. The activities still come first, so the step is to work through
+  // them (the list below), and the Process Questions stay the step after — never promoted over them.
+  if(!first){
+    // the day's own work: not its Process Questions, not the lesson's discussions, and not the
+    // typing/spelling tests and upskill hour that run on every one of the 18 days
+    const daily = x => x.id === "skills" || x.kind === "Upskill";
+    const work = ordered(d).filter(x => !isPQ(x) && !daily(x) && x.kind !== "Discussion");
+    if(!work.length) return then ? Object.assign({kind: "pq", lesson: ph.lesson}, then) : null;
+    return {kind: "work", label: "Work through today’s activities below", go: "", then, lesson: ph.lesson};
+  }
+  return {kind: "step", label: first.t, go: goFor(first), then, lesson: ph.lesson};
 }
 function goFor(item){
   if(item.at === "session") return sessionOpen(item.id) ? WHERE.session.go(item.id) : "";
@@ -108,22 +145,34 @@ function card(){
   const spot = place(); if(!spot) return "";
   const d = spot.day, next = nextStep(spot);
   const just = root.FT_JUST_FINISHED, after = ((root.FTDays && FTDays.DAYS) || []).find(x => x.day === d.day + 1);
+  // ✓ Finish Training on a lesson lands here (js/ft-process.js) with the lesson studied but not done:
+  // the band says so, and that the day's activities come before its Process Questions.
+  // only while that lesson is still studied-but-not-done: once its Process Questions pass, "now today's
+  // activities" is no longer true, whatever the trainee did or didn't navigate through in between
+  const stud = root.FT_JUST_STUDIED && !done(root.FT_JUST_STUDIED) ? root.FT_JUST_STUDIED : null;
   if(just) shown = true;                            // the dashboard has drawn the "just finished" form
+  if(stud) shownStudied = true;                     // the dashboard has drawn the "studied" form
+  const head = stud ? `✓ ${esc(lessonTitle(stud))} studied — now today’s activities`
+    : just ? `✓ ${esc(lessonTitle(just))} finished`
+    : "📍 Where you are";
   if(spot.stage === "complete"){
     return `<section class="card ftn ftn-done"><h3>🎓 Every lesson is finished</h3>
       <p>You have reached the end of the ${FTDays.COUNT}-day programme. Your trainer confirms your demos and your Monitoring Sheet; your certificate follows from there.</p></section>`;
   }
-  return `<section class="card ftn${just ? " ftn-just" : ""}">
+  const list = ordered(d);
+  return `<section class="card ftn${just || stud ? " ftn-just" : ""}">
     <div class="ftn-head">
-      <span class="ftn-where">${just ? `✓ ${esc(lessonTitle(just))} finished` : "📍 Where you are"}</span>
+      <span class="ftn-where">${head}</span>
       <h3>Day ${d.day} · ${esc(d.role)}</h3>
     </div>
     <div class="ftn-now"><span>Your next step</span>${next
       ? (next.go ? `<button class="btn btn-navy btn-sm" type="button" onclick="${next.go}">${esc(next.label)} →</button>`
-                 : `<b class="ftn-live">${esc(next.label)}${next.kind === "lesson" ? " — it opens as soon as that lesson is open for your batch." : " — this one isn’t open to you yet."}</b>`)
+                 : `<b class="ftn-live">${esc(next.label)}${next.kind === "lesson" ? " — it opens as soon as that lesson is open for your batch." : next.kind === "work" ? " — in the classroom and the training GC." : " — this one isn’t open to you yet."}</b>`)
       : `<b class="ftn-live">This day runs with your trainer — nothing to open here. Follow the steps below.</b>`}</div>
-    <details class="ftn-more"><summary>The rest of Day ${d.day}, in the guide's order — ${(d.items || []).length} steps</summary>
-      <ul class="ftn-list">${(d.items || []).map(stepRow).join("")}</ul></details>
+    ${next && next.then ? `<div class="ftn-then"><span>When today’s activities are done</span>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="${next.then.go}">${esc(next.then.label)} →</button></div>` : ""}
+    <details class="ftn-more"><summary>The rest of Day ${d.day}${(d.lessons || []).length ? " — lesson, activities, then Process Questions" : ", in the guide's order"} — ${list.length} steps</summary>
+      <ul class="ftn-list">${list.map(stepRow).join("")}</ul></details>
     ${after ? `<p class="ftn-after">After that: <b>Day ${after.day} · ${esc(after.role)}</b>${(after.lessons || []).length ? ` — Lesson ${after.lessons.join(" and ")}` : ""}.</p>` : ""}
   </section>`;
 }
@@ -145,7 +194,7 @@ root.afterRender = function(){
     // Nobody signed in yet: a trainee's whole progress record arrives with them (the cloud restore in
     // submitLogin fills it in one go), and that arrival is not a finish — so the baseline is taken on
     // the first draw they are actually signed in for, not on the login page's empty record.
-    if(!forTrainee()){ seen = null; shown = false; root.FT_JUST_FINISHED = null; return out; }
+    if(!forTrainee()){ seen = null; shown = false; shownStudied = false; root.FT_JUST_FINISHED = null; root.FT_JUST_STUDIED = null; return out; }
     const now = finishedNow();
     if(seen === null) seen = now;                       // the first draw of a session is not a finish
     else if(now !== seen){
@@ -159,6 +208,10 @@ root.afterRender = function(){
     // "kc"), several views away from the dashboard, and clearing there would mean nobody ever saw it.
     if(root.FT_JUST_FINISHED && shown && state.view !== "modules" && state.view !== "dashboard"){
       root.FT_JUST_FINISHED = null; shown = false;
+    }
+    // the "studied — now today's activities" form, likewise: drawn once on the dashboard, then let go
+    if(root.FT_JUST_STUDIED && shownStudied && state.view !== "modules" && state.view !== "dashboard"){
+      root.FT_JUST_STUDIED = null; shownStudied = false;
     }
   }catch(err){}
   return out;
@@ -210,6 +263,8 @@ root.FTNextStep = {place, nextStep, card, compact};
 .ftn-what span{font-size:12px;color:var(--ink-soft);}
 .ftn-after{margin:10px 0 0;font-size:13px;color:var(--ink-soft);}
 .ftn-compact{margin-top:14px;}
+.ftn-then{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 12px;margin:-4px 0 12px;}
+.ftn-then span{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
 .ftn-link{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline;}
 @media(max-width:700px){.ftn-step{flex-direction:column;align-items:flex-start;gap:6px;}}
 `; document.head.appendChild(s); })();
