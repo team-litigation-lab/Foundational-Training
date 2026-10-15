@@ -1,10 +1,13 @@
 // The Practice Lab's real-time Practice Sessions at the trainee's own law firm (js/ft-firms.js, js/ft-sessions.js), the
 // trainer's inputs, and the Knowledge Check's trainer review (js/ft-process.js):
-//   1. Admin → 🏛 Law Firms: the three starting firm profiles; a firm for the trainee and 🎲 Spread cases gives two trainees
-//      different cases in every practice area (assign:<id>).
-//   2. The trainee's 🏛 My Firm shows the firm, its rules and their cases; ✓ I've read the rules is saved.
+//   1. Admin → 🏛 Law Firms: the three starting firm profiles, and NO per-trainee assignment — the firm and case
+//      pickers, "Assign this firm to all" and "🎲 Spread cases" are gone, along with their functions.
+//   2. The trainee has the first firm from their first page load, with no assign:<id> written and no trainer named;
+//      🏛 My Firm shows it and its rules, ✓ I've read the rules is saved; a case-based session says "No case yet".
 //   3. The Practice Lab has the six sessions and no simulator cards; the landing page has no Simulators / Blueprint card.
-//   4. A ChartSwap records request filled from the case file passes every check; a calendar event in the wrong color doesn't.
+//   4. A ChartSwap records request filled from the case file passes every check; a calendar event in the wrong colour
+//      doesn't. Cases are no longer handed out, so the check supplies one from the firm's caseload: what it asserts
+//      is the session's own checking, not how a case arrives.
 //   5. Admin → 🟢 Practice Sessions lists the submission and saves the trainer's score, which the trainee sees as final;
 //      Admin → 🧑‍🏫 Trainer Inputs records a demo's result; both reach the Scorecard.
 //   6. A trainer's Knowledge Check score (kcreview:<id>) becomes the lesson's score and a passing one finishes it.
@@ -28,6 +31,10 @@ const failures = []; const fail = (m) => failures.push(m);
     const other = 'oli-other--' + batch.toLowerCase();
     await put('trainee:' + other, { id: other, name: 'Oli Other', batch, approved: true });
     await put('settings:opendays', { all: await page.evaluate(() => DAYS.map(d => d.id)), batches: {} });
+    // The trainee id comes from the fixed name and batch above, so a store an older run of this check
+    // wrote to still holds that run's assign:<id>. Clear it, or "nothing writes one any more" below
+    // would read a record this run never wrote.
+    await put('assign:' + id, null); await put('assign:' + other, null);
     await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
 
     // 3. the landing page and the Practice Lab
@@ -44,7 +51,11 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!/Drafting Tools/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 🧰 Drafting Tools / LOR Drafting Activity');
     if (!/Templates in this tool/i.test(lab.text)) fail('the drafting tool\'s card does not list the templates it carries');
     if (!/LOR Drafting for 1P/.test(lab.text) || !/Drafting for 3P/.test(lab.text)) fail('the drafting tool\'s card does not name its two templates');
-    if (!/Waiting for your firm/.test(lab.text)) fail('without a firm the sessions should wait for one');
+    // A firm is no longer assigned: the trainee has one from their first page load, so no session waits.
+    // (The Practice Lab no longer names the firm — its banner was removed; a session links to the profile.)
+    if (/Waiting for your firm/.test(lab.text)) fail('a session is still waiting for a firm to be assigned');
+    const gotFirm = await page.evaluate(() => { const f = FTFirms.myFirm(); return f ? f.name : null; });
+    if (!gotFirm) fail('a trainee has no firm, with nothing to assign one');
 
     // 3b. the LOR Drafting Activity: a standalone activity, the trainer assigns the case, the trainee drafts and downloads
     await page.evaluate(() => goto('lor')); await page.waitForTimeout(1200);
@@ -109,33 +120,49 @@ const failures = []; const fail = (m) => failures.push(m);
     const nm3 = await page.evaluate(() => (document.getElementById('lorFile') || {}).value || '');
     if (!/LOR with Affidavit/.test(nm3)) fail(`the 3P letter's file name is not its own convention: ${nm3}`);
 
-    // 1. Admin → 🏛 Law Firms
+    // 1. Admin → 🏛 Law Firms: the profiles, and nobody assigned to them
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'firms'; goto('admin'); }); await page.waitForTimeout(2500);
     const firmsTxt = await page.evaluate(() => document.querySelector('.ff-admin') ? document.querySelector('.ff-admin').innerText : '');
     ['LSH Training Law Group', 'Harbor & Pine Injury Law', 'Summit Trial Attorneys'].forEach(n => { if (firmsTxt.indexOf(n) < 0) fail(`Admin → Law Firms doesn't list ${n}`); });
-    await page.evaluate(([id, other, batch]) => { FTFirmsAdmin.batch(batch); FTFirmsAdmin.setFirm(id, 'harbor-pine-injury-law'); FTFirmsAdmin.setFirm(other, 'harbor-pine-injury-law'); FTFirmsAdmin.spread(); }, [id, other, batch]);
-    await page.evaluate(() => FTFirmsAdmin.saveAll({ disabled: false })); await page.waitForTimeout(800);
-    const a1 = await get('assign:' + id), a2 = await get('assign:' + other);
-    if (!a1 || a1.firm !== 'harbor-pine-injury-law') fail(`the trainee's firm wasn't saved: ${JSON.stringify(a1)}`);
-    const areas = ['pi', 'intake', 'claims', 'records'];
-    if (!a1 || !areas.every(k => (a1.cases[k] || []).length === 1)) fail(`the trainee didn't get a case in every area: ${JSON.stringify(a1)}`);
-    if (a1 && a2 && areas.some(k => a1.cases[k][0] === a2.cases[k][0])) fail(`two trainees got the same case: ${JSON.stringify([a1.cases, a2.cases])}`);
-    const pool = await page.evaluate(() => FTFirms.firmById('harbor-pine-injury-law').cases);
-    if (a1 && !areas.every(k => pool.includes(a1.cases[k][0]))) fail('a case came from outside the firm\'s caseload');
+    // The per-trainee assignment is gone: no firm picker, no case picker, no bulk or spread buttons.
+    const adminAll = await page.evaluate(() => document.querySelector('main').innerText);
+    if (/Assign this firm to all|Spread cases/.test(adminAll)) fail('Admin → Law Firms still offers the removed assignment actions');
+    const pickers = await page.evaluate(() => ({ fn: ['batch', 'setFirm', 'setCase', 'bulkFirm', 'spread', 'saveRow', 'saveAll'].filter(k => typeof FTFirmsAdmin[k] === 'function'),
+        selects: document.querySelectorAll('.ff-tbl select').length }));
+    if (pickers.fn.length) fail(`the assignment actions are still wired up: ${pickers.fn.join(', ')}`);
+    if (pickers.selects) fail(`the per-trainee assignment table is still rendered (${pickers.selects} pickers)`);
 
-    // 2. the trainee's 🏛 My Firm
+    // 2. the trainee gets a firm with nothing set up, and no assign:<id> is ever written
     await page.evaluate(() => { state.isAdmin = false; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
+    if (await get('assign:' + id)) fail('an assign:<id> record was written — nothing should assign one any more');
     await page.evaluate(() => goto('firm')); await page.waitForTimeout(1500);
     const firm = await page.evaluate(() => document.querySelector('main').innerText);
-    if (!/Harbor & Pine Injury Law/.test(firm) || !/PIP claim within 14 days/.test(firm) || (a1 && firm.indexOf(a1.cases.records[0]) < 0)) fail(`My Firm doesn't show the firm, its rules and the cases: ${firm.slice(0, 300)}`);
-    await page.evaluate(() => FTSessions.acknowledge('harbor-pine-injury-law')); await page.waitForTimeout(800);
+    const first = await page.evaluate(() => FTFirms.firms()[0].name);
+    if (firm.indexOf(first) < 0) fail(`My Firm doesn't show the firm every trainee works for (${first}): ${firm.slice(0, 300)}`);
+    if (!/The firm’s rules|The firm's rules/.test(firm)) fail('My Firm doesn\'t show the firm\'s rules');
+    if (/trainer/i.test(firm)) fail(`My Firm still sends the trainee to a trainer: ${firm.slice(0, 300)}`);
+    const firmId = await page.evaluate(() => FTFirms.firms()[0].id);
+    await page.evaluate((f) => FTSessions.acknowledge(f), firmId); await page.waitForTimeout(800);
     if (!((await get('sessions:' + id)) || {}).ack) fail('✓ I\'ve read my firm\'s rules wasn\'t saved');
 
-    // 4. a ChartSwap request, filled from the case file
+    // 3. a session that works on a case has none, and says so without naming a trainer
+    await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
+    const labTxt = await page.evaluate(() => document.querySelector('main').innerText);
+    if (/Waiting for your (case|firm)|trainer assigns/i.test(labTxt)) fail(`the Practice Lab still waits on a trainer: ${labTxt.slice(0, 300)}`);
+    if (!/No case yet/.test(labTxt)) fail('a case-based session should say it has no case yet');
+
+    // 4. a ChartSwap request, filled from the case file.
+    // Cases are not handed out any more, so the check hands the page one of the firm's own caseload
+    // and has the session work on it: what is asserted here is the session's checking, not assignment.
+    await page.evaluate(() => {
+        const f = FTFirms.firms()[0], c = f.cases.map(FTFirms.caseById).filter(x => x && (x.providers || []).length).shift();
+        window.FT_TEST_CASE = c;
+        FTFirms.myCases = () => [c];
+    });
     const rec4 = await page.evaluate(async () => {
         FTSessions.open('records'); await new Promise(r => setTimeout(r, 300));
         FTSessions.start('records'); await new Promise(r => setTimeout(r, 300));
-        const f = FTFirms.myFirm(), c = FTFirms.myCases('records')[0], p = c.providers[0];
+        const f = FTFirms.myFirm(), c = FT_TEST_CASE, p = c.providers[0];
         const iso = s => { const m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`; };
         const hold = c.hipaa === 'sent, not signed';
         Object.entries({ requester: f.name, deliver: f.recordsEmail, patient: c.client.name, dob: iso(c.client.dob), provider: p.name, from: iso(p.dates.split(/\s+[–-]\s+/)[0]),
@@ -158,7 +185,10 @@ const failures = []; const fail = (m) => failures.push(m);
         return (JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sessions:' + state.traineeId }) }).then(r => r.json())).value).runs['calendaring|-'] || {}).auto;
     });
     const color = cal && cal.checks.find(x => /color/.test(x.label));
-    if (!color || color.ok || !/Banana/.test(color.want)) fail(`a 30-minute event in Tomato should miss the firm's color rule (Banana): ${JSON.stringify(cal)}`);
+    // Everyone works for the first firm, so the rule to miss is that firm's own 30-minute colour.
+    const want30 = await page.evaluate(() => ((FTFirms.firms()[0].colors || []).find(c => Number(c[0]) === 30) || [])[1] || '');
+    if (!want30 || want30 === 'Tomato') fail(`the test needs the firm's 30-minute colour to differ from Tomato: ${want30}`);
+    if (!color || color.ok || color.want.indexOf(want30) < 0) fail(`a 30-minute event in Tomato should miss the firm's colour rule (${want30}): ${JSON.stringify(cal)}`);
 
     // 5. the trainer's review and inputs
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'sessions'; goto('admin'); }); await page.waitForTimeout(2500);
@@ -189,6 +219,11 @@ const failures = []; const fail = (m) => failures.push(m);
     if (await page.evaluate(() => DAYS.some(d => d.sections.some(s => s.id === 'process-questions')))) fail('the process questions are still a slide');
 
     // the trainee sees the review as final, and the Scorecard has both sources
+    // (the reload above dropped the case this check supplies, so hand it back before reopening)
+    await page.evaluate(() => {
+        const f = FTFirms.firms()[0], c = f.cases.map(FTFirms.caseById).filter(x => x && (x.providers || []).length).shift();
+        window.FT_TEST_CASE = c; FTFirms.myCases = () => [c];
+    });
     await page.evaluate(() => { FTSessions.open('records'); }); await page.waitForTimeout(1500);
     if (!/95% · final/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the trainee doesn\'t see the trainer\'s final score on the session');
     await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
@@ -228,9 +263,10 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!boxes) fail('Trainee view: Process Questions has no boxes for a trainee to type in');
     if (!await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions does not say it is a preview');
 
-    // 8. Process Questions, one set per module: every module locked until the trainee finishes it,
-    //    ✓ Finish lesson marks it studied and opens that module's own Process Questions page directly, and
-    //    each module row in 📚 Training Modules carries its own activities.
+    // 8. Process Questions, one set per module: every module locked until the trainee finishes it.
+    //    A lesson day runs Lesson → Activities → Process Questions: ✓ Finish lesson marks the module studied
+    //    (which unlocks its Process Questions) and goes to 📚 Dashboard, where the day's activities come
+    //    first and the Process Questions after them — it no longer jumps straight to the questions.
     // step 7 emptied the trainee to test the preview: put the real one back and leave preview
     await page.evaluate((tid) => { state.isAdmin = false; state.adminPreview = false; state.traineeId = tid;
         try { sessionStorage.removeItem('lsh_admin_preview'); } catch (e) {} }, id);
@@ -245,8 +281,24 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!pick) fail('no unfinished module with questions to test the lock with');
     await page.evaluate(async (l) => { await window.finishTrainingForDay(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
     if (!await page.evaluate((l) => !!(state.progress[l] || {}).studied, pick)) fail('✓ Finish lesson did not mark the module studied');
-    if (await page.evaluate(() => state.view) !== 'process') fail('✓ Finish lesson did not open that module\'s Process Questions');
-    if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`✓ Finish lesson did not open that module's own page: pqLesson=${await page.evaluate(() => state.pqLesson)}`);
+    // Lesson → Activities → Process Questions: finishing the lesson lands on the dashboard, not the questions.
+    if (await page.evaluate(() => state.view) === 'process') fail('✓ Finish lesson still jumps straight to the Process Questions, skipping the day\'s activities');
+    if (!['modules', 'dashboard'].includes(await page.evaluate(() => state.view))) fail(`✓ Finish lesson should go to the Dashboard for the day's activities: view=${await page.evaluate(() => state.view)}`);
+    const band = await page.evaluate(() => { const c = document.querySelector('.ftn'); return c ? {
+        head: (c.querySelector('.ftn-where') || {}).textContent || '',
+        then: (c.querySelector('.ftn-then button') || c.querySelector('.ftn-now button') || {}).textContent || '',
+        order: [...c.querySelectorAll('.ftn-step b')].map(b => b.textContent) } : null; });
+    if (!band) fail('the Dashboard has no next-step band after a lesson is finished');
+    else {
+        if (!/studied/i.test(band.head)) fail(`the band should say the lesson was studied: ${band.head}`);
+        if (!/Process Questions/.test(band.then)) fail(`the band should offer that lesson's Process Questions after the activities: ${band.then}`);
+        // on a lesson day the Process Questions are the last of the day's steps
+        const pq = band.order.map((t, i) => /^Process Questions/.test(t) ? i : -1).filter(i => i >= 0);
+        if (pq.length && pq[pq.length - 1] !== band.order.length - 1 && band.order.slice(pq[0]).some(t => !/^Process Questions/.test(t))) fail(`the Process Questions are not after the day's activities: ${JSON.stringify(band.order)}`);
+    }
+    // and the questions themselves are now open for that module, one click away
+    await page.evaluate(async (l) => { FTProcess.openLesson(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
+    if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`that module's Process Questions page did not open: pqLesson=${await page.evaluate(() => state.pqLesson)}`);
     const opened = await page.evaluate(() => ({ h1: (document.querySelector('.fp-hero h1')||{}).textContent || '', boxes: document.querySelectorAll('main textarea').length }));
     if (!opened.boxes) fail('the finished module has no boxes to answer in');
     const want = await page.evaluate((l) => ftName(l), pick);
@@ -258,5 +310,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles and case assignment, My Firm, the five sessions checked against the case and the firm, the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
+    console.log('Practice Sessions test passed (firm profiles with no per-trainee assignment, the firm every trainee gets automatically, My Firm, the five sessions checked against the case and the firm, the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -6,15 +6,16 @@
        intake, claims, medical records), its calendar color rule, statute of limitations, LOR deadline,
        records vendor and record types, and its caseload (Training Library cases in the CMS, MC-01 …).
        Until an admin saves them, the three profiles in DEFAULT_FIRMS are used.
-     • Assignments (assign:<id>, admins write, the trainee reads): the trainee's firm, and their cases for
-       each practice area: PI Process Flow, Intake, Claims and Medical Records. Different trainees can get
-       different firms and different cases. Admin → 🏛 Law Firms: the profiles, then each batch's trainees
-       with their firm and cases (🎲 Spread cases gives each trainee in the batch different cases).
-     • 🏛 My Firm (#/firm): 📁 Client Profile in the top bar — the trainee's firm profile and rules, to read and
-       acknowledge (✓ I've read my firm's rules, saved in sessions:<id>), and their assigned cases, each
-       opening in the CMS (signed in: js/lsh-tool-links.js).
-     • Every Practice Session (js/ft-sessions.js) is set at the trainee's firm, on their assigned case, and
-       checked against that firm's rules.
+     • Nobody is assigned anything. Every trainee works for the FIRST profile in the list, from the moment
+       they arrive, so a trainee is never waiting on a trainer before they can practise. The per-trainee
+       assignment that used to live here — the firm picker, "Assign this firm to all" and "🎲 Spread
+       cases", written to assign:<id> — is gone, along with the trainee's read of it.
+     • Cases are not handed out here at all for now; how trainees get them is being worked out. myCases()
+       returns none, so a session that works on a case says so instead of naming a trainer who has
+       nothing to do. Old assign:<id> records are simply left unread.
+     • 🏛 My Firm (#/firm): 📁 Client Profile in the top bar — the firm's profile and rules, to read and
+       acknowledge (✓ I've read my firm's rules, saved in sessions:<id>).
+     • Every Practice Session (js/ft-sessions.js) is set at that firm and checked against its rules.
      • window.ftAdminTab(id, label, render): adds a tab to the Admin screen (used by the Practice Lab's tabs too).
    ============================================================ */
 (function(){
@@ -99,24 +100,19 @@ function loadFirms(force){
 const firms = () => F.firms || DEFAULT_FIRMS;
 const firmById = id => firms().find(f => f.id === id) || null;
 
-/* ---------- the trainee's assignment ---------- */
-const A = {id:null, data:null, at:0, loading:null};
-function loadMine(force){
-  if(!state.traineeId || state.isAdmin || A.loading) return A.loading;
-  if(!force && A.id === state.traineeId && Date.now() - A.at < 120000) return null;
-  const id = state.traineeId; A.at = Date.now();
-  A.loading = sharedGet("assign:" + id).then(v => { A.id = id; A.data = v && typeof v === "object" ? v : {}; })
-    .catch(() => {}).then(() => { A.loading = null; rerender(); });
-  return A.loading;
-}
 function rerender(){ if(["firm", "simulators", "session"].includes(state.view) || (state.view === "admin" && state.adminTab === "firms")) render(); }
-// The trainee's firm (null until assigned) and their cases in an area (the assigned ones, or none).
-function myFirm(){ loadFirms(); if(!isTrainee()) return null; loadMine(); return A.id === state.traineeId && A.data ? firmById(A.data.firm) : null; }
-function myCases(area){ const a = A.id === state.traineeId && A.data && A.data.cases; return ((a && a[area]) || []).map(caseById).filter(Boolean); }
+// Every trainee works for the same firm, and gets it the moment they arrive: the first profile.
+// Nobody assigns it any more, so nothing has to be set up before a trainee can practise, and a
+// trainee is never left waiting on a trainer to be given one.
+function myFirm(){ loadFirms(); return isTrainee() ? (firms()[0] || null) : null; }
+// Cases are not handed out here any anymore — that plan is being written. Until it lands, a session
+// that works on a case has none, and says so rather than blaming a trainer who has nothing to do.
+function myCases(){ return []; }
 const caseHref = (c, program) => CMS + "?" + new URLSearchParams({program:program || "cm", mock:c.id, from:"standard"});
 
-window.FTFirms = {AREAS, RULE_AREAS, GCAL, firms, firmById, myFirm, myCases, caseById, caseHref, loadFirms, loadMine,
-  assignment: () => (A.id === state.traineeId && A.data) || null, defaults: DEFAULT_FIRMS};
+window.FTFirms = {AREAS, RULE_AREAS, GCAL, firms, firmById, myFirm, myCases, caseById, caseHref, loadFirms,
+  loadMine: () => null,              // kept so an older caller cannot throw; there is nothing per-trainee to load
+  defaults: DEFAULT_FIRMS};
 
 /* ---------- 🏛 My Firm (#/firm) ---------- */
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["firm"]);
@@ -133,10 +129,9 @@ function firmFacts(f){
       <div><h4>Team</h4>${(f.team || []).map(a => `<p><b>${e(a.name)}</b><span>${e(a.role)}${a.ext ? " · ext " + e(a.ext) : ""}</span></p>`).join("")}</div></div>`;
 }
 function renderMyFirm(){
-  if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Trainees see their assigned firm here. Set up the firm profiles and assign them in <a class="ff-link" onclick="state.adminTab='firms'; goto('admin')">Admin → 🏛 Law Firms</a>.</p></div>`;
+  if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Every trainee works for the first firm in <a class="ff-link" onclick="state.adminTab='firms'; goto('admin')">Admin → 🏛 Law Firms</a>, and sees its profile and rules here. Nobody assigns it.</p></div>`;
   const f = myFirm();
-  if(A.id !== state.traineeId) return `<div class="card ff-card">Loading your firm…</div>`;
-  if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Your trainer hasn’t assigned your law firm yet. Once they do, its profile, its rules and your cases show here, and every Practice Session is set at that firm.</p></div>`;
+  if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>No firm profile is set up yet. A trainer adds one in Admin → 🏛 Law Firms, and it reaches every trainee at once.</p></div>`;
   const ack = window.FTSessions && FTSessions.ack();
   const acked = ack && ack.firm === f.id;
   return `<div class="ff-hero"><p class="lp-eyebrow">📁 Client Profile · My Firm</p><h1>🏛 ${e(f.name)}</h1>
@@ -145,9 +140,8 @@ function renderMyFirm(){
     <div class="card ff-card"><h2>📏 The firm’s rules</h2>${rulesHtml(f)}
       <div class="ff-ack">${acked ? `<span class="ff-ok">✓ You confirmed you read these rules on ${e(new Date(ack.at).toLocaleDateString())}.</span>`
         : `<button class="btn btn-navy" onclick="FTSessions.acknowledge('${e(f.id)}')">✓ I’ve read and understood my firm’s rules</button>`}</div></div>
-    <div class="card ff-card"><h2>🗂 My cases</h2><p class="ff-muted">Your trainer assigned you these files in the CMS. Open one to read it before its Practice Session.</p>
-      ${AREAS.map(ar => { const cs = myCases(ar.id); return `<div class="ff-area"><b>${ar.icon} ${e(ar.label)}</b>${cs.length ? cs.map(c => `<div class="ff-case"><span class="ff-mc">${e(c.id)}</span> ${e(c.client.name)} · ${e(c.type)} · ${e(c.phase)}
-          <a class="btn btn-ghost btn-sm" href="${e(caseHref(c, ar.id === "intake" ? "intake" : "cm"))}" target="_blank" rel="noopener">Open in the CMS ↗</a></div>`).join("") : `<span class="ff-muted"> not assigned yet</span>`}</div>`; }).join("")}</div>`;
+    <div class="card ff-card"><h2>🗂 Your cases</h2>
+      <p class="ff-muted">Cases are not handed out on the platform at the moment — how you get them is being worked out. The sessions that work on a case say so when you open them; the rest run as they are.</p></div>`;
 }
 const __render = window.render;
 window.render = function(){
@@ -176,23 +170,14 @@ window.ftAdminTab = function(id, label, renderTab){
   };
 };
 
-/* ---------- Admin → 🏛 Law Firms: the profiles, then each batch's assignments ---------- */
-const FA = {people:null, assign:{}, loading:false, batch:"", edit:null};
+/* ---------- Admin → 🏛 Law Firms: the profiles (nobody is assigned to them) ---------- */
+const FA = {loaded:false, loading:false, edit:null};
+// Nothing per-trainee is read here any more — the screen is the firm profiles alone — so this loads
+// those and nothing else. Forced, so an admin always sees what is saved rather than a cached list.
 async function loadAdmin(){
   FA.loading = true;
-  try{
-    await loadFirms(true);
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected)
-      .sort((a, b) => String(a.batch || "").localeCompare(String(b.batch || "")) || String(a.name || "").localeCompare(String(b.name || "")));
-    const vals = [];
-    for(let i = 0; i < people.length; i += 100) vals.push(...await sharedGetMany(people.slice(i, i + 100).map(r => "assign:" + r.id)));
-    FA.assign = {}; people.forEach((r, i) => { FA.assign[r.id] = vals[i] || {}; });
-    FA.people = people;
-    if(!FA.batch){ const bs = [...new Set(people.map(r => r.batch).filter(Boolean))].sort(); FA.batch = bs[bs.length - 1] || ""; }
-  }catch(err){ FA.people = []; }
-  FA.loading = false; rerender();
+  try{ await loadFirms(true); }catch(err){}
+  FA.loaded = true; FA.loading = false; rerender();
 }
 const lines = v => String(v || "").split("\n").map(x => x.trim()).filter(Boolean);
 function firmForm(f){
@@ -232,35 +217,17 @@ function parseCases(v){
   });
   return out;
 }
-function caseSelect(r, area, f){
-  const cur = ((FA.assign[r.id] || {}).cases || {})[area] || [];
-  const pool = (f ? f.cases : []).map(caseById).filter(Boolean);
-  return `<select data-area="${area}" onchange="FTFirmsAdmin.setCase('${e(r.id)}','${area}',this.value)"><option value="">—</option>${pool.map(c => `<option value="${e(c.id)}" ${cur[0] === c.id ? "selected" : ""}>${e(c.id)} · ${e(c.client.name)} (${e(c.phase)})</option>`).join("")}</select>`;
-}
 function renderAdminFirms(){
-  if(!FA.people){ if(!FA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the firms and trainees…</div>`; }
-  const fs = firms(), batches = [...new Set(FA.people.map(r => r.batch).filter(Boolean))].sort();
-  const rows = FA.people.filter(r => !FA.batch || r.batch === FA.batch);
+  if(!FA.loaded){ if(!FA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the firm profiles…</div>`; }
+  const fs = firms();
   return `<div class="card ff-admin"><h3>🏛 Law Firm Profiles</h3>
-      <p class="ff-muted">Each trainee works for one firm: its rules are what their Practice Sessions are checked against, and its caseload is where their cases come from (the CMS’s Training Library files). ${F.firms ? "" : "These are the starting profiles: saving any firm saves them all."}</p>
-      <div class="ff-firms">${fs.map(f => `<div class="ff-firm"><b>${e(f.name)}</b><span>${e(f.location)} · ${e(f.tz)} · ${(f.cases || []).length} cases · ${FA.people.filter(r => (FA.assign[r.id] || {}).firm === f.id).length} trainees</span>
+      <p class="ff-muted">Every trainee works for the first firm in this list, automatically. Its rules are what their Practice Sessions are checked against. ${F.firms ? "" : "These are the starting profiles: saving any firm saves them all."}</p>
+      <div class="ff-firms">${fs.map(f => `<div class="ff-firm"><b>${e(f.name)}</b><span>${e(f.location)} · ${e(f.tz)} · ${(f.cases || []).length} cases in its caseload${fs[0] && f.id === fs[0].id ? " · every trainee works here" : ""}</span>
         <span class="ff-acts"><button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.edit('${e(f.id)}')">✏️ Edit</button>${fs.length > 1 ? `<button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.remove('${e(f.id)}')">🗑</button>` : ""}</span></div>`).join("")}</div>
       <div class="ff-acts"><button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.edit('')">➕ New firm</button>${F.firms ? `<button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.restore()">↺ Restore the starting profiles</button>` : ""}</div></div>
     ${FA.edit ? firmForm(FA.edit) : ""}
-    <div class="card ff-admin"><div class="ff-bar"><div><h3>👥 Assignments</h3><p class="ff-muted">Each trainee’s firm and their cases in each practice area. Trainees see them on 🏛 My Firm and in their Practice Sessions.</p></div>
-      <span><select onchange="FTFirmsAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === FA.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
-      <button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.refresh()">↻</button></span></div>
-      ${rows.length ? `<div class="ff-bulk"><label>Whole ${FA.batch ? "batch" : "list"}: firm <select id="ffBulkFirm"><option value="">—</option>${fs.map(f => `<option value="${e(f.id)}">${e(f.name)}</option>`).join("")}</select></label>
-          <button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.bulkFirm()">Assign this firm to all</button>
-          <button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.spread()" title="Each trainee gets different cases from their firm's caseload, in every practice area">🎲 Spread cases (different for each trainee)</button></div>
-        <div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Batch</th><th>Firm</th>${AREAS.map(a => `<th>${a.icon} ${e(a.label)}</th>`).join("")}<th></th></tr></thead><tbody>
-        ${rows.map(r => { const as = FA.assign[r.id] || {}, f = firmById(as.firm); return `<tr data-id="${e(r.id)}"><td><b>${e(r.name || r.id)}</b></td><td>${e(r.batch || "")}</td>
-          <td><select onchange="FTFirmsAdmin.setFirm('${e(r.id)}',this.value)"><option value="">—</option>${fs.map(x => `<option value="${e(x.id)}" ${as.firm === x.id ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></td>
-          ${AREAS.map(a => `<td>${caseSelect(r, a.id, f)}</td>`).join("")}
-          <td>${as._dirty ? `<button class="btn btn-navy btn-sm" onclick="FTFirmsAdmin.saveRow('${e(r.id)}', this)">Save</button>` : as.at ? `<span class="ff-ok" title="Saved ${e(new Date(as.at).toLocaleString())}">✓</span>` : ""}</td></tr>`; }).join("")}
-        </tbody></table></div>
-        ${rows.some(r => (FA.assign[r.id] || {})._dirty) ? `<div class="ff-acts"><button class="btn btn-navy btn-sm" onclick="FTFirmsAdmin.saveAll(this)">💾 Save all changes</button></div>` : ""}`
-        : `<p class="ff-muted">No approved trainees${FA.batch ? " in this batch" : ""} yet.</p>`}</div>`;
+    <div class="card ff-admin"><h3>👥 Who works here</h3>
+      <p class="ff-muted">Nobody assigns a firm any more: every trainee works for the first profile above from the moment they arrive, and its rules are what their Practice Sessions are checked against. Cases are not handed out here — that plan is being written.</p></div>`;
 }
 async function saveFirms(list){
   const ok = await sharedSet("settings:firms", {v:1, firms:list, updatedAt:new Date().toISOString()});
@@ -268,8 +235,7 @@ async function saveFirms(list){
   F.firms = list; F.at = Date.now(); return true;
 }
 window.FTFirmsAdmin = {
-  batch(b){ FA.batch = b; render(); },
-  refresh(){ FA.people = null; render(); },
+  refresh(){ FA.loaded = false; render(); },
   edit(id){ const f = id ? firmById(id) : null; FA.edit = f ? JSON.parse(JSON.stringify(f)) : {_new:true, id:"", name:"", rules:{}, cases:[], colors:[[30, "Tangerine"], [60, "Tomato"]], solYears:2, lorHours:24, gap:15, vendor:"ChartSwap", recordTypes:["Medical records", "Itemized billing"], tz:"Eastern", start:"09:00", end:"17:00"}; render(); },
   cancel(){ FA.edit = null; render(); },
   async save(btn){
@@ -293,8 +259,8 @@ window.FTFirmsAdmin = {
   },
   async remove(id){
     const f = firmById(id); if(!f) return;
-    const n = FA.people.filter(r => (FA.assign[r.id] || {}).firm === id).length;
-    if(!confirm(`Delete ${f.name}?${n ? ` ${n} trainee${n === 1 ? " is" : "s are"} assigned to it and will need another firm.` : ""}`)) return;
+    const first = firms()[0] && firms()[0].id === id;
+    if(!confirm(`Delete ${f.name}?${first ? " Every trainee works for it, so the next profile in the list takes over." : ""}`)) return;
     if(await saveFirms(firms().filter(x => x.id !== id))) toast("Firm deleted.");
     render();
   },
@@ -303,46 +269,7 @@ window.FTFirmsAdmin = {
     if(await saveFirms(JSON.parse(JSON.stringify(DEFAULT_FIRMS)))) toast("The starting profiles are back.");
     render();
   },
-  setFirm(id, firm){ const a = FA.assign[id] = Object.assign({}, FA.assign[id]); if(a.firm !== firm){ a.firm = firm; a.cases = {}; } a._dirty = true; render(); },
-  setCase(id, area, mc){ const a = FA.assign[id] = Object.assign({}, FA.assign[id]); a.cases = Object.assign({}, a.cases); a.cases[area] = mc ? [mc] : []; a._dirty = true; render(); },
-  bulkFirm(){
-    const firm = (document.getElementById("ffBulkFirm") || {}).value; if(!firm){ toast("Pick a firm first."); return; }
-    FA.people.filter(r => !FA.batch || r.batch === FA.batch).forEach(r => { const a = FA.assign[r.id] = Object.assign({}, FA.assign[r.id]); if(a.firm !== firm){ a.firm = firm; a.cases = {}; } a._dirty = true; });
-    render();
-  },
-  // Different cases for each trainee: per firm and area, the firm's caseload in turn (from the cases that fit the area).
-  spread(){
-    const rows = FA.people.filter(r => (!FA.batch || r.batch === FA.batch) && firmById((FA.assign[r.id] || {}).firm));
-    if(!rows.length){ toast("Assign the trainees’ firms first."); return; }
-    const fits = {pi:c => true, intake:c => /intake/i.test(c.phase), claims:c => (c.bi || []).length > 0, records:c => (c.providers || []).length > 0};
-    const turn = {}, perFirm = {};
-    rows.forEach(r => { const k = FA.assign[r.id].firm; perFirm[k] = (perFirm[k] || 0) + 1; });
-    rows.forEach(r => {
-      const a = FA.assign[r.id] = Object.assign({}, FA.assign[r.id]), f = firmById(a.firm); a.cases = {};
-      AREAS.forEach(ar => {
-        // the cases that fit the area first; when there are fewer than trainees, the rest of the caseload too, so no two share one
-        const all = f.cases.map(caseById).filter(Boolean), fit = all.filter(fits[ar.id]);
-        const pool = fit.length >= perFirm[f.id] ? fit : fit.concat(all.filter(c => !fit.includes(c)));
-        if(!pool.length) return;
-        const k = f.id + "|" + ar.id; turn[k] = turn[k] || 0;
-        // the areas start at different points, so one trainee's cases differ from area to area
-        a.cases[ar.id] = [pool[(turn[k] + AREAS.indexOf(ar) * 3) % pool.length].id]; turn[k]++;
-      });
-      a._dirty = true;
-    });
-    toast("Cases spread. Check them, then 💾 Save all changes."); render();
-  },
-  async saveRow(id, btn){ if(btn) btn.disabled = true; await saveAssign([id]); render(); },
-  async saveAll(btn){ btn.disabled = true; await saveAssign(Object.keys(FA.assign).filter(id => FA.assign[id]._dirty)); render(); }
 };
-async function saveAssign(ids){
-  let n = 0;
-  for(const id of ids){
-    const a = Object.assign({}, FA.assign[id]); delete a._dirty; a.at = new Date().toISOString();
-    if(await sharedSet("assign:" + id, a) !== false){ FA.assign[id] = a; n++; }
-  }
-  toast(n === ids.length ? `✓ Saved ${n} assignment${n === 1 ? "" : "s"}.` : `Saved ${n} of ${ids.length}. Check your connection and try again.`);
-}
 ftAdminTab("firms", "🏛 Law Firms", renderAdminFirms);
 
 (function(){ const s = document.createElement("style"); s.id = "ft-firms"; s.textContent = `

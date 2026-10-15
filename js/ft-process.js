@@ -517,6 +517,10 @@ function kcReport(id, r){
     <p class="fp-muted" style="margin:8px 0 0;">Graded ${e(new Date(r.at).toLocaleString())} · ${qs.length} question${qs.length===1?"":"s"} · feedback is under each answer below.</p>
   </div>`;
 }
+// A lesson with process questions is finished on this page, not on the lesson itself. Until now that
+// left the trainee on a graded sheet with a toast and nothing to do next, so the next step from the
+// curriculum (js/ft-next-step.js) is shown here the moment the check passes.
+const root_FTNextStep = () => (window.FTNextStep && typeof window.FTNextStep.compact === "function") ? window.FTNextStep : null;
 function renderKc(){
   const id = Number(state.dayId), d = DAYS.find(x=>x.id===id), qs = kcQuestionsFor(id);
   const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>`;
@@ -536,6 +540,7 @@ function renderKc(){
       ${rec && rec.attempts ? `<div class="kc-stats">${trainerScore(kcReview(id)) != null ? `Final score <b>${kcBest(id)}%</b> (your trainer’s) · best graded ${rec.best}%` : `Best score <b>${rec.best}%</b>`} · ${rec.attempts} attempt${rec.attempts===1?"":"s"}${prog.done ? " · ✓ Lesson finished" : ""}</div>` : ""}</div>
     ${reviewBlock(id)}
     ${shown ? kcReport(id, shown) : ""}
+    ${prog.done && root_FTNextStep() ? root_FTNextStep().compact(id) : ""}
     <div class="card kc-card">
       <ol class="fp-qs">${qs.map(x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
@@ -621,18 +626,21 @@ Return ONLY a JSON object, no other text:
     }
   }
 };
-// Finishing a lesson that has process questions routes to ✍️ Knowledge Check (its own feature, its own button in
-// the top bar), opening that lesson's answer sheet — rather than a Knowledge Check inside the lesson.
+// A day with a lesson runs Lesson → its Activities → its Process Questions, and only then on through the
+// curriculum. So finishing a lesson does NOT jump to ✍️ Knowledge Check: it records the lesson as studied
+// (which is what unlocks its Process Questions) and goes to 📚 Dashboard, where the next-step band
+// (js/ft-next-step.js) puts the day's activities first and the Process Questions after them.
+// A lesson without process questions is finished outright, as before.
 const __finish = window.finishTrainingForDay;
 window.finishTrainingForDay = async function(id){
   const l = Number(id);
   if(!kcQuestionsFor(l).length) return __finish.apply(this, arguments);
-  // Going through the module is what unlocks its questions, so record it before routing there.
   if(state.traineeId && !state.isAdmin && !(state.progress[l] || {}).studied){
     state.progress[l] = Object.assign({}, state.progress[l], {studied:true, studiedAt:new Date().toISOString()});
     try{ await storeSet("day-progress", state.progress); }catch(err){}
   }
-  return FTProcess.openLesson(l);
+  window.FT_JUST_STUDIED = l;                    // the band says "studied — now the activities" on arrival
+  return goto("modules");
 };
 window.goToKnowledgeCheckWithInterstitial = function(){ return window.finishTrainingForDay(state.dayId); };
 // the page, beside ✍️ Knowledge Check

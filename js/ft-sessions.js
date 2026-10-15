@@ -220,7 +220,17 @@ Return ONLY JSON: {"summary":"..."}`;
   },
   again(){ const s = sessionById(S.cur); this.start(s.id); },
   // a session's tool links (its graded and practice calls, its case in the CMS), for the checks in .github/scripts
-  links(id){ const s = sessionById(id); return s ? (s.tools(s.area ? caseFor(s) : null) || []).map(t => t[1]) : []; }
+  links(id){ const s = sessionById(id); return s ? (s.tools(s.area ? caseFor(s) : null) || []).map(t => t[1]) : []; },
+  // Can a trainee open this session right now? The Practice Lab card's own gate, in one place, so a
+  // screen that links straight to a session (js/ft-next-step.js) cannot get round the lesson lock or
+  // offer a session that works on a case while no case is handed out.
+  openable(id){
+    const s = sessionById(id); if(!s) return false;
+    if(state.isAdmin || state.adminPreview) return true;
+    if(typeof window.dayUnlocked === "function" && !window.dayUnlocked(s.lesson)) return false;
+    if(!FF().myFirm()) return false;
+    return !(s.area && !caseFor(s));
+  }
 };
 // the Practice Lab page's cards (js/ft-simulators.js)
 FTSessions.cards = function(){
@@ -235,10 +245,10 @@ FTSessions.cards = function(){
     return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
-      ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 Your trainer assigns your case for this session."}</p>` : ""}
+      ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case. Cases aren’t handed out on the platform yet — nothing for you or your trainer to do here."}</p>` : ""}
       <div class="fts-tool-act">${!open ? `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`
         : isTrainee() && !f ? `<button class="btn btn-ghost btn-sm" disabled>Waiting for your firm</button>`
-        : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled>Waiting for your case</button>`
+        : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled title="Cases aren’t handed out on the platform yet">No case yet</button>`
         : `<button class="btn btn-navy btn-sm" onclick="FTSessions.open('${s.id}')">${run && run.submittedAt ? "Review / redo" : run && run.startedAt ? "▶ Continue" : "▶ Start the session"}</button>`}</div></div>`;
   }).join("");
 };
@@ -276,7 +286,8 @@ function renderSession(){
   const preview = !isTrainee();
   if(!preview){ load(); if(!S.data) return `${back}<div class="card" style="padding:24px;">Loading your session…</div>`; }
   const f = preview ? previewFirm() : FF().myFirm(), c = sessionCase(s);
-  if(!f) return `${back}<div class="card" style="padding:24px;">Your trainer hasn’t assigned your law firm yet.</div>`;
+  // Nobody assigns a firm any more (js/ft-firms.js): there is one only when no profile exists at all.
+  if(!f) return `${back}<div class="card" style="padding:24px;">No firm profile is set up yet, so this session has no rules to check your work against.</div>`;
   const run = preview ? null : runOf(s, c), rv = run ? reviewOf(keyOf(s, c)) : null;
   const started = run && run.startedAt && !run.submittedAt, done = run && run.submittedAt;
   const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", records:"records"}[s.id];
@@ -363,9 +374,9 @@ async function loadAdmin(quiet){
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
     people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
-    const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id, "assign:" + r.id]), vals = [];
+    const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id]), vals = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
-    AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 3] || {runs:{}}, rv:vals[i * 3 + 1] || {}, as:vals[i * 3 + 2] || {}}))
+    AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
     AD.at = Date.now();
@@ -378,13 +389,13 @@ function liveRows(){
 }
 function sessionRow(r, key, run){
   const [sid, mc] = key.split("|"), s = sessionById(sid), rv = ((r.rv || {}).sessions || {})[key] || {}, k = r.id + "§" + key, open = !!AD.open[k];
-  const firm = FF().firmById((r.as || {}).firm);
+  const firm = FF().firms()[0] || null;          // everyone works for the same firm now
   return `<div class="fss-arow"><div class="fss-arow-h" onclick="FTSessionsAdmin.open('${e(k)}')">${open ? "▾" : "▸"} ${s ? s.icon + " " + e(s.title) : e(sid)} ${mc !== "-" ? `<span class="ff-mc">${e(mc)}</span>` : ""}
       ${run.submittedAt ? `<span class="fss-pill ${run.auto && run.auto.pct >= PASS ? "ok" : "mid"}">auto ${run.auto ? run.auto.pct : "—"}%</span>` : `<span class="fss-pill live">🟢 in progress</span>`}
       ${tScore(rv) != null ? `<span class="fss-pill ok">🧑‍🏫 ${tScore(rv)}%</span>` : run.submittedAt ? `<span class="fss-pill">to review</span>` : ""}
       <span class="fss-muted">${run.submittedAt ? `${e(new Date(run.submittedAt).toLocaleString())} · ${run.minutes} min · attempt ${run.attempts}` : `started ${e(new Date(run.startedAt).toLocaleTimeString())}`}</span></div>
     ${open ? `<div class="fss-abody">${firm ? `<p class="fss-muted">Firm: ${e(firm.name)}</p>` : ""}
-      ${s ? `<div class="fss-form">${s.fields(firm || FF().firms()[0]).map(x => field(x, run.answers || {}, true)).join("")}</div>` : ""}
+      ${s ? `<div class="fss-form">${s.fields(firm || {}).map(x => field(x, run.answers || {}, true)).join("")}</div>` : ""}
       ${checksHtml(run)}${aiHtml(run)}
       ${run.submittedAt ? `<div class="fss-rvform"><label>Score <input type="number" min="0" max="100" data-score value="${tScore(rv) != null ? tScore(rv) : ""}" placeholder="${run.auto ? run.auto.pct : ""}"> %</label>
         <label class="fss-wide">Your comment<textarea rows="3" data-comment placeholder="Your review: the trainee sees it with the session">${e(rv.comment || "")}</textarea></label>
@@ -402,7 +413,7 @@ function renderAdminSessions(){
       <span><select onchange="FTSessionsAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
       ${rows.length ? rows.map(r => { const runs = Object.entries((r.s && r.s.runs) || {}).filter(([k, v]) => v && v.startedAt).sort((a, b) => String(b[1].submittedAt || b[1].startedAt).localeCompare(String(a[1].submittedAt || a[1].startedAt)));
         const toReview = runs.filter(([k, v]) => v.submittedAt && tScore(((r.rv || {}).sessions || {})[k]) == null).length;
-        return `<div class="fss-trainee"><b>${e(r.name)}</b> <span class="fss-muted">${e(r.batch)} · ${runs.length} session${runs.length === 1 ? "" : "s"}${toReview ? ` · <b>${toReview} to review</b>` : ""}${FF().firmById((r.as || {}).firm) ? " · " + e(FF().firmById(r.as.firm).name) : " · no firm assigned"}</span>
+        return `<div class="fss-trainee"><b>${e(r.name)}</b> <span class="fss-muted">${e(r.batch)} · ${runs.length} session${runs.length === 1 ? "" : "s"}${toReview ? ` · <b>${toReview} to review</b>` : ""}${FF().firms()[0] ? " · " + e(FF().firms()[0].name) : ""}</span>
           ${runs.map(([k, v]) => sessionRow(r, k, v)).join("")}</div>`; }).join("") : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
 }
 async function writeReview(id, mut){
