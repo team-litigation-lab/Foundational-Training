@@ -7,7 +7,11 @@
 <title>Legal Glossary (US Law) · LSH Knowledge Base</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <style>
-:root{--bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5A6075;
+:root{
+  /* Global typography: Inter first, then the native OS stack, so the UI renders sharp with
+     no font download when Inter is unavailable. The same token on every LSH page. */
+  --font-ui:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5A6075;
   /* The gradients the flat colours are painted with, and the photograph behind the page.
      Each gradient keeps its flat colour as the middle stop, so the text on it keeps its contrast. */
   --grad-navy:linear-gradient(135deg,#333A5E 0%,#262B45 52%,#1A1E33 100%);
@@ -15,12 +19,12 @@
   --grad-page:linear-gradient(160deg,#F5F7FC 0%,#EEF0F6 45%,#E3E7F2 100%);
   --grad-paper:linear-gradient(165deg,#FFFFFF 0%,#FDFDFF 55%,#F6F8FD 100%)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);background-image:var(--grad-page);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;position:relative}
+body{margin:0;background:var(--bg);background-image:var(--grad-page);color:var(--ink);font:16px/1.5 var(--font-ui);position:relative}
 /* The photograph behind the page, at 20% (the rest is the page's own gradient showing through). */
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:url("/img/bg-flag-law.webp") center/cover no-repeat;opacity:.2;pointer-events:none}
 header{background:var(--navy);background-image:var(--grad-navy);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;position:sticky;top:0;z-index:5}
 header img{height:46px;width:auto;border-radius:6px;display:block}  /* the standard LSH logo, as on every LSH page */
-header b{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:16px;font-weight:800;letter-spacing:.075em;text-transform:uppercase}
+header b{font-family:var(--font-ui);font-size:16px;font-weight:800;letter-spacing:.075em;text-transform:uppercase}
 header a.back{margin-left:auto;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:14px}
 header a.back:hover{background:rgba(255,255,255,.12)}
 main{max-width:900px;margin:0 auto;padding:16px}
