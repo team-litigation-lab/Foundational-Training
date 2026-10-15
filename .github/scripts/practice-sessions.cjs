@@ -216,37 +216,43 @@ const failures = []; const fail = (m) => failures.push(m);
         const got = await page.evaluate(async (v) => { goto(v); await new Promise(r => setTimeout(r, 1200)); return state.view; }, view);
         if (got !== view) fail(`Trainee view can't open ${what}: goto('${view}') landed on '${got}'`);
     }
-    const typing = await page.evaluate(() => document.querySelectorAll('main textarea').length);
-    await page.evaluate(async () => { goto('process'); await new Promise(r => setTimeout(r, 1200)); });
+    // Each module is its own Process Questions page now: goto('process') alone opens the index (a row per
+    // module, no boxes yet), and opening one unlocked module (every module is unlocked in preview) shows
+    // its own boxes to type in.
+    const idx = await page.evaluate(() => document.querySelectorAll('main textarea').length);
+    if (idx) fail('Trainee view: Process Questions index page already has boxes to type in (should be a list of modules)');
+    await page.evaluate(async () => { FTProcess.openLesson(1); await new Promise(r => setTimeout(r, 1200)); });
     const boxes = await page.evaluate(() => document.querySelectorAll('main textarea').length);
     if (!boxes) fail('Trainee view: Process Questions has no boxes for a trainee to type in');
     if (!await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions does not say it is a preview');
 
     // 8. Process Questions, one set per module: every module locked until the trainee finishes it,
-    //    ✓ Finish lesson marks it studied and brings them to that module's questions, and each module
-    //    row in 📚 Training Modules carries its own activities.
+    //    ✓ Finish lesson marks it studied and opens that module's own Process Questions page directly, and
+    //    each module row in 📚 Training Modules carries its own activities.
     // step 7 emptied the trainee to test the preview: put the real one back and leave preview
     await page.evaluate((tid) => { state.isAdmin = false; state.adminPreview = false; state.traineeId = tid;
         try { sessionStorage.removeItem('lsh_admin_preview'); } catch (e) {} }, id);
     await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2200);
     await page.evaluate(async () => { goto('process'); await new Promise(r => setTimeout(r, 1600)); });
-    // One card per module, and a module only opens once it has been finished. Earlier steps already
-    // passed one module's Knowledge Check, so count from what is locked now rather than from zero.
-    const before = await page.evaluate(() => ({ sets: document.querySelectorAll('.fp-set').length, locked: document.querySelectorAll('.fp-locked').length }));
-    if (!before.sets) fail('Process Questions shows no modules');
+    // The index: one row per module, and a module only opens once it has been finished. Earlier steps
+    // already passed one module's Knowledge Check, so count from what is locked now rather than from zero.
+    const before = await page.evaluate(() => ({ rows: document.querySelectorAll('.fp-row').length, locked: document.querySelectorAll('.fp-locked').length }));
+    if (!before.rows && !before.locked) fail('Process Questions shows no modules');
     if (!before.locked) fail('no module is locked, so the per-module lock is doing nothing');
     const pick = await page.evaluate(() => (DAYS.find(d => window.ftKcQuestions(d.id).length && !window.ftModuleStudied(d.id)) || {}).id);
     if (!pick) fail('no unfinished module with questions to test the lock with');
     await page.evaluate(async (l) => { await window.finishTrainingForDay(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
     if (!await page.evaluate((l) => !!(state.progress[l] || {}).studied, pick)) fail('✓ Finish lesson did not mark the module studied');
     if (await page.evaluate(() => state.view) !== 'process') fail('✓ Finish lesson did not open that module\'s Process Questions');
-    const after = await page.evaluate(() => ({ locked: document.querySelectorAll('.fp-locked').length,
-        open: [...document.querySelectorAll('.fp-set:not(.fp-locked) .fp-head b')].map(x => x.textContent),
-        boxes: document.querySelectorAll('main textarea').length }));
-    if (after.locked !== before.locked - 1) fail(`finishing one module should unlock exactly that one: was ${before.locked} locked, now ${JSON.stringify(after)}`);
+    if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`✓ Finish lesson did not open that module's own page: pqLesson=${await page.evaluate(() => state.pqLesson)}`);
+    const opened = await page.evaluate(() => ({ h1: (document.querySelector('.fp-hero h1')||{}).textContent || '', boxes: document.querySelectorAll('main textarea').length }));
+    if (!opened.boxes) fail('the finished module has no boxes to answer in');
     const want = await page.evaluate((l) => ftName(l), pick);
-    if (after.open.indexOf(want) < 0) fail(`the module just finished (${want}) is not the one that opened: ${JSON.stringify(after.open)}`);
-    if (!after.boxes) fail('the finished module has no boxes to answer in');
+    if (opened.h1.indexOf(want) < 0) fail(`the module just finished (${want}) is not the one that opened: ${opened.h1}`);
+    // back to the index: exactly that one module should have unlocked, nothing else
+    await page.evaluate(async () => { goto('process'); await new Promise(r => setTimeout(r, 800)); });
+    const after = await page.evaluate(() => ({ locked: document.querySelectorAll('.fp-locked').length }));
+    if (after.locked !== before.locked - 1) fail(`finishing one module should unlock exactly that one: was ${before.locked} locked, now ${JSON.stringify(after)}`);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }

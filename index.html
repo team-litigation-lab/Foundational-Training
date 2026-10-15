@@ -8133,6 +8133,7 @@ function goto(view, id){
   state.view=view;
   if(view==="dashboard" || view==="tasks"){ state.surpriseTaskChecked = false; }
   if(view==="day"){ state.dayId=id; state.quizAnswers={}; state.quizQuestionIndex=0; state.quizSubmitted=false; state.slideDir="next"; state.slideInterstitial=null; state.dayViewMode="slides"; state.maxSlideReached=(state.slideProgress&&state.slideProgress[id])||0; state.lessonSlide=resumeSlideFor(id); }
+  if(view==="process"){ state.pqLesson = id || null; }
   if(view==="tool"){
     const t = PRACTICE_TOOLS.find(x=>x.id===id);
     if(t && !toolUnlocked(t)){
