@@ -243,6 +243,12 @@ function stepTimeline(all){
     </div>`;
   }).join("")}</div>`;
 }
+// What needs the eye first (the next-step band, a live task) and the pinned 📌 Training Orientation and Rules
+// card share one row, side by side, so the lesson cards keep the height for the one-screen rule. Either one
+// alone takes the whole row; phones and narrow windows stack them.
+const topRow = (notices, pins) => notices && pins
+  ? `<div class="dash-pair"><div class="dash-pair-now">${notices}</div><div class="dash-pair-pin">${pins}</div></div>`
+  : notices + pins;
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview;
@@ -264,8 +270,7 @@ function renderModules(){
       ${stepTimeline(all)}
     </div>
     <div class="dash-main">
-      ${hooks("LSH_HOME_NOTICES")}
-      ${pinned.map(d => moduleCard(d)).join("")}
+      ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""))}
       <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
       <div class="dash-side"><div class="dash-side-inner">
         <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
@@ -465,6 +470,21 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not — on both the Scorecard's
    main-lp and the Dashboard page's main-dash. */
 main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
+/* 📚 Dashboard's top row: the next-step band (and any live task) beside the pinned orientation card */
+.dash-pair{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px;align-items:stretch;margin-bottom:10px;flex:0 0 auto;}
+.dash-pair > div{min-width:0;display:flex;flex-direction:column;gap:10px;}
+.dash-pair > div > *{margin:0 !important;}
+.dash-pair > div > :last-child{flex:1 1 auto;}
+.dash-pair-pin .module-card{width:100%;height:100%;display:flex;flex-direction:column;}
+.dash-pair-pin .module-card > .module-body:empty{display:none;}
+.dash-pair-pin .module-card > .mc-grid{margin-top:auto;}
+/* the band beside it keeps to the height of the card: tighter spacing, the same lines */
+.dash-pair .ftn{padding:12px 16px;}
+.dash-pair .ftn-head{margin-bottom:6px;}
+.dash-pair .ftn-now{padding:8px 12px;margin-bottom:6px;}
+.dash-pair .ftn-then{margin:-2px 0 6px;}
+.dash-pair .ftn-after{margin-top:4px;}
+@media(max-width:1000px){.dash-pair{grid-template-columns:minmax(0,1fr);}}
 /* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
 .dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
 .lp-lessons-row .module-grid{flex:1;min-width:0;}
@@ -477,6 +497,8 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
 /* 8 lessons read as a balanced 4x2 block, not the shared five-across default (js/lsh-dashboard.js) — narrower
    screens keep its existing responsive auto-fill/stacked behavior. */
 @media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
+/* 9 or 10 lessons (Lesson 9 is the Days 17–18 deck) take two rows of five, so none drops to a third row below the fold */
+@media(min-width:1001px){main.main-dash .module-grid:has(> :nth-child(9)):not(:has(> :nth-child(11))){grid-template-columns:repeat(5,minmax(0,1fr)) !important;}}
 /* The scores band is one slim row under the lesson cards — the cards are the page's focus, so the band
    takes as little of the screen's height as it can: every box on one line, number + label only (the
    feedback stars, the "Rate <lesson>" button and the ranking's list and formula stay off the band). */
