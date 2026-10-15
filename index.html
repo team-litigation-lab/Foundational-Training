@@ -5475,6 +5475,15 @@ function authHeaders(){
 }
 function setTraineeToken(t){ state.authToken = t||""; try{ t ? localStorage.setItem("lsh_auth_token", t) : localStorage.removeItem("lsh_auth_token"); }catch(e){} }
 function setAdminToken(t){ state.adminToken = t||""; try{ t ? sessionStorage.setItem("lsh_admin_token", t) : sessionStorage.removeItem("lsh_admin_token"); }catch(e){} }
+// General rule: a trainee sign-in is never an admin session. A leftover admin token in this browser
+// (a trainer who signed in on the same machine, an earlier test) used to leave 🏅 Scorecards, 👁 Switch
+// View and 🛡 Admin in a trainee's top bar. Whenever a trainee is signed in, the admin session is dropped.
+function dropAdminSession(){
+  if(!state.isAdmin && !state.adminPreview && !state.adminToken) return;
+  setAdminToken(""); state.isAdmin = false; state.adminPreview = false;
+  try{ sessionStorage.removeItem("lsh_admin_preview"); }catch(e){}
+}
+window.dropAdminSession = dropAdminSession;
 async function authStatus(){
   if(typeof state.secureMode === "boolean") return state.secureMode;
   try{ const r = await fetch("/api/auth/status", {method:"POST", headers:{"Content-Type":"application/json"}, body:"{}"}); const j = r.ok ? await r.json() : {}; state.secureMode = !!j.secure; state.portalOnly = !!j.portalOnly; state.portalSecret = j.portalSecret !== false; }
@@ -8358,6 +8367,7 @@ async function submitLoginInner(){
     // here signs in with the Batch ID they registered under, even an older code that isn't a date.
     if(!resolved.existing && !canonicalBatch(batchVal)){ toast(BATCH_HINT); return; }
   }
+  dropAdminSession();   // signing in as a trainee ends any admin session left in this browser
   state.traineeName = v;
   await storeSet("trainee-name", v);
   if(regLast){ state.regName = {first:regFirst, last:regLast}; await storeSet("reg-name", state.regName); }
@@ -8797,6 +8807,7 @@ window.applyUpdate = applyUpdate;
   startUpdateChecks();
   await loadAll();
   if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees and admins come in from the LSH Training Portal
+  if(state.traineeId) dropAdminSession();   // a trainee session wins: no admin bar, no admin pages
   if(state.adminToken && (await authStatus())) state.isAdmin = true;
   if(state.isAdmin && !state.adminToken && (await authStatus())){ state.isAdmin = false; setTimeout(()=>{ toast("Secure mode is on — please sign in to Admin again with the admin password."); }, 600); }
   if(state.traineeId && (await authStatus()) && !state.authToken){
@@ -13049,6 +13060,8 @@ window.downloadNotesPdf = downloadNotesPdf;
    ============================================================ */
 
 function openAdmin(){
+  // Trainers sign in on the Portal, not from inside a trainee’s session: the admin screens stay out of reach here.
+  if(state.traineeId){ toast("Admin is for trainers — sign in from the LSH Training Portal."); return; }
   if(state.isAdmin){ goto("admin"); return; }
   const overlay=document.createElement("div");
   overlay.className="overlay";
@@ -14076,7 +14089,7 @@ function renderSopSection(s){
 }
 
 function renderAdmin(){
-  if(!state.isAdmin){
+  if(!state.isAdmin || state.traineeId){
     return `
       <div class="card" style="padding:40px;text-align:center;">
         <div style="font-size:30px;margin-bottom:10px;">🛡</div>

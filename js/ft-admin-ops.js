@@ -13,7 +13,7 @@
 "use strict";
 if(typeof window.ftAdminTab !== "function") return;
 const e = v => esc(String(v == null ? "" : v));
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 const DAY = 86400000;
 const when = t => { const d = new Date(t); return isFinite(d) ? d.toLocaleString() : "—"; };
 

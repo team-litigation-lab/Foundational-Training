@@ -50,7 +50,7 @@ if(typeof window.renderTopbar !== "function" || window.lshProgram) return;
 const CFG = Object.assign({modules:[], moduleViews:[], labViews:["simulators"], caseProfile:null, pinned:() => [], shared:[], sources:[]}, window.LSH_PROGRAM || {});
 const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one: no 🏅 Scorecards, no 🛡 Admin
 const lessons = () => DAYS.filter(d => d && d.sections && d.sections.length);
 const doneIn = p => lessons().filter(d => p && p[d.id] && p[d.id].done).length;
 const tier = pct => pct == null ? "none" : pct >= 85 ? "top" : pct >= 70 ? "ok" : "low";

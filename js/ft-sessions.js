@@ -33,7 +33,7 @@ const norm = v => String(v == null ? "" : v).normalize("NFD").replace(/[̀-ͯ]/g
 const same = (a, b) => has(a) && has(b) && norm(a) === norm(b);
 const near = (a, b) => { const x = norm(a), y = norm(b); return !!x && !!y && (x === y || x.includes(y) || y.includes(x)); };
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 const FF = () => window.FTFirms;
 const PASS = 80;
 // dates: "MM/DD/YYYY" (the case files) and "YYYY-MM-DD" (date inputs)

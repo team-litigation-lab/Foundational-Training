@@ -305,10 +305,10 @@ function renderTopbar(){
         <div class="nav">
           ${views.map(([id,label])=>`<button class="${state.view===id?'active':''}" onclick="goto('${id}')">${label}${id==="tasks" && openTasksCount() ? `<span class="nav-badge">${openTasksCount()}</span>` : ""}</button>`).join("")}
           ${(state.traineeId && !state.isAdmin) ? `<button type="button" class="nav-focus" onclick="openFocusPanel()" title="My Focus — trainer feedback and what to work on next">🎯 Focus${focusNewCount()?`<span class="nav-badge">${focusNewCount()}</span>`:""}</button>` : ""}
-          ${state.adminPreview
+          ${state.traineeId ? "" : state.adminPreview
             ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('admin')" title="Switch back to the admin (trainer) view">👁 Switch View</button>`
             : ((state.portalOnly && !state.isAdmin) ? "" : `<button class="${state.view==='admin'?'active':''}" onclick="openAdmin()">🛡 Admin</button>`)}
-          ${state.isAdmin ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="Switch to the trainee view — the program exactly as a trainee sees it, with no trainer tools or admin pages">👁 Switch View</button>` : ""}
+          ${state.isAdmin && !state.traineeId ? `<button type="button" class="nav-viewswitch" onclick="setAdminViewMode('trainee')" title="Switch to the trainee view — the program exactly as a trainee sees it, with no trainer tools or admin pages">👁 Switch View</button>` : ""}
         </div>
       </div>
     </div>
