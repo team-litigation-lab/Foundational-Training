@@ -117,6 +117,7 @@ async function walk(page, label) {
         const sets = [];
         const realSet = window.sharedSet;
         window.sharedSet = async (k, v) => { if (k === 'blueprint:pdf') sets.push(v.deploy || ''); return realSet(k, v); };
+        window.__realBlueprintDoc = LSHBlueprint.doc;   // put back below: the PDF itself is checked after this
         LSHBlueprint.doc = async () => ({ output: () => 'data:application/pdf;base64,JVBERi0xLjQK', getNumberOfPages: () => 1 });
         const run = async () => { lshBlueprintDeployment.reset(); state.blueprintJob = false; await autoPublishBlueprint(); return sets.length; };
         const r = { first: await run(), same: await run() };
@@ -131,6 +132,7 @@ async function walk(page, label) {
     // the real thing, unstubbed: the PDF the Portal links is built from this course's trainee slides,
     // a page a slide plus the cover, with every slide's title in it as real text
     const real = await page.evaluate(async () => {
+        if (window.__realBlueprintDoc) { LSHBlueprint.doc = window.__realBlueprintDoc; delete window.__realBlueprintDoc; }
         const d = (window.LSH_BLUEPRINT || {}).trainee;
         if (!d || !d.slides || !d.slides.length) return { error: 'no trainee slides to build /blueprint.pdf from' };
         const doc = await LSHBlueprint.doc('trainee');
