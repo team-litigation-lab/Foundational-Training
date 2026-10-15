@@ -645,7 +645,8 @@ window.ftLorCard = function(){
   const no = isTrainee() && L.draft ? myCaseNo() : null;
   const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
-  return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
+  const dayT = window.FTDays ? FTDays.label(FTDays.forTool("lor")) : "";
+  return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 LOR Drafting Activity</h3>
     <p class="fts-note">Fill in the firm’s own template on the page and download the finished letter as a <b>PDF</b>, named by the trainers’ convention — which you can edit before you download. Upload it into the Smart Advocate demo yourself: nothing here becomes a CMS case file.</p>
     ${note ? `<p class="fss-case">${note}</p>` : ""}
