@@ -3191,5 +3191,575 @@
     }
    }
   }
+ },
+ "8": {
+  "lesson": "Medical Records Specialist Training",
+  "sections": {
+   "v001": {
+    "time": "3 min",
+    "objective": "Open the Medical Records Specialist role: Days 13 to 17 run from this deck.",
+    "talk": [
+     "Today is the discussion and the breakout plus the HIPAA certification task; Day 14 is the MedLOR demo; Day 16 is lien balance verification; Day 17 is saving the bills and records.",
+     "Say the two time limits now so nobody is surprised: 1 hour 45 minutes for the MedLOR demo, 45 minutes for the LV demo."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day! We are starting Provider Communication — the Medical Records Specialist Role.\n\nThis deck carries Days 13 to 17: today's discussion, breakout and HIPAA certification, then your MedLOR demo, your Lien Balance Verification demo, and saving medical bills and records.\n\nTwo time limits to plan for:\n• MedLOR demo — ideal completion 1 hour 45 minutes.\n• LV request demo — ideal completion 45 minutes.\n\nGoing beyond either is a deduction under Time Management & Efficiency. Thank you."
+     }
+    ],
+    "keys": [
+     "Tools to have working BEFORE the demos: Smart Advocate, Microsoft Word (for the templates), Notepad, and Nitro Pro or another PDF editor that can merge files and edit existing text.",
+     "A missed demo through unpreparedness is a missed performance and is NOT rescheduled. Only a Training Team factor justifies a reschedule."
+    ]
+   },
+   "v002": {
+    "time": "3 min",
+    "objective": "The objective: request, organize and handle records accurately and ethically."
+   },
+   "v003": {
+    "time": "3 min",
+    "objective": "The agenda: introduction, legal compliance, providers and liens."
+   },
+   "v004": {
+    "time": "4 min",
+    "objective": "The role's place on the team, in PI cases.",
+    "talk": [
+     "No records, no demand. This role controls the pace of the second half of every case."
+    ]
+   },
+   "v005": {
+    "time": "5 min",
+    "objective": "What they will actually do: the bridge between the firm and the providers.",
+    "talk": [
+     "Bridge, handler of confidential information, and chaser. All three are graded in the demos."
+    ]
+   },
+   "v006": {
+    "time": "3 min",
+    "objective": "Open Protected Health Information — the section that carries the HIPAA task."
+   },
+   "v007": {
+    "time": "5 min",
+    "objective": "They handle the most confidential information in the case.",
+    "talk": [
+     "Say it plainly: a PHI mistake is reportable, and it is the firm's liability, not just theirs."
+    ]
+   },
+   "v008": {
+    "time": "6 min",
+    "objective": "HIPAA: what it protects.",
+    "talk": [
+     "Keep it practical — the test is whether they can say what they may and may not do with a record today.",
+     "Tonight's certification task covers the rest."
+    ],
+    "keys": [
+     "HIPAA protects the privacy and security of identifiable health information. Our authority to hold it comes from the client's signed authorization, nothing else."
+    ]
+   },
+   "v009": {
+    "time": "5 min",
+    "objective": "State privacy laws can be stricter than HIPAA.",
+    "talk": [
+     "The rule is simple and worth memorising: follow the more restrictive of the two."
+    ]
+   },
+   "v010": {
+    "time": "5 min",
+    "objective": "Best practices: secure systems only.",
+    "talk": [
+     "Encrypted email, the case portal, the CMS. Nothing else carries PHI."
+    ]
+   },
+   "v011": {
+    "time": "6 min",
+    "objective": "What NOT to do — read every line aloud.",
+    "talk": [
+     "No PHI on personal devices or personal email. No information to anyone not authorized.",
+     "This is the page that becomes a Process Question on the consequences of mishandling PHI."
+    ],
+    "keys": [
+     "Consequences of mishandling PHI: civil and criminal penalties under HIPAA, state penalties, loss of the client's trust, sanctions against the firm, and dismissal for the VA."
+    ],
+    "pitfalls": [
+     "Forwarding a record to a personal address 'to work on it at home'. That is the violation, by itself."
+    ]
+   },
+   "v012": {
+    "time": "5 min",
+    "objective": "What PHI actually is: name, birthdate, contact, treatment, billing.",
+    "talk": [
+     "If it identifies the person and touches their health or payment for it, it is PHI."
+    ]
+   },
+   "v013": {
+    "time": "5 min",
+    "objective": "Their responsibilities under HIPAA, numbered.",
+    "talk": [
+     "Secure systems, minimum necessary, verify the recipient, log what was sent."
+    ]
+   },
+   "v014": {
+    "time": "6 min",
+    "objective": "Common HIPAA violations — the list they will be tested against.",
+    "talk": [
+     "Wrong recipient, personal device or email, unsecured discussion, over-disclosure.",
+     "Ask the room which of these is easiest to do by accident. The answer is the wrong recipient on a fax."
+    ],
+    "keys": [
+     "Before sending: verify the recipient's fax number or email twice, and attach the correct file — check the file, not the file name."
+    ],
+    "pitfalls": [
+     "A transposed fax digit sends PHI to a stranger. Fill the recipient box LAST and verify it."
+    ]
+   },
+   "v015": {
+    "time": "4 min",
+    "objective": "State privacy laws, in more detail."
+   },
+   "v016": {
+    "time": "4 min",
+    "objective": "The state-by-state table — point at the pattern, not every row."
+   },
+   "v017": {
+    "time": "4 min",
+    "objective": "Stricter consent requirements in some states."
+   },
+   "v018": {
+    "time": "4 min",
+    "objective": "Shorter response times in some states.",
+    "talk": [
+     "This changes the follow-up cadence, which is what the demos are marked on."
+    ]
+   },
+   "v019": {
+    "time": "5 min",
+    "objective": "Best practice: check the state, follow the more restrictive rule.",
+    "talk": [
+     "Close the compliance section here; this is the line to carry into every provider call."
+    ]
+   },
+   "v020": {
+    "time": "3 min",
+    "objective": "Open the Medical Records Request section — the core of the Day 14 demo."
+   },
+   "v021": {
+    "time": "5 min",
+    "objective": "Timeline and responsibility: once the agreement is signed, the firm requests.",
+    "talk": [
+     "Tie it back to the intake packet: the signed HIPAA is what makes the request possible."
+    ]
+   },
+   "v022": {
+    "time": "6 min",
+    "objective": "When requests should be made — and the older-DOL rule.",
+    "talk": [
+     "An older date of loss means file as soon as possible; a fresh one follows treatment.",
+     "The PI Workflow deck's 4–8 week guide applies to a current DOL."
+    ],
+    "keys": [
+     "Older DOL — request immediately, because the statute and the provider's own retention clock are both running."
+    ]
+   },
+   "v023": {
+    "time": "5 min",
+    "objective": "The key check before requesting: treatment status, providers, dates of service.",
+    "talk": [
+     "Dates of service drive the file naming on Day 17. Get them right at request time."
+    ]
+   },
+   "v024": {
+    "time": "5 min",
+    "objective": "Request from ALL relevant providers to build a complete file.",
+    "talk": [
+     "One missed provider understates the damages and can be fatal to the demand."
+    ]
+   },
+   "v025": {
+    "time": "5 min",
+    "objective": "The PCP and referrals — always ask.",
+    "talk": [
+     "Referrals are how the hidden providers surface."
+    ]
+   },
+   "v026": {
+    "time": "6 min",
+    "objective": "The 14-day rule: confirm treatment within 14 days of the date of loss.",
+    "talk": [
+     "Say why it matters — many policies and carriers treat a longer gap as a break in causation."
+    ],
+    "keys": [
+     "Confirm treatment began within 14 days of the DOL. A longer gap must be flagged to the attorney with the reason, if the client gives one."
+    ],
+    "pitfalls": [
+     "Recording 'no treatment' when the client went to an urgent care and forgot. Ask specifically."
+    ]
+   },
+   "v027": {
+    "time": "5 min",
+    "objective": "The summary, including EMS: check for ambulance involvement and request those records.",
+    "talk": [
+     "EMS records are the most commonly forgotten and the most useful for the first account of the injury."
+    ]
+   },
+   "v028": {
+    "time": "4 min",
+    "objective": "Open the request checklist: forms, provider, drafting."
+   },
+   "v029": {
+    "time": "6 min",
+    "objective": "HIPAA authorization is the critical first step — confirm it before anything is requested.",
+    "talk": [
+     "No valid authorization, no request. This is where a demo goes wrong in the first five minutes."
+    ],
+    "keys": [
+     "On the HIPAA form: the Validity of Authorization date is the date the CLIENT SIGNED, as indicated below the document. Relationship to Patient is 'Self'."
+    ]
+   },
+   "v030": {
+    "time": "5 min",
+    "objective": "The step-by-step: check the file, verify the signed forms.",
+    "talk": [
+     "Walk it as a sequence they will narrate during the demo."
+    ]
+   },
+   "v031": {
+    "time": "5 min",
+    "objective": "HITECH requests and signature requirements — some providers refuse the standard HIPAA form."
+   },
+   "v032": {
+    "time": "5 min",
+    "objective": "What to do when a provider requires a HITECH form: notify the client first.",
+    "talk": [
+     "Notify, get it signed, then request. Never improvise a substitute form."
+    ]
+   },
+   "v033": {
+    "time": "5 min",
+    "objective": "Identifying providers not listed at intake."
+   },
+   "v034": {
+    "time": "5 min",
+    "objective": "Ask the client, confirm where they went.",
+    "talk": [
+     "Who authorizes contacting the client is firm policy. Check the SOP before dialling."
+    ]
+   },
+   "v035": {
+    "time": "6 min",
+    "objective": "When providers refuse to confirm details.",
+    "talk": [
+     "This is the page the Day 15 communication upskill is built on: assertive, polite, persistent.",
+     "Escalate after two failed attempts, with the attempts logged."
+    ],
+    "keys": [
+     "A provider who will not confirm: send the authorization again, ask for the records department by name, log each attempt with date and time, and escalate after two failures."
+    ]
+   },
+   "v036": {
+    "time": "5 min",
+    "objective": "Quick care, urgent care, and the Certificate of No Records.",
+    "talk": [
+     "The certificate is itself a document for the file — it proves the gap was checked."
+    ]
+   },
+   "v037": {
+    "time": "5 min",
+    "objective": "Hospitals usually process in-house.",
+    "talk": [
+     "Different route, same paperwork. Know which department."
+    ]
+   },
+   "v038": {
+    "time": "8 min",
+    "objective": "Drafting the MedLOR — and the naming convention the Day 14 demo is marked on.",
+    "talk": [
+     "Tick the correct box for bills, records, or both, matching what the request actually asks for.",
+     "Then give the naming convention and the NPIM variant, because both are scored."
+    ],
+    "keys": [
+     "MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (va's first name)",
+     "Example: MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)",
+     "NPIM providers: always add the doctor's name — MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)",
+     "Email subject: [Client Name] - [Lien Holder] - Request for Medical Bills and Records",
+     "SA update: the MEDS tab is under the GENERAL section now, not Plaintiff. For the DOCGEN dummy account use the client name John Test Doe in the documents, but take every other detail from the CURRENT contact card (which shows 'I Test Doe')."
+    ],
+    "pitfalls": [
+     "Ticking both bills and records when the task asks for one.",
+     "Copying the client's details from the tutorial video instead of the current contact card.",
+     "Looking for the MEDS tab under Plaintiff and losing demo minutes to it."
+    ],
+    "grade": {
+     "deliverable": "MedLOR demo — sending the MedLOR and requesting bills and records",
+     "file": "MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (va's first name)",
+     "ai": {
+      "match": [
+       "File name matches the convention exactly, including the doctor's name for an NPIM provider",
+       "HIPAA validity date equals the client's signature date; relationship is 'Self'",
+       "Correct request box ticked (bills / records / both)",
+       "Client details match the current contact card, not the tutorial video",
+       "Document uploaded: Direction Outgoing, sub-category Medical/meds, folder Meds, FROM OUR FIRM, TO the provider",
+       "Copy attached in the MEDS tab under GENERAL, and in the Tasks tab",
+       "Notes and Tasks reports use the templates, with the internal link hyperlinked",
+       "Fax address formatted +1XXXXXXXXXX@metrofax.com with no dashes",
+       "Completed within 1 hour 45 minutes"
+      ],
+      "nlp": [
+       "The file name is parsed field by field — provider, document set, date format mm.dd.yy, and the VA's first name in parentheses; a wrong date format is a failed field, not a typo.",
+       "Report templates are matched semantically but the required phrases 'Saved in Meds and Docs tab' and 'Thank you' must be present.",
+       "Time over 1 hour 45 minutes is scored as a deduction against Time Management & Efficiency, not against accuracy."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Document accuracy (MedLOR, HIPAA, COR)",
+        "weight": 30
+       },
+       {
+        "label": "Naming convention",
+        "weight": 15
+       },
+       {
+        "label": "SA workflow — upload, MEDS, Notes, Tasks",
+        "weight": 30
+       },
+       {
+        "label": "Transmission (email or MetroFax)",
+        "weight": 10
+       },
+       {
+        "label": "Time management & efficiency",
+        "weight": 15
+       }
+      ],
+      "rubric": [
+       "Narrated the verification steps rather than clicking silently",
+       "Prepared — tools working before the demo started",
+       "Recovered calmly from a mistake",
+       "Returned 5–10 minutes later to check the transmission confirmation"
+      ],
+      "feedback": "Where the time went, and which SA step needs a second pass…"
+     }
+    }
+   },
+   "v039": {
+    "time": "5 min",
+    "objective": "The SOAP note format — how to read what comes back.",
+    "talk": [
+     "Subjective, Objective, Assessment, Plan. Knowing it is how they spot a record that is incomplete."
+    ]
+   },
+   "v040": {
+    "time": "6 min",
+    "objective": "Prepare the documents before sending: MedLOR, HIPAA, COR.",
+    "talk": [
+     "Everything merged into one combined file before it goes. Nitro Pro is what they merge with."
+    ],
+    "keys": [
+     "The combined document is what gets uploaded and sent: MedLOR + Unsworn Certificate of Records + HIPAA."
+    ]
+   },
+   "v041": {
+    "time": "5 min",
+    "objective": "E-portals: check the provider's location first.",
+    "talk": [
+     "Right portal, right facility. A request to the wrong location is a lost week."
+    ]
+   },
+   "v042": {
+    "time": "5 min",
+    "objective": "Following up, and confirming payments.",
+    "talk": [
+     "A follow-up without a logged previous attempt is not a follow-up."
+    ]
+   },
+   "v043": {
+    "time": "5 min",
+    "objective": "Document review and file organization on receipt.",
+    "talk": [
+     "Check what arrived against what was asked for, before reporting it received."
+    ],
+    "keys": [
+     "Day 17 naming for what comes back: MED - Provider - HICF $0.00 & Records DOS mm.dd.yy with Signed COR and Unsigned Lien (va's first name), then the bill, records and lien named separately when extracted."
+    ]
+   },
+   "v044": {
+    "time": "5 min",
+    "objective": "Notate everything, and back up before editing.",
+    "talk": [
+     "Every call, every action, in the system. The note is the proof the work happened."
+    ]
+   },
+   "v045": {
+    "time": "6 min",
+    "objective": "The pre-send checklist: full name, DOB, dates of service.",
+    "talk": [
+     "Run it as a checklist in the demo, out loud. It is marked."
+    ],
+    "keys": [
+     "Before sending: client's full name and DOB present, dates of service specified, authorization attached and valid, recipient verified."
+    ]
+   },
+   "v046": {
+    "time": "4 min",
+    "objective": "Sending the request — the checklist's send step."
+   },
+   "v047": {
+    "time": "4 min",
+    "objective": "After sending: confirm transmission, log it, diarise the follow-up.",
+    "talk": [
+     "Return 5–10 minutes later for the transmission confirmation. If it failed, resend until it confirms."
+    ]
+   },
+   "v048": {
+    "time": "4 min",
+    "objective": "Upon receiving the documents: check, name, save, report."
+   },
+   "v049": {
+    "time": "3 min",
+    "objective": "Open Lien Balance Verification — the Day 16 demo.",
+    "talk": [
+     "Name the 45-minute target now."
+    ]
+   },
+   "v050": {
+    "time": "6 min",
+    "objective": "Mid-treatment lien balance verification, and why LOPs matter.",
+    "talk": [
+     "LOPs are legally binding; mismanaging one delays the settlement.",
+     "This is the Process Question on liens versus LOPs, and the one on why lien accuracy matters."
+    ],
+    "keys": [
+     "Medical lien — a legal claim against the settlement proceeds, often statutory or contractual.",
+     "Letter of Protection (LOP) — the firm's written promise to pay the provider from the settlement, so treatment continues without the client paying up front.",
+     "Both reduce the client's net, and both must be verified before any net sheet is built."
+    ]
+   },
+   "v051": {
+    "time": "5 min",
+    "objective": "The purpose: keep bills within policy limits, spot excess.",
+    "talk": [
+     "Bills above the policy limit is the problem the Lien Negotiator inherits. Catching it mid-treatment is the whole point."
+    ]
+   },
+   "v052": {
+    "time": "5 min",
+    "objective": "When to check: 30–45 days into active treatment, and after any major procedure."
+   },
+   "v053": {
+    "time": "6 min",
+    "objective": "How to do it: list every active provider, including imaging and specialists.",
+    "talk": [
+     "Then give the Day 16 naming and templates, because the demo is marked on them."
+    ],
+    "keys": [
+     "MED – Lien Holder(Provider) – Lien Balance Verification mm.dd.yyyy (va's first name)",
+     "NPIM: MED - RDG(NPIM Dr. Fabito) - Lien Balance Verification 08.17.2022 (jane)",
+     "Notes tab: Sent [filename without the VA's name]. Saved in Meds and Docs tab. Thank you. (va's first name) — highlight the file name and paste the internal link.",
+     "Tasks tab: mm/dd/yyyy Sent LV request to [lien holder(medical provider)]. Saved in Meds and Docs tab. Thank you. (va's first name)",
+     "Email subject: [Client Name] - [Lien Holder] - Request for Lien Verification",
+     "Ideal completion time: 45 minutes. Overruns are heavily penalised."
+    ],
+    "pitfalls": [
+     "Using mm.dd.yy instead of mm.dd.yyyy — the LV convention uses the four-digit year.",
+     "Leaving the VA's name in the file name quoted inside the Notes report."
+    ],
+    "grade": {
+     "deliverable": "Lien Balance Verification request demo",
+     "file": "MED – Lien Holder(Provider) – Lien Balance Verification mm.dd.yyyy (va's first name)",
+     "ai": {
+      "match": [
+       "File name matches the convention, with the four-digit year and the NPIM doctor where applicable",
+       "Upload properties: Outgoing, Medical/meds, folder Meds, FROM OUR FIRM, TO the provider",
+       "Copy attached in the Meds tab and the Tasks tab",
+       "Notes report matches the template, with the internal link on the file name",
+       "Tasks report matches the template, dated mm/dd/yyyy",
+       "Email subject matches [Client Name] - [Lien Holder] - Request for Lien Verification",
+       "Completed within 45 minutes"
+      ],
+      "nlp": [
+       "Check the Notes report excludes the VA's name from the quoted file name but signs with it at the end — that is the most commonly failed field.",
+       "Date formats are exact: mm.dd.yyyy in the file name, mm/dd/yyyy in the Tasks report.",
+       "Time beyond 45 minutes is scored against Time Management & Efficiency only."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Letter accuracy",
+        "weight": 25
+       },
+       {
+        "label": "Naming convention",
+        "weight": 20
+       },
+       {
+        "label": "SA workflow and reports",
+        "weight": 30
+       },
+       {
+        "label": "Transmission",
+        "weight": 10
+       },
+       {
+        "label": "Time management & efficiency",
+        "weight": 15
+       }
+      ],
+      "rubric": [
+       "Worked from their own process guide",
+       "Narrated the verification steps",
+       "Tools ready before the demo"
+      ],
+      "feedback": "Which field cost them, and whether the 45 minutes was realistic for them…"
+     }
+    }
+   },
+   "v054": {
+    "time": "3 min",
+    "objective": "Remember! — the closing reminder page."
+   },
+   "v055": {
+    "time": "1 hr (breakout, 2:00–3:00 PM) + HIPAA task",
+    "objective": "Close the deck, run the breakout, and set the HIPAA certification task.",
+    "talk": [
+     "Post the four handouts, run the five Priority questions, then the Document Detectives exercise.",
+     "Set the HIPAA certification task with the naming rule and the screenshot requirement — the timestamp must be visible.",
+     "Remind them of the Day 14 tutorial and the timestamp to skip."
+    ],
+    "gc": [
+     {
+      "label": "Breakout handouts",
+      "text": "For your individual breakout activity, please go over the following handouts:\n\nProtected Health Information\nhttps://drive.google.com/file/d/12NZ3kLIzF9wSs-XPwZDu_-fiO08ODT8u/view\n\nE-Portals\nhttps://drive.google.com/file/d/1yW6Oq_8CEJ_a3IGtGSdCvn9GRIlyvti0/view\n\nMedical Liens\nhttps://drive.google.com/file/d/14ujIMM1N_L2uqLMYv0sMvKMdra9b1B4y/view\n\nMedical Documents\nhttps://drive.google.com/file/d/1iQb0J3EfyomMjvqN86xrN9O2WTXvJWxQ/view\n\nThank you."
+     },
+     {
+      "label": "Process Questions — Priority track (5)",
+      "text": "PROCESS QUESTIONS\n\n1. Evaluate the impact of delayed or missing records on the ability to prepare a strong demand letter or settlement package.\n2. Evaluate the consequences of mishandling PHI in a legal setting. What are the ethical, legal, and financial implications?\n3. Analyze the difference between medical liens and letters of protection. How do both impact case settlement?\n4. Evaluate the role of the Legal VA in tracking and communicating lien balances. Why is accuracy critical in lien resolution?\n5. Analyze the difference between medical bills, treatment records, diagnostic reports, and discharge summaries. What role does each play in a demand letter?\n\nSave your answers in your Assessments/Activities folder as:\nMedical_Records_Specialist_Training_Process_Question_Answers_[your first name]\n\nType \"done\" here once uploaded. Thank you."
+     },
+     {
+      "label": "HIPAA certification task",
+      "text": "Please watch the HIPAA Training 101 series of short videos and complete all the modules. After completing the entire series, take a screenshot of the final page of the last video, making sure the TIMESTAMP IS VISIBLE, as proof of completion. Once done, please DM the screenshot to Michelle.\n\nFile naming: HIPAA Certificate_[Your Name]\n\nhttps://compliancy-group.com/free-hipaa-training/hipaa-introduction/\n\nThank you."
+     },
+     {
+      "label": "Day 14 — the tutorial video",
+      "text": "Please proceed to watch the tutorial video on Sending MedLOR and Requesting Medical Bills & Records.\n\nhttps://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view\n\nNOTE: While watching, create your own notes or work guide so you have something to refer to during your recorded demonstration. Please SKIP the segment from 58:12 to 58:45. Thank you."
+     }
+    ],
+    "keys": [
+     "Full list is 10 questions; the Priority track is the 5 above.",
+     "Answer anchor — delayed records: no records means no demand, so the statute runs while the file waits; an incomplete package understates damages and invites a low offer.",
+     "Answer anchor — lien accuracy: the lien balance sets the client's net, so an error either shorts the client or exposes the firm to a provider's claim after disbursement; it must match the provider's own figure in writing.",
+     "Answer anchor — document roles: bills prove the amount, treatment records prove causation and course, diagnostic reports prove the injury objectively, discharge summaries prove severity and the plan.",
+     "HIPAA certificate naming: HIPAA Certificate_[Your Name], screenshot with a visible timestamp, DM'd to Michelle."
+    ],
+    "pitfalls": [
+     "Screenshots without a visible timestamp — they are not accepted as proof.",
+     "Watching the Day 14 tutorial without building the process guide, then losing demo minutes to it."
+    ]
+   }
+  }
  }
 }
