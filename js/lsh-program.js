@@ -243,11 +243,11 @@ function stepTimeline(all){
     </div>`;
   }).join("")}</div>`;
 }
-// What needs the eye first (the next-step band, a live task) and the pinned 📌 Training Orientation and Rules
-// card share one row, side by side, so the lesson cards keep the height for the one-screen rule. Either one
+// The pinned 📌 Training Orientation and Rules card (first, on the left) and what needs the eye next (the
+// next-step band, a live task) share one compact row, side by side, so the lesson cards keep the height for the one-screen rule. Either one
 // alone takes the whole row; phones and narrow windows stack them.
 const topRow = (notices, pins) => notices && pins
-  ? `<div class="dash-pair"><div class="dash-pair-now">${notices}</div><div class="dash-pair-pin">${pins}</div></div>`
+  ? `<div class="dash-pair"><div class="dash-pair-pin">${pins}</div><div class="dash-pair-now">${notices}</div></div>`
   : notices + pins;
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
@@ -470,20 +470,26 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not — on both the Scorecard's
    main-lp and the Dashboard page's main-dash. */
 main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
-/* 📚 Dashboard's top row: the next-step band (and any live task) beside the pinned orientation card */
-.dash-pair{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px;align-items:stretch;margin-bottom:10px;flex:0 0 auto;}
-.dash-pair > div{min-width:0;display:flex;flex-direction:column;gap:10px;}
+/* 📚 Dashboard's top row, kept short: the pinned orientation card first, the next-step band (and any live task) beside it */
+.dash-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:12px;align-items:stretch;margin-bottom:10px;flex:0 0 auto;}
+.dash-pair > div{min-width:0;display:flex;flex-direction:column;gap:8px;}
 .dash-pair > div > *{margin:0 !important;}
 .dash-pair > div > :last-child{flex:1 1 auto;}
 .dash-pair-pin .module-card{width:100%;height:100%;display:flex;flex-direction:column;}
-.dash-pair-pin .module-card > .module-body:empty{display:none;}
+.dash-pair-pin .module-card > .module-body{display:none !important;}
+.dash-pair-pin .module-card > .module-head{padding-top:8px !important;padding-bottom:6px !important;min-height:0 !important;}
+.dash-pair-pin .module-card > .module-head .mh-day:empty{display:none;}
 .dash-pair-pin .module-card > .mc-grid{margin-top:auto;}
-/* the band beside it keeps to the height of the card: tighter spacing, the same lines */
-.dash-pair .ftn{padding:12px 16px;}
-.dash-pair .ftn-head{margin-bottom:6px;}
-.dash-pair .ftn-now{padding:8px 12px;margin-bottom:6px;}
-.dash-pair .ftn-then{margin:-2px 0 6px;}
-.dash-pair .ftn-after{margin-top:4px;}
+.dash-pair-pin .module-card .module-start-btn{padding-top:6px !important;padding-bottom:6px !important;min-height:0 !important;}
+.dash-pair-pin .module-card .module-finish-btn{padding-top:4px !important;padding-bottom:4px !important;min-height:0 !important;}
+.dash-pair .ftn{padding:9px 14px;}
+.dash-pair .ftn-head{margin-bottom:4px;}
+.dash-pair .ftn h3{font-size:16px;}
+.dash-pair .ftn-now{padding:6px 10px;margin-bottom:4px;}
+.dash-pair .ftn-now .btn{padding:4px 12px;font-size:12.5px;}
+.dash-pair .ftn-then{margin:-2px 0 4px;}
+.dash-pair .ftn-more > summary{padding:2px 0;font-size:12px;}
+.dash-pair .ftn-after{margin-top:2px;font-size:12.5px;}
 @media(max-width:1000px){.dash-pair{grid-template-columns:minmax(0,1fr);}}
 /* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
 .dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
