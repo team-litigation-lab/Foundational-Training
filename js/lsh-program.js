@@ -157,6 +157,7 @@ window.renderTopbar = function(){
     + (CASE ? btn("case", "📁 Client Profile", `goto('${CASE.view}')`, CASE.title || "") : "")
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")
     + btn("process", "✍️ Knowledge Check", processGo, adminOn() ? "Every trainee's answer sheets" : "Each module's answer sheet, graded out of 100")
+    + pagesMenu()
     + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : focusBtn());
   const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal — it holds the log out">🏠 Main Portal</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");
@@ -181,17 +182,23 @@ window.renderTopbar = function(){
 const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
 const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
 
-// 📚 Dashboard's own pages (CFG.modules, this viewer's): one row of links under the modules. The top bar
-// carries only the buttons the platform spec lists, so this row is how these pages are reached.
-function pagesRow(){
-  const items = pages().filter(m => m.view || m.run);
+// 📚 Dashboard's own pages (CFG.modules, this viewer's — Task Tracker, Monitoring Sheet, My Notes, Tasks,
+// My Performance; an admin's Orientation): one 📂 My Pages ▾ menu in the top bar, so the dashboard itself
+// keeps its height for the lesson cards. 🎯 Focus is already its own button in the bar, so it isn't repeated.
+// The menu uses js/lsh-topbar.js's .lsh-grp markup and styles (its outside-click close included).
+function pagesMenu(){
+  const items = pages().filter(m => (m.view || m.run) && m.run !== "openFocusPanel()");
   if(!items.length) return "";
-  return `<div class="lp-pages">${items.map(m => {
+  let total = 0, on = false;
+  const rows = items.map(m => {
     const n = typeof m.badge === "function" ? (Number(m.badge()) || 0) : 0;
-    const go = m.run ? m.run : `goto('${m.view}')`;
-    const on = m.view && state.view === m.view;
-    return `<button type="button" class="btn btn-ghost lp-page${on ? " active" : ""}" onclick="${go}" title="${e(m.about || "")}">${e(m.icon || "")} ${e(m.label || "")}${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
-  }).join("")}</div>`;
+    const act = !!(m.view && state.view === m.view);
+    total += n; on = on || act;
+    const go = (m.run ? m.run : `goto('${m.view}')`) + ";if(window.lshCloseTopMenus)lshCloseTopMenus()";
+    return `<button type="button" role="menuitem"${act ? ` class="active"` : ""} onclick="${go}" title="${e(m.about || "")}">${e(m.icon || "")} ${e(m.label || "")}${n ? `<span class="nav-badge">${n}</span>` : ""}</button>`;
+  }).join("");
+  const toggle = "event.stopPropagation();var g=this.parentNode,o=!g.classList.contains('open');if(window.lshCloseTopMenus)lshCloseTopMenus();if(o){g.classList.add('open');this.setAttribute('aria-expanded','true');}";
+  return `<div class="lsh-grp lp-pages-menu" data-grp="mypages"><button type="button" class="lp-sec${on ? " active" : ""}" aria-haspopup="true" aria-expanded="false" title="Your own pages" onclick="${toggle}">📂<span class="lsh-grp-word"> My Pages</span> ▾${total ? `<span class="nav-badge">${total}</span>` : ""}</button><div class="lsh-grp-menu" role="menu">${rows}</div></div>`;
 }
 
 // Resume, the certificate and the feedback card: the landing page carries them, so nothing a trainee
@@ -267,7 +274,6 @@ function renderModules(){
         ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
         ${hooks("LSH_HOME_STATS")}
       </div></div>
-      ${pagesRow()}
       ${homeActions(done, all.length)}
     </div>`;
 }
@@ -471,6 +477,20 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
 /* 8 lessons read as a balanced 4x2 block, not the shared five-across default (js/lsh-dashboard.js) — narrower
    screens keep its existing responsive auto-fill/stacked behavior. */
 @media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
+/* The scores band is one slim row under the lesson cards — the cards are the page's focus, so the band
+   takes as little of the screen's height as it can: every box on one line, number + label only (the
+   feedback stars, the "Rate <lesson>" button and the ranking's list and formula stay off the band). */
+@media(min-width:1001px){
+  main.main-dash .dash-main > .dash-side{padding:6px 8px !important;margin-top:8px !important;}
+  main.main-dash .dash-side-inner{display:flex !important;flex-wrap:nowrap !important;gap:6px !important;align-items:stretch !important;}
+  main.main-dash .dash-side-inner > *{flex:1 1 0 !important;min-width:0 !important;margin:0 !important;padding:6px 10px !important;display:flex !important;flex-direction:column !important;justify-content:center !important;overflow:hidden !important;}
+  main.main-dash .dash-side-inner .num{font-size:15px !important;line-height:1.15 !important;}
+  main.main-dash .dash-side-inner .lbl{font-size:9px !important;line-height:1.3 !important;margin-top:2px !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  main.main-dash .dash-side-inner .tfb-dash-stars, main.main-dash .dash-side-inner .tfb-dash .sub, main.main-dash .dash-side-inner .tfb-dash .btn-ghost,
+  main.main-dash .dash-side-inner .rank-list, main.main-dash .dash-side-inner .rank-card .sub{display:none !important;}
+  main.main-dash .dash-side-inner .tfb-dash-actions{margin-top:3px;}
+  main.main-dash .dash-side-inner .tfb-dash .btn{padding:2px 9px !important;font-size:10.5px !important;white-space:nowrap;}
+}
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 /* 📚 Dashboard's own pages (Task Tracker, Monitoring Sheet, My Notes, My Performance; an admin's Orientation) */
 .lp-pages{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:22px 0 0;}
