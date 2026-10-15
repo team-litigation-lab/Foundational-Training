@@ -1419,7 +1419,11 @@ window.initColdCalling4 = function(body){
      Reply / ⭐ Star = Do (urgent & important)      🕒 Snooze = Schedule
      ↪ Forward to a delegate = Delegate            Archive / 🗑 Delete = Delete/Defer
    Grading is the same expert comparison as before. */
-(function(){ const s = document.createElement("style"); s.id = "eapa-gmail"; s.textContent = `
+(function(){
+  /* The course page now ships the Gmail skin itself (index.html, --ft-gmail-skin).
+     Only inject this copy when running over a page that predates it. */
+  if(getComputedStyle(document.documentElement).getPropertyValue("--ft-gmail-skin").trim() === "1") return;
+  const s = document.createElement("style"); s.id = "eapa-gmail"; s.textContent = `
 .gm{border:1px solid #dadce0;border-radius:14px;background:#f6f8fc;overflow:hidden;font-family:Roboto,'Segoe UI',Arial,sans-serif;color:#202124;position:relative;outline:none;}
 .gm:focus-visible{box-shadow:0 0 0 2px #0b57d0;}
 .gm svg{width:20px;height:20px;fill:currentColor;flex-shrink:0;}
