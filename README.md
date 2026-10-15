@@ -282,6 +282,39 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 - **Google Sheet:** the LSH Training Portal keeps the attendance Google Sheet's **Platform Attendance** tab in step, both ways: everything here (automatic Time Ins included) goes to the sheet every 15 minutes, and edits made in the sheet to Training, Time In, Time Out, Status or Notes come back here straight away. See the Training Portal's README.
 - **Storage:** `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for trainees with no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at, by}}}`. `checkin:<YYYY-MM-DD>:<trainee id>` = `{timeIn, at, name, batch, training}` is the automatic Time In (each trainee's own key, so a room signing in at once never overwrites one another; its KV metadata carries the same for the portal; kept 40 days). The Worker lets only admins read and write these records. To change the statuses or their colors, edit `STATUSES`.
 
+## 📅 The 18 days and their activities (`js/ft-day-activities.js`)
+
+The program runs on **18 classroom days**; the platform serves **8 lesson decks, named by their training title, not by day**. The two are deliberately different shapes — one lesson covers several days (Receptionist Training is Days 3–5), and Days 17–18 (Lien Negotiator) have no deck on the platform at all. `js/ft-day-activities.js` is the one place that says **which activity belongs to which day**, read off the Training Guide (`trainer/curriculum.json`, Admin → 📘 Curriculum) in the guide's own wording.
+
+Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`, where `at` says where it is done — `session` (a 🟢 Practice Session), `trainer` (🧑‍🏫 With your trainer), `tool` (a platform tool: `lor`, `skills`, `process`, `calsim`, `callsim`), `drive` (uploaded to the trainee's Assessments/Activities folder), `gc` (run in the training GC) or `room` (live in the classroom, nothing to submit) — and `id` is the platform record it maps to. The daily Typing and Spelling Tests and the Free Communication Upskill are listed once and added to all 18 days, as the guide repeats them.
+
+| Day | Role block | Lesson deck(s) | The day's platform activities |
+|---|---|---|---|
+| 1 | VA Essentials | 1 | 🧪 the tests set up and named · ✍️ Process Questions |
+| 2 | VA Essentials | 1, 2 | ✍️ Process Questions (two assessments go to Drive) |
+| 3 | Reception Training | 3, 4 | 🟢 **PI Process Flow: your case** · ✍️ Process Questions |
+| 4 | Reception Training | 4 | 🟢 **Reception Mock Calls** · 🧑‍🏫 Reception Mock Call with the trainer |
+| 5 | Reception Training | 4, 5 | 🟢 Reception Mock Calls (the 1–2 hr buffer) |
+| 6 | Calendar Management Training | 5 | 🟢 **Calendaring Practice Lab** · 🧑‍🏫 Calendar Management Mock Call · 📅 Google Calendar Simulator |
+| 7 | Intake Training | 6 | ✍️ Process Questions |
+| 8 | Intake Training | 6 | 🟢 **Intake Mock Calls** · ☎ Call Simulator while waiting · 🧑‍🏫 Intake Packet Demo |
+| 9 | Intake Training | 6 | 🧑‍🏫 **Intake Mock Call with the trainer** · the Intake Demo buffer |
+| 10 | Insurance Communication Training | 7 | ✍️ Process Questions |
+| 11 | Insurance Communication Training | 7 | 🧰 **LOR Drafting Activity** (1P and 3P) |
+| 12 | Insurance Communication Training | 7 | 🧑‍🏫 **LOR Uploading and Sending Demo** |
+| 13 | Provider Communication Training | 8 | the LOR Drafting Demo buffer · ✍️ Process Questions |
+| 14 | Provider Communication Training | 8 | 🧑‍🏫 **MedLOR Demo** · 🟢 **Medical Records: ChartSwap request** |
+| 15 | Provider Communication Training | 8 | 🧑‍🏫 MedLOR recorded demonstration (entire day) · Shadowing |
+| 16 | Provider Communication Training | 8 | 🧑‍🏫 **LV (Lien Verification) Request Demo** |
+| 17 | Lien Negotiator Training | — | the LV demo buffer (Saving Medical Bills & Records is off-platform) |
+| 18 | Lien Negotiator Training | — | ✍️ Process Questions (the net sheet, reduction request and closing statement are off-platform) |
+
+**What reads it.** The 🟢 Practice Sessions and 🧑‍🏫 With your trainer cards carry their day in the kicker — *Days 4–5 · Receptionist Training*, *Days 14–15 · Demo · Medical Records Specialist Training* — as do the 🧰 LOR Drafting Activity card (*Day 11*) and the 🧪 Skill Building cards (*Days 1–18*). `FTSessions.forDay(n)` lists a day's platform activities, next to the existing `FTSessions.forLesson(l)`. The helpers are `FTDays.of(n)`, `FTDays.items(n)`, `FTDays.forSession(id)`, `FTDays.forAct(id)`, `FTDays.forTool(id)`, `FTDays.forLesson(l)` and `FTDays.label(days)` (which writes *Day 4*, *Days 14–15* or *Days 4, 6 and 9*).
+
+**It changes no gating.** A session still opens with its **lesson** (`window.dayUnlocked(s.lesson)`), not with its day; the day is shown, never enforced. Nothing about progress, scoring or storage moves.
+
+**Where it stops.** `MONITOR_TOPICS` (`js/ft-tracker-rules.js`) still lists the **16** classroom discussions of Days 1–16 — the Lien Negotiator days have no monitoring entry. Extending it changes what the Monitoring Sheets are graded against, so it is left as it is.
+
 ## 🛠 Practice Lab: real-time Practice Sessions at the trainee's own law firm
 
 **🛠 Practice Lab** (a section of the top bar) opens `#/simulators` (`js/ft-simulators.js`). Instead of simulators, the trainee does the real work, live, for their own law firm and on their own cases. The page: 🏛 their firm, 🟢 Practice Sessions, 🧰 Drafting Tools, 🧑‍🏫 With your trainer and 🧪 Skill Building. The separate simulator cards are gone (the Calendaring Simulators card, the mock-call cards and *All simulators*): the Call Simulator (on ☎ LSH Ring Channel) and the Google Calendar Simulator are tools inside their sessions, and the **Calendar Management Mock Calls are part of the Calendaring Practice Lab**. The main landing page has no Practice Lab / Simulators card.
@@ -296,13 +329,13 @@ Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attend
 
 ### 🟢 Practice Sessions (`js/ft-sessions.js`)
 
-| Session | Lesson | Done in | Recorded and checked |
-|---|---|---|---|
-| ☎️ Reception Mock Calls | Receptionist Training | the Call Simulator's Main Line on ☎ LSH Ring Channel (graded or practice calls), the CMS Front Desk Drill | the call note: the firm's greeting, a complete message, the case and need, routed to someone on the firm's team, the caller verified, initials |
-| 📅 Calendaring Practice Lab | Calendaring & Appointment Setting | the Calendar Management mock call (CMS), then the Google Calendar Simulator | the appointment: caller and case, a weekday inside the firm's hours, on the 15-minute grid, the firm's color for its length, Meet and the reminder, a description |
-| 📋 Intake Mock Calls | Intake Specialist | the CMS's Intake line, on the trainee's intake case (Intake tab) | the intake: name, DOB, DOL, case type, 3P carrier, the statute of limitations under the firm's state, injuries, the conflict check and a decision |
-| ⚖️ PI Process Flow | Personal Injury Process Flow | the trainee's case in the CMS | its phase, attorney, case manager, DOL, SOL and the next steps with who does each |
-| 🩺 Medical Records: ChartSwap request | Medical Records Specialist | the trainee's records case | a ChartSwap-style request: requesting firm and records email, patient and DOB, a treating provider and its first date of service, the firm's record types, a legal purpose, the HIPAA authorization (hold the request when it isn't signed yet) and who signs (the guardian or POA when the file has one) |
+| Session | Day | Lesson | Done in | Recorded and checked |
+|---|---|---|---|---|
+| ☎️ Reception Mock Calls | Days 4–5 | Receptionist Training | the Call Simulator's Main Line on ☎ LSH Ring Channel (graded or practice calls), the CMS Front Desk Drill | the call note: the firm's greeting, a complete message, the case and need, routed to someone on the firm's team, the caller verified, initials |
+| 📅 Calendaring Practice Lab | Day 6 | Calendaring & Appointment Setting | the Calendar Management mock call (CMS), then the Google Calendar Simulator | the appointment: caller and case, a weekday inside the firm's hours, on the 15-minute grid, the firm's color for its length, Meet and the reminder, a description |
+| 📋 Intake Mock Calls | Day 8 | Intake Specialist | the CMS's Intake line, on the trainee's intake case (Intake tab) | the intake: name, DOB, DOL, case type, 3P carrier, the statute of limitations under the firm's state, injuries, the conflict check and a decision |
+| ⚖️ PI Process Flow | Day 3 | Personal Injury Process Flow | the trainee's case in the CMS | its phase, attorney, case manager, DOL, SOL and the next steps with who does each |
+| 🩺 Medical Records: ChartSwap request | Day 14 | Medical Records Specialist | the trainee's records case | a ChartSwap-style request: requesting firm and records email, patient and DOB, a treating provider and its first date of service, the firm's record types, a legal purpose, the HIPAA authorization (hold the request when it isn't signed yet) and who signs (the guardian or POA when the file has one) |
 
 - **Real time:** ▶ Start the session starts a clock and opens the tools (the CMS signed in: see *Training tools open signed in*); the trainee records their work on the session's form as they go and **📤 Submits for review**.
 - **Then:** (1) the automated checks against the case file and the firm's rules, a % per session (80% passes); (2) the AI's evaluation in the facilitator's feedback DNA; (3) the trainer's review. The trainee can do a session again.
@@ -442,6 +475,7 @@ Where the token lives:
 | `build/days/dayNN.js` | The curriculum's days as HTML, kept for reference; not built into the trainee pages. |
 | `ft/dayN/img/` | The curriculum's screenshots for day N. |
 | `ft/day17/word-game-1.html` | Day 17's Word Game 1 from the Lien Negotiator Training deck, playable: the slide's grid, rules and 4-minute timer, with scoring, a Present mode for the room, and an answer key. It sits in the PM part, under Free Communication Upskill. |
+| `js/ft-day-activities.js` | **The 18 days and their activities**: which activity belongs to which classroom day, and where it is done (a Practice Session, a trainer-led demo, a platform tool, Drive, the training GC or the room). Read off `trainer/curriculum.json`. |
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
@@ -502,7 +536,8 @@ Two things to know:
    - Drive files: `<a class="viewer-link" data-kind="doc|video" data-title="…" href="…">`.
    - Canva: a `.canva-frame` embed with the design's `/view?embed` link.
 2. Put facilitator-only content in `trainer/notes.json` under `"N:<slot>"`, and mark its place in the section with `<div class="trainer-slot" data-slot="N:<slot>"></div>`.
-3. Run the build, then open the day for a batch in Admin → 📅 Open Days.
+3. Add the day's activities to `js/ft-day-activities.js` — one `{t, kind, at, id}` per activity the curriculum calls for, in the order it runs them, with `at`/`id` pointing at the Practice Session, trainer-led activity or platform tool where it is done (see *The 18 days and their activities*). The daily tests and the upskill hour are added for you.
+4. Run the build, then open the day for a batch in Admin → 📅 Open Days.
 
 ## Deploy
 

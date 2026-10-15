@@ -231,7 +231,8 @@ FTSessions.cards = function(){
     const open = state.isAdmin || state.adminPreview || window.dayUnlocked(s.lesson);
     const status = !run ? "" : run.submittedAt ? `<span class="fss-pill ${sc >= PASS ? "ok" : "mid"}">${tScore(rv) != null ? "🧑‍🏫 " : ""}${sc}%</span>` : run.startedAt ? `<span class="fss-pill live">🟢 In progress</span>` : "";
     const lessonT = (DAYS.find(d => d.id === s.lesson) || {}).title || "";
-    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
+    const dayT = window.FTDays ? FTDays.label(FTDays.forSession(s.id)) : "";
+    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
       ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 Your trainer assigns your case for this session."}</p>` : ""}
@@ -335,11 +336,21 @@ FTSessions.forLesson = function(lesson){
   return SESSIONS.filter(x => x.lesson === l).map(x => ({kind:"session", id:x.id, icon:x.icon, title:x.title}))
     .concat(acts().filter(x => Number(x.lesson) === l).map(x => ({kind:"trainer", id:x.id, icon:"🧑‍🏫", title:x.title})));
 };
+// What a classroom day's platform activities are (js/ft-day-activities.js maps the 18 days).
+// forLesson is by lesson deck; this is by the Training Guide's day.
+FTSessions.forDay = function(day){
+  const items = window.FTDays ? FTDays.items(day) : [];
+  return items.filter(x => x.at === "session" || x.at === "trainer").map(x => {
+    const s = x.at === "session" ? sessionById(x.id) : null, a = x.at === "trainer" ? acts().find(y => y.id === x.id) : null;
+    return {kind:x.at, id:x.id, icon:s ? s.icon : "🧑‍🏫", title:(s && s.title) || (a && a.title) || x.t, as:x.t, why:x.kind};
+  });
+};
 FTSessions.trainerCards = function(){
   if(isTrainee()) load();
   const mine = ((S.review || {}).acts) || {};
   return acts().filter(a => DAYS.find(d => d.id === a.lesson) || !a.lesson).map(a => { const r = mine[a.id] || {}, sc = tScore(r);
-    return `<div class="card fts-card"><div class="fts-kicker">${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
+    const dayT = window.FTDays ? FTDays.label(FTDays.forAct(a.id)) : "";
+    return `<div class="card fts-card"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
       <h3>${e(a.title)} ${r.status ? `<span class="fss-pill ${r.status === "Passed" ? "ok" : r.status === "Redo" ? "mid" : ""}">${e(r.status)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
       <p class="fts-note">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p></div>`; }).join("");
 };

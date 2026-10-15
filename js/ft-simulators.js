@@ -66,6 +66,7 @@ function renderSkills(){
   return `<section class="fts-group" id="fts-skills"><h2>🧪 Practice Lab: Skill Building</h2>
       <p class="fts-sub">Your daily Typing and Spelling Tests. LSH’s clients look for VAs who type at least 60 WPM. Take each test with the tool below, screenshot the result with the date and time showing, and save it in your training subfolder, named exactly as shown. Missed a test? Make it up during your idle time; extra rounds are welcome.</p>
       <div class="fts-grid">${tests.map(t=>`<div class="card fts-card">
+        <div class="fts-kicker">${window.FTDays ? `Days 1–${FTDays.COUNT}` : ""}</div>
         <h3>${t.icon} ${esc(t.name)}</h3>
         <p class="fts-note"><b>When:</b> ${esc(t.when)}</p>
         <div class="fts-label">Tools to use</div>
