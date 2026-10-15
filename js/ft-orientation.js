@@ -9,7 +9,7 @@
    served by worker.js), so the link always has the latest.
    Both come from orientSlides(); this file gives it this program's slides in
    place of the EA/PA ones: the lessons, how a lesson works, classroom
-   discussions, 📚 Modules (the landing page), the top bar, the daily habits, the Practice Lab,
+   discussions, 📚 Dashboard (the landing page), the top bar, the daily habits, the Practice Lab,
    feedback, the certificate, the ground rules and how to start.
    Trainee-safe: no facilitator's notes, answers or trainee data. The page is
    for admins only; 👁 Trainee view doesn't show it.

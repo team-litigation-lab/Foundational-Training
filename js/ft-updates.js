@@ -275,14 +275,14 @@ const __ftRenderDay = window.renderDay;
 window.renderDay = function(id){
   const d = DAYS.find(x=>x.id===id);
   if(!d) return __ftRenderDay(id);
-  const head = `<a class="back-link" onclick="goto('modules')">&larr; Back to Modules</a>`;
+  const head = `<a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>`;
   if(!dayUnlocked(id)){
     return `${head}
       <div class="card ft-empty-day">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div>
         <h2 style="color:var(--navy);margin:0 0 8px;">${esc(ftName(id))} is locked</h2>
         <p style="color:var(--ink-soft);font-size:14px;">${esc(dayLockReason(id))}</p>
-        <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('modules')">Back to Modules</button>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('modules')">Back to Dashboard</button>
       </div>`;
   }
   if(!d.sections.length){
@@ -758,10 +758,10 @@ window.moduleCard = function(d){
       : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}
   </div>`;
 };
-// There is only one landing-page format now: js/lsh-program.js's renderModules() (📚 Modules), the same
+// There is only one landing-page format now: js/lsh-program.js's renderModules() (📚 Dashboard), the same
 // hero/ribbon/step-timeline layout every LSH course uses. This file used to carry its own copy of that
 // page (eyebrow, hero, step-timeline, module grid, sidebar stats) as window.renderDashboard. render()
-// itself never reaches it any more (lsh-program.js's wrapper always routes "dashboard" to 📚 Modules
+// itself never reaches it any more (lsh-program.js's wrapper always routes "dashboard" to 📚 Dashboard
 // first), but a few things below (FT_OFF_VIEWS' fallbacks) still call renderDashboard() directly by name,
 // bypassing render() entirely — so it has to keep meaning something, or they'd fall through to the raw
 // EA/PA engine's own renderDashboard() baked into index.html (its literal, unpatched EA/PA hero).
@@ -784,7 +784,7 @@ const FT_OFF_VIEWS = {clientprofile:"renderClientProfile", practice:"renderPract
 Object.keys(FT_OFF_VIEWS).forEach(v=>{ window[FT_OFF_VIEWS[v]] = function(){ state.view = "dashboard"; return renderDashboard(); }; });
 const __ftGotoOff = window.goto;
 window.goto = function(view){ if(FT_OFF_VIEWS[view]) arguments[0] = "dashboard"; return __ftGotoOff.apply(this, arguments); };
-// These, and the engine's own dashboard, are aliases of 📚 Modules (#/modules): js/lsh-program.js sends
+// These, and the engine's own dashboard, are aliases of 📚 Dashboard (#/modules): js/lsh-program.js sends
 // every one of them there, so the sign-in, a saved link and a Back button all land on the same page.
 window.LSH_HOME_ALIASES = Object.keys(FT_OFF_VIEWS).concat("dashboard");
 const __ftTopbar = window.renderTopbar;
