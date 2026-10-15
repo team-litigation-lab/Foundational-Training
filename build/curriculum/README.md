@@ -7,6 +7,7 @@ Days 2–18 and the admin **📘 Curriculum** copy are generated from the *Train
    ```
    python3 build/curriculum/parse.py /tmp/guide
    python3 build/curriculum/convert.py /tmp/guide .
+   node build/day-decks.cjs
    python3 build/build.py ../EA-PA-TRAINING
    ```
 3. Delete the temporary folder and the Word file.

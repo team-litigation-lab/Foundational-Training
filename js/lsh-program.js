@@ -243,6 +243,12 @@ function stepTimeline(all){
     </div>`;
   }).join("")}</div>`;
 }
+// The pinned 📌 Training Orientation and Rules card (first, on the left) and what needs the eye next (the
+// next-step band, a live task) share one compact row, side by side, so the lesson cards keep the height for the one-screen rule. Either one
+// alone takes the whole row; phones and narrow windows stack them.
+const topRow = (notices, pins) => notices && pins
+  ? `<div class="dash-pair"><div class="dash-pair-pin">${pins}</div><div class="dash-pair-now">${notices}</div></div>`
+  : notices + pins;
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview;
@@ -264,8 +270,7 @@ function renderModules(){
       ${stepTimeline(all)}
     </div>
     <div class="dash-main">
-      ${hooks("LSH_HOME_NOTICES")}
-      ${pinned.map(d => moduleCard(d)).join("")}
+      ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""))}
       <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
       <div class="dash-side"><div class="dash-side-inner">
         <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
@@ -465,6 +470,27 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not — on both the Scorecard's
    main-lp and the Dashboard page's main-dash. */
 main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
+/* 📚 Dashboard's top row, kept short: the pinned orientation card first, the next-step band (and any live task) beside it */
+.dash-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:12px;align-items:stretch;margin-bottom:10px;flex:0 0 auto;}
+.dash-pair > div{min-width:0;display:flex;flex-direction:column;gap:8px;}
+.dash-pair > div > *{margin:0 !important;}
+.dash-pair > div > :last-child{flex:1 1 auto;}
+.dash-pair-pin .module-card{width:100%;height:100%;display:flex;flex-direction:column;}
+.dash-pair-pin .module-card > .module-body{display:none !important;}
+.dash-pair-pin .module-card > .module-head{padding-top:8px !important;padding-bottom:6px !important;min-height:0 !important;}
+.dash-pair-pin .module-card > .module-head .mh-day:empty{display:none;}
+.dash-pair-pin .module-card > .mc-grid{margin-top:auto;}
+.dash-pair-pin .module-card .module-start-btn{padding-top:6px !important;padding-bottom:6px !important;min-height:0 !important;}
+.dash-pair-pin .module-card .module-finish-btn{padding-top:4px !important;padding-bottom:4px !important;min-height:0 !important;}
+.dash-pair .ftn{padding:9px 14px;}
+.dash-pair .ftn-head{margin-bottom:4px;}
+.dash-pair .ftn h3{font-size:16px;}
+.dash-pair .ftn-now{padding:6px 10px;margin-bottom:4px;}
+.dash-pair .ftn-now .btn{padding:4px 12px;font-size:12.5px;}
+.dash-pair .ftn-then{margin:-2px 0 4px;}
+.dash-pair .ftn-more > summary{padding:2px 0;font-size:12px;}
+.dash-pair .ftn-after{margin-top:2px;font-size:12.5px;}
+@media(max-width:1000px){.dash-pair{grid-template-columns:minmax(0,1fr);}}
 /* the pinned orientation card sits beside the numbered lessons as a sidebar, not inside their grid */
 .dash-main.lp-lessons-row{display:flex;flex-direction:row;gap:16px;align-items:stretch;}
 .lp-lessons-row .module-grid{flex:1;min-width:0;}
@@ -477,6 +503,8 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
 /* 8 lessons read as a balanced 4x2 block, not the shared five-across default (js/lsh-dashboard.js) — narrower
    screens keep its existing responsive auto-fill/stacked behavior. */
 @media(min-width:1001px){main.main-dash .module-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}}
+/* 9 or 10 lessons (Lesson 9 is the Days 17–18 deck) take two rows of five, so none drops to a third row below the fold */
+@media(min-width:1001px){main.main-dash .module-grid:has(> :nth-child(9)):not(:has(> :nth-child(11))){grid-template-columns:repeat(5,minmax(0,1fr)) !important;}}
 /* The scores band is one slim row under the lesson cards — the cards are the page's focus, so the band
    takes as little of the screen's height as it can: every box on one line, number + label only (the
    feedback stars, the "Rate <lesson>" button and the ranking's list and formula stay off the band). */
@@ -499,6 +527,20 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > .module-start-btn{grid-column:1 / -1;}
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn){grid-column:span 1;padding-left:10px;padding-right:10px;}
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn):not(:last-child){border-right:1px solid #9CA3B8 !important;}
+}
+/* …and on a laptop or desktop the scores band is a column on the right of the lesson cards, not a row under
+   them: the top row (orientation card and next-step band) runs the full width, then the lessons take what is
+   left beside the column, so both rows of lessons get the height that the band used to take. */
+@media(min-width:1001px){
+  main.main-dash .dash-main{display:grid !important;grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:auto minmax(0,1fr);column-gap:12px;align-items:stretch;}
+  main.main-dash .dash-main > *{grid-column:1 / -1;}
+  main.main-dash .dash-main > .module-grid{grid-column:1;grid-row:2;min-height:0;}
+  main.main-dash .dash-main > .dash-side{grid-column:2;grid-row:2;margin:0 !important;padding:6px !important;min-height:0;overflow:auto;align-self:stretch;}
+  main.main-dash .dash-side-inner{flex-direction:column !important;flex-wrap:nowrap !important;gap:6px !important;height:100%;}
+  main.main-dash .dash-side-inner > *{flex:1 0 auto !important;min-height:40px;}
+  main.main-dash .dash-side-inner .lbl{font-size:9.5px !important;}
+  main.main-dash .dash-side-inner > .lp-home-acts{flex-direction:column !important;align-items:stretch !important;flex:0 0 auto !important;}
+  main.main-dash .dash-side-inner > .lp-home-acts > *{text-align:center;justify-content:center;}
 }
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 .dash-side-inner > .lp-home-acts{margin:0;}
