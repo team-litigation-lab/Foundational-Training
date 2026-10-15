@@ -1476,7 +1476,8 @@
        "Phone etiquette: no dead air, clean close"
       ],
       "feedback": "Scenario by scenario: what to drill before the Day 9 intake mock calls…"
-     }
+     },
+     "act": "reception-live"
     }
    }
   }
@@ -1864,7 +1865,8 @@
        "Phone etiquette: clean open and close"
       ],
       "feedback": "Which scheduling rule they broke, and how they handled being told the slot was unavailable..."
-     }
+     },
+     "act": "calendar-live"
     }
    },
    "v044": {
@@ -3541,7 +3543,8 @@
        "Returned 5–10 minutes later to check the transmission confirmation"
       ],
       "feedback": "Where the time went, and which SA step needs a second pass…"
-     }
+     },
+     "act": "medlor-demo"
     }
    },
    "v039": {
@@ -3715,7 +3718,8 @@
        "Tools ready before the demo"
       ],
       "feedback": "Which field cost them, and whether the 45 minutes was realistic for them…"
-     }
+     },
+     "act": "lv-demo"
     }
    },
    "v054": {
