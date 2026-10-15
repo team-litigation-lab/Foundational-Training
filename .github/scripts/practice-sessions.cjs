@@ -48,9 +48,10 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!/Templates in this tool/i.test(lab.text)) fail('the drafting tool\'s card does not list the templates it carries');
     if (!/LOR Drafting for 1P/.test(lab.text) || !/Drafting for 3P/.test(lab.text)) fail('the drafting tool\'s card does not name its two templates');
     // A firm is no longer assigned: the trainee has one from their first page load, so no session waits.
+    // (The Practice Lab no longer names the firm — its banner was removed; a session links to the profile.)
     if (/Waiting for your firm/.test(lab.text)) fail('a session is still waiting for a firm to be assigned');
-    const firstFirm = await page.evaluate(() => FTFirms.firms()[0].name);
-    if (lab.text.indexOf(firstFirm) < 0) fail(`the Practice Lab doesn't show the firm every trainee works for (${firstFirm})`);
+    const gotFirm = await page.evaluate(() => { const f = FTFirms.myFirm(); return f ? f.name : null; });
+    if (!gotFirm) fail('a trainee has no firm, with nothing to assign one');
 
     // 3b. the LOR Drafting Activity: a standalone activity, the trainer assigns the case, the trainee drafts and downloads
     await page.evaluate(() => goto('lor')); await page.waitForTimeout(1200);
