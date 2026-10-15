@@ -1480,5 +1480,420 @@
     }
    }
   }
+ },
+ "5": {
+  "lesson": "Calendaring & Appointment Setting Training",
+  "sections": {
+   "v001": {
+    "time": "3 min",
+    "objective": "Open Calendar Management: a missed date can dismiss a case, so this lesson is scored on rules, not habits.",
+    "talk": [
+     "Say the stakes first — dismissal, forfeiture of rights.",
+     "Tell them the firm's own rules override every general tip in this deck, and that the rules are what the activity and the mock calls are scored against."
+    ],
+    "gc": [
+     {
+      "label": "Open the session",
+      "text": "Good day! We are starting Appointment Setting and Calendar Management.\n\nAs we go, write down the FIRM'S rules — they override the general tips in the deck and they are what your activity and mock calls are scored on:\n• The calendar is in EST, and the time zone must be VISIBLE in every screenshot.\n• Event title format: [Meeting Type] – [Client Name]\n• Collect on every call: Name, Callback Number, DOB, DOL.\n• 15-minute buffer before and after every meeting.\n• Email reminder one day prior.\n\nThank you."
+     }
+    ],
+    "keys": [
+     "Firm rules to repeat at every opportunity today: EST and visible, [Meeting Type] – [Client Name], Name/Callback/DOB/DOL, 15-minute buffers, email reminder one day prior."
+    ]
+   },
+   "v002": {
+    "time": "3 min",
+    "objective": "Set the objective: a structured approach to managing someone else's time, not their own.",
+    "talk": [
+     "The calendar they manage belongs to an attorney. Every decision is made on the attorney's behalf and to the attorney's rules."
+    ]
+   },
+   "v003": {
+    "time": "3 min",
+    "objective": "The agenda, one line each: basics, organization and setup, scheduling best practices, interruptions and flexibility.",
+    "talk": [
+     "Flag that the firm rules sit inside 'scheduling best practices' — that is the part that is graded."
+    ]
+   },
+   "v004": {
+    "time": "4 min",
+    "objective": "Why it matters: organization, deadlines, and the balance of commitments.",
+    "talk": [
+     "Keep it short. The general case for calendars is not what they are tested on."
+    ]
+   },
+   "v005": {
+    "time": "5 min",
+    "objective": "Time management and avoiding overlaps — double-booking is the failure mode.",
+    "talk": [
+     "Prevent double-booking and over-scheduling. In a law firm an overlap means the attorney misses one of them.",
+     "This is why the 15-minute buffer exists: back-to-back meetings become overlaps the moment one runs long."
+    ],
+    "keys": [
+     "A double-booking in the activity or the mock calls is an automatic deduction, not a style point."
+    ]
+   },
+   "v006": {
+    "time": "4 min",
+    "objective": "The calendars we use: Google Calendar and Outlook.",
+    "talk": [
+     "Google Calendar is what the activity and the mock calls are performed in.",
+     "Outlook appears at firms that run Microsoft — the rules do not change with the platform."
+    ]
+   },
+   "v007": {
+    "time": "4 min",
+    "objective": "Shared calendars, and single versus multiple.",
+    "talk": [
+     "An attorney's calendar is shared. Anything plotted is visible to the firm immediately, so a wrong entry is seen before it is fixed."
+    ],
+    "keys": [
+     "For the activity screenshots: untick the LSH calendar before capturing the full-calendar view, then re-enable it."
+    ]
+   },
+   "v008": {
+    "time": "8 min",
+    "objective": "Time zones, event creation and colour coding — and the firm's EST rule.",
+    "talk": [
+     "Teach the time-zone setting properly: this is where most activity marks are lost.",
+     "Set the appropriate time zone for each item, and take the screenshot BEFORE saving so the time zone is captured."
+    ],
+    "keys": [
+     "The calendar runs in EST. The time zone must be visible in the screenshot of every individual appointment.",
+     "No separate screenshot of the time zone is needed — it just has to be visible in each appointment's own capture."
+    ],
+    "pitfalls": [
+     "Plotting in local time and converting afterwards.",
+     "Saving the appointment first and then trying to screenshot the time zone."
+    ]
+   },
+   "v009": {
+    "time": "3 min",
+    "objective": "Open the setup section: a calendar set up properly is what stops missed deadlines."
+   },
+   "v010": {
+    "time": "4 min",
+    "objective": "Steps 1–2: define the categories, set up the calendar.",
+    "talk": [
+     "Categories for a PI firm: consultations, follow-ups, case meetings, signings, court dates, deadlines."
+    ]
+   },
+   "v011": {
+    "time": "4 min",
+    "objective": "Steps 3–4: recurring events, then deadlines and events.",
+    "talk": [
+     "Deadlines are not meetings. Plot them as their own entries with reminders, not as appointments."
+    ]
+   },
+   "v012": {
+    "time": "4 min",
+    "objective": "Steps 5–6: time blocking, then the weekly and monthly review.",
+    "talk": [
+     "Time blocking is optional; the weekly review is not. Encourage a Monday-morning pass over the attorney's week."
+    ]
+   },
+   "v013": {
+    "time": "6 min",
+    "objective": "Step 7–8: reminders and flexibility — and the firm's reminder rule.",
+    "talk": [
+     "Reminders are the deliverable, not a nicety: the attorney has to be reminded, by email, a day before.",
+     "Flexibility means the buffer absorbs the overrun, not that the rules bend."
+    ],
+    "keys": [
+     "Set an EMAIL reminder one day prior on every event plotted. This is checked in the activity and in the mock calls."
+    ],
+    "pitfalls": [
+     "Leaving the default notification (10 minutes, pop-up) in place. It is not the firm's rule."
+    ]
+   },
+   "v014": {
+    "time": "4 min",
+    "objective": "Managing reminders: do not overload; prioritize and categorize.",
+    "talk": [
+     "Too many reminders and the attorney stops reading them — which is the same as having none."
+    ]
+   },
+   "v015": {
+    "time": "3 min",
+    "objective": "Tools for reminders, briefly.",
+    "talk": [
+     "Note them and move on; the firm's reminder lives on the calendar event itself."
+    ]
+   },
+   "v016": {
+    "time": "4 min",
+    "objective": "Keeping the client's calendar current: consistency and colour coding.",
+    "talk": [
+     "Review and update regularly. A calendar is only trusted if it is current."
+    ]
+   },
+   "v017": {
+    "time": "6 min",
+    "objective": "Weekly reviews and buffer times — where the 15-minute rule lands.",
+    "talk": [
+     "Introduce the buffer properly here, then make it concrete with the firm's number.",
+     "Ask the room what happens to the 2:00 appointment when the 1:30 runs ten minutes over without a buffer."
+    ],
+    "keys": [
+     "The attorney requires a 15-minute buffer BEFORE and AFTER every meeting. Not 10. Not 'some'."
+    ],
+    "pitfalls": [
+     "Buffering only after a meeting. The rule is both sides."
+    ]
+   },
+   "v018": {
+    "time": "3 min",
+    "objective": "Choosing and syncing the platform.",
+    "talk": [
+     "Keep it brief — the firm's platform is already chosen."
+    ]
+   },
+   "v019": {
+    "time": "4 min",
+    "objective": "Colour-coding categories, and how to create a colour label.",
+    "talk": [
+     "Useful, but never a substitute for a clear title. The title is what is graded."
+    ]
+   },
+   "v020": {
+    "time": "6 min",
+    "objective": "Labels and descriptions — the firm's event naming rule and the note content.",
+    "talk": [
+     "Clear descriptions avoid ambiguity. Our format is not optional.",
+     "Walk one example end to end: title, notes with case context, and the caller's demeanour recorded in the notes."
+    ],
+    "keys": [
+     "Event title: [Meeting Type] – [Client Name]. For example 'Client Consultation Meeting – Jane Smith'.",
+     "The notes carry the case context and the instruction from the caller, e.g. 'New PI case; client requests afternoon callback'."
+    ],
+    "pitfalls": [
+     "Titles like 'Consultation' or 'Call' with no client name. It fails the activity item outright."
+    ]
+   },
+   "v021": {
+    "time": "4 min",
+    "objective": "Categorizing by priority with the action priority matrix.",
+    "talk": [
+     "High priority in a PI firm means anything with a legal deadline attached."
+    ]
+   },
+   "v022": {
+    "time": "4 min",
+    "objective": "Time blocking and prioritization, defined."
+   },
+   "v023": {
+    "time": "5 min",
+    "objective": "The Eisenhower matrix, applied to an attorney's week.",
+    "talk": [
+     "Urgent and important: court deadlines, statute dates. Important not urgent: case strategy. Urgent not important: most inbound calls.",
+     "A VA's judgement call is which inbound requests get same-day slots — and our rule is that same-day bookings need attorney approval."
+    ],
+    "keys": [
+     "Same-day bookings require attorney approval. No exceptions in the mock calls."
+    ]
+   },
+   "v024": {
+    "time": "6 min",
+    "objective": "Scheduling meetings: do not over-schedule, leave transition time.",
+    "talk": [
+     "The deck says 10–15 minutes. Our firm says 15, before and after. Our number wins.",
+     "This is the page to state the durations the firm uses, because the mock calls are scored on them."
+    ],
+    "keys": [
+     "Durations: 30 minutes — consultations, status updates, follow-ups, signings, regular and urgent meetings. 45 minutes — preparation, strategy and settlement meetings. 1 hour — conference meetings.",
+     "New client consults: Tuesdays and Thursdays only, maximum 3 per day, none after 5:00 PM EST.",
+     "All consultation meetings are phone consults, between 9:30 AM and 3:00 PM EST; the attorney calls the client, so the callback number must be confirmed.",
+     "Follow-ups are never scheduled in the morning."
+    ],
+    "pitfalls": [
+     "Offering a new client consult on a Monday or Wednesday.",
+     "Booking a 30-minute slot for a strategy meeting, which needs 45."
+    ]
+   },
+   "v025": {
+    "time": "4 min",
+    "objective": "Managing interruptions: flexible time for overruns and urgent tasks.",
+    "talk": [
+     "The buffer is the flexibility. Nothing else gets moved without the attorney's say."
+    ]
+   },
+   "v026": {
+    "time": "4 min",
+    "objective": "Buffer time, defined properly: deliberate space to absorb delay.",
+    "talk": [
+     "Close the buffer thread here — they should be able to state the 15-minute rule without prompting."
+    ]
+   },
+   "v027": {
+    "time": "3 min",
+    "objective": "Multi-calendar management and delegation."
+   },
+   "v028": {
+    "time": "4 min",
+    "objective": "Recurring events and the frequency options.",
+    "talk": [
+     "Physical therapy courses are the common recurring series in a PI file."
+    ]
+   },
+   "v029": {
+    "time": "3 min",
+    "objective": "Syncing across devices."
+   },
+   "v030": {
+    "time": "3 min",
+    "objective": "The Pomodoro technique, in one line.",
+    "talk": [
+     "Personal productivity, not a firm rule. Keep it moving."
+    ]
+   },
+   "v031": {
+    "time": "3 min",
+    "objective": "Why time pressure makes people work worse, not faster."
+   },
+   "v032": {
+    "time": "3 min",
+    "objective": "How Pomodoro works, and blocking it on a calendar."
+   },
+   "v033": {
+    "time": "3 min",
+    "objective": "The two-minute rule.",
+    "talk": [
+     "Useful for VA inbox work: anything under two minutes is done now, not calendared."
+    ]
+   },
+   "v034": {
+    "time": "4 min",
+    "objective": "The 80/20 rule applied to the attorney's tasks.",
+    "talk": [
+     "The 20% in a PI firm is anything that moves a case toward demand or settlement."
+    ]
+   },
+   "v035": {
+    "time": "5 min",
+    "objective": "Last-minute changes: stay flexible, use notifications.",
+    "talk": [
+     "Script it: when the attorney moves a meeting, the VA re-plots it, re-sets the reminder, and tells the client — in that order."
+    ]
+   },
+   "v036": {
+    "time": "3 min",
+    "objective": "Work-life balance and boundaries on the client's calendar."
+   },
+   "v037": {
+    "time": "5 min",
+    "objective": "Preventing over-scheduling: realistic durations, white space.",
+    "talk": [
+     "Tie back to the firm's durations and the 3-consults-a-day cap.",
+     "Avoid lunch, buffer time and blocked events when offering slots — that is a scored behaviour in the mock calls."
+    ],
+    "keys": [
+     "When a requested slot is unavailable, offer 2–3 alternatives. Never offer a slot that sits on lunch, a buffer or a blocked event."
+    ]
+   },
+   "v038": {
+    "time": "3 min",
+    "objective": "The do/build method."
+   },
+   "v039": {
+    "time": "3 min",
+    "objective": "Flexibility within a routine."
+   },
+   "v040": {
+    "time": "3 min",
+    "objective": "Email management."
+   },
+   "v041": {
+    "time": "3 min",
+    "objective": "The schedule as work in progress."
+   },
+   "v042": {
+    "time": "3 min",
+    "objective": "Owning the executive's time, and reviewing it regularly."
+   },
+   "v043": {
+    "time": "3 min",
+    "objective": "Conclusion: consistency and fine-tuning.",
+    "talk": [
+     "Then move straight to the activity — the morning's marks are there, not here."
+    ]
+   },
+   "v044": {
+    "time": "1.5 hrs (activity) + Day 6 mock calls",
+    "objective": "Close the deck and run the Attorney Calendar Management activity, then set up the Day 6 mock calls.",
+    "talk": [
+     "Post the activity and the sample screenshots together — the samples are what the sequence and the time-zone capture are judged against.",
+     "Walk the screenshot rules before they start, or half the batch will re-do them: time zone visible, correct numbering, 19 screenshots, LSH calendar unticked for the full-calendar view.",
+     "Check against the answer keys as they submit, then preview tomorrow's mock calls and the scheduling rules."
+    ],
+    "gc": [
+     {
+      "label": "Calendar activity",
+      "text": "Please answer the Attorney Calendar Management Activity. Make sure to follow the instructions carefully, and signify \"done\" here as soon as you finish. Thanks.\n\nActivity: https://drive.google.com/file/d/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/view\nSamples: https://drive.google.com/drive/folders/1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW"
+     },
+     {
+      "label": "Screenshot rules — read before starting",
+      "text": "REMINDER! Set the appropriate time zone for each activity item. BEFORE saving each appointment, take a screenshot that captures the correct time zone, as shown in the sample.\n\nWhen taking a screenshot of the entire calendar, untick the LSH calendar first, take the screenshot, then re-enable it.\n\nYou should have a total of 19 screenshots uploaded to your subfolder, in the exact sequence shown in the sample. Be specific with your event titles — for example: Client Consultation Meeting – [Client Name]. Thank you."
+     },
+     {
+      "label": "Day 6 — scheduling rules for the mock calls",
+      "text": "For tomorrow's Calendar Management mock calls, please take note of the following.\n\nMINIMUM INFORMATION TO COLLECT: Name · Callback Number · Date of Birth (DOB) · Date of Loss (DOL)\n\nSCHEDULING RULES\n• Calendar in EST; email reminder one day before the event.\n• 15-minute buffer before and after every meeting.\n• Offer only available slots — avoid lunch, buffer time and blocked events; offer 2–3 alternatives if the requested slot is taken.\n• Clarify the meeting type (phone, video, in-person). All consultation meetings are phone consults.\n• New client consults: Tuesdays and Thursdays ONLY, max 3 per day, none after 5:00 PM EST.\n• Phone consults only between 9:30 AM and 3:00 PM EST — the attorney calls the client, so confirm the callback number.\n• Follow-ups are not scheduled in the mornings.\n• 30 mins: consults, status updates, follow-ups, signings, regular and urgent meetings. 45 mins: preparation, strategy, settlement. 1 hour: conferences.\n• Same-day bookings require attorney approval.\n\nThank you."
+     }
+    ],
+    "keys": [
+     "Answer keys for the activity are in the trainer's Day 5 folder; check the sequence and the visible time zone first, then the titles, then the reminders.",
+     "19 screenshots, numbered in the sample's sequence, in the trainee's own subfolder."
+    ],
+    "pitfalls": [
+     "Screenshots out of sequence or renamed — it makes the set unmarkable.",
+     "LSH calendar left ticked on the full-calendar view.",
+     "Event titles without the client name."
+    ],
+    "grade": {
+     "deliverable": "Attorney Calendar Management Activity (19 screenshots)",
+     "file": "19 numbered screenshots in the trainee's activity subfolder, in the sample's sequence",
+     "ai": {
+      "match": [
+       "19 screenshots present",
+       "Time zone visible in every individual appointment capture",
+       "Every event title matches [Meeting Type] – [Client Name]",
+       "Email reminder set one day prior on each event",
+       "15-minute buffer before and after each meeting",
+       "Full-calendar view captured with the LSH calendar unticked"
+      ],
+      "nlp": [
+       "Read the title text from each screenshot and match it against the pattern, allowing an en dash or a hyphen as the separator.",
+       "Score file-naming and sequence separately from the calendar content, so a correct calendar with a scrambled set is still marked on its content.",
+       "A missing time zone is a failed item for that appointment, not a partial — it is the one thing the screenshot exists to prove."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Correct slots and durations",
+        "weight": 35
+       },
+       {
+        "label": "Titles and notes",
+        "weight": 25
+       },
+       {
+        "label": "Time zone and reminders",
+        "weight": 25
+       },
+       {
+        "label": "Sequence and completeness",
+        "weight": 15
+       }
+      ],
+      "rubric": [
+       "Followed the written instructions without asking twice",
+       "Checked their own work against the sample before submitting"
+      ],
+      "feedback": "Which rule they missed, and whether it was the rule or the screenshot…"
+     }
+    }
+   }
+  }
  }
 }
