@@ -209,7 +209,7 @@ function homeActions(done, total){
   const html = (resume ? `<button class="btn btn-primary resume-btn" onclick="resumeWhereLeftOff()">▶ Resume where you left off <span>${e(resume)}</span></button>` : "")
     + (cert ? (cert.eligible
       ? `<button class="btn cert-hero-btn" onclick="downloadCertificatePdf(null)">🎓 Download my Certificate</button><button class="btn btn-ghost cert-hero-view" onclick="openCertificate()">View</button>`
-      : `<span class="cert-hero-locked" title="Finish the lessons to unlock your certificate">🎓 Certificate · ${done}/${total} lessons finished</span>`) : "");
+      : `<span class="cert-hero-locked" title="Finish the lessons to unlock your certificate (${done}/${total} lessons finished)">🎓 Certificate · ${done}/${total}</span>`) : "");
   return html ? `<div class="lp-home-acts">${html}</div>` : "";
 }
 // The compact stat band the sibling courses show under their lessons (their dashboard's dash-side-inner):
@@ -273,8 +273,8 @@ function renderModules(){
         ${typeof renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : ""}
         ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
         ${hooks("LSH_HOME_STATS")}
+        ${homeActions(done, all.length)}
       </div></div>
-      ${homeActions(done, all.length)}
     </div>`;
 }
 // Exposed globally so a direct, non-routed call (e.g. js/ft-updates.js's FT_OFF_VIEWS fallbacks, which call
@@ -490,8 +490,18 @@ main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
   main.main-dash .dash-side-inner .rank-list, main.main-dash .dash-side-inner .rank-card .sub{display:none !important;}
   main.main-dash .dash-side-inner .tfb-dash-actions{margin-top:3px;}
   main.main-dash .dash-side-inner .tfb-dash .btn{padding:2px 9px !important;font-size:10.5px !important;white-space:nowrap;}
+  /* Resume and the certificate ride in the band as its last box, not on a line of their own under it */
+  main.main-dash .dash-side-inner > .lp-home-acts{flex-direction:row !important;align-items:center !important;gap:6px;padding:4px 6px !important;}
+  main.main-dash .dash-side-inner > .lp-home-acts > *{min-width:0;padding:4px 9px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* An open lesson's card has three small buttons (☰ Topics, ✓ Finish Training, ▶ Video Presentation): one row
+     of three under Start, not three stacked rows, so both rows of lessons fit on the screen with the band */
+  main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3{grid-template-columns:auto 1fr 1fr;}
+  main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > .module-start-btn{grid-column:1 / -1;}
+  main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn){grid-column:span 1;padding-left:10px;padding-right:10px;}
+  main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn):not(:last-child){border-right:1px solid #9CA3B8 !important;}
 }
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
+.dash-side-inner > .lp-home-acts{margin:0;}
 /* 📚 Dashboard's own pages (Task Tracker, Monitoring Sheet, My Notes, My Performance; an admin's Orientation) */
 .lp-pages{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:22px 0 0;}
 .lp-pages .lp-page{display:inline-flex;align-items:center;gap:7px;}
