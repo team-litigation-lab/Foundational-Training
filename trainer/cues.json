@@ -1814,8 +1814,58 @@
     "time": "3 min",
     "objective": "Conclusion: consistency and fine-tuning.",
     "talk": [
-     "Then move straight to the activity — the morning's marks are there, not here."
-    ]
+     "Then move straight to the activity — the morning's marks are there, not here.",
+     "Use this page to set up the Day 6 mock calls: the scorecard below is what each call is marked against."
+    ],
+    "grade": {
+     "deliverable": "Calendar Management Mock Calls (Day 6)",
+     "ai": {
+      "match": [
+       "Collected all four: name, callback number, DOB, DOL",
+       "Clarified the meeting type (phone, video, in-person)",
+       "Offered only available slots; 2-3 alternatives where the request was taken",
+       "Event plotted in EST with the title [Meeting Type] - [Client Name]",
+       "Correct duration for the meeting type (30 / 45 / 60 minutes)",
+       "15-minute buffer before and after",
+       "Email reminder set one day prior",
+       "Notes carry the case context and the caller's demeanour"
+      ],
+      "nlp": [
+       "Score the plotted event against the rules as structured fields, and the call itself against the collection and offer rules.",
+       "A slot that breaks a hard rule - a new client consult outside Tuesday/Thursday, after 5:00 PM EST, a fourth consult in a day, a phone consult outside 9:30 AM-3:00 PM, a morning follow-up, or a same-day booking without attorney approval - fails the scheduling item however well the call was handled.",
+       "Accept any phrasing for confirming the callback number; it is the confirmation that is scored, not the words."
+      ],
+      "pass": 85
+     },
+     "trainer": {
+      "scores": [
+       {
+        "label": "Information collected",
+        "weight": 20
+       },
+       {
+        "label": "Slot offered and rules applied",
+        "weight": 30
+       },
+       {
+        "label": "Calendar entry: title, duration, buffer, reminder",
+        "weight": 30
+       },
+       {
+        "label": "Call handling and notes",
+        "weight": 20
+       }
+      ],
+      "rubric": [
+       "Call tone adapted to the caller (easy, anxious, irritated, impatient, emotional)",
+       "Empathy without over-promising",
+       "De-escalation of the impatient caller",
+       "Professional deference on an urgent attorney request",
+       "Phone etiquette: clean open and close"
+      ],
+      "feedback": "Which scheduling rule they broke, and how they handled being told the slot was unavailable..."
+     }
+    }
    },
    "v044": {
     "time": "1.5 hrs (activity) + Day 6 mock calls",
