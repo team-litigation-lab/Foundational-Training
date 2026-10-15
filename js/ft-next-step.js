@@ -13,9 +13,9 @@
 
    How the position is worked out (no trainer input, nothing to set up):
      The sequence is the curriculum's own, Days 1 → 18. A trainee's place in it is the first
-     day whose lesson they have not finished yet; once every lesson is finished it is the first
-     day that has no lesson of its own (the Lien Negotiator days, 17 and 18), and after those
-     the programme is done. Only lesson progress is read (state.progress, which the platform
+     day whose lesson they have not finished yet. Every day has one — Days 17–18 are taught from
+     Lesson 9, Lien Negotiator Training — so when the last lesson's Process Questions pass, the
+     programme is complete and the band says so. Only lesson progress is read (state.progress, which the platform
      already keeps) — the classroom and Drive steps are shown as the guide lists them, never
      ticked off here, because this program has no record of them.
 
@@ -63,8 +63,11 @@ function place(){
   if(!days.length) return null;
   const pending = days.find(d => (d.lessons || []).some(l => !done(l)));
   if(pending) return {day: pending, stage: "lesson"};
+  // Every day has a lesson today; this only matters if a day is ever added without one, which then
+  // waits here rather than being skipped.
   const closing = days.find(d => !(d.lessons || []).length);
   if(closing) return {day: closing, stage: "closing"};
+  // every lesson finished, Lesson 9 (Days 17–18) included: the programme is complete
   return {day: days[days.length - 1], stage: "complete"};
 }
 /* A day with a lesson runs in three phases, in this order, and only then on through the curriculum:
@@ -72,8 +75,8 @@ function place(){
      2. the day's Activities      — once studied: its Practice Sessions, tools and classroom work
      3. the Process Questions     — last, once the activities are done; passing them finishes the lesson
    "studied" (state.progress[l].studied) is set by ✓ Finish Training and is what unlocks the lesson's
-   Process Questions (js/ft-process.js); "done" is set when they pass. A day with no lesson (Days 17–18,
-   Lien Negotiator) has no phases: it is simply its activities, in the curriculum's order. */
+   Process Questions (js/ft-process.js); "done" is set when they pass. Every day has a lesson
+   (Days 17–18 share Lesson 9); a day added without one would have no phases, only its activities. */
 const studied = l => !!(state.progress && state.progress[l] && state.progress[l].studied);
 const isPQ = x => x.at === "tool" && x.id === "process";
 // The day's steps as the trainee works them: on a lesson day the Process Questions move to the end,
