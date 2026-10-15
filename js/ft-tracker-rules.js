@@ -198,11 +198,15 @@
   // The Training Monitoring Sheet's text (a Google Doc's text, or a sheet's CSV joined into lines), checked per discussion:
   // its title found, a date, 5 takeaways (lines of 4+ words), questions, and the understanding rated.
   // The classroom discussions (the Hubstaff To-Dos), until a trainer sets the list (settings:monitor). js/ft-monitoring.js uses it too.
+  // One entry per classroom discussion, in the order the Training Guide runs them: all 18 days of
+  // the Revised 18-Day Foundational Training Program (js/ft-day-activities.js maps the days).
+  // The Lien Negotiator days close the programme, so their discussions are monitored like the rest.
   const MONITOR_TOPICS = ["Virtual Assistant Essentials - Day 1", "Virtual Assistant Essentials - Day 2",
     "Reception Training Day 1", "Reception Training Day 2", "Reception Training Day 3", "Calendar Management Training",
     "Intake Training Day 1", "Intake Training Day 2", "Intake Training Day 3",
     "Insurance Communication Training Day 1", "Insurance Communication Training Day 2", "Insurance Communication Training Day 3",
-    "Provider Communication Training Day 1", "Provider Communication Training Day 2", "Provider Communication Training Day 3", "Provider Communication Training Day 4"];
+    "Provider Communication Training Day 1", "Provider Communication Training Day 2", "Provider Communication Training Day 3", "Provider Communication Training Day 4",
+    "Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
   const RATING_HINTS = ["really don", "on my own but", "confident that i can", "can teach this"];
   function gradeMonitorText(text, topics){
     const lines = String(text || "").split(/\r?\n/).map((l) => l.replace(/^[\s,]+|[\s,]+$/g, "")).filter(Boolean);

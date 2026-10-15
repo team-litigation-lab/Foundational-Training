@@ -313,7 +313,30 @@ Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`,
 
 **It changes no gating.** A session still opens with its **lesson** (`window.dayUnlocked(s.lesson)`), not with its day; the day is shown, never enforced. Nothing about progress, scoring or storage moves.
 
-**Where it stops.** `MONITOR_TOPICS` (`js/ft-tracker-rules.js`) still lists the **16** classroom discussions of Days 1–16 — the Lien Negotiator days have no monitoring entry. Extending it changes what the Monitoring Sheets are graded against, so it is left as it is.
+**The monitoring sheet covers all 18 days.** `MONITOR_TOPICS` (`js/ft-tracker-rules.js`, imported by `worker.js` too, so the page and the Worker grade against the same list) now carries **18** classroom discussions: the Lien Negotiator days close the programme and are monitored like the rest. A trainer who has already saved their own list in Admin → 📒 Monitoring Sheets → *Discussions and key points* (`settings:monitor`) keeps it — the 18 are the default, not an overwrite.
+
+## 🔗 Resource links open on the platform, not in a new tab
+
+Everything the guide hands the trainees — the activity instructions, the videos and the resource sheets — opens in the **pop-out viewer** (the draggable, resizable pane with ⛶ Full screen and *Open in a new tab ↗*), so a trainee never loses the page they were on. A link becomes a viewer link by carrying `class="viewer-link"` with `data-kind="doc|video"` and `data-title`; `lvEmbedUrl` (`js/ft-updates.js`) turns the address into its embed form:
+
+| Link | Embedded as |
+|---|---|
+| Drive file (`/file/d/<id>/view`, `open?id=`, `uc?id=`) | `/file/d/<id>/preview` |
+| Drive folder | `embeddedfolderview?id=<id>#grid` |
+| Google Doc / Sheet | `/preview` |
+| Google Slides | `/embed` |
+| Canva design | `/view?embed` |
+| Loom recording | `loom.com/embed/<id>` |
+| YouTube | `youtube.com/embed/<id>` |
+
+A Doc, Sheet, Slides deck or Canva deck is always `data-kind="doc"` — it is read, not watched, so the viewer opens it at document proportions and without the *"do you want to watch this video?"* prompt. Loom and YouTube are `video`.
+
+**What deliberately stays an ordinary new-tab link:**
+
+- **Third-party tools the trainee has to go and use** — the typing and spelling tests (TypingClub, SpellQuiz, TypingTest, Spelling-Test), iLovePDF, the WinRAR download, the NPI registries (npidb.org, npino.com), the free HIPAA course and the Smart Advocate knowledge base. They are not resources of ours, and most of them refuse to be framed.
+- **The credentials document.** It is never embedded, so log-in details never render inside the platform. `convert.py` keeps replacing credential lines with 🔒 *Log-in credentials aren’t stored on the platform* and a plain link out to that document, and the import still fails rather than write a credential.
+
+`link_html` in `build/curriculum/convert.py` applies this on import (its `EMBEDDABLE` list and `lvEmbedUrl` are the two halves — keep them in step). The files generated before it learned to were migrated in place.
 
 ## 🛠 Practice Lab: real-time Practice Sessions at the trainee's own law firm
 

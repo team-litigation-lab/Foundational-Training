@@ -21,6 +21,7 @@ Days 2–18 and the admin **📘 Curriculum** copy are generated from the *Train
 - **Material for trainees:** when a note says to *send / share / post / give / provide* something in the GC, only that instruction line is trainer-only. The material it introduces is shown to trainees.
 - **Log-in credentials** (Username/Password lines) are replaced by a link to the credentials document. The run stops if any would still be written.
 - **Not published:** the Nitro Pro installer and its install-video links.
+- **Resource links are embedded:** Drive files and folders, Google Docs, Sheets and Slides, Canva decks, Loom and YouTube become pop-out-viewer links (`class="viewer-link"`), so they open on the platform instead of a new tab. A Doc, Sheet or deck is `data-kind="doc"`; Loom and YouTube are `video`. Third-party tools the trainee has to go and use (the typing and spelling tests, iLovePDF, the WinRAR download, the NPI registries, the HIPAA course, the Smart Advocate knowledge base) and the credentials document stay ordinary new-tab links. The list is `EMBEDDABLE` in `convert.py`; its other half is `lvEmbedUrl` in `js/ft-updates.js` — keep the two in step.
 
 Day 1 was built by hand from the same guide and is kept as it is.
 
