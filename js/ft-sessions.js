@@ -34,7 +34,7 @@ const norm = v => String(v == null ? "" : v).normalize("NFD").replace(/[̀-ͯ]/g
 const same = (a, b) => has(a) && has(b) && norm(a) === norm(b);
 const near = (a, b) => { const x = norm(a), y = norm(b); return !!x && !!y && (x === y || x.includes(y) || y.includes(x)); };
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 const FF = () => window.FTFirms;
 const PASS = 80;
 // dates: "MM/DD/YYYY" (the case files) and "YYYY-MM-DD" (date inputs)
@@ -58,7 +58,7 @@ const calls = (line, graded) => PORTAL_SIMS + "call.html?" + new URLSearchParams
 const SESSIONS = [
   {id:"reception", icon:"☎️", title:"Reception Mock Calls", lesson:4,
     about:"Answer your firm’s front desk live on the Call Simulator — ☎ LSH Ring Channel, the training phone: the Main Line rings, you answer with your headset, verify the caller, find the file in 🔎 Case lookup and handle the call the way your firm’s rules say. Then write the call note here.",
-    tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&drill=1&from=standard"]],
+    tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&flow=reception&drill=1&from=standard"]],
     fields: f => [["greeting", "The greeting you used", "text"], ["caller", "Caller’s name", "text"], ["role", "Caller’s role", "select", ["Client", "Authorized person on the file", "Unauthorized family member or friend", "Medical provider", "Insurance adjuster", "Opposing counsel", "Media", "Other"]],
       ["callback", "Callback number", "text"], ["besttime", "Best time to call back", "text"], ["caseRef", "Case (client name or case number)", "text"], ["need", "What they need", "textarea"],
       ["urgency", "Urgency", "select", ["Routine", "Urgent: routed now"]], ["routed", "Routed to (name and ext)", "text"], ["verified", "I verified the caller before discussing the case (or didn’t discuss it)", "check"], ["initials", "Your initials", "text"]],
@@ -329,7 +329,7 @@ const T = {acts:null};
 const acts = () => T.acts || DEFAULT_ACTS;
 const STATUSES = ["Not yet", "Passed", "Redo"];
 // What this module's live work is: its Practice Session and anything done with the trainer.
-// Used by 📚 Modules to show each module's activities next to it (js/ft-program.js).
+// Used by 📚 Dashboard to show each module's activities next to it (js/ft-program.js).
 FTSessions.forLesson = function(lesson){
   const l = Number(lesson);
   return SESSIONS.filter(x => x.lesson === l).map(x => ({kind:"session", id:x.id, icon:x.icon, title:x.title}))

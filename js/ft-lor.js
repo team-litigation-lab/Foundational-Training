@@ -40,7 +40,7 @@ if(!window.FT_LOR_CASES || !window.FT_LOR_TEMPLATES) return;
 const CASES = window.FT_LOR_CASES, TEMPLATES = window.FT_LOR_TEMPLATES;
 const e = v => esc(String(v == null ? "" : v));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
-const adminOn = () => !!state.isAdmin && !state.adminPreview;
+const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
 // Said on the page itself, not only here: this activity never becomes a case file in the CMS.
 const NO_CASE_FILE = "Do <b>not</b> create a case file in the CMS for this activity, and do not link it to any case file. This is a standalone drafting exercise: you draft the two letters here, download them, and upload them into the Smart Advocate demo yourself.";
 

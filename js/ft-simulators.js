@@ -160,7 +160,7 @@ window.render = function(){
   if(!isTrainee() || state.ftOpenDays) return;
   ftLoadOpenDays().then(()=>{ if(state.view==="simulators") render(); }).catch(()=>{});
 };
-// 📚 Modules, the landing page: the graded-calls stat under the progress bar, and a mock-call lesson's best
+// 📚 Dashboard, the landing page: the graded-calls stat under the progress bar, and a mock-call lesson's best
 // graded call beside its row (js/lsh-program.js renders both). The page has no Simulators card: the Practice
 // Lab is in the top bar.
 (window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){

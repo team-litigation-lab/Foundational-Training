@@ -4,13 +4,8 @@
 // Checks:
 // - a trainee has no Trainer blueprint (it doesn't open, and Orientation isn't theirs), and has the 📘 Platform
 //   Blueprint button (the Trainee blueprint PDF) on the top bar, and no Blueprint card on the dashboard;
-// - a trainer's 🧭 Orientation has the Trainee / Trainer blueprint tabs; 🛠 Trainer blueprint opens the
-//   trainer deck with both tabs, ◀ ▶ and the keys go through every slide, each fits on a laptop and on a
-//   phone, Esc closes it, and the Trainee tab goes back to Orientation;
-// - the slide numbers match everywhere: the cover is the Cover (the counter reads "Cover · N slides"), then
-//   slides 1 to N on the contents buttons, the counter, each slide's header and footer, and the PDF's page
-//   footers ("Cover", then "1 / N" to "N / N"); nothing ever shows N + 1 (a 15-slide deck used to say "16 / 16");
-// - ⬇ Download PDF saves the Trainer blueprint: a page a slide, stamped with the build and the deployment;
+// - no blueprint opens inside the program for a trainer either: Orientation carries no blueprint tab or link,
+//   and the old #/blueprint address forwards to the Portal's 🧭 Blueprint page, where every blueprint lives;
 // - the Trainee blueprint (/blueprint.pdf) is republished after every deploy: once for a new deployment
 //   id, not again for the same one, and again when the deployment changes with APP_BUILD left as it was.
 // Usage: node .github/scripts/blueprint.cjs [baseUrl]   (with server.mjs running; needs `npm i playwright jspdf@4.2.1`)
@@ -114,38 +109,6 @@ async function walk(page, label) {
     // the Trainer blueprint opens only from its own address, #/blueprint (the Main Portal's Blueprint page links there)
     const bp = await page.evaluate(() => ({ tabs: !!document.querySelector('.lbp-or-tabs, #lbp-or-trainer'), links: [...document.querySelectorAll('main a[href*="blueprint"], .ho-bp, .bp-status')].length }));
     if (bp.tabs || bp.links) fail(`the program still shows a Blueprint tab or link: ${JSON.stringify(bp)}`);
-    await page.evaluate(() => { location.hash = '#/blueprint'; }); await page.waitForTimeout(600);
-    const a = await page.evaluate(() => ({ open: LSHBlueprint.isOpen(), deck: document.getElementById('lbp-slide').dataset.deck, tabs: [...document.querySelectorAll('#lbp-tabs button')].filter(b => b.offsetParent).map(b => b.textContent.trim()), sub: document.getElementById('lbp-sub').textContent, build: APP_BUILD, n: (LSHBlueprint.decks().trainer || { slides: [] }).slides.length, count: document.getElementById('lbp-count').textContent.trim() }));
-    if (!a.open || a.deck !== 'trainer' || a.tabs.join() !== 'Trainer blueprint,Trainee blueprint') fail(`🛠 Trainer blueprint didn't open the trainer deck with both tabs: ${JSON.stringify(a)}`);
-    if (!a.sub.includes(`build ${a.build}`) || !a.sub.includes('deploy dep-aaaa')) fail(`the Trainer blueprint's header doesn't show the build and deployment: ${a.sub}`);
-    // the cover isn't counted: it's the Cover, then the slides are 1 to n (a 15-slide deck says 15, never 16)
-    if (a.count !== `Cover · ${a.n} slides`) fail(`the Trainer blueprint opened with the counter reading "${a.count}", not "Cover · ${a.n} slides"`);
-    await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
-    const two = (await page.textContent('#lbp-count')).trim();
-    if (two !== `2 / ${a.n}`) fail(`← → didn't move through the trainer deck: after → → the counter reads "${two}", not "2 / ${a.n}"`);
-    // the last contents button goes to the last slide, numbered the same: "n / n" on the counter and the footer; → goes no further
-    await page.click('#lbp-toc button:last-child'); await page.keyboard.press('ArrowRight');
-    const end = await page.evaluate(() => ({ button: [...document.querySelectorAll('#lbp-toc button')].pop().textContent.trim(), counter: document.getElementById('lbp-count').textContent.trim(), footer: (document.querySelector('#lbp-slide .lbp-foot span:last-child') || {}).textContent }));
-    if (end.button !== String(a.n) || end.counter !== `${a.n} / ${a.n}` || end.footer !== `${a.n} / ${a.n}`) fail(`the last slide should read "${a.n} / ${a.n}", like its contents button ${a.n}: ${JSON.stringify(end)}`);
-    const w = await walk(page, 'trainer 1366px'); w.out.forEach(fail);
-    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#lbp-pdf-btn')]);
-    const pdf = inspect(fs.readFileSync(await dl.path()));
-    if (!/_Blueprint_Trainer\.pdf$/.test(dl.suggestedFilename()) || !pdf.pdf || pdf.pages !== w.total) fail(`the Trainer blueprint PDF: ${dl.suggestedFilename()}, ${pdf.pages} pages for a cover and ${w.n} slides`);
-    // its page footers: "Cover", then "1 / n" to "n / n", in order (never "n+1 / n+1")
-    const lines = pdf.text.split('\n').map(x => x.trim()), feet = lines.filter(x => /^\d+ \/ \d+$/.test(x));
-    const want = Array.from({ length: w.n }, (_, k) => `${k + 1} / ${w.n}`);
-    if (!lines.includes('Cover') || feet.join(', ') !== want.join(', ')) fail(`the Trainer blueprint PDF's page footers should be Cover, then 1 / ${w.n} to ${w.n} / ${w.n}; they are: ${lines.includes('Cover') ? 'Cover' : '(no Cover)'}, ${feet.join(', ')}`);
-    if (!pdf.text.includes(`${w.n} / ${w.n}`) || pdf.text.includes(`${w.n + 1} / ${w.n + 1}`)) fail(`the Trainer blueprint PDF's last page should say ${w.n} / ${w.n}, and no page ${w.n + 1} / ${w.n + 1}`);
-    if (!pdf.text.includes(`build ${a.build}`) || !pdf.text.includes('deploy dep-aaaa')) fail('the Trainer blueprint PDF isn\'t stamped with the build and the deployment');
-    const titles = await page.evaluate(() => LSHBlueprint.decks().trainer.slides.map(s => s.title.replace(/[^\x00-\xff]/g, '').trim()));
-    const missing = titles.filter(x => !pdf.text.includes(x)); if (missing.length) fail(`the Trainer blueprint PDF is missing: ${missing.join(' | ')}`);
-    if (/chartswap|casepeer/i.test(pdf.text)) fail('the Trainer blueprint names another product');
-    await page.click('#lbp-tabs button[data-deck="trainee"]'); await page.waitForTimeout(300);
-    const back = await page.evaluate(() => ({ open: LSHBlueprint.isOpen(), view: state.view }));
-    if (back.open || back.view !== 'orientation') fail(`the Trainee blueprint tab should go back to Orientation: ${JSON.stringify(back)}`);
-    await page.evaluate(() => { location.hash = '#/orientation'; location.hash = '#/blueprint'; }); await page.waitForTimeout(400); await page.keyboard.press('Escape');
-    if (await page.evaluate(() => LSHBlueprint.isOpen())) fail('Esc didn\'t close the Trainer blueprint');
-
     // ---- the Trainee blueprint is republished after every deploy ----
     const pub = await page.evaluate(async () => {
         const sets = [];
@@ -162,14 +125,21 @@ async function walk(page, label) {
     if (pub2.deploy !== 'dep-bbbb2222-second') fail(`a new deploy (same APP_BUILD) didn't republish the blueprint: ${JSON.stringify(pub2)}`);
     const served = await page.evaluate(async () => { const r = await fetch('/blueprint.pdf'); return { status: r.status, type: r.headers.get('content-type') }; });
     if (served.status !== 200 || !/pdf/.test(served.type || '')) fail(`/blueprint.pdf after publishing: ${JSON.stringify(served)}`);
-    await page.context().close();
+    // Every blueprint link leads to the Portal's 🧭 Blueprint page: the old #/blueprint address forwards there
+    // and opens no deck here. The Portal is stubbed so the test stays offline.
+    const PORTAL_BP = 'https://cm-training-activity.pages.dev/blueprint';
+    await page.route('https://cm-training-activity.pages.dev/**', (route) =>
+        route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Portal Blueprint</title>' }));
+    await page.evaluate(() => { location.hash = '#/blueprint'; });
+    await page.waitForURL(PORTAL_BP, { timeout: 5000 }).catch(() => {});
+    if (page.url() !== PORTAL_BP) fail(`#/blueprint should forward to the Portal's Blueprint page; it stayed on ${page.url()}`);
+    if (await page.evaluate(() => !!(window.LSHBlueprint && LSHBlueprint.isOpen()))) fail('a deck opened inside the program');
+    await page.goBack(); await page.waitForTimeout(400);
+    if (await page.evaluate(() => !!(window.LSHBlueprint && LSHBlueprint.isOpen()))) fail('a deck opened inside the program after going back');
 
-    // ---- a trainer, on a phone ----
-    page = await open(browser, { width: 390, height: 844 }, true);
-    await page.evaluate(() => LSHBlueprint.open('trainer'));
-    (await walk(page, 'trainer 390px')).out.forEach(fail);
+    await page.context().close();
 
     await browser.close();
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log(`Blueprint test passed (Trainer blueprint: a cover and ${w.n} slides, numbered Cover then 1 / ${w.n} to ${w.n} / ${w.n} on screen and in its PDF, build and deployment stamped; trainees can't open it; the Trainee blueprint republished once per deploy).`);
+    console.log('Blueprint test passed (no blueprint inside the program: no tab, card or link, no deck for a trainee or a trainer, and #/blueprint forwards to the Portal\'s Blueprint page; the Trainee blueprint republished once per deploy and served at /blueprint.pdf).');
 })().catch(e => { console.error(e); process.exit(1); });
