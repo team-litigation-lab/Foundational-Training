@@ -91,7 +91,7 @@ function firmBanner(){
   if(!isTrainee() || !window.FTFirms) return "";
   const f = FTFirms.myFirm();
   return `<div class="fts-banner" role="link" tabindex="0" onclick="goto('firm')" onkeydown="if(event.key==='Enter') goto('firm')"><span class="fts-banner-ic">🏛</span>
-    <span class="fts-banner-tx"><b>${f ? esc(f.name) : "Your law firm"}</b><span>${f ? `You work for this firm: ${esc(f.location)} · ${esc(f.tz)} time. Every session is on its cases, under its rules.` : "Your trainer assigns your firm and your cases. Its rules are what your sessions are checked against."}</span></span>
+    <span class="fts-banner-tx"><b>${f ? esc(f.name) : "Your law firm"}</b><span>${f ? `You work for this firm: ${esc(f.location)} · ${esc(f.tz)} time. Every session is on its cases, under its rules.` : "Your firm is set up for you. Its rules are what your sessions are checked against."}</span></span>
     <span class="fts-banner-go">${f ? "My firm & rules →" : "Open →"}</span></div>`;
 }
 function renderSimulators(){
