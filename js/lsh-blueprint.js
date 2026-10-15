@@ -33,7 +33,9 @@
                   Orientation); the tab calls open() instead of showing a deck
    Numbering: the cover is the Cover (★); the slides are 1 to n, the same on the buttons, the counter, the
    slide's kicker and footer, and the PDF's footers.
-   API: LSHBlueprint.open('admin'|'trainer'|'trainee'), .close(), .go(n, absolute), .deck(which), .pdf(), .zoom(src)
+   API: LSHBlueprint.open('admin'|'trainer'|'trainee'), .close(), .go(n, absolute), .deck(which), .pdf(), .doc(which), .zoom(src)
+        .doc(which) gives the deck's PDF as a jsPDF document instead of saving it, for a platform that
+        publishes its blueprint (the courses' /blueprint.pdf).
    ========================================================= */
 (function () {
     'use strict';
@@ -303,6 +305,7 @@
         isOpen() { const p = $id('lbp-page'); return !!(p && p.classList.contains('open')); },
         current() { return { deck: cur, slide: at }; },
         pdf: (which) => makePdf(which),
+        doc: (which) => makeDoc(which),
         decks: () => ({ trainee: deckOf('trainee'), trainer: deckOf('trainer'), admin: deckOf('admin') }),
         refresh: mount
     };
@@ -478,6 +481,18 @@
         return doc;
     }
 
+    // the deck's PDF as a jsPDF document, without saving it: for a platform that publishes
+    // its blueprint (the courses' /blueprint.pdf) rather than handing it to the person here.
+    // The deck has to exist, but it needn't be one this role may open.
+    async function makeDoc(which) {
+        const d = deckOf(which) || deckOf(allowed()[0]);
+        if (!d) return null;
+        await loadJsPdf();
+        if (!version) await loadVersion();
+        const [logo, shots] = await Promise.all([imageData(cfg().logo), Promise.all(d.slides.map(s => s.shot ? imageData(s.shot) : null))]);
+        return buildPdf(d, logo, shots);
+    }
+
     async function makePdf(which) {
         const tabs = allowed();
         const key = which && tabs.includes(which) ? which : (API.isOpen() ? cur : tabs[0]);
@@ -486,10 +501,7 @@
         const btn = $id('lbp-pdf-btn');
         try {
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Making the PDF…'; }
-            await loadJsPdf();
-            if (!version) await loadVersion();
-            const [logo, shots] = await Promise.all([imageData(cfg().logo), Promise.all(d.slides.map(s => s.shot ? imageData(s.shot) : null))]);
-            const doc = buildPdf(d, logo, shots);
+            const doc = await makeDoc(key);
             const name = `${cfg().file || 'LSH'}_Blueprint_${FILES[key] || 'Trainee'}.pdf`;
             doc.save(name);
             return { name, pages: doc.getNumberOfPages(), version };

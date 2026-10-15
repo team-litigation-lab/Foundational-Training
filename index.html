@@ -6478,7 +6478,6 @@ function renderTopbar(){
     // Admin is a trainer monitoring dashboard, not a trainee workspace — hide
     // the trainee-facing-only views that have no role here.
     views = views.filter(([id]) => !["crisisroleplay","notes","handouts","tasks"].includes(id));
-    views.push(["orientation","🧭 Orientation"]);
     views.push(["facilitatorguide","Facilitator Guide"]);
   }
   return `
@@ -8223,7 +8222,7 @@ function bookmarkView(){
    Tabs stay in sync: when one tab saves, the others pick the change up (the
    browser's "storage" event), so an older tab never overwrites newer progress.
    ============================================================ */
-const ROUTE_VIEWS = ["dashboard","practice","notes","clientprofile","handouts","tasks","crisisroleplay","orientation","facilitatorguide"];
+const ROUTE_VIEWS = ["dashboard","practice","notes","clientprofile","handouts","tasks","crisisroleplay","facilitatorguide"];
 const routeViews = ()=>ROUTE_VIEWS.concat(window.EXTRA_ROUTE_VIEWS||[]);   // a course build can add its own pages
 function routeHash(){
   if(state.view==="day" && state.dayId) return "#/day/"+state.dayId;
@@ -18719,7 +18718,7 @@ window.downloadProjectCompliance6Pdf = downloadProjectCompliance6Pdf;
    that was clicked, and any failure is shown on screen instead of
    disappearing silently in the browser console.
    ============================================================ */
-var APP_BUILD = "ft-2026.10.15-dashboard";
+var APP_BUILD = "ft-2026.10.15-blueprint";
 console.info("LSH EA/PA portal build", APP_BUILD);
 let busyDepth = 0;
 function showActionError(e, label){
@@ -18781,15 +18780,14 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-drive.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/ft-orientation.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-admin-ops.js?v=ft-2026.10.14-ops"></script>
 <script src="/js/attendance.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
-<!-- 🧭 Blueprints: the Trainer blueprint (blueprint-content.js) and the Trainee blueprint (Orientation, /blueprint.pdf) rebuilt after every deploy -->
-<script src="/js/blueprint-content.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/lsh-blueprint-course.js?v=ft-2026.10.05-1744"></script>
-<script src="/js/lsh-blueprint.js?v=ft-2026.10.08-perf"></script>
+<!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->
+<script src="/js/blueprint-content.js?v=ft-2026.10.15-blueprint"></script>
+<script src="/js/lsh-blueprint-course.js?v=ft-2026.10.15-blueprint"></script>
+<script src="/js/lsh-blueprint.js?v=ft-2026.10.15-blueprint"></script>
 <script src="/js/lsh-autoplay.js?v=ft-2026.10.15-autoplay"></script>
 <script src="/js/lsh-dashboard.js?v=ft-2026.10.15-onescreen"></script>
 <script src="/js/ft-card-grid.js?v=ft-2026.10.06-frame"></script>

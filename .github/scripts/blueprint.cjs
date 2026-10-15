@@ -4,10 +4,13 @@
 // Checks:
 // - a trainee has no Trainer blueprint (it doesn't open, and Orientation isn't theirs), and has the 📘 Platform
 //   Blueprint button (the Trainee blueprint PDF) on the top bar, and no Blueprint card on the dashboard;
-// - no blueprint opens inside the program for a trainer either: Orientation carries no blueprint tab or link,
-//   and the old #/blueprint address forwards to the Portal's 🧭 Blueprint page, where every blueprint lives;
+// - no blueprint opens inside the program for a trainer either, and 🧭 Orientation is gone from it: the old
+//   #/blueprint and #/orientation addresses both forward to the Portal's 🧭 Blueprint page, where every
+//   blueprint lives;
 // - the Trainee blueprint (/blueprint.pdf) is republished after every deploy: once for a new deployment
 //   id, not again for the same one, and again when the deployment changes with APP_BUILD left as it was.
+//   It is built from this course's trainee slides (LSH_BLUEPRINT.trainee), on the same cover and the same
+//   slide layout as every other LSH blueprint, so the PDF the Portal links reads as one deck with them.
 // Usage: node .github/scripts/blueprint.cjs [baseUrl]   (with server.mjs running; needs `npm i playwright jspdf@4.2.1`)
 const { chromium } = require('playwright');
 // The sign-in form is gone (trainees arrive from the Portal with a ticket, which the Portal's gate turns into these three hidden
@@ -114,7 +117,8 @@ async function walk(page, label) {
         const sets = [];
         const realSet = window.sharedSet;
         window.sharedSet = async (k, v) => { if (k === 'blueprint:pdf') sets.push(v.deploy || ''); return realSet(k, v); };
-        window.buildOrientationPdfDoc = async () => ({ output: () => 'data:application/pdf;base64,JVBERi0xLjQK' });
+        window.__realBlueprintDoc = LSHBlueprint.doc;   // put back below: the PDF itself is checked after this
+        LSHBlueprint.doc = async () => ({ output: () => 'data:application/pdf;base64,JVBERi0xLjQK', getNumberOfPages: () => 1 });
         const run = async () => { lshBlueprintDeployment.reset(); state.blueprintJob = false; await autoPublishBlueprint(); return sets.length; };
         const r = { first: await run(), same: await run() };
         return r;
@@ -125,6 +129,29 @@ async function walk(page, label) {
     if (pub2.deploy !== 'dep-bbbb2222-second') fail(`a new deploy (same APP_BUILD) didn't republish the blueprint: ${JSON.stringify(pub2)}`);
     const served = await page.evaluate(async () => { const r = await fetch('/blueprint.pdf'); return { status: r.status, type: r.headers.get('content-type') }; });
     if (served.status !== 200 || !/pdf/.test(served.type || '')) fail(`/blueprint.pdf after publishing: ${JSON.stringify(served)}`);
+    // the real thing, unstubbed: the PDF the Portal links is built from this course's trainee slides,
+    // a page a slide plus the cover, with every slide's title in it as real text
+    const real = await page.evaluate(async () => {
+        if (window.__realBlueprintDoc) { LSHBlueprint.doc = window.__realBlueprintDoc; delete window.__realBlueprintDoc; }
+        const d = (window.LSH_BLUEPRINT || {}).trainee;
+        if (!d || !d.slides || !d.slides.length) return { error: 'no trainee slides to build /blueprint.pdf from' };
+        const doc = await LSHBlueprint.doc('trainee');
+        if (!doc) return { error: 'LSHBlueprint.doc("trainee") made nothing' };
+        return { slides: d.slides.length, pages: doc.getNumberOfPages(), b64: doc.output('datauristring').split(',')[1] };
+    });
+    if (real.error) fail(real.error);
+    else {
+        const tp = inspect(Buffer.from(real.b64, 'base64'));
+        if (!tp.pdf || tp.pages !== real.slides + 1) fail(`the Trainee blueprint PDF: ${tp.pages} pages for a cover and ${real.slides} slides`);
+        // Compare on the letters and digits alone: the PDF writes punctuation in Windows-1252 (an em
+        // dash is one byte this reader can't decode), the engine drops what those fonts can't show,
+        // and a long title is drawn over two lines, so it is two text runs in the file.
+        const key = (x) => x.replace(/[^A-Za-z0-9]+/g, ' ').trim();
+        const hay = key(tp.text);
+        const titles = await page.evaluate(() => LSH_BLUEPRINT.trainee.slides.map(s => s.title));
+        const gone = titles.filter(t => key(t) && !hay.includes(key(t)));
+        if (gone.length) fail(`the Trainee blueprint PDF is missing: ${gone.join(' | ')}`);
+    }
     // Every blueprint link leads to the Portal's 🧭 Blueprint page: the old #/blueprint address forwards there
     // and opens no deck here. The Portal is stubbed so the test stays offline.
     const PORTAL_BP = 'https://cm-training-activity.pages.dev/blueprint';

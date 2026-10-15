@@ -1,8 +1,8 @@
 /* =========================================================
    🧭 BLUEPRINTS ON A COURSE PORTAL — the same file on every LSH course (EA/PA, Foundational,
    Case Management, PD Claims, MedSum & Demand); change it in one, copy it to all.
-   - Trainee blueprint: the course's 🧭 Orientation slides (orientSlides), published for everyone
-     at /blueprint.pdf. It's now rebuilt after EVERY deploy, not only when APP_BUILD is bumped:
+   - Trainee blueprint: the course's trainee slides (js/blueprint-content.js), drawn by the shared
+     engine and published for everyone at /blueprint.pdf, for the Portal's Blueprint page to link. It's now rebuilt after EVERY deploy, not only when APP_BUILD is bumped:
      the published copy is matched against APP_BUILD and the Worker's deployment id (/version),
      and the first admin page open after a deploy republishes it.
    - Trainer blueprint: every blueprint link leads to the Main Portal's 🧭 Blueprint page, never
@@ -32,7 +32,7 @@
 
   /* ---------- the Trainee blueprint (/blueprint.pdf): republished after every deploy ---------- */
   window.autoPublishBlueprint = async function () {
-    if (!isAdmin() || S().blueprintJob) return;
+    if (!isAdmin() || S().blueprintJob || !window.LSHBlueprint) return;
     const st = S();
     try {
       const d = await deployment();
@@ -43,12 +43,13 @@
       if (meta && meta.lockUntil && Date.now() < meta.lockUntil && meta.lockBuild === key) return;   // another admin is building it
       st.blueprintJob = true;
       await sharedSet('blueprint:meta', Object.assign({}, meta || {}, { lockUntil: Date.now() + 5 * 60 * 1000, lockBuild: key }));
-      const doc = await buildOrientationPdfDoc();
+      const doc = await window.LSHBlueprint.doc('trainee');
+      if (!doc) throw new Error('no trainee blueprint to publish');
       const b64 = doc.output('datauristring').split(',')[1];
       const at = new Date().toISOString();
       const ok = await sharedSet('blueprint:pdf', { build: build(), deploy: d, at, b64 });
       if (ok) {
-        st.blueprintMeta = { build: build(), deploy: d, at, pages: orientSlides().length };
+        st.blueprintMeta = { build: build(), deploy: d, at, pages: doc.getNumberOfPages() };
         await sharedSet('blueprint:meta', st.blueprintMeta);
         if (st.view === 'orientation' && typeof render === 'function') render();
       }
@@ -63,7 +64,9 @@
      older bookmark or link still lands in the right place. The Trainee blueprint is still published
      at /blueprint.pdf after every deploy, for the Portal to link to. */
   const PORTAL_BLUEPRINT = 'https://cm-training-activity.pages.dev/blueprint';
-  const BP_LINK = /^#\/blueprint\/?$/;
+  // 🧭 Orientation was the trainee-facing deck inside the course; it reads on the Portal now too,
+  // so its old address forwards there as well.
+  const BP_LINK = /^#\/(blueprint|orientation)\/?$/;
   function toPortalBlueprint() {
     if (!BP_LINK.test(location.hash)) return;
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* older browser: the hash stays */ }
@@ -75,9 +78,9 @@
   /* ---------- the shared Blueprint engine's settings for a course ---------- */
   const c = window.LSH_BLUEPRINT = window.LSH_BLUEPRINT || {};
   c.logo = c.logo || '/js/lsh-logo-dark.png';
-  c.trainee = null;   // the Trainee blueprint is the Orientation deck
+  // The trainee slides stay in blueprint-content.js: no deck opens here, but /blueprint.pdf is
+  // still built from them for the Portal's Blueprint page to link to.
   c.role = c.role || (() => null);   // no deck opens inside a program: the Blueprint page on the Portal has them
   c.version = c.version || versionText;
-  c.traineeTab = c.traineeTab || { label: 'Trainee blueprint', open: () => { if (typeof goto === 'function') goto('orientation'); else if (typeof render === 'function') { S().view = 'orientation'; render(); } } };
   window.lshBlueprintDeployment = Object.assign(deployment, { reset() { dep = null; } });   // for the test
 })();
