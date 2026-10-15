@@ -10,8 +10,9 @@
    signed in here (good for 5 minutes, so a copied link is no use later) and the link carries it.
      • Every link and window.open to the CMS or a Portal simulator gets the ticket on the way out (click, middle-click,
        New tab ↗), and LSHToolLinks.ticketed(url) gives a frame's address with it.
-     • Admins and the 👁 Trainee view are left alone: an admin's ticket never signs anyone in
-       (admins type the admin password), and a preview isn't a trainee.
+     • Admins get ?admin=1 instead of a ticket: the CMS signs out any trainee session left in that browser and
+       asks for the admin password (admins never arrive signed in as someone else). The 👁 Trainee view is a
+       preview, not an admin, and is left alone.
      • A ticket is asked for only when a tool is opened (one request; reused for 3 minutes).
      • No secret on the Worker, or the request fails: the link opens as it is (the CMS's own
        sign-in), so nothing is ever blocked.
@@ -22,6 +23,11 @@ const PORTAL_HOSTS = [/^([a-z0-9-]+\.)?cm-training-activity\.pages\.dev$/];     
 const isTool = (url)=>{ try{ const u = new URL(url, location.href);
   return CMS_HOSTS.some(re=>re.test(u.hostname)) || (PORTAL_HOSTS.some(re=>re.test(u.hostname)) && /^\/simulators(\.html|\/|$)/.test(u.pathname)); }catch(e){ return false; } };
 const signedTrainee = ()=> typeof state === "object" && !!state.traineeId && !state.isAdmin && !state.adminPreview && !!state.authToken;
+// An administrator here is an administrator there: a CMS link opened by an admin carries ?admin=1, so the CMS
+// drops whatever trainee session that browser still holds (an earlier ticketed test, a shared computer) and
+// asks for the admin password instead of opening as that trainee. The 👁 Trainee view is a preview, not an admin.
+const signedAdmin = ()=> typeof state === "object" && !!state.isAdmin && !state.adminPreview;
+const withAdmin = (url)=>{ try{ const u = new URL(url, location.href); if(!CMS_HOSTS.some(re=>re.test(u.hostname))) return url; u.searchParams.set("admin", "1"); return u.toString(); }catch(e){ return url; } };
 
 let cached = null, cachedAt = 0, pending = null;
 function ticket(){
@@ -38,6 +44,7 @@ function withTicket(url, t){
 }
 // The address with a fresh ticket (a CMS link, for a trainee); anything else comes back as it is.
 function ticketed(url){
+  if(isTool(url) && signedAdmin()) return Promise.resolve(withAdmin(url));
   if(!isTool(url) || !signedTrainee()) return Promise.resolve(url);
   return ticket().then(t=>withTicket(url, t));
 }
@@ -51,14 +58,14 @@ function openTool(url, target){
 }
 const __open = window.open;
 window.open = function(url, target, features){
-  if(url && isTool(url) && signedTrainee() && (!target || target === "_blank")) return openTool(String(url), target);
+  if(url && isTool(url) && (signedTrainee() || signedAdmin()) && (!target || target === "_blank")) return openTool(String(url), target);
   return __open.apply(window, arguments);
 };
 // Links: the ticket is added on the way out (left click, middle click, Ctrl/⌘-click).
 function onLink(e){
   if(e.defaultPrevented || (e.type === "auxclick" && e.button !== 1)) return;
   const a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
-  if(!a || !isTool(a.href) || !signedTrainee()) return;
+  if(!a || !isTool(a.href) || !(signedTrainee() || signedAdmin())) return;
   e.preventDefault();
   const newTab = e.type === "auxclick" || e.ctrlKey || e.metaKey || e.shiftKey || (a.target && a.target !== "_self");
   if(newTab) openTool(a.href, "_blank");

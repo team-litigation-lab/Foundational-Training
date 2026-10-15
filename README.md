@@ -16,17 +16,21 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 | Section | What it holds |
 |---|---|
 | 🏠 **Main Portal** | The LSH Training Portal (`https://cm-training-activity.pages.dev/`). It replaces the Portal link (← Training Directory) that `js/portal-link.js` adds, which is hidden here. |
-| 📚 **Modules** | `#/modules`: **the landing page.** Every way into the platform opens it — the Standard Foundational Training, its lessons in order, your progress, ▶ Resume where you left off, your certificate and the training pages. |
-| ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Its **own feature**, with its own button in the top bar — not a page of 📚 Modules and not a tab of 🛡 Admin Master Control. Admins open the same button and get every trainee's sheets. The questions aren't a slide in the lessons; finishing a lesson routes here, to that lesson's sheet, and its graded view (`#/kc`) also saves the answer sheet with its proper name (Google Drive, Word, the trainee folder). |
+| 📚 **Dashboard** | `#/modules`: **the landing page.** Every way into the platform opens it — the Standard Foundational Training, its lessons in order, your progress, ▶ Resume where you left off, your certificate and the training pages. |
+| ✍️ **Process Questions** | `#/process`: each lesson's answer sheet. Its **own feature**, with its own button in the top bar — not a page of 📚 Dashboard and not a tab of 🛡 Admin Master Control. Admins open the same button and get every trainee's sheets. The questions aren't a slide in the lessons; finishing a lesson routes here, to that lesson's sheet, and its graded view (`#/kc`) also saves the answer sheet with its proper name (Google Drive, Word, the trainee folder). |
 | 🛠 **Practice Lab** | `#/simulators`: the trainee's real-time 🟢 Practice Sessions at their own 🏛 law firm (`#/firm`, `#/session`), the 🧑‍🏫 activities done live with the trainer, demo preparation and Skill Building (see *Practice Lab* below). |
 | 👤 **My Dashboard ▾** | A trainee's own pages: 🎯 My Focus, 🏅 My Performance (`#/scorecard`, the trainee's grades from every grading system), 🗒 My Notes, 📋 Task Tracker and 📒 Monitoring Sheet. Admins get **🏅 Scorecards** here instead: Admin → Scorecards, every approved trainee's in one table. |
 | 🛡 **Admin Master Control** | The Admin screen (admins only, never in 👁 Trainee view). |
 
-**📚 Modules is the landing page, and *Modules* is its name on every LSH platform.** Signing in (a ticket from the LSH Training Portal or a trainee coming back to a saved session), the brand mark, a ← Back button, ← Back to Modules on a lesson, an old `#/dashboard` link and any page this program has turned off all open `#/modules`: one home, one button name, no second half-empty home page beside it. The engine's own dashboard and the pages this program doesn't use are aliases of it — `window.LSH_HOME_ALIASES` (`js/ft-updates.js`), which `js/lsh-program.js` sends to `#/modules` in both `goto()` and `render()`. The one deliberate exception: a trainer who signs in on the gate's **Admin Portal** tab lands on 🛡 Admin Master Control, the screen they asked for; 📚 Modules is one button away.
+**📚 Dashboard is the landing page, and this is the standard global set-up — every LSH program, trainer view and trainee view alike.** `#/modules` is the one home, named 📚 Dashboard in the top bar on every LSH platform. Every arrival that carries no address of its own opens it: a ticket from the LSH Training Portal, a trainer typing the admin password on the gate's **Admin Portal** tab, a trainee or trainer coming back to a saved session, the brand mark, a ← Back button, ← Back to Dashboard on a lesson, an old `#/dashboard` link and any page this program has turned off. One home, one button name, no second half-empty home page beside it — and no role gets a different landing page. The engine's own dashboard and the pages this program doesn't use are aliases of it — `window.LSH_HOME_ALIASES` (`js/ft-updates.js`), which `js/lsh-program.js` sends to `#/modules` in both `goto()` and `render()`.
 
-Blueprint (in 📚 Guides ▾ with 🧭 Orientation for admins), 👁 Trainee view and ⛶ View ▾ stay at the end of the top bar. **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback, Attendance · 📚 Modules: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Admin Master Control* shortens to *Admin* so the bar stays on one row.
+**No viewer lands in the middle of a lesson.** Signing in, or reopening a saved session, used to jump straight back into the last lesson or activity. The Dashboard carries **▶ Resume where you left off**, so the viewer takes that jump when they want it: `js/lsh-program.js` sends an *automatic* resume (the one the engine starts on sign-in and on boot) to 📚 Dashboard, and leaves the button's own resume alone. A real address — `#/day/3`, `#/tool/<id>`, a duplicated tab, ⧉ Open in a new tab — still opens that page directly: it is a link, not a landing.
 
-**What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Modules pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
+**📚 Dashboard fits one screen.** On a laptop or desktop (from 1001 px wide and 640 px tall) the banner, the lesson cards, the scores band, the page links and the actions all sit inside one viewport height and the page itself does not scroll (`js/lsh-dashboard.js`). The rule keys off the page (`main.main-dash`), never off the role, so a trainee, a trainer and a trainer in 👁 Trainee view all get the same fit. Only this page is locked: lessons, ✍️ Knowledge Check and 🛡 Admin Master Control scroll as before, and phones and short windows keep the normal scrolling layout. A program with more lesson cards than the height holds scrolls them inside the card grid, so nothing is ever cut off the bottom.
+
+Blueprint (in 📚 Guides ▾ with 🧭 Orientation for admins), 👁 Trainee view and ⛶ View ▾ stay at the end of the top bar. **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback, Attendance · 📚 Dashboard: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Admin Master Control* shortens to *Admin* so the bar stays on one row.
+
+**What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Dashboard pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
 
 - ✍️ **Knowledge Checks:** each lesson's best attempt, or the trainer's final score once they give one (`kcreview:<id>`; 70% passes).
 - 🟢 **Practice Sessions:** each session's trainer score, until then its automated checks (`sessions:<id>`, `labreview:<id>`).
@@ -211,7 +215,7 @@ A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2
 - **Where the score goes:** the score is saved in the trainee's progress (`state.progress`, so it reaches their record) and on the lesson card ("Finished · 76%", or "Knowledge Check · best 53%" before a pass). Each attempt's per-question scores and feedback are kept in `process:<id>` under `kc`.
 - **Certificate:** it needs every lesson finished, so it needs every Knowledge Check passed.
 
-**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet. Both belong to the ✍️ Process Questions feature — its own button in the top bar, with no page under 📚 Modules and no tab in 🛡 Admin Master Control.
+**Saving the answer sheet with its proper name** is on the Knowledge Check page, under the questions (📄 Save your answer sheet). The ✍️ Process Questions page (`#/process`) has the same tools for every sheet. Both belong to the ✍️ Process Questions feature — its own button in the top bar, with no page under 📚 Dashboard and no tab in 🛡 Admin Master Control.
 - **📄 Save to My Google Drive:** copies the answers and opens a new Google Doc already given the right name (e.g. `VA_Essentials_Process_Question_Answers (Jamie)`). It's created in the trainee's folder once they've saved its link (**📁 My Trainee Folder**). They paste the answers in with Ctrl+V.
 - **⬇ Download as Word:** gives a .doc with that name, to upload to the trainee folder.
 - **📝 Submit for Grading** (one button per lesson for a sheet shared by two lessons, with the best score so far) grades the sheet as that lesson's Knowledge Check. A sheet counts as submitted when a Knowledge Check is graded with all of its questions answered.
@@ -345,7 +349,7 @@ The 🖥 Demo preparation cards are gone: every demo is done live with the train
 
 **🧪 Skill Building** (`#fts-skills`): the daily Typing Test (twice a day) and Spelling Test (once a day), each with the tools to use (TypingClub or TypingTest.com; SpellQuiz or Spelling-Test.com), when to take it, the screenshot's file name and a sample. The tests are `TESTS` in `js/ft-rules.js` (shared as `window.FT_SKILL_TESTS`); the orientation slide only points here (`ftsGotoSkills()`).
 
-**Graded calls count in their lesson.** The main Call Simulator is the CMS's: every link opens it directly (`?calls=1&program=FT&line=<line>`, `&mode=graded` for the line's graded calls), signed in with the trainee's ticket. A graded call taken there is reported by the CMS to the Training Portal (its `/api/call-results`), which keeps it in this program's store as `callsim:<trainee id>`; the Worker lets the trainee read it but never write it. Reception (lesson 4), Calendar Management (5) and Intake (6) then show their best graded call on the session card ("🎯 Graded calls: best 82% · 2 calls") and on the lesson card ("📞 82%"), and the dashboard band shows the three lessons' best graded calls averaged. It's read once a page load and again when the trainee comes back to the tab (at most every two minutes).
+**Graded calls count in their lesson.** The main Call Simulator is the CMS's: every link opens it directly (`?calls=1&flow=standard&program=FT&line=<line>`, `&mode=graded` for the line’s graded calls). **`flow=standard` is what puts the trainee on the Standard Training call lines:** the CMS picks the Call Simulator’s tab from `flow` first, then `program`, and when neither names a tab it falls back to the program remembered in that browser — so a trainee who had used the CMS for Case Management work opened on the CM lines (`program=FT` is not one of the programs the CMS’s library stores, so it never cleared that). The links are signed in with the trainee's ticket. A graded call taken there is reported by the CMS to the Training Portal (its `/api/call-results`), which keeps it in this program's store as `callsim:<trainee id>`; the Worker lets the trainee read it but never write it. Reception (lesson 4), Calendar Management (5) and Intake (6) then show their best graded call on the session card ("🎯 Graded calls: best 82% · 2 calls") and on the lesson card ("📞 82%"), and the dashboard band shows the three lessons' best graded calls averaged. It's read once a page load and again when the trainee comes back to the tab (at most every two minutes).
 
 ### 🔐 Training tools open signed in (no CMS log-in page)
 
@@ -403,6 +407,33 @@ Every flat brand colour on the platform is painted as a **gradient**, and the pa
 - **The slides that already have a background of their own are untouched**: the Canva decks (`body.ft-fit`) and the Orientation deck with the trainers' design (`body.ft-orient`) both set their own background with `!important` on a more specific selector, so they win over everything in this file. That is by design — don't "fix" it.
 - **The standalone pages** carry the same palette in their own `<style>`, since they don't load the platform's scripts: `glossary.html` (with `bg-flag-law.webp` behind it), `kb.html` (which already had `kb-bg.webp`) and `ft/day17/word-game-1.html`, whose warm paper palette gets its own gradients and `bg-gavel-book.webp` behind the grain.
 
+## 🔤 Typography (every LSH page, this program and the next)
+
+One UI font stack across the platform and its satellite pages, written once as a token and used everywhere:
+
+```
+--font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+```
+
+- **Inter first** — it was drawn for screens and UI dashboards, so labels, numbers and dense tables stay sharp.
+- **Then the native OS stack** — San Francisco, Segoe UI, Roboto. A page whose visitor doesn't have Inter renders instantly in the system's own font, with no web-font download and no flash of unstyled text, which is why the satellite pages below load no font file at all.
+
+Where the token lives:
+
+```
+          index.html  ──  :root { --font-ui }  ──  body, .brand-text b, buttons …
+                              │   (the same declaration, page by page,
+                              │    because these pages load none of the
+                              ▼    platform's scripts or stylesheets)
+   glossary.html ·  kb.html  ──  :root { --font-ui }  ──  body, header b
+```
+
+- `index.html` (the platform) declares `--font-ui` in `:root` and `body` inherits it; the display face (`h1`–`h4`, `.display`) stays Fraunces and `.mono` stays IBM Plex Mono — this token is the **UI** font, not the whole type scale.
+- `glossary.html` and `kb.html` declare the same token in their own `:root` and use it for `body` and the brand mark. Nothing else about them changes: the sizes, line heights and layouts are exactly as they were.
+- `ft/day17/word-game-1.html` keeps its own typeset design (Gloock, Marcellus, Zilla Slab on warm paper) on purpose — it is a game board, not a UI surface.
+
+**A new page gets the token, not a new font choice.** Copy the `--font-ui` declaration into its `:root` and point `body` at it; don't add a Google Fonts link for a UI face.
+
 ## Files
 
 | Path | What it is |
@@ -420,7 +451,7 @@ Every flat brand colour on the platform is painted as a **gradient**, and the pa
 | `trainer/notes.json` | The facilitator's notes, keyed `"<day>:<slot>"`. |
 | `trainer/curriculum.json`, `trainer/img/` | The admin copy of the whole guide, and the facilitator-only screenshots. |
 | `build/curriculum/` | Imports Days 2–18 from the guide's Word file. |
-| `js/ft-process.js` | Process Questions and the Knowledge Checks: its own feature (its own top-bar button; no Modules page, no Admin tab). Each lesson's answer sheet, answered on the platform and graded (70% passes the lesson), saved to Google Drive or Word with the proper name; admins see every trainee's sheets on the same page. |
+| `js/ft-process.js` | Process Questions and the Knowledge Checks: its own feature (its own top-bar button; no Dashboard page, no Admin tab). Each lesson's answer sheet, answered on the platform and graded (70% passes the lesson), saved to Google Drive or Word with the proper name; admins see every trainee's sheets on the same page. |
 | `js/ft-monitoring.js` | The Training Monitoring Sheet: trainees fill it in (📒 Monitoring Sheet); Admin → 📒 Monitoring Sheets shows each entry with automated, rule-based feedback. |
 | `js/ft-rules.js` | Training Orientation and Rules: a slide presentation beside Virtual Assistant Essentials (always open, not counted as a lesson). |
 | `js/ft-orientation.js` | 🧭 Orientation: opens the Trainee blueprint (`trainee` in `js/blueprint-content.js`), which is also the Blueprint PDF (`/blueprint.pdf`). |
@@ -432,8 +463,8 @@ Every flat brand colour on the platform is painted as a **gradient**, and the pa
 | `js/ft-cases-data.js`, `build/make_cases.cjs` | The Training Library's case facts the sessions check against, generated from the CMS's `mock-cases.js`. |
 | `js/ft-drive.js` | The Task Tracker and the Monitoring Sheet in the trainee's Google Drive: the links, the checks, Admin → 📁 Drive Trackers. |
 | `js/lsh-tool-links.js` | Training tools open signed in: a fresh ticket on every CMS link (the same file in every LSH course repo). |
-| `js/lsh-program.js` | The program layout (the same file in every LSH course repo): the five sections in the top bar, 📚 Modules (`#/modules`, the landing page every way in opens) and its tabs, 🏅 Scorecard (`#/scorecard`) and Admin Master Control → 🏅 Scorecards. |
-| `js/ft-program.js` | This program's setup for the layout: the Modules pages, the Practice Lab's pages and what the Scorecard collects. |
+| `js/lsh-program.js` | The program layout (the same file in every LSH course repo): the sections in the top bar, 📚 Dashboard (`#/modules`, the landing page every way in opens) and its tabs, 🏅 Scorecard (`#/scorecard`) and Admin Master Control → 🏅 Scorecards. |
+| `js/ft-program.js` | This program's setup for the layout: the Dashboard pages, the Practice Lab's pages and what the Scorecard collects. |
 | `js/ft-activities.js` | Admin → 🗣 Feedback Style (the 📝 Activities page was taken off). |
 | `js/ft-theme.js` | The gradient theme and the photographs behind the cream pages (see *Colours and backgrounds*). Loads last, after every stylesheet it paints over. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the on-platform sheet, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too, with the Drive sheet's reader (`fromSheetCsv`) and the Monitoring Sheet's check (`gradeMonitorText`). |

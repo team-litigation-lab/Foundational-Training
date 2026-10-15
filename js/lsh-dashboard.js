@@ -7,6 +7,9 @@
      On a laptop or desktop they grow into the height that's left, so the dashboard fills the screen
      with no empty space under it.
    - Progress stats: one small band right under the day cards (not a side column, not above the days).
+   - One screen: on a laptop or desktop the whole landing page sits inside one viewport height and the page
+     itself does not scroll — the same for a trainee, a trainer and a trainer in 👁 Trainee view, since the
+     rule keys off the page (main.main-dash) and never off the role. See the block near the end of the CSS.
    - Top bar: the standard LSH logo, at the Training Portal's top-bar size, so the logo reads as clearly
      here as it does on the Portal.
    Loaded last, after the course's own update files.
@@ -231,6 +234,35 @@ img[alt="Legal Support Help"]{border-radius:8px;}
 .dash-main > .dash-side .tfb-dash .btn{color:#fff !important;}
 .dash-main > .dash-side .tfb-dash-stars button{color:#D5D8E3 !important;}
 .dash-main > .dash-side .tfb-dash-stars button.on, .dash-main > .dash-side .tfb-dash-stars button.lit{color:var(--orange) !important;}
+/* ============================================================
+   📚 Dashboard: one screen, no page scroll (laptops and desktops)
+   The landing page is read at a glance: the banner, the lesson cards, the scores band, the
+   page links and the actions all sit inside one viewport height, and the page itself does not
+   scroll. The same for every viewer — a trainee, a trainer, and a trainer in 👁 Trainee view —
+   because it keys off the page (main.main-dash), never off the role.
+   Only this page is locked: every other page (a lesson, the Admin screen, Knowledge Check)
+   scrolls as before. Phones and short windows keep the normal scrolling layout, and if a
+   program has more lesson cards than the height can hold, the card grid scrolls inside itself
+   rather than pushing the page taller — nothing is ever cut off the bottom.
+   ============================================================ */
+@media(min-width:1001px) and (min-height:640px){
+  html:has(main.main-dash){height:100%;}
+  body:has(main.main-dash){height:100%;overflow:hidden;}
+  body:has(main.main-dash) #app{height:100vh;min-height:0;overflow:hidden;}
+  body:has(main.main-dash) .topbar, body:has(main.main-dash) .footer-note{flex:0 0 auto;}
+  main.main-dash{flex:1 1 auto;min-height:0;overflow:hidden;}
+  /* the banner, the scores band, the page links and the actions take the height they need… */
+  main.main-dash > .dash-top, main.main-dash > .dash-layout > .dash-top{flex:0 0 auto;}
+  main.main-dash .dash-main > .dash-side,
+  main.main-dash .dash-main > .lp-pages,
+  main.main-dash .dash-main > .lp-home-acts,
+  main.main-dash .dash-main > .lp-home-stats{flex:0 0 auto;}
+  main.main-dash .dash-main > .lp-pages{margin-top:10px;}
+  main.main-dash .dash-main > .lp-home-acts{margin-top:8px;}
+  /* …and the lesson cards take what is left, scrolling inside the grid if there is more than fits */
+  main.main-dash .dash-main{min-height:0;}
+  main.main-dash .module-grid{min-height:0;overflow:auto;overscroll-behavior:contain;}
+}
 /* "Resume where you left off": a compact button, not a full-width bar */
 .dash-main .bottom-actions{background:none !important;border:none !important;padding:0 !important;margin:8px 0 0 !important;box-shadow:none !important;}
 .dash-main .bottom-actions .resume-btn{padding:7px 16px;font-size:13.5px;border-radius:999px;}

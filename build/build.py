@@ -62,9 +62,24 @@ if not n:
 m = re.search(r'const DAY_FILES = window\.EA_DAY_FILES \|\| \{\};\n.*?\nconst MISSING_DAYS = [^\n]*\nif\(MISSING_DAYS\.length\)\{\n.*?\n\}\n', s, flags=re.S)
 if not m:
     sys.exit("MISSING: the DAY_FILES / DAYS / MISSING_DAYS block")
-s = s[:m.start()] + days_js + "\nconst DAY_FILES = {};\nconst MISSING_DAYS = [];\n" + s[m.end():]
+# DAY_FILES and MISSING_DAYS described the engine's per-day script tags, which are gone above:
+# with no files to load there is nothing to miss, and nothing reads either name any more.
+s = s[:m.start()] + days_js + "\n" + s[m.end():]
 # The EA/PA saved-place migrations (DAY_LAYOUTS: its topic orders by title; QC_OPTION_MOVES: its Quick
 # Check answers) are about the EA/PA days: here they'd move trainees' places in these lessons.
+rep('''/* Each day's topic order before a change that added or moved topics, oldest first.
+   When a trainee next signs in, migrateDayOrder() moves their saved place and Quick Check
+   answers to the same topic in today's order. To add or reorder topics later, add an entry
+   here with the day's topic titles as they were before the change. A topic moved to another
+   day is found there by its title (titles are unique across the course). Layouts up to and
+   including "email-management" had no divider slides. */''',
+    '''/* Each day's topic order before a change that added or moved topics, oldest first,
+   so migrateDayOrder() can move a trainee's saved place to the same topic in today's
+   order. It is empty for this program: these lessons are built from build/lessons/,
+   they have never been reordered, and the EA/PA portal's own layouts describe the
+   EA/PA days \u2014 applying them here would move trainees' places in the wrong course.
+   Add an entry (the day's topic titles as they were) only when a lesson's topics are
+   actually reordered. While it is empty, migrateDayOrder() has nothing to do. */''')
 s, n = re.subn(r'const DAY_LAYOUTS = \[\n.*?\n\];\n', 'const DAY_LAYOUTS = [];\n', s, count=1, flags=re.S)
 s, n2 = re.subn(r'const QC_OPTION_MOVES = \{.*?\};\n', 'const QC_OPTION_MOVES = {};\n', s, count=1, flags=re.S)
 if not (n and n2):
@@ -96,6 +111,9 @@ if not (n4 and n5):
 # ---------- 3. branding ----------
 # The standardized LSH logo (the same files as the Training Portal's): the full logo, js/lsh-logo-dark.png, and the
 # square mark, favicon.png. Both have a white outline, so they read on navy and on white.
+# These two constants put LSH's logos in place of the EA/PA ones. They are written as data URIs
+# here, as the engine expects, and build/ft_perf_patches.py then points them at the two files
+# instead (both are deployed as static assets anyway) so they don't weigh down the document.
 import base64
 def data_uri(path):
     return "data:image/png;base64," + base64.b64encode(open(os.path.join(ROOT, path), "rb").read()).decode()
@@ -103,6 +121,14 @@ s, n1 = re.subn(r'const LOGO_FULL_DATAURI = "data:image/png;base64,[^"]*";', lam
 s, n2 = re.subn(r'const LOGO_ICON_DATAURI = "data:image/png;base64,[^"]*";', lambda m: f'const LOGO_ICON_DATAURI = "{data_uri("favicon.png")}";', s, count=1)
 if not (n1 and n2):
     sys.exit(f"MISSING logo anchors: {n1} {n2}")
+# The comment at the top of the engine's main script describes its per-day files, which
+# this build replaced with the lessons above.
+rep("""/* Each day's lessons live in js/days/dayN/lessons.js, loaded just above this script.
+   A day whose file didn't load is left out and a banner asks the trainee to refresh,
+   rather than the whole portal stopping. */""",
+    """/* The lessons are built into this file by build/build.py, from build/lessons/lessonNN.js \u2014
+   they are not loaded from js/days/dayN/lessons.js the way the EA/PA portal loads its days,
+   so there is no per-day file that can fail to load and nothing to refresh past. */""")
 rep("<title>LSH EA/PA Upskill Program</title>", "<title>LSH Foundational Training Program</title>")
 rep('<b>LSH EA/PA Upskill Program</b><span>10-Day Interactive Training</span>', '<b>LSH Foundational Training</b><span>Standard Foundational Training</span>')
 rep("LSH EA / PA Upskill Program", "LSH Foundational Training Program")
@@ -219,11 +245,13 @@ if "state.portalOnly && !state.isAdmin" not in s:
         '''${(state.portalOnly && !state.isAdmin) ? "" : `<button class="btn btn-primary" style="margin-top:14px;" onclick="openAdmin()">🛡 Sign In as Trainer</button>`}''')
 
 # ⚡ First-load speed (build/ft_perf_patches.py): nothing blocking in the page head,
-# loadAll()'s reads batched, and the trainee's record fetched once instead of twice.
-# Each patch is skipped when the engine already carries it, so this stops being
-# needed once EA-PA-TRAINING has them. See that file for why and for the numbers.
+# loadAll()'s reads batched, the trainee's record fetched once instead of twice, and
+# the inline base64 assets (logos, presenter photo, signature font, handout workbooks)
+# written out as files under ROOT. Each patch is skipped when the engine already
+# carries it, so this stops being needed once EA-PA-TRAINING has them. See that file
+# for why and for the numbers.
 from ft_perf_patches import apply as ft_perf_patches
-s = ft_perf_patches(s, sys.exit)
+s = ft_perf_patches(s, sys.exit, ROOT)
 
 open(os.path.join(ROOT, "index.html"), "w", encoding="utf8").write(s)
 # js/eapa-updates.js: the EA/PA update pack, with the same branding.
