@@ -142,6 +142,10 @@ def img_url(media, trainer, day):
 def esc(s): return H.escape(s, quote=True)
 def drive_kind(url, context):
     if "/folders/" in url: return "doc"
+    # a Canva deck, a Slides deck, a Doc or a Sheet is read, never watched: the viewer opens it at
+    # document proportions and without the "do you want to watch this video?" prompt
+    if re.search(r"canva\.com/design/|docs\.google\.com/(document|spreadsheets|presentation)/", url, re.I): return "doc"
+    if re.search(r"loom\.com/|youtube\.com/watch|youtu\.be/", url, re.I): return "video"
     return "video" if re.search(r"video|watch|recording|tutorial|demo|listen|audio|lecture", context, re.I) else "doc"
 
 def canva_view(url):
@@ -153,6 +157,25 @@ NATIVE_DECKS = {"DAGnZuriur8": (4, "Receptionist Training")}
 def lesson_link(day, title):
     return f'<a href="#" class="ft-lesson-link" onclick="goto(\'day\',{day});return false;">📘 Open Lesson {day}: {esc(title)} on the platform</a>'
 
+# Everything we hand the trainees — the instructions, the videos and the resource sheets — opens in
+# the platform's pop-out viewer rather than a new tab: Drive files and folders, Google Docs, Sheets
+# and Slides, Canva decks and Loom recordings. js/ft-updates.js (lvEmbedUrl) turns each of these into
+# its embed address; keep the two lists in step. A third-party tool the trainee has to go and *use*
+# (the typing and spelling tests, iLovePDF, the NPI registries, the WinRAR download, the HIPAA course,
+# the Smart Advocate knowledge base) is not a resource of ours and mostly refuses to be framed, so it
+# stays an ordinary link that opens in a new tab.
+EMBEDDABLE = re.compile(r"""
+    drive\.google\.com/(file/d/|open\?|uc\?|drive/(u/\d+/)?folders/)
+  | docs\.google\.com/(document|spreadsheets|presentation)/d/
+  | canva\.com/design/
+  | loom\.com/(share|embed)/
+  | youtube\.com/watch\?|youtu\.be/
+""", re.I | re.X)
+
+def viewer_link(url, label_html, context):
+    title = re.sub(r"\s+", " ", context).strip()[:90] or "Training material"
+    return f'<a class="viewer-link" data-kind="{drive_kind(url, context)}" data-title="{esc(title)}" href="{esc(url)}">{label_html}</a>'
+
 def link_html(url, label_html, context, trainer):
     if blocked(url):
         return "<i>[link not included on the platform]</i>"
@@ -161,10 +184,10 @@ def link_html(url, label_html, context, trainer):
         return lesson_link(*NATIVE_DECKS[m.group(1)])
     if "canva.com/design/" in url:
         view, _ = canva_view(url)
-        return f'<a href="{esc(view)}" target="_blank" rel="noopener noreferrer">{label_html if not label_html.startswith("https://www.canva.com") else esc(view)}</a>'
-    if re.search(r"drive\.google\.com/(file/d/|open\?|drive/(u/\d+/)?folders/)", url):
-        title = re.sub(r"\s+", " ", context).strip()[:90] or "Google Drive"
-        return f'<a class="viewer-link" data-kind="{drive_kind(url, context)}" data-title="{esc(title)}" href="{esc(url)}">{label_html}</a>'
+        label = label_html if not label_html.startswith("https://www.canva.com") else esc(view)
+        return viewer_link(view, label, context)
+    if EMBEDDABLE.search(url):
+        return viewer_link(url, label_html, context)
     return f'<a href="{esc(url)}" target="_blank" rel="noopener noreferrer">{label_html}</a>'
 
 def runs_html(runs, context, trainer, day):

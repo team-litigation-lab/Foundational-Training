@@ -816,6 +816,15 @@ function lvEmbedUrl(raw){
   m = url.match(/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([a-zA-Z0-9_-]+)/i); if(m) return `https://drive.google.com/embeddedfolderview?id=${m[1]}#grid`;
   m = url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/); if(m) return `https://www.youtube.com/embed/${m[1]}`;
   m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/i); if(m) return `https://www.youtube.com/embed/${m[1]}`;
+  // Google Docs, Sheets and Slides: the activity sheets, worksheets and answer keys the guide hands out.
+  // A /edit link asks the viewer to sign in and can't be framed; /preview (/embed for Slides) can.
+  m = url.match(/docs\.google\.com\/(document|spreadsheets|presentation)\/d\/(?:e\/)?([a-zA-Z0-9_-]+)/i);
+  if(m) return `https://docs.google.com/${m[1]}/d/${m[2]}/` + (m[1] === "presentation" ? "embed" : "preview");
+  // Canva: the facilitator and training decks.
+  m = url.match(/canva\.com\/design\/([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+)/i);
+  if(m) return `https://www.canva.com/design/${m[1]}/${m[2]}/view?embed`;
+  // Loom: the recorded walk-throughs (Day 6's calendaring videos).
+  m = url.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/i); if(m) return `https://www.loom.com/embed/${m[1]}`;
   return null;
 }
 function lvFit(){
