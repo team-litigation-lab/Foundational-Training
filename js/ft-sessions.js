@@ -43,14 +43,20 @@ const mins = t => { const m = String(t || "").match(/^(\d{1,2}):(\d\d)/); return
 const fmtDate = iso => { const m = String(iso || "").match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? `${m[2]}/${m[3]}/${m[1]}` : String(iso || ""); };
 const PHASES = ["Intake", "Treating", "Pending Demand", "BI Demanded", "BI Settlement Negotiations", "BI Settled", "UM or UIM Demanded", "UM or UIM Settled", "Litigation Discovery", "Mediation", "Arbitration", "Deposition", "Disbursement"];
 const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
-const calls = (line, graded) => CMS + "?" + new URLSearchParams(Object.assign({calls:"1", program:"FT", from:"standard", line}, graded ? {mode:"graded"} : {}));
+// The CMS Call Simulator's lines. flow=standard is what picks the Standard Training tab: the CMS reads
+// flow first (its FLOW map: standard \u2192 FT) and only then program, and when neither resolves to a tab it
+// falls back to the program remembered in that browser \u2014 which is how a trainee who had opened the CMS for
+// Case Management work landed on the CM call lines. program=FT isn't a program the CMS's library knows
+// (reception, intake, cm, ea, md, pd), so it never cleared that remembered value; flow=standard does not
+// depend on it. The line and mode still open the call itself.
+const calls = (line, graded) => CMS + "?" + new URLSearchParams(Object.assign({calls:"1", flow:"standard", program:"FT", from:"standard", line}, graded ? {mode:"graded"} : {}));
 
 /* ---------- the sessions: tools, the form, and the checks ---------- */
 // field: [name, label, type ("text" | "date" | "time" | "number" | "textarea" | "select" | "checks" | "check"), options?]
 const SESSIONS = [
   {id:"reception", icon:"☎️", title:"Reception Mock Calls", lesson:4,
     about:"Answer your firm’s front desk live in the CMS Call Simulator: verify the caller, find the file and handle the call the way your firm’s rules say. Then write the call note here.",
-    tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&drill=1&from=standard"]],
+    tools: () => [["🎯 Take a graded call", calls("Reception Mock Calls", true)], ["📞 Practice a caller", calls("Reception Mock Calls")], ["☎️ Front Desk Drill", CMS + "?program=reception&flow=reception&drill=1&from=standard"]],
     fields: f => [["greeting", "The greeting you used", "text"], ["caller", "Caller’s name", "text"], ["role", "Caller’s role", "select", ["Client", "Authorized person on the file", "Unauthorized family member or friend", "Medical provider", "Insurance adjuster", "Opposing counsel", "Media", "Other"]],
       ["callback", "Callback number", "text"], ["besttime", "Best time to call back", "text"], ["caseRef", "Case (client name or case number)", "text"], ["need", "What they need", "textarea"],
       ["urgency", "Urgency", "select", ["Routine", "Urgent: routed now"]], ["routed", "Routed to (name and ext)", "text"], ["verified", "I verified the caller before discussing the case (or didn’t discuss it)", "check"], ["initials", "Your initials", "text"]],
