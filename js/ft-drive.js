@@ -18,6 +18,16 @@ const TR = window.FTTrackerRules;
 const e = v => esc(String(v == null ? "" : v));
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
+// 👁 Trainee view: a trainer previewing the portal has no trainee of their own, so the pages show empty and save nothing
+const preview = () => !!state.adminPreview && !state.traineeId;
+const PREVIEW_ID = "__preview";
+const previewNote = () => preview() ? `<div class="card fdr-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved; a trainee keeps their own links on their own account.</div>` : "";
+const previewOnly = () => { if(!preview()) return false; toast("👁 Trainee view — nothing is saved here. A trainee saves this on their own account."); return true; };
+const ready = () => {
+  if(preview()){ if(D.id !== PREVIEW_ID){ D.id = PREVIEW_ID; D.drive = {days:{}}; D.review = {days:{}}; } return true; }
+  if(D.id !== state.traineeId){ load(); return false; }
+  return true;
+};
 const today = () => TR.ptDate();
 const isGoogle = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u || "").trim());
 const tScore = r => r && r.trainerScore != null && r.trainerScore !== "" && isFinite(Number(r.trainerScore)) ? Math.round(Number(r.trainerScore)) : null;
@@ -58,10 +68,10 @@ function rulesHtml(res){
     ${has(res.comment) ? `<div class="fdr-review fdr-trainer"><b>🧑‍🏫 Your trainer</b><p>${e(res.comment).replace(/\n/g, "<br>")}</p></div>` : ""}</div>`;
 }
 function renderTrackerPage(){
-  if(D.id !== state.traineeId){ load(); return `<div class="card fdr-card">Loading your tracker links…</div>`; }
+  if(!ready()) return `<div class="card fdr-card">Loading your tracker links…</div>`;
   const d = day(), links = dayLinks(d), res = D.review.days[d];
   const days = [...new Set([today()].concat(Object.keys(D.drive.days), Object.keys(D.review.days)))].sort().reverse().slice(0, 15);
-  return `<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Task Tracker</p><h1>📋 Daily Task Tracker</h1>
+  return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Task Tracker</p><h1>📋 Daily Task Tracker</h1>
       <p>Keep your LSH Daily Task Tracker in your VA Output folder and update it before the end of every shift. Each day, add the links to that day’s outputs. The system checks your tracker every night (and when you press ✅ Check now): every open task needs its Daily Note for the day, and the day needs its output links. Your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>🗓 ${e(TR.fmtDate(d))}</h2>
@@ -80,9 +90,9 @@ function linkRow(l, i){
     ${l.url ? `<a class="btn btn-ghost btn-sm" href="${e(l.url)}" target="_blank" rel="noopener noreferrer">↗</a>` : ""}</div>`;
 }
 function renderMonitorPage(){
-  if(D.id !== state.traineeId){ load(); return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`; }
+  if(!ready()) return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`;
   const m = D.review.monitor;
-  return `<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Monitoring Sheet</p><h1>📒 Training Monitoring Sheet</h1>
+  return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Monitoring Sheet</p><h1>📒 Training Monitoring Sheet</h1>
       <p>Fill in your Training Monitoring Sheet in your VA Output folder as soon as a discussion is fully covered: the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it every night and when you press ✅ Check now; your trainer adds their score and comments.</p>
       <p><a class="btn btn-ghost btn-sm" href="${e((window.FT_MONITOR_DOC || {}).open || "#")}" target="_blank" rel="noopener noreferrer">📄 The Monitoring Sheet template ↗</a></p></div>
     ${linksCard()}
@@ -98,6 +108,7 @@ function renderMonitorPage(){
 window.FTDrive = {
   day(d){ D.day = d; render(); },
   async saveLinks(){
+    if(previewOnly()) return;
     const v = k => String((document.getElementById("fdr-" + k) || {}).value || "").trim();
     const bad = ["folder", "tracker", "monitor"].filter(k => v(k) && !isGoogle(v(k)));
     if(bad.length){ toast("Paste Google Drive links (they start with https://drive.google.com/ or https://docs.google.com/)."); return; }
@@ -108,6 +119,7 @@ window.FTDrive = {
   },
   addLink(){ const box = document.getElementById("fdrLinks"); box.insertAdjacentHTML("beforeend", linkRow({}, box.children.length)); },
   async saveDay(){
+    if(previewOnly()) return;
     const links = [...document.querySelectorAll("#fdrLinks .fdr-link")].map(r => ({label:r.querySelector(".fdr-label").value.trim(), url:r.querySelector(".fdr-url").value.trim()})).filter(l => l.url);
     if(links.some(l => !isGoogle(l.url))){ toast("Each output link must be a Google Drive link from your VA Output folder."); return; }
     if(!links.length){ toast("Add at least one link to the day’s outputs."); return; }
@@ -115,7 +127,7 @@ window.FTDrive = {
     toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ The day’s links are submitted."); render();
   },
   async check(){
-    if(D.busy) return;
+    if(D.busy || previewOnly()) return;
     if(!D.drive.tracker && !D.drive.monitor){ toast("Save your Google Drive links first."); return; }
     D.busy = true; render();
     try{
@@ -129,7 +141,7 @@ window.FTDrive = {
 
 const __render = window.render;
 window.render = function(){
-  if(!["tracker", "monitoring"].includes(state.view) || !isTrainee()) return __render.apply(this, arguments);
+  if(!["tracker", "monitoring"].includes(state.view) || !(isTrainee() || preview())) return __render.apply(this, arguments);
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-fdr">${state.view === "tracker" ? renderTrackerPage() : renderMonitorPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
@@ -232,6 +244,7 @@ window.ftDriveItems = ctx => {
 (function(){ const s = document.createElement("style"); s.id = "ft-drive"; s.textContent = `
 main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .fdr-hero > p{margin:0 0 12px;color:var(--ink-soft);font-size:15px;} .fdr-hero a.btn{text-decoration:none;}
+.fdr-preview{padding:10px 14px;margin:0 0 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:13.5px;}
 .fdr-card{padding:18px 20px;margin-bottom:16px;} .fdr-card h2{margin:0 0 6px;color:var(--navy);font-size:20px;} .fdr-card h3{margin:14px 0 4px;color:var(--navy);font-size:16px;}
 .fdr-muted{color:var(--ink-soft);font-size:13.5px;} .fdr-err{color:var(--danger);font-weight:700;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
