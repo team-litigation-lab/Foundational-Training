@@ -33,11 +33,15 @@
   --bg:#EEF0F6;
   --paper:#FFFFFF;
   --ink:#1B1E2E;
-  --ink-soft:#5B6178;
+  /* Muted ink. #5B6178 was tuned for a white card; on a translucent one it
+     is read off the page's photo and measures 2.5:1, so it steps down to
+     the darkest grey that still reads as muted (4.8:1 there, 13.3:1 on
+     white). Same step the Portal's --slate took. */
+  --ink-soft:#2B2F3E;
   --line:#DCE0EA;
   --success:#3F7D58;
   --success-bg:#E7F1EA;
-  --danger:#B54A3F;
+  --danger:#9B3A30;   /* 4.4:1 on its own chip before, 5.8:1 now */
   --danger-bg:#F7E9E6;
   --radius:14px;
   --shadow:0 1px 2px rgba(22,24,41,.04), 0 8px 24px -12px rgba(22,24,41,.18);
@@ -2529,6 +2533,55 @@ em.warn{font-style:normal;color:var(--danger);}
 .ho-bp{display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:16px;border-left:5px solid var(--navy);}
 .ho-bp-i{font-size:30px;} .ho-bp b{display:block;color:var(--navy);font-size:15px;} .ho-bp span{font-size:13px;color:var(--ink-soft);} .ho-bp .btn{margin-left:auto;white-space:nowrap;}
 @media(max-width:760px){.ho-bp{flex-wrap:wrap;} .ho-bp .btn{margin-left:0;}}
+
+/* ============================================================================
+   The LSH standard page style — the see-through surfaces every LSH site shares.
+   A vendored copy of the layer in the Training Portal's theme.css, kept here so
+   this program deploys on its own and no other site's deploy can restyle it.
+   Two halves, the same as the Portal's: the page sits on a photo behind a wash,
+   and the panels on top of it are translucent so the photo carries on
+   underneath instead of stopping at every card's edge.
+   This program keeps its own backdrop (img/ft-page-bg.webp, the gavel and law
+   books), as each program does.
+   ========================================================================= */
+:root{
+  /* .70 white over the backdrop at this strength keeps --ink above 9:1, and
+     the muted --ink-soft above 4.5:1, which is what sets these two numbers. */
+  --surface-glass:rgba(255,255,255,.60);
+  --surface-blur:saturate(118%) blur(10px);
+}
+/* The photo was at .20, which the opaque cards then covered almost entirely.
+   At .40 it reads through the glass without the text on top of it losing
+   contrast — the page's own measurement, not a guess. */
+body::before{opacity:.40;}
+.module-card,
+.card{
+  background:var(--surface-glass);
+  backdrop-filter:var(--surface-blur);
+  -webkit-backdrop-filter:var(--surface-blur);
+}
+/* Muted text on a translucent panel is read off the photo, not off white:
+   --ink-soft (#5B6178) measures 4.6:1 there, which holds, but the paler greys
+   used for small print do not, so they step to --ink-soft. */
+.empty-note{background:rgba(246,247,251,.72);backdrop-filter:var(--surface-blur);-webkit-backdrop-filter:var(--surface-blur);}
+/* The admin tab strip sits straight on the glass over the darkest part of the
+   photo, where the muted ink reaches 4.3:1. An inactive tab is navigation, so
+   it takes the full ink; the active one keeps the navy and its orange rule. */
+.admin-tab-btn:not(.active){color:var(--ink);}
+/* Orange as lettering cannot clear AA on the photo — the deepest brand orange
+   reaches 3.5:1 — so the admin eyebrow takes the navy ink (6.5:1) and keeps
+   its size, weight and tracking to stay a label. */
+.eyebrow{color:var(--navy);}
+/* On the navy dashboard rail this button is a translucent orange with a white
+   label, 3.6:1. Solid orange with the dark label every other primary button
+   uses reads 5.8:1. */
+.dash-side .tfb-dash .btn-primary{background:var(--orange);color:#241304;}
+/* Printing drops both: a photo behind a printed page costs ink, and a
+   backdrop-filter prints as a grey slab. */
+@media print{
+  body::before{display:none;}
+  .module-card,.card,.empty-note{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;}
+}
 </style>
 <script src="/js/portal-gate.js?v=2026.10.15-dashboard"></script>
 </head>

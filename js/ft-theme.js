@@ -193,11 +193,12 @@ ${Object.keys(SURFACES).map(function (t) { return block(t, SURFACES[t]); }).join
 /* ---------- the one-off tints ---------- */
 ${sel(SHEEN)}{background-image:var(--grad-sheen);}
 
-/* The dashboard's feedback widget forces white text on its buttons
-   (js/lsh-dashboard.js), and the light end of the orange gradient would leave
-   that too faint to read. There the button takes the deep orange instead — the
-   shade the palette already pairs with white, on .btn-primary:hover. */
-.dash-main > .dash-side .tfb-dash .btn.btn-primary{background-image:var(--grad-orange-deep);}
+/* The dashboard's feedback widget used to force white text on its buttons and
+   took the deep orange to carry it, which still only reached 3.6:1. The label
+   is the dark one every other primary button uses now (js/lsh-dashboard.js),
+   so the button takes the standard orange gradient with it: dark on the
+   gradient's deepest stop is 4.7:1, where white on the deep gradient was not
+   readable at either end. */
 
 /* The page's gradient is pinned to the viewport rather than stretched down the
    whole document, so a long page shades the same way as a short one. It stays
