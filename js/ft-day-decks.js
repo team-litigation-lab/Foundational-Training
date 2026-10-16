@@ -612,7 +612,16 @@ async function saveExtras(){
 root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
-  state: () => DD, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day, discussionDay, instructionOnlyDays,
+  state: () => DD,
+  // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
+  reveal(elOrSel){
+    const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;
+    const sheet = el && el.closest(".ftdd-sheet"); if(!sheet) return false;
+    if(el.offsetParent) return true;
+    const top = [...sheet.children].find(k => k === el || k.contains(el)); if(!top) return false;
+    for(let p = 0; p < (DD.pages || 1); p++){ DD.page = p; fitSheets(); if(el.offsetParent) return true; }
+    return false;
+  }, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day, discussionDay, instructionOnlyDays,
   // the no-discussion day's last slide, "From your trainer"
   trainer(n){ open(n, 999); },
   async addX(n){
