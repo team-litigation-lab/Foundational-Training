@@ -171,7 +171,7 @@ const DAYS = [
     {t:"Live Demo after the discussion", kind:"Demo", at:"room"},
     {t:"Tutorial Demo Recording: Drafting and Sending the Reduction Request and Closing Statement", kind:"Activity", at:"room"},
     {t:"Initial Net Sheet Drafting and Medical Reduction Request", kind:"Demo", at:"room"},
-    {t:"Final Net Sheet Drafting and Closing Statement Drafting", kind:"Demo", at:"room"}
+    {t:"Final Net Sheet Drafting and Closing Statement Drafting (Reduction / Closing & Settlement Demo)", kind:"Demo", at:"trainer", id:"settlement-demo"}
   ]}
 ];
 

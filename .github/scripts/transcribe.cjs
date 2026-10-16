@@ -31,6 +31,19 @@ const failures = []; const fail = m => failures.push(m);
   const d9 = await page.evaluate(() => (FTDays.of(9).items || []).find(x => /Transcription/.test(x.t)));
   if (!d9 || d9.at !== 'tool' || d9.id !== 'transcribe') fail(`Day 9's transcription step doesn't point at the tool: ${JSON.stringify(d9)}`);
 
+  // Day 9's deck: the interview recordings open the activity (not a video with "What I learned"), the sample is a document
+  await page.evaluate(() => FTDayDecks.open(9)); await page.waitForTimeout(1500);
+  const deck = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); const t = document.querySelectorAll('.k-transcribe');
+    if (t.length) return { n: t.length, learn: document.querySelectorAll('.ftdd-learn').length, sample: [...document.querySelectorAll('.ftdd-tile')].some(x => /Sample Minutes/.test(x.innerText) && x.classList.contains('k-file')) }; } return null; });
+  if (!deck || deck.n !== 2) fail(`Day 9's deck doesn't open the two recordings in the Transcription Activity: ${JSON.stringify(deck)}`);
+  else {
+    if (deck.learn) fail('Day 9\'s transcription slide offers "📝 What I learned" on a recording');
+    if (!deck.sample) fail('Day 9\'s Sample Minutes is not shown as a document');
+    await page.click('.k-transcribe >> nth=1'); await page.waitForTimeout(1500);
+    if (!/Transcription - Recording 2 \(Tara\)/.test(await page.evaluate(() => state.view === 'transcribe' ? document.querySelector('main').innerText : ''))) fail('the deck\'s Recording 2 tile didn\'t open Recording 2 of the activity');
+    await page.evaluate(() => FTTranscribe.tab(1));
+  }
+
   // the request, then start
   await page.evaluate(() => goto('transcribe')); await page.waitForTimeout(1500);
   let txt = await page.evaluate(() => document.querySelector('main').innerText);
@@ -89,5 +102,5 @@ const failures = []; const fail = m => failures.push(m);
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Transcription Activity test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Transcription Activity test passed (the Drafting Tools card and Day 9\'s step; the request; ▶ start opens the recording; Alt+T timestamps; every check passes on complete minutes and a wrong file name misses; the Word file named by the convention; submitted, saved and read-only; Recording 2 its own; the trainer sees the minutes and both recordings in Trainer Inputs).');
+  console.log('Transcription Activity test passed (the Drafting Tools card and Day 9\'s step; Day 9\'s deck opens each recording\'s assignment and shows the sample as a document; the request; ▶ start opens the recording; Alt+T timestamps; every check passes on complete minutes and a wrong file name misses; the Word file named by the convention; submitted, saved and read-only; Recording 2 its own; the trainer sees the minutes and both recordings in Trainer Inputs).');
 })().catch(e => { console.error(e); process.exit(1); });

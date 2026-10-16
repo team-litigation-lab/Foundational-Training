@@ -222,6 +222,8 @@ function renderAdmin(){
 
 window.FTTranscribe = {
   tab(n){ T.n = Number(n) === 2 ? 2 : 1; render(); },
+  // from Day 9's deck: straight to that recording's assignment
+  openRec(n){ T.n = Number(n) === 2 ? 2 : 1; goto("transcribe"); },
   start(){ const r = run(T.n); if(!r.startedAt){ r.startedAt = new Date().toISOString(); save(); } render(); },
   set(k, v){ const r = run(T.n); if(r.submittedAt) return; r.f[k] = v; r.updatedAt = new Date().toISOString(); save();
     if(k === "discussion"){ const c = document.querySelector("#tr-discussion + .tr-count"); if(c) c.textContent = `${words(v)} words · ${stamps(v)} timestamps`; }

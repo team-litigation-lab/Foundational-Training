@@ -66,7 +66,7 @@ window.LSH_PROGRAM = {
     admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],
     lab: ["calscores", "sessions", "trainerinputs"],
-    scorecard: ["scorecards"]
+    scorecard: ["scorecards", "ranking"]
   },
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",

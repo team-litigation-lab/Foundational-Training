@@ -94,6 +94,7 @@ function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
+  if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
   if(/shadowing/i.test(h)) return {ic: "👀", label: "Shadowing"};
@@ -111,6 +112,8 @@ function linkKind(href, label, dk){
   if(/docs\.google\.com\/spreadsheets\//.test(u)) return {k: "sheet", ic: "📊", act: "Open the sheet"};
   if(/docs\.google\.com\/presentation\//.test(u)) return {k: "slides", ic: "📽", act: "Open the slides"};
   if(/docs\.google\.com\/document\//.test(u)) return {k: "doc", ic: "📄", act: "Open the document"};
+  // a sample or template is a document to read, whatever the lines around it say about recordings
+  if(/drive\.google\.com\/file\//.test(u) && /^\s*(sample|template)\b/i.test(label || "")) return {k: "file", ic: "📄", act: "Open the file"};
   if(/loom\.com|youtube\.com|youtu\.be/.test(u) || dk === "video" || VIDEO_WORDS.test(label || "")) return {k: "video", ic: "🎬", act: "▶ Watch"};
   if(/canva\.com/.test(u)) return {k: "canva", ic: "🎨", act: "Open the deck"};
   if(/drive\.google\.com\/file\//.test(u)) return {k: "file", ic: "📄", act: "Open the file"};
@@ -151,6 +154,16 @@ function visual(html){
       el.innerHTML = `<span class="ftdd-tile-ic">${lk.ic}</span><span class="ftdd-tile-t"><b></b><small>${lk.act}</small></span>`;
       el.querySelector("b").textContent = name;
       return el;
+    });
+    // 🎧 an interview recording is the Transcription Activity (js/ft-transcribe.js), not a video to watch: its tile
+    // opens that recording's assignment (the request, the recording, the minutes, submit)
+    tiles.forEach((x, j) => {
+      const m = /^Interview Recording\s*(\d)/i.exec(x.querySelector("b").textContent);
+      if(!m || !window.FTTranscribe) return;
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = "ftdd-tile k-transcribe";
+      btn.setAttribute("onclick", `FTTranscribe.openRec(${m[1]})`);
+      btn.innerHTML = `<span class="ftdd-tile-ic">🎧</span><span class="ftdd-tile-t"><b>Transcribe Interview Recording ${m[1]}</b><small>Open the Transcription Activity →</small></span>`;
+      tiles[j] = btn;
     });
     // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
     const wrapped = tiles.map(x => {
@@ -445,6 +458,8 @@ main.main-ftdd{max-width:1240px;margin:0 auto;padding:12px 20px 16px;display:fle
 .ftdd-tile.k-video .ftdd-tile-t small{color:#262B45;}
 .ftdd-vwrap{display:flex;flex-direction:column;gap:0;}
 .ftdd-vwrap > a.ftdd-tile{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+.ftdd-tile.k-transcribe{border-left-color:#2E7D4F;background:#EEF8F2;cursor:pointer;font:inherit;text-align:left;}
+.ftdd-tile.k-transcribe .ftdd-tile-t small{color:#1F5B39;}
 .ftdd-learn{border:1px solid #E6E1D8;border-top:none;border-left:5px solid #2E7D4F;border-radius:0 0 14px 14px;background:#EEF8F2;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:6px 12px;text-align:left;cursor:pointer;}
 .ftdd-learn:hover{background:#DFF2E7;}
 .ftdd-learn.done{background:#2E7D4F;color:#fff;border-left-color:#1F5B39;}
