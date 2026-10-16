@@ -352,7 +352,16 @@ function agendaHtml(d, info){
       <div class="ftdd-ag-stats">${vids ? `<span>🎬 <b>${vids}</b> video${vids > 1 ? "s" : ""}</span>` : ""}${folders ? `<span>📁 <b>${folders}</b> folder${folders > 1 ? "s" : ""}</span>` : ""}${decksN ? `<span>🎨 <b>${decksN}</b> deck${decksN > 1 ? "s" : ""}</span>` : ""}<span>🧾 <b>${d.slides.length}</b> slides</span></div>
       ${(() => { const off = (info.items || []).filter(x => x.at === "offline");
         return off.length ? `<p class="ftdd-ag-h">📴 Outside training hours</p><ul class="ftdd-ag-off">${off.map(x => `<li>${e(x.t)}</li>`).join("")}</ul>` : ""; })()}
-      ${/ftdd-pq/.test(all) ? `<p class="ftdd-ag-pq">✍️ Today’s Process Questions are in <a class="ftdd-link" onclick="goto('process')">Knowledge Check</a>, after the activities.</p>` : ""}
+      ${(() => {
+        // the day's Process Questions, connected to the day: the sheet of each lesson the day discusses, and
+        // whether the guide runs them today. The questions themselves stay on ✍️ Knowledge Check.
+        const ls = (info.lessons || []).filter(hasPQ);
+        if(!ls.length) return "";
+        const today = (info.items || []).some(x => x.at === "tool" && x.id === "process") || /ftdd-pq/.test(all);
+        return `<p class="ftdd-ag-h">✍️ Process Questions</p><ul class="ftdd-ag-ls">${ls.map(l =>
+          `<li><a class="ftdd-link" onclick="FTProcess.openLesson(${Number(l)})">${e(lessonTitle(l))} →</a></li>`).join("")}</ul>
+          <p class="ftdd-ag-pq">${today ? "Answered today, after the activities." : "Answered on the day the guide sets them; the sheet stays open."}</p>`;
+      })()}
     </div></div>`;
 }
 /* What a slide sends you to. The guide's day is a list of headings — "Classroom Discussion on Intake Specialist
@@ -368,13 +377,22 @@ function slideAgendaGo(s, info){
   }
   if(/shadow/i.test(h) && !/shadow(?:ing)?\s+etiquette/i.test(h) && root.FTShadow) return {label: "logged on the platform", btn: "👥 Log", go: `FTShadow.open(${DD.day})`};
   if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
+  if(/process question/i.test(h) && root.FTProcess){
+    const l = (info.lessons || []).find(x => hasPQ(x));
+    if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTProcess.openLesson(${Number(l)})`};
+  }
   return null;
 }
+// a lesson has Process Questions where its answer sheet exists (Calendaring, Lesson 5, has none)
+function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.ftKcQuestions(Number(l)).length > 0 : false; }catch(err){ return false; } }
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
   const h = String(s.h || ""), out = [];
   const has = re => re.test(h);
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
+  // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
+  // themselves stay on ✍️ Knowledge Check — the slide only points at them
+  if(has(/process question/i) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(${Number(l)})">✍️ Process Questions: ${e(lessonTitle(l))}</button>`); });
   if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
   if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log &amp; today’s To-Do</button>`);
   if(has(/mock call/i) && root.FTSessions){

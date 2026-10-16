@@ -245,7 +245,12 @@ function compact(justLesson){
   </section>`;
 }
 
-root.FTNextStep = {place, nextStep, card, compact};
+// The day's own steps, for any page that shows a day (📋 Today's To-Do shows all 18): where each activity
+// is done, what opens it, and the day's Process Questions — the sheet of each lesson the day discusses.
+root.FTNextStep = {place, nextStep, card, compact, stepRow, ordered, goFor, noteFor, isPQ,
+  pqFor(day){ const d = ((root.FTDays && FTDays.of) ? FTDays.of(day) : null) || {};
+    return (d.lessons || []).map(l => ({lesson: l, title: lessonTitle(l), has: hasPQ(l), go: `FTProcess.openLesson(${l})`,
+      onToday: (d.items || []).some(isPQ)})); }};
 
 (function(){ const s = document.createElement("style"); s.id = "ft-next-step"; s.textContent = `
 .ftn{padding:16px 18px;margin-bottom:14px;border-left:4px solid var(--orange);}
