@@ -60,7 +60,7 @@ window.LSH_PROGRAM = {
   caseProfile: null,
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
@@ -113,6 +113,9 @@ window.LSH_PROGRAM = {
     {id:"skills", icon:"🧪", label:"Typing & Spelling", key:"skills:",
       about:"Your daily tests, taken in the Practice Lab: your typing speed against the 60 WPM clients look for (the average of your last 10), and your spelling average.",
       items: ctx => typeof window.ftSkillItems === "function" ? window.ftSkillItems(ctx) : []},
+    {id:"drills", icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
+      about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",
+      items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
     {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
       about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
       items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},

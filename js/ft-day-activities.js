@@ -106,6 +106,7 @@ const DAYS = [
     {t:"Intake Mock Call Activity (Training Platform / Prototype CMS)", kind:"Session", at:"session", id:"intake"},
     {t:"Practice intake calls on the Call Simulator while waiting for your turn", kind:"Activity", at:"tool", id:"callsim"},
     {t:"Demo Tutorial Viewing and Demo Preparation", kind:"Activity", at:"room"},
+    {t:"🏷 Naming & Reporting Drill: Intake Packet (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Saving Intake Packet and Extracted Intake Documents to SA Demo", kind:"Demo", at:"trainer", id:"intake-packet-demo"}
   ]},
   {day:9, role:"Intake Training", lessons:[6], items:[
@@ -128,6 +129,7 @@ const DAYS = [
   {day:12, role:"Insurance Communication Training", lessons:[7], items:[
     {t:"📘 Process Guide: Saving and sending the LORs (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Tutorial Demo Recording on Saving LORs to SA and Sending to 1P & 3P Insurance Companies", kind:"Activity", at:"room"},
+    {t:"🏷 Naming & Reporting Drill: LORs (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"LOR Uploading and Sending Demo (1P & 3P)", kind:"Demo", at:"trainer", id:"lor-demo"}
   ]},
   {day:13, role:"Provider Communication Training", lessons:[8], items:[
@@ -139,6 +141,7 @@ const DAYS = [
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: Sending the MedLOR (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
+    {t:"🏷 Naming & Reporting Drill: MedLOR (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Sending MedLOR and Requesting Medical Bills & Records Demo", kind:"Demo", at:"trainer", id:"medlor-demo"},
     {t:"Medical Records: MedLOR and Request for Bills & Records (practice before the demo)", kind:"Session", at:"session", id:"records"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
@@ -151,6 +154,7 @@ const DAYS = [
   {day:16, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: The Lien Balance Verification request (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
+    {t:"🏷 Naming & Reporting Drill: Lien Balance Verification (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
@@ -161,6 +165,7 @@ const DAYS = [
     {t:"📘 Process Guide: Saving Medical Bills & Records (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Buffer Time (2–3 hrs): carryover for the LV Request demo", kind:"Buffer", at:"trainer", id:"lv-demo"},
     {t:"Saving Medical Bills & Records (to ~1:00 PM): the step-by-step process and the sample demo", kind:"Activity", at:"room"},
+    {t:"🏷 Naming & Reporting Drill: Bills & Records (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Your own work guide/notes on the naming conventions (MED — Provider — HICF … )", kind:"Activity", at:"room"}
   ]},
   {day:18, role:"Lien Negotiator Training", lessons:[9], items:[
@@ -171,6 +176,7 @@ const DAYS = [
     {t:"Live Demo after the discussion", kind:"Demo", at:"room"},
     {t:"Tutorial Demo Recording: Drafting and Sending the Reduction Request and Closing Statement", kind:"Activity", at:"room"},
     {t:"Initial Net Sheet Drafting and Medical Reduction Request", kind:"Demo", at:"room"},
+    {t:"🏷 Naming & Reporting Drill: Reduction & Closing (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Final Net Sheet Drafting and Closing Statement Drafting (Reduction / Closing & Settlement Demo)", kind:"Demo", at:"trainer", id:"settlement-demo"}
   ]}
 ];
