@@ -271,7 +271,7 @@ Return ONLY JSON: {"summary":"..."}`;
     toast(`📤 Submitted to your trainer · ${pct}% on the checks`);
   },
   reloadAdmin(){ T.admin = null; render(); },
-  checks, docHtml
+  checks, docHtml, fields: FIELDS
 };
 
 // 🧰 Drafting Tools in the Practice Lab

@@ -231,6 +231,7 @@ function renderAdmin(){
 }
 
 window.FTGuide = {
+  list: GUIDES,
   pick(id){ saveNow(); G.cur = id; G.sel = null; render(); },
   open(id){ G.cur = id || null; goto("guide"); },
   tool(c){

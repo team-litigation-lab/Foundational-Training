@@ -400,7 +400,9 @@ function renderRanking(){
         <button class="btn btn-ghost btn-sm" ${R.fill ? "disabled" : ""} onclick="FTRanking.fill()" title="Fill the empty score cells of the columns that have a source, from the trainees' grades on the platform">${R.fill ? "Filling…" : "⤓ Fill from the platform"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.sort()" title="Order the rows by name or by rank">↕ ${R.sort === "rank" ? "By rank" : "By name"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.copy()">📋 Copy</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.print()">🖨 Print</button>
-        <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="FTRanking.share(this)" title="Each trainee sees their own row only: their marks, notes, average and rank">📤 ${R.data.sharedAt ? "Share again" : "Share with the trainees"}</button></span></div>
+    ${R.data.sharedAt ? `<p class="rk-shared">📤 Shared with the trainees ${e(new Date(R.data.sharedAt).toLocaleString())}: each sees their own row on 📬 My Feedback and 🏅 My Performance. Changes since then reach them when you share again.</p>` : ""}
     ${R.edit ? columnsEditor() : ""}${grid()}
     <p class="sc-how">Type a score in its cell (Tab or → to the next, Enter or ↓ to the trainee below). A score out of its points gets its mark out of 5 in the grey ÷ 5 column beside it; a column out of 5 is already a mark. The grey cells are worked out (select one to see its formula in the bar): the final average is the average of the row’s marks (empty cells don’t count) and the rank follows it. A score’s note goes in the bar above the sheet (a red corner marks it). ⬇ Excel keeps the formulas; ⬇ Word is the facilitator’s report layout, ranked.</p></div>`;
 }
@@ -437,6 +439,22 @@ window.FTRanking = {
     const td = el.closest("td"); if(td){ td.classList.toggle("has-note", !!String(v).trim()); td.title = String(v).trim(); }
   },
   sort(){ R.sort = R.sort === "rank" ? "name" : "rank"; render(); },
+  // 📤 each trainee gets their own row of this week (rankshare:<id>, which only they and the trainers read)
+  async share(btn){
+    const list = ranked(), of = list.filter(x => x.rank).length;
+    if(!of){ toast("Score the trainees first."); return; }
+    if(!confirm(`Share ${title()} with the ${list.length} trainee${list.length === 1 ? "" : "s"} of ${R.batch}? Each sees only their own row: marks, notes, average and rank.`)) return;
+    btn.disabled = true; let bad = 0; const at = new Date().toISOString();
+    for(const x of list){
+      const r = (R.data.rows || {})[x.p.id] || {cells: {}};
+      const row = {batch: R.batch, week: R.week, title: title(), avg: x.avg == null ? null : Math.round(x.avg * 100) / 100, rank: x.rank, of, notes: r.notes || "", sharedAt: at,
+        cols: R.data.cols.map(c => { const cell = (r.cells || {})[c.id] || {}, m = mark(c, cell); return {label: c.label, sub: c.sub || "", type: c.type, max: c.type === "score" ? num(c.max) : null, raw: cell.raw == null ? "" : cell.raw, mark: m == null ? null : Math.round(m * 100) / 100, note: cell.note || ""}; })};
+      try{ const cur = (await sharedGet("rankshare:" + x.p.id)) || {}; cur.weeks = cur.weeks || {}; cur.weeks[`${R.batch}|${R.week}`] = row; if(await sharedSet("rankshare:" + x.p.id, cur) === false) bad++; }catch(err){ bad++; }
+    }
+    if(!bad){ R.data.sharedAt = at; save(); }
+    toast(bad ? `Couldn’t share with ${bad} trainee(s). Try again.` : `📤 Shared: each trainee sees their own row.`);
+    btn.disabled = false; render();
+  },
   excel(){
     const a = document.createElement("a"); a.href = URL.createObjectURL(zipParts(xlsxParts())); a.download = `${title()}.xlsx`;
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -471,6 +489,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", renderRanking);
 .rk-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:15px;}
 .rk-title .rk-acts{margin:0 0 0 auto;}
 .rk-saved{font-size:12px;color:var(--ink-soft);}
+.rk-shared{margin:0;font-size:12.5px;color:#1E7F4F;background:#E7F5EE;border-radius:8px;padding:6px 10px;}
 .rk-cols{border:1px solid #E3E7F0;border-radius:12px;padding:12px;background:#F8F9FC;}
 .rk-h{margin:0 0 8px;font-weight:800;}
 .rk-h span{font-weight:400;color:var(--ink-soft);font-size:12.5px;}

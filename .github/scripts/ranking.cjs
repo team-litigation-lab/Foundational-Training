@@ -98,6 +98,12 @@ const failures = []; const fail = m => failures.push(m);
   for (const t of ['<f>IF(E3=&quot;&quot;,&quot;&quot;,E3/40*5)</f>', '<f>IFERROR(AVERAGE(C3,D3,F3,H3,J3,L3,M3),&quot;&quot;)</f>', 'RANK(N3,$N$3:$N$5)', 'fullCalcOnLoad="1"', 'state="frozen"', 'Notes on the scores'])
     if (!xs.includes(t)) fail(`the Excel file has no ${t}`);
   if (!(xs.indexOf('Rhea Rank') < xs.indexOf('Sam Second') && xs.indexOf('Sam Second') < xs.indexOf('Tom Unscored'))) fail('the Excel file isn\'t in rank order');
+  // 📤 share: each trainee gets their own row (rankshare:<id>)
+  await page.evaluate(() => FTRanking.share(document.querySelector('button[onclick^="FTRanking.share"]'))); await page.waitForTimeout(2000);
+  const sh = (((await get('rankshare:' + ids.Rhea)) || {}).weeks || {})[`${BATCH}|1`];
+  if (!sh || sh.avg !== 4.32 || sh.rank !== 1 || sh.of !== 2 || !sh.cols.some(c => c.label === 'PI Reading Task' && c.raw === '30' && c.mark === 3.75)) fail(`📤 Share didn't give Rhea her row: ${JSON.stringify(sh)}`);
+  const shT = (((await get('rankshare:' + ids.Tom)) || {}).weeks || {})[`${BATCH}|1`];
+  if (!shT || shT.rank !== null || JSON.stringify(shT).includes('Rhea')) fail(`a trainee's shared row carries someone else's: ${JSON.stringify(shT)}`);
   if (process.env.SAVE_XLSX) fs.copyFileSync(await xl.path(), process.env.SAVE_XLSX);
 
   // 🧑‍🏫 Trainer Inputs: the Reception Mock Call's scorecard from the Training Guide (14 criteria, a feedback note each)
@@ -135,8 +141,9 @@ const failures = []; const fail = m => failures.push(m);
   if (await page.$$eval('.xl .xl-num', t => t.filter(x => x.value).length)) fail('Week 2 came with Week 1\'s scores');
 
   for (const w of [1, 2]) await put(`ranking:${BATCH}:w${w}`, null);
+  for (const id of Object.values(ids)) await put('rankshare:' + id, null);
   for (const id of Object.values(ids)) { const r = await get('trainee:' + id); if (r) { r.archived = true; await put('trainee:' + id, r); } }
   await browser.close();
   if (failures.length) { console.error('Weekly Ranking test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Weekly Ranking test passed (the tab beside 🏅 Scorecards; Week 1 started from its columns with no scores in it; points turned into marks out of 5 as they are typed; the final average and the ranking, an unscored trainee unranked; the formula bar (a formula, a score\'s note), Enter to the cell below, saved; ⬇ Excel a real .xlsx with live formulas, ranked; ⬇ Word in the facilitator\'s format, landscape and ranked; the Reception Mock Call scored on the Training Guide\'s scorecard in Trainer Inputs (its weighted average the score) and ⤓ filled into the ranking, never over a typed score; the Day 18 demo\'s scorecard; Week 2 from Week 1\'s columns).');
+  console.log('Weekly Ranking test passed (the tab beside 🏅 Scorecards; Week 1 started from its columns with no scores in it; points turned into marks out of 5 as they are typed; the final average and the ranking, an unscored trainee unranked; the formula bar (a formula, a score\'s note), Enter to the cell below, saved; ⬇ Excel a real .xlsx with live formulas, ranked; 📤 each trainee gets only their own row; ⬇ Word in the facilitator\'s format, landscape and ranked; the Reception Mock Call scored on the Training Guide\'s scorecard in Trainer Inputs (its weighted average the score) and ⤓ filled into the ranking, never over a typed score; the Day 18 demo\'s scorecard; Week 2 from Week 1\'s columns).');
 })().catch(e => { console.error(e); process.exit(1); });

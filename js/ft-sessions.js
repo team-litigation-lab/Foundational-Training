@@ -583,6 +583,10 @@ Return ONLY JSON: {"comment":"..."}`;
 };
 ftAdminTab("trainerinputs", "🧑‍🏫 Trainer Inputs", renderTrainerInputs);
 
+// 📬 My Feedback (js/ft-trainer-feedback.js) names the trainer-led activities and the sessions
+FTSessions.trainerActs = () => acts();
+FTSessions.sessionTitle = id => (sessionById(id) || {}).title || id;
+
 // the Scorecard's sources (js/ft-program.js): the sessions (the trainer's score, else the automated %) and the trainer inputs
 window.ftSessionItems = ctx => {
   const runs = ((ctx.rec["sessions:"] || {}).runs) || {}, rv = ((ctx.rec["labreview:"] || {}).sessions) || {};
@@ -592,7 +596,7 @@ window.ftSessionItems = ctx => {
 window.ftTrainerItems = ctx => {
   const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
   return list.filter(a => mine[a.id] && mine[a.id].status).map(a => { const r = mine[a.id], t = tScore(r);
-    return {name:a.title, pct:t != null ? t : r.status === "Passed" ? 100 : null, note:r.status + (r.date ? " · " + r.date : "")}; });
+    return {name:a.title, pct:t != null ? t : r.status === "Passed" ? 100 : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `

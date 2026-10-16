@@ -51,6 +51,7 @@ window.LSH_PROGRAM = {
     {view:"learn", icon:"🎬", label:"Video Notes", who:"trainee", about:"What you learned from each training video: your takeaways, the new terms, a question for your trainer, and how you’ll use it on the job."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
     {view:"tasks", icon:"🎲", label:"Tasks", who:"trainee", about:"The unannounced tasks your trainer sends during a session: acknowledge, plan and resolve each one before its timer ends. Graded.", badge:() => typeof window.openTasksCount === "function" ? window.openTasksCount() : 0},
+    {view:"myfeedback", icon:"📬", label:"My Feedback", who:"trainee", about:"Everything your trainer sent you about your work: the feedback on your transcriptions, video notes, process guides and letters, the mock calls’ and demos’ scorecards, and the reviews of your sessions and Knowledge Checks."},
     {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
@@ -66,7 +67,7 @@ window.LSH_PROGRAM = {
     admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],
     lab: ["calscores", "sessions", "trainerinputs"],
-    scorecard: ["scorecards", "ranking"]
+    scorecard: ["scorecards", "ranking", "sendfeedback"]
   },
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
@@ -109,6 +110,13 @@ window.LSH_PROGRAM = {
     {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
       about:"Your Daily Task Tracker and Training Monitoring Sheet in your VA Output folder: the system’s checks, or your trainer’s score where they gave one.",
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
+    {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
+      about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
+      items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},
+    {id:"ranking", icon:"📊", label:"Weekly Ranking", key:"rankshare:",
+      about:"Your final average each week, out of 5, from the weekly progress report your trainer shared with you (and your rank in the batch).",
+      items: ctx => Object.values(((ctx.rec["rankshare:"] || {}).weeks) || {}).filter(w => w && w.avg != null).sort((a, b) => a.week - b.week)
+        .map(w => ({name:`Week ${w.week}`, pct:Math.round(Number(w.avg) / 5 * 100), note:`${Number(w.avg).toFixed(2)}/5${w.rank ? ` · rank ${w.rank} of ${w.of}` : ""}`}))},
     {id:"portalsims", icon:"🧰", label:"Portal simulators", key:"simresults:",
       about:"Your best result on each LSH Training Portal simulator you opened from this program (the Google Calendar Simulator, Medical Records Requests, …).",
       items: ctx => Object.entries(((ctx.rec["simresults:"] || {}).best) || {}).map(([name, b]) => ({name, pct:Number(b.score), note:`Best of ${plural(b.count || 1, "attempt")}`}))}
