@@ -58,29 +58,25 @@ function addWho(q){
 }
 // The Portal's Calendaring Simulators (the Google Calendar Simulator): their own tab, with the trainee's name and batch.
 function portalHref(page){ return PORTAL + page + "?" + addWho(new URLSearchParams({program:"FT"})); }
-// 🧪 Practice Lab: Skill Building — the daily Typing and Spelling Tests (FT_SKILL_TESTS, js/ft-rules.js): the tools to
-// use, when, the screenshot's file name and a sample. The Training Orientation and Rules slide points here.
+// 🧪 Practice Lab: Skill Building — the daily Typing and Spelling Tests, taken on the platform (js/ft-skilltests.js, #/skills):
+// each result is logged with its date and AM/PM slot, so there is no screenshot to take, name or upload. The Training
+// Orientation and Rules slide and the day map's daily step point here.
 function renderSkills(){
   const tests = window.FT_SKILL_TESTS || [];
   if(!tests.length) return "";
   return `<section class="fts-group" id="fts-skills"><h2>🧪 Practice Lab: Skill Building</h2>
-      <p class="fts-sub">Your daily Typing and Spelling Tests. LSH’s clients look for VAs who type at least 60 WPM. Take each test with the tool below, screenshot the result with the date and time showing, and save it in your training subfolder, named exactly as shown. Missed a test? Make it up during your idle time; extra rounds are welcome.</p>
+      <p class="fts-sub">Your daily Typing and Spelling Tests. LSH’s clients look for VAs who type at least 60 WPM. Take them here: every result is saved with its date and time, and your trainer sees it, so there is no screenshot to take.</p>
       <div class="fts-grid">${tests.map(t=>`<div class="card fts-card">
         <div class="fts-kicker">${window.FTDays ? `Days 1–${FTDays.COUNT}` : ""}</div>
         <h3>${t.icon} ${esc(t.name)}</h3>
         <p class="fts-note"><b>When:</b> ${esc(t.when)}</p>
-        <div class="fts-label">Tools to use</div>
-        <div class="fts-tool-act">${t.links.map((l,i)=>`<a class="btn ${i ? "btn-ghost" : "btn-navy"} btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0])} ↗</a>`).join("")}</div>
-        <div class="fts-label">Save it as</div>
-        <code class="fts-file">${esc(t.file)}</code>
-        <figure class="fts-sample"><a href="${esc(t.sample)}" target="_blank" rel="noopener"><img src="${esc(t.sample)}" alt="Sample ${esc(t.name.toLowerCase())} screenshot" loading="lazy"></a><figcaption>Sample: the whole screen, with the date and time showing.</figcaption></figure>
+        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('skills')">Take the ${esc(t.name.toLowerCase())}</button></div>
+        <div class="fts-label">Extra practice in your idle time</div>
+        <div class="fts-tool-act">${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0])} ↗</a>`).join("")}</div>
       </div>`).join("")}</div></section>`;
 }
-// The orientation slide's "Open the Practice Lab": 🛠 Simulators, scrolled to Skill Building.
-window.ftsGotoSkills = function(){
-  goto("simulators");
-  setTimeout(()=>{ const el = document.getElementById("fts-skills"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 60);
-};
+// The orientation slide's "Open the Practice Lab" and the day map's daily step: the tests themselves.
+window.ftsGotoSkills = function(){ goto("skills"); };
 
 // The Practice Lab: real-time Practice Sessions at the trainee's own firm (js/ft-sessions.js, js/ft-firms.js), the activities
 // done live with the trainer, and Skill Building. The demo-preparation cards are gone: the demos are done live with the

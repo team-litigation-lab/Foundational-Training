@@ -27,7 +27,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 // the report's columns: the compliance one, the marks out of 5, and the activities scored on their own points
 const COL = (label, sub, max, src) => ({id: uid(), label, sub: sub || "", max: max == null ? 5 : max, type: "score", src: src || ""});
 const BASE = () => [
-  {id: uid(), label: "Spelling & Typing Tests", sub: "", type: "notes"},
+  {id: uid(), label: "Spelling & Typing Tests", sub: "", type: "notes", src: "skills"},
   COL("Monitoring Sheet", "", 5, "drive:Monitoring Sheet"), COL("Tracker", "", 5, "drive:Tracker")];
 const TEMPLATES = {
   week1: {label: "📋 Week 1 columns", cols: () => BASE().concat([COL("PI Reading Task", "", 40), COL("Ass: Common Terms", "", 27),
@@ -67,7 +67,7 @@ async function loadPeople(){
   try{
     let list = state.adminData;
     if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
-    R.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", progress: r.dayProgress || {}}))
+    R.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!R.batch){ const bs = batches(); R.batch = bs[bs.length - 1] || ""; }
   }catch(err){ R.people = []; }
@@ -94,6 +94,13 @@ const rerender = () => { if(state.view === "admin" && state.adminTab === "rankin
 /* ---------- ⤓ fill the empty cells from what the platform already graded ---------- */
 // the Scorecard's sources (js/ft-program.js) give every trainee's graded items; a column's src picks one:
 // "<source id>:<words in the item's name>", e.g. "drive:Tracker", "calls:Reception", "kc:Law Firm"
+// "9/28 to 10/06" (a Weekly Ranking column's dates) → ["2026-09-28", "2026-10-06"], the year from today's
+function parseRange(s){
+  const m = /(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s*(?:to|-|–|—)\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i.exec(String(s || "")); if(!m) return null;
+  const y = new Date().getFullYear(), yr = v => v ? (v.length === 2 ? 2000 + Number(v) : Number(v)) : null, p = n => String(n).padStart(2, "0");
+  let y1 = yr(m[3]) || y, y2 = yr(m[6]) || y1; if(!m[3] && Number(m[1]) > Number(m[4])) y1 = y2 - 1;
+  return [`${y1}-${p(m[1])}-${p(m[2])}`, `${y2}-${p(m[4])}-${p(m[5])}`];
+}
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   return [["", "Typed by the trainer"]].concat(S.map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
@@ -105,7 +112,8 @@ function srcOptions(){
 }
 async function fillFromPortal(){
   if(!R.data || R.fill) return;
-  const cols = R.data.cols.filter(c => c.type === "score" && c.src); if(!cols.length){ toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
+  const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
+  const cols = R.data.cols.filter(c => c.type === "score" && c.src); if(!cols.length && !notesCols.length){ toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
   try{
@@ -130,6 +138,18 @@ async function fillFromPortal(){
         row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * max), auto: true}); n++;
       });
     });
+    // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
+    if(notesCols.length && window.FTSkills){
+      const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id));
+      notesCols.forEach(c => {
+        const range = parseRange(c.sub);
+        if(!range){ toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
+        ppl.forEach((p, i) => { const row = rowOf(p.id), cur = row.cells[c.id];
+          if(cur && String(cur.note || "").trim()) return;                                  // never over what the trainer typed
+          const rec = Object.assign({typing: [], spelling: []}, recs[i] || {});
+          row.cells[c.id] = Object.assign({}, cur || {}, {note: FTSkills.complianceText(rec, range[0], range[1], p.since), auto: true}); n++; });
+      });
+    }
     if(n) save();
     toast(n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.");
   }catch(err){ toast("Couldn’t read the trainees’ grades. Try again."); }
@@ -203,7 +223,8 @@ function columnsEditor(){
       <input value="${e(c.label)}" placeholder="Column name" onchange="FTRanking.col(${i}, 'label', this.value)">
       <input class="rk-sub" value="${e(c.sub)}" placeholder="Dates or items (e.g. 9/28 to 10/06)" onchange="FTRanking.col(${i}, 'sub', this.value)">
       ${c.type === "score" ? `<label class="rk-max">out of <input type="number" min="1" step="any" value="${e(c.max)}" onchange="FTRanking.col(${i}, 'max', this.value)"></label>
-      <select title="Where ⤓ Fill takes this column's score from" onchange="FTRanking.col(${i}, 'src', this.value)">${opts.map(o => `<option value="${e(o[0])}"${(c.src || "") === o[0] ? " selected" : ""}>${e(o[1])}</option>`).join("")}</select>` : `<span></span><span></span>`}
+      <select title="Where ⤓ Fill takes this column's score from" onchange="FTRanking.col(${i}, 'src', this.value)">${opts.map(o => `<option value="${e(o[0])}"${(c.src || "") === o[0] ? " selected" : ""}>${e(o[1])}</option>`).join("")}</select>`
+      : `<span></span><select title="Where ⤓ Fill takes this column's notes from" onchange="FTRanking.col(${i}, 'src', this.value)"><option value="">Typed by the trainer</option><option value="skills"${c.src === "skills" ? " selected" : ""}>🧪 Typing & Spelling log (the column’s dates)</option></select>`}
       <span class="rk-col-ad"><button class="btn btn-ghost btn-sm" title="Move left" ${i ? "" : "disabled"} onclick="FTRanking.moveCol(${i}, -1)">←</button><button class="btn btn-ghost btn-sm" title="Remove the column" onclick="FTRanking.delCol(${i})">🗑</button></span></div>`).join("")}
     <div class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.addCol('score')">➕ Score column</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.addCol('notes')">➕ Notes column</button>
       <button class="btn btn-navy btn-sm" onclick="FTRanking.toggleEdit()">✓ Done</button></div></div>`;
