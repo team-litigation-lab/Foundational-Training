@@ -1,0 +1,134 @@
+// 👥 Shadowing log and the day's Hubstaff To-Do (js/ft-todo.js): every day's To-Do line in the guide's wording, the
+//   shadowing line on the six shadowing days, 📋 Copy in the 🛠 Practice Lab; a part-filled log saved but not
+//   counted and a full one counted, saved in shadow:<id> and on 🏅 My Performance; the trainer sets a day's buddy
+//   and wording (settings:todo) and reads the write-ups; the worker keeps shadow:<id> the trainee's own.
+// Usage: NODE_PATH=…/node_modules node .github/scripts/shadowing.cjs http://localhost:8787/
+const { chromium } = require('playwright');
+const path = require('path');
+const { pathToFileURL } = require('url');
+const signIn = require('./sign-in.cjs');
+const BASE = process.argv[2] || 'http://localhost:8787/';
+const BATCH = 'B102926';
+const failures = []; const fail = m => failures.push(m);
+
+async function workerChecks() {
+  const worker = (await import(pathToFileURL(path.join(process.cwd(), 'worker.js')).href)).default;
+  const store = new Map([['ft:trainee:ana-cruz--b1', JSON.stringify({ id: 'ana-cruz--b1', name: 'Ana Cruz', batch: 'B1', approved: true })]]);
+  const env = { MASTER_ADMIN_PASSWORD: 'ci-pass', SESSION_SECRET: 'ci-secret', PORTAL_ONLY: 'off',
+    LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) } };
+  const call = async (p, body, token) => { const res = await worker.fetch(new Request('http://x' + p, { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: 'Bearer ' + token } : {}), body: JSON.stringify(body) }), env, { waitUntil() {} }); return { status: res.status, body: await res.json().catch(() => null) }; };
+  const t = (await call('/api/auth/trainee', { name: 'Ana Cruz', batch: 'B1' })).body.token;
+  const set = (k, v, tok) => call('/api/storage/set', { key: k, value: JSON.stringify(v) }, tok || t);
+  if ((await set('shadow:ana-cruz--b1', { logs: { 7: { who: 'The intake specialist' } } })).status !== 200) fail('a trainee can\'t save their own shadowing log');
+  if ((await set('shadow:ana-cruz--b1', { logs: [] })).status === 200) fail('a shadowing log whose logs is a list was saved');
+  if ((await set('shadow:ben-diaz--b1', { logs: {} })).status === 200) fail('a trainee wrote another trainee\'s shadowing log');
+  if ((await set('settings:todo', { days: {} })).status === 200) fail('a trainee changed the day\'s To-Do wording');
+  const at = (await call('/api/auth/admin', { passphrase: 'ci-pass' })).body.token;
+  if ((await set('settings:todo', { days: { 7: { buddy: 'A. Buddy' } } }, at)).status !== 200) fail('the trainer can\'t save the To-Do wording');
+  else if (!JSON.parse(((await call('/api/storage/get', { key: 'settings:todo' }, t)).body || {}).value || 'null')) fail('a trainee can\'t read the To-Do wording');
+}
+
+(async () => {
+  await workerChecks();
+  const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+  const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  page.on('pageerror', e => fail(`page error: ${e.message}`));
+  page.on('dialog', d => d.accept());
+  const put = (k, value) => page.evaluate(([k, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k, value: JSON.stringify(value) }) }), [k, value]);
+  const get = k => page.evaluate(async k => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) }).then(r => r.json())).value || 'null'), k);
+  await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
+  await put('settings:todo', null);
+  await signIn(page, 'Sam', 'Shadow', BATCH);
+  const id = await page.evaluate(() => state.traineeId);
+  const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
+  await put('shadow:' + id, null);
+  await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
+
+  // 🛠 Practice Lab: the day's To-Do, in the exact wording of the guide's template
+  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1500);
+  const strip = await page.evaluate(() => [...document.querySelectorAll('.fts-group')].map(x => x.innerText).find(t => /Shadowing & the day/.test(t)) || '');
+  if (!/To-Do: Classroom Discussion: Virtual Assistant Essentials - Day 1/.test(strip)) fail(`the Practice Lab's To-Do isn't the guide's Day 1 wording: ${strip.slice(0, 200)}`);
+  if (!/Copy/.test(strip)) fail('the Practice Lab\'s To-Do has no Copy button');
+  // the 📚 Dashboard keeps its one-screen lesson grid: nothing of ours is added above it
+  await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
+  const over = await page.evaluate(() => { const g = document.querySelector('.module-grid'); return g ? g.scrollHeight - g.clientHeight : 0; });
+  if (over > 2) fail(`the Dashboard's lessons overflow by ${over}px`);
+
+  // every day's line, and the shadowing line on the six shadowing days
+  const lines = await page.evaluate(() => { const out = {}; (FTDays.DAYS || []).forEach(d => { out[d.day] = FTShadow.lines(d.day); }); return out; });
+  const want = {
+    1: 'Classroom Discussion: Virtual Assistant Essentials - Day 1', 2: 'Classroom Discussion: Virtual Assistant Essentials - Day 2',
+    3: 'Classroom Discussion: Reception Training Day 1', 5: 'Classroom Discussion: Reception Training Day 3',
+    6: 'Classroom Discussion: Calendar Management Training', 7: 'Classroom Discussion: Intake Training Day 1',
+    11: 'Classroom Discussion: Insurance Communication Training Day 2', 16: 'Classroom Discussion: Provider Communication Training Day 4',
+    18: 'Classroom Discussion: Lien Negotiator Training Day 2' };
+  Object.entries(want).forEach(([d, t]) => { if (lines[d][0] !== t) fail(`Day ${d}'s To-Do is “${lines[d][0]}”, expected “${t}”`); });
+  const shadowDays = Object.keys(await page.evaluate(() => FTShadow.shadowDays)).map(Number);
+  if (JSON.stringify(shadowDays) !== JSON.stringify([7, 11, 14, 15, 16, 18])) fail(`the shadowing days are ${JSON.stringify(shadowDays)}`);
+  shadowDays.forEach(d => { if (!/^Shadowing .+ Role \(buddy’s name\)$/.test(lines[d][1] || '')) fail(`Day ${d} has no shadowing line: ${JSON.stringify(lines[d])}`); });
+  if (lines[18][1] !== 'Shadowing Lien Negotiator Role (buddy’s name)') fail(`Day 18's shadowing line is ${lines[18][1]}`);
+  if ((lines[8] || []).length !== 1) fail('a day with no shadowing session has a shadowing line');
+
+  // the day map points to the log on every shadowing day
+  const steps = await page.evaluate(() => [7, 11, 14, 15, 16, 18].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'shadowing')));
+  if (steps.some(x => !x)) fail(`not every shadowing day points to the log: ${JSON.stringify(steps)}`);
+
+  // the recorded videos the guide gives for when no buddy is free: the title is the link
+  const vids = await page.evaluate(() => ({ d7: FTShadow.videos(7), d11: FTShadow.videos(11), d18: FTShadow.videos(18) }));
+  if (vids.d7.length !== 3 || !/^https:\/\/drive\.google\.com\/file\/d\//.test(vids.d7[0][1])) fail(`Day 7's shadowing videos are ${JSON.stringify(vids.d7)}`);
+  if (vids.d18.length < 2) fail(`Day 18 has ${vids.d18.length} shadowing videos`);
+  if (vids.d11.length) fail('a day the guide gives no videos for has some');
+
+  // the trainee's log: part-filled doesn't count
+  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1000);
+  await page.click('text=All 18 days & the shadowing log'); await page.waitForTimeout(900);
+  if (await page.evaluate(() => state.view) !== 'shadowing') fail('the Practice Lab\'s button doesn\'t open #/shadowing');
+  await page.evaluate(() => FTShadow.day(7)); await page.waitForTimeout(600);
+  await page.fill('#sh_who', 'The intake specialist on duty');
+  await page.fill('#sh_date', '2026-10-14');
+  await page.click('text=💾 Save this log'); await page.waitForTimeout(1300);
+  let rec = await get('shadow:' + id);
+  if (!rec || !rec.logs['7'] || rec.logs['7'].role !== 'Intake Specialist') fail(`the part-filled log wasn't saved with its role: ${JSON.stringify(rec)}`);
+  if (!/Still to fill in/.test(await page.evaluate(() => document.querySelector('.td-form').innerText))) fail('a part-filled log doesn\'t say what is left');
+
+  // filled in, it counts
+  await page.fill('#sh_did', 'Took three calls on the intake line, opened the CMS lead first, asked the accident questions in order, then entered everything into the fields while still on the call.');
+  await page.fill('#sh_learned', 'She repeats the callback number back twice, and writes the date of loss before anything else.');
+  await page.fill('#sh_asked', 'I asked how she handles a caller who already has a lawyer; she flags it and passes it to the attorney without advising.');
+  await page.fill('#sh_apply', 'Confirm the callback number twice on every call.');
+  await page.click('text=💾 Save this log'); await page.waitForTimeout(1300);
+  if (!/✓ Logged/.test(await page.evaluate(() => document.querySelector('.td-form').innerText))) fail('a full log doesn\'t count as logged');
+  if (!(await page.evaluate(() => FTShadow.done(FTShadow.state().rec.logs[7])))) fail('the page doesn\'t count the full log as done');
+  await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
+  if (!/Shadowing sessions logged[\s\S]*1 of 6/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the shadowing log');
+
+  // the trainer: the buddy's name and a note, then reading the write-up
+  await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'shadowing'; FTShadowAdmin.reload(); goto('admin'); });
+  await page.waitForTimeout(2500);
+  await page.evaluate(b => FTShadowAdmin.batch(b), BATCH); await page.waitForTimeout(400);
+  await page.fill('#tdaBuddy', 'A. Buddy');
+  await page.fill('#tdaNote', 'The session starts at 2:00 PM; recorded videos if no buddy is free.');
+  await page.click('text=💾 Save Day 7'); await page.waitForTimeout(1300);
+  const st = await get('settings:todo');
+  if (!st || !st.days['7'] || st.days['7'].buddy !== 'A. Buddy') fail(`the buddy's name wasn't saved: ${JSON.stringify(st)}`);
+  const grid = await page.evaluate(() => (document.querySelector('.td-atbl') || {}).innerText || '');
+  if (!/Sam Shadow/.test(grid) || !/✓/.test(grid)) fail(`the trainer's grid doesn't mark the logged session: ${grid.slice(0, 250)}`);
+  await page.locator('.td-atbl tbody tr').first().locator('td:last-child button').click(); await page.waitForTimeout(600);
+  const read = await page.evaluate(() => (document.querySelector('.td-alog') || {}).innerText || '');
+  if (!/complete/.test(read) || !/callback number back twice/.test(read)) fail(`the trainer can't read the write-up: ${read.slice(0, 250)}`);
+
+  // the trainee sees the buddy's name and the note
+  await page.evaluate(() => { state.isAdmin = false; state.adminData = null; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
+  await page.evaluate(() => FTShadow.open(7)); await page.waitForTimeout(1200);
+  const td = await page.evaluate(() => (document.querySelector('.td-card') || {}).innerText || '');
+  const links = await page.evaluate(() => [...document.querySelectorAll('.td-vids a')].map(a => [a.innerText.replace(' ↗', ''), a.getAttribute('href')]));
+  if (links.length !== 3 || links[0][0] !== 'Intake shadowing, part 1' || !links[0][1].includes('/file/d/1SC653')) fail(`the shadowing videos aren't linked by title: ${JSON.stringify(links)}`);
+  if (!/To-Do: Shadowing Intake Specialist Role \(A\. Buddy\)/.test(td)) fail(`the trainee doesn't see the buddy's name: ${td.slice(0, 250)}`);
+  if (!/starts at 2:00 PM/.test(td)) fail('the trainee doesn\'t see the trainer\'s note');
+
+  await put('shadow:' + id, null); await put('settings:todo', null);
+  const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
+  await browser.close();
+  if (failures.length) { console.error('Shadowing & To-Do test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
+  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and the six shadowing days\' lines, the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer setting the buddy and note and reading the write-up, which the trainee then sees; the worker\'s rules).');
+})().catch(e => { console.error(e); process.exit(1); });

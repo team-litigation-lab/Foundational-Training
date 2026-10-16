@@ -54,7 +54,7 @@ const DAYS = [
   {day:1, role:"VA Essentials", lessons:[1], items:[
     {t:"Setting of Expectations (8:00–9:00 AM)", kind:"Discussion", at:"room"},
     {t:"Typing & Spelling Activity (8:00–8:10 AM): the tests set up and named", kind:"Skill test", at:"tool", id:"skills"},
-    {t:"Shadowing activities, added to the Hubstaff To-Do", kind:"Shadowing", at:"room"},
+    {t:"Shadowing activities, added to the Hubstaff To-Do", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Client Identification Exercise", kind:"Exercise", at:"gc"}
@@ -97,6 +97,7 @@ const DAYS = [
   {day:7, role:"Intake Training", lessons:[6], items:[
     {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
+    {t:"Scheduled Shadowing: Intake Specialist Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
     {t:"Intake Scenario Exercise", kind:"Exercise", at:"gc"},
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
@@ -124,6 +125,7 @@ const DAYS = [
   ]},
   {day:11, role:"Insurance Communication Training", lessons:[7], items:[
     {t:"🎧 Call Listening on the insurance communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
+    {t:"Shadowing: Insurance Communication Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Claim and Liability Evaluation: Assessment Activities 1 & 2", kind:"Assessment", at:"drive"},
     {t:"Policy Disclosure activity (the Dec Page for each claim)", kind:"Activity", at:"gc"},
     {t:"LOR Drafting Activity: the 1P and 3P letters", kind:"Activity", at:"tool", id:"lor"}
@@ -143,7 +145,7 @@ const DAYS = [
   ]},
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: Sending the MedLOR (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
+    {t:"Demo and Shadowing (the session logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"🏷 Naming & Reporting Drill: MedLOR (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Sending MedLOR and Requesting Medical Bills & Records Demo", kind:"Demo", at:"trainer", id:"medlor-demo"},
     {t:"Medical Records: MedLOR and Request for Bills & Records (practice before the demo)", kind:"Session", at:"session", id:"records"},
@@ -151,12 +153,12 @@ const DAYS = [
   ]},
   {day:15, role:"Provider Communication Training", lessons:[8], items:[
     {t:"Recorded Demonstration — Sending MedLOR and Requesting Medical Bills & Records (entire day)", kind:"Demo", at:"trainer", id:"medlor-demo"},
-    {t:"Shadowing Session (PM)", kind:"Shadowing", at:"room"},
+    {t:"Shadowing Session (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:16, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: The Lien Balance Verification request (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
+    {t:"Demo and Shadowing (the session logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"🏷 Naming & Reporting Drill: Lien Balance Verification (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
@@ -180,7 +182,8 @@ const DAYS = [
     {t:"Tutorial Demo Recording: Drafting and Sending the Reduction Request and Closing Statement", kind:"Activity", at:"room"},
     {t:"Initial Net Sheet Drafting and Medical Reduction Request", kind:"Demo", at:"room"},
     {t:"🏷 Naming & Reporting Drill: Reduction & Closing (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
-    {t:"Final Net Sheet Drafting and Closing Statement Drafting (Reduction / Closing & Settlement Demo)", kind:"Demo", at:"trainer", id:"settlement-demo"}
+    {t:"Final Net Sheet Drafting and Closing Statement Drafting (Reduction / Closing & Settlement Demo)", kind:"Demo", at:"trainer", id:"settlement-demo"},
+    {t:"Shadowing: Lien Negotiator Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"}
   ]}
 ];
 
