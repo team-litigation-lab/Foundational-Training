@@ -2536,23 +2536,31 @@ em.warn{font-style:normal;color:var(--danger);}
 
 /* ============================================================================
    The LSH standard page style — the see-through surfaces every LSH site shares.
-   A vendored copy of the layer in the Training Portal's theme.css, kept here so
-   this program deploys on its own and no other site's deploy can restyle it.
-   Two halves, the same as the Portal's: the page sits on a photo behind a wash,
-   and the panels on top of it are translucent so the photo carries on
-   underneath instead of stopping at every card's edge.
-   This program keeps its own backdrop (img/ft-page-bg.webp, the gavel and law
-   books), as each program does.
+
+   A vendored copy of the layer in the Training Portal's theme.css, identical in
+   all five programs, kept here rather than linked so this program deploys on
+   its own and no other site's deploy can restyle it. The Portal's README, under
+   "The standard page style", is the source of truth; change it there first and
+   copy the block down.
+
+   Two halves. The page sits on a photo behind a wash — each program keeps its
+   own image, pointed at by its own body::before — and the panels on top of it
+   are translucent, so the photo carries on underneath instead of stopping at
+   every card's edge.
+
+   The colour rules below are not decoration: they are what the backdrop costs.
+   Text has to clear WCAG AA (4.5:1, or 3:1 at 24px / 18.7px bold) against the
+   photo, not against a white card that is no longer white.
    ========================================================================= */
 :root{
-  /* .70 white over the backdrop at this strength keeps --ink above 9:1, and
-     the muted --ink-soft above 4.5:1, which is what sets these two numbers. */
+  /* .60 white over the backdrop at .40 keeps --ink above 8:1 and the muted
+     --ink-soft above 4.5:1, which is what sets these two numbers. */
   --surface-glass:rgba(255,255,255,.60);
   --surface-blur:saturate(118%) blur(10px);
 }
-/* The photo was at .20, which the opaque cards then covered almost entirely.
-   At .40 it reads through the glass without the text on top of it losing
-   contrast — the page's own measurement, not a guess. */
+/* Every program shipped its backdrop turned down so far (8% to 20%) that it was
+   invisible, and covered it with opaque cards besides. At .40 it reads through
+   the glass without the text on top of it losing contrast. */
 body::before{opacity:.40;}
 .module-card,
 .card{
@@ -2560,27 +2568,25 @@ body::before{opacity:.40;}
   backdrop-filter:var(--surface-blur);
   -webkit-backdrop-filter:var(--surface-blur);
 }
-/* Muted text on a translucent panel is read off the photo, not off white:
-   --ink-soft (#5B6178) measures 4.6:1 there, which holds, but the paler greys
-   used for small print do not, so they step to --ink-soft. */
 .empty-note{background:rgba(246,247,251,.72);backdrop-filter:var(--surface-blur);-webkit-backdrop-filter:var(--surface-blur);}
+.tk-admin-note{background:rgba(255,255,255,.72);backdrop-filter:var(--surface-blur);-webkit-backdrop-filter:var(--surface-blur);}
 /* The admin tab strip sits straight on the glass over the darkest part of the
-   photo, where the muted ink reaches 4.3:1. An inactive tab is navigation, so
+   photo, where the muted ink is short of AA. An inactive tab is navigation, so
    it takes the full ink; the active one keeps the navy and its orange rule. */
 .admin-tab-btn:not(.active){color:var(--ink);}
 /* Orange as lettering cannot clear AA on the photo — the deepest brand orange
-   reaches 3.5:1 — so the admin eyebrow takes the navy ink (6.5:1) and keeps
-   its size, weight and tracking to stay a label. */
+   reaches 3.5:1 — so the admin eyebrow takes the navy ink and keeps its size,
+   weight and tracking to stay a label. */
 .eyebrow{color:var(--navy);}
-/* On the navy dashboard rail this button is a translucent orange with a white
-   label, 3.6:1. Solid orange with the dark label every other primary button
-   uses reads 5.8:1. */
-.dash-side .tfb-dash .btn-primary{background:var(--orange);color:#241304;}
+/* The footer line sits straight on the backdrop with no panel under it. On the
+   darkest of the five photos the muted ink reaches only 4.2:1 there, so the
+   footer takes the full ink on every program rather than on one. */
+.footer-note,.footer-note span{color:var(--ink);}
 /* Printing drops both: a photo behind a printed page costs ink, and a
    backdrop-filter prints as a grey slab. */
 @media print{
   body::before{display:none;}
-  .module-card,.card,.empty-note{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;}
+  .module-card,.card,.empty-note,.tk-admin-note{background:#fff;backdrop-filter:none;-webkit-backdrop-filter:none;}
 }
 </style>
 <script src="/js/portal-gate.js?v=2026.10.15-dashboard"></script>

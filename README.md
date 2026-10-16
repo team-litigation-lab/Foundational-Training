@@ -628,3 +628,34 @@ node .github/scripts/requests.cjs http://localhost:8787/
 ```
 
 `server.mjs` runs the Worker in open mode (no admin password) and with no AI keys, so nothing outside your computer is called. The requests test takes about a minute.
+
+## 🎨 The standard page style
+
+This program's look is the LSH standard, shared with the Training Portal and
+the other four programs. The block that carries it sits at the end of the
+`<style>` in `index.html`, marked **"The LSH standard page style"**, and is
+byte-identical in all five programs.
+
+**It is a vendored copy, not a link.** The Portal's `theme.css` — and the
+"The standard page style" section of the Portal's README — is the source of
+truth. Change it there first, then copy the block down into each program. The
+copy is deliberate: every program deploys on its own, and no other site's
+deploy can restyle this one.
+
+What it does:
+
+- The page sits on a photo behind a wash. Each program keeps **its own image**,
+  pointed at by its own `body::before`; only the strength is shared (`.40`).
+- The panels on top of it are translucent (`--surface-glass`, `--surface-blur`),
+  so the backdrop carries on underneath instead of stopping at every card.
+- The colour rules in the block are what the backdrop costs, not decoration.
+  Text must clear WCAG AA (4.5:1, or 3:1 at 24px / 18.7px bold) against the
+  **photo**, not against a white card that is no longer white. That is why
+  `--ink-soft` is `#2B2F3E` rather than the `#5B6178` tuned for white, why
+  orange is never used as lettering on the photo, and why a label on an orange
+  fill is dark rather than white.
+
+Changing any surface here means re-checking contrast against the photo. The
+audit that produced these numbers screenshots each view twice — normally and
+with every glyph transparent — and scores each text run against the pixels
+actually behind its own lettering.
