@@ -799,6 +799,8 @@ button.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;bord
 .ftdd-score-l li::before{content:counter(sc);position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:6px;background:#FBF1E6;color:#B5651F;font:700 11.5px/19px 'Inter',sans-serif;text-align:center;}
 .ftdd-score-f{margin:8px 0 0;font-size:12.5px;color:var(--ink-soft);}
 .ftdd-score-shot{margin-top:10px;} .ftdd-score-shot img{max-height:min(34vh,300px);}
+/* on a short screen the criteria themselves are what matters: the picture of the trainer's sheet gives way to them */
+@media(max-height:820px){.ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}}
 .ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
 .ft-body p.ftdd-check{padding:8px 12px 8px 38px;border-radius:10px;background:#EEF8F2;position:relative;}
 .ft-body p.ftdd-check::before{content:"📋";position:absolute;left:12px;top:8px;}
