@@ -71,7 +71,6 @@ const DAYS = [
     {t:"Classroom Discussion on PI Workflow", kind:"Discussion", at:"room"},
     {t:"Classroom Discussion on Reception Training (Lesson 4 on the platform)", kind:"Discussion", at:"room"},
     {t:"Call Listening on 10 Sample Recordings", kind:"Activity", at:"gc"},
-    {t:"PI Process Flow: your case", kind:"Session", at:"session", id:"pi"},
     {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
     {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
     {t:"Reception Activity on VA OSCAR’s recordings", kind:"Activity", at:"gc"}
@@ -138,7 +137,7 @@ const DAYS = [
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
     {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
     {t:"Sending MedLOR and Requesting Medical Bills & Records Demo", kind:"Demo", at:"trainer", id:"medlor-demo"},
-    {t:"Medical Records: ChartSwap request", kind:"Session", at:"session", id:"records"},
+    {t:"Medical Records: MedLOR and Request for Bills & Records (practice before the demo)", kind:"Session", at:"session", id:"records"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:15, role:"Provider Communication Training", lessons:[8], items:[
