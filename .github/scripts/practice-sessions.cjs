@@ -293,18 +293,10 @@ const failures = []; const fail = (m) => failures.push(m);
     // Lesson → Activities → Process Questions: finishing the lesson lands on the dashboard, not the questions.
     if (await page.evaluate(() => state.view) === 'process') fail('✓ Finish lesson still jumps straight to the Process Questions, skipping the day\'s activities');
     if (!['modules', 'dashboard'].includes(await page.evaluate(() => state.view))) fail(`✓ Finish lesson should go to the Dashboard for the day's activities: view=${await page.evaluate(() => state.view)}`);
-    const band = await page.evaluate(() => { const c = document.querySelector('.ftn'); return c ? {
-        head: (c.querySelector('.ftn-where') || {}).textContent || '',
-        then: (c.querySelector('.ftn-then button') || c.querySelector('.ftn-now button') || {}).textContent || '',
-        order: [...c.querySelectorAll('.ftn-step b')].map(b => b.textContent) } : null; });
-    if (!band) fail('the Dashboard has no next-step band after a lesson is finished');
-    else {
-        if (!/studied/i.test(band.head)) fail(`the band should say the lesson was studied: ${band.head}`);
-        if (!/Process Questions/.test(band.then)) fail(`the band should offer that lesson's Process Questions after the activities: ${band.then}`);
-        // on a lesson day the Process Questions are the last of the day's steps
-        const pq = band.order.map((t, i) => /^Process Questions/.test(t) ? i : -1).filter(i => i >= 0);
-        if (pq.length && pq[pq.length - 1] !== band.order.length - 1 && band.order.slice(pq[0]).some(t => !/^Process Questions/.test(t))) fail(`the Process Questions are not after the day's activities: ${JSON.stringify(band.order)}`);
-    }
+    // the dashboard has no next-step band any more: the day's activities are on the lesson card's 📋 Day deck
+    await page.waitForTimeout(600);
+    if (await page.$('main .ftn')) fail('📚 Dashboard still draws the next-step band after ✓ Finish lesson');
+    if (!(await page.$(`#module-${pick} .mc-daydeck`))) fail(`the finished lesson's card has no 📋 Day deck for the day's activities`);
     // and the questions themselves are now open for that module, one click away
     await page.evaluate(async (l) => { FTProcess.openLesson(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
     if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`that module's Process Questions page did not open: pqLesson=${await page.evaluate(() => state.pqLesson)}`);

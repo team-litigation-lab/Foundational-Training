@@ -56,7 +56,7 @@ function open(n, i){
   n = Number(n) || currentDay();
   if(!dayOpen(n)){ toast(`🔒 Day ${n}’s deck opens when you reach that day, or when its lesson is open for your batch.`); return; }
   DD.day = n; DD.i = Number(i) || 0;
-  loadDecks(); goto("daydeck");
+  loadDecks(); if(instructionOnlyDays().includes(n)) loadExtras(); goto("daydeck");
 }
 function go(step){
   const d = decks() && decks()[DD.day]; if(!d) return;
@@ -64,7 +64,7 @@ function go(step){
   if(i === DD.i) return;
   DD.i = i; render();
 }
-function pickDay(n){ n = Number(n); if(!dayOpen(n)) return; DD.day = n; DD.i = 0; render(); }
+function pickDay(n){ n = Number(n); if(!dayOpen(n)) return; DD.day = n; DD.i = 0; if(instructionOnlyDays().includes(n)) loadExtras(); render(); }
 
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["daydeck"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {daydeck: "Day deck"});
@@ -92,7 +92,9 @@ function timeOf(h){
 }
 function kindOf(s, html){
   const h = String(s.h || "");
+  if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
+  if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
   if(/shadowing/i.test(h)) return {ic: "👀", label: "Shadowing"};
@@ -110,6 +112,8 @@ function linkKind(href, label, dk){
   if(/docs\.google\.com\/spreadsheets\//.test(u)) return {k: "sheet", ic: "📊", act: "Open the sheet"};
   if(/docs\.google\.com\/presentation\//.test(u)) return {k: "slides", ic: "📽", act: "Open the slides"};
   if(/docs\.google\.com\/document\//.test(u)) return {k: "doc", ic: "📄", act: "Open the document"};
+  // a sample or template is a document to read, whatever the lines around it say about recordings
+  if(/drive\.google\.com\/file\//.test(u) && /^\s*(sample|template)\b/i.test(label || "")) return {k: "file", ic: "📄", act: "Open the file"};
   if(/loom\.com|youtube\.com|youtu\.be/.test(u) || dk === "video" || VIDEO_WORDS.test(label || "")) return {k: "video", ic: "🎬", act: "▶ Watch"};
   if(/canva\.com/.test(u)) return {k: "canva", ic: "🎨", act: "Open the deck"};
   if(/drive\.google\.com\/file\//.test(u)) return {k: "file", ic: "📄", act: "Open the file"};
@@ -150,6 +154,16 @@ function visual(html){
       el.innerHTML = `<span class="ftdd-tile-ic">${lk.ic}</span><span class="ftdd-tile-t"><b></b><small>${lk.act}</small></span>`;
       el.querySelector("b").textContent = name;
       return el;
+    });
+    // 🎧 an interview recording is the Transcription Activity (js/ft-transcribe.js), not a video to watch: its tile
+    // opens that recording's assignment (the request, the recording, the minutes, submit)
+    tiles.forEach((x, j) => {
+      const m = /^Interview Recording\s*(\d)/i.exec(x.querySelector("b").textContent);
+      if(!m || !window.FTTranscribe) return;
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = "ftdd-tile k-transcribe";
+      btn.setAttribute("onclick", `FTTranscribe.openRec(${m[1]})`);
+      btn.innerHTML = `<span class="ftdd-tile-ic">🎧</span><span class="ftdd-tile-t"><b>Transcribe Interview Recording ${m[1]}</b><small>Open the Transcription Activity →</small></span>`;
+      tiles[j] = btn;
     });
     // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
     const wrapped = tiles.map(x => {
@@ -202,7 +216,9 @@ function visual(html){
   const box = document.createElement("div"); box.appendChild(root);
   return box.innerHTML;
 }
-const slidesOf = d => [{id: "agenda", h: "Training Agenda", agenda: true}].concat(d.slides);
+// a no-discussion day ends on 📌 From your trainer (its activities and instructions) instead of "To be added"
+const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
+  return [{id: "agenda", h: "Training Agenda", agenda: true}].concat(d.slides.map(s => only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s)); };
 function agendaHtml(d, info){
   const rows = d.slides.map((s, i) => {
     const t = timeOf(s.h), k = kindOf(s, visual(s.html));
@@ -234,7 +250,7 @@ function renderDeck(){
   const d = all[DD.day]; if(!d) return `${back}<div class="ftdd-deck ftdd-msg"><p>There is no deck for Day ${e(DD.day)}.</p></div>`;
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
-  const s = list[DD.i], body = s.agenda ? "" : visual(s.html);
+  const s = list[DD.i], body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : visual(s.html);
   const t = s.agenda ? null : timeOf(s.h), k = s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
   const logo = typeof LOGO_FULL_SRC !== "undefined" ? `<img class="ftdd-logo" src="${LOGO_FULL_SRC}" alt="Legal Support Help">` : "";
   const lessons = (info.lessons || []).map(l => lessonOpen(l)
@@ -287,7 +303,110 @@ function videos(n){
   });
   return out;
 }
-root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; render(); }, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day};
+/* ---------- 📚 Dashboard: the instruction decks beside the lessons ----------
+   A day with a classroom discussion is the day its lesson is taught: its instructions deck goes with that lesson
+   (📋 Day N beside the lesson card's Start). A day without one has only its instructions: it gets a deck of its own,
+   in the row under the lesson cards. Both worked out from the day map (js/ft-day-activities.js): a lesson's
+   discussion day is the first day that lists it. */
+function discussionDay(lesson){ const ds = (root.FTDays && FTDays.DAYS) || []; const d = ds.find(x => (x.lessons || []).map(Number).includes(Number(lesson))); return d ? d.day : null; }
+function discussionDays(){ const ds = (root.FTDays && FTDays.DAYS) || [], s = new Set(); ds.forEach(d => (d.lessons || []).forEach(l => { if(discussionDay(l) === d.day) s.add(d.day); })); return s; }
+const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FTDays && FTDays.DAYS) || []).map(d => d.day).filter(n => !s.has(n)); };
+(root.LSH_HOME_CARD_EXTRA = root.LSH_HOME_CARD_EXTRA || []).push(function(lesson){
+  const n = lesson && discussionDay(lesson.id); if(!n) return "";
+  const on = dayOpen(n);
+  return `<button type="button" class="btn mc-daydeck${on ? "" : " locked"}" ${on ? `onclick="event.stopPropagation(); FTDayDecks.open(${n})"` : "disabled"} title="Day ${n}: the day’s instructions deck${on ? "" : " — opens when you reach that day"}">📋 Day ${n}</button>`;
+});
+// the lesson a no-discussion day follows: the last lesson taught on or before it
+function lessonBefore(n){ let best = null; ((root.FTDays && FTDays.DAYS) || []).forEach(d => (d.lessons || []).forEach(l => { const dd = discussionDay(l); if(dd != null && dd <= n && (best == null || dd > discussionDay(best) || (dd === discussionDay(best) && Number(l) > Number(best)))) best = Number(l); })); return best; }
+// the no-discussion days sit in the lesson grid in day order: each run of them (Days 8–9, 14–16 …) shares one cell
+// right after the lesson before it, one row per day, so the dashboard still fits one screen
+(root.LSH_HOME_GRID_CARDS = root.LSH_HOME_GRID_CARDS || []).push(function(){
+  const cur = forTrainee() ? placeDay() : null, ex = X.data && X.data.days || {}, cells = {};
+  instructionOnlyDays().forEach(n => { const l = lessonBefore(n); (cells[l] = cells[l] || []).push(n); });
+  return Object.keys(cells).map(l => ({after: Number(l), html: `<div class="ftdd-daycell" id="dayc-${l}">${cells[l].map(n => {
+    const on = dayOpen(n), i = dayInfo(n), k = (ex[n] || []).length;
+    return `<div class="ftdd-daycard${on ? "" : " locked"}${n === cur ? " now" : ""}" id="dayd-${n}">
+      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${on ? "Open the Day " + n + " instructions" : "Opens on Day " + n}">
+        <span class="ftdd-dc-ic">${on ? "📋" : "🔒"}</span><span class="ftdd-dc-t"><b>Day ${n} · Instructions</b><small>${e(String(i.role || "").replace(/ Training$/, ""))}</small></span>
+        ${on ? `<span class="ftdd-dc-go">Open</span>` : ""}</button>
+      <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${n})"` : "disabled"} title="From your trainer: activities and instructions">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
+  }).join("")}</div>`}));
+});
+
+/* ---------- 📌 the no-discussion days: activities and instructions the trainer adds ----------
+   settings:dayextras = {days: {<day>: [{id, kind, title, text, url, sim, at}]}} — admins write it, everyone reads it
+   (worker.js PUBLIC_READ). Shown on the last slide of that day's deck, in place of "To be added". */
+const X = {data: null, at: 0, loading: null, form: {}};
+const KINDS = [["instruction", "📝", "Instruction"], ["practice", "☎", "Practice on a simulator"], ["video", "🎬", "Video to watch"], ["doc", "📄", "Document / reading"],
+  ["activity", "✅", "Activity"], ["exercise", "🧩", "Exercise"], ["assessment", "📋", "Assessment"]];
+const kindOfX = k => KINDS.find(x => x[0] === k) || KINDS[0];
+const SIMS = "https://cm-training-activity.pages.dev/simulators/call.html?";
+const callSim = line => SIMS + new URLSearchParams({program: "FT", line});
+// one click for a mock-call day: practise on the simulators while waiting for your turn
+const PRESETS = [
+  {label: "☎ Reception calls", kind: "practice", title: "Practise reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
+  {label: "☎ Intake calls", kind: "practice", title: "Practise intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
+  {label: "☎ Calendar calls", kind: "practice", title: "Practise calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
+  {label: "📅 Calendar Simulator", kind: "practice", title: "Practise on the Google Calendar Simulator", text: "Practise setting appointments on the Google Calendar Simulator under the firm’s calendar rules.", sim: "calsim"},
+  {label: "🛠 Practice Lab", kind: "practice", title: "Practise in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
+];
+function loadExtras(force){
+  if(X.loading) return X.loading;
+  if(!force && X.data && Date.now() - X.at < 120000) return Promise.resolve(X.data);
+  X.loading = sharedGet("settings:dayextras").then(v => { X.data = v && typeof v === "object" && v.days ? v : {days: {}}; X.at = Date.now(); })
+    .catch(() => { if(!X.data) X.data = {days: {}}; }).then(() => { X.loading = null; if(state.view === "daydeck") render(); return X.data; });
+  return X.loading;
+}
+const isAdminView = () => !!state.isAdmin && !state.adminPreview;
+const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
+function itemHtml(x, n, i){
+  const k = kindOfX(x.kind), url = safeUrl(x.url);
+  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Open ↗</small></span></button>`
+    : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
+    : url ? (/^https:\/\/(drive|docs)\.google\.com\//.test(url) ? `<a class="viewer-link ftdd-tile k-${x.kind === "video" ? "video" : "doc"}" data-kind="${x.kind === "video" ? "video" : "doc"}" data-title="${e(x.title)}" href="${e(url)}"><span class="ftdd-tile-ic">${k[1]}</span><span class="ftdd-tile-t"><b>${e(x.title)}</b><small>${x.kind === "video" ? "▶ Watch" : "Open"}</small></span></a>`
+      : `<a class="ftdd-tile k-web" href="${e(url)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">${k[1]}</span><span class="ftdd-tile-t"><b>${e(x.title)}</b><small>${x.kind === "practice" ? "☎ Open the simulator ↗" : "Open in a new tab ↗"}</small></span></a>`) : "";
+  return `<div class="ftdd-step ftdd-x ftdd-x-${e(x.kind)}"><span class="ftdd-step-n">${k[1]}</span><div class="ftdd-step-t"><span class="ftdd-x-k">${e(k[2])}</span><b>${e(x.title)}</b>
+    ${x.text ? `<p>${e(x.text).replace(/\n/g, "<br>")}</p>` : ""}${tile ? `<div class="ftdd-tiles">${tile}</div>` : ""}</div>
+    ${isAdminView() ? `<div class="ftdd-x-ad"><button type="button" class="btn btn-ghost btn-sm" title="Move up" ${i ? "" : "disabled"} onclick="FTDayDecks.moveX(${n}, ${i}, -1)">↑</button><button type="button" class="btn btn-ghost btn-sm" title="Remove" onclick="FTDayDecks.delX(${n}, ${i})">🗑</button></div>` : ""}</div>`;
+}
+function trainerSlide(n){
+  if(!X.data){ loadExtras(); return `<p>Loading your trainer’s activities…</p>`; }
+  const items = X.data.days[n] || [], f = X.form;
+  const list = items.length ? items.map((x, i) => itemHtml(x, n, i)).join("")
+    : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : `More for Day ${n} is on its way`}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
+  return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to Day ${n} <span>— every trainee sees it on this slide</span></p>
+      <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
+      <div class="ftdd-xgrid">
+        <label>Type<select id="ftddXKind">${KINDS.map(k => `<option value="${k[0]}"${f.kind === k[0] ? " selected" : ""}>${k[1]} ${k[2]}</option>`).join("")}</select></label>
+        <label class="wide">Title<input id="ftddXTitle" value="${e(f.title || "")}" placeholder="e.g. Practise intake calls on the Call Simulator"></label>
+        <label class="full">Instructions<textarea id="ftddXText" rows="3" placeholder="What the trainee does, step by step">${e(f.text || "")}</textarea></label>
+        <label class="full">Link (optional — a video, a document, a folder or a simulator)<input id="ftddXUrl" value="${e(f.url || "")}" placeholder="https://…"></label>
+      </div><button type="button" class="btn btn-navy btn-sm" onclick="FTDayDecks.addX(${n})">➕ Add to Day ${n}</button></div>` : ""}`;
+}
+async function saveExtras(){
+  const ok = await sharedSet("settings:dayextras", X.data);
+  toast(ok === false ? "Couldn’t save. Check your connection." : "✓ Saved — every trainee sees it on this day’s deck.");
+  X.at = Date.now(); render();
+}
+
+root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; render(); }, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day, discussionDay, instructionOnlyDays,
+  // the no-discussion day's last slide, "From your trainer"
+  trainer(n){ open(n, 999); },
+  async addX(n){
+    if(!isAdminView()) return;
+    const v = id => String((document.getElementById(id) || {}).value || "").trim();
+    const item = {id: Date.now().toString(36), kind: v("ftddXKind") || "instruction", title: v("ftddXTitle"), text: v("ftddXText"), url: v("ftddXUrl"), at: new Date().toISOString()};
+    if(!item.title){ toast("Give it a title."); return; }
+    if(item.url && !safeUrl(item.url)){ toast("Links must start with https://"); return; }
+    await loadExtras(true); (X.data.days[n] = X.data.days[n] || []).push(item); X.form = {}; await saveExtras();
+  },
+  async preset(n, i){
+    if(!isAdminView()) return; const p = PRESETS[i]; if(!p) return;
+    await loadExtras(true); (X.data.days[n] = X.data.days[n] || []).push(Object.assign({id: Date.now().toString(36), at: new Date().toISOString()}, p, {label: undefined})); await saveExtras();
+  },
+  async delX(n, i){ if(!isAdminView() || !confirm("Remove this from the day?")) return; await loadExtras(true); (X.data.days[n] || []).splice(i, 1); await saveExtras(); },
+  async moveX(n, i, d){ if(!isAdminView()) return; await loadExtras(true); const l = X.data.days[n] || [], j = i + d; if(j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; await saveExtras(); },
+  extras: () => X.data};
 
 if(!document.getElementById("ftdd-deck-font")){
   const f = document.createElement("link"); f.id = "ftdd-deck-font"; f.rel = "stylesheet";
@@ -339,9 +458,44 @@ main.main-ftdd{max-width:1240px;margin:0 auto;padding:12px 20px 16px;display:fle
 .ftdd-tile.k-video .ftdd-tile-t small{color:#262B45;}
 .ftdd-vwrap{display:flex;flex-direction:column;gap:0;}
 .ftdd-vwrap > a.ftdd-tile{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+.ftdd-tile.k-transcribe{border-left-color:#2E7D4F;background:#EEF8F2;cursor:pointer;font:inherit;text-align:left;}
+.ftdd-tile.k-transcribe .ftdd-tile-t small{color:#1F5B39;}
 .ftdd-learn{border:1px solid #E6E1D8;border-top:none;border-left:5px solid #2E7D4F;border-radius:0 0 14px 14px;background:#EEF8F2;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:6px 12px;text-align:left;cursor:pointer;}
 .ftdd-learn:hover{background:#DFF2E7;}
 .ftdd-learn.done{background:#2E7D4F;color:#fff;border-left-color:#1F5B39;}
+/* 📚 Dashboard: a lesson's day deck beside its Start, and the instruction-only days' own decks under the lessons */
+main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck{flex:0 0 auto;border-radius:0 !important;margin:0 !important;padding:5px 9px !important;font-size:12px !important;font-weight:700;background:#FFF4E8 !important;color:#B5651F !important;border:none !important;border-left:1px solid #9CA3B8 !important;min-height:0 !important;}
+main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck:hover{background:#FBE3CB !important;}
+main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opacity:.5;cursor:not-allowed;}
+@media(min-width:1001px){main.main-dash .module-grid:has(> .ftdd-daycell):not(:has(> :nth-child(16))){grid-template-columns:repeat(5,minmax(0,1fr)) !important;}}
+.ftdd-daycell{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.ftdd-daycard{flex:1 1 0;min-height:34px;display:flex;align-items:stretch;background:#FFFBF5;border:1px solid #E9C9A6;border-left:4px solid #DB8437;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(26,35,64,.08);}
+.ftdd-daycard.now{box-shadow:0 0 0 3px #F4B77A;}
+.ftdd-daycard.locked{opacity:.62;}
+.ftdd-dc-main{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:8px;padding:4px 8px;background:none;border:0;font:inherit;color:#1A2340;text-align:left;cursor:pointer;}
+.ftdd-dc-main:disabled,.ftdd-dc-pin:disabled{cursor:default;}
+.ftdd-dc-main:not(:disabled):hover{background:#FDEBD8;}
+.ftdd-dc-ic{font-size:18px;flex:0 0 auto;}
+.ftdd-dc-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;line-height:1.15;}
+.ftdd-dc-t b{font-size:13px;}
+.ftdd-dc-t small{font-size:11px;color:#5B6478;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ftdd-dc-go{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#B5651F;}
+.ftdd-dc-pin{flex:0 0 auto;width:38px;border:0;border-left:1px solid #E9C9A6;background:#FFF4E6;font-size:14px;cursor:pointer;position:relative;}
+.ftdd-dc-pin:not(:disabled):hover{background:#FDEBD8;}
+.ftdd-dc-pin i{position:absolute;top:3px;right:3px;font-style:normal;font-size:9.5px;font-weight:800;background:#DB8437;color:#fff;border-radius:8px;padding:0 4px;line-height:14px;}
+.ftdd-x{position:relative;flex-wrap:wrap;}
+.ftdd-x .ftdd-step-n{font-size:16px;}
+.ftdd-x-k{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#B5651F;}
+.ftdd-x b{display:block;color:#262B45;font-size:15.5px;} .ftdd-x p{margin:4px 0 0 !important;}
+.ftdd-x-practice{background:#EEF4FF;} .ftdd-x-practice .ftdd-step-n{background:#262B45;}
+.ftdd-x-ad{position:absolute;top:8px;right:8px;display:flex;gap:4px;}
+button.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #E6E1D8;border-left:5px solid #DB8437;cursor:pointer;text-align:left;font:inherit;}
+.ftdd-xform{margin-top:16px;padding:14px 16px;border:2px dashed #C9CFDC;border-radius:14px;background:#F7F8FB;}
+.ftdd-xform-h{margin:0 0 8px !important;font-weight:800;color:#262B45;} .ftdd-xform-h span{font-weight:500;color:var(--ink-soft);}
+.ftdd-presets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:13px;} .ftdd-presets > span{font-weight:700;color:#262B45;}
+.ftdd-xgrid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px 12px;margin-bottom:10px;}
+.ftdd-xgrid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:#262B45;} .ftdd-xgrid .full{grid-column:1 / -1;}
+.ftdd-xgrid input, .ftdd-xgrid select, .ftdd-xgrid textarea{font:400 14px 'Inter',sans-serif;border:1px solid #CBD2DF;border-radius:8px;padding:7px 9px;background:#fff;}
 /* tasks as numbered steps; topics; checks; callouts; the name to copy */
 .ftdd-step{display:flex;gap:12px;align-items:flex-start;margin:12px 0 6px;padding:10px 14px;background:#F6F7FB;border-radius:12px;}
 .ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}

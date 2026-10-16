@@ -1,6 +1,8 @@
 // 📋 Day decks (js/ft-day-decks.js, js/ft-day-decks-data.js from build/day-decks.cjs): one per day, nothing
-// facilitator-only and no Process Questions on a slide, opened from 📚 Dashboard's band, a trainee kept to the
-// days they have reached, an admin on any day, and the page on one screen.
+// facilitator-only and no Process Questions on a slide; a lesson's day on its card, the no-discussion days in the
+// lesson grid in day order; no next-step band on 📚 Dashboard (the scores sit there); a trainee kept to the days
+// they have reached, an admin on any day; the trainer adds a no-discussion day's activities and instructions
+// (a simulator preset for a mock-call day, a custom step) and a trainee sees them; the page on one screen.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/day-decks.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path'), vm = require('vm'), cp = require('child_process');
@@ -40,12 +42,23 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   const rec = await get('trainee:' + id); rec.approved = true; await put('trainee:' + id, rec);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
-  const btn = await page.$('.ftn-deck');
-  if (!btn) fail('📚 Dashboard: no 📋 Day deck button in the next-step band');
-  else {
-    if (!/Day 1 deck/.test(await btn.innerText())) fail('the band offers ' + await btn.innerText() + ', not Day 1');
-    await btn.click(); await page.waitForTimeout(1500);
-  }
+  // no next-step band on the dashboard any more: the scores sit beside the orientation card instead
+  if (await page.$('main .ftn')) fail('📚 Dashboard still has the next-step band');
+  if (!(await page.$('.dash-pair-now .dash-side'))) fail('the scores are not in the top row beside the orientation card');
+  // a day with a classroom discussion: its deck is on its lesson's card (Lesson 1 → Day 1)
+  const l1 = await page.$('#module-1 .mc-daydeck');
+  if (!l1) fail('Lesson 1\'s card has no 📋 Day 1 button');
+  else if (!/Day 1/.test(await l1.innerText())) fail('Lesson 1\'s card points at ' + await l1.innerText());
+  // the days without one: in the lesson grid, in day order, locked until reached
+  const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
+  if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16, 18])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
+  const order = await page.evaluate(() => [...document.querySelectorAll('.module-grid .module-card, .module-grid .ftdd-daycard')].map(c => c.id).join());
+  if (order !== 'module-1,module-2,module-3,module-4,dayd-4,module-5,dayd-6,module-6,dayd-8,dayd-9,module-7,dayd-11,dayd-12,module-8,dayd-14,dayd-15,dayd-16,module-9,dayd-18')
+    fail(`the dashboard is not in day order: ${order}`);
+  if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard button')].some(b => !b.disabled))) fail('a new trainee can open an instruction deck of a day not reached');
+  const fit = await page.evaluate(() => { const g = document.querySelector('.module-grid'); return [g.scrollHeight - g.clientHeight, document.documentElement.scrollHeight - innerHeight]; });
+  if (fit[0] > 2 || fit[1] > 2) fail(`📚 Dashboard doesn't fit one screen: the lessons overflow by ${fit[0]}px, the page by ${fit[1]}px`);
+  if (l1) { await l1.click(); await page.waitForTimeout(1500); }
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
     deck: !!document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
     open: [...document.querySelectorAll('.ftdd-chip:not(.locked)')].map(c => c.innerText), scroll: document.documentElement.scrollHeight - innerHeight,
@@ -75,8 +88,34 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   s = await at();
   if (!/Lien Negotiator Exercise/.test(s.h)) fail('Day 18\'s first slide is "' + s.h + '"');
   if (!s.tiles) fail('Day 18\'s links are not shown as tiles');
+  // 📌 a no-discussion day: the trainer adds the day's activities and instructions on its last slide
+  const extrasBefore = await get('settings:dayextras');
+  await put('settings:dayextras', { days: {} });
+  await page.evaluate(() => FTDayDecks.trainer(4)); await page.waitForTimeout(1200);
+  if (!(await page.$('.ftdd-xform'))) fail('Day 4\'s last slide has no form for the trainer');
+  await page.evaluate(() => FTDayDecks.preset(4, 0)); await page.waitForTimeout(800);
+  await page.selectOption('#ftddXKind', 'instruction');
+  await page.fill('#ftddXTitle', 'Wait for your turn <b>quietly</b>');
+  await page.fill('#ftddXText', 'Keep your camera on.\nPractise until your name is called.');
+  await page.evaluate(() => FTDayDecks.addX(4)); await page.waitForTimeout(800);
+  const ex = await get('settings:dayextras'), d4 = (ex && ex.days && ex.days[4]) || [];
+  if (d4.length !== 2 || d4[0].kind !== 'practice' || !/call\.html\?program=FT&line=Reception/.test(d4[0].url) || d4[1].title !== 'Wait for your turn <b>quietly</b>')
+    fail(`the trainer's Day 4 additions weren't saved: ${JSON.stringify(d4)}`);
+  // a trainee on Day 4 sees them, read-only
+  await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; for (let l = 1; l <= 4; l++) state.progress[l] = { done: true, studied: true }; }, [id]);
+  await put('settings:opendays', { all: [1, 2, 3, 4, 5], batches: {} });
+  await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
+  if (await page.evaluate(() => { const b = document.querySelector('#dayd-4 .ftdd-dc-main'); return !b || b.disabled; })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
+  await page.click('#dayd-4 .ftdd-dc-pin'); await page.waitForTimeout(1500);
+  const tv = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', steps: document.querySelectorAll('.ftdd-x').length, form: !!document.querySelector('.ftdd-xform'),
+    sim: !!document.querySelector('.ftdd-x a[href*="call.html"]'), bold: !!document.querySelector('.ftdd-x b b'), text: (document.querySelector('.ftdd-body') || {}).innerText || '' }));
+  if (!/From your trainer/.test(tv.h)) fail(`📌 didn't open Day 4's "From your trainer" slide: ${tv.h}`);
+  if (tv.steps !== 2 || !tv.sim) fail('the trainee doesn\'t see the trainer\'s two Day 4 steps with the Call Simulator link');
+  if (tv.form) fail('a trainee sees the trainer\'s form');
+  if (tv.bold || !/<b>quietly<\/b>/.test(tv.text)) fail('a title from the trainer was drawn as HTML');
+  await put('settings:dayextras', extrasBefore || { days: {} });
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Day decks test passed (18 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; 📋 Day deck in the band; a trainee on their day and the days before, an admin on any; ← / →; one screen).');
+  console.log(`Day decks test passed (18 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; a lesson's day deck on its card and the no-discussion days in the lesson grid in day order; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen).`);
 })().catch(e => { console.error(e); process.exit(1); });
