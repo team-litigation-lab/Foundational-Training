@@ -24,7 +24,7 @@ const len = v => String(v == null ? "" : v).trim().length;
 const DAYS = () => (window.FTDays && FTDays.DAYS) || [];
 
 // the guide's shadowing sessions: the day, and the role as its To-Do names it
-const SHADOW = {7: "Intake Specialist", 11: "Insurance Communication", 14: "Provider Communication", 15: "Provider Communication", 16: "Provider Communication", 18: "Lien Negotiator"};
+const SHADOW = {7: "Intake Specialist", 11: "Insurance Communication", 14: "Provider Communication", 15: "Provider Communication", 16: "Provider Communication"};
 // the guide's daily To-Do templates, as "[Session Type + Schedule Day]: [Program Name] — [Module Day]"
 const PROGRAM = {"VA Essentials": "Virtual Assistant Essentials"};
 function discussionLine(d){
@@ -37,10 +37,7 @@ function discussionLine(d){
 const DRIVE = id => `https://drive.google.com/file/d/${id}/view?usp=sharing`;
 const VIDEOS = {
   7: [["Intake shadowing, part 1", DRIVE("1SC653puBU7dh4tYjQjXcr8KZ4yhYxsLV")], ["Intake shadowing, part 2", DRIVE("16DavSPhSUGF88UnltYxl932dsZsYkQtY")],
-      ["Intake shadowing, part 3", DRIVE("1_dsswdnznMTWJAykRJkJKMCOoGg-c8pw")]],
-  18: [["Reduction & Disbursement Training", DRIVE("1rv1Vwatczu3JVegzpEA_pAMxwXsO0EIl")], ["Lien negotiator recording", DRIVE("1stDohvUe3okRlq7HB8qU5uTfgD6e3I6h")],
-       ["Lien negotiator session (27 September)", DRIVE("1q0J7C0Fz1G7OsPooJLK_1bRg8VaHl-6p")], ["Lien negotiator session (28 September)", DRIVE("16VEGXqkzxDVLcwadQXNbfWhUPicZweHP")],
-       ["Discussion with the lien negotiator", DRIVE("1CMfB9tqOFrWamJfm-VZGtRX8wELiWXFa")], ["Billing reduction session (25 August)", DRIVE("1Nq9oXyPmxcll2Yob4PKz3MZ4yNvGCTUh")]]
+      ["Intake shadowing, part 3", DRIVE("1_dsswdnznMTWJAykRJkJKMCOoGg-c8pw")]]
 };
 // a day's videos: the guide's, plus the trainer's own ("Title | link" a line), which replace them when given
 function videosFor(day){
@@ -116,7 +113,7 @@ async function saveLog(day){
 function todoCard(day, compact){
   const lines = linesFor(day), note = noteFor(day);
   return `<div class="card td-card ${compact ? "td-compact" : ""}"><div class="td-head"><b>📋 ${compact ? `Day ${day}: your Hubstaff To-Do` : "Your Hubstaff To-Do for this day"}</b>
-      ${compact ? `<button class="btn btn-navy btn-sm" onclick="FTShadow.open(${day})">${isShadowDay(day) ? "Open the shadowing log" : "All 18 days & the shadowing log"}</button>` : ""}</div>
+      ${compact ? `<button class="btn btn-navy btn-sm" onclick="FTShadow.open(${day})">${isShadowDay(day) ? "Open the shadowing log" : `All ${DAYS().length} days & the shadowing log`}</button>` : ""}</div>
     ${lines.map((l, i) => `<div class="td-line"><code id="td_${day}_${i}">To-Do: ${e(l)}</code><button class="btn btn-ghost btn-sm" onclick="FTShadow.copy('td_${day}_${i}')">📋 Copy</button></div>`).join("")}
     ${note ? `<p class="td-note">${e(note)}</p>` : ""}
     ${!compact && isShadowDay(day) && videosFor(day).length ? `<div class="td-vids"><b>🎬 No buddy free? Watch these instead</b>
@@ -135,7 +132,7 @@ function logForm(day){
       <div class="w"><button class="btn btn-navy btn-sm" ${R.saving ? "disabled" : ""} onclick="FTShadow.save(${day})">${R.saving ? "Saving…" : "💾 Save this log"}</button></div></div></div>`;
 }
 /* THE DAY'S OWN WORK, AND ITS PROCESS QUESTIONS.
-   The Training Guide gives every one of the 18 days its activities, and the day decks say what they are;
+   The Training Guide gives every one of the 16 days its activities, and the day decks say what they are;
    this is the list a trainee works from, with the thing that opens each one. The Process Questions close
    the day: each day discusses a lesson, and that lesson's answer sheet is linked here, on every day, so
    they are never hunted for — the guide sits them on Days 1, 2, 3, 7, 10, 13 and 18, which the row says. */

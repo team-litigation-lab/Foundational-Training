@@ -367,7 +367,7 @@ FTSessions.forLesson = function(lesson){
   return SESSIONS.filter(x => x.lesson === l).map(x => ({kind:"session", id:x.id, icon:x.icon, title:x.title}))
     .concat(acts().filter(x => Number(x.lesson) === l).map(x => ({kind:"trainer", id:x.id, icon:"🧑‍🏫", title:x.title})));
 };
-// What a classroom day's platform activities are (js/ft-day-activities.js maps the 18 days).
+// What a classroom day's platform activities are (js/ft-day-activities.js maps the 16 days).
 // forLesson is by lesson deck; this is by the Training Guide's day.
 FTSessions.forDay = function(day){
   const items = window.FTDays ? FTDays.items(day) : [];
