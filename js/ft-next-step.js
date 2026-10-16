@@ -1,7 +1,7 @@
 /* ============================================================
    WHAT TO DO NEXT — the curriculum flow, instructed automatically
    ------------------------------------------------------------
-   The Training Guide runs 18 days in a fixed order, and js/ft-day-activities.js says which
+   The Training Guide runs 16 days in a fixed order, and js/ft-day-activities.js says which
    activity belongs to which day. Until now nothing told a trainee what came after a lesson:
    finishing one showed a toast and dropped them back on 📚 Dashboard, so a trainer had to say,
    every time and to every trainee, what to open next. This works it out from the curriculum
@@ -113,7 +113,7 @@ function nextStep(spot){
       go: open ? `goto('day',${ph.lesson})` : ""};
   }
   // The day's real work first: a Practice Session, then a tool that is particular to the day. The
-  // typing and spelling tests run on all 18 days, and the Process Questions come after the activities,
+  // typing and spelling tests run on all 16 days, and the Process Questions come after the activities,
   // so neither is ever the thing to send someone to first.
   const linkable = (d.items || []).filter(x => x.at === "session" || (x.at === "tool" && WHERE.tool[x.id] && !isPQ(x)));
   const first = linkable.find(x => x.at === "session" && goFor(x)) || linkable.find(x => x.id !== "skills" && goFor(x));
@@ -123,7 +123,7 @@ function nextStep(spot){
   // them (the list below), and the Process Questions stay the step after — never promoted over them.
   if(!first){
     // the day's own work: not its Process Questions, not the lesson's discussions, and not the
-    // typing/spelling tests and upskill hour that run on every one of the 18 days
+    // typing/spelling tests and upskill hour that run on every one of the 16 days
     const daily = x => x.id === "skills" || x.kind === "Upskill";
     const work = ordered(d).filter(x => !isPQ(x) && !daily(x) && x.kind !== "Discussion");
     if(!work.length) return then ? Object.assign({kind: "pq", lesson: ph.lesson}, then) : null;
@@ -245,7 +245,12 @@ function compact(justLesson){
   </section>`;
 }
 
-root.FTNextStep = {place, nextStep, card, compact};
+// The day's own steps, for any page that shows a day (📋 Today's To-Do shows all 18): where each activity
+// is done, what opens it, and the day's Process Questions — the sheet of each lesson the day discusses.
+root.FTNextStep = {place, nextStep, card, compact, stepRow, ordered, goFor, noteFor, isPQ,
+  pqFor(day){ const d = ((root.FTDays && FTDays.of) ? FTDays.of(day) : null) || {};
+    return (d.lessons || []).map(l => ({lesson: l, title: lessonTitle(l), has: hasPQ(l), go: `FTProcess.openLesson(${l})`,
+      onToday: (d.items || []).some(isPQ)})); }};
 
 (function(){ const s = document.createElement("style"); s.id = "ft-next-step"; s.textContent = `
 .ftn{padding:16px 18px;margin-bottom:14px;border-left:4px solid var(--orange);}

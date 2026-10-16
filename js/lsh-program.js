@@ -246,7 +246,13 @@ const topRow = (notices, pins, scores) => (notices || scores) && pins
 // own, so a card is about half as tall and many more fit on one screen (only here: other pages keep the full card).
 function gridCards(all){
   const extra = []; (window.LSH_HOME_GRID_CARDS || []).forEach(f => { try{ extra.push(...(f() || [])); }catch(err){} });
-  return all.map(d => compactCard(moduleCard(d), d) + extra.filter(x => Number(x.after) === Number(d.id)).map(x => x.html).join("")).join("");
+  const cards = {}; all.forEach(d => { cards[d.id] = compactCard(moduleCard(d), d); });
+  // A course can lay the grid out itself (window.LSH_HOME_GRID_LAYOUT): it is handed every lesson's card and
+  // the cards its own hook made, and returns the whole grid. Foundational Training lays it out by day.
+  if(typeof window.LSH_HOME_GRID_LAYOUT === "function"){
+    try{ const out = window.LSH_HOME_GRID_LAYOUT({lessons: all, cards, extra}); if(out) return out; }catch(err){}
+  }
+  return all.map(d => cards[d.id] + extra.filter(x => Number(x.after) === Number(d.id)).map(x => x.html).join("")).join("");
 }
 function compactCard(html, d){
   const t = document.createElement("template"); t.innerHTML = String(html).trim();
@@ -491,18 +497,18 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
 /* compact lesson cards (compactCard): the title, then the icon beside Start, then the small buttons on one row
    that wrap their words rather than cut them off */
-main.main-dash .module-grid:has(> .mc-compact){grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:12px !important;}
-@media(min-width:1001px){main.main-dash .module-grid:has(> :nth-child(11)){grid-template-columns:repeat(6,minmax(0,1fr)) !important;}}
+main.main-dash .module-grid:has(.mc-compact){grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:12px !important;}
+@media(min-width:1001px){main.main-dash .module-grid:has(> :nth-child(11)):not(:has(> .ftdd-daycell)){grid-template-columns:repeat(6,minmax(0,1fr)) !important;}}
 main.main-dash .module-card.mc-compact{display:flex;flex-direction:column;height:100% !important;min-height:0 !important;}
-main.main-dash .module-card.mc-compact > .module-head{padding:6px 8px 5px !important;min-height:0 !important;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;}
-main.main-dash .module-card.mc-compact .mh-title{font-size:15.5px !important;line-height:1.25 !important;}
-main.main-dash .module-card.mc-compact .mh-day{font-size:11px !important;line-height:1.2 !important;margin:0 0 2px !important;}
+main.main-dash .module-card.mc-compact > .module-head{padding:6px 8px 5px !important;min-height:0 !important;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;overflow:hidden;}
+main.main-dash .module-card.mc-compact .mh-title{font-size:14px !important;line-height:1.2 !important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+main.main-dash .module-card.mc-compact .mh-day{font-size:10px !important;line-height:1.15 !important;margin:0 0 1px !important;}
 main.main-dash .module-card.mc-compact .mh-day:empty, main.main-dash .module-card.mc-compact .mh-day:not(:has(*)):is(:empty){display:none;}
 main.main-dash .module-card.mc-compact > .mc-startrow{display:flex;align-items:stretch;gap:0;border-top:1px solid #9CA3B8;}
-main.main-dash .module-card.mc-compact > .mc-startrow > .module-icon{flex:0 0 auto;width:54px;display:grid;place-items:center;font-size:27px !important;margin:0 !important;background:#F6F7FB;border-right:1px solid #9CA3B8;}
-main.main-dash .module-card.mc-compact > .mc-startrow > .module-start-btn{flex:1 1 auto;min-height:0 !important;padding:6px 12px !important;font-size:15px !important;border-radius:0 !important;margin:0 !important;}
+main.main-dash .module-card.mc-compact > .mc-startrow > .module-icon{flex:0 0 auto;width:46px;display:grid;place-items:center;font-size:22px !important;margin:0 !important;background:#F6F7FB;border-right:1px solid #9CA3B8;}
+main.main-dash .module-card.mc-compact > .mc-startrow > .module-start-btn{flex:1 1 auto;min-height:0 !important;padding:5px 10px !important;font-size:14px !important;border-radius:0 !important;margin:0 !important;}
 main.main-dash .module-card.mc-compact > .mc-grid{display:flex !important;grid-template-columns:none !important;border-top:1px solid #9CA3B8;margin-top:0 !important;}
-main.main-dash .module-card.mc-compact > .mc-grid > button{flex:1 1 0;min-width:0;white-space:normal !important;line-height:1.2 !important;padding:6px 4px !important;font-size:12.5px !important;min-height:0 !important;overflow:visible !important;text-overflow:clip !important;grid-column:auto !important;}
+main.main-dash .module-card.mc-compact > .mc-grid > button{flex:1 1 0;min-width:0;white-space:normal !important;line-height:1.2 !important;padding:5px 4px !important;font-size:12px !important;min-height:0 !important;overflow:visible !important;text-overflow:clip !important;grid-column:auto !important;}
 main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){border-right:1px solid #9CA3B8 !important;}
 /* 📚 Dashboard's top row, kept short: the pinned orientation card first, the next-step band (and any live task) beside it */
 .dash-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:12px;align-items:stretch;margin-bottom:10px;flex:0 0 auto;}

@@ -54,7 +54,7 @@ const failures = []; const fail = m => failures.push(m);
   // the Practice Lab card and the demo days
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
   if (!(await page.$('text=Open the drills'))) fail('the Drafting Tools have no 🏷 Naming & Reporting Drills card');
-  const steps = await page.evaluate(() => [8, 12, 14, 16, 17, 18].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'drills')));
+  const steps = await page.evaluate(() => [8, 12, 14, 16].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'drills')));
   if (steps.some(x => !x)) fail(`not every demo day has its drill step: ${JSON.stringify(steps)}`);
 
   // a round of MedLOR: one wrong answer

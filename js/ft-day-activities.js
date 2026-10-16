@@ -1,10 +1,10 @@
 /* ============================================================
-   THE 18 DAYS AND THEIR ACTIVITIES (Foundational Training)
+   THE 16 DAYS AND THEIR ACTIVITIES (Foundational Training)
    ------------------------------------------------------------
-   The Revised 18-Day Foundational Training Program runs on 18 classroom days; the platform
-   serves 8 lesson decks, named by their training title, not by day (see README, "Lessons").
-   The two are not the same shape: one lesson covers several days (Reception is Days 3–5), and
-   Days 17–18 (Lien Negotiator) have no deck on the platform at all.
+   The Foundational Training Program runs on 16 classroom days; the platform serves 8 lesson
+   decks, named by their training title, not by day (see README, "Lessons"). The two are not the
+   same shape: one lesson covers several days (Reception is Days 3–5). The Lien Negotiator role
+   (the old Days 17–18 and Lesson 9) is no longer part of this programme.
 
    This file is the one place that says which activity belongs to which day. It is read from
    the Training Guide (trainer/curriculum.json, Admin → 📘 Curriculum) — every item below is an
@@ -162,32 +162,10 @@ const DAYS = [
     {t:"🏷 Naming & Reporting Drill: Lien Balance Verification (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
-  ]},
-  // Days 17–18 are the Lien Negotiator block, taught from Lesson 9 (build/lessons/lesson09.js): a deck of the
-  // two days' instructions, with the Canva training deck and Word Game 1 in it. Being a lesson is what gives the
-  // platform a record of these days being finished — without one, a trainee could never reach the end.
-  {day:17, role:"Lien Negotiator Training", lessons:[9], items:[
-    {t:"📘 Process Guide: Saving Medical Bills & Records (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Buffer Time (2–3 hrs): carryover for the LV Request demo", kind:"Buffer", at:"trainer", id:"lv-demo"},
-    {t:"Saving Medical Bills & Records (to ~1:00 PM): the step-by-step process and the sample demo", kind:"Activity", at:"room"},
-    {t:"🏷 Naming & Reporting Drill: Bills & Records (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
-    {t:"Your own work guide/notes on the naming conventions (MED — Provider — HICF … )", kind:"Activity", at:"room"}
-  ]},
-  {day:18, role:"Lien Negotiator Training", lessons:[9], items:[
-    {t:"📘 Process Guide: The Reduction Request and Closing Statement (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
-    {t:"Digital Handouts (Individual Activity)", kind:"Breakout", at:"gc"},
-    {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
-    {t:"Exercise", kind:"Exercise", at:"gc"},
-    {t:"Live Demo after the discussion", kind:"Demo", at:"room"},
-    {t:"Tutorial Demo Recording: Drafting and Sending the Reduction Request and Closing Statement", kind:"Activity", at:"room"},
-    {t:"Initial Net Sheet Drafting and Medical Reduction Request", kind:"Demo", at:"room"},
-    {t:"🏷 Naming & Reporting Drill: Reduction & Closing (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
-    {t:"Final Net Sheet Drafting and Closing Statement Drafting (Reduction / Closing & Settlement Demo)", kind:"Demo", at:"trainer", id:"settlement-demo"},
-    {t:"Shadowing: Lien Negotiator Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"}
   ]}
 ];
 
-// Every day carries the daily skill tests and the upskill hour; the guide repeats them on all 18.
+// Every day carries the daily skill tests and the upskill hour; the guide repeats them on all 16.
 /* 📴 Outside training hours. Most days carry work the guide sets for after the session or for idle time —
    the homework videos and PPTs, the assessments to finish and upload, the reading and the modules to go
    through while waiting for a turn. They were only in the GC and the day's deck; they are part of the day. */
@@ -204,8 +182,7 @@ const OFFLINE = {
   6: ["Calendaring 101 and the Calendar Management videos (Parts 1–2), while you wait for your turn"],
   7: ["The intake modules and the fillable intake forms, as additional reference in your idle time"],
   10: ["The insurance communication videos and the job aid / work guide article, in your idle time"],
-  13: ["The sample recordings and documents for the medical records role, in your idle time"],
-  17: ["The Reduction & Disbursement training videos, before the Day 18 demo"]
+  13: ["The sample recordings and documents for the medical records role, in your idle time"]
 };
 DAYS.forEach(d => {
   const off = (OFFLINE[d.day] || []).map(t => ({t, kind: "Offline", at: "offline"}));

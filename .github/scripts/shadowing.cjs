@@ -60,30 +60,55 @@ async function workerChecks() {
     1: 'Classroom Discussion: Virtual Assistant Essentials - Day 1', 2: 'Classroom Discussion: Virtual Assistant Essentials - Day 2',
     3: 'Classroom Discussion: Reception Training Day 1', 5: 'Classroom Discussion: Reception Training Day 3',
     6: 'Classroom Discussion: Calendar Management Training', 7: 'Classroom Discussion: Intake Training Day 1',
-    11: 'Classroom Discussion: Insurance Communication Training Day 2', 16: 'Classroom Discussion: Provider Communication Training Day 4',
-    18: 'Classroom Discussion: Lien Negotiator Training Day 2' };
+    11: 'Classroom Discussion: Insurance Communication Training Day 2', 16: 'Classroom Discussion: Provider Communication Training Day 4' };
   Object.entries(want).forEach(([d, t]) => { if (lines[d][0] !== t) fail(`Day ${d}'s To-Do is “${lines[d][0]}”, expected “${t}”`); });
   const shadowDays = Object.keys(await page.evaluate(() => FTShadow.shadowDays)).map(Number);
-  if (JSON.stringify(shadowDays) !== JSON.stringify([7, 11, 14, 15, 16, 18])) fail(`the shadowing days are ${JSON.stringify(shadowDays)}`);
+  if (JSON.stringify(shadowDays) !== JSON.stringify([7, 11, 14, 15, 16])) fail(`the shadowing days are ${JSON.stringify(shadowDays)}`);
   shadowDays.forEach(d => { if (!/^Shadowing .+ Role \(buddy’s name\)$/.test(lines[d][1] || '')) fail(`Day ${d} has no shadowing line: ${JSON.stringify(lines[d])}`); });
-  if (lines[18][1] !== 'Shadowing Lien Negotiator Role (buddy’s name)') fail(`Day 18's shadowing line is ${lines[18][1]}`);
+  if (lines[16][1] !== 'Shadowing Provider Communication Role (buddy’s name)') fail(`Day 16's shadowing line is ${lines[16][1]}`);
   if ((lines[8] || []).length !== 1) fail('a day with no shadowing session has a shadowing line');
 
   // the day map points to the log on every shadowing day
-  const steps = await page.evaluate(() => [7, 11, 14, 15, 16, 18].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'shadowing')));
+  const steps = await page.evaluate(() => [1, 7, 11, 14, 15, 16].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'shadowing')));
   if (steps.some(x => !x)) fail(`not every shadowing day points to the log: ${JSON.stringify(steps)}`);
 
   // the recorded videos the guide gives for when no buddy is free: the title is the link
-  const vids = await page.evaluate(() => ({ d7: FTShadow.videos(7), d11: FTShadow.videos(11), d18: FTShadow.videos(18) }));
+  const vids = await page.evaluate(() => ({ d7: FTShadow.videos(7), d11: FTShadow.videos(11) }));
   if (vids.d7.length !== 3 || !/^https:\/\/drive\.google\.com\/file\/d\//.test(vids.d7[0][1])) fail(`Day 7's shadowing videos are ${JSON.stringify(vids.d7)}`);
-  if (vids.d18.length < 2) fail(`Day 18 has ${vids.d18.length} shadowing videos`);
   if (vids.d11.length) fail('a day the guide gives no videos for has some');
 
   // the trainee's log: part-filled doesn't count
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1000);
-  await page.click('text=All 18 days & the shadowing log'); await page.waitForTimeout(900);
+  await page.click('text=All 16 days & the shadowing log'); await page.waitForTimeout(900);
   if (await page.evaluate(() => state.view) !== 'shadowing') fail('the Practice Lab\'s button doesn\'t open #/shadowing');
   await page.evaluate(() => FTShadow.day(7)); await page.waitForTimeout(600);
+
+  // every one of the 16 days shows its own activities, and the Process Questions of the lesson it discusses
+  const perDay = await page.evaluate(async () => {
+    const out = [];
+    for (let d = 1; d <= 16; d++) { FTShadow.day(d); await new Promise(r => setTimeout(r, 140));
+      const steps = document.querySelectorAll('.td-steps .td-step').length;
+      const pq = [...document.querySelectorAll('.td-steps .td-pq')].map(li => ({ t: li.innerText.replace(/\s+/g, ' ').trim(), go: !!li.querySelector('button') }));
+      out.push({ d, steps, pq });
+    }
+    return out;
+  });
+  perDay.forEach(x => {
+    if (x.steps < 2) fail(`Day ${x.d} shows no activities of its own (${x.steps} rows)`);
+    if (!x.pq.length) fail(`Day ${x.d} doesn't connect its Process Questions`);
+  });
+  // the sheet belongs to the day's lesson, and opens from the day
+  const d7 = perDay.find(x => x.d === 7).pq[0];
+  if (!/Intake Specialist Training/.test(d7.t) || !d7.go) fail(`Day 7's Process Questions row isn't its lesson's sheet: ${JSON.stringify(d7)}`);
+  // Calendaring (Lesson 5) has no sheet in the guide: the row says so instead of opening an empty page
+  const cal = perDay.find(x => x.d === 6).pq[0];
+  if (cal.go || !/no sheet for this lesson/.test(cal.t)) fail(`Day 6 offers a Calendaring sheet that doesn't exist: ${JSON.stringify(cal)}`);
+  await page.evaluate(() => FTShadow.day(7)); await page.waitForTimeout(500);
+  await page.locator('.td-pq button').first().click(); await page.waitForTimeout(1200);
+  if (await page.evaluate(() => state.view) !== 'process') fail('the day\'s Process Questions row doesn\'t open ✍️ Knowledge Check');
+  if (await page.evaluate(() => Number(state.pqLesson)) !== 6) fail(`it opens lesson ${await page.evaluate(() => state.pqLesson)}, not Day 7's own lesson`);
+  await page.evaluate(() => FTShadow.open(7)); await page.waitForTimeout(1200);
+
   await page.fill('#sh_who', 'The intake specialist on duty');
   await page.fill('#sh_date', '2026-10-14');
   await page.click('text=💾 Save this log'); await page.waitForTimeout(1300);
@@ -100,7 +125,7 @@ async function workerChecks() {
   if (!/✓ Logged/.test(await page.evaluate(() => document.querySelector('.td-form').innerText))) fail('a full log doesn\'t count as logged');
   if (!(await page.evaluate(() => FTShadow.done(FTShadow.state().rec.logs[7])))) fail('the page doesn\'t count the full log as done');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
-  if (!/Shadowing sessions logged[\s\S]*1 of 6/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the shadowing log');
+  if (!/Shadowing sessions logged[\s\S]*1 of 5/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the shadowing log');
 
   // the trainer: the buddy's name and a note, then reading the write-up
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; state.adminData = null; state.adminTab = 'shadowing'; FTShadowAdmin.reload(); goto('admin'); });
@@ -130,5 +155,5 @@ async function workerChecks() {
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Shadowing & To-Do test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and the six shadowing days\' lines, the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer setting the buddy and note and reading the write-up, which the trainee then sees; the worker\'s rules).');
+  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and the six shadowing days\' lines, each day\'s own activities and the Process Questions of the lesson it discusses (Calendaring\'s absent sheet said so, not offered), the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer setting the buddy and note and reading the write-up, which the trainee then sees; the worker\'s rules).');
 })().catch(e => { console.error(e); process.exit(1); });
