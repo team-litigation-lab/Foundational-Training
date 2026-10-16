@@ -58,6 +58,12 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard button')].some(b => !b.disabled))) fail('a new trainee can open an instruction deck of a day not reached');
   const fit = await page.evaluate(() => { const g = document.querySelector('.module-grid'); return [g.scrollHeight - g.clientHeight, document.documentElement.scrollHeight - innerHeight]; });
   if (fit[0] > 2 || fit[1] > 2) fail(`📚 Dashboard doesn't fit one screen: the lessons overflow by ${fit[0]}px, the page by ${fit[1]}px`);
+  // and it uses the whole screen: the cards stretch to the foot of the grid rather than leaving it empty below them
+  const fills = await page.evaluate(() => { const g = document.querySelector('.module-grid'), gb = g.getBoundingClientRect();
+    const kids = [...g.children].map(k => k.getBoundingClientRect());
+    return { gap: Math.round(gb.bottom - Math.max(...kids.map(r => r.bottom))), short: Math.round(Math.min(...kids.map(r => r.height))) }; });
+  if (fills.gap > 4) fail(`📚 Dashboard leaves ${fills.gap}px empty under its cards instead of filling the screen`);
+  if (fills.short < 100) fail(`a 📚 Dashboard card is only ${fills.short}px tall: the cards should fill the screen`);
   if (l1) { await l1.click(); await page.waitForTimeout(1500); }
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
     deck: !!document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,

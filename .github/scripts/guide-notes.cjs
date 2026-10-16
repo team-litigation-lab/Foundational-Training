@@ -33,9 +33,19 @@ const failures = []; const fail = m => failures.push(m);
   const slide = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); if (document.querySelector('.ftdd-learn')) return i; } return -1; });
   if (slide < 0) fail('no video in the Day 1 deck carries "📝 What I learned"');
   else {
-    // a long slide is read in pages, so turn to the page that holds the button before clicking it
-    await page.evaluate(() => FTDayDecks.reveal('.ftdd-learn')); await page.waitForTimeout(300);
-    await page.click('.ftdd-learn'); await page.waitForTimeout(500);
+    // the slide's own button sits above the sheet, so paging never hides it: it turns to the video's page itself
+    const act = await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-acts .btn')].find(x => /What I learned/.test(x.innerText));
+      const sheet = document.querySelector('.ftdd-sheet');
+      return b ? { inSheet: !!(sheet && sheet.contains(b)), above: b.getBoundingClientRect().top < sheet.getBoundingClientRect().top, shown: !!b.offsetParent } : null; });
+    if (!act) fail('a slide with a video has no 📝 What I learned button of its own');
+    else if (act.inSheet || !act.above || !act.shown) fail(`the slide's 📝 What I learned button isn't above the sheet: ${JSON.stringify(act)}`);
+    await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-acts .btn')].find(x => /What I learned/.test(x.innerText)); if (b) b.click(); });
+    await page.waitForTimeout(700);
+    if (!(await page.$('#vnModal .vn-tk input'))) {
+      fail('the slide\'s 📝 What I learned button doesn\'t open the video\'s notes');
+      await page.evaluate(() => FTDayDecks.reveal('.ftdd-learn')); await page.waitForTimeout(300);
+      await page.click('.ftdd-learn'); await page.waitForTimeout(500);
+    }
     const inputs = await page.$$('#vnModal .vn-tk input');
     const tks = ['Every to-do must follow the daily template exactly.', 'I log my Hubstaff time against the right to-do every day.', 'Notes on each to-do help my trainer see my progress clearly.'];
     for (let i = 0; i < 3; i++) await inputs[i].fill(tks[i]);
@@ -53,6 +63,23 @@ const failures = []; const fail = m => failures.push(m);
     if (!/Video Notes/.test(lp) || !/Notes written/.test(lp)) fail('🎬 Video Notes doesn\'t list the video with its notes');
     if (!/1 of \d+ videos with notes/.test(lp)) fail('🎬 Video Notes doesn\'t count the videos with notes');
   }
+  // a video is watched, not glanced at: the pop-out viewer opens wide and centred for one, and keeps the side pane for a document
+  const viewer = await page.evaluate(async () => {
+    const box = () => { const p = document.getElementById('lecture-viewer-pane'), r = p.getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height), mid: Math.round(r.left + r.width / 2) }; };
+    lvOpen({ kind: 'video', title: 'A video', url: 'https://drive.google.com/file/d/TESTVIDEO/view' });
+    await new Promise(r => setTimeout(r, 500));
+    const video = box();
+    lvOpen({ kind: 'doc', title: 'A document', url: 'https://drive.google.com/file/d/TESTDOC/view' });
+    await new Promise(r => setTimeout(r, 400));
+    const doc = box();
+    lvClose();
+    return { video, doc, half: Math.round(innerWidth / 2), win: innerWidth };
+  });
+  if (viewer.video.w < Math.min(1240, viewer.win - 48) - 2) fail(`a video doesn't open wide: ${JSON.stringify(viewer)}`);
+  if (Math.abs(viewer.video.mid - viewer.half) > 3) fail(`a video's viewer isn't centred: ${JSON.stringify(viewer)}`);
+  if (viewer.doc.w !== 820) fail(`a document's viewer isn't the side pane any more: ${JSON.stringify(viewer.doc)}`);
+
   const pages = await page.evaluate(() => JSON.stringify((window.LSH_PROGRAM || {}).modules || []));
   if (!/"learn"/.test(pages)) fail('🎬 Video Notes is not in 📂 My Pages');
 
