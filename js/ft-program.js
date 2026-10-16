@@ -60,13 +60,13 @@ window.LSH_PROGRAM = {
   caseProfile: null,
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "listening"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
-    lab: ["calscores", "sessions", "trainerinputs", "calrules"],
+    lab: ["calscores", "sessions", "trainerinputs", "calrules", "listening"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
   sources: [
@@ -116,6 +116,9 @@ window.LSH_PROGRAM = {
     {id:"drills", icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
       about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",
       items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
+    {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",
+      about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full.",
+      items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},
     {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:",
       about:"Your calendar mock-call bookings, each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart.",
       items: ctx => typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) : []},
