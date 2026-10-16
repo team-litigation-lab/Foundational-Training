@@ -231,7 +231,10 @@ img[alt="Legal Support Help"]{border-radius:8px;}
 .dash-main > .dash-side .stat .num{color:var(--navy) !important;}
 .dash-main > .dash-side .stat .lbl, .dash-main > .dash-side .card .sub, .dash-main > .dash-side .stat .lbl span{color:#6B7088 !important;}
 .dash-main > .dash-side .tfb-dash{background:#FFF7EF !important;border-color:#F7DEC6 !important;}
-.dash-main > .dash-side .tfb-dash .btn{color:#fff !important;}
+/* The primary button here is a solid orange; a white label on it is 3.6:1,
+   so only the ghost button (transparent, on the navy rail) stays white. */
+.dash-main > .dash-side .tfb-dash .btn-ghost{color:#fff !important;}
+.dash-main > .dash-side .tfb-dash .btn-primary{color:#241304 !important;}
 .dash-main > .dash-side .tfb-dash-stars button{color:#D5D8E3 !important;}
 .dash-main > .dash-side .tfb-dash-stars button.on, .dash-main > .dash-side .tfb-dash-stars button.lit{color:var(--orange) !important;}
 /* ============================================================
