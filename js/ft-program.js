@@ -65,7 +65,7 @@ window.LSH_PROGRAM = {
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
-    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],
+    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
     lab: ["calscores", "sessions", "trainerinputs"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
@@ -116,6 +116,9 @@ window.LSH_PROGRAM = {
     {id:"drills", icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
       about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",
       items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
+    {id:"kcgames", icon:"🎮", label:"Knowledge Games", key:"kcgames:",
+      about:"Your best game on each lesson’s Knowledge Games (practice only: the graded Knowledge Check is the score that counts).",
+      items: ctx => typeof window.ftKCGameItems === "function" ? window.ftKCGameItems(ctx) : []},
     {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
       about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
       items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},
