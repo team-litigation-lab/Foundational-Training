@@ -2781,26 +2781,31 @@ if(document.querySelector(".topbar")) render();
    one softer Start button with Topics and Finish side by side as quiet buttons, and a light scores band. */
 (function(){
   const st = document.createElement("style"); st.id = "calm-dashboard"; st.textContent = `
-.dash-main .module-card.mc-clean{background:#fff;border:1px solid #E3E6EE;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(38,43,69,.04),0 8px 20px -16px rgba(38,43,69,.25);}
+/* The see-through standard: these four surfaces each painted a flat sheet over
+   the page's backdrop, and two of them with !important, so the cards read as
+   solid however thin the layer under them was. The card and the rail take the
+   glass; the head and the stat tiles inside them go nearly clear, so a card is
+   ONE sheet of glass rather than three stacked. */
+.dash-main .module-card.mc-clean{background:var(--surface-glass,rgba(255,255,255,.60));backdrop-filter:var(--surface-blur,saturate(118%) blur(10px));-webkit-backdrop-filter:var(--surface-blur,saturate(118%) blur(10px));border:1px solid #E3E6EE;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(38,43,69,.04),0 8px 20px -16px rgba(38,43,69,.25);}
 .dash-main .module-card.mc-clean:hover{border-color:#D3D7E3;box-shadow:0 1px 2px rgba(38,43,69,.05),0 10px 24px -14px rgba(38,43,69,.28);}
 .dash-main .module-card.mc-clean .module-head,
 .dash-main .module-card.mc-clean:nth-child(3n+2) .module-head,
-.dash-main .module-card.mc-clean:nth-child(3n+3) .module-head{background:#F7F8FB !important;color:var(--navy);border-top:4px solid #4A5277;border-bottom:1px solid #ECEEF4;}
+.dash-main .module-card.mc-clean:nth-child(3n+3) .module-head{background:rgba(247,248,251,.34) !important;color:var(--navy);border-top:4px solid #4A5277;border-bottom:1px solid #ECEEF4;}
 .dash-main .module-card.mc-clean:nth-child(3n+2) .module-head{border-top-color:var(--orange);}
 .dash-main .module-card.mc-clean .mh-day{color:var(--orange-deep);opacity:1;font-weight:700;letter-spacing:.1em;}
 .dash-main .module-card.mc-clean .mh-title{text-transform:none;letter-spacing:0;font-weight:700;color:var(--navy);}
-.dash-main .module-card.mc-clean .module-start-btn{background:#ECEEF5;border:1px solid #DDE1EC;color:var(--navy);border-radius:10px;box-shadow:none;font-weight:700;letter-spacing:.01em;}
+.dash-main .module-card.mc-clean .module-start-btn{background:rgba(236,238,245,.62);border:1px solid #DDE1EC;color:var(--navy);border-radius:10px;box-shadow:none;font-weight:700;letter-spacing:.01em;}
 .dash-main .module-card.mc-clean .module-start-btn:hover, .dash-main .module-card.mc-clean:hover .module-start-btn{background:#353B57;border-color:#353B57;color:#fff;}
 .dash-main .module-card.mc-clean .mc-row{display:flex;gap:8px;margin:0 14px 12px;}
-.dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:1 1 0;min-width:0;width:auto !important;margin:0 !important;background:#F3F4F8;border:1px solid #F3F4F8;color:#4A5070;font-weight:600;border-radius:9px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:1 1 0;min-width:0;width:auto !important;margin:0 !important;background:rgba(243,244,248,.55);border:1px solid #F3F4F8;color:#4A5070;font-weight:600;border-radius:9px;box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @media(min-width:1001px) and (max-width:1340px){ .dash-main .module-card.mc-clean .mc-row{flex-direction:column;gap:5px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{flex:0 0 auto !important;padding-top:5px;padding-bottom:5px;} }
 @media(max-width:1600px){ .dash-main .module-card.mc-clean .mc-row{gap:6px;margin:0 10px 10px;} .dash-main .module-card.mc-clean .mc-row .module-finish-btn{font-size:11.5px;padding-left:4px;padding-right:4px;} .dash-main .module-card.mc-clean .mc-row .module-topics-btn{flex:0 1 auto;padding-left:8px;padding-right:8px;} }
 .dash-main .module-card.mc-clean .mc-row .module-finish-btn:hover{background:#E9EBF2;border-color:#E9EBF2;color:var(--navy);}
 .dash-main .module-card.mc-clean > :last-child{margin-bottom:12px;}
 .dash-main .module-card.mc-clean .module-theme{color:#6B7088;}
 /* the scores band: light, so it doesn't compete with the lessons */
-.dash-main > .dash-side{background:#fff !important;border:1px solid #E3E6EE !important;box-shadow:none !important;}
-.dash-main > .dash-side .card{background:#F7F8FB !important;border:1px solid #EDEFF5 !important;box-shadow:none !important;color:var(--navy) !important;}
+.dash-main > .dash-side{background:var(--surface-glass,rgba(255,255,255,.60)) !important;backdrop-filter:var(--surface-blur,saturate(118%) blur(10px));-webkit-backdrop-filter:var(--surface-blur,saturate(118%) blur(10px));border:1px solid #E3E6EE !important;box-shadow:none !important;}
+.dash-main > .dash-side .card{background:rgba(255,255,255,.30) !important;border:1px solid #EDEFF5 !important;box-shadow:none !important;color:var(--navy) !important;}
 .dash-main > .dash-side .card *{color:inherit;}
 .dash-main > .dash-side .stat .num{color:var(--navy) !important;}
 .dash-main > .dash-side .stat .lbl, .dash-main > .dash-side .card .sub, .dash-main > .dash-side .stat .lbl span{color:#6B7088 !important;}

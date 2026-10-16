@@ -40,13 +40,17 @@ main .card:not(.card .card):not(.stat):not(.module-card):not(.topics-modal):not(
 .dash-main .module-card .module-head{border-bottom:1px solid ${line} !important;}
 .dash-main .module-card.mc-clean > .mc-grid{display:grid;grid-template-columns:repeat(2,1fr);margin:auto 0 0 !important;border-top:1px solid ${line};}
 .dash-main .module-card.mc-clean .mc-grid > button{margin:0 !important;width:auto !important;border:0 !important;border-radius:0 !important;box-shadow:none !important;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:1;flex:none;}
-.dash-main .module-card.mc-clean .mc-grid > .module-start-btn{grid-column:span 2;padding:12px 10px;font-size:15px;background:#F3F4F8;color:var(--navy);font-weight:700;}
-.dash-main .module-card.mc-clean .mc-grid > button:not(.module-start-btn){grid-column:span 2;padding:9px 6px;font-size:12.5px;background:#fff;color:#4A5070;font-weight:600;border-top:1px solid ${line} !important;}
+.dash-main .module-card.mc-clean /* The rows are most of a card's area, so a flat sheet here undoes the glass
+   above them. They keep their own tone, thinned, and the photo carries
+   through the whole card. Hover stays solid: a row has to answer the
+   pointer. */
+.mc-grid > .module-start-btn{grid-column:span 2;padding:12px 10px;font-size:15px;background:rgba(243,244,248,.55);color:var(--navy);font-weight:700;}
+.dash-main .module-card.mc-clean .mc-grid > button:not(.module-start-btn){grid-column:span 2;padding:9px 6px;font-size:12.5px;background:rgba(255,255,255,.34);color:#4A5070;font-weight:600;border-top:1px solid ${line} !important;}
 .dash-main .module-card.mc-clean .mc-grid.mc-n2 > button:not(.module-start-btn){grid-column:span 1;}
 .dash-main .module-card.mc-clean .mc-grid.mc-n2 > button:not(.module-start-btn):not(:last-child){border-right:1px solid ${line} !important;}
 .dash-main .module-card.mc-clean .mc-grid > .module-start-btn:not(:disabled):hover, .dash-main .module-card.mc-clean:hover .mc-grid > .module-start-btn:not(:disabled){background:#353B57;color:#fff;}
 .dash-main .module-card.mc-clean .mc-grid > button:not(.module-start-btn):not(:disabled):hover{background:#F3F4F8;color:var(--navy);}
-.dash-main .module-card.mc-clean .mc-grid > button:disabled{background:#F7F8FB;color:#9AA0B4;cursor:not-allowed;}
+.dash-main .module-card.mc-clean .mc-grid > button:disabled{background:rgba(247,248,251,.30);color:#9AA0B4;cursor:not-allowed;}
 .dash-main .module-card.mc-clean .mc-grid .module-topics-btn span{color:#6B7088;font-weight:700;margin-left:2px;}
 @media(max-width:1600px){ .dash-main .module-card.mc-clean .mc-grid > button:not(.module-start-btn){font-size:11.5px;padding:8px 4px;} }
 `; document.head.appendChild(st);
