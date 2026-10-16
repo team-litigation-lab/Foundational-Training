@@ -660,7 +660,12 @@ window.ftToggleOpenDay = async function(id, on){
    Log-in credentials are not in it: they point to the credentials document. */
 const FTC = {data:null, loading:false, failed:false};
 function ftLoadCurriculum(){
-  if(FTC.data || FTC.loading) return;
+  // FTC.failed belongs in this guard, as FT.tried and FTS_SCRIPT.tried do in theirs. Without it a
+  // failed load (a stale admin token gives a non-ok answer, so j is null) left data null and
+  // loading false, and the render below asked again on every render — the Curriculum tab re-fetching
+  // /trainer/curriculum.json in a loop against the request allowance every LSH site shares.
+  // adminLogout already clears FTC.failed, so signing in again retries, as the message on screen says.
+  if(FTC.data || FTC.loading || FTC.failed) return;
   FTC.loading = true;
   fetch("/trainer/curriculum.json", {cache:"no-store", headers: state.adminToken ? {Authorization: "Bearer " + state.adminToken} : {}})
     .then(r=>r.ok ? r.json() : null)
