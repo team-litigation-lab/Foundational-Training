@@ -213,6 +213,11 @@ function visual(html){
   });
   // 4. "*** Free Communication Upskill for 1 or 1 ½ hours" is the facilitator's own timing note, not an instruction
   root.querySelectorAll("p").forEach(p => { if(/^\*+\s*Free Communication Upskill/i.test(p.textContent.trim())) p.remove(); });
+  // a row of asterisks is the guide's own divider: draw it as one rather than as a line of punctuation
+  root.querySelectorAll("p").forEach(p => {
+    if(!/^[\*\s·]{5,}$/.test(p.textContent.trim())) return;
+    const hr = document.createElement("hr"); hr.className = "ftdd-rule"; p.replaceWith(hr);
+  });
   // 5. the guide's long guideline runs (Day 6's calendar mock calls: the minimum information, the scenarios, the
   //    scheduling rules, the additional notes) come through as a wall of headings. Each section becomes a card set,
   //    so a trainee can see the scenarios and the rules as separate things rather than one block of text.
@@ -712,33 +717,23 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-stage-split .ftdd-sheet img{max-height:min(44vh,420px);}
 .ftdd-stage-split .ftdd-sheet .canva-frame{height:min(34vh,300px) !important;}
 .ftdd-onnavy{overflow:auto;min-height:0;}
-/* links as picture tiles */
-.ftdd-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:10px 0 14px;}
-/* a video is the slide's main act: its tile is bigger than a document's and takes two columns where there is room */
-.ftdd-tiles > .ftdd-vwrap, .ftdd-tiles > a.ftdd-tile.k-video{grid-column:span 2;}
-@media(max-width:900px){ .ftdd-tiles > .ftdd-vwrap, .ftdd-tiles > a.ftdd-tile.k-video{grid-column:span 1;} }
-.ft-body a.ftdd-tile.k-video{padding:16px 18px;}
-.ftdd-tile.k-video .ftdd-tile-ic{width:64px;height:64px;font-size:32px;border-radius:14px;}
-.ftdd-tile.k-video .ftdd-tile-t b{font-size:16.5px;-webkit-line-clamp:3;}
-.ftdd-tile.k-video .ftdd-tile-t small{font-size:13.5px;}
-.ft-body a.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #E6E1D8;border-left:5px solid #DB8437;color:var(--ink);text-decoration:none;box-shadow:0 2px 8px rgba(22,24,41,.06);transition:transform .15s ease,box-shadow .15s ease;overflow-wrap:normal;}
-.ft-body a.ftdd-tile:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(22,24,41,.12);}
-.ftdd-tile-ic{flex:0 0 auto;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:#FBF1E6;}
-.ftdd-tile.k-video .ftdd-tile-ic{background:#262B45;}
-.ftdd-tile.k-folder .ftdd-tile-ic{background:#FFF4D6;}
-.ftdd-tile.k-sheet .ftdd-tile-ic{background:#E7F6EC;}
-.ftdd-tile.k-doc .ftdd-tile-ic, .ftdd-tile.k-file .ftdd-tile-ic{background:#EAF1FF;}
-.ftdd-tile-t{display:flex;flex-direction:column;min-width:0;}
-.ftdd-tile-t b{font-size:14.5px;line-height:1.3;color:#262B45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-top:2px;}
-.ftdd-tile.k-video .ftdd-tile-t small{color:#262B45;}
-.ftdd-vwrap{display:flex;flex-direction:column;gap:0;}
-.ftdd-vwrap > a.ftdd-tile{border-bottom-left-radius:0;border-bottom-right-radius:0;}
-.ftdd-tile.k-transcribe{border-left-color:#2E7D4F;background:#EEF8F2;cursor:pointer;font:inherit;text-align:left;}
-.ftdd-tile.k-transcribe .ftdd-tile-t small{color:#1F5B39;}
-.ftdd-learn{border:1px solid #E6E1D8;border-top:none;border-left:5px solid #2E7D4F;border-radius:0 0 14px 14px;background:#EEF8F2;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:6px 12px;text-align:left;cursor:pointer;}
-.ftdd-learn:hover{background:#DFF2E7;}
-.ftdd-learn.done{background:#2E7D4F;color:#fff;border-left-color:#1F5B39;}
+/* A LINK IS A LINK, NOT A CARD.
+   A slide is already a card: boxing every video and document inside it put cards over cards and filled the
+   screen with chrome rather than the day's work. Each link is one line on the slide — its icon, the title as
+   the link, and what it opens — with "📝 What I learned" beside a video as another small link. */
+.ftdd-tiles{display:flex;flex-direction:column;gap:4px;margin:8px 0 12px;}
+.ft-body a.ftdd-tile, .ft-body button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;border:0;border-radius:0;background:none;box-shadow:none;color:var(--ink);text-decoration:none;text-align:left;font:inherit;cursor:pointer;overflow-wrap:break-word;}
+.ft-body a.ftdd-tile:hover .ftdd-tile-t b, .ft-body button.ftdd-tile:hover .ftdd-tile-t b{color:#B5651F;}
+.ftdd-tile-ic{flex:0 0 auto;width:auto;height:auto;border-radius:0;background:none !important;font-size:16px;line-height:1.4;}
+.ftdd-tile-t{display:inline;min-width:0;}
+.ftdd-tile-t b{font-size:15px;line-height:1.5;color:#1F5B39;text-decoration:underline;text-underline-offset:2px;display:inline;overflow:visible;}
+.ftdd-tile.k-video .ftdd-tile-t b{font-size:15.5px;}
+.ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-left:8px;white-space:nowrap;}
+.ftdd-vwrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;}
+.ftdd-learn{border:0;background:none;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+.ftdd-learn:hover{color:#2E7D4F;}
+.ftdd-learn.done{color:#2E7D4F;text-decoration:none;}
+.ftdd-learn.done::before{content:"✓ ";}
 /* 📚 Dashboard: a lesson's day deck beside its Start, and the instruction-only days' own decks under the lessons */
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck{flex:0 0 auto;border-radius:0 !important;margin:0 !important;padding:5px 9px !important;font-size:12px !important;font-weight:700;background:#FFF4E8 !important;color:#B5651F !important;border:none !important;border-left:1px solid #9CA3B8 !important;min-height:0 !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck:hover{background:#FBE3CB !important;}
@@ -766,7 +761,7 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
 .ftdd-x b{display:block;color:#262B45;font-size:15.5px;} .ftdd-x p{margin:4px 0 0 !important;}
 .ftdd-x-practice{background:#EEF4FF;} .ftdd-x-practice .ftdd-step-n{background:#262B45;}
 .ftdd-x-ad{position:absolute;top:8px;right:8px;display:flex;gap:4px;}
-button.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #E6E1D8;border-left:5px solid #DB8437;cursor:pointer;text-align:left;font:inherit;}
+button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;border:0;background:none;cursor:pointer;text-align:left;font:inherit;}
 .ftdd-xform{margin-top:16px;padding:14px 16px;border:2px dashed #C9CFDC;border-radius:14px;background:#F7F8FB;}
 .ftdd-xform-h{margin:0 0 8px !important;font-weight:800;color:#262B45;} .ftdd-xform-h span{font-weight:500;color:var(--ink-soft);}
 .ftdd-presets{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;font-size:13px;} .ftdd-presets > span{font-weight:700;color:#262B45;}
@@ -791,16 +786,16 @@ button.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;bord
 .ftdd-card b{display:block;font-size:13.5px;line-height:1.3;color:#262B45;} .ftdd-card small{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-soft);}
 .ftdd-chips-l{display:flex;flex-wrap:wrap;gap:6px;}
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
-.ftdd-score{margin:10px 0 14px;border:1px solid #E6E1D8;border-left:5px solid #DB8437;border-radius:14px;background:#fff;padding:12px 16px;}
-.ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:8px;}
+/* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
+.ftdd-score{margin:6px 0 12px;}
+.ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
 .ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
 .ftdd-score-l li{position:relative;padding-left:26px;font-size:13.5px;line-height:1.4;counter-increment:sc;}
 .ftdd-score-l li::before{content:counter(sc);position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:6px;background:#FBF1E6;color:#B5651F;font:700 11.5px/19px 'Inter',sans-serif;text-align:center;}
 .ftdd-score-f{margin:8px 0 0;font-size:12.5px;color:var(--ink-soft);}
-.ftdd-score-shot{margin-top:10px;} .ftdd-score-shot img{max-height:min(34vh,300px);}
-/* on a short screen the criteria themselves are what matters: the picture of the trainer's sheet gives way to them */
-@media(max-height:820px){.ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}}
+/* the picture of the trainer's own sheet says nothing the criteria above it don't: on a slide it is only clutter */
+.ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}
 .ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
 .ft-body p.ftdd-check{padding:8px 12px 8px 38px;border-radius:10px;background:#EEF8F2;position:relative;}
 .ft-body p.ftdd-check::before{content:"📋";position:absolute;left:12px;top:8px;}
