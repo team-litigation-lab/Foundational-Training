@@ -39,7 +39,8 @@ const WHERE = {
     transcribe: {go: () => "goto('transcribe')", note: "🎧 Transcription Activity"},
     guide:      {go: () => "goto('guide')",      note: "📘 Process Guide"},
     drills:     {go: () => "goto('drills')",     note: "🏷 Naming & Reporting Drills"},
-    calrules:   {go: () => "goto('calrules')",   note: "📅 Booking Rule Check"}
+    calrules:   {go: () => "goto('calrules')",   note: "📅 Booking Rule Check"},
+    listening:  {go: () => "goto('listening')",  note: "🎧 Call Listening Log"}
   },
   trainer: {note: "🧑‍🏫 With your trainer"},
   drive:   {note: "📁 Your Assessments/Activities folder"},
