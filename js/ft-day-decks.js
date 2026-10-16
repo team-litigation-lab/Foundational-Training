@@ -579,8 +579,11 @@ const splitDays = () => { const s = discussionDays();
 // of the day, the work the guide sets outside the discussion. A day without a discussion has its card alone.
 function dayCardHtml(n, cur, ex){
   const on = dayOpen(n), i = dayInfo(n), k = ((ex || {})[n] || []).length, half = discussionDays().has(n);
-  const sub = half ? (i.offline ? `📴 ${i.offline} outside training hours` : "The rest of the day")
-    : e(String(i.role || "").replace(/ Training$/, ""));
+  // what the day holds, so the card says something: its activities, and the work set outside the session
+  const acts = (i.items || []).filter(x => x.at !== "offline" && x.kind !== "Upskill" && !(x.at === "tool" && x.id === "skills")).length;
+  const sub = [half ? "The rest of the day" : e(String(i.role || "").replace(/ Training$/, "")),
+    acts ? `${acts} ${acts === 1 ? "activity" : "activities"}` : "",
+    i.offline ? `📴 ${i.offline} outside training hours` : ""].filter(Boolean).join(" · ");
   return `<div class="ftdd-daycard${on ? "" : " locked"}${n === cur ? " now" : ""}${half ? " half" : ""}" id="dayd-${n}">
       <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${on ? (half ? "Open the rest of Day " + n + ": the work outside the discussion" : "Open the Day " + n + " instructions") : "Opens on Day " + n}">
         <span class="ftdd-dc-ic">${on ? (half ? "📴" : "📋") : "🔒"}</span><span class="ftdd-dc-t"><b>Day ${n} · Instructions</b><small>${sub}</small></span>
@@ -790,7 +793,7 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
    day's instruction strip under it. A lesson card is never squeezed to fit, so where the screen is too short
    for four full rows the dashboard scrolls instead of clipping them. */
 @media(min-width:1001px){
-  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-rows:minmax(134px,auto) !important;align-content:start !important;height:auto !important;}
+  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-rows:158px !important;align-content:start !important;height:auto !important;}
 }
 @media(min-width:1001px) and (min-height:640px){
   body:has(main.main-dash .ftdd-daycell){overflow:auto !important;}
@@ -804,9 +807,13 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
 /* the lesson card keeps its size — never squeezed below what its title, Start and buttons need — and the
    day's instruction card is the strip under it. On a short screen the grid grows and the page scrolls
    rather than clipping a card. */
-.ftdd-daycell > .module-card.mc-compact{height:96px !important;min-height:96px !important;max-height:96px !important;}
+.ftdd-daycell > .module-card.mc-compact{flex:0 0 auto;height:116px !important;min-height:116px !important;max-height:116px !important;}
+/* the lesson's name always shows: the head keeps room for two lines of it above the Start row */
+.ftdd-daycell > .module-card.mc-compact > .module-head{min-height:38px !important;flex:1 1 auto;}
+/* every cell is the same size, so the grid reads as four rows of four: the instruction card takes whatever
+   the lesson card above it leaves, and on a day with no lesson it fills the cell on its own */
+.ftdd-daycell > .ftdd-daycard{flex:1 1 auto;min-height:40px;}
 .ftdd-daycell > .module-card{flex:1 1 auto;}
-.ftdd-daycell > .ftdd-daycard{flex:0 0 auto;height:auto;min-height:0;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-main{padding:4px 10px;gap:8px;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-ic{font-size:17px;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-t b{font-size:13px;}

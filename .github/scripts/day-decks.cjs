@@ -79,6 +79,14 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (fit.cols !== 4) fail(`📚 Dashboard shows ${fit.cols} columns, not the four the 16 days need`);
   if (fit.wide > 2) fail(`📚 Dashboard overflows sideways by ${fit.wide}px`);
   if (fit.clipped.length) fail(`📚 Dashboard clips its cards: ${fit.clipped.join(', ')}`);
+  // every lesson card still says which lesson it is, and every cell is the same size as the next
+  const titles = await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycell .module-card .mh-title')].map(x => {
+    const r = x.getBoundingClientRect(), card = x.closest('.module-card').getBoundingClientRect();
+    return { id: x.closest('.module-card').id, text: x.innerText.trim(), shown: r.height > 6 && r.bottom <= card.bottom + 1 }; }));
+  if (titles.length !== 8) fail(`${titles.length} lesson cards carry a title, not 8`);
+  titles.filter(t => !t.shown || !t.text).forEach(t => fail(`${t.id}'s lesson name is hidden on 📚 Dashboard ("${t.text}")`));
+  const sizes = await page.evaluate(() => [...new Set([...document.querySelectorAll('.module-grid > .ftdd-daycell')].map(c => Math.round(c.getBoundingClientRect().height)))]);
+  if (sizes.length !== 1) fail(`the day cells are not all the same size: ${sizes.join(', ')}px`);
   if (l1) { await l1.click(); await page.waitForTimeout(1500); }
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
     deck: !!document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
