@@ -163,7 +163,7 @@ window.portalGate = {
     return '<style>'
       + '#gate-box{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto;color:#fff;font-family:"IBM Plex Sans",Arial,Helvetica,sans-serif;'
       +   '--acc:#f97316;--acc-h:#fb923c;--glow:#132a5c;background:radial-gradient(circle at 30% 20%,var(--glow),#081226 70%)}'
-      + '#gate-box.admin{--acc:#ef4444;--acc-h:#f87171;--glow:#3b0d0d}'
+      + '#gate-box.admin{--acc:#f87171;--acc-h:#fca5a5;--glow:#3b0d0d}'
       + '#gate-box .gb{width:420px;max-width:100%;margin:auto;background:rgba(255,255,255,.03);border:1px solid #1e2c4d;border-top:3px solid var(--acc);border-radius:12px;padding:32px;box-shadow:0 30px 80px rgba(0,0,0,.5)}'
       + '#gate-box .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}'
       + '#gate-box .brand img{height:44px;width:auto;border-radius:8px;background:#fff;padding:4px 8px;box-sizing:border-box;border:2px solid var(--acc)}'
