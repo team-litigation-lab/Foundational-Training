@@ -15,7 +15,7 @@
   --paper-2:#E5DACB;
   --band:#0F0F10;
   --ink:#1B1A18;
-  --muted:#5F574C;
+  --muted:#3A332B;   /* on the page's photo-and-paper backdrop: 1.2:1 -> 4.9:1 */
   --line:#CFC2B0;
   --tile:#F7A96B;
   --tile-hi:#FBC08F;
@@ -189,7 +189,10 @@ h1{
 }
 .words li.is-bonus{background:var(--letter);background-image:var(--grad-sel);color:var(--cream);}
 .words li.is-bonus i{background:var(--cream);}
-.empty{color:var(--muted);margin:0;}
+/* This note sits in the dark wood-toned panel, not on the page: a muted ink
+   there measures 1.4:1 whichever way it is tuned, so it takes a light tone
+   (7:1 on that panel) and stays the quiet line it was. */
+.empty{color:rgba(255,255,255,.78);margin:0;}
 .key-group{display:flex;flex-direction:column;gap:6px;}
 .key-group h3{margin:0;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
 .key{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;padding:0;list-style:none;font-family:var(--roman);font-size:17px;letter-spacing:.05em;}

@@ -34,10 +34,21 @@ main{flex:1;display:flex;flex-direction:column;padding:16px;gap:12px}
 .note h1{margin:0 0 8px;font-size:20px}
 /* The button's text is white, so it takes the deep orange: the light end of the plain
    orange gradient would leave it too faint to read. */
-.btn{display:inline-block;background:var(--orange);background-image:var(--grad-orange-deep);color:#fff;text-decoration:none;font-weight:600;border-radius:8px;padding:9px 16px}
+.btn{display:inline-block;background:var(--orange);background-image:var(--grad-orange);color:#241304;text-decoration:none;font-weight:600;border-radius:8px;padding:9px 16px}
 iframe{flex:1;width:100%;min-height:70vh;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
 .bar{display:flex;justify-content:flex-end}
 .bar a{color:var(--navy);font-size:14px}
+
+/* ---- The LSH standard page style (see the Portal's README) ----------------
+   This page is outside the app shell in index.html, so it carries its own copy
+   of the two halves: the backdrop at the shared strength, and a translucent
+   panel on top of it so the photo carries on underneath. The gradients and the
+   lit edge are the same vocabulary as the app's.
+   -------------------------------------------------------------------------- */
+body::before{opacity:.40 !important;}
+.t{background:rgba(255,255,255,.60) !important;backdrop-filter:saturate(118%) blur(10px);-webkit-backdrop-filter:saturate(118%) blur(10px);}
+header{box-shadow:inset 0 -1px 0 rgba(56,189,248,.38),0 12px 30px -16px rgba(22,24,41,.65);}
+@media print{body::before{display:none;} .t{background:#fff !important;backdrop-filter:none;}}
 </style>
 </head>
 <body>
