@@ -5,8 +5,8 @@
    check by screenshot:
      • the Hubstaff To-Do, set daily from the guide's templates ("To-Do: Classroom Discussion: Intake Training
        Day 1", and on a shadowing day "To-Do: Shadowing Intake Specialist Role (buddy's name)"). The platform now
-       shows each day's exact text with 📋 Copy, on 📚 Dashboard and on this page (#/shadowing), so there is
-       nothing to remember or retype.
+       shows each day's exact text with 📋 Copy, in the 🛠 Practice Lab and on this page (#/shadowing), so there
+       is nothing to remember or retype.
      • the recorded shadowing videos the guide provides for when no buddy is free: each one's title is the link.
      • the shadowing session itself: instead of a screenshot of the TAM, the trainee writes a short log — who they
        shadowed, what that person actually did, what they learned, what they asked, and what they will use. Checked
@@ -73,7 +73,7 @@ function loadTodo(force){
   if(!force && X.data && Date.now() - X.at < 120000) return Promise.resolve(X.data);
   X.loading = sharedGet("settings:todo").then(v => { X.data = v && typeof v === "object" && v.days ? v : {days: {}}; X.at = Date.now(); })
     .catch(() => { if(!X.data) X.data = {days: {}}; })
-    .then(() => { X.loading = null; if(["shadowing", "modules"].includes(state.view) || (state.view === "admin" && state.adminTab === "shadowing")) render(); return X.data; });
+    .then(() => { X.loading = null; if(["shadowing", "simulators"].includes(state.view) || (state.view === "admin" && state.adminTab === "shadowing")) render(); return X.data; });
   return X.loading;
 }
 
@@ -116,7 +116,7 @@ async function saveLog(day){
 function todoCard(day, compact){
   const lines = linesFor(day), note = noteFor(day);
   return `<div class="card td-card ${compact ? "td-compact" : ""}"><div class="td-head"><b>📋 ${compact ? `Day ${day}: your Hubstaff To-Do` : "Your Hubstaff To-Do for this day"}</b>
-      ${compact ? `<button class="btn btn-ghost btn-sm" onclick="FTShadow.open(${day})">${isShadowDay(day) ? "Open the shadowing log" : "All 18 days"}</button>` : ""}</div>
+      ${compact ? `<button class="btn btn-navy btn-sm" onclick="FTShadow.open(${day})">${isShadowDay(day) ? "Open the shadowing log" : "All 18 days & the shadowing log"}</button>` : ""}</div>
     ${lines.map((l, i) => `<div class="td-line"><code id="td_${day}_${i}">To-Do: ${e(l)}</code><button class="btn btn-ghost btn-sm" onclick="FTShadow.copy('td_${day}_${i}')">📋 Copy</button></div>`).join("")}
     ${note ? `<p class="td-note">${e(note)}</p>` : ""}
     ${!compact && isShadowDay(day) && videosFor(day).length ? `<div class="td-vids"><b>🎬 No buddy free? Watch these instead</b>
@@ -176,20 +176,12 @@ function fallback(text, ok){
     document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); ok();
   }catch(err){ toast("Couldn’t copy on this browser — select the line and copy it."); }
 }
-// 📚 Dashboard (the "modules" view): the day's To-Do, where the trainee starts their day
-const __after = window.afterRender;
-window.afterRender = function(){
-  const out = __after ? __after.apply(this, arguments) : undefined;
-  try{
-    if(state.view === "modules" && state.traineeId && !state.isAdmin && !document.getElementById("tdStrip")){
-      if(!X.data){ loadTodo(); return out; }
-      const main = document.querySelector("main"); if(!main) return out;
-      const box = document.createElement("div"); box.id = "tdStrip"; box.innerHTML = todoCard(today(), true);
-      const first = main.querySelector(":scope > .card, :scope > section"); if(first) first.before(box); else main.prepend(box);
-    }
-  }catch(err){}
-  return out;
-};
+// 🛠 the Practice Lab's section: today's To-Do, and the way in to the log
+// (not the 📚 Dashboard: its lesson grid is sized to one screen, and anything added above it pushes the lessons out)
+window.ftShadowSection = () => { if(!X.data){ loadTodo(); return ""; } const day = today();
+  return `<section class="fts-group"><h2>👥 Shadowing &amp; the day’s To-Do</h2>
+    <p class="fts-sub">The Hubstaff To-Do for each day in the guide’s wording, ready to copy, and your write-up of each shadowing session — the six sessions on Days ${Object.keys(SHADOW).join(", ")}, in place of the TAM screenshot.</p>
+    ${todoCard(day, true)}</section>`; };
 
 // 🏅 My Performance: the shadowing sessions logged
 window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.logs) return [];

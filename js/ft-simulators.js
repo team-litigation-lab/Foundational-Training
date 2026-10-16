@@ -94,6 +94,7 @@ function renderSimulators(){
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
     ${window.ftListenSection ? ftListenSection() : ""}
+    ${window.ftShadowSection ? ftShadowSection() : ""}
     ${renderSkills()}`;
 }
 

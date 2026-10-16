@@ -1,5 +1,5 @@
 // 👥 Shadowing log and the day's Hubstaff To-Do (js/ft-todo.js): every day's To-Do line in the guide's wording, the
-//   shadowing line on the six shadowing days, 📋 Copy, the strip on 📚 Dashboard; a part-filled log saved but not
+//   shadowing line on the six shadowing days, 📋 Copy in the 🛠 Practice Lab; a part-filled log saved but not
 //   counted and a full one counted, saved in shadow:<id> and on 🏅 My Performance; the trainer sets a day's buddy
 //   and wording (settings:todo) and reads the write-ups; the worker keeps shadow:<id> the trainee's own.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/shadowing.cjs http://localhost:8787/
@@ -44,11 +44,15 @@ async function workerChecks() {
   await put('shadow:' + id, null);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
 
-  // 📚 Dashboard (the "modules" view): the day's To-Do, with the exact wording of the guide's template
-  await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-  const strip = await page.evaluate(() => (document.getElementById('tdStrip') || {}).innerText || '');
-  if (!/To-Do: Classroom Discussion: Virtual Assistant Essentials - Day 1/.test(strip)) fail(`the Dashboard's To-Do isn't the guide's Day 1 wording: ${strip.slice(0, 200)}`);
-  if (!/Copy/.test(strip)) fail('the Dashboard\'s To-Do has no Copy button');
+  // 🛠 Practice Lab: the day's To-Do, in the exact wording of the guide's template
+  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1500);
+  const strip = await page.evaluate(() => [...document.querySelectorAll('.fts-group')].map(x => x.innerText).find(t => /Shadowing & the day/.test(t)) || '');
+  if (!/To-Do: Classroom Discussion: Virtual Assistant Essentials - Day 1/.test(strip)) fail(`the Practice Lab's To-Do isn't the guide's Day 1 wording: ${strip.slice(0, 200)}`);
+  if (!/Copy/.test(strip)) fail('the Practice Lab\'s To-Do has no Copy button');
+  // the 📚 Dashboard keeps its one-screen lesson grid: nothing of ours is added above it
+  await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
+  const over = await page.evaluate(() => { const g = document.querySelector('.module-grid'); return g ? g.scrollHeight - g.clientHeight : 0; });
+  if (over > 2) fail(`the Dashboard's lessons overflow by ${over}px`);
 
   // every day's line, and the shadowing line on the six shadowing days
   const lines = await page.evaluate(() => { const out = {}; (FTDays.DAYS || []).forEach(d => { out[d.day] = FTShadow.lines(d.day); }); return out; });
@@ -76,8 +80,10 @@ async function workerChecks() {
   if (vids.d11.length) fail('a day the guide gives no videos for has some');
 
   // the trainee's log: part-filled doesn't count
-  await page.evaluate(() => FTShadow.open(7)); await page.waitForTimeout(1000);
-  if (await page.evaluate(() => state.view) !== 'shadowing') fail('the Dashboard\'s button doesn\'t open #/shadowing');
+  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1000);
+  await page.click('text=All 18 days & the shadowing log'); await page.waitForTimeout(900);
+  if (await page.evaluate(() => state.view) !== 'shadowing') fail('the Practice Lab\'s button doesn\'t open #/shadowing');
+  await page.evaluate(() => FTShadow.day(7)); await page.waitForTimeout(600);
   await page.fill('#sh_who', 'The intake specialist on duty');
   await page.fill('#sh_date', '2026-10-14');
   await page.click('text=💾 Save this log'); await page.waitForTimeout(1300);
@@ -124,5 +130,5 @@ async function workerChecks() {
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Shadowing & To-Do test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and the six shadowing days\' lines, the Dashboard strip with Copy; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer setting the buddy and note and reading the write-up, which the trainee then sees; the worker\'s rules).');
+  console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and the six shadowing days\' lines, the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer setting the buddy and note and reading the write-up, which the trainee then sees; the worker\'s rules).');
 })().catch(e => { console.error(e); process.exit(1); });

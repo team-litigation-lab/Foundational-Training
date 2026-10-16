@@ -113,7 +113,7 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/listening.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Shadowing log and the day's To-Do (the guide's wording, the Dashboard strip, a logged session, the trainer's buddy and reading)
+      - name: Shadowing log and the day's To-Do (the guide's wording, the Practice Lab's To-Do, a logged session, the trainer's buddy and reading)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/shadowing.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
