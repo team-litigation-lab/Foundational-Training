@@ -8,8 +8,8 @@
    itself and says it, in the guide's own order.
 
    Where it shows:
-     • 📚 Dashboard — a band at the top (window.LSH_HOME_NOTICES), every visit.
-     • Right after a lesson is finished — the same band, in "you just finished this" form.
+     • Under a passed ✍️ Knowledge Check — compact(), "you just finished this" and the next step.
+       (It used to be a band at the top of 📚 Dashboard too; that row now holds the scores.)
 
    How the position is worked out (no trainer input, nothing to set up):
      The sequence is the curriculum's own, Days 1 → 18. A trainee's place in it is the first
@@ -59,9 +59,6 @@ const sessionOpen = id => { try{ return root.FTSessions && typeof FTSessions.ope
 // dashboard has actually drawn it, so it is not cleared from the view the lesson was finished on.
 let seen = null, shown = false, shownStudied = false;
 
-// 📋 the day's deck (js/ft-day-decks.js): its instructions, the links to watch, and its placeholders
-const deckBtn = n => root.FTDayDecks && FTDayDecks.dayOpen(n)
-  ? `<button class="btn btn-ghost btn-sm ftn-deck" type="button" onclick="FTDayDecks.open(${Number(n)})">📋 Day ${Number(n)} deck</button>` : "";
 // Where the trainee stands in the curriculum, as a day of the guide.
 function place(){
   const days = (root.FTDays && FTDays.DAYS) || [];
@@ -172,7 +169,6 @@ function card(){
     <div class="ftn-head">
       <span class="ftn-where">${head}</span>
       <h3>Day ${d.day} · ${esc(d.role)}</h3>
-      ${deckBtn(d.day)}
     </div>
     <div class="ftn-now"><span>Your next step</span>${next
       ? (next.go ? `<button class="btn btn-navy btn-sm" type="button" onclick="${next.go}">${esc(next.label)} →</button>`
@@ -186,9 +182,8 @@ function card(){
   </section>`;
 }
 
-(root.LSH_HOME_NOTICES = root.LSH_HOME_NOTICES || []).push(function(){
-  try{ return card(); }catch(err){ return ""; }
-});
+// card() is no longer drawn on 📚 Dashboard: the top row beside the orientation card holds the scores, and each
+// lesson card's 📋 Day N (and the no-discussion days' cards in the lesson grid) carries the day's instructions.
 
 /* The band takes its "you just finished this" form the first time the dashboard is drawn after a
    lesson becomes finished. Nothing here wraps the finish itself: a lesson with process questions is
@@ -239,7 +234,7 @@ function compact(justLesson){
     : next.go ? `<button class="btn btn-navy btn-sm" type="button" onclick="${next.go}">${esc(next.label)} →</button>`
     : `<b class="ftn-live">${esc(next.label)}${next.kind === "lesson" ? " — it opens as soon as that lesson is open for your batch." : " — this one isn’t open to you yet."}</b>`;
   return `<section class="card ftn ftn-just ftn-compact">
-    <div class="ftn-head"><span class="ftn-where">${head}</span><h3>Day ${d.day} · ${esc(d.role)}</h3>${deckBtn(d.day)}</div>
+    <div class="ftn-head"><span class="ftn-where">${head}</span><h3>Day ${d.day} · ${esc(d.role)}</h3></div>
     <div class="ftn-now"><span>Your next step</span>${body}</div>
     <p class="ftn-after">The rest of Day ${d.day} is on <a class="ftn-link" onclick="goto('modules')">📚 Dashboard</a>.</p>
   </section>`;
@@ -252,7 +247,6 @@ root.FTNextStep = {place, nextStep, card, compact};
 .ftn.ftn-just{border-left-color:var(--navy);background:#F6F9FF;}
 .ftn.ftn-done{border-left-color:var(--navy);}
 .ftn-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
-.ftn-head .ftn-deck{margin-left:auto;align-self:center;padding:3px 12px;font-size:12.5px;}
 .ftn-where{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--orange-deep);}
 .ftn.ftn-just .ftn-where{color:var(--navy);}
 .ftn h3{margin:0;color:var(--navy);font-size:18px;}

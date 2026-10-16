@@ -179,6 +179,10 @@ window.renderTopbar = function(){
 // beside that lesson's Knowledge Check score, and window.LSH_HOME_NOTICES holds () => HTML for anything
 // that needs the trainee's eye the moment they open the page (a live 🎲 task). js/ft-simulators.js
 // registers the graded calls in the first two; js/ft-admin-ops.js registers the task card.
+// window.LSH_HOME_CARD_EXTRA holds (lesson) => HTML for a button beside a lesson card's Start,
+// window.LSH_HOME_GRID_CARDS holds () => [{after: lesson id, html}] — cards of the program's own placed in the
+// lesson grid right after a lesson (in the order they run), and window.LSH_HOME_BELOW_LESSONS holds () => HTML
+// for a row under the lesson cards (wrap it in .lsh-below).
 const hooks = (name, arg) => (window[name] || []).map(f => { try{ return f(arg) || ""; }catch(err){ return ""; } }).join("");
 const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
 
@@ -246,12 +250,16 @@ function stepTimeline(all){
 // The pinned 📌 Training Orientation and Rules card (first, on the left) and what needs the eye next (the
 // next-step band, a live task) share one compact row, side by side, so the lesson cards keep the height for the one-screen rule. Either one
 // alone takes the whole row; phones and narrow windows stack them.
-const topRow = (notices, pins) => notices && pins
-  ? `<div class="dash-pair"><div class="dash-pair-pin">${pins}</div><div class="dash-pair-now">${notices}</div></div>`
-  : notices + pins;
+const topRow = (notices, pins, scores) => (notices || scores) && pins
+  ? `<div class="dash-pair"><div class="dash-pair-pin">${pins}</div><div class="dash-pair-now">${notices}${scores}</div></div>`
+  : notices + pins + scores;
 // 📚 Dashboard's lesson cards, compact: the lesson's icon sits beside its Start button instead of on a band of its
 // own, so a card is about half as tall and many more fit on one screen (only here: other pages keep the full card).
-function compactCard(html){
+function gridCards(all){
+  const extra = []; (window.LSH_HOME_GRID_CARDS || []).forEach(f => { try{ extra.push(...(f() || [])); }catch(err){} });
+  return all.map(d => compactCard(moduleCard(d), d) + extra.filter(x => Number(x.after) === Number(d.id)).map(x => x.html).join("")).join("");
+}
+function compactCard(html, d){
   const t = document.createElement("template"); t.innerHTML = String(html).trim();
   const card = t.content.firstElementChild; if(!card) return html;
   const icon = card.querySelector(".module-body .module-icon"), start = card.querySelector(".module-start-btn");
@@ -259,6 +267,9 @@ function compactCard(html){
   const row = document.createElement("div"); row.className = "mc-startrow";
   if(icon) row.appendChild(icon);
   row.appendChild(start);
+  // a program's own button beside Start (window.LSH_HOME_CARD_EXTRA: (lesson) => HTML), e.g. the day's instructions deck
+  const extra = d ? hooks("LSH_HOME_CARD_EXTRA", d) : "";
+  if(extra) row.insertAdjacentHTML("beforeend", extra);
   const grid = card.querySelector(".mc-grid");
   (grid || card.lastElementChild).before(row);
   const body = card.querySelector(".module-body");
@@ -275,12 +286,10 @@ function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview;
   const pct = all.length ? Math.round(done / all.length * 100) : 0;
-  // The standard cross-course structure every LSH training site uses (Case Management, Medsum & Demand,
-  // Property Damage Claims, EA/PA): hero + step-timeline, then the day cards (moduleCard(), with
-  // js/lsh-dashboard.js's Start / Topics / Finish Training row), then one stats band under the cards —
-  // not a side column. js/lsh-dashboard.js's own renderDashboard() patch builds this same shape by moving
-  // .dash-side to sit right after .module-grid; renderModules() is written in that shape directly, since
-  // render() calls it instead of renderDashboard().
+  // Hero + step-timeline, then one top row: the pinned orientation card and, beside it, the scores (.dash-side,
+  // drawn as tiles; a live notice such as a trainer's task goes above them), then the lesson cards (moduleCard(),
+  // with js/lsh-dashboard.js's Start / Topics / Finish Training row) across the full width, with whatever
+  // LSH_HOME_GRID_CARDS places between them (the no-discussion days' instruction decks, in day order).
   return `<div class="dash-top">
       <div class="dash-hero">
         <div class="dash-hero-text">
@@ -292,16 +301,16 @@ function renderModules(){
       ${stepTimeline(all)}
     </div>
     <div class="dash-main">
-      ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""))}
-      <div class="module-grid">${all.map(d => compactCard(moduleCard(d))).join("")}</div>
-      <div class="dash-side"><div class="dash-side-inner">
+      ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""), `<div class="dash-side"><div class="dash-side-inner">
         <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
         <div class="card stat"><div class="num">${done} / ${all.length}</div><div class="lbl">Lessons finished</div></div>
         ${typeof renderFeedbackDashCard === "function" ? renderFeedbackDashCard() : ""}
         ${typeof renderRankingCard === "function" ? renderRankingCard() : ""}
         ${hooks("LSH_HOME_STATS")}
         ${homeActions(done, all.length)}
-      </div></div>
+      </div></div>`)}
+      <div class="module-grid">${gridCards(all)}</div>
+      ${hooks("LSH_HOME_BELOW_LESSONS")}
     </div>`;
 }
 // Exposed globally so a direct, non-routed call (e.g. js/ft-updates.js's FT_OFF_VIEWS fallbacks, which call
@@ -565,19 +574,32 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn){grid-column:span 1;padding-left:10px;padding-right:10px;}
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3 > button:not(.module-start-btn):not(:last-child){border-right:1px solid #9CA3B8 !important;}
 }
-/* …and on a laptop or desktop the scores band is a column on the right of the lesson cards, not a row under
-   them: the top row (orientation card and next-step band) runs the full width, then the lessons take what is
-   left beside the column, so both rows of lessons get the height that the band used to take. */
+/* …and on a laptop or desktop the scores sit in the top row, beside the orientation card (where the next-step
+   band was): a block of tiles, two rows of four, so the lesson cards below get the whole width and height. */
 @media(min-width:1001px){
-  main.main-dash .dash-main{display:grid !important;grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:auto minmax(0,1fr);column-gap:12px;align-items:stretch;}
-  main.main-dash .dash-main > *{grid-column:1 / -1;}
-  main.main-dash .dash-main > .module-grid{grid-column:1;grid-row:2;min-height:0;}
-  main.main-dash .dash-main > .dash-side{grid-column:2;grid-row:2;margin:0 !important;padding:6px !important;min-height:0;overflow:auto;align-self:stretch;}
-  main.main-dash .dash-side-inner{flex-direction:column !important;flex-wrap:nowrap !important;gap:6px !important;height:100%;}
-  main.main-dash .dash-side-inner > *{flex:1 0 auto !important;min-height:40px;}
-  main.main-dash .dash-side-inner .lbl{font-size:9.5px !important;}
-  main.main-dash .dash-side-inner > .lp-home-acts{flex-direction:column !important;align-items:stretch !important;flex:0 0 auto !important;}
-  main.main-dash .dash-side-inner > .lp-home-acts > *{text-align:center;justify-content:center;}
+  main.main-dash .dash-main{display:grid !important;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;align-items:stretch;}
+  main.main-dash .dash-main > .module-grid{grid-row:2;min-height:0;}
+  main.main-dash .dash-main > .lsh-below{grid-row:3;min-width:0;}
+  main.main-dash .dash-pair-now > .dash-side{margin:0 !important;padding:6px !important;min-height:0;}
+  main.main-dash .dash-pair-now .dash-side-inner{display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:6px !important;height:100%;}
+  main.main-dash .dash-pair-now .dash-side-inner > *{min-height:0;}
+  main.main-dash .dash-pair-now .dash-side-inner .num{font-size:17px !important;}
+  main.main-dash .dash-pair-now .dash-side-inner .lbl{font-size:9.5px !important;}
+  main.main-dash .dash-pair-now .dash-side-inner > .lp-home-acts{flex-direction:column !important;align-items:stretch !important;justify-content:center !important;}
+  main.main-dash .dash-pair-now .dash-side-inner > .lp-home-acts > *{text-align:center;justify-content:center;}
+}
+/* a laptop-height screen: the banner gives up some height so the lesson cards keep theirs */
+@media(min-width:1001px) and (max-height:820px){
+  main.main-dash .dash-top{padding-top:10px !important;padding-bottom:6px !important;}
+  main.main-dash .dash-hero{margin-bottom:2px !important;}
+  main.main-dash .dash-hero-ribbon svg{max-height:66px;width:auto;}
+  main.main-dash .dash-hero-ribbon{max-height:66px;}
+  main.main-dash .step-timeline{padding-top:4px !important;padding-bottom:0 !important;}
+  main.main-dash .module-grid:has(> :nth-child(11)){gap:8px !important;}
+  main.main-dash .module-grid:has(> :nth-child(11)) > .module-card.mc-compact > .module-head{padding:3px 8px 2px !important;}
+  main.main-dash .module-grid:has(> :nth-child(11)) > .module-card.mc-compact .mh-title{font-size:12.5px !important;}
+  main.main-dash .module-grid:has(> :nth-child(11)) > .module-card.mc-compact > .mc-startrow > .module-start-btn{padding:3px 8px !important;}
+  main.main-dash .module-grid:has(> :nth-child(11)) > .module-card.mc-compact > .mc-grid > button{padding:2px 4px !important;}
 }
 .lp-home-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 0;}
 .dash-side-inner > .lp-home-acts{margin:0;}
