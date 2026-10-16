@@ -60,14 +60,14 @@ window.LSH_PROGRAM = {
   caseProfile: null,
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],
     lab: ["calscores", "sessions", "trainerinputs"],
-    scorecard: ["scorecards", "ranking", "sendfeedback"]
+    scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
   sources: [
     {id:"kc", icon:"✍️", label:"Knowledge Checks", key:"kcreview:",
@@ -110,6 +110,9 @@ window.LSH_PROGRAM = {
     {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
       about:"Your Daily Task Tracker and Training Monitoring Sheet in your VA Output folder: the system’s checks, or your trainer’s score where they gave one.",
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
+    {id:"skills", icon:"🧪", label:"Typing & Spelling", key:"skills:",
+      about:"Your daily tests, taken in the Practice Lab: your typing speed against the 60 WPM clients look for (the average of your last 10), and your spelling average.",
+      items: ctx => typeof window.ftSkillItems === "function" ? window.ftSkillItems(ctx) : []},
     {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
       about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
       items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},

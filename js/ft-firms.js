@@ -91,7 +91,9 @@ const DEFAULT_FIRMS = [
 ];
 const F = {firms:null, at:0, loading:null};
 function loadFirms(force){
-  if(F.loading || (!force && F.firms && Date.now() - F.at < 5 * 60000)) return F.loading;
+  // "no profiles saved" is an answer too: caching only a non-empty list made every redraw ask again, and every
+  // answer redraw again — dozens of requests a second on the Practice Lab while settings:firms was empty
+  if(F.loading || (!force && F.at && Date.now() - F.at < 5 * 60000)) return F.loading;
   F.at = Date.now();
   F.loading = sharedGet("settings:firms").then(v => { F.firms = v && Array.isArray(v.firms) && v.firms.length ? v.firms : null; })
     .catch(() => {}).then(() => { F.loading = null; rerender(); });

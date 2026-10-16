@@ -208,7 +208,7 @@ function candidateIds(name, batch) {
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
@@ -284,6 +284,31 @@ async function traineeWrite(env, tok, key, value) {
     if (value.length > 300000) return "The minutes are too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
+  }
+  if (key === `skills:${id}`) {
+    // The daily Typing and Spelling Tests (js/ft-skilltests.js). Append-only: the entries already saved stay as they
+    // are, only new ones (by id) are taken, at most a few per save, and each gets the server's time — so a trainee
+    // can't backdate a test or rewrite a result already logged. The slot and date stay the trainee's local ones.
+    if (value.length > 300000) return "The test log is too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    const out = {};
+    const num = (v, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, Math.round(n))) : 0; };
+    const str = (v, n) => String(v == null ? "" : v).slice(0, n);
+    for (const k of ["typing", "spelling"]) {
+      const old = existing && Array.isArray(existing[k]) ? existing[k] : [];
+      const known = new Set(old.map((x) => x && x.id));
+      const fresh = (Array.isArray(incoming[k]) ? incoming[k] : []).filter((x) => x && typeof x.id === "string" && !known.has(x.id)).slice(0, 4).map((x) => {
+        const base = { id: str(x.id, 24), at: new Date().toISOString(), date: /^\d{4}-\d{2}-\d{2}$/.test(x.date) ? x.date : new Date().toISOString().slice(0, 10),
+          slot: x.slot === "PM" ? "PM" : "AM", tz: num(x.tz, -720, 840) };
+        if (x.makeup && /^\d{4}-\d{2}-\d{2} (AM|PM|SP)$/.test(x.makeup)) base.makeup = x.makeup;
+        if (k === "typing") return Object.assign(base, { gross: num(x.gross, 0, 300), net: num(x.net, 0, 300), acc: num(x.acc, 0, 100), errors: num(x.errors, 0, 2000), chars: num(x.chars, 0, 5000), secs: num(x.secs, 0, 600), passage: num(x.passage, -1, 99) });
+        return Object.assign(base, { score: num(x.score, 0, 50), total: num(x.total, 1, 50), mode: x.mode === "text" ? "text" : undefined,
+          missed: (Array.isArray(x.missed) ? x.missed : []).slice(0, 50).map((m) => ({ word: str(m && m.word, 40), typed: str(m && m.typed, 60) })),
+          words: (Array.isArray(x.words) ? x.words : []).slice(0, 50).map((w) => str(w, 40)) });
+      });
+      out[k] = old.concat(fresh).slice(-600);
+    }
+    await kv.put(key, JSON.stringify(out)); return null;
   }
   if (key === `learn:${id}`) {
     // Video Notes (js/ft-video-notes.js): what the trainee learned from each training video.
