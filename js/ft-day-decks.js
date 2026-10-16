@@ -509,6 +509,9 @@ root.render = function(){
   try{ afterRender(); }catch(err){}
   document.querySelectorAll(".ftdd-sheet, .ftdd-onnavy").forEach(x => { x.scrollTop = 0; });
   fitSheets();
+  // the card settles a frame later (its own head, ribbon and buttons), and a page dealt against a sheet that
+  // was still growing comes out half empty: deal them again once the slide has its real height
+  requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); });
 };
 // ← / → turn the slides (not while typing)
 document.addEventListener("keydown", ev => {
@@ -769,10 +772,13 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-xgrid label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:700;color:#262B45;} .ftdd-xgrid .full{grid-column:1 / -1;}
 .ftdd-xgrid input, .ftdd-xgrid select, .ftdd-xgrid textarea{font:400 14px 'Inter',sans-serif;border:1px solid #CBD2DF;border-radius:8px;padding:7px 9px;background:#fff;}
 /* tasks as numbered steps; topics; checks; callouts; the name to copy */
-.ftdd-step{display:flex;gap:12px;align-items:flex-start;margin:12px 0 6px;padding:10px 14px;background:#F6F7FB;border-radius:12px;}
+/* a step is one of the day's instructions, not something to highlight: the number carries it, no box needed */
+.ftdd-step{display:flex;gap:12px;align-items:flex-start;margin:10px 0 4px;padding:0;background:none;border-radius:0;}
+/* the ones that are a highlight keep their box: the monitoring-sheet step, and the Practice Lab's own activities */
+.ftdd-step.ftdd-step-check, .ftdd-step.ftdd-x{padding:10px 14px;border-radius:12px;}
 .ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}
 .ftdd-step-t{font-size:15.5px;line-height:1.5;padding-top:5px;}
-.ftdd-step-check{background:#EEF8F2;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
+.ftdd-step-check{background:#EEF8F2 !important;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
 .ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;}
 .ftdd-acts .btn{white-space:normal;text-align:left;}
 .ftdd-acts .btn-ghost{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22);color:#fff;}
@@ -781,9 +787,12 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-ag-go:hover{background:rgba(255,255,255,.14);}
 .ftdd-secs{display:flex;flex-direction:column;gap:14px;margin:8px 0 12px;}
 .ftdd-sec h3{margin:0 0 6px !important;font:700 16px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;}
-.ftdd-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;}
-.ftdd-card{background:#fff;border:1px solid #E6E1D8;border-left:4px solid #DB8437;border-radius:12px;padding:8px 12px;}
-.ftdd-card b{display:block;font-size:13.5px;line-height:1.3;color:#262B45;} .ftdd-card small{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-soft);}
+/* a guideline is part of the slide's text, not a card on it: the rules read as a list, two to a row where
+   there is room, and only a highlight (a callout, a check, the monitoring step) keeps a box of its own */
+.ftdd-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px 24px;}
+.ftdd-card{background:none;border:0;border-radius:0;padding:1px 0 1px 16px;position:relative;}
+.ftdd-card::before{content:"•";position:absolute;left:0;top:1px;color:#DB8437;font-weight:800;}
+.ftdd-card b{display:block;font-size:14px;line-height:1.4;color:#262B45;} .ftdd-card small{display:block;font-size:12.5px;line-height:1.4;color:var(--ink-soft);}
 .ftdd-chips-l{display:flex;flex-wrap:wrap;gap:6px;}
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
