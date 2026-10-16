@@ -108,6 +108,7 @@ const failures = []; const fail = m => failures.push(m);
 
   // 🧑‍🏫 Trainer Inputs: the Reception Mock Call's scorecard from the Training Guide (14 criteria, a feedback note each)
   await page.evaluate(() => { state.adminTab = 'trainerinputs'; render(); }); await page.waitForTimeout(2500);
+  await page.evaluate(b => FTSessionsAdmin.batch(b), BATCH); await page.waitForTimeout(500);   // the batch that sorts last may be another test's
   await page.evaluate(id => FTInputs.cell(id, 'reception-live'), ids.Sam); await page.waitForTimeout(600);
   const crit = await page.$$eval('.ti-rub-tbl tbody tr:not(.ti-rub-avg) td:first-child', t => t.map(x => x.innerText));
   if (crit.length !== 14 || crit[0] !== 'Introduction of Law Firm and Name' || crit[13] !== 'Tone of Voice') fail(`the Reception Mock Call scorecard isn't the Training Guide's: ${JSON.stringify(crit)}`);
