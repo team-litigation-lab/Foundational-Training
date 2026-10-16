@@ -60,7 +60,7 @@ window.LSH_PROGRAM = {
   caseProfile: null,
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "listening"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
@@ -116,6 +116,9 @@ window.LSH_PROGRAM = {
     {id:"drills", icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
       about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",
       items: ctx => typeof window.ftDrillItems === "function" ? window.ftDrillItems(ctx) : []},
+    {id:"shadow", icon:"👥", label:"Shadowing", key:"shadow:",
+      about:"The shadowing sessions you wrote up: who you shadowed, what they did, what you learned and what you will use. Written up in place of the TAM screenshot.",
+      items: ctx => typeof window.ftShadowItems === "function" ? window.ftShadowItems(ctx) : []},
     {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",
       about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full.",
       items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},

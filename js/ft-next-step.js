@@ -40,7 +40,8 @@ const WHERE = {
     guide:      {go: () => "goto('guide')",      note: "📘 Process Guide"},
     drills:     {go: () => "goto('drills')",     note: "🏷 Naming & Reporting Drills"},
     calrules:   {go: () => "goto('calrules')",   note: "📅 Booking Rule Check"},
-    listening:  {go: () => "goto('listening')",  note: "🎧 Call Listening Log"}
+    listening:  {go: () => "goto('listening')",  note: "🎧 Call Listening Log"},
+    shadowing:  {go: () => "goto('shadowing')",  note: "👥 Shadowing & To-Do"}
   },
   trainer: {note: "🧑‍🏫 With your trainer"},
   drive:   {note: "📁 Your Assessments/Activities folder"},
