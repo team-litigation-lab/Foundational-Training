@@ -420,6 +420,35 @@ Day 9's *Minutes of the Meeting Transcription Activity: Client-to-Attorney*, as 
 - **Saved in** `transcribe:<id>` (the trainee writes it; `worker.js` allows it). An admin and 👁 Trainee view work on a test copy that is never saved.
 - **The trainer** sees every trainee's minutes, file name, link, report and evaluation at the top of the same page, and records the score in **🧑‍🏫 Trainer Inputs** (*Minutes Transcription: Recording 1 / 2*, lesson 6), which reaches the Scorecard. (If the trainer-led activities list was edited in Admin, add the two rows there.)
 
+### 📘 Process Guide (`#/guide`, `js/ft-process-guide.js`)
+
+Before each recorded demo the Training Guide has the trainee watch the tutorial and *create their own notes or work guide*. Here they build it under 🧰 **Drafting Tools**, on a page that works like Word, with the tutorial playing beside it. There is one guide per demo, and each is a step on its day:
+
+| Day | Guide |
+|---|---|
+| 8 | Saving the Intake Packet and Extracted Intake Documents in SA |
+| 12 | Saving LORs to SA and sending them to the 1P & 3P insurance companies |
+| 14 | Sending the MedLOR and requesting medical bills & records |
+| 16 | The Lien Balance Verification request |
+| 17 | Saving Medical Bills & Records |
+| 18 | The Reduction Request and Closing Statement |
+
+- **The editor:** styles (Normal, Heading 1–3, Quote), bold / italic / underline / strikethrough, highlight and font colour, bullets and numbering, indent, alignment, hyperlinks (Ctrl+K), tables, a horizontal line, undo / redo, and clear formatting.
+- **Screenshots:** pasted with Ctrl+V, dropped onto the page or inserted from a file. They are shrunk to 1400 px JPEG on the way in. Click one to set it Small / Medium / Large / Full width, or remove it.
+- **📐 Start from the outline:** the title, tools, naming convention, the steps, the reporting templates and the reminders.
+- **The checks, live:** a title, 8+ numbered steps, 2+ screenshots, a hyperlink, the naming convention, and 300+ words.
+- **⬇ Download as Word:** an MHTML `.doc` that carries the pictures, named *Process Guide - <demo> (first name)*. **📋 Copy for Google Docs** copies the formatted guide. **📤 Submit** makes it read-only until it is revised.
+- **Saved in** `guide:<id>:<guide id>`, up to 5 MB each. Everything shown is cleaned first (only formatting, links and pictures survive), so a guide can never run code on the trainer's page. An admin reads any trainee's guides at the top of the page. The demo itself is scored in 🧑‍🏫 Trainer Inputs.
+
+### 🎬 Video Notes (`#/learn`, `js/ft-video-notes.js`)
+
+Watching a training video is an activity, not a link. Every video in the 📋 Day decks carries **📝 What I learned**, which opens a short form:
+- **What it asks for:** three key takeaways in the trainee's own words, the new terms they met, one question for their trainer, and how they'll use it on the job.
+- **Checks and copy:** the form has its checks, plus **📋 Copy for my Monitoring Sheet**, because the guide asks trainees to update it after the videos.
+- **Progress:** the button turns ✓ once the notes are complete.
+- **The page:** **🎬 Video Notes** (📂 My Pages) lists every video of the days the trainee has reached, by day, with a progress bar. An admin sees every trainee's notes there.
+- **Saved in:** `learn:<id>`.
+
 ### 🧑‍🏫 Trainer Inputs: what can't be simulated
 
 The trainee–trainer activities (the demos and the live mock calls with the trainer) are recorded by the trainer: **Admin → 🧑‍🏫 Trainer Inputs** is a grid of trainees × activities; a cell takes the result (Not yet, Passed, Redo), a score, the date and a comment. **✏️ Edit the activities** changes the list (`settings:trainer-acts`, one per line: `title | lesson | kind`; the starting list is the Training Guide's live mock calls and its demos, including the Saving Intake Packet and Extracted Intake Documents Demo). The trainee sees each result under *🧑‍🏫 With your trainer*, and it reaches the Scorecard.
@@ -645,6 +674,7 @@ The document-heavy folders (`ft/`, `trainer/`) are kept in **Cloudflare R2**, th
 - **Syntax, files and build:** every `.js` file and inline script parses, every local file the pages load is in the repository, and every JSON file parses (`.github/scripts/check-site.mjs`, the EA/PA portal's); the Worker builds (`wrangler deploy --dry-run`).
 - **The Drive trackers** (`.github/scripts/drive.cjs`, no browser): the Worker reads a tracker sheet and a Monitoring Sheet (Google's export answered by the test), checks them, keeps the trainer's input on a new check, makes a trainee wait 3 minutes between checks and explains a file that isn't shared.
 - **Transcription Activity** (`.github/scripts/transcribe.cjs`): the Drafting Tools card and Day 9's step; the attorney's request; ▶ start opens the recording; Alt+T timestamps; complete minutes pass every check and a wrong file name misses; the Word file named by the convention; submitted, saved and read-only; Recording 2 its own; the trainer sees the minutes and both recordings in Trainer Inputs.
+- **Video Notes and Process Guide** (`.github/scripts/guide-notes.cjs`): 📝 What I learned on a deck video, its checks, saved, ✓ on the button and listed on 🎬 Video Notes; the Day 14 guide with the tutorial beside it, the outline, steps, a link and two pictures passing every check, saved, the Word file carrying the pictures, read-only once submitted, read by the trainer, and a guide stored with code in it cleaned before it shows (nothing runs).
 - **Practice Sessions** (`.github/scripts/practice-sessions.cjs`): the starting firms, a firm and different cases for two trainees, My Firm, the four sessions (no PI Process Flow, none waiting for a case; a MedLOR request done to the Day 14 rules passes, one with the wrong file name, relationship and fax address misses; an intake call recorded completely passes; a wrong color misses), the trainer's review and inputs, the Knowledge Check's trainer score and the Scorecard. Also in the browser job: `graded-calls.cjs` and `blueprint.cjs` (no Blueprint or Simulators card on the landing page; the top bar's Blueprint button stays).
 - **Day decks** (`.github/scripts/day-decks.cjs`): `js/ft-day-decks-data.js` is what `build/day-decks.cjs` writes today; 18 decks with no facilitator content, log-in details or Process Questions on a slide, each ending on its "To be added" slide; 📋 Day deck in the band opens Day 1 for a new trainee on its Training Agenda, drawn like the LSH decks, with its links as tiles, later days stay locked until reached, an admin opens all 18, ← / → turn the slides, and the page doesn't scroll.
 - **Server requests** (`.github/scripts/requests.cjs`): `get-many` gives a trainee only their own and public records and an Admin every one, reads this program's `ft:` records only, and refuses more than 100 keys. In a browser, with the checks sped up: a trainee's page reads the tasks for every open lesson in one request, their record about once per check, and the open lessons in one request; checks for a new version rarely; and asks nothing while the tab is in the background (catching up when it's back) or on a quick switch to another tab and back. A server that doesn't answer doesn't sign the trainee out or lock their lessons; a revoke does. The Trainee Audit reads every trainee in two requests, and Task Trackers, Monitoring Sheets and Process Questions read the trainees' sheets with get-many.

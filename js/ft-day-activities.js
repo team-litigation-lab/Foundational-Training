@@ -101,6 +101,7 @@ const DAYS = [
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
   ]},
   {day:8, role:"Intake Training", lessons:[6], items:[
+    {t:"📘 Process Guide: Saving the Intake Packet in SA (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Intake Worksheet", kind:"Assessment", at:"drive"},
     {t:"Intake Mock Call Activity (Training Platform / Prototype CMS)", kind:"Session", at:"session", id:"intake"},
     {t:"Practice intake calls on the Call Simulator while waiting for your turn", kind:"Activity", at:"tool", id:"callsim"},
@@ -125,6 +126,7 @@ const DAYS = [
     {t:"LOR Drafting Activity: the 1P and 3P letters", kind:"Activity", at:"tool", id:"lor"}
   ]},
   {day:12, role:"Insurance Communication Training", lessons:[7], items:[
+    {t:"📘 Process Guide: Saving and sending the LORs (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Tutorial Demo Recording on Saving LORs to SA and Sending to 1P & 3P Insurance Companies", kind:"Activity", at:"room"},
     {t:"LOR Uploading and Sending Demo (1P & 3P)", kind:"Demo", at:"trainer", id:"lor-demo"}
   ]},
@@ -135,6 +137,7 @@ const DAYS = [
     {t:"Document Detectives Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
+    {t:"📘 Process Guide: Sending the MedLOR (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
     {t:"Sending MedLOR and Requesting Medical Bills & Records Demo", kind:"Demo", at:"trainer", id:"medlor-demo"},
     {t:"Medical Records: MedLOR and Request for Bills & Records (practice before the demo)", kind:"Session", at:"session", id:"records"},
@@ -146,6 +149,7 @@ const DAYS = [
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:16, role:"Provider Communication Training", lessons:[8], items:[
+    {t:"📘 Process Guide: The Lien Balance Verification request (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Demo and Shadowing", kind:"Shadowing", at:"room"},
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
@@ -154,11 +158,13 @@ const DAYS = [
   // two days' instructions, with the Canva training deck and Word Game 1 in it. Being a lesson is what gives the
   // platform a record of these days being finished — without one, a trainee could never reach the end.
   {day:17, role:"Lien Negotiator Training", lessons:[9], items:[
+    {t:"📘 Process Guide: Saving Medical Bills & Records (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Buffer Time (2–3 hrs): carryover for the LV Request demo", kind:"Buffer", at:"trainer", id:"lv-demo"},
     {t:"Saving Medical Bills & Records (to ~1:00 PM): the step-by-step process and the sample demo", kind:"Activity", at:"room"},
     {t:"Your own work guide/notes on the naming conventions (MED — Provider — HICF … )", kind:"Activity", at:"room"}
   ]},
   {day:18, role:"Lien Negotiator Training", lessons:[9], items:[
+    {t:"📘 Process Guide: The Reduction Request and Closing Statement (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Digital Handouts (Individual Activity)", kind:"Breakout", at:"gc"},
     {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
     {t:"Exercise", kind:"Exercise", at:"gc"},

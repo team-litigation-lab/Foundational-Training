@@ -117,7 +117,7 @@ function linkKind(href, label, dk){
 }
 // a tile's name from the sentence that introduced it: "Task 1 - Please go to this link to watch the video presentation
 // on Common Terms Used" → "Watch the video presentation on Common Terms Used"
-const cleanTitle = t => { const s = String(t || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").trim()
+const cleanTitle = t => { const s = String(t || "").replace(/https?:\/\/\S+/g, "").replace(/\s+https?:?\/*\S*\s*$/i, "").replace(/\s+/g, " ").trim()
   .replace(/^(?:task|step)\s*\d+\s*[-–:.]*\s*/i, "").replace(/^(?:please|kindly)\s+/i, "")
   .replace(/^(?:you may also\s+)?(?:go|proceed)\s+to\s+(?:this|these|the)\s+links?\s*(?:to|for)?\s*/i, "")
   .replace(/[:\s.-]+$/, "");
@@ -151,6 +151,16 @@ function visual(html){
       el.querySelector("b").textContent = name;
       return el;
     });
+    // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
+    const wrapped = tiles.map(x => {
+      if(!x.classList.contains("k-video") || !window.FTVideoNotes) return x;
+      const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
+      const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
+      b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
+      b.setAttribute("onclick", "FTVideoNotes.openFrom(this)");
+      b.textContent = "📝 What I learned"; w.appendChild(b); return w;
+    });
+    tiles.length = 0; wrapped.forEach(x => tiles.push(x));
     const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-tiles") ? p.previousElementSibling : null;
     const box = absorb ? null : last;
     const grid = box || document.createElement("div"); grid.className = "ftdd-tiles";
@@ -264,7 +274,20 @@ document.addEventListener("keydown", ev => {
   else if(ev.key === "ArrowLeft"){ ev.preventDefault(); go(-1); }
 });
 
-root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; render(); }, dayOpen, currentDay, load: loadDecks};
+// every video a day's deck links to, for 🎬 Video Notes: [{url, title, day, slide}]
+function videos(n){
+  const d = decks() && decks()[n]; if(!d) return [];
+  const out = [], seen = new Set();
+  d.slides.forEach((s, i) => {
+    const t = document.createElement("template"); t.innerHTML = visual(s.html);
+    t.content.querySelectorAll("a.ftdd-tile.k-video").forEach(a => {
+      const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
+      out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});
+    });
+  });
+  return out;
+}
+root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; render(); }, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day};
 
 if(!document.getElementById("ftdd-deck-font")){
   const f = document.createElement("link"); f.id = "ftdd-deck-font"; f.rel = "stylesheet";
@@ -314,6 +337,11 @@ main.main-ftdd{max-width:1240px;margin:0 auto;padding:12px 20px 16px;display:fle
 .ftdd-tile-t b{font-size:14.5px;line-height:1.3;color:#262B45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-top:2px;}
 .ftdd-tile.k-video .ftdd-tile-t small{color:#262B45;}
+.ftdd-vwrap{display:flex;flex-direction:column;gap:0;}
+.ftdd-vwrap > a.ftdd-tile{border-bottom-left-radius:0;border-bottom-right-radius:0;}
+.ftdd-learn{border:1px solid #E6E1D8;border-top:none;border-left:5px solid #2E7D4F;border-radius:0 0 14px 14px;background:#EEF8F2;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:6px 12px;text-align:left;cursor:pointer;}
+.ftdd-learn:hover{background:#DFF2E7;}
+.ftdd-learn.done{background:#2E7D4F;color:#fff;border-left-color:#1F5B39;}
 /* tasks as numbered steps; topics; checks; callouts; the name to copy */
 .ftdd-step{display:flex;gap:12px;align-items:flex-start;margin:12px 0 6px;padding:10px 14px;background:#F6F7FB;border-radius:12px;}
 .ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}

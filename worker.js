@@ -208,7 +208,7 @@ function candidateIds(name, batch) {
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines|firms|trainer-acts)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
@@ -222,7 +222,7 @@ const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
+  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
@@ -280,6 +280,20 @@ async function traineeWrite(env, tok, key, value) {
     // Transcription Activity (js/ft-transcribe.js): the trainee's own minutes, file name, link and report-back for
     // the two interview recordings. The trainer's score is in labreview:<id> (Trainer Inputs), which only admins write.
     if (value.length > 300000) return "The minutes are too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    await kv.put(key, value); return null;
+  }
+  if (key === `learn:${id}`) {
+    // Video Notes (js/ft-video-notes.js): what the trainee learned from each training video.
+    if (value.length > 400000) return "The notes are too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    await kv.put(key, value); return null;
+  }
+  if (key.startsWith(`guide:${id}:`)) {
+    // Process Guide (js/ft-process-guide.js): one guide per demo, guide:<id>:<guide id>, with its pasted
+    // screenshots (shrunk in the browser). The page cleans the HTML before it shows it.
+    if (!/^guide:[^:]+:[a-z0-9-]{1,40}$/.test(key)) return "Not allowed";
+    if (value.length > 5000000) return "The guide is too large to save: use fewer or smaller screenshots";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
   }

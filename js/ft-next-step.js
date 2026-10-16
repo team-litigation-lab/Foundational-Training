@@ -36,7 +36,8 @@ const WHERE = {
     process: {go: () => "goto('process')",       note: "✍️ Process Questions"},
     calsim:  {go: () => "goto('simulators')",    note: "📅 Google Calendar Simulator"},
     callsim: {go: () => "goto('simulators')",    note: "☎ Call Simulator"},
-    transcribe: {go: () => "goto('transcribe')", note: "🎧 Transcription Activity"}
+    transcribe: {go: () => "goto('transcribe')", note: "🎧 Transcription Activity"},
+    guide:      {go: () => "goto('guide')",      note: "📘 Process Guide"}
   },
   trainer: {note: "🧑‍🏫 With your trainer"},
   drive:   {note: "📁 Your Assessments/Activities folder"},

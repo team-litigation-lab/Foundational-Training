@@ -48,6 +48,7 @@ window.LSH_PROGRAM = {
     {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
     {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
+    {view:"learn", icon:"🎬", label:"Video Notes", who:"trainee", about:"What you learned from each training video: your takeaways, the new terms, a question for your trainer, and how you’ll use it on the job."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
     {view:"tasks", icon:"🎲", label:"Tasks", who:"trainee", about:"The unannounced tasks your trainer sends during a session: acknowledge, plan and resolve each one before its timer ends. Graded.", badge:() => typeof window.openTasksCount === "function" ? window.openTasksCount() : 0},
     {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
@@ -58,7 +59,7 @@ window.LSH_PROGRAM = {
   caseProfile: null,
   pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
