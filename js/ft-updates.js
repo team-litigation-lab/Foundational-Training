@@ -837,7 +837,11 @@ function lvFit(){
 if(window.ResizeObserver) new ResizeObserver(lvFit).observe(document.getElementById("lecture-viewer-body"));
 function lvReset(){
   const p = document.getElementById("lecture-viewer-pane"), doc = LV.kind === "doc";
-  Object.assign(p.style, {top:"", left:"", transform:"", right:"24px", bottom:"24px", width: doc ? "820px" : "380px", height: doc ? "600px" : "250px", maxWidth:"", maxHeight:""});
+  // a video is what the trainee is actually watching, so it opens wide — centred, most of the window —
+  // and a document keeps the side pane it had
+  if(doc) Object.assign(p.style, {top:"", left:"", transform:"", right:"24px", bottom:"24px", width:"820px", height:"600px", maxWidth:"", maxHeight:""});
+  else Object.assign(p.style, {right:"", bottom:"", left:"50%", top:"50%", transform:"translate(-50%, -50%)",
+    width:"min(1240px, calc(100vw - 48px))", height:"min(72vh, 760px)", maxWidth:"", maxHeight:""});
 }
 // A lesson's video presentation (its AI Assisted Discussion video) plays in the pop-out viewer.
 // Lessons are finished from their last slide ("✓ Finish lesson").

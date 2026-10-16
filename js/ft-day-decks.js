@@ -365,7 +365,7 @@ function slideAgendaGo(s, info){
   if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
   return null;
 }
-function slideActions(s, info){
+function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
   const h = String(s.h || ""), out = [];
   const has = re => re.test(h);
@@ -378,6 +378,8 @@ function slideActions(s, info){
   }
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
+  const vids = (String(body || "").match(/ftdd-tile k-video/g) || []).length;
+  if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 function slideCard(d, info, list, i, logo){
@@ -387,12 +389,13 @@ function slideCard(d, info, list, i, logo){
   const ribbon = s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
-  return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}">
+  return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
       <div class="ftdd-dhead">${logo}<h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
       <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         <span class="ftdd-n" data-base="Slide ${i + 1} of ${n}">Slide ${i + 1} of ${n}</span></div>
-      ${s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${slideActions(s, info)}${body}</div>`}
+      ${s.agenda ? "" : slideActions(s, info, body, i)}
+      ${s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
     </div>`;
 }
 function renderDeck(){
@@ -456,11 +459,11 @@ function sheetPages(sheet){
     if(hOf(k) > room && inner.length > 1) units.push(...inner); else units.push(k);
   });
   const pages = []; let page = [], used = 0;
-  // a page may run up to a tenth over the screen: the light scale below closes that, and it keeps a page
-  // from ending early and leaving half the slide empty
+  // a page holds what fits on the screen and no more: a block that would hang off the foot starts the next page
+  // (the light scale below only closes what a block's own margins add)
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room * 1.1){ pages.push(page); page = []; used = 0; }
+    if(page.length && used + h > room){ pages.push(page); page = []; used = 0; }
     page.push(k); used += h;
   });
   if(page.length) pages.push(page);
@@ -613,6 +616,14 @@ root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; DD
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
+  // 📝 What I learned for a video on this slide, from the button above the sheet
+  learn(n){
+    const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
+    const b = card.querySelector(".ftdd-sheet .ftdd-learn");
+    if(!b || !root.FTVideoNotes) return;
+    FTDayDecks.reveal(b);
+    FTVideoNotes.openFrom(b);
+  },
   // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
   reveal(elOrSel){
     const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;
@@ -697,7 +708,7 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 /* a screenshot or sample fits the slide: it shrinks to the sheet instead of making it scroll */
 .ftdd-sheet img{max-width:100%;height:auto;max-height:min(58vh,560px);object-fit:contain;}
 /* an embedded deck keeps its 16:9 but never grows past the slide (js/ft-updates.js gives it a padding-top box) */
-.ftdd-sheet .canva-frame{padding-top:0 !important;height:min(52vh,480px) !important;aspect-ratio:16/9;max-width:100%;margin-left:auto;margin-right:auto;}
+.ftdd-sheet .canva-frame{padding-top:0 !important;height:min(44vh,480px) !important;aspect-ratio:16/9;max-width:100%;margin-left:auto;margin-right:auto;}
 .ftdd-stage-split .ftdd-sheet img{max-height:min(44vh,420px);}
 .ftdd-stage-split .ftdd-sheet .canva-frame{height:min(34vh,300px) !important;}
 .ftdd-onnavy{overflow:auto;min-height:0;}
@@ -733,17 +744,17 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck{flex:0 0 aut
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck:hover{background:#FBE3CB !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opacity:.5;cursor:not-allowed;}
 @media(min-width:1001px){main.main-dash .module-grid:has(> .ftdd-daycell):not(:has(> :nth-child(16))){grid-template-columns:repeat(5,minmax(0,1fr)) !important;}}
-.ftdd-daycell{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.ftdd-daycell{display:flex;flex-direction:column;gap:6px;min-width:0;height:100%;}
 /* the day cards read as cards, not rows: the dashboard has the room now the lesson stepper is gone */
-.ftdd-daycard{flex:1 1 0;min-height:52px;display:flex;align-items:stretch;background:#FFFBF5;border:1px solid #E9C9A6;border-left:4px solid #DB8437;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(26,35,64,.08);}
+.ftdd-daycard{flex:1 1 0;min-height:34px;display:flex;align-items:stretch;background:#FFFBF5;border:1px solid #E9C9A6;border-left:4px solid #DB8437;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(26,35,64,.08);}
 .ftdd-daycard.now{box-shadow:0 0 0 3px #F4B77A;}
 .ftdd-daycard.locked{opacity:.62;}
-.ftdd-dc-main{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;padding:8px 12px;background:none;border:0;font:inherit;color:#1A2340;text-align:left;cursor:pointer;}
+.ftdd-dc-main{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 12px;background:none;border:0;font:inherit;color:#1A2340;text-align:left;cursor:pointer;}
 .ftdd-dc-main:disabled,.ftdd-dc-pin:disabled{cursor:default;}
 .ftdd-dc-main:not(:disabled):hover{background:#FDEBD8;}
-.ftdd-dc-ic{font-size:24px;flex:0 0 auto;}
+.ftdd-dc-ic{font-size:27px;flex:0 0 auto;}
 .ftdd-dc-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;line-height:1.15;}
-.ftdd-dc-t b{font-size:14.5px;}
+.ftdd-dc-t b{font-size:15.5px;}
 .ftdd-dc-t small{font-size:11px;color:#5B6478;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ftdd-dc-go{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#B5651F;}
 .ftdd-dc-pin{flex:0 0 auto;width:38px;border:0;border-left:1px solid #E9C9A6;background:#FFF4E6;font-size:14px;cursor:pointer;position:relative;}
@@ -767,8 +778,10 @@ button.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;bord
 .ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}
 .ftdd-step-t{font-size:15.5px;line-height:1.5;padding-top:5px;}
 .ftdd-step-check{background:#EEF8F2;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
-.ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px dashed #E6E1D8;}
+.ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;}
 .ftdd-acts .btn{white-space:normal;text-align:left;}
+.ftdd-acts .btn-ghost{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22);color:#fff;}
+.ftdd-acts .btn-ghost:hover{background:rgba(255,255,255,.16);}
 .ftdd-ag-go{position:relative;z-index:2;margin-left:auto;align-self:center;flex:0 0 auto;padding:4px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;color:#fff;font:700 12px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
 .ftdd-ag-go:hover{background:rgba(255,255,255,.14);}
 .ftdd-secs{display:flex;flex-direction:column;gap:14px;margin:8px 0 12px;}
