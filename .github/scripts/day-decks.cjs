@@ -46,19 +46,22 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
     if (!/Day 1 deck/.test(await btn.innerText())) fail('the band offers ' + await btn.innerText() + ', not Day 1');
     await btn.click(); await page.waitForTimeout(1500);
   }
-  const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-head h2') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
+  const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
+    deck: !!document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
     open: [...document.querySelectorAll('.ftdd-chip:not(.locked)')].map(c => c.innerText), scroll: document.documentElement.scrollHeight - innerHeight,
     trainerNotes: [...document.querySelectorAll('.ftdd-body .trainer-slot')].some(x => x.innerHTML.trim()) }));
   let s = await at();
   if (s.view !== 'daydeck' || s.hash !== '#/daydeck') fail(`the deck didn't open (${s.view} ${s.hash})`);
-  if (!/1 OF/i.test(s.n)) fail('the deck opened on ' + s.n);
+  if (!/1 OF/i.test(s.n) || !/Training Agenda/.test(s.h)) fail(`the deck should open on its Training Agenda: ${s.n} ${s.h}`);
+  if (!s.deck) fail('the deck is not drawn like the LSH decks (logo and outlined title)');
   if (s.open.join() !== '1') fail('a new trainee can open days ' + s.open.join(', ') + ' (only Day 1 expected)');
   if (s.scroll > 2) fail(`the deck page scrolls by ${s.scroll}px (one screen)`);
-  if (s.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300);
-  if (!/2 OF/i.test((await at()).n)) fail('→ did not turn to slide 2');
+  const s2 = await at();
+  if (!/2 OF/i.test(s2.n)) fail('→ did not turn to slide 2');
+  if (s2.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
   await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(300);
-  if (/^Day 5\b/.test(await page.evaluate(() => (document.querySelector('.ftdd-title h1') || {}).innerText || ''))) fail('a trainee opened Day 5 before reaching it');
+  if (/^Day 5\b/.test(await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || {}).innerText || ''))) fail('a trainee opened Day 5 before reaching it');
   // finishing Lessons 1 and 2 moves the trainee to Day 3: Days 1–3 open
   await page.evaluate(() => { state.progress[1] = { done: true, studied: true }; state.progress[2] = { done: true, studied: true }; FTDayDecks.open(); });
   await page.waitForTimeout(500);
@@ -68,7 +71,10 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(18); }); await page.waitForTimeout(800);
   s = await at();
   if (s.open.length !== 18) fail(`an admin can open ${s.open.length} days, not 18`);
-  if (!/Lien Negotiator Exercise/.test(s.h)) fail('Day 18 opened on "' + s.h + '"');
+  await page.evaluate(() => FTDayDecks.to(1)); await page.waitForTimeout(400);
+  s = await at();
+  if (!/Lien Negotiator Exercise/.test(s.h)) fail('Day 18\'s first slide is "' + s.h + '"');
+  if (!s.tiles) fail('Day 18\'s links are not shown as tiles');
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }

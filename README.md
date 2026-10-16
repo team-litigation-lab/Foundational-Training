@@ -26,7 +26,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 
 **No viewer lands in the middle of a lesson.** Signing in, or reopening a saved session, used to jump straight back into the last lesson or activity. The Dashboard carries **▶ Resume where you left off**, so the viewer takes that jump when they want it: `js/lsh-program.js` sends an *automatic* resume (the one the engine starts on sign-in and on boot) to 📚 Dashboard, and leaves the button's own resume alone. A real address — `#/day/3`, `#/tool/<id>`, a duplicated tab, ⧉ Open in a new tab — still opens that page directly: it is a link, not a landing.
 
-**📚 Dashboard fits one screen.** On a laptop or desktop (from 1001 px wide and 640 px tall) the banner, the lesson cards, the scores band, the page links and the actions all sit inside one viewport height and the page itself does not scroll (`js/lsh-dashboard.js`). The rule keys off the page (`main.main-dash`), never off the role, so a trainee, a trainer and a trainer in 👁 Trainee view all get the same fit. Only this page is locked: lessons, ✍️ Knowledge Check and 🛡 Admin Master Control scroll as before, and phones and short windows keep the normal scrolling layout. A program with more lesson cards than the height holds scrolls them inside the card grid, so nothing is ever cut off the bottom. To leave the cards that height, the top row is shared and kept short: the pinned **📌 Training Orientation and Rules** card first, with the **next-step band** (where you are, your next step) **beside it** (`js/lsh-program.js`, `.dash-pair`; stacked below 1001 px), the 9 lesson cards run two rows of five, and the **scores band is a column on the right** of the lesson cards instead of a row under them. On a full-HD screen the whole dashboard fits with nothing scrolling; on a smaller laptop screen the lesson cards and the score column each scroll inside themselves, and the page still doesn't.
+**📚 Dashboard fits one screen.** On a laptop or desktop (from 1001 px wide and 640 px tall) the banner, the lesson cards, the scores band, the page links and the actions all sit inside one viewport height and the page itself does not scroll (`js/lsh-dashboard.js`). The rule keys off the page (`main.main-dash`), never off the role, so a trainee, a trainer and a trainer in 👁 Trainee view all get the same fit. Only this page is locked: lessons, ✍️ Knowledge Check and 🛡 Admin Master Control scroll as before, and phones and short windows keep the normal scrolling layout. A program with more lesson cards than the height holds scrolls them inside the card grid, so nothing is ever cut off the bottom. To leave the cards that height, the top row is shared and kept short: the pinned **📌 Training Orientation and Rules** card first, with the **next-step band** (where you are, your next step) **beside it** (`js/lsh-program.js`, `.dash-pair`; stacked below 1001 px), the 9 lesson cards run two rows of five as **compact cards** (the lesson's icon beside its Start button, and ☰ Topics · ✓ Finish · ▶ Video on one row, their full names on hover; 11 or more cards run six to a row), and the **scores band is a column on the right** of the lesson cards instead of a row under them. The whole dashboard fits with nothing scrolling on a full-HD screen and on a 1366×768 laptop; on anything smaller the lesson cards and the score column each scroll inside themselves, and the page still doesn't.
 
 👁 Trainee view and ⛶ View ▾ stay at the end of the top bar (no Blueprint or 🧭 Orientation button: the blueprints are on the Main Portal). **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback, Attendance · 📚 Dashboard: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Admin Master Control* shortens to *Admin* so the bar stays on one row.
 
@@ -320,6 +320,7 @@ Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`,
 
 Every training day has its own deck: **Days 1–18**, one slide per part of the day, with the day's instructions and the videos, documents and Canva decks the trainee opens (embedded viewer links, so they open on the platform). A trainee opens it from 📚 Dashboard: **📋 Day N deck** in the next-step band. The deck page (`#/daydeck`) fits one screen: the day picker, the slide (a long slide scrolls inside itself), and Previous / Next (also ← / →), with a button to that day's lesson.
 
+- **Designed like the LSH decks** (the same execution as the Case Management course's Case Flow slides), and made for visual learners: a navy slide with the LSH logo and the orange-outlined title, orange corner shapes, the part of the day on a grey ribbon, a pill for the kind of slide (🎬 Watch & do, 💬 Classroom discussion, 📞 Mock calls, 🎥 Demo, 👀 Shadowing, 📝 Read & do) and a time badge (🌅 Morning, 🌇 Afternoon, 📅 Entire day, 🏠 Homework, ⏳ Buffer), and the content on a cream sheet with an orange border. **Each day opens on its Training Agenda**: the day's slides as numbered rows (click one to jump there), and a side card with the day's lesson and what the slides hold (videos, folders, decks). In the content, every video, document, sheet, folder and Canva link is a **picture tile** (🎬 ▶ Watch, 📄 Open, 📁 Open the folder…), each *Task N* is a **numbered step** (the Monitoring Sheet updates in green), *Topic* lines are chips, naming conventions are a 🏷 box to copy, and notes and reminders are 💡 callouts. All of it is drawn by `js/ft-day-decks.js` from the same slide data, so the generator and its checks are unchanged.
 - **Who opens which day:** a trainee opens the deck of the day they are on (the first day with an unfinished lesson) and every day before it, and a later day once the trainer has opened its lessons for the batch. An admin opens any day.
 - **No Process Questions on a slide:** they are answered in ✍️ Knowledge Check only. Each list (and its naming convention) is replaced by a pointer there.
 - **Placeholders:**
@@ -404,6 +405,49 @@ A Doc, Sheet, Slides deck or Canva deck is always `data-kind="doc"` — it is re
   ```
 
   It fails rather than writing a template with no highlighted fields, so a file that lost its yellow never reaches trainees silently.
+
+### 🎧 Transcription Activity (`#/transcribe`, `js/ft-transcribe.js`)
+
+Day 9's *Minutes of the Meeting Transcription Activity: Client-to-Attorney*, as a generalist VA's real assignment in a realistic setting, under 🧰 **Drafting Tools** in the Practice Lab (and Day 9's step on 📚 Dashboard). One assignment per interview recording (Recording 1 and 2), run as six steps the page ticks off as they're done:
+
+1. **📨 The request:** Atty. Magdalena's task e-mail — the minutes of her client interview, the file name she expects (*Transcription - Recording N (first name)*) and where to save it, with the recording attached.
+2. **🎧 Listen:** ▶ *Open the recording and start* plays the Drive recording on the page (and in a new tab) and starts the time on task. A stopwatch kept with the recording; **Alt+T** (or ⌨ Insert) puts its `[m:ss]` into the discussion.
+3. **📝 Draft:** a *Minutes of the Meeting* page laid out like the Word file: date, time, attendees, purpose, the discussion in order with timestamps, the client's concerns, the attorney's advice, and the action items (who does what, by when). The 📄 Sample Minutes of the Meeting opens beside it.
+4. **🏷 Name & file it:** the file name, ⬇ *Download as Word* (named by it), and the file's link in the trainee's Assessments/Activities folder.
+5. **💬 Report back:** the reply to the attorney, as in the GC or by e-mail.
+6. **📤 Submit:** the checks, live as the trainee types — every part filled, the discussion in detail (200+ words), 3+ timestamps, 2+ action items, the file name by the convention, a Drive link, and a report-back with a greeting, what's done, where it is and thanks — then an evaluation in the facilitator's feedback DNA. A submitted transcription is read-only until *🔁 Revise and resubmit*.
+
+- **Saved in** `transcribe:<id>` (the trainee writes it; `worker.js` allows it). An admin and 👁 Trainee view work on a test copy that is never saved.
+- **The trainer** sees every trainee's minutes, file name, link, report and evaluation at the top of the same page, and records the score in **🧑‍🏫 Trainer Inputs** (*Minutes Transcription: Recording 1 / 2*, lesson 6), which reaches the Scorecard. (If the trainer-led activities list was edited in Admin, add the two rows there.)
+
+### 📘 Process Guide (`#/guide`, `js/ft-process-guide.js`)
+
+Before each recorded demo the Training Guide has the trainee watch the tutorial and *create their own notes or work guide*. Here they build it under 🧰 **Drafting Tools**, on a page that works like Word, with the tutorial playing beside it. There is one guide per demo, and each is a step on its day:
+
+| Day | Guide |
+|---|---|
+| 8 | Saving the Intake Packet and Extracted Intake Documents in SA |
+| 12 | Saving LORs to SA and sending them to the 1P & 3P insurance companies |
+| 14 | Sending the MedLOR and requesting medical bills & records |
+| 16 | The Lien Balance Verification request |
+| 17 | Saving Medical Bills & Records |
+| 18 | The Reduction Request and Closing Statement |
+
+- **The editor:** styles (Normal, Heading 1–3, Quote), bold / italic / underline / strikethrough, highlight and font colour, bullets and numbering, indent, alignment, hyperlinks (Ctrl+K), tables, a horizontal line, undo / redo, and clear formatting.
+- **Screenshots:** pasted with Ctrl+V, dropped onto the page or inserted from a file. They are shrunk to 1400 px JPEG on the way in. Click one to set it Small / Medium / Large / Full width, or remove it.
+- **📐 Start from the outline:** the title, tools, naming convention, the steps, the reporting templates and the reminders.
+- **The checks, live:** a title, 8+ numbered steps, 2+ screenshots, a hyperlink, the naming convention, and 300+ words.
+- **⬇ Download as Word:** an MHTML `.doc` that carries the pictures, named *Process Guide - <demo> (first name)*. **📋 Copy for Google Docs** copies the formatted guide. **📤 Submit** makes it read-only until it is revised.
+- **Saved in** `guide:<id>:<guide id>`, up to 5 MB each. Everything shown is cleaned first (only formatting, links and pictures survive), so a guide can never run code on the trainer's page. An admin reads any trainee's guides at the top of the page. The demo itself is scored in 🧑‍🏫 Trainer Inputs.
+
+### 🎬 Video Notes (`#/learn`, `js/ft-video-notes.js`)
+
+Watching a training video is an activity, not a link. Every video in the 📋 Day decks carries **📝 What I learned**, which opens a short form:
+- **What it asks for:** three key takeaways in the trainee's own words, the new terms they met, one question for their trainer, and how they'll use it on the job.
+- **Checks and copy:** the form has its checks, plus **📋 Copy for my Monitoring Sheet**, because the guide asks trainees to update it after the videos.
+- **Progress:** the button turns ✓ once the notes are complete.
+- **The page:** **🎬 Video Notes** (📂 My Pages) lists every video of the days the trainee has reached, by day, with a progress bar. An admin sees every trainee's notes there.
+- **Saved in:** `learn:<id>`.
 
 ### 🧑‍🏫 Trainer Inputs: what can't be simulated
 
@@ -629,8 +673,10 @@ The document-heavy folders (`ft/`, `trainer/`) are kept in **Cloudflare R2**, th
 
 - **Syntax, files and build:** every `.js` file and inline script parses, every local file the pages load is in the repository, and every JSON file parses (`.github/scripts/check-site.mjs`, the EA/PA portal's); the Worker builds (`wrangler deploy --dry-run`).
 - **The Drive trackers** (`.github/scripts/drive.cjs`, no browser): the Worker reads a tracker sheet and a Monitoring Sheet (Google's export answered by the test), checks them, keeps the trainer's input on a new check, makes a trainee wait 3 minutes between checks and explains a file that isn't shared.
+- **Transcription Activity** (`.github/scripts/transcribe.cjs`): the Drafting Tools card and Day 9's step; the attorney's request; ▶ start opens the recording; Alt+T timestamps; complete minutes pass every check and a wrong file name misses; the Word file named by the convention; submitted, saved and read-only; Recording 2 its own; the trainer sees the minutes and both recordings in Trainer Inputs.
+- **Video Notes and Process Guide** (`.github/scripts/guide-notes.cjs`): 📝 What I learned on a deck video, its checks, saved, ✓ on the button and listed on 🎬 Video Notes; the Day 14 guide with the tutorial beside it, the outline, steps, a link and two pictures passing every check, saved, the Word file carrying the pictures, read-only once submitted, read by the trainer, and a guide stored with code in it cleaned before it shows (nothing runs).
 - **Practice Sessions** (`.github/scripts/practice-sessions.cjs`): the starting firms, a firm and different cases for two trainees, My Firm, the four sessions (no PI Process Flow, none waiting for a case; a MedLOR request done to the Day 14 rules passes, one with the wrong file name, relationship and fax address misses; an intake call recorded completely passes; a wrong color misses), the trainer's review and inputs, the Knowledge Check's trainer score and the Scorecard. Also in the browser job: `graded-calls.cjs` and `blueprint.cjs` (no Blueprint or Simulators card on the landing page; the top bar's Blueprint button stays).
-- **Day decks** (`.github/scripts/day-decks.cjs`): `js/ft-day-decks-data.js` is what `build/day-decks.cjs` writes today; 18 decks with no facilitator content, log-in details or Process Questions on a slide, each ending on its "To be added" slide; 📋 Day deck in the band opens Day 1 for a new trainee, later days stay locked until reached, an admin opens all 18, ← / → turn the slides, and the page doesn't scroll.
+- **Day decks** (`.github/scripts/day-decks.cjs`): `js/ft-day-decks-data.js` is what `build/day-decks.cjs` writes today; 18 decks with no facilitator content, log-in details or Process Questions on a slide, each ending on its "To be added" slide; 📋 Day deck in the band opens Day 1 for a new trainee on its Training Agenda, drawn like the LSH decks, with its links as tiles, later days stay locked until reached, an admin opens all 18, ← / → turn the slides, and the page doesn't scroll.
 - **Server requests** (`.github/scripts/requests.cjs`): `get-many` gives a trainee only their own and public records and an Admin every one, reads this program's `ft:` records only, and refuses more than 100 keys. In a browser, with the checks sped up: a trainee's page reads the tasks for every open lesson in one request, their record about once per check, and the open lessons in one request; checks for a new version rarely; and asks nothing while the tab is in the background (catching up when it's back) or on a quick switch to another tab and back. A server that doesn't answer doesn't sign the trainee out or lock their lessons; a revoke does. The Trainee Audit reads every trainee in two requests, and Task Trackers, Monitoring Sheets and Process Questions read the trainees' sheets with get-many.
 
 To run them locally (Node 22; the browser test needs Playwright: `npm install playwright` and `npx playwright install chromium`):

@@ -350,6 +350,8 @@ const DEFAULT_ACTS = [
   {id:"calendar-live", title:"Calendar Management Mock Call with the trainer", lesson:5, kind:"Mock call"},
   {id:"intake-live", title:"Intake Mock Call with the trainer", lesson:6, kind:"Mock call"},
   {id:"intake-packet-demo", title:"Saving Intake Packet and Extracted Intake Documents Demo", lesson:6, kind:"Demo"},
+  {id:"transcription-1", title:"Minutes Transcription: Recording 1 (🎧 Transcription Activity)", lesson:6, kind:"Transcription"},
+  {id:"transcription-2", title:"Minutes Transcription: Recording 2 (🎧 Transcription Activity)", lesson:6, kind:"Transcription"},
   {id:"lor-demo", title:"LOR Uploading and Sending Demo (1P & 3P)", lesson:7, kind:"Demo"},
   {id:"medlor-demo", title:"Sending MedLOR and Requesting Medical Bills & Records Demo", lesson:8, kind:"Demo"},
   {id:"lv-demo", title:"LV (Lien Verification) Request Demo", lesson:8, kind:"Demo"}

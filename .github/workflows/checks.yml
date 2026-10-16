@@ -73,6 +73,14 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/day-decks.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Transcription Activity (Day 9's minutes, end to end; the trainer's view)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/transcribe.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Video Notes and Process Guide (what was learned from each video; the Word-like guide before each demo)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/guide-notes.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Practice Sessions (firms and case assignment, the sessions' checks, the trainer's review and inputs, the Scorecard)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
