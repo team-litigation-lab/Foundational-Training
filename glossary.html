@@ -11,7 +11,7 @@
   /* Global typography: Inter first, then the native OS stack, so the UI renders sharp with
      no font download when Inter is unavailable. The same token on every LSH page. */
   --font-ui:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  --bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#5A6075;
+  --bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--orange:#DB8437;--paper:#FFFFFF;--line:#DCE0EA;--muted:#2B2F3E;   /* read off the backdrop, not off white: 2.2:1 -> 4.8:1 */
   /* The gradients the flat colours are painted with, and the photograph behind the page.
      Each gradient keeps its flat colour as the middle stop, so the text on it keeps its contrast. */
   --grad-navy:linear-gradient(135deg,#333A5E 0%,#262B45 52%,#1A1E33 100%);
@@ -39,7 +39,9 @@ input[type=search]{width:100%;padding:10px 12px;border:1px solid var(--line);bor
 .az a{font-size:13px;text-decoration:none;color:var(--navy);padding:2px 6px;border-radius:6px;border:1px solid var(--line);background:var(--paper)}
 .az a.off{opacity:.35;pointer-events:none}
 .count{font-size:13px;color:var(--muted);margin:4px 0}
-h2.l{margin:20px 0 6px;font-size:18px;color:var(--orange);border-bottom:2px solid var(--line);padding-bottom:2px}
+/* The letter headings sit straight on the backdrop, where the brand orange is
+   2.2:1. Navy is 6.5:1 and the orange rule under each one keeps the accent. */
+h2.l{margin:20px 0 6px;font-size:18px;color:var(--navy);border-bottom:2px solid var(--line);padding-bottom:2px}
 .t{background:var(--paper);background-image:var(--grad-paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:6px 0}
 .t dt{font-weight:700}
 .t dt i{font-weight:400;font-style:normal;font-size:12px;color:#fff;background:var(--navy);background-image:var(--grad-navy);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:middle}
@@ -47,6 +49,17 @@ h2.l{margin:20px 0 6px;font-size:18px;color:var(--orange);border-bottom:2px soli
 .none{padding:24px;text-align:center;color:var(--muted)}
 .disc{font-size:13px;color:var(--muted);margin-top:24px;border-top:1px solid var(--line);padding-top:10px}
 mark{background:#FFE7C2;background-image:linear-gradient(135deg,#FFF0D8 0%,#FFE7C2 55%,#F7D8A6 100%)}
+
+/* ---- The LSH standard page style (see the Portal's README) ----------------
+   This page is outside the app shell in index.html, so it carries its own copy
+   of the two halves: the backdrop at the shared strength, and a translucent
+   panel on top of it so the photo carries on underneath. The gradients and the
+   lit edge are the same vocabulary as the app's.
+   -------------------------------------------------------------------------- */
+body::before{opacity:.40 !important;}
+.t{background:rgba(255,255,255,.60) !important;backdrop-filter:saturate(118%) blur(10px);-webkit-backdrop-filter:saturate(118%) blur(10px);}
+header{box-shadow:inset 0 -1px 0 rgba(56,189,248,.38),0 12px 30px -16px rgba(22,24,41,.65);}
+@media print{body::before{display:none;} .t{background:#fff !important;backdrop-filter:none;}}
 </style>
 </head>
 <body>
