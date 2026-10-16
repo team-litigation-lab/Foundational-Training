@@ -143,6 +143,20 @@ if (D[18] && !D[18].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 18: no p
   if (!score || score.items < 10 || !/How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
+  // the guidelines the guide writes as a wall of headings are read as cards, and the day's offline work is named
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, 2); }); await page.waitForTimeout(1600);
+  const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
+  if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
+  await page.evaluate(() => FTDayDecks.open(2, 0)); await page.waitForTimeout(1300);
+  const off = await page.evaluate(() => [...document.querySelectorAll('.ftdd-ag-off li')].map(x => x.innerText));
+  if (off.length < 3 || !off.some(x => /upload/i.test(x))) fail(`Day 2's outside-hours work isn't on its agenda: ${JSON.stringify(off)}`);
+  if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-ag-list li')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
+  // Day 9's mock call preparation is no longer a blank slide
+  await page.evaluate(() => FTDayDecks.open(9, 2)); await page.waitForTimeout(1500);
+  const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score-l li').length }));
+  if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
+  if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+
   await put('settings:dayextras', extrasBefore || { days: {} });
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();

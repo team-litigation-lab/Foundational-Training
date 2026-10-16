@@ -46,6 +46,7 @@ const WHERE = {
   trainer: {note: "🧑‍🏫 With your trainer"},
   drive:   {note: "📁 Your Assessments/Activities folder"},
   gc:      {note: "💬 In the training GC"},
+  offline: {note: "📴 Outside training hours"},
   room:    {note: "🏫 In the classroom"}
 };
 // isTrainee() is private to the file that declares it, so this keeps its own copy of the test.

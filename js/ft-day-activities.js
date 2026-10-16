@@ -18,7 +18,7 @@
    Each item: {t, kind, at, id}
      t     the activity, as the Training Guide names it
      kind  Skill test · Assessment · Breakout · Process questions · Exercise · Mock call ·
-           Demo · Activity · Session · Buffer · Shadowing · Upskill · Discussion
+           Demo · Activity · Session · Buffer · Shadowing · Upskill · Discussion · Offline
      at    where it is done:
              "session"  🟢 a Practice Session on 🛠 Practice Lab  (id = SESSIONS id, js/ft-sessions.js)
              "trainer"  🧑‍🏫 With your trainer, the trainer records it (id = DEFAULT_ACTS id)
@@ -188,7 +188,30 @@ const DAYS = [
 ];
 
 // Every day carries the daily skill tests and the upskill hour; the guide repeats them on all 18.
-DAYS.forEach(d => { d.items = d.items.concat(DAILY); });
+/* 📴 Outside training hours. Most days carry work the guide sets for after the session or for idle time —
+   the homework videos and PPTs, the assessments to finish and upload, the reading and the modules to go
+   through while waiting for a turn. They were only in the GC and the day's deck; they are part of the day. */
+const OFFLINE = {
+  1: ["Nitro Pro 12 and Adobe Acrobat Pro: watch the how-to videos and note your takeaways on the Monitoring Sheet",
+      "PI Reading Task (6 questions, 40 points) in your Assessments/Activities folder"],
+  2: ["Common Terms Used — Assessment and Auto Liability Insurance — Assessment: finish them and upload both to your Assessments/Activities subfolder",
+      "Softphones: watch one sample type from the instructional video for your takeaways",
+      "The PPTs on Documents & Spreadsheets, Keyboard Shortcuts and Shadowing Etiquette",
+      "The VLF articles on Personal Injury, while you wait for your teammates"],
+  3: ["The CRM/CMS training videos, then update item #12 on your Monitoring Sheet",
+      "Carlos’ and Oscar’s remaining reception recordings, in your own time (supplementary, not training hours)"],
+  4: ["Reception Training with Julio (1:49:49): watch it and update items #10 and #11 on your Monitoring Sheet"],
+  6: ["Calendaring 101 and the Calendar Management videos (Parts 1–2), while you wait for your turn"],
+  7: ["The intake modules and the fillable intake forms, as additional reference in your idle time"],
+  10: ["The insurance communication videos and the job aid / work guide article, in your idle time"],
+  13: ["The sample recordings and documents for the medical records role, in your idle time"],
+  17: ["The Reduction & Disbursement training videos, before the Day 18 demo"]
+};
+DAYS.forEach(d => {
+  const off = (OFFLINE[d.day] || []).map(t => ({t, kind: "Offline", at: "offline"}));
+  d.items = d.items.concat(DAILY, off);
+  d.offline = off.length;
+});
 
 const byDay = n => DAYS.find(d => Number(d.day) === Number(n)) || null;
 // The days an activity is worked on, in order: a session or trainer-led activity can run over

@@ -213,6 +213,43 @@ function visual(html){
   });
   // 4. "*** Free Communication Upskill for 1 or 1 ½ hours" is the facilitator's own timing note, not an instruction
   root.querySelectorAll("p").forEach(p => { if(/^\*+\s*Free Communication Upskill/i.test(p.textContent.trim())) p.remove(); });
+  // 5. the guide's long guideline runs (Day 6's calendar mock calls: the minimum information, the scenarios, the
+  //    scheduling rules, the additional notes) come through as a wall of headings. Each section becomes a card set,
+  //    so a trainee can see the scenarios and the rules as separate things rather than one block of text.
+  (() => {
+    const HEAD = /^(?:📌|✅|🗓)?\s*(minimum information|possible scenarios|scheduling rules|additional notes|please take note)/i;
+    const runs = [];
+    root.querySelectorAll("h4").forEach(h => {
+      if(h.closest(".trainer-slot") || h.dataset.ftddSeen) return;
+      const run = [h]; h.dataset.ftddSeen = "1";
+      let x = h.nextElementSibling;
+      while(x && x.tagName === "H4"){ x.dataset.ftddSeen = "1"; run.push(x); x = x.nextElementSibling; }
+      if(run.length >= 6 && run.some(y => HEAD.test(y.textContent.trim()))) runs.push(run);
+    });
+    runs.forEach(run => {
+      const secs = []; let cur = null;
+      run.forEach(y => {
+        const txt = y.textContent.replace(/\s+/g, " ").trim();
+        if(!txt) return;
+        if(HEAD.test(txt) || (!cur && /:\s*$/.test(txt))){ cur = {h: txt, items: []}; secs.push(cur); return; }
+        if(!cur){ cur = {h: "", items: []}; secs.push(cur); }
+        cur.items.push(txt.replace(/^•\s*/, ""));
+      });
+      const box = document.createElement("div"); box.className = "ftdd-secs";
+      box.innerHTML = secs.filter(x => x.items.length || x.h).map(sec => {
+        const short = sec.items.every(i => i.length < 42);
+        return `<section class="ftdd-sec"><h3>${e(sec.h.replace(/[:\s]+$/, ""))}</h3>
+          <div class="${short ? "ftdd-chips-l" : "ftdd-cards"}">${sec.items.map(i => {
+            const m = i.match(/^(.*?)\s*[–-]\s*\(Client Name\)\s*Notes?:\s*(.*)$/i);
+            if(short) return `<span class="ftdd-chip-i">${e(i)}</span>`;
+            return m ? `<div class="ftdd-card"><b>${e(m[1])}</b><small>${e(m[2])}</small></div>`
+                     : `<div class="ftdd-card"><b>${e(i)}</b></div>`;
+          }).join("")}</div></section>`;
+      }).join("");
+      run[0].parentNode.insertBefore(box, run[0]);
+      run.forEach(y => y.remove());
+    });
+  })();
   // the same material listed twice in the guide becomes one tile, and a leftover scrap of a pasted URL
   //   ("…ve_link", from ?usp=drive_link) is not content — it goes
   (() => {
@@ -308,6 +345,8 @@ function agendaHtml(d, info){
       ${lessons ? `<p class="ftdd-ag-h">Today’s lesson</p><ul class="ftdd-ag-ls">${lessons}</ul>` : ""}
       <p class="ftdd-ag-h">In today’s slides</p>
       <div class="ftdd-ag-stats">${vids ? `<span>🎬 <b>${vids}</b> video${vids > 1 ? "s" : ""}</span>` : ""}${folders ? `<span>📁 <b>${folders}</b> folder${folders > 1 ? "s" : ""}</span>` : ""}${decksN ? `<span>🎨 <b>${decksN}</b> deck${decksN > 1 ? "s" : ""}</span>` : ""}<span>🧾 <b>${d.slides.length}</b> slides</span></div>
+      ${(() => { const off = (info.items || []).filter(x => x.at === "offline");
+        return off.length ? `<p class="ftdd-ag-h">📴 Outside training hours</p><ul class="ftdd-ag-off">${off.map(x => `<li>${e(x.t)}</li>`).join("")}</ul>` : ""; })()}
       ${/ftdd-pq/.test(all) ? `<p class="ftdd-ag-pq">✍️ Today’s Process Questions are in <a class="ftdd-link" onclick="goto('process')">Knowledge Check</a>, after the activities.</p>` : ""}
     </div></div>`;
 }
@@ -322,7 +361,7 @@ function slideAgendaGo(s, info){
     const l = (info.lessons || []).find(x => lessonOpen(x));
     if(l != null) return {label: "opens the lesson", btn: "📘 Lesson", go: `goto('day', ${Number(l)})`};
   }
-  if(/shadow/i.test(h) && root.FTShadow) return {label: "logged on the platform", btn: "👥 Log", go: `FTShadow.open(${DD.day})`};
+  if(/shadow/i.test(h) && !/shadow(?:ing)?\s+etiquette/i.test(h) && root.FTShadow) return {label: "logged on the platform", btn: "👥 Log", go: `FTShadow.open(${DD.day})`};
   if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
   return null;
 }
@@ -332,7 +371,7 @@ function slideActions(s, info){
   const has = re => re.test(h);
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
-  if(has(/shadow/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log &amp; today’s To-Do</button>`);
+  if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log &amp; today’s To-Do</button>`);
   if(has(/mock call/i) && root.FTSessions){
     const sid = /reception/i.test(h) ? "reception" : /calendar/i.test(h) ? "calendaring" : /intake/i.test(h) ? "intake" : "";
     if(sid) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTSessions.open('${sid}')">☎ Open the Practice Session</button>`);
@@ -417,9 +456,11 @@ function sheetPages(sheet){
     if(hOf(k) > room && inner.length > 1) units.push(...inner); else units.push(k);
   });
   const pages = []; let page = [], used = 0;
+  // a page may run up to a tenth over the screen: the light scale below closes that, and it keeps a page
+  // from ending early and leaving half the slide empty
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room){ pages.push(page); page = []; used = 0; }
+    if(page.length && used + h > room * 1.1){ pages.push(page); page = []; used = 0; }
     page.push(k); used += h;
   });
   if(page.length) pages.push(page);
@@ -435,7 +476,7 @@ function fitSheets(){
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close with a light scale rather than a scrollbar
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 4){
-      const z = Math.max(0.8, Math.min(1, (sheet.clientHeight - 6) / sheet.scrollHeight));
+      const z = Math.max(0.74, Math.min(1, (sheet.clientHeight - 6) / sheet.scrollHeight));
       sheet.style.zoom = String(Math.floor(z * 100) / 100);
     }
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
@@ -624,6 +665,7 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 /* the slide: navy, the logo and the outlined title, orange corner shapes */
 .ftdd-deck{position:relative;overflow:hidden;background:#262B45;color:#fff;border-radius:18px;padding:16px 28px 14px;display:flex;flex-direction:column;min-height:0;box-shadow:0 14px 34px -18px rgba(22,24,41,.6);}
 .ftdd-deck::before{content:"";position:absolute;top:0;right:0;width:min(300px,30%);height:84px;border-radius:0 18px 0 100%;background:#DB8437;opacity:.95;pointer-events:none;}
+.ftdd-deck-ag::after{display:none;}
 .ftdd-deck::after{content:"";position:absolute;left:0;bottom:0;width:min(180px,18%);height:52px;border-radius:0 100% 0 18px;background:#DB8437;opacity:.9;pointer-events:none;}
 .ftdd-deck > *{position:relative;z-index:1;}
 .ftdd-msg p{margin:0;font-size:15px;}
@@ -718,8 +760,15 @@ button.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;bord
 .ftdd-step-check{background:#EEF8F2;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
 .ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px dashed #E6E1D8;}
 .ftdd-acts .btn{white-space:normal;text-align:left;}
-.ftdd-ag-go{margin-left:auto;align-self:center;flex:0 0 auto;padding:4px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;color:#fff;font:700 12px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
+.ftdd-ag-go{position:relative;z-index:2;margin-left:auto;align-self:center;flex:0 0 auto;padding:4px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;color:#fff;font:700 12px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
 .ftdd-ag-go:hover{background:rgba(255,255,255,.14);}
+.ftdd-secs{display:flex;flex-direction:column;gap:14px;margin:8px 0 12px;}
+.ftdd-sec h3{margin:0 0 6px !important;font:700 16px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;}
+.ftdd-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;}
+.ftdd-card{background:#fff;border:1px solid #E6E1D8;border-left:4px solid #DB8437;border-radius:12px;padding:8px 12px;}
+.ftdd-card b{display:block;font-size:13.5px;line-height:1.3;color:#262B45;} .ftdd-card small{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-soft);}
+.ftdd-chips-l{display:flex;flex-wrap:wrap;gap:6px;}
+.ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 .ftdd-score{margin:10px 0 14px;border:1px solid #E6E1D8;border-left:5px solid #DB8437;border-radius:14px;background:#fff;padding:12px 16px;}
 .ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:8px;}
 .ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
@@ -750,11 +799,12 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-ag{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.85fr);gap:20px;align-items:start;}
 .ftdd-ag-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
 .ftdd-ag-list li{display:flex;align-items:stretch;gap:8px;}
-.ftdd-ag-list button{width:100%;text-align:left;display:flex;gap:14px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 14px;color:#fff;cursor:pointer;font:inherit;}
-.ftdd-ag-list button:hover{background:rgba(255,255,255,.12);border-color:#DB8437;}
+.ftdd-ag-list button{width:100%;text-align:left;display:flex;gap:14px;align-items:center;background:#2F3550;border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 14px;color:#fff;cursor:pointer;font:inherit;}
+.ftdd-ag-list button:hover{background:#3A4160;border-color:#DB8437;}
 .ftdd-ag-n{flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 16px 'Poppins','Inter',sans-serif;}
 .ftdd-ag-t b{display:block;font:700 17px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
 .ftdd-ag-t small{display:block;margin-top:3px;font:500 13px/1.35 'Inter',sans-serif;color:#C9CFDD;}
+.ftdd-ag-off{margin:4px 0 0;padding-left:18px;display:grid;gap:4px;font-size:13px;line-height:1.4;}
 .ftdd-ag-side{background:#FFFDF8;color:var(--ink);border:3px solid #DB8437;border-radius:20px;padding:16px 20px;font:500 15px/1.5 'Inter',sans-serif;}
 .ftdd-ag-side p{margin:0;}
 .ftdd-ag-day{margin:0 0 6px !important;font:800 21px/1.25 'Poppins','Inter',sans-serif;color:#262B45;}

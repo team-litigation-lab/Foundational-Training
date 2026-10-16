@@ -11,7 +11,7 @@ const DAY9 = {
     {
       "id": "s2",
       "h": "AM: Intake Mock Call Preparation",
-      "html": ""
+      "html": "<p>While you wait for your turn, practise intake calls on the Call Simulator — the Intake Line on ☎ LSH Ring Channel. Take as many practice callers as you like: they are not scored, and the line is the same one your graded call rings on.</p><p>Run through the intake questions in order, enter what you gather straight into the Prototype CMS's fields as you go, and close by confirming the callback number and what happens next.</p><p><b>Intake Mock Calls Metrics</b></p><p><b>After the mock calls:</b> a debrief is scheduled once everyone's calls are done — your trainer runs through the scorecard with you, what went well and what to change before the next one.</p>"
     },
     {
       "id": "s3",
