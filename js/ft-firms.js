@@ -89,12 +89,18 @@ const DEFAULT_FIRMS = [
     },
     cases:range(37, 52)}
 ];
-const F = {firms:null, at:0, loading:null};
+const F = {firms:null, loaded:false, at:0, loading:null};
 function loadFirms(force){
-  if(F.loading || (!force && F.firms && Date.now() - F.at < 5 * 60000)) return F.loading;
+  // The freshness check is on F.loaded, not on F.firms. Until an admin saves any profile the
+  // answer is empty and F.firms stays null, so a check on F.firms alone was always a cache miss:
+  // render -> myFirm -> loadFirms -> rerender -> render asked /api/storage/get about forty-five
+  // times a second, roughly 140 requests in three seconds, against the Cloudflare request
+  // allowance every LSH site shares. Saving one profile made F.firms truthy and hid it entirely.
+  // F.loaded records that the question was asked, so an empty answer is cached like any other.
+  if(F.loading || (!force && F.loaded && Date.now() - F.at < 5 * 60000)) return F.loading;
   F.at = Date.now();
   F.loading = sharedGet("settings:firms").then(v => { F.firms = v && Array.isArray(v.firms) && v.firms.length ? v.firms : null; })
-    .catch(() => {}).then(() => { F.loading = null; rerender(); });
+    .catch(() => {}).then(() => { F.loaded = true; F.loading = null; rerender(); });
   return F.loading;
 }
 const firms = () => F.firms || DEFAULT_FIRMS;
