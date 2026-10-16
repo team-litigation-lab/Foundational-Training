@@ -183,14 +183,12 @@ window.LSH_BLUEPRINT = {
         shot: '/img/blueprint/trackers.jpg',
         shotAlt: 'The Task Trackers tab: each trainee\'s Daily Task Tracker with Run today\'s check now, and the Notes review criteria the evening check uses.' },
       { icon: '🕘', title: 'Attendance, Switch View and Orientation', points: [
-          '🕘 Attendance: Time In fills in by itself when a trainee opens the course; tag each status and add notes.',
-          'It stays in step with the attendance Google Sheet, both ways, through the Training Portal.',
+          '🕘 Attendance is taken on the Main Portal, not here: Master Control → 🕘 Attendance, every program and batch in one place.',
+          'Time In still fills in by itself when a trainee opens this course; tag the status and add notes there. The Google Sheet stays in step both ways.',
           '👁 Switch View shows the platform exactly as trainees see it, and switches you back.',
           '🧭 Orientation is the deck to share with trainees on day one. The blueprints themselves live on the Main Portal\'s 🧭 Blueprint page, never inside the program.'],
-        where: 'Admin → 🕘 Attendance · 👁 Switch View · 🧭 Orientation.',
-        tip: 'The Trainee blueprint PDF republishes itself after every update; nothing to do by hand.',
-        shot: '/img/blueprint/attendance.jpg',
-        shotAlt: 'The Attendance tab: the day\'s date, and one table per batch with each trainee\'s training, Time In, Time Out, status tag and notes.' }
+        where: 'Attendance: the Main Portal → Master Control → 🕘 Attendance. Here: Admin → 👁 Switch View · 🧭 Orientation.',
+        tip: 'The Trainee blueprint PDF republishes itself after every update; nothing to do by hand.' }
     ]
   }
 };

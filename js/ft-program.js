@@ -64,7 +64,7 @@ window.LSH_PROGRAM = {
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "attendance", "firms", "sops", "randomtasks", "dbmaint"],
+    admin: ["audit", "batches", "tfeedback", "firms", "sops", "randomtasks", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
     lab: ["calscores", "sessions", "trainerinputs", "calrules", "listening"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]

@@ -5,7 +5,8 @@
      🗄 Database Maintenance clear the data that is only needed for a while; the records are kept
    The spec's other three are already their own tabs: Assign Case File (🏛 Law Firms, this program
    only), the Trainer Feedback Tool (💬 Trainee Feedback) and Trainee Progress Monitoring (the
-   Trainee Audit, 📋 Task Trackers, 📒 Monitoring Sheets and 🕘 Attendance).
+   Trainee Audit, 📋 Task Trackers and 📒 Monitoring Sheets; attendance is taken on the Training
+   Portal, Master Control → 🕘 Attendance, per program per batch).
    Loaded after js/ft-firms.js (window.ftAdminTab) and before js/ft-program.js, which puts these
    three in the Admin section of the Admin screen's tab bar.
    ============================================================ */

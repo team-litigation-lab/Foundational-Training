@@ -28,7 +28,7 @@ Every LSH program is organised in the same five sections, and the top bar shows 
 
 **📚 Dashboard fits one screen.** On a laptop or desktop (from 1001 px wide and 640 px tall) the banner, the lesson cards, the scores, the page links and the actions all sit inside one viewport height and the page itself does not scroll (`js/lsh-dashboard.js`). The rule keys off the page (`main.main-dash`), never off the role, so a trainee, a trainer and a trainer in 👁 Trainee view all get the same fit. Only this page is locked: lessons, ✍️ Knowledge Check and 🛡 Admin Master Control scroll as before, and phones and short windows keep the normal scrolling layout. A program with more lesson cards than the height holds scrolls them inside the card grid, so nothing is ever cut off the bottom. To leave the cards that height, the top row is shared and kept short: the pinned **📌 Training Orientation and Rules** card first, with **the scores beside it** as two rows of four tiles (program complete, lessons finished, feedback, ranking, graded calls, Task Tracker, Monitoring Sheet, certificate; `js/lsh-program.js`, `.dash-pair`; stacked below 1001 px). The lesson grid then takes the full width: the 9 lessons as **compact cards** (the lesson's icon beside its Start button, and ☰ Topics · ✓ Finish · ▶ Video on one row, their full names on hover) with the no-discussion days' instruction cards between them in day order, five to a row (see 📋 Day decks). The whole dashboard fits with nothing scrolling on a full-HD screen and on a 1366×768 laptop; on anything smaller the lesson grid scrolls inside itself, and the page still doesn't. There is no next-step band on the dashboard any more: each day's instructions are on its 📋 Day deck, and the "what's next" line still shows under a passed ✍️ Knowledge Check.
 
-👁 Trainee view and ⛶ View ▾ stay at the end of the top bar (no Blueprint or 🧭 Orientation button: the blueprints are on the Main Portal). **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback, Attendance · 📚 Dashboard: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Admin Master Control* shortens to *Admin* so the bar stays on one row.
+👁 Trainee view and ⛶ View ▾ stay at the end of the top bar (no Blueprint or 🧭 Orientation button: the blueprints are on the Main Portal). **The Admin screen's tabs are grouped the same way:** a row of sections (🛡 Admin Master Control: Trainee Audit, Batch Folders, Trainee Feedback · 📚 Dashboard: Open Lessons, Curriculum, Task Trackers, Monitoring Sheets, Process Questions, Activities, Feedback Style · 🛠 Practice Lab: Calendar Scores · 🏅 Scorecard: Scorecards), then the open section's tabs. On a phone the sections are a 2 × 2 grid and the tabs wrap as buttons, so every one shows. The groups are `adminGroups` in `js/ft-program.js`; a tab that isn't listed goes under Admin Master Control. Between 961 and 1400 px wide, *Admin Master Control* shortens to *Admin* so the bar stays on one row.
 
 **What a program puts in each section** is its own: `js/ft-program.js` (loaded just before `js/lsh-program.js`) sets `window.LSH_PROGRAM`: the Dashboard pages, the Practice Lab's pages, and the Scorecard's sources. This program's Scorecard collects:
 
@@ -315,22 +315,25 @@ Trainees now keep their tracker in their Drive (above). Before that, each traine
 
 ## Attendance
 
-Trainers take each day's attendance in **Admin → 🕘 Attendance** (`js/attendance.js`). Trainees don't see it. It's the same file in every LSH course repo (EA-PA-TRAINING, Case-Management-Training, propertydamageclaimstraining, Foundational-Training); change it in all of them. The LSH Training Portal's admin **🕘 Attendance** page shows and edits the same records, for every program.
+**Attendance is not taken in this course.** It is centralized on the LSH Training Portal: **Master
+Control → 🕘 Attendance** (`/attendance.html`), which takes and reviews attendance for every program,
+per program per batch. This course has no Admin → 🕘 Attendance tab (`js/attendance.js` is gone), so
+there is no second place to take it and no copy of that file to keep in step.
 
-- **By batch:** one section per batch (newest first, like the other admin tabs), listing its approved, active trainees. Each section shows its count of every status.
-- **The day:** the date is today's in Eastern time (EST, or EDT in summer; attendance only, the Task Tracker keeps Pacific time). ◀ ▶ step through the training days, and the date picker opens any day. The batch's **Day N** counts its days already logged; the trainer can change it.
-- **Each trainee's row:**
-  - **Name**, from their trainee record.
-  - **Training**: the batch's training for the day. It starts as the batch's latest open lesson (Admin → 📅 Open Lessons), or the orientation when none is open. It can be changed for the batch, or for one trainee (marked in orange). The list is the lessons, after the orientation and the first days that are off the platform (`ATTENDANCE_TRAININGS_BEFORE` in `js/ft-updates.js`).
-  - **Time In / Time Out**, in Eastern time (EST, or EDT in summer): typed, or ⏱ Now. **Time In fills in on its own:** the first time a trainee opens the course each day, the Worker records it (`/api/checkin`). The tab shows it marked "auto" until a trainer sets one, and it's saved into the day's attendance when a trainer tags that trainee. Trainers always tag the status.
-  - **Status**, tagged by the trainer from the attendance sheet's dropdown, in its colors: Present, Late, Late with Notif, Early Out - POC Approved, Undertime - POC Approved, Undertime - No Approval, NCNS, Sick Leave, RL, EOP, Absent with Notif. **✓ Mark the rest Present** tags everyone not yet tagged.
-  - **Notes**.
-- **Saving:** each change saves as you go. A save re-reads the day and writes only the rows changed on that screen, so two trainers can take one batch's attendance at the same time.
-- **📊 Summary** (per batch): each trainee's count of every status over all the batch's logged days, with the last 10 days as colored squares.
-- **⬇ CSV**, which opens in Excel or Google Sheets: **This day** (every batch) or **Download all days** (one batch, from its summary). The columns: Date, Day, Batch, Name, Training, Time In (EST), Time Out (EST), Status, Notes.
-- **Google Sheet:** the LSH Training Portal keeps the attendance Google Sheet's **Platform Attendance** tab in step, both ways: everything here (automatic Time Ins included) goes to the sheet every 15 minutes, and edits made in the sheet to Training, Time In, Time Out, Status or Notes come back here straight away. See the Training Portal's README.
-- **Storage:** `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for trainees with no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut, status, note, at, by}}}`. `checkin:<YYYY-MM-DD>:<trainee id>` = `{timeIn, at, name, batch, training}` is the automatic Time In (each trainee's own key, so a room signing in at once never overwrites one another; its KV metadata carries the same for the portal; kept 40 days). The Worker lets only admins read and write these records. To change the statuses or their colors, edit `STATUSES`.
+What this course still does for attendance:
 
+- **Automatic Time In.** The Worker's `/api/checkin` records a trainee's first visit each day (Eastern
+  time) as `checkin:<YYYY-MM-DD>:<trainee id>` = `{timeIn, at, name, batch, training}` — each trainee
+  their own key, so a room signing in at once never overwrites one another; the same values are in the
+  key's KV metadata for the portal; kept 40 days. The portal's page shows it marked "auto" until a
+  trainer sets a Time In.
+- **The records live in this course's KV**, under the Worker's `ft:` prefix: `attendance:<batch key>:<YYYY-MM-DD>` (`_none` for
+  no batch) = `{batch, date, day, training, rows:{<trainee id>:{name, training, timeIn, timeOut,
+  status, note, at, by}}}`. The portal reads and writes them directly, and keeps the attendance
+  Google Sheet's **Platform Attendance** tab in step both ways. Only admins can read or write them.
+
+The statuses, the per-batch summaries, the CSV downloads and the Google Sheet sync are all documented
+in the Training Portal's README.
 ## 📅 The 18 days and their activities (`js/ft-day-activities.js`)
 
 The program runs on **18 classroom days**; the platform serves **9 lesson decks, named by their training title, not by day**. The two are deliberately different shapes — one lesson covers several days (Receptionist Training is Days 3–5; Lien Negotiator Training, Lesson 9, is Days 17–18). `js/ft-day-activities.js` is the one place that says **which activity belongs to which day**, read off the Training Guide (`trainer/curriculum.json`, Admin → 📘 Curriculum) in the guide's own wording.
@@ -631,7 +634,6 @@ Where the token lives:
 | `js/ft-activities.js` | Admin → 🗣 Feedback Style (the 📝 Activities page was taken off). |
 | `js/ft-theme.js` | The gradient theme and the photographs behind the cream pages (see *Colours and backgrounds*). Loads last, after every stylesheet it paints over. |
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the on-platform sheet, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too, with the Drive sheet's reader (`fromSheetCsv`) and the Monitoring Sheet's check (`gradeMonitorText`). |
-| `js/attendance.js` | Admin → 🕘 Attendance (the same file in every LSH course): each batch's daily attendance (name, training, day and date, time in and out, the trainer's status tag, notes), with a per-batch summary and CSV downloads. |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 | `.github/workflows/checks.yml`, `.github/scripts/` | The checks on every pull request (see *Checks*): `check-site.mjs` (syntax, files, JSON), `server.mjs` (the site through `worker.js` with an in-memory KV, for local runs) and `requests.cjs` (how often a page asks the server). |
 
@@ -706,7 +708,7 @@ So an open page asks the server sparingly (`POLL` in `index.html`; the open less
 
 A trainee's page in view now sends about 4 requests a minute (before: about 24, and about 18 in a background tab, now none). An admin on the Trainee Audit sends about 3 a minute for up to 100 trainees (before: about 2 a minute per trainee, so about 60 for 30 trainees).
 
-Lists of records are read with `/api/storage/get-many` (1 to 100 keys, the same rules as `/api/storage/get` for each key, under the `ft:` prefix like every other key), not one request per record: the tasks for every lesson, the Trainee Audit, Rankings and Trainee Feedback, 🕘 Attendance, and the trainees' sheets in 📋 Task Trackers, 📒 Monitoring Sheets and ✍️ Process Questions (20 sheets to a request, since a sheet can be up to about 1 MB). A trainee is signed out as revoked only when the server answers that their record is gone or not approved: a server that doesn't answer (offline, or the request limit) no longer signs anyone out, and their open lessons stay open until it answers again.
+Lists of records are read with `/api/storage/get-many` (1 to 100 keys, the same rules as `/api/storage/get` for each key, under the `ft:` prefix like every other key), not one request per record: the tasks for every lesson, the Trainee Audit, Rankings and Trainee Feedback, and the trainees' sheets in 📋 Task Trackers, 📒 Monitoring Sheets and ✍️ Process Questions (20 sheets to a request, since a sheet can be up to about 1 MB). A trainee is signed out as revoked only when the server answers that their record is gone or not approved: a server that doesn't answer (offline, or the request limit) no longer signs anyone out, and their open lessons stay open until it answers again.
 
 The `index.html` part is the EA/PA portal's engine (the same change is in EA-PA-TRAINING), so a rebuild keeps it.
 
