@@ -33,6 +33,8 @@ const failures = []; const fail = m => failures.push(m);
   const slide = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); if (document.querySelector('.ftdd-learn')) return i; } return -1; });
   if (slide < 0) fail('no video in the Day 1 deck carries "📝 What I learned"');
   else {
+    // a long slide is read in pages, so turn to the page that holds the button before clicking it
+    await page.evaluate(() => FTDayDecks.reveal('.ftdd-learn')); await page.waitForTimeout(300);
     await page.click('.ftdd-learn'); await page.waitForTimeout(500);
     const inputs = await page.$$('#vnModal .vn-tk input');
     const tks = ['Every to-do must follow the daily template exactly.', 'I log my Hubstaff time against the right to-do every day.', 'Notes on each to-do help my trainer see my progress clearly.'];

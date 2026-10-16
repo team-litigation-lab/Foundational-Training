@@ -234,19 +234,8 @@ function statsBand(done, total){
     ${fb}${rank}${hooks("LSH_HOME_STATS")}
   </div>`;
 }
-// The step-timeline: one circle per lesson (not the pinned orientation), done/open/locked, click to jump to its card —
-// the same header the EA/PA-style dashboard shows above its lessons (js/ft-updates.js's retired renderDashboard).
-function stepTimeline(all){
-  if(!all.length) return "";
-  return `<div class="step-timeline">${all.map((d, i) => {
-    const p = (state.progress || {})[d.id] || {}, hasSlides = !!(d.sections && d.sections.length), open = dayUnlocked(d.id) && hasSlides, done = !!p.done;
-    const st = done ? "st-done" : open ? "st-open" : "st-locked", can = open || (adminOn() && hasSlides);
-    return `<div class="step-node">
-      <div class="step-circle ${st}" ${can ? `onclick="scrollToModule(${d.id})"` : ""} title="${e(d.title)}">${done ? "✓" : i + 1}</div>
-      ${i < all.length - 1 ? `<div class="step-dash ${done ? "filled" : ""}"></div>` : ""}
-    </div>`;
-  }).join("")}</div>`;
-}
+// The step-timeline (a circle per lesson, under the hero) is gone: the lesson cards sit right below it and say
+// the same thing, and the row it took is the room the day cards needed on one screen.
 // The pinned 📌 Training Orientation and Rules card (first, on the left) and what needs the eye next (the
 // next-step band, a live task) share one compact row, side by side, so the lesson cards keep the height for the one-screen rule. Either one
 // alone takes the whole row; phones and narrow windows stack them.
@@ -298,7 +287,6 @@ function renderModules(){
         </div>
         ${viewer ? `<div class="dash-hero-ribbon">${completionRibbonSvg(pct, done)}</div>` : ""}
       </div>
-      ${stepTimeline(all)}
     </div>
     <div class="dash-main">
       ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""), `<div class="dash-side"><div class="dash-side-inner">
@@ -522,12 +510,18 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
 .dash-pair > div > *{margin:0 !important;}
 .dash-pair > div > :last-child{flex:1 1 auto;}
 .dash-pair-pin .module-card{width:100%;height:100%;display:flex;flex-direction:column;}
-.dash-pair-pin .module-card > .module-body{display:none !important;}
-.dash-pair-pin .module-card > .module-head{padding-top:8px !important;padding-bottom:6px !important;min-height:0 !important;}
-.dash-pair-pin .module-card > .module-head .mh-day:empty{display:none;}
-.dash-pair-pin .module-card > .mc-grid{margin-top:auto;}
-.dash-pair-pin .module-card .module-start-btn{padding-top:6px !important;padding-bottom:6px !important;min-height:0 !important;}
-.dash-pair-pin .module-card .module-finish-btn{padding-top:4px !important;padding-bottom:4px !important;min-height:0 !important;}
+/* …and it takes the look of the stat tiles beside it, rather than reading as a white card on the navy band
+   (js/lsh-dashboard.js paints .dash-main .module-card.mc-clean light, so these match its weight) */
+.dash-main .dash-pair-pin .module-card.mc-clean{background:linear-gradient(135deg, var(--navy) 0%, var(--navy-soft) 100%) !important;border:1px solid rgba(255,255,255,.14) !important;box-shadow:var(--shadow) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;color:#fff;}
+.dash-main .dash-pair-pin .module-card.mc-clean .module-head{background:none !important;color:#fff !important;border-top:0 !important;border-bottom:1px solid rgba(255,255,255,.12) !important;}
+.dash-main .dash-pair-pin .module-card.mc-clean .mh-title,.dash-main .dash-pair-pin .module-card.mc-clean .mh-day{color:#fff !important;}
+.dash-main .dash-pair-pin .module-card.mc-clean .module-start-btn{background:var(--orange) !important;border-color:var(--orange) !important;color:#241304 !important;}
+.dash-main .dash-pair-pin .module-card.mc-clean .module-start-btn:hover{background:var(--orange-deep) !important;border-color:var(--orange-deep) !important;color:#fff !important;}
+.dash-main .dash-pair-pin .module-card.mc-clean .mc-grid,.dash-main .dash-pair-pin .module-card.mc-clean .mc-row{border-top:1px solid rgba(255,255,255,.12) !important;}
+.dash-main .dash-pair-pin .module-card.mc-clean .mc-grid a,.dash-main .dash-pair-pin .module-card.mc-clean .mc-grid button:not(.module-start-btn),
+.dash-main .dash-pair-pin .module-card.mc-clean .mc-row .module-finish-btn,.dash-main .dash-pair-pin .module-card.mc-clean .module-finish-btn{background:transparent !important;border-color:rgba(255,255,255,.18) !important;color:#E7EAF4 !important;}
+.dash-main .dash-pair-pin .module-card.mc-clean .mc-grid a:hover,.dash-main .dash-pair-pin .module-card.mc-clean .mc-grid button:not(.module-start-btn):hover,
+.dash-main .dash-pair-pin .module-card.mc-clean .mc-row .module-finish-btn:hover{background:rgba(255,255,255,.12) !important;color:#fff !important;}
 .dash-pair .ftn{padding:9px 14px;}
 .dash-pair .ftn-head{margin-bottom:4px;}
 .dash-pair .ftn h3{font-size:16px;}
