@@ -3,11 +3,12 @@
 //   1. Admin → 🏛 Law Firms: the three starting firm profiles, and NO per-trainee assignment — the firm and case
 //      pickers, "Assign this firm to all" and "🎲 Spread cases" are gone, along with their functions.
 //   2. The trainee has the first firm from their first page load, with no assign:<id> written and no trainer named;
-//      🏛 My Firm shows it and its rules, ✓ I've read the rules is saved; a case-based session says "No case yet".
-//   3. The Practice Lab has the six sessions and no simulator cards; the landing page has no Simulators / Blueprint card.
-//   4. A ChartSwap records request filled from the case file passes every check; a calendar event in the wrong colour
-//      doesn't. Cases are no longer handed out, so the check supplies one from the firm's caseload: what it asserts
-//      is the session's own checking, not how a case arrives.
+//      🏛 My Firm shows it and its rules, ✓ I've read the rules is saved; no session waits for a case.
+//   3. The Practice Lab has the four sessions (no PI Process Flow) and no simulator cards; the landing page has no
+//      Simulators / Blueprint card.
+//   4. The sessions follow the Training Guide and work on no case: a MedLOR request done to the Day 14 rules passes
+//      every check and one with the wrong file name, relationship and fax address misses them; an intake call recorded
+//      completely (Days 8–9, Prototype CMS) passes; a calendar event in the wrong colour doesn't.
 //   5. Admin → 🟢 Practice Sessions lists the submission and saves the trainer's score, which the trainee sees as final;
 //      Admin → 🧑‍🏫 Trainer Inputs records a demo's result; both reach the Scorecard.
 //   6. A trainer's Knowledge Check score (kcreview:<id>) becomes the lesson's score and a passing one finishes it.
@@ -43,9 +44,10 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText }));
     if (/Your law firm|My firm & rules/.test(lab.text)) fail('the Practice Lab still shows the 🏛 Your law firm banner');
-    // Five Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
-    // 🧰 Drafting Tools' LOR Drafting Activity, which has no CMS case file and no firm case.
-    if (lab.sessions !== 5) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 5)`);
+    // Four Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
+    // 🧰 Drafting Tools' LOR Drafting Activity — and PI Process Flow isn't either: Day 3 is a discussion.
+    if (lab.sessions !== 4) fail(`the Practice Lab has ${lab.sessions} Practice Sessions (expected 4)`);
+    if (/PI Process Flow: your case/.test(lab.text)) fail('PI Process Flow is still a Practice Session');
     if (/All simulators|📅 Calendaring Simulators\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
     if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
     if (!/Drafting Tools/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 🧰 Drafting Tools / LOR Drafting Activity');
@@ -145,37 +147,49 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate((f) => FTSessions.acknowledge(f), firmId); await page.waitForTimeout(800);
     if (!((await get('sessions:' + id)) || {}).ack) fail('✓ I\'ve read my firm\'s rules wasn\'t saved');
 
-    // 3. a session that works on a case has none, and says so without naming a trainer
+    // 3. no session waits for a case or a trainer: every one can be started
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const labTxt = await page.evaluate(() => document.querySelector('main').innerText);
     if (/Waiting for your (case|firm)|trainer assigns/i.test(labTxt)) fail(`the Practice Lab still waits on a trainer: ${labTxt.slice(0, 300)}`);
-    if (!/No case yet/.test(labTxt)) fail('a case-based session should say it has no case yet');
+    if (/No case yet|Cases aren’t handed out/.test(labTxt)) fail('a session still waits for a case');
+    const shut = await page.evaluate(() => ['reception', 'calendaring', 'intake', 'records'].filter(s => !FTSessions.openable(s)));
+    if (shut.length) fail(`sessions that can't be opened: ${shut.join(', ')}`);
 
-    // 4. a ChartSwap request, filled from the case file.
-    // Cases are not handed out any more, so the check hands the page one of the firm's own caseload
-    // and has the session work on it: what is asserted here is the session's checking, not assignment.
-    await page.evaluate(() => {
-        const f = FTFirms.firms()[0], c = f.cases.map(FTFirms.caseById).filter(x => x && (x.providers || []).length).shift();
-        window.FT_TEST_CASE = c;
-        FTFirms.myCases = () => [c];
-    });
-    const rec4 = await page.evaluate(async () => {
-        FTSessions.open('records'); await new Promise(r => setTimeout(r, 300));
-        FTSessions.start('records'); await new Promise(r => setTimeout(r, 300));
-        const f = FTFirms.myFirm(), c = FT_TEST_CASE, p = c.providers[0];
-        const iso = s => { const m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`; };
-        const hold = c.hipaa === 'sent, not signed';
-        Object.entries({ requester: f.name, deliver: f.recordsEmail, patient: c.client.name, dob: iso(c.client.dob), provider: p.name, from: iso(p.dates.split(/\s+[–-]\s+/)[0]),
-            purpose: 'Legal: attorney request', hipaa: hold ? 'Not signed yet: hold the request and send it to the client' : 'Signed authorization attached', rep: c.authorized ? c.authorized.split(' (')[0] : c.client.name })
-            .forEach(([k, v]) => FTSessions.set(k, v));
-        f.recordTypes.forEach(t => FTSessions.toggle('types', t, true));
+    // 4. the Day 14 MedLOR request, to the day's rules — by fax, an NPIM doctor
+    const fill = (sid, answers, toggles) => page.evaluate(async ([sid, answers, toggles]) => {
+        FTSessions.open(sid); await new Promise(r => setTimeout(r, 300));
+        FTSessions.start(sid); await new Promise(r => setTimeout(r, 300));
+        Object.entries(answers).forEach(([k, v]) => FTSessions.set(k, v));
+        Object.entries(toggles || {}).forEach(([k, l]) => l.forEach(o => FTSessions.toggle(k, o, true)));
         await FTSessions.submit();
-        return { key: 'records|' + c.id, text: document.querySelector('main').innerText };
-    });
+        return { key: sid + '|-', text: document.querySelector('main').innerText };
+    }, [sid, answers, toggles]);
+    const medlor = { provider: 'JML(Fabito Anesthesia Pain Center)', npim: 'Dr. Daniel Fabito',
+        file: 'MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - MedLOR with Unsworn COR and HIPAA 10.16.26 (Pia)',
+        hipaaDate: '2026-03-02', relation: 'Self', method: 'Fax', fax: '+17029982171@metrofax.com' };
+    const rec4 = await fill('records', medlor, { boxes: ['Medical bills', 'Medical records'], sig: ['Full name', 'General Virtual Assistant', 'Work email address', 'Phone number'] });
     await page.waitForTimeout(800);
     const s4 = (await get('sessions:' + id)) || { runs: {} }, run = s4.runs[rec4.key];
-    if (!run || !run.auto || run.auto.pct !== 100) fail(`a request filled from the case file should pass every check: ${JSON.stringify(run && run.auto)}`);
+    if (!run || !run.auto || run.auto.pct !== 100) fail(`a MedLOR request done to the Day 14 rules should pass every check: ${JSON.stringify(run && run.auto)}`);
     if (!/Automated checks/.test(rec4.text)) fail('the submitted session doesn\'t show its checks');
+    // the same request with the wrong file name, relationship and fax address misses exactly those
+    const bad = await page.evaluate(async () => {
+        FTSessions.again(); await new Promise(r => setTimeout(r, 300));
+        FTSessions.set('file', 'MedLOR for Fabito'); FTSessions.set('relation', 'Spouse'); FTSessions.set('fax', '702-998-2171');
+        await FTSessions.submit();
+        const r = JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'sessions:' + state.traineeId }) }).then(r => r.json())).value).runs['records|-'];
+        return r.auto.checks.filter(x => !x.ok).map(x => x.label);
+    });
+    ['The file name follows the convention', 'Relationship to Patient', '@metrofax.com'].forEach(w => { if (!bad.some(l => l.indexOf(w) >= 0)) fail(`a wrong ${w} should miss its check: ${JSON.stringify(bad)}`); });
+    // put the passing request back, for the trainer's review below
+    await page.evaluate(async (m) => { FTSessions.again(); await new Promise(r => setTimeout(r, 300)); Object.entries(m).forEach(([k, v]) => FTSessions.set(k, v)); await FTSessions.submit(); }, medlor);
+    await page.waitForTimeout(500);
+    // the intake call, recorded completely (no case: the caller is the lead)
+    const dolISO = '2026-02-10', sol = await page.evaluate((d) => { const y = Number(FTFirms.myFirm().solYears) || 2; return (Number(d.slice(0, 4)) + y) + d.slice(4); }, dolISO);
+    await fill('intake', { name: 'Maria Lopez', phone: '(702) 555-0142', dob: '1988-06-21', dol: dolISO, type: 'MVA', injuries: 'Neck and back pain; ER visit, now in physical therapy twice a week.',
+        carrier: 'Progressive', sol, cms: true, conflict: true, decision: 'Accept: send the retainer' });
+    const ik = ((await get('sessions:' + id)) || { runs: {} }).runs['intake|-'];
+    if (!ik || !ik.auto || ik.auto.pct !== 100) fail(`an intake recorded completely should pass every check: ${JSON.stringify(ik && ik.auto)}`);
     // a calendar event in the wrong color for its length
     const cal = await page.evaluate(async () => {
         FTSessions.open('calendaring'); await new Promise(r => setTimeout(r, 300)); FTSessions.start('calendaring'); await new Promise(r => setTimeout(r, 300));
@@ -219,11 +233,6 @@ const failures = []; const fail = (m) => failures.push(m);
     if (await page.evaluate(() => DAYS.some(d => d.sections.some(s => s.id === 'process-questions')))) fail('the process questions are still a slide');
 
     // the trainee sees the review as final, and the Scorecard has both sources
-    // (the reload above dropped the case this check supplies, so hand it back before reopening)
-    await page.evaluate(() => {
-        const f = FTFirms.firms()[0], c = f.cases.map(FTFirms.caseById).filter(x => x && (x.providers || []).length).shift();
-        window.FT_TEST_CASE = c; FTFirms.myCases = () => [c];
-    });
     await page.evaluate(() => { FTSessions.open('records'); }); await page.waitForTimeout(1500);
     if (!/95% · final/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the trainee doesn\'t see the trainer\'s final score on the session');
     await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
@@ -310,5 +319,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles with no per-trainee assignment, the firm every trainee gets automatically, My Firm, the five sessions checked against the case and the firm, the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
+    console.log('Practice Sessions test passed (firm profiles with no per-trainee assignment, the firm every trainee gets automatically, My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });

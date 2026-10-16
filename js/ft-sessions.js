@@ -12,12 +12,14 @@
                                     the call note
      📅 Calendaring Practice Lab    lesson 5: the Calendar Management mock call (Ring Channel), then the appointment on the
                                     Google Calendar Simulator, under the firm's calendar rules
-     📋 Intake Mock Calls           lesson 6: Ring Channel's Intake Line on the trainee's intake case; the intake summary
-     ⚖️ PI Process Flow             lesson 3: the trainee's case: its phase, team, dates and next steps
+     📋 Intake Mock Calls           lesson 6 (Days 8–9): Ring Channel's Intake Line, the details entered in the Prototype
+                                    CMS; the intake recorded here — no case handed out, the caller is the lead
      (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 🧰 Drafting Tools'
       LOR Drafting Activity, js/ft-lor.js — the trainee drafts the 1P and 3P letters in the firm's own
       templates, with no CMS case file.)
-     🩺 Medical Records: ChartSwap  lesson 8: a ChartSwap records request for the trainee's records case
+     🩺 Medical Records: MedLOR     lesson 8 (Day 14): the MedLOR request prepared to the day's rules — file name, HIPAA,
+                                    the boxes, the subject line or the fax address and signature
+   (PI Process Flow, lesson 3, is not a Practice Session: Day 3 is a classroom discussion, with no case work.)
    Records:
      sessions:<id>      the trainee's own: {ack: {firm, at}, live: {sid, startedAt}, runs: {<session|case>: run}}
      labreview:<id>     the trainer's (trainee reads, admins write): {sessions: {<key>: {score, comment, at}},
@@ -87,52 +89,65 @@ const SESSIONS = [
         ["Google Meet and the reminder", !!a.meet && !!a.reminder, ""],
         ["A description that names the case and the purpose", String(a.desc || "").trim().length >= 20, ""]];
     }},
-  {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, area:"intake", program:"intake",
-    about:"Take the intake call live (the Call Simulator’s Intake Line, on ☎ LSH Ring Channel), working in your intake case’s Intake tab, under your firm’s intake criteria. Then record the intake here.",
-    tools: c => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")]].concat(c ? [[`🗂 ${c.id} in the CMS (Intake)`, FF().caseHref(c, "intake")]] : []),
-    fields: f => [["name", "Potential client’s full name", "text"], ["dob", "Date of birth", "date"], ["dol", "Date of the accident (DOL)", "date"], ["type", "Case type", "select", ["MVA", "Slip and Fall", "Premise Liability", "Dog Bite", "Others"]],
-      ["injuries", "Injuries and treatment so far", "textarea"], ["carrier", "At-fault party’s carrier (3P)", "text"], ["sol", "Statute of limitations date", "date"],
-      ["conflict", "Conflict check run on every party", "check"], ["decision", "Decision", "select", ["Accept: send the retainer", "Refer to the Intake Attorney", "Decline and refer out"]]],
-    check: (a, c, f) => c ? [
-      ["Client’s name", same(a.name, c.client.name), c.client.name],
-      ["Date of birth", toISO(c.client.dob) === a.dob, c.client.dob],
-      ["Date of the accident", toISO(c.dol) === a.dol, c.dol],
-      ["Case type", near(a.type, c.type) || (a.type === "Others" && !["MVA", "Slip and Fall", "Premise Liability", "Dog Bite"].includes(c.type)), c.type],
-      ["3P carrier", !(c.bi || []).length || (c.bi || []).some(b => near(a.carrier, b.carrier)), (c.bi || []).map(b => b.carrier).join(", ")],
-      [`Statute of limitations (${f.solYears} years, ${f.state})`, a.sol === addYears(toISO(c.dol), Number(f.solYears) || 2), fmtDate(addYears(toISO(c.dol), Number(f.solYears) || 2))],
-      ["Injuries and treatment recorded", String(a.injuries || "").trim().length >= 20, ""],
-      ["Conflict check and a decision", !!a.conflict && has(a.decision), ""]] : []},
-  {id:"pi", icon:"⚖️", title:"PI Process Flow: your case", lesson:3, area:"pi",
-    about:"Open your assigned case in the CMS and place it in the personal injury process: where it is, who owns it, its key dates, and what happens next.",
-    tools: c => c ? [[`🗂 ${c.id} in the CMS`, FF().caseHref(c, "cm")]] : [],
-    fields: f => [["phase", "Phase the case is in", "select", PHASES], ["attorney", "Attorney on the file", "text"], ["cm", "Case manager", "text"], ["dol", "Date of the accident", "date"], ["sol", "Statute of limitations date", "date"],
-      ["next", "The next steps, in order (one per line), and who does each", "textarea"]],
-    check: (a, c) => c ? [
-      ["Phase", same(a.phase, c.phase), c.phase], ["Attorney", near(a.attorney, c.attorney), c.attorney], ["Case manager", near(a.cm, c.cm), c.cm],
-      ["Date of the accident", toISO(c.dol) === a.dol, c.dol], ["Statute of limitations", toISO(c.sol) === a.sol, c.sol],
-      ["At least two next steps, each with who does it", String(a.next || "").split("\n").filter(x => x.trim().length > 8).length >= 2, ""]] : []},
-  {id:"records", icon:"🩺", title:"Medical Records: ChartSwap request", lesson:8, area:"records",
-    about:"Request your records case’s medical records the way your firm does: through ChartSwap when the provider uses it. Find what you need in the CMS file, then fill in the ChartSwap request here.",
-    tools: c => c ? [[`🗂 ${c.id} in the CMS`, FF().caseHref(c, "cm")]] : [],
-    fields: f => [["requester", "Requesting firm", "text"], ["deliver", "Deliver the records to (email)", "text"], ["patient", "Patient’s full name", "text"], ["dob", "Patient’s date of birth", "date"],
-      ["provider", "Provider / facility", "text"], ["from", "Dates of service: from", "date"], ["to", "Dates of service: to (empty = to present)", "date"],
-      ["types", "Records requested", "checks", ["Medical records", "Itemized billing", "Imaging reports", "Radiology films", "Discharge summary"]],
-      ["purpose", "Purpose of the request", "select", ["Legal: attorney request", "Continuing care", "Personal use"]],
-      ["hipaa", "HIPAA authorization", "select", ["Signed authorization attached", "Not signed yet: hold the request and send it to the client"]],
-      ["rep", "Signed by (the client, or their authorized representative)", "text"]],
-    check: (a, c, f) => { if(!c) return [];
-      const prov = (c.providers || []).find(p => near(a.provider, p.name));
-      const dfrom = prov ? toISO(String(prov.dates || "").split(/\s+[–-]\s+/)[0]) : "";
-      const hold = c.hipaa === "sent, not signed";
-      const rep = c.authorized ? c.authorized.split(" (")[0] : c.client.name;
-      return [["Requesting firm", near(a.requester, f.name), f.name], ["Delivered to the firm’s records email", same(a.deliver, f.recordsEmail), f.recordsEmail],
-        ["Patient’s name, as on the file", same(a.patient, c.client.name), c.client.name], ["Date of birth", toISO(c.client.dob) === a.dob, c.client.dob],
-        ["A provider treating this client", !!prov, (c.providers || []).map(p => p.name).join(", ")],
-        ["Dates of service from the first visit", !!prov && a.from === dfrom, prov ? prov.dates : ""],
-        ["The firm’s record types", (f.recordTypes || []).every(t => (a.types || []).includes(t)), (f.recordTypes || []).join(", ")],
-        ["Purpose: legal", a.purpose === "Legal: attorney request", ""],
-        ["HIPAA authorization", hold ? /hold/i.test(a.hipaa) : /attached/i.test(a.hipaa), hold ? "Not signed yet: hold the request" : "Signed authorization attached"],
-        ["Signed by the right person", near(a.rep, rep), c.authorized || c.client.name]]; }}
+  // Days 8–9 (Training Guide, "Intake Mock Call Activity – Training Platform (Prototype CMS)"): the trainee asks the
+  // intake questions on the call, enters what they gather straight into the Prototype CMS's fields — not a fillable
+  // form — and records it here. No case is handed out: the caller is the lead. The checks are the call's own: every
+  // detail an intake needs, dates that hold together, the statute of limitations under the firm's rule, a conflict
+  // check and a decision.
+  {id:"intake", icon:"📋", title:"Intake Mock Calls", lesson:6, program:"intake",
+    about:"Take an intake call (the Call Simulator’s Intake Line, on ☎ LSH Ring Channel). Ask the intake questions, enter what you gather straight into the Prototype CMS’s fields — not the fillable intake forms — then record the intake here. Between your turns, practise intake calls on the Call Simulator.",
+    tools: () => [["🎯 Take a graded call", calls("Intake Mock Calls", true)], ["📞 Practice a caller", calls("Intake Mock Calls")],
+      ["🗂 The Prototype CMS (Intake)", CMS + "?" + new URLSearchParams({program:"intake", from:"standard"})],
+      ["📄 Fillable intake forms (what to ask)", "https://drive.google.com/file/d/1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF/view?usp=sharing"]],
+    fields: f => [["name", "Potential client’s full name", "text"], ["phone", "Callback number", "text"], ["dob", "Date of birth", "date"], ["dol", "Date of the accident (DOL)", "date"],
+      ["type", "Case type", "select", ["MVA", "Slip and Fall", "Premise Liability", "Dog Bite", "Medical Malpractice", "Others"]],
+      ["injuries", "Injuries and treatment so far", "textarea"], ["carrier", "At-fault party’s carrier (3P), or “Unknown”", "text"], ["sol", "Statute of limitations date", "date"],
+      ["cms", "Every detail entered in the Prototype CMS’s fields", "check"], ["conflict", "Conflict check run on every party", "check"],
+      ["decision", "Decision", "select", ["Accept: send the retainer", "Refer to the Intake Attorney", "Decline and refer out"]]],
+    check: (a, c, f) => {
+      const today = new Date().toISOString().slice(0, 10), dob = String(a.dob || ""), dol = String(a.dol || "");
+      const sol = addYears(dol, Number(f.solYears) || 2);
+      return [["The client’s first and last name", String(a.name || "").trim().split(/\s+/).length >= 2, ""],
+        ["A callback number (10 digits)", String(a.phone || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "").length === 10, ""],
+        ["Date of birth before the accident", !!dob && !!dol && dob < dol, ""],
+        ["Date of the accident, not in the future", !!dol && dol <= today, ""],
+        ["Case type", has(a.type), ""],
+        ["Injuries and treatment recorded", String(a.injuries || "").trim().length >= 20, ""],
+        ["The at-fault party’s carrier, or “Unknown”", has(a.carrier), ""],
+        [`Statute of limitations (${f.solYears || 2} years from the accident, ${f.state || "the firm’s state"})`, !!dol && a.sol === sol, dol ? fmtDate(sol) : "the accident date + " + (f.solYears || 2) + " years"],
+        ["Entered in the Prototype CMS", !!a.cms, ""],
+        ["Conflict check and a decision", !!a.conflict && has(a.decision), ""]]; }},
+  // Day 14 (Training Guide, "Sending MedLOR and Requesting for Medical Bills & Records"): the trainee prepares the
+  // MedLOR request the way the tutorial and the day's notes set it out — before the recorded demo with the trainer
+  // (🧑‍🏫 Trainer Inputs: medlor-demo). No case is handed out; the checks are the day's own rules.
+  {id:"records", icon:"🩺", title:"Medical Records: MedLOR and Request for Bills & Records", lesson:8,
+    about:"Prepare a MedLOR request the way Day 14 sets it out: the combined MedLOR, Unsworn COR and HIPAA under the right file name, the HIPAA fields, both boxes on the MedLOR, and the e-mail subject line or the fax address and signature. Use the provider your trainer gave you for the demo (the client is John Test Doe).",
+    tools: () => [["🎬 Tutorial: Sending MedLOR and requesting bills & records", "https://drive.google.com/file/d/16Oy2X1S9nokz5tqMm_P6nByqYaakvGDU/view?usp=drive_link"]],
+    fields: f => [["provider", "Lien holder (medical provider), e.g. JML(Lyons Physical Therapy)", "text"], ["npim", "NPIM doctor (only when the provider is NPIM)", "text"],
+      ["file", "File name of the combined MedLOR, Unsworn COR and HIPAA", "text"],
+      ["hipaaDate", "HIPAA: Validity of Authorization (the date the client signed)", "date"], ["relation", "HIPAA: Relationship to Patient", "select", ["Self", "Spouse", "Parent", "Guardian", "Other"]],
+      ["boxes", "MedLOR: boxes ticked", "checks", ["Medical bills", "Medical records"]],
+      ["method", "Sent by", "select", ["E-mail / E-filing", "Fax"]],
+      ["subject", "E-mail subject line (e-mail only)", "text"], ["fax", "Fax number as entered in the recipient field (fax only)", "text"],
+      ["sig", "Below the closing (fax only)", "checks", ["Full name", "General Virtual Assistant", "Work email address", "Phone number"]]],
+    check: a => {
+      const prov = String(a.provider || "").trim(), file = String(a.file || "").trim(), npim = /\bNPIM\b|Nevada Personal Injury Management/i.test(prov + " " + file);
+      const doc = String(a.npim || "").replace(/^Dr\.?\s*/i, "").trim().split(/\s+/).pop() || "";
+      const out = [["The file name follows the convention", /^MED - .+\(.+\) - MedLOR with Unsworn COR and HIPAA \d{2}\.\d{2}\.\d{2} \([^()]+\)$/.test(file), "MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (your first name)"],
+        ["The file name names the provider", !!prov && near(file, prov) || (!!prov && norm(file).includes(norm(prov))), prov || "the provider"],
+        ["NPIM: the doctor’s name with the provider", !npim || (!!doc && new RegExp("Dr\\.?\\s*[^)]*" + doc.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i").test(file)), "e.g. MED - JML(Fabito Anesthesia Pain Center Dr. Fabito) - …"],
+        ["HIPAA: the date the client signed", has(a.hipaaDate), ""],
+        ["HIPAA: Relationship to Patient is Self", a.relation === "Self", "Self"],
+        ["MedLOR: both bills and records ticked", ["Medical bills", "Medical records"].every(x => (a.boxes || []).includes(x)), "Medical bills, Medical records"],
+        ["How it was sent", has(a.method), ""]];
+      if(a.method === "Fax"){
+        out.push(["The fax address: +1, no dashes, @metrofax.com", /^\+1\d{10}@metrofax\.com$/i.test(String(a.fax || "").trim()), "+17029982171@metrofax.com"]);
+        out.push(["Name, General Virtual Assistant, work email and phone below the closing", ["Full name", "General Virtual Assistant", "Work email address", "Phone number"].every(x => (a.sig || []).includes(x)), ""]);
+      }else{
+        const subj = String(a.subject || "").trim();
+        out.push(["The subject line: client – provider – Request for Medical Bills and Records", /^.+ - .+ - Request for Medical Bills and Records$/i.test(subj) && (!prov || norm(subj).includes(norm(prov))), `John Test Doe - ${prov || "Provider"} - Request for Medical Bills and Records`]);
+      }
+      return out; }}
 ];
 const sessionById = id => SESSIONS.find(s => s.id === id) || null;
 
@@ -178,6 +193,8 @@ window.FTSessions = {
     const s = sessionById(S.cur); if(!s) return;
     const c = sessionCase(s), t = (s.tools(c) || [])[i]; if(!t) return;
     if(t[1] === "calsim:standard"){ if(window.ftsCalsim) ftsCalsim("standard"); return; }
+    // a Drive video or document opens in the platform's viewer (js/ft-updates.js), like every resource link
+    if(/^https:\/\/(drive|docs)\.google\.com\//.test(t[1]) && typeof window.lvOpen === "function"){ lvOpen({kind: /video|tutorial/i.test(t[0]) ? "video" : "doc", title: t[0].replace(/^\S+\s/, ""), url: t[1]}); return; }
     if(window.ftsShowTool) ftsShowTool(t[1], `${t[0].replace(/^\S+\s/, "")} · ${s.title}`); else window.open(t[1], "_blank");
   },
   set(name, v){ const s = sessionById(S.cur), run = runOf(s, caseFor(s)); if(!run) return; run.answers[name] = v; clearTimeout(S.saving); S.saving = setTimeout(save, 1200); },
@@ -204,7 +221,7 @@ ${Object.entries(run.answers).map(([k, v]) => `- ${k}: ${Array.isArray(v) ? v.jo
 The automated checks against the case file and the firm's rules (${pct}%):
 ${checks.map(x => `- ${x.ok ? "PASS" : "MISS"}: ${x.label}${!x.ok && x.want ? ` (expected: ${x.want})` : ""}`).join("\n")}
 The firm's rules for this work:
-${((f.rules || {})[{reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", records:"records"}[s.id]] || []).map(x => "- " + x).join("\n")}
+${((f.rules || {})[{reception:"reception", calendaring:"calendar", intake:"intake", records:"records"}[s.id]] || []).map(x => "- " + x).join("\n")}
 
 Write the evaluation the way the facilitator writes it (her feedback DNA, below): a verdict label, then "Demonstrated … understanding of …" naming exactly what was done correctly, then "However, improvement is needed in …" naming each missed item with the correct value, then the habit or rule that prevents it, tying it to the firm's rules. 3-5 sentences, third person, using the trainee's work only.
 
@@ -290,7 +307,7 @@ function renderSession(){
   if(!f) return `${back}<div class="card" style="padding:24px;">No firm profile is set up yet, so this session has no rules to check your work against.</div>`;
   const run = preview ? null : runOf(s, c), rv = run ? reviewOf(keyOf(s, c)) : null;
   const started = run && run.startedAt && !run.submittedAt, done = run && run.submittedAt;
-  const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", pi:"general", records:"records"}[s.id];
+  const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", records:"records"}[s.id];
   return `${back}
     <div class="fss-hero"><p class="lp-eyebrow">🟢 Practice Session · ${e(f.name)}</p><h1>${s.icon} ${e(s.title)}</h1><p>${e(s.about)}</p>
       ${c ? `<p class="fss-case">🗂 Case <b>${e(c.id)}</b> · ${e(c.client.name)} · ${e(c.type)}</p>` : ""}
