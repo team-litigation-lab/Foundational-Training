@@ -508,7 +508,7 @@ function renderTrainerInputs(){
     ${editing ? (() => { const r = rows.find(x => x.id === TI.cell[0]), a = list.find(x => x.id === TI.cell[1]), c = cellOf(r, a);
       return `<div class="fss-rvform fss-cellform"><b>${e(r.name)} · ${e(a.title)}</b>
         <label>Result <select data-status>${STATUSES.map(s => `<option ${s === (c.status || "Not yet") ? "selected" : ""}>${s}</option>`).join("")}</select></label>
-        ${rubricForm(a, c)}
+        ${rubricForm(a, c)}${typeof window.ftRubricAssist === "function" ? window.ftRubricAssist(r, a) : ""}
         <label>Score <input type="number" min="0" max="100" data-score value="${tScore(c) != null ? tScore(c) : ""}"> %</label>
         <label>Date <input type="date" data-date value="${e(c.date || new Date().toISOString().slice(0, 10))}"></label>
         <label class="fss-wide">Comment<textarea rows="3" data-comment placeholder="What went well, what to improve (the trainee sees it)">${e(c.comment || "")}</textarea></label>

@@ -88,7 +88,7 @@ function renderSimulators(){
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
       <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
     ${window.FTSessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
-      <div class="fts-grid">${FTSessions.cards()}</div></section>
+      <div class="fts-grid">${FTSessions.cards()}${window.ftCalRulesCard ? ftCalRulesCard() : ""}</div></section>
     ${window.ftLorCard ? `<section class="fts-group"><h2>🧰 Drafting Tools</h2><p class="fts-sub">Tools you draft in here, on this platform. You fill in the firm’s own template on the page and download the finished document as a PDF, named by the trainers’ convention — yours to edit before you download. Nothing you draft here becomes a case file in the CMS.</p>
       <div class="fts-grid">${ftLorCard()}${window.ftGuideCard ? ftGuideCard() : ""}${window.ftTranscribeCard ? ftTranscribeCard() : ""}${window.ftDrillsCard ? ftDrillsCard() : ""}</div></section>` : ""}
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
