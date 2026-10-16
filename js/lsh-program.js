@@ -249,6 +249,28 @@ function stepTimeline(all){
 const topRow = (notices, pins) => notices && pins
   ? `<div class="dash-pair"><div class="dash-pair-pin">${pins}</div><div class="dash-pair-now">${notices}</div></div>`
   : notices + pins;
+// 📚 Dashboard's lesson cards, compact: the lesson's icon sits beside its Start button instead of on a band of its
+// own, so a card is about half as tall and many more fit on one screen (only here: other pages keep the full card).
+function compactCard(html){
+  const t = document.createElement("template"); t.innerHTML = String(html).trim();
+  const card = t.content.firstElementChild; if(!card) return html;
+  const icon = card.querySelector(".module-body .module-icon"), start = card.querySelector(".module-start-btn");
+  if(!start) return html;
+  const row = document.createElement("div"); row.className = "mc-startrow";
+  if(icon) row.appendChild(icon);
+  row.appendChild(start);
+  const grid = card.querySelector(".mc-grid");
+  (grid || card.lastElementChild).before(row);
+  const body = card.querySelector(".module-body");
+  if(body && !body.textContent.trim() && !body.querySelector("img, svg")) body.remove();
+  // the small buttons in one line: a short label, the full one on hover
+  card.querySelectorAll(".mc-grid > button").forEach(b => {
+    const full = b.textContent.trim(), short = full.replace(/Finish Training/, "Finish").replace(/Video Presentation/, "Video");
+    if(short !== full){ b.title = b.title || full; b.setAttribute("aria-label", full); [...b.childNodes].forEach(n => { if(n.nodeType === 3) n.nodeValue = n.nodeValue.replace(/Finish Training/, "Finish").replace(/Video Presentation/, "Video"); }); }
+  });
+  card.classList.add("mc-compact");
+  return card.outerHTML;
+}
 function renderModules(){
   const all = lessons(), done = doneIn(state.progress), pinned = (CFG.pinned() || []).filter(Boolean);
   const viewer = isTrainee() || !!state.adminPreview;
@@ -271,7 +293,7 @@ function renderModules(){
     </div>
     <div class="dash-main">
       ${topRow(hooks("LSH_HOME_NOTICES"), pinned.map(d => moduleCard(d)).join(""))}
-      <div class="module-grid">${all.map(d => moduleCard(d)).join("")}</div>
+      <div class="module-grid">${all.map(d => compactCard(moduleCard(d))).join("")}</div>
       <div class="dash-side"><div class="dash-side-inner">
         <div class="card stat"><div class="num">${pct}%</div><div class="lbl">Program complete</div></div>
         <div class="card stat"><div class="num">${done} / ${all.length}</div><div class="lbl">Lessons finished</div></div>
@@ -470,6 +492,21 @@ main.main-lp{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
    and wraps one word per line. Pin it to the wide column explicitly, ribbon or not — on both the Scorecard's
    main-lp and the Dashboard page's main-dash. */
 main.main-lp .dash-hero-text,main.main-dash .dash-hero-text{grid-column:2;}
+/* compact lesson cards (compactCard): the title, then the icon beside Start, then the small buttons on one row
+   that wrap their words rather than cut them off */
+main.main-dash .module-grid:has(> .mc-compact){grid-auto-rows:min-content !important;align-content:start !important;}
+@media(min-width:1001px){main.main-dash .module-grid:has(> :nth-child(11)){grid-template-columns:repeat(6,minmax(0,1fr)) !important;}}
+main.main-dash .module-card.mc-compact{display:flex;flex-direction:column;height:auto !important;min-height:0 !important;}
+main.main-dash .module-card.mc-compact > .module-head{padding:6px 8px 5px !important;min-height:0 !important;flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;}
+main.main-dash .module-card.mc-compact .mh-title{font-size:13.5px !important;line-height:1.25 !important;}
+main.main-dash .module-card.mc-compact .mh-day{font-size:10px !important;line-height:1.2 !important;margin:0 0 1px !important;}
+main.main-dash .module-card.mc-compact .mh-day:empty, main.main-dash .module-card.mc-compact .mh-day:not(:has(*)):is(:empty){display:none;}
+main.main-dash .module-card.mc-compact > .mc-startrow{display:flex;align-items:stretch;gap:0;border-top:1px solid #9CA3B8;}
+main.main-dash .module-card.mc-compact > .mc-startrow > .module-icon{flex:0 0 auto;width:46px;display:grid;place-items:center;font-size:22px !important;margin:0 !important;background:#F6F7FB;border-right:1px solid #9CA3B8;}
+main.main-dash .module-card.mc-compact > .mc-startrow > .module-start-btn{flex:1 1 auto;min-height:0 !important;padding:5px 10px !important;font-size:14px !important;border-radius:0 !important;margin:0 !important;}
+main.main-dash .module-card.mc-compact > .mc-grid{display:flex !important;grid-template-columns:none !important;border-top:1px solid #9CA3B8;margin-top:0 !important;}
+main.main-dash .module-card.mc-compact > .mc-grid > button{flex:1 1 0;min-width:0;white-space:normal !important;line-height:1.2 !important;padding:5px 4px !important;font-size:12px !important;min-height:0 !important;overflow:visible !important;text-overflow:clip !important;grid-column:auto !important;}
+main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){border-right:1px solid #9CA3B8 !important;}
 /* 📚 Dashboard's top row, kept short: the pinned orientation card first, the next-step band (and any live task) beside it */
 .dash-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:12px;align-items:stretch;margin-bottom:10px;flex:0 0 auto;}
 .dash-pair > div{min-width:0;display:flex;flex-direction:column;gap:8px;}

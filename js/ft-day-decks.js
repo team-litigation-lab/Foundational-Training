@@ -60,7 +60,7 @@ function open(n, i){
 }
 function go(step){
   const d = decks() && decks()[DD.day]; if(!d) return;
-  const i = Math.max(0, Math.min(d.slides.length - 1, DD.i + step));
+  const i = Math.max(0, Math.min(slidesOf(d).length - 1, DD.i + step));
   if(i === DD.i) return;
   DD.i = i; render();
 }
@@ -77,6 +77,141 @@ function chips(){
   }
   return `<div class="ftdd-chips" role="tablist" aria-label="Training days">${h}</div>`;
 }
+/* ---------- executed like the original LSH decks (as the Case Management course's Case Flow): a navy slide with the
+   LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
+   cream, orange-bordered sheet; orange corner shapes. Each day opens on its Training Agenda. ---------- */
+// what a slide is, at a glance: the time of day on the ribbon, the kind of work on the pill
+function timeOf(h){
+  const t = String(h || "");
+  if(/^homework/i.test(t)) return {ic: "🏠", label: "Homework"};
+  if(/buffer/i.test(t)) return {ic: "⏳", label: "Buffer time"};
+  if(/^entire day/i.test(t)) return {ic: "📅", label: "Entire day"};
+  if(/^pm\b/i.test(t)) return {ic: "🌇", label: "Afternoon"};
+  if(/^am\b/i.test(t)) return {ic: "🌅", label: "Morning"};
+  return null;
+}
+function kindOf(s, html){
+  const h = String(s.h || "");
+  if(s.placeholder) return {ic: "📌", label: "To be added"};
+  if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
+  if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
+  if(/shadowing/i.test(h)) return {ic: "👀", label: "Shadowing"};
+  if(/discussion/i.test(h)) return {ic: "💬", label: "Classroom discussion"};
+  if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
+  if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
+  if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
+  return {ic: "📝", label: "Read & do"};
+}
+const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
+const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
+function linkKind(href, label, dk){
+  const u = String(href || "");
+  if(/drive\.google\.com\/drive\/folders\//.test(u)) return {k: "folder", ic: "📁", act: "Open the folder"};
+  if(/docs\.google\.com\/spreadsheets\//.test(u)) return {k: "sheet", ic: "📊", act: "Open the sheet"};
+  if(/docs\.google\.com\/presentation\//.test(u)) return {k: "slides", ic: "📽", act: "Open the slides"};
+  if(/docs\.google\.com\/document\//.test(u)) return {k: "doc", ic: "📄", act: "Open the document"};
+  if(/loom\.com|youtube\.com|youtu\.be/.test(u) || dk === "video" || VIDEO_WORDS.test(label || "")) return {k: "video", ic: "🎬", act: "▶ Watch"};
+  if(/canva\.com/.test(u)) return {k: "canva", ic: "🎨", act: "Open the deck"};
+  if(/drive\.google\.com\/file\//.test(u)) return {k: "file", ic: "📄", act: "Open the file"};
+  return {k: "web", ic: "🔗", act: "Open in a new tab ↗"};
+}
+// a tile's name from the sentence that introduced it: "Task 1 - Please go to this link to watch the video presentation
+// on Common Terms Used" → "Watch the video presentation on Common Terms Used"
+const cleanTitle = t => { const s = String(t || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").trim()
+  .replace(/^(?:task|step)\s*\d+\s*[-–:.]*\s*/i, "").replace(/^(?:please|kindly)\s+/i, "")
+  .replace(/^(?:you may also\s+)?(?:go|proceed)\s+to\s+(?:this|these|the)\s+links?\s*(?:to|for)?\s*/i, "")
+  .replace(/[:\s.-]+$/, "");
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; };
+// the day file's HTML, made visual: links → picture tiles, tasks → numbered steps, naming conventions and notes → boxes
+function visual(html){
+  const t = document.createElement("template"); t.innerHTML = html;
+  const root = t.content;
+  // 1. a line that is only a link (or links) becomes tiles; the short line before it names the tile
+  root.querySelectorAll("p").forEach(p => {
+    const as = [...p.querySelectorAll("a[href]")];
+    if(!as.length || p.closest(".trainer-slot, .ftdd-tiles")) return;
+    const rest = p.textContent.replace(/https?:\/\/\S+/g, "").replace(/[\s,]+/g, "");
+    if(rest.length) return;                                  // a link inside a sentence stays a link
+    let prev = p.previousElementSibling, label = "";
+    const prevText = prev && prev.tagName === "P" && !prev.querySelector("a") ? prev.textContent.trim() : "";
+    const absorb = prevText && prevText.length <= 140 && !/^\s*(task|step|topic)\b/i.test(prevText) && !/[.!?]\s*$/.test(prevText.replace(/\s*\(.*\)\s*$/, ""));
+    if(absorb) label = cleanTitle(prevText) || prevText.replace(/[:\s]+$/, "");
+    // the lines just before say what the links are ("Please watch these two videos:")
+    let context = "", q = p.previousElementSibling;
+    for(let k = 0; q && k < 3; k++, q = q.previousElementSibling) context += " " + q.textContent;
+    const tiles = as.map((a, j) => {
+      const href = a.getAttribute("href"), name = (as.length > 1 && label ? label + " · " + (j + 1) : label) || cleanTitle(a.getAttribute("data-title")) || cleanTitle(a.textContent) || "Open";
+      const lk = linkKind(href, name + " " + (prevText || "") + " " + context, a.getAttribute("data-kind"));
+      const el = document.createElement("a");
+      el.className = (a.classList.contains("viewer-link") ? "viewer-link " : "") + "ftdd-tile k-" + lk.k;
+      el.href = href;
+      if(a.classList.contains("viewer-link")){ el.setAttribute("data-kind", lk.k === "video" ? "video" : "doc"); el.setAttribute("data-title", name); }
+      else { el.target = "_blank"; el.rel = "noopener noreferrer"; }
+      el.innerHTML = `<span class="ftdd-tile-ic">${lk.ic}</span><span class="ftdd-tile-t"><b></b><small>${lk.act}</small></span>`;
+      el.querySelector("b").textContent = name;
+      return el;
+    });
+    const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-tiles") ? p.previousElementSibling : null;
+    const box = absorb ? null : last;
+    const grid = box || document.createElement("div"); grid.className = "ftdd-tiles";
+    tiles.forEach(x => grid.appendChild(x));
+    if(absorb){ prev.replaceWith(grid); p.remove(); }
+    else if(box){ p.remove(); }
+    else p.replaceWith(grid);
+  });
+  // tiles that ended up next to each other share one grid
+  root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
+  root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
+  // 2. tasks → numbered step cards; topics → a topic chip; dashed lines → a divider
+  root.querySelectorAll("p").forEach(p => {
+    if(p.closest(".trainer-slot")) return;
+    const txt = p.textContent.trim();
+    let m;
+    if((m = txt.match(/^(?:Task|Step)\s*(\d+)\s*[-–:.]*\s*(.*)$/i))){
+      const d = document.createElement("div"); d.className = "ftdd-step";
+      d.innerHTML = `<span class="ftdd-step-n"></span><div class="ftdd-step-t"></div>`;
+      d.querySelector(".ftdd-step-n").textContent = m[1];
+      d.querySelector(".ftdd-step-t").innerHTML = p.innerHTML.replace(/^\s*(?:<b>)?\s*(?:Task|Step)\s*\d+\s*[-–:.]*\s*/i, "");
+      if(/monitoring/i.test(txt)) d.classList.add("ftdd-step-check");
+      p.replaceWith(d); return;
+    }
+    if((m = txt.match(/^Topic\s*\d*\s*:\s*(.+)$/i))){
+      const d = document.createElement("div"); d.className = "ftdd-topic"; d.textContent = "🏷 " + m[1].trim(); p.replaceWith(d); return;
+    }
+    if(/^-{5,}$/.test(txt)){ const hr = document.createElement("hr"); hr.className = "ftdd-rule"; p.replaceWith(hr); return; }
+    if(/^(note|notes|reminder|reminders|important|tip|gentle reminders?)\b|^📌|^❗/i.test(txt)){ p.classList.add("ftdd-callout"); return; }
+    if(/update (item|#)|monitoring sheet/i.test(txt) && txt.length < 160) p.classList.add("ftdd-check");
+  });
+  // 3. the naming convention: the line after "Naming Convention" is the name to copy
+  root.querySelectorAll("p, h3, h4").forEach(p => {
+    if(!/^\s*(complete\s+)?naming convention/i.test(p.textContent)) return;
+    p.classList.add("ftdd-name-h");
+    const n = p.nextElementSibling;
+    if(n && n.tagName === "P" && n.textContent.trim().length < 200) n.classList.add("ftdd-name");
+  });
+  const box = document.createElement("div"); box.appendChild(root);
+  return box.innerHTML;
+}
+const slidesOf = d => [{id: "agenda", h: "Training Agenda", agenda: true}].concat(d.slides);
+function agendaHtml(d, info){
+  const rows = d.slides.map((s, i) => {
+    const t = timeOf(s.h), k = kindOf(s, visual(s.html));
+    return `<li><button type="button" onclick="FTDayDecks.to(${i + 1})"><span class="ftdd-ag-n">${String(i + 1).padStart(2, "0")}</span>
+      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${t ? t.ic + " " + t.label + " · " : ""}${k.ic} ${k.label}</small></span></button></li>`;
+  }).join("");
+  const all = d.slides.map(s => s.html).join(" ");
+  const count = re => (all.match(re) || []).length;
+  const vids = d.slides.reduce((n, s) => n + (visual(s.html).match(/ftdd-tile k-video/g) || []).length, 0);
+  const folders = count(/drive\.google\.com\/drive\/folders\//g), decksN = count(/class="canva-frame"/g);
+  const lessons = (info.lessons || []).map(l => `<li>📘 ${e(lessonTitle(l))}</li>`).join("");
+  return `<div class="ftdd-ag"><ol class="ftdd-ag-list">${rows}</ol>
+    <div class="ftdd-ag-side"><p class="ftdd-ag-day">${e(info.role || d.title)}</p>
+      ${lessons ? `<p class="ftdd-ag-h">Today’s lesson</p><ul class="ftdd-ag-ls">${lessons}</ul>` : ""}
+      <p class="ftdd-ag-h">In today’s slides</p>
+      <div class="ftdd-ag-stats">${vids ? `<span>🎬 <b>${vids}</b> video${vids > 1 ? "s" : ""}</span>` : ""}${folders ? `<span>📁 <b>${folders}</b> folder${folders > 1 ? "s" : ""}</span>` : ""}${decksN ? `<span>🎨 <b>${decksN}</b> deck${decksN > 1 ? "s" : ""}</span>` : ""}<span>🧾 <b>${d.slides.length}</b> slides</span></div>
+      ${/ftdd-pq/.test(all) ? `<p class="ftdd-ag-pq">✍️ Today’s Process Questions are in <a class="ftdd-link" onclick="goto('process')">Knowledge Check</a>, after the activities.</p>` : ""}
+    </div></div>`;
+}
 function renderDeck(){
   const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>`;
   if(DD.day == null) DD.day = currentDay();
@@ -84,27 +219,31 @@ function renderDeck(){
   const all = decks();
   if(!all){
     loadDecks();
-    return `${back}<div class="card ftdd-card"><div class="ftdd-body"><p>${DD.failed ? "The day decks couldn’t load. Check your connection and open the deck again." : "Loading the day deck…"}</p></div></div>`;
+    return `${back}<div class="ftdd-deck ftdd-msg"><p>${DD.failed ? "The day decks couldn’t load. Check your connection and open the deck again." : "Loading the day deck…"}</p></div>`;
   }
-  const d = all[DD.day]; if(!d) return `${back}<div class="card ftdd-card"><div class="ftdd-body"><p>There is no deck for Day ${e(DD.day)}.</p></div></div>`;
-  const info = dayInfo(DD.day), n = d.slides.length;
+  const d = all[DD.day]; if(!d) return `${back}<div class="ftdd-deck ftdd-msg"><p>There is no deck for Day ${e(DD.day)}.</p></div>`;
+  const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
-  const s = d.slides[DD.i];
+  const s = list[DD.i], body = s.agenda ? "" : visual(s.html);
+  const t = s.agenda ? null : timeOf(s.h), k = s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
+  const logo = typeof LOGO_FULL_SRC !== "undefined" ? `<img class="ftdd-logo" src="${LOGO_FULL_SRC}" alt="Legal Support Help">` : "";
   const lessons = (info.lessons || []).map(l => lessonOpen(l)
     ? `<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${Number(l)})">📘 ${e(lessonTitle(l))}</button>`
     : `<span class="ftdd-locked">🔒 ${e(lessonTitle(l))}</span>`).join("");
-  return `<div class="ftdd-top">${back}
-      <div class="ftdd-title"><span class="ftdd-kicker">📋 Day deck</span><h1>Day ${DD.day} · ${e(info.role || d.title)}</h1>${lessons ? `<div class="ftdd-lessons">${lessons}</div>` : ""}</div>
-      ${chips()}</div>
-    <div class="card ftdd-card${s.placeholder ? " ftdd-card-ph" : ""}">
-      <div class="ftdd-head"><span class="ftdd-n">Slide ${DD.i + 1} of ${n}</span><h2>${e(s.h)}</h2></div>
-      <div class="ftdd-body ft-body">${s.html}</div>
+  const ribbon = s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  return `<div class="ftdd-top">${back}${chips()}${lessons ? `<div class="ftdd-lessons">${lessons}</div>` : ""}</div>
+    <div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}">
+      <div class="ftdd-dhead">${logo}<h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1></div>
+      <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
+      <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
+        <span class="ftdd-n">Slide ${DD.i + 1} of ${n}</span></div>
+      ${s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body">${body}</div>`}
       <div class="ftdd-nav">
-        <button type="button" class="btn btn-ghost" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
-        <div class="ftdd-dots">${d.slides.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i ? " on" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
-        ${DD.i < n - 1 ? `<button type="button" class="btn btn-navy" onclick="FTDayDecks.go(1)">Next →</button>`
-          : DD.day < COUNT() && dayOpen(DD.day + 1) ? `<button type="button" class="btn btn-navy" onclick="FTDayDecks.pick(${DD.day + 1})">Day ${DD.day + 1} →</button>`
-          : `<button type="button" class="btn btn-navy" onclick="goto('modules')">📚 Dashboard</button>`}
+        <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
+        <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
+        ${DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
+          : DD.day < COUNT() && dayOpen(DD.day + 1) ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.pick(${DD.day + 1})">Day ${DD.day + 1} →</button>`
+          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`}
       </div>
     </div>`;
 }
@@ -115,7 +254,7 @@ root.render = function(){
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ftdd">${renderDeck()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
-  const b = document.querySelector(".ftdd-body"); if(b) b.scrollTop = 0;
+  const b = document.querySelector(".ftdd-sheet, .ftdd-onnavy"); if(b) b.scrollTop = 0;
 };
 // ← / → turn the slides (not while typing)
 document.addEventListener("keydown", ev => {
@@ -127,45 +266,119 @@ document.addEventListener("keydown", ev => {
 
 root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; render(); }, dayOpen, currentDay, load: loadDecks};
 
+if(!document.getElementById("ftdd-deck-font")){
+  const f = document.createElement("link"); f.id = "ftdd-deck-font"; f.rel = "stylesheet";
+  f.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap";
+  document.head.appendChild(f);
+}
 (function(){ const st = document.createElement("style"); st.id = "ft-day-decks"; st.textContent = `
-main.main-ftdd{max-width:1180px;margin:0 auto;padding:14px 20px 18px;display:flex;flex-direction:column;gap:10px;}
-.ftdd-top{display:flex;flex-direction:column;gap:8px;}
-.ftdd-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.ftdd-kicker{font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--orange-deep);}
-.ftdd-title h1{margin:0;font-size:22px;color:var(--navy);}
+main.main-ftdd{max-width:1240px;margin:0 auto;padding:12px 20px 16px;display:flex;flex-direction:column;gap:10px;}
+.ftdd-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.ftdd-top .back-link{margin:0;}
 .ftdd-lessons{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
 .ftdd-locked{font-size:12.5px;color:var(--ink-soft);padding:4px 8px;}
 .ftdd-chips{display:flex;gap:4px;flex-wrap:wrap;}
 .ftdd-chip{min-width:30px;height:28px;border-radius:999px;border:1px solid var(--line,#dfe3ec);background:#fff;color:var(--navy);font-weight:700;font-size:12.5px;cursor:pointer;padding:0 8px;}
-.ftdd-chip.on{background:var(--navy);color:#fff;border-color:var(--navy);}
+.ftdd-chip.on{background:#DB8437;color:#fff;border-color:#DB8437;}
 .ftdd-chip.locked{opacity:.45;cursor:not-allowed;font-size:11px;}
-.ftdd-card{display:flex;flex-direction:column;padding:0;overflow:hidden;min-height:0;}
-.ftdd-head{padding:14px 20px 10px;border-bottom:1px solid var(--line,#e5e7eb);}
-.ftdd-n{font-size:11.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
-.ftdd-head h2{margin:4px 0 0;font-size:19px;color:var(--navy);}
-.ftdd-body{padding:14px 20px;overflow:auto;min-height:0;}
-.ftdd-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px;border-top:1px solid var(--line,#e5e7eb);background:#FAFBFD;}
-.ftdd-dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
-.ftdd-dot{width:10px;height:10px;border-radius:50%;border:none;background:#D5D9E4;cursor:pointer;padding:0;}
-.ftdd-dot.on{background:var(--orange);}
-.ftdd-dot.ph{outline:1px dashed #9AA3B8;outline-offset:1px;}
-.ftdd-pq{margin:10px 0;padding:10px 14px;border-radius:10px;background:#EAF1FF;border-left:4px solid var(--navy);font-size:14px;color:var(--navy);}
-.ftdd-link{color:var(--navy);font-weight:700;text-decoration:underline;cursor:pointer;}
+/* the slide: navy, the logo and the outlined title, orange corner shapes */
+.ftdd-deck{position:relative;overflow:hidden;background:#262B45;color:#fff;border-radius:18px;padding:16px 28px 14px;display:flex;flex-direction:column;min-height:0;box-shadow:0 14px 34px -18px rgba(22,24,41,.6);}
+.ftdd-deck::before{content:"";position:absolute;top:0;right:0;width:min(300px,30%);height:84px;border-radius:0 18px 0 100%;background:#DB8437;opacity:.95;pointer-events:none;}
+.ftdd-deck::after{content:"";position:absolute;left:0;bottom:0;width:min(180px,18%);height:52px;border-radius:0 100% 0 18px;background:#DB8437;opacity:.9;pointer-events:none;}
+.ftdd-deck > *{position:relative;z-index:1;}
+.ftdd-msg p{margin:0;font-size:15px;}
+.ftdd-dhead{display:flex;align-items:center;gap:18px;padding:0 0 8px;margin:0 0 10px;border-bottom:2px solid rgba(255,255,255,.88);}
+.ftdd-logo{height:44px;width:auto;flex:0 0 auto;}
+.ftdd-dtitle{margin:0 !important;font:800 30px/1.1 'Poppins','Inter',sans-serif !important;color:#fff !important;letter-spacing:.005em;
+  text-shadow:-2px -2px 0 #DB8437,2px -2px 0 #DB8437,-2px 2px 0 #DB8437,2px 2px 0 #DB8437,0 -2px 0 #DB8437,0 2px 0 #DB8437,-2px 0 0 #DB8437,2px 0 0 #DB8437,0 4px 0 rgba(0,0,0,.18);}
+.ftdd-ribbon{margin:0 0 10px -28px;max-width:calc(100% + 28px);}
+.ftdd-ribbon span{display:inline-block;max-width:100%;background:#5B6579;color:#fff;font:700 19px/1.25 'Poppins','Inter',sans-serif;padding:7px 54px 7px 28px;clip-path:polygon(0 0,calc(100% - 28px) 0,100% 50%,calc(100% - 28px) 100%,0 100%);}
+.ftdd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;}
+.ftdd-pill{display:inline-flex;align-items:center;gap:8px;background:#ECEEF3;color:#262B45;border-radius:8px;padding:5px 14px;font:700 15px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.04em;}
+.ftdd-time{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.35);color:#F4B77A;border-radius:999px;padding:4px 12px;font:700 13px/1.2 'Inter',sans-serif;}
+.ftdd-n{margin-left:auto;font:600 12.5px 'Inter',sans-serif;color:#C9CFDD;letter-spacing:.04em;text-transform:uppercase;}
+/* the content: a cream sheet with the orange border */
+.ftdd-sheet{background:#FFFDF8;color:var(--ink);border:3px solid #DB8437;border-radius:20px;padding:16px 22px;box-shadow:0 8px 22px rgba(0,0,0,.18);overflow:auto;min-height:0;}
+.ftdd-sheet > :first-child{margin-top:0 !important;}
+.ftdd-onnavy{overflow:auto;min-height:0;}
+/* links as picture tiles */
+.ftdd-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:10px 0 14px;}
+.ft-body a.ftdd-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:#fff;border:1px solid #E6E1D8;border-left:5px solid #DB8437;color:var(--ink);text-decoration:none;box-shadow:0 2px 8px rgba(22,24,41,.06);transition:transform .15s ease,box-shadow .15s ease;overflow-wrap:normal;}
+.ft-body a.ftdd-tile:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(22,24,41,.12);}
+.ftdd-tile-ic{flex:0 0 auto;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:#FBF1E6;}
+.ftdd-tile.k-video .ftdd-tile-ic{background:#262B45;}
+.ftdd-tile.k-folder .ftdd-tile-ic{background:#FFF4D6;}
+.ftdd-tile.k-sheet .ftdd-tile-ic{background:#E7F6EC;}
+.ftdd-tile.k-doc .ftdd-tile-ic, .ftdd-tile.k-file .ftdd-tile-ic{background:#EAF1FF;}
+.ftdd-tile-t{display:flex;flex-direction:column;min-width:0;}
+.ftdd-tile-t b{font-size:14.5px;line-height:1.3;color:#262B45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-top:2px;}
+.ftdd-tile.k-video .ftdd-tile-t small{color:#262B45;}
+/* tasks as numbered steps; topics; checks; callouts; the name to copy */
+.ftdd-step{display:flex;gap:12px;align-items:flex-start;margin:12px 0 6px;padding:10px 14px;background:#F6F7FB;border-radius:12px;}
+.ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}
+.ftdd-step-t{font-size:15.5px;line-height:1.5;padding-top:5px;}
+.ftdd-step-check{background:#EEF8F2;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
+.ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
+.ft-body p.ftdd-check{padding:8px 12px 8px 38px;border-radius:10px;background:#EEF8F2;position:relative;}
+.ft-body p.ftdd-check::before{content:"📋";position:absolute;left:12px;top:8px;}
+.ft-body p.ftdd-callout{padding:10px 14px 10px 40px;border-radius:12px;background:#FFF6EC;border-left:4px solid #DB8437;position:relative;}
+.ft-body p.ftdd-callout::before{content:"💡";position:absolute;left:13px;top:10px;}
+.ft-body .ftdd-name-h{margin-bottom:2px !important;color:#262B45;}
+.ft-body p.ftdd-name{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14.5px;color:#262B45;background:#ECEEF3;border:1px dashed #9AA3B8;border-radius:8px;padding:8px 12px;display:inline-block;}
+.ft-body p.ftdd-name::before{content:"🏷 ";}
+hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
+.ftdd-pq{margin:10px 0;padding:10px 14px;border-radius:10px;background:#EAF1FF;border-left:4px solid #262B45;font-size:14px;color:#262B45;}
+.ftdd-link{color:#B5651F;font-weight:700;text-decoration:underline;cursor:pointer;}
 .ftdd-ph{display:flex;gap:12px;align-items:flex-start;margin:12px 0;padding:14px 16px;border:2px dashed #C9CFDC;border-radius:12px;background:#F7F8FB;}
 .ftdd-ph-ic{font-size:22px;line-height:1;}
-.ftdd-ph b{color:var(--navy);font-size:15px;}
+.ftdd-ph b{color:#262B45;font-size:15px;}
 .ftdd-ph p{margin:4px 0 0;color:var(--ink-soft);font-size:13.5px;}
 .ftdd-ph-link{border-color:#F0C08A;background:#FFF8F0;}
-.ftdd-card-ph .ftdd-body{display:flex;align-items:center;justify-content:center;}
-.ftdd-card-ph .ftdd-ph{max-width:560px;width:100%;}
-/* one screen: the day picker, the slide and its Previous / Next bar fit the window; a long slide scrolls inside */
+.ftdd-deck-ph .ftdd-sheet{display:flex;align-items:center;justify-content:center;}
+.ftdd-deck-ph .ftdd-ph{max-width:560px;width:100%;}
+/* the day's Training Agenda, on the navy slide */
+.ftdd-ag{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.85fr);gap:20px;align-items:start;}
+.ftdd-ag-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.ftdd-ag-list button{width:100%;text-align:left;display:flex;gap:14px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 14px;color:#fff;cursor:pointer;font:inherit;}
+.ftdd-ag-list button:hover{background:rgba(255,255,255,.12);border-color:#DB8437;}
+.ftdd-ag-n{flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 16px 'Poppins','Inter',sans-serif;}
+.ftdd-ag-t b{display:block;font:700 17px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+.ftdd-ag-t small{display:block;margin-top:3px;font:500 13px/1.35 'Inter',sans-serif;color:#C9CFDD;}
+.ftdd-ag-side{background:#FFFDF8;color:var(--ink);border:3px solid #DB8437;border-radius:20px;padding:16px 20px;font:500 15px/1.5 'Inter',sans-serif;}
+.ftdd-ag-side p{margin:0;}
+.ftdd-ag-day{margin:0 0 6px !important;font:800 21px/1.25 'Poppins','Inter',sans-serif;color:#262B45;}
+.ftdd-ag-h{margin:12px 0 4px !important;font:800 11.5px/1.2 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#B5651F;}
+.ftdd-ag-ls{margin:0;padding:0;list-style:none;font-weight:600;color:#262B45;}
+.ftdd-ag-stats{display:flex;flex-wrap:wrap;gap:6px;}
+.ftdd-ag-stats span{background:#F6F7FB;border:1px solid #E3E6EE;border-radius:999px;padding:4px 10px;font-size:13px;color:#262B45;}
+.ftdd-ag-pq{margin-top:12px !important;font-size:13.5px;color:#262B45;}
+/* Previous / Next, on the slide */
+.ftdd-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 0;}
+.ftdd-nav .btn{border-radius:10px;font-weight:700;}
+.ftdd-prev{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.35);color:#fff;}
+.ftdd-prev:disabled{opacity:.4;}
+.ftdd-next{background:#DB8437;border:1px solid #DB8437;color:#fff;}
+.ftdd-next:hover{background:#C9742B;}
+.ftdd-dots{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.ftdd-dot{width:11px;height:11px;border-radius:50%;border:none;background:rgba(255,255,255,.25);cursor:pointer;padding:0;}
+.ftdd-dot.done{background:#AEB6CC;}
+.ftdd-dot.on{background:#DB8437;transform:scale(1.25);}
+.ftdd-dot.ph{outline:1px dashed rgba(255,255,255,.6);outline-offset:1px;}
+/* one screen: the day picker, the slide and its Previous / Next fit the window; a long slide scrolls inside its sheet */
 @media(min-width:1001px) and (min-height:600px){
   body:has(main.main-ftdd){height:100%;overflow:hidden;}
   body:has(main.main-ftdd) #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
   main.main-ftdd{flex:1 1 auto;min-height:0;width:100%;}
-  main.main-ftdd .ftdd-card{flex:1 1 auto;}
-  main.main-ftdd .ftdd-body{flex:1 1 auto;}
+  main.main-ftdd .ftdd-deck{flex:1 1 auto;}
+  main.main-ftdd .ftdd-sheet, main.main-ftdd .ftdd-onnavy{flex:1 1 auto;}
 }
-@media(max-width:700px){.ftdd-lessons{margin-left:0;} .ftdd-nav{flex-wrap:wrap;}}
+@media(max-width:760px){
+  .ftdd-deck{padding:14px 16px 12px;}
+  .ftdd-dhead{gap:12px;} .ftdd-logo{height:34px;} .ftdd-dtitle{font-size:21px !important;}
+  .ftdd-ribbon{margin-left:-16px;max-width:calc(100% + 16px);} .ftdd-ribbon span{font-size:15px;padding:6px 34px 6px 16px;}
+  .ftdd-ag{grid-template-columns:minmax(0,1fr);}
+  .ftdd-lessons{margin-left:0;} .ftdd-nav{flex-wrap:wrap;}
+}
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);
