@@ -83,6 +83,16 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     return { id: x.closest('.ftdd-daycard').id, text: x.innerText.trim(), shown: r.height > 6 && r.bottom <= card.bottom + 1 }; }));
   if (titles.length !== 8) fail(`${titles.length} lesson parts carry a title, not 8`);
   titles.filter(t => !t.shown || !t.text).forEach(t => fail(`${t.id}'s lesson name is hidden on 📚 Dashboard ("${t.text}")`));
+  // the whole dashboard fits one screen, and no card's words run outside it: a long heading ends in an
+  // ellipsis at a word, with the rest in its tooltip and on the day's own deck
+  const fits = await page.evaluate(() => {
+    const g = document.querySelector('main.main-dash .module-grid');
+    const spill = [...g.querySelectorAll('.ftdd-daycard')].filter(c => { const b = c.getBoundingClientRect(), t = c.querySelector('.ftdd-dc-t').getBoundingClientRect();
+      return t.bottom > b.bottom + 1 || t.right > b.right + 1; }).map(c => c.id);
+    return { over: g.scrollHeight - g.clientHeight, page: document.documentElement.scrollHeight - innerHeight, spill };
+  });
+  if (fits.over > 2 || fits.page > 2) fail(`📚 Dashboard doesn't fit one screen: the days overflow by ${fits.over}px, the page by ${fits.page}px`);
+  if (fits.spill.length) fail(`a day card's words run outside it: ${fits.spill.join(', ')}`);
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(1500);
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
     deck: !!document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,

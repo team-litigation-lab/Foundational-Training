@@ -616,7 +616,14 @@ root.LSH_HOME_GRID_LAYOUT = function(ctx){
   if(!decks()) loadDecks();
   const dk = decks() || {};
   const head = (n, re) => ((dk[n] || {}).slides || []).map(x => String(x.h || "")).find(h => re.test(h)) || "";
-  const strip = h => h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\s*\(.*?\)\s*$/, "").trim();
+  // the guide's heading, as short as the card can show it: the prefix, the bracketed aside and anything after
+  // a dash are the guide's own detail, and the day deck carries all of it
+  const strip = h => {
+    let t = String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+    t = t.replace(/\s*[-–—]\s+.*$/, "").replace(/\s*\/\s+.*$/, "").trim();
+    if(t.length > 34) t = t.slice(0, 32).replace(/[\s,;:&]+\S*$/, "") + "…";
+    return t;
+  };
   const am = n => strip(head(n, /^AM\s*:\s*(?!Buffer)/i)) || strip(head(n, /^(?!PM\s*:|Entire Day)/i)) || "Morning session";
   const pm = n => strip(head(n, /^PM\s*:/i)) || strip(head(n, /^(Topic|Additional Activity|Attorney|Client|FOR YOUR HOMEWORK|HOMEWORK)/i)) || "Offline activity";
   const whole = n => strip(head(n, /^Entire Day/i));
@@ -640,7 +647,7 @@ root.LSH_HOME_GRID_LAYOUT = function(ctx){
     // the lesson's own card does not fit half a row: the morning part is a card like the others, named for the
     // lesson it teaches, and it opens the lesson itself — its topics and video sit on it as the small buttons
     const first = partCard(ns, cur, ex, lid != null
-      ? {part: "am", label, title: lessonTitle(lid), lesson: lid, lessons: lessonOf[n]}
+      ? {part: "am", label, title: String(lessonTitle(lid)).replace(/\s*Training$/, ""), lesson: lid, lessons: lessonOf[n]}
       : {part: "am", label, title: w || am(n)});
     return `<div class="ftdd-dayrow" id="dayr-${n}">${first}${partCard(ns, cur, ex, {part: "pm", label, title: w ? pm(n) : pm(n)})}</div>`;
   };
@@ -854,20 +861,20 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
 @media(min-width:1001px){
   main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
 }
-}
-/* a day's cell: its lesson beside its instructions, two cards wide, each the full height of the cell —
-   stacked instead on a narrow window, where a row of four is already too tight */
-/* a day is a row: the lesson it teaches, then that day's instructions beside it */
-/* three columns of day rows: Days 1–5, 6–12, 13–16 */
-main.main-dash .module-grid:has(> .ftdd-daycol){grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:10px 14px !important;}
-main.main-dash .module-grid > .ftdd-daycol{display:flex !important;flex-direction:column;gap:7px;min-width:0;min-height:0;justify-content:flex-start;}
-/* a day is a row: its morning part, then its afternoon part beside it; a day given over to one thing, or a run
-   of days, takes the whole row */
-/* every day's row is the same height, whatever a column holds, so the three columns read as one grid */
-.ftdd-dayrow{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:7px;min-width:0;flex:1 1 0;min-height:0;max-height:94px;}
-.ftdd-dayrow-wide{grid-template-columns:minmax(0,1fr);}
-.ftdd-dayrow > .module-card, .ftdd-dayrow > .ftdd-daycard{min-height:0;height:100%;overflow:hidden;}
-.ftdd-dayrow > .module-card.mc-compact{height:100% !important;min-height:0 !important;max-height:none !important;}
+/* the day cards themselves: the cream card with its orange edge, its 📌 for the trainer's instructions */
+.ftdd-daycard{flex:1 1 0;min-height:0;display:flex;flex-wrap:nowrap;align-items:stretch;background:#FFFBF5;border:1px solid #E9C9A6;border-left:4px solid #DB8437;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(26,35,64,.08);}
+.ftdd-daycard.now{box-shadow:0 0 0 3px #F4B77A;}
+.ftdd-daycard.locked{opacity:.62;}
+.ftdd-dc-main{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 12px;background:none;border:0;font:inherit;color:#1A2340;text-align:left;cursor:pointer;}
+.ftdd-dc-main:disabled,.ftdd-dc-pin:disabled{cursor:default;}
+.ftdd-dc-main:not(:disabled):hover{background:#FDEBD8;}
+.ftdd-dc-ic{font-size:23px;flex:0 0 auto;}
+.ftdd-dc-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;line-height:1.15;overflow:hidden;}
+.ftdd-dc-t b{font-size:14.5px;overflow-wrap:normal;word-break:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.ftdd-dc-t small{font-size:11px;color:#5B6478;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ftdd-dc-pin{flex:0 0 auto;width:38px;border:0;border-left:1px solid #E9C9A6;background:#FFF4E6;font-size:14px;cursor:pointer;position:relative;}
+.ftdd-dc-pin:not(:disabled):hover{background:#FDEBD8;}
+.ftdd-dc-pin i{position:absolute;top:3px;right:3px;font-style:normal;font-size:9.5px;font-weight:800;background:#DB8437;color:#fff;border-radius:8px;padding:0 4px;line-height:14px;}
 /* a lesson's own part reads as the lesson: the cream card with the orange edge the dashboard already uses */
 .ftdd-daycard.ftdd-dc-les{border-left-color:#DB8437;background:#FFFBF5;}
 .ftdd-daycard.ftdd-dc-les .ftdd-dc-t b{color:var(--navy);font-size:14px;}
@@ -879,15 +886,46 @@ main.main-dash .module-grid > .ftdd-daycol{display:flex !important;flex-directio
 .ftdd-daycard.ftdd-dc-pm .ftdd-dc-main:not(:disabled):hover{background:rgba(255,255,255,.08);}
 .ftdd-daycard.ftdd-dc-pm .ftdd-dc-pin{background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.18);color:#fff;}
 .ftdd-daycard.ftdd-dc-pm.locked{opacity:.72;}
+/* three columns of day rows: Days 1–5, 6–12, 13–16 */
+main.main-dash .module-grid:has(> .ftdd-daycol){grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:10px 14px !important;}
+main.main-dash .module-grid > .ftdd-daycol{display:flex !important;flex-direction:column;gap:7px;min-width:0;min-height:0;justify-content:flex-start;}
+/* a day is a row: its morning part, then its afternoon part beside it; a day given over to one thing, or a run
+   of days, takes the whole row */
+/* every day's row is the same height, whatever a column holds, so the three columns read as one grid */
+.ftdd-dayrow{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:7px;min-width:0;flex:1 1 0;min-height:0;max-height:94px;}
+.ftdd-dayrow-wide{grid-template-columns:minmax(0,1fr);}
+.ftdd-dayrow > .module-card, .ftdd-dayrow > .ftdd-daycard{min-height:0;height:100%;overflow:hidden;}
+.ftdd-dayrow > .module-card.mc-compact{height:100% !important;min-height:0 !important;max-height:none !important;}
 .ftdd-daycard .ftdd-dc-main{align-items:center;}
-.ftdd-daycard .ftdd-dc-t b{font-size:13.5px;line-height:1.2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word;word-break:normal;}
-.ftdd-daycard .ftdd-dc-t small{font-size:10.5px;}
-.ftdd-daycard .ftdd-dc-ic{font-size:16px;}
+.ftdd-daycard .ftdd-dc-t b{font-size:12.5px;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word;word-break:normal;}
+.ftdd-dayrow-wide .ftdd-dc-t b{-webkit-line-clamp:2;font-size:13.5px;}
+/* a short screen has no room for two lines in a card: the title runs to one, with the rest in its tooltip
+   and on the day's own deck, so nothing is ever cut mid-word */
+@media(max-height:830px){
+  .ftdd-dayrow .ftdd-dc-t b{-webkit-line-clamp:1;}
+  .ftdd-dayrow-wide .ftdd-dc-t b{-webkit-line-clamp:2;}
+  .ftdd-dayrow .ftdd-dc-main{padding:2px 8px;gap:6px;}
+  .ftdd-dayrow .ftdd-dc-ic{font-size:14px;}
+}
+.ftdd-daycard .ftdd-dc-t small{font-size:10px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ftdd-daycard .ftdd-dc-t{min-height:0;overflow:hidden;}
+.ftdd-daycard .ftdd-dc-ic{font-size:15px;}
 .ftdd-daycard .ftdd-dc-pin{width:28px;font-size:12px;}
 .ftdd-dc-go{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#B5651F;margin-left:6px;}
 .ftdd-dc-pin{flex:0 0 auto;width:38px;border:0;border-left:1px solid #E9C9A6;background:#FFF4E6;font-size:14px;cursor:pointer;position:relative;}
 .ftdd-dc-pin:not(:disabled):hover{background:#FDEBD8;}
 .ftdd-dc-pin i{position:absolute;top:3px;right:3px;font-style:normal;font-size:9.5px;font-weight:800;background:#DB8437;color:#fff;border-radius:8px;padding:0 4px;line-height:14px;}
+/* a lesson's own part reads as the lesson: the cream card with the orange edge the dashboard already uses */
+.ftdd-daycard.ftdd-dc-les{border-left-color:#DB8437;background:#FFFBF5;}
+.ftdd-daycard.ftdd-dc-les .ftdd-dc-t b{color:var(--navy);font-size:14px;}
+/* the afternoon part on navy, the morning part on the cream card — the dashboard's own two colours */
+.ftdd-daycard.ftdd-dc-pm{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-soft) 100%);border-color:rgba(255,255,255,.14);}
+.ftdd-daycard.ftdd-dc-pm .ftdd-dc-main{color:#fff;}
+.ftdd-daycard.ftdd-dc-pm .ftdd-dc-t b{color:#fff;}
+.ftdd-daycard.ftdd-dc-pm .ftdd-dc-t small{color:rgba(255,255,255,.72);}
+.ftdd-daycard.ftdd-dc-pm .ftdd-dc-main:not(:disabled):hover{background:rgba(255,255,255,.08);}
+.ftdd-daycard.ftdd-dc-pm .ftdd-dc-pin{background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.18);color:#fff;}
+.ftdd-daycard.ftdd-dc-pm.locked{opacity:.72;}
 .ftdd-x{position:relative;flex-wrap:wrap;}
 .ftdd-x .ftdd-step-n{font-size:16px;}
 .ftdd-x-k{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#B5651F;}
