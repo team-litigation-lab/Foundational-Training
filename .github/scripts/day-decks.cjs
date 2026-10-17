@@ -75,6 +75,10 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   });
   if (shape.cards !== 16) fail(`📚 Dashboard draws ${shape.cards} cards, not the 16 the eight lessons' two parts make`);
   if (shape.rows !== 4 || shape.cols !== 2) fail(`the lessons are in ${shape.rows} rows of ${shape.cols} pairs, not 4 of 2`);
+  // and the whole dashboard is on one screen, as it has to be
+  const screen = await page.evaluate(() => { const g = document.querySelector('.module-grid');
+    return [g.scrollHeight - g.clientHeight, document.documentElement.scrollHeight - innerHeight]; });
+  if (screen[0] > 2 || screen[1] > 2) fail(`📚 Dashboard doesn't fit one screen: the lessons overflow by ${screen[0]}px, the page by ${screen[1]}px`);
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard button')].some(b => !b.disabled && Number(b.closest('.ftdd-daycard').id.slice(5)) > 1)))
     fail('a new trainee can open an offline half of a day not reached');
   // a lesson card is never squeezed: four columns, and no card clipped (the page may scroll on a short screen)

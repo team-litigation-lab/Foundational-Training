@@ -837,27 +837,24 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
 @media(min-width:1001px){
   main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
 }
-@media(min-width:1001px) and (min-height:640px){
-  body:has(main.main-dash .ftdd-daycell){overflow:auto !important;}
-  body:has(main.main-dash .ftdd-daycell) #app{height:auto !important;min-height:100vh;overflow:visible !important;}
-  main.main-dash:has(.ftdd-daycell){overflow:visible !important;}
-  main.main-dash:has(.ftdd-daycell) .dash-main{grid-template-rows:auto auto auto !important;}
 }
 /* a day's cell: its lesson beside its instructions, two cards wide, each the full height of the cell —
    stacked instead on a narrow window, where a row of four is already too tight */
 /* a day is a row: the lesson it teaches, then that day's instructions beside it */
-.ftdd-daycell{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px;min-width:0;align-items:stretch;}
+main.main-dash .module-grid > .ftdd-daycell{display:grid !important;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) !important;grid-auto-rows:minmax(0,1fr) !important;gap:8px !important;min-width:0;align-items:stretch;}
+main.main-dash .module-grid > .ftdd-daycell-wide{grid-template-columns:minmax(0,1fr) !important;}
+.ftdd-daycell{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:8px;min-width:0;align-items:stretch;}
 .ftdd-daycell-wide{grid-template-columns:minmax(0,1fr);}
 @media(max-width:1000px){.ftdd-daycell{grid-template-columns:minmax(0,1fr);}}
 /* the lesson card keeps its size — never squeezed below what its title, Start and buttons need — and the
    day's instruction card is the strip under it. On a short screen the grid grows and the page scrolls
    rather than clipping a card. */
-.ftdd-daycell > .module-card.mc-compact{height:124px !important;min-height:124px !important;max-height:124px !important;}
+.ftdd-daycell > .module-card.mc-compact{height:100% !important;min-height:0 !important;max-height:none !important;overflow:hidden !important;}
 /* the lesson's name always shows: the head keeps room for two lines of it above the Start row */
 .ftdd-daycell > .module-card.mc-compact > .module-head{min-height:38px !important;flex:1 1 auto;}
 /* every cell is the same size, so the grid reads as four rows of four: the instruction card takes whatever
    the lesson card above it leaves, and on a day with no lesson it fills the cell on its own */
-.ftdd-daycell > .ftdd-daycard{height:124px;min-height:0;}
+.ftdd-daycell > .ftdd-daycard{height:100%;min-height:0;overflow:hidden;}
 .ftdd-daycell > .module-card{flex:1 1 auto;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-main{padding:4px 10px;gap:8px;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-ic{font-size:17px;}
