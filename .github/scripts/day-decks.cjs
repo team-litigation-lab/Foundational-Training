@@ -58,11 +58,13 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const cells = await page.evaluate(() => [...document.querySelectorAll('.module-grid > .ftdd-daycell')].map(c => ({
     id: c.id, lesson: (c.querySelector('.module-card') || {}).id || '', day: (c.querySelector('.ftdd-daycard') || {}).id || '' })));
   if (cells.length !== 16) fail(`the dashboard has ${cells.length} day cells, not 16`);
-  if (cells.map(c => c.id).join() !== Array.from({ length: 16 }, (_, i) => 'dayc-' + (i + 1)).join())
-    fail(`the dashboard is not in day order: ${cells.map(c => c.id).join()}`);
-  if (cells.some(c => !c.day) || cells.map(c => c.day).join() !== Array.from({ length: 16 }, (_, i) => 'dayd-' + (i + 1)).join())
-    fail(`a day has no instruction card of its own: ${cells.map(c => c.day).join()}`);
+  // every day has its own instruction card, and the eight lessons read down the first column in teaching order
+  const byDay = cells.map(c => c.day).sort((a, b) => Number(a.slice(5)) - Number(b.slice(5))).join();
+  if (byDay !== Array.from({ length: 16 }, (_, i) => 'dayd-' + (i + 1)).join())
+    fail(`a day has no instruction card of its own: ${byDay}`);
   const lessonCells = cells.filter(c => c.lesson);
+  if (lessonCells.map(c => c.lesson).join() !== Array.from({ length: 8 }, (_, i) => 'module-' + (i + 1)).join())
+    fail(`the lessons are not in the order they are taught: ${lessonCells.map(c => c.lesson).join()}`);
   if (lessonCells.length !== 8) fail(`${lessonCells.length} of the 16 days carry a lesson card, not 8`);
   if (lessonCells.map(c => `${c.id}:${c.lesson}`).join() !== 'dayc-1:module-1,dayc-2:module-2,dayc-3:module-3,dayc-4:module-4,dayc-5:module-5,dayc-7:module-6,dayc-10:module-7,dayc-13:module-8')
     fail(`the lessons do not sit on the days that teach them: ${lessonCells.map(c => `${c.id}:${c.lesson}`).join()}`);
@@ -76,7 +78,12 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
       .filter(c => c.scrollHeight - c.clientHeight > 2).map(c => c.id);
     return { cols: cs.gridTemplateColumns.split(' ').length, wide: g.scrollWidth - g.clientWidth, clipped };
   });
-  if (fit.cols !== 4) fail(`📚 Dashboard shows ${fit.cols} columns, not the four the 16 days need`);
+  if (fit.cols !== 2) fail(`📚 Dashboard shows ${fit.cols} grid columns, not the two a lesson row and a day card need`);
+  // a lesson sits beside the instructions of the day it is taught on, not above them
+  const row = await page.evaluate(() => { const c = document.querySelector('.ftdd-daycell:has(.module-card)');
+    const l = c.querySelector('.module-card').getBoundingClientRect(), d = c.querySelector('.ftdd-daycard').getBoundingClientRect();
+    return { beside: d.left >= l.right - 1, sameTop: Math.abs(d.top - l.top) < 3 }; });
+  if (!row.beside || !row.sameTop) fail(`a lesson's day card is not beside it: ${JSON.stringify(row)}`);
   if (fit.wide > 2) fail(`📚 Dashboard overflows sideways by ${fit.wide}px`);
   if (fit.clipped.length) fail(`📚 Dashboard clips its cards: ${fit.clipped.join(', ')}`);
   // every lesson card still says which lesson it is, and every cell is the same size as the next
@@ -190,5 +197,5 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; a lesson's day deck on its card and the 16 days four across, each cell its lesson and that day's own instruction card; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; split screen and autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
+  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; a lesson's day deck on its card and the eight lessons down one column with every day's own instruction card beside them; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; split screen and autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -605,7 +605,17 @@ root.LSH_HOME_GRID_LAYOUT = function(ctx){
     const n = own.find(d => !taken[d]); if(n == null) return;
     taken[n] = true; (lessonsOn[n] = lessonsOn[n] || []).push(l.id);
   });
-  return days.map(n => `<div class="ftdd-daycell" id="dayc-${n}">${(lessonsOn[n] || []).map(id => ctx.cards[id]).join("")}${dayCardHtml(n, cur, ex)}</div>`).join("");
+  // EIGHT LESSONS, SIXTEEN DAYS. One row per lesson: the lesson, then the instructions of the day it is taught
+  // on, and beside them the instruction cards of the days that teach no lesson of their own — two to a row, in
+  // day order, so the eight lessons read down one column and every day has its card on the same screen.
+  const lessonRow = (ctx.lessons || []).map(l => {
+    const n = Object.keys(lessonsOn).map(Number).find(d => (lessonsOn[d] || []).includes(l.id));
+    return {id: l.id, day: n};
+  }).filter(x => x.day != null).sort((a, b) => a.day - b.day);
+  const rest = days.filter(n => !lessonsOn[n]);
+  const per = Math.max(1, Math.ceil(rest.length / Math.max(1, lessonRow.length)));
+  const cell = (n, wide) => `<div class="ftdd-daycell${wide ? " ftdd-daycell-wide" : ""}" id="dayc-${n}">${(lessonsOn[n] || []).map(id => ctx.cards[id]).join("")}${dayCardHtml(n, cur, ex)}</div>`;
+  return lessonRow.map((x, i) => cell(x.day) + rest.slice(i * per, (i + 1) * per).map(n => cell(n, true)).join("")).join("");
 };
 
 
@@ -793,7 +803,7 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
    day's instruction strip under it. A lesson card is never squeezed to fit, so where the screen is too short
    for four full rows the dashboard scrolls instead of clipping them. */
 @media(min-width:1001px){
-  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-rows:158px !important;align-content:start !important;height:auto !important;}
+  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
 }
 @media(min-width:1001px) and (min-height:640px){
   body:has(main.main-dash .ftdd-daycell){overflow:auto !important;}
@@ -803,16 +813,19 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
 }
 /* a day's cell: its lesson beside its instructions, two cards wide, each the full height of the cell —
    stacked instead on a narrow window, where a row of four is already too tight */
-.ftdd-daycell{display:flex;flex-direction:column;gap:6px;min-width:0;height:100%;min-height:0;}
+/* a day is a row: the lesson it teaches, then that day's instructions beside it */
+.ftdd-daycell{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px;min-width:0;align-items:stretch;}
+.ftdd-daycell-wide{grid-template-columns:minmax(0,1fr);}
+@media(max-width:1000px){.ftdd-daycell{grid-template-columns:minmax(0,1fr);}}
 /* the lesson card keeps its size — never squeezed below what its title, Start and buttons need — and the
    day's instruction card is the strip under it. On a short screen the grid grows and the page scrolls
    rather than clipping a card. */
-.ftdd-daycell > .module-card.mc-compact{flex:0 0 auto;height:116px !important;min-height:116px !important;max-height:116px !important;}
+.ftdd-daycell > .module-card.mc-compact{height:124px !important;min-height:124px !important;max-height:124px !important;}
 /* the lesson's name always shows: the head keeps room for two lines of it above the Start row */
 .ftdd-daycell > .module-card.mc-compact > .module-head{min-height:38px !important;flex:1 1 auto;}
 /* every cell is the same size, so the grid reads as four rows of four: the instruction card takes whatever
    the lesson card above it leaves, and on a day with no lesson it fills the cell on its own */
-.ftdd-daycell > .ftdd-daycard{flex:1 1 auto;min-height:40px;}
+.ftdd-daycell > .ftdd-daycard{height:124px;min-height:0;}
 .ftdd-daycell > .module-card{flex:1 1 auto;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-main{padding:4px 10px;gap:8px;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-ic{font-size:17px;}
