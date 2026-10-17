@@ -33,7 +33,7 @@ function loadDecks(){
     const s = document.createElement("script"); s.src = SRC; s.async = true;
     s.onload = () => res(decks()); s.onerror = () => { DD.failed = true; res(null); };
     document.head.appendChild(s);
-  }).then(d => { DD.loading = null; if(state.view === "daydeck") render(); return d; });
+  }).then(d => { DD.loading = null; if(state.view === "daydeck" || state.view === "modules") render(); return d; });
   return DD.loading;
 }
 const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons: []};
@@ -577,33 +577,78 @@ const splitDays = () => { const s = discussionDays();
 // 📚 THE DASHBOARD IS THE 16 DAYS. One cell per training day, four across and four down, and each cell holds
 // that day's cards: the lesson its classroom discussion teaches, and the day's own instruction card — the rest
 // of the day, the work the guide sets outside the discussion. A day without a discussion has its card alone.
-function dayCardHtml(n, cur, ex){
-  const on = dayOpen(n), i = dayInfo(n), k = ((ex || {})[n] || []).length, half = discussionDays().has(n);
-  const sub = half ? (i.offline ? `📴 ${i.offline} outside training hours` : "The rest of the day")
-    : e(String(i.role || "").replace(/ Training$/, ""));
-  return `<div class="ftdd-daycard${on ? "" : " locked"}${n === cur ? " now" : ""}${half ? " half" : ""}" id="dayd-${n}">
-      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${on ? (half ? "Open the rest of Day " + n + ": the work outside the discussion" : "Open the Day " + n + " instructions") : "Opens on Day " + n}">
-        <span class="ftdd-dc-ic">${on ? (half ? "📴" : "📋") : "🔒"}</span><span class="ftdd-dc-t"><b>Day ${n} · Instructions</b><small>${sub}</small></span>
+function dayCardHtml(n, cur, ex, opt){
+  const on = dayOpen(n), i = dayInfo(n), k = ((ex || {})[n] || []).length, o = opt || {};
+  // what the day holds, so the card says something: its activities, and the work set outside the session
+  const acts = (i.items || []).filter(x => x.at !== "offline" && x.kind !== "Upskill" && !(x.at === "tool" && x.id === "skills")).length;
+  const counts = [acts ? `${acts} ${acts === 1 ? "activity" : "activities"}` : "",
+    i.offline ? `📴 ${i.offline} outside training hours` : ""].filter(Boolean).join(" · ");
+  // the card is named for what it holds: the day's own morning session, its instructions and PM activity, or
+  // the whole day where the guide gives it over to one thing
+  const t = o.kind === "session" ? {ic: "📘", head: `Day ${n} · ${o.title || "Morning session"}`, sub: e(String(i.role || "").replace(/ Training$/, ""))}
+    : o.kind === "whole" ? {ic: "📅", head: `Day ${n} · ${o.title || "The whole day"}`, sub: counts}
+    : {ic: "📋", head: `Day ${n} · Instructions`, sub: o.title ? e(o.title) : counts};
+  const tip = o.kind === "session" ? `Open Day ${n}: ${o.title || "the day's session"}`
+    : o.kind === "whole" ? `Open Day ${n}` : `Open the Day ${n} instructions`;
+  // the day's own instruction card keeps the day's id; its morning session card is a second card of the same day
+  return `<div class="ftdd-daycard${on ? "" : " locked"}${n === cur ? " now" : ""}${o.kind ? " ftdd-dc-" + o.kind : ""}" id="dayd-${n}${o.kind === "session" ? "-am" : ""}">
+      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${on ? e(tip) : "Opens on Day " + n}">
+        <span class="ftdd-dc-ic">${on ? t.ic : "🔒"}</span><span class="ftdd-dc-t"><b>${e(t.head)}</b><small>${t.sub}</small></span>
         ${on ? `<span class="ftdd-dc-go">Open</span>` : ""}</button>
       <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${n})"` : "disabled"} title="From your trainer: activities and instructions">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
 }
+
 root.LSH_HOME_GRID_LAYOUT = function(ctx){
-  const days = ((root.FTDays && FTDays.DAYS) || []).map(d => d.day);
-  if(!days.length) return "";
+  /* EIGHT LESSONS, TWO CARDS EACH — SIXTEEN CARDS.
+     A lesson runs in two parts, and the dashboard shows both: the classroom discussion (the lesson itself) and
+     the offline half — the days of that lesson's block with no discussion of their own, and the work the guide
+     sets outside the session. Four rows of two lessons, so the eight pairs read as four rows of four cards. */
+  const DAYS_ = (root.FTDays && FTDays.DAYS) || [];
+  if(!DAYS_.length || !(ctx.lessons || []).length) return "";
   const cur = forTrainee() ? placeDay() : null, ex = X.data && X.data.days || {};
-  // two cards to a cell, never three: a day that teaches two lessons (Day 3 opens both Personal Injury Process
-  // Flow and Receptionist Training) hands the second to the next day of the same block, which has no lesson of
-  // its own — the cells stay even and the lesson still sits on a day it is taught
-  const lessonsOn = {}, taken = {};
-  (ctx.lessons || []).forEach(l => {
-    // the lesson sits on the first day of its own block that hasn't a lesson card yet: Day 3 opens both
-    // Personal Injury Process Flow and Receptionist Training, so Receptionist takes Day 4, which teaches it too
-    const own = ((root.FTDays && FTDays.DAYS) || []).filter(d => (d.lessons || []).map(Number).includes(Number(l.id))).map(d => d.day);
-    const n = own.find(d => !taken[d]); if(n == null) return;
-    taken[n] = true; (lessonsOn[n] = lessonsOn[n] || []).push(l.id);
+  // the day names come from the day decks, which until now only loaded on the deck page
+  if(!decks()) loadDecks();
+  const dk = decks() || {};
+  const head = (n, re) => ((dk[n] || {}).slides || []).map(x => String(x.h || "")).find(h => re.test(h)) || "";
+  const strip = h => h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\s*\(.*?\)\s*$/, "").trim();
+  // each lesson's own days: the day its discussion is taught on, and the days of its block that follow it
+  const lessons = (ctx.lessons || []).map(l => {
+    const own = DAYS_.filter(d => (d.lessons || []).map(Number).includes(Number(l.id))).map(d => d.day);
+    return {id: l.id, talk: own[0], days: own};
+  }).filter(x => x.talk != null).sort((a, b) => a.talk - b.talk);
+  const talks = new Set(lessons.map(x => x.talk));
+  // a day with no discussion belongs to the last lesson taught before it: that lesson's offline half
+  const offline = {};
+  DAYS_.map(d => d.day).forEach(n => {
+    if(talks.has(n)) return;
+    // where two lessons open on the same day (Day 3 teaches Personal Injury Process Flow and Receptionist
+    // Training), the days that follow belong to the later of them — Days 4–5 are Reception's in the guide
+    let best = null; lessons.forEach(x => { if(x.talk <= n && (best == null || x.talk > best.talk || (x.talk === best.talk && Number(x.id) > Number(best.id)))) best = x; });
+    if(best) (offline[best.id] = offline[best.id] || []).push(n);
   });
-  return days.map(n => `<div class="ftdd-daycell" id="dayc-${n}">${(lessonsOn[n] || []).map(id => ctx.cards[id]).join("")}${dayCardHtml(n, cur, ex)}</div>`).join("");
+  return lessons.map(x => {
+    const mine = offline[x.id] || [];
+    return `<div class="ftdd-daycell" id="dayl-${x.id}">${ctx.cards[x.id]}${offlineCardHtml(x, mine, cur, ex, {head, strip})}</div>`;
+  }).join("");
 };
+// A lesson's offline half: the days of its block with no discussion, the work the guide sets outside the
+// session, and the trainer's own instructions (📌). It opens the first of those days' instruction decks.
+function offlineCardHtml(x, mine, cur, ex, h){
+  const all = [x.talk].concat(mine), open = all.find(n => dayOpen(n)) != null;
+  const go = mine.length ? (mine.find(n => dayOpen(n)) || mine[0]) : x.talk;
+  const on = dayOpen(go), k = ((ex || {})[go] || []).length, info = dayInfo(go);
+  const off = all.reduce((t, n) => t + ((dayInfo(n) || {}).offline || 0), 0);
+  const label = mine.length ? FTDays.label(mine) : `Day ${x.talk}`;
+  const what = mine.length ? (h.strip(h.head(mine[0], /^Entire Day/i) || h.head(mine[0], /^AM\s*:\s*(?!Buffer)/i) || h.head(mine[0], /^PM\s*:/i)) || "Instructions and activities")
+    : (h.strip(h.head(x.talk, /^PM\s*:/i)) || "The rest of the day");
+  const sub = [label, off ? `📴 ${off} outside training hours` : ""].filter(Boolean).join(" · ");
+  return `<div class="ftdd-daycard ftdd-dc-off${on ? "" : " locked"}${cur != null && all.includes(cur) ? " now" : ""}" id="dayd-${go}">
+      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${go})"` : "disabled"} title="${on ? e(`Open ${label}: ${what}`) : `Opens on Day ${go}`}">
+        <span class="ftdd-dc-ic">${on ? "📴" : "🔒"}</span><span class="ftdd-dc-t"><b>${e(what)}</b><small>${e(sub)}</small></span>
+        ${on ? `<span class="ftdd-dc-go">Open</span>` : ""}</button>
+      <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${go})"` : "disabled"} title="From your trainer: activities and instructions">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
+}
+
 
 
 
@@ -790,23 +835,27 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
    day's instruction strip under it. A lesson card is never squeezed to fit, so where the screen is too short
    for four full rows the dashboard scrolls instead of clipping them. */
 @media(min-width:1001px){
-  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-auto-rows:minmax(134px,auto) !important;align-content:start !important;height:auto !important;}
+  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
 }
-@media(min-width:1001px) and (min-height:640px){
-  body:has(main.main-dash .ftdd-daycell){overflow:auto !important;}
-  body:has(main.main-dash .ftdd-daycell) #app{height:auto !important;min-height:100vh;overflow:visible !important;}
-  main.main-dash:has(.ftdd-daycell){overflow:visible !important;}
-  main.main-dash:has(.ftdd-daycell) .dash-main{grid-template-rows:auto auto auto !important;}
 }
 /* a day's cell: its lesson beside its instructions, two cards wide, each the full height of the cell —
    stacked instead on a narrow window, where a row of four is already too tight */
-.ftdd-daycell{display:flex;flex-direction:column;gap:6px;min-width:0;height:100%;min-height:0;}
+/* a day is a row: the lesson it teaches, then that day's instructions beside it */
+main.main-dash .module-grid > .ftdd-daycell{display:grid !important;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) !important;grid-auto-rows:minmax(0,1fr) !important;gap:8px !important;min-width:0;align-items:stretch;}
+main.main-dash .module-grid > .ftdd-daycell-wide{grid-template-columns:minmax(0,1fr) !important;}
+.ftdd-daycell{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:8px;min-width:0;align-items:stretch;}
+.ftdd-daycell-wide{grid-template-columns:minmax(0,1fr);}
+@media(max-width:1000px){.ftdd-daycell{grid-template-columns:minmax(0,1fr);}}
 /* the lesson card keeps its size — never squeezed below what its title, Start and buttons need — and the
    day's instruction card is the strip under it. On a short screen the grid grows and the page scrolls
    rather than clipping a card. */
-.ftdd-daycell > .module-card.mc-compact{height:96px !important;min-height:96px !important;max-height:96px !important;}
+.ftdd-daycell > .module-card.mc-compact{height:100% !important;min-height:0 !important;max-height:none !important;overflow:hidden !important;}
+/* the lesson's name always shows: the head keeps room for two lines of it above the Start row */
+.ftdd-daycell > .module-card.mc-compact > .module-head{min-height:38px !important;flex:1 1 auto;}
+/* every cell is the same size, so the grid reads as four rows of four: the instruction card takes whatever
+   the lesson card above it leaves, and on a day with no lesson it fills the cell on its own */
+.ftdd-daycell > .ftdd-daycard{height:100%;min-height:0;overflow:hidden;}
 .ftdd-daycell > .module-card{flex:1 1 auto;}
-.ftdd-daycell > .ftdd-daycard{flex:0 0 auto;height:auto;min-height:0;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-main{padding:4px 10px;gap:8px;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-ic{font-size:17px;}
 .ftdd-daycell > .ftdd-daycard .ftdd-dc-t b{font-size:13px;}
@@ -939,6 +988,21 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
   .ftdd-ribbon{margin-left:-16px;max-width:calc(100% + 16px);} .ftdd-ribbon span{font-size:15px;padding:6px 34px 6px 16px;}
   .ftdd-ag{grid-template-columns:minmax(0,1fr);}
   .ftdd-lessons{margin-left:0;} .ftdd-nav{flex-wrap:wrap;}
+}
+
+/* THE TOP BAND, SMALLER. The orientation card and the score tiles take the room the sixteen days need, so on
+   the day grid they run at two thirds the height: a shorter Start, smaller numbers, tighter padding. */
+@media(min-width:1001px){
+  main.main-dash:has(.ftdd-daycell) .dash-pair{margin-bottom:8px !important;gap:8px !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-pair-pin .module-card .module-head{padding:5px 10px !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-pair-pin .mh-title{font-size:13.5px !important;line-height:1.2 !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-pair-pin .module-start-btn{padding:5px 10px !important;font-size:14px !important;min-height:0 !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-pair-pin .mc-grid > button{padding:4px 6px !important;font-size:12px !important;min-height:0 !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-side{padding:4px !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-side-inner{gap:4px !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-side-inner > *{padding:5px 8px !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-side-inner b, main.main-dash:has(.ftdd-daycell) .dash-side-inner strong{font-size:17px !important;line-height:1.1 !important;}
+  main.main-dash:has(.ftdd-daycell) .dash-side-inner small, main.main-dash:has(.ftdd-daycell) .dash-side-inner span{font-size:9.5px !important;}
 }
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -53,22 +53,34 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   // the days without one: in the lesson grid, in day order, locked until reached
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
-  // 📚 Dashboard is the 16 training days, four across and four down: each day's cell carries the lesson its
-  // discussion teaches and the day's own instruction card under it
-  const cells = await page.evaluate(() => [...document.querySelectorAll('.module-grid > .ftdd-daycell')].map(c => ({
-    id: c.id, lesson: (c.querySelector('.module-card') || {}).id || '', day: (c.querySelector('.ftdd-daycard') || {}).id || '' })));
-  if (cells.length !== 16) fail(`the dashboard has ${cells.length} day cells, not 16`);
-  if (cells.map(c => c.id).join() !== Array.from({ length: 16 }, (_, i) => 'dayc-' + (i + 1)).join())
-    fail(`the dashboard is not in day order: ${cells.map(c => c.id).join()}`);
-  if (cells.some(c => !c.day) || cells.map(c => c.day).join() !== Array.from({ length: 16 }, (_, i) => 'dayd-' + (i + 1)).join())
-    fail(`a day has no instruction card of its own: ${cells.map(c => c.day).join()}`);
-  const lessonCells = cells.filter(c => c.lesson);
-  if (lessonCells.length !== 8) fail(`${lessonCells.length} of the 16 days carry a lesson card, not 8`);
-  if (lessonCells.map(c => `${c.id}:${c.lesson}`).join() !== 'dayc-1:module-1,dayc-2:module-2,dayc-3:module-3,dayc-4:module-4,dayc-5:module-5,dayc-7:module-6,dayc-10:module-7,dayc-13:module-8')
-    fail(`the lessons do not sit on the days that teach them: ${lessonCells.map(c => `${c.id}:${c.lesson}`).join()}`);
-  // a new trainee reaches Day 1 only: its card opens, the fifteen days after it are locked
-  const dayOpenNow = await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard')].filter(c => [...c.querySelectorAll('button')].some(b => !b.disabled)).map(c => c.id));
-  if (dayOpenNow.join() !== 'dayd-1') fail(`a new trainee can open the instruction cards of ${dayOpenNow.join(', ') || 'no day'} (Day 1 only expected)`);
+  // 📚 Dashboard is the eight lessons, each in its two parts: the classroom discussion and the offline half
+  // (the days of that lesson's block with no discussion, and the work set outside the session) — 16 cards.
+  const pairs = await page.evaluate(() => [...document.querySelectorAll('.module-grid > .ftdd-daycell')].map(c => ({
+    cell: c.id, lesson: (c.querySelector('.module-card') || {}).id || '', off: (c.querySelector('.ftdd-daycard') || {}).id || '',
+    title: ((c.querySelector('.ftdd-dc-t b') || {}).innerText || '').trim() })));
+  if (pairs.length !== 8) fail(`📚 Dashboard shows ${pairs.length} lessons, not 8`);
+  if (pairs.map(p => p.cell).join() !== Array.from({ length: 8 }, (_, i) => 'dayl-' + (i + 1)).join())
+    fail(`the lessons are not in the order they are taught: ${pairs.map(p => p.cell).join()}`);
+  if (pairs.some(p => !p.lesson)) fail(`a lesson has no discussion card: ${pairs.filter(p => !p.lesson).map(p => p.cell).join()}`);
+  if (pairs.some(p => !p.off || !p.title)) fail(`a lesson has no offline card: ${pairs.filter(p => !p.off || !p.title).map(p => p.cell).join()}`);
+  // the offline half opens the right day: Reception's is Day 4, Intake's Days 8–9, Medical Records' Days 14–16
+  const offDays = pairs.map(p => p.off);
+  if (offDays.join() !== 'dayd-1,dayd-2,dayd-3,dayd-4,dayd-6,dayd-8,dayd-11,dayd-14')
+    fail(`the offline halves open the wrong days: ${offDays.join()}`);
+  const shape = await page.evaluate(() => {
+    const g = document.querySelector('.module-grid');
+    return { cards: g.querySelectorAll('.module-card, .ftdd-daycard').length,
+      rows: [...new Set([...g.children].map(c => Math.round(c.getBoundingClientRect().top)))].length,
+      cols: getComputedStyle(g).gridTemplateColumns.split(' ').length };
+  });
+  if (shape.cards !== 16) fail(`📚 Dashboard draws ${shape.cards} cards, not the 16 the eight lessons' two parts make`);
+  if (shape.rows !== 4 || shape.cols !== 2) fail(`the lessons are in ${shape.rows} rows of ${shape.cols} pairs, not 4 of 2`);
+  // and the whole dashboard is on one screen, as it has to be
+  const screen = await page.evaluate(() => { const g = document.querySelector('.module-grid');
+    return [g.scrollHeight - g.clientHeight, document.documentElement.scrollHeight - innerHeight]; });
+  if (screen[0] > 2 || screen[1] > 2) fail(`📚 Dashboard doesn't fit one screen: the lessons overflow by ${screen[0]}px, the page by ${screen[1]}px`);
+  if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard button')].some(b => !b.disabled && Number(b.closest('.ftdd-daycard').id.slice(5)) > 1)))
+    fail('a new trainee can open an offline half of a day not reached');
   // a lesson card is never squeezed: four columns, and no card clipped (the page may scroll on a short screen)
   const fit = await page.evaluate(() => {
     const g = document.querySelector('.module-grid'), cs = getComputedStyle(g);
@@ -76,9 +88,22 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
       .filter(c => c.scrollHeight - c.clientHeight > 2).map(c => c.id);
     return { cols: cs.gridTemplateColumns.split(' ').length, wide: g.scrollWidth - g.clientWidth, clipped };
   });
-  if (fit.cols !== 4) fail(`📚 Dashboard shows ${fit.cols} columns, not the four the 16 days need`);
+  if (fit.cols !== 2) fail(`📚 Dashboard shows ${fit.cols} grid columns, not the two a lesson row and a day card need`);
+  // a lesson sits beside the instructions of the day it is taught on, not above them
+  const row = await page.evaluate(() => { const c = document.querySelector('.ftdd-daycell:has(.module-card)');
+    const l = c.querySelector('.module-card').getBoundingClientRect(), d = c.querySelector('.ftdd-daycard').getBoundingClientRect();
+    return { beside: d.left >= l.right - 1, sameTop: Math.abs(d.top - l.top) < 3 }; });
+  if (!row.beside || !row.sameTop) fail(`a lesson's day card is not beside it: ${JSON.stringify(row)}`);
   if (fit.wide > 2) fail(`📚 Dashboard overflows sideways by ${fit.wide}px`);
   if (fit.clipped.length) fail(`📚 Dashboard clips its cards: ${fit.clipped.join(', ')}`);
+  // every lesson card still says which lesson it is, and every cell is the same size as the next
+  const titles = await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycell .module-card .mh-title')].map(x => {
+    const r = x.getBoundingClientRect(), card = x.closest('.module-card').getBoundingClientRect();
+    return { id: x.closest('.module-card').id, text: x.innerText.trim(), shown: r.height > 6 && r.bottom <= card.bottom + 1 }; }));
+  if (titles.length !== 8) fail(`${titles.length} lesson cards carry a title, not 8`);
+  titles.filter(t => !t.shown || !t.text).forEach(t => fail(`${t.id}'s lesson name is hidden on 📚 Dashboard ("${t.text}")`));
+  const sizes = await page.evaluate(() => [...new Set([...document.querySelectorAll('.module-grid > .ftdd-daycell')].map(c => Math.round(c.getBoundingClientRect().height)))]);
+  if (sizes.length !== 1) fail(`the day cells are not all the same size: ${sizes.join(', ')}px`);
   if (l1) { await l1.click(); await page.waitForTimeout(1500); }
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
     deck: !!document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
@@ -182,5 +207,5 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; a lesson's day deck on its card and the 16 days four across, each cell its lesson and that day's own instruction card; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; split screen and autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
+  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; a lesson's day deck on its card and the eight lessons in their two parts — the discussion and the offline half — as 16 cards in four rows; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; split screen and autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
 })().catch(e => { console.error(e); process.exit(1); });
