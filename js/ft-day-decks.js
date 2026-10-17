@@ -599,45 +599,56 @@ function dayCardHtml(n, cur, ex, opt){
 }
 
 root.LSH_HOME_GRID_LAYOUT = function(ctx){
-  const days = ((root.FTDays && FTDays.DAYS) || []).map(d => d.day);
-  if(!days.length) return "";
+  /* EIGHT LESSONS, TWO CARDS EACH — SIXTEEN CARDS.
+     A lesson runs in two parts, and the dashboard shows both: the classroom discussion (the lesson itself) and
+     the offline half — the days of that lesson's block with no discussion of their own, and the work the guide
+     sets outside the session. Four rows of two lessons, so the eight pairs read as four rows of four cards. */
+  const DAYS_ = (root.FTDays && FTDays.DAYS) || [];
+  if(!DAYS_.length || !(ctx.lessons || []).length) return "";
   const cur = forTrainee() ? placeDay() : null, ex = X.data && X.data.days || {};
-  // two cards to a cell, never three: a day that teaches two lessons (Day 3 opens both Personal Injury Process
-  // Flow and Receptionist Training) hands the second to the next day of the same block, which has no lesson of
-  // its own — the cells stay even and the lesson still sits on a day it is taught
-  const lessonsOn = {}, taken = {};
-  (ctx.lessons || []).forEach(l => {
-    // the lesson sits on the first day of its own block that hasn't a lesson card yet: Day 3 opens both
-    // Personal Injury Process Flow and Receptionist Training, so Receptionist takes Day 4, which teaches it too
-    const own = ((root.FTDays && FTDays.DAYS) || []).filter(d => (d.lessons || []).map(Number).includes(Number(l.id))).map(d => d.day);
-    const n = own.find(d => !taken[d]); if(n == null) return;
-    taken[n] = true; (lessonsOn[n] = lessonsOn[n] || []).push(l.id);
-  });
-  // ONE ROW PER DAY, as the programme runs it: on the left the day's session — the lesson where its classroom
-  // discussion teaches one, otherwise the morning's own work — and on the right that day's instructions and PM
-  // activity. A day the guide gives over entirely to one thing takes the whole row. The sixteen days run down
-  // in two blocks of eight, so the whole programme is on one screen.
-  // 📚 Dashboard names each day by the guide's own heading for it, which lives in the day decks: fetch them
-  // here (they load lazily for the deck page) and draw the grid again when they arrive
+  // the day names come from the day decks, which until now only loaded on the deck page
   if(!decks()) loadDecks();
   const dk = decks() || {};
   const head = (n, re) => ((dk[n] || {}).slides || []).map(x => String(x.h || "")).find(h => re.test(h)) || "";
   const strip = h => h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\s*\(.*?\)\s*$/, "").trim();
-  const pm = n => strip(head(n, /^PM\s*:/i) || head(n, /^(Topic|Additional Activity|Attorney|Client|Training Monitoring|FOR YOUR HOMEWORK|HOMEWORK)/i));
-  const am = n => strip(head(n, /^AM\s*:\s*(?!Buffer)/i) || head(n, /^(?!PM\s*:|Entire Day)/i));
-  const whole = n => head(n, /^Entire Day/i);
-  const sessionCard = n => {
-    const les = (lessonsOn[n] || []).map(id => ctx.cards[id]).join("");
-    return les || dayCardHtml(n, cur, ex, {kind: "session", title: am(n)});
-  };
-  const half = Math.ceil(days.length / 2), rows = [];
-  for(let i = 0; i < half; i++) rows.push([days[i], days[i + half]].filter(n => n != null));
-  return rows.map(pair => pair.map(n => {
-    const w = whole(n);
-    if(w) return `<div class="ftdd-daycell ftdd-daycell-wide" id="dayc-${n}">${dayCardHtml(n, cur, ex, {kind: "whole", title: strip(w)})}</div>`;
-    return `<div class="ftdd-daycell" id="dayc-${n}">${sessionCard(n)}${dayCardHtml(n, cur, ex, {kind: "pm", title: pm(n)})}</div>`;
-  }).join("")).join("");
+  // each lesson's own days: the day its discussion is taught on, and the days of its block that follow it
+  const lessons = (ctx.lessons || []).map(l => {
+    const own = DAYS_.filter(d => (d.lessons || []).map(Number).includes(Number(l.id))).map(d => d.day);
+    return {id: l.id, talk: own[0], days: own};
+  }).filter(x => x.talk != null).sort((a, b) => a.talk - b.talk);
+  const talks = new Set(lessons.map(x => x.talk));
+  // a day with no discussion belongs to the last lesson taught before it: that lesson's offline half
+  const offline = {};
+  DAYS_.map(d => d.day).forEach(n => {
+    if(talks.has(n)) return;
+    // where two lessons open on the same day (Day 3 teaches Personal Injury Process Flow and Receptionist
+    // Training), the days that follow belong to the later of them — Days 4–5 are Reception's in the guide
+    let best = null; lessons.forEach(x => { if(x.talk <= n && (best == null || x.talk > best.talk || (x.talk === best.talk && Number(x.id) > Number(best.id)))) best = x; });
+    if(best) (offline[best.id] = offline[best.id] || []).push(n);
+  });
+  return lessons.map(x => {
+    const mine = offline[x.id] || [];
+    return `<div class="ftdd-daycell" id="dayl-${x.id}">${ctx.cards[x.id]}${offlineCardHtml(x, mine, cur, ex, {head, strip})}</div>`;
+  }).join("");
 };
+// A lesson's offline half: the days of its block with no discussion, the work the guide sets outside the
+// session, and the trainer's own instructions (📌). It opens the first of those days' instruction decks.
+function offlineCardHtml(x, mine, cur, ex, h){
+  const all = [x.talk].concat(mine), open = all.find(n => dayOpen(n)) != null;
+  const go = mine.length ? (mine.find(n => dayOpen(n)) || mine[0]) : x.talk;
+  const on = dayOpen(go), k = ((ex || {})[go] || []).length, info = dayInfo(go);
+  const off = all.reduce((t, n) => t + ((dayInfo(n) || {}).offline || 0), 0);
+  const label = mine.length ? FTDays.label(mine) : `Day ${x.talk}`;
+  const what = mine.length ? (h.strip(h.head(mine[0], /^Entire Day/i) || h.head(mine[0], /^AM\s*:\s*(?!Buffer)/i) || h.head(mine[0], /^PM\s*:/i)) || "Instructions and activities")
+    : (h.strip(h.head(x.talk, /^PM\s*:/i)) || "The rest of the day");
+  const sub = [label, off ? `📴 ${off} outside training hours` : ""].filter(Boolean).join(" · ");
+  return `<div class="ftdd-daycard ftdd-dc-off${on ? "" : " locked"}${cur != null && all.includes(cur) ? " now" : ""}" id="dayd-${go}">
+      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${go})"` : "disabled"} title="${on ? e(`Open ${label}: ${what}`) : `Opens on Day ${go}`}">
+        <span class="ftdd-dc-ic">${on ? "📴" : "🔒"}</span><span class="ftdd-dc-t"><b>${e(what)}</b><small>${e(sub)}</small></span>
+        ${on ? `<span class="ftdd-dc-go">Open</span>` : ""}</button>
+      <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${go})"` : "disabled"} title="From your trainer: activities and instructions">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
+}
+
 
 
 
@@ -824,7 +835,7 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
    day's instruction strip under it. A lesson card is never squeezed to fit, so where the screen is too short
    for four full rows the dashboard scrolls instead of clipping them. */
 @media(min-width:1001px){
-  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:minmax(0,1.9fr) minmax(0,1fr) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
+  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
 }
 @media(min-width:1001px) and (min-height:640px){
   body:has(main.main-dash .ftdd-daycell){overflow:auto !important;}
