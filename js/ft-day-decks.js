@@ -37,20 +37,75 @@ function loadDecks(){
   return DD.loading;
 }
 const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons: []};
-const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
+// a lesson is open when the trainer has opened it for the batch and the trainee has reached the day that
+// teaches it (lessonReachable, with the day gate below)
+const lessonOpen = l => { try{ return (typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true) && lessonReachable(l); }catch(err){ return true; } };
 const lessonTitle = l => { try{ return ftName(Number(l)) || ("Lesson " + l); }catch(err){ return "Lesson " + l; } };
 const COUNT = () => (root.FTDays && FTDays.COUNT) || 18;
 // the day the trainee is on in the curriculum (js/ft-next-step.js: the first day with an unfinished lesson)
 function placeDay(){ try{ const p = root.FTNextStep && FTNextStep.place(); return p && p.day ? Number(p.day.day) : 1; }catch(err){ return 1; } }
-// A trainee opens the deck of the day they are on and every day before it — the day's instructions are
-// needed before its lesson is opened — and a later day's deck once the trainer has opened all its lessons.
-function dayOpen(n){
-  if(!forTrainee()) return true;
+/* 🔒 ONE DAY AT A TIME (the trainee), EVERY DAY (the trainer).
+   A trainee works the curriculum in order. A day is theirs to open once everything the guide teaches before it
+   is finished — every lesson taught on an earlier day, except the lessons that day teaches as well, because a
+   lesson runs over two or three days and its ✍️ Knowledge Check comes at the end of them (Lesson 6 is taught on
+   Days 7, 8 and 9: a trainee on it works all three, and Day 10 waits for it to be passed). Everything further on
+   stays locked, on its card, on its instructions deck and on the lesson itself, whatever the trainer has opened
+   for the batch — what a trainer opens still has to be reached.
+   "Finished" is the curriculum's own test, the one js/ft-next-step.js moves the trainee on by: the lesson passed
+   in its ✍️ Knowledge Check, or — where a lesson has no Process Questions, as Calendar Management has none —
+   studied (✓ Finish Training).
+   A trainer, and a trainer previewing the program in Trainee view, opens any day and any lesson: the rest of the
+   platform unlocks for both, and a trainer checking a day they are about to run should see the day, not a 🔒. */
+const lessonDone = l => { try{ const p = (state.progress || {})[Number(l)] || {}; return !!p.done || (!hasPQ(l) && !!p.studied); }catch(err){ return false; } };
+const asTrainer = () => !!state.isAdmin || !!state.adminPreview || !state.traineeId;
+// the lessons a day waits for: taught before it, and not taught on it
+function dayNeeds(n){
   n = Number(n);
-  if(n <= placeDay()) return true;
-  const ls = dayInfo(n).lessons || [];
-  return ls.length ? ls.every(lessonOpen) : false;
+  const days = (root.FTDays && FTDays.DAYS) || [];
+  const own = new Set((dayInfo(n).lessons || []).map(Number));
+  const need = new Set();
+  days.filter(d => Number(d.day) < n).forEach(d => (d.lessons || []).map(Number).forEach(l => { if(!own.has(l)) need.add(l); }));
+  return [...need].sort((a, b) => a - b);
 }
+function dayOpen(n){
+  if(asTrainer()) return true;
+  return dayNeeds(n).every(lessonDone);
+}
+// why a day is locked: the lessons it is still waiting for, named by the last of them — the one the day
+// follows in the guide
+function dayLocked(n){
+  n = Number(n);
+  const left = dayNeeds(n).filter(x => !lessonDone(x));
+  const l = left[left.length - 1];
+  if(l == null) return `Day ${n} is locked.`;
+  return left.length === 1
+    ? `Day ${n} opens when you finish ${lessonTitle(l)} — its ✍️ Knowledge Check is the last of it.`
+    : `Day ${n} opens once you have worked through the lessons before it, up to ${lessonTitle(l)}.`;
+}
+// the gate in the few words a card has room for: "🔒 after Reception Training"
+function lockShort(n){
+  const left = dayNeeds(n).filter(x => !lessonDone(x)), l = left[left.length - 1];
+  return l == null ? "🔒 Locked" : `🔒 after ${String(lessonTitle(l)).replace(/\s*Training$/, "")}`;
+}
+// The first day of the curriculum that teaches a lesson — the day a trainee has to reach to open it.
+const dayOfLesson = l => (((root.FTDays && FTDays.DAYS) || []).find(x => (x.lessons || []).map(Number).includes(Number(l))) || {}).day;
+// The same gate on a lesson: a lesson the trainer has opened for the batch still waits until the trainee reaches
+// the day that teaches it, so no lesson further on is opened early — from its card, from a saved address or from
+// anywhere else that renders it. The day's own work keeps its own gates (the Practice Lab's sessions and tools
+// open on the trainer's 📅 Open Lessons, as before); this is the curriculum itself, card by card.
+const lessonReachable = l => { if(asTrainer()) return true; const d = dayOfLesson(l); return d == null || dayOpen(d); };
+const __ftSeqRenderDay = root.renderDay;
+root.renderDay = function(id){
+  const d = dayOfLesson(id);
+  if(!lessonReachable(id)) return `<a class="back-link" onclick="goto('modules')">&larr; Back to Dashboard</a>
+      <div class="card ft-empty-day">
+        <div style="font-size:34px;margin-bottom:10px;">🔒</div>
+        <h2 style="color:var(--navy);margin:0 0 8px;">${e(lessonTitle(id))} is locked</h2>
+        <p style="color:var(--ink-soft);font-size:14px;">${e(dayLocked(d))} This lesson is taught on Day ${d}.</p>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="goto('modules')">Back to Dashboard</button>
+      </div>`;
+  return __ftSeqRenderDay.apply(this, arguments);
+};
 // the day the trainee is on, else the last open day
 function currentDay(){
   const p = placeDay(); if(dayOpen(p)) return p;
@@ -59,7 +114,7 @@ function currentDay(){
 }
 function open(n, i){
   n = Number(n) || currentDay();
-  if(!dayOpen(n)){ toast(`🔒 Day ${n}’s deck opens when you reach that day, or when its lesson is open for your batch.`); return; }
+  if(!dayOpen(n)){ toast("🔒 " + dayLocked(n)); return; }
   DD.day = n; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1;
   loadDecks(); if(instructionOnlyDays().includes(n)) loadExtras(); goto("daydeck");
 }
@@ -563,7 +618,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
 (root.LSH_HOME_CARD_EXTRA = root.LSH_HOME_CARD_EXTRA || []).push(function(lesson){
   const n = lesson && discussionDay(lesson.id); if(!n) return "";
   const on = dayOpen(n);
-  return `<button type="button" class="btn mc-daydeck${on ? "" : " locked"}" ${on ? `onclick="event.stopPropagation(); FTDayDecks.open(${n})"` : "disabled"} title="Day ${n}: the day’s instructions deck${on ? "" : " — opens when you reach that day"}">📋 Day ${n}</button>`;
+  return `<button type="button" class="btn mc-daydeck${on ? "" : " locked"}" ${on ? `onclick="event.stopPropagation(); FTDayDecks.open(${n})"` : "disabled"} title="${on ? `Day ${n}: the day’s instructions deck` : e(dayLocked(n))}">📋 Day ${n}</button>`;
 });
 // the lesson a no-discussion day follows: the last lesson taught on or before it
 function lessonBefore(n){ let best = null; ((root.FTDays && FTDays.DAYS) || []).forEach(d => (d.lessons || []).forEach(l => { const dd = discussionDay(l); if(dd != null && dd <= n && (best == null || dd > discussionDay(best) || (dd === discussionDay(best) && Number(l) > Number(best)))) best = Number(l); })); return best; }
@@ -592,7 +647,7 @@ function dayCardHtml(n, cur, ex, opt){
     : o.kind === "whole" ? `Open Day ${n}` : `Open the Day ${n} instructions`;
   // the day's own instruction card keeps the day's id; its morning session card is a second card of the same day
   return `<div class="ftdd-daycard${on ? "" : " locked"}${n === cur ? " now" : ""}${o.kind ? " ftdd-dc-" + o.kind : ""}" id="dayd-${n}${o.kind === "session" ? "-am" : ""}">
-      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${on ? e(tip) : "Opens on Day " + n}">
+      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${on ? e(tip) : e(dayLocked(n))}">
         <span class="ftdd-dc-ic">${on ? t.ic : "🔒"}</span><span class="ftdd-dc-t"><b>${e(t.head)}</b><small>${t.sub}</small></span>
         ${on ? `<span class="ftdd-dc-go">Open</span>` : ""}</button>
       <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${n})"` : "disabled"} title="From your trainer: activities and instructions">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
@@ -646,8 +701,10 @@ root.LSH_HOME_GRID_LAYOUT = function(ctx){
     const lid = (lessonOf[n] || [])[0];
     // the lesson's own card does not fit half a row: the morning part is a card like the others, named for the
     // lesson it teaches, and it opens the lesson itself — its topics and video sit on it as the small buttons
+    const les_ = lid != null ? (ctx.lessons || []).find(x => Number(x.id) === Number(lid)) : null;
     const first = partCard(ns, cur, ex, lid != null
-      ? {part: "am", label, title: String(lessonTitle(lid)).replace(/\s*Training$/, ""), lesson: lid, lessons: lessonOf[n]}
+      ? {part: "am", label, title: String(lessonTitle(lid)).replace(/\s*Training$/, ""), lesson: lid, lessons: lessonOf[n],
+         tag: les_ && typeof ctx.tags === "function" ? ctx.tags(les_) : ""}
       : {part: "am", label, title: w || am(n)});
     return `<div class="ftdd-dayrow" id="dayr-${n}">${first}${partCard(ns, cur, ex, {part: "pm", label, title: w ? pm(n) : pm(n)})}</div>`;
   };
@@ -665,10 +722,13 @@ function partCard(ns, cur, ex, o){
   const ic = les ? "📘" : o.part === "pm" ? "📴" : "📋";
   const click = les ? `goto('day', ${Number(o.lesson)})` : `FTDayDecks.open(${go})`;
   const tip = les ? `Open the lesson: ${o.title}` : `${o.label}: ${o.title}`;
-  const subl = les ? [o.label, "Classroom discussion"].join(" · ") : sub;
+  // a locked card says on its face what opens it, so a trainee reads the gate without hovering over it
+  const shut = !open && !asTrainer() && !dayOpen(n);
+  const subl = shut ? [o.label, lockShort(n)].filter(Boolean).join(" · ")
+    : les ? [o.label, "Classroom discussion"].join(" · ") : sub;
   return `<div class="ftdd-daycard ftdd-dc-${o.part}${les ? " ftdd-dc-les" : ""}${open ? "" : " locked"}${cur != null && ns.includes(cur) ? " now" : ""}" id="${les ? "dayl-" + o.lesson : "dayd-" + n + (o.part === "pm" ? "" : "-am")}">
-      <button type="button" class="ftdd-dc-main" ${open ? `onclick="${click}"` : "disabled"} title="${open ? e(tip) : les ? "Opens when your batch reaches this lesson" : `Opens on Day ${n}`}">
-        <span class="ftdd-dc-ic">${open ? ic : "🔒"}</span><span class="ftdd-dc-t"><b>${e(o.title)}</b><small>${e(subl)}</small></span></button>
+      <button type="button" class="ftdd-dc-main" ${open ? `onclick="${click}"` : "disabled"} title="${open ? e(tip) : dayOpen(n) ? "Opens when your batch reaches this lesson" : e(dayLocked(n))}">
+        <span class="ftdd-dc-ic">${open ? ic : "🔒"}</span><span class="ftdd-dc-t"><b>${e(o.title)}</b><small>${e(subl)}${o.tag || ""}</small></span></button>
       ${les ? `<button type="button" class="ftdd-dc-pin" ${open ? `onclick="event.stopPropagation(); showDayTopics(${Number(o.lesson)})"` : "disabled"} title="☰ Topics">☰</button>` : ""}
       <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${go})"` : "disabled"} title="${les ? `Day ${n}: the day's instructions and activities` : "From your trainer: activities and instructions"}">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
 }
@@ -908,6 +968,8 @@ main.main-dash .module-grid > .ftdd-daycol{display:flex !important;flex-directio
   .ftdd-dayrow .ftdd-dc-ic{font-size:14px;}
 }
 .ftdd-daycard .ftdd-dc-t small{font-size:10px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* a badge beside the sub-line: a mock-call lesson's best graded call (window.LSH_HOME_LESSON_TAGS) */
+.ftdd-daycard .ftdd-dc-t small .lp-kc{display:inline-block;margin-left:5px;padding:0 4px;border-radius:4px;background:#fff7ed;color:#9a3412;font-weight:800;font-size:9.5px;vertical-align:1px;}
 .ftdd-daycard .ftdd-dc-t{min-height:0;overflow:hidden;}
 .ftdd-daycard .ftdd-dc-ic{font-size:15px;}
 .ftdd-daycard .ftdd-dc-pin{width:28px;font-size:12px;}

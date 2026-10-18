@@ -93,6 +93,7 @@ function renderSimulators(){
       <div class="fts-grid">${ftLorCard()}${window.ftGuideCard ? ftGuideCard() : ""}${window.ftTranscribeCard ? ftTranscribeCard() : ""}${window.ftDrillsCard ? ftDrillsCard() : ""}</div></section>` : ""}
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
+    ${window.ftCasesSection ? ftCasesSection() : ""}
     ${window.ftListenSection ? ftListenSection() : ""}
     ${window.ftShadowSection ? ftShadowSection() : ""}
     ${renderSkills()}`;
@@ -153,8 +154,8 @@ window.render = function(){
   ftLoadOpenDays().then(()=>{ if(state.view==="simulators") render(); }).catch(()=>{});
 };
 // 📚 Dashboard, the landing page: the graded-calls stat under the progress bar, and a mock-call lesson's best
-// graded call beside its row (js/lsh-program.js renders both). The page has no Simulators card: the Practice
-// Lab is in the top bar.
+// graded call beside the sub-line of its day card (js/lsh-program.js hands the tags to the day grid, which
+// js/ft-day-decks.js lays out). The page has no Simulators card: the Practice Lab is in the top bar.
 (window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
   if(!isTrainee()) return "";
   if(!state.ftCallsim) ftLoadCallsim();

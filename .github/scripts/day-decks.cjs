@@ -20,6 +20,10 @@ for (let n = 1; n <= 16; n++) {
   const d = D[n]; if (!d || !(d.slides || []).length) { fail(`no deck for Day ${n}`); continue; }
   for (const s of d.slides) {
     if (/PROCESS QUESTIONS/.test(s.html)) fail(`Day ${n} ${s.id}: a Process Questions list on a slide`);
+    // no assessment questions on a slide either: a reading task's questions come with its file
+    if (/Answer (the following|these) questions?/i.test(s.html)) fail(`Day ${n} ${s.id}: an assessment's questions on a slide`);
+    if (/What is personal injury and what are its types/i.test(s.html)) fail(`Day ${n} ${s.id}: the PI reading task's questions on a slide`);
+    if (/(^|>)\s*1[.)]\s+[^<]{25,}<br>\s*2[.)]\s/m.test(s.html)) fail(`Day ${n} ${s.id}: a numbered question list on a slide`);
     if (/class="facilitator|Answer Key|Correct Answer|Ideal Answer|Password|Username/i.test(s.html)) fail(`Day ${n} ${s.id}: facilitator-only content or log-in details`);
   }
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
@@ -102,7 +106,8 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (s.view !== 'daydeck' || s.hash !== '#/daydeck') fail(`the deck didn't open (${s.view} ${s.hash})`);
   if (!/1 OF/i.test(s.n) || !/Training Agenda/.test(s.h)) fail(`the deck should open on its Training Agenda: ${s.n} ${s.h}`);
   if (!s.deck) fail('the deck is not drawn like the LSH decks (logo and outlined title)');
-  if (s.open.join() !== '1') fail('a new trainee can open days ' + s.open.join(', ') + ' (only Day 1 expected)');
+  // Days 1–2 teach Lesson 1 between them, so both open to a new trainee and nothing further (js/ft-day-decks.js)
+  if (s.open.join() !== '1,2') fail('a new trainee can open days ' + s.open.join(', ') + ' (1, 2 expected)');
   if (s.scroll > 2) fail(`the deck page scrolls by ${s.scroll}px (one screen)`);
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300);
   const s2 = await at();
@@ -110,7 +115,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (s2.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
   await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(300);
   if (/^Day 5\b/.test(await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || {}).innerText || ''))) fail('a trainee opened Day 5 before reaching it');
-  // finishing Lessons 1 and 2 moves the trainee to Day 3: Days 1–3 open
+  // finishing Lessons 1 and 2 opens Day 3, where Lesson 3 begins
   await page.evaluate(() => { state.progress[1] = { done: true, studied: true }; state.progress[2] = { done: true, studied: true }; FTDayDecks.open(); });
   await page.waitForTimeout(500);
   s = await at();

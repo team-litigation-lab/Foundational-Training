@@ -51,7 +51,11 @@ const WHERE = {
 };
 // isTrainee() is private to the file that declares it, so this keeps its own copy of the test.
 const forTrainee = () => !!state.traineeId && !state.isAdmin;
-const done = l => !!(state.progress && state.progress[l] && state.progress[l].done);
+// A lesson is finished when its Knowledge Check is passed. Calendar Management (Lesson 5) has no Process
+// Questions of its own, so there is nothing to pass there: studying it (✓ Finish Training) finishes it.
+// Without that, the day it is taught on would never be behind the trainee and, now that a day opens only
+// once the day before it is finished, the programme would stop at Calendar Management.
+const done = l => { const p = (state.progress || {})[l] || {}; return !!p.done || (!hasPQ(l) && !!p.studied); };
 // DAYS is script-scoped like isTrainee, so the lesson's name comes from ftName(), the engine's own.
 const lessonTitle = l => { try{ return ftName(Number(l)) || ("Lesson " + l); }catch(err){ return "Lesson " + l; } };
 // A step the trainee cannot act on yet is read, not clicked. A lesson opens when a trainer opens it

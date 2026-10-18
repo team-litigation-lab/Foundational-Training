@@ -1,6 +1,7 @@
 // Graded calls from the Call Simulator (☎ LSH Ring Channel) count in their lesson (js/ft-simulators.js): with the trainee's callsim:<id>
 // (kept by the Training Portal) 📚 Modules — the landing page — shows the best graded calls of lessons 4–6 averaged in its
-// stat row, a mock-call lesson's row its best graded call, and the Practice Lab's Reception, Calendaring and Intake
+// stat row, a mock-call lesson's own day card its best graded call (the dashboard is the sixteen days now, so the
+// badge sits on that lesson's card, #dayl-<lesson>, not on a lesson row), and the Practice Lab's Reception, Calendaring and Intake
 // sessions each lesson's best score, with the
 // line's graded calls (mode=graded) and its practice calls opening the Call Simulator on Ring Channel, through the Portal; a trainee without
 // graded calls sees "—" and "No graded call yet".
@@ -31,10 +32,10 @@ const failures = []; const fail = (m) => failures.push(m);
     await put('callsim:' + id, { traineeId: id, calls: [], best: { lesson4: { score: 90, calls: 1 }, lesson5: { score: 82, calls: 2 } } });
     await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2500);
     const dash = await page.evaluate(() => ({ view: state.view, stat: (document.querySelector('.fts-calls-stat') || {}).innerText || '',
-        l4: (document.querySelector('#module-4 .mh-day') || {}).innerText || '', l5: (document.querySelector('#module-5 .mh-day') || {}).innerText || '', l6: (document.querySelector('#module-6 .mh-day') || {}).innerText || '' }));
+        l4: (document.querySelector('#dayl-4') || {}).innerText || '', l5: (document.querySelector('#dayl-5') || {}).innerText || '', l6: (document.querySelector('#dayl-6') || {}).innerText || '' }));
     if (dash.view !== 'modules') fail(`signing in should land on the Modules page: "${dash.view}"`);
     if (!/86%/.test(dash.stat) || !/2 \/ 3 lessons/i.test(dash.stat)) fail(`the Modules stat row's graded calls: "${dash.stat}" (expected 86%, 2 / 3 lessons)`);
-    if (!/📞 90%/.test(dash.l4) || !/📞 82%/.test(dash.l5) || /📞/.test(dash.l6)) fail(`the lesson rows' graded calls: ${JSON.stringify(dash)}`);
+    if (!/📞 90%/.test(dash.l4) || !/📞 82%/.test(dash.l5) || /📞/.test(dash.l6)) fail(`the lesson cards' graded calls: ${JSON.stringify(dash)}`);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
     // the Practice Sessions' cards for the three mock-call lessons (js/ft-sessions.js): each shows its lesson's best graded call
     const cards = await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => ({ h: c.querySelector('h3').innerText, g: (c.querySelector('.fts-graded') || {}).innerText || '' })));
@@ -50,5 +51,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Graded calls test passed (the Modules landing page: its stat row and lesson rows, and the Reception, Calendaring and Intake sessions, show the best graded calls; graded and practice links).');
+    console.log('Graded calls test passed (the Modules landing page: its stat row and the lesson day cards, and the Reception, Calendaring and Intake sessions, show the best graded calls; graded and practice links).');
 })().catch(e => { console.error(e); process.exit(1); });

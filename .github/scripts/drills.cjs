@@ -1,7 +1,7 @@
 // 🏷 Naming & Reporting Drills (js/ft-drills.js): every question, many times over, accepts its own answer typed with
 //   other dashes, spacing and capitals, and refuses one with a part missing; the guide's own samples pass against the
-//   conventions (the LOR's four-digit year included); the fax number is exact. A trainee's round: the wrong answer
-//   shown with the convention, the round saved in drills:<id>, the best round on 🏅 My Performance; the Practice
+//   conventions (the LOR's four-digit year included); the fax number is exact. A trainee's round: a wrong answer marked with the convention but never the
+//   line itself (that is the trainer's, in trainer view), the round saved in drills:<id>, the best round on 🏅 My Performance; the Practice
 //   Lab's Drafting Tools card and the demo days' steps point to it.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/drills.cjs http://localhost:8787/
 const { chromium } = require('playwright');
@@ -60,20 +60,41 @@ const failures = []; const fail = m => failures.push(m);
   // a round of MedLOR: one wrong answer
   await page.click('text=Open the drills'); await page.waitForTimeout(800);
   await page.evaluate(() => FTDrills.start('medlor')); await page.waitForTimeout(300);
+  let ans0 = '';
   for (let i = 0; i < 10; i++) {
     const ans = await page.evaluate(() => FTDrills.round().qs[FTDrills.round().i].answer);
+    if (i === 0) ans0 = ans;
     await page.fill('#drAns', i === 0 ? ans + ' X' : ans);   // always wrong, whatever the question
     await page.press('#drAns', 'Enter'); await page.waitForTimeout(120);
     if (i === 0) {
+      // the answer belongs to the trainer: a trainee is told it is wrong and what the convention is, never the line
       const fb = await page.evaluate(() => (document.querySelector('.dr-fb') || {}).innerText || '');
-      if (!/Not quite/.test(fb) || !/The convention gives/.test(fb)) fail(`a wrong answer doesn't show the convention: ${fb}`);
+      if (!/Not quite/.test(fb)) fail(`a wrong answer isn't marked wrong: ${fb}`);
+      if (!/📘/.test(fb)) fail(`a wrong answer doesn't show the convention it follows: ${fb}`);
+      if (/The convention gives/.test(fb) || fb.includes(ans)) fail(`the answer is shown to the trainee: ${fb}`);
+      if (!/your trainer has the line/i.test(fb)) fail(`the trainee isn't told where the answer is: ${fb}`);
     }
     await page.click('#drNext'); await page.waitForTimeout(120);
   }
   await page.waitForTimeout(1200);
   if (!/9\s*of 10/.test(await page.evaluate(() => (document.querySelector('.dr-big') || {}).innerText || ''))) fail('the round doesn\'t end on 9 of 10');
+  const review = await page.evaluate(() => (document.querySelector('.dr-review') || {}).innerText || '');
+  if (!review) fail('the round has no review of what was typed');
+  // the nine right rows show the trainee's own typing; the row they missed shows what they typed and no key
+  const badRow = await page.evaluate(() => { const tr = document.querySelector('.dr-review tr.bad');
+    return tr ? { typed: !!tr.querySelector('.dr-typed'), keys: tr.querySelectorAll('code').length } : null; });
+  if (!badRow) fail('the round review has no row for the answer that was missed');
+  else if (!badRow.typed || badRow.keys) fail(`the round review shows a trainee the answer they missed: ${JSON.stringify(badRow)}`);
   const rec = await get('drills:' + id);
   if (!rec || !rec.runs.some(r => r.set === 'medlor' && r.score === 9 && r.total === 10)) fail(`the round wasn't saved: ${JSON.stringify(rec)}`);
+  // the trainer, in trainer view, does see the line each drill expects
+  await page.evaluate(() => { state.isAdmin = true; }); await page.evaluate(() => goto('drills')); await page.waitForTimeout(600);
+  await page.evaluate(() => FTDrills.start('medlor')); await page.waitForTimeout(400);
+  const want = await page.evaluate(() => FTDrills.round().qs[0].answer);
+  await page.fill('#drAns', 'not the answer'); await page.press('#drAns', 'Enter'); await page.waitForTimeout(300);
+  const adminFb = await page.evaluate(() => (document.querySelector('.dr-fb') || {}).innerText || '');
+  if (!adminFb.includes(want)) fail(`the trainer can't see the answer either: ${adminFb}`);
+  await page.evaluate(() => { state.isAdmin = false; });
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   if (!/Naming & Reporting Drills[\s\S]*MedLOR[\s\S]*90%/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the best MedLOR round');
 

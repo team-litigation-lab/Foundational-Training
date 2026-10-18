@@ -240,7 +240,7 @@ Return ONLY JSON: {"summary":"..."}`;
   links(id){ const s = sessionById(id); return s ? (s.tools(s.area ? caseFor(s) : null) || []).map(t => t[1]) : []; },
   // Can a trainee open this session right now? The Practice Lab card's own gate, in one place, so a
   // screen that links straight to a session (js/ft-next-step.js) cannot get round the lesson lock or
-  // offer a session that works on a case while no case is handed out.
+  // offer a session that works on a case before the trainer has assigned one.
   openable(id){
     const s = sessionById(id); if(!s) return false;
     if(state.isAdmin || state.adminPreview) return true;
@@ -262,10 +262,10 @@ FTSessions.cards = function(){
     return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
-      ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case. Cases aren’t handed out on the platform yet — nothing for you or your trainer to do here."}</p>` : ""}
+      ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case. Your trainer assigns you one — ask in the training GC if you have none yet."}</p>` : ""}
       <div class="fts-tool-act">${!open ? `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`
         : isTrainee() && !f ? `<button class="btn btn-ghost btn-sm" disabled>Waiting for your firm</button>`
-        : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled title="Cases aren’t handed out on the platform yet">No case yet</button>`
+        : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled title="Your trainer assigns the case this session works on">Waiting for your case</button>`
         : `<button class="btn btn-navy btn-sm" onclick="FTSessions.open('${s.id}')">${run && run.submittedAt ? "Review / redo" : run && run.startedAt ? "▶ Continue" : "▶ Start the session"}</button>`}</div></div>`;
   }).join("");
 };
