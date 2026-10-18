@@ -40,6 +40,11 @@ const fullName = c => `${c[0]} ${c[1]}`;
 const card = (rows) => rows.filter(r => r[1] != null && r[1] !== "");
 
 /* ---------- the drills: each builds a case and the one right answer ---------- */
+/* THE ANSWER IS THE TRAINER'S, NOT THE TRAINEE'S.
+   A drill is marked, not answered for you: a trainee sees whether their line was right, what differs from
+   the convention, and the convention itself — never the finished line. The trainer, in trainer view, sees
+   the answer each drill expects, so they can mark a line a trainee shows them. */
+const keyShown = () => !!state.isAdmin && !state.adminPreview;   // trainer view only; 👁 Trainee view sees what a trainee sees
 // q(): {ask, facts, answer, rule, yearEither?}
 const SETS = [
   {id: "intake", icon: "📋", title: "Intake Packet", day: 8, items: [
@@ -205,14 +210,14 @@ async function finish(){
 function roundHtml(){
   const r = D.round;
   if(r.done) return `<div class="card dr-run"><h2>Round done</h2><div class="dr-big"><b>${r.done.score}</b><span>of ${r.done.total}</span></div>
-      <table class="dr-review"><tbody>${r.qs.map((q, i) => `<tr class="${r.results[i].ok ? "ok" : "bad"}"><td>${r.results[i].ok ? "✓" : "✗"}</td><td><b>${e(q.ask)}</b><br>${r.results[i].ok ? `<code>${e(q.answer)}</code>` : `<span class="dr-typed">${e(r.results[i].typed)}</span><br><code>${e(q.answer)}</code>`}</td></tr>`).join("")}</tbody></table>
+      <table class="dr-review"><tbody>${r.qs.map((q, i) => `<tr class="${r.results[i].ok ? "ok" : "bad"}"><td>${r.results[i].ok ? "✓" : "✗"}</td><td><b>${e(q.ask)}</b><br>${r.results[i].ok ? `<code>${e(r.results[i].typed)}</code>` : `<span class="dr-typed">${e(r.results[i].typed)}</span>${keyShown() ? `<br><code>${e(q.answer)}</code>` : ""}`}</td></tr>`).join("")}</tbody></table>
       <div class="dr-acts"><button class="btn btn-navy btn-sm" onclick="FTDrills.start('${r.set}')">Another round</button><button class="btn btn-ghost btn-sm" onclick="FTDrills.close()">Done</button></div></div>`;
   const q = r.qs[r.i], set = SETS.find(s => s.id === q.set), s = r.shown;
   return `<div class="card dr-run"><div class="dr-runh"><span class="dr-kicker">${set.icon} ${e(set.title)}</span><span class="dr-count">${r.i + 1} / ${r.qs.length}</span></div>
       <h2>${e(q.ask)}</h2>
       <dl class="dr-facts">${q.facts.map(f => `<div><dt>${e(f[0])}</dt><dd>${e(f[1])}</dd></div>`).join("")}</dl>
       <input id="drAns" class="dr-ans ${s ? (s.ok ? "ok" : "bad") : ""}" autocomplete="off" spellcheck="false" ${s ? "readonly" : ""} value="${s ? e(s.typed) : ""}" placeholder="Type it exactly as you would in SA or the email" onkeydown="if(event.key==='Enter'){event.preventDefault();FTDrills.submit();}">
-      ${s ? `<div class="dr-fb ${s.ok ? "ok" : "bad"}">${s.ok ? "✓ Exactly right." : `✗ Not quite. ${e(s.hint)}<div class="dr-right">The convention gives: <code>${e(q.answer)}</code></div>`}<div class="dr-rule">📘 ${e(q.rule)}</div></div>` : ""}
+      ${s ? `<div class="dr-fb ${s.ok ? "ok" : "bad"}">${s.ok ? "✓ Exactly right." : `✗ Not quite. ${e(s.hint)}${keyShown() ? `<div class="dr-right">The convention gives: <code>${e(q.answer)}</code></div>` : `<div class="dr-right">Read the convention below and try the next one — your trainer has the line it expects.</div>`}`}<div class="dr-rule">📘 ${e(q.rule)}</div></div>` : ""}
       <div class="dr-acts"><button id="drNext" class="btn btn-navy btn-sm" onclick="FTDrills.submit()">${s ? (r.i + 1 < r.qs.length ? "Next →" : "See my round") : "Check"}</button><button class="btn btn-ghost btn-sm" onclick="FTDrills.close()">Stop</button></div></div>`;
 }
 function renderPage(){

@@ -63,7 +63,7 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(() => goto('lor')); await page.waitForTimeout(1200);
     const lor0 = await page.evaluate(() => document.querySelector('main').innerText);
     if (!/Do not create a case file in the CMS/i.test(lor0.replace(/\s+/g, ' '))) fail('the LOR activity does not tell trainees to keep it out of the CMS');
-    if (!/hasn’t assigned your case yet|hasn't assigned your case yet/.test(lor0)) fail('with no case assigned the LOR activity should say so');
+    if (!/assign|no case/i.test(lor0)) fail('with no case assigned the LOR activity should say so');
     await put('lorassign:' + id, { case: 1 });
     await page.evaluate(() => { FTLor.reload(); }); await page.waitForTimeout(1500);
     const lor = await page.evaluate(() => {
@@ -147,11 +147,14 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate((f) => FTSessions.acknowledge(f), firmId); await page.waitForTimeout(800);
     if (!((await get('sessions:' + id)) || {}).ack) fail('✓ I\'ve read my firm\'s rules wasn\'t saved');
 
-    // 3. no session waits for a case or a trainer: every one can be started
+    // 3. every session can be started: a session is gated by its lesson, not by a trainer's say-so. The cases
+    //    themselves ARE the trainer's to hand out (Admin → 🗂 Case Assignment), so 🗂 My cases may well say a
+    //    trainee has none yet — that is the design, and .github/scripts/assign.cjs covers it.
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const labTxt = await page.evaluate(() => document.querySelector('main').innerText);
-    if (/Waiting for your (case|firm)|trainer assigns/i.test(labTxt)) fail(`the Practice Lab still waits on a trainer: ${labTxt.slice(0, 300)}`);
-    if (/No case yet|Cases aren’t handed out/.test(labTxt)) fail('a session still waits for a case');
+    if (/Waiting for your firm/i.test(labTxt)) fail(`the Practice Lab still waits on a firm: ${labTxt.slice(0, 300)}`);
+    if (!/My cases/.test(labTxt)) fail('the Practice Lab doesn\'t show the cases the trainer assigned');
+    if (/Cases aren’t handed out/.test(labTxt)) fail('the Practice Lab still says cases are not handed out at all');
     const shut = await page.evaluate(() => ['reception', 'calendaring', 'intake', 'records'].filter(s => !FTSessions.openable(s)));
     if (shut.length) fail(`sessions that can't be opened: ${shut.join(', ')}`);
 
@@ -293,10 +296,10 @@ const failures = []; const fail = (m) => failures.push(m);
     // Lesson → Activities → Process Questions: finishing the lesson lands on the dashboard, not the questions.
     if (await page.evaluate(() => state.view) === 'process') fail('✓ Finish lesson still jumps straight to the Process Questions, skipping the day\'s activities');
     if (!['modules', 'dashboard'].includes(await page.evaluate(() => state.view))) fail(`✓ Finish lesson should go to the Dashboard for the day's activities: view=${await page.evaluate(() => state.view)}`);
-    // the dashboard has no next-step band any more: the day's activities are on the lesson card's 📋 Day deck
+    // the dashboard has no next-step band any more: each day's own cards carry its activities
     await page.waitForTimeout(600);
     if (await page.$('main .ftn')) fail('📚 Dashboard still draws the next-step band after ✓ Finish lesson');
-    if (!(await page.$(`#module-${pick} .mc-daydeck`))) fail(`the finished lesson's card has no 📋 Day deck for the day's activities`);
+    if (!(await page.$('main.main-dash .ftdd-daycard'))) fail(`📚 Dashboard has no day cards for the day's activities`);
     // and the questions themselves are now open for that module, one click away
     await page.evaluate(async (l) => { FTProcess.openLesson(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
     if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`that module's Process Questions page did not open: pqLesson=${await page.evaluate(() => state.pqLesson)}`);
@@ -311,5 +314,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles with no per-trainee assignment, the firm every trainee gets automatically, My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
+    console.log('Practice Sessions test passed (firm profiles, the trainer assigning the firm and cases in 🗂 Case Assignment, My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });

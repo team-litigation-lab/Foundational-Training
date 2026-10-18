@@ -247,10 +247,11 @@ const topRow = (notices, pins, scores) => (notices || scores) && pins
 function gridCards(all){
   const extra = []; (window.LSH_HOME_GRID_CARDS || []).forEach(f => { try{ extra.push(...(f() || [])); }catch(err){} });
   const cards = {}; all.forEach(d => { cards[d.id] = compactCard(moduleCard(d), d); });
-  // A course can lay the grid out itself (window.LSH_HOME_GRID_LAYOUT): it is handed every lesson's card and
-  // the cards its own hook made, and returns the whole grid. Foundational Training lays it out by day.
+  // A course can lay the grid out itself (window.LSH_HOME_GRID_LAYOUT): it is handed every lesson's card, the
+  // cards its own hook made and tags(lesson) for the badges LSH_HOME_LESSON_TAGS registers (the graded call of
+  // a mock-call lesson), and returns the whole grid. Foundational Training lays it out by day.
   if(typeof window.LSH_HOME_GRID_LAYOUT === "function"){
-    try{ const out = window.LSH_HOME_GRID_LAYOUT({lessons: all, cards, extra}); if(out) return out; }catch(err){}
+    try{ const out = window.LSH_HOME_GRID_LAYOUT({lessons: all, cards, extra, tags: lessonTags}); if(out) return out; }catch(err){}
   }
   return all.map(d => cards[d.id] + extra.filter(x => Number(x.after) === Number(d.id)).map(x => x.html).join("")).join("");
 }
@@ -566,7 +567,11 @@ main.main-dash .module-card.mc-compact > .mc-grid > button:not(:last-child){bord
   main.main-dash .dash-side-inner .tfb-dash .btn{padding:2px 9px !important;font-size:10.5px !important;white-space:nowrap;}
   /* Resume and the certificate ride in the band as its last box, not on a line of their own under it */
   main.main-dash .dash-side-inner > .lp-home-acts{flex-direction:row !important;align-items:center !important;gap:6px;padding:4px 6px !important;}
-  main.main-dash .dash-side-inner > .lp-home-acts > *{min-width:0;padding:4px 9px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  main.main-dash .dash-side-inner > .lp-home-acts > *{min-width:0;max-width:100%;flex:0 1 auto;padding:4px 9px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* ▶ Resume where you left off carries the lesson's name: in the band it has to give way, so the name is cut
+     with an ellipsis inside the button rather than running past the tile it sits in */
+  main.main-dash .dash-side-inner > .lp-home-acts > .resume-btn{display:inline-flex;align-items:center;gap:6px;overflow:hidden;}
+  main.main-dash .dash-side-inner > .lp-home-acts > .resume-btn > span{min-width:0;flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   /* An open lesson's card has three small buttons (☰ Topics, ✓ Finish Training, ▶ Video Presentation): one row
      of three under Start, not three stacked rows, so both rows of lessons fit on the screen with the band */
   main.main-dash .dash-main .module-card.mc-clean > .mc-grid.mc-n3{grid-template-columns:auto 1fr 1fr;}
