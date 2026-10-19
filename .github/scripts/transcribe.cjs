@@ -31,11 +31,7 @@ const failures = []; const fail = m => failures.push(m);
   const d9 = await page.evaluate(() => (FTDays.of(9).items || []).find(x => /Transcription/.test(x.t)));
   if (!d9 || d9.at !== 'tool' || d9.id !== 'transcribe') fail(`Day 9's transcription step doesn't point at the tool: ${JSON.stringify(d9)}`);
 
-  // Day 9's deck: the interview recordings open the activity (not a video with "What I learned"), the sample is a document.
-  // Day 9 belongs to Lesson 6, so the trainee has to have worked the guide that far — a day further on than the one
-  // they are on stays locked (the gate in js/ft-day-decks.js).
-  await page.evaluate(() => { [1, 2, 3, 4].forEach(l => state.progress[l] = { done: true, studied: true, score: 100 });
-    state.progress[5] = { studied: true }; });
+  // Day 9's deck: the interview recordings open the activity (not a video with "What I learned"), the sample is a document
   await page.evaluate(() => FTDayDecks.open(9)); await page.waitForTimeout(1500);
   const deck = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); const t = document.querySelectorAll('.k-transcribe');
     if (t.length) return { n: t.length, learn: document.querySelectorAll('.ftdd-learn').length, sample: [...document.querySelectorAll('.ftdd-tile')].some(x => /Sample Minutes/.test(x.innerText) && x.classList.contains('k-file')) }; } return null; });

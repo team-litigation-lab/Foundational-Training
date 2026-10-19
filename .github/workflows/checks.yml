@@ -105,7 +105,7 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/assign.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Gated curriculum (a trainee opens the days of the lesson they are on and the days behind them only; a trainer and Trainee view open all 16)
+      - name: Open days (every day card and deck open to a trainee; the lessons wait on the trainer's 📅 Open Lessons)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/gating.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
