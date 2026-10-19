@@ -7,8 +7,8 @@
        "Lessons finished", the certificate or the admin stats. It isn't in DAYS; DAYS.find and
        DAYS.some also look at it (by id, ORIENT_ID), so the lesson view, Presenter view, routes
        (#/day/12) and names find it, while DAYS.length, map and filter still count the 8 lessons.
-     • A slide's html is built when it's shown (a getter), so the file name in the Reading Task
-       has the trainee's name and the Copy buttons work.
+     • A slide's html is built when it's shown (a getter), so a file name carries the trainee's own name
+       and the Copy buttons work.
      • The parts follow the Setting of Expectations: what training is (pass it; hard on purpose; trainers are your first clients);
        General VAs (foundation, not mastery); the rules (schedule and breaks, communication, your work and the use of AI);
        the Training Monitoring Sheet, embedded; Free Upskill Training (after the shift, unpaid, encouraged); auxes (the 2 Discord
@@ -16,8 +16,9 @@
        daily habits (EOD email, trackers, Monitoring Sheet); the EOD template; the Daily Task Tracker part by part, and its filled-in sample, embedded;
        skill building (typing and spelling tests: a pointer to the Practice Lab on 🛠 Simulators); Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
        label); how to create notes in Hubstaff; Hubstaff How-To Lessons (links to those slides and the
-       VA Guide; HOWTO_LESSONS for more); the Manual Time Adjustment Request; Day 1's
-       Reading Task.
+       VA Guide; HOWTO_LESSONS for more); and the Manual Time Adjustment Request. Day 1's PI overview
+       reading task is not here: it is an assessment the trainer posts in the training GC, with its own file,
+       questions and naming convention, and it is scored on the Weekly Ranking.
      • The Hubstaff pictures are drawn after the trainer's screenshots (SVG): the to-do list, with an
        arrow on the button inside the day's to-do, and the Add Work Notes box.
    ============================================================ */
@@ -107,20 +108,6 @@ const REMINDER_SHOTS = [
 // Hubstaff How-To Lessons: this lesson's Hubstaff slides (by id) and the guide. Add more as {title, desc, href}.
 const HOWTO_LESSONS = [];
 
-// Day 1 → Reading Task. The file name gets the trainee's name.
-const READING = {
-  title:"Personal Injury Cases (Overview: What is personal injury?)",
-  when:"Day 1: Complete it within the 2nd – 3rd hour of the training day.",
-  url:"https://drive.google.com/file/d/1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O/view?usp=sharing",
-  questions:[
-    "What is personal injury and what are its types?",
-    "Can you enumerate the stages of a personal injury claim on your own understanding?",
-    "How much is the common compensation for a personal injury claim?",
-    "How long does it take for a personal injury case to resolve?",
-    "What are the common factors that affect a personal injury case?",
-    "What do you think are the advantages and disadvantages of pushing for a case to litigation (going to court)?"],
-  file: name => `PI Overview_Answers (${name || "VA’s Name"})`
-};
 
 // Day 1 → Setting of Expectations: the tests' links, file names and sample screenshots.
 const TESTS = [
@@ -280,7 +267,7 @@ const SLIDES = [
       <p>Being in training doesn’t mean you can be complacent. Your performance is deliberated every week, and depending on the outcome you can still be let go and have your project ended.</p></div>
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
-    <p class="ftr-sub">Next: Your role as a General VA, the rules for every training day, your auxes, your daily habits, your tests, your Hubstaff To-Dos and notes, and Day 1’s Reading Task.</p>`],
+    <p class="ftr-sub">Next: Your role as a General VA, the rules for every training day, your auxes, your daily habits, your tests, and your Hubstaff To-Dos and notes.</p>`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
@@ -409,21 +396,6 @@ const SLIDES = [
       <p class="ftr-when" style="margin-top:10px!important;"><b>In the Email:</b></p>
       <ul class="ftr-list">${TIME_ADJ.include.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
     </div>`],
-  ["reading", "Day 1 Reading Task: Personal Injury Cases", ()=>{
-    const readFile = READING.file(state.certName || state.traineeName);
-    return `
-    <p class="ftr-sub">${esc(READING.when)}</p>
-    <div class="ftr-part">
-      <div class="ftr-part-h"><span>A</span>Read</div>
-      <p class="ftr-when">Read this to get a good grasp of what we do here in the firm.</p>
-      <div class="ftr-links" style="margin-top:8px;"><a class="btn btn-navy btn-sm viewer-link" data-kind="doc" data-title="${esc(READING.title)}" href="${esc(READING.url)}">📄 ${esc(READING.title)}</a></div>
-    </div>
-    <div class="ftr-part" style="margin-top:14px;">
-      <div class="ftr-part-h"><span>B</span>Answer the Following Questions</div>
-      <ol>${READING.questions.map(q=>`<li>${esc(q)}</li>`).join("")}</ol>
-      <p class="ftr-tip">Write your answers in a Word document or Notepad, then send them in our group chat so we know you’re done. Name the file exactly:</p>
-      <div class="ftr-todo"><span class="ftr-todo-tx"><code class="ftr-code">${esc(readFile)}</code></span><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(readFile)}" data-toast="Copied. Use it as your file name." onclick="ftrCopy(this)">📋 Copy</button></div>
-    </div>`; }]
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
 // above it would count as heading and leave less for the content, so a short intro could end up alone on a page.
