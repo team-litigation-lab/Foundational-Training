@@ -37,6 +37,10 @@ function loadDecks(){
   return DD.loading;
 }
 const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons: []};
+/* A slide's own HTML, as the trainer has it. js/ft-slide-editor.js lets a trainer rewrite any slide of any day
+   (settings:dayslides); the edit stands in for what build/day-decks.cjs built, for trainers and trainees alike, and
+   everything downstream — the agenda, the slide's buttons, 🎬 Video Notes — reads the slide through here. */
+const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : v; }catch(err){ return (s || {}).html; } };
 // a lesson is open when the trainer has opened it for the batch (Admin → 📅 Open Lessons)
 const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
 const lessonTitle = l => { try{ return ftName(Number(l)) || ("Lesson " + l); }catch(err){ return "Lesson " + l; } };
@@ -332,14 +336,14 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
 };
 function agendaHtml(d, info){
   const rows = slidesOf(d).slice(1).map((s, i) => {
-    const t = timeOf(s.h), k = kindOf(s, visual(s.html));
+    const t = timeOf(s.h), k = kindOf(s, visual(slideSrc(d.day, s)));
     const go = slideAgendaGo(s, info);
     return `<li><button type="button" onclick="FTDayDecks.to(${i + 1})"><span class="ftdd-ag-n">${String(i + 1).padStart(2, "0")}</span>
       <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${t ? t.ic + " " + t.label + " · " : ""}${k.ic} ${k.label}${go ? " · " + e(go.label) : ""}</small></span></button>${go ? `<a class="ftdd-ag-go" onclick="event.stopPropagation(); ${go.go}">${e(go.btn)}</a>` : ""}</li>`;
   }).join("");
-  const all = d.slides.map(s => s.html).join(" ");
+  const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
-  const vids = d.slides.reduce((n, s) => n + (visual(s.html).match(/ftdd-tile k-video/g) || []).length, 0);
+  const vids = d.slides.reduce((t, s) => t + (visual(slideSrc(d.day, s)).match(/ftdd-tile k-video/g) || []).length, 0);
   const folders = count(/drive\.google\.com\/drive\/folders\//g), decksN = count(/class="canva-frame"/g);
   const lessons = (info.lessons || []).map(l => `<li>📘 ${e(lessonTitle(l))}</li>`).join("");
   return `<div class="ftdd-ag"><ol class="ftdd-ag-list">${rows}</ol>
@@ -404,7 +408,7 @@ function slideActions(s, info, body, i){
 }
 function slideCard(d, info, list, i, logo){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : visual(s.html);
+  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : visual(slideSrc(DD.day, s));
   const t = s.agenda ? null : timeOf(s.h), k = s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
   const ribbon = s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
@@ -428,6 +432,8 @@ function renderDeck(){
     return `${back}<div class="ftdd-deck ftdd-msg"><p>${DD.failed ? "The day decks couldn’t load. Check your connection and open the deck again." : "Loading the day deck…"}</p></div>`;
   }
   const d = all[DD.day]; if(!d) return `${back}<div class="ftdd-deck ftdd-msg"><p>There is no deck for Day ${e(DD.day)}.</p></div>`;
+  // the trainer's own edits of these slides (js/ft-slide-editor.js), so a trainee opens the deck as it now reads
+  if(root.FTSlideEdit) FTSlideEdit.load();
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
   const logo = typeof LOGO_FULL_SRC !== "undefined" ? `<img class="ftdd-logo" src="${LOGO_FULL_SRC}" alt="Legal Support Help">` : "";
@@ -453,6 +459,10 @@ function renderDeck(){
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl${DD.auto ? " on" : ""}" onclick="FTDayDecks.auto()">${DD.auto ? "⏸ Stop autoplay" : "▶ Autoplay"}</button>
       ${DD.auto ? `<p class="ftdd-rail-note">A slide every ${AUTOPLAY_SECS} seconds.</p>` : ""}
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('shadowing')">📋 Today’s To-Do</button>
+      ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
+        <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
+        ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
+        <p class="ftdd-rail-note">${e(FTSlideEdit.note(DD.day, (list[DD.i] || {}).id))}</p>` : ""}` : ""}
     </aside>
   </div>`;
 }
@@ -541,7 +551,7 @@ function videos(n){
   const d = decks() && decks()[n]; if(!d) return [];
   const out = [], seen = new Set();
   d.slides.forEach((s, i) => {
-    const t = document.createElement("template"); t.innerHTML = visual(s.html);
+    const t = document.createElement("template"); t.innerHTML = visual(slideSrc(n, s));
     t.content.querySelectorAll("a.ftdd-tile.k-video").forEach(a => {
       const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
       out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});

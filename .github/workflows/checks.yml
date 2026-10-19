@@ -105,6 +105,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/assign.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Slide editor (a trainer rewrites a day slide with the toolbar and saves it for the batch; a trainee has no editor; what is typed is cleaned)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/slide-editor.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Open days (every day card and deck open to a trainee; the lessons wait on the trainer's 📅 Open Lessons)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
