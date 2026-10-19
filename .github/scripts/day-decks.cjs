@@ -106,21 +106,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (s.view !== 'daydeck' || s.hash !== '#/daydeck') fail(`the deck didn't open (${s.view} ${s.hash})`);
   if (!/1 OF/i.test(s.n) || !/Training Agenda/.test(s.h)) fail(`the deck should open on its Training Agenda: ${s.n} ${s.h}`);
   if (!s.deck) fail('the deck is not drawn like the LSH decks (logo and outlined title)');
-  // Days 1–2 teach Lesson 1 between them, so both open to a new trainee and nothing further (js/ft-day-decks.js)
-  if (s.open.join() !== '1,2') fail('a new trainee can open days ' + s.open.join(', ') + ' (1, 2 expected)');
+  // the days are not gated: a trainee reads any day's instructions, in any order (gating.cjs covers the rest —
+  // what paces the programme is the trainer's 📅 Open Lessons, which gates the lessons, not the days)
+  if (s.open.length !== 16) fail('a trainee can open ' + s.open.length + ' of the 16 days: ' + s.open.join(', '));
   if (s.scroll > 2) fail(`the deck page scrolls by ${s.scroll}px (one screen)`);
   await page.keyboard.press('ArrowRight'); await page.waitForTimeout(300);
   const s2 = await at();
   if (!/2 OF/i.test(s2.n)) fail('→ did not turn to slide 2');
   if (s2.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
-  await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(300);
-  if (/^Day 5\b/.test(await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || {}).innerText || ''))) fail('a trainee opened Day 5 before reaching it');
-  // finishing Lessons 1 and 2 opens Day 3, where Lesson 3 begins
-  await page.evaluate(() => { state.progress[1] = { done: true, studied: true }; state.progress[2] = { done: true, studied: true }; FTDayDecks.open(); });
-  await page.waitForTimeout(500);
-  s = await at();
-  if (s.open.join() !== '1,2,3') fail('after Lessons 1–2 the open days are ' + s.open.join(', ') + ' (1, 2, 3 expected)');
-  // an admin opens any day
+  await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(400);
+  if (!/^Day 5\b/.test(await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || {}).innerText || ''))) fail('a trainee can\'t open Day 5\'s instructions');
+  // an admin opens any day too
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);
   s = await at();
   if (s.open.length !== 16) fail(`an admin can open ${s.open.length} days, not 16`);

@@ -156,10 +156,18 @@ function norm(s, yearEither){
   if(yearEither) t = t.replace(/\b(\d{2})\.(\d{2})\.\d{2}(\d{2})\b/g, "$1.$2.$3");
   return t;
 }
-// the part to look at: the first " - " piece (or word) that differs
-function diffHint(typed, answer){
+// The part to look at: the first " - " piece (or word) that differs. The piece itself belongs to the answer,
+// so it is quoted for a trainer only (show) — to a trainee the hint says which part of their own line to look
+// at, never what it should have said. A one-part answer (the fax address) is the whole line, so quoting it
+// would hand a trainee the answer outright.
+function diffHint(typed, answer, show){
   const a = norm(answer).split(" - "), b = norm(typed).split(" - ");
-  for(let i = 0; i < Math.max(a.length, b.length); i++) if(a[i] !== b[i]) return i < a.length ? `Look at part ${i + 1}: “${answer.split(/\s[-–]\s/)[i] || ""}”` : "There is extra text at the end.";
+  for(let i = 0; i < Math.max(a.length, b.length); i++) if(a[i] !== b[i])
+    return i < a.length
+      ? (show ? `Look at part ${i + 1}: “${answer.split(/\s[-–]\s/)[i] || ""}”`
+        : a.length > 1 ? `Look at part ${i + 1} of your line — the ${i + 1}${["st", "nd", "rd"][i] || "th"} piece between the dashes.`
+        : "Look at your line again, character by character.")
+      : "There is extra text at the end.";
   return "";
 }
 const check = (q, typed) => q.exact ? String(typed || "").trim() === q.answer : norm(typed, q.yearEither) === norm(q.answer, q.yearEither);
@@ -196,7 +204,7 @@ function submit(){
   const v = String((document.getElementById("drAns") || {}).value || "");
   if(!v.trim()){ toast("Type your answer first."); return; }
   const q = r.qs[r.i], ok = check(q, v);
-  r.results.push({ok, typed: v}); r.shown = {ok, typed: v, hint: ok ? "" : diffHint(v, q.answer)};
+  r.results.push({ok, typed: v}); r.shown = {ok, typed: v, hint: ok ? "" : diffHint(v, q.answer, keyShown())};
   render(); setTimeout(() => { const b = document.getElementById("drNext"); if(b) b.focus(); }, 30);
 }
 async function finish(){

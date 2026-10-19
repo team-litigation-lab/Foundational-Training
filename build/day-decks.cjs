@@ -12,10 +12,13 @@
 // build if an answer key or a facilitator section would still be in one.
 const fs = require("fs"), vm = require("vm"), path = require("path");
 const R = path.resolve(__dirname, "..");
-// parts of a day left out of its deck: Day 1's Setting of Expectations is written to the facilitator, and Training
+// parts of a day left out of its deck: Day 1's Setting of Expectations is written to the facilitator; Training
 // Reminders and the Nitro Pro 12 / Smart Advocate plug-ins installation are to be disregarded (the Nitro Pro and
-// Adobe Acrobat Pro how-to homework stays)
-const SKIP = {1: ["expectations", "reminders", "pm"]};
+// Adobe Acrobat Pro how-to homework stays); the Hubstaff To-Do set-up is not a slide — the trainer sets the
+// to-dos with the batch, and the day cards already name each day's work; and neither is the PI overview reading
+// task — it is an assessment the trainer posts in the training GC with its own file, questions and naming
+// convention, and it is scored on the Weekly Ranking ("PI Reading Task", 40 points)
+const SKIP = {1: ["expectations", "reminders", "pm", "hubstaff", "reading"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {};
 // material the guide names without a link yet: {day: [{after: sectionId, name, note?}]} — shown as a "link coming" box
