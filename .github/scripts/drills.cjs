@@ -8,6 +8,11 @@ const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const failures = []; const fail = m => failures.push(m);
+// Feedback that hands a trainee the line: the whole answer, or any of the parts it is built from (the hint
+// used to quote the part that differs, which on a one-part answer — the fax address — is the answer itself).
+// The convention's own example, in the 📘 line, is the rule, not the answer, so it is cut out first.
+const leaks = (fb, ans) => { const t = String(fb).replace(/📘[^\n]*/g, '');
+  return [ans].concat(ans.split(/\s[-–]\s/)).some(p => p.trim().length > 3 && t.includes(p.trim())); };
 
 (async () => {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
@@ -71,7 +76,7 @@ const failures = []; const fail = m => failures.push(m);
       const fb = await page.evaluate(() => (document.querySelector('.dr-fb') || {}).innerText || '');
       if (!/Not quite/.test(fb)) fail(`a wrong answer isn't marked wrong: ${fb}`);
       if (!/📘/.test(fb)) fail(`a wrong answer doesn't show the convention it follows: ${fb}`);
-      if (/The convention gives/.test(fb) || fb.includes(ans)) fail(`the answer is shown to the trainee: ${fb}`);
+      if (/The convention gives/.test(fb) || leaks(fb, ans)) fail(`the answer is shown to the trainee: ${fb}`);
       if (!/your trainer has the line/i.test(fb)) fail(`the trainee isn't told where the answer is: ${fb}`);
     }
     await page.click('#drNext'); await page.waitForTimeout(120);
@@ -87,6 +92,19 @@ const failures = []; const fail = m => failures.push(m);
   else if (!badRow.typed || badRow.keys) fail(`the round review shows a trainee the answer they missed: ${JSON.stringify(badRow)}`);
   const rec = await get('drills:' + id);
   if (!rec || !rec.runs.some(r => r.set === 'medlor' && r.score === 9 && r.total === 10)) fail(`the round wasn't saved: ${JSON.stringify(rec)}`);
+  // every set, not just the one above: a wrong answer in a trainee's view never carries the line, whatever the
+  // question looks like (the fax address is one part, so a hint that quotes "the part that differs" would be it)
+  const sets = await page.evaluate(() => FTDrills.sets.map(s => s.id));
+  for (const sid of sets) {
+    await page.evaluate((sid) => FTDrills.start(sid), sid); await page.waitForTimeout(250);
+    const ans = await page.evaluate(() => FTDrills.round().qs[FTDrills.round().i].answer);
+    await page.fill('#drAns', ans.slice(0, -1) + 'ZZ');   // wrong, and never contains the answer
+    await page.press('#drAns', 'Enter'); await page.waitForTimeout(200);
+    const fb = await page.evaluate(() => (document.querySelector('.dr-fb') || {}).innerText || '');
+    if (!/Not quite/.test(fb)) fail(`${sid}: a wrong answer isn't marked wrong: ${fb}`);
+    if (leaks(fb, ans)) fail(`${sid}: the answer is shown to the trainee: ${fb}`);
+  }
+
   // the trainer, in trainer view, does see the line each drill expects
   await page.evaluate(() => { state.isAdmin = true; }); await page.evaluate(() => goto('drills')); await page.waitForTimeout(600);
   await page.evaluate(() => FTDrills.start('medlor')); await page.waitForTimeout(400);
@@ -102,5 +120,5 @@ const failures = []; const fail = m => failures.push(m);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Naming & Reporting Drills test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Naming & Reporting Drills test passed (every question accepts its own answer in other dashes, spacing and capitals and refuses one with a part missing; the guide\'s samples pass; mm.dd.yy and the fax address strict; the Drafting Tools card and the demo days\' steps; a round with the convention shown for a miss, saved, and on My Performance).');
+  console.log('Naming & Reporting Drills test passed (every question accepts its own answer in other dashes, spacing and capitals and refuses one with a part missing; the guide\'s samples pass; mm.dd.yy and the fax address strict; the Drafting Tools card and the demo days\' steps; a round with the convention shown for a miss, saved, and on My Performance; and in every set a wrong answer carries neither the line nor any part of it, which the trainer does see in trainer view).');
 })().catch(e => { console.error(e); process.exit(1); });
