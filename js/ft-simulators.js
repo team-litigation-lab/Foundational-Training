@@ -132,14 +132,30 @@ function ftsShow(url, name){
   const f = p.querySelector("#ftsIframe");
   (window.LSHToolLinks ? LSHToolLinks.ticketed(url) : Promise.resolve(url)).then(u=>{ if(f.isConnected) f.src = u; });
   p.classList.add("open"); document.body.classList.add("fts-panel-open");
+  window.scrollTo(0, 0);   // the bar is sticky, so bring it to the top before the panel measures it
+  ftsTop();
 }
+// The top bar wraps to two rows on a narrow window, so its height is read, not assumed.
+function ftsTop(){
+  const bar = document.querySelector(".topbar");
+  const h = bar ? Math.round(bar.getBoundingClientRect().height) : 0;
+  document.documentElement.style.setProperty("--fts-top", h + "px");
+}
+window.addEventListener("resize", ()=>{ if(document.body.classList.contains("fts-panel-open")) ftsTop(); });
 window.ftsClose = function(){
   const p = document.getElementById("fts-panel"); if(!p) return;
+  document.documentElement.style.removeProperty("--fts-top");
   if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
   p.classList.remove("open"); p.querySelector(".fts-panel-body").innerHTML = ""; document.body.classList.remove("fts-panel-open");
 };
 window.ftsFullscreen = function(){ const f = document.getElementById("ftsIframe"); if(f && f.requestFullscreen) f.requestFullscreen().catch(()=>{}); };
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && !document.fullscreenElement && document.body.classList.contains("fts-panel-open")) ftsClose(); });
+// A tab in the top bar leaves the tool: the panel closes first, so 🛠 Practice Lab comes back to the lab
+// itself rather than to the tool that was open on top of it.
+document.addEventListener("click", e=>{
+  if(!document.body.classList.contains("fts-panel-open")) return;
+  if(e.target.closest && e.target.closest(".topbar .nav button, .topbar .brand")) ftsClose();
+}, true);
 
 /* ---------- wiring into the engine ---------- */
 const __render = window.render;
@@ -195,7 +211,9 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-sub a{color:var(--orange-deep);font-weight:700;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
 .fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
-#fts-panel{display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#f8fafc);flex-direction:column;}
+/* The panel starts below the top bar: a tool fills the rest of the window, and 📚 Dashboard and the
+   other tabs stay clickable while it is open (ftsTop() keeps --fts-top on the bar's real height). */
+#fts-panel{display:none;position:fixed;inset:var(--fts-top,0px) 0 0 0;z-index:9000;background:var(--bg,#f8fafc);flex-direction:column;}
 #fts-panel.open{display:flex;} body.fts-panel-open{overflow:hidden;}
 .fts-panel-bar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 16px;background:var(--card,#fff);border-bottom:1px solid var(--line,#e5e7eb);}
 .fts-panel-bar b{color:var(--navy);font-size:14.5px;min-width:0;overflow-wrap:anywhere;} .fts-panel-bar span{display:flex;gap:8px;flex-wrap:wrap;}
