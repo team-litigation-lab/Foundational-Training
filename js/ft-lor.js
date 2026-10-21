@@ -623,16 +623,31 @@ window.FTLor = {
   }
 };
 
+/* This activity now lives on the LSH Training Portal, as one shared tool that both this course and
+   Case Management open: /simulators/drafting.html. The Portal fills the firm's own .docx and hands
+   that file back, so the download carries the letterhead and logo — this course re-typeset the
+   letter through jsPDF, which is what lost them. js/lsh-tool-links.js puts the signed ticket on the
+   link, so a trainee lands there already signed in. This file still draws the card and still
+   answers its own route, so old links and bookmarks keep working. */
+const PORTAL_DRAFTING = "https://cm-training-activity.pages.dev/simulators/drafting.html";
+
+// On window: the card's onclick is an inline attribute, which is read in global scope, not in this
+// file's closure.
+window.lshOpenPortalDrafting = function(){
+  if(typeof LSHToolLinks === "object" && LSHToolLinks.ticketed) LSHToolLinks.ticketed(PORTAL_DRAFTING).then(function(u){ location.href = u; });
+  else location.href = PORTAL_DRAFTING;
+};
+
 /* ---------- wiring into the engine ---------- */
 const __render = window.render;
 window.render = function(){
   if(state.view !== "lor") return __render.apply(this, arguments);
-  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
-  const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-lor">${renderPage()}</main>` + renderFooter();
-  paintSave();
-  try{ afterRender(); }catch(err){}
-  document.querySelectorAll(".lorl-ta").forEach(FTLor.grow);
+  // An old link or bookmark: open the shared tool on the Portal rather than drafting here, and
+  // leave the dashboard behind it. The drafting code above is no longer routed to — it stays for
+  // now so nothing that still calls into it breaks, and comes out in a follow-up.
+  window.lshOpenPortalDrafting();
+  state.view = "dashboard";
+  return __render.apply(this, arguments);
 };
 // 🧰 Drafting Tools in the Practice Lab, where the Claims Specialist session used to be. A tool, not a
 // one-off: it draws every template in js/ft-lor-data.js, so a records request or a HIPAA authorisation added
@@ -648,11 +663,11 @@ window.ftLorCard = function(){
   const dayT = window.FTDays ? FTDays.label(FTDays.forTool("lor")) : "";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 LOR Drafting Activity</h3>
-    <p class="fts-note">Fill in the firm’s own template on the page and download the finished letter as a <b>PDF</b>, named by the trainers’ convention — which you can edit before you download. Upload it into the Smart Advocate demo yourself: nothing here becomes a CMS case file.</p>
+    <p class="fts-note">Fill in the firm’s own template on the page and download the finished letter as a <b>Word file</b>, named by the trainers’ convention. It opens on the Training Portal, and what you download is the firm’s own document with your answers written into it — letterhead and logo included — so you can upload it into the Smart Advocate demo as it is: nothing here becomes a CMS case file.</p>
     ${note ? `<p class="fss-case">${note}</p>` : ""}
     <div class="fts-label">Templates in this tool</div>
     <ul class="fts-tpl">${TEMPLATES.map(t => `<li>${e(String(t.title).replace(/^Activity \d+:\s*/, ""))}</li>`).join("")}</ul>
-    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="goto('lor')">Open the tool</button>`
+    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="lshOpenPortalDrafting()">Open the tool &rarr;</button>`
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
 };
 
