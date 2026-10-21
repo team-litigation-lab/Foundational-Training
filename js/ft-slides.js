@@ -142,8 +142,8 @@ body.ft-fit .lesson-stage .slide-dot.active{flex:0 0 22px;}
 body.ft-fit .lesson-stage .slide-done-banner{display:none;}
 /* No white frame around the deck page: the page sits straight on the lesson panel, in the middle, across and
    down (the frame and its card are see-through, without the orange strip on top). */
-body.ft-fit #lessonSlideWrap{background:transparent !important;border:0 !important;box-shadow:none !important;display:flex !important;flex-direction:column;justify-content:center;align-items:center;}
-body.ft-fit #lessonSlideWrap::before{display:none !important;}
+body.ft-fit #lessonSlideWrap{background:transparent !important;border:0 !important;box-shadow:none !important;display:flex !important;flex-direction:column;justify-content:center;align-items:center;padding:30px 40px 34px !important;}
+body.ft-fit #lessonSlideWrap::before, body.ft-fit #lessonSlideWrap::after{display:none !important;}
 /* the page in the middle of the lesson panel: the frame takes the panel's whole width, and the presenter
    character stands in the bottom-right corner over it (beside the page, which is narrower than the frame) */
 body.ft-fit #lessonStage:not(:fullscreen) .stage-body{display:block !important;position:relative;}

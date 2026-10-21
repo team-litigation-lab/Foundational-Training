@@ -2481,8 +2481,14 @@ em.warn{font-style:normal;color:var(--danger);}
 /* ================= Lesson slides in the Orientation format =================
    The whole slide is one cream "page" (like the Orientation deck): mono kicker,
    big serif title, lead text, and content laid out as cards. */
-.lesson-stage #lessonSlideWrap{position:relative;background:#FFFDF8;border-radius:16px;padding:30px 40px 34px;min-height:min(64vh,640px);max-height:none;overflow:auto;box-shadow:none;}
-.lesson-stage #lessonSlideWrap::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;border-radius:16px 16px 0 0;background:linear-gradient(90deg,var(--navy),var(--orange));}
+/* The standard deck card (every lesson slide, every day): a white page with the
+   angled orange/navy edge of the LSH deck on the left and the LSH mark top right.
+   The same card as EA-PA-TRAINING; change it in both. */
+.lesson-stage #lessonSlideWrap{position:relative;background:#FFFFFF url(/logo.svg) no-repeat right 26px top 22px;background-size:96px auto;border-radius:16px;padding:30px 132px 34px 128px;min-height:min(64vh,640px);max-height:none;overflow:hidden;box-shadow:none;}
+.lesson-stage #lessonSlideWrap::before{content:"";position:absolute;left:0;top:0;width:104px;height:64%;background:var(--orange);clip-path:polygon(0 0,100% 0,26% 100%,0 100%);pointer-events:none;}
+.lesson-stage #lessonSlideWrap::after{content:"";position:absolute;left:0;bottom:0;width:104px;height:34%;background:var(--navy);clip-path:polygon(0 36%,100% 100%,0 100%);pointer-events:none;}
+@media(max-width:760px){.lesson-stage #lessonSlideWrap{overflow:visible;padding:26px 20px 28px 44px;background-size:62px auto;background-position:right 14px top 14px;}
+  .lesson-stage #lessonSlideWrap::before,.lesson-stage #lessonSlideWrap::after{width:40px;}}
 .lesson-stage #lessonSlideWrap > .card, .lesson-stage #lessonSlideWrap > .qcheck-card, .lesson-stage #lessonSlideWrap .lesson-card, .lesson-stage #lessonSlideWrap .meet-client-card{background:transparent !important;border:none !important;box-shadow:none !important;padding:0 !important;margin:0 !important;min-height:0 !important;}
 .lesson-stage #lessonSlideWrap .lesson-card::before{display:none;}
 /* kicker + title */
@@ -2541,7 +2547,7 @@ em.warn{font-style:normal;color:var(--danger);}
 .lesson-stage:fullscreen .lesson-slide#lessonSlideWrap{display:block;justify-content:initial;font-size:1.2em;min-height:0;flex:1;}
 .lesson-stage:fullscreen .stage-body{flex:1;min-height:0;align-items:stretch;}
 .lesson-stage:fullscreen .stage-body > #lessonSlideWrap{height:100%;}
-@media(max-width:760px){.lesson-stage #lessonSlideWrap{padding:22px 16px 26px;min-height:0;} .lesson-stage #lessonSlideWrap .quiz-opts{grid-template-columns:1fr;}}
+@media(max-width:760px){.lesson-stage #lessonSlideWrap{padding:22px 16px 26px 44px;min-height:0;} .lesson-stage #lessonSlideWrap .quiz-opts{grid-template-columns:1fr;}}
 
 .bp-status{font-size:12px;color:var(--ink-soft);} .bp-status a{color:var(--orange-deep);font-weight:700;}
 .ho-bp{display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:16px;border-left:5px solid var(--navy);}
@@ -18871,7 +18877,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-updates.js?v=ft-2026.10.16-wide1"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.05-1744"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.21-2010"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.08-drive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.08-drive"></script>
