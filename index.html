@@ -2313,12 +2313,23 @@ em.warn{font-style:normal;color:var(--danger);}
 
 /* ================= Lesson slides: presentation stage ================= */
 .ls-top{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 10px;}
+/* No panel around the slide: the deck card sits straight on the page, so a lesson is the one card.
+   Deck-page lessons (body.ft-fit) keep the panel: their page is an image and needs the ground behind it.
+   Full screen keeps a ground too (there is no page under it there). Same card as EA-PA-TRAINING. */
 .lesson-stage{background:linear-gradient(135deg,#1F2440 0%,#2B3158 60%,#353C68 100%);border-radius:20px;padding:18px 22px 16px;box-shadow:0 18px 40px -22px rgba(20,24,48,.65);}
+body:not(.ft-fit) .lesson-stage:not(:fullscreen){background:none;border-radius:0;padding:0;box-shadow:none;}
 .lesson-stage .slide-dots{margin:0 0 12px;}
 .lesson-stage .slide-dot{background:rgba(255,255,255,.25);}
 .lesson-stage .slide-dot.visited{background:rgba(240,192,138,.7);}
 .lesson-stage .slide-dot.active{background:#F0C08A;}
 .lesson-stage .slide-dot.locked{background:rgba(255,255,255,.12);}
+/* on the page, not on the panel: the dots and the step count take their ordinary colours */
+body:not(.ft-fit) .lesson-stage:not(:fullscreen) .slide-dot{background:var(--line);}
+body:not(.ft-fit) .lesson-stage:not(:fullscreen) .slide-dot.visited{background:var(--navy-soft);}
+body:not(.ft-fit) .lesson-stage:not(:fullscreen) .slide-dot.active{background:var(--orange);}
+body:not(.ft-fit) .lesson-stage:not(:fullscreen) .slide-dot.locked{background:var(--line);opacity:.5;}
+body:not(.ft-fit) .lesson-stage:not(:fullscreen) .slide-counter{color:var(--ink-soft);}
+body:not(.ft-fit) .lesson-stage:not(:fullscreen) .topic-separator{color:var(--orange-deep) !important;border-color:rgba(181,101,31,.45) !important;}
 .lesson-stage .lesson-slide{max-height:min(64vh,720px);}
 .lesson-stage .topic-separator{background:transparent !important;color:#F0C08A !important;border:1px solid rgba(240,192,138,.45);font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;}
 .lesson-stage .lesson-slide > .card, .lesson-stage .lesson-slide .lesson-card{position:relative;background:rgba(255,253,248,.68) !important;border:none !important;border-radius:16px;box-shadow:none;overflow:hidden;}
@@ -2328,11 +2339,11 @@ em.warn{font-style:normal;color:var(--danger);}
 .lesson-stage .slide-counter{color:#C9CDE3;}
 .lesson-stage .slide-done-banner{margin-top:10px;}
 /* full screen */
-.lesson-stage:fullscreen{border-radius:0;padding:2.5vh 3vw;display:flex;flex-direction:column;overflow:hidden;}
+.lesson-stage:fullscreen{background:linear-gradient(135deg,#1F2440 0%,#2B3158 60%,#353C68 100%);border-radius:0;padding:2.5vh 3vw;display:flex;flex-direction:column;overflow:hidden;}
 .lesson-stage:fullscreen .lesson-slide{flex:1;max-height:none;overflow:auto;font-size:1.12em;}
 .lesson-stage:fullscreen .lesson-card{min-height:calc(100vh - 190px) !important;}
 .lesson-stage:fullscreen .slide-nav{position:static;background:none;}
-@media(max-width:760px){.lesson-stage{padding:12px 10px;border-radius:14px;} .ls-top .or-tip{display:none;}}
+@media(max-width:760px){.lesson-stage{padding:12px 10px;border-radius:14px;} body:not(.ft-fit) .lesson-stage:not(:fullscreen){padding:0;} .ls-top .or-tip{display:none;}}
 
 /* uniform page hero (matches the dashboard hero) */
 .page-hero{position:relative;overflow:hidden;border-radius:20px;padding:26px 32px 24px;margin:0 0 22px;
