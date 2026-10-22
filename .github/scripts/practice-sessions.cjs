@@ -59,68 +59,43 @@ const failures = []; const fail = (m) => failures.push(m);
     const gotFirm = await page.evaluate(() => { const f = FTFirms.myFirm(); return f ? f.name : null; });
     if (!gotFirm) fail('a trainee has no firm, with nothing to assign one');
 
-    // 3b. the LOR Drafting Activity: a standalone activity, the trainer assigns the case, the trainee drafts and downloads
-    await page.evaluate(() => goto('lor')); await page.waitForTimeout(1200);
-    const lor0 = await page.evaluate(() => document.querySelector('main').innerText);
-    if (!/Do not create a case file in the CMS/i.test(lor0.replace(/\s+/g, ' '))) fail('the LOR activity does not tell trainees to keep it out of the CMS');
-    if (!/assign|no case/i.test(lor0)) fail('with no case assigned the LOR activity should say so');
-    await put('lorassign:' + id, { case: 1 });
-    await page.evaluate(() => { FTLor.reload(); }); await page.waitForTimeout(1500);
-    const lor = await page.evaluate(() => {
-      const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-      document.querySelectorAll('.lorl-box').forEach(b => b.click());
-      return { fields: document.querySelectorAll('.lorl-in, .lorl-ta').length, boxes: document.querySelectorAll('.lorl-box').length,
-               ticked: document.querySelectorAll('.lorl-box.on').length, dateOk: (document.querySelector('.lorl-auto') || {}).textContent === today,
-               notes: document.querySelectorAll('.lor-notes dd').length, text: document.querySelector('main').innerText };
+    // 3b. LOR Drafting is the Portal's shared tool now (js/ft-lor.js). The drafting itself is tested
+    // there; what this course has to get right is that the card and the old #/lor route both open it,
+    // and that the link is signed so the trainee lands on it already logged in.
+    const DRAFTING = 'https://cm-training-activity.pages.dev/simulators/drafting.html';
+    const opener = await page.evaluate(() => {
+      // the Drafting Tools card, not the Practice Session cards that share the class
+      const card = [...document.querySelectorAll('.fts-card')].find(c => /LOR Drafting Activity/.test(c.innerText));
+      const btn = card && card.querySelector('.fts-tool-act button');
+      return { exists: typeof window.lshOpenPortalDrafting === 'function', found: !!card,
+               card: btn ? (btn.getAttribute('onclick') || '') : '' };
     });
-    if (!lor.fields) fail('the LOR letter has no fields to fill in');
-    if (lor.boxes !== 3 || lor.ticked !== 3) fail(`the 1P letter's tick boxes don't work (${lor.ticked} of ${lor.boxes} ticked)`);
-    if (!lor.dateOk) fail('the letter is not dated today');
-    if (!lor.notes) fail('the assigned case notes are not on the page');
-    if (!/Sandy Van, Esq\./.test(lor.text)) fail('the letter is not the firm\'s template');
-    // the file name: the trainers' convention filled in, editable, and what the PDF is actually saved as
-    const nm = await page.evaluate(() => {
-      const box = document.getElementById('lorFile');
-      return { val: box ? box.value : '', reset: !!(document.getElementById('lorFileReset') || {}).disabled,
-               help: (document.getElementById('lorFileHelp') || {}).textContent || '' };
-    });
-    const mmddyyyy = (d => [d.getMonth() + 1, d.getDate()].map(n => String(n).padStart(2, '0')).join('.') + '.' + d.getFullYear())(new Date());
-    if (!nm.val) fail('the LOR tool has no file-name box');
-    if (!/^INS – /.test(nm.val)) fail(`the file name does not follow the convention: ${nm.val}`);
-    if (nm.val.indexOf(mmddyyyy) < 0) fail(`the file name is not dated today (${mmddyyyy}): ${nm.val}`);
-    if (/mm\.dd\.yyyy|VA’s name|1P Insurance Provider/.test(nm.val)) fail(`the convention's tokens were not filled in: ${nm.val}`);
-    if (!nm.reset) fail('Reset to the convention should start disabled, with nothing edited yet');
-    if (nm.help.indexOf('mm.dd.yyyy') < 0) fail('the help line does not show the convention');
-    // edit it: the typed name is what the download uses, and it survives a reload
-    const edited = await page.evaluate(() => {
-      const box = document.getElementById('lorFile');
-      box.value = 'INS - My Own Name 01.02.2030'; box.dispatchEvent(new Event('input', { bubbles: true }));
-      return { reset: !!(document.getElementById('lorFileReset') || {}).disabled };
-    });
-    if (edited.reset) fail('Reset to the convention stays disabled after the name is edited');
-    await page.waitForTimeout(1400);
-    const saved = await get('lor:' + id);
-    if (!saved || !saved.letters || !saved.letters.lor1p || saved.letters.lor1p.file !== 'INS - My Own Name 01.02.2030') fail(`the edited file name wasn't saved: ${JSON.stringify(saved && saved.letters && saved.letters.lor1p)}`);
-    // the downloads come out under that name. Checked through the name the download layer is handed and
-    // through the Word download's own anchor: jsPDF comes off a CDN, so the PDF is not fetched here.
-    const dl = await page.evaluate(() => {
-      const names = [];
-      const click = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function () { if (this.download) names.push(this.download); };
-      try { FTLor.word('lor1p'); } finally { HTMLAnchorElement.prototype.click = click; }
-      return { handed: FTLor.fileName('lor1p'), names };
-    });
-    if (dl.handed !== 'INS - My Own Name 01.02.2030') fail(`the download is handed the wrong name: ${dl.handed}`);
-    if (dl.names[0] !== 'INS - My Own Name 01.02.2030.doc') fail(`the download was not named as edited: ${JSON.stringify(dl.names)}`);
-    // reset puts the convention back
-    await page.evaluate(() => FTLor.resetName('lor1p')); await page.waitForTimeout(300);
-    const back = await page.evaluate(() => (document.getElementById('lorFile') || {}).value || '');
-    if (!/^INS – /.test(back) || back.indexOf(mmddyyyy) < 0) fail(`Reset did not put the convention back: ${back}`);
+    if (!opener.found) fail('the Practice Lab has no LOR Drafting Activity card');
+    if (!opener.exists) fail('js/ft-lor.js does not expose the opener for the Portal\'s Drafting tool');
+    if (!/lshOpenPortalDrafting/.test(opener.card || '')) fail(`the Drafting Tools card does not open the Portal's tool: ${opener.card}`);
 
-    const lor3 = await page.evaluate(() => { FTLor.tab('lor3p'); return document.querySelector('main').innerText; });
-    if (!/AFFIDAVIT OF INSURANCE COVERAGE/.test(lor3)) fail('the 3P letter has no affidavit');
-    const nm3 = await page.evaluate(() => (document.getElementById('lorFile') || {}).value || '');
-    if (!/LOR with Affidavit/.test(nm3)) fail(`the 3P letter's file name is not its own convention: ${nm3}`);
+    // The route: #/lor hands the trainee to the Portal instead of drafting here, and leaves the
+    // dashboard behind it. The opener is stubbed so the test isn't navigated off the course.
+    const routed = await page.evaluate(() => {
+      const real = window.lshOpenPortalDrafting;
+      let called = 0;
+      window.lshOpenPortalDrafting = () => { called++; };
+      try { goto('lor'); } finally { window.lshOpenPortalDrafting = real; }
+      return { called, view: state.view };
+    });
+    if (!routed.called) fail('#/lor does not open the Portal\'s Drafting tool');
+    if (routed.view !== 'dashboard') fail(`#/lor should leave the dashboard behind it, not ${routed.view}`);
+
+    // The address it opens, signed: js/lsh-tool-links.js puts a ticket on any Portal /simulators/ link.
+    // js/lsh-tool-links.js signs a Portal /simulators/ link for a signed-in trainee only (an admin's
+    // ticket signs nobody in, and this page is in preview), so what matters here is that the address
+    // is recognised as a training tool at all — the signing itself is tested where it is done.
+    const signed = await page.evaluate((url) => {
+      if (typeof LSHToolLinks !== 'object' || !LSHToolLinks.isTool) return { skipped: true };
+      return { isTool: !!LSHToolLinks.isTool(url) };
+    }, DRAFTING);
+    if (!signed.skipped && !signed.isTool) fail('the Portal\'s Drafting page is not recognised as a training tool, so it would open signed out');
+    await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
 
     // 1. Admin → 🏛 Law Firms: the profiles, and nobody assigned to them
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'firms'; goto('admin'); }); await page.waitForTimeout(2500);
@@ -261,10 +236,21 @@ const failures = []; const fail = (m) => failures.push(m);
         if (tv.bar.indexOf(n) >= 0) fail(`Trainee view's top bar should not have ${n}: ${tv.bar}`);
     });
     // My Firm (js/ft-firms.js) is still reachable, just not from its own top bar button any more
-    for (const [view, what] of [['process', 'the Knowledge Check'], ['simulators', 'the Practice Lab'], ['firm', 'My Firm'], ['lor', 'the LOR Drafting Activity']]) {
+    for (const [view, what] of [['process', 'the Knowledge Check'], ['simulators', 'the Practice Lab'], ['firm', 'My Firm']]) {
         const got = await page.evaluate(async (v) => { goto(v); await new Promise(r => setTimeout(r, 1200)); return state.view; }, view);
         if (got !== view) fail(`Trainee view can't open ${what}: goto('${view}') landed on '${got}'`);
     }
+    // LOR Drafting is the Portal's shared tool, so 'lor' opens that rather than a view of its own
+    // here. The opener is stubbed so this test isn't navigated off the course.
+    const lorView = await page.evaluate(async () => {
+        const real = window.lshOpenPortalDrafting;
+        let called = 0;
+        window.lshOpenPortalDrafting = () => { called++; };
+        try { goto('lor'); await new Promise(r => setTimeout(r, 600)); } finally { window.lshOpenPortalDrafting = real; }
+        return { called, view: state.view };
+    });
+    if (!lorView.called) fail("Trainee view can't open the LOR Drafting Activity: it does not open the Portal's tool");
+    if (lorView.view !== 'dashboard') fail(`Trainee view: #/lor should leave the dashboard behind it, not '${lorView.view}'`);
     // Each module is its own Process Questions page now: goto('process') alone opens the index (a row per
     // module, no boxes yet), and opening one unlocked module (every module is unlocked in preview) shows
     // its own boxes to type in.
@@ -314,5 +300,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles, the trainer assigning the firm and cases in 🗂 Case Assignment, My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity with its editable naming convention, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
+    console.log('Practice Sessions test passed (firm profiles, the trainer assigning the firm and cases in 🗂 Case Assignment, My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity opening the Portal\'s shared tool, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });
