@@ -92,6 +92,20 @@ def roles(lo, hi):
             nt = text(B[k]).strip() if k < hi else ""
             if re.match(r"^(\d+\.\s*)?" + RELAY_V[2:-2] + r"\b", nt, re.I) or (re.search(RELAY_V, nt, re.I) and re.search(r"\bGC\b|group chat", nt, re.I)):
                 for m in range(j, k + 1): role[m - lo] = "trainer"
+                # What that line hands to the trainees ("… and provide this instruction:") is theirs, but only up to
+                # the next numbered note: from there the notes are the facilitator's again (Day 16's "2. Ensure the
+                # sequence of tasks is rearranged…", the LV Demo Tasks and the templates folder, "3. DM the LV Letter…").
+                m = k + 1
+                while m < hi and not re.match(r"^\s*\d+\.\s", text(B[m])) and not (B[m]["label"] and re.fullmatch(r"\d+\.", B[m]["label"] or "")):
+                    if is_fac(B[m]) or is_stars(B[m]) or is_boundary(B[m], False) or is_heading(B[m]): break
+                    m += 1
+                if m < hi and not (is_fac(B[m]) or is_stars(B[m]) or is_boundary(B[m], False) or is_heading(B[m])):
+                    while m < hi:
+                        nb = B[m]
+                        if is_fac(nb) or re.match(r"^\s*\*{3}\s*Free Communication", text(nb)) or re.search(r"Metrics\s*$", text(nb).strip()): break
+                        if is_stars(nb) or is_boundary(nb, False) or (is_heading(nb) and not is_fac(nb)): break
+                        role[m - lo] = "trainer"; m += 1
+                    i = m; continue
                 i = k + 1; continue
         if is_heading(b) and hlevel(b) == 1:          # a whole facilitator-only part (Day 18's reference for the demo)
             while j < hi and not (B[j]["k"] == "p" and B[j]["style"] == "Heading1" and text(B[j]).strip()):
