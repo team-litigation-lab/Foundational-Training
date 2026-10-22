@@ -25,6 +25,9 @@ for (let n = 1; n <= 16; n++) {
     if (/What is personal injury and what are its types/i.test(s.html)) fail(`Day ${n} ${s.id}: the PI reading task's questions on a slide`);
     if (/(^|>)\s*1[.)]\s+[^<]{25,}<br>\s*2[.)]\s/m.test(s.html)) fail(`Day ${n} ${s.id}: a numbered question list on a slide`);
     if (/class="facilitator|Answer Key|Correct Answer|Ideal Answer|Password|Username/i.test(s.html)) fail(`Day ${n} ${s.id}: facilitator-only content or log-in details`);
+    // A facilitator's instruction the guide doesn't label as one (Day 16's notes 2 and 3 came through after a "share … and
+    // provide this instruction" line): the demo task lists and the instructions about preparing them stay with the trainer.
+    if (/Demo Tasks|trainees(&#x27;|')? consumption|before posting them on SA|to each trainee before their turn/i.test(s.html)) fail(`Day ${n} ${s.id}: a facilitator's instruction or the demo tasks`);
   }
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }

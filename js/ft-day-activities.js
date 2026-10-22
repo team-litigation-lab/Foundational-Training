@@ -22,7 +22,8 @@
      at    where it is done:
              "session"  🟢 a Practice Session on 🛠 Practice Lab  (id = SESSIONS id, js/ft-sessions.js)
              "trainer"  🧑‍🏫 With your trainer, the trainer records it (id = DEFAULT_ACTS id)
-             "tool"     a platform tool  (id: "lor" = 🧰 LOR Drafting Activity, "skills" = 🧪 Skill Building,
+             "tool"     a platform tool  (id: "lor" = 🧰 LOR Drafting Activity, "medlor" / "lienbv" = the same tool
+                        on the MedLOR + HIPAA packet / the Lien Balance Verification, "skills" = 🧪 Skill Building,
                         "process" = ✍️ Process Questions, "calsim" = 📅 Google Calendar Simulator,
                         "callsim" = ☎ Call Simulator on LSH Ring Channel)
              "drive"    uploaded to the trainee's Assessments/Activities folder
@@ -146,6 +147,7 @@ const DAYS = [
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: Sending the MedLOR (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Demo and Shadowing (the session logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
+    {t:"Drafting: the MedLOR with Unsworn COR and the client’s signed HIPAA, merged into one PDF (practice before the demo)", kind:"Activity", at:"tool", id:"medlor"},
     {t:"🏷 Naming & Reporting Drill: MedLOR (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"Sending MedLOR and Requesting Medical Bills & Records Demo", kind:"Demo", at:"trainer", id:"medlor-demo"},
     {t:"Medical Records: MedLOR and Request for Bills & Records (practice before the demo)", kind:"Session", at:"session", id:"records"},
@@ -159,6 +161,7 @@ const DAYS = [
   {day:16, role:"Provider Communication Training", lessons:[8], items:[
     {t:"📘 Process Guide: The Lien Balance Verification request (built from the tutorial, before the demo)", kind:"Activity", at:"tool", id:"guide"},
     {t:"Demo and Shadowing (the session logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
+    {t:"Drafting: the Lien Balance Verification request letter (practice before the demo)", kind:"Activity", at:"tool", id:"lienbv"},
     {t:"🏷 Naming & Reporting Drill: Lien Balance Verification (file names, Notes/Tasks entries, subject lines)", kind:"Activity", at:"tool", id:"drills"},
     {t:"LV (Lien Verification) Request Demo", kind:"Demo", at:"trainer", id:"lv-demo"},
     {t:"Demo Metrics (how the demo is scored)", kind:"Activity", at:"gc"}
