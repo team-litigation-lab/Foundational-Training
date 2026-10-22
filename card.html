@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Title Card Generator · LSH Foundational Training</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Same non-blocking font pattern as index.html: fetched as "print", switched to all on load. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all';this.onload=null">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+<style>
+:root{
+  /* Global typography: Inter first, then the native OS stack, so the UI renders sharp with
+     no font download when Inter is unavailable. The same token on every LSH page. */
+  --font-ui:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --bg:#EEF0F6;--ink:#1B1E2E;--navy:#262B45;--navy-deep:#161829;--orange:#DB8437;--orange-deep:#B5651F;
+  --paper:#FFFFFF;--line:#DCE0EA;--muted:#2B2F3E;
+  /* The ribbon grey. The card brief calls for a slate tertiary; #3C4268 (--navy-soft) reads as
+     navy-on-navy against the banner, so the ribbons use a grey-blue that still separates from it. */
+  --slate:#5C626C;
+  --grad-navy:linear-gradient(135deg,#333A5E 0%,#262B45 52%,#1A1E33 100%);
+  --grad-page:linear-gradient(160deg,#F5F7FC 0%,#EEF0F6 45%,#E3E7F2 100%);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:var(--grad-page);color:var(--ink);font:16px/1.5 var(--font-ui);position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:url("/img/bg-flag-law.webp") center/cover no-repeat;opacity:.2;pointer-events:none}
+header{background:var(--navy);background-image:var(--grad-navy);color:#fff;display:flex;align-items:center;gap:12px;padding:10px 16px;position:sticky;top:0;z-index:5}
+header img{height:46px;width:auto;border-radius:6px;display:block}
+header b{font-size:16px;font-weight:800;letter-spacing:.075em;text-transform:uppercase}
+header a.back{margin-left:auto;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:6px 12px;font-size:14px}
+header a.back:hover{background:rgba(255,255,255,.12)}
+main{max-width:1000px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:14px}
+/* The card itself: a fixed 16:9 stage. The SVG scales with it, so what you see is what exports. */
+.stage{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px;box-shadow:0 1px 2px rgba(22,24,41,.04),0 8px 24px -12px rgba(22,24,41,.18)}
+.stage .frame{aspect-ratio:16/9;width:100%;max-width:100%;overflow:hidden;border-radius:4px}
+.stage svg{display:block;width:100%;height:100%}
+.panel{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:12px;margin-top:14px}
+@media (max-width:620px){.panel{grid-template-columns:minmax(0,1fr)}}
+label{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+input,select{font:inherit;font-size:15px;font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--orange-deep);outline-offset:1px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button{font:inherit;font-size:14px;font-weight:700;cursor:pointer;border-radius:10px;padding:9px 14px;border:1px solid var(--navy);background:var(--navy);background-image:var(--grad-navy);color:#fff}
+button.ghost{background:var(--paper);background-image:none;color:var(--navy);border-color:var(--line)}
+button:hover{filter:brightness(1.08)}
+.status{font-size:13px;color:var(--muted);min-height:1.4em}
+.disc{color:var(--muted);font-size:13px;margin:18px 0 8px}
+</style>
+</head>
+<body>
+<header>
+  <img src="/js/lsh-logo-dark.png" alt="Legal Support Help">
+  <b>Title Card Generator</b>
+  <a class="back" href="/">← Program Home</a>
+</header>
+<main>
+  <h1>Module title cards</h1>
+  <p class="sub">The standard 16:9 opening card for a training day or deck: navy banner, interlocking slate and orange ribbons, LSH monogram. Set the text, then download the PNG and drop it on the first slide.</p>
+
+  <div class="stage">
+    <div class="frame">
+      <!-- The card. Geometry is fixed at 1600x900 so every export is pixel-identical; only the
+           two text nodes change. Ribbons use multiply so the crossings darken like folded paper. -->
+      <svg id="card" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="cardAlt">
+        <title id="cardAlt">Title card</title>
+        <defs>
+          <!-- Woven paper tooth on the cream canvas. Cheap, and it survives the PNG export. -->
+          <filter id="weave" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9 0.42" numOctaves="3" seed="7" result="n"/>
+            <feColorMatrix in="n" type="saturate" values="0"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.085" intercept="0"/></feComponentTransfer>
+          </filter>
+          <clipPath id="frameClip"><rect width="1600" height="900"/></clipPath>
+        </defs>
+        <g clip-path="url(#frameClip)">
+          <rect width="1600" height="900" fill="#F1EFE9"/>
+          <rect width="1600" height="900" filter="url(#weave)" opacity="0.9"/>
+
+          <!-- 1. Slate angular base, entering from the left. -->
+          <g style="mix-blend-mode:multiply">
+            <path d="M0 236 L452 180 L560 404 L96 470 Z" fill="#5C626C" opacity="0.92"/>
+            <path d="M96 470 L560 404 L512 520 L48 586 Z" fill="#4E545E" opacity="0.88"/>
+            <path d="M0 586 L512 520 L636 744 L0 826 Z" fill="#6B717B" opacity="0.5"/>
+          </g>
+
+          <!-- 2. LSH orange ribbon crossing vertically, with translucent folds. -->
+          <g style="mix-blend-mode:multiply">
+            <path d="M688 0 L904 0 L1012 900 L796 900 Z" fill="#DB8437" opacity="0.95"/>
+            <path d="M904 0 L1004 0 L1112 900 L1012 900 Z" fill="#B5651F" opacity="0.72"/>
+            <path d="M688 0 L904 0 L868 196 L652 164 Z" fill="#F0C08A" opacity="0.55"/>
+            <path d="M760 612 L1050 660 L1012 900 L796 900 Z" fill="#C06E22" opacity="0.42"/>
+          </g>
+
+          <!-- 3. Slate ribbon return, folding back over the orange. -->
+          <g style="mix-blend-mode:multiply">
+            <path d="M1600 170 L1600 300 L820 452 L792 318 Z" fill="#5C626C" opacity="0.86"/>
+            <path d="M1600 300 L1600 356 L826 508 L820 452 Z" fill="#474D57" opacity="0.6"/>
+            <path d="M1286 560 L1600 614 L1600 760 L1232 690 Z" fill="#6B717B" opacity="0.55"/>
+          </g>
+
+          <!-- The banner. Navy #262B45, orange hairline above, slate hairline below. -->
+          <rect x="0" y="374" width="1600" height="176" fill="#262B45"/>
+          <rect x="0" y="374" width="1600" height="5" fill="#DB8437"/>
+          <rect x="0" y="545" width="1600" height="5" fill="#5C626C" opacity="0.75"/>
+
+          <text id="cardTitle" x="108" y="479" fill="#FFFFFF" font-family="Inter, Helvetica Neue, Arial, sans-serif"
+                font-size="92" font-weight="800" letter-spacing="2" dominant-baseline="middle">FOUNDATIONAL TRAINING</text>
+
+          <!-- Monogram badge, pinned to the right end of the banner. -->
+          <rect x="1372" y="356" width="150" height="212" fill="#262B45"/>
+          <rect x="1372" y="356" width="150" height="212" fill="none" stroke="#DB8437" stroke-width="9"/>
+          <text id="cardMono" x="1447" y="468" fill="#FFFFFF" font-family="Inter, Helvetica Neue, Arial, sans-serif"
+                font-size="76" font-weight="700" letter-spacing="3" text-anchor="middle" dominant-baseline="middle">LSH</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="panel">
+      <label for="titleInput">Card text
+        <input id="titleInput" type="text" value="FOUNDATIONAL TRAINING" maxlength="52" autocomplete="off" spellcheck="false">
+      </label>
+      <label for="monoInput">Monogram
+        <input id="monoInput" type="text" value="LSH" maxlength="3" autocomplete="off" spellcheck="false">
+      </label>
+    </div>
+
+    <div class="panel">
+      <label for="presetSel">Start from a training day
+        <select id="presetSel"><option value="">— pick a day or card —</option></select>
+      </label>
+      <label for="scaleSel">Export size
+        <select id="scaleSel">
+          <option value="1">1600 × 900</option>
+          <option value="2" selected>3200 × 1800</option>
+          <option value="3">4800 × 2700</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="row">
+      <button type="button" id="png">Download PNG</button>
+      <button type="button" id="svg" class="ghost">Download SVG</button>
+      <span class="status" id="status" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <p class="disc">The headline scales itself down as the text gets longer so it always clears the monogram badge. The PNG export embeds Inter, so the downloaded card matches what you see here even on a machine without the font.</p>
+</main>
+
+<script>
+// The 18 training days, as they are headed in the curriculum, plus the standing cards a deck needs.
+var PRESETS = [
+  "FOUNDATIONAL TRAINING","WELCOME","THANK YOU!",
+  "DAY 1: VA ESSENTIALS","DAY 2: VA ESSENTIALS",
+  "DAY 3: RECEPTION TRAINING","DAY 4: RECEPTION TRAINING","DAY 5: RECEPTION TRAINING",
+  "DAY 6: CALENDAR MANAGEMENT","DAY 7: INTAKE TRAINING","DAY 8: INTAKE TRAINING","DAY 9: INTAKE TRAINING",
+  "DAY 10: INSURANCE COMMUNICATION","DAY 11: INSURANCE COMMUNICATION","DAY 12: INSURANCE COMMUNICATION",
+  "DAY 13: PROVIDER COMMUNICATION","DAY 14: PROVIDER COMMUNICATION","DAY 15: PROVIDER COMMUNICATION",
+  "DAY 16: PROVIDER COMMUNICATION","DAY 17: LIEN NEGOTIATOR TRAINING","DAY 18: LIEN NEGOTIATOR TRAINING"
+];
+
+var card = document.getElementById('card');
+var titleEl = document.getElementById('cardTitle');
+var monoEl = document.getElementById('cardMono');
+var altEl = document.getElementById('cardAlt');
+var titleInput = document.getElementById('titleInput');
+var monoInput = document.getElementById('monoInput');
+var presetSel = document.getElementById('presetSel');
+var scaleSel = document.getElementById('scaleSel');
+var statusEl = document.getElementById('status');
+// The banner's text column: from the left margin to the badge, less a little breathing room.
+var MAX_TEXT_WIDTH = 1372 - 108 - 48;
+
+PRESETS.forEach(function(p){
+  var o = document.createElement('option'); o.value = p; o.textContent = p; presetSel.appendChild(o);
+});
+
+// Shrink the headline until it fits the column. 92px is the designed size; 34px is the floor.
+function fitTitle(){
+  var size = 92;
+  titleEl.setAttribute('font-size', size);
+  for (var i = 0; i < 30; i++){
+    var w = titleEl.getComputedTextLength ? titleEl.getComputedTextLength() : 0;
+    if (!w || w <= MAX_TEXT_WIDTH || size <= 34) break;
+    size = Math.max(34, size - 3);
+    titleEl.setAttribute('font-size', size);
+  }
+}
+
+function sync(){
+  var t = (titleInput.value || ' ').toUpperCase();
+  var m = (monoInput.value || ' ').toUpperCase();
+  titleEl.textContent = t;
+  monoEl.textContent = m;
+  altEl.textContent = t + ' — LSH title card';
+  fitTitle();
+}
+
+titleInput.addEventListener('input', sync);
+monoInput.addEventListener('input', sync);
+presetSel.addEventListener('change', function(){
+  if (!presetSel.value) return;
+  titleInput.value = presetSel.value;
+  sync();
+});
+
+function say(msg){ statusEl.textContent = msg || ''; }
+
+function saveBlob(blob, name){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+
+function fileName(ext){
+  var base = (titleInput.value || 'title-card').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return 'lsh-card-' + (base || 'title-card') + '.' + ext;
+}
+
+// An SVG drawn into a canvas does NOT see the page's webfonts, so the headline would fall back to
+// Arial in the export. Fetching the two Inter faces and inlining them as data URIs is what keeps
+// the downloaded card identical to the preview. If the fetch fails we still export, in the fallback face.
+var fontCss = null;
+function interCss(){
+  if (fontCss !== null) return Promise.resolve(fontCss);
+  var sheet = 'https://fonts.googleapis.com/css2?family=Inter:wght@700;800&display=swap';
+  return fetch(sheet).then(function(r){ return r.text(); }).then(function(css){
+    var urls = (css.match(/https:\/\/fonts\.gstatic\.com[^)]+\.woff2/g) || []).slice(0, 6);
+    return Promise.all(urls.map(function(u){
+      return fetch(u).then(function(r){ return r.blob(); }).then(function(b){
+        return new Promise(function(res){
+          var fr = new FileReader();
+          fr.onload = function(){ res({ url: u, data: fr.result }); };
+          fr.readAsDataURL(b);
+        });
+      });
+    })).then(function(faces){
+      faces.forEach(function(f){ css = css.split(f.url).join(f.data); });
+      fontCss = css;
+      return css;
+    });
+  }).catch(function(){ fontCss = ''; return ''; });
+}
+
+function serialize(css){
+  var clone = card.cloneNode(true);
+  clone.setAttribute('width', '1600');
+  clone.setAttribute('height', '900');
+  if (css){
+    var style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = css;
+    clone.insertBefore(style, clone.firstChild);
+  }
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone);
+}
+
+document.getElementById('svg').addEventListener('click', function(){
+  say('Building SVG…');
+  interCss().then(function(css){
+    saveBlob(new Blob([serialize(css)], {type:'image/svg+xml'}), fileName('svg'));
+    say('SVG downloaded.');
+  });
+});
+
+document.getElementById('png').addEventListener('click', function(){
+  var scale = parseInt(scaleSel.value, 10) || 2;
+  say('Rendering PNG…');
+  interCss().then(function(css){
+    var blob = new Blob([serialize(css)], {type:'image/svg+xml;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var img = new Image();
+    img.onload = function(){
+      var cv = document.createElement('canvas');
+      cv.width = 1600 * scale; cv.height = 900 * scale;
+      var ctx = cv.getContext('2d');
+      ctx.drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      cv.toBlob(function(b){
+        if (!b){ say('The browser could not render the PNG. Download the SVG instead.'); return; }
+        saveBlob(b, fileName('png'));
+        say('PNG downloaded (' + cv.width + ' × ' + cv.height + ').');
+      }, 'image/png');
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); say('The browser could not render the PNG. Download the SVG instead.'); };
+    img.src = url;
+  });
+});
+
+// Re-fit once Inter has actually arrived, so the measured width is the real one.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
+sync();
+</script>
+</body>
+</html>
