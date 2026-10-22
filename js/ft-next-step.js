@@ -32,6 +32,8 @@ const WHERE = {
   session: {go: id => `FTSessions.open('${id}')`, note: "🛠 Practice Lab"},
   tool: {
     lor:     {go: () => "goto('lor')",           note: "🧰 Drafting Tools"},
+    medlor:  {go: () => "lshOpenPortalDrafting('medlor')", note: "🧰 Drafting Tools · MedLOR + HIPAA"},
+    lienbv:  {go: () => "lshOpenPortalDrafting('lienbv')", note: "🧰 Drafting Tools · Lien BV"},
     skills:  {go: () => "ftsGotoSkills()",       note: "🧪 Skill Building"},
     process: {go: () => "goto('process')",       note: "✍️ Process Questions"},
     calsim:  {go: () => "goto('simulators')",    note: "📅 Google Calendar Simulator"},
