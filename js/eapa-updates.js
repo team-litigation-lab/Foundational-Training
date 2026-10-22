@@ -397,10 +397,15 @@ function fitSlideFrame(wrap){
   // line and the lesson page never scrolls; on a narrow or short window, which scrolls as it
   // always did, it is the window's.
   const page = stage.closest("main");
-  const floor = (page && document.body.classList.contains("one-screen"))
-    ? page.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(page).paddingBottom) || 0)
-    : window.innerHeight;
-  wrap.style.height = Math.max(320, Math.floor(floor - (r.top + window.scrollY) - below - 12)) + "px";
+  if(page && document.body.classList.contains("one-screen")){
+    // All measured from the top of the window, so the height can't depend on how far the page body
+    // happens to be scrolled — window.scrollY is the body's scrollTop here, and mixing it in made
+    // the slide a different size from one slide to the next.
+    const floor = page.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(page).paddingBottom) || 0);
+    wrap.style.height = Math.max(320, Math.floor(floor - r.top - below - 12)) + "px";
+  } else {
+    wrap.style.height = Math.max(320, Math.floor(window.innerHeight - (r.top + window.scrollY) - below - 12)) + "px";
+  }
 }
 function slideZoomParts(wrap){ return [...wrap.children].filter(n=>!n.classList.contains("pg-badge")); }
 function fitSlideZoom(wrap){
