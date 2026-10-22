@@ -110,3 +110,45 @@ const native = Object.getOwnPropertyDescriptor(Window.prototype, "scrollY");
   // each slide is drawn into the same page, so re-measure when the app replaces it
   new MutationObserver(soon).observe(document.getElementById("app") || document.body, {childList:true, subtree:true});
 })();
+
+/* ---------- The dashboard, squeezed only when it would otherwise scroll ----------
+   The day cards, the stats band and the competency profile are meant to be one screen. On a
+   shorter window a course whose dashboard is a little too tall for them would scroll inside the
+   page body; this takes the padding back until it fits, and does nothing at all where the
+   dashboard already fits (a course that tunes its own dashboard, as EA-PA-TRAINING does, is
+   measured the same way and simply never gets the class). Measured, not guessed, so it can't
+   squeeze a dashboard that doesn't need it. */
+(function(){
+  const s = document.createElement("style"); s.id = "lsh-dash-squeeze"; s.textContent = `
+body.one-screen.dash-squeeze #app > main{padding-bottom:12px;}
+body.one-screen.dash-squeeze .dash-top{padding-top:10px !important;padding-bottom:6px !important;margin-bottom:6px !important;}
+body.one-screen.dash-squeeze .dash-main .module-card .module-head{padding:6px 10px 5px !important;}
+body.one-screen.dash-squeeze .dash-main .module-card .module-body{padding:2px 16px 0 !important;}
+body.one-screen.dash-squeeze .dash-main .module-card .module-start-btn{padding:7px 10px !important;}
+body.one-screen.dash-squeeze .dash-main .module-grid{gap:9px !important;}
+body.one-screen.dash-squeeze .dash-main .comp-strip{margin-top:7px;padding:8px 16px 9px;}
+body.one-screen.dash-squeeze .dash-main .comp-strip-head{margin-bottom:5px;}
+body.one-screen.dash-squeeze .dash-main .comp-cell-top{min-height:0;font-size:11.2px;line-height:1.25;}
+body.one-screen.dash-squeeze .dash-main .comp-track{height:5px;margin-top:4px;}
+body.one-screen.dash-squeeze .dash-main .bottom-actions{margin-top:7px;}
+`;
+  document.head.appendChild(s);
+
+  let pending = 0;
+  function measure(){
+    pending = 0;
+    const page = document.querySelector("#app > main");
+    const on = document.body.classList.contains("one-screen") && page && page.querySelector(".dash-main");
+    if(!on){ document.body.classList.remove("dash-squeeze"); return; }
+    // measure without the class, so it comes off again as soon as the room is there
+    document.body.classList.remove("dash-squeeze");
+    if(page.scrollHeight > page.clientHeight + 1) document.body.classList.add("dash-squeeze");
+  }
+  function soon(){ if(!pending) pending = requestAnimationFrame(measure); }
+
+  addEventListener("resize", soon);
+  addEventListener("load", soon);
+  document.addEventListener("DOMContentLoaded", soon);
+  new MutationObserver(soon).observe(document.getElementById("app") || document.body, {childList:true, subtree:true});
+})();
+
