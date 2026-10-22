@@ -633,9 +633,13 @@ const PORTAL_DRAFTING = "https://cm-training-activity.pages.dev/simulators/draft
 
 // On window: the card's onclick is an inline attribute, which is read in global scope, not in this
 // file's closure.
-window.lshOpenPortalDrafting = function(){
-  if(typeof LSHToolLinks === "object" && LSHToolLinks.ticketed) LSHToolLinks.ticketed(PORTAL_DRAFTING).then(function(u){ location.href = u; });
-  else location.href = PORTAL_DRAFTING;
+// The tool opens on the letter asked for: none = the LORs; "medlor" = the MedLOR with Unsworn COR and the
+// client's signed HIPAA, merged into one PDF (Day 14); "lienbv" = the Lien Balance Verification (Day 16).
+const PORTAL_LETTER = {medlor: "?tab=prov&kind=medlor", lienbv: "?tab=prov&kind=lienbv"};
+window.lshOpenPortalDrafting = function(letter){
+  const url = PORTAL_DRAFTING + (PORTAL_LETTER[letter] || "");
+  if(typeof LSHToolLinks === "object" && LSHToolLinks.ticketed) LSHToolLinks.ticketed(url).then(function(u){ location.href = u; });
+  else location.href = url;
 };
 
 /* ---------- wiring into the engine ---------- */
@@ -661,13 +665,18 @@ window.ftLorCard = function(){
   const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
     : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
   const dayT = window.FTDays ? FTDays.label(FTDays.forTool("lor")) : "";
+  const medT = window.FTDays ? FTDays.label(FTDays.forTool("medlor")) : "", lvT = window.FTDays ? FTDays.label(FTDays.forTool("lienbv")) : "";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 LOR Drafting Activity</h3>
-    <p class="fts-note">Fill in the firm’s own template on the page and download the finished letter as a <b>Word file</b>, named by the trainers’ convention. It opens on the Training Portal, and what you download is the firm’s own document with your answers written into it — letterhead and logo included — so you can upload it into the Smart Advocate demo as it is: nothing here becomes a CMS case file.</p>
+    <p class="fts-note">Fill in the firm’s own template on the page — drawn the way Word has it, letterhead and all — and download the finished letter as a <b>Word file</b>, named by the trainers’ convention. The MedLOR goes out as the firm sends it: one PDF with the client’s signed HIPAA in front. It opens on the Training Portal, and what you download is the firm’s own document with your answers written into it, so you can upload it into the Smart Advocate demo as it is: nothing here becomes a CMS case file.</p>
     ${note ? `<p class="fss-case">${note}</p>` : ""}
     <div class="fts-label">Templates in this tool</div>
-    <ul class="fts-tpl">${TEMPLATES.map(t => `<li>${e(String(t.title).replace(/^Activity \d+:\s*/, ""))}</li>`).join("")}</ul>
-    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="lshOpenPortalDrafting()">Open the tool &rarr;</button>`
+    <ul class="fts-tpl">${TEMPLATES.map(t => `<li>${e(String(t.title).replace(/^Activity \d+:\s*/, ""))}</li>`).join("")}
+      <li>MedLOR with Unsworn COR + the client’s signed HIPAA, merged into one PDF${medT ? ` (${e(medT)})` : ""}</li>
+      <li>Lien Balance Verification${lvT ? ` (${e(lvT)})` : ""}</li></ul>
+    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="lshOpenPortalDrafting()">Open the tool &rarr;</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="lshOpenPortalDrafting('medlor')">MedLOR + HIPAA</button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="lshOpenPortalDrafting('lienbv')">Lien BV</button>`
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
 };
 
