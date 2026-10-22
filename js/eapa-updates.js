@@ -392,7 +392,20 @@ function fitSlideFrame(wrap){
     window.__fitBarRO = new ResizeObserver(()=>{ const h = bar.offsetHeight; if(h !== h0){ h0 = h; if(state.view==="day" && document.getElementById("lessonSlideWrap")) paginateLessonSlide(); } });   // before the next paint: no jump
     window.__fitBarRO.observe(bar);
   }
-  wrap.style.height = Math.max(320, Math.floor(window.innerHeight - (r.top + window.scrollY) - below - 12)) + "px";
+  // Where the slide has to end. On a window the whole page fits on (js/lsh-one-screen.js) that is
+  // the bottom of the page's body, so the slide and its Previous / Next bar stay above the footer
+  // line and the lesson page never scrolls; on a narrow or short window, which scrolls as it
+  // always did, it is the window's.
+  const page = stage.closest("main");
+  if(page && document.body.classList.contains("one-screen")){
+    // All measured from the top of the window, so the height can't depend on how far the page body
+    // happens to be scrolled — window.scrollY is the body's scrollTop here, and mixing it in made
+    // the slide a different size from one slide to the next.
+    const floor = page.getBoundingClientRect().bottom - (parseFloat(getComputedStyle(page).paddingBottom) || 0);
+    wrap.style.height = Math.max(320, Math.floor(floor - r.top - below - 12)) + "px";
+  } else {
+    wrap.style.height = Math.max(320, Math.floor(window.innerHeight - (r.top + window.scrollY) - below - 12)) + "px";
+  }
 }
 function slideZoomParts(wrap){ return [...wrap.children].filter(n=>!n.classList.contains("pg-badge")); }
 function fitSlideZoom(wrap){

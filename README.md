@@ -1,5 +1,7 @@
 # LSH Standard Foundational Training
 
+**🖥 One screen fits all, no scrolling.** The window never scrolls: the top bar and the footer line keep their place, the page's body takes the height left between them, and a page with more in it than fits scrolls inside that body. A lesson's slide is sized to the room the page has left, so the slide and its Previous / Next bar stay above the footer line. Phones and tiny windows (under 1001 x 480) keep the ordinary page scroll. It's `js/lsh-one-screen.js`, loaded last, the same file in every LSH course repo; change it in all of them. (Everyone already lands on the modules screen here — `js/portal-gate.js` — which is the same rule.)
+
 The training platform for the *Revised 18-Day Foundational Training Program* (Training Guide for LSH Trainees). It runs on the same engine as the EA/PA portal and the CM course:
 
 - sign-in and approvals
