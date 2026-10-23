@@ -979,6 +979,9 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck{flex:0 0 auto;border-radius:0 !important;margin:0 !important;padding:5px 9px !important;font-size:12px !important;font-weight:700;background:#FFF4E8 !important;color:#B5651F !important;border:none !important;border-left:1px solid #9CA3B8 !important;min-height:0 !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck:hover{background:#FBE3CB !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opacity:.5;cursor:not-allowed;}
+/* ▶ Resume where you left off, on its own: the lesson's name after it was cut off in the narrow tile ("Virtu…"),
+   so this program shows the plain button (the shared js/lsh-program.js still writes the name for the other courses) */
+main.main-dash .resume-btn > span{display:none !important;}
 /* 📚 THE EIGHT INTRO CARDS, ON ONE SCREEN: four across, two down. */
 main.main-dash .module-grid:has(> .ftli){grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-template-rows:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:12px 14px !important;}
 @media(max-width:1000px){ main.main-dash .module-grid:has(> .ftli){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-template-rows:none !important;grid-auto-rows:auto !important;} }
