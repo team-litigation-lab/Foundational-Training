@@ -24,12 +24,25 @@
 (function(){
 const SHIFT = "8:00 AM – 5:00 PM PST";
 
+// The camera: how you show up on it, in every meeting (the orientation's Camera slide).
+const CAMERA = [
+  {h:"🙂 Demeanor", rows:["Be at your desk and ready when the meeting starts, facing the camera.",
+    "Look at the screen and stay attentive: no eating, no phone, no side tasks while you’re on camera.",
+    "Stay muted when you’re not speaking, and keep your surroundings quiet."]},
+  {h:"👔 Outfit", rows:["Dress as you would for the office: business casual.",
+    "A collared shirt, a blouse or a plain, neat top.",
+    "No sleepwear, tank tops, caps, or clothes with large prints, logos or slogans."]},
+  {h:"🖼 Framing", rows:["Your camera at eye level, your head and shoulders in the middle of the frame.",
+    "Light in front of you, not behind you, so your face is clearly seen.",
+    "A plain, tidy background, or a professional virtual background."]}
+];
+
 // Auxes: where and what to type in Discord.
 const AUX_CHANNELS = [
   {ch:"#⏳-timestamps", what:"The LSH BOT channel. Type the command for your status. LSH BOT replies with a notification: check it, so your log is recorded properly.",
    rows:[["Logging In", "!in"], ["Lunch Break", "!brb - lunch"], ["Logging Out", "!out"],
          ["Power Outage", "!brb - power outage"], ["Internet Outage", "!brb - internet outage"]], bot:true},
-  {ch:"#batch-group-channel", what:"Your batch’s channel. Post the same update here, at the same time, when you start your Hubstaff.",
+  {ch:"#training-channel", what:"Your batch’s channel. Post the same update here, at the same time, when you start your Hubstaff.",
    rows:[["Logging In", "in"], ["Lunch Break", "brb - lunch"], ["Logging Out", "out"],
          ["Power Outage", "brb - power outage"], ["Internet Outage", "brb - internet outage"]]}
 ];
@@ -288,7 +301,8 @@ const SLIDES = [
   // Camera, then Discord
   ["camera", "Camera: On in Every Meeting", ()=>
     `<div class="ftr-goal"><b>📷 Your Camera Is Part of Showing Up</b><p>Training is a simulation of working with a client, and your trainers are your first clients: in every meeting and classroom discussion, they see you.</p></div>` +
-    rule("📷 Cameras On, Always", "Keep your camera on during every meeting. It tests and gauges your internet speed and connectivity.")],
+    rule("📷 Cameras On, Always", "Keep your camera on during every meeting. It tests and gauges your internet speed and connectivity.") +
+    `<div class="ftr-grid ftr-cam">${CAMERA.map(c=>`<div class="ftr-part"><div class="ftr-part-h">${c.h}</div><ul class="ftr-list">${c.rows.map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>`).join("")}</div>`],
   ["communication", "Discord: Mindfulness and Response Rates", ()=>
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
@@ -296,7 +310,7 @@ const SLIDES = [
   // The 4 daily deliverables: the tests, the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show each one.</p>
-    <div class="ftr-lessons">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
+    <div class="ftr-lessons ftr-two">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
       ["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
@@ -391,6 +405,10 @@ function fitOrient(w){
   const over = ()=>card.scrollHeight > card.clientHeight + 2;
   let z = 1;
   while(over() && z > 0.5){ z = Math.round((z - 0.05) * 100) / 100; body.style.zoom = String(z); }
+  // a short slide is drawn bigger, so its cards fill the sheet instead of sitting small in the middle of it
+  if(z === 1 && !over()){
+    while(z < 1.5){ const up = Math.round((z + 0.05) * 100) / 100; body.style.zoom = String(up); if(over()){ body.style.zoom = String(z); break; } z = up; }
+  }
   if(over()){ body.style.zoom = ""; return false; }
   state.slidePages = 1; state.slidePage = 0;
   if(typeof updateSlidePageUi === "function") updateSlidePageUi();
@@ -533,6 +551,10 @@ body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
 body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
+body.ft-orient #lessonSlideWrap .ftr-lessons.ftr-two{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin-top:4px;}
+body.ft-orient #lessonSlideWrap .ftr-cam .ftr-part{padding:12px 14px;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:minmax(0,1fr) !important;} }
 body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
 /* in the middle of the sheet: narrower boxes and short rows of cards are centered */
 body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *){margin-left:auto !important;margin-right:auto !important;}

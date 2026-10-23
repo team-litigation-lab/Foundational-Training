@@ -87,8 +87,8 @@ function startAuto(){ stopAuto(); DD.auto = true; DD.timer = setInterval(() => {
 function stopAuto(){ clearInterval(DD.timer); DD.timer = null; if(DD.auto){ DD.auto = false; if(state.view === "daydeck") render(); } }
 function pickDay(n){ n = Number(n); if(!dayOpen(n)) return; DD.day = n; DD.i = 0; DD.page = 0; DD.pages = 1; if(instructionOnlyDays().includes(n)) loadExtras(); render(); }
 
-window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["daydeck"]);
-window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {daydeck: "Day deck"});
+window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["daydeck", "knowtools"]);
+window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {daydeck: "Day deck", knowtools: "Know Your Tools"});
 
 /* ---------- executed like the original LSH decks (as the Case Management course's Case Flow): a navy slide with the
    LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
@@ -547,8 +547,56 @@ function paintPageMark(){
 }
 root.addEventListener("resize", () => { if(state.view !== "daydeck") return; clearTimeout(fitT); fitT = setTimeout(() => { DD.page = 0; fitSheets(); }, 120); });
 
+/* 🧰 Know Your Tools has a card of its own on 📚 Dashboard, beside the 📌 Setting of Training Expectations card, and
+   its own page (#/knowtools), drawn like a deck slide: the tools on the left, the picked one's screenshot, purpose,
+   place and features (toolsSlide below). */
+function toolsCard(){
+  return `<div class="module-card mc-open mc-clean ftkt-card" id="module-tools">
+    <div class="module-head"><div class="mh-day">🧰 Before Day 1</div><div class="mh-title">Know Your Tools</div></div>
+    <div class="module-body"></div>
+    <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">Start</button></div></div>`;
+}
+// one of the pinned cards (window.FT_TOOLS_PIN, listed by js/ft-program.js after the orientation): the dashboard
+// draws a pinned card with moduleCard(), which draws this one as its own card
+root.FT_TOOLS_PIN = {id: "knowtools", ftTools: true, title: "Know Your Tools"};
+const __moduleCard = root.moduleCard;
+root.moduleCard = function(d){ return d && d.ftTools ? toolsCard() : __moduleCard.apply(this, arguments); };
+function renderToolsPage(){
+  const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
+  return `<div class="ftdd-stage">
+    <div class="ftdd-mid"><a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>
+      <div class="ftdd-slides"><div class="ftdd-deck" data-slide="0">
+        <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Know Your Tools</h1>
+          <span class="ftdd-prog" title="Tool ${k + 1} of ${n}"><span style="width:${((k + 1) / n * 100).toFixed(1)}%"></span></span></div>
+        <div class="ftdd-ribbon"><span>The tools you’ll use in this training</span></div>
+        <div class="ftdd-bar"><span class="ftdd-pill">🧰 Know your tools</span><span class="ftdd-n">Tool ${k + 1} of ${n}</span></div>
+        <div class="ftdd-sheet ftdd-body ft-body">${toolsSlide()}</div>
+      </div></div>
+      <div class="ftdd-nav">
+        <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
+        <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
+        ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
+          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`}
+      </div>
+    </div>
+    <aside class="ftdd-rail ftdd-rail-r">
+      <p class="ftdd-rail-kick">Before Day 1</p>
+      <h2 class="ftdd-rail-title">Know Your Tools</h2>
+      <p class="ftdd-rail-h">Start here</p>
+      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('day', 12)">📌 Setting of Training Expectations</button>
+      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTDayDecks.open(1)">📋 Day 1 Activity Deck</button>
+    </aside>
+  </div>`;
+}
 const __render = root.render;
 root.render = function(){
+  if(state.view === "knowtools"){
+    if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
+    document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ftdd">${renderToolsPage()}</main>` + renderFooter();
+    try{ afterRender(); }catch(err){}
+    fitSheets(); requestAnimationFrame(() => { if(state.view === "knowtools") fitSheets(); });
+    return;
+  }
   if(state.view !== "daydeck"){ if(DD.auto) stopAuto(); return __render.apply(this, arguments); }
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
@@ -613,11 +661,9 @@ const LESSON_CARDS = {
   1: {days: [1], focus: "VA Essentials & Software Setup",
     rows: [
       {t: "Setting of Expectations", time: "8:00–9:00 AM", k: "classroom", go: "lesson"},
-      {t: "Know Your Tools", sub: "The CMS and the platform’s tools: what each is for, and its features", k: "classroom", d: 1, s: "tools"},
       {t: "Typing & Spelling Tests", time: "8:00–8:10 AM", sub: "Typing twice daily (AM and before shift end) · spelling once", k: "read", go: "skills"},
       {t: "Hubstaff To-Do Set-up", sub: "Daily requirement · [Session Type + Day]: [Program] – [Module Day]", k: "read", go: "shadowing"},
-      {t: "Client Identification Exercise", k: "interactive", d: 1, s: "client-id"},
-      {t: "Training Monitoring Sheet Setup", k: "read", d: 1, s: "monitoring"}],
+      {t: "Client Identification Exercise", k: "interactive", d: 1, s: "client-id"}],
     outside: ["Personal Injury (PI) reading task"],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
       "Set your Hubstaff To-Dos daily from the template before the session starts", "Time limit: 45 mins max · Evaluation: Monitoring sheet entry checked at the end of the session"],
@@ -742,7 +788,7 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
-   carries its Classroom Activity card (▶ Live session opens the lesson, Classroom the offline activity, and the
+   carries its Classroom Activity card (▶ Start Training opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
    focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
 function dayCard(n, ex){
@@ -765,7 +811,7 @@ function dayCard(n, ex){
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
       <div class="ftlc-acts">
-        <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶ Live session" : "🔒 Not open yet"}</button>
+        <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶ Start Training" : "🔒 Not open yet"}</button>
         <button type="button" class="ftlc-tag" onclick="${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">Classroom</button>
       </div>
     </header>
@@ -787,7 +833,7 @@ function dayCard(n, ex){
 /* 📚 THE DASHBOARD: EIGHT INTRO CARDS ON ONE SCREEN. Each is the portal's own lesson card (moduleCard: the
    frame, the gradient, the title and the lesson's icon), and its buttons run in the order the session does:
    ① 📋 the days card fills the top row (the day deck, which opens on the full Classroom Activity card), then
-   ② ▶ Live discussion (the lesson deck), its 🎬 video and ③ 🏠 Classroom (the offline activity) share the row under it. */
+   ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
   const open_ = lessonOpen(l.id), title = lessonTitle(l.id), off = offlineRow(c), n = c.days[0];
@@ -800,14 +846,16 @@ function introCard(l, cur, ex, tags){
   const grid = card.querySelector(".mc-grid"); if(!grid) return card.outerHTML;
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
-  if(vid){ vid.title = vid.disabled ? "Your trainer unlocks this video" : "▶ Video Presentation"; vid.textContent = vid.disabled ? "🔒 Video" : "🎬 Video"; }
+  // (locked: 🔒 Request asks the trainer for it; ⏳ Requested until they approve it — js/ft-updates.js)
+  if(vid){ const ask = vid.classList.contains("ft-video-ask"), wait = vid.classList.contains("ft-video-pending");
+    vid.textContent = ask ? "🔒 Request Video" : wait ? "⏳ Requested" : vid.disabled ? "🔒 Video" : "🎬 Video"; }
   const acts = cardRows(c, ex).length;
-  // the lesson's icon opens its day card (the day deck); ▶ Live discussion fills the top row
+  // the lesson's icon opens its day card (the day deck); ▶ Start Training fills the top row
   const body = card.querySelector(".module-body");
   if(body){ body.id = `dayd-${n}`; body.classList.add("ftli-days"); body.setAttribute("role", "button"); body.tabIndex = 0;
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
-  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶" : "🔒"} Live discussion</button>
+  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶" : "🔒"} Start Training</button>
     ${vid ? vid.outerHTML : ""}
     <button type="button" class="btn btn-ghost btn-sm module-finish-btn ftli-class" onclick="event.stopPropagation(); ${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">🏠 Classroom</button>`;
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
@@ -1044,7 +1092,7 @@ root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = 
   // 🗺 Map: the training roadmap
   map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
-  tool(i){ DD.tool = Number(i) || 0; render(); },
+  tool(i){ DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
   tools: () => TOOLS.map(t => t.name),
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
@@ -1446,6 +1494,9 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 /* the pinned 📌 Setting of Training Expectations and Company Policies card: Start only, no ☰ Topics / ✓ Finish Training
    row (it is always open and isn't counted as a lesson, so there is nothing to finish; its slides list their topics) */
 main.main-dash .dash-pair-pin .module-card .mc-grid > .module-finish-btn{display:none !important;}
+/* 🧰 Know Your Tools beside it, the same card */
+main.main-dash .dash-pair-pin:has(.ftkt-card){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch;}
+main.main-dash .dash-pair-pin .ftkt-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 @media(min-width:1001px){
   main.main-dash:has(.ftdd-daycell) .dash-pair{margin-bottom:8px !important;gap:8px !important;}

@@ -57,7 +57,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
-  // the session's order (▶ Live discussion on top, then 🎬 Video and 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
+  // the session's order (▶ Start Training on top, then 🎬 Video and 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
@@ -69,7 +69,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    if (c.steps.join('|') !== 'Live discussion|Video|Classroom') fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
+    if (c.steps[0] !== 'Start Training' || !/^(Video|Request Video|Requested)$/.test(c.steps[1] || '') || c.steps[2] !== 'Classroom' || c.steps.length !== 3) fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
@@ -86,7 +86,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 6 || card.pills !== 6 || !card.focus || !card.file)
+  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 4 || card.pills !== 4 || !card.focus || !card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
@@ -103,12 +103,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Client Identification")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
   if (row.view !== 'daydeck' || !/Client Identification/.test(row.h)) fail(`the Client Identification row opened ${JSON.stringify(row)}`);
-  // 🧰 Know Your Tools: Day 1's second slide, opened by its own row on the card; every tool shows its real screenshot,
-  // what it is for, where it is and its features, and the slide fits its sheet whichever tool is picked
-  await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
-  await page.click('.ftdd-lcslide .ftlc-row:has-text("Know Your Tools")'); await page.waitForTimeout(1200);
-  const kt = await page.evaluate(() => ({ i: FTDayDecks.state().i, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
-  if (kt.i !== 1 || !/Know Your Tools/.test(kt.h) || kt.tabs !== 10) fail(`the Know Your Tools row didn't open Day 1's second slide with its ten tools: ${JSON.stringify(kt)}`);
+  // 🧰 Know Your Tools: its own card on 📚 Dashboard, beside the 📌 Setting of Training Expectations card, opening its own
+  // page (#/knowtools); every tool shows its real screenshot, what it is for, where it is and its features, and the
+  // page fits its sheet whichever tool is picked. Day 1's deck has neither it nor the Monitoring Sheet set-up any more.
+  const d1 = await page.evaluate(() => FT_DAY_DECKS[1].slides.map(x => x.id));
+  if (d1.includes('tools') || d1.includes('monitoring')) fail(`Day 1's deck still has Know Your Tools or the Monitoring Sheet set-up: ${d1.join(', ')}`);
+  await page.evaluate(() => goto('modules')); await page.waitForTimeout(900);
+  const pins = await page.evaluate(() => [...document.querySelectorAll('main .dash-pair-pin .module-card .mh-title')].map(x => x.innerText.trim()));
+  if (pins.length !== 2 || !/Setting of Training Expectations/.test(pins[0]) || pins[1] !== 'Know Your Tools') fail(`the pinned cards are ${JSON.stringify(pins)}`);
+  await page.click('.ftkt-card .module-start-btn'); await page.waitForTimeout(1200);
+  const kt = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-dtitle') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
+  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 10) fail(`the Know Your Tools card didn't open its page with ten tools: ${JSON.stringify(kt)}`);
   for (let t = 0; t < 10; t++) {
     await page.evaluate(t => FTDayDecks.tool(t), t); await page.waitForTimeout(300);
     const tool = await page.evaluate(async () => { const img = document.querySelector('.ftdd-tool-shot img');
