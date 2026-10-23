@@ -31,7 +31,7 @@ const CAMERA = [
     "Stay muted when you’re not speaking, and keep your surroundings quiet."]},
   {h:"👔 Outfit", rows:["Dress as you would for the office: business casual.",
     "A collared shirt, a blouse or a plain, neat top.",
-    "No sleepwear, tank tops, caps, or clothes with large prints, logos or slogans."]},
+    "No sleepwear, sleeveless tops, tank tops, caps, or clothes with large prints, logos or slogans."]},
   {h:"🖼 Framing", rows:["Your camera at eye level, your head and shoulders in the middle of the frame.",
     "Light in front of you, not behind you, so your face is clearly seen.",
     "A plain, tidy background, or a professional virtual background."]}
@@ -255,7 +255,7 @@ const SLIDES = [
       <span class="ftr-todo-n">${n}</span>
       <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
       <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
-    return `<div class="ftr-todos-all">
+    return `<div class="ftr-todos-all" data-ftr-max="1">
     <div class="ftr-todos-top"><p class="ftr-sub">Named exactly as below. Click 📋 Copy, then in the Hubstaff app click your training project, paste it in <b>Create a to-do</b> and press Enter. Click the button inside that to-do, at its left, to track your time on it. Or copy them all at once.</p>
       <button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
     <div class="ftr-todo-parts">${parts.map((list, k)=>`<div class="ftr-part ftr-todos">
@@ -394,8 +394,10 @@ function fitOrient(w){
   let z = 1;
   while(over() && z > 0.5){ z = Math.round((z - 0.05) * 100) / 100; body.style.zoom = String(z); }
   // a short slide is drawn bigger, so its cards fill the sheet instead of sitting small in the middle of it
+  // (a slide can cap it with data-ftr-max: the To-Dos keep their small type)
+  const maxEl = body.querySelector("[data-ftr-max]"), maxZ = maxEl ? (parseFloat(maxEl.dataset.ftrMax) || 1) : 1.6;
   if(z === 1 && !over()){
-    while(z < 1.6){ const up = Math.round((z + 0.05) * 100) / 100; body.style.zoom = String(up); if(over()){ body.style.zoom = String(z); break; } z = up; }
+    while(z < maxZ){ const up = Math.round((z + 0.05) * 100) / 100; body.style.zoom = String(up); if(over()){ body.style.zoom = String(z); break; } z = up; }
   }
   if(over()){ body.style.zoom = ""; return false; }
   state.slidePages = 1; state.slidePage = 0;
@@ -544,7 +546,9 @@ body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
 body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
 /* bigger type on the sheet: the boxes, rules, lists and cards all at 18px, their headings at 21px (a slide too long for
    its sheet is still scaled down to fit, by fitOrient) */
-body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-goal p, .ftr-stakes p, .ftr-rule span, .ftr-lesson span, .ftr-list, .ftr-list li, .ftr-part ol, .ftr-part li, .ftr-def, .ftr-when, .ftr-aux, .ftr-todo-tx, .ftr-tip, .ftr-chan p){font-size:18px !important;line-height:1.45 !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-goal p, .ftr-stakes p, .ftr-rule span, .ftr-lesson span, .ftr-list, .ftr-list li, .ftr-part ol, .ftr-part li, .ftr-def, .ftr-when, .ftr-aux, .ftr-tip, .ftr-chan p){font-size:18px !important;line-height:1.45 !important;}
+/* the 16 To-Dos stay smaller, one line each */
+body.ft-orient #lessonSlideWrap .ftr-todo-parts .ftr-todo-tx{font-size:14.5px !important;line-height:1.3 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ftr-lesson b, .ftr-part-h, .ftr-chan-h){font-size:21px !important;}
 /* the content takes the sheet's whole width (no narrow column in the middle of it) */
 body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-stakes p, .ftr-habit){max-width:none !important;}
