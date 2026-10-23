@@ -209,7 +209,35 @@ function figNote(){
     ${arrow("M540 296C590 296 625 288 632 270", m)}${callout(380, 280, 160, ["③ Click Add Note"])}
   </svg>`;
 }
-const FIGS = {note: figNote};
+// The to-do list: click the training project, paste the to-do in Create a to-do and click +, then the button inside it.
+function figTodo(){
+  const m = "ftrArrowTodo", sel = 2;
+  const rows = [["Classroom Discussion: Reception Training Day 1", "09/25/2026 07:58 AM"],
+                ["Classroom Discussion: Reception Training Day 2", "09/28/2026 07:57 AM"],
+                ["Classroom Discussion: Reception Training Day 3", "09/29/2026 07:59 AM"]];
+  const projects = [["LSH - CHECK-IN", "0:00"], ["LSH - FILLER", "0:00"], ["LSH - SUPPORT (Training Jr)", "7:33"]];
+  return `<svg viewBox="0 0 760 420" role="img" aria-label="The Hubstaff app: click your training project, paste your to-do in Create a to-do and click +, then click the button inside today’s to-do to track time on it.">
+    ${hsWindow(760, 420, m)}
+    <rect x="2" y="226" width="247" height="30" fill="#dfe2ea"/><text x="14" y="246" font-size="13.5" font-weight="700" fill="#1B1E2E">Legal Support Help</text>
+    ${projects.map((p,i)=>{ const y = 256 + i*34, on = i===2;
+      return `${on ? `<rect x="2" y="${y}" width="247" height="34" fill="${HB}"/><circle cx="18" cy="${y+17}" r="7" fill="#fff"/><rect x="15" y="${y+14}" width="6" height="6" rx="1" fill="${HB}"/>` : `<path d="M2 ${y+34}H249" stroke="#b4bac6"/>`}
+        <text x="34" y="${y+22}" font-size="12.5" font-weight="${on ? 700 : 400}" fill="${on ? "#fff" : "#1B1E2E"}">${p[0]}</text><text x="238" y="${y+22}" text-anchor="end" font-size="12.5" fill="${on ? "#fff" : "#1B1E2E"}">${p[1]}</text>`; }).join("")}
+    <text x="266" y="52" font-size="18" font-weight="700" fill="#111">To-dos</text><text x="266" y="69" font-size="12" fill="#3d4357">LSH - SUPPORT (Training Jr)</text>
+    <rect x="266" y="106" width="456" height="26" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><text x="274" y="124" font-size="13" fill="#1B1E2E">Create a to-do</text>
+    <rect x="262" y="102" width="464" height="34" rx="5" fill="none" stroke="${OR}" stroke-width="2.5" stroke-dasharray="6 3"/>
+    <rect x="730" y="107" width="22" height="24" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><text x="741" y="125" text-anchor="middle" font-size="17" font-weight="700" fill="#111">+</text>
+    <rect x="725" y="102" width="32" height="34" rx="6" fill="none" stroke="${OR}" stroke-width="3"/>
+    <text x="292" y="158" font-size="11" font-weight="700" fill="#3d4357">TO-DO</text><text x="590" y="158" font-size="11" font-weight="700" fill="#3d4357">CREATED</text>
+    <path d="M251 168H759" stroke="#9aa0ab" stroke-width="1.5"/>
+    ${rows.map((r,i)=>{ const y = 168 + i*38, on = i===sel;
+      return `${on ? `<rect x="251" y="${y}" width="507" height="38" fill="${HB}"/><circle cx="272" cy="${y+19}" r="8" fill="#fff"/><rect x="268.5" y="${y+15.5}" width="7" height="7" rx="1" fill="${HB}"/><circle cx="272" cy="${y+19}" r="14" fill="none" stroke="${OR}" stroke-width="3.5"/>` : `<path d="M251 ${y+38}H759" stroke="#b4bac6"/>`}
+        <text x="292" y="${y+24}" font-size="12.5" font-weight="${on ? 700 : 400}" fill="${on ? "#fff" : "#1B1E2E"}">${r[0]}</text><text x="590" y="${y+24}" font-size="12.5" fill="${on ? "#fff" : "#1B1E2E"}">${r[1]}</text>`; }).join("")}
+    ${arrow("M125 382V362", m)}${callout(28, 380, 196, ["① Click Your Project"])}
+    ${arrow("M741 86V100", m)}${callout(470, 34, 280, ["② Paste It in Create a To-Do", "Then click + (or press Enter)."])}
+    ${arrow("M330 330C292 322 274 306 272 290", m)}${callout(318, 322, 432, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
+  </svg>`;
+}
+const FIGS = {note: figNote, todo: figTodo};
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
@@ -241,7 +269,8 @@ const SLIDES = [
   // Hubstaff: how-tos and why they matter, the To-Dos, notes and lost hours
   ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>{
     // this lesson's Hubstaff slides (a click goes to the slide) and the LSH VA Guide, then any added lessons
-    const here = [["todos", "Your Hubstaff To-Dos", "The names to use, with 📋 Copy and 📋 Copy All, and how to add them."],
+    const here = [["todo-how", "Add Your Hubstaff To-Dos", "How to add today’s To-Do in the Hubstaff app."],
+                  ["todos", "Your Hubstaff To-Dos", "The names to use, with 📋 Copy and 📋 Copy All."],
                   ["notes", "Create Notes in Hubstaff", "Add a work note to the time you’re tracking."],
                   ["time-adjustment", "Lost Hours", "The Manual Time Adjustment Request."]];
     const at = id=>ORIENT.sections.findIndex(x=>x.id===id);
@@ -250,6 +279,17 @@ const SLIDES = [
     <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
       <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
       ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
+  // how to add a to-do: the steps beside the Hubstaff picture (the To-Dos to copy are on the next slide)
+  ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`<div class="ftr-notes ftr-notes-wide"><div class="ftr-parts"><div class="ftr-part">
+      <div class="ftr-part-h">Add Today’s To-Do</div>
+      <ol>
+        <li>Click <b>📋 Copy</b> next to the session you’re in (next slide).</li>
+        <li>In the Hubstaff app, click your training project.</li>
+        <li>Click in <b>Create a to-do</b>, paste it (Ctrl+V), then click <b>+</b> or press Enter.</li>
+        <li>Click the button inside that to-do, at its left, to track your time on it.</li>
+      </ol>
+      <p class="ftr-tip">More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p></div></div>
+    ${fig(FIGS.todo())}</div>`],
   ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>{
     // two parts side by side (1–10, 11–19); 📋 Copy All puts every To-Do on the clipboard, one per line
     const half = Math.ceil(TODOS.length / 2), parts = [TODOS.slice(0, half), TODOS.slice(half)];
@@ -564,6 +604,7 @@ body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
 /* How to Create Notes: the steps beside a big Hubstaff picture, framed in navy so it stands out on the white sheet */
 body.ft-orient #lessonSlideWrap .ftr-notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-parts{gap:10px;}
+body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}

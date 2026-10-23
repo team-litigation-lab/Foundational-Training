@@ -107,7 +107,7 @@ function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
-  if(s.id === "tools") return {ic: "🧰", label: "Know your tools"};
+  if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
@@ -586,7 +586,7 @@ function renderToolsPage(){
         <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Know Your Tools</h1>
           <span class="ftdd-prog" title="Tool ${k + 1} of ${n}"><span style="width:${((k + 1) / n * 100).toFixed(1)}%"></span></span></div>
         <div class="ftdd-ribbon"><span>The tools you’ll use in this training</span></div>
-        <div class="ftdd-bar"><span class="ftdd-pill">🧰 Know your tools</span><span class="ftdd-n">Tool ${k + 1} of ${n}</span></div>
+        <div class="ftdd-bar"><span class="ftdd-pill">🧰 Know Your Tools</span><span class="ftdd-n">Tool ${k + 1} of ${n}</span></div>
         <div class="ftdd-sheet ftdd-body ft-body">${toolsSlide()}</div>
       </div></div>
       <div class="ftdd-nav">
@@ -1525,12 +1525,12 @@ main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
-   Tools): a round close button, top right. The words stay in the link for screen readers. */
+   Tools): a round close button, top right, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
 body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;
-  display:inline-flex !important;align-items:center;justify-content:center;align-self:flex-end;border-radius:50%;background:#fff;border:1px solid rgba(30,35,64,.18);
-  box-shadow:0 2px 8px rgba(30,35,64,.18);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
-body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:700 17px/1 'Inter',sans-serif;color:#1E2340;}
-body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;border-color:#E8590C;}
+  display:inline-flex !important;align-items:center;justify-content:center;align-self:flex-end;border-radius:50%;background:#1E2340;border:2px solid #fff;
+  box-shadow:0 0 0 2px #1E2340, 0 4px 12px rgba(30,35,64,.45);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:800 18px/1 'Inter',sans-serif;color:#fff;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;box-shadow:0 0 0 2px #E8590C, 0 4px 12px rgba(30,35,64,.45);}
 body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mid > a.back-link:hover::before{color:#fff;}
 /* the top row on the lesson grid's columns: each pinned card one lesson card wide, the scores panel the other two,
    with the grid's own 14px gap */
