@@ -248,6 +248,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
 
+  // ✍️ Process Questions and 🎮 Knowledge Games on the days the guide runs the questions, and only there
+  const pqDays = [];
+  for (let d = 1; d <= 16; d++) {
+    await page.evaluate(d => FTDayDecks.open(d, 0), d); await page.waitForTimeout(400);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-lcslide .ftlc-pqbox .ftlc-games'))) pqDays.push(d);
+  }
+  if (pqDays.join() !== '1,2,3,5,7,10,13') fail(`the Process Questions and Knowledge Games show on days ${pqDays.join(', ')}, not 1, 2, 3, 5, 7, 10 and 13`);
+  await page.evaluate(() => FTDayDecks.open(1, 0)); await page.waitForTimeout(600);
+  await page.click('.ftdd-lcslide .ftlc-games'); await page.waitForTimeout(800);
+  if (await page.evaluate(() => state.view) !== 'kcgames') fail('🎮 Review with the Knowledge Games doesn\'t open the games');
+
   await put('settings:dayextras', extrasBefore || { days: {} });
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
