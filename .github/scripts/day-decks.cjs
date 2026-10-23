@@ -86,7 +86,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || !card.file)
+  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 6 || card.pills !== 6 || !card.focus || !card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
@@ -103,6 +103,24 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Client Identification")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
   if (row.view !== 'daydeck' || !/Client Identification/.test(row.h)) fail(`the Client Identification row opened ${JSON.stringify(row)}`);
+  // 🧰 Know Your Tools: Day 1's second slide, opened by its own row on the card; every tool shows its real screenshot,
+  // what it is for, where it is and its features, and the slide fits its sheet whichever tool is picked
+  await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
+  await page.click('.ftdd-lcslide .ftlc-row:has-text("Know Your Tools")'); await page.waitForTimeout(1200);
+  const kt = await page.evaluate(() => ({ i: FTDayDecks.state().i, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
+  if (kt.i !== 1 || !/Know Your Tools/.test(kt.h) || kt.tabs !== 10) fail(`the Know Your Tools row didn't open Day 1's second slide with its ten tools: ${JSON.stringify(kt)}`);
+  for (let t = 0; t < 10; t++) {
+    await page.evaluate(t => FTDayDecks.tool(t), t); await page.waitForTimeout(300);
+    const tool = await page.evaluate(async () => { const img = document.querySelector('.ftdd-tool-shot img');
+      if (img && !img.complete) await new Promise(r => { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 3000); });
+      const sh = document.querySelector('.ftdd-mid .ftdd-sheet');
+      return { name: (document.querySelector('.ftdd-tool-txt h3') || {}).textContent || '', shot: !!(img && img.naturalWidth), what: !!document.querySelector('.ftdd-tool-what'),
+        where: !!document.querySelector('.ftdd-tool-where'), feats: document.querySelectorAll('.ftdd-tool-txt li').length, open: !!document.querySelector('.ftdd-tool-acts .btn-navy'),
+        on: (document.querySelector('.ftdd-tools-tab.on') || {}).title || '', over: sh ? sh.scrollHeight - sh.clientHeight : -1 }; });
+    if (!tool.shot || !tool.what || !tool.where || tool.feats < 3 || (!tool.open && t > 0)) fail(`Know Your Tools, tool ${t + 1}, is missing its screenshot, purpose, place, features or Open button: ${JSON.stringify(tool)}`);
+    if (!tool.on || tool.name.indexOf(tool.on) < 0) fail(`Know Your Tools: the picked tab isn't the tool shown: ${JSON.stringify(tool)}`);
+    if (tool.over > 4) fail(`Know Your Tools, ${tool.name}: the slide runs over its sheet by ${tool.over}px`);
+  }
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(1500);
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
