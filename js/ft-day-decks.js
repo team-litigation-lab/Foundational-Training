@@ -1443,6 +1443,10 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 
 /* THE TOP BAND, SMALLER. The orientation card and the score tiles take the room the sixteen days need, so on
    the day grid they run at two thirds the height: a shorter Start, smaller numbers, tighter padding. */
+/* the pinned 📌 Setting of Training Expectations and Company Policies card: Start only, no ☰ Topics / ✓ Finish Training
+   row (it is always open and isn't counted as a lesson, so there is nothing to finish; its slides list their topics) */
+main.main-dash .dash-pair-pin .module-card .mc-grid > .module-finish-btn{display:none !important;}
+main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 @media(min-width:1001px){
   main.main-dash:has(.ftdd-daycell) .dash-pair{margin-bottom:8px !important;gap:8px !important;}
   main.main-dash:has(.ftdd-daycell) .dash-pair-pin .module-card .module-head{padding:5px 10px !important;}

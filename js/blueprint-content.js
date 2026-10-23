@@ -21,12 +21,12 @@ window.LSH_BLUEPRINT = {
         where: 'The program opens from the LSH Training Portal; 📚 Dashboard is where you land.',
         tip: 'Your progress saves to your account, not to the computer you used \u2014 you can pick up on any machine.' },
       { icon: '🗺', title: 'Your roadmap', points: [
-          '📌 Training Orientation and Rules comes first. It is always open, and it is not one of the 18 lessons.',
+          '📌 Setting of Training Expectations and Company Policies comes first. It is always open, and it is not one of the 18 lessons.',
           'Then Lessons 1 to 18, in order, each with its training deck and its Knowledge Check.',
           'Your trainer opens each lesson for your batch; a 🔒 lesson opens when it is time.',
           'Every lesson you have finished stays on 📚 Dashboard \u2014 press Review to go back to it any time.'],
         where: '📚 Dashboard \u2014 the lessons, in order, with your progress above them.',
-        tip: 'Open 📌 Training Orientation and Rules before Lesson 1: every rule and routine is in it.' },
+        tip: 'Open 📌 Setting of Training Expectations and Company Policies before Lesson 1: every rule and routine is in it.' },
       { icon: '🖥', title: 'How every lesson works', points: [
           '1. Lesson slides: the training deck, full width. ⛶ Full screen any time; your place is saved.',
           '2. Video Presentation: the lesson\'s AI Assisted Discussion video, 🔒 until your trainer unlocks it.',
@@ -63,7 +63,7 @@ window.LSH_BLUEPRINT = {
           'EOD email before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day\'s tasks.',
           'Auxes and Hubstaff: !in and !back in #⏳-timestamps, In in #batch-group-channel. Your Hubstaff To-Dos are named exactly as given.'],
         where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your VA Output folder in Drive.',
-        tip: 'Every rule and routine is written out in 📌 Training Orientation and Rules, first on 📚 Dashboard.' },
+        tip: 'Every rule and routine is written out in 📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.' },
       { icon: '🛠', title: 'Practice Lab: the real tasks', points: [
           'Your firm: your trainer assigns your law firm and your cases. Learn its rules \u2014 every session is checked against them.',
           'Practice Sessions: reception, calendaring, intake, the PI process, claims and ChartSwap records requests, done live in the CMS, recorded and submitted.',
@@ -82,7 +82,7 @@ window.LSH_BLUEPRINT = {
           'Finish all 18 lessons and your Certificate of Completion unlocks \u2014 download it as a PDF from 📚 Dashboard.',
           'It shows your name exactly as you registered it, so check your spelling.',
           '📚 Dashboard counts your finished lessons as you go.',
-          '📌 Training Orientation and Rules is where you start. It is always open, and it is not one of the 18 lessons.'],
+          '📌 Setting of Training Expectations and Company Policies is where you start. It is always open, and it is not one of the 18 lessons.'],
         where: '📚 Dashboard \u2014 the certificate sits beside Resume.',
         tip: 'Name spelt wrong? Tell your trainer before the end of the program, not after the certificate is issued.' },
       { icon: '🔒', title: 'Ground rules', points: [
@@ -91,11 +91,11 @@ window.LSH_BLUEPRINT = {
           'The 5-minute rule: reply within 5 minutes, and acknowledge every Discord message from your trainer.',
           'On time: Hubstaff tracks 8:00 AM \u2013 5:00 PM PST. Breaks are 15 \u2013 30 \u2013 15, or one full hour.',
           'Naming conventions, strictly: To-Dos, screenshots and files exactly as given.'],
-        where: '📌 Training Orientation and Rules, first on 📚 Dashboard.',
+        where: '📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.',
         tip: 'When a rule and a shortcut disagree, follow the rule and raise it with your trainer \u2014 spotting the clash is the job.' },
       { icon: '🚀', title: "Let's begin", points: [
           '1. Sign in: last name, first name(s) and your batch code. Your trainer approves your registration.',
-          '2. Open 📌 Training Orientation and Rules: the rules and your daily routine.',
+          '2. Open 📌 Setting of Training Expectations and Company Policies: the rules and your daily routine.',
           '3. Open Lesson 1 from 📚 Dashboard and press Start.',
           'Questions before we start?'],
         where: 'The LSH Training Portal → this program → 📚 Dashboard.',
@@ -127,7 +127,7 @@ window.LSH_BLUEPRINT = {
       { icon: '📅', title: 'Open Lessons', points: [
           'Lessons open when you open them: tick the lessons that are open.',
           'Open them for All batches, or for one batch only.',
-          'Trainees only ever see the open lessons. 📌 Training Orientation and Rules is always open.',
+          'Trainees only ever see the open lessons. 📌 Setting of Training Expectations and Company Policies is always open.',
           'The batch\'s latest open lesson is also its training of the day in Attendance.'],
         where: 'Admin → 📅 Open Lessons.',
         tip: 'Open the next lesson at the start of its session, not the night before.',

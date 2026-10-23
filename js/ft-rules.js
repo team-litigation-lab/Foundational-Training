@@ -1,5 +1,5 @@
 /* ============================================================
-   Training Orientation and Rules — a slide lesson of its own, beside
+   Setting of Training Expectations and Company Policies — a slide lesson of its own, beside
    Virtual Assistant Essentials (first in the lessons row).
    Loaded after js/ft-tracker.js. Each part below is one slide; the trainer can run
    it in Presenter view and the slides window like the other lessons.
@@ -444,7 +444,7 @@ function keepLead(html){
   return t.innerHTML;
 }
 const ORIENT_ID = 12;   // not used by any lesson (1–9, and 10–11 in build/lessons/off/)
-const ORIENT = {id:ORIENT_ID, title:"Training Orientation and Rules", heading:"Training Orientation and Rules", label:"Orientation", short:"📌",
+const ORIENT = {id:ORIENT_ID, title:"Setting of Training Expectations and Company Policies", heading:"Setting of Training Expectations and Company Policies", label:"Orientation", short:"📌",
   sections: SLIDES.map(([id, h, fn])=>({id, h, get html(){ return keepLead(`<div class="ftr-slide">${fn()}</div>`); }})),
   quiz:[], quickChecks:[]};
 ORIENT.lessons = ORIENT.sections.map(x=>({h:x.h}));

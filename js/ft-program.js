@@ -58,7 +58,7 @@ window.LSH_PROGRAM = {
   // No 📁 Client Profile button in the top bar — My Firm (js/ft-firms.js) is still reachable from the
   // Practice Lab (labViews below), just not as its own top-level nav item.
   caseProfile: null,
-  pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Training Orientation and Rules, before Lesson 1
+  pinned: () => window.FT_ORIENTATION ? [window.FT_ORIENTATION] : [],   // 📌 Setting of Training Expectations and Company Policies, before Lesson 1
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
   labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
