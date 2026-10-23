@@ -622,6 +622,12 @@ function renderFtOpenDays(){
 /* 🎬 A lesson's AI discussion video: the trainee asks for access (🔒 Request Video on the lesson card: videoreq:<id>,
    their own record), and the trainer approves it for them in Admin → 📅 Open Lessons → 🎬 Unlock Videos
    (videoaccess:<id>, which only admins write). Unlocking a video for a whole batch still works as before. */
+// The lesson's video if it's open to this trainee, else the request (or a note that it's already asked for).
+window.ftVideoOrAsk = function(id){
+  if(ftVideoUnlocked(id)) return ftOpenVideo(id);
+  if((state.ftVideoReq || {})[String(id)]){ toast("⏳ You asked for this video. It opens once your trainer approves it."); return; }
+  return ftRequestVideo(id);
+};
 window.ftRequestVideo = async function(id){
   if(!state.traineeId || state.isAdmin || state.adminPreview){ toast("Trainees ask for a video from their own lesson card."); return; }
   if(!confirm(`Ask your trainer for access to the AI discussion video of ${ftName(id)}?`)) return;

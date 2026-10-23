@@ -12,8 +12,8 @@
      • The parts, in the order the trainers run the orientation: 👋 Welcome to LSH!; Hubstaff (how-tos and why they
        matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
        Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
-       deliverables (an overview, then the typing and spelling tests, the Daily Task Tracker part by part with its filled-in
-       sample, the 📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), the Training Monitoring Sheet embedded, and the EOD email with
+       deliverables (an overview, the Daily Task Tracker part by part, the Training Monitoring Sheet embedded with the
+       📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), and the EOD email with
        its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
        Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
        training GC, with its own file, questions and naming convention, and it is scored on the Weekly Ranking.
@@ -97,9 +97,6 @@ const TRACKER_PARTS = {
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
 };
 
-// Day 0 → Onboarding Orientation: the LSH Daily Task Tracker's "Sample updated trackers".
-const TRACKER_SAMPLE = {view:"https://drive.google.com/file/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/view",
-  open:"https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516"};
 // Day 0 → Onboarding Orientation.
 const DISCORD_STATUS = {format:"LSH | [your team] | [time zone] [work days] [shift] RD [rest days]", example:"LSH | Support | EST Mon-Fri 8AM-5PM RD Sat-Sun", note:"RD = rest days."};
 const TIME_ADJ = {
@@ -172,26 +169,26 @@ function arrow(d, m){
   return `<path d="${d}" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${OR}" stroke-width="3" stroke-linecap="round" marker-end="url(#${m})"/>`;
 }
 function callout(x, y, w, lines){
-  return `<rect x="${x}" y="${y}" width="${w}" height="${10 + lines.length*17}" rx="8" fill="${OR}"/>` +
-    lines.map((t,i)=>`<text x="${x+12}" y="${y+19+i*17}" font-size="${i ? 11.5 : 13}" font-weight="${i ? 400 : 700}" fill="#fff">${esc(t)}</text>`).join("");
+  return `<rect x="${x}" y="${y}" width="${w}" height="${12 + lines.length*20}" rx="8" fill="${OR}"/>` +
+    lines.map((t,i)=>`<text x="${x+12}" y="${y+22+i*20}" font-size="${i ? 14 : 16}" font-weight="${i ? 400 : 700}" fill="#fff">${esc(t)}</text>`).join("");
 }
 // The app window and its left side: the timer, the notes button, the project and the stop button.
 function hsWindow(w, h, m){
   return `<defs><marker id="${m}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="${OR}"/></marker></defs>
-    <rect x=".5" y=".5" width="${w-1}" height="${h-1}" rx="8" fill="#fff" stroke="#cfd4dc"/>
-    <path d="M1 26H${w-1}M250 26V${h-1}" stroke="#e1e4ea"/>
+    <rect x="1" y="1" width="${w-2}" height="${h-2}" rx="8" fill="#fff" stroke="#5b6178" stroke-width="2"/>
+    <path d="M1 28H${w-1}M250 28V${h-1}" stroke="#9aa0ab" stroke-width="1.5"/>
     <circle cx="16" cy="13.5" r="6" fill="#2b7de9"/><circle cx="16" cy="13.5" r="2.5" fill="#fff"/>
-    <text x="28" y="17.5" font-size="11" fill="#333">Hubstaff</text>
-    <rect x="50" y="42" width="130" height="30" fill="${HB}"/><text x="115" y="63" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">07:33:42</text>
-    <circle cx="210" cy="57" r="17" fill="#fff" stroke="#c9ced6"/>
-    <rect x="202" y="49" width="12" height="15" rx="2" fill="none" stroke="#5b6178" stroke-width="1.6"/><path d="M208 61l8-8 2.5 2.5-8 8H208z" fill="#5b6178"/>
-    <text x="125" y="102" text-anchor="middle" font-size="14" font-weight="700" fill="#222">LSH - SUPPORT (Training Jr)</text>
-    <text x="125" y="118" text-anchor="middle" font-size="10.5" fill="#444">Classroom Discussion: Reception Tr…</text>
-    <path d="M20 150H230M125 150V178" stroke="#d5d8de"/>
-    <circle cx="125" cy="148" r="18" fill="#fff" stroke="#d5d8de"/><rect x="118" y="141" width="14" height="14" rx="2" fill="${HB}"/>
-    <text x="70" y="176" text-anchor="middle" font-size="9" fill="#8a90a0">No limits</text><text x="182" y="176" text-anchor="middle" font-size="9" fill="#8a90a0">Today: 7:33</text>
-    <rect x="14" y="188" width="222" height="20" fill="#fff" stroke="#9aa0ab"/><circle cx="24" cy="197" r="4" fill="none" stroke="#555"/><path d="M27 200l3 3" stroke="#555"/>
-    <text x="34" y="202" font-size="10.5" fill="#333">Search projects</text>`;
+    <text x="28" y="19" font-size="14" font-weight="700" fill="#1B1E2E">Hubstaff</text>
+    <rect x="40" y="40" width="146" height="34" fill="${HB}"/><text x="113" y="64" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">07:33:42</text>
+    <circle cx="210" cy="57" r="17" fill="#fff" stroke="#5b6178" stroke-width="1.5"/>
+    <rect x="202" y="49" width="12" height="15" rx="2" fill="none" stroke="#1B1E2E" stroke-width="1.8"/><path d="M208 61l8-8 2.5 2.5-8 8H208z" fill="#1B1E2E"/>
+    <text x="125" y="104" text-anchor="middle" font-size="16" font-weight="700" fill="#111">LSH - SUPPORT (Training Jr)</text>
+    <text x="125" y="123" text-anchor="middle" font-size="12.5" fill="#222">Classroom Discussion: Recep…</text>
+    <path d="M20 150H230M125 150V178" stroke="#9aa0ab" stroke-width="1.5"/>
+    <circle cx="125" cy="148" r="18" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><rect x="118" y="141" width="14" height="14" rx="2" fill="${HB}"/>
+    <text x="64" y="178" text-anchor="middle" font-size="12" fill="#3d4357">No limits</text><text x="186" y="178" text-anchor="middle" font-size="12" fill="#3d4357">Today: 7:33</text>
+    <rect x="14" y="190" width="222" height="26" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><circle cx="26" cy="202" r="5" fill="none" stroke="#1B1E2E" stroke-width="1.5"/><path d="M30 206l4 4" stroke="#1B1E2E" stroke-width="1.5"/>
+    <text x="40" y="208" font-size="13" fill="#1B1E2E">Search projects</text>`;
 }
 // The Add Work Notes box, opened from the notes button next to the timer.
 function figNote(){
@@ -199,15 +196,15 @@ function figNote(){
   return `<svg viewBox="0 0 760 320" role="img" aria-label="The Hubstaff app: click the notes button next to the timer, type what you’re working on in Add Work Notes, then click Add Note.">
     ${hsWindow(760, 320, m)}
     <circle cx="210" cy="57" r="22" fill="none" stroke="${OR}" stroke-width="3"/>
-    <rect x="330" y="92" width="360" height="176" rx="6" fill="#fff" stroke="#b9bec8"/>
-    <path d="M331 118H689" stroke="#e1e4ea"/><text x="342" y="109" font-size="11" fill="#222">Add Work Notes</text>
-    <rect x="350" y="128" width="320" height="92" fill="#fff" stroke="#1c5fa8" stroke-width="1.5"/>
-    <text x="362" y="148" font-size="12.5" font-weight="700" fill="${OR}">② Type What You’re Working On</text>
-    <rect x="350" y="234" width="66" height="22" rx="3" fill="#fff" stroke="#9aa0ab"/><text x="383" y="249" text-anchor="middle" font-size="11" fill="#222">Cancel</text>
-    <rect x="590" y="234" width="80" height="22" rx="3" fill="#f4f4f4" stroke="#b9bec8"/><text x="630" y="249" text-anchor="middle" font-size="11" fill="#222">Add Note</text>
-    <rect x="585" y="229" width="90" height="32" rx="6" fill="none" stroke="${OR}" stroke-width="2.5"/>
-    ${arrow("M270 54H240", m)}${callout(270, 40, 340, ["① Click the Notes Button Next to the Timer"])}
-    ${arrow("M550 295C590 295 620 285 626 268", m)}${callout(400, 282, 150, ["③ Click Add Note"])}
+    <rect x="310" y="88" width="400" height="184" rx="6" fill="#fff" stroke="#5b6178" stroke-width="2"/>
+    <path d="M311 118H709" stroke="#9aa0ab" stroke-width="1.5"/><text x="324" y="109" font-size="14" font-weight="700" fill="#1B1E2E">Add Work Notes</text>
+    <rect x="330" y="128" width="360" height="92" fill="#fff" stroke="#1c5fa8" stroke-width="2"/>
+    <text x="344" y="152" font-size="16" font-weight="700" fill="#C2410C">② Type What You’re Working On</text>
+    <rect x="330" y="232" width="80" height="28" rx="3" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><text x="370" y="251" text-anchor="middle" font-size="13.5" fill="#1B1E2E">Cancel</text>
+    <rect x="590" y="232" width="100" height="28" rx="3" fill="#eef0f4" stroke="#5b6178" stroke-width="1.5"/><text x="640" y="251" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1B1E2E">Add Note</text>
+    <rect x="584" y="226" width="112" height="40" rx="7" fill="none" stroke="${OR}" stroke-width="3"/>
+    ${arrow("M270 57H240", m)}${callout(270, 41, 380, ["① Click the Notes Button Next to the Timer"])}
+    ${arrow("M540 296C590 296 625 288 632 270", m)}${callout(380, 280, 160, ["③ Click Add Note"])}
   </svg>`;
 }
 const FIGS = {note: figNote};
@@ -264,12 +261,13 @@ const SLIDES = [
     <div class="ftr-todo-parts">${parts.map((list, k)=>`<div class="ftr-part ftr-todos">
       <div class="ftr-part-h"><span>Part ${k+1}</span>Hubstaff To-Dos ${k ? half + 1 : 1}–${k ? TODOS.length : half}</div>
       ${list.map((t, i)=>row(t, (k ? half : 0) + i + 1)).join("")}</div>`).join("")}</div></div>`; }],
-  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
+  // the steps on the left, the picture (Part 2) big on the right
+  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-notes"><div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-      ${p.fig ? fig(FIGS[p.fig]()) : ""}
-    </div>`).join("")}</div>`],
+    </div>`).join("")}</div>
+    ${NOTE_PARTS.filter(p=>p.fig).map(p=>fig(FIGS[p.fig]())).join("")}</div>`],
   ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
     <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
     <div class="ftr-part">
@@ -307,33 +305,23 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // The 4 daily deliverables: the tests, the Daily Task Tracker, the Monitoring Sheet and the EOD email
+  // The 4 daily deliverables: an overview (the tests are in the Practice Lab), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show each one.</p>
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are in 🛠 Practice Lab → 🧪 Skill Building.</p>
     <div class="ftr-lessons ftr-two">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
       ["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
-  // Skill building (the tests' tools, file names and samples) is in the Practice Lab on 🛠 Simulators
-  // (js/ft-simulators.js, from FT_SKILL_TESTS): the slide only points there.
-  ["tests", "Skill Building: Typing and Spelling Tests", ()=>`
-    <div class="ftr-why"><b>Why?</b> LSH’s clients look for VAs who type at least 60 WPM (words per minute), so as an initiative you practice typing every day, twice a day. The daily spelling test improves your listening comprehension, vocabulary and spelling. The results you save show your progress through the training.</div>
-    <div class="ftr-goal"><b>🧪 Your Tests Are in the Practice Lab</b>
-      <p>Open <b>🛠 Practice Lab → 🧪 Skill Building</b> and take each test there. Your result is saved with the date and time on its own, so there is no screenshot to take, name or upload. Missed one? Make it up there in your idle time.</p></div>
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="ftsGotoSkills()">🧪 Open the Practice Lab</button></div>`}`],
   ["habits-trackers", `Building Your Habits: ${HABITS[1].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[1])}</div>`],
   ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
-    <div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div>`],
+    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
+    <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
-  ["tracker-sample", "Your Daily Task Tracker: A Filled-In Sample", ()=>`<div class="ftr-keep">
-    <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
-    ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`}</div>`],
   ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
     rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
     (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
@@ -565,6 +553,24 @@ body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:repeat(3,minmax(0
 body.ft-orient #lessonSlideWrap .ftr-cam .ftr-part{padding:12px 14px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:minmax(0,1fr) !important;} }
 body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
+/* How to Create Notes: the steps beside a big Hubstaff picture, framed in navy so it stands out on the white sheet */
+body.ft-orient #lessonSlideWrap .ftr-notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center;}
+body.ft-orient #lessonSlideWrap .ftr-notes .ftr-parts{gap:10px;}
+body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
+body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
+body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}
+body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
+/* The Sheet: two columns, so its three tables fill the width */
+body.ft-orient #lessonSlideWrap .ftr-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start;}
+body.ft-orient #lessonSlideWrap .ftr-cols2 .ftr-def{grid-template-columns:minmax(0,36%) minmax(0,1fr);}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap :is(.ftr-notes, .ftr-cols2){grid-template-columns:minmax(0,1fr);} }
+/* the term/definition tables in more contrast: a navy rule under each heading, darker row lines, every other row shaded */
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def){background:#fff;border:1.5px solid #B9C0D0;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-part-h{padding-bottom:6px;border-bottom:3px solid #343C66;}
+body.ft-orient #lessonSlideWrap .ftr-def{border-top:1px solid #C9CFDD;padding:8px 10px;margin:0 -10px;}
+body.ft-orient #lessonSlideWrap .ftr-def:first-of-type{border-top:0;margin-top:4px;}
+body.ft-orient #lessonSlideWrap .ftr-def:nth-of-type(even){background:#EEF1F8;}
+body.ft-orient #lessonSlideWrap .ftr-def b{color:#1E2340;font-weight:800;} body.ft-orient #lessonSlideWrap .ftr-def span{color:#1B1E2E;}
 /* in the middle of the sheet: narrower boxes and short rows of cards are centered */
 body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *){margin-left:auto !important;margin-right:auto !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)) !important;}

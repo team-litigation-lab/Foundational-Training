@@ -13,16 +13,27 @@
 const fs = require("fs"), vm = require("vm"), path = require("path");
 const R = path.resolve(__dirname, "..");
 // parts of a day left out of its deck: Day 1's Setting of Expectations is written to the facilitator; Training
-// Reminders and the Nitro Pro 12 / Smart Advocate plug-ins installation are to be disregarded (the Nitro Pro and
-// Adobe Acrobat Pro how-to homework stays); the Hubstaff To-Do set-up is not a slide — the trainer sets the
-// to-dos with the batch, and the day cards already name each day's work; and neither is the PI overview reading
-// task — it is an assessment the trainer posts in the training GC with its own file, questions and naming
-// convention, and it is scored on the Weekly Ranking ("PI Reading Task", 40 points); and the Nitro Pro / Adobe Acrobat
-// Pro how-to homework is taken off the deck as well; and so is the Training Monitoring Sheet set-up (the orientation
-// and 📒 Monitoring Sheet cover it)
-const SKIP = {1: ["expectations", "reminders", "pm", "hubstaff", "reading", "homework", "monitoring"]};
+// Reminders are to be disregarded; the Hubstaff To-Do set-up is not a slide (the trainer sets the to-dos with the
+// batch, and the orientation covers them); the Nitro Pro / Adobe Acrobat Pro how-to homework is off the deck; and so
+// is the Training Monitoring Sheet set-up (the orientation and 📒 Monitoring Sheet cover it). Day 1's Reading Task
+// (Personal Injury) and the Smart Advocate plug-ins installation are on it: the Day 1 card runs Reading Task →
+// Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
+// slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
+const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring"]};
 // slide titles that named the Process Questions, which aren't on the slides
-const RENAME = {};
+const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury (Overview: What Is Personal Injury?)"}};
+// a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
+// Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
+const SA_FROM = "<h3>How to install the Smart Advocate";
+const TRIM = {1: {pm: html => {
+  const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
+  // the help line keeps the SA contact only (the Nitro Pro contact goes with its installation)
+  const sa = html.slice(i).replace(/<p>For those who still have issues installing Nitro Pro[\s\S]*?<\/div>\n/, () =>
+    `<p>If you have issues installing the SA plug-ins, reach out to Ivan on Discord. His shift starts at 8:00 AM PST.</p>\n<p><b>Ivan: kuchiq</b></p>\n` +
+    `<div class="shots">\n  <figure><a href="/ft/day1/img/discord-ivan.png" target="_blank"><img src="/ft/day1/img/discord-ivan.png" alt="Ivan on Discord" loading="lazy"></a></figure>\n</div>\n`);
+  if(/Nitro/i.test(sa)) throw new Error("Day 1's Installation of SA still mentions Nitro Pro");
+  return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa;
+}}};
 // material the guide names without a link yet: {day: [{after: sectionId, name, note?}]} — shown as a "link coming" box
 // at the end of that slide until the link is added to the day file
 const PENDING = {};
@@ -84,7 +95,7 @@ for(let n = 1; n <= 16; n++){
     const r = stripPQ(s.html); pqs += r.n;
     const q = stripQuestions(r.html); qs += q.n;
     const ld = stripLessonDeck(s.h, q.html); decksOff += ld.n;
-    let html = ld.html;
+    let html = (TRIM[n] && TRIM[n][s.id]) ? TRIM[n][s.id](ld.html) : ld.html;
     for(const p of (PENDING[n] || []).filter(p => p.after === s.id))
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     slides.push({id: s.id, h: ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, ""), html});
