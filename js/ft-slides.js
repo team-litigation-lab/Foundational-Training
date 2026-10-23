@@ -218,11 +218,39 @@ body.ft-fit #lessonSlideWrap.pg-anim > *, body.ft-orient #lessonSlideWrap.pg-ani
 @media (max-width:640px){ .cs-lead{font-size:16px;} .cs-flow li:not(:last-child)::after{display:none;} .cs-hero{padding:22px 18px;} }
 `;
 const st = document.createElement("style"); st.id = "ft-slides"; st.textContent = css; document.head.appendChild(st);
+/* The presenter stands in the side column, under the lesson's controls (Listen, Objectives, Present…), not in a column
+   of her own beside the slide: the slide takes the whole width of the stage, so it is bigger on the same screen. Only
+   on the lesson page of a laptop or desktop; full screen and the shared slides window keep their own layout. */
+const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter"; sideCss.textContent = `
+.ft-side-presenter{display:none;}
+@media(min-width:1001px){
+  main:has(> #lessonStage) #lessonStage:not(:fullscreen) .stage-body{grid-template-columns:minmax(0,1fr) !important;}
+  main:has(> #lessonStage) #lessonStage:not(:fullscreen) .stage-presenter{display:none !important;}
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:center;height:auto;margin:auto 0 0 !important;justify-content:normal;
+    transform:scaleX(-1);pointer-events:none;user-select:none;filter:drop-shadow(0 10px 16px rgba(0,0,0,.35));}
+}`;
+document.head.appendChild(sideCss);
+function placePresenter(){
+  const top = document.querySelector("main > .ls-top"), stage = document.getElementById("lessonStage");
+  let img = top && top.querySelector(":scope > .ft-side-presenter");
+  if(!top || !stage || window.innerWidth <= 1000 || document.fullscreenElement){ if(img) img.style.width = "0px"; return; }
+  if(!img){
+    img = document.createElement("img"); img.className = "ft-side-presenter"; img.alt = ""; img.setAttribute("aria-hidden", "true");
+    img.src = typeof PRESENTER_IMG !== "undefined" ? PRESENTER_IMG : "/img/presenter.webp";
+    top.appendChild(img);
+  }
+  // as big as the room left under the controls, down to the slide's bottom edge (and no wider than the column)
+  img.style.width = "0px";
+  const room = stage.getBoundingClientRect().bottom - img.getBoundingClientRect().top - 4;
+  const w = Math.min(top.clientWidth, 230, Math.floor(room * 564 / 520));
+  img.style.width = (w < 80 ? 0 : w) + "px";
+}
 // A deck page (.cs-page) is sized to the room it has, so nothing needs scrolling: on the lesson page the
 // whole page fits the screen (the slide, its Previous / Next bar and, about an inch below, the footer line);
 // in full screen and the slides window, the slide and the bar fit. It runs after each render and again once
 // the slide has slid in (measured mid-animation, positions are off), and on resize and full screen.
 function fitPages(){
+  try{ placePresenter(); }catch(e){}
   const d = typeof state !== "undefined" && state.view === "day" && typeof DAYS !== "undefined" ? DAYS.find(x=>x.id===state.dayId) : null;
   document.body.classList.toggle("ft-fit", !!(d && (d.sections||[]).some(x=>/class="cs cs-pages"/.test(x.html))));
   document.body.classList.toggle("ft-orient", !!(d && window.FT_ORIENTATION && d.id === window.FT_ORIENTATION.id));   // its slides' background (ft-rules.js)
