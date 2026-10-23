@@ -9440,10 +9440,10 @@ function renderDaySlideshow(d){
       </span>
       <span class="slide-counter">Step ${idx+1} of ${total}</span>
       ${isLast
-        ? `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()">✓ Finish lesson</button>`
+        ? `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()" title="Open this lesson’s Activity deck">📋 Classroom Activity</button>`
         : `<button class="btn btn-primary" onclick="nextSlide()">Next &rarr;</button>`}
     </div>
-    ${isLast ? `<div class="slide-done-banner">🎉 That's everything for this lesson — click Finish lesson to mark it complete.</div>` : ""}
+    ${isLast ? `<div class="slide-done-banner">🎉 That's everything for this lesson — click Classroom Activity to go on to its activities.</div>` : ""}
   `;
   if(state.stageInnerOnly){ state.stageInnerOnly = false; return inner; }
   if(state.dayViewMode==="intro") return renderDayIntro(d);
@@ -18911,7 +18911,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.16-16day"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.23-nohw"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.23-classact"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>
