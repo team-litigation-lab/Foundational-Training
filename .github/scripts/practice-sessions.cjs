@@ -282,10 +282,10 @@ const failures = []; const fail = (m) => failures.push(m);
     // Lesson → Activities → Process Questions: finishing the lesson lands on the dashboard, not the questions.
     if (await page.evaluate(() => state.view) === 'process') fail('✓ Finish lesson still jumps straight to the Process Questions, skipping the day\'s activities');
     if (!['modules', 'dashboard'].includes(await page.evaluate(() => state.view))) fail(`✓ Finish lesson should go to the Dashboard for the day's activities: view=${await page.evaluate(() => state.view)}`);
-    // the dashboard has no next-step band any more: each day's own cards carry its activities
+    // the dashboard has no next-step band any more: each lesson's card carries its days' activities
     await page.waitForTimeout(600);
     if (await page.$('main .ftn')) fail('📚 Dashboard still draws the next-step band after ✓ Finish lesson');
-    if (!(await page.$('main.main-dash .ftdd-daycard'))) fail(`📚 Dashboard has no day cards for the day's activities`);
+    if (!(await page.$('main.main-dash .ftlc .ftlc-row'))) fail(`📚 Dashboard has no lesson cards with the day's activities`);
     // and the questions themselves are now open for that module, one click away
     await page.evaluate(async (l) => { FTProcess.openLesson(l); await new Promise(r => setTimeout(r, 1600)); }, pick);
     if (await page.evaluate((l) => state.pqLesson, pick) !== pick) fail(`that module's Process Questions page did not open: pqLesson=${await page.evaluate(() => state.pqLesson)}`);

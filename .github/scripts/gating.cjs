@@ -24,8 +24,10 @@ const failures = []; const fail = m => failures.push(m);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2500);
 
   const openDays = () => page.evaluate(() => Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)));
-  const cards = () => page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard')].map(c => ({ id: c.id, locked: c.classList.contains('locked'),
-    off: !!(c.querySelector('.ftdd-dc-main') || {}).disabled, lock: (c.querySelector('.ftdd-dc-ic') || {}).innerText === '🔒' })));
+  // the lesson cards (their ▶ Live session button) and, on each, the buttons to its days' decks
+  const cards = () => page.evaluate(() => [...[...document.querySelectorAll('.ftlc')].map(c => { const b = c.querySelector('.ftlc-start') || {};
+      return { id: c.id, locked: c.classList.contains('locked'), off: !!b.disabled, lock: /🔒/.test(b.innerText || '') }; }),
+    ...[...document.querySelectorAll('.ftlc-days button')].map(b => ({ id: b.id, locked: false, off: b.disabled, lock: /🔒/.test(b.innerText) }))]);
 
   // a brand-new trainee, with nothing finished and nothing opened: every day is theirs to read
   let days = await openDays();
@@ -36,7 +38,7 @@ const failures = []; const fail = m => failures.push(m);
   if (!dayCards.length) fail('the dashboard has no day instruction cards');
   const shut = dayCards.filter(c => c.locked || c.off || c.lock);
   if (shut.length) fail(`a day card is still locked: ${JSON.stringify(shut.map(c => c.id).slice(0, 4))}`);
-  const padlock = await page.evaluate(() => [...document.querySelectorAll('.ftdd-daycard')].filter(c => /^dayd-/.test(c.id) && c.innerText.indexOf('🔒') >= 0).map(c => c.id));
+  const padlock = dayCards.filter(c => c.lock).map(c => c.id);
   if (padlock.length) fail(`a day card still shows a padlock: ${JSON.stringify(padlock.slice(0, 4))}`);
 
   // the deck of a day far ahead opens, with nothing finished
