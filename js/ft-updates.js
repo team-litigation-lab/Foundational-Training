@@ -134,6 +134,9 @@ body.lv-dragging{user-select:none;}
 #lecture-viewer-header{background:#161829;color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;border-bottom:2px solid #dc2626;}
 #lecture-viewer-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px;}
 #lecture-viewer-actions{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+#lecture-viewer-tabs{display:flex;gap:6px;margin:0 auto 0 4px;flex-shrink:0;} #lecture-viewer-tabs:empty{display:none;}
+#lecture-viewer-tabs button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font:700 12px/1 inherit;border-radius:999px;padding:5px 11px;cursor:pointer;}
+#lecture-viewer-tabs button.on{background:#E8590C;border-color:#E8590C;}
 #lecture-viewer-open-link, #lecture-viewer-fullscreen, #lecture-viewer-close{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font-size:12px;font-weight:700;font-family:inherit;border-radius:5px;padding:4px 8px;cursor:pointer;text-decoration:none;line-height:1.4;display:inline-block;}
 #lecture-viewer-open-link:hover, #lecture-viewer-fullscreen:hover{background:rgba(255,255,255,.15);}
 #lecture-viewer-close:hover{background:#dc2626;border-color:#dc2626;}
@@ -885,7 +888,7 @@ window.renderTopbar = function(){
   if(document.getElementById("lecture-viewer-pane")) return;
   const pane = document.createElement("div");
   pane.id = "lecture-viewer-pane";
-  pane.innerHTML = `<div id="lecture-viewer-header"><span id="lecture-viewer-title">Recorded Lecture</span><div id="lecture-viewer-actions">
+  pane.innerHTML = `<div id="lecture-viewer-header"><span id="lecture-viewer-title">Recorded Lecture</span><span id="lecture-viewer-tabs"></span><div id="lecture-viewer-actions">
       <a id="lecture-viewer-open-link" href="#" target="_blank" rel="noopener noreferrer" title="Open the original link in a new tab">↗</a>
       <button id="lecture-viewer-fullscreen" type="button" title="Full Screen">⛶</button>
       <button id="lecture-viewer-close" type="button" title="Close">✕</button></div></div>
@@ -929,12 +932,35 @@ function lvReset(){
   else Object.assign(p.style, {right:"", bottom:"", left:"50%", top:"50%", transform:"translate(-50%, -50%)",
     width:"min(1240px, calc(100vw - 48px))", height:"min(72vh, 760px)", maxWidth:"", maxHeight:""});
 }
-// A lesson's video presentation (its AI Assisted Discussion video) plays in the pop-out viewer.
-// Lessons are finished from their last slide ("✓ Finish lesson").
+// The facilitator's training deck of each lesson (Canva, from the trainer notes), shown with the lesson's locked 🎬 Video:
+// once the trainer approves the video, the trainee gets both (Receptionist Training, Lesson 4, has no deck link yet).
+const FT_FACILITATOR_DECKS = {
+  1: "https://www.canva.com/design/DAGtQfkdZeg/2q09DSRJeNS7rRNa0G-7Hw/view",
+  2: "https://www.canva.com/design/DAGtUzUSX0A/o4fGwijKtWkkQ7fQR-oI9Q/view",
+  3: "https://www.canva.com/design/DAGnZtLpFlA/0BPHCZmHCpIqY398SUNVXg/view",
+  5: "https://www.canva.com/design/DAGW71bRci4/W8QMwl3Ui1QXIejya5aHUQ/view",
+  6: "https://www.canva.com/design/DAGtVEq2L8E/FeCRMu4p2OHrj7LYPz6rRA/view",
+  7: "https://www.canva.com/design/DAGtWGIfRwA/GSn28wFFTOSGH9chJlCk8g/view",
+  8: "https://www.canva.com/design/DAGtiDcg6Rg/vf5ko9Ac9ayCD6mA0TsC7Q/view"
+};
+window.FT_FACILITATOR_DECKS = FT_FACILITATOR_DECKS;
+// A lesson's video presentation (its AI Assisted Discussion video) plays in the pop-out viewer, with the lesson's
+// 🎨 Facilitator Training Deck as a second tab. Lessons are finished from their last slide ("✓ Finish lesson").
 window.ftOpenVideo = function(id){
-  const d = DAYS.find(x=>x.id===id);
-  if(d && d.video && !ftVideoUnlocked(id)){ toast("🔒 Ask your trainer for this video: it opens once they approve it."); return; }
-  if(d && d.video) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:d.video});
+  const d = DAYS.find(x=>x.id===id), deck = FT_FACILITATOR_DECKS[Number(id)];
+  if(d && (d.video || deck) && !ftVideoUnlocked(id)){ toast("🔒 Ask your trainer for this video: it opens once they approve it."); return; }
+  const tabs = [d && d.video ? {label:"🎬 AI Discussion Video", url:d.video} : null, deck ? {label:"🎨 Facilitator Training Deck", url:deck} : null].filter(Boolean);
+  if(d && tabs.length) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:tabs[0].url, tabs});
+};
+// one of the viewer's tabs (the video, or the facilitator's deck)
+window.lvTab = function(i){
+  const t = (LV.tabs || [])[i]; if(!t) return;
+  const holder = document.getElementById("lecture-viewer-frame-holder"), link = document.getElementById("lecture-viewer-open-link");
+  const clean = lvSrc(t.url).trim(), src = lvEmbedUrl(t.url);
+  if(clean){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
+  holder.innerHTML = src ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+    : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  document.querySelectorAll("#lecture-viewer-tabs button").forEach((b, k) => b.classList.toggle("on", k === i));
 };
 function lvOpen(item){
   if(item.kind !== "doc" && !confirm(`Do you want to watch this ${item.kind==="lecture"?"lecture":"video"}?\n\n"${item.title}"`)) return;
@@ -947,6 +973,8 @@ function lvOpen(item){
   holder.innerHTML = src
     ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
     : `<div id="lecture-viewer-fallback">This link can't be previewed inline.<br><a href="${esc(clean)}" target="_blank" rel="noopener noreferrer">Open in a new tab &rarr;</a></div>`;
+  LV.tabs = item.tabs && item.tabs.length > 1 ? item.tabs : null;
+  document.getElementById("lecture-viewer-tabs").innerHTML = LV.tabs ? LV.tabs.map((t, i) => `<button type="button" class="${i ? "" : "on"}" onclick="lvTab(${i})">${esc(t.label)}</button>`).join("") : "";
   p.classList.remove("maximized");
   const fs = document.getElementById("lecture-viewer-fullscreen"); fs.textContent = "⛶"; fs.title = "Full Screen";
   lvReset(); p.classList.add("open"); lvFit();

@@ -29,6 +29,9 @@ const SA_FROM = "<h3>How to install the Smart Advocate";
 const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
+  // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
+  html = html.replace(/<p><b>Note: Please send you answers[\s\S]*?<p>Thank you\.<\/p>\n?/, "").replace(/<hr class="stars">\n?<div class="trainer-slot" data-slot="1:tettra"><\/div>\n?/, "");
+  if(/group chat|1:tettra/.test(html)) throw new Error("Day 1's Reading Task still has the group-chat note or the Tettra credentials");
   return html.slice(0, at + 4) + `\n<div class="ftdd-embed"><iframe src="https://drive.google.com/file/d/${PI_FILE}/preview" title="Personal Injury Cases (Overview: What is personal injury?)" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>\n` + html.slice(at + 4);
 }, pm: html => {
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
@@ -64,7 +67,8 @@ function stripPQ(html){
   }
   return {html: out, n};
 }
-const Q_NOTE = `<div class="ftdd-pq">📄 <b>The questions for this task</b> come with the assessment file your trainer posts in the training GC — they are not on the slide. Answer them there and upload your answers as the naming convention below says.</div>\n`;
+// (only Day 1's Reading Task has one: its questions are the Reading Task sheet of Lesson 1's ✍️ Knowledge Check, js/ft-process.js)
+const Q_NOTE = `<div class="ftdd-pq">✍️ <b>The questions for this task</b> are answered in <a class="ftdd-link" onclick="FTProcess.openLesson(1)">✍️ Knowledge Check</a>: the <b>Reading Task: Personal Injury Overview</b> sheet, with Virtual Assistant Essentials. Your answers save as you type; press 📝 Submit for Grading when you’re done.</div>\n`;
 // A question list on a slide — the reading task's "Answer the following questions:" and its numbered list —
 // is an assessment, not slide content: a trainee answers it on the file their trainer posts, so the slide
 // carries the note above instead of the questions themselves.
