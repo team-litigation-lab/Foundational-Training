@@ -326,6 +326,8 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   d.slides.forEach(s => {
     // a lesson day's empty "To be added" slide isn't shown (the automated task announcements will come in its place)
     if(s.placeholder && !only) return;
+    // a no-discussion day's 📌 From your trainer slide shows once the trainer has added something (a trainer always sees it, to add)
+    if(s.placeholder && only && !isAdminView() && !(X.data && (X.data.days[d.day] || []).length)){ if(!X.data) loadExtras(); return; }
     const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
     if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
@@ -1395,8 +1397,14 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
 .ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
-.ftdd-score-l li{position:relative;padding-left:26px;font-size:13.5px;line-height:1.4;counter-increment:sc;}
-.ftdd-score-l li::before{content:counter(sc);position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:6px;background:#FBF1E6;color:#B5651F;font:700 11.5px/19px 'Inter',sans-serif;text-align:center;}
+/* Day 5's "while you wait for your turn" box: the tools to review with */
+.ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
+.ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}
+.ftdd-wait-acts{display:flex;flex-wrap:wrap;gap:8px;}
+/* each criterion a box of the same height, its number centred beside the text, so the rows line up */
+.ftdd-score-l{align-items:stretch;grid-auto-rows:1fr;gap:8px 12px !important;}
+.ftdd-score-l li{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border:1.5px solid #E6D6C2;border-radius:10px;background:#FFFBF6;font-size:13.5px;line-height:1.35;counter-increment:sc;}
+.ftdd-score-l li::before{content:counter(sc);flex:0 0 26px;width:26px;height:26px;border-radius:7px;background:#E8590C;color:#fff;font:800 12.5px/26px 'Inter',sans-serif;text-align:center;}
 .ftdd-score-f{margin:8px 0 0;font-size:12.5px;color:var(--ink-soft);}
 /* the picture of the trainer's own sheet says nothing the criteria above it don't: on a slide it is only clutter */
 .ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}
