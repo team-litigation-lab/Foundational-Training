@@ -12,8 +12,8 @@
      • The parts, in the order the trainers run the orientation: 👋 Welcome to LSH!; Hubstaff (how-tos and why they
        matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
        Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
-       deliverables (an overview, then the typing and spelling tests, the Daily Task Tracker part by part with its filled-in
-       sample, the 📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), the Training Monitoring Sheet embedded, and the EOD email with
+       deliverables (an overview, the Daily Task Tracker part by part, the Training Monitoring Sheet embedded with the
+       📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), and the EOD email with
        its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
        Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
        training GC, with its own file, questions and naming convention, and it is scored on the Weekly Ranking.
@@ -97,9 +97,6 @@ const TRACKER_PARTS = {
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
 };
 
-// Day 0 → Onboarding Orientation: the LSH Daily Task Tracker's "Sample updated trackers".
-const TRACKER_SAMPLE = {view:"https://drive.google.com/file/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/view",
-  open:"https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516"};
 // Day 0 → Onboarding Orientation.
 const DISCORD_STATUS = {format:"LSH | [your team] | [time zone] [work days] [shift] RD [rest days]", example:"LSH | Support | EST Mon-Fri 8AM-5PM RD Sat-Sun", note:"RD = rest days."};
 const TIME_ADJ = {
@@ -307,20 +304,13 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // The 4 daily deliverables: the tests, the Daily Task Tracker, the Monitoring Sheet and the EOD email
+  // The 4 daily deliverables: an overview (the tests are in the Practice Lab), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show each one.</p>
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are in 🛠 Practice Lab → 🧪 Skill Building.</p>
     <div class="ftr-lessons ftr-two">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
       ["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
-  // Skill building (the tests' tools, file names and samples) is in the Practice Lab on 🛠 Simulators
-  // (js/ft-simulators.js, from FT_SKILL_TESTS): the slide only points there.
-  ["tests", "Skill Building: Typing and Spelling Tests", ()=>`
-    <div class="ftr-why"><b>Why?</b> LSH’s clients look for VAs who type at least 60 WPM (words per minute), so as an initiative you practice typing every day, twice a day. The daily spelling test improves your listening comprehension, vocabulary and spelling. The results you save show your progress through the training.</div>
-    <div class="ftr-goal"><b>🧪 Your Tests Are in the Practice Lab</b>
-      <p>Open <b>🛠 Practice Lab → 🧪 Skill Building</b> and take each test there. Your result is saved with the date and time on its own, so there is no screenshot to take, name or upload. Missed one? Make it up there in your idle time.</p></div>
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="ftsGotoSkills()">🧪 Open the Practice Lab</button></div>`}`],
   ["habits-trackers", `Building Your Habits: ${HABITS[1].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[1])}</div>`],
@@ -330,10 +320,6 @@ const SLIDES = [
   ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
-  ["tracker-sample", "Your Daily Task Tracker: A Filled-In Sample", ()=>`<div class="ftr-keep">
-    <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
-    ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`}</div>`],
   ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
     rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
     (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +

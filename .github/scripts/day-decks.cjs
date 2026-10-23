@@ -31,7 +31,10 @@ for (let n = 1; n <= 16; n++) {
   }
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }
-if (D[1] && D[1].slides.some(s => ['reminders', 'pm', 'expectations', 'homework'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro installation or homework, or Setting of Expectations');
+if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'monitoring'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro homework, the Monitoring Sheet set-up or Setting of Expectations');
+// Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck
+const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
+if (!sa || !/Installation of SA/.test(sa.h) || /Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no pointer to ✍️ Knowledge Check where its Process Questions were');
 
@@ -86,7 +89,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 4 || card.pills !== 4 || !card.focus || !card.file)
+  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || !card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
@@ -100,9 +103,13 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     if (!c || c.day !== n || c.rows < 1) fail(`Day ${n}'s deck doesn't open on its own day card: ${JSON.stringify(c)}`);
     else if ([1, 2, 3, 4, 5, 7, 10, 13].includes(n) !== /^Classroom Activity: /.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}"`); });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
-  await page.click('.ftdd-lcslide .ftlc-row:has-text("Client Identification")'); await page.waitForTimeout(1500);
+  // Day 1's card runs the trainers' order: Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA
+  const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
+  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Handouts \/ Video/, /^Process Questions/, /^Installation of SA/];
+  if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
+  await page.click('.ftdd-lcslide .ftlc-row:has-text("Reading Task")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
-  if (row.view !== 'daydeck' || !/Client Identification/.test(row.h)) fail(`the Client Identification row opened ${JSON.stringify(row)}`);
+  if (row.view !== 'daydeck' || !/Reading Task/.test(row.h)) fail(`the Reading Task row opened ${JSON.stringify(row)}`);
   // 🧰 Know Your Tools: its own card on 📚 Dashboard, beside the 📌 Setting of Training Expectations card, opening its own
   // page (#/knowtools); every tool shows its real screenshot, what it is for, where it is and its features, and the
   // page fits its sheet whichever tool is picked. Day 1's deck has neither it nor the Monitoring Sheet set-up any more.

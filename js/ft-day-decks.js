@@ -572,7 +572,12 @@ function toolsCard(){
 // draws a pinned card with moduleCard(), which draws this one as its own card
 root.FT_TOOLS_PIN = {id: "knowtools", ftTools: true, title: "Know Your Tools"};
 const __moduleCard = root.moduleCard;
-root.moduleCard = function(d){ return d && d.ftTools ? toolsCard() : __moduleCard.apply(this, arguments); };
+root.moduleCard = function(d){
+  if(d && d.ftTools) return toolsCard();
+  const html = __moduleCard.apply(this, arguments);
+  // the pinned orientation card carries a kicker like its neighbour, so the two read as a pair
+  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Start here</div>') : html;
+};
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
   return `<div class="ftdd-stage">
@@ -672,11 +677,12 @@ const SUBMIT = "Assessments › Activities subfolder";
 const LESSON_CARDS = {
   1: {days: [1], focus: "VA Essentials & Software Setup",
     rows: [
-      {t: "Setting of Expectations", time: "8:00–9:00 AM", k: "classroom", go: "lesson"},
-      {t: "Typing & Spelling Tests", time: "8:00–8:10 AM", sub: "Typing twice daily (AM and before shift end) · spelling once", k: "read", go: "skills"},
-      {t: "Hubstaff To-Do Set-up", sub: "Daily requirement · [Session Type + Day]: [Program] – [Module Day]", k: "read", go: "shadowing"},
-      {t: "Client Identification Exercise", k: "interactive", d: 1, s: "client-id"}],
-    outside: ["Personal Injury (PI) reading task"],
+      {t: "Reading Task: Personal Injury", sub: "Read the overview · the questions come with the assessment file your trainer posts in the training GC", k: "read", d: 1, s: "reading"},
+      {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
+      {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
+      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
+      {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
+    outside: [],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
       "Set your Hubstaff To-Dos daily from the template before the session starts", "Time limit: 45 mins max · Evaluation: Monitoring sheet entry checked at the end of the session"],
     takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
@@ -770,6 +776,7 @@ function openSlide(n, id, alt){
   });
 }
 function rowGo(c, r){
+  if(r.run) return r.run;   // a platform action of its own (the lesson's video, its Process Questions)
   if(r.d != null && r.s) return `FTDayDecks.slide(${Number(r.d)}, '${e(r.s)}'${r.go ? `, '${e(r.go)}'` : ""})`;
   if(r.go === "lesson") return `goto('day', ${Number(c.lesson)})`;
   if(r.go) return `goto('${e(r.go)}')`;
@@ -1509,6 +1516,13 @@ main.main-dash .dash-pair-pin .module-card .mc-grid > .module-finish-btn{display
 /* 🧰 Know Your Tools beside it, the same card */
 main.main-dash .dash-pair-pin:has(.ftkt-card){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch;}
 main.main-dash .dash-pair-pin .ftkt-card .module-body{display:none;}
+/* the two pinned cards as a pair: the same kicker, the title in the same two-line space, Start at the same height */
+main.main-dash .dash-pair-pin .module-card{display:flex !important;flex-direction:column;}
+main.main-dash .dash-pair-pin .module-card .module-head{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:74px;text-align:center;}
+main.main-dash .dash-pair-pin .module-card .mh-day{font:700 11px/1.2 'IBM Plex Mono',monospace !important;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A !important;}
+main.main-dash .dash-pair-pin .module-card .mh-title{font:700 15px/1.25 'Inter',sans-serif !important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.5em;align-content:center;}
+main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
+main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 @media(min-width:1001px){
   main.main-dash:has(.ftdd-daycell) .dash-pair{margin-bottom:8px !important;gap:8px !important;}
