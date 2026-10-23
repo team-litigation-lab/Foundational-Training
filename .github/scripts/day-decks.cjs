@@ -31,7 +31,7 @@ for (let n = 1; n <= 16; n++) {
   }
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }
-if (D[1] && D[1].slides.some(s => ['reminders', 'pm', 'expectations'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro installation or Setting of Expectations');
+if (D[1] && D[1].slides.some(s => ['reminders', 'pm', 'expectations', 'homework'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro installation or homework, or Setting of Expectations');
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no pointer to ✍️ Knowledge Check where its Process Questions were');
 
@@ -76,17 +76,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   // the eight fit one screen
   const fits = await page.evaluate(() => ({ page: document.documentElement.scrollHeight - innerHeight, main: (m => m.scrollHeight - m.clientHeight)(document.querySelector('main.main-dash')) }));
   if (fits.page > 2 || fits.main > 2) fail(`📚 Dashboard doesn't fit one screen: ${JSON.stringify(fits)}`);
-  // 🏠 Classroom opens the lesson's offline activity: Day 1's homework slide
-  await page.click('#dayl-1 .ftli-class'); await page.waitForTimeout(1500);
+  // 🏠 Classroom opens the lesson's offline activity: Day 2's homework slide
+  await page.click('#dayl-2 .ftli-class'); await page.waitForTimeout(1500);
   const cls = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '' }));
-  if (cls.view !== 'daydeck' || !/HOMEWORK: Nitro Pro/i.test(cls.h)) fail(`Lesson 1's Classroom opened ${JSON.stringify(cls)}`);
+  if (cls.view !== 'daydeck' || !/HOMEWORK: Softphones/i.test(cls.h)) fail(`Lesson 2's Classroom opened ${JSON.stringify(cls)}`);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   // 📋 the days card opens the day deck on the full Classroom Discussion card, and a row opens its own slide
   await page.click('#dayd-1'); await page.waitForTimeout(1500);
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Classroom Discussion: Virtual Assistant Essentials/.test(card.h) || card.rows !== 6 || card.pills !== 6 || !card.focus || !card.file)
+  if (!card || !/^Classroom Discussion: Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || !card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Discussion card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Discussion card, a day after it on a
   // card of that day's own rows

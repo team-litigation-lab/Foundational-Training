@@ -17,8 +17,9 @@ const R = path.resolve(__dirname, "..");
 // Adobe Acrobat Pro how-to homework stays); the Hubstaff To-Do set-up is not a slide — the trainer sets the
 // to-dos with the batch, and the day cards already name each day's work; and neither is the PI overview reading
 // task — it is an assessment the trainer posts in the training GC with its own file, questions and naming
-// convention, and it is scored on the Weekly Ranking ("PI Reading Task", 40 points)
-const SKIP = {1: ["expectations", "reminders", "pm", "hubstaff", "reading"]};
+// convention, and it is scored on the Weekly Ranking ("PI Reading Task", 40 points); and the Nitro Pro / Adobe Acrobat
+// Pro how-to homework is taken off the deck as well
+const SKIP = {1: ["expectations", "reminders", "pm", "hubstaff", "reading", "homework"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {};
 // material the guide names without a link yet: {day: [{after: sectionId, name, note?}]} — shown as a "link coming" box

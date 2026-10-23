@@ -421,7 +421,7 @@ function slideCard(d, info, list, i, logo){
       <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         <span class="ftdd-n" data-base="Slide ${i + 1} of ${n}">Slide ${i + 1} of ${n}</span></div>
       ${s.agenda ? "" : slideActions(s, info, body, i)}
-      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
+      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
     </div>`;
 }
 function renderDeck(){
@@ -596,9 +596,8 @@ const LESSON_CARDS = {
       {t: "Typing & Spelling Tests", time: "8:00–8:10 AM", sub: "Typing twice daily (AM and before shift end) · spelling once", k: "read", go: "skills"},
       {t: "Hubstaff To-Do Set-up", sub: "Daily requirement · [Session Type + Day]: [Program] – [Module Day]", k: "read", go: "shadowing"},
       {t: "Client Identification Exercise", k: "interactive", d: 1, s: "client-id"},
-      {t: "Training Monitoring Sheet Setup", k: "read", d: 1, s: "monitoring"},
-      {t: "Nitro Pro & Adobe Acrobat Pro", sub: "Install and work through the tutorials", k: "homework", d: 1, s: "homework"}],
-    outside: ["Nitro Pro and Adobe Acrobat Pro tutorials — install both, then complete the walkthroughs", "Personal Injury (PI) reading task"],
+      {t: "Training Monitoring Sheet Setup", k: "read", d: 1, s: "monitoring"}],
+    outside: ["Personal Injury (PI) reading task"],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
       "Set your Hubstaff To-Dos daily from the template before the session starts", "Time limit: 45 mins max · Evaluation: Monitoring sheet entry checked at the end of the session"],
     takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
@@ -951,6 +950,14 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 /* a slide with a line or two: its content sits in the middle of the sheet rather than alone at the top */
 .ftdd-sheet.ftdd-short{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;}
 .ftdd-sheet.ftdd-short > *{width:100%;}
+/* a homework slide reads as one notice: centred, in a bigger type */
+.ftdd-sheet.ftdd-hw{text-align:center;font-size:19px;line-height:1.55;}
+.ftdd-sheet.ftdd-hw p, .ftdd-sheet.ftdd-hw li{font-size:inherit;}
+.ftdd-sheet.ftdd-hw ul, .ftdd-sheet.ftdd-hw ol{display:inline-block;text-align:left;}
+.ftdd-sheet.ftdd-hw .ftdd-tiles, .ftdd-sheet.ftdd-hw .url-list{justify-content:center;}
+.ftdd-sheet.ftdd-hw .url-list > span{display:block;}
+.ftdd-sheet.ftdd-hw .ftdd-vwrap{justify-content:center;}
+.ftdd-sheet.ftdd-hw .ftdd-tile b{font-size:18px;}
 /* a screenshot or sample fits the slide: it shrinks to the sheet instead of making it scroll */
 .ftdd-sheet img{max-width:100%;height:auto;max-height:min(58vh,560px);object-fit:contain;}
 /* an embedded deck keeps its 16:9 but never grows past the slide (js/ft-updates.js gives it a padding-top box) */
