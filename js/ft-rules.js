@@ -333,9 +333,10 @@ const SLIDES = [
     <div class="ftr-habit-emb"><div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>
       <div class="ftr-keep"><div class="ftr-part-h">🗂 Training Matrix</div><p class="ftr-tip">${esc(HABITS[0].matrix.note)}</p>${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div></div>`],
   ["eod", "Your EOD Email: The Template", ()=>`
-    <div class="ftr-part">
+    <div class="ftr-part ftr-eod">
+      <div class="ftr-part-h">📧 Your EOD Email</div>
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
-      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join("")}
+      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0]).replace(/\//g, "/<wbr>")}</b><span>${esc(p[1])}</span></div>`).join("")}
       <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
     </div>
     <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
@@ -575,13 +576,18 @@ body.ft-orient #lessonSlideWrap .ftr-habit-emb .ftr-embed{height:max(300px, min(
 body.ft-orient #lessonSlideWrap .ftr-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-cols2 .ftr-def{grid-template-columns:minmax(0,36%) minmax(0,1fr);}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap :is(.ftr-notes, .ftr-cols2){grid-template-columns:minmax(0,1fr);} }
-/* the term/definition tables in more contrast: a navy rule under each heading, darker row lines, every other row shaded */
-body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def){background:#fff;border:1.5px solid #B9C0D0;}
-body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-part-h{padding-bottom:6px;border-bottom:3px solid #343C66;}
-body.ft-orient #lessonSlideWrap .ftr-def{border-top:1px solid #C9CFDD;padding:8px 10px;margin:0 -10px;}
-body.ft-orient #lessonSlideWrap .ftr-def:first-of-type{border-top:0;margin-top:4px;}
-body.ft-orient #lessonSlideWrap .ftr-def:nth-of-type(even){background:#EEF1F8;}
-body.ft-orient #lessonSlideWrap .ftr-def b{color:#1E2340;font-weight:800;} body.ft-orient #lessonSlideWrap .ftr-def span{color:#1B1E2E;}
+/* the term/definition tables in high contrast: a navy heading bar, the terms in a shaded column, darker row lines */
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def){background:#fff;border:2px solid #343C66;padding:0;overflow:hidden;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-part-h{background:#1E2340;color:#fff !important;padding:10px 16px;margin:0;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-def{border-top:1px solid #AEB6CA;padding:0;margin:0;gap:0;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-def:first-of-type{border-top:0;margin-top:0;}
+body.ft-orient #lessonSlideWrap .ftr-def b{background:#E1E7F5;color:#1E2340;font-weight:800;padding:9px 14px;border-right:2px solid #343C66;}
+body.ft-orient #lessonSlideWrap .ftr-def span{color:#0F1222;padding:9px 14px;}
+body.ft-orient #lessonSlideWrap .ftr-def:nth-of-type(odd) span{background:#F4F6FB;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > :not(.ftr-def):not(.ftr-part-h){margin:10px 16px;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-aux{border-top:0;border-bottom:2px solid #343C66;margin:0 !important;padding:10px 16px !important;background:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-def b{overflow-wrap:normal;word-break:normal;}
+body.ft-orient #lessonSlideWrap .ftr-eod .ftr-def{grid-template-columns:minmax(0,34%) minmax(0,1fr);}
 /* in the middle of the sheet: narrower boxes and short rows of cards are centered */
 body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *){margin-left:auto !important;margin-right:auto !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)) !important;}
