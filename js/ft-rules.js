@@ -347,11 +347,13 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // The 4 daily deliverables: an overview (the tests are in the Practice Lab), the Daily Task Tracker, the Monitoring Sheet and the EOD email
+  // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are in 🛠 Practice Lab → 🧪 Skill Building.</p>
-    <div class="ftr-lessons ftr-two">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
-      ["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
+    <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
+      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your VA Output folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
+      ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
+    ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   ["habits-trackers", `Building Your Habits: ${HABITS[1].name}`, ()=>`
@@ -597,6 +599,9 @@ body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ft
 /* the content takes the sheet's whole width (no narrow column in the middle of it) */
 body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-stakes p, .ftr-habit){max-width:none !important;}
 body.ft-orient #lessonSlideWrap .ftr-lessons.ftr-two{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+body.ft-orient #lessonSlideWrap .ftr-tests span b{font-size:inherit !important;font-family:inherit !important;}
+body.ft-orient #lessonSlideWrap .ftr-test-links{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;}
+body.ft-orient #lessonSlideWrap .ftr-test-links .btn{text-decoration:none;font-size:14px !important;padding:4px 10px !important;min-height:0 !important;}
 body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin-top:4px;}
 body.ft-orient #lessonSlideWrap .ftr-cam .ftr-part{padding:12px 14px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:minmax(0,1fr) !important;} }

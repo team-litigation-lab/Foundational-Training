@@ -120,8 +120,8 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (pins.length !== 2 || !/Setting of Training Expectations/.test(pins[0]) || pins[1] !== 'Know Your Tools') fail(`the pinned cards are ${JSON.stringify(pins)}`);
   await page.click('.ftkt-card .module-start-btn'); await page.waitForTimeout(1200);
   const kt = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-dtitle') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
-  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 10) fail(`the Know Your Tools card didn't open its page with ten tools: ${JSON.stringify(kt)}`);
-  for (let t = 0; t < 10; t++) {
+  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 7) fail(`the Know Your Tools card didn't open its page with seven tools: ${JSON.stringify(kt)}`);
+  for (let t = 0; t < 7; t++) {
     await page.evaluate(t => FTDayDecks.tool(t), t); await page.waitForTimeout(300);
     const tool = await page.evaluate(async () => { const img = document.querySelector('.ftdd-tool-shot img');
       if (img && !img.complete) await new Promise(r => { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 3000); });
