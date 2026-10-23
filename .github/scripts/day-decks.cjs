@@ -193,6 +193,18 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const listen = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
     for (let i = 0; i < n; i++) { FTDayDecks.to(i); if (/Call Listening/.test((document.querySelector('.ftdd-ribbon span') || {}).textContent || '')) return [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()); } return null; });
   if (!listen || !listen.some(x => /Call Listening Log/.test(x))) fail(`the Call Listening slide has no log button: ${JSON.stringify(listen)}`);
+  // 🗺 Map: the training roadmap, every lesson with its days and each day's slides; the slide you are on is marked,
+  // and a slide in it opens that slide
+  await page.evaluate(() => FTDayDecks.open(7, 2)); await page.waitForTimeout(1000);
+  await page.click('.ftdd-nav .ftdd-map'); await page.waitForTimeout(500);
+  const roadmap = await page.evaluate(() => ({ open: !!document.getElementById('ftMap'), lessons: document.querySelectorAll('.ftmap-lesson').length, days: document.querySelectorAll('.ftmap-day').length,
+    here: (document.querySelector('.ftmap-day.here .ftmap-dt') || {}).textContent || '', on: (document.querySelector('.ftmap-slide.on .ftmap-sn') || {}).textContent || '' }));
+  if (!roadmap.open || roadmap.lessons !== 8 || roadmap.days !== 16 || !/Day 7/.test(roadmap.here) || roadmap.on !== '7.3') fail(`🗺 Map doesn't show the roadmap with Day 7, slide 3 marked: ${JSON.stringify(roadmap)}`);
+  await page.click('.ftmap-slide:has(.ftmap-sn:text-is("9.2"))'); await page.waitForTimeout(800);
+  const went = await page.evaluate(() => ({ day: FTDayDecks.state().day, i: FTDayDecks.state().i, open: !!document.getElementById('ftMap') }));
+  if (went.day !== 9 || went.i !== 1 || went.open) fail(`a slide on the map didn't open it: ${JSON.stringify(went)}`);
+  await page.click('.ftdd-nav .ftdd-map'); await page.waitForTimeout(300); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  if (await page.$('#ftMap')) fail('Escape doesn\'t close the map');
   // ◫ split screen shows two slides, ▶ autoplay turns them on its own
   await page.evaluate(() => { FTDayDecks.to(1); FTDayDecks.split(); }); await page.waitForTimeout(800);
   if (await page.$$eval('.ftdd-slides .ftdd-deck', x => x.length) !== 2) fail('split screen doesn\'t show two slides');

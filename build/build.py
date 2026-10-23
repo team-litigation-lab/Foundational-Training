@@ -99,12 +99,12 @@ if not (n1 and n2 and n3):
 s, n4 = re.subn(
     r'(body::before\{\s*\n\s*content:"";position:fixed;inset:0;z-index:0;pointer-events:none;\s*\n)'
     r'.*?\n\}',
-    lambda m: m.group(1) + '  background-image:url("/img/bg-flag-law.webp");\n'
+    lambda m: m.group(1) + '  background-image:url("/img/bg-flag-law.webp?v=2026-10-23");\n'
               '  background-size:cover;background-position:center;\n'
               '  opacity:.2;\n  will-change:transform;\n}',
     s, count=1, flags=re.S)
 s, n5 = re.subn(r'/\* Page background photo: faint, fixed, behind everything \*/',
-                '/* Page background photo: the U.S. flag and the law book (img/bg-flag-law.webp), faint, fixed, behind every page */', s, count=1)
+                '/* Page background photo: the U.S. flag beside a law library and a desk (img/bg-flag-law.webp), faint, fixed, behind every page */', s, count=1)
 if not (n4 and n5):
     sys.exit(f"MISSING page-background anchors: {n4} {n5}")
 

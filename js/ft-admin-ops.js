@@ -67,7 +67,7 @@ function renderAdminSOPs(){
   return `
     <div class="ops-hero">
       <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>📋 SOPs</h1>
-      <p>This program’s standard operating procedures, written and kept by its trainers: the steps a trainee is held to, in one place, so every trainer teaches and grades the same way. The trainer’s run-book for the sessions themselves is <b>📘 Curriculum</b>; the rules a trainee reads are in <b>📌 Training Orientation and Rules</b>.</p>
+      <p>This program’s standard operating procedures, written and kept by its trainers: the steps a trainee is held to, in one place, so every trainer teaches and grades the same way. The trainer’s run-book for the sessions themselves is <b>📘 Curriculum</b>; the rules a trainee reads are in <b>📌 Setting of Training Expectations and Company Policies</b>.</p>
       ${SOP.err ? `<p class="ops-err">${e(SOP.err)}</p>` : ""}
       <div class="ops-row">
         <button class="btn btn-navy btn-sm" onclick="FTOps.sopNew()">＋ New SOP</button>
