@@ -483,6 +483,17 @@ let fitT = null;
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
 const FIT_MIN = 0.5;
 const PAGE_ZOOM = 0.75;   // a page holds up to a third more than the screen, scaled down to fit: fuller pages, fewer of them
+// a slide with room to spare is drawn bigger, up to max, so its content fills the sheet instead of sitting small in it
+function zoomUp(box, max){
+  const inner = [...box.children].filter(k => k.style.display !== "none");
+  if(!inner.length || !box.clientHeight || box.scrollHeight > box.clientHeight + 2) return;
+  let z = parseFloat(inner[0].style.zoom) || 1; if(z < 1) return;
+  while(z < max){
+    const up = Math.round((z + 0.05) * 100) / 100; inner.forEach(k => { k.style.zoom = String(up); });
+    if(box.scrollHeight > box.clientHeight + 2){ inner.forEach(k => { k.style.zoom = z === 1 ? "" : String(z); }); break; }
+    z = up;
+  }
+}
 // scales the card's content down until it fits; true when it does
 function zoomToFit(box, min){
   const inner = [...box.children];
@@ -532,6 +543,7 @@ function fitSheets(){
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, 0.4);
+    else if(!sheet.classList.contains("ftdd-sheet-edit") && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });

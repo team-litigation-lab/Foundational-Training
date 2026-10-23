@@ -13,7 +13,7 @@
        matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
        Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
        deliverables (an overview, then the typing and spelling tests, the Daily Task Tracker part by part with its filled-in
-       sample and the one 📋 Open My Task Tracker button, the Training Monitoring Sheet embedded, and the EOD email with
+       sample, the 📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), the Training Monitoring Sheet embedded, and the EOD email with
        its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
        Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
        training GC, with its own file, questions and naming convention, and it is scored on the Weekly Ranking.
@@ -333,11 +333,11 @@ const SLIDES = [
   ["tracker-sample", "Your Daily Task Tracker: A Filled-In Sample", ()=>`<div class="ftr-keep">
     <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
     ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}</div>`],
+    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`}</div>`],
   ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
     rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
     (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
-    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('monitoring')">📒 Save My Sheet’s Link</button></div>`) + `</div>`],
+    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -402,16 +402,19 @@ function fitOrient(w){
   w.querySelectorAll(".pg-badge").forEach(x=>x.remove());
   w.classList.remove("pg-later", "pg-roomy");
   body.style.zoom = "";
-  const over = ()=>card.scrollHeight > card.clientHeight + 2;
+  const over = ()=>card.scrollHeight > card.clientHeight;
   let z = 1;
   while(over() && z > 0.5){ z = Math.round((z - 0.05) * 100) / 100; body.style.zoom = String(z); }
   // a short slide is drawn bigger, so its cards fill the sheet instead of sitting small in the middle of it
   if(z === 1 && !over()){
-    while(z < 1.5){ const up = Math.round((z + 0.05) * 100) / 100; body.style.zoom = String(up); if(over()){ body.style.zoom = String(z); break; } z = up; }
+    while(z < 1.6){ const up = Math.round((z + 0.05) * 100) / 100; body.style.zoom = String(up); if(over()){ body.style.zoom = String(z); break; } z = up; }
   }
   if(over()){ body.style.zoom = ""; return false; }
   state.slidePages = 1; state.slidePage = 0;
   if(typeof updateSlidePageUi === "function") updateSlidePageUi();
+  // the web fonts can still be arriving: fit again once they have, if the slide then runs over
+  if(document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(()=>{ if(w.isConnected && over()) fitOrient(w); });
+  setTimeout(()=>{ if(w.isConnected && card.isConnected && over()) fitOrient(w); }, 400);
   // a picture that hasn't loaded yet has no height: fit again once it has
   w.querySelectorAll("img").forEach(img=>{ if(!img.complete && !img.dataset.ftrFit){ img.dataset.ftrFit = "1"; img.addEventListener("load", ()=>{ if(w.isConnected) fitOrient(w); }, {once:true}); } });
   return true;
@@ -537,12 +540,12 @@ body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;a
 body.ft-orient #lessonSlideWrap.ftr-measure > .card.lesson-card{justify-content:flex-start !important;}
 /* a slide split into pages: its sheet holds the whole of each page (the engine measures what runs past the slide) */
 body.ft-orient #lessonSlideWrap.ftr-paged > .card.lesson-card{flex:1 0 auto;overflow:visible;justify-content:flex-start !important;}
-body.ft-orient #lessonSlideWrap > .card.lesson-card > .ft-body{width:100%;max-width:1180px;margin:0 auto !important;flex:0 0 auto;background:transparent;border-radius:0;padding:0 !important;box-shadow:none;}
+body.ft-orient #lessonSlideWrap > .card.lesson-card > .ft-body{width:100%;max-width:none;margin:0 auto !important;flex:0 0 auto;background:transparent;border-radius:0;padding:0 !important;box-shadow:none;}
 /* full screen and the slides window too (their rules make the slide a block and its parts full width) */
 body.ft-orient #lessonStage #lessonSlideWrap, body.ft-orient #audienceRoot #lessonSlideWrap{display:flex !important;flex-direction:column !important;}
 body.ft-orient #lessonStage #lessonSlideWrap > .card.lesson-card, body.ft-orient #audienceRoot #lessonSlideWrap > .card.lesson-card{width:auto !important;max-width:none !important;min-height:0 !important;}
 /* the type, as the Case Management slides set it: Inter 500 at 17px, bold at 700, headings in Poppins */
-body.ft-orient #lessonSlideWrap .ftr-slide{font:500 16.5px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
+body.ft-orient #lessonSlideWrap .ftr-slide{font:500 18.5px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
 body.ft-orient #lessonSlideWrap .ftr-slide :is(b,strong){font-weight:700;}
 body.ft-orient #lessonSlideWrap .ftr-slide :is(.ftr-part-h,.ftr-chan-h,.ftr-goal > b,.ftr-stakes > b,.ftr-rule > b,.ftr-lesson > b){font-family:'Poppins','Inter',sans-serif;font-weight:800;}
 /* an embedded sheet (Monitoring Sheet, sample tracker) and the Hubstaff pictures fit the sheet */
@@ -551,6 +554,12 @@ body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
 body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
+/* bigger type on the sheet: the boxes, rules, lists and cards all at 18px, their headings at 21px (a slide too long for
+   its sheet is still scaled down to fit, by fitOrient) */
+body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-goal p, .ftr-stakes p, .ftr-rule span, .ftr-lesson span, .ftr-list, .ftr-list li, .ftr-part ol, .ftr-part li, .ftr-def, .ftr-when, .ftr-aux, .ftr-todo-tx, .ftr-tip, .ftr-chan p){font-size:18px !important;line-height:1.45 !important;}
+body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ftr-lesson b, .ftr-part-h, .ftr-chan-h){font-size:21px !important;}
+/* the content takes the sheet's whole width (no narrow column in the middle of it) */
+body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-stakes p, .ftr-habit){max-width:none !important;}
 body.ft-orient #lessonSlideWrap .ftr-lessons.ftr-two{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin-top:4px;}
 body.ft-orient #lessonSlideWrap .ftr-cam .ftr-part{padding:12px 14px;}
