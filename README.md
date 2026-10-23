@@ -375,6 +375,17 @@ Every training day has its own deck: **Days 1–18**, one slide per part of the 
 
 **📚 Dashboard is the eight lessons, on one screen** (`LSH_HOME_GRID_LAYOUT` in `js/ft-day-decks.js`): the portal's own lesson card for each, four across and two down, its buttons in the order the session runs — **▶ Live discussion** on top (the lesson deck, 🔒 until the trainer opens it in 📅 Open Lessons), then **🎬 Video** (🔒 until the trainer unlocks it) and **🏠 Classroom** (the offline activity: the lesson's homework, else its last activity). The lesson's icon opens its day card (the day deck). A lesson's card holds its discussion day and the days after it until the next lesson: Lesson 1 Day 1, Lesson 2 Day 2, Lesson 3 Day 3, Lesson 4 Day 4, Lesson 5 Days 5–6, Lesson 6 Days 7–9, Lesson 7 Days 10–12, Lesson 8 Days 13–16.
 
+**🧰 Know Your Tools (Day 1, the slide after the Classroom Activity card).** It introduces every tool the training uses, one at a time. The tools are listed on the left of the sheet. The picked tool shows a real screenshot (click it for full size), *What it's for*, *Where* to find it, its *Features* and a button that opens it, with *Next tool →*. The ten tools are the 📋 Activity Deck, 🗂 the LSH Case Management System (CMS), ☎ LSH Ring Channel (the Call Simulator), 🛠 the Practice Lab, 📅 the Google Calendar Simulator, 🧰 the Drafting Tools, 🧪 Skill Building, ✍️ Knowledge Check, 📒 the Training Monitoring Sheet and 👥 Shadowing & To-Do. The Day 1 card has a *Know Your Tools* row that opens the slide.
+- **Where it is:** `TOOLS` and `toolsSlide()` in `js/ft-day-decks.js` (the slide id is `tools` in `build/days/day01.js`, whose text is the plain list a reader without the deck gets). Change a tool's text there.
+- **The screenshots** are in `ft/day1/img/tools/` (WebP, 1200 px wide), each shown in the same 16:10 frame from its top:
+  - the platform's own pages, taken in a browser as a trainee;
+  - the CMS: its 🧭 Blueprint picture of a case file (CaseManagementTraining, `blueprint/trainee-case-file.jpg`);
+  - LSH Ring Channel: its tests' picture of an incoming call (lshringchannel, `tests/03-trainee-ringing.png`);
+  - the Drafting Tools: the Training Portal's `simulators/drafting.html`.
+  
+  Retake a screenshot when its screen changes.
+- **One screen:** the slide is one panel, never split into pages. On a short screen it is scaled down (to half size at the smallest) so the picked tool always shows whole.
+
 **Every day deck opens on its day card** (in place of the Training Agenda): the day that opens a lesson on the lesson's Classroom Discussion card, with its Process Questions' key takeaways and file name; a day after it (Days 6, 8–9, 11–12, 14–16) on a *Day N* card of that day's own rows and focus (`DAY_TITLES`, `DAY_FOCUS`), with **📋 Day N** buttons between the lesson's days:
 - **The header:** *Classroom Discussion: [lesson]*, its days, **▶ Live session** (the lesson) and **Classroom** (the offline activity).
 - **Activity & task sequence (left):** numbered rows in the order the guide runs them, each with a pill for its kind (Classroom, Read & do, Interactive activity, Watch & do, Assessment, Mock calls, Demo, Shadowing, Buffer, Call listening, Homework). A row opens its own slide in that day's deck (`{d, s}`: the day and the slide id in `build/days/`) or the platform page it names (`{go}`). Once the trainer has added something to a no-discussion day, a **📌 From your trainer · Day N** row opens it. A multi-day lesson's card has **📋 Day N** buttons for each day's slides.

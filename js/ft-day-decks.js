@@ -107,6 +107,7 @@ function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
+  if(s.id === "tools") return {ic: "🧰", label: "Know your tools"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
@@ -408,7 +409,7 @@ function slideActions(s, info, body, i){
 }
 function slideCard(d, info, list, i, logo){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : visual(slideSrc(DD.day, s));
+  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s));
   // the first slide is the lesson's Classroom Discussion card, where the day has one; else the Training Agenda
   const lc = s.agenda ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom discussion"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -511,8 +512,12 @@ function fitSheets(){
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close with a light scale rather than a scrollbar
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 4){
-      const z = Math.max(0.74, Math.min(1, (sheet.clientHeight - 6) / sheet.scrollHeight));
-      sheet.style.zoom = String(Math.floor(z * 100) / 100);
+      // (🧰 Know Your Tools is one panel, never paged: it may go smaller, so the picked tool always shows whole)
+      const min = sheet.querySelector(".ftdd-tools") ? 0.5 : 0.74;
+      let z = Math.floor(Math.max(min, Math.min(1, (sheet.clientHeight - 6) / sheet.scrollHeight)) * 100) / 100;
+      sheet.style.zoom = String(z);
+      // the estimate can fall a little short (text rewraps once scaled): step down until it fits or reaches the floor
+      while(sheet.scrollHeight - sheet.clientHeight > 2 && z > min){ z = Math.max(min, Math.round((z - 0.02) * 100) / 100); sheet.style.zoom = String(z); }
     }
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
@@ -593,6 +598,7 @@ const LESSON_CARDS = {
   1: {days: [1], focus: "VA Essentials & Software Setup",
     rows: [
       {t: "Setting of Expectations", time: "8:00–9:00 AM", k: "classroom", go: "lesson"},
+      {t: "Know Your Tools", sub: "The CMS and the platform’s tools: what each is for, and its features", k: "classroom", d: 1, s: "tools"},
       {t: "Typing & Spelling Tests", time: "8:00–8:10 AM", sub: "Typing twice daily (AM and before shift end) · spelling once", k: "read", go: "skills"},
       {t: "Hubstaff To-Do Set-up", sub: "Daily requirement · [Session Type + Day]: [Program] – [Module Day]", k: "read", go: "shadowing"},
       {t: "Client Identification Exercise", k: "interactive", d: 1, s: "client-id"},
@@ -874,10 +880,101 @@ root.goToKnowledgeCheckWithInterstitial = async function(){
   open(day, 0);
 };
 
+/* ---------- 🧰 Know Your Tools (Day 1, after the Classroom Activity card) ----------
+   Every tool this training uses, one at a time: a real screenshot of it, what it is for, where to find it and its
+   features, with a button that opens it. The list sits on the left of the sheet and the picked tool fills the rest,
+   so the whole slide fits one screen. The screenshots are in ft/day1/img/tools/: the platform's own pages, the CMS's
+   (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Ring Channel's (its tests' pictures). */
+const TOOL_IMG = "/ft/day1/img/tools/";
+const TOOLS = [
+  {ic: "📋", name: "Activity Deck", img: "activity-deck", where: "📚 Dashboard → a lesson’s 📋 Day N, or 📋 Classroom Activity on a lesson’s last slide",
+    what: "Each training day’s instructions, slide by slide: what to do, in the order the day runs it.",
+    feats: ["Opens on the day’s Classroom Activity card: the activity and task sequence, today’s focus and where your answers go",
+      "Videos, documents and decks open right on the slide; 📝 What I learned keeps your notes on each video",
+      "◫ Split screen shows two slides side by side; ▶ Autoplay turns them for you",
+      "📋 Today’s To-Do and 📘 the day’s lesson are one click away"]},
+  {ic: "🗂", name: "LSH Case Management System (CMS)", short: "CMS (Case Management)", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
+    what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
+    feats: ["🔍 Search cases by client name (Ctrl / Cmd + K); when names match, it asks for the date of the accident and the date of birth",
+      "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
+      "📝 New Intake: the intake form for the case type, graded on how much you gathered",
+      "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
+  {ic: "☎", name: "LSH Ring Channel · Call Simulator", short: "Call Simulator", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Call Simulator (it opens in its own tab)",
+    what: "The training phone: your trainer, or an AI caller, rings your line and you take the call live with your headset on.",
+    feats: ["Answer within 3 rings and greet with the firm’s name and yours",
+      "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
+      "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
+      "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
+  {ic: "🛠", name: "Practice Lab", img: "practice-lab", go: "goto('simulators')", where: "🛠 Practice Lab in the top bar",
+    what: "Real work, in real time, for your firm: each Practice Session is done live in the CMS and on the Call Simulator, checked against your firm’s rules and reviewed by your trainer.",
+    feats: ["🟢 Practice Sessions by day: Reception and Intake Mock Calls, the Calendaring Practice Lab, Medical Records requests",
+      "🎯 A graded call counts toward its lesson",
+      "Home of 🧪 Skill Building, 🧰 Drafting Tools and the simulators",
+      "Each session opens with its lesson, so you practise what you just learned"]},
+  {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
+    what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
+    feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
+      "Eastern Time on a 15-minute grid, with 15 minutes between events",
+      "Each event colored by its length, as the attorney’s color rule says",
+      "An automated review checks the week before you submit it to your trainer"]},
+  {ic: "🧰", name: "Drafting Tools", img: "drafting-tools", go: "goto('lor')", where: "🛠 Practice Lab → 🧰 Drafting Tools",
+    what: "The firm’s own documents to draft: the Letters of Representation to the carriers and the medical providers’ letters.",
+    feats: ["Each letter opens as the firm’s original, read-only",
+      "✎ Edit in Word or ✎ Edit in PDF on your own computer, then upload it",
+      "Your upload is checked, and the score goes to your progress",
+      "It shows the file name to save it under"]},
+  {ic: "🧪", name: "Skill Building · Typing & Spelling", short: "Skill Building", img: "skill-building", go: "goto('skills')", where: "🛠 Practice Lab → 🧪 Skill Building",
+    what: "The daily skill tests: typing twice a day (in the morning and before the end of your shift), spelling once.",
+    feats: ["⌨ Typing: 60 seconds on a passage about the work; clients look for 60 WPM",
+      "🔤 Spelling: 15 words read aloud in a sentence, from the course’s legal, medical and business words",
+      "Each result is saved with its date and time: no screenshot to take, name or upload",
+      "Your log keeps every result"]},
+  {ic: "✍️", name: "Knowledge Check", img: "knowledge-check", go: "goto('process')", where: "✍️ Knowledge Check in the top bar",
+    what: "Each module’s Process Questions, answered in writing on the platform and graded.",
+    feats: ["A module’s questions open once you finish the module",
+      "📝 Submit for Grading: a score and feedback under each answer, then your trainer’s review",
+      "🎮 Knowledge Games review a lesson as a game show before you answer; they don’t change your grade",
+      "📁 Your Trainee Folder’s Drive link, so new documents are made there"]},
+  {ic: "📒", name: "Training Monitoring Sheet", short: "Monitoring Sheet", img: "monitoring-sheet", go: "goto('monitoring')", where: "📂 My Pages → 📒 Monitoring Sheet",
+    what: "Your record of each classroom discussion, filled in as soon as the discussion is covered.",
+    feats: ["One entry per discussion: the date, 5 major takeaways, 3 questions you still have, and your rating",
+      "📄 The Monitoring Sheet template to copy",
+      "📁 Your Drive links: the VA Output folder, the Daily Task Tracker and the Monitoring Sheet",
+      "✅ Checked every night and when you press Check now; your trainer adds a score and comments"]},
+  {ic: "👥", name: "Shadowing & To-Do", img: "shadowing-todo", go: "goto('shadowing')", where: "📋 Today’s To-Do on the Activity Deck",
+    what: "Your Hubstaff To-Do for each day, in the Training Guide’s exact wording, and your log of each shadowing session.",
+    feats: ["📋 Copy the day’s To-Do straight into Hubstaff",
+      "The day’s activities in the guide’s order, with where each one is done",
+      "Log each shadowing session (Days 7, 11, 14, 15 and 16)",
+      "Any day’s To-Do, from Day 1 to Day 16"]}
+];
+function toolsSlide(){
+  const k = Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)), t = TOOLS[k];
+  const open = t.href ? `<a class="btn btn-navy btn-sm" href="${e(t.href)}" target="_blank" rel="noopener">Open ${e(t.name.split(" · ")[0])} ↗</a>`
+    : t.go ? `<button type="button" class="btn btn-navy btn-sm" onclick="${e(t.go)}">Open ${e(t.name.split(" · ")[0])} →</button>` : "";
+  return `<div class="ftdd-tools">
+    <div class="ftdd-tools-list" role="tablist" aria-label="The training’s tools">${TOOLS.map((x, i) => `<button type="button" role="tab" aria-selected="${i === k}" class="ftdd-tools-tab${i === k ? " on" : ""}" title="${e(x.name)}" onclick="FTDayDecks.tool(${i})"><span class="ftdd-tools-ic">${x.ic}</span><span>${e(x.short || x.name)}</span></button>`).join("")}</div>
+    <div class="ftdd-tool" role="tabpanel">
+      <a class="ftdd-tool-shot" href="${TOOL_IMG}${t.img}.webp" target="_blank" rel="noopener" title="Open the screenshot full size"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></a>
+      <div class="ftdd-tool-txt">
+        <h3>${t.ic} ${e(t.name)}</h3>
+        <p class="ftdd-tool-what"><b>What it’s for:</b> ${e(t.what)}</p>
+        <p class="ftdd-tool-where"><b>Where:</b> ${e(t.where)}</p>
+        <p class="ftdd-tool-fh">Features</p>
+        <ul>${t.feats.map(f => `<li>${e(f)}</li>`).join("")}</ul>
+        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : ""}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
 root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
+  // 🧰 Know Your Tools: show this tool
+  tool(i){ DD.tool = Number(i) || 0; render(); },
+  tools: () => TOOLS.map(t => t.name),
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
     const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
@@ -982,6 +1079,27 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-stage-split .ftdd-sheet img{max-height:min(44vh,420px);}
 .ftdd-stage-split .ftdd-sheet .canva-frame{height:min(34vh,300px) !important;}
 .ftdd-onnavy{overflow:auto;min-height:0;}
+/* 🧰 Know Your Tools: the tools listed on the left, the picked one (its screenshot, what it is for, where, its features) */
+.ftdd-tools{display:grid;grid-template-columns:minmax(190px,240px) minmax(0,1fr);gap:16px;height:100%;min-height:0;}
+.ftdd-tools-list{display:flex;flex-direction:column;gap:4px;min-height:0;}
+.ftdd-tools-tab{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #E3E6EE;background:#F6F7FA;color:#262B45;border-radius:10px;padding:5px 10px;font:600 13px/1.25 'Inter',sans-serif;cursor:pointer;min-width:0;}
+.ftdd-tools-tab > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.ftdd-tools-tab:hover{border-color:#DB8437;}
+.ftdd-tools-tab.on{background:#262B45;border-color:#262B45;color:#fff;}
+.ftdd-tools-ic{flex:0 0 22px;text-align:center;font-size:16px;}
+.ftdd-tool{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start;min-width:0;}
+.ftdd-tool-shot{display:block;aspect-ratio:16/10;border:1px solid #E3E6EE;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(38,43,69,.14);background:#F6F7FA;}
+.ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:cover;object-position:top center;}   /* every screenshot in the same 16:10 frame, from its top */
+.ftdd-tool-txt h3{margin:0 0 8px !important;font:700 20px/1.25 'Poppins','Inter',sans-serif !important;color:#262B45 !important;}
+.ftdd-tool-txt p{margin:0 0 8px;font-size:14px;line-height:1.45;}
+.ftdd-tool-where{color:var(--ink-soft);}
+.ftdd-tool-fh{margin:10px 0 4px !important;font:700 11.5px 'IBM Plex Mono',monospace !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;}
+.ftdd-tool-txt ul{margin:0 0 10px;padding-left:18px;}
+.ftdd-tool-txt li{font-size:13.5px;line-height:1.45;margin:0 0 4px;}
+.ftdd-tool-acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.ftdd-tool-n{font:600 12px 'IBM Plex Mono',monospace;color:var(--ink-soft);}
+@media(max-width:1100px){ .ftdd-tool{grid-template-columns:minmax(0,1fr);} }
+@media(max-width:760px){ .ftdd-tools{grid-template-columns:minmax(0,1fr);} .ftdd-tools-list{flex-direction:row;flex-wrap:wrap;} }
 /* A LINK IS A LINK, NOT A CARD.
    A slide is already a card: boxing every video and document inside it put cards over cards and filled the
    screen with chrome rather than the day's work. Each link is one line on the slide — its icon, the title as
