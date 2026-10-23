@@ -111,9 +111,9 @@ function kindOf(s, html){
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
-  if(/shadowing/i.test(h)) return {ic: "👀", label: "Shadowing"};
-  if(/discussion/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
+  // a shadowing session is part of the day's Classroom Activity; a homework that names Shadowing Etiquette stays Homework
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
+  if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   return {ic: "📝", label: "Read & do"};
