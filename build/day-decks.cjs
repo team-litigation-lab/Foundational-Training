@@ -18,8 +18,9 @@ const R = path.resolve(__dirname, "..");
 // to-dos with the batch, and the day cards already name each day's work; and neither is the PI overview reading
 // task — it is an assessment the trainer posts in the training GC with its own file, questions and naming
 // convention, and it is scored on the Weekly Ranking ("PI Reading Task", 40 points); and the Nitro Pro / Adobe Acrobat
-// Pro how-to homework is taken off the deck as well
-const SKIP = {1: ["expectations", "reminders", "pm", "hubstaff", "reading", "homework"]};
+// Pro how-to homework is taken off the deck as well; and so is the Training Monitoring Sheet set-up (the orientation
+// and 📒 Monitoring Sheet cover it)
+const SKIP = {1: ["expectations", "reminders", "pm", "hubstaff", "reading", "homework", "monitoring"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {};
 // material the guide names without a link yet: {day: [{after: sectionId, name, note?}]} — shown as a "link coming" box

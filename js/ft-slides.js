@@ -226,7 +226,11 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
 @media(min-width:1001px){
   main:has(> #lessonStage) #lessonStage:not(:fullscreen) .stage-body{grid-template-columns:minmax(0,1fr) !important;}
   main:has(> #lessonStage) #lessonStage:not(:fullscreen) .stage-presenter{display:none !important;}
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:center;height:auto;margin:auto 0 0 !important;justify-content:normal;
+  /* a wider side column (240 px, from 200), so the presenter in it is bigger */
+  body:not(.ft-fit) main:has(> #lessonStage){grid-template-columns:minmax(0,1fr) 240px !important;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){width:240px !important;}
+  body.ft-fit main:has(#lessonStage) > #lessonStage{margin-right:256px !important;}
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:flex-end;height:auto;margin:auto -16px 0 0 !important;justify-content:normal;
     transform:scaleX(-1);pointer-events:none;user-select:none;filter:drop-shadow(0 10px 16px rgba(0,0,0,.35));}
 }`;
 document.head.appendChild(sideCss);
@@ -242,7 +246,7 @@ function placePresenter(){
   // as big as the room left under the controls, down to the slide's bottom edge (and no wider than the column)
   img.style.width = "0px";
   const room = stage.getBoundingClientRect().bottom - img.getBoundingClientRect().top - 4;
-  const w = Math.min(top.clientWidth, 230, Math.floor(room * 564 / 520));
+  const w = Math.min(top.clientWidth + 16, 300, Math.floor(room * 564 / 520));   // (she may stand 16 px into the page's margin)
   img.style.width = (w < 80 ? 0 : w) + "px";
 }
 // A deck page (.cs-page) is sized to the room it has, so nothing needs scrolling: on the lesson page the

@@ -113,6 +113,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/gating.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Video access (a trainee asks for a lesson's AI discussion video, the trainer approves it, and it opens for that trainee only)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/video-access.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Knowledge Games (the bank for every lesson, Survey Says matching, all eight games played to the end and saved, the trainer's questions, the worker's rules)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules

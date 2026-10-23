@@ -503,13 +503,22 @@ let ftOpenDaysAt = 0;   // when the open lessons were last read (see ftRefreshOp
 async function ftLoadOpenDays(){
   ftOpenDaysAt = Date.now();
   // Both settings in one request (/api/storage/get-many).
-  const [v, vv] = await sharedGetMany(["settings:opendays", "settings:openvideos"]);
+  // and, for a trainee, the AI discussion videos they asked for and the ones their trainer approved
+  const me = state.traineeId && !state.isAdmin && !state.adminPreview ? state.traineeId : null;
+  const [v, vv, vr, va] = await sharedGetMany(["settings:opendays", "settings:openvideos"].concat(me ? ["videoreq:" + me, "videoaccess:" + me] : []));
+  if(me){
+    const req = (vr && vr.lessons) || {}, acc = (va && va.lessons) || {};
+    const was = JSON.stringify([state.ftVideoReq, state.ftVideoAccess]);
+    state.ftVideoReq = req; state.ftVideoAccess = acc;
+    if(was !== JSON.stringify([req, acc]) && (v != null || vv != null)) state.ftVideosChanged = true;
+  }
   // Nothing back (the server didn't answer: offline, or Cloudflare's request limit): the lessons already
   // open stay open until the next check, rather than locking for everyone in the meantime.
   if(v == null && vv == null && state.ftOpenDays) return false;
   const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: x.batches || {}} : {all: [], batches: {}};
   const next = shape(v), nextV = shape(vv);
-  const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos);
+  const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos) || !!state.ftVideosChanged;
+  state.ftVideosChanged = false;
   state.ftOpenDays = next; state.ftOpenVideos = nextV;
   return changed;
 }
@@ -518,6 +527,7 @@ async function ftLoadOpenDays(){
 state.ftOpenVideos = null;
 function ftVideoUnlocked(id){
   if(state.isAdmin || state.adminPreview) return true;
+  if((state.ftVideoAccess || {})[String(id)]) return true;   // approved for this trainee (videoaccess:<id>)
   const o = state.ftOpenVideos || {};
   return new Set([].concat(o.all || [], (o.batches || {})[ftBatchKey(state.traineeBatch)] || []).map(Number)).has(Number(id));
 }
@@ -609,6 +619,73 @@ function renderFtOpenDays(){
       </div>
     </div>`;
 }
+/* 🎬 A lesson's AI discussion video: the trainee asks for access (🔒 Request Video on the lesson card: videoreq:<id>,
+   their own record), and the trainer approves it for them in Admin → 📅 Open Lessons → 🎬 Unlock Videos
+   (videoaccess:<id>, which only admins write). Unlocking a video for a whole batch still works as before. */
+window.ftRequestVideo = async function(id){
+  if(!state.traineeId || state.isAdmin || state.adminPreview){ toast("Trainees ask for a video from their own lesson card."); return; }
+  if(!confirm(`Ask your trainer for access to the AI discussion video of ${ftName(id)}?`)) return;
+  const req = Object.assign({}, state.ftVideoReq || {}, {[String(id)]: {at: new Date().toISOString()}});
+  const ok = await sharedSet("videoreq:" + state.traineeId, {lessons: req});
+  if(ok === false){ toast("Couldn't send the request. Check your connection and try again."); return; }
+  state.ftVideoReq = req;
+  toast("⏳ Asked. The video opens once your trainer approves it.");
+  render();
+};
+const VREQ = {rows: null, loading: false, at: 0};
+async function ftLoadVideoRequests(){
+  if(VREQ.loading) return; VREQ.loading = true;
+  try{
+    let list = state.adminData;
+    if(!list){ const keys = await sharedList("trainee:"); list = (await sharedGetMany(keys)).filter(Boolean); }
+    const people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    const vals = await ftGetMany([].concat(...people.map(p => ["videoreq:" + p.id, "videoaccess:" + p.id])));
+    const rows = [];
+    people.forEach((p, i) => {
+      const req = (vals[2*i] && vals[2*i].lessons) || {}, acc = (vals[2*i+1] && vals[2*i+1].lessons) || {};
+      Object.keys(req).forEach(l => rows.push({id: p.id, name: p.name || p.id, batch: p.batch || "", lesson: Number(l), at: req[l].at || "", approved: !!acc[l], access: acc}));
+    });
+    VREQ.rows = rows.sort((a, b) => (a.approved - b.approved) || String(b.at).localeCompare(String(a.at)));
+    VREQ.at = Date.now();
+  }catch(e){ VREQ.rows = VREQ.rows || []; }
+  VREQ.loading = false;
+  if(state.view === "admin") render();
+}
+window.ftApproveVideo = async function(tid, lesson, on){
+  const cur = (await sharedGet("videoaccess:" + tid)) || {};
+  const acc = Object.assign({}, cur.lessons || {});
+  if(on) acc[String(lesson)] = {at: new Date().toISOString(), by: (state.adminName || "trainer")}; else delete acc[String(lesson)];
+  const ok = await sharedSet("videoaccess:" + tid, {lessons: acc});
+  if(ok === false){ toast("Couldn't save. Check your connection and try again."); return; }
+  if(!on){   // declined or taken back: the request goes too, so the trainee can ask again
+    const r = (await sharedGet("videoreq:" + tid)) || {}; const lessons = Object.assign({}, r.lessons || {}); delete lessons[String(lesson)];
+    await sharedSet("videoreq:" + tid, {lessons});
+  }
+  toast(on ? `✓ ${ftName(lesson)} video approved.` : `${ftName(lesson)} video request removed.`);
+  VREQ.at = 0; ftLoadVideoRequests();
+};
+function renderFtVideoRequests(){
+  if(!VREQ.rows || Date.now() - VREQ.at > 60000) ftLoadVideoRequests();
+  const rows = VREQ.rows;
+  const pending = (rows || []).filter(r => !r.approved), done = (rows || []).filter(r => r.approved);
+  const row = r => `<div class="ft-vreq">
+      <span><b>${esc(r.name)}</b>${r.batch ? ` · ${esc(r.batch)}` : ""}<br><small>${esc(ftName(r.lesson))}${r.at ? " · asked " + esc(String(r.at).slice(0, 10)) : ""}</small></span>
+      ${r.approved ? `<span class="pill pill-done">Approved</span><button type="button" class="btn btn-ghost btn-sm" onclick="ftApproveVideo('${esc(r.id)}', ${r.lesson}, false)">Take back</button>`
+        : `<button type="button" class="btn btn-navy btn-sm" onclick="ftApproveVideo('${esc(r.id)}', ${r.lesson}, true)">✓ Approve</button><button type="button" class="btn btn-ghost btn-sm" onclick="ftApproveVideo('${esc(r.id)}', ${r.lesson}, false)">Decline</button>`}
+    </div>`;
+  return `<div class="ft-vreqs"><h4>🙋 Requests from trainees${pending.length ? ` <span class="nav-badge">${pending.length}</span>` : ""}</h4>
+    ${rows == null ? `<p class="ft-vreq-note">Loading the requests…</p>`
+      : pending.length ? pending.map(row).join("") : `<p class="ft-vreq-note">No requests waiting. A trainee asks from the lesson card's 🔒 Request Video.</p>`}
+    ${done.length ? `<details class="ft-vreq-done"><summary>Approved (${done.length})</summary>${done.map(row).join("")}</details>` : ""}</div>`;
+}
+(function(){ const st = document.createElement("style"); st.textContent = `
+.ft-vreqs{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}
+.ft-vreqs h4{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px;}
+.ft-vreq{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line);font-size:14px;}
+.ft-vreq > span:first-child{flex:1 1 220px;min-width:0;} .ft-vreq small{color:var(--ink-soft);}
+.ft-vreq-note{margin:0;font-size:13.5px;color:var(--ink-soft);}
+.ft-vreq-done summary{cursor:pointer;font-size:13.5px;color:var(--ink-soft);margin-top:8px;}
+`; document.head.appendChild(st); })();
 function renderFtOpenVideos(){
   const sel = state.ftOdBatch || "__all";
   const o = state.ftOpenVideos || {all:[], batches:{}};
@@ -618,7 +695,7 @@ function renderFtOpenVideos(){
   return `
     <div class="card ft-open-days">
       <h3>🎬 Unlock Videos</h3>
-      <p style="margin:0;color:var(--ink-soft);font-size:14px;">A lesson’s ▶ Video Presentation stays locked for trainees (🔒) until you unlock it here, for ${sel==="__all" ? "<b>All batches</b>" : "batch <b>" + esc(sel) + "</b>"} (the batch chosen above). A video unlocked for All batches is unlocked for everyone.</p>
+      <p style="margin:0;color:var(--ink-soft);font-size:14px;">A lesson’s AI discussion video stays locked for trainees (🔒) until a trainee asks for it and you approve it (Requests, below), or you unlock it here for ${sel==="__all" ? "<b>All batches</b>" : "batch <b>" + esc(sel) + "</b>"} (the batch chosen above). A video unlocked for All batches is unlocked for everyone.</p>
       <div class="ft-od-days" style="margin-top:10px;">
         ${withVideo.map(d=>{
           const on = open.has(d.id), viaAll = sel!=="__all" && everyone.has(d.id);
@@ -628,6 +705,7 @@ function renderFtOpenVideos(){
           </label>`;
         }).join("")}
       </div>
+      ${renderFtVideoRequests()}
     </div>`;
 }
 window.ftToggleOpenVideo = async function(id, on){
@@ -755,7 +833,9 @@ window.moduleCard = function(d){
     ${status==="open" && typeof finishTrainingForDay==="function" ? `<button type="button" class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); finishTrainingForDay(${d.id})">✓ Finish Training</button>` : ""}
     ${d.video ? (ftVideoUnlocked(d.id)
       ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>`
-      : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Your trainer unlocks this video">🔒 Video Presentation</button>`) : ""}
+      : (state.ftVideoReq || {})[String(d.id)]
+        ? `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked ft-video-pending" disabled title="You asked for this video: your trainer approves it">⏳ Video Requested</button>`
+        : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked ft-video-ask" onclick="event.stopPropagation(); ftRequestVideo(${d.id})" title="Ask your trainer for access to this lesson's AI discussion video">🔒 Request Video</button>`) : ""}
   </div>`;
 };
 // There is only one landing-page format now: js/lsh-program.js's renderModules() (📚 Dashboard), the same
@@ -847,7 +927,7 @@ function lvReset(){
 // Lessons are finished from their last slide ("✓ Finish lesson").
 window.ftOpenVideo = function(id){
   const d = DAYS.find(x=>x.id===id);
-  if(d && d.video && !ftVideoUnlocked(id)){ toast("🔒 This video opens when your trainer unlocks it."); return; }
+  if(d && d.video && !ftVideoUnlocked(id)){ toast("🔒 Ask your trainer for this video: it opens once they approve it."); return; }
   if(d && d.video) lvOpen({kind:"video", title:`${d.title} — Video Presentation`, url:d.video});
 };
 function lvOpen(item){

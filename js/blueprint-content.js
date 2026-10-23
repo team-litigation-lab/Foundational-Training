@@ -61,7 +61,7 @@ window.LSH_BLUEPRINT = {
           'Daily Task Tracker: update it in your VA Output folder before the end of every shift, and submit the day\'s output links.',
           'Every open task gets a Daily Note for the day; the tracker is checked every evening.',
           'EOD email before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day\'s tasks.',
-          'Auxes and Hubstaff: !in and !back in #⏳-timestamps, In in #batch-group-channel. Your Hubstaff To-Dos are named exactly as given.'],
+          'Auxes and Hubstaff: !in and !back in #⏳-timestamps, In in #training-channel. Your Hubstaff To-Dos are named exactly as given.'],
         where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your VA Output folder in Drive.',
         tip: 'Every rule and routine is written out in 📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.' },
       { icon: '🛠', title: 'Practice Lab: the real tasks', points: [

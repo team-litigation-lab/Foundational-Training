@@ -210,7 +210,7 @@ function candidateIds(name, batch) {
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
 // own HTML, every trainee reads it in place of the built slide.
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `listening:${id}`, `shadow:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
@@ -221,7 +221,8 @@ const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemp
 //   lorassign:<id>    the case the trainer assigned for the LOR Drafting Activity (js/ft-lor.js)
 //   trainerfb:<id>    the trainer's feedback on each activity's work, sent from Admin → 📝 Send Feedback (js/ft-trainer-feedback.js)
 //   rankshare:<id>    the trainee's own row of each Weekly Ranking Report the trainer shared (js/ft-ranking.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`];
+//   videoaccess:<id>  the lessons' AI discussion videos the trainer approved for this trainee (js/ft-updates.js)
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `assign:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
@@ -286,6 +287,14 @@ async function traineeWrite(env, tok, key, value) {
     if (value.length > 300000) return "The minutes are too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
+  }
+  if (key === `videoreq:${id}`) {
+    // 🎬 A lesson's AI discussion video, asked for by the trainee (js/ft-updates.js): {lessons: {"<lesson id>": {at}}}.
+    // Only lesson numbers and the server's time are kept; the trainer approves it in videoaccess:<id>.
+    if (value.length > 4000) return "Too many requests";
+    const lessons = {}, src = (incoming && incoming.lessons) || {}, was = (existing && existing.lessons) || {};
+    for (const k of Object.keys(src).slice(0, 40)) if (/^\d{1,3}$/.test(k)) lessons[k] = was[k] || { at: new Date().toISOString() };
+    await kv.put(key, JSON.stringify({ lessons })); return null;
   }
   if (key === `skills:${id}`) {
     // The daily Typing and Spelling Tests (js/ft-skilltests.js). Append-only: the entries already saved stay as they

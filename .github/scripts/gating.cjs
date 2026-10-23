@@ -24,7 +24,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2500);
 
   const openDays = () => page.evaluate(() => Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)));
-  // the lesson cards (their ▶ Live discussion) and, on each, 📋 the days card
+  // the lesson cards (their ▶ Start Training) and, on each, 📋 the days card
   const cards = () => page.evaluate(() => [...[...document.querySelectorAll('.ftli')].map(c => { const b = c.querySelector('.ftli-live') || {};
       return { id: c.id, locked: !!b.disabled, off: !!b.disabled, lock: /🔒/.test(b.innerText || '') }; }),
     ...[...document.querySelectorAll('.ftli-days')].map(b => ({ id: b.id, locked: false, off: b.disabled, lock: /🔒/.test(b.innerText) }))]);
