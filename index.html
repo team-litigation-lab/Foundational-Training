@@ -63,10 +63,10 @@ body{
   line-height:1.5;
   position:relative;
 }
-/* Page background photo: the gavel and law books (img/ft-page-bg.webp), faint, fixed, behind every page */
+/* Page background photo: the U.S. flag and the law book (img/bg-flag-law.webp), faint, fixed, behind every page */
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:url("/img/ft-page-bg.webp");
+  background-image:url("/img/bg-flag-law.webp");
   background-size:cover;background-position:center;
   opacity:.2;
   will-change:transform;
@@ -2572,8 +2572,8 @@ body:not(.ft-fit) .lesson-stage:not(:fullscreen) .topic-separator{color:var(--or
    Two halves, the same as the Portal's: the page sits on a photo behind a wash,
    and the panels on top of it are translucent so the photo carries on
    underneath instead of stopping at every card's edge.
-   This program keeps its own backdrop (img/ft-page-bg.webp, the gavel and law
-   books), as each program does.
+   This program keeps its own backdrop (img/bg-flag-law.webp, the U.S. flag and
+   the law book), as each program does.
    ========================================================================= */
 :root{
   /* .70 white over the backdrop at this strength keeps --ink above 9:1, and
@@ -5601,7 +5601,7 @@ const CLIENT_DOSSIER_MD = CLIENT_PROFILE_DOC.map(sec =>
    added weight to this document: the square mark as 8 KB and the full logo as
    32 KB, re-downloaded with every build because they sat inside the HTML.
    Same-origin paths, not blob: URLs, so hosting security headers don't block
-   them (img/ft-page-bg.webp is served the same way).
+   them (img/bg-flag-law.webp is served the same way).
    The full logo is navy and orange with a white outline, on transparent, 646 x 397. */
 const LOGO_ICON_SRC = "/favicon.png";
 const LOGO_FULL_SRC = "/js/lsh-logo-dark.png";
@@ -18911,7 +18911,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.16-16day"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.23-cards"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.23-daycards"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>

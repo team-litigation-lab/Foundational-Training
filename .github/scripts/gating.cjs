@@ -24,10 +24,10 @@ const failures = []; const fail = m => failures.push(m);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2500);
 
   const openDays = () => page.evaluate(() => Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)));
-  // the lesson cards (their ▶ Live session button) and, on each, the buttons to its days' decks
-  const cards = () => page.evaluate(() => [...[...document.querySelectorAll('.ftlc')].map(c => { const b = c.querySelector('.ftlc-start') || {};
-      return { id: c.id, locked: c.classList.contains('locked'), off: !!b.disabled, lock: /🔒/.test(b.innerText || '') }; }),
-    ...[...document.querySelectorAll('.ftlc-days button')].map(b => ({ id: b.id, locked: false, off: b.disabled, lock: /🔒/.test(b.innerText) }))]);
+  // the lesson cards (their ▶ Live discussion) and, on each, 📋 the days card
+  const cards = () => page.evaluate(() => [...[...document.querySelectorAll('.ftli')].map(c => { const b = c.querySelector('.ftli-live') || {};
+      return { id: c.id, locked: !!b.disabled, off: !!b.disabled, lock: /🔒/.test(b.innerText || '') }; }),
+    ...[...document.querySelectorAll('.ftli-days')].map(b => ({ id: b.id, locked: false, off: b.disabled, lock: /🔒/.test(b.innerText) }))]);
 
   // a brand-new trainee, with nothing finished and nothing opened: every day is theirs to read
   let days = await openDays();
