@@ -19,9 +19,10 @@ const e = v => esc(String(v == null ? "" : v));
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 // 👁 Trainee view: a trainer previewing the portal has no trainee of their own, so the pages show empty and save nothing
-const preview = () => !!state.adminPreview && !state.traineeId;
+// (the 📁 Link window, opened by a trainer or by someone not signed in as a trainee, shows the same way: D.look)
+const preview = () => (!!state.adminPreview || !!D.look) && !state.traineeId;
 const PREVIEW_ID = "__preview";
-const previewNote = () => preview() ? `<div class="card fdr-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved; a trainee keeps their own links on their own account.</div>` : "";
+const previewNote = () => preview() ? `<div class="card fdr-preview">👁 <b>Trainee view</b> — this is ${D.look ? "the window" : "the page"} as a trainee sees it. Nothing you type here is saved; a trainee signs in and keeps their own links on their own account.</div>` : "";
 const previewOnly = () => { if(!preview()) return false; toast("👁 Trainee view — nothing is saved here. A trainee saves this on their own account."); return true; };
 const ready = () => {
   if(preview()){ if(D.id !== PREVIEW_ID){ D.id = PREVIEW_ID; D.drive = {days:{}}; D.review = {days:{}}; } return true; }
@@ -130,12 +131,12 @@ function renderMonitorPage(){
 /* 📁 Link my Drive, from anywhere (the orientation's Task Tracker and Monitoring Sheet slides): the same My Drive links
    form in a window over the page, so a trainee pastes the links where they read about them. Saved in drive:<id> like the
    page's; from then on the Worker checks the tracker and the Monitoring Sheet every night (and on ✅ Check now). */
-function closeLinkModal(){ const o = document.getElementById("fdrLinkModal"); if(o) o.remove(); document.removeEventListener("keydown", linkModalKey, true); }
+function closeLinkModal(){ const o = document.getElementById("fdrLinkModal"); if(o) o.remove(); document.removeEventListener("keydown", linkModalKey, true); D.look = false; }
 function linkModalKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); closeLinkModal(); } }
 function paintLinkModal(){
   const o = document.getElementById("fdrLinkModal"); if(!o) return;
   const x = D.drive || {}, ok = k => x[k] ? "✓" : "—";
-  o.querySelector(".fdr-modal-body").innerHTML = linksCard() + `<div class="card fdr-card fdr-modal-status">
+  o.querySelector(".fdr-modal-body").innerHTML = previewNote() + linksCard() + `<div class="card fdr-card fdr-modal-status">
       <p class="fdr-muted"><b>Linked:</b> ${ok("folder")} VA Output folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p>
       <p class="fdr-muted">Once they’re saved, your tracker and Monitoring Sheet are checked automatically every night, and whenever you press ✅ Check now. Your results show on 📚 Dashboard and on 📋 Task Tracker / 📒 Monitoring Sheet.</p>
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" ${D.busy ? "disabled" : ""} onclick="FTDrive.check()">${D.busy ? "Checking…" : "✅ Check now"}</button>
@@ -144,9 +145,10 @@ function paintLinkModal(){
 
 window.FTDrive = {
   async linkMine(){
-    if(!(isTrainee() || preview())){ toast("Trainees link their own Task Tracker and Monitoring Sheet from their account."); return; }
+    // a trainer, or someone not signed in as a trainee, sees the window as a trainee does (the steps), but saves nothing
+    if(!(isTrainee() || preview())) D.look = true;
     if(!ready()){ await (D.loading || load(true)); if(!ready()){ toast("Couldn’t load your links. Check your connection and try again."); return; } }
-    closeLinkModal();
+    const look = D.look; closeLinkModal(); D.look = look;
     const o = document.createElement("div"); o.id = "fdrLinkModal"; o.className = "fdr-modal"; o.setAttribute("role", "dialog"); o.setAttribute("aria-label", "Link my Task Tracker and Monitoring Sheet");
     o.innerHTML = `<div class="fdr-modal-box"><button type="button" class="fdr-modal-x" onclick="FTDrive.closeLinks()" aria-label="Close">✕</button><div class="fdr-modal-body"></div></div>`;
     o.addEventListener("click", ev => { if(ev.target === o) closeLinkModal(); });
