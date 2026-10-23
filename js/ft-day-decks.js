@@ -1448,6 +1448,18 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
+/* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
+   headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
+   navy-bordered boxes */
+main.main-ftdd .ftdd-sheet{font-size:19px;color:#11131F;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:19px;line-height:1.5;color:#11131F;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:19px;color:#11131F;}
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 17px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
+main.main-ftdd .ftdd-sheet .ftdd-step{padding:10px 14px;margin:10px 0;border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
+main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36px;font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:18px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
+main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:16px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
+main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
 /* 🎲 Today's Task (taskSlide) */
 .ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
 .ftdd-task-wait{border-style:dashed;background:#F4F6FB;}
@@ -1589,6 +1601,7 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
+.ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
    three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */
