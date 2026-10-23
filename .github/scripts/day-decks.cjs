@@ -1,6 +1,6 @@
 // 📋 Day decks (js/ft-day-decks.js, js/ft-day-decks-data.js from build/day-decks.cjs): one per day, nothing
-// facilitator-only and no Process Questions on a slide; 📚 Dashboard is the eight lessons, one Classroom Discussion card
-// each holding its days (every row opens its slide); no next-step band on 📚 Dashboard (the scores sit there); a trainee kept to the days
+// facilitator-only and no Process Questions on a slide; 📚 Dashboard is the eight lessons' intro cards on one screen, and a
+// day deck opens on its lesson's full Classroom Discussion card (every row opens its slide); no next-step band on 📚 Dashboard (the scores sit there); a trainee kept to the days
 // they have reached, an admin on any day; the trainer adds a no-discussion day's activities and instructions
 // (a simulator preset for a mock-call day, a custom step) and a trainee sees them; the page on one screen.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/day-decks.cjs http://localhost:8787/
@@ -56,34 +56,41 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   // the days without a classroom discussion still end on 📌 From your trainer
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
-  // 📚 Dashboard is the eight lessons: one Classroom Discussion card each, in lesson order, and every one of the
-  // sixteen days sits on exactly one of them (Intake is Days 7–9, Medical Records Days 13–16)
-  const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftlc')].map(c => ({ id: c.id,
-    days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '',
-    rows: c.querySelectorAll('.ftlc-seq .ftlc-row').length, pills: c.querySelectorAll('.ftlc-seq .ftlc-pill').length,
-    focus: !!c.querySelector('.ftlc-focus .ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || ''),
-    chips: [...c.querySelectorAll('.ftlc-days button')].map(b => b.id) })));
+  // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
+  // the session's order (📋 the days card on top, then ▶ Live discussion, 🎬 Video, 🏠 Classroom), and every one of the sixteen days on
+  // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
+  const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
+    days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
+    steps: [...c.querySelectorAll('.mc-grid > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()), first: (c.querySelector('.mc-grid > .ftli-days') || {}).id })));
   if (grid.length !== 8) fail(`📚 Dashboard draws ${grid.length} lesson cards, not 8`);
   if (grid.map(c => c.id).join() !== 'dayl-1,dayl-2,dayl-3,dayl-4,dayl-5,dayl-6,dayl-7,dayl-8') fail(`the lesson cards run ${grid.map(c => c.id).join()}`);
   const all = grid.flatMap(c => c.days);
   if (all.join() !== Array.from({ length: 16 }, (_, i) => i + 1).join()) fail(`the cards don't hold Days 1–16 once each, in order: ${all.join()}`);
-  if (await page.$('.ftdd-daycard, .ftdd-daycol')) fail('the old day grid is still drawn');
+  if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
-    if (!/^Classroom Discussion: \S/.test(c.h)) fail(`${c.id}'s header reads "${c.h}"`);
-    if (c.rows < 3 || c.pills !== c.rows) fail(`${c.id}: ${c.rows} rows in its sequence, ${c.pills} pills`);
-    if (!c.focus || !c.file) fail(`${c.id} has no focus panel or no file name`);
-    if (c.chips.join() !== c.days.map(n => 'dayd-' + n).join()) fail(`${c.id}'s day decks are ${c.chips.join()}`);
+    if (!c.h) fail(`${c.id} has no lesson name`);
+    if (c.steps.join('|').replace(/^Days card/, 'Day card') !== 'Day card|Live discussion|Video|Classroom') fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
+    if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s days card is #${c.first}`);
   });
-  const l1 = await page.evaluate(() => (document.querySelector('#dayl-1 .ftlc-ht h3') || {}).innerText || '');
-  if (!/Virtual Assistant Essentials/.test(l1)) fail(`Lesson 1's card reads "${l1}"`);
-  // nothing runs outside its card, and the page scrolls rather than squeezing the cards
-  const fits = await page.evaluate(() => [...document.querySelectorAll('.ftlc')].filter(c => c.scrollWidth > c.clientWidth + 1 ||
-    [...c.querySelectorAll('.ftlc-row')].some(r => r.scrollHeight > r.clientHeight + 1)).map(c => c.id));
-  if (fits.length) fail(`a lesson card's words run outside it: ${fits.join(', ')}`);
-  // a row opens its own slide in the day's deck
-  await page.click('#dayl-1 .ftlc-row:has-text("Client Identification")'); await page.waitForTimeout(1500);
+  if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
+  // the eight fit one screen
+  const fits = await page.evaluate(() => ({ page: document.documentElement.scrollHeight - innerHeight, main: (m => m.scrollHeight - m.clientHeight)(document.querySelector('main.main-dash')) }));
+  if (fits.page > 2 || fits.main > 2) fail(`📚 Dashboard doesn't fit one screen: ${JSON.stringify(fits)}`);
+  // 🏠 Classroom opens the lesson's offline activity: Day 1's homework slide
+  await page.click('#dayl-1 .ftli-class'); await page.waitForTimeout(1500);
+  const cls = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '' }));
+  if (cls.view !== 'daydeck' || !/HOMEWORK: Nitro Pro/i.test(cls.h)) fail(`Lesson 1's Classroom opened ${JSON.stringify(cls)}`);
+  await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
+  // 📋 the days card opens the day deck on the full Classroom Discussion card, and a row opens its own slide
+  await page.click('#dayd-1'); await page.waitForTimeout(1500);
+  const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
+    return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
+      focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
+  if (!card || !/^Classroom Discussion: Virtual Assistant Essentials/.test(card.h) || card.rows !== 6 || card.pills !== 6 || !card.focus || !card.file)
+    fail(`Day 1's deck doesn't open on the full Classroom Discussion card: ${JSON.stringify(card)}`);
+  await page.click('.ftdd-lcslide .ftlc-row:has-text("Client Identification")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '' }));
-  if (row.view !== 'daydeck' || !/Client Identification/.test(row.h)) fail(`Lesson 1's Client Identification row opened ${JSON.stringify(row)}`);
+  if (row.view !== 'daydeck' || !/Client Identification/.test(row.h)) fail(`the Client Identification row opened ${JSON.stringify(row)}`);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(1500);
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
@@ -92,7 +99,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     trainerNotes: [...document.querySelectorAll('.ftdd-body .trainer-slot')].some(x => x.innerHTML.trim()) }));
   let s = await at();
   if (s.view !== 'daydeck' || s.hash !== '#/daydeck') fail(`the deck didn't open (${s.view} ${s.hash})`);
-  if (!/1 OF/i.test(s.n) || !/Training Agenda/.test(s.h)) fail(`the deck should open on its Training Agenda: ${s.n} ${s.h}`);
+  if (!/1 OF/i.test(s.n) || !/Classroom Discussion/.test(s.h)) fail(`the deck should open on its Classroom Discussion card: ${s.n} ${s.h}`);
   if (!s.deck) fail('the deck is not drawn like the LSH decks (logo and outlined title)');
   // the days are not gated: a trainee reads any day's instructions, in any order (gating.cjs covers the rest —
   // what paces the programme is the trainer's 📅 Open Lessons, which gates the lessons, not the days)
@@ -130,8 +137,9 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await put('settings:opendays', { all: [1, 2, 3, 4, 5], batches: {} });
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
   if (await page.evaluate(() => { const b = document.querySelector('#dayd-4'); return !b || b.disabled; })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
-  // the trainer's additions are a row of their own on the lesson's card, and it opens their slide
-  await page.click('#dayl-4 .ftlc-row:has-text("From your trainer · Day 4")'); await page.waitForTimeout(1500);
+  // the trainer's additions are a row of their own on the lesson's Classroom Discussion card, and it opens their slide
+  await page.click('#dayd-4'); await page.waitForTimeout(1500);
+  await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer · Day 4")'); await page.waitForTimeout(1500);
   const tv = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', steps: document.querySelectorAll('.ftdd-x').length, form: !!document.querySelector('.ftdd-xform'),
     sim: !!document.querySelector('.ftdd-x a[href*="call.html"]'), bold: !!document.querySelector('.ftdd-x b b'), text: (document.querySelector('.ftdd-body') || {}).innerText || '' }));
   if (!/From your trainer/.test(tv.h)) fail(`📌 didn't open Day 4's "From your trainer" slide: ${tv.h}`);
@@ -173,9 +181,10 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
   if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
   await page.evaluate(() => FTDayDecks.open(2, 0)); await page.waitForTimeout(1300);
-  const off = await page.evaluate(() => [...document.querySelectorAll('.ftdd-ag-off li')].map(x => x.innerText));
+  const off = await page.evaluate(() => { const h = [...document.querySelectorAll('.ftdd-lcslide .ftlc-h2')].find(x => /Outside training hours/i.test(x.innerText));
+    return h ? [...h.nextElementSibling.querySelectorAll('li')].map(x => x.innerText) : []; });
   if (off.length < 3 || !off.some(x => /upload/i.test(x))) fail(`Day 2's outside-hours work isn't on its agenda: ${JSON.stringify(off)}`);
-  if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-ag-list li')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
+  if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
   // Day 9's mock call preparation is no longer a blank slide
   await page.evaluate(() => FTDayDecks.open(9, 2)); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score-l li').length }));
@@ -186,5 +195,5 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson cards, Days 1–16 once each, every row opening its slide; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; split screen and autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
+  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the days card opening the deck on the full Classroom Discussion card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; split screen and autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
 })().catch(e => { console.error(e); process.exit(1); });

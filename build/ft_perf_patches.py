@@ -284,7 +284,7 @@ BRAND_NEW = '''/* ============================================================
    added weight to this document: the square mark as 8 KB and the full logo as
    32 KB, re-downloaded with every build because they sat inside the HTML.
    Same-origin paths, not blob: URLs, so hosting security headers don't block
-   them (img/ft-page-bg.webp is served the same way).
+   them (img/bg-flag-law.webp is served the same way).
    The full logo is navy and orange with a white outline, on transparent, 646 x 397. */
 const LOGO_ICON_SRC = "/favicon.png";
 const LOGO_FULL_SRC = "/js/lsh-logo-dark.png";

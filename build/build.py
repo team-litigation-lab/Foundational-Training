@@ -94,17 +94,17 @@ if not (n1 and n2 and n3):
     sys.exit(f"MISSING heavy-asset anchors: {n1} {n2} {n3}")
 # The page background photo: the EA/PA portal carries its own portrait inline, as ~88 KB of base64 in
 # body::before (with a top offset so the top bar never covered her head). This program's background is the
-# gavel and law books, served as a file (img/ft-page-bg.webp) rather than inlined: 86 KB smaller here, and
+# U.S. flag and the law book, served as a file (img/bg-flag-law.webp) rather than inlined: 86 KB smaller here, and
 # the browser caches it. Everything else about the rule - fixed, behind the page - stays as it is.
 s, n4 = re.subn(
     r'(body::before\{\s*\n\s*content:"";position:fixed;inset:0;z-index:0;pointer-events:none;\s*\n)'
     r'.*?\n\}',
-    lambda m: m.group(1) + '  background-image:url("/img/ft-page-bg.webp");\n'
+    lambda m: m.group(1) + '  background-image:url("/img/bg-flag-law.webp");\n'
               '  background-size:cover;background-position:center;\n'
               '  opacity:.2;\n  will-change:transform;\n}',
     s, count=1, flags=re.S)
 s, n5 = re.subn(r'/\* Page background photo: faint, fixed, behind everything \*/',
-                '/* Page background photo: the gavel and law books (img/ft-page-bg.webp), faint, fixed, behind every page */', s, count=1)
+                '/* Page background photo: the U.S. flag and the law book (img/bg-flag-law.webp), faint, fixed, behind every page */', s, count=1)
 if not (n4 and n5):
     sys.exit(f"MISSING page-background anchors: {n4} {n5}")
 
