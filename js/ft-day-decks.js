@@ -857,6 +857,23 @@ async function saveExtras(){
   X.at = Date.now(); render();
 }
 
+// 📋 Classroom Activity, on a lesson's last slide (index.html, in place of ✓ Finish lesson): records the lesson
+// as studied, as finishing it did (js/ft-process.js — that unlocks its Process Questions; a lesson without any
+// is finished outright), then opens the deck of the lesson's discussion day, where its classroom activities are.
+const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
+root.goToKnowledgeCheckWithInterstitial = async function(){
+  const l = Number(state.dayId), day = discussionDay(l);
+  if(!day) return __lessonDone.apply(this, arguments);
+  if(state.traineeId && !state.isAdmin){
+    const now = new Date().toISOString(), prev = state.progress[l] || {};
+    state.progress[l] = hasPQ(l) ? Object.assign({}, prev, prev.studied ? {} : {studied: true, studiedAt: now})
+                                 : Object.assign({}, prev, {done: true, date: prev.date || now});
+    try{ await storeSet("day-progress", state.progress); }catch(err){}
+    try{ if(!hasPQ(l)) syncToLedger(); }catch(err){}
+  }
+  open(day, 0);
+};
+
 root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
