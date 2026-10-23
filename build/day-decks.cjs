@@ -32,7 +32,8 @@ const TRIM = {1: {pm: html => {
     `<p>If you have issues installing the SA plug-ins, reach out to Ivan on Discord. His shift starts at 8:00 AM PST.</p>\n<p><b>Ivan: kuchiq</b></p>\n` +
     `<div class="shots">\n  <figure><a href="/ft/day1/img/discord-ivan.png" target="_blank"><img src="/ft/day1/img/discord-ivan.png" alt="Ivan on Discord" loading="lazy"></a></figure>\n</div>\n`);
   if(/Nitro/i.test(sa)) throw new Error("Day 1's Installation of SA still mentions Nitro Pro");
-  return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa;
+  // its screenshots are drawn big (ftdd-big-shots: two or three to a row, in js/ft-day-decks.js)
+  return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa.replace(/<div class="shots">/g, '<div class="shots ftdd-big-shots">');
 }}};
 // material the guide names without a link yet: {day: [{after: sectionId, name, note?}]} — shown as a "link coming" box
 // at the end of that slide until the link is added to the day file

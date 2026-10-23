@@ -1506,6 +1506,9 @@ main.main-dash .dash-pair-pin .module-card .mh-title{font:700 15px/1.25 'Inter',
 main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
+/* Day 1's Installation of SA: its step screenshots big enough to read (two or three to a row, 300px tall) */
+.ft-body .shots.ftdd-big-shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px;}
+.ft-body .shots.ftdd-big-shots a{height:300px;padding:8px;background:#fff;border:1.5px solid #9AA0AB;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, top right, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
 body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;
