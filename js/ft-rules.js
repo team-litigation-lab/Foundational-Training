@@ -9,18 +9,17 @@
        (#/day/12) and names find it, while DAYS.length, map and filter still count the 8 lessons.
      • A slide's html is built when it's shown (a getter), so a file name carries the trainee's own name
        and the Copy buttons work.
-     • The parts follow the Setting of Expectations: what training is (pass it; hard on purpose; trainers are your first clients);
-       General VAs (foundation, not mastery); the rules (schedule and breaks, communication, your work and the use of AI);
-       the Training Monitoring Sheet, embedded; Free Upskill Training (after the shift, unpaid, encouraged); auxes (the 2 Discord
-       channels, no double stamping, profile status); #training-reminders (its screenshots);
-       daily habits (EOD email, trackers, Monitoring Sheet); the EOD template; the Daily Task Tracker part by part, and its filled-in sample, embedded;
-       skill building (typing and spelling tests: a pointer to the Practice Lab on 🛠 Simulators); Hubstaff To-Dos (with 📋 Copy, the name without the "To-Do:"
-       label); how to create notes in Hubstaff; Hubstaff How-To Lessons (links to those slides and the
-       VA Guide; HOWTO_LESSONS for more); and the Manual Time Adjustment Request. Day 1's PI overview
-       reading task is not here: it is an assessment the trainer posts in the training GC, with its own file,
-       questions and naming convention, and it is scored on the Weekly Ranking.
-     • The Hubstaff pictures are drawn after the trainer's screenshots (SVG): the to-do list, with an
-       arrow on the button inside the day's to-do, and the Add Work Notes box.
+     • The parts, in the order the trainers run the orientation: 👋 Welcome to LSH!; Hubstaff (how-tos and why they
+       matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
+       Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
+       deliverables (an overview, then the typing and spelling tests, the Daily Task Tracker part by part with its filled-in
+       sample and the one 📋 Open My Task Tracker button, the Training Monitoring Sheet embedded, and the EOD email with
+       its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
+       Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
+       training GC, with its own file, questions and naming convention, and it is scored on the Weekly Ranking.
+     • Drawn like the Activity decks and the Case Management course's slides (the CSS below, fitOrient): a slide is
+       scaled to fit its white sheet, to half size at the smallest, and only one that would need less is split into pages.
+     • The Hubstaff picture is drawn after the trainer's screenshot (SVG): the Add Work Notes box.
    ============================================================ */
 (function(){
 const SHIFT = "8:00 AM – 5:00 PM PST";
@@ -98,12 +97,6 @@ const TIME_ADJ = {
            "Screenshots that show the work you did during the lost hours.",
            "The affected start and end time."]
 };
-// Day 1 → Training Reminders: screenshots of the #training-reminders channel (LSH BOT's posts).
-const REMINDER_SHOTS = [
-  ["/ft/day1/img/training-reminders-deliverables.png", "#training-reminders: Deliverables and Important Reminders"],
-  ["/ft/day1/img/training-reminders-welcome.png", "#training-reminders: Welcome to Your Training Journey (Hubstaff TO-DOs)"],
-  ["/ft/day1/img/training-reminders-channel.png", "The #training-reminders channel on Discord"]
-];
 
 // Hubstaff How-To Lessons: this lesson's Hubstaff slides (by id) and the guide. Add more as {title, desc, href}.
 const HOWTO_LESSONS = [];
@@ -129,18 +122,15 @@ const TODOS = [
   "Classroom Discussion: Reception Training Day 3",
   "Classroom Discussion: Calendar Management Training",
   "Classroom Discussion: Intake Training Day 1",
-  "Shadowing Intake Specialist Role (Arlene)",
   "Classroom Discussion: Intake Training Day 2",
   "Classroom Discussion: Intake Training Day 3",
   "Classroom Discussion: Insurance Communication Training Day 1",
   "Classroom Discussion: Insurance Communication Training Day 2",
-  "Shadowing Insurance Communication Role (Edward)",
   "Classroom Discussion: Insurance Communication Training Day 3",
   "Classroom Discussion: Provider Communication Training Day 1",
   "Classroom Discussion: Provider Communication Training Day 2",
   "Classroom Discussion: Provider Communication Training Day 3",
-  "Classroom Discussion: Provider Communication Training Day 4",
-  "Shadowing Provider Communication Role (Allesa)"
+  "Classroom Discussion: Provider Communication Training Day 4"
 ];
 // Day 0 → Onboarding Orientation: LSH VA Guide | "Create a to-do" task list.
 const TODO_GUIDE = "https://docs.google.com/spreadsheets/d/1Yfeuw9xGb2H68qF9nHf94whXVKmoL1PP8QocP_FN1Ys/edit#gid=0";
@@ -149,7 +139,7 @@ const NOTE_PARTS = [
   {h:"Start Tracking on Today’s To-Do", steps:[
     "Open the Hubstaff desktop app.",
     "Click your training project, e.g. LSH - SUPPORT (Training Jr). It turns blue.",
-    "Under To-dos, find today’s to-do. Not there yet? Add it first (see the Your Hubstaff To-Dos slides).",
+    "Under To-dos, find today’s to-do. Not there yet? Add it first (see the Your Hubstaff To-Dos slide).",
     "Click the button inside today’s to-do, at its left. The row turns blue and the timer at the top tracks that to-do."],
    tip:"You can only add a note while the timer is running."},
   {h:"Add the Note", fig:"note", steps:[
@@ -190,38 +180,6 @@ function hsWindow(w, h, m){
     <rect x="14" y="188" width="222" height="20" fill="#fff" stroke="#9aa0ab"/><circle cx="24" cy="197" r="4" fill="none" stroke="#555"/><path d="M27 200l3 3" stroke="#555"/>
     <text x="34" y="202" font-size="10.5" fill="#333">Search projects</text>`;
 }
-// The to-do list, with an arrow on the button inside the day's to-do.
-function figTodo(){
-  const m = "ftrArrowTodo", sel = 2;
-  const rows = [["Classroom Discussion: Reception Training Day 1", "09/25/2026 07:58 AM"],
-                ["Classroom Discussion: Reception Training Day 2", "09/28/2026 07:57 AM"],
-                ["Classroom Discussion: Reception Training Day 3", "09/29/2026 07:59 AM"]];
-  const projects = [["LSH - CHECK-IN", "0:00"], ["LSH - FILLER", "0:00"], ["LSH - SUPPORT (Training Jr)", "7:33"]];
-  return `<svg viewBox="0 0 760 410" role="img" aria-label="The Hubstaff app: click your training project, paste your to-do in Create a to-do and click +, then click the button inside today’s to-do to track time on it.">
-    ${hsWindow(760, 410, m)}
-    <rect x="1" y="216" width="249" height="30" fill="#e9eaee"/><text x="14" y="236" font-size="12" font-weight="700" fill="#333">Legal Support Help</text>
-    ${projects.map((p,i)=>{ const y = 246 + i*32, on = i===2;
-      return `${on ? `<rect x="1" y="${y}" width="249" height="32" fill="${HB}"/><circle cx="18" cy="${y+16}" r="7" fill="#fff"/><rect x="15" y="${y+13}" width="6" height="6" rx="1" fill="${HB}"/>` : `<path d="M1 ${y+32}H250" stroke="#eceef2"/>`}
-        <text x="36" y="${y+20}" font-size="11" fill="${on ? "#fff" : "#333"}">${p[0]}</text><text x="236" y="${y+20}" text-anchor="end" font-size="11" fill="${on ? "#fff" : "#333"}">${p[1]}</text>`; }).join("")}
-    <text x="268" y="50" font-size="16" font-weight="700" fill="#222">To-dos</text><text x="268" y="65" font-size="10" fill="#444">LSH - SUPPORT (Training Jr)</text>
-    <rect x="268" y="78" width="104" height="20" fill="#fff" stroke="#9aa0ab"/><text x="274" y="92" font-size="10.5" fill="#222">All to-dos</text><path d="M356 86l4 4 4-4" fill="none" stroke="#555"/>
-    <rect x="382" y="78" width="104" height="20" fill="#f4f4f4" stroke="#cfd4dc"/>
-    <rect x="496" y="83" width="10" height="10" fill="#fff" stroke="#777"/><text x="511" y="92" font-size="10.5" fill="#222">Show completed</text>
-    <rect x="636" y="78" width="84" height="20" fill="#fff" stroke="#9aa0ab"/><circle cx="645" cy="87" r="3.5" fill="none" stroke="#555"/><path d="M647.5 89.5l2.5 2.5" stroke="#555"/><text x="654" y="92" font-size="10" fill="#333">Search to-dos</text>
-    <rect x="268" y="106" width="458" height="22" fill="#fff" stroke="#9aa0ab"/><text x="274" y="121" font-size="11" fill="#333">Create a to-do</text>
-    <rect x="265" y="103" width="464" height="28" rx="4" fill="none" stroke="${OR}" stroke-width="2" stroke-dasharray="5 3"/>
-    <rect x="732" y="107" width="18" height="20" fill="#fff" stroke="#9aa0ab"/><text x="741" y="122" text-anchor="middle" font-size="14" font-weight="700" fill="#333">+</text>
-    <rect x="728" y="103" width="26" height="28" rx="5" fill="none" stroke="${OR}" stroke-width="2.5"/>
-    <text x="292" y="150" font-size="9" fill="#777">TO-DO</text><path d="M585 140V156" stroke="#e1e4ea"/><text x="597" y="150" font-size="9" fill="#777">CREATED</text>
-    <path d="M251 160H759" stroke="#e1e4ea"/>
-    ${rows.map((r,i)=>{ const y = 160 + i*34, on = i===sel;
-      return `${on ? `<rect x="251" y="${y}" width="508" height="34" fill="${HB}"/><circle cx="272" cy="${y+17}" r="8" fill="#fff"/><rect x="268.5" y="${y+13.5}" width="7" height="7" rx="1" fill="${HB}"/><circle cx="272" cy="${y+17}" r="13" fill="none" stroke="${OR}" stroke-width="3"/>` : `<path d="M251 ${y+34}H759" stroke="#eceef2"/>`}
-        <text x="292" y="${y+21}" font-size="10.5" fill="${on ? "#fff" : "#333"}">${r[0]}</text><text x="597" y="${y+21}" font-size="10.5" fill="${on ? "#fff" : "#333"}">${r[1]}</text>`; }).join("")}
-    ${arrow("M125 372V350", m)}${callout(14, 372, 222, ["① Click Your Training Project"])}
-    ${arrow("M741 57V99", m)}${callout(410, 30, 340, ["② Paste It in Create a To-Do, Then Click +"])}
-    ${arrow("M345 318C300 308 276 292 273 266", m)}${callout(330, 318, 410, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
-  </svg>`;
-}
 // The Add Work Notes box, opened from the notes button next to the timer.
 function figNote(){
   const m = "ftrArrowNote";
@@ -257,48 +215,63 @@ const habitCard = h=>`<div class="ftr-chan ftr-test">
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
       ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
       ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
-      ${h.tracker && !FT_AUDIENCE() ? `<div class="ftr-links"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>` : ""}
       ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
     </div>`;
 
 const SLIDES = [
-  ["why", "Setting Expectations: What Training Is", ()=>`
-    <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
-      <p>Being in training doesn’t mean you can be complacent. Your performance is deliberated every week, and depending on the outcome you can still be let go and have your project ended.</p></div>
-    ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
-    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
-    <p class="ftr-sub">Next: Your role as a General VA, the rules for every training day, your auxes, your daily habits, your tests, and your Hubstaff To-Dos and notes.</p>`],
-  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
-    <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
-      <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
-    ${rule("🙋 Take Initiative", "Knowing every role lets you take on other work when your tasks run low or what you’re assigned is limited.")}
-    ${rule("🛡 Stay Placed", "When a firm restructures, you can move into a different role instead of being laid off.")}
-    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}`],
-  ["schedule", "Rules: Your Schedule and Breaks", ()=>
+  ["welcome", "Welcome to LSH!", ()=>`
+    <div class="ftr-stakes"><b>👋 Welcome to Legal Support Help!</b>
+      <p>You’re starting the Standard Foundational Training Program: the training that prepares you to work as a legal VA for U.S. law firms. Before your first lesson, this orientation walks you through how training runs and what’s expected of you every day.</p></div>
+    <div class="ftr-lessons">${[["⏱", "Hubstaff", "How-Tos, your To-Dos, notes and lost hours"], ["☕", "Breaks and Auxes", "Your schedule, your hour of breaks, and reporting your status"],
+      ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Daily Deliverables", "Typing and spelling tests, Daily Task Tracker, Monitoring Sheet, EOD email"],
+      ["🎯", "Setting of Expectations", "What training is, your role and the use of AI"], ["🌱", "Free Upskill", "After your shift"]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>
+    <p class="ftr-sub ftr-after">Your training shift: <b>${esc(SHIFT)}</b>.</p>`],
+  // Hubstaff: how-tos and why they matter, the To-Dos, notes and lost hours
+  ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>{
+    // this lesson's Hubstaff slides (a click goes to the slide) and the LSH VA Guide, then any added lessons
+    const here = [["todos", "Your Hubstaff To-Dos", "The names to use, with 📋 Copy and 📋 Copy All, and how to add them."],
+                  ["notes", "Create Notes in Hubstaff", "Add a work note to the time you’re tracking."],
+                  ["time-adjustment", "Lost Hours", "The Manual Time Adjustment Request."]];
+    const at = id=>ORIENT.sections.findIndex(x=>x.id===id);
+    return `<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
+    <p class="ftr-sub">Everything you need to use Hubstaff during training. Click a lesson to open it.</p>
+    <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
+      <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
+      ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
+  ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>{
+    // two parts side by side (1–10, 11–19); 📋 Copy All puts every To-Do on the clipboard, one per line
+    const half = Math.ceil(TODOS.length / 2), parts = [TODOS.slice(0, half), TODOS.slice(half)];
+    const row = (t, n)=>`<div class="ftr-todo">
+      <span class="ftr-todo-n">${n}</span>
+      <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
+      <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
+    return `<div class="ftr-todos-all">
+    <div class="ftr-todos-top"><p class="ftr-sub">Named exactly as below. Click 📋 Copy, then in the Hubstaff app click your training project, paste it in <b>Create a to-do</b> and press Enter. Click the button inside that to-do, at its left, to track your time on it. Or copy them all at once.</p>
+      <button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
+    <div class="ftr-todo-parts">${parts.map((list, k)=>`<div class="ftr-part ftr-todos">
+      <div class="ftr-part-h"><span>Part ${k+1}</span>Hubstaff To-Dos ${k ? half + 1 : 1}–${k ? TODOS.length : half}</div>
+      ${list.map((t, i)=>row(t, (k ? half : 0) + i + 1)).join("")}</div>`).join("")}</div></div>`; }],
+  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+      ${p.fig ? fig(FIGS[p.fig]()) : ""}
+    </div>`).join("")}</div>`],
+  ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
+    <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
+    <div class="ftr-part">
+      ${copyRow("Subject", TIME_ADJ.subject)}
+      ${copyRow("Send To", TIME_ADJ.to)}
+      ${TIME_ADJ.cc.map(c=>copyRow("CC", c[1], c[0])).join("")}
+      <p class="ftr-when" style="margin-top:10px!important;"><b>In the Email:</b></p>
+      <ul class="ftr-list">${TIME_ADJ.include.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
+    </div>`],
+  // Breaks and auxes
+  ["schedule", "Breaks: Your Schedule and Your Hour of Breaks", ()=>
     rule(`⏰ Hubstaff Tracking Is Strict: ${esc(SHIFT)}`, "We follow a strict schedule. Log out no later than 5:00 PM. No tracking is allowed beyond it.") +
     rule("🕗 Managing Your Time Is Essential", "If you don’t finish a deliverable by the end of your shift, stop tracking and finish it unpaid, since you didn’t manage your time well. You may keep tracking only if you ask your trainer and they approve it.") +
     rule("🕖 Log In Up to 10 Minutes Early", "You may log in up to 10 minutes before your shift, no earlier. Use it to prepare your tools, and as a buffer for any break beyond your 1-hour total.") +
     rule("☕ Breaks: 1 Hour Total, Maximum", "The prescribed total break during training is 1 hour. How you split it is up to you, as long as you don’t go over 1 hour. Going over is your choice only if you accept not getting 8 hours for your shift, since tracking beyond 5:00 PM isn’t allowed.")],
-  ["communication", "Rules: Communication", ()=>
-    rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
-    rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
-    rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.") +
-    rule("📷 Cameras On, Always", "Keep your camera on during every meeting. It tests and gauges your internet speed and connectivity.")],
-  ["work", "Rules: Your Work and the Use of AI", ()=>
-    rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
-    rule("🤖 Don’t Rely on AI to Draft or Complete Your Work", "As Legal VAs, you’re trained to draft legal documents from actual case information, instructions and established legal processes. Training develops your own legal reasoning, attention to detail, writing skills and understanding of the case lifecycle. If AI drafts for you, you may produce something that looks correct without understanding why it’s correct, or fail to spot its errors. You may use AI to improve your grammar, spelling and sentence structure.") +
-    rule("🔒 Protect Client Information", "Every document we handle is sensitive. It’s protected by attorney-client privilege and confidentiality rules (HIPAA). Uploading case details or sensitive information to an unauthorized AI tool creates serious risks for the client and the law firm. Never paste client, case or medical information into one.") +
-    rule("⚖️ AI Is a Tool, Not a Replacement", "It never replaces your understanding, judgment or responsibility as a Legal VA. Some law firms allow AI, depending on the client you’re assigned to.")],
-  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
-    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
-    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
-    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('monitoring')">📒 Save My Sheet’s Link</button></div>`) + `</div>`],
-  ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
-    <div class="ftr-goal"><b>🌱 Right After Your Shift, for an Hour or So</b>
-      <p>These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm.</p></div>
-    ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
-    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}
-    <div class="ftr-why"><b>Why It Matters:</b> Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>`],
   ["auxes", "Auxes: Reporting Your Status", ()=>`
     <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post the update in both channels during training:</p>
     <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
@@ -312,31 +285,21 @@ const SLIDES = [
       <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
       <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
     </div>`],
-  ["reminders", "Check #training-reminders", ()=>`
-    <p class="ftr-sub">Check #training-reminders on Discord regularly, so you’re always guided on the right things to do for your HS To-Do, your deliverables and other important reminders throughout the training. Click a screenshot to see it full size.</p>
-    <div class="ftr-rshots">${REMINDER_SHOTS.map(x=>`<figure><a href="${esc(x[0])}" target="_blank" rel="noopener"><img src="${esc(x[0])}" alt="${esc(x[1])}" loading="lazy"></a><figcaption>${esc(x[1])}</figcaption></figure>`).join("")}</div>`],
-  // one slide per habit (side by side, the two cards were too tall for one page)
-  ...HABITS.map((h, k)=>[k ? "habits-trackers" : "habits", `Building Your Habits: ${h.name}`, ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(h)}</div>`]),
-  ["eod", "Your EOD Email: The Template", ()=>`
-    <div class="ftr-part">
-      ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
-      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join("")}
-      <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
-    </div>
-    <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
-  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
-    <p class="ftr-sub">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
-    <div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div>`],
-  ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
-    <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
-    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links" style="margin-top:12px;"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}`],
-  ["tracker-sample", "Your Daily Task Tracker: A Filled-In Sample", ()=>`<div class="ftr-keep">
-    <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
-    ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
-    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}</div>`],
+  // Camera, then Discord
+  ["camera", "Camera: On in Every Meeting", ()=>
+    `<div class="ftr-goal"><b>📷 Your Camera Is Part of Showing Up</b><p>Training is a simulation of working with a client, and your trainers are your first clients: in every meeting and classroom discussion, they see you.</p></div>` +
+    rule("📷 Cameras On, Always", "Keep your camera on during every meeting. It tests and gauges your internet speed and connectivity.")],
+  ["communication", "Discord: Mindfulness and Response Rates", ()=>
+    rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
+    rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
+    rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
+  // The 4 daily deliverables: the tests, the Daily Task Tracker, the Monitoring Sheet and the EOD email
+  ["deliverables", "Your 4 Daily Deliverables", ()=>`
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show each one.</p>
+    <div class="ftr-lessons">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
+      ["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
+      ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
+      ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   // Skill building (the tests' tools, file names and samples) is in the Practice Lab on 🛠 Simulators
   // (js/ft-simulators.js, from FT_SKILL_TESTS): the slide only points there.
   ["tests", "Skill Building: Typing and Spelling Tests", ()=>`
@@ -344,58 +307,57 @@ const SLIDES = [
     <div class="ftr-goal"><b>🧪 Your Tests Are in the Practice Lab</b>
       <p>Open <b>🛠 Practice Lab → 🧪 Skill Building</b> and take each test there. Your result is saved with the date and time on its own, so there is no screenshot to take, name or upload. Missed one? Make it up there in your idle time.</p></div>
     ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="ftsGotoSkills()">🧪 Open the Practice Lab</button></div>`}`],
-  ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`
-    <div class="ftr-why"><b>Why?</b> Your To-Dos help the audit team review your work easily, and keep a clear record of what you completed each day. Set your To-Do every day, for the session you’re in. Don’t miss this routine.</div>
+  ["habits-trackers", `Building Your Habits: ${HABITS[1].name}`, ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <div class="ftr-grid ftr-habit">${habitCard(HABITS[1])}</div>`],
+  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
+    <p class="ftr-sub">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
+    <div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div>`],
+  ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
+    <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
+    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
+  ["tracker-sample", "Your Daily Task Tracker: A Filled-In Sample", ()=>`<div class="ftr-keep">
+    <p class="ftr-sub">A sample of an updated LSH Daily Task Tracker. Scroll inside it to see every part, and fill in yours the same way.</p>
+    ${embed(TRACKER_SAMPLE.view, "Sample Updated Trackers", TRACKER_SAMPLE.open)}
+    ${FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('tracker')">📋 Open My Task Tracker</button></div>`}</div>`],
+  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
+    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
+    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
+    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="goto('monitoring')">📒 Save My Sheet’s Link</button></div>`) + `</div>`],
+  ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
+  ["eod", "Your EOD Email: The Template", ()=>`
     <div class="ftr-part">
-      <ol>
-        <li>Click <b>📋 Copy</b> next to the session you’re in (next slide).</li>
-        <li>In the Hubstaff app, click your training project.</li>
-        <li>Click in <b>Create a to-do</b>, paste it (Ctrl+V), then click <b>+</b> or press Enter.</li>
-        <li>Click the button inside that to-do, at its left, to track your time on it.</li>
-      </ol>
-      ${fig(figTodo())}
-      <p class="ftr-tip">More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p>
-    </div>`],
-  ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>{
-    // two parts side by side (1–10, 11–19); 📋 Copy All puts every To-Do on the clipboard, one per line
-    const half = Math.ceil(TODOS.length / 2), parts = [TODOS.slice(0, half), TODOS.slice(half)];
-    const row = (t, n)=>`<div class="ftr-todo">
-      <span class="ftr-todo-n">${n}</span>
-      <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
-      <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
-    return `<div class="ftr-todos-all">
-    <div class="ftr-todos-top"><p class="ftr-sub">Named exactly as below. Click 📋 Copy, then paste it in Hubstaff’s Create a to-do. Or copy them all at once.</p>
-      <button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
-    <div class="ftr-todo-parts">${parts.map((list, k)=>`<div class="ftr-part ftr-todos">
-      <div class="ftr-part-h"><span>Part ${k+1}</span>Hubstaff To-Dos ${k ? half + 1 : 1}–${k ? TODOS.length : half}</div>
-      ${list.map((t, i)=>row(t, (k ? half : 0) + i + 1)).join("")}</div>`).join("")}</div>
-    <p class="ftr-sub ftr-after"><b>Shadowing Session?</b> Use <code class="ftr-code">Shadowing [Type of role or process you’re shadowing] (VA’s Name)</code>. Your trainer tells you exactly what to enter each time a shadowing session is scheduled.</p></div>`; }],
-  ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-      ${p.fig ? fig(FIGS[p.fig]()) : ""}
-    </div>`).join("")}</div>`],
-  ["howto", "Hubstaff How-To Lessons", ()=>{
-    // this lesson's Hubstaff slides (a click goes to the slide) and the LSH VA Guide, then any added lessons
-    const here = [["todo-how", "Add Your Hubstaff To-Dos", "Where to create a to-do, and how to track your time on it."],
-                  ["todos", "Your Hubstaff To-Dos", "The names to use, with 📋 Copy and 📋 Copy All."],
-                  ["notes", "Create Notes in Hubstaff", "Add a work note to the time you’re tracking."],
-                  ["time-adjustment", "Lost Hours", "The Manual Time Adjustment Request."]];
-    const at = id=>ORIENT.sections.findIndex(x=>x.id===id);
-    return `<p class="ftr-sub">Everything you need to use Hubstaff during training. Click a lesson to open it.</p>
-    <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
-      <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
-      ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
-  ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
-    <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
-    <div class="ftr-part">
-      ${copyRow("Subject", TIME_ADJ.subject)}
-      ${copyRow("Send To", TIME_ADJ.to)}
-      ${TIME_ADJ.cc.map(c=>copyRow("CC", c[1], c[0])).join("")}
-      <p class="ftr-when" style="margin-top:10px!important;"><b>In the Email:</b></p>
-      <ul class="ftr-list">${TIME_ADJ.include.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-    </div>`],
+      ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
+      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join("")}
+      <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
+    </div>
+    <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
+  // Setting of expectations
+  ["why", "Setting Expectations: What Training Is", ()=>`
+    <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
+      <p>Being in training doesn’t mean you can be complacent. Your performance is deliberated every week, and depending on the outcome you can still be let go and have your project ended.</p></div>
+    ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
+    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
+    <p class="ftr-sub">Next: your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training.</p>`],
+  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
+    <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
+      <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
+    ${rule("🙋 Take Initiative", "Knowing every role lets you take on other work when your tasks run low or what you’re assigned is limited.")}
+    ${rule("🛡 Stay Placed", "When a firm restructures, you can move into a different role instead of being laid off.")}
+    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}`],
+  ["work", "Rules: Your Work and the Use of AI", ()=>
+    rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
+    rule("🤖 Don’t Rely on AI to Draft or Complete Your Work", "As Legal VAs, you’re trained to draft legal documents from actual case information, instructions and established legal processes. Training develops your own legal reasoning, attention to detail, writing skills and understanding of the case lifecycle. If AI drafts for you, you may produce something that looks correct without understanding why it’s correct, or fail to spot its errors. You may use AI to improve your grammar, spelling and sentence structure.") +
+    rule("🔒 Protect Client Information", "Every document we handle is sensitive. It’s protected by attorney-client privilege and confidentiality rules (HIPAA). Uploading case details or sensitive information to an unauthorized AI tool creates serious risks for the client and the law firm. Never paste client, case or medical information into one.") +
+    rule("⚖️ AI Is a Tool, Not a Replacement", "It never replaces your understanding, judgment or responsibility as a Legal VA. Some law firms allow AI, depending on the client you’re assigned to.")],
+  ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
+    <div class="ftr-goal"><b>🌱 Right After Your Shift, for an Hour or So</b>
+      <p>These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm.</p></div>
+    ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
+    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}
+    <div class="ftr-why"><b>Why It Matters:</b> Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>`],
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
 // above it would count as heading and leave less for the content, so a short intro could end up alone on a page.
@@ -403,12 +365,38 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
   const __pg = window.paginateSlideUnits;
   window.paginateSlideUnits = function(){
     const w = document.getElementById("lessonSlideWrap"), on = !!(w && document.body.classList.contains("ft-orient"));
+    if(on && fitOrient(w)) return;
     if(on){
-      w.classList.add("ftr-measure");
+      w.classList.add("ftr-measure", "ftr-paged");   // too long even at half size: the engine splits it into pages
     }
     try{ return __pg.apply(this, arguments); } finally { if(on) w.classList.remove("ftr-measure"); }
   };
   window.paginateSlideUnits.__ftr = true;
+}
+// One slide on one sheet, the way the Case Management course fits its slides (fitSlideZoom there): the sheet's content
+// is scaled down until it fits, to half size at the smallest, and only a slide that would have to shrink further is
+// split into pages by the engine. It also sets the progress line under the lesson's title (--ftr-prog).
+function fitOrient(w){
+  try{
+    const d = DAYS.find(x=>x.id===ORIENT_ID), n = typeof buildDaySlides === "function" && d ? buildDaySlides(d).length : ORIENT.sections.length;
+    w.style.setProperty("--ftr-prog", String(Math.min(1, ((state.lessonSlide||0) + 1) / Math.max(1, n))));
+  }catch(e){}
+  const card = w.querySelector(":scope > .card.lesson-card"), body = card && card.querySelector(":scope > .ft-body");
+  w.classList.remove("ftr-paged");
+  if(!card || !body || window.innerWidth <= 760) return false;
+  w.querySelectorAll(".pg-hide").forEach(x=>x.classList.remove("pg-hide"));
+  w.querySelectorAll(".pg-badge").forEach(x=>x.remove());
+  w.classList.remove("pg-later", "pg-roomy");
+  body.style.zoom = "";
+  const over = ()=>card.scrollHeight > card.clientHeight + 2;
+  let z = 1;
+  while(over() && z > 0.5){ z = Math.round((z - 0.05) * 100) / 100; body.style.zoom = String(z); }
+  if(over()){ body.style.zoom = ""; return false; }
+  state.slidePages = 1; state.slidePage = 0;
+  if(typeof updateSlidePageUi === "function") updateSlidePageUi();
+  // a picture that hasn't loaded yet has no height: fit again once it has
+  w.querySelectorAll("img").forEach(img=>{ if(!img.complete && !img.dataset.ftrFit){ img.dataset.ftrFit = "1"; img.addEventListener("load", ()=>{ if(w.isConnected) fitOrient(w); }, {once:true}); } });
+  return true;
 }
 // The slides window shown to the room (Presenter view) has no Task Tracker to open.
 function FT_AUDIENCE(){ return typeof PV_IS_AUDIENCE !== "undefined" && PV_IS_AUDIENCE; }
@@ -492,71 +480,63 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .ftr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px;}
 .ftr-rule{background:var(--danger-bg);border:1px solid #E9C9C3;border-left:5px solid var(--danger);border-radius:12px;padding:12px 16px;margin-bottom:10px;}
 .ftr-rule-aux{margin-top:14px;}
-/* The Orientation slides' background (ft/orientation/background.webp, the trainers' design): navy, the LSH
-   header band with the orange line, orange waves at the sides. The part label and the title sit in the band,
-   right of the logo; the slide's content is a cream panel under the orange line. Sized with the slide's
-   width (cqw), so it lines up at any screen size, in full screen and in the slides window. */
-body.ft-orient #lessonSlideWrap{container-type:inline-size;position:relative;background:#2B2E41 url(/ft/orientation/background.webp) top left / 100% auto no-repeat !important;
-  padding:var(--ftr-band, calc(11.3cqw + 10px)) 0 18px !important;border-color:transparent !important;justify-content:flex-start !important;align-items:flex-start !important;}
-/* (cqw on the slide itself would count the screen's width: its content takes the band's room instead) */
-body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;margin:0 10.5cqw !important;
-  flex:1 0 auto;display:flex !important;flex-direction:column;justify-content:safe center;}
-body.ft-orient #lessonSlideWrap.ftr-measure > .card.lesson-card{justify-content:flex-start !important;}
-/* the panel: centered in the room under the orange line, across and down (when it holds more than fits, it
-   starts at the top, and the rest continues on the next page) */
-body.ft-orient #lessonSlideWrap > .card.lesson-card > .ft-body{width:100%;max-width:1180px;margin:0 auto !important;flex:0 0 auto;}
-/* The label and title are drawn by the slide itself (::before / ::after, from data-kicker and data-title,
-   set by fitPages in ft-slides.js), so they stay in the band when the engine zooms the slide's content to
-   fit or animates its pages; the slide's own label and title stay in the page (Listen, page splitting) unseen. */
-body.ft-orient #lessonSlideWrap > .topic-separator, body.ft-orient #lessonSlideWrap > .card.lesson-card > h4{position:absolute !important;visibility:hidden;pointer-events:none;height:0;overflow:hidden;margin:0 !important;padding:0 !important;}
-body.ft-orient #lessonSlideWrap[data-title]::before, body.ft-orient #lessonSlideWrap[data-title]::after{position:absolute;left:16.5cqw;width:61cqw;height:auto;background:none;right:auto;bottom:auto;border:0;border-radius:0;pointer-events:none;z-index:2;}
-body.ft-orient #lessonSlideWrap[data-title]::before{content:attr(data-kicker);top:1.7cqw;color:#F6C79A;font:700 max(10px, .78cqw)/1.2 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;}
-body.ft-orient #lessonSlideWrap[data-title]::after{content:attr(data-title);top:3.4cqw;height:5.6cqw;display:flex;align-items:center;color:#fff;font-family:'Fraunces',Georgia,serif;font-weight:700;
-  font-size:clamp(17px, 2.2cqw, 34px);line-height:1.12;text-shadow:0 2px 6px rgba(20,22,36,.55);}
+/* The Orientation slides, drawn like the Activity decks and the Case Management course's Case Flow slides: a
+   glass navy card with line ornaments at three corners, the lesson's orange-outlined title with its progress
+   line under it, the slide's title on a centred ribbon, and the content on a white sheet. A slide is scaled to
+   fit its sheet (fitOrient below), not split into pages. The title and the ribbon are drawn by the slide itself
+   (::before, ::after, the ribbon from data-title set by fitPages in ft-slides.js), so they keep their size when the
+   content is scaled; the progress line is a background layer, its length from --ftr-prog. */
+body.ft-orient #lessonSlideWrap{position:relative;container-type:inline-size;
+  background-color:rgba(30,35,64,.92) !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke-linecap='round'%3E%3Cg transform='rotate(180 48 48)'%3E%3Cpath d='M12 14V84H82' stroke='%23DB8437' stroke-width='1.6'/%3E%3Cpath d='M6 30V66M30 90H66' stroke='%238E97C4' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='14' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='82' cy='84' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='6' cy='30' r='1.6' fill='%238E97C4'/%3E%3Ccircle cx='66' cy='90' r='1.6' fill='%238E97C4'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke-linecap='round'%3E%3Cg transform='translate(0 0)'%3E%3Cpath d='M12 14V84H82' stroke='%23DB8437' stroke-width='1.6'/%3E%3Cpath d='M6 30V66M30 90H66' stroke='%238E97C4' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='14' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='82' cy='84' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='6' cy='30' r='1.6' fill='%238E97C4'/%3E%3Ccircle cx='66' cy='90' r='1.6' fill='%238E97C4'/%3E%3C/g%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96' fill='none' stroke-linecap='round'%3E%3Cg transform='matrix(-1 0 0 1 96 0)'%3E%3Cpath d='M12 14V84H82' stroke='%23DB8437' stroke-width='1.6'/%3E%3Cpath d='M6 30V66M30 90H66' stroke='%238E97C4' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='14' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='82' cy='84' r='2.2' fill='%23DB8437'/%3E%3Ccircle cx='6' cy='30' r='1.6' fill='%238E97C4'/%3E%3Ccircle cx='66' cy='90' r='1.6' fill='%238E97C4'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(#E8913A,#E8913A),linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.18)) !important;
+  background-position:right top,left bottom,right bottom,24px 60px,24px 60px !important;
+  background-size:96px 96px,96px 96px,96px 96px,calc((100% - 144px) * var(--ftr-prog, 0)) 5px,calc(100% - 144px) 5px !important;
+  background-repeat:no-repeat !important;
+  border:1px solid rgba(255,255,255,.14) !important;border-radius:20px !important;box-shadow:0 18px 40px -22px rgba(20,24,48,.65) !important;
+  padding:124px 20px 16px !important;justify-content:flex-start !important;align-items:stretch !important;}
+body.ft-orient #lessonSlideWrap::before{content:"Setting of Training Expectations and Company Policies";position:absolute;top:14px;left:22px;right:120px;z-index:2;pointer-events:none;
+  background:none;border:0;clip-path:none;padding:2px 0 2px 4px;width:auto;height:auto;bottom:auto;
+  font:800 clamp(18px,1.8vw,28px)/1.15 'Poppins','Inter',sans-serif;color:#fff;letter-spacing:.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  -webkit-text-stroke:4px #DB8437;paint-order:stroke fill;text-shadow:0 4px 0 rgba(0,0,0,.18);}
+body.ft-orient #lessonSlideWrap[data-title]::after{content:attr(data-title);position:absolute;top:74px;left:20px;right:20px;width:auto;height:auto;bottom:auto;z-index:2;pointer-events:none;clip-path:none;
+  display:block;text-align:center;background:linear-gradient(90deg,#343C66 0%,#46508A 50%,#343C66 100%);border:0;border-bottom:3px solid #DB8437;border-radius:6px;
+  color:#fff;font:800 clamp(13px,1.1vw,17px)/1.25 'Poppins','Inter',sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:8px 24px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:none;}
+/* (no ribbon text until fitPages sets data-title: the engine's own corner shapes are off either way) */
+body.ft-orient #lessonSlideWrap:not([data-title])::after{display:none;}
+/* the opening line, repeated on each page when a slide is split (a .fp-label for the page splitter), keeps its own look */
+.lesson-stage #lessonSlideWrap .fp-label.ftr-lead{display:block;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:normal;text-transform:none;line-height:1.5;margin:0 0 12px;}
+.lesson-stage #lessonSlideWrap .fp-label.ftr-sub.ftr-lead{color:var(--ink-soft);text-align:left;}
+.lesson-stage #lessonSlideWrap .fp-label.ftr-why.ftr-lead{color:var(--ink);}
 body.ft-orient #lessonSlideWrap.pg-later[data-title]::after{content:attr(data-title) "  · continued";}
+/* the slide's own label and title stay in the page (Listen, page splitting) unseen */
+body.ft-orient #lessonSlideWrap > .topic-separator, body.ft-orient #lessonSlideWrap > .card.lesson-card > h4{position:absolute !important;visibility:hidden;pointer-events:none;height:0;overflow:hidden;margin:0 !important;padding:0 !important;}
 body.ft-orient #lessonSlideWrap > .pg-badge, body.ft-orient #lessonStage #lessonSlideWrap > .pg-badge{left:auto !important;width:auto !important;max-width:none !important;}
+/* the white sheet: it takes the room under the ribbon, and what is on it sits in the middle of it */
+body.ft-orient #lessonSlideWrap > .card.lesson-card{position:static;width:auto;align-self:stretch;margin:0 !important;flex:1 1 auto;min-height:0;overflow:hidden;
+  display:flex !important;flex-direction:column;justify-content:safe center;
+  background:#fff !important;border:1px solid rgba(255,255,255,.6) !important;border-radius:14px !important;box-shadow:0 8px 22px rgba(0,0,0,.18) !important;padding:18px 24px !important;}
+body.ft-orient #lessonSlideWrap.ftr-measure > .card.lesson-card{justify-content:flex-start !important;}
+/* a slide split into pages: its sheet holds the whole of each page (the engine measures what runs past the slide) */
+body.ft-orient #lessonSlideWrap.ftr-paged > .card.lesson-card{flex:1 0 auto;overflow:visible;justify-content:flex-start !important;}
+body.ft-orient #lessonSlideWrap > .card.lesson-card > .ft-body{width:100%;max-width:1180px;margin:0 auto !important;flex:0 0 auto;background:transparent;border-radius:0;padding:0 !important;box-shadow:none;}
 /* full screen and the slides window too (their rules make the slide a block and its parts full width) */
 body.ft-orient #lessonStage #lessonSlideWrap, body.ft-orient #audienceRoot #lessonSlideWrap{display:flex !important;flex-direction:column !important;}
 body.ft-orient #lessonStage #lessonSlideWrap > .card.lesson-card, body.ft-orient #audienceRoot #lessonSlideWrap > .card.lesson-card{width:auto !important;max-width:none !important;min-height:0 !important;}
-/* an embedded sheet (Monitoring Sheet, sample tracker) fits under the band with its note and button */
+/* the type, as the Case Management slides set it: Inter 500 at 17px, bold at 700, headings in Poppins */
+body.ft-orient #lessonSlideWrap .ftr-slide{font:500 16.5px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
+body.ft-orient #lessonSlideWrap .ftr-slide :is(b,strong){font-weight:700;}
+body.ft-orient #lessonSlideWrap .ftr-slide :is(.ftr-part-h,.ftr-chan-h,.ftr-goal > b,.ftr-stakes > b,.ftr-rule > b,.ftr-lesson > b){font-family:'Poppins','Inter',sans-serif;font-weight:800;}
+/* an embedded sheet (Monitoring Sheet, sample tracker) and the Hubstaff pictures fit the sheet */
 body.ft-orient #lessonSlideWrap .ftr-embed{height:max(220px, min(34vh, 24cqw)) !important;}
-/* the Hubstaff pictures fit under the band without the slide being zoomed */
 body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
-/* the content sits straight on the background (no panel), clear of the orange waves at the sides; text
-   that isn't in a box is light on the navy, and the boxes keep their own colours */
-body.ft-orient #lessonSlideWrap .ft-body{background:transparent;border-radius:0;padding:4px 0 !important;box-shadow:none;}
-body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub, body.ft-orient #lessonSlideWrap .ftr-slide > p, body.ft-orient #lessonSlideWrap .ftr-todos-top .ftr-sub,
-body.ft-orient #lessonSlideWrap .ftr-todos-all > .ftr-sub, body.ft-orient #lessonSlideWrap .ftr-rshots figcaption, body.ft-orient #lessonSlideWrap .ftr-keep > .ftr-sub, body.ft-orient #lessonSlideWrap .ftr-keep > p{color:#E7EAF3 !important;}
-body.ft-orient #lessonSlideWrap .ftr-keep > .ftr-sub b, body.ft-orient #lessonSlideWrap .ftr-keep > p b{color:#fff;}
-body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub b, body.ft-orient #lessonSlideWrap .ftr-todos-all > .ftr-sub b{color:#fff;}
-body.ft-orient #lessonSlideWrap .ftr-slide > .ftr-sub code, body.ft-orient #lessonSlideWrap .ftr-todos-all > .ftr-sub code{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2);}
-/* the opening line, repeated on each page (a .fp-label for the page splitter), keeps its own look */
-.lesson-stage #lessonSlideWrap .fp-label.ftr-lead{display:block;font-family:inherit;font-size:15.5px;font-weight:inherit;letter-spacing:normal;text-transform:none;line-height:1.5;margin:0 0 12px;}
-.lesson-stage #lessonSlideWrap .fp-label.ftr-sub.ftr-lead{color:#E7EAF3;text-align:left;}
-.lesson-stage #lessonSlideWrap .fp-label.ftr-why.ftr-lead{color:var(--ink);}
-/* No white boxes on the Orientation slides: they're see-through on the navy, with a light border and light
-   text (the coloured boxes, the "Why?" notes and the rules, keep their colours). */
-body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan, .ftr-lesson, .ftr-eg, .ftr-to){background:none !important;border:0 !important;box-shadow:none !important;color:#E7EAF3 !important;}
-body.ft-orient #lessonSlideWrap .ftr-lesson{border-left:3px solid var(--orange) !important;}
-/* buttons readable on the navy: outline buttons light, filled buttons orange */
-body.ft-orient #lessonSlideWrap .btn-ghost{background:transparent !important;color:#fff !important;border:1px solid rgba(255,255,255,.45) !important;}
-body.ft-orient #lessonSlideWrap .btn-ghost:hover{background:rgba(255,255,255,.1) !important;}
-body.ft-orient #lessonSlideWrap .btn-navy{background:var(--orange) !important;color:#fff !important;border-color:var(--orange) !important;}
-body.ft-orient #lessonSlideWrap .ftr-copied{color:#9BE7B0 !important;border-color:#9BE7B0 !important;}
-body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan, .ftr-lesson, .ftr-eg, .ftr-to) :is(p, li, span:not(.ftr-todo-n):not(.ftr-part-h > span), small, b, em, .ftr-when, .ftr-tip, .ftr-def span, .ftr-todo-tx, .ftr-embed-bar, figcaption){color:#E7EAF3 !important;}
-body.ft-orient #lessonSlideWrap :is(.ftr-part-h, .ftr-def b, .ftr-lesson b, .ftr-chan-h){color:#fff !important;}
-body.ft-orient #lessonSlideWrap .ftr-chan-h{color:#F6C79A !important;}
-body.ft-orient #lessonSlideWrap :is(.ftr-def, .ftr-aux, .ftr-todo){border-top-color:rgba(255,255,255,.14) !important;}
-body.ft-orient #lessonSlideWrap :is(.ftr-code, .ftr-aux code){background:rgba(255,255,255,.12) !important;border:1px solid rgba(255,255,255,.22) !important;color:#fff !important;}
-body.ft-orient #lessonSlideWrap .ftr-todo-n{background:rgba(255,255,255,.14) !important;color:#fff !important;}
-body.ft-orient #lessonSlideWrap .ftr-tip a, body.ft-orient #lessonSlideWrap .ftr-part a:not(.btn){color:#F6C79A !important;}
-/* in the middle of the slide: narrower boxes and short rows of cards are centered */
+body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
+body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
+/* in the middle of the sheet: narrower boxes and short rows of cards are centered */
 body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *){margin-left:auto !important;margin-right:auto !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)) !important;}
-body.ft-orient #lessonSlideWrap .ftr-stakes{background:#363B57;border:1px solid rgba(246,199,154,.35);}
-body.ft-orient #lessonSlideWrap .ftr-embed-bar{color:#E7EAF3;}
 .ftr-lessons{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px;margin-top:10px;}
 .ftr-lesson{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:10px;background:#fff;color:var(--ink);text-decoration:none;}
 .ftr-lesson:hover{border-color:var(--orange);box-shadow:var(--shadow);}
