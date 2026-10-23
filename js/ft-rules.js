@@ -614,6 +614,18 @@ body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
+/* every card in high contrast, like the tables: a navy border, a navy heading bar with an orange rule, darker text */
+body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):not(:has(> .ftr-def)){background:#fff;border:2px solid #343C66;box-shadow:0 4px 14px rgba(30,35,64,.14);}
+body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):has(> :is(.ftr-part-h, .ftr-chan-h):first-child):not(:has(> .ftr-def)){padding:0 18px 14px;overflow:hidden;}
+body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):not(:has(> .ftr-def)) > :is(.ftr-part-h, .ftr-chan-h):first-child{background:#1E2340;color:#fff !important;margin:0 -18px 12px;padding:10px 18px;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-to{background:#1E2340;color:#fff;border-left:4px solid #E8590C;} body.ft-orient #lessonSlideWrap .ftr-to b{color:#F4B77A;}
+body.ft-orient #lessonSlideWrap .ftr-eg{background:#EEF1F8;border-left:4px solid #343C66;color:#1B1E2E;}
+body.ft-orient #lessonSlideWrap .ftr-lesson{border:1.5px solid #343C66;border-left:5px solid #E8590C;box-shadow:0 3px 10px rgba(30,35,64,.12);}
+body.ft-orient #lessonSlideWrap .ftr-lesson b{color:#1E2340;} body.ft-orient #lessonSlideWrap .ftr-lesson span{color:#2B2F45;}
+body.ft-orient #lessonSlideWrap .ftr-why{border:1.5px solid #E8590C;border-left:5px solid #E8590C;color:#1B1E2E;}
+body.ft-orient #lessonSlideWrap .ftr-goal{border:1.5px solid #E8590C;border-left:5px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left:5px solid #C0392B;}
+body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 body.ft-orient #lessonSlideWrap .ftr-habit-emb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-habit-emb .ftr-embed{height:max(300px, min(50vh, 30cqw)) !important;}
