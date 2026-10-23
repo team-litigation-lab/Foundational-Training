@@ -111,7 +111,7 @@ function kindOf(s, html){
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
   if(/shadowing/i.test(h)) return {ic: "👀", label: "Shadowing"};
-  if(/discussion/i.test(h)) return {ic: "💬", label: "Classroom discussion"};
+  if(/discussion/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
@@ -409,18 +409,18 @@ function slideActions(s, info, body, i){
 function slideCard(d, info, list, i, logo){
   const n = list.length, s = list[i];
   const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : visual(slideSrc(DD.day, s));
-  // the first slide is the lesson's Classroom Discussion card, where the day has one; else the Training Agenda
+  // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda ? lessonOfDay(DD.day) : null;
-  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom discussion"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
-  const ribbon = lc != null ? `Day ${DD.day} · ${lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Discussion" : "Day card"}` : s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
+  const ribbon = lc != null ? `Day ${DD.day} · ${lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Day card"}` : s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
   return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
       <div class="ftdd-dhead">${logo}<h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
       <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
+        ${s.agenda ? "" : slideActions(s, info, body, i)}
         <span class="ftdd-n" data-base="Slide ${i + 1} of ${n}">Slide ${i + 1} of ${n}</span></div>
-      ${s.agenda ? "" : slideActions(s, info, body, i)}
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
     </div>`;
 }
@@ -469,12 +469,25 @@ function renderDeck(){
   </div>`;
 }
 let fitT = null;
-/* ONE SCREEN FOR ALL OF THEM.
-   A day's slide carries as much as the guide's page did, so most are taller than any screen. Rather than
-   scrolling (or shrinking the type to nothing), a long slide is read in pages: its blocks are dealt into
-   screenfuls, Previous / Next turn the pages before moving to the next slide, and the bar says which page it is.
-   Anything that still overflows its page by a little is scaled down to 85% to close the gap.
+/* ONE SCREEN FOR ALL OF THEM, the way the Case Management course's slides fit (fitSlideZoom / paginateLessonSlide
+   in its js/cm-updates.js). The slide's frame takes the room left on the screen; its header, ribbon and bar keep
+   their size, and only what is on its card (the sheet, or the day card on navy) is scaled down until the whole
+   slide fits, to half size at the smallest. Only a slide that would have to shrink further is read in pages: its
+   blocks are dealt into screenfuls, Previous / Next turn the pages before moving to the next slide, and the bar
+   says which page it is. Nothing scrolls.
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
+const FIT_MIN = 0.5;
+// scales the card's content down until it fits; true when it does
+function zoomToFit(box, min){
+  const inner = [...box.children];
+  inner.forEach(k => { k.style.zoom = ""; });
+  box.style.zoom = ""; box.scrollTop = 0;
+  let z = 1;
+  while(box.clientHeight && box.scrollHeight > box.clientHeight + 2 && z > min){
+    z = Math.round((z - 0.05) * 100) / 100; inner.forEach(k => { k.style.zoom = String(z); });
+  }
+  return box.scrollHeight <= box.clientHeight + 2;
+}
 function sheetPages(sheet){
   const kids = [...sheet.children];
   kids.forEach(k => { k.style.display = ""; });
@@ -482,7 +495,8 @@ function sheetPages(sheet){
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
   const room = sheet.clientHeight;
-  if(!room || sheet.scrollHeight - room <= 4) return [kids];
+  if(!room || zoomToFit(sheet, FIT_MIN)) return [kids];
+  kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
   const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // a block taller than the screen on its own (a long list, a table) is dealt out by its own rows
   const units = [];
@@ -511,12 +525,14 @@ function fitSheets(){
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close with a light scale rather than a scrollbar
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 4){
-      const z = Math.max(0.74, Math.min(1, (sheet.clientHeight - 6) / sheet.scrollHeight));
+      const z = Math.max(0.4, Math.min(1, (sheet.clientHeight - 6) / sheet.scrollHeight));   // a block taller than a page (a long table)
       sheet.style.zoom = String(Math.floor(z * 100) / 100);
     }
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
+  // the day card (and the Training Agenda) on navy is one card, not pages: scaled to fit, further if it must
+  document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => { if(!zoomToFit(box, 0.35)) box.scrollTop = 0; });
   paintPageMark();
 }
 // the slide bar says which page of the slide this is, once there is more than one
@@ -721,7 +737,7 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
-   carries its Classroom Discussion card (▶ Live session opens the lesson, Classroom the offline activity, and the
+   carries its Classroom Activity card (▶ Live session opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
    focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
 function dayCard(n, ex){
@@ -738,7 +754,7 @@ function dayCard(n, ex){
   // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js)
   const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
-  const head = first ? `Classroom Discussion: ${title}` : `Day ${n}: ${DAY_TITLES[n] || title}`;
+  const head = first ? `Classroom Activity: ${title}` : `Day ${n}: ${DAY_TITLES[n] || title}`;
   const sub = first ? `Day ${n} · Trainer-led discussion · opens the session${of}` : `${title}${of}`;
   return `<article class="ftlc${open_ ? "" : " locked"}" data-day="${n}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
@@ -765,7 +781,7 @@ function dayCard(n, ex){
 }
 /* 📚 THE DASHBOARD: EIGHT INTRO CARDS ON ONE SCREEN. Each is the portal's own lesson card (moduleCard: the
    frame, the gradient, the title and the lesson's icon), and its buttons run in the order the session does:
-   ① 📋 the days card fills the top row (the day deck, which opens on the full Classroom Discussion card), then
+   ① 📋 the days card fills the top row (the day deck, which opens on the full Classroom Activity card), then
    ② ▶ Live discussion (the lesson deck), its 🎬 video and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
@@ -775,7 +791,7 @@ function introCard(l, cur, ex, tags){
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
   card.classList.add("ftli"); if(cur != null && c.days.includes(cur)) card.classList.add("now");
   const kick = card.querySelector(".mh-day");
-  if(kick) kick.innerHTML = `Classroom Discussion · ${e(FTDays.label(c.days))}${tags || ""}`;
+  if(kick) kick.innerHTML = `Classroom Activity · ${e(FTDays.label(c.days))}${tags || ""}`;
   const grid = card.querySelector(".mc-grid"); if(!grid) return card.outerHTML;
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
@@ -1019,7 +1035,7 @@ main.main-dash .module-grid > .ftli .mc-grid{grid-template-columns:repeat(2,minm
 main.main-dash .module-grid > .ftli .ftli-days{cursor:pointer;}
 main.main-dash .module-grid > .ftli .ftli-days:hover .module-icon,main.main-dash .module-grid > .ftli .ftli-days:focus-visible .module-icon{transform:scale(1.12);}
 main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-/* the full Classroom Discussion card, as the first slide of its days' decks: it scrolls inside the slide if long */
+/* the full Classroom Activity card, as the first slide of its days' decks: scaled to fit the slide (fitSheets) */
 .ftdd-lcslide{min-height:0;overflow:auto;padding:0 !important;}
 .ftdd-lcslide .ftlc{box-shadow:none;}
 .ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
@@ -1086,7 +1102,22 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}
 .ftdd-step-t{font-size:15.5px;line-height:1.5;padding-top:5px;}
 .ftdd-step-check{background:#EEF8F2 !important;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
-.ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;}
+.ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0;}
+/* a short screen (a laptop at 1366 x 768): the slide's header takes less of the height, so its card has the room */
+@media (max-height:900px) and (min-width:1001px){
+  .ftdd-deck{padding:10px 22px 10px;}
+  .ftdd-deck::before{height:58px;}
+  .ftdd-dhead{gap:12px;padding:0 0 5px;margin:0 0 6px;}
+  .ftdd-logo{height:30px;}
+  .ftdd-dtitle{font-size:21px !important;}
+  .ftdd-ribbon{margin:0 0 6px -22px;}
+  .ftdd-ribbon span{font-size:15px;padding:4px 44px 4px 22px;}
+  .ftdd-bar{margin:0 0 6px;gap:8px;}
+  .ftdd-pill{font-size:13px;padding:3px 10px;}
+  .ftdd-time{font-size:12px;padding:2px 10px;}
+  .ftdd-acts .btn{padding:3px 10px;font-size:12px;min-height:0;}
+  .ftdd-sheet{padding:12px 18px;}
+}
 .ftdd-acts .btn{white-space:normal;text-align:left;}
 .ftdd-acts .btn-ghost{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22);color:#fff;}
 .ftdd-acts .btn-ghost:hover{background:rgba(255,255,255,.16);}
