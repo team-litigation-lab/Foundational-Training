@@ -1415,6 +1415,14 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
 .ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
+/* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
+.ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}
+.ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
+.ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
+.ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
+.ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
+.ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
+@media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
 /* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
 .ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
 .ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}

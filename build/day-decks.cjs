@@ -43,6 +43,17 @@ const TRIM = {1: {reading: html => {
   // its screenshots are drawn big (ftdd-big-shots: two or three to a row, in js/ft-day-decks.js)
   return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa.replace(/<div class="shots">/g, '<div class="shots ftdd-big-shots">');
 }},
+// Day 5's Attorney Calendar Management Activity: four cards (the activity, the time zone, the whole calendar, the upload)
+5: {s3: html => {
+  const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
+  const act = cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">');
+  const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
+  const whole = cut("<p>When taking a screenshot of the entire calendar", "<p>You should have a total of 19");
+  const up = cut("<p>You should have a total of 19", "<p><b><i>*** Free Communication");
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
+    card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
+}},
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide
 2: {s4: html => {
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
