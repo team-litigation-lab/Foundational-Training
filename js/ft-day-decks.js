@@ -6,7 +6,7 @@
      • the trainer-slot boxes: js/ft-updates.js fills them with the facilitator's notes for a trainer in trainer
        view; a trainee sees nothing there;
      • "Link coming" boxes, where the guide names material it has no link for yet;
-     • the last slide of each day, "To be added", until there is more for that day.
+     • no "To be added" slide on a lesson day (its placeholder is in the data but isn't shown).
    No Process Questions: they are answered in ✍️ Knowledge Check only, and a deck points there.
    Opened from 📚 Dashboard's next-step band (js/ft-next-step.js: 📋 Day N deck). A trainee opens the deck
    of the day they are on and every day before it, and a later day's once its lessons are open for the batch;
@@ -324,6 +324,8 @@ const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, 
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
   const out = [{id: "agenda", h: "Training Agenda", agenda: true}];
   d.slides.forEach(s => {
+    // a lesson day's empty "To be added" slide isn't shown (the automated task announcements will come in its place)
+    if(s.placeholder && !only) return;
     const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
     if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
