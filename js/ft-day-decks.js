@@ -411,8 +411,8 @@ function slideCard(d, info, list, i, logo){
   const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : visual(slideSrc(DD.day, s));
   // the first slide is the lesson's Classroom Discussion card, where the day has one; else the Training Agenda
   const lc = s.agenda ? lessonOfDay(DD.day) : null;
-  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? {ic: "💬", label: "Classroom discussion"} : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
-  const ribbon = lc != null ? `Day ${DD.day} · Classroom Discussion` : s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom discussion"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
+  const ribbon = lc != null ? `Day ${DD.day} · ${lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Discussion" : "Day card"}` : s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
   return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
@@ -421,7 +421,7 @@ function slideCard(d, info, list, i, logo){
       <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         <span class="ftdd-n" data-base="Slide ${i + 1} of ${n}">Slide ${i + 1} of ${n}</span></div>
       ${s.agenda ? "" : slideActions(s, info, body, i)}
-      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${fullCard(lc, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
+      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
     </div>`;
 }
 function renderDeck(){
@@ -660,7 +660,7 @@ const LESSON_CARDS = {
       {t: "Claims Terminology Exercise", k: "interactive", d: 10, s: "s1"},
       {t: "Insurance Communication Videos & Articles", time: "Day 10 PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "Day 11", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
-      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters", k: "interactive", go: "lor"},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters", k: "interactive", go: "lor", day: 11},
       {t: "Shadowing", time: "Day 11 PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
       {t: "Uploading & Sending 1P and 3P LORs", time: "Day 12 · entire day", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1"}],
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
@@ -712,21 +712,38 @@ function cardRows(c, ex){
 const cardOf = lid => LESSON_CARDS[lid] ? Object.assign({lesson: Number(lid)}, LESSON_CARDS[lid]) : null;
 // 🏠 Classroom: the lesson's offline activity — its homework, else the last thing its days set
 const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.length - 1];
-/* THE CLASSROOM DISCUSSION CARD, IN FULL: the first slide of each of its days' decks (in place of the Training
-   Agenda). The header's ▶ Live session opens the lesson, Classroom the offline activity; every row opens its slide. */
-function fullCard(lid, ex){
-  const c = cardOf(lid); if(!c) return "";
-  const open_ = lessonOpen(lid), title = lessonTitle(lid), off = offlineRow(c);
-  const seq = cardRows(c, ex).map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
+// the day a row belongs to: its slide's day, else the day it names (the LOR activity is Day 11's), else the lesson's first
+const rowDay = (c, r) => Number(r.day != null ? r.day : r.d != null ? r.d : c.days[0]);
+// a day after the discussion is named for what it holds
+const DAY_TITLES = {6: "Calendar Management Mock Calls", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
+  11: "Insurance Communication Activities", 12: "Uploading & Sending 1P and 3P LORs", 13: "Medical Records Specialist Role",
+  14: "Sending MedLOR & Requesting Records", 15: "Recorded Demonstration: MedLOR", 16: "Lien Balance Verification Request"};
+const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
+  11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
+  15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
+/* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
+   carries its Classroom Discussion card (▶ Live session opens the lesson, Classroom the offline activity, and the
+   key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
+   focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
+function dayCard(n, ex){
+  n = Number(n);
+  const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return "";
+  const first = n === c.days[0], open_ = lessonOpen(lid), title = lessonTitle(lid), off = offlineRow(c);
+  const rows = cardRows(c, ex).filter(r => rowDay(c, r) === n);
+  // the card is one day's, so a row's time drops its "Day N": "Day 8 PM" reads "PM"
+  const when = r => String(r.time || "").replace(new RegExp("^Day " + n + "\\b\\s*(·\\s*)?", "i"), "").replace(/^./, x => x.toUpperCase());
+  const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(r.t)}${r.time ? ` · ${e(r.time)}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}${r.sub ? pill(r) : ""}</span>
+      <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}${r.sub ? pill(r) : ""}</span>
       ${r.sub ? "" : pill(r)}</button></li>`).join("");
-  // outside training hours: the card's own wording, else the day map's (js/ft-day-activities.js)
-  const outside = c.outside || c.days.flatMap(n => (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t));
-  return `<article class="ftlc${open_ ? "" : " locked"}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
+  // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js)
+  const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
+  const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
+  const head = first ? `Classroom Discussion: ${title}` : `Day ${n}: ${DAY_TITLES[n] || title}`;
+  const sub = first ? `Day ${n} · Trainer-led discussion · opens the session${of}` : `${title}${of}`;
+  return `<article class="ftlc${open_ ? "" : " locked"}" data-day="${n}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
-      <div class="ftlc-ht"><h3>Classroom Discussion: ${e(title)}</h3>
-        <p>${e(FTDays.label(c.days))} · Trainer-led discussion · opens the session</p></div>
+      <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
       <div class="ftlc-acts">
         <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶ Live session" : "🔒 Not open yet"}</button>
         <button type="button" class="ftlc-tag" onclick="${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">Classroom</button>
@@ -734,15 +751,15 @@ function fullCard(lid, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol>${seq}</ol>
-        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(n => `<button type="button" onclick="FTDayDecks.open(${n}, 1)" title="Day ${n}: its slides">📋 Day ${n}</button>`).join("")}</div>` : ""}</section>
+        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="Day ${d}’s card">📋 Day ${d}</button>`).join("")}</div>` : ""}</section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
-        <p class="ftlc-focus-t">Focus on ${e(c.focus)}</p>
+        <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
         ${outside.length ? `<p class="ftlc-h2">Outside training hours</p><ul>${outside.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
-        ${c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
-        <div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p>
-          ${hasPQ(lid) ? `<button type="button" class="ftlc-pq" onclick="FTProcess.openLesson(${c.lesson})">✍️ Answer on Knowledge Check →</button>` : ""}</div>
+        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        ${first ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p>
+          ${hasPQ(lid) ? `<button type="button" class="ftlc-pq" onclick="FTProcess.openLesson(${c.lesson})">✍️ Answer on Knowledge Check →</button>` : ""}</div>` : ""}
       </aside>
     </div>
   </article>`;
@@ -765,8 +782,12 @@ function introCard(l, cur, ex, tags){
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
   if(vid){ vid.title = vid.disabled ? "Your trainer unlocks this video" : "▶ Video Presentation"; vid.textContent = vid.disabled ? "🔒 Video" : "🎬 Video"; }
   const acts = cardRows(c, ex).length;
-  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-days" id="dayd-${n}" onclick="FTDayDecks.open(${n})" title="${e(`The Classroom Discussion card: ${FTDays.label(c.days)}, ${acts} activities`)}">📋 ${c.days.length > 1 ? "Days" : "Day"} card</button>
-    <button type="button" class="btn btn-ghost btn-sm module-finish-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶" : "🔒"} Live discussion</button>
+  // the lesson's icon opens its day card (the day deck); ▶ Live discussion fills the top row
+  const body = card.querySelector(".module-body");
+  if(body){ body.id = `dayd-${n}`; body.classList.add("ftli-days"); body.setAttribute("role", "button"); body.tabIndex = 0;
+    body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
+    body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
+  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶" : "🔒"} Live discussion</button>
     ${vid ? vid.outerHTML : ""}
     <button type="button" class="btn btn-ghost btn-sm module-finish-btn ftli-class" onclick="event.stopPropagation(); ${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">🏠 Classroom</button>`;
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
@@ -967,7 +988,9 @@ main.main-dash .module-grid > .ftli{min-height:0;height:100%;overflow:hidden;dis
 main.main-dash .module-grid > .ftli .module-body{flex:1 1 auto;min-height:0;}
 main.main-dash .module-grid > .ftli .mh-day{font-family:'Inter',sans-serif !important;}
 main.main-dash .module-grid > .ftli .mh-day .lp-kc{margin-left:6px;}
-main.main-dash .module-grid > .ftli .mc-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+main.main-dash .module-grid > .ftli .mc-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+main.main-dash .module-grid > .ftli .ftli-days{cursor:pointer;}
+main.main-dash .module-grid > .ftli .ftli-days:hover .module-icon,main.main-dash .module-grid > .ftli .ftli-days:focus-visible .module-icon{transform:scale(1.12);}
 main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* the full Classroom Discussion card, as the first slide of its days' decks: it scrolls inside the slide if long */
 .ftdd-lcslide{min-height:0;overflow:auto;padding:0 !important;}
@@ -1003,6 +1026,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-pill.k-trainer{background:#3C4268;}
 .ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 .ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
+.ftlc-days button.on{border-color:#DB8437;background:#DB8437;}
 .ftlc-days button:hover{border-color:#DB8437;background:rgba(219,132,55,.18);}
 .ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.45;}
 .ftlc-focus p{margin:0;}
