@@ -55,7 +55,9 @@ const HABITS = [
     "Your EOD is a summary of your day. List everything you accomplished and completed.",
     "Include at least 3 specific learnings from the tasks you completed, with at least 2 sentences for each, so your trainers can gauge your understanding."],
    to:["martin@legalsupporthelp.com", "michelle.velarde@legalsupporthelp.com"],
-   links:[["Training Matrix", "https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", "Your training flow, for your tasks on queue for tomorrow."]],
+   links:[],
+   // embedded beside the card, not linked
+   matrix:{url:"https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", note:"Your training flow, for your tasks on queue for tomorrow."}
    },
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
@@ -207,13 +209,41 @@ function figNote(){
     ${arrow("M540 296C590 296 625 288 632 270", m)}${callout(380, 280, 160, ["③ Click Add Note"])}
   </svg>`;
 }
-const FIGS = {note: figNote};
+// The to-do list: click the training project, paste the to-do in Create a to-do and click +, then the button inside it.
+function figTodo(){
+  const m = "ftrArrowTodo", sel = 2;
+  const rows = [["Classroom Discussion: Reception Training Day 1", "09/25/2026 07:58 AM"],
+                ["Classroom Discussion: Reception Training Day 2", "09/28/2026 07:57 AM"],
+                ["Classroom Discussion: Reception Training Day 3", "09/29/2026 07:59 AM"]];
+  const projects = [["LSH - CHECK-IN", "0:00"], ["LSH - FILLER", "0:00"], ["LSH - SUPPORT (Training Jr)", "7:33"]];
+  return `<svg viewBox="0 0 760 420" role="img" aria-label="The Hubstaff app: click your training project, paste your to-do in Create a to-do and click +, then click the button inside today’s to-do to track time on it.">
+    ${hsWindow(760, 420, m)}
+    <rect x="2" y="226" width="247" height="30" fill="#dfe2ea"/><text x="14" y="246" font-size="13.5" font-weight="700" fill="#1B1E2E">Legal Support Help</text>
+    ${projects.map((p,i)=>{ const y = 256 + i*34, on = i===2;
+      return `${on ? `<rect x="2" y="${y}" width="247" height="34" fill="${HB}"/><circle cx="18" cy="${y+17}" r="7" fill="#fff"/><rect x="15" y="${y+14}" width="6" height="6" rx="1" fill="${HB}"/>` : `<path d="M2 ${y+34}H249" stroke="#b4bac6"/>`}
+        <text x="34" y="${y+22}" font-size="12.5" font-weight="${on ? 700 : 400}" fill="${on ? "#fff" : "#1B1E2E"}">${p[0]}</text><text x="238" y="${y+22}" text-anchor="end" font-size="12.5" fill="${on ? "#fff" : "#1B1E2E"}">${p[1]}</text>`; }).join("")}
+    <text x="266" y="52" font-size="18" font-weight="700" fill="#111">To-dos</text><text x="266" y="69" font-size="12" fill="#3d4357">LSH - SUPPORT (Training Jr)</text>
+    <rect x="266" y="106" width="456" height="26" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><text x="274" y="124" font-size="13" fill="#1B1E2E">Create a to-do</text>
+    <rect x="262" y="102" width="464" height="34" rx="5" fill="none" stroke="${OR}" stroke-width="2.5" stroke-dasharray="6 3"/>
+    <rect x="730" y="107" width="22" height="24" fill="#fff" stroke="#5b6178" stroke-width="1.5"/><text x="741" y="125" text-anchor="middle" font-size="17" font-weight="700" fill="#111">+</text>
+    <rect x="725" y="102" width="32" height="34" rx="6" fill="none" stroke="${OR}" stroke-width="3"/>
+    <text x="292" y="158" font-size="11" font-weight="700" fill="#3d4357">TO-DO</text><text x="590" y="158" font-size="11" font-weight="700" fill="#3d4357">CREATED</text>
+    <path d="M251 168H759" stroke="#9aa0ab" stroke-width="1.5"/>
+    ${rows.map((r,i)=>{ const y = 168 + i*38, on = i===sel;
+      return `${on ? `<rect x="251" y="${y}" width="507" height="38" fill="${HB}"/><circle cx="272" cy="${y+19}" r="8" fill="#fff"/><rect x="268.5" y="${y+15.5}" width="7" height="7" rx="1" fill="${HB}"/><circle cx="272" cy="${y+19}" r="14" fill="none" stroke="${OR}" stroke-width="3.5"/>` : `<path d="M251 ${y+38}H759" stroke="#b4bac6"/>`}
+        <text x="292" y="${y+24}" font-size="12.5" font-weight="${on ? 700 : 400}" fill="${on ? "#fff" : "#1B1E2E"}">${r[0]}</text><text x="590" y="${y+24}" font-size="12.5" fill="${on ? "#fff" : "#1B1E2E"}">${r[1]}</text>`; }).join("")}
+    ${arrow("M125 382V362", m)}${callout(28, 380, 196, ["① Click Your Project"])}
+    ${arrow("M741 86V100", m)}${callout(470, 34, 280, ["② Paste It in Create a To-Do", "Then click + (or press Enter)."])}
+    ${arrow("M330 330C292 322 274 306 272 290", m)}${callout(318, 322, 432, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
+  </svg>`;
+}
+const FIGS = {note: figNote, todo: figTodo};
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
 /* ---------- the slides ---------- */
-// A Drive file shown in full inside the slide (its /preview), with a link to open it in its own tab.
-const drivePreview = u => { const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
+// A Drive file shown in full inside the slide (its /preview; a Google Doc, the Doc's own /preview), with a link to open it in its own tab.
+const drivePreview = u => { const g = String(u).match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]{20,})/); if(g) return `https://docs.google.com/document/d/${g[1]}/preview`; const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
 const embed = (url, title, open)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
     <div class="ftr-embed-bar"><span>📄 ${esc(title)}</span>${open ? `<a class="btn btn-ghost btn-sm" href="${esc(open)}" target="_blank" rel="noopener noreferrer">Open or Download ↗</a>` : ""}</div>`;
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
@@ -239,7 +269,8 @@ const SLIDES = [
   // Hubstaff: how-tos and why they matter, the To-Dos, notes and lost hours
   ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>{
     // this lesson's Hubstaff slides (a click goes to the slide) and the LSH VA Guide, then any added lessons
-    const here = [["todos", "Your Hubstaff To-Dos", "The names to use, with 📋 Copy and 📋 Copy All, and how to add them."],
+    const here = [["todo-how", "Add Your Hubstaff To-Dos", "How to add today’s To-Do in the Hubstaff app."],
+                  ["todos", "Your Hubstaff To-Dos", "The names to use, with 📋 Copy and 📋 Copy All."],
                   ["notes", "Create Notes in Hubstaff", "Add a work note to the time you’re tracking."],
                   ["time-adjustment", "Lost Hours", "The Manual Time Adjustment Request."]];
     const at = id=>ORIENT.sections.findIndex(x=>x.id===id);
@@ -248,6 +279,17 @@ const SLIDES = [
     <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
       <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
       ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
+  // how to add a to-do: the steps beside the Hubstaff picture (the To-Dos to copy are on the next slide)
+  ["todo-how", "Your Hubstaff To-Dos: How to Add Them", ()=>`<div class="ftr-notes ftr-notes-wide"><div class="ftr-parts"><div class="ftr-part">
+      <div class="ftr-part-h">Add Today’s To-Do</div>
+      <ol>
+        <li>Click <b>📋 Copy</b> next to the session you’re in (next slide).</li>
+        <li>In the Hubstaff app, click your training project.</li>
+        <li>Click in <b>Create a to-do</b>, paste it (Ctrl+V), then click <b>+</b> or press Enter.</li>
+        <li>Click the button inside that to-do, at its left, to track your time on it.</li>
+      </ol>
+      <p class="ftr-tip">More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p></div></div>
+    ${fig(FIGS.todo())}</div>`],
   ["todos", "Your Hubstaff To-Dos: Copy and Paste", ()=>{
     // two parts side by side (1–10, 11–19); 📋 Copy All puts every To-Do on the clipboard, one per line
     const half = Math.ceil(TODOS.length / 2), parts = [TODOS.slice(0, half), TODOS.slice(half)];
@@ -305,11 +347,13 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // The 4 daily deliverables: an overview (the tests are in the Practice Lab), the Daily Task Tracker, the Monitoring Sheet and the EOD email
+  // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are in 🛠 Practice Lab → 🧪 Skill Building.</p>
-    <div class="ftr-lessons ftr-two">${[["🧪", "1. Typing and Spelling Tests", "Typing twice a day (morning and before the end of your shift), spelling once, in 🛠 Practice Lab → 🧪 Skill Building."],
-      ["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
+    <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
+      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your VA Output folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
+      ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
+    ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   ["habits-trackers", `Building Your Habits: ${HABITS[1].name}`, ()=>`
@@ -328,11 +372,13 @@ const SLIDES = [
     (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
+    <div class="ftr-habit-emb"><div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>
+      <div class="ftr-keep"><div class="ftr-part-h">🗂 Training Matrix</div><p class="ftr-tip">${esc(HABITS[0].matrix.note)}</p>${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div></div>`],
   ["eod", "Your EOD Email: The Template", ()=>`
-    <div class="ftr-part">
+    <div class="ftr-part ftr-eod">
+      <div class="ftr-part-h">📧 Your EOD Email</div>
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
-      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0])}</b><span>${esc(p[1])}</span></div>`).join("")}
+      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0]).replace(/\//g, "/<wbr>")}</b><span>${esc(p[1])}</span></div>`).join("")}
       <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
     </div>
     <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
@@ -553,6 +599,9 @@ body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ft
 /* the content takes the sheet's whole width (no narrow column in the middle of it) */
 body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-stakes p, .ftr-habit){max-width:none !important;}
 body.ft-orient #lessonSlideWrap .ftr-lessons.ftr-two{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+body.ft-orient #lessonSlideWrap .ftr-tests span b{font-size:inherit !important;font-family:inherit !important;}
+body.ft-orient #lessonSlideWrap .ftr-test-links{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;}
+body.ft-orient #lessonSlideWrap .ftr-test-links .btn{text-decoration:none;font-size:14px !important;padding:4px 10px !important;min-height:0 !important;}
 body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin-top:4px;}
 body.ft-orient #lessonSlideWrap .ftr-cam .ftr-part{padding:12px 14px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-cam{grid-template-columns:minmax(0,1fr) !important;} }
@@ -560,21 +609,31 @@ body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
 /* How to Create Notes: the steps beside a big Hubstaff picture, framed in navy so it stands out on the white sheet */
 body.ft-orient #lessonSlideWrap .ftr-notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-parts{gap:10px;}
+body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
+/* Send Your EOD Email: the card beside the embedded Training Matrix */
+body.ft-orient #lessonSlideWrap .ftr-habit-emb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start;}
+body.ft-orient #lessonSlideWrap .ftr-habit-emb .ftr-embed{height:max(300px, min(50vh, 30cqw)) !important;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-habit-emb{grid-template-columns:minmax(0,1fr);} }
 /* The Sheet: two columns, so its three tables fill the width */
 body.ft-orient #lessonSlideWrap .ftr-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-cols2 .ftr-def{grid-template-columns:minmax(0,36%) minmax(0,1fr);}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap :is(.ftr-notes, .ftr-cols2){grid-template-columns:minmax(0,1fr);} }
-/* the term/definition tables in more contrast: a navy rule under each heading, darker row lines, every other row shaded */
-body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def){background:#fff;border:1.5px solid #B9C0D0;}
-body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-part-h{padding-bottom:6px;border-bottom:3px solid #343C66;}
-body.ft-orient #lessonSlideWrap .ftr-def{border-top:1px solid #C9CFDD;padding:8px 10px;margin:0 -10px;}
-body.ft-orient #lessonSlideWrap .ftr-def:first-of-type{border-top:0;margin-top:4px;}
-body.ft-orient #lessonSlideWrap .ftr-def:nth-of-type(even){background:#EEF1F8;}
-body.ft-orient #lessonSlideWrap .ftr-def b{color:#1E2340;font-weight:800;} body.ft-orient #lessonSlideWrap .ftr-def span{color:#1B1E2E;}
+/* the term/definition tables in high contrast: a navy heading bar, the terms in a shaded column, darker row lines */
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def){background:#fff;border:2px solid #343C66;padding:0;overflow:hidden;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-part-h{background:#1E2340;color:#fff !important;padding:10px 16px;margin:0;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-def{border-top:1px solid #AEB6CA;padding:0;margin:0;gap:0;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-def:first-of-type{border-top:0;margin-top:0;}
+body.ft-orient #lessonSlideWrap .ftr-def b{background:#E1E7F5;color:#1E2340;font-weight:800;padding:9px 14px;border-right:2px solid #343C66;}
+body.ft-orient #lessonSlideWrap .ftr-def span{color:#0F1222;padding:9px 14px;}
+body.ft-orient #lessonSlideWrap .ftr-def:nth-of-type(odd) span{background:#F4F6FB;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > :not(.ftr-def):not(.ftr-part-h){margin:10px 16px;}
+body.ft-orient #lessonSlideWrap .ftr-part:has(> .ftr-def) > .ftr-aux{border-top:0;border-bottom:2px solid #343C66;margin:0 !important;padding:10px 16px !important;background:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-def b{overflow-wrap:normal;word-break:normal;}
+body.ft-orient #lessonSlideWrap .ftr-eod .ftr-def{grid-template-columns:minmax(0,34%) minmax(0,1fr);}
 /* in the middle of the sheet: narrower boxes and short rows of cards are centered */
 body.ft-orient #lessonSlideWrap :is(.ft-body > *, .ftr-slide > *, .ftr-keep > *){margin-left:auto !important;margin-right:auto !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr)) !important;}

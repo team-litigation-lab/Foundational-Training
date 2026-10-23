@@ -48,13 +48,35 @@ const day = () => D.day || today();
 const dayLinks = d => ((D.drive.days[d] || {}).links || []);
 
 /* ---------- the pages ---------- */
+// The templates a trainee starts from (Office files in the trainer's Drive): ⬇ downloads the file, ↗ opens it in Google.
+const driveId = u => (String(u || "").match(/\/d\/([a-zA-Z0-9_-]{20,})/) || [])[1] || "";
+const download = u => driveId(u) ? `https://drive.google.com/uc?export=download&id=${driveId(u)}` : u;
+const TEMPLATES = () => [
+  ["📋", "Daily Task Tracker", window.FT_TRACKER_TEMPLATE || "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit"],
+  ["📒", "Training Monitoring Sheet", (window.FT_MONITOR_DOC || {}).open || ""]].filter(t => t[2]);
+// The steps from the templates to the automated check, above the links (the 📁 Link window and the Task Tracker page)
+function stepsHtml(){
+  return `<ol class="fdr-steps">
+      <li><b>Download the templates.</b>
+        <span class="fdr-tpls">${TEMPLATES().map(([i, n, u]) => `<span class="fdr-tpl">${i} ${n}
+          <a class="btn btn-navy btn-sm" href="${e(download(u))}" target="_blank" rel="noopener noreferrer">⬇ Download</a>
+          <a class="btn btn-ghost btn-sm" href="${e(u)}" target="_blank" rel="noopener noreferrer">Open ↗</a></span>`).join("")}</span></li>
+      <li><b>Save them in your VA Output folder in Google Drive, as Google files.</b> Upload both to the folder, open each one and choose
+        <b>File → Save as Google Sheets</b> (the tracker) or <b>File → Save as Google Docs</b> (the Monitoring Sheet). Put your name in each file’s name.</li>
+      <li><b>Share the folder and both files:</b> Share → General access → <b>Anyone with the link</b> → Viewer.</li>
+      <li><b>Paste the links below and save.</b> Your VA Output folder, then each file (open it and copy the link from the address bar).</li></ol>
+    <div class="fdr-auto">🤖 <b>Automated monitoring.</b> Every night, and whenever you press ✅ Check now, the system opens your tracker and Monitoring
+      Sheet from your Drive: it checks every day’s Daily Notes and output links and every discussion’s Monitoring entry, and an AI review sums up
+      your progress. You see the results on 📚 Dashboard; your trainer sees them too, and adds their score and comments.</div>`;
+}
 function linksCard(){
   const x = D.drive, row = (k, label, ph, hint) => `<label class="fdr-l"><span>${label}</span>
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
       ${hint ? `<small>${hint}</small>` : ""}</label>`;
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
-    <p class="fdr-muted">Your Task Tracker and Monitoring Sheet live in your <b>VA Output folder</b> in Google Drive. Share each file as <b>“Anyone with the link can view”</b> so the system can grade it, then paste the links here.</p>
-    ${row("folder", "📁 VA Output folder", "https://drive.google.com/drive/folders/…", "")}
+    <p class="fdr-muted">Your Task Tracker and Monitoring Sheet live in your <b>VA Output folder</b> in Google Drive, where the system checks them for you.</p>
+    ${stepsHtml()}
+    ${row("folder", "📁 VA Output folder (the Drive folder with your tracker and Monitoring Sheet)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Your own copy of the tracker. Link the Daily Task Tracker tab.")}
     ${row("monitor", "📒 Training Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion: the date, 5 takeaways, 3 questions, and your rating.")}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
@@ -280,7 +302,11 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .fdr-hero > p{margin:0 0 12px;color:var(--ink-soft);font-size:15px;} .fdr-hero a.btn{text-decoration:none;}
 .fdr-preview{padding:10px 14px;margin:0 0 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:13.5px;}
 .fdr-card{padding:18px 20px;margin-bottom:16px;} .fdr-card h2{margin:0 0 6px;color:var(--navy);font-size:20px;} .fdr-card h3{margin:14px 0 4px;color:var(--navy);font-size:16px;}
-.fdr-muted{color:var(--ink-soft);font-size:13.5px;} .fdr-err{color:var(--danger);font-weight:700;}
+.fdr-muted{color:var(--ink-soft);font-size:13.5px;}
+.fdr-steps{margin:10px 0 8px;padding-left:22px;font-size:14px;line-height:1.5;color:var(--ink);} .fdr-steps li{margin-bottom:8px;} .fdr-steps li::marker{font-weight:800;color:var(--orange-deep);}
+.fdr-tpls{display:flex;flex-direction:column;gap:6px;margin-top:6px;} .fdr-tpl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600;color:var(--navy);}
+.fdr-tpl .btn{text-decoration:none;} .fdr-tpl .btn-navy{margin-left:auto;}
+.fdr-auto{margin:4px 0 10px;padding:10px 12px;border-radius:10px;background:#EEF1F8;border-left:4px solid var(--orange);font-size:13.5px;line-height:1.5;color:var(--ink);} .fdr-err{color:var(--danger);font-weight:700;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
 .fdr-row{display:flex;gap:8px;align-items:center;margin:4px 0;} .fdr-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fdr-row .fdr-label{flex:0 1 240px;} .fdr-row a.btn{text-decoration:none;}

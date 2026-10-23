@@ -107,7 +107,7 @@ function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
-  if(s.id === "tools") return {ic: "🧰", label: "Know your tools"};
+  if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
@@ -361,7 +361,7 @@ function agendaHtml(d, info){
         if(!ls.length) return "";
         const today = (info.items || []).some(x => x.at === "tool" && x.id === "process") || /ftdd-pq/.test(all);
         return `<p class="ftdd-ag-h">✍️ Process Questions</p><ul class="ftdd-ag-ls">${ls.map(l =>
-          `<li><a class="ftdd-link" onclick="FTProcess.openLesson(${Number(l)})">${e(lessonTitle(l))} →</a></li>`).join("")}</ul>
+          `<li><a class="ftdd-link" onclick="FTProcess.openLesson(${Number(l)})">${e(lessonTitle(l))} →</a>${root.FTKCGames ? ` · <a class="ftdd-link" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</a>` : ""}</li>`).join("")}</ul>
           <p class="ftdd-ag-pq">${today ? "Answered today, after the activities." : "Answered on the day the guide sets them; the sheet stays open."}</p>`;
       })()}
     </div></div>`;
@@ -387,6 +387,13 @@ function slideAgendaGo(s, info){
 }
 // a lesson has Process Questions where its answer sheet exists (Calendaring, Lesson 5, has none)
 function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.ftKcQuestions(Number(l)).length > 0 : false; }catch(err){ return false; } }
+// a day has Process Questions when the guide runs them that day (its deck carries the ✍️ Process Questions note):
+// Days 1, 2, 3, 7, 10 and 13. Only those days link to them and to the 🎮 Knowledge Games.
+const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
+function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || ""))); }
+// ✍️ Answer and 🎮 Knowledge Games for a lesson's Process Questions (the games review the same lesson, as a game show)
+const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTProcess.openLesson(${Number(l)})">✍️ Process Questions: ${e(lessonTitle(l))}</button>` +
+  (root.FTKCGames ? `<button type="button" class="${cls || "btn btn-ghost btn-sm"} ftdd-games" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</button>` : "");
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
   const h = String(s.h || ""), out = [];
@@ -394,7 +401,7 @@ function slideActions(s, info, body, i){
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
   // themselves stay on ✍️ Knowledge Check — the slide only points at them
-  if(has(/process question/i) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(${Number(l)})">✍️ Process Questions: ${e(lessonTitle(l))}</button>`); });
+  if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(pqButtons(l)); });
   if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
   if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log &amp; today’s To-Do</button>`);
   if(has(/mock call/i) && root.FTSessions){
@@ -427,7 +434,7 @@ function slideCard(d, info, list, i){
     </div>`;
 }
 function renderDeck(){
-  const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>`;
+  const back = `<a class="back-link" title="Close: back to the 📚 Dashboard" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>`;
   if(DD.day == null) DD.day = currentDay();
   if(!dayOpen(DD.day)) DD.day = currentDay();
   const all = decks();
@@ -581,12 +588,12 @@ root.moduleCard = function(d){
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
   return `<div class="ftdd-stage">
-    <div class="ftdd-mid"><a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>
+    <div class="ftdd-mid"><a class="back-link" title="Close: back to the 📚 Dashboard" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>
       <div class="ftdd-slides"><div class="ftdd-deck" data-slide="0">
         <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Know Your Tools</h1>
           <span class="ftdd-prog" title="Tool ${k + 1} of ${n}"><span style="width:${((k + 1) / n * 100).toFixed(1)}%"></span></span></div>
         <div class="ftdd-ribbon"><span>The tools you’ll use in this training</span></div>
-        <div class="ftdd-bar"><span class="ftdd-pill">🧰 Know your tools</span><span class="ftdd-n">Tool ${k + 1} of ${n}</span></div>
+        <div class="ftdd-bar"><span class="ftdd-pill">🧰 Know Your Tools</span><span class="ftdd-n">Tool ${k + 1} of ${n}</span></div>
         <div class="ftdd-sheet ftdd-body ft-body">${toolsSlide()}</div>
       </div></div>
       <div class="ftdd-nav">
@@ -680,7 +687,7 @@ const LESSON_CARDS = {
       {t: "Reading Task: Personal Injury", sub: "Read the overview · the questions come with the assessment file your trainer posts in the training GC", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
-      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
+      {t: "Process Questions: Submit", sub: "Review them with 🎮 Knowledge Games, answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
@@ -843,8 +850,12 @@ function dayCard(n, ex){
         ${outside.length ? `<p class="ftlc-h2">Outside training hours</p><ul>${outside.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
-        ${first ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p>
-          ${hasPQ(lid) ? `<button type="button" class="ftlc-pq" onclick="FTProcess.openLesson(${c.lesson})">✍️ Answer on Knowledge Check →</button>` : ""}</div>` : ""}
+        ${first ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
+        ${(() => { // the day's own Process Questions (the lessons the day discusses), on the days the guide runs them
+          const pl = dayHasPQ(n) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
+          return pl.length ? `<div class="ftlc-pqbox"><p class="ftlc-h2">✍️ Today’s Process Questions</p>${pl.map(l => `
+          <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTProcess.openLesson(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Answer on Knowledge Check →</button>
+          ${root.FTKCGames ? `<button type="button" class="ftlc-pqbtn ftlc-games" onclick="FTKCGames.open(${Number(l)})">🎮 Review with the Knowledge Games</button>` : ""}</div>`).join("")}</div>` : ""; })()}
       </aside>
     </div>
   </article>`;
@@ -1045,7 +1056,7 @@ const TOOLS = [
     what: "Real work, in real time, for your firm: each Practice Session is done live in the CMS and on the Call Simulator, checked against your firm’s rules and reviewed by your trainer.",
     feats: ["🟢 Practice Sessions by day: Reception and Intake Mock Calls, the Calendaring Practice Lab, Medical Records requests",
       "🎯 A graded call counts toward its lesson",
-      "Home of 🧪 Skill Building, 🧰 Drafting Tools and the simulators",
+      "Home of 🧰 Drafting Tools and the simulators",
       "Each session opens with its lesson, so you practise what you just learned"]},
   {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
@@ -1059,30 +1070,12 @@ const TOOLS = [
       "✎ Edit in Word or ✎ Edit in PDF on your own computer, then upload it",
       "Your upload is checked, and the score goes to your progress",
       "It shows the file name to save it under"]},
-  {ic: "🧪", name: "Skill Building · Typing & Spelling", short: "Skill Building", img: "skill-building", go: "goto('skills')", where: "🛠 Practice Lab → 🧪 Skill Building",
-    what: "The daily skill tests: typing twice a day (in the morning and before the end of your shift), spelling once.",
-    feats: ["⌨ Typing: 60 seconds on a passage about the work; clients look for 60 WPM",
-      "🔤 Spelling: 15 words read aloud in a sentence, from the course’s legal, medical and business words",
-      "Each result is saved with its date and time: no screenshot to take, name or upload",
-      "Your log keeps every result"]},
   {ic: "✍️", name: "Knowledge Check", img: "knowledge-check", go: "goto('process')", where: "✍️ Knowledge Check in the top bar",
     what: "Each module’s Process Questions, answered in writing on the platform and graded.",
     feats: ["A module’s questions open once you finish the module",
       "📝 Submit for Grading: a score and feedback under each answer, then your trainer’s review",
       "🎮 Knowledge Games review a lesson as a game show before you answer; they don’t change your grade",
-      "📁 Your Trainee Folder’s Drive link, so new documents are made there"]},
-  {ic: "📒", name: "Training Monitoring Sheet", short: "Monitoring Sheet", img: "monitoring-sheet", go: "goto('monitoring')", where: "📂 My Pages → 📒 Monitoring Sheet",
-    what: "Your record of each classroom discussion, filled in as soon as the discussion is covered.",
-    feats: ["One entry per discussion: the date, 5 major takeaways, 3 questions you still have, and your rating",
-      "📄 The Monitoring Sheet template to copy",
-      "📁 Your Drive links: the VA Output folder, the Daily Task Tracker and the Monitoring Sheet",
-      "✅ Checked every night and when you press Check now; your trainer adds a score and comments"]},
-  {ic: "👥", name: "Shadowing & To-Do", img: "shadowing-todo", go: "goto('shadowing')", where: "📋 Today’s To-Do on the Activity Deck",
-    what: "Your Hubstaff To-Do for each day, in the Training Guide’s exact wording, and your log of each shadowing session.",
-    feats: ["📋 Copy the day’s To-Do straight into Hubstaff",
-      "The day’s activities in the guide’s order, with where each one is done",
-      "Log each shadowing session (Days 7, 11, 14, 15 and 16)",
-      "Any day’s To-Do, from Day 1 to Day 16"]}
+      "📁 Your Trainee Folder’s Drive link, so new documents are made there"]}
 ];
 function toolsSlide(){
   const k = Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)), t = TOOLS[k];
@@ -1342,6 +1335,9 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
+.ftlc-pqbox{margin-top:10px;} .ftlc-pqacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.ftlc-pqbtn{border:1px solid #E8590C;background:#fff;color:#B5451F;border-radius:999px;padding:5px 12px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
+.ftlc-pqbtn:hover{background:#FFF1E6;} .ftlc-pqbtn.ftlc-games{background:#1E2340;border-color:#1E2340;color:#fff;} .ftlc-pqbtn.ftlc-games:hover{background:#343C66;}
 .ftdd-x{position:relative;flex-wrap:wrap;}
 .ftdd-x .ftdd-step-n{font-size:16px;}
 .ftdd-x-k{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#B5651F;}
@@ -1524,6 +1520,20 @@ main.main-dash .dash-pair-pin .module-card .mh-title{font:700 15px/1.25 'Inter',
 main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
+/* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
+.ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
+.ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
+/* Day 1's Installation of SA: its step screenshots big enough to read (two or three to a row, 300px tall) */
+.ft-body .shots.ftdd-big-shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px;}
+.ft-body .shots.ftdd-big-shots a{height:300px;padding:8px;background:#fff;border:1.5px solid #9AA0AB;}
+/* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
+   Tools): a round close button, top right, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
+body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;
+  display:inline-flex !important;align-items:center;justify-content:center;align-self:flex-end;border-radius:50%;background:#1E2340;border:2px solid #fff;
+  box-shadow:0 0 0 2px #1E2340, 0 4px 12px rgba(30,35,64,.45);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:800 18px/1 'Inter',sans-serif;color:#fff;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;box-shadow:0 0 0 2px #E8590C, 0 4px 12px rgba(30,35,64,.45);}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mid > a.back-link:hover::before{color:#fff;}
 /* the top row on the lesson grid's columns: each pinned card one lesson card wide, the scores panel the other two,
    with the grid's own 14px gap */
 @media(min-width:1001px){

@@ -120,8 +120,8 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (pins.length !== 2 || !/Setting of Training Expectations/.test(pins[0]) || pins[1] !== 'Know Your Tools') fail(`the pinned cards are ${JSON.stringify(pins)}`);
   await page.click('.ftkt-card .module-start-btn'); await page.waitForTimeout(1200);
   const kt = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-dtitle') || {}).textContent || '', tabs: document.querySelectorAll('.ftdd-tools-tab').length }));
-  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 10) fail(`the Know Your Tools card didn't open its page with ten tools: ${JSON.stringify(kt)}`);
-  for (let t = 0; t < 10; t++) {
+  if (kt.view !== 'knowtools' || !/Know Your Tools/.test(kt.h) || kt.tabs !== 7) fail(`the Know Your Tools card didn't open its page with seven tools: ${JSON.stringify(kt)}`);
+  for (let t = 0; t < 7; t++) {
     await page.evaluate(t => FTDayDecks.tool(t), t); await page.waitForTimeout(300);
     const tool = await page.evaluate(async () => { const img = document.querySelector('.ftdd-tool-shot img');
       if (img && !img.complete) await new Promise(r => { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 3000); });
@@ -247,6 +247,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score-l li').length }));
   if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+
+  // ✍️ Process Questions and 🎮 Knowledge Games on the days the guide runs the questions, and only there
+  const pqDays = [];
+  for (let d = 1; d <= 16; d++) {
+    await page.evaluate(d => FTDayDecks.open(d, 0), d); await page.waitForTimeout(400);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-lcslide .ftlc-pqbox .ftlc-games'))) pqDays.push(d);
+  }
+  if (pqDays.join() !== '1,2,3,7,10,13') fail(`the Process Questions and Knowledge Games show on days ${pqDays.join(', ')}, not 1, 2, 3, 7, 10 and 13`);
+  await page.evaluate(() => FTDayDecks.open(1, 0)); await page.waitForTimeout(600);
+  await page.click('.ftdd-lcslide .ftlc-games'); await page.waitForTimeout(800);
+  if (await page.evaluate(() => state.view) !== 'kcgames') fail('🎮 Review with the Knowledge Games doesn\'t open the games');
 
   await put('settings:dayextras', extrasBefore || { days: {} });
   await put('settings:opendays', openBefore || { all: [], batches: {} });

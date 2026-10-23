@@ -89,6 +89,7 @@ A grading system's score is the average of its graded items; the overall score i
 - **Eight games:** 💰 Millionaire (a 10-step ladder, 30 s a question, 50:50, Ask the Audience, walk away, safe havens at 2,000 and 100,000), 💣 Countdown Bomb (a 12 s fuse), 📋 Survey Says (type the top answers; typos and other wordings count; three strikes), 🟦 Jeopardy (four categories, 100–500, a Daily Double; a miss costs the clue's value), ⚡ Rapid Fire (a definition, four terms, 3 s, streak multiplier), 🎡 Spin the Wheel (the wheel picks the category and the multiplier), 🚪 Mystery Doors (a question, a double or a bonus), 🔍 Blur & Zoom (name a mock document, made-up names only, before it comes into focus). Every game ends on what was missed and why. Sound cues can be muted.
 - **Questions:** a starting bank for all nine lessons (multiple choice with a why, survey boards, terms, ten mock documents). The trainer (Admin → 📚 Dashboard → 🎮 Knowledge Games) adds their own questions, boards and terms per lesson and hides any built-in one (`settings:kcgames`). A trainee sees the lessons they've reached.
 - **Saved** in `kcgames:<id>` (the trainee's own, a `plays` list); the best game per lesson shows on 🏅 My Performance (🎮 Knowledge Games).
+- **Linked from the days with Process Questions** (Days 1, 2, 3, 7, 10 and 13: the days whose Activity deck carries the ✍️ Today’s Process Questions note, `dayHasPQ` in `js/ft-day-decks.js`): the day's Classroom Activity card shows *✍️ Today's Process Questions* with ✍️ Answer on Knowledge Check and 🎮 Review with the Knowledge Games for the lesson the day discusses; the slide with the questions note and the agenda carry the same two; a lesson's ✍️ Process Questions page has 🎮 Review with the Knowledge Games at the top. Days without Process Questions show neither.
 
 **📝 Send Feedback** (`js/ft-trainer-feedback.js`, Admin → 🏅 Scorecard → 📝 Send Feedback): the trainees' work on the activities that had no trainer review — 🎧 each transcription, 🎬 each video's notes, 📘 each Process Guide, 🧰 each LOR letter — by batch, "To review" first. Open one: the work (a guide is read when opened and cleaned like the trainer's other views), the AI's evaluation where there is one, then the verdict (the facilitator's own labels), a score in % and the comment (✨ drafts all three in the facilitator's DNA), and 📤 Send. Saved in `trainerfb:<id>` (the trainee reads it, only admins write it). The trainee sees it at the top of that activity's page (NEW until seen), on **📬 My Feedback** (📂 My Pages: every feedback a trainer sent — these, the scorecards, the sessions' and Knowledge Checks' reviews, the shared Weekly Ranking rows — newest first) and on 🏅 My Performance (📝 Trainer feedback).
 
@@ -195,25 +196,25 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
 - **The slides** are drawn like the Activity decks and the Case Management course's Case Flow slides (`body.ft-orient` in `js/ft-rules.js`): a glass navy card with line ornaments at three corners, the lesson's orange-outlined title with its progress line, the slide's title on a centred uppercase ribbon, and the content on a white sheet in the CM type (Inter 500, Poppins headings). Each slide is scaled to fit its sheet (`fitOrient`, to half size at the smallest); only a slide that would need less is split into pages (on a laptop: the Hubstaff notes and the Task Tracker sheet). In the order the trainers run the orientation:
   1. 👋 Welcome to LSH!: the program, what the orientation covers, and the training shift.
-  2. Hubstaff: how-tos and why they matter (the audit team's record of your day), with links to the lesson's Hubstaff slides and the LSH VA Guide (more in `HOWTO_LESSONS`).
-  3. Your Hubstaff To-Dos: the 16 To-Dos, each with 📋 Copy and 📋 Copy All, and how to add one. No shadowing To-Do: the trainer gives that one on the day.
-  4. How to create notes in Hubstaff, with the Add Work Notes picture.
-  5. Lost hours: the Manual Time Adjustment Request (subject, To and CC to copy).
-  6. Breaks: tracking 8:00 AM – 5:00 PM PST, finishing late deliverables unpaid unless approved, logging in up to 10 minutes early, 1 hour of breaks in total.
-  7. Auxes: the commands in #⏳-timestamps and #training-channel, no double stamping, the Discord profile status.
-  8. Camera: on in every meeting and classroom discussion, with the rules for your demeanor, outfit and framing (`CAMERA`).
-  9. Discord: mindfulness and response rates (reply within 5 minutes, acknowledge every instruction, meetings are posted on their day).
-  10. Your 4 daily deliverables: the typing and spelling tests, the Daily Task Tracker, the Training Monitoring Sheet and the EOD email.
-  11. Skill Building: Typing and Spelling Tests, with **🧪 Open the Practice Lab**.
+  2. Hubstaff: how-tos and why they matter (the audit team's record of your day), with links to the lesson's Hubstaff slides and the LSH VA Guide.
+  3. Your Hubstaff To-Dos: how to add them, the steps beside the Hubstaff to-do picture (`figTodo`).
+  4. Your Hubstaff To-Dos: the 16 To-Dos, each with 📋 Copy and 📋 Copy All, in smaller type (not scaled up: `data-ftr-max`). No shadowing To-Do: the trainer gives that one on the day.
+  5. How to create notes in Hubstaff: the steps beside the Add Work Notes picture.
+  6. Lost hours: the Manual Time Adjustment Request (subject, To and CC to copy).
+  7. Breaks: your schedule and your hour of breaks.
+  8. Auxes: the commands in #⏳-timestamps and #training-channel, no double stamping, the Discord profile status.
+  9. Camera: on in every meeting and classroom discussion, with the rules for your demeanor, outfit and framing (`CAMERA`).
+  10. Discord: mindfulness and response rates (reply within 5 minutes, acknowledge every instruction, meetings are posted on their day).
+  11. Your 4 daily deliverables: the typing and spelling tests, with the links to the sites the training uses (`TESTS`: TypingClub or TypingTest.com, SpellQuiz or Spelling-Test.com) and the screenshot's file name, the Daily Task Tracker, the Training Monitoring Sheet and the EOD email.
   12. Building your habits: Update Your Trackers.
-  13–15. The Daily Task Tracker: the sheet, the other tabs and the daily check, and the filled-in sample, with the one **📋 Open My Task Tracker** button.
-  16. Your Training Monitoring Sheet, embedded, with 📒 Save My Sheet's Link.
-  17. Building your habits: Send Your EOD Email, with the Training Matrix link.
-  18. The EOD template, with 📋 Copy the Template.
-  19. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
-  20. You're a General VA, ready for any role.
-  21. Your work and the use of AI.
-  22. Free Upskill Training, after your shift.
+  13–14. The Daily Task Tracker: the sheet (two columns), the other tabs and the daily check, in high-contrast tables.
+  15. Your Training Monitoring Sheet, embedded, with 📁 Link My Task Tracker and Monitoring Sheet.
+  16. Building your habits: Send Your EOD Email, with the Training Matrix embedded beside it (its Google Doc preview, with Open or Download ↗).
+  17. The EOD template, with 📋 Copy the Template.
+  18. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
+  19. You're a General VA, ready for any role.
+  20. Your work and the use of AI.
+  21. Free Upskill Training, after your shift.
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff picture is SVG, drawn after the trainer's screenshot.
@@ -270,7 +271,7 @@ A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2
 
 Trainees keep their **LSH Daily Task Tracker** (a Google Sheet) and their **Training Monitoring Sheet** (a Google Doc or Sheet) in their **VA Output folder**, not on the platform (`js/ft-drive.js`, which replaces the trainee pages of 📋 Task Tracker and 📒 Monitoring Sheet; the on-platform sheets below stay for admins and earlier records).
 
-- **📁 My Drive links** (on both pages): the VA Output folder, the Task Tracker sheet and the Monitoring Sheet. Each file is shared as **"Anyone with the link can view"** so the system can read it. Saved in `drive:<id>` (the trainee's own).
+- **📁 My Drive links** (on both pages): the VA Output folder, the Task Tracker sheet and the Monitoring Sheet. Each file is shared as **"Anyone with the link can view"** so the system can read it. Saved in `drive:<id>` (the trainee's own). Above the links, numbered steps: ① download the templates (⬇ Download / Open ↗ for the Daily Task Tracker, `window.FT_TRACKER_TEMPLATE` or the sample tracker, and the Monitoring Sheet, `FT_MONITOR_DOC`), ② save them in the VA Output folder as Google files (File → Save as Google Sheets / Docs), ③ share the folder and both files as "Anyone with the link" → Viewer, ④ paste the links and save; then a note on the automated monitoring (the nightly and ✅ Check now checks with their AI review).
 - **Each training day** (📋 Task Tracker): the links to the day's outputs (typing and spelling test screenshots, documents …), **📤 Submit the day's links**.
 - **Graded automatically:** every night on the Worker's cron and on **✅ Check now** (`/api/drive/check`; a trainee at most every 3 minutes, an admin for anyone), the Worker reads each file's export (a sheet as CSV, a doc as text) and checks:
   - **the tracker** with the same rules as before (`fromSheetCsv` in `js/ft-tracker-rules.js` turns the sheet into the workbook: the header row with *Task Details*, the dated Daily Notes columns between *Accountable VA* and *VA Notes*, the ⬇ FOR COMPLETION / RECURRING / COMPLETED sections): every open task has its Daily Note for the day, and the day's output links are in (`output-links`). Plus the notes review, in the facilitator's voice.
@@ -371,7 +372,7 @@ Every training day has its own deck: **Days 1–18**, one slide per part of the 
 
 **📚 Dashboard is the eight lessons, on one screen** (`LSH_HOME_GRID_LAYOUT` in `js/ft-day-decks.js`): the portal's own lesson card for each, four across and two down, its buttons in the order the session runs — **▶ Start Training** on top (the lesson deck, 🔒 until the trainer opens it in 📅 Open Lessons), then **🎬 Video** (the lesson's AI discussion video: a trainee asks for it with 🔒 Request Video, it reads ⏳ Requested, and it opens once the trainer approves it in 📅 Open Lessons → 🎬 Unlock Videos → Requests, or unlocks it for the batch) and **🏠 Classroom** (the offline activity: the lesson's homework, else its last activity). The lesson's icon opens its day card (the day deck). A lesson's card holds its discussion day and the days after it until the next lesson: Lesson 1 Day 1, Lesson 2 Day 2, Lesson 3 Day 3, Lesson 4 Day 4, Lesson 5 Days 5–6, Lesson 6 Days 7–9, Lesson 7 Days 10–12, Lesson 8 Days 13–16.
 
-**🧰 Know Your Tools (its own card on 📚 Dashboard, beside 📌 Setting of Training Expectations and Company Policies, and its own page `#/knowtools`, drawn like a deck slide).** It introduces every tool the training uses, one at a time. The tools are listed on the left of the sheet. The picked tool shows a real screenshot (click it for full size), *What it's for*, *Where* to find it, its *Features* and a button that opens it, with *Next tool →*. The ten tools are the 📋 Activity Deck, 🗂 the LSH Case Management System (CMS), ☎ LSH Ring Channel (the Call Simulator), 🛠 the Practice Lab, 📅 the Google Calendar Simulator, 🧰 the Drafting Tools, 🧪 Skill Building, ✍️ Knowledge Check, 📒 the Training Monitoring Sheet and 👥 Shadowing & To-Do. Its card's **Start** opens the page; ← / → step through the tools. It is no longer a Day 1 slide, and Day 1's deck no longer has the Training Monitoring Sheet set-up either (the orientation and 📒 Monitoring Sheet cover it).
+**🧰 Know Your Tools (its own card on 📚 Dashboard, beside 📌 Setting of Training Expectations and Company Policies, and its own page `#/knowtools`, drawn like a deck slide).** It introduces every tool the training uses, one at a time. The tools are listed on the left of the sheet. The picked tool shows a real screenshot (click it for full size), *What it's for*, *Where* to find it, its *Features* and a button that opens it, with *Next tool →*. The seven tools are the 📋 Activity Deck, 🗂 the LSH Case Management System (CMS), ☎ LSH Ring Channel (the Call Simulator), 🛠 the Practice Lab, 📅 the Google Calendar Simulator, 🧰 the Drafting Tools and ✍️ Knowledge Check (Skill Building, the Training Monitoring Sheet and Shadowing & To-Do are no longer on it). Its card's **Start** opens the page; ← / → step through the tools. It is no longer a Day 1 slide, and Day 1's deck no longer has the Training Monitoring Sheet set-up either (the orientation and 📒 Monitoring Sheet cover it).
 - **Where it is:** `TOOLS` and `toolsSlide()` in `js/ft-day-decks.js` (`renderToolsPage()` draws the page; `window.FT_TOOLS_PIN` puts the card in the pinned row, listed by `pinned()` in `js/ft-program.js`). Change a tool's text there.
 - **The screenshots** are in `ft/day1/img/tools/` (WebP, 1200 px wide), each shown in the same 16:10 frame from its top:
   - the platform's own pages, taken in a browser as a trainee;

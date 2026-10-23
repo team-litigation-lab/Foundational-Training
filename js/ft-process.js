@@ -255,6 +255,7 @@ function renderPage(){
   // ✓ Finish lesson lands here directly, not on a long page of every module's questions stacked together.
   const lesson = state.pqLesson && kcQuestionsFor(state.pqLesson).length ? state.pqLesson : null;
   if(lesson) return `${preview}<div class="fp-hero"><button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
+      ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
     ${folderCard}
