@@ -30,7 +30,7 @@ window.LSH_BLUEPRINT = {
       { icon: '🖥', title: 'How every lesson works', points: [
           '1. Lesson slides: the training deck, full width. ⛶ Full screen any time; your place is saved.',
           '2. Video Presentation: the lesson\'s AI Assisted Discussion video, 🔒 until your trainer unlocks it.',
-          '3. Finish lesson, on the last slide: it takes you to ✍️ Knowledge Check, at this lesson\'s answer sheet.',
+          '3. 📋 Classroom Activity, on the last slide: it opens this lesson\'s ✍️ Knowledge Check questions and takes you to the day\'s Activity deck.',
           '4. Knowledge Check: submit the sheet for grading. 70% passes and your circle turns ✓, and your trainer adds a review.',
           '5. The next lesson opens when your trainer opens it for your batch.'],
         where: '📚 Dashboard → Start (or Review) on a lesson.',

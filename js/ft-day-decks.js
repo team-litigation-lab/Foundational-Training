@@ -448,6 +448,7 @@ function renderDeck(){
       <div class="ftdd-slides">${slideCard(d, info, list, DD.i)}${pair ? slideCard(d, info, list, DD.i + 1) : ""}</div>
       <div class="ftdd-nav">
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
+        <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
@@ -892,10 +893,66 @@ root.goToKnowledgeCheckWithInterstitial = async function(){
   open(day, 0);
 };
 
+/* ---------- 🗺 Map: the training roadmap ----------
+   The 🗺 Map button on the deck's bar (like the Case Management course's 🗺 Slide Map) opens the whole programme
+   as one roadmap: the eight lessons in order, each with its days, and each day with its slides. The day and slide
+   you are on are marked, the days before it are ticked, and any open day or slide is a click away. Escape, ✕ or a
+   click outside closes it. */
+function mapHtml(){
+  const all = decks() || {}, here = DD.day, at = placeDay();
+  const lessons = Object.keys(LESSON_CARDS).map(Number).sort((a, b) => a - b);
+  const seen = new Set();
+  const dayRow = n => {
+    seen.add(n);
+    const d = all[n], open = dayOpen(n), info = dayInfo(n), list = d ? slidesOf(d) : [];
+    const title = (d && (info.role || d.title)) || `Day ${n}`;
+    const state_ = n === here ? "here" : n < at ? "done" : "";
+    const slides = list.map((x, i) => {
+      const name = x.agenda ? (lessonOfDay(n) != null ? "Day card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+      const on = n === here && i === DD.i;
+      return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${open ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span></button></li>`;
+    }).join("");
+    return `<li class="ftmap-day${state_ ? " " + state_ : ""}${open ? "" : " locked"}">
+      <button type="button" class="ftmap-dayh" ${open ? `onclick="FTDayDecks.mapGo(${n}, 0)"` : "disabled"}><span class="ftmap-dn">${state_ === "done" ? "✓" : n}</span><span class="ftmap-dt"><b>Day ${n}</b> · ${e(title)}</span>${n === here ? `<span class="ftmap-you">You are here</span>` : ""}${open ? "" : `<span class="ftmap-lock">🔒</span>`}</button>
+      ${slides ? `<ol class="ftmap-slides">${slides}</ol>` : ""}</li>`;
+  };
+  const groups = lessons.map((l, k) => {
+    const days = ((LESSON_CARDS[l] || {}).days || []).filter(n => all[n] || n <= COUNT());
+    if(!days.length) return "";
+    return `<section class="ftmap-lesson${days.includes(here) ? " here" : ""}"><h3><span class="ftmap-ln">${k + 1}</span>${e(lessonTitle(l))}<small>${e(root.FTDays && FTDays.label ? FTDays.label(days) : "Days " + days.join(", "))}</small></h3>
+      <ol class="ftmap-days">${days.map(dayRow).join("")}</ol></section>`;
+  }).join("");
+  // any day no lesson card names still shows, at the end
+  const rest = [];
+  for(let n = 1; n <= COUNT(); n++) if(!seen.has(n) && all[n]) rest.push(n);
+  const restHtml = rest.length ? `<section class="ftmap-lesson"><h3><span class="ftmap-ln">+</span>Other days</h3><ol class="ftmap-days">${rest.map(dayRow).join("")}</ol></section>` : "";
+  const total = Object.keys(all).length || COUNT();
+  return `<div class="ftmap-box" role="document">
+    <button type="button" class="ftmap-x" onclick="FTDayDecks.mapClose()" aria-label="Close the map">✕</button>
+    <div class="ftmap-head"><p class="ftmap-kick">Standard Foundational Training · ${total} days · 8 lessons</p><h2>🗺 Training Roadmap</h2>
+      <p class="ftmap-sub">You are on <b>Day ${e(here)}</b>, slide ${DD.i + 1}. Tap any day or slide to go there.</p>
+      <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (at - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
+    <div class="ftmap-body">${groups}${restHtml}</div></div>`;
+}
+function mapKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); mapClose(); } }
+function mapClose(){ const o = document.getElementById("ftMap"); if(o) o.remove(); document.removeEventListener("keydown", mapKey, true); }
+function mapOpen(){
+  mapClose(); loadDecks();
+  const o = document.createElement("div"); o.id = "ftMap"; o.className = "ftmap-modal"; o.setAttribute("role", "dialog"); o.setAttribute("aria-label", "Training roadmap");
+  o.innerHTML = mapHtml();
+  o.addEventListener("click", ev => { if(ev.target === o) mapClose(); });
+  document.body.appendChild(o);
+  document.addEventListener("keydown", mapKey, true);
+  const body = o.querySelector(".ftmap-body"), here = o.querySelector(".ftmap-slide.on") || o.querySelector(".ftmap-day.here");
+  if(body && here) body.scrollTop = Math.max(0, here.offsetTop - body.offsetTop - body.clientHeight / 3);
+}
+
 root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
+  // 🗺 Map: the training roadmap
+  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
     const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
@@ -989,6 +1046,17 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-time{display:inline-flex;align-items:center;gap:6px;font:700 12px 'IBM Plex Mono',monospace;letter-spacing:.02em;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#F4B77A;white-space:nowrap;}
 /* the content: a white sheet */
 .ftdd-sheet{background:#fff;color:var(--ink);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:18px 24px;box-shadow:0 8px 22px rgba(0,0,0,.18);overflow:auto;min-height:0;}
+/* the type, as the Case Management course's Case Flow slides set it: body text in Inter 500 at 17px, bold at 700
+   (not the engine's 700 / 900 everywhere), the slide's opening line as a Fraunces lead, section headings in Poppins */
+main.main-ftdd .ftdd-sheet{font:500 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:500;line-height:1.45;color:#1B1E2E;}
+main.main-ftdd .ftdd-sheet :is(b,strong){font-weight:700;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:600 21px/1.32 'Fraunces',Georgia,serif;color:#1B1E2E;letter-spacing:-.005em;}
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 15.5px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;letter-spacing:.01em;margin:14px 0 6px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:600;line-height:1.45;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t b{font-weight:700;}
+main.main-ftdd .ftdd-sheet .ftdd-name{font:600 14.5px/1.4 'IBM Plex Mono',ui-monospace,monospace;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 .ftdd-sheet > :first-child{margin-top:0 !important;}
 /* a slide with a line or two: its content sits in the middle of the sheet rather than alone at the top */
 .ftdd-sheet.ftdd-short{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;}
@@ -1191,6 +1259,44 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;background:rgba(255,255,255,.82);border:1px solid rgba(38,43,69,.12);border-radius:14px;backdrop-filter:blur(6px);}
 .ftdd-nav .btn{border-radius:10px;font-weight:700;}
 .ftdd-prev{background:#fff;border:1px solid rgba(38,43,69,.2);color:#262B45;}
+.ftdd-map{background:#fff;border:1px solid rgba(38,43,69,.2);color:#262B45;}
+.ftdd-map:hover{border-color:#DB8437;color:#9A4A12;}
+/* 🗺 the roadmap */
+.ftmap-modal{position:fixed;inset:0;z-index:1000;background:rgba(15,20,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;}
+.ftmap-box{position:relative;display:flex;flex-direction:column;width:min(980px,100%);max-height:min(88vh,900px);background:#fff;border-radius:18px;box-shadow:0 24px 60px -20px rgba(15,20,40,.6);overflow:hidden;}
+.ftmap-x{position:absolute;top:12px;right:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;width:34px;height:34px;font-size:15px;cursor:pointer;z-index:2;}
+.ftmap-head{background:linear-gradient(135deg,#262B45,#343C66);color:#fff;padding:18px 24px 16px;}
+.ftmap-kick{margin:0 0 4px;font:600 11.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;}
+.ftmap-head h2{margin:0 0 4px !important;font:800 26px/1.15 'Poppins','Inter',sans-serif !important;color:#fff !important;-webkit-text-stroke:3px #DB8437;paint-order:stroke fill;}
+.ftmap-sub{margin:0 0 10px;font-size:13.5px;color:#DDE1EC;}
+.ftmap-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;}
+.ftmap-bar > span{display:block;height:100%;background:#E8913A;border-radius:3px;}
+.ftmap-body{overflow:auto;padding:14px 20px 18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:start;}
+.ftmap-lesson{border:1px solid #E3E6EE;border-radius:14px;padding:10px 12px;background:#FAFBFD;min-width:0;}
+.ftmap-lesson.here{border-color:#DB8437;box-shadow:0 0 0 3px rgba(219,132,55,.14);}
+.ftmap-lesson h3{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:0 0 8px !important;font:700 15px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;}
+.ftmap-lesson h3 small{font:600 11.5px 'IBM Plex Mono',monospace;color:#8A90A6;}
+.ftmap-ln{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#262B45;color:#fff;font:700 12px 'Inter',sans-serif;flex:0 0 auto;}
+.ftmap-days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+.ftmap-day{margin:0;}
+.ftmap-dayh{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid #E3E6EE;background:#fff;border-radius:10px;padding:6px 10px;font:600 13px/1.3 'Inter',sans-serif;color:#262B45;cursor:pointer;}
+.ftmap-dayh:hover:not(:disabled){border-color:#DB8437;}
+.ftmap-dayh:disabled{cursor:not-allowed;color:#A0A6B8;}
+.ftmap-dn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:#ECEEF3;font:700 12px 'IBM Plex Mono',monospace;flex:0 0 auto;}
+.ftmap-day.done .ftmap-dn{background:#DCEFE3;color:#1F7A45;}
+.ftmap-day.here .ftmap-dayh{border-color:#DB8437;background:#FDF0E4;}
+.ftmap-day.here .ftmap-dn{background:#DB8437;color:#fff;}
+.ftmap-dt{flex:1 1 auto;min-width:0;}
+.ftmap-you{font:700 10.5px 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:#9A4A12;background:#fff;border:1px solid #F0D2AE;border-radius:999px;padding:2px 8px;white-space:nowrap;}
+.ftmap-slides{list-style:none;margin:4px 0 2px 32px;padding:0;display:flex;flex-direction:column;gap:1px;}
+.ftmap-slide{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;border-radius:7px;padding:3px 8px;font:500 12.5px/1.3 'Inter',sans-serif;color:#3A4058;cursor:pointer;}
+.ftmap-slide:hover:not(:disabled){background:#F3F4F8;}
+.ftmap-slide.on{background:#FDF0E4;color:#9A4A12;font-weight:700;}
+.ftmap-slide.ph{color:#A0A6B8;font-style:italic;}
+.ftmap-slide:disabled{cursor:not-allowed;color:#A0A6B8;}
+.ftmap-sn{font:600 11px 'IBM Plex Mono',monospace;color:#8A90A6;flex:0 0 34px;}
+.ftmap-st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+@media(max-width:760px){ .ftmap-body{grid-template-columns:minmax(0,1fr);} }
 .ftdd-prev:disabled{opacity:.45;}
 .ftdd-next{background:linear-gradient(135deg,#E8913A,#C9742B);border:1px solid #C9742B;color:#fff;}
 .ftdd-next:hover{filter:brightness(1.05);}

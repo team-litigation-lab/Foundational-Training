@@ -189,7 +189,7 @@ async function copyRich(html, text){
 function lockedCard(title){
   return `<div class="card fp-set fp-locked"><div class="fp-head"><b>${e(title)}</b>
       <span class="fp-st st-none">🔒 Opens when you finish this module</span></div>
-      <p class="fp-muted fp-lockwhy">Work through the module's slides and press <b>✓ Finish lesson</b> on the last one. It brings you straight back here, to these questions.</p></div>`;
+      <p class="fp-muted fp-lockwhy">Work through the module's slides and press <b>📋 Classroom Activity</b> on the last one. It opens these questions, and takes you to the day's Activity deck.</p></div>`;
 }
 // A module's own page: its questions, its own Knowledge Check. Each module has its own PROCESS_SETS entry,
 // so "sets" is always one — the map()s below are left in place in case a future set ever spans two modules.
@@ -260,7 +260,7 @@ function renderPage(){
     ${folderCard}
     ${moduleCard(lesson)}`;
   return `${preview}<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
-      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — tap it below, or finish the module's last slide and its <b>✓ Finish lesson</b> brings you straight here.</p></div>
+      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here.</p></div>
     ${folderCard}
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
 }
