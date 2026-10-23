@@ -106,6 +106,7 @@ function timeOf(h){
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
+  if(s.task) return {ic: "🎲", label: "Today’s Task"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
@@ -324,8 +325,8 @@ const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, 
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
   const out = [{id: "agenda", h: "Training Agenda", agenda: true}];
   d.slides.forEach(s => {
-    // a lesson day's empty "To be added" slide isn't shown (the automated task announcements will come in its place)
-    if(s.placeholder && !only) return;
+    // a lesson day's "To be added" slide is 🎲 Today's Task: where the day's unannounced task lands (taskSlide)
+    if(s.placeholder && !only){ out.push({id: "task", h: "Today’s Task", task: true, html: ""}); return; }
     // a no-discussion day's 📌 From your trainer slide shows once the trainer has added something (a trainer always sees it, to add)
     if(s.placeholder && only && !isAdminView() && !(X.data && (X.data.days[d.day] || []).length)){ if(!X.data) loadExtras(); return; }
     const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
@@ -436,9 +437,33 @@ function waitBox(s, info){
   return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
     <p>${sim ? "Go over the call flow, the questions to ask and the closing spiel, so you’re ready when your trainer calls your name." : "Go over the lesson and its key terms, so you’re ready when it’s your turn."}</p></div>`;
 }
+/* 🎲 Today's Task: the unannounced task a trainer sends to a lesson's trainees (Admin → 🎲 Random Tasks, js/ft-admin-ops.js:
+   surprise-task-day<lesson>, written from the lesson's own material) lands on the day's last slide too, with its time left
+   and 🎲 Answer it (the 🎲 Tasks page, where it's acknowledged, planned and resolved, and graded). */
+const TK = {recs: {}, at: 0, loading: null};
+function loadTasks(lessons){
+  if(TK.loading) return;
+  const stale = Date.now() - TK.at >= 60000, ids = lessons.filter(l => stale || !(String(l) in TK.recs));
+  if(!ids.length || typeof sharedGetMany !== "function") return;
+  TK.loading = sharedGetMany(ids.map(l => "surprise-task-day" + l)).then(v => { ids.forEach((l, k) => { TK.recs[String(l)] = v[k] || null; }); })
+    .catch(() => {}).then(() => { TK.at = Date.now(); TK.loading = null; if(state.view === "daydeck") render(); });
+}
+function taskSlide(n, info){
+  const lessons = (info.lessons || []).map(Number).filter(x => x > 0);
+  loadTasks(lessons);
+  const live = lessons.map(l => ({l, r: TK.recs[String(l)]})).filter(x => x.r && x.r.active && x.r.expiresAt && Date.now() < new Date(x.r.expiresAt).getTime());
+  const admin = isAdminView();
+  const send = admin ? `<p class="ftdd-task-ad">🧑‍🏫 <b>Trainer:</b> send the day’s task from <a class="ftdd-link" onclick="state.adminTab='randomtasks'; goto('admin')">🛡 Admin → 🎲 Random Tasks</a>. It’s written from the lesson’s own material and lands here and in every trainee’s 🎲 Tasks.</p>` : "";
+  if(!live.length) return `<div class="ftdd-task ftdd-task-wait"><span class="ftdd-task-ic">🎲</span><div><b>Your task for Day ${n} drops here</b>
+      <p>During the session your trainer sends an unannounced task from ${lessons.length ? e(lessons.map(lessonTitle).join(" and ")) : "today’s lesson"}. When it arrives it shows on this slide and in 🎲 Tasks, with its timer: acknowledge it, plan it and resolve it before the time is up.</p></div></div>${send}`;
+  return live.map(({l, r}) => { const left = Math.max(0, Math.round((new Date(r.expiresAt).getTime() - Date.now()) / 60000));
+    return `<div class="ftdd-task"><span class="ftdd-task-ic">🎲</span><div><b>New task · ${e(lessonTitle(l))} · ⏱ ${left} min left</b>
+      <p>${e(r.task).replace(/\n/g, "<br>")}</p>
+      <div class="ftdd-task-acts"><button type="button" class="btn btn-navy btn-sm" onclick="goto('tasks')">🎲 Answer it in Tasks</button></div></div></div>`; }).join("") + send;
+}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
+  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -1423,6 +1448,12 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
+/* 🎲 Today's Task (taskSlide) */
+.ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
+.ftdd-task-wait{border-style:dashed;background:#F4F6FB;}
+.ftdd-task-ic{font-size:30px;line-height:1;} .ftdd-task b{display:block;font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;margin-bottom:6px;}
+.ftdd-task p{margin:0 0 8px;font-size:16px;line-height:1.5;color:#1B1E2E;} .ftdd-task-acts{display:flex;gap:8px;flex-wrap:wrap;}
+.ftdd-task-ad{font-size:14px;color:#2B2F45;}
 /* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
 .ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
 .ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}
