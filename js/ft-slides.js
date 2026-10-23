@@ -310,8 +310,6 @@ function preloadNext(){
   const at = srcs.indexOf(cur.getAttribute("src"));
   for(const u of at < 0 ? [] : srcs.slice(at + 1, at + 3)) if(!preloaded.has(u)){ preloaded.add(u); const im = new Image(); im.decoding = "async"; im.src = u; }
 }
-// The Orientation slides' background is fetched with the page, so it's there the first time they open.
-(new Image()).src = "/ft/orientation/background.webp";
 window.addEventListener("resize", queueFit);
 document.addEventListener("animationend", (e)=>{ if(e.target && e.target.id === "lessonSlideWrap") fitPages(); }, true);
 document.addEventListener("fullscreenchange", ()=>setTimeout(fitPages, 60));
