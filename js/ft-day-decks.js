@@ -572,119 +572,181 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
   const on = dayOpen(n);
   return `<button type="button" class="btn mc-daydeck${on ? "" : " locked"}" ${on ? `onclick="event.stopPropagation(); FTDayDecks.open(${n})"` : "disabled"} title="Day ${n}: the day’s instructions deck">📋 Day ${n}</button>`;
 });
-// the lesson a no-discussion day follows: the last lesson taught on or before it
-function lessonBefore(n){ let best = null; ((root.FTDays && FTDays.DAYS) || []).forEach(d => (d.lessons || []).forEach(l => { const dd = discussionDay(l); if(dd != null && dd <= n && (best == null || dd > discussionDay(best) || (dd === discussionDay(best) && Number(l) > Number(best)))) best = Number(l); })); return best; }
-// the no-discussion days sit in the lesson grid in day order: each run of them (Days 8–9, 14–16 …) shares one cell
-// right after the lesson before it, one row per day, so the dashboard still fits one screen
-// A day split into two sessions — the classroom discussion, then the work the guide sets outside it — gets
-// its own instruction card as well, beside its lesson's: the lesson card opens the discussion, this one the
-// rest of the day (Day 1's homework videos and reading task, Day 2's assessments, and so on).
-const splitDays = () => { const s = discussionDays();
-  return ((root.FTDays && FTDays.DAYS) || []).filter(d => s.has(d.day) && d.offline).map(d => d.day); };
-// 📚 THE DASHBOARD IS THE 16 DAYS. One cell per training day, four across and four down, and each cell holds
-// that day's cards: the lesson its classroom discussion teaches, and the day's own instruction card — the rest
-// of the day, the work the guide sets outside the discussion. A day without a discussion has its card alone.
-function dayCardHtml(n, cur, ex, opt){
-  const on = dayOpen(n), i = dayInfo(n), k = ((ex || {})[n] || []).length, o = opt || {};
-  // what the day holds, so the card says something: its activities, and the work set outside the session
-  const acts = (i.items || []).filter(x => x.at !== "offline" && x.kind !== "Upskill" && !(x.at === "tool" && x.id === "skills")).length;
-  const counts = [acts ? `${acts} ${acts === 1 ? "activity" : "activities"}` : "",
-    i.offline ? `📴 ${i.offline} outside training hours` : ""].filter(Boolean).join(" · ");
-  // the card is named for what it holds: the day's own morning session, its instructions and PM activity, or
-  // the whole day where the guide gives it over to one thing
-  const t = o.kind === "session" ? {ic: "📘", head: `Day ${n} · ${o.title || "Morning session"}`, sub: e(String(i.role || "").replace(/ Training$/, ""))}
-    : o.kind === "whole" ? {ic: "📅", head: `Day ${n} · ${o.title || "The whole day"}`, sub: counts}
-    : {ic: "📋", head: `Day ${n} · Instructions`, sub: o.title ? e(o.title) : counts};
-  const tip = o.kind === "session" ? `Open Day ${n}: ${o.title || "the day's session"}`
-    : o.kind === "whole" ? `Open Day ${n}` : `Open the Day ${n} instructions`;
-  // the day's own instruction card keeps the day's id; its morning session card is a second card of the same day
-  return `<div class="ftdd-daycard${on ? "" : " locked"}${n === cur ? " now" : ""}${o.kind ? " ftdd-dc-" + o.kind : ""}" id="dayd-${n}${o.kind === "session" ? "-am" : ""}">
-      <button type="button" class="ftdd-dc-main" ${on ? `onclick="FTDayDecks.open(${n})"` : "disabled"} title="${e(tip)}">
-        <span class="ftdd-dc-ic">${on ? t.ic : "🔒"}</span><span class="ftdd-dc-t"><b>${e(t.head)}</b><small>${t.sub}</small></span>
-        ${on ? `<span class="ftdd-dc-go">Open</span>` : ""}</button>
-      <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${n})"` : "disabled"} title="From your trainer: activities and instructions">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
-}
-
 /* ============================================================
-   📚 THE DASHBOARD IS THE SIXTEEN DAYS, EACH IN ITS TWO PARTS.
-   The programme runs a morning and an afternoon: on a lesson day the classroom discussion is one of them and
-   the day's own activity the other; on the rest it is the day's work and its offline half. The dashboard draws
-   them as the guide lays them out — a row per day, the two parts side by side, in three columns: Days 1–5,
-   Days 6–12, Days 13–16. Where the guide runs one thing across a day or two (Days 8–9's intake activity, the
-   recorded demonstrations, Days 15–16's demo and shadowing) the part takes the whole row.
-   The colours are the portal's own: the lesson or morning part on the cream card, the afternoon part on navy.
+   📚 THE DASHBOARD IS THE EIGHT LESSONS: ONE CLASSROOM DISCUSSION CARD EACH.
+   Each lesson is a classroom discussion that opens its session, and the card carries everything the guide runs
+   with it, in order — the discussion day itself and the days that follow it until the next lesson (Intake is
+   Days 7–9, Medical Records Days 13–16). On the left, the activity and task sequence: every row opens its slide
+   in that day's deck (or the platform page it names). On the right, the focus: what is done outside training
+   hours, the instructions and tools, the Process Questions' key takeaways and where the answers go.
+   The rows are written here from the Training Guide (trainer/curriculum.json), in the trainee's words; a row's
+   {d, s} is the day and the slide id it opens (build/days/), {go} a platform page instead.
    ============================================================ */
-const DAY_COLUMNS = [[1, 2, 3, 4, 5], [6, 7, [8, 9], 10, 11, 12], [13, 14, [15, 16]]];
-root.LSH_HOME_GRID_LAYOUT = function(ctx){
-  const DAYS_ = (root.FTDays && FTDays.DAYS) || [];
-  if(!DAYS_.length || !(ctx.lessons || []).length) return "";
-  const cur = forTrainee() ? placeDay() : null, ex = X.data && X.data.days || {};
-  // the day names come from the day decks, which until now only loaded on the deck page
-  if(!decks()) loadDecks();
-  const dk = decks() || {};
-  const head = (n, re) => ((dk[n] || {}).slides || []).map(x => String(x.h || "")).find(h => re.test(h)) || "";
-  // the guide's heading, as short as the card can show it: the prefix, the bracketed aside and anything after
-  // a dash are the guide's own detail, and the day deck carries all of it
-  const strip = h => {
-    let t = String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\s*\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
-    t = t.replace(/\s*[-–—]\s+.*$/, "").replace(/\s*\/\s+.*$/, "").trim();
-    if(t.length > 34) t = t.slice(0, 32).replace(/[\s,;:&]+\S*$/, "") + "…";
-    return t;
-  };
-  const am = n => strip(head(n, /^AM\s*:\s*(?!Buffer)/i)) || strip(head(n, /^(?!PM\s*:|Entire Day)/i)) || "Morning session";
-  const pm = n => strip(head(n, /^PM\s*:/i)) || strip(head(n, /^(Topic|Additional Activity|Attorney|Client|FOR YOUR HOMEWORK|HOMEWORK)/i)) || "Offline activity";
-  const whole = n => strip(head(n, /^Entire Day/i));
-  // the lesson a day's morning teaches. Day 3 opens both Personal Injury Process Flow and Receptionist
-  // Training, so the second takes Day 4 — the next day of its own block, as the guide heads it
-  const lessonOf = {};
-  (ctx.lessons || []).slice().sort((a, b) => Number(a.id) - Number(b.id)).forEach(l => {
-    const own = DAYS_.filter(x => (x.lessons || []).map(Number).includes(Number(l.id))).map(x => x.day);
-    const n = own.find(d => !lessonOf[d]); if(n != null) lessonOf[n] = [l.id];
-  });
-  const row = g => {
-    const span = Array.isArray(g), ns = span ? g : [g], n = ns[0];
-    const label = span ? FTDays.label(ns) : `Day ${n}`;
-    const les = (lessonOf[n] || []).map(id => ctx.cards[id]).join("");
-    const w = whole(n);
-    // a run of days, or a day the guide gives over to one thing and nothing else, reads as one card across the
-    // row; a whole-day session that still sets its own activity (Day 6's mock calls) keeps both parts
-    const parts = ((dk[n] || {}).slides || []).filter(x => !x.placeholder && !/^extra-/.test(String(x.id || ""))).length;
-    if(span || (w && parts < 2)) return `<div class="ftdd-dayrow ftdd-dayrow-wide" id="dayr-${n}">${partCard(ns, cur, ex, {part: "pm", label, title: w || am(n), span})}</div>`;
-    const lid = (lessonOf[n] || [])[0];
-    // the lesson's own card does not fit half a row: the morning part is a card like the others, named for the
-    // lesson it teaches, and it opens the lesson itself — its topics and video sit on it as the small buttons
-    const les_ = lid != null ? (ctx.lessons || []).find(x => Number(x.id) === Number(lid)) : null;
-    const first = partCard(ns, cur, ex, lid != null
-      ? {part: "am", label, title: String(lessonTitle(lid)).replace(/\s*Training$/, ""), lesson: lid, lessons: lessonOf[n],
-         tag: les_ && typeof ctx.tags === "function" ? ctx.tags(les_) : ""}
-      : {part: "am", label, title: w || am(n)});
-    return `<div class="ftdd-dayrow" id="dayr-${n}">${first}${partCard(ns, cur, ex, {part: "pm", label, title: w ? pm(n) : pm(n)})}</div>`;
-  };
-  return DAY_COLUMNS.map((col, i) => `<div class="ftdd-daycol" id="dayc-${i + 1}">${col.map(row).join("")}</div>`).join("");
+// the pills a row carries, as the card names its kind
+const PILLS = {classroom: "Classroom", read: "Read & do", interactive: "Interactive activity", homework: "Homework",
+  watch: "Watch & do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
+  listen: "Call listening", trainer: "From your trainer"};
+const SUBMIT = "Assessments › Activities subfolder";
+const LESSON_CARDS = {
+  1: {days: [1], focus: "VA Essentials & Software Setup",
+    rows: [
+      {t: "Setting of Expectations", time: "8:00–9:00 AM", k: "classroom", go: "lesson"},
+      {t: "Typing & Spelling Tests", time: "8:00–8:10 AM", sub: "Typing twice daily (AM and before shift end) · spelling once", k: "read", go: "skills"},
+      {t: "Hubstaff To-Do Set-up", sub: "Daily requirement · [Session Type + Day]: [Program] – [Module Day]", k: "read", go: "shadowing"},
+      {t: "Client Identification Exercise", k: "interactive", d: 1, s: "client-id"},
+      {t: "Training Monitoring Sheet Setup", k: "read", d: 1, s: "monitoring"},
+      {t: "Nitro Pro & Adobe Acrobat Pro", sub: "Install and work through the tutorials", k: "homework", d: 1, s: "homework"}],
+    outside: ["Nitro Pro and Adobe Acrobat Pro tutorials — install both, then complete the walkthroughs", "Personal Injury (PI) reading task"],
+    tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
+      "Set your Hubstaff To-Dos daily from the template before the session starts", "Time limit: 45 mins max · Evaluation: Monitoring sheet entry checked at the end of the session"],
+    takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
+  2: {days: [2], focus: "Law Firm Communication & Escalations",
+    rows: [
+      {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for any pending Day 1 tasks", k: "buffer", d: 2, s: "s1"},
+      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2"},
+      {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2"},
+      {t: "Breakout Session: Digital Handouts", sub: "Group activity · handouts posted in the training GC", k: "interactive", d: 2, s: "s3"},
+      {t: "Escalation Handling Exercise", k: "interactive", d: 2, s: "s3"},
+      {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "homework", d: 2, s: "s4"}],
+    tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
+      "Upload both assessments to your Assessments/Activities subfolder", "Process Questions: five of the ten where time is short"],
+    takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
+  3: {days: [3], focus: "The PI Workflow & Reception Calls",
+    rows: [
+      {t: "Checking of Assignments", sub: "Day 2’s homework and assessments reviewed", k: "classroom", d: 3, s: "s1"},
+      {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
+      {t: "Confidentiality & Call Response Exercise", k: "interactive", d: 3, s: "s1"},
+      {t: "Reception Activity on VA Oscar’s Recordings", sub: "Extract the 5 data points into your assessment sheet", k: "assessment", d: 3, s: "s1"},
+      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet", k: "homework", d: 3, s: "s2"}],
+    tools: ["The sample SOP and the 10 sample call recordings are on the day’s slide",
+      "Upload the Reception Activity to your Assessments/Activities folder", "Process Questions: five of the ten where time is short"],
+    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_Process_Question_Answers (VA First Name)"},
+  4: {days: [4], focus: "Handling Reception Calls",
+    rows: [
+      {t: "Training Video Viewing & Mock Call Preparation", sub: "The receptionist’s roles, responsibilities and attributes", k: "watch", d: 4, s: "s1"},
+      {t: "Reception Training with Julio", time: "1:49:49", sub: "Watch it, then update items #10–11 on your Monitoring Sheet", k: "watch", d: 4, s: "s2"},
+      {t: "Reception Mock Calls", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
+    tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
+    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "Receptionist_Training_Process_Question_Answers (VA First Name)"},
+  5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
+    rows: [
+      {t: "Buffer Time for Reception Mock Calls", time: "Day 5 AM", sub: "Carryover for any pending Day 4 tasks", k: "buffer", d: 5, s: "s1"},
+      {t: "Attorney Calendar Management Activity", sub: "Set the time zone and screenshot each appointment before saving", k: "interactive", d: 5, s: "s3"},
+      {t: "Calendar Management Mock Calls", time: "Day 6 · entire day", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1"},
+      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
+      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
+    tools: [["Tools:", "Google Calendar Simulator, Booking Rule Check"], "The time zone visible in every screenshot",
+      "Collect from every caller: name, callback number, DOB and DOL"],
+    takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
+  6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
+    rows: [
+      {t: "Breakout Session: Intake Specialist Best Practices", sub: "Digital handouts · group activity", k: "interactive", d: 7, s: "s1"},
+      {t: "Call Listening on the Intake Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
+      {t: "Intake Scenario Exercise", k: "interactive", d: 7, s: "s1"},
+      {t: "Scheduled Shadowing", time: "Day 7 PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
+      {t: "Intake Process, Overview & Documents", time: "Day 8", sub: "The videos, the Intake Worksheet and your intake packet", k: "watch", d: 8, s: "s1"},
+      {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet and extracted documents in SA", k: "watch", d: 8, s: "s2"},
+      {t: "Saving the Intake Packet to SA", time: "Day 8 PM", k: "demo", d: 8, s: "s3"},
+      {t: "Intake Mock Call Preparation", time: "Day 9", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
+      {t: "Transcription Activity & Mock Calls", time: "Day 9 PM", sub: "Minutes of the meeting: client-to-attorney", k: "interactive", d: 9, s: "s3"}],
+    tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
+      "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
+    takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
+  7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
+    rows: [
+      {t: "Breakout Session: Claims Specialist Best Practices", sub: "Digital handouts · individual activity", k: "interactive", d: 10, s: "s1"},
+      {t: "Claims Terminology Exercise", k: "interactive", d: 10, s: "s1"},
+      {t: "Insurance Communication Videos & Articles", time: "Day 10 PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
+      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "Day 11", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters", k: "interactive", go: "lor"},
+      {t: "Shadowing", time: "Day 11 PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
+      {t: "Uploading & Sending 1P and 3P LORs", time: "Day 12 · entire day", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1"}],
+    tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
+      "Never share the client’s DOB, email, SSN or VIN with the 3P insurer"],
+    takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
+  8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
+    rows: [
+      {t: "Buffer Time for the LOR Drafting Demo", time: "Day 13 AM", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
+      {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
+      {t: "Breakout Session & Document Detectives Exercise", time: "Day 13 PM", k: "interactive", d: 13, s: "s3"},
+      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "Day 14", sub: "Tutorial video · build your own work guide", k: "watch", d: 14, s: "s1"},
+      {t: "Shadowing Session", time: "Day 14 PM", k: "shadow", d: 14, s: "s2"},
+      {t: "MedLOR & Records Request", time: "Day 15 · entire day", sub: "Recorded demonstration", k: "demo", d: 15, s: "s1"},
+      {t: "Lien Balance Verification Request", time: "Day 16", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
+      {t: "Demo and Shadowing", time: "Day 16 PM", k: "demo", d: 16, s: "s2"}],
+    tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
+      "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
+    takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
 };
-// One part of a day: its morning work (cream) or its afternoon (navy), named as the guide names it, with the
-// day's own count of activities under it and the trainer's instructions behind 📌.
-function partCard(ns, cur, ex, o){
-  const n = ns[0], on = ns.some(d => dayOpen(d)), go = ns.find(d => dayOpen(d)) || n;
-  const k = ((ex || {})[go] || []).length;
-  const off = ns.reduce((t, d) => t + ((dayInfo(d) || {}).offline || 0), 0);
-  const acts = ns.reduce((t, d) => t + ((dayInfo(d) || {}).items || []).filter(x => x.at !== "offline" && x.kind !== "Upskill" && !(x.at === "tool" && x.id === "skills")).length, 0);
-  const sub = [o.label, acts ? `${acts} ${acts === 1 ? "activity" : "activities"}` : "", off ? `📴 ${off}` : ""].filter(Boolean).join(" · ");
-  const les = o.lesson != null, open = les ? lessonOpen(o.lesson) : on;
-  const ic = les ? "📘" : o.part === "pm" ? "📴" : "📋";
-  const click = les ? `goto('day', ${Number(o.lesson)})` : `FTDayDecks.open(${go})`;
-  const tip = les ? `Open the lesson: ${o.title}` : `${o.label}: ${o.title}`;
-  const subl = les ? [o.label, "Classroom discussion"].join(" · ") : sub;
-  return `<div class="ftdd-daycard ftdd-dc-${o.part}${les ? " ftdd-dc-les" : ""}${open ? "" : " locked"}${cur != null && ns.includes(cur) ? " now" : ""}" id="${les ? "dayl-" + o.lesson : "dayd-" + n + (o.part === "pm" ? "" : "-am")}">
-      <button type="button" class="ftdd-dc-main" ${open ? `onclick="${click}"` : "disabled"} title="${open ? e(tip) : "Opens when your batch reaches this lesson"}">
-        <span class="ftdd-dc-ic">${open ? ic : "🔒"}</span><span class="ftdd-dc-t"><b>${e(o.title)}</b><small>${e(subl)}${o.tag || ""}</small></span></button>
-      ${les ? `<button type="button" class="ftdd-dc-pin" ${open ? `onclick="event.stopPropagation(); showDayTopics(${Number(o.lesson)})"` : "disabled"} title="☰ Topics">☰</button>` : ""}
-      <button type="button" class="ftdd-dc-pin" ${on ? `onclick="FTDayDecks.trainer(${go})"` : "disabled"} title="${les ? `Day ${n}: the day's instructions and activities` : "From your trainer: activities and instructions"}">📌${k ? `<i>${k}</i>` : ""}</button></div>`;
+// open a row's slide: the deck loads first, so the slide is found by its id (the agenda and the split-off Call
+// Listening slide shift the numbers); a slide the deck doesn't have opens the day's agenda
+function openSlide(n, id, alt){
+  loadDecks().then(() => {
+    const d = decks() && decks()[n];
+    const i = d ? slidesOf(d).findIndex(s => s.id === id) : -1;
+    if(i < 0 && alt){ goto(alt); return; }
+    open(n, Math.max(0, i));
+  });
 }
-
-
-
-
+function rowGo(c, r){
+  if(r.d != null && r.s) return `FTDayDecks.slide(${Number(r.d)}, '${e(r.s)}'${r.go ? `, '${e(r.go)}'` : ""})`;
+  if(r.go === "lesson") return `goto('day', ${Number(c.lesson)})`;
+  if(r.go) return `goto('${e(r.go)}')`;
+  return `FTDayDecks.open(${Number(c.days[0])})`;
+}
+// a row with a sub-line carries its pill under it, as the mock-up does; a one-line row keeps it on the right
+const pill = r => `<span class="ftlc-pill k-${e(r.k)}">${e(PILLS[r.k] || r.k)}</span>`;
+const tip = x => Array.isArray(x) ? `<b>${e(x[0])}</b> ${x[1]}` : x;   // the tools are written here, so their <i> stands
+function lessonCard(l, cur, ex, tags){
+  const c = Object.assign({lesson: Number(l.id)}, LESSON_CARDS[l.id]);
+  if(!c.days) return "";
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id);
+  // a day without a discussion ends on 📌 From your trainer: a row for it once the trainer has added something
+  const rows = c.rows.slice();
+  c.days.filter(n => instructionOnlyDays().includes(n) && ((ex || {})[n] || []).length).forEach(n =>
+    rows.push({t: `From your trainer · Day ${n}`, sub: `${ex[n].length} ${ex[n].length === 1 ? "activity" : "activities"} and instructions`, k: "trainer", d: n, s: "trainer"}));
+  const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
+      <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
+      <span class="ftlc-t"><b>${e(r.t)}${r.time ? ` · ${e(r.time)}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}${r.sub ? pill(r) : ""}</span>
+      ${r.sub ? "" : pill(r)}</button></li>`).join("");
+  // outside training hours: the card's own wording, else the day map's (js/ft-day-activities.js)
+  const outside = c.outside || c.days.flatMap(n => (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t));
+  const pq = hasPQ(l.id);
+  const days = FTDays.label(c.days);
+  const now = cur != null && c.days.includes(cur);
+  return `<article class="ftlc${open_ ? "" : " locked"}${now ? " now" : ""}" id="dayl-${c.lesson}" data-days="${c.days.join(",")}">
+    <header class="ftlc-head">
+      <div class="ftlc-ht"><h3>Classroom Discussion: ${e(title)}</h3>
+        <p>${e(days)} · Trainer-led discussion · opens the session${tags || ""}</p></div>
+      <div class="ftlc-acts">
+        <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶ Live session" : "🔒 Not open yet"}</button>
+        <button type="button" class="ftlc-tag" ${open_ ? `onclick="showDayTopics(${c.lesson})"` : "disabled"} title="☰ Topics">Classroom</button>
+      </div>
+    </header>
+    <div class="ftlc-body">
+      <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol>${seq}</ol>
+        <div class="ftlc-days">${c.days.map(n => `<button type="button" id="dayd-${n}" onclick="FTDayDecks.open(${n})" title="Day ${n}: the day’s deck">📋 Day ${n}</button>`).join("")}</div></section>
+      <aside class="ftlc-focus">
+        <p class="ftlc-fh">Today’s focus</p>
+        <p class="ftlc-focus-t">Focus on ${e(c.focus)}</p>
+        ${outside.length ? `<p class="ftlc-h2">Outside training hours</p><ul>${outside.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
+        ${c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        <div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p>
+          ${pq ? `<button type="button" class="ftlc-pq" onclick="FTProcess.openLesson(${c.lesson})">✍️ Answer on Knowledge Check →</button>` : ""}</div>
+      </aside>
+    </div>
+  </article>`;
+}
+root.LSH_HOME_GRID_LAYOUT = function(ctx){
+  if(!((root.FTDays && FTDays.DAYS) || []).length || !(ctx.lessons || []).length) return "";
+  if(!decks()) loadDecks();
+  if(!X.data) loadExtras();
+  const cur = forTrainee() ? placeDay() : null, ex = X.data && X.data.days || {};
+  return (ctx.lessons || []).slice().sort((a, b) => Number(a.id) - Number(b.id))
+    .map(l => lessonCard(l, cur, ex, typeof ctx.tags === "function" ? ctx.tags(l) : "")).join("");
+};
 
 /* ---------- 📌 the no-discussion days: activities and instructions the trainer adds ----------
    settings:dayextras = {days: {<day>: [{id, kind, title, text, url, sim, at}]}} — admins write it, everyone reads it
@@ -707,7 +769,7 @@ function loadExtras(force){
   if(X.loading) return X.loading;
   if(!force && X.data && Date.now() - X.at < 120000) return Promise.resolve(X.data);
   X.loading = sharedGet("settings:dayextras").then(v => { X.data = v && typeof v === "object" && v.days ? v : {days: {}}; X.at = Date.now(); })
-    .catch(() => { if(!X.data) X.data = {days: {}}; }).then(() => { X.loading = null; if(state.view === "daydeck") render(); return X.data; });
+    .catch(() => { if(!X.data) X.data = {days: {}}; }).then(() => { X.loading = null; if(state.view === "daydeck" || state.view === "modules") render(); return X.data; });
   return X.loading;
 }
 const isAdminView = () => !!state.isAdmin && !state.adminPreview;
@@ -742,7 +804,7 @@ async function saveExtras(){
   X.at = Date.now(); render();
 }
 
-root.FTDayDecks = {open, go, pick: pickDay, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -863,80 +925,56 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck{flex:0 0 auto;border-radius:0 !important;margin:0 !important;padding:5px 9px !important;font-size:12px !important;font-weight:700;background:#FFF4E8 !important;color:#B5651F !important;border:none !important;border-left:1px solid #9CA3B8 !important;min-height:0 !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck:hover{background:#FBE3CB !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opacity:.5;cursor:not-allowed;}
-/* the 16 days: four across, four down */
-/* THE 16 DAYS, FOUR ACROSS AND FOUR DOWN. Each day's cell carries its lesson card at its own size and the
-   day's instruction strip under it. A lesson card is never squeezed to fit, so where the screen is too short
-   for four full rows the dashboard scrolls instead of clipping them. */
-@media(min-width:1001px){
-  main.main-dash .module-grid:has(> .ftdd-daycell){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,auto) !important;align-content:start !important;height:auto !important;gap:10px 14px !important;}
-}
-/* the day cards themselves: the cream card with its orange edge, its 📌 for the trainer's instructions */
-.ftdd-daycard{flex:1 1 0;min-height:0;display:flex;flex-wrap:nowrap;align-items:stretch;background:#FFFBF5;border:1px solid #E9C9A6;border-left:4px solid #DB8437;border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(26,35,64,.08);}
-.ftdd-daycard.now{box-shadow:0 0 0 3px #F4B77A;}
-.ftdd-daycard.locked{opacity:.62;}
-.ftdd-dc-main{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;padding:6px 12px;background:none;border:0;font:inherit;color:#1A2340;text-align:left;cursor:pointer;}
-.ftdd-dc-main:disabled,.ftdd-dc-pin:disabled{cursor:default;}
-.ftdd-dc-main:not(:disabled):hover{background:#FDEBD8;}
-.ftdd-dc-ic{font-size:23px;flex:0 0 auto;}
-.ftdd-dc-t{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;line-height:1.15;overflow:hidden;}
-.ftdd-dc-t b{font-size:14.5px;overflow-wrap:normal;word-break:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.ftdd-dc-t small{font-size:11px;color:#5B6478;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ftdd-dc-pin{flex:0 0 auto;width:38px;border:0;border-left:1px solid #E9C9A6;background:#FFF4E6;font-size:14px;cursor:pointer;position:relative;}
-.ftdd-dc-pin:not(:disabled):hover{background:#FDEBD8;}
-.ftdd-dc-pin i{position:absolute;top:3px;right:3px;font-style:normal;font-size:9.5px;font-weight:800;background:#DB8437;color:#fff;border-radius:8px;padding:0 4px;line-height:14px;}
-/* a lesson's own part reads as the lesson: the cream card with the orange edge the dashboard already uses */
-.ftdd-daycard.ftdd-dc-les{border-left-color:#DB8437;background:#FFFBF5;}
-.ftdd-daycard.ftdd-dc-les .ftdd-dc-t b{color:var(--navy);font-size:14px;}
-/* the afternoon part on navy, the morning part on the cream card — the dashboard's own two colours */
-.ftdd-daycard.ftdd-dc-pm{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-soft) 100%);border-color:rgba(255,255,255,.14);}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-main{color:#fff;}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-t b{color:#fff;}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-t small{color:rgba(255,255,255,.72);}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-main:not(:disabled):hover{background:rgba(255,255,255,.08);}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-pin{background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.18);color:#fff;}
-.ftdd-daycard.ftdd-dc-pm.locked{opacity:.72;}
-/* three columns of day rows: Days 1–5, 6–12, 13–16 */
-main.main-dash .module-grid:has(> .ftdd-daycol){grid-template-columns:repeat(3,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:10px 14px !important;}
-main.main-dash .module-grid > .ftdd-daycol{display:flex !important;flex-direction:column;gap:7px;min-width:0;min-height:0;justify-content:flex-start;}
-/* a day is a row: its morning part, then its afternoon part beside it; a day given over to one thing, or a run
-   of days, takes the whole row */
-/* every day's row is the same height, whatever a column holds, so the three columns read as one grid */
-.ftdd-dayrow{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:7px;min-width:0;flex:1 1 0;min-height:0;max-height:94px;}
-.ftdd-dayrow-wide{grid-template-columns:minmax(0,1fr);}
-.ftdd-dayrow > .module-card, .ftdd-dayrow > .ftdd-daycard{min-height:0;height:100%;overflow:hidden;}
-.ftdd-dayrow > .module-card.mc-compact{height:100% !important;min-height:0 !important;max-height:none !important;}
-.ftdd-daycard .ftdd-dc-main{align-items:center;}
-.ftdd-daycard .ftdd-dc-t b{font-size:12.5px;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word;word-break:normal;}
-.ftdd-dayrow-wide .ftdd-dc-t b{-webkit-line-clamp:2;font-size:13.5px;}
-/* a short screen has no room for two lines in a card: the title runs to one, with the rest in its tooltip
-   and on the day's own deck, so nothing is ever cut mid-word */
-@media(max-height:830px){
-  .ftdd-dayrow .ftdd-dc-t b{-webkit-line-clamp:1;}
-  .ftdd-dayrow-wide .ftdd-dc-t b{-webkit-line-clamp:2;}
-  .ftdd-dayrow .ftdd-dc-main{padding:2px 8px;gap:6px;}
-  .ftdd-dayrow .ftdd-dc-ic{font-size:14px;}
-}
-.ftdd-daycard .ftdd-dc-t small{font-size:10px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-/* a badge beside the sub-line: a mock-call lesson's best graded call (window.LSH_HOME_LESSON_TAGS) */
-.ftdd-daycard .ftdd-dc-t small .lp-kc{display:inline-block;margin-left:5px;padding:0 4px;border-radius:4px;background:#fff7ed;color:#9a3412;font-weight:800;font-size:9.5px;vertical-align:1px;}
-.ftdd-daycard .ftdd-dc-t{min-height:0;overflow:hidden;}
-.ftdd-daycard .ftdd-dc-ic{font-size:15px;}
-.ftdd-daycard .ftdd-dc-pin{width:28px;font-size:12px;}
-.ftdd-dc-go{flex:0 0 auto;font-size:11.5px;font-weight:800;color:#B5651F;margin-left:6px;}
-.ftdd-dc-pin{flex:0 0 auto;width:38px;border:0;border-left:1px solid #E9C9A6;background:#FFF4E6;font-size:14px;cursor:pointer;position:relative;}
-.ftdd-dc-pin:not(:disabled):hover{background:#FDEBD8;}
-.ftdd-dc-pin i{position:absolute;top:3px;right:3px;font-style:normal;font-size:9.5px;font-weight:800;background:#DB8437;color:#fff;border-radius:8px;padding:0 4px;line-height:14px;}
-/* a lesson's own part reads as the lesson: the cream card with the orange edge the dashboard already uses */
-.ftdd-daycard.ftdd-dc-les{border-left-color:#DB8437;background:#FFFBF5;}
-.ftdd-daycard.ftdd-dc-les .ftdd-dc-t b{color:var(--navy);font-size:14px;}
-/* the afternoon part on navy, the morning part on the cream card — the dashboard's own two colours */
-.ftdd-daycard.ftdd-dc-pm{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-soft) 100%);border-color:rgba(255,255,255,.14);}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-main{color:#fff;}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-t b{color:#fff;}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-t small{color:rgba(255,255,255,.72);}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-main:not(:disabled):hover{background:rgba(255,255,255,.08);}
-.ftdd-daycard.ftdd-dc-pm .ftdd-dc-pin{background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.18);color:#fff;}
-.ftdd-daycard.ftdd-dc-pm.locked{opacity:.72;}
+/* 📚 THE EIGHT LESSON CARDS. A navy card per lesson: its title and the Live session / Classroom pills on the
+   header, the activity and task sequence on the left (numbered rows, a pill for the kind of activity), and the
+   focus on the white panel on the right. Two across on a wide screen, one on a narrow one; the page scrolls. */
+main.main-dash .module-grid:has(> .ftlc){display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:auto !important;align-content:start !important;align-items:start !important;height:auto !important;max-height:none !important;overflow:visible !important;gap:16px !important;}
+/* the one-screen dashboard gave the grid fixed row heights; the cards take their own height and the page scrolls */
+main.main-dash .dash-main:has(> .module-grid > .ftlc){grid-template-rows:auto auto auto !important;}
+main.main-dash .module-grid:has(> .ftlc){grid-template-rows:none !important;flex:0 0 auto !important;min-height:auto !important;}
+@media(max-width:1180px){ main.main-dash .module-grid:has(> .ftlc){grid-template-columns:minmax(0,1fr) !important;} }
+.ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
+.ftlc.now{box-shadow:0 0 0 3px #F4B77A,0 6px 18px rgba(16,19,36,.28);}
+.ftlc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1F2338;border-bottom:1px solid rgba(255,255,255,.08);position:relative;}
+.ftlc-head::before{content:"";position:absolute;left:0;top:0;width:72px;height:3px;background:#DB8437;}
+.ftlc-ht{min-width:0;}
+.ftlc-ht h3{margin:0;font:800 18px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+.ftlc-ht p{margin:3px 0 0;font-size:13px;font-weight:600;color:#C9CFDD;}
+.ftlc-ht p .lp-kc{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;background:#fff7ed;color:#9a3412;font-weight:800;font-size:10.5px;vertical-align:1px;}
+.ftlc-acts{display:flex;gap:8px;flex:0 0 auto;}
+.ftlc-start,.ftlc-tag{border:0;border-radius:999px;padding:7px 14px;font:800 11.5px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;white-space:nowrap;}
+.ftlc-start{background:#DB8437;} .ftlc-start:not(:disabled):hover{background:#C9742B;}
+.ftlc-tag{background:#5C626C;} .ftlc-tag:not(:disabled):hover{background:#6B727D;}
+.ftlc-start:disabled,.ftlc-tag:disabled{cursor:not-allowed;opacity:.7;}
+.ftlc.locked .ftlc-start{background:#5C626C;}
+.ftlc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;padding:14px 16px 16px;align-items:start;}
+@media(max-width:700px){ .ftlc-body{grid-template-columns:minmax(0,1fr);} .ftlc-head{flex-wrap:wrap;} }
+.ftlc-h{margin:0 0 8px;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#C9CFDD;}
+.ftlc-seq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+.ftlc-row{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px;text-align:left;background:#2F3550;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#fff;font:inherit;cursor:pointer;}
+.ftlc-row:hover{background:#3A4160;border-color:#DB8437;}
+.ftlc-n{font:800 15px/1 'Poppins','Inter',sans-serif;color:#DB8437;align-self:start;padding-top:2px;}
+.ftlc-t{min-width:0;}
+.ftlc-t b{display:block;font:700 13.5px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+.ftlc-t small{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:#C9CFDD;}
+.ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
+.ftlc-pill{justify-self:end;border-radius:999px;padding:4px 9px;background:#5C626C;color:#fff;font:800 9.5px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.ftlc-pill.k-homework{background:#DB8437;}
+.ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo{background:#7A5A2E;}
+.ftlc-pill.k-trainer{background:#3C4268;}
+.ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
+.ftlc-days button:hover{border-color:#DB8437;background:rgba(219,132,55,.18);}
+.ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.45;}
+.ftlc-focus p{margin:0;}
+.ftlc-fh{font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#262B45;}
+.ftlc-focus-t{margin-top:6px !important;padding-bottom:10px;border-bottom:1px solid #E3E6EE;font-weight:700;color:#1B1E2E;display:flex;gap:8px;align-items:center;}
+.ftlc-focus-t::before{content:"";flex:0 0 auto;width:10px;height:10px;background:#2E5A9A;border-radius:2px;}
+.ftlc-h2{margin:12px 0 4px !important;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#B5651F;}
+.ftlc-focus ul{margin:0;padding-left:18px;display:grid;gap:3px;}
+.ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
+.ftlc-file p + p{margin-top:2px;}
+.ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
 .ftdd-x{position:relative;flex-wrap:wrap;}
 .ftdd-x .ftdd-step-n{font-size:16px;}
 .ftdd-x-k{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#B5651F;}
