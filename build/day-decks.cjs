@@ -43,13 +43,6 @@ const TRIM = {1: {reading: html => {
   // its screenshots are drawn big (ftdd-big-shots: two or three to a row, in js/ft-day-decks.js)
   return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa.replace(/<div class="shots">/g, '<div class="shots ftdd-big-shots">');
 }},
-// Day 5's Buffer Time before the Reception mock calls: what to review with the platform's tools while waiting for their turn
-5: {s1: html => html + `\n<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in the mock calls, review with your tools:</b></p>
-<div class="ftdd-wait-acts"><button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('reception') : goto('simulators')">☎ Practise reception calls on the Call Simulator</button>
-<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(4)">🎮 Knowledge Games: Receptionist Training</button>
-<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', 4)">📘 Review the Receptionist Training lesson</button>
-<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(4)">✍️ Knowledge Check</button></div>
-<p>Go over the call flow, the authentication questions and the closing spiel, so you’re ready when your trainer calls your name.</p></div>\n`},
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide
 2: {s4: html => {
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")

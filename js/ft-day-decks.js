@@ -418,9 +418,27 @@ function slideActions(s, info, body, i){
   if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
+/* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
+   trainer takes the others one by one — the day's lesson's Call Simulator line, its 🎮 Knowledge Games, the lesson itself
+   and its ✍️ Knowledge Check. */
+const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calendar management calls"], 6: ["intake", "intake calls"]};
+function waitBox(s, info){
+  const h = String(s.h || "");
+  if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
+  const sim = SIM_OF[l], acts = [];
+  if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
+  if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
+  if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
+  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(${l})">✍️ Knowledge Check</button>`);
+  if(!acts.length) return "";
+  const what = /demo/i.test(h) ? "the demo" : "the mock calls";
+  return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
+    <p>${sim ? "Go over the call flow, the questions to ask and the closing spiel, so you’re ready when your trainer calls your name." : "Go over the lesson and its key terms, so you’re ready when it’s your turn."}</p></div>`;
+}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s));
+  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -1397,7 +1415,7 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
 .ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
-/* Day 5's "while you wait for your turn" box: the tools to review with */
+/* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
 .ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
 .ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}
 .ftdd-wait-acts{display:flex;flex-wrap:wrap;gap:8px;}
