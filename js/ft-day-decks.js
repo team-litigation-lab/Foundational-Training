@@ -427,7 +427,7 @@ function slideCard(d, info, list, i){
     </div>`;
 }
 function renderDeck(){
-  const back = `<a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>`;
+  const back = `<a class="back-link" title="Close: back to the 📚 Dashboard" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>`;
   if(DD.day == null) DD.day = currentDay();
   if(!dayOpen(DD.day)) DD.day = currentDay();
   const all = decks();
@@ -581,7 +581,7 @@ root.moduleCard = function(d){
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
   return `<div class="ftdd-stage">
-    <div class="ftdd-mid"><a class="back-link" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>
+    <div class="ftdd-mid"><a class="back-link" title="Close: back to the 📚 Dashboard" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>
       <div class="ftdd-slides"><div class="ftdd-deck" data-slide="0">
         <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Know Your Tools</h1>
           <span class="ftdd-prog" title="Tool ${k + 1} of ${n}"><span style="width:${((k + 1) / n * 100).toFixed(1)}%"></span></span></div>
@@ -1524,6 +1524,14 @@ main.main-dash .dash-pair-pin .module-card .mh-title{font:700 15px/1.25 'Inter',
 main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
+/* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
+   Tools): a round close button, top right. The words stay in the link for screen readers. */
+body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;
+  display:inline-flex !important;align-items:center;justify-content:center;align-self:flex-end;border-radius:50%;background:#fff;border:1px solid rgba(30,35,64,.18);
+  box-shadow:0 2px 8px rgba(30,35,64,.18);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:700 17px/1 'Inter',sans-serif;color:#1E2340;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;border-color:#E8590C;}
+body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mid > a.back-link:hover::before{color:#fff;}
 /* the top row on the lesson grid's columns: each pinned card one lesson card wide, the scores panel the other two,
    with the grid's own 14px gap */
 @media(min-width:1001px){

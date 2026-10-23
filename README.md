@@ -208,7 +208,7 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   12. Building your habits: Update Your Trackers.
   13–15. The Daily Task Tracker: the sheet, the other tabs and the daily check, and the filled-in sample, with the one **📋 Open My Task Tracker** button.
   16. Your Training Monitoring Sheet, embedded, with 📒 Save My Sheet's Link.
-  17. Building your habits: Send Your EOD Email, with the Training Matrix link.
+  17. Building your habits: Send Your EOD Email, with the Training Matrix embedded beside it (its Google Doc preview, with Open or Download ↗).
   18. The EOD template, with 📋 Copy the Template.
   19. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
   20. You're a General VA, ready for any role.

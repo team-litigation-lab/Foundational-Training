@@ -55,7 +55,9 @@ const HABITS = [
     "Your EOD is a summary of your day. List everything you accomplished and completed.",
     "Include at least 3 specific learnings from the tasks you completed, with at least 2 sentences for each, so your trainers can gauge your understanding."],
    to:["martin@legalsupporthelp.com", "michelle.velarde@legalsupporthelp.com"],
-   links:[["Training Matrix", "https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", "Your training flow, for your tasks on queue for tomorrow."]],
+   links:[],
+   // embedded beside the card, not linked
+   matrix:{url:"https://docs.google.com/document/d/1fJnSYHyCFBE2XZP1s43pBc6pE6GV44o_a1BKzO0z4Ys/edit?tab=t.0", note:"Your training flow, for your tasks on queue for tomorrow."}
    },
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
@@ -212,8 +214,8 @@ const FIGS = {note: figNote};
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
 /* ---------- the slides ---------- */
-// A Drive file shown in full inside the slide (its /preview), with a link to open it in its own tab.
-const drivePreview = u => { const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
+// A Drive file shown in full inside the slide (its /preview; a Google Doc, the Doc's own /preview), with a link to open it in its own tab.
+const drivePreview = u => { const g = String(u).match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]{20,})/); if(g) return `https://docs.google.com/document/d/${g[1]}/preview`; const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
 const embed = (url, title, open)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
     <div class="ftr-embed-bar"><span>📄 ${esc(title)}</span>${open ? `<a class="btn btn-ghost btn-sm" href="${esc(open)}" target="_blank" rel="noopener noreferrer">Open or Download ↗</a>` : ""}</div>`;
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
@@ -328,7 +330,8 @@ const SLIDES = [
     (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
+    <div class="ftr-habit-emb"><div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>
+      <div class="ftr-keep"><div class="ftr-part-h">🗂 Training Matrix</div><p class="ftr-tip">${esc(HABITS[0].matrix.note)}</p>${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div></div>`],
   ["eod", "Your EOD Email: The Template", ()=>`
     <div class="ftr-part">
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
@@ -564,6 +567,10 @@ body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
+/* Send Your EOD Email: the card beside the embedded Training Matrix */
+body.ft-orient #lessonSlideWrap .ftr-habit-emb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start;}
+body.ft-orient #lessonSlideWrap .ftr-habit-emb .ftr-embed{height:max(300px, min(50vh, 30cqw)) !important;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-habit-emb{grid-template-columns:minmax(0,1fr);} }
 /* The Sheet: two columns, so its three tables fill the width */
 body.ft-orient #lessonSlideWrap .ftr-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-cols2 .ftr-def{grid-template-columns:minmax(0,36%) minmax(0,1fr);}
