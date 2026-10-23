@@ -79,7 +79,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   // 🏠 Classroom opens the lesson's offline activity: Day 1's homework slide
   await page.click('#dayl-1 .ftli-class'); await page.waitForTimeout(1500);
   const cls = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).innerText || '' }));
-  if (cls.view !== 'daydeck' || !/HOMEWORK: Nitro Pro/i.test(cls.h)) fail(`Lesson 1's Classroom opened ${JSON.stringify(cls)}`);
+  if (cls.view !== 'daydeck' || !/HOMEWORK \(Optional\): Nitro Pro/i.test(cls.h)) fail(`Lesson 1's Classroom opened ${JSON.stringify(cls)}`);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   // 📋 the days card opens the day deck on the full Classroom Discussion card, and a row opens its own slide
   await page.click('#dayd-1'); await page.waitForTimeout(1500);
