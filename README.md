@@ -193,34 +193,30 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   - It's always open, for every trainee and batch.
   - It doesn't count toward "Lessons finished", the certificate or the admin stats.
   - It isn't in `DAYS`. `DAYS.find` and `DAYS.some` also look at it (by id, `ORIENT_ID` = 12), so the lesson view, Presenter view, routes and names find it, while `DAYS.length`, `map` and `filter` still see the 9 lessons.
-- **The slides:**
-  Every slide has the trainers' background (the content sits straight on it, no panel, clear of the orange waves at the sides; a slide's opening line repeats on each of its pages) (`ft/orientation/background.webp`, styled in `js/ft-rules.js` under `body.ft-orient`): navy, the LSH header band with the orange line, orange waves at the sides. The part label and title sit in the band, the content in a cream panel below it, sized with the slide's width so it lines up on any screen.
-  The slides follow the trainers' Setting of Expectations:
-  1. Setting expectations: training isn't the end goal, you need to pass (performance deliberated weekly; you can still be let go); training is hard on purpose; your trainers are your first clients (resilience, pressure, time management).
-  2. You're a General VA: tagged General VAs but may be assigned to different roles; take initiative when tasks run low; stay placed when a firm restructures; a foundation, not mastery (mastery once a role is assigned, or in the Free Trial period).
-  3. Rules: your schedule and breaks. Tracking 8:00 AM – 5:00 PM PST, no tracking beyond 5:00 PM; unfinished deliverables are finished unpaid unless the trainer approves tracking; log in up to 10 minutes early (tools, and a buffer for breaks beyond the hour); breaks 1 hour total maximum, split as the trainee likes.
-  4. Rules: communication. Reply on Discord within 5 minutes; acknowledge every instruction and activity with a message or a reaction; all meetings are posted on their day, no need to ask; cameras on always (it tests internet speed and connectivity).
-  5. Rules: your work and the use of AI. Naming conventions; don't rely on AI to draft or complete work (grammar and spelling only); protect client information; AI is a tool, not a replacement; some firms allow it, depending on the client.
-  6. Rules: your Training Monitoring Sheet: download it and upload it to the trainee folder once the tasks are done, or fill it in on the platform; the sheet embedded, with 📒 Fill It In on the Platform.
-  7. Free Upskill Training: right after the shift for an hour or so; communication, accent reduction, grammar, email writing, client interviews; unpaid, not mandatory but highly encouraged; missed sessions are caught up on the trainee's own initiative.
-  8. Auxes: in #⏳-timestamps `!in`, `!brb - lunch`, `!out`, `!brb - power outage`, `!brb - internet outage` (check LSH BOT's notification), and the same without `!` in #batch-group-channel; no double stamping; the Discord profile status format.
-  9. Check #training-reminders: the channel's screenshots (Deliverables and Important Reminders, the welcome post, the channel).
-  10. Building your habits: Send Your EOD Email (a summary: everything completed, at least 3 specific learnings of at least 2 sentences each), with the Training Matrix link.
-  11. Building your habits: Update Your Trackers (the rest of the learnings; the Training Monitoring Sheet), with the sample trackers and the Monitoring Sheet links.
-  12. The EOD template: subject `Daily Report mm/dd/yy` or `EOD Report mm/dd/yy`, its three parts, and 📋 Copy the Template.
-  13. The Daily Task Tracker, part 1: the status counts, the sections and every column.
-  14. The Daily Task Tracker, part 2: the other tabs and the daily check.
-  15. The Daily Task Tracker, part 3: the guide's filled-in sample (Sample updated trackers), embedded in full.
-  16. Skill Building: Typing and Spelling Tests: why (clients look for at least 60 WPM), and a pointer, **🧪 Open the Practice Lab**, to **🛠 Simulators → 🧪 Practice Lab: Skill Building**, where the tests now live (the tools to use, when, file names and samples). The slide keeps its place, so saved slide positions don't shift.
-  17. Hubstaff To-Dos, part 1: why they matter, the steps and the picture of the to-do list.
-  18. Hubstaff To-Dos, part 2: the 19 To-Dos, each with 📋 Copy (the name without "To-Do:"), and the shadowing template.
-  19. How to create notes in Hubstaff, with the Add Work Notes picture.
-  20. Hubstaff How-To Lessons: links to this lesson's Hubstaff slides (To-Dos, notes, lost hours) and the LSH VA Guide; more can be added in `HOWTO_LESSONS`.
-  21. The Manual Time Adjustment Request: subject, To and CC to copy.
-  22. Day 1's Reading Task: the reading, the 6 questions and the file name with the trainee's name.
+- **The slides** are drawn like the Activity decks and the Case Management course's Case Flow slides (`body.ft-orient` in `js/ft-rules.js`): a glass navy card with line ornaments at three corners, the lesson's orange-outlined title with its progress line, the slide's title on a centred uppercase ribbon, and the content on a white sheet in the CM type (Inter 500, Poppins headings). Each slide is scaled to fit its sheet (`fitOrient`, to half size at the smallest); only a slide that would need less is split into pages (on a laptop: the Hubstaff notes and the Task Tracker sheet). In the order the trainers run the orientation:
+  1. 👋 Welcome to LSH!: the program, what the orientation covers, and the training shift.
+  2. Hubstaff: how-tos and why they matter (the audit team's record of your day), with links to the lesson's Hubstaff slides and the LSH VA Guide (more in `HOWTO_LESSONS`).
+  3. Your Hubstaff To-Dos: the 16 To-Dos, each with 📋 Copy and 📋 Copy All, and how to add one. No shadowing To-Do: the trainer gives that one on the day.
+  4. How to create notes in Hubstaff, with the Add Work Notes picture.
+  5. Lost hours: the Manual Time Adjustment Request (subject, To and CC to copy).
+  6. Breaks: tracking 8:00 AM – 5:00 PM PST, finishing late deliverables unpaid unless approved, logging in up to 10 minutes early, 1 hour of breaks in total.
+  7. Auxes: the commands in #⏳-timestamps and #batch-group-channel, no double stamping, the Discord profile status.
+  8. Camera: on in every meeting and classroom discussion.
+  9. Discord: mindfulness and response rates (reply within 5 minutes, acknowledge every instruction, meetings are posted on their day).
+  10. Your 4 daily deliverables: the typing and spelling tests, the Daily Task Tracker, the Training Monitoring Sheet and the EOD email.
+  11. Skill Building: Typing and Spelling Tests, with **🧪 Open the Practice Lab**.
+  12. Building your habits: Update Your Trackers.
+  13–15. The Daily Task Tracker: the sheet, the other tabs and the daily check, and the filled-in sample, with the one **📋 Open My Task Tracker** button.
+  16. Your Training Monitoring Sheet, embedded, with 📒 Save My Sheet's Link.
+  17. Building your habits: Send Your EOD Email, with the Training Matrix link.
+  18. The EOD template, with 📋 Copy the Template.
+  19. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
+  20. You're a General VA, ready for any role.
+  21. Your work and the use of AI.
+  22. Free Upskill Training, after your shift.
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
-  - The Hubstaff pictures are SVG, drawn after the trainer's screenshots.
+  - The Hubstaff picture is SVG, drawn after the trainer's screenshot.
   - The text lives in the constants at the top of `js/ft-rules.js` and in `SLIDES`. If the tracker's columns change in `js/ft-tracker.js`, update `TRACKER_PARTS`.
 
 ## 🧭 The Blueprint PDF (the blueprints live on the Main Portal)
