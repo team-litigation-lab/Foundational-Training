@@ -1524,6 +1524,12 @@ main.main-dash .dash-pair-pin .module-card .mh-title{font:700 15px/1.25 'Inter',
 main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
+/* the top row on the lesson grid's columns: each pinned card one lesson card wide, the scores panel the other two,
+   with the grid's own 14px gap */
+@media(min-width:1001px){
+  main.main-dash .dash-pair:has(.ftkt-card){grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:14px !important;}
+  main.main-dash .dash-pair-pin:has(.ftkt-card){gap:14px;}
+}
 @media(min-width:1001px){
   main.main-dash:has(.ftdd-daycell) .dash-pair{margin-bottom:8px !important;gap:8px !important;}
   main.main-dash:has(.ftdd-daycell) .dash-pair-pin .module-card .module-head{padding:5px 10px !important;}
