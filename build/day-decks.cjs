@@ -64,15 +64,25 @@ function stripQuestions(html){
   }
   return {html: out, n};
 }
+// The lesson's own deck is not on a day slide: the classroom discussion is taught from the lesson (▶ Live discussion
+// on 📚 Dashboard, 📘 Open the lesson on the slide), so a discussion slide drops its embedded lesson deck — the
+// Canva frame and its ⛶ Full screen / Open in Canva row. An exercise's deck on the same slide stays.
+const LESSON_DECK = /<div class="canva-frame" id="([^"]+)">\s*<iframe[^>]*title="(?![^"]*Exercise)[^"]*\(Canva\)"[\s\S]*?<\/iframe>\s*<\/div>\s*<div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div>\s*<\/div>\s*/;
+const LESSON_NOTE = `<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Live discussion</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>\n`;
+function stripLessonDeck(h, html){
+  if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
+  return {html: html.replace(LESSON_DECK, LESSON_NOTE), n: 1};
+}
 const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
-const decks = {}; let pqs = 0, qs = 0;
+const decks = {}; let pqs = 0, qs = 0, decksOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [];
   for(const s of d.sections){
     if(s.trainerOnly || (SKIP[n] || []).includes(s.id)) continue;
     const r = stripPQ(s.html); pqs += r.n;
     const q = stripQuestions(r.html); qs += q.n;
-    let html = q.html;
+    const ld = stripLessonDeck(s.h, q.html); decksOff += ld.n;
+    let html = ld.html;
     for(const p of (PENDING[n] || []).filter(p => p.after === s.id))
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     slides.push({id: s.id, h: ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, ""), html});
@@ -85,6 +95,7 @@ for(let n = 1; n <= 16; n++){
     if(/class=\\?"facilitator|Answer Key|Correct Answer|Ideal Answer|Facilitator[’']s (Note|Guide)/i.test(s.html)) throw new Error(`facilitator content in Day ${n} ${s.id}`);
     if(/PROCESS QUESTIONS/.test(s.html)) throw new Error(`Process Questions left in Day ${n} ${s.id}`);
     if(/Password|Username/.test(s.html)) throw new Error(`log-in details in Day ${n} ${s.id}`);
+    if(/classroom discussion|discussion on/i.test(s.h) && LESSON_DECK.test(s.html)) throw new Error(`the lesson deck is still embedded on Day ${n} ${s.id}`);
   }
   decks[n] = {day: n, title: d.title, heading: d.heading, slides};
 }
