@@ -254,7 +254,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     await page.evaluate(d => FTDayDecks.open(d, 0), d); await page.waitForTimeout(400);
     if (await page.evaluate(() => !!document.querySelector('.ftdd-lcslide .ftlc-pqbox .ftlc-games'))) pqDays.push(d);
   }
-  if (pqDays.join() !== '1,2,3,5,7,10,13') fail(`the Process Questions and Knowledge Games show on days ${pqDays.join(', ')}, not 1, 2, 3, 5, 7, 10 and 13`);
+  if (pqDays.join() !== '1,2,3,7,10,13') fail(`the Process Questions and Knowledge Games show on days ${pqDays.join(', ')}, not 1, 2, 3, 7, 10 and 13`);
   await page.evaluate(() => FTDayDecks.open(1, 0)); await page.waitForTimeout(600);
   await page.click('.ftdd-lcslide .ftlc-games'); await page.waitForTimeout(800);
   if (await page.evaluate(() => state.view) !== 'kcgames') fail('🎮 Review with the Knowledge Games doesn\'t open the games');

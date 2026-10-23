@@ -388,8 +388,9 @@ function slideAgendaGo(s, info){
 // a lesson has Process Questions where its answer sheet exists (Calendaring, Lesson 5, has none)
 function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.ftKcQuestions(Number(l)).length > 0 : false; }catch(err){ return false; } }
 // a day has Process Questions when the guide runs them that day (its deck carries the ✍️ Process Questions note):
-// Days 1, 2, 3, 5, 7, 10 and 13. Only those days link to them and to the 🎮 Knowledge Games.
-function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.slides || []).some(x => /ftdd-pq/.test(x.html || ""))); }
+// Days 1, 2, 3, 7, 10 and 13. Only those days link to them and to the 🎮 Knowledge Games.
+const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
+function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || ""))); }
 // ✍️ Answer and 🎮 Knowledge Games for a lesson's Process Questions (the games review the same lesson, as a game show)
 const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTProcess.openLesson(${Number(l)})">✍️ Process Questions: ${e(lessonTitle(l))}</button>` +
   (root.FTKCGames ? `<button type="button" class="${cls || "btn btn-ghost btn-sm"} ftdd-games" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</button>` : "");
@@ -400,7 +401,7 @@ function slideActions(s, info, body, i){
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
   // themselves stay on ✍️ Knowledge Check — the slide only points at them
-  if((has(/process question/i) || /ftdd-pq/.test(String(body || ""))) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(pqButtons(l)); });
+  if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(pqButtons(l)); });
   if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
   if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log &amp; today’s To-Do</button>`);
   if(has(/mock call/i) && root.FTSessions){
@@ -1519,6 +1520,9 @@ main.main-dash .dash-pair-pin .module-card .mh-title{font:700 15px/1.25 'Inter',
 main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
+/* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
+.ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
+.ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* Day 1's Installation of SA: its step screenshots big enough to read (two or three to a row, 300px tall) */
 .ft-body .shots.ftdd-big-shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px;}
 .ft-body .shots.ftdd-big-shots a{height:300px;padding:8px;background:#fff;border:1.5px solid #9AA0AB;}

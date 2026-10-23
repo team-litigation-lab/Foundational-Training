@@ -25,7 +25,12 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
-const TRIM = {1: {pm: html => {
+// Day 1's Reading Task: the Personal Injury overview is embedded in the slide (the Drive file's own preview), under its link
+const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
+const TRIM = {1: {reading: html => {
+  const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
+  return html.slice(0, at + 4) + `\n<div class="ftdd-embed"><iframe src="https://drive.google.com/file/d/${PI_FILE}/preview" title="Personal Injury Cases (Overview: What is personal injury?)" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>\n` + html.slice(at + 4);
+}, pm: html => {
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
   // the help line keeps the SA contact only (the Nitro Pro contact goes with its installation)
   const sa = html.slice(i).replace(/<p>For those who still have issues installing Nitro Pro[\s\S]*?<\/div>\n/, () =>
@@ -82,7 +87,7 @@ function stripQuestions(html){
 // on 📚 Dashboard, 📘 Open the lesson on the slide), so a discussion slide drops its embedded lesson deck — the
 // Canva frame and its ⛶ Full screen / Open in Canva row. An exercise's deck on the same slide stays.
 const LESSON_DECK = /<div class="canva-frame" id="([^"]+)">\s*<iframe[^>]*title="(?![^"]*Exercise)[^"]*\(Canva\)"[\s\S]*?<\/iframe>\s*<\/div>\s*<div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div>\s*<\/div>\s*/;
-const LESSON_NOTE = `<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Live discussion</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>\n`;
+const LESSON_NOTE = `<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>\n`;
 function stripLessonDeck(h, html){
   if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
   return {html: html.replace(LESSON_DECK, LESSON_NOTE), n: 1};
