@@ -6,7 +6,7 @@
      • the trainer-slot boxes: js/ft-updates.js fills them with the facilitator's notes for a trainer in trainer
        view; a trainee sees nothing there;
      • "Link coming" boxes, where the guide names material it has no link for yet;
-     • the last slide of each day, "To be added", until there is more for that day.
+     • no "To be added" slide on a lesson day (its placeholder is in the data but isn't shown).
    No Process Questions: they are answered in ✍️ Knowledge Check only, and a deck points there.
    Opened from 📚 Dashboard's next-step band (js/ft-next-step.js: 📋 Day N deck). A trainee opens the deck
    of the day they are on and every day before it, and a later day's once its lessons are open for the batch;
@@ -106,14 +106,15 @@ function timeOf(h){
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
+  if(s.task) return {ic: "🎲", label: "Today’s Task"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
-  if(/shadowing/i.test(h)) return {ic: "👀", label: "Shadowing"};
-  if(/discussion/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
+  // a shadowing session is part of the day's Classroom Activity; a homework that names Shadowing Etiquette stays Homework
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
+  if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   return {ic: "📝", label: "Read & do"};
@@ -324,6 +325,10 @@ const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, 
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
   const out = [{id: "agenda", h: "Training Agenda", agenda: true}];
   d.slides.forEach(s => {
+    // a lesson day's "To be added" slide is 🎲 Today's Task: where the day's unannounced task lands (taskSlide)
+    if(s.placeholder && !only){ out.push({id: "task", h: "Today’s Task", task: true, html: ""}); return; }
+    // a no-discussion day's 📌 From your trainer slide shows once the trainer has added something (a trainer always sees it, to add)
+    if(s.placeholder && only && !isAdminView() && !(X.data && (X.data.days[d.day] || []).length)){ if(!X.data) loadExtras(); return; }
     const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
     if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
@@ -414,9 +419,51 @@ function slideActions(s, info, body, i){
   if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
+/* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
+   trainer takes the others one by one — the day's lesson's Call Simulator line, its 🎮 Knowledge Games, the lesson itself
+   and its ✍️ Knowledge Check. */
+const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calendar management calls"], 6: ["intake", "intake calls"]};
+function waitBox(s, info){
+  const h = String(s.h || "");
+  if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
+  const sim = SIM_OF[l], acts = [];
+  if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
+  if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
+  if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
+  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(${l})">✍️ Knowledge Check</button>`);
+  if(!acts.length) return "";
+  const what = /demo/i.test(h) ? "the demo" : "the mock calls";
+  return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
+    <p>${sim ? "Go over the call flow, the questions to ask and the closing spiel, so you’re ready when your trainer calls your name." : "Go over the lesson and its key terms, so you’re ready when it’s your turn."}</p></div>`;
+}
+/* 🎲 Today's Task: the unannounced task a trainer sends to a lesson's trainees (Admin → 🎲 Random Tasks, js/ft-admin-ops.js:
+   surprise-task-day<lesson>, written from the lesson's own material) lands on the day's last slide too, with its time left
+   and 🎲 Answer it (the 🎲 Tasks page, where it's acknowledged, planned and resolved, and graded). */
+const TK = {recs: {}, at: 0, loading: null};
+function loadTasks(lessons){
+  if(TK.loading) return;
+  const stale = Date.now() - TK.at >= 60000, ids = lessons.filter(l => stale || !(String(l) in TK.recs));
+  if(!ids.length || typeof sharedGetMany !== "function") return;
+  TK.loading = sharedGetMany(ids.map(l => "surprise-task-day" + l)).then(v => { ids.forEach((l, k) => { TK.recs[String(l)] = v[k] || null; }); })
+    .catch(() => {}).then(() => { TK.at = Date.now(); TK.loading = null; if(state.view === "daydeck") render(); });
+}
+function taskSlide(n, info){
+  const lessons = (info.lessons || []).map(Number).filter(x => x > 0);
+  loadTasks(lessons);
+  const live = lessons.map(l => ({l, r: TK.recs[String(l)]})).filter(x => x.r && x.r.active && x.r.expiresAt && Date.now() < new Date(x.r.expiresAt).getTime());
+  const admin = isAdminView();
+  const send = admin ? `<p class="ftdd-task-ad">🧑‍🏫 <b>Trainer:</b> send the day’s task from <a class="ftdd-link" onclick="state.adminTab='randomtasks'; goto('admin')">🛡 Admin → 🎲 Random Tasks</a>. It’s written from the lesson’s own material and lands here and in every trainee’s 🎲 Tasks.</p>` : "";
+  if(!live.length) return `<div class="ftdd-task ftdd-task-wait"><span class="ftdd-task-ic">🎲</span><div><b>Your task for Day ${n} drops here</b>
+      <p>During the session your trainer sends an unannounced task from ${lessons.length ? e(lessons.map(lessonTitle).join(" and ")) : "today’s lesson"}. When it arrives it shows on this slide and in 🎲 Tasks, with its timer: acknowledge it, plan it and resolve it before the time is up.</p></div></div>${send}`;
+  return live.map(({l, r}) => { const left = Math.max(0, Math.round((new Date(r.expiresAt).getTime() - Date.now()) / 60000));
+    return `<div class="ftdd-task"><span class="ftdd-task-ic">🎲</span><div><b>New task · ${e(lessonTitle(l))} · ⏱ ${left} min left</b>
+      <p>${e(r.task).replace(/\n/g, "<br>")}</p>
+      <div class="ftdd-task-acts"><button type="button" class="btn btn-navy btn-sm" onclick="goto('tasks')">🎲 Answer it in Tasks</button></div></div></div>`; }).join("") + send;
+}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s));
+  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -684,7 +731,7 @@ const SUBMIT = "Assessments › Activities subfolder";
 const LESSON_CARDS = {
   1: {days: [1], focus: "VA Essentials & Software Setup",
     rows: [
-      {t: "Reading Task: Personal Injury", sub: "Read the overview · the questions come with the assessment file your trainer posts in the training GC", k: "read", d: 1, s: "reading"},
+      {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
       {t: "Process Questions: Submit", sub: "Review them with 🎮 Knowledge Games, answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
@@ -1393,8 +1440,40 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
 .ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
-.ftdd-score-l li{position:relative;padding-left:26px;font-size:13.5px;line-height:1.4;counter-increment:sc;}
-.ftdd-score-l li::before{content:counter(sc);position:absolute;left:0;top:1px;width:19px;height:19px;border-radius:6px;background:#FBF1E6;color:#B5651F;font:700 11.5px/19px 'Inter',sans-serif;text-align:center;}
+/* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
+.ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}
+.ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
+.ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
+.ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
+.ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
+.ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
+@media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
+/* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
+   headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
+   navy-bordered boxes */
+main.main-ftdd .ftdd-sheet{font-size:19px;color:#11131F;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:19px;line-height:1.5;color:#11131F;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:19px;color:#11131F;}
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 17px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
+main.main-ftdd .ftdd-sheet .ftdd-step{padding:10px 14px;margin:10px 0;border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
+main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36px;font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:18px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
+main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:16px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
+main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
+/* 🎲 Today's Task (taskSlide) */
+.ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
+.ftdd-task-wait{border-style:dashed;background:#F4F6FB;}
+.ftdd-task-ic{font-size:30px;line-height:1;} .ftdd-task b{display:block;font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;margin-bottom:6px;}
+.ftdd-task p{margin:0 0 8px;font-size:16px;line-height:1.5;color:#1B1E2E;} .ftdd-task-acts{display:flex;gap:8px;flex-wrap:wrap;}
+.ftdd-task-ad{font-size:14px;color:#2B2F45;}
+/* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
+.ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
+.ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}
+.ftdd-wait-acts{display:flex;flex-wrap:wrap;gap:8px;}
+/* each criterion a box of the same height, its number centred beside the text, so the rows line up */
+.ftdd-score-l{align-items:stretch;grid-auto-rows:1fr;gap:8px 12px !important;}
+.ftdd-score-l li{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border:1.5px solid #E6D6C2;border-radius:10px;background:#FFFBF6;font-size:13.5px;line-height:1.35;counter-increment:sc;}
+.ftdd-score-l li::before{content:counter(sc);flex:0 0 26px;width:26px;height:26px;border-radius:7px;background:#E8590C;color:#fff;font:800 12.5px/26px 'Inter',sans-serif;text-align:center;}
 .ftdd-score-f{margin:8px 0 0;font-size:12.5px;color:var(--ink-soft);}
 /* the picture of the trainer's own sheet says nothing the criteria above it don't: on a slide it is only clutter */
 .ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}
@@ -1522,10 +1601,13 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
+.ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
-/* Day 1's Installation of SA: its step screenshots big enough to read (two or three to a row, 300px tall) */
-.ft-body .shots.ftdd-big-shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px;}
-.ft-body .shots.ftdd-big-shots a{height:300px;padding:8px;background:#fff;border:1.5px solid #9AA0AB;}
+/* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
+   three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */
+.ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
+.ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
+.ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, top right, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
 body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;

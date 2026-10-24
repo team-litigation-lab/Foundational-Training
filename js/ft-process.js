@@ -23,6 +23,15 @@
    ============================================================ */
 (function(){
 const PROCESS_SETS = [
+  // Day 1's Reading Task (the Personal Injury overview, read on the Activity deck): its questions are answered here, with
+  // Lesson 1's Knowledge Check, not in the training GC
+  {id:"pi-overview", lesson:1, title:"Reading Task: Personal Injury Overview", file:"PI Overview_Answers", questions:[
+    "What is personal injury and what are its types?",
+    "Can you enumerate the stages of a personal injury claim on your own understanding?",
+    "How much is the common compensation for a personal injury claim?",
+    "How long does it take for a personal injury case to resolve?",
+    "What are the common factors that affect a personal injury case?",
+    "What do you think are the advantages and disadvantages of pushing for a case to litigation (going to court)?"]},
   {id:"va-essentials", lesson:1, title:"Virtual Assistant Essentials", file:"VA_Essentials_Process_Question_Answers", questions:[
     "Analyze a hypothetical case: A breach of contract with parties in two states. Which court system would have jurisdiction? Why?",
     "Assess the advantages and disadvantages of pursuing a case in federal court instead of state court for a personal injury claim.",

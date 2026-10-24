@@ -29,6 +29,9 @@ const SA_FROM = "<h3>How to install the Smart Advocate";
 const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
+  // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
+  html = html.replace(/<p><b>Note: Please send you answers[\s\S]*?<p>Thank you\.<\/p>\n?/, "").replace(/<hr class="stars">\n?<div class="trainer-slot" data-slot="1:tettra"><\/div>\n?/, "");
+  if(/group chat|1:tettra/.test(html)) throw new Error("Day 1's Reading Task still has the group-chat note or the Tettra credentials");
   return html.slice(0, at + 4) + `\n<div class="ftdd-embed"><iframe src="https://drive.google.com/file/d/${PI_FILE}/preview" title="Personal Injury Cases (Overview: What is personal injury?)" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>\n` + html.slice(at + 4);
 }, pm: html => {
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
@@ -39,6 +42,25 @@ const TRIM = {1: {reading: html => {
   if(/Nitro/i.test(sa)) throw new Error("Day 1's Installation of SA still mentions Nitro Pro");
   // its screenshots are drawn big (ftdd-big-shots: two or three to a row, in js/ft-day-decks.js)
   return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa.replace(/<div class="shots">/g, '<div class="shots ftdd-big-shots">');
+}},
+// Day 5's Attorney Calendar Management Activity: four cards (the activity, the time zone, the whole calendar, the upload)
+5: {s3: html => {
+  const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
+  const act = cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">');
+  const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
+  const whole = cut("<p>When taking a screenshot of the entire calendar", "<p>You should have a total of 19");
+  const up = cut("<p>You should have a total of 19", "<p><b><i>*** Free Communication");
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
+    card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
+}},
+// Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide
+2: {s4: html => {
+  const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
+    .replace(/<p>2026 VERSION<\/p>\n<p><a [^>]*(1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r)[^>]*>[^<]*<\/a> ?<\/p>/, (m, id) =>
+      `<p><b>The handouts (2026 version)</b></p>\n<div class="ftdd-embed ftdd-embed-folder"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy"></iframe></div>`);
+  if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
+  return out;
 }}};
 // material the guide names without a link yet: {day: [{after: sectionId, name, note?}]} — shown as a "link coming" box
 // at the end of that slide until the link is added to the day file
@@ -64,7 +86,8 @@ function stripPQ(html){
   }
   return {html: out, n};
 }
-const Q_NOTE = `<div class="ftdd-pq">📄 <b>The questions for this task</b> come with the assessment file your trainer posts in the training GC — they are not on the slide. Answer them there and upload your answers as the naming convention below says.</div>\n`;
+// (only Day 1's Reading Task has one: its questions are the Reading Task sheet of Lesson 1's ✍️ Knowledge Check, js/ft-process.js)
+const Q_NOTE = `<div class="ftdd-pq">✍️ <b>The questions for this task</b> are answered in <a class="ftdd-link" onclick="FTProcess.openLesson(1)">✍️ Knowledge Check</a>: the <b>Reading Task: Personal Injury Overview</b> sheet, with Virtual Assistant Essentials. Your answers save as you type; press 📝 Submit for Grading when you’re done.</div>\n`;
 // A question list on a slide — the reading task's "Answer the following questions:" and its numbered list —
 // is an assessment, not slide content: a trainee answers it on the file their trainer posts, so the slide
 // carries the note above instead of the questions themselves.
