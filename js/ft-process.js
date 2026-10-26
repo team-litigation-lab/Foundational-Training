@@ -260,8 +260,6 @@ function renderPage(){
   loadReview();
   if(FP.err) return `<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `<div class="card" style="padding:28px;">Loading your answers…</div>`;
-  const preview = ((state.adminPreview || fromDeck) && !state.traineeId)
-    ? `<div class="card fp-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it, with every lesson unlocked. Nothing you type here is saved, and grading needs a trainee's own account.</div>` : "";
   const folderCard = `<div class="card fp-folder">
       <label for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
       <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
@@ -274,13 +272,13 @@ function renderPage(){
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const backBtn = back && Number(back.l) === Number(lesson) && back.day && window.FTDayDecks
     ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>` : "";
-  if(lesson) return `${preview}<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
+  if(lesson) return `<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
     ${folderCard}
     ${moduleCard(lesson)}`;
-  return `${preview}<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
+  return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here.</p></div>
     ${folderCard}
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
@@ -700,7 +698,6 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .kc-fb{margin-top:6px;border-radius:8px;padding:8px 10px;font-size:14px;line-height:1.45;border-left:4px solid;}
 .kc-fb b{margin-right:6px;} .kc-fb.kc-ok{background:var(--success-bg);border-color:var(--success);} .kc-fb.kc-mid{background:#FEF7C3;border-color:#C9A227;} .kc-fb.kc-low{background:var(--danger-bg);border-color:var(--danger);}
 
-.fp-preview{padding:10px 14px;margin:0 0 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:13.5px;}
 .fp-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .fp-hero p{margin:0 0 14px;color:var(--ink-soft);font-size:15px;}
 .fp-hero .btn{margin-bottom:10px;}
 .fp-save{margin-left:6px;font-size:13px;color:var(--success);}

@@ -917,18 +917,15 @@ function deckPresenter(){
 // next day / 📚 Dashboard on the last slide (the same card as the lessons', js/ft-slides.js)
 function deckNextUp(){
   document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
-  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split) return;
-  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1) return;   // the slide's own pages come first: Next turns them
-  const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1];
+  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split || !root.FTNextUp) return;
+  const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1], btn = nav.querySelector(".ftdd-next");
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-  const t = kcOf(cur) ? "✍️ The Reading Task questions, in Knowledge Check" : nx ? clean(nx.h)
-    : DD.day < COUNT() && dayOpen(DD.day + 1) ? `Day ${DD.day + 1}` : "📚 Dashboard";
-  if(!t) return;
-  nav.style.position = "relative";
-  const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
-  el.innerHTML = `<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span></span>`;
-  el.querySelector("span").textContent = t;
-  nav.appendChild(el);
+  // the slide's own pages come first: Next turns them
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
+  if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
+  if(nx){ FTNextUp(nav, btn, clean(nx.h), `Step ${DD.i + 2} of ${list.length}`); return; }
+  if(DD.day < COUNT() && dayOpen(DD.day + 1)) FTNextUp(nav, btn, `Day ${DD.day + 1}`, "Activity Deck");
+  else FTNextUp(nav, btn, "📚 Dashboard", "Your lessons");
 }
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
@@ -1612,14 +1609,17 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 /* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
    headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
    navy-bordered boxes */
-main.main-ftdd .ftdd-sheet{font-size:19px;color:#11131F;}
-main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:19px;line-height:1.5;color:#11131F;}
-main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:19px;color:#11131F;}
-main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 17px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
+main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
+/* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
+main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw) > *{flex:0 0 auto;}
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
 main.main-ftdd .ftdd-sheet .ftdd-step{padding:10px 14px;margin:10px 0;border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36px;font-size:16px;}
-main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:18px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
-main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:16px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
+main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
 /* 🎲 Today's Task (taskSlide) */
 .ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
@@ -1767,15 +1767,15 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
 .ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
-main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:19px !important;line-height:1.6 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:21px !important;line-height:1.6 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:20px !important;}
 .ft-body figure.ftdd-pi-fig{margin:0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
 .ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
 .ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 .ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
 .ft-body .ftdd-pi-chart img{max-height:30vh;width:auto;margin:0 auto;display:block;}
-main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:16.5px !important;line-height:1.5 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:18px !important;line-height:1.5 !important;}
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}

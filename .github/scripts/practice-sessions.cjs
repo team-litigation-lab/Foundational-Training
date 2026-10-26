@@ -259,7 +259,7 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate(async () => { FTProcess.openLesson(1); await new Promise(r => setTimeout(r, 1200)); });
     const boxes = await page.evaluate(() => document.querySelectorAll('main textarea').length);
     if (!boxes) fail('Trainee view: Process Questions has no boxes for a trainee to type in');
-    if (!await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions does not say it is a preview');
+    if (await page.evaluate(() => !!document.querySelector('.fp-preview'))) fail('Trainee view: Process Questions still shows the Trainee view note');
 
     // 8. Process Questions, one set per module: every module locked until the trainee finishes it.
     //    A lesson day runs Lesson → Activities → Process Questions: ✓ Finish lesson marks the module studied
