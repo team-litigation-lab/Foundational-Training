@@ -662,8 +662,26 @@ function renderToolsPage(){
     </aside>
   </div>`;
 }
+// 👆 Know Your Tools: on the first mouse movement over the page (or first touch), a pop-up beside the tools list says to
+// click each tool to learn more. It goes on a tool click, its ✕, leaving the page, or after 9 seconds, and shows once
+// per visit (this browser tab).
+function toolsHintClose(){ const h = document.getElementById("ftToolsHint"); if(h) h.remove(); }
+function toolsHintShow(){
+  if(state.view !== "knowtools" || document.getElementById("ftToolsHint")) return;
+  try{ if(sessionStorage.getItem("ftToolsHint")) return; sessionStorage.setItem("ftToolsHint", "1"); }catch(e){}
+  const list = document.querySelector("main.main-ftdd .ftdd-tools-list"); if(!list) return;
+  const r = list.getBoundingClientRect(), narrow = root.innerWidth <= 760;
+  const h = document.createElement("div"); h.id = "ftToolsHint"; h.className = "ftdd-hint" + (narrow ? " ftdd-hint-down" : ""); h.setAttribute("role", "status");
+  h.innerHTML = `<button type="button" class="ftdd-hint-x" aria-label="Close" onclick="FTDayDecks.hintClose()">✕</button><b>👈 Click each tool to learn more</b><span>Each one shows what it’s for, where to find it and its features.</span>`;
+  h.style.left = (narrow ? r.left : r.right + 14) + "px"; h.style.top = (narrow ? r.bottom + 12 : r.top + 6) + "px";
+  document.body.appendChild(h);
+  setTimeout(toolsHintClose, 9000);
+}
+document.addEventListener("mousemove", toolsHintShow, {passive: true});
+document.addEventListener("touchstart", toolsHintShow, {passive: true});
 const __render = root.render;
 root.render = function(){
+  if(state.view !== "knowtools") toolsHintClose();
   if(state.view === "knowtools"){
     if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
     document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ftdd">${renderToolsPage()}</main>` + renderFooter();
@@ -1210,7 +1228,8 @@ root.FTDayDecks = {open, go, next: nextKC, pick: pickDay, slide: openSlide, toKC
   // 🗺 Map: the training roadmap
   map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
-  tool(i){ DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
+  tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
+  hintClose: toolsHintClose,
   tools: () => TOOLS.map(t => t.name),
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
@@ -1338,6 +1357,13 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 /* 🧰 Know Your Tools: the tools listed on the left, the picked one (its screenshot, what it is for, where, its features) */
 .ftdd-tools{display:grid;grid-template-columns:minmax(190px,240px) minmax(0,1fr);gap:16px;height:100%;min-height:0;}
 .ftdd-tools-list{display:flex;flex-direction:column;gap:4px;min-height:0;}
+.ftdd-hint{position:fixed;z-index:80;max-width:280px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:12px 36px 12px 14px;box-shadow:0 10px 28px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftddHintIn .25s ease-out;}
+.ftdd-hint::before{content:"";position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:#E8590C;border-left:0;}
+.ftdd-hint-down::before{left:24px;top:-10px;border:8px solid transparent;border-bottom-color:#E8590C;border-top:0;}
+.ftdd-hint b{display:block;font-size:15px;color:#F4B77A;margin-bottom:3px;} .ftdd-hint span{display:block;color:#E6E8F2;}
+.ftdd-hint-x{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 12px/1 'Inter',sans-serif;cursor:pointer;}
+.ftdd-hint-x:hover{background:#E8590C;}
+@keyframes ftddHintIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
 .ftdd-tools-tab{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #E3E6EE;background:#F6F7FA;color:#262B45;border-radius:10px;padding:5px 10px;font:600 13px/1.25 'Inter',sans-serif;cursor:pointer;min-width:0;}
 .ftdd-tools-tab > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .ftdd-tools-tab:hover{border-color:#DB8437;}
