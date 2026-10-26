@@ -998,8 +998,8 @@ function dayCard(n, ex){
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
-  // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js)
-  const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
+  // (outside training hours aren't on the card: every day's card follows Day 1's, focus, instructions and the day's
+  // Process Questions; they're on the day's Training Agenda, 📴 Outside training hours)
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
@@ -1019,7 +1019,6 @@ function dayCard(n, ex){
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
-        ${outside.length ? `<p class="ftlc-h2">Outside training hours</p><ul>${outside.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${first ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
@@ -1498,6 +1497,11 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 /* the full Classroom Activity card, as the first slide of its days' decks: scaled to fit the slide (fitSheets) */
 .ftdd-lcslide{min-height:0;overflow:auto;padding:0 !important;}
 .ftdd-lcslide .ftlc{box-shadow:none;}
+/* every day's card in Day 1's size (its text as Day 1's card shows it), filling the slide: a fuller card still shrinks to
+   fit, a lighter one no longer grows past Day 1's */
+main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
+main.main-ftdd .ftdd-lcslide > .ftlc{zoom:.74;flex:1 0 auto;display:flex;flex-direction:column;}
+main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
 .ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
 .ftlc.now{box-shadow:0 0 0 3px #F4B77A,0 6px 18px rgba(16,19,36,.28);}
 .ftlc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1F2338;border-bottom:1px solid rgba(255,255,255,.08);position:relative;}
