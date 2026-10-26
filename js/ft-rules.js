@@ -349,6 +349,12 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
+  // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
+  // (TRAINING_MATRIX_IMG, the picture in the document) on the right
+  ["matrix", "Your Training Matrix", ()=>`
+    <p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email.</p>
+    <div class="ftr-matrix"><div class="ftr-keep">${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div>
+      ${TRAINING_MATRIX_IMG ? `<figure class="ftr-matrix-img"><img src="${esc(TRAINING_MATRIX_IMG)}" alt="Virtual Assistant Training Matrix"></figure>` : ""}</div>`],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
@@ -383,12 +389,6 @@ const SLIDES = [
       <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
     </div>
     <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
-  // the Training Matrix on its own slide, after the EOD template: the matrix itself embedded on the left, its cover
-  // (TRAINING_MATRIX_IMG, the picture in the document) on the right
-  ["matrix", "Your Training Matrix", ()=>`
-    <p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email.</p>
-    <div class="ftr-matrix"><div class="ftr-keep">${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div>
-      ${TRAINING_MATRIX_IMG ? `<figure class="ftr-matrix-img"><img src="${esc(TRAINING_MATRIX_IMG)}" alt="Virtual Assistant Training Matrix"></figure>` : ""}</div>`],
   // Setting of expectations
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>

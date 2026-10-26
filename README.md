@@ -205,13 +205,13 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   8. Auxes: the commands in #⏳-timestamps and #training-channel, no double stamping, the Discord profile status.
   9. Camera: on in every meeting and classroom discussion, with the rules for your demeanor, outfit and framing (`CAMERA`).
   10. Discord: mindfulness and response rates (reply within 5 minutes, acknowledge every instruction, meetings are posted on their day).
-  11. Your 4 daily deliverables: the typing and spelling tests, with the links to the sites the training uses (`TESTS`: TypingClub or TypingTest.com, SpellQuiz or Spelling-Test.com) and the screenshot's file name, the Daily Task Tracker, the Training Monitoring Sheet and the EOD email.
-  12. Building your habits: Update Your Trackers.
-  13–14. The Daily Task Tracker: the sheet (two columns), the other tabs and the daily check, in high-contrast tables.
-  15. Your Training Monitoring Sheet, embedded, with 📁 Link My Task Tracker and Monitoring Sheet.
-  16. Building your habits: Send Your EOD Email.
-  17. The EOD template, with 📋 Copy the Template.
-  18. Your Training Matrix: the matrix embedded on the left, its cover picture on the right (`TRAINING_MATRIX_IMG`, once it is in the repository).
+  11. Your Training Matrix: the matrix embedded on the left, its cover picture on the right (`TRAINING_MATRIX_IMG`, once it is in the repository).
+  12. Your 4 daily deliverables: the typing and spelling tests, with the links to the sites the training uses (`TESTS`: TypingClub or TypingTest.com, SpellQuiz or Spelling-Test.com) and the screenshot's file name, the Daily Task Tracker, the Training Monitoring Sheet and the EOD email.
+  13. Building your habits: Update Your Trackers.
+  14–15. The Daily Task Tracker: the sheet (two columns), the other tabs and the daily check, in high-contrast tables.
+  16. Your Training Monitoring Sheet, embedded, with 📁 Link My Task Tracker and Monitoring Sheet.
+  17. Building your habits: Send Your EOD Email.
+  18. The EOD template, with 📋 Copy the Template.
   19. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
   20. You're a General VA, ready for any role.
   21. Your work and the use of AI.
