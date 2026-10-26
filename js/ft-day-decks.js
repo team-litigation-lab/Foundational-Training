@@ -1003,20 +1003,37 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
    carries its Classroom Activity card (▶ Start Training opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
    focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
+/* 📋 Every day's card in Day 1's arrangement, each row opening its activity in the order the day runs: the opening task
+   (a buffer, the checking of assignments, a reading), then on the lesson's first day 💬 Classroom Discussion (▶ the lesson)
+   and 🎬 Handouts / Video, then the day's activities, then ✍️ Process Questions: Submit on the days the guide sets them,
+   before the day's homework. A row the day's own list already has isn't added twice. */
+function standardRows(n, c, lid, first, title, rows){
+  const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
+  const lead = []; let i = 0;
+  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t))) lead.push(rows[i++]);
+  const body = rows.slice(i), tail = [];
+  while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
+  const mid = [];
+  if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"});
+  if(first && !has(/ftVideoOrAsk|Handouts \/ Video/)) mid.push({t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
+  // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
+  const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
+  const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
+  const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
+  return [...lead, ...mid, ...body, ...pqRows, ...tail];
+}
 function dayCard(n, ex){
   n = Number(n);
   const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return "";
   const first = n === c.days[0], open_ = lessonOpen(lid), title = lessonTitle(lid), off = offlineRow(c);
-  const rows = cardRows(c, ex).filter(r => rowDay(c, r) === n);
+  const rows = standardRows(n, c, lid, first, title, cardRows(c, ex).filter(r => rowDay(c, r) === n));
   // the card is one day's, so a row's time drops its "Day N": "Day 8 PM" reads "PM"
   const when = r => String(r.time || "").replace(new RegExp("^Day " + n + "\\b\\s*(·\\s*)?", "i"), "").replace(/^./, x => x.toUpperCase());
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
-  // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js). Every
-  // day's card follows Day 1's, so the list is one closed line at the foot of the focus, opened when it's wanted
-  const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
+  // (no outside-hours list on the card: it is on the day's Training Agenda, the slide after the card)
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
@@ -1044,7 +1061,6 @@ function dayCard(n, ex){
           return pl.length ? `<div class="ftlc-pqbox"><p class="ftlc-h2">✍️ Today’s Process Questions</p>${pl.map(l => `
           <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTDayDecks.toKC(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Knowledge Check →</button>
           ${root.FTKCGames ? `<button type="button" class="ftlc-pqbtn ftlc-games" onclick="FTKCGames.open(${Number(l)})">🎮 Review with the Knowledge Games</button>` : ""}</div>`).join("")}</div>` : ""; })()}
-        ${outside.length ? `<details class="ftlc-out"><summary class="ftlc-h2">📴 Outside training hours · ${outside.length}</summary><ul>${outside.map(x => `<li>${e(x)}</li>`).join("")}</ul></details>` : ""}
       </aside>
     </div>
   </article>`;
@@ -1522,10 +1538,6 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc{zoom:.74;flex:1 0 auto;display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
-.ftlc-out{margin-top:10px;border-top:1px solid #E6E8F0;padding-top:8px;}
-.ftlc-out > summary{cursor:pointer;list-style:none;margin:0 !important;}
-.ftlc-out > summary::-webkit-details-marker{display:none;}
-.ftlc-out > summary::after{content:" ▾";} .ftlc-out[open] > summary::after{content:" ▴";}
 .ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
 .ftlc.now{box-shadow:0 0 0 3px #F4B77A,0 6px 18px rgba(16,19,36,.28);}
 .ftlc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1F2338;border-bottom:1px solid rgba(255,255,255,.08);position:relative;}

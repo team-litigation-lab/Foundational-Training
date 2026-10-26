@@ -161,9 +161,9 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);
   s = await at();
   if (s.open.length !== 16) fail(`an admin can open ${s.open.length} days, not 16`);
-  await page.evaluate(() => FTDayDecks.to(1)); await page.waitForTimeout(400);
+  await page.evaluate(() => FTDayDecks.to(FTDayDecks.first(16))); await page.waitForTimeout(400);
   s = await at();
-  if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s second slide is "' + s.h + '"');
+  if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s first slide of its own is "' + s.h + '"');
   if (!s.tiles) fail('Day 16\'s links are not shown as tiles');
   // 📌 a no-discussion day: the trainer adds the day's activities and instructions on its last slide
   const extrasBefore = await get('settings:dayextras');
@@ -194,12 +194,12 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (tv.bold || !/<b>quietly<\/b>/.test(tv.text)) fail('a title from the trainer was drawn as HTML');
   // a slide too long even at half size is read in pages, and Next turns the page before the slide
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(7, FTDayDecks.first(7)); }); await page.waitForTimeout(1600);
-  const paged = await page.evaluate(() => ({ pages: FTDayDecks.state().pages, page: FTDayDecks.state().page, over: (() => { const x = document.querySelector('.ftdd-sheet'); return x.scrollHeight - x.clientHeight; })() }));
+  const paged = await page.evaluate(() => ({ i: FTDayDecks.state().i, pages: FTDayDecks.state().pages, page: FTDayDecks.state().page, over: (() => { const x = document.querySelector('.ftdd-sheet'); return x.scrollHeight - x.clientHeight; })() }));
   if (!(paged.pages > 1)) fail(`Day 7's instruction slide isn't read in pages: ${JSON.stringify(paged)}`);
   if (paged.over > 4) fail(`a page of it overflows by ${paged.over}px`);
   await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(700);
   const after = await page.evaluate(() => ({ i: FTDayDecks.state().i, page: FTDayDecks.state().page, mark: (document.querySelector('.ftdd-n') || {}).innerText || '' }));
-  if (after.i !== 1 || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
+  if (after.i !== paged.i || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
   // the slide says what it opens: its lesson, and the Call Listening log on its own slide
   const acts = await page.evaluate(() => [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()));
   if (!acts.some(x => /Open the lesson/.test(x))) fail(`a classroom discussion slide has no lesson button: ${JSON.stringify(acts)}`);
