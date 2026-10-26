@@ -195,13 +195,6 @@ function fallback(text, ok){
     document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); ok();
   }catch(err){ toast("Couldn’t copy on this browser — select the line and copy it."); }
 }
-// 🛠 the Practice Lab's section: today's To-Do, and the way in to the log
-// (not the 📚 Dashboard: its lesson grid is sized to one screen, and anything added above it pushes the lessons out)
-window.ftShadowSection = () => { if(!X.data){ loadTodo(); return ""; } const day = today();
-  return `<section class="fts-group"><h2>👥 Shadowing &amp; the day’s To-Do</h2>
-    <p class="fts-sub">The Hubstaff To-Do for each day in the guide’s wording, ready to copy, and your write-up of each shadowing session — the six sessions on Days ${Object.keys(SHADOW).join(", ")}, in place of the TAM screenshot.</p>
-    ${todoCard(day, true)}</section>`; };
-
 // 🏅 My Performance: the shadowing sessions logged
 window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.logs) return [];
   const days = Object.keys(SHADOW).map(Number).filter(d => Object.keys(((rec.logs || {})[d]) || {}).length);
