@@ -293,10 +293,10 @@ function renderPage(){
   if(lesson) return `<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
-      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
+      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet in today’s day folder in your Assessment and Activities Folder, named by its convention, and submit its link below before the end of your shift. <span class="fp-save" id="fpSave"></span></p></div>
     ${moduleCard(lesson)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
-      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here.</p></div>
+      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in that day's folder in your Assessment and Activities Folder and submitted by its link: its name and its time are checked.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
 }
 

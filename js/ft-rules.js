@@ -62,7 +62,7 @@ const HABITS = [
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
     "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
+    "Update your Training Monitoring Sheet in your Assessment and Activities Folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
           ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your Assessment and Activities Folder, then save its link on the platform: 📒 Monitoring Sheet."]],
@@ -391,9 +391,9 @@ const SLIDES = [
     return `<div class="ftr-flow">${stages.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) goes in that day’s folder in your Assessment and Activities Folder, named by its convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
-      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
+      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in today’s day folder in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
