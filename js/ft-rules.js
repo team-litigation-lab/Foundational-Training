@@ -317,7 +317,7 @@ const SLIDES = [
     rule("🕗 Managing Your Time Is Essential", "If you don’t finish a deliverable by the end of your shift, stop tracking and finish it unpaid, since you didn’t manage your time well. You may keep tracking only if you ask your trainer and they approve it.") +
     rule("🕖 Log In Up to 10 Minutes Early", "You may log in up to 10 minutes before your shift, no earlier. Use it to prepare your tools, and as a buffer for any break beyond your 1-hour total.") +
     rule("☕ Breaks: 1 Hour Total, Maximum", "The prescribed total break during training is 1 hour. How you split it is up to you, as long as you don’t go over 1 hour. Going over is your choice only if you accept not getting 8 hours for your shift, since tracking beyond 5:00 PM isn’t allowed.")],
-  ["auxes", "Auxes: Reporting Your Status", ()=>`
+  ["auxes", "Auxes: Reporting Your Status", ()=>`<div class="ftr-bold">
     <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post the update in both channels during training:</p>
     <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
       <div class="ftr-chan-h">${esc(c.ch)}</div>
@@ -329,7 +329,7 @@ const SLIDES = [
       <div class="ftr-part-h">💬 Your Discord Profile Status</div>
       <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
       <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
-    </div>`],
+    </div></div>`],
   // Camera, then Discord
   ["camera", "Camera: On in Every Meeting", ()=>
     `<div class="ftr-goal"><b>📷 Your Camera Is Part of Showing Up</b><p>Training is a simulation of working with a client, and your trainers are your first clients: in every meeting and classroom discussion, they see you.</p></div>` +
@@ -669,6 +669,8 @@ body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:18px;fon
 body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:16px !important;line-height:1.35 !important;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
+/* a slide whose body text is all bold (Auxes) */
+body.ft-orient #lessonSlideWrap .ftr-bold :is(p, span, li, code, .ftr-when, .ftr-sub){font-weight:700 !important;}
 body.ft-orient #lessonSlideWrap .ftr-adj{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:stretch;}
 body.ft-orient #lessonSlideWrap .ftr-adj .ftr-part{margin:0;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-adj{grid-template-columns:minmax(0,1fr);} }
