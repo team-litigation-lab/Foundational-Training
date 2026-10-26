@@ -5,7 +5,7 @@
    plain JavaScript with no imports so both can load it.
    Add a rule to RULES to extend the daily check; each rule returns
    {pass, pct, detail, flags:[{row, col, msg}]} (or null when it doesn't apply).
-   The trainee's tracker is a Google Sheet in their VA Output folder (js/ft-drive.js): fromSheetCsv turns the
+   The trainee's tracker is a Google Sheet in their Assessment and Activities Folder (js/ft-drive.js): fromSheetCsv turns the
    sheet (its CSV export) into the same workbook, so the same rules check it; gradeMonitorText checks the
    Training Monitoring Sheet's text the same way (rule-based, no AI).
    ============================================================ */
@@ -99,7 +99,7 @@
          : `All ${rows.length} open task${rows.length === 1 ? "" : "s"} have a note for ${fmtDate(D)}.`;
        return {pass: missing.length === 0, pct, detail, flags};
      }},
-    {id: "output-links", label: "The day's output links submitted (VA Output folder)",
+    {id: "output-links", label: "The day's output links submitted (Assessment and Activities Folder)",
      run(t, D){
        if(!t || !t.drive) return null;   // only for a tracker kept in Google Drive (js/ft-drive.js)
        const links = (((t.drive.days || {})[D] || {}).links || []).filter((l) => /^https:\/\/(drive|docs)\.google\.com\//.test(String(l.url || "")));

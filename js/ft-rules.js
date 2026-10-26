@@ -65,7 +65,7 @@ const HABITS = [
     "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your VA Output folder, then save its link on the platform: 📒 Monitoring Sheet."]],
+          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your Assessment and Activities Folder, then save its link on the platform: 📒 Monitoring Sheet."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -243,7 +243,7 @@ function figMonitor(){
   return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
-    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · VA Output folder</text>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · Assessment and Activities Folder</text>
     <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
@@ -261,8 +261,7 @@ const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
   {h:"Make Your Copy and Link It", link:true, steps:[
-    "Copy the Training Monitoring Sheet into your VA Output folder.",
-    "Share it: “Anyone with the link can view.”",
+    "Copy the Training Monitoring Sheet into your Assessment and Activities Folder.",
     "Save its link here, once:"]},
   {h:"Fill It In After Each Discussion", steps:[
     "The discussion and its date.",
@@ -394,7 +393,7 @@ const SLIDES = [
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
-      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your VA Output folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
+      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
@@ -446,15 +445,14 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  // the answer sheets, in the Hubstaff how-tos' way: link the folder once (right here), name each sheet, save it there
-  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Link Your Trainee Folder", steps:["Open your Trainee Folder in Google Drive and copy its link.", "Paste it here and press Save. You do this once."], field:true},
-      {h:"Name Each Answer Sheet", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Type the file name yourself: it’s checked as you type."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
-      {h:"Save It to Your Trainee Folder", steps:["📁 Save to My Trainee Folder opens a new Google Doc in your folder, with the name you typed.", "Your answers are copied: paste them in with Ctrl+V."], tip:"Answer sheets aren’t downloaded: they live in your Trainee Folder."}
+  // the answer sheets, in the Hubstaff how-tos' way: saved in the day's folder, named by the convention, submitted by link on time
+  ["answer-sheets", "Setting Expectations: Submit Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Save It in Today’s Day Folder", steps:["Your Assessment and Activities Folder has a folder for each training day.", "Save each answer sheet in that day’s folder."]},
+      {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "The platform reads your file’s name from Drive and checks it."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
+      {h:"Submit Its Link on Time", steps:["Open the file in Drive and copy its link from the address bar.", "Paste it on the Knowledge Check and submit, before the end of your shift."], tip:"Attention to detail, following instructions and timely submission are all checked."},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.field && !FT_AUDIENCE() && window.FTProcess && FTProcess.folderField ? `<div class="ftr-folder">${FTProcess.folderField()}</div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
@@ -714,7 +712,6 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !i
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
-body.ft-orient #lessonSlideWrap .ftr-folder .fp-folder-row{display:flex;gap:6px;margin-top:6px;} body.ft-orient #lessonSlideWrap .ftr-folder input{flex:1;min-width:0;padding:6px 8px;border:1px solid #C9CFE6;border-radius:8px;font-size:13px;} body.ft-orient #lessonSlideWrap .ftr-folder .kc-folder{display:none;}
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
 body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}

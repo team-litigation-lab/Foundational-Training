@@ -5,10 +5,10 @@
    A lesson's last slide (✓ Finish lesson) routes here, to that lesson's answer sheet, instead of opening a
    Knowledge Check inside the lesson. The graded view (#/kc) belongs to this feature too, not to the modules.
      • Trainees answer each question (saved to process:<id> as they type) and
-       submit the sheet. They save it to their Trainee Folder (no downloads):
-       they type the sheet's file name by its naming convention, and once it's
-       right and their folder link is saved, 📁 Save to My Trainee Folder copies
-       the answers and opens a new Google Doc with that name in the folder.
+       submit the sheet. The answer sheet itself is a file the trainee saves in
+       that day's folder in their Assessment and Activities Folder, named by its
+       convention, and submits by its link: the platform reads the file's name
+       from Drive and checks it, and records whether it came in on time.
      • Admins open the same ✍️ Knowledge Check button and get every trainee's
        sheets: batch → trainee → each answer sheet (submitted or not, how many
        answered, the answers), and the line for the ranking report ("Out of N
@@ -121,26 +121,44 @@ const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
-/* ✍️ Naming practice: the convention is the rule (with "Your First Name" in place of the name), not a name to copy. The
-   trainee types the file name themselves, it's checked as they type, and the sheet's 📁 Save to My Trainee Folder
-   opens once it's right, every day's sheet, so naming files the firm's way becomes a habit. */
-const names = {};
+/* 📄 The answer sheet as a deliverable: the trainee saves it in that day's folder in their Assessment and Activities Folder,
+   named by its convention (the rule, with "Your First Name": not a name to copy), and submits its link here (the folder's
+   sharing is set up in the LSH community, so the trainee doesn't share anything). The platform reads the file's own name from Drive (/api/drive/name), checks it against the
+   convention, and records when it came in against its due time: the end of the day the sheet was given (the day the
+   trainee first opened it). Attention to Detail and Following Instructions (the name), Timely Submission (the time). Kept on
+   the sheet: x.file = {url, name, at, nameOk, onTime}, x.assignedOn, x.fileTries. */
 const normName = t => String(t || "").replace(/[‘’`]/g, "'").replace(/\s+/g, " ").trim();
-const nameOk = set => !state.traineeId || state.isAdmin || normName(names[set.id]) === normName(fileName(set));
-// 📁 Save to My Trainee Folder: the one way an answer sheet leaves the platform (no downloads). It opens once the
-// file name is typed right and the trainee's folder link is saved.
-const canSave = set => nameOk(set) && (!state.traineeId || state.isAdmin || !!FP.data.folder);
-function saveBtn(set, many){
-  const why = !nameOk(set) ? "Type the file name above first" : !canSave(set) ? "Add your Trainee Folder link first" : "Opens a new Google Doc with this name, in your Trainee Folder";
-  return `<button class="btn btn-ghost btn-sm" type="button" data-needs-name="${e(set.id)}"${canSave(set) ? "" : " disabled"} title="${e(why)}" onclick="FTProcess.toDrive('${set.id}')">📁 Save ${many ? e(set.file) + " " : ""}to My Trainee Folder</button>`;
+const ptDay = d => window.FTTrackerRules ? FTTrackerRules.ptDate(d ? new Date(d) : new Date()) : new Date(d || Date.now()).toISOString().slice(0, 10);
+const nameMatches = (set, n) => normName(String(n || "").replace(/\.(docx?|pdf|txt|rtf|odt)$/i, "")) === normName(fileName(set));
+const prettyDay = d => { const t = new Date(d + "T12:00:00Z"); return isNaN(t) ? d : t.toLocaleDateString(undefined, {weekday:"short", month:"short", day:"numeric", timeZone:"UTC"}); };
+const isTraineeHere = () => !!state.traineeId && !state.isAdmin;
+// when the trainee first sees the sheet's submit box, the sheet is theirs to deliver that day
+function assignedOn(set){ const x = sheet(set.id); if(!x.assignedOn && isTraineeHere()){ x.assignedOn = ptDay(); queueSave(); } return x.assignedOn || ptDay(); }
+// the result of a submitted link, for the trainee and the trainer alike
+function fileStatus(set, x){
+  const f = x && x.file; if(!f) return "";
+  return `<span class="fp-pill ${f.nameOk ? "ok" : "bad"}">${f.nameOk ? "✓ Named by the convention" : "✗ Name doesn’t follow the convention"}</span>
+    <span class="fp-pill ${f.onTime ? "ok" : "mid"}">${f.onTime ? "✓ On time" : "⚠ Late"}</span>`;
 }
-function namePractice(set){
-  const ok = nameOk(set), typed = names[set.id] || "";
-  return `<div class="fp-name fp-name-try" data-set="${e(set.id)}"><span>Naming convention</span><code>${e(set.file)} (Your First Name)</code>
-      <label class="fp-name-in">Type your file name <input type="text" spellcheck="false" autocomplete="off" value="${e(typed)}" placeholder="${e(set.file)} (…)" oninput="FTProcess.tryName('${set.id}', this.value)"></label>
-      <b class="fp-name-ok${ok ? " ok" : ""}">${ok && typed ? "✓ Correct" : !typed ? "" : "Not yet: check every space, underscore and capital, and your first name in ( )"}</b></div>`;
+function fileCard(set, many){
+  const x = sheet(set.id), f = x.file, due = assignedOn(set), today = ptDay();
+  return `<div class="fp-file" data-set="${e(set.id)}">
+      ${many ? `<b class="fp-file-h">${e(set.title)}</b>` : ""}
+      <p class="fp-file-rule"><span>Naming convention</span> <code>${e(set.file)} (Your First Name)</code>
+        <span class="fp-muted">${due < today ? `Was due ${e(prettyDay(due))}` : "Due today, by the end of your shift"}</span></p>
+      <div class="fp-folder-row"><input id="fpFile_${e(set.id)}" type="url" placeholder="Your answer sheet’s link: https://docs.google.com/document/d/…" value="${e(f ? f.url : "")}">
+        <button class="btn btn-navy btn-sm" type="button" ${isTraineeHere() ? "" : "disabled title=\"Trainees submit their own answer sheets\""} onclick="FTProcess.submitFile('${set.id}')">${f ? "Submit again" : "Submit link"}</button></div>
+      ${f ? `<p class="fp-file-res">${fileStatus(set, x)} <span class="fp-muted">“${e(f.name)}” · ${e(new Date(f.at).toLocaleString())}</span></p>
+        ${f.nameOk ? "" : `<p class="fp-muted">Rename the file in Drive to the convention, with your first name in ( ), and submit again.</p>`}` : ""}
+    </div>`;
 }
-const folderId = url => { const m = String(url||"").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(url||"").match(/[?&]id=([a-zA-Z0-9_-]{10,})/); return m ? m[1] : ""; };
+function fileSteps(){
+  const folder = FP.driveFolder;
+  return `<ol class="fp-file-steps">
+      <li>Save your answer sheet in <b>today’s day folder</b> in your ${folder ? `<a href="${e(folder)}" target="_blank" rel="noopener noreferrer">📁 Assessment and Activities Folder</a>` : "📁 Assessment and Activities Folder"}.</li>
+      <li>Name it by its naming convention: every space, underscore and capital, and your first name in ( ).</li>
+      <li>Paste its link below and submit, before the end of your shift.</li></ol>`;
+}
 // An admin can reword a question (a typo, a clearer phrasing) without a new deploy: "processq:overrides" holds
 // {[set.id]: {[questionIndex]: "the edited wording"}}, loaded once and read by every question shown, trainee
 // and admin alike (PROCESS_SETS itself — the question bank's own text — never changes at runtime).
@@ -162,7 +180,8 @@ const FP = {id:null, data:null, loading:false, err:"", timer:null, saving:false,
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["process"]);
 async function load(id){
   FP.loading = true; FP.err = ""; FP.id = id;
-  try{ FP.data = (await sharedGet("process:"+id)) || {v:1, sets:{}}; if(!FP.data.sets) FP.data.sets = {}; }
+  try{ FP.data = (await sharedGet("process:"+id)) || {v:1, sets:{}}; if(!FP.data.sets) FP.data.sets = {};
+    const dv = await sharedGet("drive:"+id).catch(() => null); FP.driveFolder = (dv && dv.folder) || ""; }
   catch(err){ FP.err = "Couldn't load your answers. Check your connection and try again."; }
   FP.loading = false;
   // "kc" too: a trainee who opens a Knowledge Check before their answers are in would otherwise
@@ -193,25 +212,6 @@ const moduleStudied = lesson => {
   return !!(p.studied || p.done);
 };
 window.ftModuleStudied = moduleStudied;
-
-// The answers as a document: the same text goes to the clipboard (for a Google Doc) and into the Word file.
-function docHtml(set, x, first){
-  const name = String(state.certName || state.traineeName || first || "");
-  return `<h2>${e(set.title)} — Process Questions</h2><p><b>Name:</b> ${e(name)}<br><b>Date:</b> ${e(new Date().toLocaleDateString())}</p>` +
-    set.questions.map((q,i)=>`<p><b>${i+1}. ${e(qtext(set,i))}</b></p><p>${e(((x||{}).answers||[])[i]||"").replace(/\n/g, "<br>")}</p>`).join("");
-}
-function docText(set, x){
-  return `${set.title} — Process Questions\n\n` + set.questions.map((q,i)=>`${i+1}. ${qtext(set,i)}\n${((x||{}).answers||[])[i]||""}\n`).join("\n");
-}
-async function copyRich(html, text){
-  try{
-    if(navigator.clipboard && window.ClipboardItem && window.isSecureContext){
-      await navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([html], {type:"text/html"}), "text/plain": new Blob([text], {type:"text/plain"})})]);
-      return true;
-    }
-  }catch(err){}
-  try{ await navigator.clipboard.writeText(text); return true; }catch(err){ return false; }
-}
 
 // A module's locked note — shown both on its own page and as its row in the index, before it's studied.
 function lockedCard(title){
@@ -245,16 +245,14 @@ function moduleCard(lesson){
   return `<div class="card fp-set">
     <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${qs.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Best ${best}%</span>` : ""}</div>
     <div class="fp-body">
-      ${sets.map(namePractice).join("")}
       ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
       <div class="fp-actions">
         ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>` : ""}
-        ${sets.map(set => saveBtn(set, sets.length > 1)).join("")}
-        ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}
       </div>
       ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Your answers here save as you type, and you submit them all together for grading then.</p>`}
-    </div></div>`;
+    </div></div>
+    ${kcSave(qs)}`;
 }
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
 // questions inline, so every module's answer sheet is its own page instead of all of them stacked on one.
@@ -285,11 +283,6 @@ function renderPage(){
   loadReview();
   if(FP.err) return `<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `<div class="card" style="padding:28px;">Loading your answers…</div>`;
-  const folderCard = `<div class="card fp-folder">
-      <label for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
-      <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>
-    </div>`;
   // Each module is its own page (goto('process', lessonId), FTProcess.openLesson): a lesson's own
   // ✓ Finish lesson lands here directly, not on a long page of every module's questions stacked together.
   const lesson = state.pqLesson && kcQuestionsFor(state.pqLesson).length ? state.pqLesson : null;
@@ -301,11 +294,9 @@ function renderPage(){
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. <span class="fp-save" id="fpSave"></span></p></div>
-    ${folderCard}
     ${moduleCard(lesson)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here.</p></div>
-    ${folderCard}
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
 }
 
@@ -336,43 +327,22 @@ window.FTProcess = {
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
-  // the naming practice: checked as it's typed; the sheet's Save opens once the name is right
-  tryName(sid, v){
-    const set = PROCESS_SETS.find(s=>s.id===sid); if(!set) return;
-    names[sid] = v; const ok = nameOk(set);
-    document.querySelectorAll(`.fp-name-try[data-set="${sid}"]`).forEach(box=>{
-      const b = box.querySelector(".fp-name-ok"); b.classList.toggle("ok", ok);
-      b.textContent = ok && v ? "✓ Correct" : !v.trim() ? "" : "Not yet: check every space, underscore and capital, and your first name in ( )";
-      const i = box.querySelector("input"); if(i && i.value !== v) i.value = v;
-    });
-    document.querySelectorAll(`[data-needs-name="${sid}"]`).forEach(b=>{ b.disabled = !canSave(set); b.title = !ok ? "Type the file name above first" : !canSave(set) ? "Add your Trainee Folder link first" : "Opens a new Google Doc with this name, in your Trainee Folder"; });
-  },
-  // Copies the answers, then opens a new Google Doc with the proper name (in the trainee folder if it's saved).
-  async toDrive(sid){
-    if(!nameOk(PROCESS_SETS.find(s=>s.id===sid) || {})){ toast("Type the file name first, the way the convention says."); return; }
-    if(!canSave(PROCESS_SETS.find(s=>s.id===sid) || {})){ toast("Add your Trainee Folder link first: answer sheets are saved there."); return; }
-    const set = PROCESS_SETS.find(s=>s.id===sid), x = sheet(sid);
-    const tab = window.open("about:blank", "_blank");
-    const ok = await copyRich(docHtml(set, x), docText(set, x));
-    const q = new URLSearchParams({title: fileName(set)}); const f = folderId(FP.data.folder); if(f) q.set("folder", f);
-    const url = "https://docs.google.com/document/create?" + q;
-    if(tab) tab.location.href = url; else window.open(url, "_blank");
-    toast(ok ? "Your answers are copied. Paste them into the new Google Doc with Ctrl+V." : "The Google Doc is open. Copy your answers from here and paste them in.");
-  },
-
-  saveFolder(){
-    const v = String((document.getElementById("fpFolder")||{}).value || "").trim();
-    if(v && !/^https:\/\/drive\.google\.com\//.test(v)){ toast("Paste your trainee folder’s Google Drive link (it starts with https://drive.google.com/)."); return; }
-    FP.data.folder = v; queueSave(); toast(v ? "Trainee folder saved." : "Trainee folder removed."); render();
+  // 📄 the answer sheet's link: the file's name read from Drive and checked, and the time it came in
+  async submitFile(sid){
+    const set = PROCESS_SETS.find(s=>s.id===sid); if(!set || !isTraineeHere()) return;
+    const url = String((document.getElementById("fpFile_" + sid) || {}).value || "").trim();
+    if(!/^https:\/\/(docs|drive)\.google\.com\//.test(url)){ toast("Paste your answer sheet’s Google Drive link (it starts with https://docs.google.com/ or https://drive.google.com/)."); return; }
+    let j = {};
+    try{ const r = await authFetch("/api/drive/name", {url}); j = await r.json().catch(() => ({})); }catch(err){ toast("Couldn’t reach the platform. Check your connection and try again."); return; }
+    if(j.error === "not-shared"){ toast("The platform can’t open this file. Check that it’s your answer sheet in your Assessment and Activities Folder, copy its link again and submit."); return; }
+    if(j.error || !j.name){ toast("That link doesn’t open a file. Open your answer sheet in Drive and copy the link from the address bar."); return; }
+    const x = sheet(sid), at = new Date().toISOString();
+    x.file = {url, name: j.name, at, nameOk: nameMatches(set, j.name), onTime: ptDay(at) <= assignedOn(set)};
+    x.fileTries = (x.fileTries || 0) + 1; if(!x.fileFirstAt) x.fileFirstAt = at;
+    queueSave(); render();
+    toast(x.file.nameOk ? "✓ Answer sheet submitted." : `Submitted, but “${j.name}” doesn’t follow the naming convention. Rename it and submit again.`);
   },
   reload(){ FP.id = null; FP.err = ""; render(); },
-  // the folder link, on the orientation's Save Your Answer Sheets slide (js/ft-rules.js)
-  folderField(){
-    if(!state.traineeId || state.isAdmin) return `<p class="fp-muted">Each trainee pastes their Trainee Folder’s Google Drive link here.</p>`;
-    if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
-    if(!FP.data || FP.id !== state.traineeId) return `<p class="fp-muted">Loading…</p>`;
-    return folderField() + (FP.data.folder ? `<p class="fp-muted">✓ Linked. <a href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a></p>` : "");
-  }
 };
 
 /* ---------- a lesson's Knowledge Check questions ---------- */
@@ -431,7 +401,7 @@ function renderAdminProcess(){
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
             ${kcAdmin(x)}
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
-              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span></div>
+              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>${a && a.file ? ` ${fileStatus(s, a)} <a href="${e(a.file.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(a.file.name)}” ↗</a>${a.fileTries > 1 ? ` <span class="fp-muted">(${a.fileTries} submissions)</span>` : ""}` : ` <span class="fp-pill bad">No file submitted</span>`}</div>
                 ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has started the Process Questions yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTProcessAdmin.refresh()">Refresh</button></div></div>`;
@@ -611,21 +581,12 @@ function renderKc(){
     </div>
     ${kcSave(qs)}`;
 }
-// 📁 My Trainee Folder: its Google Drive link, set once (the orientation's Save Your Answer Sheets slide, or here until
-// it's set), so each new answer sheet opens in it
-function folderField(){
-  return `<label class="kc-folder" for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
-    <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
-      <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>`;
-}
-// Saving the lesson's answer sheet with its proper name (to Google Drive or as a Word file), on the Knowledge Check page.
+// 📄 Submitting the lesson's answer sheet: saved in the day's folder, named by its convention, delivered by its link
 function kcSave(qs){
   const sets = [...new Set(qs.map(x=>x.set))];
-  return `<div class="card kc-card kc-save"><h3>📄 Save your answer sheet</h3>
-    ${sets.map(set=>`${namePractice(set)}
-      <div class="fp-actions">${saveBtn(set, false)}
-        ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}</div>`).join("")}
-    ${FP.data.folder ? "" : folderField()}
+  return `<div class="card kc-card kc-save"><h3>📄 Submit your answer sheet</h3>
+    ${fileSteps()}
+    ${sets.map(set => fileCard(set, sets.length > 1)).join("")}
   </div>`;
 }
 window.FTKc = {
@@ -752,14 +713,12 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-count{font-size:13px;color:var(--ink-soft);}
 .fp-st{font-size:12.5px;border-radius:999px;padding:3px 10px;} .fp-st.st-none{background:var(--bg);color:var(--ink-soft);} .fp-st.st-part{background:#FEF7C3;color:#7a5d00;} .fp-st.st-done{background:var(--success-bg);color:var(--success);}
 .fp-body{border-top:1px solid var(--line);padding:12px 16px 16px;}
-.fp-name{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:14px;}
-.fp-name span{font-weight:800;color:var(--orange-deep);}
-.fp-name-try{gap:8px 14px;}
-.fp-name-try .fp-name-in{display:flex;align-items:center;gap:8px;flex:1 1 100%;font-weight:700;color:#3B2A1A;}
-.fp-name-try .fp-name-in input{flex:1;min-width:0;font:600 14px 'IBM Plex Mono',ui-monospace,monospace;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;}
-.fp-name-try .fp-name-ok{flex-basis:100%;font-size:13px;color:#9A4A12;font-weight:700;}
-.fp-name-try .fp-name-ok:empty{display:none;}
-.fp-name-try .fp-name-ok.ok{color:#1E7A46;} .fp-name code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere;}
+.fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
+.fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
+.fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}
+.fp-file-rule{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:0 0 8px;} .fp-file-rule > span:first-child{font-weight:800;color:var(--orange-deep);}
+.fp-file-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;}
+.fp-file-res{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:8px 0 0;} .fp-file .fp-muted{margin:6px 0 0;}
 .fp-sheet-h{margin:18px 0 4px;padding:8px 14px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;border-radius:8px;font:800 16px/1.3 'Poppins','Inter',sans-serif;}
 .fp-sheet-h:first-child{margin-top:0;} .fp-sheet-h span{margin-left:8px;font:600 12.5px 'Inter',sans-serif;color:#C9CFE6;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}

@@ -1,8 +1,8 @@
 /* ============================================================
    📁 The Daily Task Tracker and the Training Monitoring Sheet live in the trainee's Google Drive
    Loaded after js/ft-tracker.js and js/ft-monitoring.js, whose trainee pages it replaces (their admin tabs stay).
-   Trainees keep both files in their VA Output folder, not on the platform: they save the links once (📁 My Drive
-   links: the VA Output folder, the Task Tracker sheet, the Monitoring Sheet), and each training day they add the
+   Trainees keep both files in their Assessment and Activities Folder, not on the platform: they save the links once (📁 My Drive
+   links: the Assessment and Activities Folder, the Task Tracker sheet, the Monitoring Sheet), and each training day they add the
    links to that day's outputs. Saved in drive:<id> = {folder, tracker, monitor, startDate, days: {<date>: {links:
    [{label, url}], submittedAt}}}, the trainee's own.
    Graded automatically: the Worker reads the files (shared "Anyone with the link can view"), checks the tracker
@@ -49,23 +49,10 @@ const day = () => D.day || today();
 const dayLinks = d => ((D.drive.days[d] || {}).links || []);
 
 /* ---------- the pages ---------- */
-// The templates a trainee starts from (Office files in the trainer's Drive): ⬇ downloads the file, ↗ opens it in Google.
-const driveId = u => (String(u || "").match(/\/d\/([a-zA-Z0-9_-]{20,})/) || [])[1] || "";
-const download = u => driveId(u) ? `https://drive.google.com/uc?export=download&id=${driveId(u)}` : u;
-const TEMPLATES = () => [
-  ["📋", "Daily Task Tracker", window.FT_TRACKER_TEMPLATE || "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit"],
-  ["📒", "Training Monitoring Sheet", (window.FT_MONITOR_DOC || {}).open || ""]].filter(t => t[2]);
-// The steps from the templates to the automated check, above the links (the 📁 Link window and the Task Tracker page)
+// The steps to the automated check (the tracker and the Monitoring Sheet were copied in orientation: no templates here), above the links (the 📁 Link window and the Task Tracker page)
 function stepsHtml(auto = true){
   return `<ol class="fdr-steps">
-      <li><b>Download the templates.</b>
-        <span class="fdr-tpls">${TEMPLATES().map(([i, n, u]) => `<span class="fdr-tpl">${i} ${n}
-          <a class="btn btn-navy btn-sm" href="${e(download(u))}" target="_blank" rel="noopener noreferrer">⬇ Download</a>
-          <a class="btn btn-ghost btn-sm" href="${e(u)}" target="_blank" rel="noopener noreferrer">Open ↗</a></span>`).join("")}</span></li>
-      <li><b>Save them in your VA Output folder in Google Drive, as Google files.</b> Upload both to the folder, open each one and choose
-        <b>File → Save as Google Sheets</b> (the tracker) or <b>File → Save as Google Docs</b> (the Monitoring Sheet). Put your name in each file’s name.</li>
-      <li><b>Share the folder and both files:</b> Share → General access → <b>Anyone with the link</b> → Viewer.</li>
-      <li><b>Paste the links below and save.</b> Your VA Output folder, then each file (open it and copy the link from the address bar).</li></ol>
+      <li><b>Paste the links below and save.</b> Your Assessment and Activities Folder, then each file (open it and copy the link from the address bar).</li></ol>
     ${auto ? `<div class="fdr-auto">🤖 <b>Automated monitoring.</b> Automatically at the end of every shift, the system opens your tracker and Monitoring
       Sheet from your Drive: it checks every day’s Daily Notes and output links and every discussion’s Monitoring entry, and an AI review sums up
       your progress. You see the results on 📚 Dashboard; your trainer sees them too, and adds their score and comments.</div>` : ""}`;
@@ -75,9 +62,9 @@ function linksCard(auto = true){
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
       ${hint ? `<small>${hint}</small>` : ""}</label>`;
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
-    <p class="fdr-muted">Your Task Tracker and Monitoring Sheet live in your <b>VA Output folder</b> in Google Drive, where the system checks them for you.</p>
+    <p class="fdr-muted">Your Task Tracker and Monitoring Sheet live in your <b>Assessment and Activities Folder</b> in Google Drive, where the system checks them for you.</p>
     ${stepsHtml(auto)}
-    ${row("folder", "📁 VA Output folder (the Drive folder with your tracker and Monitoring Sheet)", "https://drive.google.com/drive/folders/…", "")}
+    ${row("folder", "📁 Assessment and Activities Folder (where you save each day’s outputs, in its day folder)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Your own copy of the tracker. Link the Daily Task Tracker tab.")}
     ${row("monitor", "📒 Training Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion: the date, 5 takeaways, 3 questions, and your rating.")}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
@@ -95,12 +82,12 @@ function renderTrackerPage(){
   const d = day(), links = dayLinks(d), res = D.review.days[d];
   const days = [...new Set([today()].concat(Object.keys(D.drive.days), Object.keys(D.review.days)))].sort().reverse().slice(0, 15);
   return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Task Tracker</p><h1>📋 Daily Task Tracker</h1>
-      <p>Keep your LSH Daily Task Tracker in your VA Output folder and update it before the end of every shift. Each day, add the links to that day’s outputs. The system checks your tracker automatically at the end of every shift: every open task needs its Daily Note for the day, and the day needs its output links. Your trainer adds their score and comments.</p></div>
+      <p>Keep your LSH Daily Task Tracker in your Assessment and Activities Folder and update it before the end of every shift. Each day, add the links to that day’s outputs. The system checks your tracker automatically at the end of every shift: every open task needs its Daily Note for the day, and the day needs its output links. Your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>🗓 ${e(TR.fmtDate(d))}</h2>
         <select onchange="FTDrive.day(this.value)">${days.map(x => `<option value="${x}" ${x === d ? "selected" : ""}>${TR.fmtDate(x)}${x === today() ? " (today)" : ""}</option>`).join("")}</select></div>
       <h3>🔗 The day’s output links</h3>
-      <p class="fdr-muted">The files you made or updated today, from your VA Output folder (typing and spelling test screenshots, documents, recordings …).</p>
+      <p class="fdr-muted">The files you made or updated today, from your Assessment and Activities Folder (typing and spelling test screenshots, documents, recordings …).</p>
       <div id="fdrLinks">${(links.length ? links : [{label:"", url:""}]).map((l, i) => linkRow(l, i)).join("")}</div>
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.addLink()">＋ Another link</button>
         <button class="btn btn-navy btn-sm" onclick="FTDrive.saveDay()">📤 Submit the day’s links</button></div>
@@ -115,8 +102,7 @@ function renderMonitorPage(){
   if(!ready()) return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`;
   const m = D.review.monitor;
   return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Monitoring Sheet</p><h1>📒 Training Monitoring Sheet</h1>
-      <p>Fill in your Training Monitoring Sheet in your VA Output folder as soon as a discussion is fully covered: the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it automatically at the end of every shift; your trainer adds their score and comments.</p>
-      <p><a class="btn btn-ghost btn-sm" href="${e((window.FT_MONITOR_DOC || {}).open || "#")}" target="_blank" rel="noopener noreferrer">📄 The Monitoring Sheet template ↗</a></p></div>
+      <p>Fill in your Training Monitoring Sheet in your Assessment and Activities Folder as soon as a discussion is fully covered: the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it automatically at the end of every shift; your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>📊 The check</h2></div>
       ${!m ? `<p class="fdr-muted">Not checked yet.</p>` : m.error ? `<p class="fdr-err">⚠ ${e(m.error)}</p>` : `
@@ -141,7 +127,7 @@ function paintLinkModal(){
         from your Drive automatically at the end of every shift, nothing to press: it checks every day’s Daily Notes and output links and every
         discussion’s Monitoring entry, and an AI review sums up your progress. Your results show on 📚 Dashboard and on 📋 Task Tracker /
         📒 Monitoring Sheet; your trainer sees them too, and adds their score and comments.
-        <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} VA Output folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p></div>
+        <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} Assessment and Activities Folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p></div>
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
 }
 
@@ -173,7 +159,7 @@ window.FTDrive = {
   async saveDay(){
     if(previewOnly()) return;
     const links = [...document.querySelectorAll("#fdrLinks .fdr-link")].map(r => ({label:r.querySelector(".fdr-label").value.trim(), url:r.querySelector(".fdr-url").value.trim()})).filter(l => l.url);
-    if(links.some(l => !isGoogle(l.url))){ toast("Each output link must be a Google Drive link from your VA Output folder."); return; }
+    if(links.some(l => !isGoogle(l.url))){ toast("Each output link must be a Google Drive link from your Assessment and Activities Folder."); return; }
     if(!links.length){ toast("Add at least one link to the day’s outputs."); return; }
     const d = day(); D.drive.days[d] = {links, submittedAt:new Date().toISOString()};
     toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ The day’s links are submitted."); render();
@@ -244,7 +230,7 @@ function renderAdminDrive(){
   if(!DA.rows){ if(!DA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the trainees’ Drive links…</div>`; }
   const batches = [...new Set(DA.rows.map(r => r.batch).filter(Boolean))].sort(), rows = DA.rows.filter(r => !DA.batch || r.batch === DA.batch);
   const lk = (u, t) => u ? `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${t} ↗</a>` : `<span class="fdr-muted">${t}: —</span>`;
-  return `<div class="card fss-admin"><div class="ff-bar"><div><h3>📁 Drive Trackers</h3><p class="fdr-muted">Each trainee’s Task Tracker and Monitoring Sheet, kept in their VA Output folder: the links, the automated checks (automatically at the end of every shift, or ✅ Check now) and your score and comment for each day and for the Monitoring Sheet.</p></div>
+  return `<div class="card fss-admin"><div class="ff-bar"><div><h3>📁 Drive Trackers</h3><p class="fdr-muted">Each trainee’s Task Tracker and Monitoring Sheet, kept in their Assessment and Activities Folder: the links, the automated checks (automatically at the end of every shift, or ✅ Check now) and your score and comment for each day and for the Monitoring Sheet.</p></div>
       <span><select onchange="FTDriveAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === DA.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select><button class="btn btn-ghost btn-sm" onclick="FTDriveAdmin.refresh()">↻</button></span></div>
     ${rows.length ? rows.map(r => { const dv = r.drive || {}, t = (r.rv.days || {})[today()], m = r.rv.monitor, open = !!DA.open[r.id];
       const days = [...new Set(Object.keys(dv.days || {}).concat(Object.keys(r.rv.days || {})))].sort().reverse().slice(0, 10);
@@ -252,7 +238,7 @@ function renderAdminDrive(){
           ${t ? `<span class="fss-pill ${t.pct >= 100 ? "ok" : "mid"}">📋 today ${t.pct}%</span>` : `<span class="fss-pill">📋 today —</span>`}
           ${m && !m.error ? `<span class="fss-pill">📒 ${m.found}/${m.total} · ${m.pct}%</span>` : m && m.error ? `<span class="fss-pill mid">📒 can’t read</span>` : ""}
           ${!dv.tracker && !dv.monitor ? `<span class="fss-pill mid">no links yet</span>` : ""}</div>
-        ${open ? `<div class="fss-abody"><p class="fdr-links">${lk(dv.folder, "📁 VA Output folder")} · ${lk(dv.tracker, "📋 Task Tracker")} · ${lk(dv.monitor, "📒 Monitoring Sheet")}
+        ${open ? `<div class="fss-abody"><p class="fdr-links">${lk(dv.folder, "📁 Assessment and Activities Folder")} · ${lk(dv.tracker, "📋 Task Tracker")} · ${lk(dv.monitor, "📒 Monitoring Sheet")}
             <button class="btn btn-ghost btn-sm" ${DA.busy[r.id] ? "disabled" : ""} onclick="FTDriveAdmin.check('${e(r.id)}')">${DA.busy[r.id] ? "Checking…" : "✅ Check now"}</button></p>
           <h4>📋 Task Tracker, by day</h4>${days.length ? days.map(d => { const res = (r.rv.days || {})[d], ls = ((dv.days || {})[d] || {}).links || [];
             return `<div class="fdr-aday"><b>${TR.fmtDate(d)}</b> ${ls.map(l => `<a href="${e(l.url)}" target="_blank" rel="noopener noreferrer">${e(l.label || "output")} ↗</a>`).join(" · ") || `<span class="fdr-muted">no output links</span>`}

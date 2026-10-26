@@ -269,7 +269,7 @@ async function traineeWrite(env, tok, key, value) {
     await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `drive:${id}`) {
-    // The trainee's Google Drive links (js/ft-drive.js): their VA Output folder, Task Tracker sheet, Monitoring Sheet
+    // The trainee's Google Drive links (js/ft-drive.js): their Assessment and Activities Folder, Task Tracker sheet, Monitoring Sheet
     // and each day's output links. The checks and the trainer's scores are in trackerreview:<id> (Worker and admins).
     if (value.length > 200000) return "The links are too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
@@ -625,7 +625,24 @@ async function fetchGoogle(url) {
   if (!res.ok || /^\s*<(!doctype|html)/i.test(text.slice(0, 200))) throw new Error("not-shared");
   return text;
 }
-const DRIVE_UNREADABLE = "The system can't open this file. In Google Drive, share it as “Anyone with the link can view”, and check that the link is the file's own link.";
+// A Google Docs / Sheets / Drive file's name, from its page (the file shared "Anyone with the link can view"); a file that isn't
+// shared sends the browser to Google's sign-in, so there is no name to read
+async function googleFileName(url) {
+  const u = String(url || "").trim(), id = (u.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || u.match(/[?&]id=([a-zA-Z0-9_-]{20,})/) || [])[1] || "";
+  if (!id || !/^https:\/\/(docs|drive)\.google\.com\//.test(u)) return { error: "link" };
+  const page = /docs\.google\.com\/(document|spreadsheets|presentation)\//.test(u) ? u.replace(/[?#].*$/, "") : `https://drive.google.com/file/d/${id}/view`;
+  const res = await fetch(page, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
+  if (/accounts\.google\.com/.test(res.url) || res.status === 401 || res.status === 403) return { error: "not-shared" };
+  if (!res.ok) return { error: "not-found" };
+  const html = await res.text();
+  const dec = t => t.replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+  const og = (html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]*)"/i) || [])[1];
+  const title = (html.match(/<title>([^<]*)<\/title>/i) || [])[1];
+  const name = og ? dec(og) : title ? dec(title).replace(/\s+-\s+Google (Docs|Sheets|Slides|Drive)\s*$/i, "") : "";
+  if (!name || /^(sign[- ]in|google (docs|drive|sheets))$/i.test(name)) return { error: "not-shared" };
+  return { name, id };
+}
+const DRIVE_UNREADABLE = "The system can't open this file. Check that the link is the file's own link (open the file and copy it from the address bar), from your Assessment and Activities Folder.";
 async function checkDrive(env, id, D, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
@@ -975,6 +992,12 @@ export default {
         if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
         if (tok.role !== "a") { const cur = JSON.parse((await kv.get(`trackerreview:${id}`)) || "{}"); cur.selfCheckAt = new Date().toISOString(); await kv.put(`trackerreview:${id}`, JSON.stringify(cur)); }
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
+      }
+
+      /* ---------- an answer sheet saved in the trainee's Drive: the file's name, read from its link (js/ft-process.js) ---------- */
+      if (path === "/api/drive/name") {
+        const b = await request.json().catch(() => ({}));
+        try { return json(await googleFileName(b.url)); } catch (e) { return json({ error: "unreadable" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
