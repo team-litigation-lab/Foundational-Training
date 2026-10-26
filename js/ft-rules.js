@@ -425,13 +425,13 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
 // One slide on one sheet, the way the Case Management course fits its slides (fitSlideZoom there): the sheet's content
 // is scaled down until it fits, to half size at the smallest, and only a slide that would have to shrink further is
 // split into pages by the engine. It also sets the progress line under the lesson's title (--ftr-prog).
-// The orientation's last slide goes on to 🧰 Know Your Tools (it has no Activity deck): its 📋 Classroom Activity button
-// and the banner under it say so (js/ft-day-decks.js sends the button there).
+// The orientation's last slide goes on to 🧰 Know Your Tools (it has no Activity deck), then the Reading Task: its
+// 📋 Classroom Activity button and the banner under it say so (js/ft-day-decks.js sends the button there).
 function orientLastStep(){
   const b = document.querySelector('.slide-nav button[onclick^="goToKnowledgeCheckWithInterstitial"]');
   if(b){ b.textContent = "🧰 Next: Know Your Tools →"; b.title = "The orientation is done: go on to Know Your Tools"; }
   const n = document.querySelector(".slide-done-banner");
-  if(n) n.textContent = "🎉 That’s the whole orientation. Next: 🧰 Know Your Tools, the tools you’ll use in this training.";
+  if(n) n.textContent = "🎉 That’s the whole orientation. Next: 🧰 Know Your Tools, then the Reading Task, What Is Personal Injury?";
 }
 function fitOrient(w){
   try{

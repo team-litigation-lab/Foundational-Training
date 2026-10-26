@@ -25,7 +25,8 @@
 const PROCESS_SETS = [
   // Day 1's Reading Task (the Personal Injury overview, read on the Activity deck): its questions are answered here, with
   // Lesson 1's Knowledge Check, not in the training GC
-  {id:"pi-overview", lesson:1, title:"Reading Task: Personal Injury Overview", file:"PI Overview_Answers", questions:[
+  // (open: answered before the module is finished, straight after the orientation; graded with the module's others)
+  {id:"pi-overview", lesson:1, open:true, title:"Reading Task: Personal Injury Overview", file:"PI Overview_Answers", questions:[
     "What is personal injury and what are its types?",
     "Can you enumerate the stages of a personal injury claim on your own understanding?",
     "How much is the common compensation for a personal injury claim?",
@@ -203,10 +204,12 @@ function lockedCard(title){
 // A module's own page: its questions, its own Knowledge Check. Each module has its own PROCESS_SETS entry,
 // so "sets" is always one — the map()s below are left in place in case a future set ever spans two modules.
 function moduleCard(lesson){
-  const qs = kcQuestionsFor(lesson);
-  if(!qs.length) return "";
+  const all = kcQuestionsFor(lesson);
+  if(!all.length) return "";
+  // before the module is finished, only its open sets (Day 1's Reading Task) can be answered; they're graded with the rest
+  const studied = moduleStudied(lesson), qs = studied ? all : all.filter(x => x.set.open);
   const title = ftName(lesson), sets = [...new Set(qs.map(x => x.set))];
-  if(!moduleStudied(lesson)) return lockedCard(title);
+  if(!qs.length) return lockedCard(title);
   const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
   const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
@@ -218,11 +221,12 @@ function moduleCard(lesson){
       <ol class="fp-qs">${qs.map(x => `<li><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`).join("")}</ol>
       <div class="fp-actions">
-        <button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>
+        ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>` : ""}
         ${sets.map(set => `<button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.toDrive('${set.id}')">📄 Save to My Google Drive</button>
         <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.word('${set.id}')">⬇ Download as Word</button>`).join("")}
         ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}
       </div>
+      ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Your answers here save as you type, and you submit them all together for grading then.</p>`}
       <p class="fp-muted">These are this module's <b>Knowledge Check</b>: <b>📝 Submit for Grading</b> scores each answer out of 10 in your facilitator's own feedback style (${KC_PASS}% passes the module), and your trainer adds their review on top.</p>
       ${sets.length > 1 ? `<p class="fp-muted">The answers belong to ${sets.length} answer sheets; each has its own file name above.</p>` : ""}
     </div></div>`;
@@ -230,10 +234,11 @@ function moduleCard(lesson){
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
 // questions inline, so every module's answer sheet is its own page instead of all of them stacked on one.
 function moduleRow(lesson){
-  const qs = kcQuestionsFor(lesson);
-  if(!qs.length) return "";
+  const all = kcQuestionsFor(lesson);
+  if(!all.length) return "";
+  const qs = moduleStudied(lesson) ? all : all.filter(x => x.set.open);
   const title = ftName(lesson);
-  if(!moduleStudied(lesson)) return lockedCard(title);
+  if(!qs.length) return lockedCard(title);
   const done = qs.filter(x => has(((FP.data.sets[x.set.id] || {}).answers || [])[x.i])).length;
   const best = kcBest(lesson), prog = (state.progress || {})[lesson] || {};
   const st = prog.done ? {k:"done", t:"Passed"} : done === qs.length ? {k:"part", t:"Ready to submit"} : done ? {k:"part", t:"In progress"} : {k:"none", t:"Not started"};
