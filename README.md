@@ -206,7 +206,7 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   7. Auxes: the commands in #⏳-timestamps and #trainingchannel, no double stamping, the Discord profile status.
   8. Camera: on in every meeting and classroom discussion, with the rules for your demeanor, outfit and framing (`CAMERA`).
   9. Discord: mindfulness and response rates (reply within 5 minutes, acknowledge every instruction, meetings are posted on their day).
-  10. Your Training Matrix: the matrix embedded on the left, its cover picture on the right (`TRAINING_MATRIX_IMG`, once it is in the repository).
+  10. Your Training Matrix: the training flow as cards, one per day (Day 1 → Day 16), each with the day's role and its main activities, from the day map (`js/ft-day-activities.js`); the tests and the upskill that run every day are said once above them.
   11. Your 4 daily deliverables: the typing and spelling tests, with the links to the sites the training uses (`TESTS`: TypingClub or TypingTest.com, SpellQuiz or Spelling-Test.com) and the screenshot's file name, the Daily Task Tracker, the Training Monitoring Sheet and the EOD email.
   12. Building your habits: Update Your Trackers.
   13–14. The Daily Task Tracker: the sheet (two columns), the other tabs and the daily check, in high-contrast tables.

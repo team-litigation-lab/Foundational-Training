@@ -69,8 +69,6 @@ const HABITS = [
    }
 ];
 // The EOD email (Setting of Expectations).
-// The Training Matrix's cover picture, shown beside the embedded matrix (null until the picture is in the repository)
-const TRAINING_MATRIX_IMG = null;
 const EOD = {
   subject:"Daily Report mm/dd/yy", subjectAlt:"EOD Report mm/dd/yy",
   parts:[["Accomplishments/Completed Tasks:", "All the tasks you accomplished and completed for the day.", 4],
@@ -340,11 +338,16 @@ const SLIDES = [
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
   // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
-  // (TRAINING_MATRIX_IMG, the picture in the document) on the right
-  ["matrix", "Your Training Matrix", ()=>`
-    <p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email.</p>
-    <div class="ftr-matrix"><div class="ftr-keep ftr-matrix-full"><div class="ftr-embed"><iframe src="${esc(drivePreview(HABITS[0].matrix.url))}" title="Training Matrix" loading="lazy" allow="fullscreen" allowfullscreen></iframe></div></div>
-      ${TRAINING_MATRIX_IMG ? `<figure class="ftr-matrix-img"><img src="${esc(TRAINING_MATRIX_IMG)}" alt="Virtual Assistant Training Matrix"></figure>` : ""}</div>`],
+  ["matrix", "Your Training Matrix", ()=>{
+    // the training's flow, one card per day, from the day map (js/ft-day-activities.js): the day's role and its main
+    // activities (the typing and spelling tests and the upskill run every day, so they're said once, not on each card)
+    const days = (window.FTDays && FTDays.DAYS) || [];
+    const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
+    const card = d=>{ const items = (d.items || []).filter(x=>!skip.has(x.kind)).slice(0, 3);
+      return `<div class="ftr-flow-card"><div class="ftr-flow-n">Day ${d.day}</div><b>${esc(d.role)}</b>
+        <ul>${items.map(x=>`<li>${esc(String(x.t).replace(/\s*\([^)]*\)\s*$/, ""))}</li>`).join("")}</ul></div>`; };
+    return `<p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email. Every day also has your typing and spelling tests and your free upskill.</p>
+    <div class="ftr-flow">${days.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
@@ -648,6 +651,15 @@ body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 /* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
+body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 22px;counter-reset:none;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card{position:relative;background:#1E2340;color:#fff;border-radius:12px;border-top:4px solid #E8590C;padding:10px 12px 8px;box-shadow:0 4px 12px rgba(30,35,64,.18);}
+body.ft-orient #lessonSlideWrap .ftr-flow-card:not(:nth-child(4n)):not(:last-child)::after{content:"→";position:absolute;right:-18px;top:50%;transform:translateY(-50%);color:#E8590C;font:900 16px/1 'Inter',sans-serif;}
+body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;font:800 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:4px 9px;margin-bottom:6px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 15px/1.25 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:16px;font-size:12.5px;line-height:1.35;color:#E6E8F2;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:12.5px !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
 body.ft-orient #lessonSlideWrap .ftr-matrix .ftr-embed{height:max(360px, calc(100vh - 380px)) !important;margin-top:0;}   /* the document fills the slide (no Open or Download bar) */
