@@ -372,53 +372,13 @@ const SLIDES = [
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
+    <p class="ftr-sub">Every training day, these four are yours to deliver. Your EOD email, your tracker and your Monitoring Sheet each have their own slides near the end (Building Your Habits); the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
       <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
-  // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
-  // Sheet (before its own)
-  ["habits-trackers", "Building Your Habits: Update Your Task Tracker", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
-  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
-    <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
-    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
-    <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
-  ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
-    <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
-    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
-  ["habits-monitoring", "Building Your Habits: Update Your Monitoring Sheet", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
-  // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
-  // the copy; the 📁 link is the last slide), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
-  ["monitoring", "Your Training Progress Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Progress Monitoring Sheet</button></div>` : ""}
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>`],
-  // the sheet with numbered arrows, and beside it what goes at each number
-  ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
-    <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
-      ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
-      ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
-      ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><div><b>${esc(h)}</b><span>${esc(t)}</span></div></li>`).join("")}</ol></div>`],
-  ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
-  ["eod", "Your EOD Email: The Template", ()=>`
-    <div class="ftr-part ftr-eod">
-      <div class="ftr-part-h">📧 Your EOD Email</div>
-      ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
-      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0]).replace(/\//g, "/<wbr>")}</b><span>${esc(p[1])}</span></div>`).join("")}
-      <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
-    </div>
-    <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
   // Setting of expectations
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
@@ -450,7 +410,47 @@ const SLIDES = [
   ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
     <div class="ftr-why"><b>Why It Matters:</b> These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm. Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
-    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],,
+    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
+  ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
+  ["eod", "Your EOD Email: The Template", ()=>`
+    <div class="ftr-part ftr-eod">
+      <div class="ftr-part-h">📧 Your EOD Email</div>
+      ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
+      ${EOD.parts.map(p=>`<div class="ftr-def"><b>${esc(p[0]).replace(/\//g, "/<wbr>")}</b><span>${esc(p[1])}</span></div>`).join("")}
+      <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
+    </div>
+    <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
+  // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
+  // Sheet (before its own)
+  ["habits-trackers", "Your Daily Task Tracker: Update It Every Day", ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
+  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
+    <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
+    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
+    <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
+  ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
+    <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
+    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
+  ["habits-monitoring", "Your Daily Monitoring Sheet: Update It After Each Activity", ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
+  // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
+  // the copy; the 📁 link is the last slide), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
+  ["monitoring", "Your Training Progress Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Progress Monitoring Sheet</button></div>` : ""}
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`],
+  // the sheet with numbered arrows, and beside it what goes at each number
+  ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+    <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
+      ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
+      ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
+      ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><div><b>${esc(h)}</b><span>${esc(t)}</span></div></li>`).join("")}</ol></div>`],
   // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
   ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
