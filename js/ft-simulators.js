@@ -75,6 +75,10 @@ function renderSimulators(){
       <div class="fts-grid">${ftLorCard()}${window.ftGuideCard ? ftGuideCard() : ""}${window.ftTranscribeCard ? ftTranscribeCard() : ""}${window.ftDrillsCard ? ftDrillsCard() : ""}</div></section>` : ""}
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
+    <section class="fts-group"><h2>📚 Knowledge Base</h2><p class="fts-sub">The LSH library of SOPs, guides and training videos. Look up how a task is done before you ask, and come back to it once you are working with your clients.</p>
+      <div class="fts-grid"><div class="card fts-card"><div class="fts-kicker">Any day</div><h3>📚 LSH Knowledge Base</h3>
+        <p class="fts-note">SOPs, guides and training videos, searchable, in one place.</p>
+        <div class="fts-tool-act"><a class="btn btn-navy btn-sm" href="/kb.html" target="_blank" rel="noopener">Open the Knowledge Base ↗</a></div></div></div></section>
     ${window.ftCasesSection ? ftCasesSection() : ""}
     ${window.ftListenSection ? ftListenSection() : ""}`;
 }

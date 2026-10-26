@@ -1107,7 +1107,7 @@ const TOOLS = [
   {ic: "🛠", name: "Practice Lab", img: "practice-lab", go: "goto('simulators')", where: "🛠 Practice Lab in the top bar",
     what: "Where you practise the real work for your law firm. It brings together the Call Simulators, your Knowledge Base and the Drafting Tools, and every Practice Session is checked against your firm’s rules and reviewed by your trainer.",
     feats: ["☎ Call Simulators: the Reception and Intake Mock Calls on LSH Ring Channel, and 🎧 Call Listening, where you log the sample calls as you hear them",
-      "📚 Knowledge Base: your 🏛 firm’s profile and rules and 🗂 My cases, the facts every session is checked against",
+      "📚 Knowledge Base: the LSH library of SOPs, guides and training videos, to look up how a task is done",
       "🧰 Drafting Tools: the 📄 LOR Drafting Activity, the 📘 Process Guide, the 🎧 Transcription Activity and the 🏷 Naming & Reporting Drills",
       "🟢 Each Practice Session opens with its lesson, and a graded call counts toward it"]},
   {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
