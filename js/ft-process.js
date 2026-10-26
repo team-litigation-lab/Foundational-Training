@@ -251,14 +251,16 @@ function moduleRow(lesson){
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
   // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
-  if(state.isAdmin && !state.adminPreview) return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
+  // …except a lesson's own sheet opened from its Activity deck (FTDayDecks.toKC): a trainer sees that sheet as trainees do
+  const fromDeck = (()=>{ try{ const b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); return !!(b && state.pqLesson && Number(b.l) === Number(state.pqLesson)); }catch(err){ return false; } })();
+  if(state.isAdmin && !state.adminPreview && !fromDeck) return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>Every trainee’s answer sheets, by batch, and the Knowledge Check each one is graded as. Trainees answer the process questions on this same page.</p></div>
     ${renderAdminProcess()}`;
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   loadReview();
   if(FP.err) return `<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
   if(!FP.data) return `<div class="card" style="padding:28px;">Loading your answers…</div>`;
-  const preview = (state.adminPreview && !state.traineeId)
+  const preview = ((state.adminPreview || fromDeck) && !state.traineeId)
     ? `<div class="card fp-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it, with every lesson unlocked. Nothing you type here is saved, and grading needs a trainee's own account.</div>` : "";
   const folderCard = `<div class="card fp-folder">
       <label for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>

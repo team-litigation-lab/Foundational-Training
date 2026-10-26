@@ -366,7 +366,7 @@ function agendaHtml(d, info){
         if(!ls.length) return "";
         const today = (info.items || []).some(x => x.at === "tool" && x.id === "process") || /ftdd-pq/.test(all);
         return `<p class="ftdd-ag-h">✍️ Process Questions</p><ul class="ftdd-ag-ls">${ls.map(l =>
-          `<li><a class="ftdd-link" onclick="FTProcess.openLesson(${Number(l)})">${e(lessonTitle(l))} →</a>${root.FTKCGames ? ` · <a class="ftdd-link" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</a>` : ""}</li>`).join("")}</ul>
+          `<li><a class="ftdd-link" onclick="FTDayDecks.toKC(${Number(l)})">${e(lessonTitle(l))} →</a>${root.FTKCGames ? ` · <a class="ftdd-link" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</a>` : ""}</li>`).join("")}</ul>
           <p class="ftdd-ag-pq">${today ? "Answered today, after the activities." : "Answered on the day the guide sets them; the sheet stays open."}</p>`;
       })()}
     </div></div>`;
@@ -386,7 +386,7 @@ function slideAgendaGo(s, info){
   if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
   if(/process question/i.test(h) && root.FTProcess){
     const l = (info.lessons || []).find(x => hasPQ(x));
-    if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTProcess.openLesson(${Number(l)})`};
+    if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTDayDecks.toKC(${Number(l)})`};
   }
   return null;
 }
@@ -397,7 +397,7 @@ function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.f
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || ""))); }
 // ✍️ Answer and 🎮 Knowledge Games for a lesson's Process Questions (the games review the same lesson, as a game show)
-const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTProcess.openLesson(${Number(l)})">✍️ Process Questions: ${e(lessonTitle(l))}</button>` +
+const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTDayDecks.toKC(${Number(l)})">✍️ Knowledge Check: ${e(lessonTitle(l))}</button>` +
   (root.FTKCGames ? `<button type="button" class="${cls || "btn btn-ghost btn-sm"} ftdd-games" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</button>` : "");
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
@@ -432,7 +432,7 @@ function waitBox(s, info){
   if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
   if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
   if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
-  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(${l})">✍️ Knowledge Check</button>`);
+  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.toKC(${l})">✍️ Knowledge Check</button>`);
   if(!acts.length) return "";
   const what = /demo/i.test(h) ? "the demo" : "the mock calls";
   return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
@@ -780,7 +780,7 @@ const LESSON_CARDS = {
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
-      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
+      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
@@ -1029,7 +1029,7 @@ function dayCard(n, ex){
         ${(() => { // the day's own Process Questions (the lessons the day discusses), on the days the guide runs them
           const pl = dayHasPQ(n) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
           return pl.length ? `<div class="ftlc-pqbox"><p class="ftlc-h2">✍️ Today’s Process Questions</p>${pl.map(l => `
-          <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTProcess.openLesson(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Answer on Knowledge Check →</button>
+          <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTDayDecks.toKC(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Knowledge Check →</button>
           ${root.FTKCGames ? `<button type="button" class="ftlc-pqbtn ftlc-games" onclick="FTKCGames.open(${Number(l)})">🎮 Review with the Knowledge Games</button>` : ""}</div>`).join("")}</div>` : ""; })()}
       </aside>
     </div>
@@ -1212,20 +1212,20 @@ function mapOpen(){
    (its 🧭 Blueprint pictures, CaseManagementTraining) and LSH Ring Channel's (its tests' pictures). */
 const TOOL_IMG = "/ft/day1/img/tools/";
 const TOOLS = [
-  {ic: "📋", name: "Activity Deck", img: "activity-deck", where: "📚 Dashboard → a lesson’s 📋 Day N, or 📋 Classroom Activity on a lesson’s last slide",
-    what: "Each training day’s instructions, slide by slide: what to do, in the order the day runs it.",
-    feats: ["Opens on the day’s Classroom Activity card: the activity and task sequence, today’s focus and where your answers go",
-      "Videos, documents and decks open right on the slide; 📝 What I learned keeps your notes on each video",
-      "◫ Split screen shows two slides side by side; ▶ Autoplay turns them for you",
-      "📋 Today’s To-Do and 📘 the day’s lesson are one click away"]},
+  {ic: "🎓", name: "LSH Training Directory", short: "Training Directory", img: "training-directory", href: "https://cm-training-activity.pages.dev/programs.html", where: "🏠 Main Portal → 🎓 Training Directory (where you log in once)",
+    what: "Every LSH training program in one place: you log in once there, then open your program and the training tools from it, already signed in.",
+    feats: ["Your programs, with each one’s access: ✅ Approved opens with Enter Program →",
+      "🛠 Simulators, 📚 Knowledge Base, ☎ LSH Ring Channel and 🗂 the Case Management System, one click each from the top",
+      "Request access to another program when your trainer tells you to",
+      "Blueprint and My Evaluations in its top bar"]},
   {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name (Ctrl / Cmd + K); when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
       "📝 New Intake: the intake form for the case type, graded on how much you gathered",
       "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
-  {ic: "☎", name: "LSH Ring Channel · Call Simulator", short: "Call Simulator", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Call Simulator (it opens in its own tab)",
-    what: "The training phone: your trainer, or an AI caller, rings your line and you take the call live with your headset on.",
+  {ic: "☎", name: "LSH Ring Channel · Mock Calls", short: "Ring Channel", img: "ring-channel", href: "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", where: "🛠 Practice Lab → a Practice Session’s ☎ Mock Calls (it opens in its own tab)",
+    what: "The training phone, where your Mock Calls are taken: your trainer, or an AI caller, rings your line and you take the call live with your headset on.",
     feats: ["Answer within 3 rings and greet with the firm’s name and yours",
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
@@ -1285,7 +1285,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -1723,7 +1723,8 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
 .ftdd-bar:not(:has(*)){display:none;}
-main.main-ftdd.ftdd-settling .ftdd-sheet > *{visibility:hidden;}   /* the day card slide has no pill or buttons up here */
+.ft-body .ftdd-pq-go{margin-top:10px;}
+main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visibility: its text stays readable to scripts and screen readers) */   /* the day card slide has no pill or buttons up here */
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
 .ftdd-dot.done{background:#8E97C4;}
 .ftdd-dot.on{background:#DB8437;transform:scale(1.25);}
