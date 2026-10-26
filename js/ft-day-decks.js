@@ -946,8 +946,8 @@ function dayCard(n, ex){
   const when = r => String(r.time || "").replace(new RegExp("^Day " + n + "\\b\\s*(·\\s*)?", "i"), "").replace(/^./, x => x.toUpperCase());
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}${r.sub ? pill(r) : ""}</span>
-      ${r.sub ? "" : pill(r)}</button></li>`).join("");
+      <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
+      ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js)
   const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
@@ -1435,8 +1435,8 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1F2338;border-bottom:1px solid rgba(255,255,255,.08);position:relative;}
 .ftlc-head::before{content:"";position:absolute;left:0;top:0;width:72px;height:3px;background:#DB8437;}
 .ftlc-ht{min-width:0;}
-.ftlc-ht h3{margin:0;font:800 18px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
-.ftlc-ht p{margin:3px 0 0;font-size:13px;font-weight:600;color:#C9CFDD;}
+.ftlc-ht h3{margin:0;font:800 21px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+.ftlc-ht p{margin:3px 0 0;font-size:15px;font-weight:600;color:#C9CFDD;}
 .ftlc-ht p .lp-kc{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;background:#fff7ed;color:#9a3412;font-weight:800;font-size:10.5px;vertical-align:1px;}
 .ftlc-acts{display:flex;gap:8px;flex:0 0 auto;}
 .ftlc-start,.ftlc-tag{border:0;border-radius:999px;padding:7px 14px;font:800 11.5px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;white-space:nowrap;}
@@ -1446,16 +1446,16 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc.locked .ftlc-start{background:#5C626C;}
 .ftlc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;padding:14px 16px 16px;align-items:start;}
 @media(max-width:700px){ .ftlc-body{grid-template-columns:minmax(0,1fr);} .ftlc-head{flex-wrap:wrap;} }
-.ftlc-h{margin:0 0 8px;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#C9CFDD;}
+.ftlc-h{margin:0 0 8px;font:800 13px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#C9CFDD;}
 .ftlc-seq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
 .ftlc-row{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px;text-align:left;background:#2F3550;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#fff;font:inherit;cursor:pointer;}
 .ftlc-row:hover{background:#3A4160;border-color:#DB8437;}
-.ftlc-n{font:800 15px/1 'Poppins','Inter',sans-serif;color:#DB8437;align-self:start;padding-top:2px;}
+.ftlc-n{font:800 18px/1 'Poppins','Inter',sans-serif;color:#DB8437;align-self:start;padding-top:2px;}
 .ftlc-t{min-width:0;}
-.ftlc-t b{display:block;font:700 13.5px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
-.ftlc-t small{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:#C9CFDD;}
+.ftlc-t b{display:block;font:700 16.5px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+.ftlc-t small{display:block;margin-top:3px;font-size:14px;line-height:1.35;color:#C9CFDD;}
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
-.ftlc-pill{justify-self:end;border-radius:999px;padding:4px 9px;background:#5C626C;color:#fff;font:800 9.5px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
 .ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
@@ -1463,7 +1463,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
 .ftlc-days button.on{border-color:#DB8437;background:#DB8437;}
 .ftlc-days button:hover{border-color:#DB8437;background:rgba(219,132,55,.18);}
-.ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.45;}
+.ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:15.5px;line-height:1.45;}
 .ftlc-focus p{margin:0;}
 .ftlc-fh{font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#262B45;}
 .ftlc-focus-t{margin-top:6px !important;padding-bottom:10px;border-bottom:1px solid #E3E6EE;font-weight:700;color:#1B1E2E;display:flex;gap:8px;align-items:center;}
@@ -1474,7 +1474,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
 .ftlc-pqbox{margin-top:10px;} .ftlc-pqacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
-.ftlc-pqbtn{border:1px solid #E8590C;background:#fff;color:#B5451F;border-radius:999px;padding:5px 12px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
+.ftlc-pqbtn{border:1px solid #E8590C;background:#fff;color:#B5451F;border-radius:999px;padding:5px 12px;font:700 14px 'Inter',sans-serif;cursor:pointer;}
 .ftlc-pqbtn:hover{background:#FFF1E6;} .ftlc-pqbtn.ftlc-games{background:#1E2340;border-color:#1E2340;color:#fff;} .ftlc-pqbtn.ftlc-games:hover{background:#343C66;}
 .ftdd-x{position:relative;flex-wrap:wrap;}
 .ftdd-x .ftdd-step-n{font-size:16px;}
