@@ -304,7 +304,8 @@ function renderPage(){
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const backBtn = back && Number(back.l) === Number(lesson) && back.day && back.id && window.FTDayDecks
     ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>` : "";
-  if(lesson) return `<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
+  // (opened from the deck, the way on is the classroom's next activity only: no ← Back to Process Questions beside it)
+  if(lesson) return `<div class="fp-hero">${backBtn || `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>`}
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there. <span class="fp-save" id="fpSave"></span></p></div>

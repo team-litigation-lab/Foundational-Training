@@ -522,7 +522,7 @@ function slideCard(d, info, list, i){
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
   return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
-      <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1>
+      <div class="ftdd-dhead"><h1 class="ftdd-dtitle" data-day="${DD.day}">${e(info.role || d.title)}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
       <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
@@ -677,7 +677,8 @@ function cardScale(box){
     probe.className = "ftdd-onnavy ftdd-lcslide"; probe.style.cssText = `position:absolute;left:-99999px;top:0;width:${w}px;height:auto;visibility:hidden;`;
     probe.innerHTML = dayCard(1, (X.data && X.data.days) || {}); box.parentNode.appendChild(probe);
     const nat = probe.scrollHeight; probe.remove();
-    cardScales[key] = nat > h ? Math.max(0.5, Math.floor(h / nat * 100) / 100) : 1;
+    // (a card with room to spare is drawn bigger, up to 1.3: fitSheets shrinks it back if the wider text runs over)
+    cardScales[key] = nat > h ? Math.max(0.5, Math.floor(h / nat * 100) / 100) : Math.min(1.3, Math.floor(h / nat * 100) / 100);
   }
   return cardScales[key];
 }
@@ -1145,11 +1146,7 @@ function dayCard(n, ex){
         ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${first ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
-        ${(() => { // the day's own Process Questions (the lessons the day discusses), on the days the guide runs them
-          const pl = dayHasPQ(n) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
-          return pl.length ? `<div class="ftlc-pqbox"><p class="ftlc-h2">✍️ Today’s Process Questions</p>${pl.map(l => `
-          <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTDayDecks.toKC(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Knowledge Check →</button>
-          ${root.FTKCGames ? `<button type="button" class="ftlc-pqbtn ftlc-games" onclick="FTKCGames.open(${Number(l)})">🎮 Review with the Knowledge Games</button>` : ""}</div>`).join("")}</div>` : ""; })()}
+        ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
       </aside>
     </div>
   </article>`;
@@ -1638,6 +1635,9 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 /* the full Classroom Activity card, as the first slide of its days' decks: scaled to fit the slide (fitSheets) */
 .ftdd-lcslide{min-height:0;overflow:auto;padding:0 !important;}
 .ftdd-lcslide .ftlc{box-shadow:none;}
+/* on the slide, no lesson-title header (the slide's own bar names the day): the activity sequence and the day's focus
+   take the room, drawn bigger */
+.ftdd-lcslide .ftlc-head{display:none;}
 /* every day's card in Day 1's size (its text as Day 1's card shows it), filling the slide: a fuller card still shrinks to
    fit, a lighter one no longer grows past Day 1's */
 main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
