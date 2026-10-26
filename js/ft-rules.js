@@ -344,7 +344,7 @@ const SLIDES = [
     const days = (window.FTDays && FTDays.DAYS) || [];
     const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
     const card = d=>{ const items = (d.items || []).filter(x=>!skip.has(x.kind)).slice(0, 3);
-      return `<div class="ftr-flow-card"><div class="ftr-flow-n">Day ${d.day}</div><b>${esc(d.role)}</b>
+      return `<div class="ftr-flow-card"><div class="ftr-flow-hd"><span class="ftr-flow-n">Day ${d.day}</span><b>${esc(d.role)}</b></div>
         <ul>${items.map(x=>`<li>${esc(String(x.t).replace(/\s*\([^)]*\)\s*$/, ""))}</li>`).join("")}</ul></div>`; };
     return `<div class="ftr-flow">${days.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
@@ -660,10 +660,11 @@ body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-
 body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 22px;counter-reset:none;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card{position:relative;background:#1E2340;color:#fff;border-radius:12px;border-top:4px solid #E8590C;padding:12px 14px 10px;box-shadow:0 4px 12px rgba(30,35,64,.18);}
 body.ft-orient #lessonSlideWrap .ftr-flow-card:not(:nth-child(4n)):not(:last-child)::after{content:"→";position:absolute;right:-18px;top:50%;transform:translateY(-50%);color:#E8590C;font:900 16px/1 'Inter',sans-serif;}
-body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;font:800 12px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:4px 9px;margin-bottom:6px;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 17px/1.25 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:16px;font-size:14px;line-height:1.35;color:#E6E8F2;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:14px !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;flex:0 0 auto;font:800 14px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:5px 10px;margin:0;}
+body.ft-orient #lessonSlideWrap .ftr-flow-hd{display:flex;align-items:center;gap:10px;margin-bottom:6px;} body.ft-orient #lessonSlideWrap .ftr-flow-hd b{margin:0 !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 20px/1.2 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:18px;font-size:16px;line-height:1.35;color:#E6E8F2;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:16px !important;line-height:1.35 !important;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
 body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start;}
