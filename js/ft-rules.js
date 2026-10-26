@@ -253,7 +253,7 @@ const habitCard = h=>`<div class="ftr-chan ftr-test">
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
       ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
       ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
-      ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
+      ${h.links.length ? `<div class="ftr-linkgrid">${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}</div>` : ""}
     </div>`;
 
 const SLIDES = [
@@ -671,6 +671,13 @@ body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
 /* a slide whose body text is all bold (Auxes) */
 body.ft-orient #lessonSlideWrap .ftr-bold :is(p, span, li, code, .ftr-when, .ftr-sub){font-weight:700 !important;}
+/* the habit cards' links (Sample Updated Trackers, the Monitoring Sheet): a navy block ruled in orange */
+body.ft-orient #lessonSlideWrap .ftr-linkgrid{margin-top:12px;background:#1E2340;border:2px solid #E8590C;border-radius:12px;overflow:hidden;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux{padding:10px 14px !important;margin:0 !important;border:0 !important;border-top:1.5px solid #E8590C !important;background:transparent;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux:first-child{border-top:0 !important;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux b{color:#F4B77A !important;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux small{color:#E6E8F2 !important;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux .btn{background:#fff !important;color:#1E2340 !important;border-color:#E8590C !important;}
 body.ft-orient #lessonSlideWrap .ftr-adj{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:stretch;}
 body.ft-orient #lessonSlideWrap .ftr-adj .ftr-part{margin:0;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-adj{grid-template-columns:minmax(0,1fr);} }
