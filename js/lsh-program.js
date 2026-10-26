@@ -75,36 +75,9 @@ const signedIn = () => !!(state.traineeId || state.isAdmin || state.adminPreview
 const __goto = window.goto;
 window.goto = function(view){ if(atHome(view)) arguments[0] = HOME; return __goto.apply(this, arguments); };
 
-/* An arrival with no address of its own lands on 📚 Dashboard — for a trainee and a trainer alike.
-   Signing in, or coming back to a saved session, used to jump straight back into the last lesson or
-   activity; the landing page carries "▶ Resume where you left off", so the viewer now takes that jump
-   when they want it, from the Dashboard, rather than landing in the middle of a lesson. A real address
-   (#/day/3, #/tool/…, a duplicated tab) still opens that page: it is a link, not a landing. */
-const __resume = window.resumeWhereLeftOff;
-if(typeof __resume === "function"){
-  window.resumeWhereLeftOff = function(saved){
-    // automatic: the engine passes the saved view, or is still opening the session (resumePending)
-    if(saved || state.resumePending){
-      state.resumePending = false;
-      suppressResumeToast();
-      goto(HOME);
-      return;
-    }
-    return __resume.apply(this, arguments);   // the viewer pressed ▶ Resume where you left off
-  };
-}
-// the engine says "picking up where you left off" right after that call; on the landing page it would say
-// the opposite of what happened, so the one message is dropped (any other toast still shows).
-function suppressResumeToast(){
-  if(typeof window.toast !== "function") return;
-  const real = window.toast;
-  window.toast = function(msg){
-    window.toast = real;
-    if(/picking up where you left off/i.test(String(msg == null ? "" : msg))) return;
-    return real.apply(this, arguments);
-  };
-  setTimeout(() => { if(window.toast !== real) window.toast = real; }, 1500);
-}
+/* A trainee coming back (the next day, a new tab, from the Portal) is taken straight back to where they left off,
+   automatically: the engine's own resume, to the lesson slide, the Activity deck slide or the Practice Lab tool they
+   were on. 📚 Dashboard keeps its "▶ Resume where you left off" button too. */
 
 /* ---------- the sections ---------- */
 // The 📚 Dashboard pages this viewer has (an admin's own pages, or a trainee's; the trainee view sees the trainee's).
