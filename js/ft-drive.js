@@ -56,7 +56,7 @@ const TEMPLATES = () => [
   ["📋", "Daily Task Tracker", window.FT_TRACKER_TEMPLATE || "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit"],
   ["📒", "Training Monitoring Sheet", (window.FT_MONITOR_DOC || {}).open || ""]].filter(t => t[2]);
 // The steps from the templates to the automated check, above the links (the 📁 Link window and the Task Tracker page)
-function stepsHtml(){
+function stepsHtml(auto = true){
   return `<ol class="fdr-steps">
       <li><b>Download the templates.</b>
         <span class="fdr-tpls">${TEMPLATES().map(([i, n, u]) => `<span class="fdr-tpl">${i} ${n}
@@ -66,17 +66,17 @@ function stepsHtml(){
         <b>File → Save as Google Sheets</b> (the tracker) or <b>File → Save as Google Docs</b> (the Monitoring Sheet). Put your name in each file’s name.</li>
       <li><b>Share the folder and both files:</b> Share → General access → <b>Anyone with the link</b> → Viewer.</li>
       <li><b>Paste the links below and save.</b> Your VA Output folder, then each file (open it and copy the link from the address bar).</li></ol>
-    <div class="fdr-auto">🤖 <b>Automated monitoring.</b> Every night, and whenever you press ✅ Check now, the system opens your tracker and Monitoring
+    ${auto ? `<div class="fdr-auto">🤖 <b>Automated monitoring.</b> Every night, and whenever you press ✅ Check now, the system opens your tracker and Monitoring
       Sheet from your Drive: it checks every day’s Daily Notes and output links and every discussion’s Monitoring entry, and an AI review sums up
-      your progress. You see the results on 📚 Dashboard; your trainer sees them too, and adds their score and comments.</div>`;
+      your progress. You see the results on 📚 Dashboard; your trainer sees them too, and adds their score and comments.</div>` : ""}`;
 }
-function linksCard(){
+function linksCard(auto = true){
   const x = D.drive, row = (k, label, ph, hint) => `<label class="fdr-l"><span>${label}</span>
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
       ${hint ? `<small>${hint}</small>` : ""}</label>`;
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
     <p class="fdr-muted">Your Task Tracker and Monitoring Sheet live in your <b>VA Output folder</b> in Google Drive, where the system checks them for you.</p>
-    ${stepsHtml()}
+    ${stepsHtml(auto)}
     ${row("folder", "📁 VA Output folder (the Drive folder with your tracker and Monitoring Sheet)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Your own copy of the tracker. Link the Daily Task Tracker tab.")}
     ${row("monitor", "📒 Training Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion: the date, 5 takeaways, 3 questions, and your rating.")}
@@ -136,9 +136,13 @@ function linkModalKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); closeL
 function paintLinkModal(){
   const o = document.getElementById("fdrLinkModal"); if(!o) return;
   const x = D.drive || {}, ok = k => x[k] ? "✓" : "—";
-  o.querySelector(".fdr-modal-body").innerHTML = previewNote() + linksCard() + `<div class="card fdr-card fdr-modal-status">
-      <p class="fdr-muted"><b>Linked:</b> ${ok("folder")} VA Output folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p>
-      <p class="fdr-muted">Once they’re saved, your tracker and Monitoring Sheet are checked automatically every night, and whenever you press ✅ Check now. Your results show on 📚 Dashboard and on 📋 Task Tracker / 📒 Monitoring Sheet.</p>
+  // the window: the links form, then one box that says how the monitoring works and what is linked so far
+  o.querySelector(".fdr-modal-body").innerHTML = linksCard(false) + `<div class="card fdr-card fdr-modal-status">
+      <div class="fdr-auto">🤖 <b>Automated monitoring.</b> Once your links are saved, the system opens your tracker and Monitoring Sheet
+        from your Drive every night, and whenever you press ✅ Check now: it checks every day’s Daily Notes and output links and every
+        discussion’s Monitoring entry, and an AI review sums up your progress. Your results show on 📚 Dashboard and on 📋 Task Tracker /
+        📒 Monitoring Sheet; your trainer sees them too, and adds their score and comments.
+        <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} VA Output folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p></div>
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" ${D.busy ? "disabled" : ""} onclick="FTDrive.check()">${D.busy ? "Checking…" : "✅ Check now"}</button>
         <button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
 }
@@ -308,7 +312,7 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-steps{margin:10px 0 8px;padding-left:22px;font-size:14px;line-height:1.5;color:var(--ink);} .fdr-steps li{margin-bottom:8px;} .fdr-steps li::marker{font-weight:800;color:var(--orange-deep);}
 .fdr-tpls{display:flex;flex-direction:column;gap:6px;margin-top:6px;} .fdr-tpl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600;color:var(--navy);}
 .fdr-tpl .btn{text-decoration:none;} .fdr-tpl .btn-navy{margin-left:auto;}
-.fdr-auto{margin:4px 0 10px;padding:10px 12px;border-radius:10px;background:#EEF1F8;border-left:4px solid var(--orange);font-size:13.5px;line-height:1.5;color:var(--ink);} .fdr-err{color:var(--danger);font-weight:700;}
+.fdr-linked{margin:8px 0 0 !important;font-size:13.5px;} .fdr-auto{margin:4px 0 10px;padding:10px 12px;border-radius:10px;background:#EEF1F8;border-left:4px solid var(--orange);font-size:13.5px;line-height:1.5;color:var(--ink);} .fdr-err{color:var(--danger);font-weight:700;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
 .fdr-row{display:flex;gap:8px;align-items:center;margin:4px 0;} .fdr-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fdr-row .fdr-label{flex:0 1 240px;} .fdr-row a.btn{text-decoration:none;}
