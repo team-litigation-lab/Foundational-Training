@@ -4,18 +4,23 @@
 //   - the trainer unlocks up to the Personal Injury Reading for the batch: the Dashboard opens the reading, its slide
 //     shows, Lesson 1 is still locked, and the Knowledge Check's Virtual Assistant Essentials sheet waits for its step;
 //   - Finish unlocked: the Dashboard opens as usual; the admin's 🔓 Day 1 Steps lists the eight steps.
-// The test server starts with Day 1 unlocked to its end (server.mjs); this test sets its own steps and puts that back.
+// The test server starts with Day 1 unlocked to its end (server.mjs); this test sets its own steps, opens only Lesson 1
+// (an earlier test may have opened them all), and puts both back.
 // Usage: node .github/scripts/day1-flow.cjs [base-url]
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const failures = []; const fail = (m) => failures.push(m);
+// a batch on Day 1 has only Lesson 1 open (a batch given a later lesson is past Day 1, and the steps don't hold it)
+const setOpen = (page, v) => page.evaluate(async (v) => { await fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'settings:opendays', value: v }) }); }, v);
+const getOpen = (page) => page.evaluate(async () => { const r = await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'settings:opendays' }) }); return (await r.json()).value || null; });
 const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'settings:day1steps', value: JSON.stringify(v) }) }); await ftLoadOpenDays(); }, v);
 (async () => {
-  const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 1366, height: 768 } });
+  const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 1366, height: 768 } }); let openWas = null;
   page.on('pageerror', e => fail('page error: ' + e.message));
   try {
     await page.goto(BASE); await signIn(page, 'Dee', 'Flow', 'B101026'); await page.waitForTimeout(1200);
+    openWas = await getOpen(page); await setOpen(page, JSON.stringify({ all: [1], batches: {} }));
     await setSteps(page, { all: 0, batches: {} });
     // nothing unlocked: the Dashboard is Setting of Training Expectations
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
@@ -50,6 +55,7 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     if (steps !== 8) fail(`🔓 Day 1 Steps lists ${steps} steps, not 8`);
   } finally {
     await setSteps(page, { all: 8, batches: {} }).catch(() => {});
+    if (openWas) await setOpen(page, openWas).catch(() => {});
     await b.close();
   }
   if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
