@@ -76,6 +76,8 @@ function piParts(){
   if(parts.join("\n").replace(/\s+/g, " ") !== units.join("\n").replace(/\s+/g, " ")) throw new Error("Day 1's reading lost text when it was split");
   return parts;
 }
+// slides that hold several topics, split at each topic's own line (one slide per topic)
+const SPLIT = {8: {s1: /(?=<p><b>Topic \d+:|<h4>Additional Instruction|<p><b>Added on )/}};
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -199,6 +201,24 @@ for(let n = 1; n <= 16; n++){
       }).join(""));   // and each group (PI_PAIRS): its cards side by side, in one row
       slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
       parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
+      continue;
+    }
+    // a slide that holds several topics (Day 8's Intake Process / Intake Documents) is one slide per topic, so each reads
+    // in a page or two and the deck walks through them in order; the topic's name joins the slide's title
+    const split = (SPLIT[n] || {})[s.id];
+    if(split){
+      const parts = html.split(split).filter(x => x.replace(/<[^>]+>/g, "").trim());
+      if(parts.length < 2) throw new Error(`Day ${n} ${s.id} no longer splits at its topics`);
+      // the lead-in before the first topic stays with it
+      const first = split.test(parts[0]) ? 0 : 1, lead = first ? parts[0] : "";
+      let topic = "";
+      parts.slice(first).forEach((x, i) => {
+        // a topic's own line names the slide; a section of it (Additional Instruction, a dated addition) follows its topic's name
+        const own = ((x.match(/^\s*<p><b>(Topic \d+:[^<]*)<\/b>/) || [])[1] || "").trim(), sub = ((x.match(/^\s*<(?:h4|p><b)>([^<]*)</) || [])[1] || "").replace(/[:\s]+$/, "").trim();
+        if(own) topic = own;
+        const t = own || [topic, sub].filter(Boolean).join(" · ");
+        const when = (h.match(/^(AM|PM|Entire Day)\s*:/i) || [""])[0];
+        slides.push({id: i ? `${s.id}-${i + 1}` : s.id, h: t ? `${when ? when + " " : ""}${t}` : h, html: (i ? "" : lead) + x}); });
       continue;
     }
     slides.push({id: s.id, h, html});
