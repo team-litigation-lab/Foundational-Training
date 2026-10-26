@@ -396,7 +396,8 @@ function dayRows(n){
 // a stop that opens something other than a slide: the lesson, the video, the day's Knowledge Check
 /* 🎬 Day 1's Handouts / Video: the Breakout Session's digital handouts, one per group (the lesson card's 🎬 Video opens
    this slide too: js/ft-day1-flow.js) */
-const HANDOUTS = {1: {when: "Afternoon, 1:00–3:00 PM", items: [
+// (no set hours: the trainer opens the session when the batch is ready, with the Handouts and Videos unlock)
+const HANDOUTS = {1: {items: [
   ["US Legal System", "https://drive.google.com/file/d/1lIZN9VxbkKHWDb-wkQp90l8GC60-7T0J/view"],
   ["LSH Services and VA Task List", "https://drive.google.com/file/d/12xvxXorgh_wjR9DidEewbnfokItzpzNY/view"],
   ["LSH Clients and Clientele", "https://drive.google.com/file/d/1-x8NMuG0sR994yqodr5xBgHaHDfrWv6v/view"],
@@ -405,7 +406,7 @@ const HANDOUTS = {1: {when: "Afternoon, 1:00–3:00 PM", items: [
 function handoutsSlide(h){
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts">
-    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">🕐 ${e(h.when)}</p></div>
+    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">🔓 Opens when your trainer unlocks it</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol></div>
@@ -909,7 +910,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
-      {t: "Handouts / Video", sub: "Breakout Session (Group Activity), 1:00–3:00 PM · the digital handouts open here once your trainer unlocks them", k: "watch", run: "ftVideoOrAsk(1)"},
+      {t: "Handouts / Video", sub: "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them", k: "watch", run: "ftVideoOrAsk(1)"},
       {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
