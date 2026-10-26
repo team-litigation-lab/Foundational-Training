@@ -205,7 +205,7 @@ function candidateIds(name, batch) {
 /* ---------- what a trainee may touch ---------- */
 // Activities: activities:dayN and their attachments (actfile:*) are published by trainers for everyone;
 // settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
-// settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
+// settings:monitor is the Training Progress Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
@@ -250,7 +250,7 @@ async function traineeWrite(env, tok, key, value) {
     await kv.put(key, value); return null;
   }
   if (key === `monitor:${id}`) {
-    // Training Monitoring Sheet (js/ft-monitoring.js): the trainee's own entries; the admin's
+    // Training Progress Monitoring Sheet (js/ft-monitoring.js): the trainee's own entries; the admin's
     // automated feedback is worked out from them on the page, so there's nothing here to protect.
     if (value.length > 400000) return "The Monitoring Sheet is too large to save";
     await kv.put(key, value); return null;
@@ -717,7 +717,7 @@ async function checkDrive(env, id, D, o = {}) {
       g = TR.gradeMonitorText(text, topics);
       if (o.ai !== false && g.found) {
         try {
-          review = await aiText(env, "You are a training supervisor at Legal Support Help reviewing a trainee virtual assistant's Training Monitoring Sheet. Never mention that you are an AI." + voice,
+          review = await aiText(env, "You are a training supervisor at Legal Support Help reviewing a trainee virtual assistant's Training Progress Monitoring Sheet. Never mention that you are an AI." + voice,
             `Trainee: ${(rec && rec.name) || "Trainee"}\nThe sheet's entries (one per classroom discussion: the date, 5 major takeaways, 3 questions, and how well they understand it):\n${text.slice(0, 9000)}\n\nThe automated check found ${g.found} of ${g.total} discussions, ${g.pct}% complete.\nReview it: are the takeaways specific to each discussion and in complete sentences, are questions real, which entries are missing or incomplete (name them). At most 6 short bullet points, under 140 words. No greeting, no sign-off.`, 500);
         } catch (e) { review = ""; }
       }

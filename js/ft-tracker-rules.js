@@ -7,7 +7,7 @@
    {pass, pct, detail, flags:[{row, col, msg}]} (or null when it doesn't apply).
    The trainee's tracker is a Google Sheet in their Assessment and Activities Folder (js/ft-drive.js): fromSheetCsv turns the
    sheet (its CSV export) into the same workbook, so the same rules check it; gradeMonitorText checks the
-   Training Monitoring Sheet's text the same way (rule-based, no AI).
+   Training Progress Monitoring Sheet's text the same way (rule-based, no AI).
    ============================================================ */
 (function(root){
   const TZ = "America/Los_Angeles";      // training days follow the firm's time zone
@@ -195,7 +195,7 @@
     });
     return {v: 1, source: "drive", startDate: o.startDate || "", tracker: {noteDates: dateCols.map((x) => x[1]), rows: out}};
   }
-  // The Training Monitoring Sheet's text (a Google Doc's text, or a sheet's CSV joined into lines), checked per discussion:
+  // The Training Progress Monitoring Sheet's text (a Google Doc's text, or a sheet's CSV joined into lines), checked per discussion:
   // its title found, a date, 5 takeaways (lines of 4+ words), questions, and the understanding rated.
   // The classroom discussions (the Hubstaff To-Dos), until a trainer sets the list (settings:monitor). js/ft-monitoring.js uses it too.
   // One entry per classroom discussion, in the order the Training Guide runs them: all 18 days of

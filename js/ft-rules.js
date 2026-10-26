@@ -12,7 +12,7 @@
      • The parts, in the order the trainers run the orientation: 👋 Welcome to LSH!; Hubstaff (how-tos and why they
        matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
        Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
-       deliverables (an overview, the Daily Task Tracker part by part, the Training Monitoring Sheet embedded with the
+       deliverables (an overview, the Daily Task Tracker part by part, the Training Progress Monitoring Sheet embedded with the
        📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), and the EOD email with
        its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
        Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
@@ -62,10 +62,10 @@ const HABITS = [
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
     "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Training Monitoring Sheet in your Assessment and Activities Folder every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
+    "Update your Training Progress Monitoring Sheet in your Assessment and Activities Folder every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your Assessment and Activities Folder, then save its link on the platform: 📒 Monitoring Sheet."]],
+          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your Assessment and Activities Folder, then save its link on the platform: 📒 Monitoring Sheet."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -232,15 +232,15 @@ function figTodo(){
     ${arrow("M330 330C292 322 274 306 272 290", m)}${callout(318, 322, 432, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
   </svg>`;
 }
-/* 📒 the Training Monitoring Sheet, drawn as one filled-in entry (a preview: the sheet itself isn't embedded, so it
+/* 📒 the Training Progress Monitoring Sheet, drawn as one filled-in entry (a preview: the sheet itself isn't embedded, so it
    needs no sharing): the discussion and its date, 5 major takeaways, 3 questions and the rating */
 function figMonitor(){
   const row = (y, n, t) => `<text x="40" y="${y}" font-size="13" font-weight="700" fill="#E8590C">${n}</text><text x="62" y="${y}" font-size="13" fill="#2A2F4A">${t}</text><path d="M40 ${y + 8}H720" stroke="#E6E8F0"/>`;
   const opt = (y, t, on) => `<rect x="40" y="${y - 12}" width="14" height="14" rx="3" fill="${on ? OR : "#fff"}" stroke="#5b6178"/>${on ? `<path d="M43 ${y - 5}l3 3 6-7" stroke="#fff" stroke-width="2" fill="none"/>` : ""}<text x="64" y="${y}" font-size="13" fill="#2A2F4A">${t}</text>`;
-  return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
+  return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Progress Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
-    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · Assessment and Activities Folder</text>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · Assessment and Activities Folder</text>
     <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
@@ -258,17 +258,17 @@ const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
   {h:"Make Your Copy and Link It", link:true, steps:[
-    "Copy the Training Monitoring Sheet into your Assessment and Activities Folder.",
+    "Copy the Training Progress Monitoring Sheet into your Assessment and Activities Folder.",
     "Save its link here, once:"]},
   {h:"Fill It In After Each Discussion or Activity", steps:[
-    "The discussion and its date.",
+    "The discussion or activity, and its date.",
     "5 Major Takeaways, in your own words.",
     "3 Questions That You Still Have.",
     "Rate Your Understanding: pick one line."]},
   {h:"How It’s Checked", steps:[
     "Automatically, at the end of every shift (5:00 PM ET).",
     "You get feedback on each entry; your trainer adds comments."],
-   tip:"Fill it in before your shift ends, every training day."}
+   tip:"Fill it in as each discussion or activity is done. It is for your training only."}
 ];
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -393,7 +393,7 @@ const SLIDES = [
       <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
-      ["📒", "3. Your Training Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
+      ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
   // Sheet (before its own)
@@ -412,14 +412,14 @@ const SLIDES = [
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
   // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
   // 📁 Link button), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
-  ["monitoring", "Your Training Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
+  ["monitoring", "Your Training Progress Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>` : ""}
+      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Progress Monitoring Sheet</button></div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   // the sheet with numbered arrows, and beside it what goes at each number
-  ["monitoring-entry", "Your Training Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+  ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],

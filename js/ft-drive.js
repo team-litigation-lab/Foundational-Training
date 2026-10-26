@@ -1,5 +1,5 @@
 /* ============================================================
-   📁 The Daily Task Tracker and the Training Monitoring Sheet live in the trainee's Google Drive
+   📁 The Daily Task Tracker and the Training Progress Monitoring Sheet live in the trainee's Google Drive
    Loaded after js/ft-tracker.js and js/ft-monitoring.js, whose trainee pages it replaces (their admin tabs stay).
    Trainees keep both files in their Assessment and Activities Folder, not on the platform: they save the links once (📁 My Drive
    links: the Assessment and Activities Folder, the Task Tracker sheet, the Monitoring Sheet), and each training day they add the
@@ -66,7 +66,7 @@ function linksCard(auto = true){
     ${stepsHtml(auto)}
     ${row("folder", "📁 Assessment and Activities Folder (where you save your outputs, every day)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Your own copy of the tracker. Link the Daily Task Tracker tab.")}
-    ${row("monitor", "📒 Training Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion or activity: the date, 5 takeaways, 3 questions, and your rating.")}
+    ${row("monitor", "📒 Training Progress Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion or activity: the date, 5 takeaways, 3 questions, and your rating.")}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
 }
 function rulesHtml(res){
@@ -101,8 +101,8 @@ function linkRow(l, i){
 function renderMonitorPage(){
   if(!ready()) return `<div class="card fdr-card">Loading your Monitoring Sheet link…</div>`;
   const m = D.review.monitor;
-  return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Monitoring Sheet</p><h1>📒 Training Monitoring Sheet</h1>
-      <p>Fill in your Training Monitoring Sheet in your Assessment and Activities Folder every time a discussion or an activity is done, following its specific instructions (it is for your training only): the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it automatically at the end of every shift; your trainer adds their score and comments.</p></div>
+  return `${previewNote()}<div class="fdr-hero"><p class="lp-eyebrow">📚 Dashboard · Monitoring Sheet</p><h1>📒 Training Progress Monitoring Sheet</h1>
+      <p>Fill in your Training Progress Monitoring Sheet in your Assessment and Activities Folder every time a discussion or an activity is done, following its specific instructions (it is for your training only): the date, 5 major takeaways in complete, specific sentences, 3 questions you still have, and your rating. The system checks it automatically at the end of every shift; your trainer adds their score and comments.</p></div>
     ${linksCard()}
     <div class="card fdr-card"><div class="fdr-day"><h2>📊 The check</h2></div>
       ${!m ? `<p class="fdr-muted">Not checked yet.</p>` : m.error ? `<p class="fdr-err">⚠ ${e(m.error)}</p>` : `
@@ -283,7 +283,7 @@ window.ftDriveItems = ctx => {
   if(days.length){ const vals = days.map(([d, x]) => tScore(x) != null ? tScore(x) : x.pct).filter(v => typeof v === "number");
     out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)"}); }
   const m = rv.monitor;
-  if(m && !m.error) out.push({name:"Training Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`});
+  if(m && !m.error) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`});
   return out;
 };
 

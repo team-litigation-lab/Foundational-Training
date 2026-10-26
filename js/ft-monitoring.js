@@ -1,5 +1,5 @@
 /* ============================================================
-   Training Monitoring Sheet — filled in on the platform
+   Training Progress Monitoring Sheet — filled in on the platform
    Loaded after js/ft-tracker.js. 📒 Monitoring Sheet in the top bar (#/monitoring).
      • Trainees: one entry per classroom discussion, as in the Word sheet
        (MON_DOC): the date, 5 Major Takeaways from This Discussion,
@@ -196,13 +196,13 @@ function renderPage(){
   if(FTM.id !== state.traineeId && !FTM.loading) load(state.traineeId);
   if(FTM.err) return `<div class="card" style="padding:28px;">${e(FTM.err)} <button class="btn btn-ghost btn-sm" onclick="FTMon.reload()">Try again</button></div>`;
   if(!FTM.data || !FTM.topics) return `<div class="card" style="padding:28px;">Loading your Monitoring Sheet…</div>`;
-  return `<div class="ftm-hero"><h1>📒 Training Monitoring Sheet</h1>
+  return `<div class="ftm-hero"><h1>📒 Training Progress Monitoring Sheet</h1>
       <p>Update it within the shift, as soon as a topic is fully covered. It saves as you type. <span class="ftm-save" id="ftmSave"></span></p>
       <div class="ftm-actions"><span class="ftm-count" id="ftmCount">${countLine()}</span>
         <a class="btn btn-ghost btn-sm" href="${e(MON_DOC.open)}" target="_blank" rel="noopener noreferrer">Download ↗</a></div></div>
     <details class="card ftm-doc" ${FTM.docOpen === false ? "" : "open"} ontoggle="FTMon.doc(this.open)">
-      <summary><b>📄 The Training Monitoring Sheet</b> <span class="ftm-muted">— the Word version, in full</span></summary>
-      <div class="ftm-embed"><iframe src="${e(MON_DOC.view.replace(/\/view$/, "/preview"))}" title="Training Monitoring Sheet" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
+      <summary><b>📄 The Training Progress Monitoring Sheet</b> <span class="ftm-muted">— the Word version, in full</span></summary>
+      <div class="ftm-embed"><iframe src="${e(MON_DOC.view.replace(/\/view$/, "/preview"))}" title="Training Progress Monitoring Sheet" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
     </details>
     <div class="card ftm-how">
       <b>For Each Discussion</b>
@@ -292,7 +292,7 @@ function renderAdminMonitor(){
   const topicsText = FTM.topics.map(t=>t.title + (t.keys && t.keys.length ? " | " + t.keys.join(", ") : "")).join("\n");
   return `<div class="card ftm-admin">
     <h3>📒 Monitoring Sheets</h3>
-    <p class="ftm-muted">Each trainee’s Training Monitoring Sheet, by batch. The feedback is automated from the 📏 Feedback Rubric below (rubric v${rubricNow().version}), on what they wrote and on the discussion’s key points; no AI writes it. Click a trainee, then a discussion, for the checks, the feedback to copy, and what they wrote.</p>
+    <p class="ftm-muted">Each trainee’s Training Progress Monitoring Sheet, by batch. The feedback is automated from the 📏 Feedback Rubric below (rubric v${rubricNow().version}), on what they wrote and on the discussion’s key points; no AI writes it. Click a trainee, then a discussion, for the checks, the feedback to copy, and what they wrote.</p>
     ${FMA.rows.length ? batches : `<div class="ftm-muted" style="margin:14px 0;">No active trainee has started their Monitoring Sheet yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTMonAdmin.refresh()">Refresh</button></div>
   </div>

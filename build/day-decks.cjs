@@ -15,7 +15,7 @@ const R = path.resolve(__dirname, "..");
 // parts of a day left out of its deck: Day 1's Setting of Expectations is written to the facilitator; Training
 // Reminders are to be disregarded; the Hubstaff To-Do set-up is not a slide (the trainer sets the to-dos with the
 // batch, and the orientation covers them); the Nitro Pro / Adobe Acrobat Pro how-to homework is off the deck; and so
-// is the Training Monitoring Sheet set-up (the orientation and 📒 Monitoring Sheet cover it). Day 1's Reading Task
+// is the Training Progress Monitoring Sheet set-up (the orientation and 📒 Monitoring Sheet cover it). Day 1's Reading Task
 // (Personal Injury) and the Smart Advocate plug-ins installation are on it: the Day 1 card runs Reading Task →
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).

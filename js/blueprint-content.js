@@ -158,7 +158,7 @@ window.LSH_BLUEPRINT = {
         shot: '/img/blueprint/fbstyle.jpg',
         shotAlt: 'The Feedback Style tab: the current voice with its traits, the style guide text and the voice examples, and the Save edits and Try it on a sample answer buttons.' },
       { icon: '📒', title: 'Monitoring Sheets', points: [
-          'Each trainee\'s Training Monitoring Sheet, by batch, trainee and discussion.',
+          'Each trainee\'s Training Progress Monitoring Sheet, by batch, trainee and discussion.',
           'Automated feedback from the 📏 Feedback Rubric (not AI): the checks, a score and the feedback to copy.',
           '"Needs extra help" marks entries rated "I really don\'t get this".',
           'Tune the rubric\'s metrics, and set the discussions and their key points.'],

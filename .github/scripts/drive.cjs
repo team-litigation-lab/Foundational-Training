@@ -1,4 +1,4 @@
-// The Daily Task Tracker and the Training Monitoring Sheet kept in Google Drive (js/ft-drive.js, worker.js checkDrive):
+// The Daily Task Tracker and the Training Progress Monitoring Sheet kept in Google Drive (js/ft-drive.js, worker.js checkDrive):
 // with Google's export answered here (a tracker sheet as CSV, a Monitoring Sheet doc as text), /api/drive/check
 //   - reads the trainee's sheet and checks the day with the tracker rules (every open task's Daily Note, the day's output links);
 //   - checks the Monitoring Sheet per discussion;
