@@ -385,7 +385,7 @@ const SLIDES = [
   // Setting of expectations
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
-      <p>Being in training doesn’t mean you can be complacent. Your performance is deliberated every week, and depending on the outcome you can still be let go and have your project ended.</p></div>
+      <p>Training is your chance to show what you can do, so give it your best every day. Your progress is reviewed each week, and those reviews help decide whether you continue on to your project.</p></div>
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
     <p class="ftr-sub">Next: your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training.</p>`],
