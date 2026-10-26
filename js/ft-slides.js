@@ -417,15 +417,17 @@ if(typeof Narrator !== "undefined"){
 }
 })();
 
-/* The progress dots sit under the Previous / Next bar (between it and the footer line), not in a row above the slide,
-   so the slide gets that height (lessons and the orientation, not full screen or the room's window). */
+/* The Previous / Next bar is drawn like the Activity decks': one white bar with ← Previous, "Step N of M" and the
+   progress dots beside it, Autoplay and Next →. The dots leave their row above the slide, so the slide gets that
+   height (lessons and the orientation, not full screen or the room's window). */
 (function(){
   const __after = window.afterRender;
   window.afterRender = function(){
     const r = __after ? __after.apply(this, arguments) : undefined;
     try{
       const st = document.querySelector("#lessonStage:not(:fullscreen)"), dots = st && st.querySelector(":scope > .slide-dots"), nav = st && st.querySelector(":scope > .slide-nav");
-      if(dots && nav && !document.getElementById("audienceRoot")){ dots.classList.add("slide-dots-nav"); nav.insertAdjacentElement("afterend", dots); }
+      const c = nav && nav.querySelector(".slide-counter");
+      if(dots && c && !document.getElementById("audienceRoot")){ dots.classList.add("slide-dots-nav"); c.insertAdjacentElement("afterend", dots); }
       nextUp(st);
     }catch(e){}
     return r;
@@ -451,7 +453,9 @@ if(typeof Narrator !== "undefined"){
   }
   const css = document.createElement("style");
   css.textContent = `.lesson-stage .slide-done-banner{display:none !important;}   /* the last slide is the same size as the others; Next up says what's next */
-.lesson-stage .slide-dots-nav{margin:8px 0 0 !important;justify-content:center;flex-wrap:nowrap;overflow:hidden;}
+#lessonStage:not(:fullscreen) > .slide-nav{background:rgba(255,255,255,.82);border:1px solid rgba(38,43,69,.12);border-radius:14px;padding:8px 12px !important;margin:10px 0 0 !important;backdrop-filter:blur(6px);gap:12px;flex-wrap:nowrap;}
+#lessonStage:not(:fullscreen) > .slide-nav .slide-counter{margin-left:auto;font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;}
+.lesson-stage .slide-dots-nav{margin:0 auto 0 0 !important;justify-content:center;flex-wrap:nowrap;overflow:hidden;gap:5px !important;min-width:0;max-width:34%;}
 .lesson-stage .slide-dots-nav .slide-dot{background:#C9CFDD;}
 .lesson-stage .slide-dots-nav .slide-dot.visited{background:#8E97C4;}
 .lesson-stage .slide-dots-nav .slide-dot.active{background:#DB8437;}`;
