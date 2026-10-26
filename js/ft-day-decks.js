@@ -1767,7 +1767,9 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
-.ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
+/* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
+main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}
+main.main-ftdd .ftdd-sheet h2.ftdd-pi-h:not(:first-child){margin-top:30px;}
 main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:21px !important;line-height:1.6 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:20px !important;}
 /* a line of space between one step (or section) and the next */
