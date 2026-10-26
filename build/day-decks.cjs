@@ -31,10 +31,18 @@ const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 // (its charts are in ft/day1/img/pi/). It is dealt over PI_PARTS slides of about the same length, each starting at one
 // of its headings, so it reads a slide at a time: the Reading Task slide holds part 1, "reading-2" … the rest.
 const PI_PARTS = 8;
-const PI_PAIR = /^<h3>Step 4\b/;
+const PI_BESIDE = 130;   // the most words of text beside a chart
+// sections of the reading that read together: one page, two cards side by side (the first heading, then the second)
+const PI_PAIRS = [["Step 3", "Step 4"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
+// sections kept in the same part as the one before them: a pair's second card, and the statute of limitations section
+// (its introduction, How Does It Work, the Standard Statute and the Discovery Rule) as one part
+const PI_JOIN = [...PI_PAIRS.map(p => p[1]), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception'];
+const PI_PAIR = new RegExp(`^<h3>(${PI_JOIN.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
+const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const PI_PAIR_ROW = new RegExp(PI_PAIRS.map(([a, b]) => `(?:(<h3>${esc(a)}\\b[\\s\\S]*?)(<h3>${esc(b)}\\b[\\s\\S]*?)(?=<h[23][ >]|$))`).join("|"), "g");
 function piParts(){
   const src = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
-  // Steps 3 and 4 of the case timeline read together (one page, two cards side by side): one unit, never split
+  // a pair (PI_PAIRS) and the statute of limitations section (PI_JOIN) are one unit, never split between two parts
   const units = src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean)
     .reduce((a, u) => { if(PI_PAIR.test(u) && a.length) a[a.length - 1] += "\n" + u; else a.push(u); return a; }, []);
   // a chart reads like ~60 words
@@ -166,10 +174,15 @@ for(let n = 1; n <= 16; n++){
         // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
         const figs = sec.match(/<figure>[\s\S]*?<\/figure>/g); if(!figs) return sec;
         const text = sec.replace(/<figure>[\s\S]*?<\/figure>\s*/g, "").trim();
-        return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${text}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n`;
+        // beside the chart: the heading and its first paragraphs, about a page's worth (PI_BESIDE words); the rest of the
+        // section's text follows under the row, so a long section is read over pages instead of shrunk to fit
+        const blocks = text.split(/\n(?=<(?:p|ul|ol|h[2-6])[ >])/), words = x => x.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+        let n = 0, k = 0; while(k < blocks.length && (k < 2 || n + words(blocks[k]) <= PI_BESIDE)){ n += words(blocks[k]); k++; }
+        const beside = blocks.slice(0, k).join("\n"), after = blocks.slice(k).join("\n");
+        return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${beside}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n${after ? after + "\n" : ""}`;
       }).join("")
-        // Steps 3 and 4: two cards side by side, in one row
-        .replace(/(<h3>Step 3\b[\s\S]*?)(<h3>Step 4\b[\s\S]*?)(?=<h[23][ >]|$)/, (m, a, b) => `<div class="ftdd-pi-row ftdd-pi-pair"><div class="ftdd-pi-card">\n${a.trim()}\n</div><div class="ftdd-pi-card">\n${b.trim()}\n</div></div>\n`);
+        // each pair: two cards side by side, in one row
+        .replace(PI_PAIR_ROW, (m, ...g) => { const [a, b] = g.slice(0, PI_PAIRS.length * 2).filter(x => x !== undefined); return `<div class="ftdd-pi-row ftdd-pi-pair"><div class="ftdd-pi-card">\n${a.trim()}\n</div><div class="ftdd-pi-card">\n${b.trim()}\n</div></div>\n`; });
       slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
       parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
       continue;

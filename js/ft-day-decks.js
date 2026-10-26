@@ -620,7 +620,7 @@ function fitSheets(){
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.classList.contains("ftdd-read");
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? 0.72 : 0.4);
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.4);   // a text-and-chart row is never split, so it may shrink a little more
     else if(!sheet.classList.contains("ftdd-sheet-edit") && !read && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
@@ -1781,7 +1781,8 @@ main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 .ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
-.ft-body .ftdd-pi-chart img{max-height:52vh;max-width:100%;width:auto;margin:0 auto;display:block;}
+.ft-body .ftdd-pi-chart img{width:100%;height:auto;max-height:56vh;object-fit:contain;margin:0 auto;display:block;}   /* a small chart is scaled up to fill its half */
+.ft-body .ftdd-pi-chart:has(> figure + figure) img{max-height:26vh;}   /* two charts share the half */
 /* a text-and-chart row is split in two, half text, half chart: the text big and bold so it fills its half, the chart as big as its half */
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:21px !important;font-weight:600 !important;line-height:1.5 !important;}
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair) > .ftdd-pi-card:first-child{display:flex;flex-direction:column;justify-content:center;}

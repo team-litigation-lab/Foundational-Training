@@ -437,27 +437,14 @@ function orientNextUp(){}
 window.FTNextUp = function(nav, btn, title, sub){
   document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
   if(!nav || !title) return;
-  nav.style.position = "relative";
   const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
-  el.innerHTML = '<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span class="ftr-nextup-t"></span><span class="ftr-nextup-s"></span>';
-  el.querySelector(".ftr-nextup-t").textContent = String(title).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  el.innerHTML = '<b>Next up</b><span class="ftr-nextup-t"></span><span class="ftr-nextup-s"></span>';
+  const t = String(title).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  el.querySelector(".ftr-nextup-t").textContent = t; el.title = "Next up: " + t + (sub ? " · " + sub : "");
   el.querySelector(".ftr-nextup-s").textContent = sub || "";
-  nav.appendChild(el);
-  // centered over the Next button, kept inside the bar
-  const place = () => {
-    if(!el.isConnected) return;
-    const n = nav.getBoundingClientRect(), b = (btn && btn.isConnected ? btn : nav.lastElementChild || nav).getBoundingClientRect(), w = el.offsetWidth;
-    const mid = b.left + b.width / 2 - n.left, left = Math.max(0, Math.min(n.width - w, mid - w / 2));
-    el.style.left = left + "px"; el.style.setProperty("--ftr-nu-tip", (mid - left) + "px");
-  };
-  place(); requestAnimationFrame(place);
-  // it steps aside after a few seconds so it never sits over the slide's text, and comes back over the Next button
-  let t = setTimeout(() => el.classList.add("ftr-nextup-off"), 6000);
-  if(btn){
-    const show = () => { clearTimeout(t); el.classList.remove("ftr-nextup-off"); place(); }, hide = () => { clearTimeout(t); t = setTimeout(() => el.classList.add("ftr-nextup-off"), 1500); };
-    btn.addEventListener("mouseenter", show); btn.addEventListener("focus", show);
-    btn.addEventListener("mouseleave", hide); btn.addEventListener("blur", hide);
-  }
+  // in the bar itself, just before the Next button, so it never covers the slide
+  const at = btn && btn.isConnected && btn.parentNode === nav ? btn : null;
+  if(at) nav.insertBefore(el, at); else nav.appendChild(el);
 };
 function orientLastStep(){
   const b = document.querySelector('.slide-nav button[onclick^="goToKnowledgeCheckWithInterstitial"]');
@@ -706,14 +693,17 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
-.ftr-nextup{position:absolute;left:0;bottom:calc(100% + 14px);z-index:6;box-sizing:border-box;width:290px;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:14px;padding:12px 34px;box-shadow:0 12px 28px rgba(30,35,64,.38);font:600 17px/1.3 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;transition:opacity .35s, transform .35s;}
-.ftr-nextup.ftr-nextup-off{opacity:0;transform:translateY(6px);pointer-events:none;}
-.ftr-nextup::after{content:"";position:absolute;left:var(--ftr-nu-tip, 50%);margin-left:-9px;bottom:-11px;border:9px solid transparent;border-top-color:#E8590C;border-bottom:0;}
-.ftr-nextup b{display:block;font:800 13px/1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
-.ftr-nextup .ftr-nextup-t{display:block;color:#fff;font-weight:700;}
-.ftr-nextup .ftr-nextup-s{display:block;color:#C9CFE6;font:600 13.5px/1.3 'Inter',sans-serif;}
+.ftr-nextup{flex:0 0 250px;width:250px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:5px 12px;font:700 14px/1.25 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;margin-left:auto;min-width:0;}
+.ftr-nextup b{display:block;font:800 10.5px/1.1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
+.ftr-nextup .ftr-nextup-t{display:block;max-width:100%;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ftr-nextup .ftr-nextup-s{display:block;color:#C9CFE6;font:600 11.5px/1.2 'Inter',sans-serif;}
 .ftr-nextup .ftr-nextup-s:empty{display:none;}
-.ftr-nextup-x{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font:700 12px/1 'Inter',sans-serif;cursor:pointer;}
+@media(max-width:1100px){ .ftr-nextup{flex-basis:190px;width:190px;} }
+/* in a lesson's bar the buttons keep their size and the progress dots give way to the card */
+#lessonStage > .slide-nav > :not(.slide-dots){flex-shrink:0;white-space:nowrap;}
+#lessonStage > .slide-nav > .slide-dots{flex:1 1 auto;min-width:0;overflow:hidden;}
+#lessonStage > .slide-nav > .ftr-nextup{flex-basis:220px;width:220px;margin-left:0;}
+@media(max-width:760px){ .ftr-nextup{display:none !important;} }
 @keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
