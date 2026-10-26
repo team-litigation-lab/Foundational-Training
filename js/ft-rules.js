@@ -630,11 +630,11 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one{grid-template-columns:minmax(0,1.
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todos{margin-top:0;}
 body.ft-orient #lessonSlideWrap .ftr-todos-t{display:inline-flex;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h .btn{padding:4px 12px !important;font-size:13px !important;min-height:0 !important;line-height:1.3 !important;flex:0 0 auto;}
-body.ft-orient #lessonSlideWrap .ftr-todos-pre{margin:4px 0 2px !important;font-size:12.5px !important;color:#4A5068 !important;}
+body.ft-orient #lessonSlideWrap .ftr-todos-pre{margin:4px 0 2px !important;font-size:12.5px !important;font-weight:600 !important;color:#2A2F45 !important;}
 body.ft-orient #lessonSlideWrap .ftr-todos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:2px 0;gap:8px;flex-wrap:nowrap;align-items:center;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;min-height:0 !important;white-space:nowrap;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;font-weight:700 !important;color:#1B1E2E !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;font-weight:700 !important;min-height:0 !important;white-space:nowrap;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
