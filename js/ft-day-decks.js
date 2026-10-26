@@ -673,7 +673,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.slide(1, 'reading')" title="Day 1's Reading Task, then its questions in ✍️ Knowledge Check">📖 Next: Reading Task: What Is Personal Injury? →</button>`}
+          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.slide(1, 'reading')" title="Day 1's Reading Task, then its questions in ✍️ Knowledge Check">📖 Next: Reading Task: Personal Injury →</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -1135,7 +1135,7 @@ const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
 root.goToKnowledgeCheckWithInterstitial = async function(){
   const l = Number(state.dayId), day = discussionDay(l);
   // the orientation has no Activity deck (and isn't a lesson to finish): its last slide goes on to 🧰 Know Your Tools,
-  // which in turn ends on Day 1's Reading Task (What Is Personal Injury?)
+  // which in turn ends on Day 1's Reading Task (Personal Injury)
   if(root.FT_ORIENTATION && l === Number(root.FT_ORIENTATION.id)) return goto("knowtools");
   if(!day) return __lessonDone.apply(this, arguments);
   if(state.traineeId && !state.isAdmin){
@@ -1227,12 +1227,12 @@ const TOOLS = [
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "🟢", name: "Practice Sessions", img: "practice-lab", go: "goto('simulators')", where: "🛠 Practice Lab → 🟢 Practice Sessions",
-    what: "Real work, in real time, for your law firm: each session is a task done live in the CMS on your assigned case, checked against your firm’s rules and reviewed by your trainer.",
-    feats: ["By day: the Reception and Intake Mock Calls, the Calendaring Practice Lab, Medical Records requests",
-      "Each session opens with its lesson, so you practise what you just learned",
-      "Record what you did and submit it: it’s evaluated against your case and your 🏛 firm’s rules",
-      "🎯 A graded call counts toward its lesson"]},
+  {ic: "✉️", name: "Email Simulators", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 Training Directory → 🛠 Simulators → ✉️ Email (it opens in its own tab)",
+    what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
+    feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
+      "✍️ Email Replies: one email at a time, answered in the sender’s style",
+      "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
+      "One submission grades filing, security, triage and your replies"]},
   {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
@@ -1247,15 +1247,16 @@ const TOOLS = [
       "It shows the file name to save it under"]},
   {ic: "📚", name: "LSH Knowledge Base", short: "Knowledge Base", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 Knowledge Base (it opens in its own tab)",
     what: "The LSH library of SOPs, training videos and know-how from the whole LSH VA community: look up how a task is done before you ask.",
-    feats: ["SOPs and step-by-step guides for the work you do for your clients",
-      "Training videos from the LSH VA community",
+    feats: ["★ Opens on Featured: the articles the team has starred as front-page reading, from Personal Injury to the Receptionist SOP",
+      "SOPs and step-by-step guides for the work you do for your clients",
       "Opens signed in: no second log-in, straight from this platform",
       "Yours to keep using once you are working with your clients"]},
-  {ic: "✍️", name: "Knowledge Check", img: "knowledge-check", go: "goto('process')", where: "✍️ Knowledge Check in the top bar",
-    what: "Each module’s Process Questions, answered in writing on the platform and graded.",
-    feats: ["A module’s questions open once you finish the module",
-      "📝 Submit for Grading: a score and feedback under each answer, then your trainer’s review",
-      "📁 Your Trainee Folder’s Drive link, so new documents are made there"]}
+  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 Training Directory → 🛠 Simulators → 🏥 Medical Records Requests (it opens in its own tab)",
+    what: "A records request platform on a real-looking case file: you collect complete medical records and itemized bills for a demand, the way a Case Manager does.",
+    feats: ["🔐 Check the HIPAA authorization before anything goes out",
+      "🏥 Send each request to the right provider’s department for the right dates, from the Provider Directory",
+      "Handle what comes back: rejections, invoices against the fee cap, follow-ups and missing records",
+      "Review the records, flag the problems and log them to the case file by the attorney’s date"]}
 ];
 // the tools, as a row of tabs in the slide's bar (in place of a pill and "Tool N of 8"), so the picked tool's
 // screenshot and text get the sheet's whole width
@@ -1769,8 +1770,12 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 .ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
 main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:21px !important;line-height:1.6 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:20px !important;}
+/* a line of space between one step (or section) and the next */
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body figure.ftdd-pi-fig{margin:0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
 .ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
+.ft-body .ftdd-pi-row.ftdd-pi-pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 .ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 .ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
