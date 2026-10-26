@@ -8,7 +8,11 @@
    the open lessons (js/ft-updates.js ftLoadOpenDays, the same request). The trainer unlocks the next step in
    Admin → 📅 Open Lessons → 🔓 Day 1 Steps. Until Finish is unlocked:
      • 📚 Dashboard opens the step the trainee is on (Setting of Training Expectations, first);
-     • a later step's page, deck slide, video or answer sheet says it is locked and goes back to the current step.
+     • a later step's page, deck slide, video or answer sheet says it is locked and goes back to the current step;
+     • Day 1's Activity deck goes strictly in order: Next, one slide at a time; no skipping ahead from the dots or the 🗺 Map
+       (going back to a slide already passed is fine).
+   🎬 Day 1's video (the day card's Handouts / Video, the lesson card's 🎬 Video) is never requested: it opens once the
+   trainer unlocks Handouts and Videos, and locks again if the trainer locks from there.
    Only a trainee on Day 1 is held to it: an admin, the 👁 trainee view, a trainee who finished Lesson 1 and a batch
    already given a later lesson are not.
    ============================================================ */
@@ -16,11 +20,11 @@
 const STEPS = [
   {n: 1, label: "Setting of Training Expectations", go: "goto('day', 12)"},
   {n: 2, label: "Know Your Tools", go: "goto('knowtools')"},
-  {n: 3, label: "Personal Injury Reading", go: "FTDayDecks.slide(1, 'reading')"},
-  {n: 4, label: "Classroom Discussion", go: "goto('day', 1)"},
-  {n: 5, label: "Handouts and Videos", go: "FTDayDecks.open(1, 0)"},   // the day card, its Handouts / Video row
-  {n: 6, label: "Process Questions", go: "FTDayDecks.toKC(1)"},
-  {n: 7, label: "Installation of SA", go: "FTDayDecks.slide(1, 'pm')"},
+  {n: 3, label: "Personal Injury Reading", go: "FTDay1.openStep(3)"},   // each: its first slide in Day 1's Activity deck
+  {n: 4, label: "Classroom Discussion", go: "FTDay1.openStep(4)"},
+  {n: 5, label: "Handouts and Videos", go: "FTDay1.openStep(5)"},
+  {n: 6, label: "Process Questions", go: "FTDay1.openStep(6)"},
+  {n: 7, label: "Installation of SA", go: "FTDay1.openStep(7)"},
   {n: 8, label: "Finish", go: "goto('modules')"}
 ];
 const FINISH = 8;
@@ -41,11 +45,45 @@ function blocked(n){
   toast(`🔒 ${step(n).label} opens when your trainer unlocks it. You are on ${step(at()).label}.`);
   return true;
 }
+/* Day 1's Activity deck, slide by slide: the step each slide belongs to (the day card goes with the reading, where the
+   deck starts; a slide not named here goes with the slide before it) */
+function slideStep(s){
+  if(!s) return 0;
+  if(s.agenda || /^reading/.test(s.id)) return 3;
+  if(s.id === "discussion" || s.id === "client-id") return 4;
+  if(s.id === "pm") return 7;
+  const r = s.launch || {};
+  if(r.go === "lesson") return 4;
+  if(/ftVideoOrAsk/.test(r.run || "")) return 5;
+  if(/toKC/.test(r.run || "")) return 6;
+  return 0;
+}
+const deckList = () => window.FTDayDecks && FTDayDecks.list ? FTDayDecks.list(1) : [];
+function stepAt(i){ const L = deckList(); for(let j = Math.min(i, L.length - 1); j >= 0; j--){ const n = slideStep(L[j]); if(n) return n; } return 3; }
+let pendingStep = 0;
+function openStep(n){
+  const L = deckList(), i = L.findIndex((s, j) => !s.agenda && stepAt(j) === n);
+  if(i >= 0){ FTDayDecks.open(1, i); return; }
+  pendingStep = n; FTDayDecks.open(1, 0);   // (the deck's slides load first: the render below goes on to the step's slide)
+}
+// may a trainee go to slide i of day n's deck (from slide `from`, -1 from elsewhere)?
+function mayGo(n, i, from){
+  if(n !== 1 || !active()) return true;
+  const want = stepAt(i);
+  if(want > at()){ toast(`🔒 ${step(want).label} opens when your trainer unlocks it. You are on ${step(at()).label}.`); return false; }
+  const by = window.FTDayDecks && FTDayDecks.state && FTDayDecks.state().split ? 2 : 1;
+  if(from >= 0 && i > from + by){ toast("Day 1 goes in order: one slide at a time, with Next →."); return false; }
+  return true;
+}
 const goCurrent = () => { try{ (new Function(step(at()).go))(); }catch(err){ goto("day", 12); } };
 window.FTDay1 = {STEPS, active, at, stepsFor, label: n => step(n).label,
   // a lesson 1 answer sheet: the Reading Task's opens with the reading, the Virtual Assistant Essentials one with Process Questions
   sheetLocked: set => active() && Number(set.lesson) === 1 && set.id !== "pi-overview" && at() < 6,
-  goCurrent};
+  goCurrent, openStep, mayGo,
+  // 🎬 Day 1's video waits for Handouts and Videos (no request): true while it is locked
+  videoByStep: id => Number(id) === 1 && !!state.traineeId && !state.isAdmin && !state.adminPreview && !videoOpen()};
+// Day 1's video is open once the trainer has unlocked Handouts and Videos for the batch (and locks again from there)
+const videoOpen = () => stepsFor(state.traineeBatch) >= 5;
 
 /* the pages: 📚 Dashboard opens the current step; Know Your Tools, Lesson 1 and its Knowledge Check wait for theirs */
 const __goto = window.goto;
@@ -58,17 +96,21 @@ window.goto = function(view, arg){
   }
   return __goto.apply(this, arguments);
 };
-// 🎬 the lesson's video (Handouts and Videos)
+// 🎬 the lesson's video (Handouts and Videos): opened by the trainer's unlock, never requested
+const isTrainee = () => !!state.traineeId && !state.isAdmin && !state.adminPreview;
+const VIDEO_LOCKED = "🔒 The video opens when your trainer unlocks Handouts and Videos.";
+const __unlocked = window.ftVideoUnlocked;
+if(__unlocked) window.ftVideoUnlocked = function(id){ if(Number(id) === 1 && isTrainee()) return videoOpen(); return __unlocked.apply(this, arguments); };
 const __video = window.ftVideoOrAsk;
-if(__video) window.ftVideoOrAsk = function(id){ if(Number(id) === 1 && blocked(5)) return; return __video.apply(this, arguments); };
+if(__video) window.ftVideoOrAsk = function(id){
+  if(Number(id) === 1 && isTrainee()){ if(blocked(5)) return; if(!videoOpen()){ toast(VIDEO_LOCKED); return; } return ftOpenVideo(1); }
+  return __video.apply(this, arguments);
+};
+const __ask = window.ftRequestVideo;
+if(__ask) window.ftRequestVideo = function(id){ if(Number(id) === 1 && isTrainee()){ toast(VIDEO_LOCKED); return; } return __ask.apply(this, arguments); };
 
 /* Day 1's Activity deck: a slide of a later step shows its lock instead */
-const SLIDE_STEP = id => /^reading/.test(id) ? 3 : (id === "discussion" || id === "client-id") ? 4 : id === "pm" ? 7 : 0;
-function slideId(){
-  const s = window.FTDayDecks && FTDayDecks.state ? FTDayDecks.state() : null, d = window.FT_DAY_DECKS && FT_DAY_DECKS[1];
-  if(!s || Number(s.day) !== 1 || !d) return "";
-  const hit = d.slides.find(x => FTDayDecks.at(1, x.id) === s.i); return hit ? hit.id : "";
-}
+const deckState = () => window.FTDayDecks && FTDayDecks.state ? FTDayDecks.state() : null;
 const __render = window.render;
 let loading = false;
 window.render = function(){
@@ -78,10 +120,12 @@ window.render = function(){
   }
   // 📚 Dashboard on Day 1 is the step the trainee is on
   if((state.view === "modules" || state.view === "dashboard") && active() && at() < FINISH){ goCurrent(); return; }
+  const d = deckState();
+  if(pendingStep && state.view === "daydeck" && d && Number(d.day) === 1 && deckList().length){ const n = pendingStep; pendingStep = 0; openStep(n); return; }
   const r = __render.apply(this, arguments);
-  if(state.view === "daydeck" && active()){
-    const n = SLIDE_STEP(slideId()), box = document.querySelector("main.main-ftdd .ftdd-slides");
-    if(n && n > at() && box) box.innerHTML = `<div class="ftd1-lock"><b>🔒 ${esc(step(n).label)}</b>
+  if(state.view === "daydeck" && active() && d && Number(d.day) === 1 && deckList().length){
+    const n = stepAt(d.i), box = document.querySelector("main.main-ftdd .ftdd-slides");
+    if(n > at() && box) box.innerHTML = `<div class="ftd1-lock"><b>🔒 ${esc(step(n).label)}</b>
         <span>This step opens when your trainer unlocks it. Day 1 goes in order, one step at a time.</span>
         <button type="button" class="btn btn-navy" onclick="FTDay1.goCurrent()">Go to ${esc(step(at()).label)} →</button></div>`;
   }

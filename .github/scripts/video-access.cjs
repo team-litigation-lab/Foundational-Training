@@ -1,4 +1,4 @@
-// 🎬 A lesson's AI discussion video, asked for and approved per trainee (js/ft-updates.js): the lesson card's
+// 🎬 A lesson's AI discussion video (after Lesson 1, whose video the Day 1 steps open), asked for and approved per trainee (js/ft-updates.js): the lesson card's
 //   🔒 Request Video writes videoreq:<id> (the trainee's own record: only lesson numbers and the server's time are kept),
 //   the button then reads ⏳ Requested, the trainer approves it in Admin → 📅 Open Lessons → 🎬 Unlock Videos → Requests
 //   (videoaccess:<id>, which only admins write and the trainee reads), and the card's button becomes 🎬 Video.
@@ -47,23 +47,27 @@ async function workerChecks() {
   await put('settings:openvideos', { all: [], batches: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-  const btn = () => page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-1 .mc-grid > button')][1]; return b ? b.innerText.trim() : ''; });
+  const btn = () => page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-2 .mc-grid > button')][1]; return b ? b.innerText.trim() : ''; });
+  // Day 1's video is never asked for: it opens with the trainer's Handouts and Videos unlock (js/ft-day1-flow.js; the
+  // test server starts with Day 1 unlocked to its end)
+  const l1 = await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-1 .mc-grid > button')][1]; return b ? b.innerText.trim() : ''; });
+  if (/Request/.test(l1)) fail(`Lesson 1's video offers a request: "${l1}"`);
   if (!/Request Video/.test(await btn())) fail(`a locked video doesn't offer 🔒 Request Video: "${await btn()}"`);
   // the trainee asks for it
-  await page.click('#dayl-1 .ft-video-ask'); await page.waitForTimeout(1200);
+  await page.click('#dayl-2 .ft-video-ask'); await page.waitForTimeout(1200);
   if (!/Requested/.test(await btn())) fail(`after asking, the button reads "${await btn()}", not ⏳ Requested`);
-  if (!((await get('videoreq:' + id)) || { lessons: {} }).lessons['1']) fail('the request wasn\'t saved');
+  if (!((await get('videoreq:' + id)) || { lessons: {} }).lessons['2']) fail('the request wasn\'t saved');
   // the trainer sees it under Requests and approves it
   await page.evaluate(() => { state.isAdmin = true; state.adminData = null; goto('admin'); state.adminTab = 'opendays'; render(); }); await page.waitForTimeout(3000);
   const adm = await page.evaluate(() => (document.querySelector('.ft-vreqs') || {}).innerText || '');
   if (!/Vida Video/.test(adm) || !/Approve/.test(adm)) fail(`the trainer's Requests don't list the trainee's request: ${adm.slice(0, 200)}`);
-  await page.evaluate(id => ftApproveVideo(id, 1, true), id); await page.waitForTimeout(1500);
-  if (!((await get('videoaccess:' + id)) || { lessons: {} }).lessons['1']) fail('the approval wasn\'t saved');
+  await page.evaluate(id => ftApproveVideo(id, 2, true), id); await page.waitForTimeout(1500);
+  if (!((await get('videoaccess:' + id)) || { lessons: {} }).lessons['2']) fail('the approval wasn\'t saved');
   // the trainee's card now plays it
   await page.evaluate(() => { state.isAdmin = false; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
   if (!/^.?.?\s*Video$/.test(await btn()) || /Request|Requested/.test(await btn())) fail(`after the approval, the button reads "${await btn()}", not 🎬 Video`);
-  if (!/Request Video/.test(await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-2 .mc-grid > button')][1]; return b ? b.innerText : ''; }))) fail('approving one lesson\'s video opened another\'s');
+  if (!/Request Video/.test(await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-3 .mc-grid > button')][1]; return b ? b.innerText : ''; }))) fail('approving one lesson\'s video opened another\'s');
 
   await put('settings:openvideos', vidsBefore || { all: [], batches: {} });
   await browser.close();
