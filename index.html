@@ -2653,7 +2653,7 @@ body::before{opacity:.40;}
   .topbar,.btn-primary,.btn-navy{background-image:none;box-shadow:none;}
 }
 </style>
-<script src="/js/portal-gate.js?v=2026.10.15-dashboard"></script>
+<script src="/js/portal-gate.js?v=ft-2026.10.26-rbac"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -9049,6 +9049,8 @@ window.applyUpdate = applyUpdate;
   if(window.portalGate) await window.portalGate.init();   // js/portal-gate.js: trainees and admins come in from the LSH Training Portal
   if(state.traineeId) dropAdminSession();   // a trainee session wins: no admin bar, no admin pages
   if(state.adminToken && (await authStatus())) state.isAdmin = true;
+  // 👁 trainee view (Switch View, or the Portal's trainee view) stays on through a reload of this tab
+  if(state.isAdmin){ try{ if(sessionStorage.getItem("lsh_admin_preview") === "1"){ state.isAdmin = false; state.adminPreview = true; } }catch(e){} }
   if(state.isAdmin && !state.adminToken && (await authStatus())){ state.isAdmin = false; setTimeout(()=>{ toast("Secure mode is on — please sign in to Admin again with the admin password."); }, 600); }
   if(state.traineeId && (await authStatus()) && !state.authToken){
     if(!(await reauthTrainee())){ state.traineeId = ""; await storeSet("trainee-id", ""); state.view = "login"; render(); return; }
