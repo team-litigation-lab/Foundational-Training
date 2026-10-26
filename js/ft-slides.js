@@ -398,3 +398,23 @@ if(typeof Narrator !== "undefined"){
   window.ftSayText = ftSayText;
 }
 })();
+
+/* The progress dots sit in the Previous / Next bar, beside "Step N of M", not in a row of their own above the slide,
+   so the slide gets that height (lessons and the orientation, not full screen or the room's window). */
+(function(){
+  const __after = window.afterRender;
+  window.afterRender = function(){
+    const r = __after ? __after.apply(this, arguments) : undefined;
+    try{
+      const st = document.querySelector("#lessonStage:not(:fullscreen)"), dots = st && st.querySelector(":scope > .slide-dots"), c = st && st.querySelector(".slide-nav .slide-counter");
+      if(dots && c && !document.getElementById("audienceRoot")){ dots.classList.add("slide-dots-nav"); c.insertAdjacentElement("afterend", dots); }
+    }catch(e){}
+    return r;
+  };
+  const css = document.createElement("style");
+  css.textContent = `.lesson-stage .slide-nav .slide-dots-nav{margin:0 !important;flex:0 1 auto;min-width:0;max-width:40%;flex-wrap:nowrap;overflow:hidden;}
+.lesson-stage .slide-nav .slide-dots-nav .slide-dot{background:#C9CFDD;}
+.lesson-stage .slide-nav .slide-dots-nav .slide-dot.visited{background:#8E97C4;}
+.lesson-stage .slide-nav .slide-dots-nav .slide-dot.active{background:#DB8437;}`;
+  document.head.appendChild(css);
+})();
