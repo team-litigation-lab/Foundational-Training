@@ -42,7 +42,7 @@ const failures = []; const fail = (m) => failures.push(m);
     const land = await page.evaluate(() => { goto('dashboard'); return [...document.querySelectorAll('.fts-banner')].length; });
     if (land) fail(`the landing page still has ${land} Simulators / Blueprint card(s)`);
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
-    const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText }));
+    const lab = await page.evaluate(() => ({ sessions: document.querySelectorAll('.fss-card').length, text: document.querySelector('main').innerText, all: document.querySelector('main').textContent }));
     if (/Your law firm|My firm & rules/.test(lab.text)) fail('the Practice Lab still shows the 🏛 Your law firm banner');
     // Four Practice Sessions: Claims is no longer one of them — the Claims Specialist work is the
     // 🧰 Drafting Tools' LOR Drafting Activity — and PI Process Flow isn't either: Day 3 is a discussion.
@@ -51,8 +51,9 @@ const failures = []; const fail = (m) => failures.push(m);
     if (/All simulators|📅 Calendaring Simulators\n/.test(lab.text)) fail('the Practice Lab still lists the simulators');
     if (/Claims: LORs to the 1P and 3P carriers/.test(lab.text)) fail('the Claims Specialist Practice Session is still in the Practice Lab');
     if (!/Drafting Tools/.test(lab.text) || !/LOR Drafting Activity/.test(lab.text)) fail('the Practice Lab has no 🧰 Drafting Tools / LOR Drafting Activity');
-    if (!/Templates in this tool/i.test(lab.text)) fail('the drafting tool\'s card does not list the templates it carries');
-    if (!/LOR Drafting for 1P/.test(lab.text) || !/Drafting for 3P/.test(lab.text)) fail('the drafting tool\'s card does not name its two templates');
+    // (the card keeps its template list; the compact Lab hides it on screen, so it's read from the card's text)
+    if (!/Templates in this tool/i.test(lab.all)) fail('the drafting tool\'s card does not list the templates it carries');
+    if (!/LOR Drafting for 1P/.test(lab.all) || !/Drafting for 3P/.test(lab.all)) fail('the drafting tool\'s card does not name its two templates');
     // A firm is no longer assigned: the trainee has one from their first page load, so no session waits.
     // (The Practice Lab no longer names the firm — its banner was removed; a session links to the profile.)
     if (/Waiting for your firm/.test(lab.text)) fail('a session is still waiting for a firm to be assigned');

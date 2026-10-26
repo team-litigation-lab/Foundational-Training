@@ -37,8 +37,10 @@ function fitPage(){
   const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ft-s")) || 1;
   const pad = (parseFloat(getComputedStyle(m).paddingTop) || 0) + (parseFloat(getComputedStyle(m).paddingBottom) || 0);
   const room = m.clientHeight - pad, need = m.scrollHeight - pad;
-  if(need <= room + 1 || need > room * 1.35) return;
-  m.style.setProperty("--ft-page-s", Math.max(0.8, s * room / need * 0.99).toFixed(3));
+  // 🛠 the Practice Lab is made to fit one screen (down to 0.66); other pages only when a little taller (down to 0.8)
+  const lab = m.classList.contains("main-sims");
+  if(need <= room + 1 || (!lab && need > room * 1.35)) return;
+  m.style.setProperty("--ft-page-s", Math.max(lab ? 0.66 : 0.8, s * room / need * 0.99).toFixed(3));
 }
 let pageT = 0;
 new MutationObserver(() => { cancelAnimationFrame(pageT); pageT = requestAnimationFrame(fitPage); }).observe(document.getElementById("app") || document.body, {childList: true});

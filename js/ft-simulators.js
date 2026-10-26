@@ -85,19 +85,20 @@ function renderSimulators(){
   const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalRulesCard", "calrules") : "";
   const drafting = window.ftLorCard ? tool("ftLorCard", "lor") + tool("ftGuideCard", "guide") + tool("ftTranscribeCard", "transcribe") + tool("ftDrillsCard", "drills") : "";
   const trainer = window.FTSessions ? FTSessions.trainerCards() : "";
+  // 📚 the Knowledge Base: a card beside the Drafting Tools (its own section when there are none yet), so the Lab fits one screen
+  const KB = `<div class="card fts-card"><div class="fts-kicker">Any day</div><h3>📚 LSH Knowledge Base</h3>
+        <p class="fts-note">SOPs, guides and training videos, searchable, in one place. It opens signed in.</p>
+        <div class="fts-tool-act"><a class="btn btn-navy btn-sm" href="https://lsh-knowledge-base.legalsupporthelp.workers.dev/" target="_blank" rel="noopener">Open the Knowledge Base ↗</a></div></div>`;
   const more = !seesAll() ? `<p class="fts-sub fts-more">📅 More of the Practice Lab opens as your training goes on, day by day.</p>` : "";
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
       <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
     ${window.FTSessions ? `${sessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
       <div class="fts-grid">${sessions}</div></section>` : ""}
     ${drafting ? `<section class="fts-group"><h2>🧰 Drafting Tools</h2><p class="fts-sub">Tools you draft in here, on this platform. You fill in the firm’s own template on the page and download the finished document as a PDF, named by the trainers’ convention — yours to edit before you download. Nothing you draft here becomes a case file in the CMS.</p>
-      <div class="fts-grid">${drafting}</div></section>` : ""}
+      <div class="fts-grid">${drafting}${KB}</div></section>` : ""}
     ${trainer ? `<section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${trainer}</div></section>` : ""}` : ""}
-    <section class="fts-group"><h2>📚 Knowledge Base</h2><p class="fts-sub">The LSH library of SOPs, guides and training videos. Look up how a task is done before you ask, and come back to it once you are working with your clients.</p>
-      <div class="fts-grid"><div class="card fts-card"><div class="fts-kicker">Any day</div><h3>📚 LSH Knowledge Base</h3>
-        <p class="fts-note">SOPs, guides and training videos, searchable, in one place. It opens signed in.</p>
-        <div class="fts-tool-act"><a class="btn btn-navy btn-sm" href="https://lsh-knowledge-base.legalsupporthelp.workers.dev/" target="_blank" rel="noopener">Open the Knowledge Base ↗</a></div></div></div></section>
+    ${drafting ? "" : `<section class="fts-group"><h2>📚 Knowledge Base</h2><p class="fts-sub">The LSH library of SOPs, guides and training videos. Look up how a task is done before you ask.</p><div class="fts-grid">${KB}</div></section>`}
     ${window.ftCasesSection ? ftCasesSection() : ""}
     ${tool("ftListenSection", "listening")}${more}`;
 }
@@ -213,6 +214,30 @@ main.main-sims{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fts-tool-act a.btn{text-decoration:none;}
 .fts-sub a{color:var(--orange-deep);font-weight:700;}
 .fts-graded{margin:0;font-size:13.5px;color:var(--navy);background:#fff7ed;border-left:3px solid #f97316;border-radius:6px;padding:6px 10px;}
+/* 🛠 the Practice Lab on one screen: small cards, more in a row, a slim side margin (the page shrinks the rest of the
+   way to fit: js/ft-screen-fit.js) */
+main.main-sims{max-width:none;padding:12px 18px 20px;}
+main.main-sims .fts-hero{margin-bottom:10px;} main.main-sims .fts-hero .page-hero{padding:10px 18px !important;margin:0 !important;}
+main.main-sims .fts-hero h1{font-size:20px !important;margin:0 0 2px !important;} main.main-sims .fts-hero .eyebrow{display:none;}
+main.main-sims .fts-hero p{margin:0 !important;font-size:12.5px !important;max-width:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+main.main-sims .fts-group{margin-bottom:8px;} main.main-sims .fts-group h2{font-size:17px;margin:0 0 2px;}
+main.main-sims .fts-sub{margin:0 0 6px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+main.main-sims .fts-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;}
+@media(min-width:1500px){ main.main-sims .fts-grid{grid-template-columns:repeat(7,minmax(0,1fr));} }
+@media(max-width:1300px){ main.main-sims .fts-grid{grid-template-columns:repeat(4,minmax(0,1fr));} }
+@media(max-width:1000px){ main.main-sims .fts-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media(max-width:560px){ main.main-sims .fts-grid{grid-template-columns:minmax(0,1fr);} }
+/* a card says what it is and opens it: its long lists (templates, guides, recordings) and samples are inside the tool */
+main.main-sims .fts-card ul, main.main-sims .fts-card ol, main.main-sims .fts-label, main.main-sims .fts-sample, main.main-sims .fts-file{display:none !important;}
+main.main-sims .fts-card{padding:8px 10px;gap:4px;}
+main.main-sims .fts-card h3{font-size:14.5px;}
+main.main-sims .fts-kicker{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+main.main-sims .fts-note{font-size:12.5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+main.main-sims .fts-graded{font-size:12px;padding:4px 8px;}
+main.main-sims .fts-card .btn{padding:5px 10px;font-size:12.5px;}
+main.main-sims .fts-tool-act{margin-top:auto;}
+/* the same line on every trainer card (the section says it once): hidden here; the trainer's own comment still shows */
+main.main-sims .fts-note-std{display:none !important;}
 .fss-card h3 .fss-pill{margin-left:4px;} .fss-case{margin:0;font-size:13.5px;color:var(--navy);}
 /* The panel starts below the top bar: a tool fills the rest of the window, and 📚 Dashboard and the
    other tabs stay clickable while it is open (ftsTop() keeps --fts-top on the bar's real height). */
