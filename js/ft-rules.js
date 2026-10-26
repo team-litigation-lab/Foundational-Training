@@ -79,7 +79,6 @@ EOD.body = EOD.parts.map(p=>p[0] + "\n" + "-\n".repeat(p[2])).join("\n");
 
 // The LSH Daily Task Tracker, part by part (the parts of js/ft-tracker.js's sheet).
 const TRACKER_PARTS = {
-  top:[["Status Counts (Rows 1–5)", "How many of your tasks are New, Pending for >3 days, Ongoing, Priority - Ongoing and Completed. They count themselves from each task’s Status."]],
   sections:[["⬇ FOR COMPLETION ⬇", "The tasks you’re working on. Add a row for each new task."],
             ["⬇ RECURRING ⬇", "Tasks you do every day, like your Typing Test and Spelling Test."],
             ["⬇ COMPLETED ⬇", "Finished tasks, with their Actual Completion Date."]],
@@ -87,13 +86,11 @@ const TRACKER_PARTS = {
         ["Type of Task", "Pick the type from the list. Your training tasks are LSH-TRAINING."],
         ["Task Details / Specific Task", "What the task is, specifically, e.g. Classroom Discussion: Reception Training Day 1."],
         ["Accountable VA", "Your name, as the VA responsible for the task."],
-        ["DAILY NOTES (Dated Significant Task Progress/Difficulties)", "One dated column for each training day. For every open task, write what you did that day, the result and the next step, and any difficulty with what you need to resolve it. Make it as detailed as possible. Never write just “done”, “ok” or “same”."],
         ["VA NOTES", "Your takeaways from the task, in complete sentences that show what you learned."],
         ["Deadline", "The date the task is due."],
         ["Status", "New, Pending for >3 days, Ongoing, Priority - Ongoing or Completed. Keep it up to date."],
         ["Actual Completion Date", "The date you finished the task."]],
-  tabs:[["Client-VA Specific Tasks Index", "Each client’s tasks at a glance, with the client code, business name, state, time zone, field of law, type of task, specific task, period (Daily to Project-based), nature of task (how important and urgent), and deadline (ASAP, Anytime w/in the day, or Timebound, with the date, day or time)."],
-        ["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here. They stay in the credentials document."],
+  tabs:[["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here. They stay in the credentials document."],
         ["Directory", "Your contacts, with the contact person, business name, business address, phone no. (ext), fax number and email."],
         ["Time Zone", "The time zones you work with, for quick reference."]],
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
@@ -405,7 +402,7 @@ const SLIDES = [
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
   ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
-    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
+    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
