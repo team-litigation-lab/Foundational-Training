@@ -757,7 +757,7 @@ const toolsDone = () => forTrainee() && TOOLS.every((t, i) => seenTools().includ
 function toolsCard(){
   const done = toolsDone();
   return `<div class="module-card mc-open mc-clean ftkt-card${done ? " mc-done" : ""}" id="module-tools">
-    <div class="module-head"><div class="mh-day">${done ? "Finished" : "🧰 Day 1"}</div><div class="mh-title">Know Your Tools</div></div>
+    <div class="module-head"><div class="mh-day">${done ? "Finished" : "&nbsp;"}</div><div class="mh-title">Know Your Tools</div></div>
     <div class="module-body"></div>
     <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">${done ? "Review" : "Start"}</button></div></div>`;
 }
@@ -768,8 +768,8 @@ const __moduleCard = root.moduleCard;
 root.moduleCard = function(d){
   if(d && d.ftTools) return toolsCard();
   const html = __moduleCard.apply(this, arguments);
-  // the pinned orientation card carries a kicker like its neighbour, so the two read as a pair
-  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Day 1 · Start here</div>') : html;
+  // (no "Day 1 · Start here" kicker on the orientation's card: its title says what it is)
+  return html;
 };
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
@@ -1182,7 +1182,8 @@ function introCard(l, cur, ex, tags){
   card.classList.add("ftli"); if(cur != null && c.days.includes(cur)) card.classList.add("now");
   const kick = card.querySelector(".mh-day");
   const done = lessonDone(l.id);
-  if(kick) kick.innerHTML = `${done ? "✓ Finished" : "Classroom Activity"} · ${e(FTDays.label(c.days))}${tags || ""}`;
+  // no "Classroom Activity · Day N" kicker: the card says Finished once it is, and its tags (Today …) otherwise
+  if(kick) kick.innerHTML = done ? `✓ Finished${tags || ""}` : (tags ? String(tags).replace(/^\s*·\s*/, "") : "&nbsp;");
   if(done) card.classList.add("ftli-done");
   const grid = card.querySelector(".mc-grid"); if(!grid) return card.outerHTML;
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label

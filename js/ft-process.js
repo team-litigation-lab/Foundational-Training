@@ -221,6 +221,17 @@ function lockedCard(title){
 }
 // A module's own page: its questions, its own Knowledge Check. Each module has its own PROCESS_SETS entry,
 // so "sets" is always one — the map()s below are left in place in case a future set ever spans two modules.
+// A lesson's questions can come from more than one answer sheet (Day 1: the Reading Task's and the lesson's own Process
+// Questions): each sheet is its own section, with its heading and its own numbering, so the two never read as one list.
+const sheetIcon = set => /^Reading Task/i.test(set.title || "") ? "📖" : "✍️";
+function bySheet(qs, each){
+  const sets = [...new Set(qs.map(x => x.set))];
+  return sets.map(set => {
+    const mine = qs.filter(x => x.set === set);
+    return `${sets.length > 1 ? `<h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${mine.length} question${mine.length === 1 ? "" : "s"}</span></h3>` : ""}
+      <ol class="fp-qs">${mine.map(each).join("")}</ol>`;
+  }).join("");
+}
 function moduleCard(lesson){
   const all = kcQuestionsFor(lesson);
   if(!all.length) return "";
@@ -235,8 +246,8 @@ function moduleCard(lesson){
     <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${qs.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Best ${best}%</span>` : ""}</div>
     <div class="fp-body">
       ${sets.map(namePractice).join("")}
-      <ol class="fp-qs">${qs.map(x => `<li><div class="fp-q">${e(x.q)}</div>
-        <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`).join("")}</ol>
+      ${bySheet(qs, x => `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
+        <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
       <div class="fp-actions">
         ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>` : ""}
         ${sets.map(set => saveBtn(set, sets.length > 1)).join("")}
@@ -568,7 +579,7 @@ function renderKc(){
   const intro = `<p class="eyebrow">Knowledge Check</p><h1>${e(d.title)}</h1>
     <p>Answer each process question in complete sentences. Each answer is scored out of 10 for accuracy, depth and clarity, with feedback written the way your facilitator gives it; <b>${KC_PASS}% passes</b> and finishes the lesson. Retakes keep your best score, and your trainer adds their own review.</p>`;
   if(state.isAdmin && !state.adminPreview) return `${back}<div class="kc-hero">${intro}</div>
-    <div class="card kc-card"><ol class="fp-qs">${qs.map(x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`).join("")}</ol>
+    <div class="card kc-card">${bySheet(qs, x=>`<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div></li>`)}
     <p class="fp-muted">Trainees take this Knowledge Check. Their scores, and your review of each one, are under ✍️ Knowledge Check in the top bar.</p></div>`;
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   if(FP.err) return `${back}<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
@@ -582,11 +593,11 @@ function renderKc(){
     ${shown ? kcReport(id, shown) : ""}
     ${prog.done && root_FTNextStep() ? root_FTNextStep().compact(id) : ""}
     <div class="card kc-card">
-      <ol class="fp-qs">${qs.map(x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
+      ${bySheet(qs, x=>{ const g = shown && (shown.items||[]).find(it=>it.sid===x.set.id && it.i===x.i);
         return `<li value="${x.i+1}"><div class="fp-q">${e(x.q)}</div>
           <textarea rows="5" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e((sheet(x.set.id).answers||[])[x.i]||"")}</textarea>
           ${g ? `<div class="kc-fb kc-${kcTone(g.score)}"><b>${g.score}/10</b> ${e(g.feedback)}</div>` : ""}
-          ${(()=>{ const n = ((kcReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; }).join("")}</ol>
+          ${(()=>{ const n = ((kcReview(id) || {}).notes || {})[x.set.id + "|" + x.i]; return has(n) ? `<div class="kc-fb kc-trainer-note"><b>🧑‍🏫 Trainer</b> ${e(n)}</div>` : ""; })()}</li>`; })}
       <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
         <span class="fp-save" id="fpSave"></span></div>
       <p class="fp-muted">Your answers save as you type.</p>
@@ -738,6 +749,8 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-name-try .fp-name-ok{flex-basis:100%;font-size:13px;color:#9A4A12;font-weight:700;}
 .fp-name-try .fp-name-ok:empty{display:none;}
 .fp-name-try .fp-name-ok.ok{color:#1E7A46;} .fp-name code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere;}
+.fp-sheet-h{margin:18px 0 4px;padding:8px 14px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;border-radius:8px;font:800 16px/1.3 'Poppins','Inter',sans-serif;}
+.fp-sheet-h:first-child{margin-top:0;} .fp-sheet-h span{margin-left:8px;font:600 12.5px 'Inter',sans-serif;color:#C9CFE6;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}
 .fp-qs textarea{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
 .fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}
