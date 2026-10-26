@@ -402,6 +402,8 @@ const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-gh
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
   const h = String(s.h || ""), out = [];
+  // Day 1's Reading Task: its questions are the Reading Task sheet of Lesson 1's ✍️ Knowledge Check (open before the lesson)
+  if(DD.day === 1 && s.id === "reading" && root.FTProcess) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTProcess.openLesson(1)">✍️ Answer the Reading Task questions</button>`);
   const has = re => re.test(h);
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
@@ -647,7 +649,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`}
+          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.slide(1, 'reading')" title="Day 1's Reading Task, then its questions in ✍️ Knowledge Check">📖 Next: Reading Task: What Is Personal Injury? →</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -1009,6 +1011,9 @@ async function saveExtras(){
 const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
 root.goToKnowledgeCheckWithInterstitial = async function(){
   const l = Number(state.dayId), day = discussionDay(l);
+  // the orientation has no Activity deck (and isn't a lesson to finish): its last slide goes on to 🧰 Know Your Tools,
+  // which in turn ends on Day 1's Reading Task (What Is Personal Injury?)
+  if(root.FT_ORIENTATION && l === Number(root.FT_ORIENTATION.id)) return goto("knowtools");
   if(!day) return __lessonDone.apply(this, arguments);
   if(state.traineeId && !state.isAdmin){
     const now = new Date().toISOString(), prev = state.progress[l] || {};
@@ -1138,7 +1143,7 @@ function toolsSlide(){
         <p class="ftdd-tool-where"><b>Where:</b> ${e(t.where)}</p>
         <p class="ftdd-tool-fh">Features</p>
         <ul>${t.feats.map(f => `<li>${e(f)}</li>`).join("")}</ul>
-        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : ""}</div>
+        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.slide(1, 'reading')">📖 Next: the Reading Task →</button>`}</div>
       </div>
     </div>
   </div>`;
