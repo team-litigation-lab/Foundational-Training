@@ -19,7 +19,7 @@ const R = path.resolve(__dirname, "..");
 // (Personal Injury) and the Smart Advocate plug-ins installation are on it: the Day 1 card runs Reading Task →
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
-const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring"]};
+const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"]};   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
