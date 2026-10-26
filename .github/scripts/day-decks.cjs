@@ -136,7 +136,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   }
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(1500);
-  const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', n: (document.querySelector('.ftdd-n') || {}).innerText || '',
+  const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', n: (document.querySelector('.ftdd-stepno') || {}).innerText || '',
     deck: !document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle') && !!document.querySelector('.ftdd-dhead .ftdd-prog > span') && !!document.querySelector('.ftdd-nav .ftdd-stepno'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
     open: Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)).map(String), scroll: document.documentElement.scrollHeight - innerHeight,
     trainerNotes: [...document.querySelectorAll('.ftdd-body .trainer-slot')].some(x => x.innerHTML.trim()) }));

@@ -268,10 +268,10 @@ function renderPage(){
   // Each module is its own page (goto('process', lessonId), FTProcess.openLesson): a lesson's own
   // ✓ Finish lesson lands here directly, not on a long page of every module's questions stacked together.
   const lesson = state.pqLesson && kcQuestionsFor(state.pqLesson).length ? state.pqLesson : null;
-  // opened from a deck slide (Day 1's Reading Task, FTDayDecks.toKC): the way back to that slide comes first
+  // opened from a deck slide (Day 1's Reading Task, FTDayDecks.toKC): the way back to the classroom's next activity comes first
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const backBtn = back && Number(back.l) === Number(lesson) && back.day && window.FTDayDecks
-    ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">← Back to the Classroom Activity: Day ${Number(back.day)}${back.h ? ` · ${e(back.h)}` : ""}</button>` : "";
+    ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>` : "";
   if(lesson) return `${preview}<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
@@ -287,7 +287,7 @@ function renderPage(){
 window.FTProcess = {
   // ✍️ Process Questions, at one lesson's own answer-sheet page: where a lesson's ✓ Finish lesson sends the
   // trainee, and what tapping a module's row on the index opens.
-  // ← Back to the Classroom Activity: the deck slide the sheet was opened from (see FTDayDecks.toKC)
+  // Back to the classroom: the deck's next activity after the slide the sheet was opened from (see FTDayDecks.toKC)
   backToClass(){
     let b = null; try{ b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); sessionStorage.removeItem("ftKCBack"); }catch(err){}
     if(b && b.day && window.FTDayDecks) FTDayDecks.slide(Number(b.day), String(b.id || "")); else goto("process");
