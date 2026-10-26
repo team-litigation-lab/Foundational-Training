@@ -112,8 +112,6 @@ const TIME_ADJ = {
            "The affected start and end time."]
 };
 
-// Hubstaff How-To Lessons: this lesson's Hubstaff slides (by id) and the guide. Add more as {title, desc, href}.
-const HOWTO_LESSONS = [];
 
 
 // Day 1 → Setting of Expectations: the tests' links, file names and sample screenshots.
@@ -268,18 +266,11 @@ const SLIDES = [
       ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Daily Deliverables", "Typing and spelling tests, Daily Task Tracker, Monitoring Sheet, EOD email"],
       ["🎯", "Setting of Expectations", "What training is, your role and the use of AI"], ["🌱", "Free Upskill", "After your shift"]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>
     <p class="ftr-sub ftr-after">Your training shift: <b>${esc(SHIFT)}</b>.</p>`],
-  // Hubstaff: how-tos and why they matter, the To-Dos, notes and lost hours
-  ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>{
-    // this lesson's Hubstaff slides (a click goes to the slide) and the LSH VA Guide, then any added lessons
-    const here = [["todos", "Your Hubstaff To-Dos", "How to add today’s To-Do, and the names to use, with 📋 Copy and 📋 Copy All."],
-                  ["notes", "Create Notes in Hubstaff", "Add a work note to the time you’re tracking."],
-                  ["time-adjustment", "Lost Hours", "The Manual Time Adjustment Request."]];
-    const at = id=>ORIENT.sections.findIndex(x=>x.id===id);
-    return `<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
-    <p class="ftr-sub">Everything you need to use Hubstaff during training. Click a lesson to open it.</p>
-    <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
-      <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
-      ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
+  // Hubstaff: why it matters, and the reminder that integrity is a must in a virtual setting (the To-Dos, notes and lost
+  // hours are the slides that follow)
+  ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>`<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
+    <div class="ftr-remind"><b>🛡 A reminder: integrity is a must</b>
+      <p>We work in a virtual setting, so the trust your trainers, your team and our clients place in you rests on your honesty. Track only the time you truly work, keep your To-Dos and notes accurate, and do what is expected of you every day, whether or not anyone is watching.</p></div>`],
   // the Hubstaff To-Dos in one slide, on one page: how to add today's (the steps beside the Hubstaff picture) on top, the 16
   // To-Dos to copy in a grid below (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
   ["todos", "Your Hubstaff To-Dos: How to Add Them", ()=>{
@@ -692,6 +683,7 @@ body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-colum
 .ftr-rshots figcaption{margin-top:6px;font-size:14px;color:var(--ink-soft);text-align:center;}
 @media (max-width:760px){ .ftr-rshots{grid-template-columns:1fr;} }
 .ftr-stakes b{display:block;font-size:18px;color:var(--orange-soft);} .ftr-stakes p{margin:6px 0 0;font-size:15.5px;line-height:1.55;max-width:900px;}
+.ftr-remind{background:#1E2340;color:#fff;border-left:6px solid #E8590C;border-radius:12px;padding:16px 20px;font-size:16.5px;line-height:1.55;max-width:900px;} .ftr-remind b{display:block;font-size:19px;margin-bottom:6px;color:#F4B77A;} .ftr-remind p{margin:0;color:#fff;}
 .ftr-why{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15.5px;max-width:900px;} .ftr-why b{color:var(--orange-deep);}
 .ftr-test{display:flex;flex-direction:column;gap:8px;} .ftr-test .ftr-aux{border-top:0;padding:0;}
 .ftr-when{margin:0!important;font-size:15px!important;color:var(--ink)!important;}
