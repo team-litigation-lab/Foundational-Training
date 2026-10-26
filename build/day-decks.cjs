@@ -39,7 +39,8 @@ const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7
 const PI_MOVE = {"Jury Selection in a Car Accident Trial": "Step 8"};
 // sections kept in the same part as the one before them: a pair's second card, and the statute of limitations section
 // (its introduction, How Does It Work, the Standard Statute and the Discovery Rule) as one part
-const PI_JOIN = [...PI_PAIRS.flatMap(p => p.slice(1)), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception'];
+// (and Opening Statements, read with When a Car Accident Case Goes to Trial rather than alone at the top of the next part)
+const PI_JOIN = [...PI_PAIRS.flatMap(p => p.slice(1)), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception', "Opening Statements"];
 const PI_PAIR = new RegExp(`^<h3>(${PI_JOIN.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
 const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // a group's sections (PI_PAIRS) as one row of cards side by side; the rest of the reading as it is
