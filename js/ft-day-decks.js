@@ -1616,6 +1616,10 @@ main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck.locked{opaci
 /* ▶ Resume where you left off, on its own: the lesson's name after it was cut off in the narrow tile ("Virtu…"),
    so this program shows the plain button (the shared js/lsh-program.js still writes the name for the other courses) */
 main.main-dash .resume-btn > span{display:none !important;}
+/* the stat tiles' labels and ▶ Resume where you left off in full: they wrap to a second line instead of being cut off
+   ("Monitoring Shee…", "Resume where you left o") on a narrower or zoomed-in screen */
+main.main-dash .dash-side-inner .lbl{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;}
+main.main-dash .dash-side-inner > .lp-home-acts > .resume-btn{white-space:normal !important;overflow:visible !important;text-overflow:clip !important;line-height:1.2;text-align:center;}
 /* 📚 THE EIGHT INTRO CARDS, ON ONE SCREEN: four across, two down. */
 main.main-dash .module-grid:has(> .ftli){grid-template-columns:repeat(4,minmax(0,1fr)) !important;grid-template-rows:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;align-content:stretch !important;gap:12px 14px !important;}
 @media(max-width:1000px){ main.main-dash .module-grid:has(> .ftli){grid-template-columns:repeat(2,minmax(0,1fr)) !important;grid-template-rows:none !important;grid-auto-rows:auto !important;} }
