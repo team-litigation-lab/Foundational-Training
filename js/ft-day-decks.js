@@ -644,9 +644,9 @@ function sheetPages(sheet){
   const capAll = room / (read ? 1 : PAGE_ZOOM), sumH = p => p.reduce((a, x) => a + hOf(x), 0);
   // and a first page that is only a heading and its introduction (the reading's "Time Limits …" over the statute of
   // limitations sections) goes on top of the page after it, so the heading opens the page its sections are on
-  // (on the reading, only where it fits: the reading is never shrunk to hold it)
+  // (on the reading too: a section's last paragraph stays with its section, the page scaled a little to hold it)
   const fold = ps => { const out = ps.reduce((out, p) => { const prev = out[out.length - 1];
-    if(prev && sumH(p) < capAll * 0.3 && sumH(prev) + sumH(p) <= capAll * (read ? 1 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
+    if(prev && sumH(p) < capAll * (read ? 0.55 : 0.3) && sumH(prev) + sumH(p) <= capAll * (read ? 1.42 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
     const introOnly = p => p.length <= 3 && /^H[1-6]$/.test(p[0].tagName) && sumH(p) < capAll * 0.5;
     if(out.length > 1 && introOnly(out[0]) && sumH(out[0]) + sumH(out[1]) <= capAll / (read ? 0.6 : FIT_MIN)) out.splice(0, 2, out[0].concat(out[1]));   // (fitSheets scales it to fit)
     // the reading: a short page that is only the end of a section (the text under a text-and-chart row) goes on top of
