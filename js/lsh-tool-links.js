@@ -20,14 +20,18 @@
 (function(){
 const CMS_HOSTS = [/^([a-z0-9-]+\.)?lshcasemanagementtraining-trainingcrm\.pages\.dev$/];   // the CMS and its preview addresses
 const PORTAL_HOSTS = [/^([a-z0-9-]+\.)?cm-training-activity\.pages\.dev$/];                  // the LSH Training Portal: its simulator pages
+// The LSH Knowledge Base (the lsh-knowledge-base Worker): it hands the ticket to the Portal's /api/verify-ticket, and ?admin=1
+// opens its Admin Portal tab (the admin password), like the CMS.
+const KB_HOSTS = [/^lsh-knowledge-base\.legalsupporthelp\.workers\.dev$/];
 const isTool = (url)=>{ try{ const u = new URL(url, location.href);
-  return CMS_HOSTS.some(re=>re.test(u.hostname)) || (PORTAL_HOSTS.some(re=>re.test(u.hostname)) && /^\/simulators(\.html|\/|$)/.test(u.pathname)); }catch(e){ return false; } };
+  return CMS_HOSTS.some(re=>re.test(u.hostname)) || KB_HOSTS.some(re=>re.test(u.hostname))
+    || (PORTAL_HOSTS.some(re=>re.test(u.hostname)) && /^\/simulators(\.html|\/|$)/.test(u.pathname)); }catch(e){ return false; } };
 const signedTrainee = ()=> typeof state === "object" && !!state.traineeId && !state.isAdmin && !state.adminPreview && !!state.authToken;
 // An administrator here is an administrator there: a CMS link opened by an admin carries ?admin=1, so the CMS
 // drops whatever trainee session that browser still holds (an earlier ticketed test, a shared computer) and
 // asks for the admin password instead of opening as that trainee. The 👁 Trainee view is a preview, not an admin.
 const signedAdmin = ()=> typeof state === "object" && !!state.isAdmin && !state.adminPreview;
-const withAdmin = (url)=>{ try{ const u = new URL(url, location.href); if(!CMS_HOSTS.some(re=>re.test(u.hostname))) return url; u.searchParams.set("admin", "1"); return u.toString(); }catch(e){ return url; } };
+const withAdmin = (url)=>{ try{ const u = new URL(url, location.href); if(!CMS_HOSTS.some(re=>re.test(u.hostname)) && !KB_HOSTS.some(re=>re.test(u.hostname))) return url; u.searchParams.set("admin", "1"); return u.toString(); }catch(e){ return url; } };
 
 let cached = null, cachedAt = 0, pending = null;
 function ticket(){
