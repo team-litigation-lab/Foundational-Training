@@ -123,7 +123,7 @@ const firstName = () => String(state.certName || state.traineeName || "").replac
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
 /* 📄 The answer sheet as a deliverable: the trainee only saves it in their Assessment and Activities Folder that day, named by
    its convention (the rule, with "Your First Name": not a name to copy). The platform finds it there itself
-   (/api/drive/answers: the folder's files, read through the service account), checks its name against the convention and
+   (/api/drive/answers: the files in the folder the trainee linked), checks its name against the convention and
    records whether it was saved by its due time: the end of the day the sheet was given (the day the trainee first opened
    it). Attention to Detail and Following Instructions (the name), Timely Submission (the time). Kept on the sheet:
    x.file = {name, link, at, nameOk, onTime}, x.assignedOn. */
@@ -165,8 +165,8 @@ function fileStatus(set, x){
 }
 function fileCard(set, many){
   const x = sheet(set.id), f = x.file, due = assignedOn(set), today = ptDay();
-  const why = FOLDER.error === "no-folder" ? "Link your Assessment and Activities Folder first (📁 Drive links on 📚 Dashboard)."
-    : FOLDER.error === "no-access" ? "The platform can’t open your folder yet. Tell your trainer."
+  const why = FOLDER.error === "no-folder" ? "Link your Assessment and Activities Folder first: 📁 Link My Google Drive, on the last slide of Setting of Training Expectations."
+    : FOLDER.error === "no-access" ? "The platform can’t open your Assessment and Activities Folder. Check its link (📁 Link My Google Drive, on the last slide of Setting of Training Expectations)."
     : FOLDER.error ? "Couldn’t check your folder just now. Try again in a moment." : "";
   return `<div class="fp-file" data-set="${e(set.id)}">
       ${many ? `<b class="fp-file-h">${e(set.title)}</b>` : ""}

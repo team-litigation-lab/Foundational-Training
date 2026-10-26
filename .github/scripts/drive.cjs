@@ -27,6 +27,8 @@ const failures = []; const fail = (m) => failures.push(m);
             `⬇ FOR COMPLETION ⬇\n${us},LSH-TRAINING,Reception lesson,Dee,"Finished the slides, took notes",Learned the spiel,ASAP,Ongoing,\n⬇ RECURRING ⬇\n,LSH-TRAINING,Typing Test,Dee,,,,Ongoing,\n`);
         if (u.includes('1MonitorDocIdForTheCiTest000001/export?format=txt')) return new Response(
             'Virtual Assistant Essentials - Day 1\nDate: 10/01/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney with case tasks.\n2. Federal courts hear cases between parties in different states.\n3. Solo attorneys gain the most from a VA handling intake.\n4. Clear written updates build the client’s trust.\n5. Deadlines are tracked in the firm’s calendar every day.\n3 Questions That You Still Have\n1. How are court deadlines counted?\nRate Your Understanding\n[x] I am confident that I can do this on my own.\n');
+        if (u.startsWith('https://drive.google.com/embeddedfolderview?id=abcFolderId01')) return new Response('<div class="flip-entries"><div class="flip-entry" id="entry-f1"><a href="https://docs.google.com/document/d/f1/edit"><div class="flip-entry-title">PI Overview_Answers (Dee)</div><div class="flip-entry-last-modified"><div>Oct 26</div></div></a></div><div class="flip-entry" id="entry-sub1"><a href="https://drive.google.com/drive/folders/sub1"><div class="flip-entry-title">Week 1</div></a></div></div>');
+        if (u.startsWith('https://drive.google.com/embeddedfolderview?id=sub1')) return new Response('<div class="flip-entry" id="entry-f2"><a href="https://drive.google.com/file/d/f2/view"><div class="flip-entry-title">Typing Test 10.26.26AM</div><div class="flip-entry-last-modified"><div>10:41 AM</div></div></a></div>');
         if (u === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'ci-token' }));
         if (u.startsWith('https://www.googleapis.com/drive/v3/files?')) {
             const parent = decodeURIComponent(u).match(/'([^']+)' in parents/)[1];
@@ -66,9 +68,11 @@ const failures = []; const fail = (m) => failures.push(m);
     const r2 = await call('/api/drive/check', { id }, admin);
     const day2 = r2.body.review.days[D];
     if (day2.trainerScore !== 90 || day2.comment !== 'Good notes.' || r2.body.review.monitor.comment !== 'Complete.') fail(`a new check lost the trainer's input: ${JSON.stringify(day2)}`);
-    // the answer sheets in the trainee's Assessment and Activities Folder: none without the service account, then found through it
+    // the answer sheets in the trainee's Assessment and Activities Folder: read through the folder's link, then through the service account
+    // without the service account: the folder the trainee linked, read through its own link (and the folder in it)
     const noSA = await call('/api/drive/answers', {}, trainee);
-    if (!noSA.body || noSA.body.error !== 'no-access') fail(`without the service account the folder can't be read: ${JSON.stringify(noSA)}`);
+    const pub = ((noSA.body || {}).files || []).map(f => f.name).sort().join(' | ');
+    if (pub !== 'PI Overview_Answers (Dee) | Typing Test 10.26.26AM' || !/-10-26T/.test(((noSA.body.files || []).find(f => /PI/.test(f.name)) || {}).created || '')) fail(`the linked folder wasn't read through its link: ${JSON.stringify(noSA.body)}`);
     const kp = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
     const pk = Buffer.from(await crypto.subtle.exportKey('pkcs8', kp.privateKey)).toString('base64');
     env.GDRIVE_SA_EMAIL = 'ci@lsh.iam.gserviceaccount.com'; env.GDRIVE_SA_KEY = `-----BEGIN PRIVATE KEY-----\\n${pk}\\n-----END PRIVATE KEY-----`;

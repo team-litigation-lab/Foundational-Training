@@ -649,11 +649,12 @@ async function fetchGoogle(url, env) {
   return text;
 }
 /* 📄 The answer sheets in a trainee's Assessment and Activities Folder (js/ft-process.js finds each sheet there by its name):
-   the files in the folder and in the folders inside it, with when each was made. Needs the service account. */
+   the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
+   else through the folder's own link (publicFolderFiles). */
 async function folderFiles(env, folderUrl) {
   const fid = (String(folderUrl || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(folderUrl || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1];
   if (!fid) return { error: "no-folder" };
-  if (!driveSA(env)) return { error: "no-access" };
+  if (!driveSA(env)) return publicFolderFiles(fid);
   const token = await driveToken(env), FOLDER = "application/vnd.google-apps.folder", out = [];
   const list = async (parent) => {
     let page = "", n = 0;
@@ -670,6 +671,36 @@ async function folderFiles(env, folderUrl) {
     for (const sub of out.filter(f => f.mimeType === FOLDER).slice(0, 40)) await list(sub.id);
   } catch (e) { return { error: e.message === "no-access" ? "no-access" : "drive" }; }
   return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
+}
+/* Without the service account: the folder the trainee linked, read through Google's own folder view (as its link opens it
+   for anyone it is shared with), with each file's name, its link and the day it was last changed, and the folders in it
+   one level down. */
+async function publicFolderFiles(fid) {
+  const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const dec = t => String(t || "").replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+  const when = t => {   // "10:41 AM" (today), "Oct 26", "Oct 26, 2025" or "10/26/25"
+    const v = dec(t), now = new Date(); let m;
+    if (/\d{1,2}:\d{2}/.test(v) && !/[a-z]{3}\s+\d/i.test(v)) return now.toISOString();
+    if ((m = v.match(/^([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?/)) && MON.includes(m[1].toLowerCase())) return new Date(Date.UTC(+(m[3] || now.getUTCFullYear()), MON.indexOf(m[1].toLowerCase()), +m[2], 12)).toISOString();
+    if ((m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/))) return new Date(Date.UTC(+(m[3].length === 2 ? "20" + m[3] : m[3]), +m[1] - 1, +m[2], 12)).toISOString();
+    return "";
+  };
+  const read = async (id) => {
+    const res = await fetch(`https://drive.google.com/embeddedfolderview?id=${id}#list`, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
+    if (/accounts\.google\.com/.test(res.url) || !res.ok) throw new Error("no-access");
+    const html = await res.text(), out = [];
+    html.split(/<div class="flip-entry"/).slice(1).forEach(chunk => {
+      const id2 = (chunk.match(/id="entry-([a-zA-Z0-9_-]+)"/) || [])[1], name = dec((chunk.match(/class="flip-entry-title">([^<]*)</) || [])[1]);
+      const link = dec((chunk.match(/<a href="([^"]+)"/) || [])[1]), mod = (chunk.match(/class="flip-entry-last-modified"><div>([^<]*)</) || [])[1];
+      if (id2 && name) out.push({ id: id2, name, link, modified: when(mod), folder: /\/folders\//.test(link) });
+    });
+    return out;
+  };
+  try {
+    const top = await read(fid), files = top.filter(f => !f.folder);
+    for (const sub of top.filter(f => f.folder).slice(0, 40)) { try { (await read(sub.id)).filter(f => !f.folder).forEach(f => files.push(f)); } catch (e) { /* the next folder */ } }
+    return { files: files.map(f => ({ name: f.name, link: f.link, created: f.modified, modified: f.modified })) };
+  } catch (e) { return { error: "no-access" }; }
 }
 const DRIVE_UNREADABLE = "The system can't open this file. Check that the link is the file's own link (open the file and copy it from the address bar), from your main Google Drive.";
 async function checkDrive(env, id, D, o = {}) {

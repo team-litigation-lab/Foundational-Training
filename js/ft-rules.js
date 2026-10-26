@@ -454,10 +454,10 @@ const SLIDES = [
   // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
   ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Your Main Google Drive", steps:["Your LSH Daily Task Tracker.", "Your Training Progress Monitoring Sheet."]},
+      {h:"Your Task Tracker and Monitoring Sheet", steps:["Both are in your main Google Drive, in the same place.", "Your LSH Daily Task Tracker and your Training Progress Monitoring Sheet."]},
       {h:"Your Assessment and Activities Folder", steps:["Where you save your outputs, every day: test screenshots, answer sheets, documents."]},
-      {h:"Link Them Once", steps:["Paste the folder’s link, then each file’s link (open it and copy it from the address bar), and save."], link:true,
-       tip:"From then on the platform checks them automatically at the end of every shift."},
+      {h:"Link Them Yourself, Once", steps:["Paste the link of your Task Tracker and of your Monitoring Sheet (open each and copy it from the address bar).", "Paste the link of your Assessment and Activities Folder, and save."], link:true,
+       tip:"From then on the platform checks them for you: your tracker and Monitoring Sheet at the end of every shift, your answer sheets in your folder."},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
