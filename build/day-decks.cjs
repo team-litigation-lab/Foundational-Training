@@ -123,8 +123,10 @@ const TRIM = {1: {reading: html => {
     `<hr class="stars">\n` +
     `<p>For those who still have issues installing Nitro Pro despite carefully following the correct process, you may seek technical assistance from Sanders. For the SA plugins issue, you may reach out to Ivan. Message them at 8AM PST.</p>\n` +
     `<p>Here are the Discord IDs of Sanders and Ivan. Please be reminded once again that their shift starts at 8:00 AM PST.</p>\n` +
-    `<p><b>Sanders: sndrrsss9920</b></p>\n<p><b>Ivan: kuchiq</b></p>\n` +
-    shots([img("discord-sanders.png", "Sanders on Discord"), img("discord-ivan.png", "Ivan on Discord")]) +
+    // the two Discord IDs together, each over its own profile (one block, so a page never splits them)
+    `<div class="ftdd-sa-contacts">\n` +
+    `  <div><p><b>Sanders: sndrrsss9920</b></p>\n${shots([img("discord-sanders.png", "Sanders on Discord")])}</div>\n` +
+    `  <div><p><b>Ivan: kuchiq</b></p>\n${shots([img("discord-ivan.png", "Ivan on Discord")])}</div>\n</div>\n` +
     `<hr class="stars">\n` +
     `<p>Just a heads-up, for the SA plug-ins, for now, there is no way for us to check whether they have successfully installed. We will only know if the installation was successful when we start using the firm’s CMS (SA) which is scheduled for around the 8th or 9th of your classroom training. As long as you have this in your list of installed apps then you're good for now.</p>\n` +
     shots([img("sa-20.png", "Installed apps: SADocumentHandler_2023 and WordSADocumentMergeAddIn")]);

@@ -1973,6 +1973,11 @@ main.main-ftdd .ftdd-sheet.ftdd-sa > h3{font-size:20px !important;text-align:cen
 /* its screenshots as the curriculum shows them: three to a row, each numbered at its lower right, all of a set together */
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:14px 26px !important;margin:10px 0 18px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
+/* Sanders' and Ivan's Discord IDs side by side, each over its profile */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts{display:grid;grid-template-columns:repeat(2,minmax(0,360px));justify-content:center;gap:24px;margin:8px 0 14px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p{margin:0 0 8px !important;text-align:center;font:800 20px/1.3 'Inter',sans-serif !important;color:#1E2340 !important;background:none !important;padding:0 !important;border:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots{grid-template-columns:minmax(0,1fr) !important;margin:0 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:19vh !important;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{position:absolute;right:-18px;bottom:0;margin:0 !important;font:600 17px/1 'Inter',sans-serif;color:#1E2340;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
