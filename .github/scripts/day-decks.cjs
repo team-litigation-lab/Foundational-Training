@@ -32,9 +32,9 @@ for (let n = 1; n <= 16; n++) {
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }
 if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'monitoring'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro homework, the Monitoring Sheet set-up or Setting of Expectations');
-// Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck
+// Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck (its help line names Sanders for Nitro Pro)
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
-if (!sa || !/Installation of SA/.test(sa.h) || /Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
+if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no pointer to ✍️ Knowledge Check where its Process Questions were');
 

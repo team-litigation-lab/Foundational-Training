@@ -1967,7 +1967,7 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* 🖥 Day 1's Installation of SA: every step the same, centered: its text big and bold, its screenshots bigger and centered
    under it (a step's one or two screenshots sit side by side in the middle, not to the left) */
-main.main-ftdd .ftdd-sheet.ftdd-sa > p, main.main-ftdd .ftdd-sheet.ftdd-sa > ol li, main.main-ftdd .ftdd-sheet.ftdd-sa > ul li{font:600 20px/1.5 'Inter',sans-serif !important;color:#1E2340 !important;text-align:center;}
+main.main-ftdd .ftdd-sheet.ftdd-sa > p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa > ol li, main.main-ftdd .ftdd-sheet.ftdd-sa > ul li{font:600 20px/1.5 'Inter',sans-serif !important;color:#1E2340 !important;text-align:center;}
 main.main-ftdd .ftdd-sheet.ftdd-sa > p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
 main.main-ftdd .ftdd-sheet.ftdd-sa > h3{font-size:20px !important;text-align:center;}
 /* its screenshots as the curriculum shows them: three to a row, each numbered at its lower right, all of a set together */
