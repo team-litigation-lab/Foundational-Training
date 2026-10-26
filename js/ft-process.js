@@ -5,11 +5,10 @@
    A lesson's last slide (✓ Finish lesson) routes here, to that lesson's answer sheet, instead of opening a
    Knowledge Check inside the lesson. The graded view (#/kc) belongs to this feature too, not to the modules.
      • Trainees answer each question (saved to process:<id> as they type) and
-       submit the sheet. They can save it to their Google Drive with the
-       proper name: 📄 Save to My Google Drive copies the answers and opens a
-       new Google Doc already named with the sheet's naming convention (in
-       their trainee folder once they've saved its link), or ⬇ Download as
-       Word gives a file with that name to upload.
+       submit the sheet. They save it to their Trainee Folder (no downloads):
+       they type the sheet's file name by its naming convention, and once it's
+       right and their folder link is saved, 📁 Save to My Trainee Folder copies
+       the answers and opens a new Google Doc with that name in the folder.
      • Admins open the same ✍️ Knowledge Check button and get every trainee's
        sheets: batch → trainee → each answer sheet (submitted or not, how many
        answered, the answers), and the line for the ranking report ("Out of N
@@ -122,6 +121,25 @@ const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
+/* ✍️ Naming practice: the convention is the rule (with "Your First Name" in place of the name), not a name to copy. The
+   trainee types the file name themselves, it's checked as they type, and the sheet's 📁 Save to My Trainee Folder
+   opens once it's right, every day's sheet, so naming files the firm's way becomes a habit. */
+const names = {};
+const normName = t => String(t || "").replace(/[‘’`]/g, "'").replace(/\s+/g, " ").trim();
+const nameOk = set => !state.traineeId || state.isAdmin || normName(names[set.id]) === normName(fileName(set));
+// 📁 Save to My Trainee Folder: the one way an answer sheet leaves the platform (no downloads). It opens once the
+// file name is typed right and the trainee's folder link is saved.
+const canSave = set => nameOk(set) && (!state.traineeId || state.isAdmin || !!FP.data.folder);
+function saveBtn(set, many){
+  const why = !nameOk(set) ? "Type the file name above first" : !canSave(set) ? "Add your Trainee Folder link first" : "Opens a new Google Doc with this name, in your Trainee Folder";
+  return `<button class="btn btn-ghost btn-sm" type="button" data-needs-name="${e(set.id)}"${canSave(set) ? "" : " disabled"} title="${e(why)}" onclick="FTProcess.toDrive('${set.id}')">📁 Save ${many ? e(set.file) + " " : ""}to My Trainee Folder</button>`;
+}
+function namePractice(set){
+  const ok = nameOk(set), typed = names[set.id] || "";
+  return `<div class="fp-name fp-name-try" data-set="${e(set.id)}"><span>Naming convention</span><code>${e(set.file)} (Your First Name)</code>
+      <label class="fp-name-in">Type your file name <input type="text" spellcheck="false" autocomplete="off" value="${e(typed)}" placeholder="${e(set.file)} (…)" oninput="FTProcess.tryName('${set.id}', this.value)"></label>
+      <b class="fp-name-ok${ok ? " ok" : ""}">${ok && typed ? "✓ Correct" : !typed ? "" : "Not yet: check every space, underscore and capital, and your first name in ( )"}</b></div>`;
+}
 const folderId = url => { const m = String(url||"").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(url||"").match(/[?&]id=([a-zA-Z0-9_-]{10,})/); return m ? m[1] : ""; };
 // An admin can reword a question (a typo, a clearer phrasing) without a new deploy: "processq:overrides" holds
 // {[set.id]: {[questionIndex]: "the edited wording"}}, loaded once and read by every question shown, trainee
@@ -216,19 +234,15 @@ function moduleCard(lesson){
   return `<div class="card fp-set">
     <div class="fp-head"><b>${e(title)}</b><span class="fp-count">${done} of ${qs.length} answered</span><span class="fp-st st-${st.k}">${e(st.t)}</span>${best != null ? `<span class="fp-st st-${best >= KC_PASS ? "done" : "part"}">Best ${best}%</span>` : ""}</div>
     <div class="fp-body">
-      ${sets.map(set => `<div class="fp-name"><span>Naming convention</span><code>${e(fileName(set))}</code>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.copyName('${set.id}')">📋 Copy</button></div>`).join("")}
+      ${sets.map(namePractice).join("")}
       <ol class="fp-qs">${qs.map(x => `<li><div class="fp-q">${e(x.q)}</div>
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`).join("")}</ol>
       <div class="fp-actions">
         ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>` : ""}
-        ${sets.map(set => `<button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.toDrive('${set.id}')">📄 Save to My Google Drive</button>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.word('${set.id}')">⬇ Download as Word</button>`).join("")}
+        ${sets.map(set => saveBtn(set, sets.length > 1)).join("")}
         ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}
       </div>
       ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Your answers here save as you type, and you submit them all together for grading then.</p>`}
-      <p class="fp-muted">These are this module's <b>Knowledge Check</b>: <b>📝 Submit for Grading</b> scores each answer out of 10 in your facilitator's own feedback style (${KC_PASS}% passes the module), and your trainer adds their review on top.</p>
-      ${sets.length > 1 ? `<p class="fp-muted">The answers belong to ${sets.length} answer sheets; each has its own file name above.</p>` : ""}
     </div></div>`;
 }
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
@@ -311,12 +325,21 @@ window.FTProcess = {
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
-  copyName(sid){
-    const set = PROCESS_SETS.find(s=>s.id===sid); const t = fileName(set);
-    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>toast("Copied. Use it as your file name."), ()=>toast("Couldn’t copy. Select the name instead."));
+  // the naming practice: checked as it's typed; the sheet's Save opens once the name is right
+  tryName(sid, v){
+    const set = PROCESS_SETS.find(s=>s.id===sid); if(!set) return;
+    names[sid] = v; const ok = nameOk(set);
+    document.querySelectorAll(`.fp-name-try[data-set="${sid}"]`).forEach(box=>{
+      const b = box.querySelector(".fp-name-ok"); b.classList.toggle("ok", ok);
+      b.textContent = ok && v ? "✓ Correct" : !v.trim() ? "" : "Not yet: check every space, underscore and capital, and your first name in ( )";
+      const i = box.querySelector("input"); if(i && i.value !== v) i.value = v;
+    });
+    document.querySelectorAll(`[data-needs-name="${sid}"]`).forEach(b=>{ b.disabled = !canSave(set); b.title = !ok ? "Type the file name above first" : !canSave(set) ? "Add your Trainee Folder link first" : "Opens a new Google Doc with this name, in your Trainee Folder"; });
   },
   // Copies the answers, then opens a new Google Doc with the proper name (in the trainee folder if it's saved).
   async toDrive(sid){
+    if(!nameOk(PROCESS_SETS.find(s=>s.id===sid) || {})){ toast("Type the file name first, the way the convention says."); return; }
+    if(!canSave(PROCESS_SETS.find(s=>s.id===sid) || {})){ toast("Add your Trainee Folder link first: answer sheets are saved there."); return; }
     const set = PROCESS_SETS.find(s=>s.id===sid), x = sheet(sid);
     const tab = window.open("about:blank", "_blank");
     const ok = await copyRich(docHtml(set, x), docText(set, x));
@@ -325,14 +348,7 @@ window.FTProcess = {
     if(tab) tab.location.href = url; else window.open(url, "_blank");
     toast(ok ? "Your answers are copied. Paste them into the new Google Doc with Ctrl+V." : "The Google Doc is open. Copy your answers from here and paste them in.");
   },
-  word(sid){
-    const set = PROCESS_SETS.find(s=>s.id===sid), x = sheet(sid);
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${e(fileName(set))}</title></head><body style="font-family:Arial,sans-serif;font-size:11pt;">${docHtml(set, x)}</body></html>`;
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(["﻿", html], {type:"application/msword"}));
-    a.download = fileName(set) + ".doc"; document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  },
+
   saveFolder(){
     const v = String((document.getElementById("fpFolder")||{}).value || "").trim();
     if(v && !/^https:\/\/drive\.google\.com\//.test(v)){ toast("Paste your trainee folder’s Google Drive link (it starts with https://drive.google.com/)."); return; }
@@ -581,15 +597,13 @@ function renderKc(){
 function kcSave(qs){
   const sets = [...new Set(qs.map(x=>x.set))];
   return `<div class="card kc-card kc-save"><h3>📄 Save your answer sheet</h3>
-    ${sets.map(set=>`<div class="fp-name"><span>Naming convention</span><code>${e(fileName(set))}</code>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.copyName('${set.id}')">📋 Copy</button></div>
-      <div class="fp-actions"><button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.toDrive('${set.id}')">📄 Save to My Google Drive</button>
-        <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.word('${set.id}')">⬇ Download as Word</button>
+    ${sets.map(set=>`${namePractice(set)}
+      <div class="fp-actions">${saveBtn(set, false)}
         ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}</div>`).join("")}
     <label class="kc-folder" for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
     <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
       <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>
-    <p class="fp-muted"><b>📄 Save to My Google Drive</b> copies your answers and opens a new Google Doc already given that name${FP.data.folder ? ", in your trainee folder" : ""}. Paste them in with Ctrl+V. <b>⬇ Download as Word</b> gives you the file with the same name, to upload to your trainee folder.</p>
+    <p class="fp-muted"><b>📁 Save to My Trainee Folder</b> copies your answers and opens a new Google Doc in your Trainee Folder, already given the file name you typed. Paste them in with Ctrl+V. Answer sheets aren't downloaded: they live in your Trainee Folder.</p>
   </div>`;
 }
 window.FTKc = {
@@ -717,7 +731,13 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-st{font-size:12.5px;border-radius:999px;padding:3px 10px;} .fp-st.st-none{background:var(--bg);color:var(--ink-soft);} .fp-st.st-part{background:#FEF7C3;color:#7a5d00;} .fp-st.st-done{background:var(--success-bg);color:var(--success);}
 .fp-body{border-top:1px solid var(--line);padding:12px 16px 16px;}
 .fp-name{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:14px;}
-.fp-name span{font-weight:800;color:var(--orange-deep);} .fp-name code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere;}
+.fp-name span{font-weight:800;color:var(--orange-deep);}
+.fp-name-try{gap:8px 14px;}
+.fp-name-try .fp-name-in{display:flex;align-items:center;gap:8px;flex:1 1 100%;font-weight:700;color:#3B2A1A;}
+.fp-name-try .fp-name-in input{flex:1;min-width:0;font:600 14px 'IBM Plex Mono',ui-monospace,monospace;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+.fp-name-try .fp-name-ok{flex-basis:100%;font-size:13px;color:#9A4A12;font-weight:700;}
+.fp-name-try .fp-name-ok:empty{display:none;}
+.fp-name-try .fp-name-ok.ok{color:#1E7A46;} .fp-name code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}
 .fp-qs textarea{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
 .fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}

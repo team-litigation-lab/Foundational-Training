@@ -31,10 +31,28 @@ const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 // (its charts are in ft/day1/img/pi/). It is dealt over PI_PARTS slides of about the same length, each starting at one
 // of its headings, so it reads a slide at a time: the Reading Task slide holds part 1, "reading-2" … the rest.
 const PI_PARTS = 8;
-const PI_PAIR = /^<h3>Step 4\b/;
+const PI_BESIDE = 130;   // the most words of text beside a chart
+// sections of the reading that read together: one page, two cards side by side (the first heading, then the second)
+const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
+// sections kept in the same part as the one before them: a pair's second card, and the statute of limitations section
+// (its introduction, How Does It Work, the Standard Statute and the Discovery Rule) as one part
+const PI_JOIN = [...PI_PAIRS.flatMap(p => p.slice(1)), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception'];
+const PI_PAIR = new RegExp(`^<h3>(${PI_JOIN.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
+const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// a group's sections (PI_PAIRS) as one row of cards side by side; the rest of the reading as it is
+function piRows(html){
+  const secs = html.split(/(?=<h[23][ >])/), out = [];
+  for(let i = 0; i < secs.length; i++){
+    const g = PI_PAIRS.find(p => p.every((h, j) => secs[i + j] && secs[i + j].startsWith(`<h3>${h}`) && !/<\/?div/.test(secs[i + j])));
+    if(!g){ out.push(secs[i]); continue; }
+    out.push(`<div class="ftdd-pi-row ftdd-pi-pair ftdd-pi-n${g.length}">${secs.slice(i, i + g.length).map(x => `<div class="ftdd-pi-card">\n${x.trim()}\n</div>`).join("")}</div>\n`);
+    i += g.length - 1;
+  }
+  return out.join("");
+}
 function piParts(){
   const src = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
-  // Steps 3 and 4 of the case timeline read together (one page, two cards side by side): one unit, never split
+  // a pair (PI_PAIRS) and the statute of limitations section (PI_JOIN) are one unit, never split between two parts
   const units = src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean)
     .reduce((a, u) => { if(PI_PAIR.test(u) && a.length) a[a.length - 1] += "\n" + u; else a.push(u); return a; }, []);
   // a chart reads like ~60 words
@@ -162,14 +180,17 @@ for(let n = 1; n <= 16; n++){
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
     if(html.includes("<!--pi-reading-->")){
-      const parts = piParts(), of = i => `Reading Task: Personal Injury · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
+      const parts = piParts(), of = i => `Reading Task: Personal Injury · Part ${i + 1} of ${parts.length}`, wrap = x => piRows(x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
         // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
         const figs = sec.match(/<figure>[\s\S]*?<\/figure>/g); if(!figs) return sec;
         const text = sec.replace(/<figure>[\s\S]*?<\/figure>\s*/g, "").trim();
-        return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${text}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n`;
-      }).join("")
-        // Steps 3 and 4: two cards side by side, in one row
-        .replace(/(<h3>Step 3\b[\s\S]*?)(<h3>Step 4\b[\s\S]*?)(?=<h[23][ >]|$)/, (m, a, b) => `<div class="ftdd-pi-row ftdd-pi-pair"><div class="ftdd-pi-card">\n${a.trim()}\n</div><div class="ftdd-pi-card">\n${b.trim()}\n</div></div>\n`);
+        // beside the chart: the heading and its first paragraphs, about a page's worth (PI_BESIDE words); the rest of the
+        // section's text follows under the row, so a long section is read over pages instead of shrunk to fit
+        const blocks = text.split(/\n(?=<(?:p|ul|ol|h[2-6])[ >])/), words = x => x.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+        let n = 0, k = 0; while(k < blocks.length && (k < 2 || n + words(blocks[k]) <= PI_BESIDE)){ n += words(blocks[k]); k++; }
+        const beside = blocks.slice(0, k).join("\n"), after = blocks.slice(k).join("\n");
+        return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${beside}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n${after ? after + "\n" : ""}`;
+      }).join(""));   // and each group (PI_PAIRS): its cards side by side, in one row
       slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
       parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
       continue;

@@ -49,6 +49,7 @@ async function workerChecks() {
   if (steps.some(x => !x)) fail(`not every Call Listening day points to the log: ${JSON.stringify(steps)}`);
 
   // the Practice Lab: all four sets, in day order (this platform locks no lesson)
+  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }; });   // the trainer has opened the lessons (the Practice Lab goes by the day)
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
   const cards = await page.evaluate(() => [...document.querySelectorAll('.fts-group')].map(s => s.innerText).filter(t => /Call Listening/.test(t)).join('\n'));
   ['Reception calls', 'Intake calls', 'Insurance communication calls', 'Provider communication calls'].forEach(t => { if (!cards.includes(t)) fail(`the Practice Lab has no Call Listening card for ${t}`); });
