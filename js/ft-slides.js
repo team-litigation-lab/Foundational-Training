@@ -426,11 +426,32 @@ if(typeof Narrator !== "undefined"){
     try{
       const st = document.querySelector("#lessonStage:not(:fullscreen)"), dots = st && st.querySelector(":scope > .slide-dots"), nav = st && st.querySelector(":scope > .slide-nav");
       if(dots && nav && !document.getElementById("audienceRoot")){ dots.classList.add("slide-dots-nav"); nav.insertAdjacentElement("afterend", dots); }
+      nextUp(st);
     }catch(e){}
     return r;
   };
+  // 👉 "Next up" over the Next button: what the next slide is (its title), or where Next goes on the last slide
+  function nextUp(st){
+    document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
+    const nav = st && st.querySelector(":scope > .slide-nav");
+    if(!nav || document.getElementById("audienceRoot") || typeof buildDaySlides !== "function") return;
+    const d = (typeof DAYS !== "undefined" && DAYS.find(x => x.id === state.dayId)) || (window.FT_ORIENTATION && FT_ORIENTATION.id === state.dayId ? FT_ORIENTATION : null);
+    if(!d) return;
+    const list = buildDaySlides(d), i = state.lessonSlide || 0, cur = list[i], nx = list[i + 1], secs = d.sections || [];
+    const own = cur && cur.type === "ftSection" && secs[cur.index] && (window.FT_NEXT_UP || {})[secs[cur.index].id];
+    const titleOf = x => !x ? "" : x.type === "ftSection" ? (secs[x.index] || {}).h : x.type === "ftDivider" ? (secs[x.before] || {}).h : "";
+    const isOrient = window.FT_ORIENTATION && d.id === FT_ORIENTATION.id;
+    const t = own || (nx ? titleOf(nx) : (isOrient ? "🧰 Know Your Tools, then the Reading Task" : "📋 This lesson’s Classroom Activity"));
+    if(!t) return;
+    nav.style.position = "relative";
+    const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
+    el.innerHTML = `<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span></span>`;
+    el.querySelector("span").textContent = String(t).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+    nav.appendChild(el);
+  }
   const css = document.createElement("style");
-  css.textContent = `.lesson-stage .slide-dots-nav{margin:8px 0 0 !important;justify-content:center;flex-wrap:nowrap;overflow:hidden;}
+  css.textContent = `.lesson-stage .slide-done-banner{display:none !important;}   /* the last slide is the same size as the others; Next up says what's next */
+.lesson-stage .slide-dots-nav{margin:8px 0 0 !important;justify-content:center;flex-wrap:nowrap;overflow:hidden;}
 .lesson-stage .slide-dots-nav .slide-dot{background:#C9CFDD;}
 .lesson-stage .slide-dots-nav .slide-dot.visited{background:#8E97C4;}
 .lesson-stage .slide-dots-nav .slide-dot.active{background:#DB8437;}`;

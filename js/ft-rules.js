@@ -427,20 +427,14 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
 // split into pages by the engine. It also sets the progress line under the lesson's title (--ftr-prog).
 // The orientation's last slide goes on to 🧰 Know Your Tools (it has no Activity deck), then the Reading Task: its
 // 📋 Classroom Activity button and the banner under it say so (js/ft-day-decks.js sends the button there).
-// "What's next" on a slide is a small pop-up card by the Next button, not a line on the slide (✕ closes it)
+// "What's next" on a slide, in its own words, for the Next up card by the Next button (js/ft-slides.js)
 const NEXT_UP = {why: "Your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training."};
-function orientNextUp(){
-  document.querySelectorAll(".ftr-nextup").forEach(x=>x.remove());
-  const s = ORIENT.sections[state.lessonSlide || 0], t = s && NEXT_UP[s.id], nav = document.querySelector("body.ft-orient .lesson-stage .slide-nav");
-  if(!t || !nav || FT_AUDIENCE()) return;
-  nav.style.position = nav.style.position || "relative";
-  nav.insertAdjacentHTML("beforeend", `<div class="ftr-nextup" role="status"><button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span>${esc(t)}</span></div>`);
-}
+// (js/ft-slides.js draws the "Next up" card on every slide; this slide's own wording replaces the next slide's title)
+window.FT_NEXT_UP = NEXT_UP;
+function orientNextUp(){}
 function orientLastStep(){
   const b = document.querySelector('.slide-nav button[onclick^="goToKnowledgeCheckWithInterstitial"]');
   if(b){ b.textContent = "🧰 Next: Know Your Tools →"; b.title = "The orientation is done: go on to Know Your Tools"; }
-  const n = document.querySelector(".slide-done-banner");
-  if(n) n.textContent = "🎉 That’s the whole orientation. Next: 🧰 Know Your Tools, then the Reading Task, What Is Personal Injury?";
 }
 function fitOrient(w){
   try{
@@ -685,11 +679,11 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
-body.ft-orient .ftr-nextup{position:absolute;right:0;bottom:calc(100% + 10px);z-index:6;max-width:340px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:10px 34px 10px 14px;box-shadow:0 10px 26px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;}
-body.ft-orient .ftr-nextup::after{content:"";position:absolute;right:28px;bottom:-10px;border:8px solid transparent;border-top-color:#E8590C;border-bottom:0;}
-body.ft-orient .ftr-nextup b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;margin-bottom:2px;}
-body.ft-orient .ftr-nextup span{display:block;color:#fff;}
-body.ft-orient .ftr-nextup-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 11px/1 'Inter',sans-serif;cursor:pointer;}
+.ftr-nextup{position:absolute;right:0;bottom:calc(100% + 10px);z-index:6;max-width:340px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:10px 34px 10px 14px;box-shadow:0 10px 26px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;}
+.ftr-nextup::after{content:"";position:absolute;right:28px;bottom:-10px;border:8px solid transparent;border-top-color:#E8590C;border-bottom:0;}
+.ftr-nextup b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;margin-bottom:2px;}
+.ftr-nextup span{display:block;color:#fff;}
+.ftr-nextup-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 11px/1 'Inter',sans-serif;cursor:pointer;}
 @keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}

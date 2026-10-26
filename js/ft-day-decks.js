@@ -616,7 +616,7 @@ function paintPageMark(){
   const el = document.querySelector("main.main-ftdd .ftdd-mid .ftdd-deck .ftdd-n-page");
   if(!el) return;
   el.hidden = !(DD.pages > 1); el.textContent = DD.pages > 1 ? `Page ${DD.page + 1} of ${DD.pages}` : "";
-  try{ wireReaders(); }catch(e){}
+  try{ wireReaders(); deckNextUp(); }catch(e){}
 }
 root.addEventListener("resize", () => { if(state.view !== "daydeck") return; clearTimeout(fitT); fitT = setTimeout(() => { DD.page = 0; fitSheets(); }, 120); });
 
@@ -699,7 +699,7 @@ root.render = function(){
   app.innerHTML = renderTopbar() + `<main class="main-ftdd">${renderDeck()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   document.querySelectorAll(".ftdd-sheet, .ftdd-onnavy").forEach(x => { x.scrollTop = 0; });
-  fitSheets(); wireReaders();
+  fitSheets(); wireReaders(); deckNextUp();
   // the card settles a frame later (its own head, ribbon and buttons), and a page dealt against a sheet that
   // was still growing comes out half empty: deal them again once the slide has its real height
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); });
@@ -876,6 +876,23 @@ function wireReaders(){
   go.disabled = left.length > 0;
   go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || go.textContent;
   go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
+}
+// 👉 "Next up" over the deck's Next button: the next slide's title, the questions on the reading's last part, or the
+// next day / 📚 Dashboard on the last slide (the same card as the lessons', js/ft-slides.js)
+function deckNextUp(){
+  document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
+  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split) return;
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1) return;   // the slide's own pages come first: Next turns them
+  const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1];
+  const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+  const t = kcOf(cur) ? "✍️ The Reading Task questions, in Knowledge Check" : nx ? clean(nx.h)
+    : DD.day < COUNT() && dayOpen(DD.day + 1) ? `Day ${DD.day + 1}` : "📚 Dashboard";
+  if(!t) return;
+  nav.style.position = "relative";
+  const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
+  el.innerHTML = `<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span></span>`;
+  el.querySelector("span").textContent = t;
+  nav.appendChild(el);
 }
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
