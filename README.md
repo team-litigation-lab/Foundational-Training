@@ -190,7 +190,7 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
 
 ## Setting of Training Expectations and Company Policies
 
-**Setting of Training Expectations and Company Policies** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Start here, and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
+**Setting of Training Expectations and Company Policies** is a separate slide presentation, beside Virtual Assistant Essentials. Its card is first in the lessons row, marked 📌 Day 1 · Start here (it, 🧰 Know Your Tools and the Virtual Assistant Essentials discussion are all Day 1), and it opens as a lesson (`#/day/12`). The trainer can run it in 🖥 Presenter view and the slides window like the other lessons. It's all in `js/ft-rules.js`.
 
 - **It isn't one of the program's 9 lessons.**
   - It's always open, for every trainee and batch.

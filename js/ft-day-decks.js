@@ -621,7 +621,7 @@ root.addEventListener("resize", () => { if(state.view !== "daydeck") return; cle
    place and features (toolsSlide below). */
 function toolsCard(){
   return `<div class="module-card mc-open mc-clean ftkt-card" id="module-tools">
-    <div class="module-head"><div class="mh-day">🧰 Before Day 1</div><div class="mh-title">Know Your Tools</div></div>
+    <div class="module-head"><div class="mh-day">🧰 Day 1</div><div class="mh-title">Know Your Tools</div></div>
     <div class="module-body"></div>
     <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">Start</button></div></div>`;
 }
@@ -633,7 +633,7 @@ root.moduleCard = function(d){
   if(d && d.ftTools) return toolsCard();
   const html = __moduleCard.apply(this, arguments);
   // the pinned orientation card carries a kicker like its neighbour, so the two read as a pair
-  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Start here</div>') : html;
+  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Day 1 · Start here</div>') : html;
 };
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
@@ -654,7 +654,7 @@ function renderToolsPage(){
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
-      <p class="ftdd-rail-kick">Before Day 1</p>
+      <p class="ftdd-rail-kick">Day 1</p>
       <h2 class="ftdd-rail-title">Know Your Tools</h2>
       <p class="ftdd-rail-h">Start here</p>
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('day', 12)">📌 Setting of Training Expectations</button>
