@@ -42,7 +42,7 @@ const AUX_CHANNELS = [
   {ch:"#⏳-timestamps", what:"The LSH BOT channel. Type the command for your status. LSH BOT replies with a notification: check it, so your log is recorded properly.",
    rows:[["Logging In", "!in"], ["Lunch Break", "!brb - lunch"], ["Logging Out", "!out"],
          ["Power Outage", "!brb - power outage"], ["Internet Outage", "!brb - internet outage"]], bot:true},
-  {ch:"#training-channel", what:"Your batch’s channel. Post the same update here, at the same time, when you start your Hubstaff.",
+  {ch:"#trainingchannel", what:"Your batch’s channel. Post the same update here, at the same time, when you start your Hubstaff.",
    rows:[["Logging In", "in"], ["Lunch Break", "brb - lunch"], ["Logging Out", "out"],
          ["Power Outage", "brb - power outage"], ["Internet Outage", "brb - internet outage"]]}
 ];
@@ -280,15 +280,15 @@ const SLIDES = [
     <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
       <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
       ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
-  // the Hubstaff To-Dos in one slide: how to add today's (the steps and the Hubstaff picture) on the left, the 16 To-Dos to
-  // copy on the right (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
+  // the Hubstaff To-Dos in one slide, on one page: how to add today's (the steps beside the Hubstaff picture) on top, the 16
+  // To-Dos to copy in a grid below (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
   ["todos", "Your Hubstaff To-Dos: How to Add Them", ()=>{
     const row = (t, n)=>`<div class="ftr-todo">
       <span class="ftr-todo-n">${n}</span>
       <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
       <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
     return `<div class="ftr-todos-all ftr-todos-one" data-ftr-max="1">
-    <div class="ftr-parts"><div class="ftr-part">
+    <div class="ftr-todos-top"><div class="ftr-part">
       <div class="ftr-part-h">Add Today’s To-Do</div>
       <ol>
         <li>Click <b>📋 Copy</b> next to the session you’re in.</li>
@@ -300,7 +300,7 @@ const SLIDES = [
       ${fig(FIGS.todo())}</div>
     <div class="ftr-part ftr-todos">
       <div class="ftr-part-h ftr-todos-h">Your ${TODOS.length} Hubstaff To-Dos <button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
-      ${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div>`; }],
+      <div class="ftr-todos-grid">${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div></div>`; }],
   // the steps on the left, the picture (Part 2) big on the right
   ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-notes"><div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
@@ -364,7 +364,7 @@ const SLIDES = [
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[1])}</div>`],
   ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
-    <p class="ftr-sub">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
+    <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
@@ -546,6 +546,7 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide ol > li, .lesson-card .ftr-slide ol > li{padding-left:2px;}
 .lesson-stage #lessonSlideWrap .lesson-card .ftr-slide ol > li::before, .lesson-card .ftr-slide ol > li::before{content:none;display:none;}
 .ftr-sub{margin:0 0 14px;color:var(--ink-soft);font-size:15.5px;max-width:820px;} .ftr-sub b{color:var(--ink);}
+.ftr-sub.ftr-sub-big{font-size:22px;font-weight:700;color:var(--ink);line-height:1.35;max-width:none;}
 .ftr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px;}
 .ftr-rule{background:var(--danger-bg);border:1px solid #E9C9C3;border-left:5px solid var(--danger);border-radius:12px;padding:12px 16px;margin-bottom:10px;}
 .ftr-rule-aux{margin-top:14px;}
@@ -622,16 +623,19 @@ body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
 body.ft-orient #lessonSlideWrap .ftr-notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-parts{gap:10px;}
 /* Your Hubstaff To-Dos: how to add one (steps and picture) on the left, the To-Dos to copy on the right */
-body.ft-orient #lessonSlideWrap .ftr-todos-one{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-parts{gap:12px;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-fig svg{min-width:0;max-height:none;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:3px 0;gap:10px;flex-wrap:nowrap;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{font-size:14px !important;line-height:1.3 !important;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one{display:flex;flex-direction:column;gap:12px;}
+body.ft-orient #lessonSlideWrap .ftr-todos-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start;}
+body.ft-orient #lessonSlideWrap .ftr-todos-top .ftr-fig{margin:0;}
+body.ft-orient #lessonSlideWrap .ftr-todos-top .ftr-fig svg{min-width:0;max-height:min(34vh, 25cqw);}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todos{margin-top:0;}
+body.ft-orient #lessonSlideWrap .ftr-todos-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:3px 0;gap:8px;flex-wrap:nowrap;align-items:center;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;line-height:1.25 !important;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx em{display:none;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:3px 10px !important;font-size:12px !important;min-height:0 !important;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:22px;height:22px;font-size:11px;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;min-height:0 !important;white-space:nowrap;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-one{grid-template-columns:minmax(0,1fr);} }
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-top, body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}

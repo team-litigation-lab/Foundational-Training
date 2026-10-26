@@ -201,7 +201,7 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   4. How to create notes in Hubstaff: the steps beside the Add Work Notes picture.
   5. Lost hours: the Manual Time Adjustment Request (subject, To and CC to copy).
   6. Breaks: your schedule and your hour of breaks.
-  7. Auxes: the commands in #⏳-timestamps and #training-channel, no double stamping, the Discord profile status.
+  7. Auxes: the commands in #⏳-timestamps and #trainingchannel, no double stamping, the Discord profile status.
   8. Camera: on in every meeting and classroom discussion, with the rules for your demeanor, outfit and framing (`CAMERA`).
   9. Discord: mindfulness and response rates (reply within 5 minutes, acknowledge every instruction, meetings are posted on their day).
   10. Your Training Matrix: the matrix embedded on the left, its cover picture on the right (`TRAINING_MATRIX_IMG`, once it is in the repository).
