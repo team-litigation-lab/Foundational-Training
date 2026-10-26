@@ -581,6 +581,11 @@ function sheetPages(sheet){
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
     if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row")) units.push(...inner); else units.push(k);
   });
+  // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
+  // which fitSheets scales a little to hold it, rather than a near-empty page
+  const capAll = room / (read ? 1 : PAGE_ZOOM), sumH = p => p.reduce((a, x) => a + hOf(x), 0);
+  const fold = ps => ps.reduce((out, p) => { const prev = out[out.length - 1];
+    if(prev && sumH(p) < capAll * 0.3 && sumH(prev) + sumH(p) <= capAll * 1.35) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
   // the next page, and fitSheets scales the page down to fit
@@ -606,13 +611,22 @@ function sheetPages(sheet){
         pg.push(k); u += h; });
       if(pg.length) out.push(pg); return out; };
     for(let limit = Math.max(total / pages.length, tallest); limit < cap; limit += Math.max(8, cap / 60)){
-      const even = deal(limit); if(even.length <= pages.length) return even;
+      const even = deal(limit); if(even.length <= pages.length) return fold(even);
     }
   }
-  return pages.length ? pages : [kids];
+  return pages.length ? fold(pages) : [kids];
+}
+// 🎨 the same contrast on every slide: a line that is only bold text (the guide's "Topic 1: Intake Process") reads as a
+// section bar, like the slides that have real headings, so no slide is plain black on white
+function contrastMarks(sheet){
+  sheet.querySelectorAll("p:not(.ftdd-hbar)").forEach(p => {
+    const b = p.children.length === 1 && /^(B|STRONG)$/.test(p.children[0].tagName) ? p.children[0] : null, t = p.textContent.trim();
+    if(b && t && t === b.textContent.trim() && t.length <= 120 && !p.closest(".ftdd-step, .ftdd-pq, .ftdd-task, .ftdd-pi-card, table")) p.classList.add("ftdd-hbar");
+  });
 }
 function fitSheets(){
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
+  sheets.forEach(contrastMarks);
   sheets.forEach((sheet, idx) => {
     const pages = sheetPages(sheet);
     if(idx === 0){ DD.pages = pages.length; if(DD.page >= pages.length) DD.page = pages.length - 1; if(DD.page < 0) DD.page = 0; }
@@ -1634,6 +1648,10 @@ main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36p
 main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
 main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
+main.main-ftdd .ftdd-sheet p.ftdd-hbar{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:14px 0 8px;}
+main.main-ftdd .ftdd-sheet p.ftdd-hbar:first-child{margin-top:0;}
+main.main-ftdd .ftdd-sheet p.ftdd-hbar b, main.main-ftdd .ftdd-sheet p.ftdd-hbar strong{color:inherit !important;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:800;}
 /* 🎲 Today's Task (taskSlide) */
 .ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
 .ftdd-task-wait{border-style:dashed;background:#F4F6FB;}
