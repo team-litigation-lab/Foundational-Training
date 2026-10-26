@@ -1618,7 +1618,11 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
-.ft-body .ftdd-embed.ftdd-embed-pdf{height:max(360px, 52vh);}
+.ft-body .ftdd-reader{height:max(320px, 46vh);margin:10px 0;padding:18px 26px;border:1.5px solid #9AA0AB;border-radius:10px;overflow-y:auto;background:#fff;color:#11131F;font-size:16px;line-height:1.6;text-align:left;}
+.ft-body .ftdd-reader h2{font-size:22px;margin:22px 0 8px;color:#B42318;} .ft-body .ftdd-reader h2:first-child{margin-top:0;}
+.ft-body .ftdd-reader h3{font-size:17px;margin:16px 0 6px;color:#11131F;}
+.ft-body .ftdd-reader p{margin:0 0 10px;} .ft-body .ftdd-reader ul{margin:0 0 10px 22px;}
+.ft-body .ftdd-reader figure{margin:12px 0;text-align:center;} .ft-body .ftdd-reader figure img{max-width:100%;height:auto;}
 .ft-body .ftdd-kc-go{display:flex;justify-content:center;margin:12px 0 4px;}
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}

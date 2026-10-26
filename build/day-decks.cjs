@@ -25,7 +25,7 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
-// Day 1's Reading Task: the Personal Injury overview PDF is on the slide itself, in place of its Drive link (PI_FILE finds the link)
+// Day 1's Reading Task: the Personal Injury overview's text is on the slide itself, in place of its Drive link (PI_FILE finds the link)
 const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
@@ -36,9 +36,10 @@ const TRIM = {1: {reading: html => {
   const from = html.lastIndexOf("<p", at); if(from < 0) throw new Error("Day 1's Reading Task link line isn't a paragraph");
   const lead = html.slice(0, from).replace("Go to this link and read on to get a good grasp", "Read the material below to get a good grasp");
   if(/Go to this link/.test(lead)) throw new Error("Day 1's Reading Task still says to go to the link");
-  // the reading itself is on the slide: the Personal Injury overview PDF, as it is, served from this site
-  // (ft/day1/what-is-personal-injury.pdf), so it opens without a Google sign-in
-  return lead + `<div class="ftdd-embed ftdd-embed-pdf"><iframe src="/ft/day1/what-is-personal-injury.pdf#view=FitH" title="Personal Injury Cases (Overview: What is personal injury?)" loading="lazy"></iframe></div>\n` + html.slice(at + 4).replace(/^\n/, "");
+  // the reading itself is on the slide, word for word, with its charts, in a reader that scrolls: build/days/pi-overview.html
+  // is the Personal Injury overview PDF's text, unchanged (its charts are in ft/day1/img/pi/)
+  const reading = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
+  return lead + `<div class="ftdd-reader" tabindex="0" role="region" aria-label="Reading: Personal Injury Cases (Overview: What is personal injury?)">\n${reading}\n</div>\n` + html.slice(at + 4).replace(/^\n/, "");
 }, pm: html => {
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
   // the help line keeps the SA contact only (the Nitro Pro contact goes with its installation)
