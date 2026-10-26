@@ -49,24 +49,23 @@ const day = () => D.day || today();
 const dayLinks = d => ((D.drive.days[d] || {}).links || []);
 
 /* ---------- the pages ---------- */
-// The steps to the automated check (the tracker and the Monitoring Sheet were copied in orientation: no templates here), above the links (the 📁 Link window and the Task Tracker page)
+// The steps to the automated check (the trainee's Google Drive link comes with onboarding: no templates here), above the links (the 📁 Link window and the Task Tracker page)
 function stepsHtml(auto = true){
   return `<ol class="fdr-steps">
-      <li><b>Paste the links below and save.</b> Your Assessment and Activities Folder, then each file (open it and copy the link from the address bar).</li></ol>
-    ${auto ? `<div class="fdr-auto">🤖 <b>Automated monitoring.</b> Automatically at the end of every shift, the system opens your tracker and Monitoring
-      Sheet from your Drive: it checks every day’s Daily Notes and output links and every discussion’s Monitoring entry, and an AI review sums up
-      your progress. You see the results on 📚 Dashboard; your trainer sees them too, and adds their score and comments.</div>` : ""}`;
+      <li>Open the Google Drive link you got during onboarding.</li>
+      <li>Open each file there and copy its link from the address bar.</li>
+      <li>Paste each link below, then save.</li></ol>
+    ${auto ? `<div class="fdr-auto">🤖 Your tracker and Monitoring Sheet are checked at the end of every shift. You and your trainer see the results.</div>` : ""}`;
 }
 function linksCard(auto = true){
   const x = D.drive, row = (k, label, ph, hint) => `<label class="fdr-l"><span>${label}</span>
       <div class="fdr-row"><input id="fdr-${k}" type="url" placeholder="${ph}" value="${e(x[k] || "")}">${x[k] ? `<a class="btn btn-ghost btn-sm" href="${e(x[k])}" target="_blank" rel="noopener noreferrer">Open ↗</a>` : ""}</div>
       ${hint ? `<small>${hint}</small>` : ""}</label>`;
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
-    <p class="fdr-muted">Your Task Tracker and Progress Monitoring Sheet live in your <b>main Google Drive</b>, where the system checks them for you. Your day’s outputs go in your <b>Assessment and Activities Folder</b>.</p>
     ${stepsHtml(auto)}
-    ${row("folder", "📁 Assessment and Activities Folder (where you save your outputs, every day)", "https://drive.google.com/drive/folders/…", "")}
-    ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Your own copy of the tracker. Link the Daily Task Tracker tab.")}
-    ${row("monitor", "📒 Training Progress Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion or activity: the date, 5 takeaways, 3 questions, and your rating.")}
+    ${row("folder", "📁 Assessment and Activities Folder (your daily outputs)", "https://drive.google.com/drive/folders/…", "")}
+    ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Link the Daily Task Tracker tab.")}
+    ${row("monitor", "📒 Training Progress Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "")}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
 }
 function rulesHtml(res){
@@ -123,10 +122,7 @@ function paintLinkModal(){
   const x = D.drive || {}, ok = k => x[k] ? "✓" : "—";
   // the window: the links form, then one box that says how the monitoring works and what is linked so far
   o.querySelector(".fdr-modal-body").innerHTML = linksCard(false) + `<div class="card fdr-card fdr-modal-status">
-      <div class="fdr-auto">🤖 <b>Automated monitoring.</b> Once your links are saved, the system opens your tracker and Monitoring Sheet
-        from your Drive automatically at the end of every shift, nothing to press: it checks every day’s Daily Notes and output links and every
-        discussion’s Monitoring entry, and an AI review sums up your progress. Your results show on 📚 Dashboard and on 📋 Task Tracker /
-        📒 Monitoring Sheet; your trainer sees them too, and adds their score and comments.
+      <div class="fdr-auto">🤖 Your tracker and Monitoring Sheet are checked at the end of every shift. You and your trainer see the results.
         <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} Assessment and Activities Folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p></div>
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
 }

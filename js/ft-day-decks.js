@@ -614,8 +614,13 @@ function sheetPages(sheet){
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
   const capAll = room / (read ? 1 : PAGE_ZOOM), sumH = p => p.reduce((a, x) => a + hOf(x), 0);
-  const fold = ps => ps.reduce((out, p) => { const prev = out[out.length - 1];
+  // and a first page that is only a heading and its introduction (the reading's "Time Limits …" over the statute of
+  // limitations sections) goes on top of the page after it, so the heading opens the page its sections are on
+  const fold = ps => { const out = ps.reduce((out, p) => { const prev = out[out.length - 1];
     if(prev && sumH(p) < capAll * 0.3 && sumH(prev) + sumH(p) <= capAll * 1.35) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
+    const introOnly = p => p.length <= 3 && /^H[1-6]$/.test(p[0].tagName) && sumH(p) < capAll * 0.5;
+    if(out.length > 1 && introOnly(out[0]) && sumH(out[0]) + sumH(out[1]) <= capAll / (read ? 0.6 : FIT_MIN)) out.splice(0, 2, out[0].concat(out[1]));   // (fitSheets scales it to fit)
+    return out; };
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
   // the next page, and fitSheets scales the page down to fit
@@ -680,7 +685,9 @@ function fitSheets(){
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.classList.contains("ftdd-read");
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.4);   // a text-and-chart row is never split, so it may shrink a little more
-    else if(!sheet.classList.contains("ftdd-sheet-edit") && !read && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
+    // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
+    // the reading, up to 1.15 so its pages still read alike)
+    else if(!sheet.classList.contains("ftdd-sheet-edit") && !DD.split) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });

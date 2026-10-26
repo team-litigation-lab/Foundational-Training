@@ -154,38 +154,13 @@ async function checkFolder(force){
     const nf = {name: f.name, link: f.link, at: f.created || f.modified, nameOk: nameMatches(set, f.name), onTime: ptDay(f.created || f.modified) <= x.assignedOn};
     if(JSON.stringify(nf) !== JSON.stringify(x.file || null)){ x.file = nf; changed = true; }
   });
-  if(changed) queueSave();
-  if(["process", "kc"].includes(state.view)) render();
+  if(changed) queueSave();   // (nothing on the trainee's page changes: the trainer sees the result)
 }
 // the result, for the trainee and the trainer alike
 function fileStatus(set, x){
   const f = x && x.file; if(!f) return "";
   return `<span class="fp-pill ${f.nameOk ? "ok" : "bad"}">${f.nameOk ? "✓ Named by the convention" : "✗ Name doesn’t follow the convention"}</span>
     <span class="fp-pill ${f.onTime ? "ok" : "mid"}">${f.onTime ? "✓ On time" : "⚠ Late"}</span>`;
-}
-function fileCard(set, many){
-  const x = sheet(set.id), f = x.file, due = assignedOn(set), today = ptDay();
-  const why = FOLDER.error === "no-folder" ? "Link your Assessment and Activities Folder first: 📁 Link My Google Drive, on the last slide of Setting of Training Expectations."
-    : FOLDER.error === "no-access" ? "The platform can’t open your Assessment and Activities Folder. Check its link (📁 Link My Google Drive, on the last slide of Setting of Training Expectations)."
-    : FOLDER.error ? "Couldn’t check your folder just now. Try again in a moment." : "";
-  return `<div class="fp-file" data-set="${e(set.id)}">
-      ${many ? `<b class="fp-file-h">${e(set.title)}</b>` : ""}
-      <p class="fp-file-rule"><span>Naming convention</span> <code>${e(set.file)} (Your First Name)</code>
-        <span class="fp-muted">${due < today ? `Was due ${e(prettyDay(due))}` : "Due today, by the end of your shift"}</span></p>
-      ${f ? `<p class="fp-file-res">${fileStatus(set, x)} ${f.link ? `<a href="${e(f.link)}" target="_blank" rel="noopener noreferrer">“${e(f.name)}” ↗</a>` : `“${e(f.name)}”`}
-          <span class="fp-muted">saved ${e(new Date(f.at).toLocaleString())}</span></p>
-        ${f.nameOk ? "" : `<p class="fp-muted">Rename the file in your folder to the convention, with your first name in ( ).</p>`}`
-        : `<p class="fp-file-res"><span class="fp-pill bad">Not in your folder yet</span>${why ? ` <span class="fp-muted">${e(why)}</span>` : ""}</p>`}
-      ${isTraineeHere() ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.checkFolder()"${FOLDER.busy ? " disabled" : ""}>${FOLDER.busy ? "Checking…" : "🔄 Check my folder"}</button>` : ""}
-    </div>`;
-}
-function fileSteps(){
-  const folder = FP.driveFolder;
-  if(isTraineeHere()) checkFolder();
-  return `<ol class="fp-file-steps">
-      <li>Save your answer sheet <b>today</b> in your ${folder ? `<a href="${e(folder)}" target="_blank" rel="noopener noreferrer">📁 Assessment and Activities Folder</a>` : "📁 Assessment and Activities Folder"}, before the end of your shift.</li>
-      <li>Name it by its naming convention: every space, underscore and capital, and your first name in ( ).</li>
-      <li>That’s all: the platform finds it in your folder and checks its name and when it was saved.</li></ol>`;
 }
 // An admin can reword a question (a typo, a clearer phrasing) without a new deploy: "processq:overrides" holds
 // {[set.id]: {[questionIndex]: "the edited wording"}}, loaded once and read by every question shown, trainee
@@ -252,13 +227,23 @@ function lockedCard(title){
 // A lesson's questions can come from more than one answer sheet (Day 1: the Reading Task's and the lesson's own Process
 // Questions): each sheet is its own section, with its heading and its own numbering, so the two never read as one list.
 const sheetIcon = set => /^Reading Task/i.test(set.title || "") ? "📖" : "✍️";
+// Two sheets are two pages: a tab for each (its questions answered so far), one sheet shown at a time, and a button to the
+// next sheet at its foot. (The answers save as they're typed, so moving between the sheets loses nothing.)
+const SHEET_PAGE = {};
 function bySheet(qs, each){
   const sets = [...new Set(qs.map(x => x.set))];
-  return sets.map(set => {
-    const mine = qs.filter(x => x.set === set);
-    return `${sets.length > 1 ? `<h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${mine.length} question${mine.length === 1 ? "" : "s"}</span></h3>` : ""}
-      <ol class="fp-qs">${mine.map(each).join("")}</ol>`;
-  }).join("");
+  // (Day 1 in order, js/ft-day1-flow.js: the Virtual Assistant Essentials sheet waits for its Process Questions step)
+  const locked = set => !!(window.FTDay1 && FTDay1.sheetLocked(set));
+  const one = set => locked(set) ? `<p class="fp-muted fp-sheet-lock">🔒 This answer sheet opens with ${e(FTDay1.label(6))}, when your trainer unlocks it.</p>`
+    : `<ol class="fp-qs">${qs.filter(x => x.set === set).map(each).join("")}</ol>`;
+  if(sets.length < 2) return sets.map(one).join("");
+  const key = sets.map(x => x.id).join("+"), at = Math.min(SHEET_PAGE[key] || 0, sets.length - 1), set = sets[at];
+  const done = st => { const mine = qs.filter(x => x.set === st); return mine.filter(x => has(((FP.data && FP.data.sets[st.id]) || {answers: []}).answers[x.i])).length + " of " + mine.length; };
+  const tabs = sets.map((st, i) => `<button type="button" class="fp-sheet-tab${i === at ? " on" : ""}" onclick="FTProcess.sheetPage('${key}', ${i})">
+      <b>${sheetIcon(st)} ${e(st.title)}</b><span>Page ${i + 1} of ${sets.length} · ${done(st)} answered</span></button>`).join("");
+  const next = at < sets.length - 1 ? `<div class="fp-sheet-next"><button type="button" class="btn btn-navy btn-sm" onclick="FTProcess.sheetPage('${key}', ${at + 1})">Next sheet: ${sheetIcon(sets[at + 1])} ${e(sets[at + 1].title)} →</button></div>`
+    : `<div class="fp-sheet-next"><button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.sheetPage('${key}', ${at - 1})">← Back to ${sheetIcon(sets[at - 1])} ${e(sets[at - 1].title)}</button></div>`;
+  return `<div class="fp-sheet-tabs">${tabs}</div><h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${qs.filter(x => x.set === set).length} questions</span></h3>${one(set)}${next}`;
 }
 function moduleCard(lesson){
   const all = kcQuestionsFor(lesson);
@@ -355,8 +340,8 @@ window.FTProcess = {
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
-  // 📄 look in the trainee's folder for their answer sheets again
-  checkFolder(){ checkFolder(true); render(); },
+  // an answer sheet's page, when a lesson has two (bySheet)
+  sheetPage(key, i){ SHEET_PAGE[key] = Math.max(0, Number(i) || 0); render(); const t = document.querySelector('.fp-sheet-tabs'); if(t) t.scrollIntoView({block: 'start'}); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
 
@@ -596,13 +581,13 @@ function renderKc(){
     </div>
     ${kcSave(qs)}`;
 }
-// 📄 The lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, found there by the platform
+// 📄 The lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, checked there by the platform
 function kcSave(qs){
+  // no box for the trainee: the folder is linked once, in Setting of Training Expectations, and the platform only checks,
+  // quietly, that each answer sheet is in it, named by its convention, on time (the trainer sees the result)
   const sets = [...new Set(qs.map(x=>x.set))];
-  return `<div class="card kc-card kc-save"><h3>📄 Save your answer sheet</h3>
-    ${fileSteps()}
-    ${sets.map(set => fileCard(set, sets.length > 1)).join("")}
-  </div>`;
+  if(isTraineeHere()){ sets.forEach(assignedOn); checkFolder(); }
+  return "";
 }
 window.FTKc = {
   open(id){ state.dayId = Number(id); KC.shown[id] = null; goto("kc"); window.scrollTo(0, 0); },
@@ -735,7 +720,12 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-file-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;}
 .fp-file-res{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:8px 0 0;} .fp-file .fp-muted{margin:6px 0 0;}
 .fp-sheet-h{margin:18px 0 4px;padding:8px 14px;background:#1E2340;color:#fff;border-left:5px solid #E8590C;border-radius:8px;font:800 16px/1.3 'Poppins','Inter',sans-serif;}
-.fp-sheet-h:first-child{margin-top:0;} .fp-sheet-h span{margin-left:8px;font:600 12.5px 'Inter',sans-serif;color:#C9CFE6;}
+.fp-sheet-h:first-child{margin-top:0;}
+.fp-sheet-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin:0 0 12px;}
+.fp-sheet-tab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;border:2px solid #343C66;border-radius:10px;background:#fff;color:#1E2340;cursor:pointer;text-align:left;font:inherit;}
+.fp-sheet-tab b{font:800 15px/1.25 'Poppins','Inter',sans-serif;} .fp-sheet-tab span{font-size:12.5px;color:var(--ink-soft);}
+.fp-sheet-tab.on{background:#1E2340;color:#fff;border-color:#E8590C;} .fp-sheet-tab.on span{color:#C9CFE6;}
+.fp-sheet-next{display:flex;justify-content:flex-end;margin:6px 0 4px;} .fp-sheet-h span{margin-left:8px;font:600 12.5px 'Inter',sans-serif;color:#C9CFE6;}
 .fp-qs{margin:0;padding-left:30px;} .fp-qs li{margin:12px 0;} .fp-q{font-size:15px;color:var(--ink);margin-bottom:6px;}
 .fp-qs textarea{width:100%;box-sizing:border-box;font:inherit;font-weight:500;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;background:#fff;}
 .fp-qs textarea:focus, .fp-folder-row input:focus{outline:2px solid var(--orange-soft);border-color:var(--orange);}

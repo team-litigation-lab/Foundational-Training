@@ -29,6 +29,9 @@ const ASSETS = {
         return new Response(fs.readFileSync(f), { headers: { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' } });
     }
 };
+// Day 1 runs one step at a time, each unlocked by the trainer (js/ft-day1-flow.js): the tests of everything else start with
+// Day 1 unlocked to its end, and the Day 1 flow test sets its own steps (FT_DAY1_LOCKED=1 starts it locked instead)
+if (!process.env.FT_DAY1_LOCKED) store.set('ft:settings:day1steps', JSON.stringify({ all: 8, batches: {} }));
 const env = { LSH_KV: KV, ASSETS, SESSION_SECRET: 'ci-only-secret' };
 http.createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);

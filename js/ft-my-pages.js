@@ -6,6 +6,7 @@
        Task Tracker and Monitoring Sheet tiles on 📚 Dashboard still open their pages.) An admin's bar is as it was.
      • 🏅 My Performance holds what was three places, on one screen: 🎯 Focus (what to work on next, the trainer's focus items and
        their feedback by day) on top, the scorecard, then 📬 My Feedback (everything the trainer sent, newest first).
+     • 🎲 Random Tasks are abolished: no Tasks page, no looking for a task (the admin tab is gone too: js/ft-admin-ops.js).
    ============================================================ */
 (function(){
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
@@ -28,8 +29,11 @@ window.renderTopbar = function(){
   if(portal) portal.insertAdjacentHTML("beforebegin", mine); else nav.insertAdjacentHTML("beforeend", mine);
   return t.innerHTML;
 };
+// 🎲 Random Tasks are abolished in this program: no trainee page for them and no looking for one in the background
+window.checkSurpriseTask = async function(){ state.activeSurpriseTask = null; };
 const __render = window.render;
 window.render = function(){
+  if(state.view === "tasks"){ state.view = "modules"; return window.render.apply(this, arguments); }
   const r = __render.apply(this, arguments);
   if(state.view !== "scorecard" || !isTrainee()) return r;
   const main = document.querySelector("#app > main.main-lp"); if(!main || main.querySelector(".ftmp-focus")) return r;

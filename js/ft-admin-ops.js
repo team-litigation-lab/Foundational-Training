@@ -1,7 +1,6 @@
 /* ============================================================
    🛡 Admin: the operations tabs the platform spec lists for every program —
      📋 SOPs                 the program's standard operating procedures, written and kept by trainers
-     🎲 Random Tasks         assign an unannounced task to a module's trainees, graded in 🎲 Tasks
      🗄 Database Maintenance clear the data that is only needed for a while; the records are kept
    The spec's other three are already their own tabs: Assign Case File (🏛 Law Firms, this program
    only), the Trainer Feedback Tool (💬 Trainee Feedback) and Trainee Progress Monitoring (the
@@ -91,101 +90,6 @@ function renderAdminSOPs(){
     : `<div class="card ops-card ops-empty">No SOPs yet. Add the first one — what a trainee should do, step by step — and it shows here for every trainer.</div>`}`;
 }
 
-/* ============================================================
-   🎲 Random Tasks — one unannounced task, broadcast to a module's trainees
-   The record a trainee's platform already reads (surprise-task-day<id>) is written here, so the
-   trainee side is the engine's: it lands in 🎲 Tasks, they acknowledge, plan and resolve it before
-   the timer ends, and it is graded on timeliness, prioritisation, applying the module, communication
-   and risk. The task itself is generated from that module's own topics — this program's work, not
-   another program's client.
-   ============================================================ */
-const RT = {recs:null, loading:false, busy:false, out:"", day:0, mins:30};
-const rtKey = id => "surprise-task-day" + id;
-const rtModules = () => DAYS.filter(d => d && d.sections && d.sections.length);
-const rtLive = r => !!(r && r.active && r.expiresAt && Date.now() < new Date(r.expiresAt).getTime());
-
-async function rtLoad(force){
-  if(RT.loading || (RT.recs && !force)) return;
-  RT.loading = true;
-  try{
-    const ids = rtModules().map(d => d.id);
-    const recs = await sharedGetMany(ids.map(rtKey));
-    RT.recs = {}; ids.forEach((id, i) => { RT.recs[id] = recs[i] || null; });
-  }catch(err){ RT.recs = RT.recs || {}; }
-  RT.loading = false;
-  if(state.view === "admin" && state.adminTab === "randomtasks") render();
-}
-
-async function rtSend(){
-  const mods = rtModules(), id = RT.day || (mods[0] && mods[0].id);
-  const d = DAYS.find(x => x.id === id);
-  if(!d || RT.busy) return;
-  RT.busy = true; RT.out = `<div class="ai-loading">Writing a task from ${ftName(id)}’s own material…</div>`; render();
-  const topics = (d.lessons || []).map(l => l.h).filter(Boolean).join("; ");
-  const prompt = `Write one unannounced task for a trainee legal virtual assistant, to be dropped on them mid-session during live training at the U.S. personal-injury law firm they work for in training.
-It must be answerable correctly ONLY by someone who has actually absorbed this module's material — not by generic advice.
-THIS MODULE (${ftName(id)}: ${d.title}):
-${topics || d.title}
-Write a short, realistic incoming request or situation (2-4 sentences) — the kind that really lands on a legal VA's desk — that requires applying one or more of this module's topics correctly. Keep it general enough that it works for any firm and any case the trainee has been assigned: name no client, no case number and no firm. Return ONLY the task text, with no preamble, no explanation and no quotation marks.`;
-  try{
-    const task = await callAIText(prompt, 400, 150000, "trainer");
-    const now = Date.now(), mins = RT.mins || 30;
-    const prev = await sharedGet(rtKey(id)).catch(() => null);
-    const record = {task:String(task || "").trim(), dayId:id, generatedAt:new Date(now).toISOString(),
-      expiresAt:new Date(now + mins * 60000).toISOString(), active:true,
-      history: typeof surpriseTaskHistory === "function" ? surpriseTaskHistory(prev, false) : []};
-    await sharedSet(rtKey(id), record);
-    if(RT.recs) RT.recs[id] = record;
-    RT.out = `<div class="card ops-sent"><b>Sent to ${e(ftName(id))}’s trainees:</b> ${e(record.task)}</div>`;
-    toast(`🎲 Task sent to ${ftName(id)}’s trainees.`);
-  }catch(err){
-    RT.out = typeof renderAiErrorBlock === "function" ? renderAiErrorBlock(err, "Couldn’t write a task") : `<p class="ops-err">Couldn’t write a task.</p>`;
-  }
-  RT.busy = false; render();
-}
-async function rtEnd(id){
-  if(typeof clearSurpriseTask === "function") await clearSurpriseTask(id);
-  await rtLoad(true);
-}
-
-function renderAdminRandomTasks(){
-  if(!adminOn()) return `<div class="card" style="padding:28px;">Trainers only.</div>`;
-  if(RT.recs === null){ rtLoad(); return `<div class="card" style="padding:28px;">Loading the modules’ tasks…</div>`; }
-  const mods = rtModules();
-  if(!RT.day && mods.length) RT.day = mods[0].id;
-  const rows = mods.map(d => {
-    const r = RT.recs[d.id], live = rtLive(r);
-    const sent = (r && r.generatedAt) ? when(r.generatedAt) : "";
-    const sentCount = r ? ((r.history || []).length + (r.generatedAt ? 1 : 0)) : 0;
-    return `<tr>
-      <td><b>${e(ftName(d.id))}</b><span class="ops-muted"> · ${e(d.title)}</span></td>
-      <td>${live ? `<span class="ops-live">● Live</span>` : (r && r.generatedAt ? `<span class="ops-muted">Ended</span>` : `<span class="ops-muted">—</span>`)}</td>
-      <td>${r && r.task ? `<span class="ops-task">${e(r.task)}</span>` : `<span class="ops-muted">No task sent yet</span>`}</td>
-      <td class="ops-muted">${e(sent)}${sentCount > 1 ? ` · ${sentCount} sent in all` : ""}</td>
-      <td>${live ? `<button class="btn btn-ghost btn-sm ops-danger" onclick="FTOps.rtEnd(${d.id})">⏹ End now</button>` : ""}</td>
-    </tr>`;
-  }).join("");
-  return `
-    <div class="ops-hero">
-      <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>🎲 Random Tasks</h1>
-      <p>Assign one unannounced task to a module’s trainees — a real-time test of what they have just learned, written from that module’s own topics. It reaches every trainee who had reached that module when you sent it; they handle it in <b>🎲 Tasks</b> (acknowledge → plan → resolve) before the timer ends, and it is graded on timeliness, prioritisation, applying the module, communication and risk. A task nobody submits in time is logged as Missed and scores 0.</p>
-      <div class="ops-row">
-        <select class="ops-in ops-sel" onchange="FTOps.rtField('day', this.value)" title="Which module’s trainees get it">
-          ${mods.map(d => `<option value="${d.id}" ${d.id === RT.day ? "selected" : ""}>${e(ftName(d.id))} — ${e(d.title)}</option>`).join("")}
-        </select>
-        <select class="ops-in ops-sel" onchange="FTOps.rtField('mins', this.value)" title="How long it stays live">
-          ${[15, 30, 60, 120].map(m => `<option value="${m}" ${m === RT.mins ? "selected" : ""}>${m < 60 ? m + " min" : (m / 60) + " hour" + (m > 60 ? "s" : "")}</option>`).join("")}
-        </select>
-        <button class="btn btn-navy btn-sm" onclick="FTOps.rtSend()" ${RT.busy ? "disabled" : ""}>🎲 Write &amp; send</button>
-        <button class="btn btn-ghost btn-sm" onclick="FTOps.rtReload()">↻ Refresh</button>
-      </div>
-      ${RT.out}
-    </div>
-    <div class="card ops-card">
-      <table class="ops-table"><thead><tr><th>Module</th><th>Status</th><th>Task</th><th>Sent</th><th></th></tr></thead>
-      <tbody>${rows}</tbody></table>
-    </div>`;
-}
 
 /* ============================================================
    🗄 Database Maintenance — clear what is only needed for a while
@@ -356,13 +260,10 @@ window.FTOps = {
     render();
   },
   sopReload(){ sopLoad(true); },
-  rtField(k, v){ RT[k] = parseInt(v, 10) || RT[k]; },
-  rtSend, rtEnd, rtReload(){ rtLoad(true); },
   dbScan, dbClear
 };
 
 ftAdminTab("sops", "📋 SOPs", renderAdminSOPs);
-ftAdminTab("randomtasks", "🎲 Random Tasks", renderAdminRandomTasks);
 ftAdminTab("dbmaint", "🗄 Database Maintenance", renderAdminDbMaint);
 
 /* (🎲 Tasks for the trainee: no live-task card on 📚 Dashboard and no looking for one; the unannounced tasks are gone

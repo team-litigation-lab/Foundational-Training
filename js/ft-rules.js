@@ -62,10 +62,10 @@ const HABITS = [
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
     "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Training Progress Monitoring Sheet in your main Google Drive every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
+    "Update your Monitoring Sheet after each discussion or activity. Add the date and 5 takeaways in full sentences. It is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your main Google Drive. You link it on the last slide of this orientation."]],
+          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "It is in the Google Drive you got during onboarding. You link it on the last slide."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -240,7 +240,7 @@ function figMonitor(){
   return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Progress Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
-    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · your main Google Drive</text>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">in your Google Drive</text>
     <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
@@ -257,14 +257,14 @@ function figMonitor(){
 const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
-  {h:"Make Your Copy", steps:[
-    "Copy the Training Progress Monitoring Sheet into your main Google Drive.",
-    "You link it to the platform at the end of this orientation, with your Task Tracker."]},
-  {h:"Fill It In, Then It’s Checked", steps:[
-    "A discussion or an activity is done: fill in its entry, following its specific instructions.",
-    "Before your shift ends, every entry of the day is in.",
-    "At the end of the shift (5:00 PM ET) the platform checks it automatically.",
-    "You get feedback on each entry, and your trainer adds comments."],
+  {h:"Find It", steps:[
+    "It is in the Google Drive you got during onboarding.",
+    "You link it on the last slide."]},
+  {h:"Update It", steps:[
+    "Update your Monitoring Sheet.",
+    "Finish before your shift ends.",
+    "It is checked at 5:00 PM ET.",
+    "Your trainer adds feedback."],
    tip:"It is for your training only."}
 ];
 // On a phone the picture keeps its size and scrolls sideways in its box.
@@ -428,9 +428,9 @@ const SLIDES = [
 `],
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
   ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Spell it exactly, with your first name in ( )."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
-      {h:"Save It Daily in Your Assessment and Activities Folder", steps:["Save the named answer sheet in your Assessment and Activities Folder, on the day you answer it.", "Do it before the end of your shift. There is no link to paste."]},
-      {h:"The Platform Checks It", steps:["The platform finds it in your folder.", "It checks the name, and that it was saved on time."], tip:"Attention to detail, following instructions and timely submission are all checked."},
+      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
+      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends."]},
+      {h:"It Is Checked", steps:["The platform checks the name.", "It checks that it was on time."]},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
@@ -454,10 +454,9 @@ const SLIDES = [
   // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
   ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Your Task Tracker and Monitoring Sheet", steps:["Both are in your main Google Drive, in the same place.", "Your LSH Daily Task Tracker and your Training Progress Monitoring Sheet."]},
-      {h:"Your Assessment and Activities Folder", steps:["Where you save your outputs, every day: test screenshots, answer sheets, documents."]},
-      {h:"Link Them Yourself, Once", steps:["Paste the link of your Task Tracker and of your Monitoring Sheet (open each and copy it from the address bar).", "Paste the link of your Assessment and Activities Folder, and save."], link:true,
-       tip:"From then on the platform checks them for you: your tracker and Monitoring Sheet at the end of every shift, your answer sheets in your folder."},
+      {h:"Your Tracker and Monitoring Sheet", steps:["Both are in the Google Drive you got during onboarding."]},
+      {h:"Your Assessment and Activities Folder", steps:["Save your daily outputs here."]},
+      {h:"Link Them Once", steps:["Paste the link of your Task Tracker.", "Paste the link of your Monitoring Sheet.", "Paste the link of your folder, then save."], link:true},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
