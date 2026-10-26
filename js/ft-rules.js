@@ -244,7 +244,7 @@ function figMonitor(){
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
     <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · VA Output folder</text>
-    <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="736" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
+    <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
     ${row(174, "3", "…")}${row(198, "4", "…")}${row(222, "5", "…")}
@@ -253,6 +253,8 @@ function figMonitor(){
     <text x="24" y="360" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">RATE YOUR UNDERSTANDING</text>
     ${opt(384, "I really don’t get this. I need extra help.", false)}${opt(406, "I think I can do this on my own but I am still not sure.", false)}
     ${opt(428, "I am confident that I can do this on my own.", true)}${opt(450, "I definitely can do this and I can teach this to others!", false)}
+    ${[[70, 1], [104, 2], [256, 3], [360, 4]].map(([y, n]) => `<path d="M730 ${y - 4}H${n === 1 ? 712 : 600}" stroke="${OR}" stroke-width="2.5" marker-end="url(#ftrMonArrow)"/><circle cx="742" cy="${y - 4}" r="11" fill="${OR}"/><text x="742" y="${y}" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">${n}</text>`).join("")}
+    <defs><marker id="ftrMonArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="${OR}"/></marker></defs>
   </svg>`;
 }
 const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
@@ -420,7 +422,12 @@ const SLIDES = [
       ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
-  ["monitoring-entry", "Your Training Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}</div>`],
+  // the sheet with numbered arrows, and beside it what goes at each number
+  ["monitoring-entry", "Your Training Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+    <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
+      ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
+      ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
+      ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><b>${esc(h)}</b><span>${esc(t)}</span></li>`).join("")}</ol></div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -704,6 +711,12 @@ body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
 /* the Monitoring Sheet preview fills its slide: the sheet as big as the screen allows, on a light frame */
+body.ft-orient #lessonSlideWrap .ftr-mon-entry{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:center;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps{list-style:none;counter-reset:mon;margin:0;padding:0;display:grid;gap:10px;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li{counter-increment:mon;position:relative;padding:8px 12px 8px 46px;border:2px solid #343C66;border-radius:10px;background:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li::before{content:none !important;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li i{position:absolute;left:10px;top:9px;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;font:800 14px/26px 'Inter',sans-serif;font-style:normal;text-align:center;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps b{display:block;color:#1E2340;font-size:16px;} body.ft-orient #lessonSlideWrap .ftr-mon-steps span{display:block;color:#2A2F4A;font-size:14px;line-height:1.35;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig-scroll{background:#EEF1F8;padding:8px;box-shadow:none;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig svg{min-width:0;width:auto;max-width:100%;height:calc(100vh - 360px);max-height:none;margin:0 auto;border-radius:6px;}

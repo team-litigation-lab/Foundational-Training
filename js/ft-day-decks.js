@@ -687,6 +687,19 @@ function contrastMarks(sheet){
     if(b && t && t === b.textContent.trim() && t.length <= 120 && !p.closest(".ftdd-step, .ftdd-pq, .ftdd-task, .ftdd-pi-card, table")) p.classList.add("ftdd-hbar");
   });
 }
+// Day 1's card's scale for a slide box of this size: its natural height there against the box's
+const cardScales = {};
+function cardScale(box){
+  const w = box.clientWidth, h = box.clientHeight, key = w + "x" + h; if(!w || !h) return 1;
+  if(cardScales[key] == null){
+    const probe = document.createElement("div");
+    probe.className = "ftdd-onnavy ftdd-lcslide"; probe.style.cssText = `position:absolute;left:-99999px;top:0;width:${w}px;height:auto;visibility:hidden;`;
+    probe.innerHTML = dayCard(1, (X.data && X.data.days) || {}); box.parentNode.appendChild(probe);
+    const nat = probe.scrollHeight; probe.remove();
+    cardScales[key] = nat > h ? Math.max(0.5, Math.floor(h / nat * 100) / 100) : 1;
+  }
+  return cardScales[key];
+}
 function fitSheets(){
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
   sheets.forEach(contrastMarks);
@@ -705,7 +718,14 @@ function fitSheets(){
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
   // the day card (and the Training Agenda) on navy is one card, not pages: scaled to fit, further if it must
-  document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => { if(!zoomToFit(box, 0.35)) box.scrollTop = 0; });
+  // a day's card is drawn at Day 1's card's scale on this screen (full size where Day 1's fits, all of them smaller
+  // together where it doesn't), so every day's card reads the same; a fuller card still shrinks further to fit
+  document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => {
+    const c = box.matches(".ftdd-lcslide") ? box.querySelector(":scope > .ftlc") : null;
+    if(!c){ if(!zoomToFit(box, 0.35)) box.scrollTop = 0; return; }
+    let z = cardScale(box); c.style.zoom = String(z); box.scrollTop = 0;
+    while(box.clientHeight && box.scrollHeight > box.clientHeight + 2 && z > 0.35){ z = Math.round((z - 0.05) * 100) / 100; c.style.zoom = String(z); }
+  });
   paintPageMark();
 }
 // the slide bar says which page of the slide this is, once there is more than one (the slide number itself is
@@ -1624,7 +1644,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 /* every day's card in Day 1's size (its text as Day 1's card shows it), filling the slide: a fuller card still shrinks to
    fit, a lighter one no longer grows past Day 1's */
 main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
-main.main-ftdd .ftdd-lcslide > .ftlc{zoom:.74;flex:1 0 auto;display:flex;flex-direction:column;}
+main.main-ftdd .ftdd-lcslide > .ftlc{flex:1 0 auto;display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
 .ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
 .ftlc.now{box-shadow:0 0 0 3px #F4B77A,0 6px 18px rgba(16,19,36,.28);}
