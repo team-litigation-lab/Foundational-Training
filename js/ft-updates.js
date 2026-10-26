@@ -64,6 +64,9 @@ DAYS.forEach(d=>{ d.lessons = d.sections.map(x=>({h:x.h})); d.quiz = []; d.quick
 .ft-body .res-card:hover{box-shadow:0 12px 32px rgba(15,33,72,.12);transform:translateY(-2px);}
 .ft-body .res-head{display:inline-block;padding:3px 9px;border-radius:6px;background:#fef2f2;color:#b91c1c;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
 .ft-body .facilitator, .pv-cues .facilitator{background:#F3F5FA;border:1px dashed #9AA1BC;border-radius:8px;padding:12px 16px;margin:12px 0;}
+.ft-body .res-card .trainer-slot-in{margin-top:10px;padding-top:10px;border-top:1px dashed #C9CFDC;cursor:default;}
+.ft-body .res-card .trainer-slot-in .facilitator{margin:0;padding:0;border:0;background:none;box-shadow:none;}
+.ft-body .cards:has(.trainer-slot-in){grid-template-columns:minmax(0,1fr);}
 .ft-body .facilitator::before{content:"🧑‍🏫 Trainer only";display:block;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);margin-bottom:6px;}
 .ft-empty-day{padding:40px;text-align:center;}
 /* deck slides: the deck fills the slide at 16:9, with its Full screen button, no scrolling */
@@ -329,6 +332,13 @@ function ftFillSlots(){
   document.querySelectorAll(".trainer-slot").forEach(el=>{
     const html = on && FT.notes ? (FT.notes[el.getAttribute("data-slot")] || "") : "";
     if(el.innerHTML !== html) el.innerHTML = html;
+    // a trainer's note right under a resource card (the 🎬 Recorded Lecture and its Facilitator Training Deck link)
+    // goes inside that card, as one card
+    const prev = el.previousElementSibling, card = prev && prev.matches(".cards") ? prev.querySelector(":scope > .res-card:last-child") : null;
+    if(html && card && !card.contains(el)){
+      el.classList.add("trainer-slot-in"); card.appendChild(el);
+      el.addEventListener("click", ev => ev.stopPropagation()); el.addEventListener("keydown", ev => ev.stopPropagation());
+    }
   });
 }
 const __ftAfterRender = window.afterRender;
