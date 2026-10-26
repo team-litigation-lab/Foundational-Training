@@ -1,7 +1,7 @@
 // Day 1 in order, one step at a time, each opened by the trainer (js/ft-day1-flow.js, settings:day1steps):
 //   - with nothing unlocked, 📚 Dashboard opens Setting of Training Expectations, and Know Your Tools, the reading's
 //     deck slides and Lesson 1 are locked;
-//   - the trainer unlocks up to the Personal Injury Reading for the batch: the Dashboard opens the reading, its slide
+//   - the trainer unlocks up to the Personal Injury Reading for the batch: the Dashboard opens Day 1's card, the reading's slide
 //     shows, Lesson 1 is still locked, and the Knowledge Check's Virtual Assistant Essentials sheet waits for its step;
 //   - Finish unlocked: the Dashboard opens as usual; the admin's 🔓 Day 1 Steps lists the eight steps.
 // The test server starts with Day 1 unlocked to its end (server.mjs); this test sets its own steps, opens only Lesson 1
@@ -36,8 +36,8 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     // up to the reading, for this batch
     await setSteps(page, { all: 0, batches: { b101026: 3 } });
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-    v = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('.ftd1-lock'), sheet: !!document.querySelector('.ftdd-sheet') }));
-    if (v.view !== 'daydeck' || v.lock || !v.sheet) fail(`with the reading unlocked the Dashboard didn't open the reading: ${JSON.stringify(v)}`);
+    v = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('.ftd1-lock'), i: FTDayDecks.state().i, day: FTDayDecks.state().day }));
+    if (v.view !== 'daydeck' || v.lock || v.i !== 0 || Number(v.day) !== 1) fail(`with the reading unlocked the Dashboard didn't open Day 1's Classroom Activity card, the deck's start: ${JSON.stringify(v)}`);
     // strictly in order: no skipping ahead in the deck, nothing of a locked step, and the video waits (no request)
     v = await page.evaluate(() => { const from = FTDayDecks.state().i; FTDayDecks.to(from + 3); const skip = FTDayDecks.state().i; FTDayDecks.to(FTDayDecks.list(1).findIndex(s => s.id === 'discussion')); return {from, skip, locked: FTDayDecks.state().i, video: ftVideoUnlocked(1), ask: FTDay1.videoByStep(1)}; });
     if (v.skip !== v.from) fail(`the deck skipped ahead from slide ${v.from} to ${v.skip}`);
@@ -70,5 +70,5 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     await b.close();
   }
   if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-  console.log('Day 1 flow test passed (nothing unlocked: the Dashboard opens Setting of Training Expectations and the later steps are locked; up to the reading: the Dashboard opens it, Lesson 1 and the Virtual Assistant Essentials sheet still wait, the deck goes one slide at a time, the video waits for Handouts and Videos; Finish: the Dashboard as usual; the trainer\'s 🔓 Day 1 Steps).');
+  console.log('Day 1 flow test passed (nothing unlocked: the Dashboard opens Setting of Training Expectations and the later steps are locked; up to the reading: the Dashboard opens Day 1\'s card, Lesson 1 and the Virtual Assistant Essentials sheet still wait, the deck goes one slide at a time, the video waits for Handouts and Videos; Finish: the Dashboard as usual; the trainer\'s 🔓 Day 1 Steps).');
 })().catch(e => { console.error(e); process.exit(1); });

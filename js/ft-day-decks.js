@@ -555,7 +555,7 @@ function renderDeck(){
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
-          : DD.day < COUNT() && dayOpen(DD.day + 1) ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.pick(${DD.day + 1})">Day ${DD.day + 1} →</button>`
+          : DD.day < COUNT() && dayOpen(DD.day + 1) && !(list[n - 1] && list[n - 1].end) ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.pick(${DD.day + 1})">Day ${DD.day + 1} →</button>`
           : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`)}
       </div>
     </div>
@@ -769,7 +769,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.slide(1, 'reading')" title="Day 1's Reading Task, then its questions in ✍️ Knowledge Check">📖 Next: Reading Task: Personal Injury →</button>`}
+          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.open(1, 0)" title="Day 1's Classroom Activity card, the start of Day 1's Activity deck">📋 Next: Day 1 · Classroom Activity →</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -1020,7 +1020,8 @@ function deckNextUp(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
   if(nx){ FTNextUp(nav, btn, clean(nx.h), `Step ${DD.i + 2} of ${list.length}`); return; }
-  if(DD.day < COUNT() && dayOpen(DD.day + 1)) FTNextUp(nav, btn, `Day ${DD.day + 1}`, "Activity Deck");
+  // (a day that closes with its own End of Day slide, Day 1, ends there: no next day after it)
+  if(DD.day < COUNT() && dayOpen(DD.day + 1) && !(cur && cur.end)) FTNextUp(nav, btn, `Day ${DD.day + 1}`, "Activity Deck");
   else FTNextUp(nav, btn, "📚 Dashboard", "Your lessons");
 }
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
@@ -1258,7 +1259,7 @@ const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
 root.goToKnowledgeCheckWithInterstitial = async function(){
   const l = Number(state.dayId), day = discussionDay(l);
   // the orientation has no Activity deck (and isn't a lesson to finish): its last slide goes on to 🧰 Know Your Tools,
-  // which in turn ends on Day 1's Reading Task (Personal Injury)
+  // which in turn ends on Day 1's Classroom Activity card, the start of Day 1's Activity deck
   if(root.FT_ORIENTATION && l === Number(root.FT_ORIENTATION.id)) return goto("knowtools");
   if(!day) return __lessonDone.apply(this, arguments);
   if(state.traineeId && !state.isAdmin){
@@ -1268,7 +1269,12 @@ root.goToKnowledgeCheckWithInterstitial = async function(){
     try{ await storeSet("day-progress", state.progress); }catch(err){}
     try{ if(!hasPQ(l)) syncToLedger(); }catch(err){}
   }
-  open(day, 0);
+  // back into the deck in its own order: the slide after the lesson's ▶ Start Training stop (Day 1: Handouts / Video),
+  // else the day's card
+  await loadDecks();
+  const list = decks() && decks()[day] ? slidesOf(decks()[day]) : [];
+  const stop = list.findIndex(x => x.launch && x.launch.go === "lesson");
+  open(day, stop >= 0 && stop + 1 < list.length ? stop + 1 : 0);
 };
 
 /* ---------- 🗺 Map: the training roadmap ----------
