@@ -1970,9 +1970,11 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !
 main.main-ftdd .ftdd-sheet.ftdd-sa > p, main.main-ftdd .ftdd-sheet.ftdd-sa > ol li, main.main-ftdd .ftdd-sheet.ftdd-sa > ul li{font:600 20px/1.5 'Inter',sans-serif !important;color:#1E2340 !important;text-align:center;}
 main.main-ftdd .ftdd-sheet.ftdd-sa > p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
 main.main-ftdd .ftdd-sheet.ftdd-sa > h3{font-size:20px !important;text-align:center;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),620px)) !important;justify-content:center !important;gap:18px !important;margin:10px auto 18px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:38vh !important;border:2px solid #343C66 !important;border-radius:12px !important;box-shadow:0 3px 10px rgba(30,35,64,.12);}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{text-align:center;font-weight:700;color:#1E2340;}
+/* its screenshots as the curriculum shows them: three to a row, each numbered at its lower right, all of a set together */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:14px 26px !important;margin:10px 0 18px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:19vh !important;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{position:absolute;right:-18px;bottom:0;margin:0 !important;font:600 17px/1 'Inter',sans-serif;color:#1E2340;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
