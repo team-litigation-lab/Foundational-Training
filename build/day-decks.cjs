@@ -33,13 +33,23 @@ const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 const PI_PARTS = 8;
 const PI_BESIDE = 130;   // the most words of text beside a chart
 // sections of the reading that read together: one page, two cards side by side (the first heading, then the second)
-const PI_PAIRS = [["Step 3", "Step 4"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
+const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
 // sections kept in the same part as the one before them: a pair's second card, and the statute of limitations section
 // (its introduction, How Does It Work, the Standard Statute and the Discovery Rule) as one part
-const PI_JOIN = [...PI_PAIRS.map(p => p[1]), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception'];
+const PI_JOIN = [...PI_PAIRS.flatMap(p => p.slice(1)), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception'];
 const PI_PAIR = new RegExp(`^<h3>(${PI_JOIN.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
 const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const PI_PAIR_ROW = new RegExp(PI_PAIRS.map(([a, b]) => `(?:(<h3>${esc(a)}\\b[\\s\\S]*?)(<h3>${esc(b)}\\b[\\s\\S]*?)(?=<h[23][ >]|$))`).join("|"), "g");
+// a group's sections (PI_PAIRS) as one row of cards side by side; the rest of the reading as it is
+function piRows(html){
+  const secs = html.split(/(?=<h[23][ >])/), out = [];
+  for(let i = 0; i < secs.length; i++){
+    const g = PI_PAIRS.find(p => p.every((h, j) => secs[i + j] && secs[i + j].startsWith(`<h3>${h}`) && !/<\/?div/.test(secs[i + j])));
+    if(!g){ out.push(secs[i]); continue; }
+    out.push(`<div class="ftdd-pi-row ftdd-pi-pair ftdd-pi-n${g.length}">${secs.slice(i, i + g.length).map(x => `<div class="ftdd-pi-card">\n${x.trim()}\n</div>`).join("")}</div>\n`);
+    i += g.length - 1;
+  }
+  return out.join("");
+}
 function piParts(){
   const src = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
   // a pair (PI_PAIRS) and the statute of limitations section (PI_JOIN) are one unit, never split between two parts
@@ -170,7 +180,7 @@ for(let n = 1; n <= 16; n++){
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
     if(html.includes("<!--pi-reading-->")){
-      const parts = piParts(), of = i => `Reading Task: Personal Injury · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
+      const parts = piParts(), of = i => `Reading Task: Personal Injury · Part ${i + 1} of ${parts.length}`, wrap = x => piRows(x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
         // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
         const figs = sec.match(/<figure>[\s\S]*?<\/figure>/g); if(!figs) return sec;
         const text = sec.replace(/<figure>[\s\S]*?<\/figure>\s*/g, "").trim();
@@ -180,9 +190,7 @@ for(let n = 1; n <= 16; n++){
         let n = 0, k = 0; while(k < blocks.length && (k < 2 || n + words(blocks[k]) <= PI_BESIDE)){ n += words(blocks[k]); k++; }
         const beside = blocks.slice(0, k).join("\n"), after = blocks.slice(k).join("\n");
         return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${beside}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n${after ? after + "\n" : ""}`;
-      }).join("")
-        // each pair: two cards side by side, in one row
-        .replace(PI_PAIR_ROW, (m, ...g) => { const [a, b] = g.slice(0, PI_PAIRS.length * 2).filter(x => x !== undefined); return `<div class="ftdd-pi-row ftdd-pi-pair"><div class="ftdd-pi-card">\n${a.trim()}\n</div><div class="ftdd-pi-card">\n${b.trim()}\n</div></div>\n`; });
+      }).join(""));   // and each group (PI_PAIRS): its cards side by side, in one row
       slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
       parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
       continue;

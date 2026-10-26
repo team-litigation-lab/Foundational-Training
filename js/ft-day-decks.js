@@ -1778,11 +1778,15 @@ main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body figure.ftdd-pi-fig{margin:0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
 .ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
 .ft-body .ftdd-pi-row.ftdd-pi-pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+.ft-body .ftdd-pi-row.ftdd-pi-n3{grid-template-columns:repeat(3,minmax(0,1fr));}
 .ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 .ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
 .ft-body .ftdd-pi-chart img{width:100%;height:auto;max-height:56vh;object-fit:contain;margin:0 auto;display:block;}   /* a small chart is scaled up to fill its half */
-.ft-body .ftdd-pi-chart:has(> figure + figure) img{max-height:26vh;}   /* two charts share the half */
+/* the charts fill their card: each figure takes an equal share of the card's height, its chart as big as fits */
+.ft-body .ftdd-pi-row:not(.ftdd-pi-pair){min-height:min(54vh, 560px);}
+.ft-body .ftdd-pi-chart > figure.ftdd-pi-fig{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;}
+.ft-body .ftdd-pi-chart > figure.ftdd-pi-fig img{width:100%;height:100%;max-height:none;object-fit:contain;}
 /* a text-and-chart row is split in two, half text, half chart: the text big and bold so it fills its half, the chart as big as its half */
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:21px !important;font-weight:600 !important;line-height:1.5 !important;}
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair) > .ftdd-pi-card:first-child{display:flex;flex-direction:column;justify-content:center;}

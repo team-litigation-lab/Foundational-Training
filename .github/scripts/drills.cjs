@@ -57,6 +57,7 @@ const leaks = (fb, ans) => { const t = String(fb).replace(/📘[^\n]*/g, '');
   bad.slice(0, 12).forEach(fail);
 
   // the Practice Lab card and the demo days
+  await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }; });   // the trainer has opened the lessons (the Practice Lab goes by the day)
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
   if (!(await page.$('text=Open the drills'))) fail('the Drafting Tools have no 🏷 Naming & Reporting Drills card');
   const steps = await page.evaluate(() => [8, 12, 14, 16].map(d => (FTDays.of(d).items || []).some(x => x.at === 'tool' && x.id === 'drills')));
