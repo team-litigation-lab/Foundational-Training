@@ -585,8 +585,6 @@ function renderDeck(){
       ${lessons ? `<p class="ftdd-rail-h">Today’s lesson</p><div class="ftdd-lessons">${lessons}</div>` : ""}
       <p class="ftdd-rail-h">How you read it</p>
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl${DD.split ? " on" : ""}" onclick="FTDayDecks.split()">${DD.split ? "◫ One slide" : "◫ Split screen"}</button>
-      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl${DD.auto ? " on" : ""}" onclick="FTDayDecks.auto()">${DD.auto ? "⏸ Stop autoplay" : "▶ Autoplay"}</button>
-      ${DD.auto ? `<p class="ftdd-rail-note">A slide every ${AUTOPLAY_SECS} seconds.</p>` : ""}
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('shadowing')">📋 Today’s To-Do</button>
       ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
@@ -689,6 +687,19 @@ function contrastMarks(sheet){
     if(b && t && t === b.textContent.trim() && t.length <= 120 && !p.closest(".ftdd-step, .ftdd-pq, .ftdd-task, .ftdd-pi-card, table")) p.classList.add("ftdd-hbar");
   });
 }
+// Day 1's card's scale for a slide box of this size: its natural height there against the box's
+const cardScales = {};
+function cardScale(box){
+  const w = box.clientWidth, h = box.clientHeight, key = w + "x" + h; if(!w || !h) return 1;
+  if(cardScales[key] == null){
+    const probe = document.createElement("div");
+    probe.className = "ftdd-onnavy ftdd-lcslide"; probe.style.cssText = `position:absolute;left:-99999px;top:0;width:${w}px;height:auto;visibility:hidden;`;
+    probe.innerHTML = dayCard(1, (X.data && X.data.days) || {}); box.parentNode.appendChild(probe);
+    const nat = probe.scrollHeight; probe.remove();
+    cardScales[key] = nat > h ? Math.max(0.5, Math.floor(h / nat * 100) / 100) : 1;
+  }
+  return cardScales[key];
+}
 function fitSheets(){
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
   sheets.forEach(contrastMarks);
@@ -707,7 +718,14 @@ function fitSheets(){
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
   // the day card (and the Training Agenda) on navy is one card, not pages: scaled to fit, further if it must
-  document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => { if(!zoomToFit(box, 0.35)) box.scrollTop = 0; });
+  // a day's card is drawn at Day 1's card's scale on this screen (full size where Day 1's fits, all of them smaller
+  // together where it doesn't), so every day's card reads the same; a fuller card still shrinks further to fit
+  document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => {
+    const c = box.matches(".ftdd-lcslide") ? box.querySelector(":scope > .ftlc") : null;
+    if(!c){ if(!zoomToFit(box, 0.35)) box.scrollTop = 0; return; }
+    let z = cardScale(box); c.style.zoom = String(z); box.scrollTop = 0;
+    while(box.clientHeight && box.scrollHeight > box.clientHeight + 2 && z > 0.35){ z = Math.round((z - 0.05) * 100) / 100; c.style.zoom = String(z); }
+  });
   paintPageMark();
 }
 // the slide bar says which page of the slide this is, once there is more than one (the slide number itself is
@@ -739,7 +757,7 @@ const toolsDone = () => forTrainee() && TOOLS.every((t, i) => seenTools().includ
 function toolsCard(){
   const done = toolsDone();
   return `<div class="module-card mc-open mc-clean ftkt-card${done ? " mc-done" : ""}" id="module-tools">
-    <div class="module-head"><div class="mh-day">${done ? "Finished" : "🧰 Day 1"}</div><div class="mh-title">Know Your Tools</div></div>
+    <div class="module-head"><div class="mh-day">${done ? "Finished" : "&nbsp;"}</div><div class="mh-title">Know Your Tools</div></div>
     <div class="module-body"></div>
     <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">${done ? "Review" : "Start"}</button></div></div>`;
 }
@@ -750,8 +768,8 @@ const __moduleCard = root.moduleCard;
 root.moduleCard = function(d){
   if(d && d.ftTools) return toolsCard();
   const html = __moduleCard.apply(this, arguments);
-  // the pinned orientation card carries a kicker like its neighbour, so the two read as a pair
-  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Day 1 · Start here</div>') : html;
+  // (no "Day 1 · Start here" kicker on the orientation's card: its title says what it is)
+  return html;
 };
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
@@ -1164,7 +1182,8 @@ function introCard(l, cur, ex, tags){
   card.classList.add("ftli"); if(cur != null && c.days.includes(cur)) card.classList.add("now");
   const kick = card.querySelector(".mh-day");
   const done = lessonDone(l.id);
-  if(kick) kick.innerHTML = `${done ? "✓ Finished" : "Classroom Activity"} · ${e(FTDays.label(c.days))}${tags || ""}`;
+  // no "Classroom Activity · Day N" kicker: the card says Finished once it is, and its tags (Today …) otherwise
+  if(kick) kick.innerHTML = done ? `✓ Finished${tags || ""}` : (tags ? String(tags).replace(/^\s*·\s*/, "") : "&nbsp;");
   if(done) card.classList.add("ftli-done");
   const grid = card.querySelector(".mc-grid"); if(!grid) return card.outerHTML;
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label
@@ -1626,7 +1645,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 /* every day's card in Day 1's size (its text as Day 1's card shows it), filling the slide: a fuller card still shrinks to
    fit, a lighter one no longer grows past Day 1's */
 main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
-main.main-ftdd .ftdd-lcslide > .ftlc{zoom:.74;flex:1 0 auto;display:flex;flex-direction:column;}
+main.main-ftdd .ftdd-lcslide > .ftlc{flex:1 0 auto;display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
 .ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
 .ftlc.now{box-shadow:0 0 0 3px #F4B77A,0 6px 18px rgba(16,19,36,.28);}

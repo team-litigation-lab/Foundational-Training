@@ -235,7 +235,45 @@ function figTodo(){
     ${arrow("M330 330C292 322 274 306 272 290", m)}${callout(318, 322, 432, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
   </svg>`;
 }
-const FIGS = {note: figNote, todo: figTodo};
+/* 📒 the Training Monitoring Sheet, drawn as one filled-in entry (a preview: the sheet itself isn't embedded, so it
+   needs no sharing): the discussion and its date, 5 major takeaways, 3 questions and the rating */
+function figMonitor(){
+  const row = (y, n, t) => `<text x="40" y="${y}" font-size="13" font-weight="700" fill="#E8590C">${n}</text><text x="62" y="${y}" font-size="13" fill="#2A2F4A">${t}</text><path d="M40 ${y + 8}H720" stroke="#E6E8F0"/>`;
+  const opt = (y, t, on) => `<rect x="40" y="${y - 12}" width="14" height="14" rx="3" fill="${on ? OR : "#fff"}" stroke="#5b6178"/>${on ? `<path d="M43 ${y - 5}l3 3 6-7" stroke="#fff" stroke-width="2" fill="none"/>` : ""}<text x="64" y="${y}" font-size="13" fill="#2A2F4A">${t}</text>`;
+  return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
+    <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
+    <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · VA Output folder</text>
+    <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
+    <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
+    ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
+    ${row(174, "3", "…")}${row(198, "4", "…")}${row(222, "5", "…")}
+    <text x="24" y="256" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">3 QUESTIONS THAT YOU STILL HAVE</text>
+    ${row(278, "1", "How does a VA know which state’s deadlines apply?")}${row(302, "2", "…")}${row(326, "3", "…")}
+    <text x="24" y="360" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">RATE YOUR UNDERSTANDING</text>
+    ${opt(384, "I really don’t get this. I need extra help.", false)}${opt(406, "I think I can do this on my own but I am still not sure.", false)}
+    ${opt(428, "I am confident that I can do this on my own.", true)}${opt(450, "I definitely can do this and I can teach this to others!", false)}
+    ${[[70, 1], [104, 2], [256, 3], [360, 4]].map(([y, n]) => `<path d="M730 ${y - 4}H${n === 1 ? 712 : 600}" stroke="${OR}" stroke-width="2.5" marker-end="url(#ftrMonArrow)"/><circle cx="742" cy="${y - 4}" r="11" fill="${OR}"/><text x="742" y="${y}" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">${n}</text>`).join("")}
+    <defs><marker id="ftrMonArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="${OR}"/></marker></defs>
+  </svg>`;
+}
+const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
+// 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
+const MON_PARTS = [
+  {h:"Make Your Copy and Link It", link:true, steps:[
+    "Copy the Training Monitoring Sheet into your VA Output folder.",
+    "Share it: “Anyone with the link can view.”",
+    "Save its link here, once:"]},
+  {h:"Fill It In After Each Discussion", steps:[
+    "The discussion and its date.",
+    "5 Major Takeaways, in your own words.",
+    "3 Questions That You Still Have.",
+    "Rate Your Understanding: pick one line."]},
+  {h:"How It’s Checked", steps:[
+    "Automatically, at the end of every shift (5:00 PM ET).",
+    "You get feedback on each entry; your trainer adds comments."],
+   tip:"Fill it in before your shift ends, every training day."}
+];
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
@@ -361,21 +399,35 @@ const SLIDES = [
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
-  ["habits-trackers", `Building Your Habits: ${HABITS[1].name}`, ()=>`
+  // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
+  // Sheet (before its own)
+  ["habits-trackers", "Building Your Habits: Update Your Task Tracker", ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(HABITS[1])}</div>`],
+    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
   ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
-  ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
+  ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
-  // the rule and the 📁 Link button on the left, the sheet itself big on the right
-  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep ftr-mon-two"><div class="ftr-mon-l">` +
-    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet on the right in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
-    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>` +
-    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet") : "") + `</div>`],
+  ["habits-monitoring", "Building Your Habits: Update Your Monitoring Sheet", ()=>`
+    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
+  // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
+  // 📁 Link button), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
+  ["monitoring", "Your Training Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>` : ""}
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`],
+  // the sheet with numbered arrows, and beside it what goes at each number
+  ["monitoring-entry", "Your Training Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+    <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
+      ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
+      ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
+      ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><b>${esc(h)}</b><span>${esc(t)}</span></li>`).join("")}</ol></div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -394,6 +446,17 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
+  // the answer sheets, in the Hubstaff how-tos' way: link the folder once (right here), name each sheet, save it there
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Link Your Trainee Folder", steps:["Open your Trainee Folder in Google Drive and copy its link.", "Paste it here and press Save. You do this once."], field:true},
+      {h:"Name Each Answer Sheet", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Type the file name yourself: it’s checked as you type."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
+      {h:"Save It to Your Trainee Folder", steps:["📁 Save to My Trainee Folder opens a new Google Doc in your folder, with the name you typed.", "Your answers are copied: paste them in with Ctrl+V."], tip:"Answer sheets aren’t downloaded: they live in your Trainee Folder."}
+    ].map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.field && !FT_AUDIENCE() && window.FTProcess && FTProcess.folderField ? `<div class="ftr-folder">${FTProcess.folderField()}</div>` : ""}
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
@@ -651,11 +714,24 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !i
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
+body.ft-orient #lessonSlideWrap .ftr-folder .fp-folder-row{display:flex;gap:6px;margin-top:6px;} body.ft-orient #lessonSlideWrap .ftr-folder input{flex:1;min-width:0;padding:6px 8px;border:1px solid #C9CFE6;border-radius:8px;font-size:13px;} body.ft-orient #lessonSlideWrap .ftr-folder .kc-folder{display:none;}
+body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-fig .ftr-fig-scroll{background:#1E2340;padding:10px;box-shadow:0 6px 18px rgba(30,35,64,.28);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:none;border-radius:6px;}
+/* the Monitoring Sheet preview fills its slide: the sheet as big as the screen allows, on a light frame */
+body.ft-orient #lessonSlideWrap .ftr-mon-entry{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:center;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps{list-style:none;counter-reset:mon;margin:0;padding:0;display:grid;gap:10px;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li{counter-increment:mon;position:relative;padding:8px 12px 8px 46px;border:2px solid #343C66;border-radius:10px;background:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li::before{content:none !important;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li i{position:absolute;left:10px;top:9px;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;font:800 14px/26px 'Inter',sans-serif;font-style:normal;text-align:center;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps b{display:block;color:#1E2340;font-size:16px;} body.ft-orient #lessonSlideWrap .ftr-mon-steps span{display:block;color:#2A2F4A;font-size:14px;line-height:1.35;}
+body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig{margin:0;}
+body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig-scroll{background:#EEF1F8;padding:8px;box-shadow:none;}
+body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig svg{min-width:0;width:auto;max-width:100%;height:calc(100vh - 360px);max-height:none;margin:0 auto;border-radius:6px;}
 /* every card in high contrast, like the tables: a navy border, a navy heading bar with an orange rule, darker text */
 body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):not(:has(> .ftr-def)){background:#fff;border:2px solid #343C66;box-shadow:0 4px 14px rgba(30,35,64,.14);}
 body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):has(> :is(.ftr-part-h, .ftr-chan-h):first-child):not(:has(> .ftr-def)){padding:0 18px 14px;overflow:hidden;}

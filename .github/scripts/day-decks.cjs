@@ -218,15 +218,13 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (went.day !== 9 || went.i !== 1 || went.open) fail(`a slide on the map didn't open it: ${JSON.stringify(went)}`);
   await page.click('.ftdd-nav .ftdd-map'); await page.waitForTimeout(300); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   if (await page.$('#ftMap')) fail('Escape doesn\'t close the map');
-  // ◫ split screen shows two slides, ▶ autoplay turns them on its own
+  // ◫ split screen shows two slides
   await page.evaluate(() => { FTDayDecks.to(1); FTDayDecks.split(); }); await page.waitForTimeout(800);
   if (await page.$$eval('.ftdd-slides .ftdd-deck', x => x.length) !== 2) fail('split screen doesn\'t show two slides');
   await page.evaluate(() => FTDayDecks.split()); await page.waitForTimeout(500);
   if (await page.$$eval('.ftdd-slides .ftdd-deck', x => x.length) !== 1) fail('one slide doesn\'t come back');
-  await page.evaluate(() => FTDayDecks.auto()); await page.waitForTimeout(400);
-  if (!(await page.evaluate(() => FTDayDecks.state().auto))) fail('autoplay didn\'t start');
-  await page.evaluate(() => FTDayDecks.auto()); await page.waitForTimeout(300);
-  if (await page.evaluate(() => FTDayDecks.state().auto)) fail('autoplay didn\'t stop');
+  // no ▶ Autoplay on a deck: the trainee turns the slides
+  if (await page.$('.ftdd-rail button:has-text("Autoplay")')) fail('the deck still offers ▶ Autoplay');
   // the metrics screenshot is drawn out as the scorecard the call is marked on
   await page.evaluate(() => { state.isAdmin = true; FTDayDecks.open(4, 0); }); await page.waitForTimeout(1300);
   const score = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
