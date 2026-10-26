@@ -323,7 +323,9 @@ function listenSlide(day, time){
 }
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
-  const out = [{id: "agenda", h: "Training Agenda", agenda: true}];
+  // the first slide: the lesson's day card where the day has one, then the Training Agenda, standard on every day
+  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Day card", agenda: true}, {id: "plan", h: "Training Agenda", agenda: true, plan: true}]
+    : [{id: "agenda", h: "Training Agenda", agenda: true}];
   d.slides.forEach(s => {
     // a lesson day's "To be added" slide is 🎲 Today's Task: where the day's unannounced task lands (taskSlide)
     if(s.placeholder && !only){ out.push({id: "task", h: "Today’s Task", task: true, html: ""}); return; }
@@ -341,10 +343,10 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   return out;
 };
 function agendaHtml(d, info){
-  const rows = slidesOf(d).slice(1).map((s, i) => {
+  const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda).map(([s, i], j) => {
     const t = timeOf(s.h), k = kindOf(s, visual(slideSrc(d.day, s)));
     const go = slideAgendaGo(s, info);
-    return `<li><button type="button" onclick="FTDayDecks.to(${i + 1})"><span class="ftdd-ag-n">${String(i + 1).padStart(2, "0")}</span>
+    return `<li><button type="button" onclick="FTDayDecks.to(${i})"><span class="ftdd-ag-n">${String(j + 1).padStart(2, "0")}</span>
       <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${t ? t.ic + " " + t.label + " · " : ""}${k.ic} ${k.label}${go ? " · " + e(go.label) : ""}</small></span></button>${go ? `<a class="ftdd-ag-go" onclick="event.stopPropagation(); ${go.go}">${e(go.btn)}</a>` : ""}</li>`;
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
@@ -466,7 +468,7 @@ function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
   const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
-  const lc = s.agenda ? lessonOfDay(DD.day) : null;
+  const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
   const ribbon = lc != null ? `Day ${DD.day} · ${lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Day card"}` : s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
@@ -998,8 +1000,9 @@ function dayCard(n, ex){
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
-  // (outside training hours aren't on the card: every day's card follows Day 1's, focus, instructions and the day's
-  // Process Questions; they're on the day's Training Agenda, 📴 Outside training hours)
+  // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js). Every
+  // day's card follows Day 1's, so the list is one closed line at the foot of the focus, opened when it's wanted
+  const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
@@ -1027,6 +1030,7 @@ function dayCard(n, ex){
           return pl.length ? `<div class="ftlc-pqbox"><p class="ftlc-h2">✍️ Today’s Process Questions</p>${pl.map(l => `
           <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTDayDecks.toKC(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Knowledge Check →</button>
           ${root.FTKCGames ? `<button type="button" class="ftlc-pqbtn ftlc-games" onclick="FTKCGames.open(${Number(l)})">🎮 Review with the Knowledge Games</button>` : ""}</div>`).join("")}</div>` : ""; })()}
+        ${outside.length ? `<details class="ftlc-out"><summary class="ftlc-h2">📴 Outside training hours · ${outside.length}</summary><ul>${outside.map(x => `<li>${e(x)}</li>`).join("")}</ul></details>` : ""}
       </aside>
     </div>
   </article>`;
@@ -1162,7 +1166,7 @@ function mapHtml(){
     const title = (d && (info.role || d.title)) || `Day ${n}`;
     const state_ = n === here ? "here" : n < at ? "done" : "";
     const slides = list.map((x, i) => {
-      const name = x.agenda ? (lessonOfDay(n) != null ? "Day card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+      const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Day card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
       const on = n === here && i === DD.i;
       return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${open ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span></button></li>`;
     }).join("");
@@ -1502,6 +1506,10 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 main.main-ftdd .ftdd-lcslide{display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc{zoom:.74;flex:1 0 auto;display:flex;flex-direction:column;}
 main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
+.ftlc-out{margin-top:10px;border-top:1px solid #E6E8F0;padding-top:8px;}
+.ftlc-out > summary{cursor:pointer;list-style:none;margin:0 !important;}
+.ftlc-out > summary::-webkit-details-marker{display:none;}
+.ftlc-out > summary::after{content:" ▾";} .ftlc-out[open] > summary::after{content:" ▴";}
 .ftlc{background:#262B45;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;color:#fff;box-shadow:0 6px 18px rgba(16,19,36,.28);font-family:'Inter',sans-serif;min-width:0;}
 .ftlc.now{box-shadow:0 0 0 3px #F4B77A,0 6px 18px rgba(16,19,36,.28);}
 .ftlc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1F2338;border-bottom:1px solid rgba(255,255,255,.08);position:relative;}
@@ -1772,10 +1780,10 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
 /* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
-main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}
+main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h:not(:first-child){margin-top:30px;}
-main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:21px !important;line-height:1.6 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:20px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:18px !important;line-height:1.55 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
 /* a line of space between one step (or section) and the next */
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
@@ -1792,7 +1800,7 @@ main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body .ftdd-pi-chart > figure.ftdd-pi-fig{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;}
 .ft-body .ftdd-pi-chart > figure.ftdd-pi-fig img{width:100%;height:100%;max-height:none;object-fit:contain;}
 /* a text-and-chart row is split in two, half text, half chart: the text big and bold so it fills its half, the chart as big as its half */
-main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:21px !important;font-weight:600 !important;line-height:1.5 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:17px !important;font-weight:600 !important;line-height:1.45 !important;}
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair) > .ftdd-pi-card:first-child{display:flex;flex-direction:column;justify-content:center;}
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */

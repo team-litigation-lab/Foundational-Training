@@ -445,7 +445,8 @@ if(typeof Narrator !== "undefined"){
     const isOrient = window.FT_ORIENTATION && d.id === FT_ORIENTATION.id;
     const t = own || (nx ? titleOf(nx) : (isOrient ? "🧰 Know Your Tools, then the Reading Task" : "📋 This lesson’s Classroom Activity"));
     if(!t || !window.FTNextUp) return;
-    const btn = [...nav.querySelectorAll("button")].filter(b => b.offsetParent && /next|→|&rarr;/i.test(b.textContent)).pop();
+    // the bar's forward button is its last (Next →, or 📋 Classroom Activity on the last slide): the label goes just before it
+    const btn = [...nav.children].filter(b => b.matches("button, a.btn") && b.offsetParent).pop();
     FTNextUp(nav, btn, t, nx ? `Step ${i + 2} of ${list.length}` : (isOrient ? "Day 1" : "Activity Deck"));
   }
   const css = document.createElement("style");
