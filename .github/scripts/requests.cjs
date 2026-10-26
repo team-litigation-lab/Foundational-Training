@@ -103,8 +103,8 @@ async function workerChecks() {
     const open = all.filter(x => x.path === '/api/storage/get-many' && /settings:opendays/.test(x.key));
     const singleOpen = all.filter(x => x.path === '/api/storage/get' && /^settings:open(days|videos)$/.test(x.key));
     if (singleTasks.length) fail(`the tasks are read one lesson at a time (${singleTasks.length} requests in 8 s): they should come in one get-many`);
-    if (!many.length || many.length > ticks + 1) fail(`the tasks check ran ${many.length} times in 8 s (expected about ${ticks})`);
-    if (many.some(x => x.n !== nDays)) fail(`the tasks check asked for ${many.map(x => x.n).join(', ')} lessons (expected all ${nDays} in one request)`);
+    // 🎲 Random Tasks are abolished in this program: nothing looks for one
+    if (many.length) fail(`the platform still looks for a random task (${many.length} requests in 8 s)`);
     if (!record.length || record.length > 2 * ticks + 1) fail(`the trainee's record was read ${record.length} times in 8 s (expected about ${ticks})`);
     if (version.length > 4) fail(`the version was checked ${version.length} times in 8 s (expected 3 or so)`);
     if (singleOpen.length) fail(`the open lessons are read one setting at a time (${singleOpen.length} requests in 8 s): both should come in one get-many`);
@@ -194,5 +194,5 @@ async function workerChecks() {
 
     await browser.close();
     if (failures.length) { console.log(`\n${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log(`Server requests test passed (get-many rules and the "ft:" prefix; a trainee's page: ${all.length} requests in 8 s of sped-up checks, the tasks for all ${nDays} lessons in one, none in the background or on a quick tab switch; a dead server doesn't sign anyone out or lock their lessons; the Trainee Audit in 2 requests; the Task Trackers and Monitoring Sheets tabs and the Process Questions page with get-many).`);
+    console.log(`Server requests test passed (get-many rules and the "ft:" prefix; a trainee's page: ${all.length} requests in 8 s of sped-up checks, no random-task checks, none in the background or on a quick tab switch; a dead server doesn't sign anyone out or lock their lessons; the Trainee Audit in 2 requests; the Task Trackers and Monitoring Sheets tabs and the Process Questions page with get-many).`);
 })().catch(e => { console.error(e); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); });
