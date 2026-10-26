@@ -302,13 +302,15 @@ const SLIDES = [
     ${NOTE_PARTS.filter(p=>p.fig).map(p=>fig(FIGS[p.fig]())).join("")}</div>`],
   ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
     <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
-    <div class="ftr-part">
+    <div class="ftr-adj"><div class="ftr-part">
+      <div class="ftr-part-h">📧 The Email</div>
       ${copyRow("Subject", TIME_ADJ.subject)}
       ${copyRow("Send To", TIME_ADJ.to)}
       ${TIME_ADJ.cc.map(c=>copyRow("CC", c[1], c[0])).join("")}
-      <p class="ftr-when" style="margin-top:10px!important;"><b>In the Email:</b></p>
+    </div><div class="ftr-part">
+      <div class="ftr-part-h">📝 In the Email</div>
       <ul class="ftr-list">${TIME_ADJ.include.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-    </div>`],
+    </div></div>`],
   // Breaks and auxes
   ["schedule", "Breaks: Your Schedule and Your Hour of Breaks", ()=>
     rule(`⏰ Hubstaff Tracking Is Strict: ${esc(SHIFT)}`, "We follow a strict schedule. Log out no later than 5:00 PM. No tracking is allowed beyond it.") +
@@ -667,6 +669,9 @@ body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:18px;fon
 body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:16px !important;line-height:1.35 !important;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
+body.ft-orient #lessonSlideWrap .ftr-adj{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-adj .ftr-part{margin:0;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-adj{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
