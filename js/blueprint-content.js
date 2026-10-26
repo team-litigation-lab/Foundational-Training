@@ -38,7 +38,7 @@ window.LSH_BLUEPRINT = {
       { icon: '📷', title: 'Classroom discussions', points: [
           'Your trainer presents each lesson live, on the same slides you have on the platform. Nothing extra to install.',
           'Cameras on for the whole discussion. Meeting schedules are sent on the discussion\'s date and time \u2014 keep your notifications on.',
-          'After each discussion, fill in your Monitoring Sheet: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.',
+          'After each discussion or activity, following its specific instructions, fill in your Monitoring Sheet: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.',
           'Free Upskill Training runs right after your shift, for an hour or so: communication, accent reduction, grammar, email writing and client interviews. Unpaid and not mandatory, but highly encouraged.'],
         where: 'Discord, on the date and time of the discussion · 📒 Monitoring Sheet under 📚 Dashboard.',
         tip: 'Missed a Free Upskill session? Ask your trainers what was covered, review the materials and do the practice on your own time.' },
@@ -52,17 +52,17 @@ window.LSH_BLUEPRINT = {
       { icon: '🧭', title: 'Getting around', points: [
           '📁 Client Profile: your firm, its rules and the case files assigned to you. Every Practice Session is checked against them.',
           '🛠 Practice Lab: your real-time Practice Sessions and the activities with your trainer.',
-          '✍️ Knowledge Check: every lesson\'s answer sheet in one place. 70% passes, graded in your facilitator\'s style.',
+          '✍️ Knowledge Check: every lesson\'s answer sheet in one place. 70% passes, graded in your facilitator\'s style. Save each sheet daily in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there.',
           '🎯 Focus: your trainer\'s feedback and what to work on next.',
           '🏠 Main Portal: every program you are in, your evaluations \u2014 and where you log out.'],
         where: 'The top bar, on every page. On a phone, everything is under ☰ Menu.',
         tip: '📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🏅 My Performance sit under 📚 Dashboard.' },
       { icon: '📋', title: 'Your daily habits', points: [
-          'Daily Task Tracker: update it in your Assessment and Activities Folder before the end of every shift, and submit the day\'s output links.',
+          'Daily Task Tracker: update it in your main Google Drive before the end of every shift, and submit the day\'s output links.',
           'Every open task gets a Daily Note for the day; the tracker is checked every evening.',
           'EOD email before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day\'s tasks.',
           'Auxes and Hubstaff: !in and !back in #⏳-timestamps, In in #trainingchannel. Your Hubstaff To-Dos are named exactly as given.'],
-        where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your Assessment and Activities Folder in Drive.',
+        where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your main Google Drive.',
         tip: 'Every rule and routine is written out in 📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.' },
       { icon: '🛠', title: 'Practice Lab: the real tasks', points: [
           'Your firm: your trainer assigns your law firm and your cases. Learn its rules \u2014 every session is checked against them.',
@@ -158,7 +158,7 @@ window.LSH_BLUEPRINT = {
         shot: '/img/blueprint/fbstyle.jpg',
         shotAlt: 'The Feedback Style tab: the current voice with its traits, the style guide text and the voice examples, and the Save edits and Try it on a sample answer buttons.' },
       { icon: '📒', title: 'Monitoring Sheets', points: [
-          'Each trainee\'s Training Monitoring Sheet, by batch, trainee and discussion.',
+          'Each trainee\'s Training Progress Monitoring Sheet, by batch, trainee and discussion.',
           'Automated feedback from the 📏 Feedback Rubric (not AI): the checks, a score and the feedback to copy.',
           '"Needs extra help" marks entries rated "I really don\'t get this".',
           'Tune the rubric\'s metrics, and set the discussions and their key points.'],
@@ -167,7 +167,7 @@ window.LSH_BLUEPRINT = {
         shot: '/img/blueprint/monitor.jpg',
         shotAlt: 'The Monitoring Sheets tab: each trainee\'s sheet by batch, with the Discussions and Key Points list open and the Feedback Rubric below it.' },
       { icon: '✍️', title: 'Knowledge Check', points: [
-          'Each module\'s answer sheet, by batch and trainee: submitted or not, how many answered, the answers.',
+          'Each module\'s answer sheet, by batch and trainee: submitted or not, how many answered, the answers, and the file the platform found in their folder: named by the convention or not, saved on time or late.',
           'A ready line for the ranking report, in the facilitator\'s words.'],
         where: '✍️ Knowledge Check in the top bar (its own feature — it is not a tab of this Admin screen).',
         tip: 'Copy the ranking line straight into the weekly report.',

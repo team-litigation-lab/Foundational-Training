@@ -15,7 +15,7 @@ const R = path.resolve(__dirname, "..");
 // parts of a day left out of its deck: Day 1's Setting of Expectations is written to the facilitator; Training
 // Reminders are to be disregarded; the Hubstaff To-Do set-up is not a slide (the trainer sets the to-dos with the
 // batch, and the orientation covers them); the Nitro Pro / Adobe Acrobat Pro how-to homework is off the deck; and so
-// is the Training Monitoring Sheet set-up (the orientation and 📒 Monitoring Sheet cover it). Day 1's Reading Task
+// is the Training Progress Monitoring Sheet set-up (the orientation and 📒 Monitoring Sheet cover it). Day 1's Reading Task
 // (Personal Injury) and the Smart Advocate plug-ins installation are on it: the Day 1 card runs Reading Task →
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
@@ -27,7 +27,8 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
 const SA_FROM = "<h3>How to install the Smart Advocate";
 // Day 1's Reading Task: the Personal Injury overview's text is on the slide itself, in place of its Drive link (PI_FILE finds the link)
 const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
-// Day 1's reading, word for word: build/days/pi-overview.html is the Personal Injury overview PDF's text, unchanged
+// Day 1's reading: build/days/pi-overview.html is the Personal Injury overview PDF's text (one sentence of the discovery rule
+// joined up so it doesn't trail after its list)
 // (its charts are in ft/day1/img/pi/). It is dealt over PI_PARTS slides of about the same length, each starting at one
 // of its headings, so it reads a slide at a time: the Reading Task slide holds part 1, "reading-2" … the rest.
 const PI_PARTS = 8;

@@ -205,7 +205,7 @@ function candidateIds(name, batch) {
 /* ---------- what a trainee may touch ---------- */
 // Activities: activities:dayN and their attachments (actfile:*) are published by trainers for everyone;
 // settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
-// settings:monitor is the Training Monitoring Sheet's discussions and key points (trainers set it).
+// settings:monitor is the Training Progress Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
@@ -250,7 +250,7 @@ async function traineeWrite(env, tok, key, value) {
     await kv.put(key, value); return null;
   }
   if (key === `monitor:${id}`) {
-    // Training Monitoring Sheet (js/ft-monitoring.js): the trainee's own entries; the admin's
+    // Training Progress Monitoring Sheet (js/ft-monitoring.js): the trainee's own entries; the admin's
     // automated feedback is worked out from them on the page, so there's nothing here to protect.
     if (value.length > 400000) return "The Monitoring Sheet is too large to save";
     await kv.put(key, value); return null;
@@ -618,31 +618,91 @@ function facilitatorVoice(saved) {
    which works when the file is shared "Anyone with the link can view", checks it with the same rules
    (TR.fromSheetCsv + TR.checkDay; TR.gradeMonitorText) and writes the result into trackerreview:<id> (days[D] for the
    tracker, monitor for the Monitoring Sheet), keeping the trainer's comment and score. */
-async function fetchGoogle(url) {
+/* Google Drive through a service account (no user login), when GDRIVE_SA_EMAIL and GDRIVE_SA_KEY are set on this Worker (the
+   same kind of account as the Training Portal's functions/_drive.js): it reads the files and folders shared with it, so a
+   trainee's folder shared inside the LSH community (with the account added) needs no public link. Without it, the files are
+   read by their public export, as before. */
+const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
+let SA_TOKEN = { token: "", exp: 0 };
+async function driveToken(env) {
+  if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
+  const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const b64text = t => b64url(new TextEncoder().encode(t));
+  const pem = String(env.GDRIVE_SA_KEY).replace(/\\n/g, "\n").replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
+  const key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
+  const now = Math.floor(Date.now() / 1000);
+  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify({ iss: env.GDRIVE_SA_EMAIL, scope: "https://www.googleapis.com/auth/drive.readonly", aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }));
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
+  const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + unsigned + "." + b64url(sig) });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || !j.access_token) throw new Error("drive-auth");
+  SA_TOKEN = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
+  return SA_TOKEN.token;
+}
+async function fetchGoogle(url, env) {
   if (!url) throw new Error("link");
-  const res = await fetch(url, { redirect: "follow" });
+  const headers = driveSA(env) ? { Authorization: "Bearer " + await driveToken(env) } : {};
+  const res = await fetch(url, { redirect: "follow", headers });
   const text = await res.text();
   if (!res.ok || /^\s*<(!doctype|html)/i.test(text.slice(0, 200))) throw new Error("not-shared");
   return text;
 }
-// A Google Docs / Sheets / Drive file's name, from its page (the file shared "Anyone with the link can view"); a file that isn't
-// shared sends the browser to Google's sign-in, so there is no name to read
-async function googleFileName(url) {
-  const u = String(url || "").trim(), id = (u.match(/\/d\/([a-zA-Z0-9_-]{20,})/) || u.match(/[?&]id=([a-zA-Z0-9_-]{20,})/) || [])[1] || "";
-  if (!id || !/^https:\/\/(docs|drive)\.google\.com\//.test(u)) return { error: "link" };
-  const page = /docs\.google\.com\/(document|spreadsheets|presentation)\//.test(u) ? u.replace(/[?#].*$/, "") : `https://drive.google.com/file/d/${id}/view`;
-  const res = await fetch(page, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
-  if (/accounts\.google\.com/.test(res.url) || res.status === 401 || res.status === 403) return { error: "not-shared" };
-  if (!res.ok) return { error: "not-found" };
-  const html = await res.text();
-  const dec = t => t.replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
-  const og = (html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]*)"/i) || [])[1];
-  const title = (html.match(/<title>([^<]*)<\/title>/i) || [])[1];
-  const name = og ? dec(og) : title ? dec(title).replace(/\s+-\s+Google (Docs|Sheets|Slides|Drive)\s*$/i, "") : "";
-  if (!name || /^(sign[- ]in|google (docs|drive|sheets))$/i.test(name)) return { error: "not-shared" };
-  return { name, id };
+/* 📄 The answer sheets in a trainee's Assessment and Activities Folder (js/ft-process.js finds each sheet there by its name):
+   the files in the folder and in the folders inside it, with when each was made: through the service account when it is set,
+   else through the folder's own link (publicFolderFiles). */
+async function folderFiles(env, folderUrl) {
+  const fid = (String(folderUrl || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(folderUrl || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1];
+  if (!fid) return { error: "no-folder" };
+  if (!driveSA(env)) return publicFolderFiles(fid);
+  const token = await driveToken(env), FOLDER = "application/vnd.google-apps.folder", out = [];
+  const list = async (parent) => {
+    let page = "", n = 0;
+    do {
+      const q = encodeURIComponent(`'${parent}' in parents and trashed = false`);
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,webViewLink)&pageSize=200&supportsAllDrives=true&includeItemsFromAllDrives=true${page ? "&pageToken=" + page : ""}`, { headers: { Authorization: "Bearer " + token } });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(res.status === 404 || res.status === 403 ? "no-access" : "drive");
+      (j.files || []).forEach(f => out.push(f)); page = j.nextPageToken || ""; n++;
+    } while (page && n < 5);
+  };
+  try {
+    await list(fid);
+    for (const sub of out.filter(f => f.mimeType === FOLDER).slice(0, 40)) await list(sub.id);
+  } catch (e) { return { error: e.message === "no-access" ? "no-access" : "drive" }; }
+  return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
 }
-const DRIVE_UNREADABLE = "The system can't open this file. Check that the link is the file's own link (open the file and copy it from the address bar), from your Assessment and Activities Folder.";
+/* Without the service account: the folder the trainee linked, read through Google's own folder view (as its link opens it
+   for anyone it is shared with), with each file's name, its link and the day it was last changed, and the folders in it
+   one level down. */
+async function publicFolderFiles(fid) {
+  const MON = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const dec = t => String(t || "").replace(/&amp;/g, "&").replace(/&#39;|&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+  const when = t => {   // "10:41 AM" (today), "Oct 26", "Oct 26, 2025" or "10/26/25"
+    const v = dec(t), now = new Date(); let m;
+    if (/\d{1,2}:\d{2}/.test(v) && !/[a-z]{3}\s+\d/i.test(v)) return now.toISOString();
+    if ((m = v.match(/^([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?/)) && MON.includes(m[1].toLowerCase())) return new Date(Date.UTC(+(m[3] || now.getUTCFullYear()), MON.indexOf(m[1].toLowerCase()), +m[2], 12)).toISOString();
+    if ((m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/))) return new Date(Date.UTC(+(m[3].length === 2 ? "20" + m[3] : m[3]), +m[1] - 1, +m[2], 12)).toISOString();
+    return "";
+  };
+  const read = async (id) => {
+    const res = await fetch(`https://drive.google.com/embeddedfolderview?id=${id}#list`, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; LSH-Training)" } });
+    if (/accounts\.google\.com/.test(res.url) || !res.ok) throw new Error("no-access");
+    const html = await res.text(), out = [];
+    html.split(/<div class="flip-entry"/).slice(1).forEach(chunk => {
+      const id2 = (chunk.match(/id="entry-([a-zA-Z0-9_-]+)"/) || [])[1], name = dec((chunk.match(/class="flip-entry-title">([^<]*)</) || [])[1]);
+      const link = dec((chunk.match(/<a href="([^"]+)"/) || [])[1]), mod = (chunk.match(/class="flip-entry-last-modified"><div>([^<]*)</) || [])[1];
+      if (id2 && name) out.push({ id: id2, name, link, modified: when(mod), folder: /\/folders\//.test(link) });
+    });
+    return out;
+  };
+  try {
+    const top = await read(fid), files = top.filter(f => !f.folder);
+    for (const sub of top.filter(f => f.folder).slice(0, 40)) { try { (await read(sub.id)).filter(f => !f.folder).forEach(f => files.push(f)); } catch (e) { /* the next folder */ } }
+    return { files: files.map(f => ({ name: f.name, link: f.link, created: f.modified, modified: f.modified })) };
+  } catch (e) { return { error: "no-access" }; }
+}
+const DRIVE_UNREADABLE = "The system can't open this file. Check that the link is the file's own link (open the file and copy it from the address bar), from your main Google Drive.";
 async function checkDrive(env, id, D, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
@@ -657,7 +717,7 @@ async function checkDrive(env, id, D, o = {}) {
     try {
       const f = TR.googleFile(drive.tracker);
       if (f.kind !== "sheet") throw new Error("kind");
-      const t = TR.fromSheetCsv(await fetchGoogle(f.exportUrl), { today: D, startDate: drive.startDate || "" });
+      const t = TR.fromSheetCsv(await fetchGoogle(f.exportUrl, env), { today: D, startDate: drive.startDate || "" });
       if (!t) throw new Error("layout");
       t.drive = drive;
       res = TR.checkDay(t, D);
@@ -681,14 +741,14 @@ async function checkDrive(env, id, D, o = {}) {
     let g, review = "", error = "";
     try {
       const f = TR.googleFile(drive.monitor);
-      let text = await fetchGoogle(f.exportUrl);
+      let text = await fetchGoogle(f.exportUrl, env);
       if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
       const set = JSON.parse((await kv.get("settings:monitor")) || "null");
       const topics = (set && Array.isArray(set.topics) && set.topics.length ? set.topics : TR.MONITOR_TOPICS).map((t) => typeof t === "string" ? { title: t } : t);
       g = TR.gradeMonitorText(text, topics);
       if (o.ai !== false && g.found) {
         try {
-          review = await aiText(env, "You are a training supervisor at Legal Support Help reviewing a trainee virtual assistant's Training Monitoring Sheet. Never mention that you are an AI." + voice,
+          review = await aiText(env, "You are a training supervisor at Legal Support Help reviewing a trainee virtual assistant's Training Progress Monitoring Sheet. Never mention that you are an AI." + voice,
             `Trainee: ${(rec && rec.name) || "Trainee"}\nThe sheet's entries (one per classroom discussion: the date, 5 major takeaways, 3 questions, and how well they understand it):\n${text.slice(0, 9000)}\n\nThe automated check found ${g.found} of ${g.total} discussions, ${g.pct}% complete.\nReview it: are the takeaways specific to each discussion and in complete sentences, are questions real, which entries are missing or incomplete (name them). At most 6 short bullet points, under 140 words. No greeting, no sign-off.`, 500);
         } catch (e) { review = ""; }
       }
@@ -994,10 +1054,13 @@ export default {
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
       }
 
-      /* ---------- an answer sheet saved in the trainee's Drive: the file's name, read from its link (js/ft-process.js) ---------- */
-      if (path === "/api/drive/name") {
+      /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */
+      if (path === "/api/drive/answers") {
         const b = await request.json().catch(() => ({}));
-        try { return json(await googleFileName(b.url)); } catch (e) { return json({ error: "unreadable" }); }
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+        try { return json(await folderFiles(env, drive && drive.folder)); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */

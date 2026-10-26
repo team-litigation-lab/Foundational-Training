@@ -85,14 +85,15 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(500);
   await page.evaluate(() => goto('transcribe')); await page.waitForTimeout(1500);
   if (await page.$('#tfbPage .tfb-badge')) fail('feedback already seen is still NEW');
-  // 📬 My Feedback
+  // 📬 My Feedback: part of 🏅 My Performance now (goto('myfeedback') opens it there)
   await page.evaluate(() => goto('myfeedback')); await page.waitForTimeout(2500);
   const mf = await page.evaluate(() => document.querySelector('main').innerText);
   if (!/My Feedback/.test(mf) || !/Interview Recording 1/.test(mf)) fail('📬 My Feedback doesn\'t list the transcription\'s feedback');
   if (!/Reception Mock Call/.test(mf) || !/4\.14\/5/.test(mf)) fail('📬 My Feedback doesn\'t show the Reception Mock Call\'s scorecard');
   if (!/Week 1 · rank 2 of 9/.test(mf) || !/4\.32\/5/.test(mf) || !/35\/40 → 4\.38\/5/.test(mf)) fail(`📬 My Feedback doesn't show the shared Weekly Ranking row: ${mf.slice(0, 600)}`);
   const pages = await page.evaluate(() => JSON.stringify((window.LSH_PROGRAM || {}).modules || []));
-  if (!/"myfeedback"/.test(pages)) fail('📬 My Feedback is not in 📂 My Pages');
+  if (/"myfeedback"/.test(pages)) fail('📬 My Feedback still has its own page in the menu');
+  if (await page.evaluate(() => state.view) !== 'scorecard' || !/My Focus/.test(mf)) fail('📬 My Feedback is not on 🏅 My Performance with 🎯 My Focus');
   // 🏅 My Performance
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   const sc = await page.evaluate(() => document.querySelector('main').innerText);

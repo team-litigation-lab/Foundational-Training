@@ -81,7 +81,7 @@ const failures = []; const fail = m => failures.push(m);
   if (viewer.doc.w !== 820) fail(`a document's viewer isn't the side pane any more: ${JSON.stringify(viewer.doc)}`);
 
   const pages = await page.evaluate(() => JSON.stringify((window.LSH_PROGRAM || {}).modules || []));
-  if (!/"learn"/.test(pages)) fail('🎬 Video Notes is not in 📂 My Pages');
+  if (/"learn"/.test(pages)) fail('🎬 Video Notes is still in the menu');
 
   /* ---------- 📘 Process Guide ---------- */
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1000);

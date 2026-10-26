@@ -387,7 +387,7 @@ FTSessions.trainerCards = function(){
     const dayT = window.FTDays ? FTDays.label(FTDays.forAct(a.id)) : "";
     return `<div class="card fts-card"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
       <h3>${e(a.title)} ${r.status ? `<span class="fss-pill ${r.status === "Passed" ? "ok" : r.status === "Redo" ? "mid" : ""}">${e(r.status)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
-      <p class="fts-note">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
+      <p class="fts-note${isTrainee() && has(r.comment) ? "" : " fts-note-std"}">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
       ${(() => { const rb = RUB().forAct(a); if(!rb) return "";
         const got = isTrainee() && r.rubric && r.rubric.key === rb.key ? r.rubric : null;
         return `<details class="ti-rub-card"><summary>📋 Scorecard${got && got.avg != null ? ` · weighted average <b>${avgTxt(got.avg)}</b>` : ` · ${rb.criteria.length} criteria`}</summary>

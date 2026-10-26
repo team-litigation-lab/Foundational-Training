@@ -12,8 +12,8 @@
      • The parts, in the order the trainers run the orientation: 👋 Welcome to LSH!; Hubstaff (how-tos and why they
        matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
        Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
-       deliverables (an overview, the Daily Task Tracker part by part, the Training Monitoring Sheet embedded with the
-       📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), and the EOD email with
+       deliverables (an overview, the Daily Task Tracker part by part, the Training Progress Monitoring Sheet embedded with the
+       📁 Link My Google Drive button on the last slide (the My Drive links form, for the nightly check), and the EOD email with
        its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
        Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
        training GC, with its own file, questions and naming convention, and it is scored on the Weekly Ranking.
@@ -62,10 +62,10 @@ const HABITS = [
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
     "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Training Monitoring Sheet in your trainee folder within the shift, as soon as a topic is fully covered. Add the date, and all 5 takeaways in complete, specific sentences."],
+    "Update your Training Progress Monitoring Sheet in your main Google Drive every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your Assessment and Activities Folder, then save its link on the platform: 📒 Monitoring Sheet."]],
+          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your main Google Drive. You link it on the last slide of this orientation."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -79,7 +79,6 @@ EOD.body = EOD.parts.map(p=>p[0] + "\n" + "-\n".repeat(p[2])).join("\n");
 
 // The LSH Daily Task Tracker, part by part (the parts of js/ft-tracker.js's sheet).
 const TRACKER_PARTS = {
-  top:[["Status Counts (Rows 1–5)", "How many of your tasks are New, Pending for >3 days, Ongoing, Priority - Ongoing and Completed. They count themselves from each task’s Status."]],
   sections:[["⬇ FOR COMPLETION ⬇", "The tasks you’re working on. Add a row for each new task."],
             ["⬇ RECURRING ⬇", "Tasks you do every day, like your Typing Test and Spelling Test."],
             ["⬇ COMPLETED ⬇", "Finished tasks, with their Actual Completion Date."]],
@@ -87,13 +86,11 @@ const TRACKER_PARTS = {
         ["Type of Task", "Pick the type from the list. Your training tasks are LSH-TRAINING."],
         ["Task Details / Specific Task", "What the task is, specifically, e.g. Classroom Discussion: Reception Training Day 1."],
         ["Accountable VA", "Your name, as the VA responsible for the task."],
-        ["DAILY NOTES (Dated Significant Task Progress/Difficulties)", "One dated column for each training day. For every open task, write what you did that day, the result and the next step, and any difficulty with what you need to resolve it. Make it as detailed as possible. Never write just “done”, “ok” or “same”."],
         ["VA NOTES", "Your takeaways from the task, in complete sentences that show what you learned."],
         ["Deadline", "The date the task is due."],
         ["Status", "New, Pending for >3 days, Ongoing, Priority - Ongoing or Completed. Keep it up to date."],
         ["Actual Completion Date", "The date you finished the task."]],
-  tabs:[["Client-VA Specific Tasks Index", "Each client’s tasks at a glance, with the client code, business name, state, time zone, field of law, type of task, specific task, period (Daily to Project-based), nature of task (how important and urgent), and deadline (ASAP, Anytime w/in the day, or Timebound, with the date, day or time)."],
-        ["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here. They stay in the credentials document."],
+  tabs:[["Links & Access", "The tools you have access to, with your username and remarks. Never write passwords here. They stay in the credentials document."],
         ["Directory", "Your contacts, with the contact person, business name, business address, phone no. (ext), fax number and email."],
         ["Time Zone", "The time zones you work with, for quick reference."]],
   check:"Every training day, the platform checks that every open task has a Daily Note for that day. A cell that needs fixing turns red, and your trainer can add a comment on your day."
@@ -235,15 +232,15 @@ function figTodo(){
     ${arrow("M330 330C292 322 274 306 272 290", m)}${callout(318, 322, 432, ["③ Click the Button Inside Today’s To-Do", "This tracks your time on it, and the row turns blue."])}
   </svg>`;
 }
-/* 📒 the Training Monitoring Sheet, drawn as one filled-in entry (a preview: the sheet itself isn't embedded, so it
+/* 📒 the Training Progress Monitoring Sheet, drawn as one filled-in entry (a preview: the sheet itself isn't embedded, so it
    needs no sharing): the discussion and its date, 5 major takeaways, 3 questions and the rating */
 function figMonitor(){
   const row = (y, n, t) => `<text x="40" y="${y}" font-size="13" font-weight="700" fill="#E8590C">${n}</text><text x="62" y="${y}" font-size="13" fill="#2A2F4A">${t}</text><path d="M40 ${y + 8}H720" stroke="#E6E8F0"/>`;
   const opt = (y, t, on) => `<rect x="40" y="${y - 12}" width="14" height="14" rx="3" fill="${on ? OR : "#fff"}" stroke="#5b6178"/>${on ? `<path d="M43 ${y - 5}l3 3 6-7" stroke="#fff" stroke-width="2" fill="none"/>` : ""}<text x="64" y="${y}" font-size="13" fill="#2A2F4A">${t}</text>`;
-  return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
+  return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Progress Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
-    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · Assessment and Activities Folder</text>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · your main Google Drive</text>
     <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
@@ -260,18 +257,15 @@ function figMonitor(){
 const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
-  {h:"Make Your Copy and Link It", link:true, steps:[
-    "Copy the Training Monitoring Sheet into your Assessment and Activities Folder.",
-    "Save its link here, once:"]},
-  {h:"Fill It In After Each Discussion", steps:[
-    "The discussion and its date.",
-    "5 Major Takeaways, in your own words.",
-    "3 Questions That You Still Have.",
-    "Rate Your Understanding: pick one line."]},
-  {h:"How It’s Checked", steps:[
-    "Automatically, at the end of every shift (5:00 PM ET).",
-    "You get feedback on each entry; your trainer adds comments."],
-   tip:"Fill it in before your shift ends, every training day."}
+  {h:"Make Your Copy", steps:[
+    "Copy the Training Progress Monitoring Sheet into your main Google Drive.",
+    "You link it to the platform at the end of this orientation, with your Task Tracker."]},
+  {h:"Fill It In, Then It’s Checked", steps:[
+    "A discussion or an activity is done: fill in its entry, following its specific instructions.",
+    "Before your shift ends, every entry of the day is in.",
+    "At the end of the shift (5:00 PM ET) the platform checks it automatically.",
+    "You get feedback on each entry, and your trainer adds comments."],
+   tip:"It is for your training only."}
 ];
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -376,27 +370,14 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
-  ["matrix", "Your Training Matrix", ()=>{
-    // the training's flow, calm and at a glance: one light card per stage of the training (the days that share a role,
-    // from the day map, js/ft-day-activities.js), each day on one line with its main activity (the typing and spelling
-    // tests and the upskill run every day, so they're left off)
-    const days = (window.FTDays && FTDays.DAYS) || [];
-    const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
-    const stages = days.reduce((a, d)=>{ const last = a[a.length - 1]; if(last && last.role === d.role) last.days.push(d); else a.push({role: d.role, days: [d]}); return a; }, []);
-    const main = d=>{ const x = (d.items || []).find(x=>!skip.has(x.kind)); return x ? String(x.t).replace(/\s*\([^)]*\)\s*$/, "") : ""; };
-    const card = (st, i)=>{ const a = st.days[0].day, b = st.days[st.days.length - 1].day;
-      return `<div class="ftr-flow-card ftr-flow-s${i % 6}"><div class="ftr-flow-hd"><span class="ftr-flow-n">${a === b ? `Day ${a}` : `Days ${a}–${b}`}</span><b>${esc(st.role)}</b></div>
-        <ul>${st.days.map(d=>`<li><span>Day ${d.day}</span>${esc(main(d))}</li>`).join("")}</ul></div>`; };
-    return `<div class="ftr-flow">${stages.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
       <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
-      ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
+      ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
   // Sheet (before its own)
@@ -405,7 +386,7 @@ const SLIDES = [
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
   ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
-    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
+    <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
@@ -414,15 +395,15 @@ const SLIDES = [
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
   // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
-  // 📁 Link button), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
-  ["monitoring", "Your Training Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
+  // the copy; the 📁 link is the last slide), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
+  ["monitoring", "Your Training Progress Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>` : ""}
+      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Progress Monitoring Sheet</button></div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   // the sheet with numbered arrows, and beside it what goes at each number
-  ["monitoring-entry", "Your Training Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+  ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
@@ -445,11 +426,11 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  // the answer sheets, in the Hubstaff how-tos' way: saved in the day's folder, named by the convention, submitted by link on time
-  ["answer-sheets", "Setting Expectations: Submit Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Save It in Today’s Day Folder", steps:["Your Assessment and Activities Folder has a folder for each training day.", "Save each answer sheet in that day’s folder."]},
-      {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "The platform reads your file’s name from Drive and checks it."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
-      {h:"Submit Its Link on Time", steps:["Open the file in Drive and copy its link from the address bar.", "Paste it on the Knowledge Check and submit, before the end of your shift."], tip:"Attention to detail, following instructions and timely submission are all checked."},
+  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Spell it exactly, with your first name in ( )."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
+      {h:"Save It Daily in Your Assessment and Activities Folder", steps:["Save the named answer sheet in your Assessment and Activities Folder, on the day you answer it.", "Do it before the end of your shift. There is no link to paste."]},
+      {h:"The Platform Checks It", steps:["The platform finds it in your folder.", "It checks the name, and that it was saved on time."], tip:"Attention to detail, following instructions and timely submission are all checked."},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
@@ -469,7 +450,20 @@ const SLIDES = [
   ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
     <div class="ftr-why"><b>Why It Matters:</b> These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm. Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
-    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
+    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],,
+  // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
+  // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
+  ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Your Task Tracker and Monitoring Sheet", steps:["Both are in your main Google Drive, in the same place.", "Your LSH Daily Task Tracker and your Training Progress Monitoring Sheet."]},
+      {h:"Your Assessment and Activities Folder", steps:["Where you save your outputs, every day: test screenshots, answer sheets, documents."]},
+      {h:"Link Them Yourself, Once", steps:["Paste the link of your Task Tracker and of your Monitoring Sheet (open each and copy it from the address bar).", "Paste the link of your Assessment and Activities Folder, and save."], link:true,
+       tip:"From then on the platform checks them for you: your tracker and Monitoring Sheet at the end of every shift, your answer sheets in your folder."},
+    ].map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Google Drive</button></div>` : ""}
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`]
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
 // above it would count as heading and leave less for the content, so a short intro could end up alone on a page.
@@ -713,6 +707,7 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20p
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr));}   /* two parts share the width */
 body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}

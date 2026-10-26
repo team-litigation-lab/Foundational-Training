@@ -109,7 +109,7 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 
 /* ---------- executed like the original LSH decks (as the Case Management course's Case Flow): a navy slide with the
    LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
-   cream, orange-bordered sheet; orange corner shapes. Each day opens on its Training Agenda. ---------- */
+   cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the time of day on the ribbon, the kind of work on the pill
 function timeOf(h){
   const t = String(h || "");
@@ -123,7 +123,6 @@ function timeOf(h){
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
-  if(s.task) return {ic: "🎲", label: "Today’s Task"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
@@ -340,12 +339,11 @@ function listenSlide(day, time){
 }
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
-  // the first slide: the lesson's day card where the day has one, then the Training Agenda, standard on every day
-  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Day card", agenda: true}, {id: "plan", h: "Training Agenda", agenda: true, plan: true}]
-    : [{id: "agenda", h: "Training Agenda", agenda: true}];
+  // the first slide: the lesson's day card where the day has one (there is no Training Agenda slide)
+  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Day card", agenda: true}] : [];   // (no Training Agenda slide)
   d.slides.forEach(s => {
-    // a lesson day's "To be added" slide is 🎲 Today's Task: where the day's unannounced task lands (taskSlide)
-    if(s.placeholder && !only){ out.push({id: "task", h: "Today’s Task", task: true, html: ""}); return; }
+    // a lesson day's "To be added" slide has no slide of its own (no 🎲 Today's Task: the unannounced task lands in 🎲 Tasks)
+    if(s.placeholder && !only) return;
     // a no-discussion day's 📌 From your trainer slide shows once the trainer has added something (a trainer always sees it, to add)
     if(s.placeholder && only && !isAdminView() && !(X.data && (X.data.days[d.day] || []).length)){ if(!X.data) loadExtras(); return; }
     const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
@@ -505,33 +503,9 @@ function waitBox(s, info){
   return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
     <p>${sim ? "Go over the call flow, the questions to ask and the closing spiel, so you’re ready when your trainer calls your name." : "Go over the lesson and its key terms, so you’re ready when it’s your turn."}</p></div>`;
 }
-/* 🎲 Today's Task: the unannounced task a trainer sends to a lesson's trainees (Admin → 🎲 Random Tasks, js/ft-admin-ops.js:
-   surprise-task-day<lesson>, written from the lesson's own material) lands on the day's last slide too, with its time left
-   and 🎲 Answer it (the 🎲 Tasks page, where it's acknowledged, planned and resolved, and graded). */
-const TK = {recs: {}, at: 0, loading: null};
-function loadTasks(lessons){
-  if(TK.loading) return;
-  const stale = Date.now() - TK.at >= 60000, ids = lessons.filter(l => stale || !(String(l) in TK.recs));
-  if(!ids.length || typeof sharedGetMany !== "function") return;
-  TK.loading = sharedGetMany(ids.map(l => "surprise-task-day" + l)).then(v => { ids.forEach((l, k) => { TK.recs[String(l)] = v[k] || null; }); })
-    .catch(() => {}).then(() => { TK.at = Date.now(); TK.loading = null; if(state.view === "daydeck") render(); });
-}
-function taskSlide(n, info){
-  const lessons = (info.lessons || []).map(Number).filter(x => x > 0);
-  loadTasks(lessons);
-  const live = lessons.map(l => ({l, r: TK.recs[String(l)]})).filter(x => x.r && x.r.active && x.r.expiresAt && Date.now() < new Date(x.r.expiresAt).getTime());
-  const admin = isAdminView();
-  const send = admin ? `<p class="ftdd-task-ad">🧑‍🏫 <b>Trainer:</b> send the day’s task from <a class="ftdd-link" onclick="state.adminTab='randomtasks'; goto('admin')">🛡 Admin → 🎲 Random Tasks</a>. It’s written from the lesson’s own material and lands here and in every trainee’s 🎲 Tasks.</p>` : "";
-  if(!live.length) return `<div class="ftdd-task ftdd-task-wait"><span class="ftdd-task-ic">🎲</span><div><b>Your task for Day ${n} drops here</b>
-      <p>During the session your trainer sends an unannounced task from ${lessons.length ? e(lessons.map(lessonTitle).join(" and ")) : "today’s lesson"}. When it arrives it shows on this slide and in 🎲 Tasks, with its timer: acknowledge it, plan it and resolve it before the time is up.</p></div></div>${send}`;
-  return live.map(({l, r}) => { const left = Math.max(0, Math.round((new Date(r.expiresAt).getTime() - Date.now()) / 60000));
-    return `<div class="ftdd-task"><span class="ftdd-task-ic">🎲</span><div><b>New task · ${e(lessonTitle(l))} · ⏱ ${left} min left</b>
-      <p>${e(r.task).replace(/\n/g, "<br>")}</p>
-      <div class="ftdd-task-acts"><button type="button" class="btn btn-navy btn-sm" onclick="goto('tasks')">🎲 Answer it in Tasks</button></div></div></div>`; }).join("") + send;
-}
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
+  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -1127,7 +1101,7 @@ function dayCard(n, ex){
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
-  // (no outside-hours list on the card: it is on the day's Training Agenda, the slide after the card)
+  // (no outside-hours list on the card, as on Day 1's)
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
@@ -1165,7 +1139,7 @@ function dayCard(n, ex){
    ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
-  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), off = offlineRow(c), n = c.days[0];
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.days[0];
   const t = document.createElement("template"); t.innerHTML = String(moduleCard(l)).trim();
   const card = t.content.firstElementChild; if(!card) return "";
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
@@ -1188,8 +1162,7 @@ function introCard(l, cur, ex, tags){
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
   grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? (done ? "▶ Review" : "▶ Start Training") : "🔒 Start Training"}</button>
-    ${vid ? vid.outerHTML : ""}
-    <button type="button" class="btn btn-ghost btn-sm module-finish-btn ftli-class" onclick="event.stopPropagation(); ${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">🏠 Classroom</button>`;
+    ${vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
   return card.outerHTML;
 }
@@ -1630,6 +1603,7 @@ main.main-dash .module-grid > .ftli .module-body{flex:1 1 auto;min-height:0;}
 main.main-dash .module-grid > .ftli .mh-day{font-family:'Inter',sans-serif !important;}
 main.main-dash .module-grid > .ftli .mh-day .lp-kc{margin-left:6px;}
 main.main-dash .module-grid > .ftli .mc-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+main.main-dash .module-grid > .ftli .mc-grid.mc-n1{grid-template-columns:minmax(0,1fr) !important;}   /* the video button alone, full width */
 main.main-dash .module-grid > .ftli .ftli-days{cursor:pointer;}
 main.main-dash .module-grid > .ftli .ftli-days:hover .module-icon,main.main-dash .module-grid > .ftli .ftli-days:focus-visible .module-icon{transform:scale(1.12);}
 main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1774,12 +1748,6 @@ main.main-ftdd .ftdd-sheet p.ftdd-hbar{font:800 18px/1.3 'Poppins','Inter',sans-
 main.main-ftdd .ftdd-sheet p.ftdd-hbar:first-child{margin-top:0;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar b, main.main-ftdd .ftdd-sheet p.ftdd-hbar strong{color:inherit !important;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:800;}
-/* 🎲 Today's Task (taskSlide) */
-.ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
-.ftdd-task-wait{border-style:dashed;background:#F4F6FB;}
-.ftdd-task-ic{font-size:30px;line-height:1;} .ftdd-task b{display:block;font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;margin-bottom:6px;}
-.ftdd-task p{margin:0 0 8px;font-size:16px;line-height:1.5;color:#1B1E2E;} .ftdd-task-acts{display:flex;gap:8px;flex-wrap:wrap;}
-.ftdd-task-ad{font-size:14px;color:#2B2F45;}
 /* the "while you wait for your turn" box on a mock-call or demo slide: the tools to review with (waitBox) */
 .ftdd-wait{margin:14px 0;padding:14px 16px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:12px;background:#F4F6FB;}
 .ftdd-wait p{margin:0 0 8px;} .ftdd-wait p:last-child{margin:8px 0 0;color:#2B2F45;}

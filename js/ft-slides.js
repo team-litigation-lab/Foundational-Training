@@ -245,6 +245,13 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
     75%{transform:scaleX(-1) translateY(-4px) rotate(.6deg);}
   }
   @media (prefers-reduced-motion: reduce){ main:has(> #lessonStage) .ls-top > .ft-side-presenter img{animation:none;} }
+  /* 👩‍🏫 the presenter in one place on every page: the lower right of the screen, the same size on the lesson and
+     orientation slides and on the Activity decks (js/ft-day-decks.js), whatever the page around her */
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter, main.main-ftdd .ftdd-presenter{position:fixed !important;right:14px !important;bottom:0 !important;left:auto !important;top:auto !important;
+    width:clamp(170px, 13vw, 250px) !important;height:auto !important;margin:0 !important;display:block !important;z-index:30;pointer-events:none;}
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter img, main.main-ftdd .ftdd-presenter img{width:100% !important;margin-left:0 !important;}
+  /* (a page's entrance animation leaves a transform on <main>, which would pin her to the page instead of the screen) */
+  main.main-ftdd:has(.ftdd-presenter), main:has(> #lessonStage){transform:none !important;animation:none !important;}
 }`;
 document.head.appendChild(sideCss);
 function placePresenter(){

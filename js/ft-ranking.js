@@ -104,7 +104,7 @@ function parseRange(s){
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   return [["", "Typed by the trainer"]].concat(S.map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],

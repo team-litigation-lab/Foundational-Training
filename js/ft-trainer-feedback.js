@@ -115,7 +115,7 @@ async function loadAll(){
         verdict: w.avg == null ? "" : `Week ${w.week} final average: ${Number(w.avg).toFixed(2)}/5`, comment: w.notes, week: w}); });
     MF.list = out.sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   }catch(err){ MF.list = []; }
-  MF.loading = false; if(state.view === "myfeedback") render();
+  MF.loading = false; if(state.view === "myfeedback" || state.view === "scorecard") render();
 }
 function renderMine(){
   if(!state.traineeId) return `<div class="card" style="padding:28px;">Sign in to see your trainer’s feedback.</div>`;
@@ -131,8 +131,11 @@ function renderMine(){
 }
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["myfeedback"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {myfeedback: "My Feedback"});
+// 📬 My Feedback is part of 🏅 My Performance now (js/ft-my-pages.js): its list, without its own page header
+window.FTMyFeedback = {html: () => renderMine().replace(/^<div class="tfb-hero">[\s\S]*?<\/div>/, "")};
 const __render = window.render;
 window.render = function(){
+  if(state.view === "myfeedback"){ state.view = "scorecard"; return window.render.apply(this, arguments); }
   if(state.view !== "myfeedback") return __render.apply(this, arguments);
   if(!state.traineeId){ state.view = "modules"; return __render.apply(this, arguments); }
   if(MF.list && !MF.loading && Date.now() - F.at > 60000) loadAll();
