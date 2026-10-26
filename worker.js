@@ -671,7 +671,7 @@ async function folderFiles(env, folderUrl) {
   } catch (e) { return { error: e.message === "no-access" ? "no-access" : "drive" }; }
   return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
 }
-const DRIVE_UNREADABLE = "The system can't open this file. Check that the link is the file's own link (open the file and copy it from the address bar), from your Assessment and Activities Folder.";
+const DRIVE_UNREADABLE = "The system can't open this file. Check that the link is the file's own link (open the file and copy it from the address bar), from your main Google Drive.";
 async function checkDrive(env, id, D, o = {}) {
   const kv = kvOf(env);
   const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");

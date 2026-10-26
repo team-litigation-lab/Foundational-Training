@@ -58,11 +58,11 @@ window.LSH_BLUEPRINT = {
         where: 'The top bar, on every page. On a phone, everything is under ☰ Menu.',
         tip: '📋 Task Tracker, 📒 Monitoring Sheet, 🗒 My Notes and 🏅 My Performance sit under 📚 Dashboard.' },
       { icon: '📋', title: 'Your daily habits', points: [
-          'Daily Task Tracker: update it in your Assessment and Activities Folder before the end of every shift, and submit the day\'s output links.',
+          'Daily Task Tracker: update it in your main Google Drive before the end of every shift, and submit the day\'s output links.',
           'Every open task gets a Daily Note for the day; the tracker is checked every evening.',
           'EOD email before the end of every shift: at least 2 sentences for each item, and 3 key learnings from the day\'s tasks.',
           'Auxes and Hubstaff: !in and !back in #⏳-timestamps, In in #trainingchannel. Your Hubstaff To-Dos are named exactly as given.'],
-        where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your Assessment and Activities Folder in Drive.',
+        where: '📋 Task Tracker and 📒 Monitoring Sheet under 📚 Dashboard · your main Google Drive.',
         tip: 'Every rule and routine is written out in 📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.' },
       { icon: '🛠', title: 'Practice Lab: the real tasks', points: [
           'Your firm: your trainer assigns your law firm and your cases. Learn its rules \u2014 every session is checked against them.',

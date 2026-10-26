@@ -62,10 +62,10 @@ const HABITS = [
   {icon:"📋", name:"Update Your Trackers", tracker:true, lines:[
     "Update your LSH Daily Task Tracker every day, before the end of your shift. Every open task gets a Daily Note for the day.",
     "Your EOD is only a summary, so the rest of your learnings go in your tracker. Make it as comprehensive and detailed as possible, and keep it organized. Fill in every part (explained on the next slides). You can transfer your discussion notes for reference.",
-    "Update your Training Progress Monitoring Sheet in your Assessment and Activities Folder every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
+    "Update your Training Progress Monitoring Sheet in your main Google Drive every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your Assessment and Activities Folder, then save its link on the platform: 📒 Monitoring Sheet."]],
+          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your main Google Drive, then save its link on the platform: 📒 Monitoring Sheet."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -240,7 +240,7 @@ function figMonitor(){
   return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Progress Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
-    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · Assessment and Activities Folder</text>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · your main Google Drive</text>
     <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
@@ -258,13 +258,8 @@ const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
   {h:"Make Your Copy and Link It", link:true, steps:[
-    "Copy the Training Progress Monitoring Sheet into your Assessment and Activities Folder.",
+    "Copy the Training Progress Monitoring Sheet into your main Google Drive.",
     "Save its link here, once:"]},
-  {h:"Fill It In After Each Discussion or Activity", steps:[
-    "The discussion or activity, and its date.",
-    "5 Major Takeaways, in your own words.",
-    "3 Questions That You Still Have.",
-    "Rate Your Understanding: pick one line."]},
   {h:"How It’s Checked", steps:[
     "Automatically, at the end of every shift (5:00 PM ET).",
     "You get feedback on each entry; your trainer adds comments."],
@@ -710,6 +705,7 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20p
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr));}   /* two parts share the width */
 body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
