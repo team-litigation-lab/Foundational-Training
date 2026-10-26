@@ -418,7 +418,7 @@ if(typeof Narrator !== "undefined"){
 })();
 
 /* The Previous / Next bar is drawn like the Activity decks': one white bar with ← Previous, "Step N of M" and the
-   progress dots beside it, Autoplay and Next →. The dots leave their row above the slide, so the slide gets that
+   progress dots beside it and Next →. The dots leave their row above the slide, so the slide gets that
    height (lessons and the orientation, not full screen or the room's window). */
 (function(){
   const __after = window.afterRender;
