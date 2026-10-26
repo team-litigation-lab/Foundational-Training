@@ -1092,7 +1092,7 @@ const TOOLS = [
       "Videos, documents and decks open right on the slide; 📝 What I learned keeps your notes on each video",
       "◫ Split screen shows two slides side by side; ▶ Autoplay turns them for you",
       "📋 Today’s To-Do and 📘 the day’s lesson are one click away"]},
-  {ic: "🗂", name: "LSH Case Management System (CMS)", short: "CMS (Case Management)", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
+  {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name (Ctrl / Cmd + K); when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
