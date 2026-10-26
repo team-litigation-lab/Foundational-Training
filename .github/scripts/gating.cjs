@@ -43,8 +43,8 @@ const failures = []; const fail = m => failures.push(m);
 
   // the deck of a day far ahead opens, with nothing finished
   await page.evaluate(() => FTDayDecks.open(14)); await page.waitForTimeout(1200);
-  const deck = await page.evaluate(() => ({ view: state.view, t: (document.querySelector('.ftdd-dtitle') || {}).innerText || '' }));
-  if (deck.view !== 'daydeck' || !/^Day 14\b/.test(deck.t)) fail(`Day 14's deck didn't open for a trainee on Day 1: ${JSON.stringify(deck)}`);
+  const deck = await page.evaluate(() => ({ view: state.view, t: (document.querySelector('.ftdd-dtitle') || { dataset: {} }).dataset.day || '' }));
+  if (deck.view !== 'daydeck' || deck.t !== '14') fail(`Day 14's deck didn't open for a trainee on Day 1: ${JSON.stringify(deck)}`);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
 
   // the lessons, though, are the trainer's to open: locked until 📅 Open Lessons says otherwise

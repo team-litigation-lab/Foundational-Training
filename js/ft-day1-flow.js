@@ -20,7 +20,7 @@
 const STEPS = [
   {n: 1, label: "Setting of Training Expectations", go: "goto('day', 12)"},
   {n: 2, label: "Know Your Tools", go: "goto('knowtools')"},
-  {n: 3, label: "Personal Injury Reading", go: "FTDay1.openStep(3)"},   // each: its first slide in Day 1's Activity deck
+  {n: 3, label: "Personal Injury Reading", go: "FTDay1.openStep(3)"},   // each: its first slide in Day 1's Activity deck (3: the card)
   {n: 4, label: "Classroom Discussion", go: "FTDay1.openStep(4)"},
   {n: 5, label: "Handouts and Videos", go: "FTDay1.openStep(5)"},
   {n: 6, label: "Process Questions", go: "FTDay1.openStep(6)"},
@@ -62,7 +62,7 @@ const deckList = () => window.FTDayDecks && FTDayDecks.list ? FTDayDecks.list(1)
 function stepAt(i){ const L = deckList(); for(let j = Math.min(i, L.length - 1); j >= 0; j--){ const n = slideStep(L[j]); if(n) return n; } return 3; }
 let pendingStep = 0;
 function openStep(n){
-  const L = deckList(), i = L.findIndex((s, j) => !s.agenda && stepAt(j) === n);
+  const L = deckList(), i = L.findIndex((s, j) => stepAt(j) === n);   // (the reading's step opens on Day 1's card, the deck's first slide)
   if(i >= 0){ FTDayDecks.open(1, i); return; }
   pendingStep = n; FTDayDecks.open(1, 0);   // (the deck's slides load first: the render below goes on to the step's slide)
 }
