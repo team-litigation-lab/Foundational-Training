@@ -673,7 +673,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.slide(1, 'reading')" title="Day 1's Reading Task, then its questions in ✍️ Knowledge Check">📖 Next: Reading Task: What Is Personal Injury? →</button>`}
+          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.slide(1, 'reading')" title="Day 1's Reading Task, then its questions in ✍️ Knowledge Check">📖 Next: Reading Task: Personal Injury →</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -917,18 +917,15 @@ function deckPresenter(){
 // next day / 📚 Dashboard on the last slide (the same card as the lessons', js/ft-slides.js)
 function deckNextUp(){
   document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
-  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split) return;
-  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1) return;   // the slide's own pages come first: Next turns them
-  const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1];
+  const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split || !root.FTNextUp) return;
+  const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1], btn = nav.querySelector(".ftdd-next");
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-  const t = kcOf(cur) ? "✍️ The Reading Task questions, in Knowledge Check" : nx ? clean(nx.h)
-    : DD.day < COUNT() && dayOpen(DD.day + 1) ? `Day ${DD.day + 1}` : "📚 Dashboard";
-  if(!t) return;
-  nav.style.position = "relative";
-  const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
-  el.innerHTML = `<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span></span>`;
-  el.querySelector("span").textContent = t;
-  nav.appendChild(el);
+  // the slide's own pages come first: Next turns them
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
+  if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
+  if(nx){ FTNextUp(nav, btn, clean(nx.h), `Step ${DD.i + 2} of ${list.length}`); return; }
+  if(DD.day < COUNT() && dayOpen(DD.day + 1)) FTNextUp(nav, btn, `Day ${DD.day + 1}`, "Activity Deck");
+  else FTNextUp(nav, btn, "📚 Dashboard", "Your lessons");
 }
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
@@ -1138,7 +1135,7 @@ const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
 root.goToKnowledgeCheckWithInterstitial = async function(){
   const l = Number(state.dayId), day = discussionDay(l);
   // the orientation has no Activity deck (and isn't a lesson to finish): its last slide goes on to 🧰 Know Your Tools,
-  // which in turn ends on Day 1's Reading Task (What Is Personal Injury?)
+  // which in turn ends on Day 1's Reading Task (Personal Injury)
   if(root.FT_ORIENTATION && l === Number(root.FT_ORIENTATION.id)) return goto("knowtools");
   if(!day) return __lessonDone.apply(this, arguments);
   if(state.traineeId && !state.isAdmin){
@@ -1230,12 +1227,12 @@ const TOOLS = [
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "🟢", name: "Practice Sessions", img: "practice-lab", go: "goto('simulators')", where: "🛠 Practice Lab → 🟢 Practice Sessions",
-    what: "Real work, in real time, for your law firm: each session is a task done live in the CMS on your assigned case, checked against your firm’s rules and reviewed by your trainer.",
-    feats: ["By day: the Reception and Intake Mock Calls, the Calendaring Practice Lab, Medical Records requests",
-      "Each session opens with its lesson, so you practise what you just learned",
-      "Record what you did and submit it: it’s evaluated against your case and your 🏛 firm’s rules",
-      "🎯 A graded call counts toward its lesson"]},
+  {ic: "✉️", name: "Email Simulators", img: "email-simulator", href: "https://cm-training-activity.pages.dev/simulators/email.html?program=FT", where: "🎓 Training Directory → 🛠 Simulators → ✉️ Email (it opens in its own tab)",
+    what: "A Gmail-style practice inbox and email replies: you handle a law firm’s mail the way a VA does, without touching a real inbox.",
+    feats: ["✉️ Email Workspace: file every email under a label, give each one a decision, and don’t get phished",
+      "✍️ Email Replies: one email at a time, answered in the sender’s style",
+      "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
+      "One submission grades filing, security, triage and your replies"]},
   {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
@@ -1250,15 +1247,16 @@ const TOOLS = [
       "It shows the file name to save it under"]},
   {ic: "📚", name: "LSH Knowledge Base", short: "Knowledge Base", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 Knowledge Base (it opens in its own tab)",
     what: "The LSH library of SOPs, training videos and know-how from the whole LSH VA community: look up how a task is done before you ask.",
-    feats: ["SOPs and step-by-step guides for the work you do for your clients",
-      "Training videos from the LSH VA community",
+    feats: ["★ Opens on Featured: the articles the team has starred as front-page reading, from Personal Injury to the Receptionist SOP",
+      "SOPs and step-by-step guides for the work you do for your clients",
       "Opens signed in: no second log-in, straight from this platform",
       "Yours to keep using once you are working with your clients"]},
-  {ic: "✍️", name: "Knowledge Check", img: "knowledge-check", go: "goto('process')", where: "✍️ Knowledge Check in the top bar",
-    what: "Each module’s Process Questions, answered in writing on the platform and graded.",
-    feats: ["A module’s questions open once you finish the module",
-      "📝 Submit for Grading: a score and feedback under each answer, then your trainer’s review",
-      "📁 Your Trainee Folder’s Drive link, so new documents are made there"]}
+  {ic: "🏥", name: "Medical Records Requests", short: "Medical Records Request", img: "medical-records", href: "https://cm-training-activity.pages.dev/simulators/records.html?program=FT", where: "🎓 Training Directory → 🛠 Simulators → 🏥 Medical Records Requests (it opens in its own tab)",
+    what: "A records request platform on a real-looking case file: you collect complete medical records and itemized bills for a demand, the way a Case Manager does.",
+    feats: ["🔐 Check the HIPAA authorization before anything goes out",
+      "🏥 Send each request to the right provider’s department for the right dates, from the Provider Directory",
+      "Handle what comes back: rejections, invoices against the fee cap, follow-ups and missing records",
+      "Review the records, flag the problems and log them to the case file by the attorney’s date"]}
 ];
 // the tools, as a row of tabs in the slide's bar (in place of a pill and "Tool N of 8"), so the picked tool's
 // screenshot and text get the sheet's whole width
@@ -1612,14 +1610,17 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 /* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
    headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
    navy-bordered boxes */
-main.main-ftdd .ftdd-sheet{font-size:19px;color:#11131F;}
-main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:19px;line-height:1.5;color:#11131F;}
-main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:19px;color:#11131F;}
-main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 17px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
+main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
+/* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
+main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw) > *{flex:0 0 auto;}
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
 main.main-ftdd .ftdd-sheet .ftdd-step{padding:10px 14px;margin:10px 0;border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36px;font-size:16px;}
-main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:18px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
-main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:16px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
+main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
 /* 🎲 Today's Task (taskSlide) */
 .ftdd-task{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border:2px solid #343C66;border-left:6px solid #E8590C;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.12);margin:6px 0 12px;}
@@ -1766,16 +1767,24 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
-.ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
-main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:19px !important;line-height:1.6 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
+/* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
+main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}
+main.main-ftdd .ftdd-sheet h2.ftdd-pi-h:not(:first-child){margin-top:30px;}
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:21px !important;line-height:1.6 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:20px !important;}
+/* a line of space between one step (or section) and the next */
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body figure.ftdd-pi-fig{margin:0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
-.ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
+.ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
+.ft-body .ftdd-pi-row.ftdd-pi-pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 .ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 .ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
-.ft-body .ftdd-pi-chart img{max-height:30vh;width:auto;margin:0 auto;display:block;}
-main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:16.5px !important;line-height:1.5 !important;}
+.ft-body .ftdd-pi-chart img{max-height:52vh;max-width:100%;width:auto;margin:0 auto;display:block;}
+/* a text-and-chart row is split in two, half text, half chart: the text big and bold so it fills its half, the chart as big as its half */
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:21px !important;font-weight:600 !important;line-height:1.5 !important;}
+.ft-body .ftdd-pi-row:not(.ftdd-pi-pair) > .ftdd-pi-card:first-child{display:flex;flex-direction:column;justify-content:center;}
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}

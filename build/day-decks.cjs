@@ -21,7 +21,7 @@ const R = path.resolve(__dirname, "..");
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
 const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring"]};
 // slide titles that named the Process Questions, which aren't on the slides
-const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury (Overview: What Is Personal Injury?)"}};
+const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -31,9 +31,12 @@ const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 // (its charts are in ft/day1/img/pi/). It is dealt over PI_PARTS slides of about the same length, each starting at one
 // of its headings, so it reads a slide at a time: the Reading Task slide holds part 1, "reading-2" … the rest.
 const PI_PARTS = 8;
+const PI_PAIR = /^<h3>Step 4\b/;
 function piParts(){
   const src = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
-  const units = src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean);
+  // Steps 3 and 4 of the case timeline read together (one page, two cards side by side): one unit, never split
+  const units = src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean)
+    .reduce((a, u) => { if(PI_PAIR.test(u) && a.length) a[a.length - 1] += "\n" + u; else a.push(u); return a; }, []);
   // a chart reads like ~60 words
   const size = u => u.replace(/<figure>[\s\S]*?<\/figure>/g, " ").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length + 60 * (u.match(/<figure>/g) || []).length;
   const w = units.map(size), n = units.length, k = Math.min(PI_PARTS, n);
@@ -159,12 +162,14 @@ for(let n = 1; n <= 16; n++){
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
     if(html.includes("<!--pi-reading-->")){
-      const parts = piParts(), of = i => `Reading Task: What Is Personal Injury? · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
+      const parts = piParts(), of = i => `Reading Task: Personal Injury · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
         // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
         const figs = sec.match(/<figure>[\s\S]*?<\/figure>/g); if(!figs) return sec;
         const text = sec.replace(/<figure>[\s\S]*?<\/figure>\s*/g, "").trim();
         return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${text}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n`;
-      }).join("");
+      }).join("")
+        // Steps 3 and 4: two cards side by side, in one row
+        .replace(/(<h3>Step 3\b[\s\S]*?)(<h3>Step 4\b[\s\S]*?)(?=<h[23][ >]|$)/, (m, a, b) => `<div class="ftdd-pi-row ftdd-pi-pair"><div class="ftdd-pi-card">\n${a.trim()}\n</div><div class="ftdd-pi-card">\n${b.trim()}\n</div></div>\n`);
       slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
       parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
       continue;

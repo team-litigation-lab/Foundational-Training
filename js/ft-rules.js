@@ -432,6 +432,33 @@ const NEXT_UP = {why: "Your role as a General VA, the rules for your work and th
 // (js/ft-slides.js draws the "Next up" card on every slide; this slide's own wording replaces the next slide's title)
 window.FT_NEXT_UP = NEXT_UP;
 function orientNextUp(){}
+// 👉 The one "Next up" card, over the Next button of every slide, deck and page (js/ft-slides.js, js/ft-day-decks.js):
+// always the same size, centered over the button, with what comes next and, under it, where that is
+window.FTNextUp = function(nav, btn, title, sub){
+  document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
+  if(!nav || !title) return;
+  nav.style.position = "relative";
+  const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
+  el.innerHTML = '<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span class="ftr-nextup-t"></span><span class="ftr-nextup-s"></span>';
+  el.querySelector(".ftr-nextup-t").textContent = String(title).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  el.querySelector(".ftr-nextup-s").textContent = sub || "";
+  nav.appendChild(el);
+  // centered over the Next button, kept inside the bar
+  const place = () => {
+    if(!el.isConnected) return;
+    const n = nav.getBoundingClientRect(), b = (btn && btn.isConnected ? btn : nav.lastElementChild || nav).getBoundingClientRect(), w = el.offsetWidth;
+    const mid = b.left + b.width / 2 - n.left, left = Math.max(0, Math.min(n.width - w, mid - w / 2));
+    el.style.left = left + "px"; el.style.setProperty("--ftr-nu-tip", (mid - left) + "px");
+  };
+  place(); requestAnimationFrame(place);
+  // it steps aside after a few seconds so it never sits over the slide's text, and comes back over the Next button
+  let t = setTimeout(() => el.classList.add("ftr-nextup-off"), 6000);
+  if(btn){
+    const show = () => { clearTimeout(t); el.classList.remove("ftr-nextup-off"); place(); }, hide = () => { clearTimeout(t); t = setTimeout(() => el.classList.add("ftr-nextup-off"), 1500); };
+    btn.addEventListener("mouseenter", show); btn.addEventListener("focus", show);
+    btn.addEventListener("mouseleave", hide); btn.addEventListener("blur", hide);
+  }
+};
 function orientLastStep(){
   const b = document.querySelector('.slide-nav button[onclick^="goToKnowledgeCheckWithInterstitial"]');
   if(b){ b.textContent = "🧰 Next: Know Your Tools →"; b.title = "The orientation is done: go on to Know Your Tools"; }
@@ -679,11 +706,14 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
-.ftr-nextup{position:absolute;right:0;bottom:calc(100% + 10px);z-index:6;max-width:340px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:10px 34px 10px 14px;box-shadow:0 10px 26px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;}
-.ftr-nextup::after{content:"";position:absolute;right:28px;bottom:-10px;border:8px solid transparent;border-top-color:#E8590C;border-bottom:0;}
-.ftr-nextup b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;margin-bottom:2px;}
-.ftr-nextup span{display:block;color:#fff;}
-.ftr-nextup-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 11px/1 'Inter',sans-serif;cursor:pointer;}
+.ftr-nextup{position:absolute;left:0;bottom:calc(100% + 14px);z-index:6;box-sizing:border-box;width:290px;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:14px;padding:12px 34px;box-shadow:0 12px 28px rgba(30,35,64,.38);font:600 17px/1.3 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;transition:opacity .35s, transform .35s;}
+.ftr-nextup.ftr-nextup-off{opacity:0;transform:translateY(6px);pointer-events:none;}
+.ftr-nextup::after{content:"";position:absolute;left:var(--ftr-nu-tip, 50%);margin-left:-9px;bottom:-11px;border:9px solid transparent;border-top-color:#E8590C;border-bottom:0;}
+.ftr-nextup b{display:block;font:800 13px/1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
+.ftr-nextup .ftr-nextup-t{display:block;color:#fff;font-weight:700;}
+.ftr-nextup .ftr-nextup-s{display:block;color:#C9CFE6;font:600 13.5px/1.3 'Inter',sans-serif;}
+.ftr-nextup .ftr-nextup-s:empty{display:none;}
+.ftr-nextup-x{position:absolute;top:7px;right:7px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font:700 12px/1 'Inter',sans-serif;cursor:pointer;}
 @keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}

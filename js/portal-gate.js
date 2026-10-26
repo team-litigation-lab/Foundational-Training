@@ -22,11 +22,13 @@
 var PORTAL_HOME = "https://cm-training-activity.pages.dev/";
 
 // Take the ticket out of the address straight away, so it isn't kept in history or sent on in a refresh.
-var ticket = "";
+var ticket = "", viewTrainee = false;
 try{
   var u = new URL(location.href);
   ticket = u.searchParams.get("ticket") || "";
-  if(ticket){ u.searchParams.delete("ticket"); history.replaceState(history.state, "", u.pathname + (u.search || "") + u.hash); }
+  // An administrator in the Portal's 👁 trainee view opens the program the way a trainee sees it (?view=trainee)
+  viewTrainee = !!ticket && u.searchParams.get("view") === "trainee";
+  if(ticket){ u.searchParams.delete("ticket"); u.searchParams.delete("view"); history.replaceState(history.state, "", u.pathname + (u.search || "") + u.hash); }
 }catch(e){}
 // A page opened from the Portal (it carries a ticket) stays behind a plain "opening" cover until the sign-in has settled,
 // so the dashboard shell, the "Signing you in…" card and the dashboard don't flash one after another.
@@ -107,7 +109,12 @@ window.portalGate = {
       if((j.code === "admin-password" || j.admin) && state.traineeId){ try{ await logout(); }catch(e){} }
       if(j.code === "admin-password"){ wantAdmin = true; uncover(0); return; }   // administrators always type the admin password: straight to that prompt
       if(!r.ok || !j.token){ notice = j.error || "We couldn't sign you in from the LSH Training Portal. Open the program from the Portal again."; uncover(0); return; }
-      if(j.admin){ setAdminToken(j.token); uncover(250); return; }                                        // an admin signed in on the Portal: no password here (boot picks up the token)
+      // an admin signed in on the Portal: no password here (boot picks up the token); in the Portal's trainee view, the
+      // program opens in 👁 trainee view too (boot reads lsh_admin_preview)
+      if(j.admin){ setAdminToken(j.token); try{ viewTrainee ? sessionStorage.setItem("lsh_admin_preview", "1") : sessionStorage.removeItem("lsh_admin_preview"); }catch(e){} uncover(250); return; }
+      // RBAC: a trainee's ticket is never an admin session. An admin session left in this tab (a trainer signed in here
+      // earlier) is dropped before the trainee is signed in, or it would open the admin's bar instead of theirs.
+      if(typeof dropAdminSession === "function") dropAdminSession();                                        // an admin signed in on the Portal: no password here (boot picks up the token)
       if(state.traineeId && state.traineeId === j.id){ setTraineeToken(j.token); uncover(250); return; }   // already signed in as them
       if(state.traineeId){ try{ await logout(); }catch(e){} }                               // someone else was signed in on this device
       setTraineeToken(j.token);
@@ -138,8 +145,8 @@ window.portalGate = {
   // What the sign-in screen shows. With a Portal ticket it registers the trainee (the engine's own steps) on their way in.
   renderCard: function(){
     var logo = (typeof LOGO_FULL_SRC !== "undefined") ? '<img src="'+LOGO_FULL_SRC+'" alt="Legal Support Help" style="width:150px;height:auto;margin-bottom:22px;">' : "";
-    if(state.isAdmin){            // an admin who came in from the Portal (or is signed in): 📚 Dashboard, like every other viewer
-      setTimeout(function(){ if(state.isAdmin && state.view === "login") goto("modules"); }, 0);
+    if((state.isAdmin || state.adminPreview) && !pending){            // an admin (in 👁 trainee view too) who came in from the Portal (or is signed in): 📚 Dashboard, like every other viewer
+      setTimeout(function(){ if((state.isAdmin || state.adminPreview) && state.view === "login") goto("modules"); }, 0);
       return '<div class="login-shell"><div class="login-card">'+logo
         + '<h1 style="font-size:22px;color:var(--navy);margin:0 0 8px;">Opening the training…</h1></div></div>';
     }

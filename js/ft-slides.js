@@ -444,12 +444,9 @@ if(typeof Narrator !== "undefined"){
     const titleOf = x => !x ? "" : x.type === "ftSection" ? (secs[x.index] || {}).h : x.type === "ftDivider" ? (secs[x.before] || {}).h : "";
     const isOrient = window.FT_ORIENTATION && d.id === FT_ORIENTATION.id;
     const t = own || (nx ? titleOf(nx) : (isOrient ? "🧰 Know Your Tools, then the Reading Task" : "📋 This lesson’s Classroom Activity"));
-    if(!t) return;
-    nav.style.position = "relative";
-    const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
-    el.innerHTML = `<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span></span>`;
-    el.querySelector("span").textContent = String(t).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
-    nav.appendChild(el);
+    if(!t || !window.FTNextUp) return;
+    const btn = [...nav.querySelectorAll("button")].filter(b => b.offsetParent && /next|→|&rarr;/i.test(b.textContent)).pop();
+    FTNextUp(nav, btn, t, nx ? `Step ${i + 2} of ${list.length}` : (isOrient ? "Day 1" : "Activity Deck"));
   }
   const css = document.createElement("style");
   css.textContent = `/* the lesson card (lessons and the orientation, the navy panel the slide sits in) has the American-flag photo, under a
