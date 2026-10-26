@@ -605,7 +605,7 @@ function zoomToFit(box, min){
 }
 function sheetPages(sheet){
   const kids = [...sheet.children];
-  kids.forEach(k => { k.style.display = ""; });
+  kids.forEach(k => { k.style.display = ""; k.classList.remove("ftdd-pi-compact"); });
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
@@ -633,6 +633,15 @@ function sheetPages(sheet){
     if(prev && sumH(p) < capAll * (read ? 0.55 : 0.3) && sumH(prev) + sumH(p) <= capAll * (read ? 1.42 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
     const introOnly = p => p.length <= 3 && /^H[1-6]$/.test(p[0].tagName) && sumH(p) < capAll * 0.5;
     if(out.length > 1 && introOnly(out[0]) && sumH(out[0]) + sumH(out[1]) <= capAll / (read ? 0.6 : FIT_MIN)) out.splice(0, 2, out[0].concat(out[1]));   // (fitSheets scales it to fit)
+    // the reading: a short page that is only the end of a section (the text under a text-and-chart row) goes on top of
+    // the next page, whose row is then drawn compact (only as tall as its text) to make room, so it never stands alone
+    // (scaled a little to fit, if it must, as far as a reading page is: 0.72)
+    if(read) for(let i = 0; i < out.length - 1; i++){
+      const p = out[i], nx = out[i + 1], row = nx[0];
+      if(sumH(p) >= capAll * 0.5 || !row.classList.contains("ftdd-pi-row") || p.some(x => x.classList.contains("ftdd-pi-row"))) continue;
+      row.classList.add("ftdd-pi-compact");
+      if(sumH(p) + sumH(nx) <= capAll / 0.72){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
+    }
     return out; };
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
@@ -1938,6 +1947,8 @@ main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body .ftdd-pi-chart img{width:100%;height:auto;max-height:56vh;object-fit:contain;margin:0 auto;display:block;}   /* a small chart is scaled up to fill its half */
 /* the charts fill their card: each figure takes an equal share of the card's height, its chart as big as fits */
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair){min-height:min(54vh, 560px, var(--ftdd-pi-h, 560px));}
+.ft-body .ftdd-pi-row.ftdd-pi-compact{min-height:0;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row.ftdd-pi-compact:not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);}
 /* the reading's text beside its chart: the text has the wider share, bigger and bolder */
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);}
 .ft-body .ftdd-pi-chart > figure.ftdd-pi-fig{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;}
