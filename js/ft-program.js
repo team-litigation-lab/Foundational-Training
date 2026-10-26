@@ -45,8 +45,8 @@ window.LSH_PROGRAM = {
   // 📚 Dashboard: the modules, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
-    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your VA Output folder: its link, each day’s output links, and the daily check."},
-    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your VA Output folder, checked per discussion."},
+    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your Assessment and Activities Folder: its link, each day’s output links, and the daily check."},
+    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Monitoring Sheet in your Assessment and Activities Folder, checked per discussion."},
     {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
     {view:"learn", icon:"🎬", label:"Video Notes", who:"trainee", about:"What you learned from each training video: your takeaways, the new terms, a question for your trainer, and how you’ll use it on the job."},
     {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
@@ -109,7 +109,7 @@ window.LSH_PROGRAM = {
       about:"The demos and mock calls you do live with your trainer, as your trainer recorded them.",
       items: ctx => typeof window.ftTrainerItems === "function" ? window.ftTrainerItems(ctx) : []},
     {id:"drive", icon:"📋", label:"Task Tracker & Monitoring Sheet", key:"trackerreview:",
-      about:"Your Daily Task Tracker and Training Monitoring Sheet in your VA Output folder: the system’s checks, or your trainer’s score where they gave one.",
+      about:"Your Daily Task Tracker and Training Monitoring Sheet in your Assessment and Activities Folder: the system’s checks, or your trainer’s score where they gave one.",
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
     {id:"skills", icon:"🧪", label:"Typing & Spelling", key:"skills:",
       about:"Your daily tests, taken in the Practice Lab: your typing speed against the 60 WPM clients look for (the average of your last 10), and your spelling average.",
