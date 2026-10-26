@@ -27,7 +27,8 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
 const SA_FROM = "<h3>How to install the Smart Advocate";
 // Day 1's Reading Task: the Personal Injury overview's text is on the slide itself, in place of its Drive link (PI_FILE finds the link)
 const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
-// Day 1's reading, word for word: build/days/pi-overview.html is the Personal Injury overview PDF's text, unchanged
+// Day 1's reading: build/days/pi-overview.html is the Personal Injury overview PDF's text (one sentence of the discovery rule
+// joined up so it doesn't trail after its list)
 // (its charts are in ft/day1/img/pi/). It is dealt over PI_PARTS slides of about the same length, each starting at one
 // of its headings, so it reads a slide at a time: the Reading Task slide holds part 1, "reading-2" … the rest.
 const PI_PARTS = 8;
