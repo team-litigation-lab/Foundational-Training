@@ -362,6 +362,8 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   const lid = lessonOfDay(Number(d.day)), days = lid != null ? (LESSON_CARDS[lid] || {days: []}).days : [];
   const deck = inCardOrder(Number(d.day), out);
   if(days.includes(Number(d.day) + 1)) deck.push({id: "next-day", h: `End of Day ${d.day}`, divider: true, html: ""});
+  // Day 1 closes with its own End of Day 1, after the Installation of SA
+  else if(Number(d.day) === 1) deck.push({id: "end-day", h: "End of Day 1", divider: true, end: true, html: ""});
   return deck;
 };
 /* 📋 The deck runs in the day's own order, the order of its card: each of the card's rows is a stop, in turn. A row that is
@@ -401,7 +403,11 @@ function launchSlide(s){
 }
 // 🔀 the divider at the end of a day whose lesson continues tomorrow: today is done, and the next day's instructions
 // begin on the next slide (Next goes straight on into that day's deck)
-function dividerSlide(n){
+function dividerSlide(n, s){
+  if(s && s.end) return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of Day ${n}</p>
+    <h2 class="ftdd-dv-h">Day ${n} is done</h2>
+    <p class="ftdd-dv-sub">Update your Training Progress Monitoring Sheet before the end of your shift.</p>
+    <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="goto('modules')">Finish → 📚 Dashboard</button></div>`;
   const lid = lessonOfDay(n), c = LESSON_CARDS[lid] || {days: []}, k = c.days.indexOf(n + 1) + 1, info = dayInfo(n + 1);
   return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of Day ${n}</p>
     <p class="ftdd-dv-k">Next</p><h2 class="ftdd-dv-h">Day ${n + 1}${info.role ? " · " + e(info.role) : ""}</h2>
@@ -508,7 +514,7 @@ function waitBox(s, info){
 }
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
+  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -1028,13 +1034,17 @@ function nextKC(){
 function toKC(l){
   const d0 = decks() && decks()[DD.day];
   if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
-  // the way back is to the day's next activity: the slide after the day's ✍️ Process Questions stop (wherever the sheet
-  // was opened from: that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
+  // the way back is to the day's next activity: the slide after the reading it was opened from, else the slide after the
+  // day's ✍️ Process Questions stop (that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
   // end of a day whose lesson goes on, that's the divider into the next day
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
   const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
-  const from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i, s = list[from + 1] || null;
-  const h = !s ? "" : s.divider ? `Day ${DD.day + 1}` : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+  let from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i;
+  // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
+  const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => k.parts.test(list[DD.i].id));
+  if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
+  const s = list[from + 1] || null;
+  const h = !s ? "" : s.end ? s.h : s.divider ? `Day ${DD.day + 1}` : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l)})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }

@@ -241,7 +241,8 @@ function bySheet(qs, each){
   const done = st => { const mine = qs.filter(x => x.set === st); return mine.filter(x => has(((FP.data && FP.data.sets[st.id]) || {answers: []}).answers[x.i])).length + " of " + mine.length; };
   const tabs = sets.map((st, i) => `<button type="button" class="fp-sheet-tab${i === at ? " on" : ""}" onclick="FTProcess.sheetPage('${key}', ${i})">
       <b>${sheetIcon(st)} ${e(st.title)}</b><span>Page ${i + 1} of ${sets.length} · ${done(st)} answered</span></button>`).join("");
-  const next = at < sets.length - 1 ? `<div class="fp-sheet-next"><button type="button" class="btn btn-navy btn-sm" onclick="FTProcess.sheetPage('${key}', ${at + 1})">Next sheet: ${sheetIcon(sets[at + 1])} ${e(sets[at + 1].title)} →</button></div>`
+  // (no "Next sheet" button: the next sheet may belong to a later activity; the tabs above switch sheets)
+  const next = at < sets.length - 1 ? ""
     : `<div class="fp-sheet-next"><button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.sheetPage('${key}', ${at - 1})">← Back to ${sheetIcon(sets[at - 1])} ${e(sets[at - 1].title)}</button></div>`;
   return `<div class="fp-sheet-tabs">${tabs}</div><h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${qs.filter(x => x.set === set).length} questions</span></h3>${one(set)}${next}`;
 }
