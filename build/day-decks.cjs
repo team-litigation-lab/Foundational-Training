@@ -157,7 +157,12 @@ for(let n = 1; n <= 16; n++){
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
     if(html.includes("<!--pi-reading-->")){
-      const parts = piParts(), of = i => `Reading Task: What Is Personal Injury? · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').replace(/<figure>/g, '<figure class="ftdd-pi-fig">');
+      const parts = piParts(), of = i => `Reading Task: What Is Personal Injury? · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
+        // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
+        const figs = sec.match(/<figure>[\s\S]*?<\/figure>/g); if(!figs) return sec;
+        const text = sec.replace(/<figure>[\s\S]*?<\/figure>\s*/g, "").trim();
+        return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${text}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n`;
+      }).join("");
       slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
       parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
       continue;

@@ -576,7 +576,8 @@ function sheetPages(sheet){
   const units = [];
   kids.forEach(k => {
     const inner = [...k.children];
-    if(hOf(k) > room && inner.length > 1) units.push(...inner); else units.push(k);
+    // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row")) units.push(...inner); else units.push(k);
   });
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
@@ -600,7 +601,7 @@ function fitSheets(){
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.classList.contains("ftdd-read");
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? 0.85 : 0.4);
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? 0.72 : 0.4);
     else if(!sheet.classList.contains("ftdd-sheet-edit") && !read && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
@@ -1275,9 +1276,9 @@ if(!document.getElementById("ftdd-deck-font")){
   document.head.appendChild(f);
 }
 (function(){ const st = document.createElement("style"); st.id = "ft-day-decks"; st.textContent = `
-main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:flex;flex-direction:column;gap:10px;}
+main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display:flex;flex-direction:column;gap:10px;}
 /* the day picker and the day's lesson sit in rails either side, so the slide itself takes the width */
-.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 196px;gap:12px;align-items:stretch;min-height:0;}
+.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 172px;gap:10px;align-items:stretch;min-height:0;}
 .ftdd-mid{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;}
 .ftdd-slides{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-height:0;}
 .ftdd-stage-split .ftdd-slides{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -1289,8 +1290,8 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-ctl{text-align:left;white-space:normal;}
 .ftdd-ctl.on{background:#262B45;color:#fff;border-color:#262B45;}
 .ftdd-rail-note{margin:0;font-size:11.5px;color:var(--ink-soft);}
-.ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;white-space:nowrap;}
-.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 18px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
+.ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;}
+.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 16px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
 @media(max-width:1100px){
   .ftdd-stage{grid-template-columns:minmax(0,1fr);}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
@@ -1693,7 +1694,14 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 .ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
 main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:19px !important;line-height:1.6 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
-.ft-body figure.ftdd-pi-fig{margin:12px 0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
+.ft-body figure.ftdd-pi-fig{margin:0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
+.ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
+.ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
+.ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
+.ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
+.ft-body .ftdd-pi-chart img{max-height:40vh;width:auto;margin:0 auto;display:block;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:16.5px !important;line-height:1.5 !important;}
+@media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
