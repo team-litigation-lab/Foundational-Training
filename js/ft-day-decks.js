@@ -396,18 +396,22 @@ function dayRows(n){
 // a stop that opens something other than a slide: the lesson, the video, the day's Knowledge Check
 /* 🎬 Day 1's Handouts / Video: the Breakout Session's digital handouts, one per group (the lesson card's 🎬 Video opens
    this slide too: js/ft-day1-flow.js) */
-const HANDOUTS = {1: {when: "Afternoon, 1:00–3:00 PM", items: [
+// (no set hours: the trainer opens the session when the batch is ready, with the Handouts and Videos unlock)
+const HANDOUTS = {1: {items: [
   ["US Legal System", "https://drive.google.com/file/d/1lIZN9VxbkKHWDb-wkQp90l8GC60-7T0J/view"],
   ["LSH Services and VA Task List", "https://drive.google.com/file/d/12xvxXorgh_wjR9DidEewbnfokItzpzNY/view"],
   ["LSH Clients and Clientele", "https://drive.google.com/file/d/1-x8NMuG0sR994yqodr5xBgHaHDfrWv6v/view"],
   ["Western Culture", "https://drive.google.com/file/d/1EkJ1eqoZqccdThFJ0-O1tPXEyjLLeIX0/view"],
   ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]}};
 function handoutsSlide(h){
-  return `<div class="ftdd-handouts"><p class="ftdd-dv-k">Breakout Session · Group Activity</p><h2 class="ftdd-dv-h">Digital Handouts</h2>
-    <p class="ftdd-ho-when">🕐 ${e(h.when)}</p>
-    <ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout below.</li>
-      <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol>
-    <div class="ftdd-ho-list">${h.items.map(([t, u], i) => `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("")}</div></div>`;
+  // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
+  return `<div class="ftdd-handouts">
+    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">🔓 Opens when your trainer unlocks it</p></div>
+    <div class="ftdd-ho-body">
+      <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
+        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol></div>
+      <div class="ftdd-ho-list">${h.items.map(([t, u], i) => `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("")}</div>
+    </div></div>`;
 }
 function launchSlide(s){
   const c = cardOf(lessonOfDay(DD.day)), r = s.launch;
@@ -906,7 +910,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
-      {t: "Handouts / Video", sub: "Breakout Session (Group Activity), 1:00–3:00 PM · the digital handouts open here once your trainer unlocks them", k: "watch", run: "ftVideoOrAsk(1)"},
+      {t: "Handouts / Video", sub: "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them", k: "watch", run: "ftVideoOrAsk(1)"},
       {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
@@ -1798,13 +1802,24 @@ main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36p
 main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
 main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
-.ftdd-handouts{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 18px;text-align:center;}
-.ftdd-handouts .ftdd-ho-when{margin:0;font:700 16px 'Inter',sans-serif;color:#E8590C;}
-.ftdd-handouts .ftdd-ho-steps{margin:4px 0 6px;padding-left:22px;text-align:left;font-size:17px;line-height:1.5;color:#1E2340;}
-.ftdd-handouts .ftdd-ho-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;width:100%;max-width:1100px;}
-.ftdd-handouts .ftdd-ho{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid #343C66;border-radius:12px;background:#fff;color:#1E2340;text-decoration:none;text-align:left;}
-.ftdd-handouts .ftdd-ho:hover{background:#EEF1FA;} .ftdd-handouts .ftdd-ho span{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#1E2340;color:#fff;font-weight:800;}
-.ftdd-handouts .ftdd-ho b{flex:1;font:800 15.5px/1.3 'Poppins','Inter',sans-serif;} .ftdd-handouts .ftdd-ho i{font-style:normal;font-size:13px;color:#E8590C;font-weight:700;}
+main.main-ftdd .ftdd-handouts{display:flex;flex-direction:column;gap:14px;padding:6px 10px;width:100%;max-width:1180px;margin:0 auto;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-k{margin:0;font:800 14px/1.2 'Inter',sans-serif !important;letter-spacing:.12em !important;text-transform:uppercase;color:#C2410C !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-when{display:inline-block;margin:0;padding:6px 16px;border-radius:999px;background:#E8590C;color:#fff !important;font:800 17px/1.2 'Inter',sans-serif !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-steps{margin:0;padding-left:26px;font:600 20px/1.55 'Inter',sans-serif !important;color:#fff !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-steps li{color:#fff !important;font:600 20px/1.55 'Inter',sans-serif !important;margin:2px 0 !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-steps li::marker{color:#F4B77A !important;font-weight:800;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-list{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:10px;}
+main.main-ftdd .ftdd-handouts .ftdd-ho{display:flex;align-items:center;gap:14px;padding:12px 16px;border:2px solid #1E2340;border-left:8px solid #E8590C;border-radius:12px;background:#fff;color:#1E2340 !important;text-decoration:none;text-align:left;}
+main.main-ftdd .ftdd-handouts .ftdd-ho:hover{background:#FFF4EC;}
+main.main-ftdd .ftdd-handouts .ftdd-ho span{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#1E2340;color:#fff !important;font:800 18px 'Poppins','Inter',sans-serif !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho b{flex:1;font:800 19px/1.25 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
+main.main-ftdd .ftdd-handouts .ftdd-ho i{flex:none;font-style:normal;font:800 15px 'Inter',sans-serif !important;color:#fff !important;background:#C2410C;padding:7px 14px;border-radius:8px;}
+@media(max-width:900px){ .ftdd-handouts .ftdd-ho-body{grid-template-columns:minmax(0,1fr);} }
 .ftdd-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;min-height:100%;padding:24px;}
 .ftdd-dv-done{margin:0 !important;font:800 15px 'Inter',sans-serif !important;color:#1E7A46 !important;letter-spacing:.04em;}
 .ftdd-dv-k{margin:14px 0 0 !important;font:800 12px 'IBM Plex Mono',monospace !important;letter-spacing:.12em;text-transform:uppercase;color:#E8590C !important;}
