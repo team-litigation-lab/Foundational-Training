@@ -33,7 +33,7 @@ const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 const PI_PARTS = 8;
 const PI_BESIDE = 130;   // the most words of text beside a chart
 // sections of the reading that read together: one page, two cards side by side (the first heading, then the second)
-const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7"], ["Step 8", "Jury Selection in a Car Accident Trial"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
+const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7"], ["Step 8", "Jury Selection in a Car Accident Trial"], ["The Defendant’s Presentation of Evidence", "Closing Arguments"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
 // a section read beside another one that isn't next to it in the overview: moved up to sit right after it
 const PI_MOVE = {"Jury Selection in a Car Accident Trial": "Step 8"};
 // sections kept in the same part as the one before them: a pair's second card, and the statute of limitations section
