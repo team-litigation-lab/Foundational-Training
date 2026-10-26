@@ -737,7 +737,7 @@ const LESSON_CARDS = {
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
-      {t: "Process Questions: Submit", sub: "Review them with 🎮 Knowledge Games, answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
+      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
@@ -1181,7 +1181,6 @@ const TOOLS = [
     what: "Each module’s Process Questions, answered in writing on the platform and graded.",
     feats: ["A module’s questions open once you finish the module",
       "📝 Submit for Grading: a score and feedback under each answer, then your trainer’s review",
-      "🎮 Knowledge Games review a lesson as a game show before you answer; they don’t change your grade",
       "📁 Your Trainee Folder’s Drive link, so new documents are made there"]}
 ];
 function toolsSlide(){

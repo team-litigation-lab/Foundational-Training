@@ -17,6 +17,10 @@
    ============================================================ */
 (function(){
 "use strict";
+// 🎮 Off for now: no Knowledge Games for trainees (no hub, no 🎮 buttons on the decks, lesson cards or ✍️ Knowledge
+// Check, no promo). The trainers' question bank and its Admin tab stay. true turns them back on (the games' own test,
+// .github/scripts/kcgames.cjs, sets window.FT_KCGAMES_ON before the page loads, so the engine stays tested meanwhile).
+const GAMES_ON = false || window.FT_KCGAMES_ON === true;
 const e = v => esc(String(v == null ? "" : v));
 const shuffle = a => { a = a.slice(); for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const BANK = () => window.FT_KC_BANK || {lessons: {}, docs: []};
@@ -356,13 +360,14 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 const __render = window.render;
 window.render = function(){
   if(state.view !== "kcgames"){ if(G.game && !G.s?.over) stop(); return __render.apply(this, arguments); }
+  if(!GAMES_ON){ state.view = "process"; return __render.apply(this, arguments); }
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   if(!X.data) loadExtras(); loadRec();
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-kg">${G.game && G.s ? stageHtml() : hubHtml()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
-window.FTKCGames = {
+const API = {
   open(lesson){ if(lesson) G.lesson = Number(lesson); G.game = null; G.s = null; stop(); goto("kcgames"); },
   hub(){ stop(); G.game = null; G.s = null; render(); },
   lesson(l){ G.lesson = Number(l); render(); },
@@ -378,13 +383,15 @@ window.FTKCGames = {
   // for the checks and the trainer's editor
   pool, games: GAMES, state: () => G, matchFeud, reload: () => loadExtras(true)
 };
+// the other pages offer the games only while this is set
+if(GAMES_ON) window.FTKCGames = API;
 
 /* ---------- ✍️ the Knowledge Check page points here ---------- */
 const __after = window.afterRender;
 window.afterRender = function(){
   const out = __after ? __after.apply(this, arguments) : undefined;
   try{
-    if(state.view === "process" && !document.getElementById("kgPromo")){
+    if(GAMES_ON && state.view === "process" && !document.getElementById("kgPromo")){
       const main = document.querySelector("main"); const l = Number(state.pqLesson) || null;
       if(main){ const back = main.querySelector(":scope > .back-link");
         const html = `<div class="card kg-promo" id="kgPromo"><span>🎮</span><div><b>Knowledge Games</b><small>Review ${l ? "this lesson" : "a lesson"} as a game show (Millionaire, Survey Says, Jeopardy and more) before you answer. They don’t change your grade.</small></div><button class="btn btn-navy btn-sm" onclick="FTKCGames.open(${l || ""})">Play</button></div>`;

@@ -249,16 +249,18 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
 
-  // ✍️ Process Questions and 🎮 Knowledge Games on the days the guide runs the questions, and only there
+  // ✍️ Process Questions on the days the guide runs the questions, and only there; 🎮 Knowledge Games are off for now
+  // (js/ft-kcgames.js GAMES_ON): no 🎮 button anywhere, and #/kcgames goes to ✍️ Knowledge Check
   const pqDays = [];
   for (let d = 1; d <= 16; d++) {
     await page.evaluate(d => FTDayDecks.open(d, 0), d); await page.waitForTimeout(400);
-    if (await page.evaluate(() => !!document.querySelector('.ftdd-lcslide .ftlc-pqbox .ftlc-games'))) pqDays.push(d);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-lcslide .ftlc-pqbox'))) pqDays.push(d);
+    if (await page.evaluate(() => !!document.querySelector('.ftlc-games, .ftdd-games') || /Knowledge Games/.test(document.querySelector('main').innerText))) fail(`Day ${d}'s deck still offers the Knowledge Games`);
   }
-  if (pqDays.join() !== '1,2,3,7,10,13') fail(`the Process Questions and Knowledge Games show on days ${pqDays.join(', ')}, not 1, 2, 3, 7, 10 and 13`);
-  await page.evaluate(() => FTDayDecks.open(1, 0)); await page.waitForTimeout(600);
-  await page.click('.ftdd-lcslide .ftlc-games'); await page.waitForTimeout(800);
-  if (await page.evaluate(() => state.view) !== 'kcgames') fail('🎮 Review with the Knowledge Games doesn\'t open the games');
+  if (pqDays.join() !== '1,2,3,7,10,13') fail(`the Process Questions show on days ${pqDays.join(', ')}, not 1, 2, 3, 7, 10 and 13`);
+  if (await page.evaluate(() => typeof window.FTKCGames !== 'undefined')) fail('the Knowledge Games are still offered (window.FTKCGames)');
+  await page.evaluate(() => goto('kcgames')); await page.waitForTimeout(800);
+  if (await page.evaluate(() => state.view) !== 'process') fail('#/kcgames doesn\'t go to ✍️ Knowledge Check while the games are off');
 
   await put('settings:dayextras', extrasBefore || { days: {} });
   await put('settings:opendays', openBefore || { all: [], batches: {} });

@@ -34,6 +34,8 @@ async function workerChecks() {
   await workerChecks();
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
   const page = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  // the games are off for trainees for now (js/ft-kcgames.js GAMES_ON): this test turns them on for itself, so the engine stays tested
+  await page.addInitScript(() => { window.FT_KCGAMES_ON = true; });
   page.on('pageerror', e => fail(`page error: ${e.message}`));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const put = (k, value) => page.evaluate(([k, value]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k, value: JSON.stringify(value) }) }), [k, value]);
