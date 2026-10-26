@@ -58,8 +58,14 @@ const failures = []; const fail = m => failures.push(m);
   // the trainer opens two of them for the batch: those two, and only those two, open
   await put('settings:opendays', { all: [1, 4], batches: {} });
   await page.evaluate(() => { state.ftOpenDays = null; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2600);
-  les = (await cards()).filter(c => /^dayl-/.test(c.id));
-  const openLes = les.filter(c => !c.locked && !c.off).map(c => c.id).sort();
+  // (the open lessons are read after the page loads: on a busy runner, give them up to ten seconds more)
+  let openLes = [];
+  for (let t = 0; t < 20; t++) {
+    les = (await cards()).filter(c => /^dayl-/.test(c.id));
+    openLes = les.filter(c => !c.locked && !c.off).map(c => c.id).sort();
+    if (openLes.join() === 'dayl-1,dayl-4') break;
+    await page.waitForTimeout(500);
+  }
   if (openLes.join() !== 'dayl-1,dayl-4') fail(`📅 Open Lessons opened ${JSON.stringify(openLes)} (dayl-1 and dayl-4 expected)`);
 
   // a trainer, and a trainer in Trainee view, reads everything

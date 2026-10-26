@@ -98,14 +98,18 @@ window.goto = function(view, arg){
 };
 // 🎬 the lesson's video (Handouts and Videos): opened by the trainer's unlock, never requested
 const isTrainee = () => !!state.traineeId && !state.isAdmin && !state.adminPreview;
-const VIDEO_LOCKED = "🔒 The video opens when your trainer unlocks Handouts and Videos.";
+const VIDEO_LOCKED = "🔒 The handouts open when your trainer unlocks Handouts and Videos.";
 const __unlocked = window.ftVideoUnlocked;
 if(__unlocked) window.ftVideoUnlocked = function(id){ if(Number(id) === 1 && isTrainee()) return videoOpen(); return __unlocked.apply(this, arguments); };
 const __video = window.ftVideoOrAsk;
 if(__video) window.ftVideoOrAsk = function(id){
   if(Number(id) === 1 && isTrainee()){ if(blocked(5)) return; if(!videoOpen()){ toast(VIDEO_LOCKED); return; } return ftOpenVideo(1); }
+  if(Number(id) === 1) return ftOpenVideo(1);
   return __video.apply(this, arguments);
 };
+// Day 1's 🎬 Video (the lesson card's, the day card's Handouts / Video) is its Breakout Session handouts: their slide
+const __open = window.ftOpenVideo;
+if(__open) window.ftOpenVideo = function(id){ if(Number(id) === 1 && window.FTDayDecks){ openStep(5); return; } return __open.apply(this, arguments); };
 const __ask = window.ftRequestVideo;
 if(__ask) window.ftRequestVideo = function(id){ if(Number(id) === 1 && isTrainee()){ toast(VIDEO_LOCKED); return; } return __ask.apply(this, arguments); };
 
