@@ -303,10 +303,15 @@ function steps(tpl){
   return `<details class="card lor-steps"><summary>📋 Instructions for this activity</summary><ol>${list.map(x => `<li>${x}</li>`).join("")}</ol>
     <p class="lor-muted">Save it as <code>${e(tpl.naming)}</code> in your assigned Assessment/Activities folder.</p></details>`;
 }
+/* ✍️ Naming practice, as on the Knowledge Check sheets: the trainee types the file name by the trainers' convention (the
+   rule is shown, not a name to copy), it's checked as they type, and ⬇ Download opens once it's right. */
+const normName = t => String(t || "").replace(/[‘’`]/g, "'").replace(/\s+/g, " ").trim();
+const typedName = tid => String((L.draft ? letter(tid).file : "") || "");
+const nameOk = (tpl, no) => !isTrainee() || normName(typedName(tpl.id)) === normName(conventionName(tpl, no));
+const nameMsg = (tpl, no) => !typedName(tpl.id).trim() ? "" : nameOk(tpl, no) ? "✓ Correct" : "Not yet: check the date, every space, dash and capital, the carrier and your name in ( )";
 function editor(no){
   const tabs = TEMPLATES.map(t => `<button type="button" class="${L.tab === t.id ? "on" : ""}" onclick="FTLor.tab('${t.id}')">${e(t.title.split(":")[0])}</button>`).join("");
   const tpl = TEMPLATES.find(t => t.id === L.tab) || TEMPLATES[0];
-  const custom = fileNameFor(tpl, no) !== conventionName(tpl, no);
   return `<section class="lor-ed"><div class="lsh-subtabs lor-tabs" role="tablist">${tabs}</div>
     <h2 class="lor-ed-h">${e(tpl.title)}</h2>
     ${steps(tpl)}
@@ -315,16 +320,15 @@ function editor(no){
       <label class="lor-file-l" for="lorFile">File name</label>
       <div class="lor-file-row">
         <input id="lorFile" class="lor-file-in" type="text" spellcheck="false" autocomplete="off" aria-describedby="lorFileHelp"
-               value="${e(fileNameFor(tpl, no))}" oninput="FTLor.name('${tpl.id}', this.value)">
+               value="${e(isTrainee() ? typedName(tpl.id) : fileNameFor(tpl, no))}" placeholder="${e(tpl.naming || "")}" oninput="FTLor.name('${tpl.id}', this.value)">
         <span class="lor-file-ext">.pdf</span>
-        <button class="btn btn-ghost btn-sm" type="button" id="lorFileReset" onclick="FTLor.resetName('${tpl.id}')"${custom ? "" : " disabled"}>↺ Reset to the convention</button>
       </div>
-      <p class="lor-muted" id="lorFileHelp">The trainers’ convention, filled in for you: <code>${e(tpl.naming || "")}</code>. Edit it if your trainer asks for a different name — what is in the box is what the file is called.</p>
+      <p class="lor-file-ok${nameOk(tpl, no) ? " ok" : ""}" id="lorFileOk">${e(nameMsg(tpl, no))}</p>
+      <p class="lor-muted" id="lorFileHelp">Type the file name yourself, by the trainers’ convention: <code>${e(tpl.naming || "")}</code>, with today’s date, the carrier and your name filled in.</p>
     </div>
     <div class="lor-actions">
-      <button class="btn btn-navy" type="button" onclick="FTLor.pdf('${tpl.id}')">⬇ Download the letter (PDF)</button>
-      <button class="btn btn-ghost" type="button" onclick="FTLor.word('${tpl.id}')">⬇ Download as Word</button>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="FTLor.copyName('${tpl.id}')">📋 Copy the file name</button>
+      <button class="btn btn-navy" type="button" data-needs-name${nameOk(tpl, no) ? "" : " disabled"} title="Type the file name first" onclick="FTLor.pdf('${tpl.id}')">⬇ Download the letter (PDF)</button>
+      <button class="btn btn-ghost" type="button" data-needs-name${nameOk(tpl, no) ? "" : " disabled"} title="Type the file name first" onclick="FTLor.word('${tpl.id}')">⬇ Download as Word</button>
       <span class="lor-save" id="lorSave"></span></div>
     <p class="lor-muted lor-naming">Upload the file you download into the Smart Advocate demo yourself.</p></section>`;
 }
@@ -581,24 +585,23 @@ window.FTLor = {
   // Reset button's state changes, and it changes by hand.
   name(tid, v){
     const d = letter(tid); d.file = v; d.updatedAt = new Date().toISOString(); queueSave();
-    const btn = document.getElementById("lorFileReset"), tpl = TEMPLATES.find(t => t.id === tid);
-    if(btn && tpl) btn.disabled = fileNameFor(tpl, myCaseNo()) === conventionName(tpl, myCaseNo());
+    const tpl = TEMPLATES.find(t => t.id === tid); if(!tpl) return;
+    const no = myCaseNo(), ok = nameOk(tpl, no), m = document.getElementById("lorFileOk");
+    if(m){ m.textContent = nameMsg(tpl, no); m.classList.toggle("ok", ok); }
+    document.querySelectorAll("[data-needs-name]").forEach(b => { b.disabled = !ok; });
   },
-  resetName(tid){ letter(tid).file = ""; queueSave(); render(); },
-  // What a download of this letter is called — what ⬇ Download (PDF), ⬇ Download as Word and 📋 Copy all use.
+
+  // What a download of this letter is called — what ⬇ Download (PDF) and ⬇ Download as Word use.
   fileName(tid){ const tpl = TEMPLATES.find(t => t.id === tid); return tpl ? fileNameFor(tpl, myCaseNo()) : ""; },
-  copyName(tid){
-    const tpl = TEMPLATES.find(t => t.id === tid);
-    const name = fileNameFor(tpl, myCaseNo());
-    (navigator.clipboard ? navigator.clipboard.writeText(name) : Promise.reject())
-      .then(() => toast("Copied the file name."), () => toast("Couldn’t copy. Select the name instead."));
-  },
+
   async pdf(tid){
     const tpl = TEMPLATES.find(t => t.id === tid);
+    if(!nameOk(tpl, myCaseNo())){ toast("Type the file name first, by the convention."); return; }
     await makeLetterPdf(fileNameFor(tpl, myCaseNo()), tpl, letter(tid));
   },
   word(tid){
     const tpl = TEMPLATES.find(t => t.id === tid);
+    if(!nameOk(tpl, myCaseNo())){ toast("Type the file name first, by the convention."); return; }
     makeWord(fileNameFor(tpl, myCaseNo()), letterLines(tpl));
   },
   async casePdf(){
@@ -687,6 +690,7 @@ main.main-lor{max-width:1080px;margin:0 auto;padding:24px 16px 48px;}
 .lor-hero p{margin:0 0 16px;color:var(--ink-soft);font-size:15px;max-width:760px;}
 .lor-eyebrow{margin:0 0 2px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--orange-deep);}
 .lor-muted{color:var(--ink-soft);font-size:13.5px;}
+.lor-file-ok{margin:6px 0 0;font-size:13px;font-weight:700;color:#9A4A12;} .lor-file-ok:empty{display:none;} .lor-file-ok.ok{color:#1E7A46;}
 .lor-warn{display:flex;gap:12px;align-items:flex-start;background:#FFF7ED;border:1px solid #FDBA74;border-left:5px solid #F97316;border-radius:12px;padding:14px 16px;margin:0 0 16px;}
 .lor-warn-ic{font-size:19px;line-height:1.2;}
 .lor-warn-h{color:#9A3412;display:block;margin-bottom:2px;}

@@ -585,8 +585,6 @@ function renderDeck(){
       ${lessons ? `<p class="ftdd-rail-h">Today’s lesson</p><div class="ftdd-lessons">${lessons}</div>` : ""}
       <p class="ftdd-rail-h">How you read it</p>
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl${DD.split ? " on" : ""}" onclick="FTDayDecks.split()">${DD.split ? "◫ One slide" : "◫ Split screen"}</button>
-      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl${DD.auto ? " on" : ""}" onclick="FTDayDecks.auto()">${DD.auto ? "⏸ Stop autoplay" : "▶ Autoplay"}</button>
-      ${DD.auto ? `<p class="ftdd-rail-note">A slide every ${AUTOPLAY_SECS} seconds.</p>` : ""}
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('shadowing')">📋 Today’s To-Do</button>
       ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
