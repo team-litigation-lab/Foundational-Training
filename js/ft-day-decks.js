@@ -1724,7 +1724,7 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
 .ftdd-bar:not(:has(*)){display:none;}
 .ft-body .ftdd-pq-go{margin-top:10px;}
-main.main-ftdd.ftdd-settling .ftdd-sheet > *{visibility:hidden;}   /* the day card slide has no pill or buttons up here */
+main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visibility: its text stays readable to scripts and screen readers) */   /* the day card slide has no pill or buttons up here */
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
 .ftdd-dot.done{background:#8E97C4;}
 .ftdd-dot.on{background:#DB8437;transform:scale(1.25);}
