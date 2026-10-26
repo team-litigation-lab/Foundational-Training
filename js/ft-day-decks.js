@@ -109,7 +109,7 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 
 /* ---------- executed like the original LSH decks (as the Case Management course's Case Flow): a navy slide with the
    LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
-   cream, orange-bordered sheet; orange corner shapes. Each day opens on its Training Agenda. ---------- */
+   cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
 // what a slide is, at a glance: the time of day on the ribbon, the kind of work on the pill
 function timeOf(h){
   const t = String(h || "");
@@ -339,9 +339,8 @@ function listenSlide(day, time){
 }
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
-  // the first slide: the lesson's day card where the day has one, then the Training Agenda, standard on every day
-  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Day card", agenda: true}, {id: "plan", h: "Training Agenda", agenda: true, plan: true}]
-    : [{id: "agenda", h: "Training Agenda", agenda: true}];
+  // the first slide: the lesson's day card where the day has one (there is no Training Agenda slide)
+  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Day card", agenda: true}] : [];   // (no Training Agenda slide)
   d.slides.forEach(s => {
     // a lesson day's "To be added" slide has no slide of its own (no 🎲 Today's Task: the unannounced task lands in 🎲 Tasks)
     if(s.placeholder && !only) return;
@@ -1102,7 +1101,7 @@ function dayCard(n, ex){
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
-  // (no outside-hours list on the card: it is on the day's Training Agenda, the slide after the card)
+  // (no outside-hours list on the card, as on Day 1's)
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again

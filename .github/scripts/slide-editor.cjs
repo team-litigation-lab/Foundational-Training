@@ -49,9 +49,9 @@ async function workerChecks() {
   if (await page.evaluate(() => document.body.classList.contains('ftse-open'))) fail('the editor opened for a trainee');
 
   // the trainer opens the slide in the editor from the deck's rail, on the first of the guide's own slides: the day card
-  // and the Training Agenda before it are drawn by the platform, and nobody edits them.
+  // is drawn by the platform, and nobody edits it.
   await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; render(); }); await page.waitForTimeout(700);
-  if (await page.$('text=✏️ Edit this slide')) fail('the Training Agenda, which the platform draws, is offered for editing');
+  if (await page.$('text=✏️ Edit this slide')) fail('the day card, which the platform draws, is offered for editing');
   await page.evaluate(() => FTDayDecks.to(FTDayDecks.at(FTDayDecks.state().day, FT_DAY_DECKS[FTDayDecks.state().day].slides[0].id))); await page.waitForTimeout(900);
   const sid = await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-rail button')].find(x => /Edit this slide/.test(x.textContent));
     const m = b && /FTSlideEdit\.open\(\d+,\s*'([^']+)'/.exec(b.getAttribute('onclick') || ''); return m ? m[1] : ''; });

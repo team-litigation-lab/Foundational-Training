@@ -234,11 +234,9 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, FT_DAY_DECKS[6].slides[1].id)); }); await page.waitForTimeout(1600);
   const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
   if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
-  // every day's card follows Day 1's; the day's outside-hours work is on its Training Agenda, the slide after the card
+  // no Training Agenda slide on any day: a lesson day opens on its card, a day without one on its first slide
   await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
-  const off = await page.evaluate(() => [...document.querySelectorAll('.ftdd-ag-off li')].map(x => x.innerText));
-  if (await page.evaluate(() => [...document.querySelectorAll('.ftlc-h2')].some(x => /Outside training hours/i.test(x.innerText)))) fail("Day 2's card still has the outside-hours list (the agenda has it)");
-  if (off.length < 3 || !off.some(x => /upload/i.test(x))) fail(`Day 2's outside-hours work isn't on its agenda: ${JSON.stringify(off)}`);
+  if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
   // Day 9's mock call preparation is no longer a blank slide
   await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, FT_DAY_DECKS[9].slides[1].id))); await page.waitForTimeout(1500);
