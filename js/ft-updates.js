@@ -855,6 +855,8 @@ window.moduleCard = function(d){
     ${status==="open" && typeof finishTrainingForDay==="function" ? `<button type="button" class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); finishTrainingForDay(${d.id})">✓ Finish Training</button>` : ""}
     ${d.video ? (ftVideoUnlocked(d.id)
       ? `<button class="btn btn-ghost btn-sm module-finish-btn" onclick="event.stopPropagation(); ftOpenVideo(${d.id})">▶ Video Presentation</button>`
+      : window.FTDay1 && FTDay1.videoByStep(d.id)   // Day 1's video: no request, the trainer unlocks it (js/ft-day1-flow.js)
+        ? `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked" disabled title="Opens when your trainer unlocks Handouts and Videos">🔒 Video</button>`
       : (state.ftVideoReq || {})[String(d.id)]
         ? `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked ft-video-pending" disabled title="You asked for this video: your trainer approves it">⏳ Video Requested</button>`
         : `<button class="btn btn-ghost btn-sm module-finish-btn ft-video-locked ft-video-ask" onclick="event.stopPropagation(); ftRequestVideo(${d.id})" title="Ask your trainer for access to this lesson's AI discussion video">🔒 Request Video</button>`) : ""}
