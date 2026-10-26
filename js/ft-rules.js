@@ -501,7 +501,7 @@ function keepLead(html){
   return t.innerHTML;
 }
 const ORIENT_ID = 12;   // not used by any lesson (1–9, and 10–11 in build/lessons/off/)
-const ORIENT = {id:ORIENT_ID, title:"Setting of Training Expectations and Company Policies", heading:"Setting of Training Expectations and Company Policies", label:"Orientation", short:"📌",
+const ORIENT = {id:ORIENT_ID, title:"Setting of Training Expectations and Company Policies", heading:"Setting of Training Expectations and Company Policies", label:"Day 1 · Orientation", short:"📌",
   sections: SLIDES.map(([id, h, fn])=>({id, h, get html(){ return keepLead(`<div class="ftr-slide">${fn()}</div>`); }})),
   quiz:[], quickChecks:[]};
 ORIENT.lessons = ORIENT.sections.map(x=>({h:x.h}));

@@ -27,6 +27,28 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
 const SA_FROM = "<h3>How to install the Smart Advocate";
 // Day 1's Reading Task: the Personal Injury overview's text is on the slide itself, in place of its Drive link (PI_FILE finds the link)
 const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
+// Day 1's reading, word for word: build/days/pi-overview.html is the Personal Injury overview PDF's text, unchanged
+// (its charts are in ft/day1/img/pi/). It is dealt over PI_PARTS slides of about the same length, each starting at one
+// of its headings, so it reads a slide at a time: the Reading Task slide holds part 1, "reading-2" … the rest.
+const PI_PARTS = 8;
+function piParts(){
+  const src = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
+  const units = src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean);
+  // a chart reads like ~60 words
+  const size = u => u.replace(/<figure>[\s\S]*?<\/figure>/g, " ").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length + 60 * (u.match(/<figure>/g) || []).length;
+  const w = units.map(size), n = units.length, k = Math.min(PI_PARTS, n);
+  // contiguous groups with the smallest largest group (linear partition)
+  const pre = [0]; w.forEach(x => pre.push(pre[pre.length - 1] + x));
+  const best = Array.from({length: k + 1}, () => Array(n + 1).fill(Infinity)), cut = Array.from({length: k + 1}, () => Array(n + 1).fill(0));
+  best[0][0] = 0;
+  for(let g = 1; g <= k; g++) for(let i = 1; i <= n; i++) for(let j = g - 1; j < i; j++){
+    const v = Math.max(best[g - 1][j], pre[i] - pre[j]); if(v < best[g][i]){ best[g][i] = v; cut[g][i] = j; }
+  }
+  const parts = []; let i = n;
+  for(let g = k; g >= 1; g--){ const j = cut[g][i]; parts.unshift(units.slice(j, i).join("\n")); i = j; }
+  if(parts.join("\n").replace(/\s+/g, " ") !== units.join("\n").replace(/\s+/g, " ")) throw new Error("Day 1's reading lost text when it was split");
+  return parts;
+}
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -36,10 +58,8 @@ const TRIM = {1: {reading: html => {
   const from = html.lastIndexOf("<p", at); if(from < 0) throw new Error("Day 1's Reading Task link line isn't a paragraph");
   const lead = html.slice(0, from).replace("Go to this link and read on to get a good grasp", "Read the material below to get a good grasp");
   if(/Go to this link/.test(lead)) throw new Error("Day 1's Reading Task still says to go to the link");
-  // the reading itself is on the slide, word for word, with its charts, in a reader that scrolls: build/days/pi-overview.html
-  // is the Personal Injury overview PDF's text, unchanged (its charts are in ft/day1/img/pi/)
-  const reading = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
-  return lead + `<div class="ftdd-reader" tabindex="0" role="region" aria-label="Reading: Personal Injury Cases (Overview: What is personal injury?)">\n${reading}\n</div>\n` + html.slice(at + 4).replace(/^\n/, "");
+  // the reading itself follows, word for word, split over this slide and the next ones (PI_PARTS below)
+  return lead + "<!--pi-reading-->\n" + html.slice(at + 4).replace(/^\n/, "");
 }, pm: html => {
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
   // the help line keeps the SA contact only (the Nitro Pro contact goes with its installation)
@@ -94,7 +114,8 @@ function stripPQ(html){
   return {html: out, n};
 }
 // (only Day 1's Reading Task has one: its questions are the Reading Task sheet of Lesson 1's ✍️ Knowledge Check, js/ft-process.js)
-const Q_NOTE = `<div class="ftdd-kc-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.toKC(1)">✍️ Answer the Reading Task questions in Knowledge Check →</button></div>\n`;
+// (nothing on the slide: its ✍️ Knowledge Check is the slide's Next button, js/ft-day-decks.js)
+const Q_NOTE = "";
 // A question list on a slide — the reading task's "Answer the following questions:" and its numbered list —
 // is an assessment, not slide content: a trainee answers it on the file their trainer posts, so the slide
 // carries the note above instead of the questions themselves.
@@ -134,7 +155,14 @@ for(let n = 1; n <= 16; n++){
     let html = (TRIM[n] && TRIM[n][s.id]) ? TRIM[n][s.id](ld.html) : ld.html;
     for(const p of (PENDING[n] || []).filter(p => p.after === s.id))
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
-    slides.push({id: s.id, h: ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, ""), html});
+    const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
+    if(html.includes("<!--pi-reading-->")){
+      const parts = piParts(), of = i => `Reading Task: What Is Personal Injury? · Part ${i + 1} of ${parts.length}`, wrap = x => x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').replace(/<figure>/g, '<figure class="ftdd-pi-fig">');
+      slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
+      parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
+      continue;
+    }
+    slides.push({id: s.id, h, html});
   }
   const extra = EXTRA[n] || [];
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));

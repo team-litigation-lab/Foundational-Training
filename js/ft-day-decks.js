@@ -476,7 +476,7 @@ function slideCard(d, info, list, i){
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
       <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>
-        <span class="ftdd-n" data-base="${DD.day}.${i + 1} · Slide ${i + 1} of ${n}">${DD.day}.${i + 1} · Slide ${i + 1} of ${n}</span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
+        <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
     </div>`;
@@ -507,9 +507,9 @@ function renderDeck(){
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
-        ${DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
+        ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
           : DD.day < COUNT() && dayOpen(DD.day + 1) ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.pick(${DD.day + 1})">Day ${DD.day + 1} →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`}
+          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`)}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -606,11 +606,13 @@ function fitSheets(){
   document.querySelectorAll("main.main-ftdd .ftdd-onnavy").forEach(box => { if(!zoomToFit(box, 0.35)) box.scrollTop = 0; });
   paintPageMark();
 }
-// the slide bar says which page of the slide this is, once there is more than one
+// the slide bar says which page of the slide this is, once there is more than one (the slide number itself is
+// the Step N of M under the slide, so it isn't repeated up here)
 function paintPageMark(){
-  const el = document.querySelector("main.main-ftdd .ftdd-mid .ftdd-deck .ftdd-n");
-  if(!el || !el.dataset.base) return;
-  el.textContent = el.dataset.base + (DD.pages > 1 ? ` · page ${DD.page + 1} of ${DD.pages}` : "");
+  const el = document.querySelector("main.main-ftdd .ftdd-mid .ftdd-deck .ftdd-n-page");
+  if(!el) return;
+  el.hidden = !(DD.pages > 1); el.textContent = DD.pages > 1 ? `Page ${DD.page + 1} of ${DD.pages}` : "";
+  try{ wireReaders(); }catch(e){}
 }
 root.addEventListener("resize", () => { if(state.view !== "daydeck") return; clearTimeout(fitT); fitT = setTimeout(() => { DD.page = 0; fitSheets(); }, 120); });
 
@@ -619,7 +621,7 @@ root.addEventListener("resize", () => { if(state.view !== "daydeck") return; cle
    place and features (toolsSlide below). */
 function toolsCard(){
   return `<div class="module-card mc-open mc-clean ftkt-card" id="module-tools">
-    <div class="module-head"><div class="mh-day">🧰 Before Day 1</div><div class="mh-title">Know Your Tools</div></div>
+    <div class="module-head"><div class="mh-day">🧰 Day 1</div><div class="mh-title">Know Your Tools</div></div>
     <div class="module-body"></div>
     <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">Start</button></div></div>`;
 }
@@ -631,7 +633,7 @@ root.moduleCard = function(d){
   if(d && d.ftTools) return toolsCard();
   const html = __moduleCard.apply(this, arguments);
   // the pinned orientation card carries a kicker like its neighbour, so the two read as a pair
-  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Start here</div>') : html;
+  return d && root.FT_ORIENTATION && d.id === root.FT_ORIENTATION.id ? String(html).replace(/<div class="mh-day">(?:&nbsp;|\s)*<\/div>/, '<div class="mh-day">📌 Day 1 · Start here</div>') : html;
 };
 function renderToolsPage(){
   const n = TOOLS.length, k = Math.max(0, Math.min(n - 1, Number(DD.tool) || 0));
@@ -652,7 +654,7 @@ function renderToolsPage(){
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
-      <p class="ftdd-rail-kick">Before Day 1</p>
+      <p class="ftdd-rail-kick">Day 1</p>
       <h2 class="ftdd-rail-title">Know Your Tools</h2>
       <p class="ftdd-rail-h">Start here</p>
       <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('day', 12)">📌 Setting of Training Expectations</button>
@@ -684,7 +686,7 @@ root.render = function(){
 document.addEventListener("keydown", ev => {
   if(state.view !== "daydeck" || ev.altKey || ev.ctrlKey || ev.metaKey) return;
   const t = ev.target; if(t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
-  if(ev.key === "ArrowRight"){ ev.preventDefault(); go(1); }
+  if(ev.key === "ArrowRight"){ ev.preventDefault(); nextKC(); }
   else if(ev.key === "ArrowLeft"){ ev.preventDefault(); go(-1); }
 });
 
@@ -735,7 +737,7 @@ const LESSON_CARDS = {
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
-      {t: "Process Questions: Submit", sub: "Review them with 🎮 Knowledge Games, answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
+      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
@@ -822,28 +824,52 @@ const LESSON_CARDS = {
 };
 // open a row's slide: the deck loads first, so the slide is found by its id (the agenda and the split-off Call
 // Listening slide shift the numbers); a slide the deck doesn't have opens the day's agenda
-// 📖 A reading on a slide (Day 1's Reading Task, .ftdd-reader): its ✍️ Knowledge Check button stays locked until the
-// trainee has scrolled the reading to its end; that is remembered (this browser), so it stays open after. Trainers
-// and admins are never locked out.
-const readKey = () => `ftReadDone:${state.traineeId || "-"}:${DD.day}:${(slidesOf((decks() || {})[DD.day] || {slides: []})[DD.i] || {}).id || ""}`;
-function readDone(){ try{ return localStorage.getItem(readKey()) === "1"; }catch(e){ return false; } }
+// 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
+// Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
+// counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
+const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
+const kcOf = s => s && (KC_NEXT[DD.day] || {})[s.id];
+function kcNext(s){
+  const k = kcOf(s); if(!k || !root.FTProcess || DD.split) return "";
+  return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(k.label)}</button>`;
+}
+const readKey = () => `ftReadParts:${state.traineeId || "-"}:${DD.day}`;
+function readParts(){ try{ return JSON.parse(localStorage.getItem(readKey()) || "[]"); }catch(e){ return []; } }
+// the parts of the reading not read yet (none, for a trainer)
+function unread(k){
+  if(!forTrainee() || !k) return [];
+  const d = decks() && decks()[DD.day], seen = readParts();
+  return (d ? slidesOf(d) : []).filter(x => k.parts.test(x.id) && !seen.includes(x.id)).map(x => x.id);
+}
+// called after each draw: the slide being read counts once its last page shows; then the Knowledge Check Next unlocks
 function wireReaders(){
-  const r = document.querySelector(".ftdd-sheet .ftdd-reader"), go = document.querySelector(".ftdd-sheet .ftdd-kc-go .btn");
-  if(!r || !go) return;
-  const label = go.dataset.label || (go.dataset.label = go.textContent);
-  const unlock = () => { go.disabled = false; go.textContent = label; go.title = ""; const n = document.querySelector(".ftdd-sheet .ftdd-kc-lock"); if(n) n.remove(); };
-  if(!forTrainee() || readDone()){ unlock(); return; }
-  go.disabled = true; go.textContent = "🔒 " + label.replace(/^✍️\s*/, ""); go.title = "Read to the end of the reading first";
-  if(!document.querySelector(".ftdd-sheet .ftdd-kc-lock")) go.insertAdjacentHTML("afterend", `<span class="ftdd-kc-lock">Read to the end of the reading to answer its questions.</span>`);
-  const check = () => { if(r.scrollTop + r.clientHeight >= r.scrollHeight - 12){ try{ localStorage.setItem(readKey(), "1"); }catch(e){} r.removeEventListener("scroll", check); unlock(); } };
-  r.addEventListener("scroll", check, {passive: true}); check();
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null;
+  if(s && forTrainee() && Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id)) && !((DD.pages || 1) > 1 && DD.page < DD.pages - 1)){
+    const seen = readParts(); if(!seen.includes(s.id)){ seen.push(s.id); try{ localStorage.setItem(readKey(), JSON.stringify(seen)); }catch(e){} }
+  }
+  const go = document.querySelector("main.main-ftdd .ftdd-next-kc"); if(!go) return;
+  // the slide's own pages turn first: a plain Next until its last page
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go.disabled = false; go.textContent = "Next →"; go.title = ""; return; }
+  const left = unread(kcOf(s));
+  go.disabled = left.length > 0;
+  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || go.textContent;
+  go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
+}
+// Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
+function nextKC(){
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s);
+  if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
 function toKC(l){
-  if(forTrainee() && document.querySelector(".ftdd-sheet .ftdd-reader") && !readDone()) return;   // the reading comes first
-  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null;
-  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: s ? s.h : "", l: Number(l)})); }catch(e){}
+  const d0 = decks() && decks()[DD.day];
+  if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
+  // the way back is to the classroom's next activity (the slide after this one)
+  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [], s = list[DD.i + 1] || list[DD.i] || null;
+  const h = s ? String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity") : "";
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l)})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }
 function openSlide(n, id, alt){
@@ -1155,7 +1181,6 @@ const TOOLS = [
     what: "Each module’s Process Questions, answered in writing on the platform and graded.",
     feats: ["A module’s questions open once you finish the module",
       "📝 Submit for Grading: a score and feedback under each answer, then your trainer’s review",
-      "🎮 Knowledge Games review a lesson as a game show before you answer; they don’t change your grade",
       "📁 Your Trainee Folder’s Drive link, so new documents are made there"]}
 ];
 function toolsSlide(){
@@ -1178,7 +1203,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, next: nextKC, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -1592,6 +1617,7 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-prev:disabled{opacity:.45;}
 .ftdd-next{background:linear-gradient(135deg,#E8913A,#C9742B);border:1px solid #C9742B;color:#fff;}
 .ftdd-next:hover{filter:brightness(1.05);}
+.ftdd-next:disabled{opacity:.65;cursor:not-allowed;filter:none;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
@@ -1635,13 +1661,8 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
-.ft-body .ftdd-reader{height:max(320px, 52vh);margin:10px 0;padding:18px 26px;border:1.5px solid #9AA0AB;border-radius:10px;overflow-y:auto;background:#fff;color:#11131F;font-size:16px;line-height:1.6;text-align:left;}
-.ft-body .ftdd-reader h2{font-size:22px;margin:22px 0 8px;color:#B42318;} .ft-body .ftdd-reader h2:first-child{margin-top:0;}
-.ft-body .ftdd-reader h3{font-size:17px;margin:16px 0 6px;color:#11131F;}
-.ft-body .ftdd-reader p{margin:0 0 10px;} .ft-body .ftdd-reader ul{margin:0 0 10px 22px;}
-.ft-body .ftdd-reader figure{margin:12px 0;text-align:center;} .ft-body .ftdd-reader figure img{max-width:100%;height:auto;}
-.ft-body .ftdd-kc-go{display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0 4px;}
-.ft-body .ftdd-kc-go .btn:disabled{opacity:.6;cursor:not-allowed;} .ft-body .ftdd-kc-lock{font-size:13px;color:#5A6072;}
+.ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
+.ft-body figure.ftdd-pi-fig{margin:12px 0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
