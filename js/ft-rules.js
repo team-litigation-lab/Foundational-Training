@@ -242,8 +242,8 @@ const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</
 /* ---------- the slides ---------- */
 // A Drive file shown in full inside the slide (its /preview; a Google Doc, the Doc's own /preview), with a link to open it in its own tab.
 const drivePreview = u => { const g = String(u).match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]{20,})/); if(g) return `https://docs.google.com/document/d/${g[1]}/preview`; const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
-const embed = (url, title, open)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
-    <div class="ftr-embed-bar"><span>📄 ${esc(title)}</span>${open ? `<a class="btn btn-ghost btn-sm" href="${esc(open)}" target="_blank" rel="noopener noreferrer">Open or Download ↗</a>` : ""}</div>`;
+// an embedded document fills its frame; no "Open or Download" bar under it (the document is right there)
+const embed = (url, title)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
@@ -369,7 +369,7 @@ const SLIDES = [
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
     rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
-    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
+    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet") : "") +
     (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
@@ -526,7 +526,6 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .ftr-mon{margin:10px 0 0;} .ftr-mon a.btn{text-decoration:none;}
 .ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
 .ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
-.ftr-embed-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:var(--ink-soft);} .ftr-embed-bar a.btn{text-decoration:none;}
 /* Full screen and the slides window: the page fills the screen (no width cap, no presenter column) and scales up. */
 .lesson-stage:fullscreen .stage-body:has(.ftr-slide), #audienceRoot .stage-body:has(.ftr-slide){grid-template-columns:minmax(0,1fr) !important;}
 .lesson-stage:fullscreen .stage-body:has(.ftr-slide) .stage-presenter, #audienceRoot .stage-body:has(.ftr-slide) .stage-presenter{display:none !important;}
