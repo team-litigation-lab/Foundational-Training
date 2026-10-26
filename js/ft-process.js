@@ -245,7 +245,7 @@ function bySheet(qs, each){
   const set = sets[routed >= 0 ? routed : open.length ? open[open.length - 1] : 0];
   return `<h3 class="fp-sheet-h">${sheetIcon(set)} ${e(set.title)} <span>${qs.filter(x => x.set === set).length} questions</span></h3>${one(set)}`;
 }
-function moduleCard(lesson){
+function moduleCard(lesson, after){   // after: a button beside 📝 Submit for Grading (the way back to the classroom)
   const all = kcQuestionsFor(lesson);
   if(!all.length) return "";
   // before the module is finished, only its open sets (Day 1's Reading Task) can be answered; they're graded with the rest
@@ -262,6 +262,7 @@ function moduleCard(lesson){
         <textarea rows="4" placeholder="Your answer, in complete sentences." oninput="FTProcess.set('${x.set.id}',${x.i},this.value)">${e(((FP.data.sets[x.set.id] || {}).answers || [])[x.i] || "")}</textarea></li>`)}
       <div class="fp-actions">
         ${studied ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.grade('${sets[0].id}', ${lesson})">📝 Submit for Grading${best != null ? ` · best ${best}%` : ""}</button>` : ""}
+        ${after || ""}
       </div>
       ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Your answers here save as you type, and you submit them all together for grading then.</p>`}
     </div></div>
@@ -299,16 +300,17 @@ function renderPage(){
   // Each module is its own page (goto('process', lessonId), FTProcess.openLesson): a lesson's own
   // ✓ Finish lesson lands here directly, not on a long page of every module's questions stacked together.
   const lesson = state.pqLesson && kcQuestionsFor(state.pqLesson).length ? state.pqLesson : null;
-  // opened from a deck slide (Day 1's Reading Task, FTDayDecks.toKC): the way back to the classroom's next activity comes first
+  // opened from a deck slide (Day 1's Reading Task, FTDayDecks.toKC): the way back to the classroom's next activity, beside
+  // 📝 Submit for Grading at the foot of the sheet
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const backBtn = back && Number(back.l) === Number(lesson) && back.day && back.id && window.FTDayDecks
     ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>` : "";
   // (opened from the deck, the way on is the classroom's next activity only: no ← Back to Process Questions beside it)
-  if(lesson) return `<div class="fp-hero">${backBtn || `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>`}
+  if(lesson) return `<div class="fp-hero">${backBtn ? "" : `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>`}
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there. <span class="fp-save" id="fpSave"></span></p></div>
-    ${moduleCard(lesson)}`;
+    ${moduleCard(lesson, backBtn)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day: the platform finds it there and checks its name and when it was saved.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
