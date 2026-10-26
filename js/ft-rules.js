@@ -13,7 +13,7 @@
        matter, the To-Dos with 📋 Copy — no shadowing To-Do: the trainer gives that one on the day —, notes, and the
        Manual Time Adjustment Request); breaks and auxes; the camera; Discord (mindfulness and response rates); the 4 daily
        deliverables (an overview, the Daily Task Tracker part by part, the Training Progress Monitoring Sheet embedded with the
-       📁 Link My Task Tracker and Monitoring Sheet button (the My Drive links form, for the nightly check), and the EOD email with
+       📁 Link My Google Drive button on the last slide (the My Drive links form, for the nightly check), and the EOD email with
        its template); the setting of expectations (what training is, General VAs, your work and the use of AI); and Free
        Upskill Training. Day 1's PI overview reading task is not here: it is an assessment the trainer posts in the
        training GC, with its own file, questions and naming convention, and it is scored on the Weekly Ranking.
@@ -65,7 +65,7 @@ const HABITS = [
     "Update your Training Progress Monitoring Sheet in your main Google Drive every time a discussion or an activity is done, following its specific instructions. Add the date, and all 5 takeaways in complete, specific sentences. The Monitoring Sheet is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your main Google Drive, then save its link on the platform: 📒 Monitoring Sheet."]],
+          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your main Google Drive. You link it on the last slide of this orientation."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -257,13 +257,15 @@ function figMonitor(){
 const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
-  {h:"Make Your Copy and Link It", link:true, steps:[
+  {h:"Make Your Copy", steps:[
     "Copy the Training Progress Monitoring Sheet into your main Google Drive.",
-    "Save its link here, once:"]},
-  {h:"How It’s Checked", steps:[
-    "Automatically, at the end of every shift (5:00 PM ET).",
-    "You get feedback on each entry; your trainer adds comments."],
-   tip:"Fill it in as each discussion or activity is done. It is for your training only."}
+    "You link it to the platform at the end of this orientation, with your Task Tracker."]},
+  {h:"Fill It In, Then It’s Checked", steps:[
+    "A discussion or an activity is done: fill in its entry, following its specific instructions.",
+    "Before your shift ends, every entry of the day is in.",
+    "At the end of the shift (5:00 PM ET) the platform checks it automatically.",
+    "You get feedback on each entry, and your trainer adds comments."],
+   tip:"It is for your training only."}
 ];
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -406,7 +408,7 @@ const SLIDES = [
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
   // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
-  // 📁 Link button), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
+  // the copy; the 📁 link is the last slide), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
   ["monitoring", "Your Training Progress Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
@@ -439,9 +441,9 @@ const SLIDES = [
 `],
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
   ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Save It Daily in Your Assessment and Activities Folder", steps:["Your Assessment and Activities Folder is where you save your outputs, every day.", "Save each answer sheet there on the day you answer it."]},
       {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Spell it exactly, with your first name in ( )."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
-      {h:"The Platform Checks It", steps:["Save it before the end of your shift. There is no link to paste.", "The platform finds it in your folder and checks its name and when it was saved."], tip:"Attention to detail, following instructions and timely submission are all checked."},
+      {h:"Save It Daily in Your Assessment and Activities Folder", steps:["Save the named answer sheet in your Assessment and Activities Folder, on the day you answer it.", "Do it before the end of your shift. There is no link to paste."]},
+      {h:"The Platform Checks It", steps:["The platform finds it in your folder.", "It checks the name, and that it was saved on time."], tip:"Attention to detail, following instructions and timely submission are all checked."},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
@@ -461,7 +463,20 @@ const SLIDES = [
   ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
     <div class="ftr-why"><b>Why It Matters:</b> These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm. Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
-    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
+    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],,
+  // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
+  // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
+  ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Your Main Google Drive", steps:["Your LSH Daily Task Tracker.", "Your Training Progress Monitoring Sheet."]},
+      {h:"Your Assessment and Activities Folder", steps:["Where you save your outputs, every day: test screenshots, answer sheets, documents."]},
+      {h:"Link Them Once", steps:["Paste the folder’s link, then each file’s link (open it and copy it from the address bar), and save."], link:true,
+       tip:"From then on the platform checks them automatically at the end of every shift."},
+    ].map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Google Drive</button></div>` : ""}
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`]
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
 // above it would count as heading and leave less for the content, so a short intro could end up alone on a page.
