@@ -475,7 +475,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>
+      <div class="ftdd-bar">${lc != null ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}">${body}</div>`}
@@ -951,9 +951,11 @@ function dayCard(n, ex){
   // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js)
   const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
-  const head = first ? `Classroom Activity: ${title}` : `Day ${n}: ${DAY_TITLES[n] || title}`;
-  const sub = first ? `Day ${n} · Trainer-led discussion · opens the session${of}` : `${title}${of}`;
-  return `<article class="ftlc${open_ ? "" : " locked"}" data-day="${n}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
+  // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
+  // lesson (or what the day holds), not the day and the label again
+  const head = first ? title : (DAY_TITLES[n] || title);
+  const sub = first ? `Trainer-led discussion · opens the session${of}` : `${title}${of}`;
+  return `<article class="ftlc${open_ ? "" : " locked"}" data-day="${n}" data-first="${first ? 1 : 0}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
       <div class="ftlc-acts">
@@ -1650,6 +1652,7 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-next:disabled{opacity:.65;cursor:not-allowed;filter:none;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
+.ftdd-bar:not(:has(*)){display:none;}   /* the day card slide has no pill or buttons up here */
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
 .ftdd-dot.done{background:#8E97C4;}
 .ftdd-dot.on{background:#DB8437;transform:scale(1.25);}
