@@ -475,10 +475,10 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>
+      <div class="ftdd-bar">${lc != null ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
-      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
+      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}">${body}</div>`}
     </div>`;
 }
 function renderDeck(){
@@ -537,6 +537,8 @@ let fitT = null;
    says which page it is. Nothing scrolls.
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
 const FIT_MIN = 0.5;
+// a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
+const isReadPart = s => !!s && Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id));
 const PAGE_ZOOM = 0.75;   // a page holds up to a third more than the screen, scaled down to fit: fuller pages, fewer of them
 // a slide with room to spare is drawn bigger, up to max, so its content fills the sheet instead of sitting small in it
 function zoomUp(box, max){
@@ -566,22 +568,23 @@ function sheetPages(sheet){
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
-  const room = sheet.clientHeight;
-  if(!room || zoomToFit(sheet, FIT_MIN)) return [kids];
+  const room = sheet.clientHeight, read = sheet.classList.contains("ftdd-read");
+  if(!room || (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN))) return [kids];
   kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
   const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // a block taller than the screen on its own (a long list, a table) is dealt out by its own rows
   const units = [];
   kids.forEach(k => {
     const inner = [...k.children];
-    if(hOf(k) > room && inner.length > 1) units.push(...inner); else units.push(k);
+    // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row")) units.push(...inner); else units.push(k);
   });
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
   // the next page, and fitSheets scales the page down to fit
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room / PAGE_ZOOM){ pages.push(page); page = []; used = 0; }
+    if(page.length && used + h > room / (read ? 1 : PAGE_ZOOM)){ pages.push(page); page = []; used = 0; }
     page.push(k); used += h;
   });
   if(page.length) pages.push(page);
@@ -597,8 +600,9 @@ function fitSheets(){
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, 0.4);
-    else if(!sheet.classList.contains("ftdd-sheet-edit") && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
+    const read = sheet.classList.contains("ftdd-read");
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? 0.72 : 0.4);
+    else if(!sheet.classList.contains("ftdd-sheet-edit") && !read && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
@@ -662,8 +666,26 @@ function renderToolsPage(){
     </aside>
   </div>`;
 }
+// 👆 Know Your Tools: on the first mouse movement over the page (or first touch), a pop-up beside the tools list says to
+// click each tool to learn more. It goes on a tool click, its ✕, leaving the page, or after 9 seconds, and shows once
+// per visit (this browser tab).
+function toolsHintClose(){ const h = document.getElementById("ftToolsHint"); if(h) h.remove(); }
+function toolsHintShow(){
+  if(state.view !== "knowtools" || document.getElementById("ftToolsHint")) return;
+  try{ if(sessionStorage.getItem("ftToolsHint")) return; sessionStorage.setItem("ftToolsHint", "1"); }catch(e){}
+  const list = document.querySelector("main.main-ftdd .ftdd-tools-list"); if(!list) return;
+  const r = list.getBoundingClientRect(), narrow = root.innerWidth <= 760;
+  const h = document.createElement("div"); h.id = "ftToolsHint"; h.className = "ftdd-hint" + (narrow ? " ftdd-hint-down" : ""); h.setAttribute("role", "status");
+  h.innerHTML = `<button type="button" class="ftdd-hint-x" aria-label="Close" onclick="FTDayDecks.hintClose()">✕</button><b>👈 Click each tool to learn more</b><span>Each one shows what it’s for, where to find it and its features.</span>`;
+  h.style.left = (narrow ? r.left : r.right + 14) + "px"; h.style.top = (narrow ? r.bottom + 12 : r.top + 6) + "px";
+  document.body.appendChild(h);
+  setTimeout(toolsHintClose, 9000);
+}
+document.addEventListener("mousemove", toolsHintShow, {passive: true});
+document.addEventListener("touchstart", toolsHintShow, {passive: true});
 const __render = root.render;
 root.render = function(){
+  if(state.view !== "knowtools") toolsHintClose();
   if(state.view === "knowtools"){
     if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
     document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ftdd">${renderToolsPage()}</main>` + renderFooter();
@@ -924,14 +946,16 @@ function dayCard(n, ex){
   const when = r => String(r.time || "").replace(new RegExp("^Day " + n + "\\b\\s*(·\\s*)?", "i"), "").replace(/^./, x => x.toUpperCase());
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}${r.sub ? pill(r) : ""}</span>
-      ${r.sub ? "" : pill(r)}</button></li>`).join("");
+      <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
+      ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // outside training hours: the lesson's own wording on its first day, else the day map's (js/ft-day-activities.js)
   const outside = first && c.outside ? c.outside : (dayInfo(n).items || []).filter(x => x.at === "offline").map(x => x.t);
   const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
-  const head = first ? `Classroom Activity: ${title}` : `Day ${n}: ${DAY_TITLES[n] || title}`;
-  const sub = first ? `Day ${n} · Trainer-led discussion · opens the session${of}` : `${title}${of}`;
-  return `<article class="ftlc${open_ ? "" : " locked"}" data-day="${n}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
+  // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
+  // lesson (or what the day holds), not the day and the label again
+  const head = first ? title : (DAY_TITLES[n] || title);
+  const sub = first ? `Trainer-led discussion · opens the session${of}` : `${title}${of}`;
+  return `<article class="ftlc${open_ ? "" : " locked"}" data-day="${n}" data-first="${first ? 1 : 0}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
       <div class="ftlc-acts">
@@ -1210,7 +1234,8 @@ root.FTDayDecks = {open, go, next: nextKC, pick: pickDay, slide: openSlide, toKC
   // 🗺 Map: the training roadmap
   map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
-  tool(i){ DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
+  tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
+  hintClose: toolsHintClose,
   tools: () => TOOLS.map(t => t.name),
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
@@ -1253,9 +1278,9 @@ if(!document.getElementById("ftdd-deck-font")){
   document.head.appendChild(f);
 }
 (function(){ const st = document.createElement("style"); st.id = "ft-day-decks"; st.textContent = `
-main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:flex;flex-direction:column;gap:10px;}
+main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display:flex;flex-direction:column;gap:10px;}
 /* the day picker and the day's lesson sit in rails either side, so the slide itself takes the width */
-.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 196px;gap:12px;align-items:stretch;min-height:0;}
+.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 172px;gap:10px;align-items:stretch;min-height:0;}
 .ftdd-mid{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;}
 .ftdd-slides{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-height:0;}
 .ftdd-stage-split .ftdd-slides{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -1267,8 +1292,8 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-ctl{text-align:left;white-space:normal;}
 .ftdd-ctl.on{background:#262B45;color:#fff;border-color:#262B45;}
 .ftdd-rail-note{margin:0;font-size:11.5px;color:var(--ink-soft);}
-.ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;white-space:nowrap;}
-.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 18px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
+.ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;}
+.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 16px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
 @media(max-width:1100px){
   .ftdd-stage{grid-template-columns:minmax(0,1fr);}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
@@ -1338,6 +1363,13 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 /* 🧰 Know Your Tools: the tools listed on the left, the picked one (its screenshot, what it is for, where, its features) */
 .ftdd-tools{display:grid;grid-template-columns:minmax(190px,240px) minmax(0,1fr);gap:16px;height:100%;min-height:0;}
 .ftdd-tools-list{display:flex;flex-direction:column;gap:4px;min-height:0;}
+.ftdd-hint{position:fixed;z-index:80;max-width:280px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:12px 36px 12px 14px;box-shadow:0 10px 28px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftddHintIn .25s ease-out;}
+.ftdd-hint::before{content:"";position:absolute;left:-10px;top:18px;border:8px solid transparent;border-right-color:#E8590C;border-left:0;}
+.ftdd-hint-down::before{left:24px;top:-10px;border:8px solid transparent;border-bottom-color:#E8590C;border-top:0;}
+.ftdd-hint b{display:block;font-size:15px;color:#F4B77A;margin-bottom:3px;} .ftdd-hint span{display:block;color:#E6E8F2;}
+.ftdd-hint-x{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 12px/1 'Inter',sans-serif;cursor:pointer;}
+.ftdd-hint-x:hover{background:#E8590C;}
+@keyframes ftddHintIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
 .ftdd-tools-tab{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #E3E6EE;background:#F6F7FA;color:#262B45;border-radius:10px;padding:5px 10px;font:600 13px/1.25 'Inter',sans-serif;cursor:pointer;min-width:0;}
 .ftdd-tools-tab > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .ftdd-tools-tab:hover{border-color:#DB8437;}
@@ -1403,8 +1435,8 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1F2338;border-bottom:1px solid rgba(255,255,255,.08);position:relative;}
 .ftlc-head::before{content:"";position:absolute;left:0;top:0;width:72px;height:3px;background:#DB8437;}
 .ftlc-ht{min-width:0;}
-.ftlc-ht h3{margin:0;font:800 18px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
-.ftlc-ht p{margin:3px 0 0;font-size:13px;font-weight:600;color:#C9CFDD;}
+.ftlc-ht h3{margin:0;font:800 21px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+.ftlc-ht p{margin:3px 0 0;font-size:15px;font-weight:600;color:#C9CFDD;}
 .ftlc-ht p .lp-kc{display:inline-block;margin-left:6px;padding:0 5px;border-radius:4px;background:#fff7ed;color:#9a3412;font-weight:800;font-size:10.5px;vertical-align:1px;}
 .ftlc-acts{display:flex;gap:8px;flex:0 0 auto;}
 .ftlc-start,.ftlc-tag{border:0;border-radius:999px;padding:7px 14px;font:800 11.5px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;white-space:nowrap;}
@@ -1414,16 +1446,16 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc.locked .ftlc-start{background:#5C626C;}
 .ftlc-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;padding:14px 16px 16px;align-items:start;}
 @media(max-width:700px){ .ftlc-body{grid-template-columns:minmax(0,1fr);} .ftlc-head{flex-wrap:wrap;} }
-.ftlc-h{margin:0 0 8px;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#C9CFDD;}
+.ftlc-h{margin:0 0 8px;font:800 13px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#C9CFDD;}
 .ftlc-seq ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
 .ftlc-row{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px;text-align:left;background:#2F3550;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;color:#fff;font:inherit;cursor:pointer;}
 .ftlc-row:hover{background:#3A4160;border-color:#DB8437;}
-.ftlc-n{font:800 15px/1 'Poppins','Inter',sans-serif;color:#DB8437;align-self:start;padding-top:2px;}
+.ftlc-n{font:800 18px/1 'Poppins','Inter',sans-serif;color:#DB8437;align-self:start;padding-top:2px;}
 .ftlc-t{min-width:0;}
-.ftlc-t b{display:block;font:700 13.5px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
-.ftlc-t small{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;color:#C9CFDD;}
+.ftlc-t b{display:block;font:700 16.5px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+.ftlc-t small{display:block;margin-top:3px;font-size:14px;line-height:1.35;color:#C9CFDD;}
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
-.ftlc-pill{justify-self:end;border-radius:999px;padding:4px 9px;background:#5C626C;color:#fff;font:800 9.5px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
 .ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
@@ -1431,7 +1463,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
 .ftlc-days button.on{border-color:#DB8437;background:#DB8437;}
 .ftlc-days button:hover{border-color:#DB8437;background:rgba(219,132,55,.18);}
-.ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:13.5px;line-height:1.45;}
+.ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:15.5px;line-height:1.45;}
 .ftlc-focus p{margin:0;}
 .ftlc-fh{font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#262B45;}
 .ftlc-focus-t{margin-top:6px !important;padding-bottom:10px;border-bottom:1px solid #E3E6EE;font-weight:700;color:#1B1E2E;display:flex;gap:8px;align-items:center;}
@@ -1442,7 +1474,7 @@ main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflo
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
 .ftlc-pqbox{margin-top:10px;} .ftlc-pqacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
-.ftlc-pqbtn{border:1px solid #E8590C;background:#fff;color:#B5451F;border-radius:999px;padding:5px 12px;font:700 12.5px 'Inter',sans-serif;cursor:pointer;}
+.ftlc-pqbtn{border:1px solid #E8590C;background:#fff;color:#B5451F;border-radius:999px;padding:5px 12px;font:700 14px 'Inter',sans-serif;cursor:pointer;}
 .ftlc-pqbtn:hover{background:#FFF1E6;} .ftlc-pqbtn.ftlc-games{background:#1E2340;border-color:#1E2340;color:#fff;} .ftlc-pqbtn.ftlc-games:hover{background:#343C66;}
 .ftdd-x{position:relative;flex-wrap:wrap;}
 .ftdd-x .ftdd-step-n{font-size:16px;}
@@ -1620,6 +1652,7 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-next:disabled{opacity:.65;cursor:not-allowed;filter:none;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
+.ftdd-bar:not(:has(*)){display:none;}   /* the day card slide has no pill or buttons up here */
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
 .ftdd-dot.done{background:#8E97C4;}
 .ftdd-dot.on{background:#DB8437;transform:scale(1.25);}
@@ -1662,7 +1695,16 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
 .ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
-.ft-body figure.ftdd-pi-fig{margin:12px 0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:19px !important;line-height:1.6 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
+.ft-body figure.ftdd-pi-fig{margin:0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
+.ft-body .ftdd-pi-row{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:16px;margin:10px 0;align-items:stretch;}
+.ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
+.ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
+.ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
+.ft-body .ftdd-pi-chart img{max-height:40vh;width:auto;margin:0 auto;display:block;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:16.5px !important;line-height:1.5 !important;}
+@media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or

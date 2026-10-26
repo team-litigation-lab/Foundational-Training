@@ -89,7 +89,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Classroom Activity: Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || !card.file)
+  if (!card || !/^Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || !card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
@@ -97,11 +97,11 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   for (let n = 1; n <= 16; n++) {
     await page.evaluate(n => FTDayDecks.open(n), n); await page.waitForTimeout(500);
     dayCards.push(await page.evaluate(() => { const c = document.querySelector('.ftdd-lcslide .ftlc');
-      return c ? { day: Number(c.dataset.day), h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length } : null; }));
+      return c ? { day: Number(c.dataset.day), first: c.dataset.first === '1', h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length } : null; }));
   }
   dayCards.forEach((c, i) => { const n = i + 1;
     if (!c || c.day !== n || c.rows < 1) fail(`Day ${n}'s deck doesn't open on its own day card: ${JSON.stringify(c)}`);
-    else if ([1, 2, 3, 4, 5, 7, 10, 13].includes(n) !== /^Classroom Activity: /.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}"`); });
+    else if ([1, 2, 3, 4, 5, 7, 10, 13].includes(n) !== c.first || /^(Classroom Activity|Day \d+):/.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}" (first day: ${c.first})`); });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
   // Day 1's card runs the trainers' order: Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));

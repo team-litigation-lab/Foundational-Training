@@ -117,9 +117,9 @@ const css = `
 /* A lesson of deck pages (body.ft-fit): the controls sit in a column to the right of the slide, so the
    slide and its Previous / Next bar fit on one screen (fitPages() below sizes the page to what's left). */
 @media (min-width:1000px){
-  body.ft-fit main:has(#lessonStage){display:flow-root;padding-top:12px;}
-  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){float:right;clear:right;width:200px;margin:0 0 10px;}
-  body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 216px 0 0;}
+  body.ft-fit main:has(#lessonStage){display:flow-root;padding-top:12px;padding-right:8px !important;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){float:right;clear:right;width:176px;margin:0 0 10px;}
+  body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 188px 0 0;}
   body.ft-fit main:has(#lessonStage) > #navBackSlot:empty{display:none;}
   /* the footer line about an inch under the slide, and the page ends there */
   body.ft-fit main:has(#lessonStage){padding-bottom:62px;}

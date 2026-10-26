@@ -259,7 +259,7 @@ const habitCard = h=>`<div class="ftr-chan ftr-test">
 const SLIDES = [
   ["welcome", "Welcome to LSH!", ()=>`
     <div class="ftr-stakes"><b>👋 Welcome to Legal Support Help!</b>
-      <p>You’re starting the Standard Foundational Training Program: the training that prepares you to work as a legal VA for U.S. law firms. Before your first lesson, this orientation walks you through how training runs and what’s expected of you every day.</p></div>
+      <p>You’re starting the Standard Foundational Training Program: the training that prepares you to work as a legal VA for U.S. Law Firms. Before your first lesson, this orientation walks you through how training runs and what’s expected of you every day.</p></div>
     <div class="ftr-lessons">${[["⏱", "Hubstaff", "How-Tos, your To-Dos, notes and lost hours"], ["☕", "Breaks and Auxes", "Your schedule, your hour of breaks, and reporting your status"],
       ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Daily Deliverables", "Typing and spelling tests, Daily Task Tracker, Monitoring Sheet, EOD email"],
       ["🎯", "Setting of Expectations", "What training is, your role and the use of AI"], ["🌱", "Free Upskill", "After your shift"]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>
@@ -267,8 +267,8 @@ const SLIDES = [
   // Hubstaff: why it matters, and the reminder that integrity is a must in a virtual setting (the To-Dos, notes and lost
   // hours are the slides that follow)
   ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>`<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
-    <div class="ftr-remind"><b>🛡 A reminder: integrity is a must</b>
-      <p>We work in a virtual setting, so the trust your trainers, your team and our clients place in you rests on your honesty. Track only the time you truly work, keep your To-Dos and notes accurate, and do what is expected of you every day, whether or not anyone is watching.</p></div>`],
+    <div class="ftr-remind"><b>🛡 A reminder: Integrity is a must.</b>
+      <p>We work in a virtual setting, so the trust your trainers, your team and our clients place in you rests on your honesty. Track only the time you truly work, keep your To-Dos and notes accurate, don’t access or open sites that aren’t related to your training while you’re tracking, and do what is expected of you every day, whether or not anyone is watching.</p></div>`],
   // the Hubstaff To-Dos, laid out like the Notes slide: Part 1 (how to add today's) and Part 2 (the 16 To-Dos to copy)
   // on the left, the Hubstaff picture big on the right (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
   ["todos", "Your Hubstaff To-Dos: How to Add Them", ()=>{
@@ -340,14 +340,13 @@ const SLIDES = [
   // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
   ["matrix", "Your Training Matrix", ()=>{
     // the training's flow, one card per day, from the day map (js/ft-day-activities.js): the day's role and its main
-    // activities (the typing and spelling tests and the upskill run every day, so they're said once, not on each card)
+    // activities (the typing and spelling tests and the upskill run every day, so they're left off the cards)
     const days = (window.FTDays && FTDays.DAYS) || [];
     const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
     const card = d=>{ const items = (d.items || []).filter(x=>!skip.has(x.kind)).slice(0, 3);
-      return `<div class="ftr-flow-card"><div class="ftr-flow-n">Day ${d.day}</div><b>${esc(d.role)}</b>
+      return `<div class="ftr-flow-card"><div class="ftr-flow-hd"><span class="ftr-flow-n">Day ${d.day}</span><b>${esc(d.role)}</b></div>
         <ul>${items.map(x=>`<li>${esc(String(x.t).replace(/\s*\([^)]*\)\s*$/, ""))}</li>`).join("")}</ul></div>`; };
-    return `<p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email. Every day also has your typing and spelling tests and your free upskill.</p>
-    <div class="ftr-flow">${days.map(card).join("")}</div>`; }],
+    return `<div class="ftr-flow">${days.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
@@ -367,10 +366,11 @@ const SLIDES = [
   ["tracker-tabs", "Your Daily Task Tracker: The Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
-  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
-    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
-    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet") : "") +
-    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
+  // the rule and the 📁 Link button on the left, the sheet itself big on the right
+  ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep ftr-mon-two"><div class="ftr-mon-l">` +
+    rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet on the right in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
+    (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>` +
+    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet") : "") + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -385,10 +385,10 @@ const SLIDES = [
   // Setting of expectations
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
-      <p>Being in training doesn’t mean you can be complacent. Your performance is deliberated every week, and depending on the outcome you can still be let go and have your project ended.</p></div>
+      <p>Training is your chance to show what you can do, so give it your best every day. Your progress is reviewed each week, and those reviews help decide whether you continue on to your project.</p></div>
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
-    <p class="ftr-sub">Next: your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training.</p>`],
+`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
@@ -401,11 +401,9 @@ const SLIDES = [
     rule("🔒 Protect Client Information", "Every document we handle is sensitive. It’s protected by attorney-client privilege and confidentiality rules (HIPAA). Uploading case details or sensitive information to an unauthorized AI tool creates serious risks for the client and the law firm. Never paste client, case or medical information into one.") +
     rule("⚖️ AI Is a Tool, Not a Replacement", "It never replaces your understanding, judgment or responsibility as a Legal VA. Some law firms allow AI, depending on the client you’re assigned to.")],
   ["free-skills", "Free Upskill Training: After Your Shift", ()=>`
-    <div class="ftr-goal"><b>🌱 Right After Your Shift, for an Hour or So</b>
-      <p>These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm.</p></div>
+    <div class="ftr-why"><b>Why It Matters:</b> These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm. Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
-    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}
-    <div class="ftr-why"><b>Why It Matters:</b> Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>`],
+    ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
 ];
 // The page splitter (eapa-updates.js) measures each slide with its content at the top: centered, the room
 // above it would count as heading and leave less for the content, so a short intro could end up alone on a page.
@@ -413,7 +411,7 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
   const __pg = window.paginateSlideUnits;
   window.paginateSlideUnits = function(){
     const w = document.getElementById("lessonSlideWrap"), on = !!(w && document.body.classList.contains("ft-orient"));
-    if(on) orientLastStep();
+    if(on){ orientLastStep(); orientNextUp(); }
     if(on && fitOrient(w)) return;
     if(on){
       w.classList.add("ftr-measure", "ftr-paged");   // too long even at half size: the engine splits it into pages
@@ -427,6 +425,15 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
 // split into pages by the engine. It also sets the progress line under the lesson's title (--ftr-prog).
 // The orientation's last slide goes on to 🧰 Know Your Tools (it has no Activity deck), then the Reading Task: its
 // 📋 Classroom Activity button and the banner under it say so (js/ft-day-decks.js sends the button there).
+// "What's next" on a slide is a small pop-up card by the Next button, not a line on the slide (✕ closes it)
+const NEXT_UP = {why: "Your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training."};
+function orientNextUp(){
+  document.querySelectorAll(".ftr-nextup").forEach(x=>x.remove());
+  const s = ORIENT.sections[state.lessonSlide || 0], t = s && NEXT_UP[s.id], nav = document.querySelector("body.ft-orient .lesson-stage .slide-nav");
+  if(!t || !nav || FT_AUDIENCE()) return;
+  nav.style.position = nav.style.position || "relative";
+  nav.insertAdjacentHTML("beforeend", `<div class="ftr-nextup" role="status"><button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span>${esc(t)}</span></div>`);
+}
 function orientLastStep(){
   const b = document.querySelector('.slide-nav button[onclick^="goToKnowledgeCheckWithInterstitial"]');
   if(b){ b.textContent = "🧰 Next: Know Your Tools →"; b.title = "The orientation is done: go on to Know Your Tools"; }
@@ -623,11 +630,11 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one{grid-template-columns:minmax(0,1.
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todos{margin-top:0;}
 body.ft-orient #lessonSlideWrap .ftr-todos-t{display:inline-flex;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h .btn{padding:4px 12px !important;font-size:13px !important;min-height:0 !important;line-height:1.3 !important;flex:0 0 auto;}
-body.ft-orient #lessonSlideWrap .ftr-todos-pre{margin:4px 0 2px !important;font-size:12.5px !important;color:#4A5068 !important;}
+body.ft-orient #lessonSlideWrap .ftr-todos-pre{margin:4px 0 2px !important;font-size:12.5px !important;font-weight:600 !important;color:#2A2F45 !important;}
 body.ft-orient #lessonSlideWrap .ftr-todos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:2px 0;gap:8px;flex-wrap:nowrap;align-items:center;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;min-height:0 !important;white-space:nowrap;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;font-weight:700 !important;color:#1B1E2E !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;font-weight:700 !important;min-height:0 !important;white-space:nowrap;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
@@ -651,14 +658,25 @@ body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 /* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
 body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 22px;counter-reset:none;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card{position:relative;background:#1E2340;color:#fff;border-radius:12px;border-top:4px solid #E8590C;padding:10px 12px 8px;box-shadow:0 4px 12px rgba(30,35,64,.18);}
+body.ft-orient #lessonSlideWrap .ftr-flow-card{position:relative;background:#1E2340;color:#fff;border-radius:12px;border-top:4px solid #E8590C;padding:12px 14px 10px;box-shadow:0 4px 12px rgba(30,35,64,.18);}
 body.ft-orient #lessonSlideWrap .ftr-flow-card:not(:nth-child(4n)):not(:last-child)::after{content:"→";position:absolute;right:-18px;top:50%;transform:translateY(-50%);color:#E8590C;font:900 16px/1 'Inter',sans-serif;}
-body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;font:800 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:4px 9px;margin-bottom:6px;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 15px/1.25 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:16px;font-size:12.5px;line-height:1.35;color:#E6E8F2;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:12.5px !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;flex:0 0 auto;font:800 14px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:5px 10px;margin:0;}
+body.ft-orient #lessonSlideWrap .ftr-flow-hd{display:flex;align-items:center;gap:10px;margin-bottom:6px;} body.ft-orient #lessonSlideWrap .ftr-flow-hd b{margin:0 !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 20px/1.2 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:18px;font-size:16px;line-height:1.35;color:#E6E8F2;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:16px !important;line-height:1.35 !important;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
+body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start;}
+body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
+body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
+body.ft-orient .ftr-nextup{position:absolute;right:0;bottom:calc(100% + 10px);z-index:6;max-width:340px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:10px 34px 10px 14px;box-shadow:0 10px 26px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;}
+body.ft-orient .ftr-nextup::after{content:"";position:absolute;right:28px;bottom:-10px;border:8px solid transparent;border-top-color:#E8590C;border-bottom:0;}
+body.ft-orient .ftr-nextup b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;margin-bottom:2px;}
+body.ft-orient .ftr-nextup span{display:block;color:#fff;}
+body.ft-orient .ftr-nextup-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 11px/1 'Inter',sans-serif;cursor:pointer;}
+@keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
 body.ft-orient #lessonSlideWrap .ftr-matrix .ftr-embed{height:max(360px, calc(100vh - 380px)) !important;margin-top:0;}   /* the document fills the slide (no Open or Download bar) */
