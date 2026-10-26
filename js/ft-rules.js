@@ -22,7 +22,7 @@
      • The Hubstaff picture is drawn after the trainer's screenshot (SVG): the Add Work Notes box.
    ============================================================ */
 (function(){
-const SHIFT = "8:00 AM – 5:00 PM PST";
+const SHIFT = "8:00 AM – 5:00 PM EST";
 
 // The camera: how you show up on it, in every meeting (the orientation's Camera slide).
 const CAMERA = [
@@ -69,8 +69,6 @@ const HABITS = [
    }
 ];
 // The EOD email (Setting of Expectations).
-// The Training Matrix's cover picture, shown beside the embedded matrix (null until the picture is in the repository)
-const TRAINING_MATRIX_IMG = null;
 const EOD = {
   subject:"Daily Report mm/dd/yy", subjectAlt:"EOD Report mm/dd/yy",
   parts:[["Accomplishments/Completed Tasks:", "All the tasks you accomplished and completed for the day.", 4],
@@ -112,8 +110,6 @@ const TIME_ADJ = {
            "The affected start and end time."]
 };
 
-// Hubstaff How-To Lessons: this lesson's Hubstaff slides (by id) and the guide. Add more as {title, desc, href}.
-const HOWTO_LESSONS = [];
 
 
 // Day 1 → Setting of Expectations: the tests' links, file names and sample screenshots.
@@ -246,8 +242,8 @@ const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</
 /* ---------- the slides ---------- */
 // A Drive file shown in full inside the slide (its /preview; a Google Doc, the Doc's own /preview), with a link to open it in its own tab.
 const drivePreview = u => { const g = String(u).match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]{20,})/); if(g) return `https://docs.google.com/document/d/${g[1]}/preview`; const m = String(u).match(/\/d\/([a-zA-Z0-9_-]{20,})/); return m ? `https://drive.google.com/file/d/${m[1]}/preview` : u; };
-const embed = (url, title, open)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>
-    <div class="ftr-embed-bar"><span>📄 ${esc(title)}</span>${open ? `<a class="btn btn-ghost btn-sm" href="${esc(open)}" target="_blank" rel="noopener noreferrer">Open or Download ↗</a>` : ""}</div>`;
+// an embedded document fills its frame; no "Open or Download" bar under it (the document is right there)
+const embed = (url, title)=>`<div class="ftr-embed"><iframe src="${esc(drivePreview(url))}" title="${esc(title)}" loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
 const rule = (b, span)=>`<div class="ftr-rule"><b>${b}</b>${span ? `<span>${span}</span>` : ""}</div>`;
 const tpart = (h, rows)=>`<div class="ftr-part"><div class="ftr-part-h">${esc(h)}</div>${rows.map(r=>`<div class="ftr-def"><b>${esc(r[0])}</b><span>${esc(r[1])}</span></div>`).join("")}</div>`;
 const copyRow = (label, text, sub)=>`<div class="ftr-aux"><span><b>${esc(label)}</b>${sub ? `<br><small>${esc(sub)}</small>` : ""}</span><span class="ftr-copyrow"><code class="ftr-code">${esc(text)}</code><button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(text)}" data-toast="Copied." onclick="ftrCopy(this)">📋 Copy</button></span></div>`;
@@ -268,39 +264,35 @@ const SLIDES = [
       ["📷", "Camera", "On in every meeting"], ["💬", "Discord", "Mindfulness and response rates"], ["📦", "Your 4 Daily Deliverables", "Typing and spelling tests, Daily Task Tracker, Monitoring Sheet, EOD email"],
       ["🎯", "Setting of Expectations", "What training is, your role and the use of AI"], ["🌱", "Free Upskill", "After your shift"]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>
     <p class="ftr-sub ftr-after">Your training shift: <b>${esc(SHIFT)}</b>.</p>`],
-  // Hubstaff: how-tos and why they matter, the To-Dos, notes and lost hours
-  ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>{
-    // this lesson's Hubstaff slides (a click goes to the slide) and the LSH VA Guide, then any added lessons
-    const here = [["todos", "Your Hubstaff To-Dos", "How to add today’s To-Do, and the names to use, with 📋 Copy and 📋 Copy All."],
-                  ["notes", "Create Notes in Hubstaff", "Add a work note to the time you’re tracking."],
-                  ["time-adjustment", "Lost Hours", "The Manual Time Adjustment Request."]];
-    const at = id=>ORIENT.sections.findIndex(x=>x.id===id);
-    return `<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
-    <p class="ftr-sub">Everything you need to use Hubstaff during training. Click a lesson to open it.</p>
-    <div class="ftr-lessons">${here.map(([id, t, d])=>`<a class="ftr-lesson" href="javascript:void 0" onclick="goToSlide(${at(id)})"><b>${esc(t)}</b><span>${esc(d)}</span></a>`).join("")}
-      <a class="ftr-lesson" href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer"><b>LSH VA Guide: Create a To-Do ↗</b><span>The guide’s task list for creating to-dos.</span></a>
-      ${HOWTO_LESSONS.map(l=>`<a class="ftr-lesson" href="${esc(l.href)}" target="_blank" rel="noopener"><b>${esc(l.title)}</b><span>${esc(l.desc||"")}</span></a>`).join("")}</div>`; }],
-  // the Hubstaff To-Dos in one slide, on one page: how to add today's (the steps beside the Hubstaff picture) on top, the 16
-  // To-Dos to copy in a grid below (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
+  // Hubstaff: why it matters, and the reminder that integrity is a must in a virtual setting (the To-Dos, notes and lost
+  // hours are the slides that follow)
+  ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>`<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
+    <div class="ftr-remind"><b>🛡 A reminder: integrity is a must</b>
+      <p>We work in a virtual setting, so the trust your trainers, your team and our clients place in you rests on your honesty. Track only the time you truly work, keep your To-Dos and notes accurate, and do what is expected of you every day, whether or not anyone is watching.</p></div>`],
+  // the Hubstaff To-Dos, laid out like the Notes slide: Part 1 (how to add today's) and Part 2 (the 16 To-Dos to copy)
+  // on the left, the Hubstaff picture big on the right (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
   ["todos", "Your Hubstaff To-Dos: How to Add Them", ()=>{
+    // every To-Do starts "Classroom Discussion: ": the list shows the rest (📋 Copy still copies the whole name)
+    const PRE = "Classroom Discussion: ", short = t=>t.startsWith(PRE) ? t.slice(PRE.length) : t;
     const row = (t, n)=>`<div class="ftr-todo">
       <span class="ftr-todo-n">${n}</span>
-      <span class="ftr-todo-tx"><em>To-Do:</em> ${esc(t)}</span>
+      <span class="ftr-todo-tx" title="${esc(t)}">${esc(short(t))}</span>
       <button class="btn btn-ghost btn-sm" type="button" data-copy="${esc(t)}" onclick="ftrCopy(this)">📋 Copy</button></div>`;
-    return `<div class="ftr-todos-all ftr-todos-one" data-ftr-max="1">
-    <div class="ftr-todos-top"><div class="ftr-part">
-      <div class="ftr-part-h">Add Today’s To-Do</div>
+    return `<div class="ftr-notes ftr-todos-one" data-ftr-max="1"><div class="ftr-parts">
+    <div class="ftr-part">
+      <div class="ftr-part-h"><span>Part 1</span>Add Today’s To-Do</div>
       <ol>
-        <li>Click <b>📋 Copy</b> next to the session you’re in.</li>
+        <li>Click <b>📋 Copy</b> next to the session you’re in (Part 2).</li>
         <li>In the Hubstaff app, click your training project.</li>
         <li>Click in <b>Create a to-do</b>, paste it (Ctrl+V), then click <b>+</b> or press Enter.</li>
         <li>Click the button inside that to-do, at its left, to track your time on it.</li>
       </ol>
-      <p class="ftr-tip">More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p></div>
-      ${fig(FIGS.todo())}</div>
+      <p class="ftr-tip">💡 More on To-Dos: <a href="${esc(TODO_GUIDE)}" target="_blank" rel="noopener noreferrer">LSH VA Guide | “Create a to-do” task list ↗</a></p></div>
     <div class="ftr-part ftr-todos">
-      <div class="ftr-part-h ftr-todos-h">Your ${TODOS.length} Hubstaff To-Dos <button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
-      <div class="ftr-todos-grid">${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div></div>`; }],
+      <div class="ftr-part-h ftr-todos-h"><div class="ftr-todos-t"><span>Part 2</span>Your ${TODOS.length} Hubstaff To-Dos</div><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(TODOS.join("\n"))}" data-toast="Copied all ${TODOS.length} To-Dos, one per line." onclick="ftrCopy(this, '📋 Copy All')">📋 Copy All</button></div>
+      <p class="ftr-todos-pre">Each one starts with <b>${esc(PRE.trim())}</b> — 📋 Copy copies the whole name.</p>
+      <div class="ftr-todos-grid">${TODOS.map((t, i)=>row(t, i + 1)).join("")}</div></div></div>
+    ${fig(FIGS.todo())}</div>`; }],
   // the steps on the left, the picture (Part 2) big on the right
   ["notes", "How to Create Notes in Hubstaff", ()=>`<div class="ftr-notes"><div class="ftr-parts">${NOTE_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
@@ -346,11 +338,16 @@ const SLIDES = [
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
   // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
-  // (TRAINING_MATRIX_IMG, the picture in the document) on the right
-  ["matrix", "Your Training Matrix", ()=>`
-    <p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email.</p>
-    <div class="ftr-matrix"><div class="ftr-keep">${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div>
-      ${TRAINING_MATRIX_IMG ? `<figure class="ftr-matrix-img"><img src="${esc(TRAINING_MATRIX_IMG)}" alt="Virtual Assistant Training Matrix"></figure>` : ""}</div>`],
+  ["matrix", "Your Training Matrix", ()=>{
+    // the training's flow, one card per day, from the day map (js/ft-day-activities.js): the day's role and its main
+    // activities (the typing and spelling tests and the upskill run every day, so they're said once, not on each card)
+    const days = (window.FTDays && FTDays.DAYS) || [];
+    const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
+    const card = d=>{ const items = (d.items || []).filter(x=>!skip.has(x.kind)).slice(0, 3);
+      return `<div class="ftr-flow-card"><div class="ftr-flow-n">Day ${d.day}</div><b>${esc(d.role)}</b>
+        <ul>${items.map(x=>`<li>${esc(String(x.t).replace(/\s*\([^)]*\)\s*$/, ""))}</li>`).join("")}</ul></div>`; };
+    return `<p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email. Every day also has your typing and spelling tests and your free upskill.</p>
+    <div class="ftr-flow">${days.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
@@ -372,7 +369,7 @@ const SLIDES = [
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   ["monitoring", "Rules: Your Training Monitoring Sheet", ()=>`<div class="ftr-keep">` +
     rule("📒 Your Training Monitoring Sheet", "As soon as you are done with all the tasks, make your copy of the monitoring sheet below in your VA Output folder and fill it in there. Share it as “Anyone with the link can view” and save its link on the platform: it’s checked automatically, and your trainer adds their comments.") +
-    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet", FT_MONITOR_DOC.open) : "") +
+    (window.FT_MONITOR_DOC ? embed(FT_MONITOR_DOC.view, "Training Monitoring Sheet") : "") +
     (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
@@ -529,7 +526,6 @@ window.dayUnlocked = function(id){ return Number(id)===ORIENT_ID ? true : __unlo
 .ftr-mon{margin:10px 0 0;} .ftr-mon a.btn{text-decoration:none;}
 .ftr-embed{position:relative;width:100%;height:max(340px, 52vh);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#F6F7FB;margin-top:10px;}
 .ftr-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
-.ftr-embed-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:var(--ink-soft);} .ftr-embed-bar a.btn{text-decoration:none;}
 /* Full screen and the slides window: the page fills the screen (no width cap, no presenter column) and scales up. */
 .lesson-stage:fullscreen .stage-body:has(.ftr-slide), #audienceRoot .stage-body:has(.ftr-slide){grid-template-columns:minmax(0,1fr) !important;}
 .lesson-stage:fullscreen .stage-body:has(.ftr-slide) .stage-presenter, #audienceRoot .stage-body:has(.ftr-slide) .stage-presenter{display:none !important;}
@@ -623,19 +619,18 @@ body.ft-orient #lessonSlideWrap div.ftr-lesson{cursor:default;}
 body.ft-orient #lessonSlideWrap .ftr-notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:18px;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-parts{gap:10px;}
 /* Your Hubstaff To-Dos: how to add one (steps and picture) on the left, the To-Dos to copy on the right */
-body.ft-orient #lessonSlideWrap .ftr-todos-one{display:flex;flex-direction:column;gap:12px;}
-body.ft-orient #lessonSlideWrap .ftr-todos-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start;}
-body.ft-orient #lessonSlideWrap .ftr-todos-top .ftr-fig{margin:0;}
-body.ft-orient #lessonSlideWrap .ftr-todos-top .ftr-fig svg{min-width:0;max-height:min(34vh, 25cqw);}
+body.ft-orient #lessonSlideWrap .ftr-todos-one{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todos{margin-top:0;}
-body.ft-orient #lessonSlideWrap .ftr-todos-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:18px;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:3px 0;gap:8px;flex-wrap:nowrap;align-items:center;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;line-height:1.25 !important;}
-body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx em{display:none;}
+body.ft-orient #lessonSlideWrap .ftr-todos-t{display:inline-flex;align-items:center;}
+body.ft-orient #lessonSlideWrap .ftr-todos-h .btn{padding:4px 12px !important;font-size:13px !important;min-height:0 !important;line-height:1.3 !important;flex:0 0 auto;}
+body.ft-orient #lessonSlideWrap .ftr-todos-pre{margin:4px 0 2px !important;font-size:12.5px !important;color:#4A5068 !important;}
+body.ft-orient #lessonSlideWrap .ftr-todos-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo{padding:2px 0;gap:8px;flex-wrap:nowrap;align-items:center;}
+body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-tx{flex:1;min-width:0;font-size:13px !important;line-height:1.25 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !important;font-size:11px !important;min-height:0 !important;white-space:nowrap;}
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-top, body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig{margin:0;}
@@ -655,9 +650,18 @@ body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 /* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
+body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 22px;counter-reset:none;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card{position:relative;background:#1E2340;color:#fff;border-radius:12px;border-top:4px solid #E8590C;padding:10px 12px 8px;box-shadow:0 4px 12px rgba(30,35,64,.18);}
+body.ft-orient #lessonSlideWrap .ftr-flow-card:not(:nth-child(4n)):not(:last-child)::after{content:"→";position:absolute;right:-18px;top:50%;transform:translateY(-50%);color:#E8590C;font:900 16px/1 'Inter',sans-serif;}
+body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;font:800 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:4px 9px;margin-bottom:6px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 15px/1.25 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:16px;font-size:12.5px;line-height:1.35;color:#E6E8F2;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:12.5px !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
-body.ft-orient #lessonSlideWrap .ftr-matrix .ftr-embed{height:max(320px, min(56vh, 34cqw)) !important;}
+body.ft-orient #lessonSlideWrap .ftr-matrix .ftr-embed{height:max(360px, calc(100vh - 380px)) !important;margin-top:0;}   /* the document fills the slide (no Open or Download bar) */
 body.ft-orient #lessonSlideWrap .ftr-matrix-img{margin:0;} body.ft-orient #lessonSlideWrap .ftr-matrix-img img{display:block;width:100%;height:auto;border:2px solid #343C66;border-radius:12px;box-shadow:0 4px 14px rgba(30,35,64,.14);}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-matrix{grid-template-columns:minmax(0,1fr);} }
 /* The Sheet: two columns, so its three tables fill the width */
@@ -692,6 +696,7 @@ body.ft-orient #lessonSlideWrap :is(.ftr-grid, .ftr-lessons){grid-template-colum
 .ftr-rshots figcaption{margin-top:6px;font-size:14px;color:var(--ink-soft);text-align:center;}
 @media (max-width:760px){ .ftr-rshots{grid-template-columns:1fr;} }
 .ftr-stakes b{display:block;font-size:18px;color:var(--orange-soft);} .ftr-stakes p{margin:6px 0 0;font-size:15.5px;line-height:1.55;max-width:900px;}
+.ftr-remind{background:#1E2340;color:#fff;border-left:6px solid #E8590C;border-radius:12px;padding:16px 20px;font-size:16.5px;line-height:1.55;max-width:900px;} .ftr-remind b{display:block;font-size:19px;margin-bottom:6px;color:#F4B77A;} .ftr-remind p{margin:0;color:#fff;}
 .ftr-why{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:15.5px;max-width:900px;} .ftr-why b{color:var(--orange-deep);}
 .ftr-test{display:flex;flex-direction:column;gap:8px;} .ftr-test .ftr-aux{border-top:0;padding:0;}
 .ftr-when{margin:0!important;font-size:15px!important;color:var(--ink)!important;}

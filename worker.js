@@ -28,7 +28,8 @@
  *
  * Daily Task Tracker: each trainee's sheet is tracker:<id> (the trainee edits it); the daily check,
  * notes review and trainer comments are trackerreview:<id> (trainees read it, only admins write it).
- * The check runs on the cron in wrangler.json (after the training day, Pacific time), and on demand
+ * The check runs on the cron in wrangler.json (5 22 * * *: 5:05 PM EST, just after the 8 AM – 5 PM EST shift ends;
+ * 6:05 PM in Eastern daylight time), and on demand
  * from Admin → 📋 Task Trackers. The rules are shared with the page: js/ft-tracker-rules.js.
  *
  * Without MASTER_ADMIN_PASSWORD the Worker runs in the old open mode so nothing breaks

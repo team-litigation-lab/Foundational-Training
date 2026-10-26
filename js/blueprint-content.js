@@ -89,7 +89,7 @@ window.LSH_BLUEPRINT = {
           'Confidentiality first: every document is protected by attorney-client privilege. Never paste client, case or medical information into any tool.',
           'AI for grammar and spelling only \u2014 use your own reasoning and discretion.',
           'The 5-minute rule: reply within 5 minutes, and acknowledge every Discord message from your trainer.',
-          'On time: Hubstaff tracks 8:00 AM \u2013 5:00 PM PST. Breaks are 15 \u2013 30 \u2013 15, or one full hour.',
+          'On time: Hubstaff tracks 8:00 AM \u2013 5:00 PM EST. Breaks are 15 \u2013 30 \u2013 15, or one full hour.',
           'Naming conventions, strictly: To-Dos, screenshots and files exactly as given.'],
         where: '📌 Setting of Training Expectations and Company Policies, first on 📚 Dashboard.',
         tip: 'When a rule and a shortcut disagree, follow the rule and raise it with your trainer \u2014 spotting the clash is the job.' },
