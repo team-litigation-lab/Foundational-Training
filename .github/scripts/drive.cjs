@@ -3,7 +3,7 @@
 //   - reads the trainee's sheet and checks the day with the tracker rules (every open task's Daily Note, the day's output links);
 //   - checks the Monitoring Sheet per discussion;
 //   - keeps the trainer's score and comment when it checks again, and lets a trainee check at most every 3 minutes;
-//   - reads a submitted answer sheet's file name (/api/drive/name);
+//   - lists the answer sheets in the trainee's Assessment and Activities Folder through the service account (/api/drive/answers);
 //   - says the file can't be opened when Google answers with its sign-in page.
 // Usage: node .github/scripts/drive.cjs   (no browser, no network)
 const path = require('path'); const { pathToFileURL } = require('url');
@@ -27,7 +27,13 @@ const failures = []; const fail = (m) => failures.push(m);
             `⬇ FOR COMPLETION ⬇\n${us},LSH-TRAINING,Reception lesson,Dee,"Finished the slides, took notes",Learned the spiel,ASAP,Ongoing,\n⬇ RECURRING ⬇\n,LSH-TRAINING,Typing Test,Dee,,,,Ongoing,\n`);
         if (u.includes('1MonitorDocIdForTheCiTest000001/export?format=txt')) return new Response(
             'Virtual Assistant Essentials - Day 1\nDate: 10/01/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney with case tasks.\n2. Federal courts hear cases between parties in different states.\n3. Solo attorneys gain the most from a VA handling intake.\n4. Clear written updates build the client’s trust.\n5. Deadlines are tracked in the firm’s calendar every day.\n3 Questions That You Still Have\n1. How are court deadlines counted?\nRate Your Understanding\n[x] I am confident that I can do this on my own.\n');
-        if (u === DOC) return new Response('<!doctype html><html><head><meta property="og:title" content="PI Overview_Answers (Dee)"><title>PI Overview_Answers (Dee) - Google Docs</title></head></html>');
+        if (u === 'https://oauth2.googleapis.com/token') return new Response(JSON.stringify({ access_token: 'ci-token' }));
+        if (u.startsWith('https://www.googleapis.com/drive/v3/files?')) {
+            const parent = decodeURIComponent(u).match(/'([^']+)' in parents/)[1];
+            const files = parent === 'abcFolderId01' ? [{ id: 'sub1', name: 'Week 1', mimeType: 'application/vnd.google-apps.folder' }, { id: 'f1', name: 'PI Overview_Answers (Dee)', mimeType: 'application/vnd.google-apps.document', createdTime: '2026-10-26T15:00:00Z', webViewLink: 'https://docs.google.com/document/d/f1/edit' }]
+                : parent === 'sub1' ? [{ id: 'f2', name: 'Typing Test 10.26.26AM', mimeType: 'image/png', createdTime: '2026-10-26T14:00:00Z' }] : [];
+            return new Response(JSON.stringify({ files }));
+        }
         return new Response('not found', { status: 404 });
     };
     const call = async (p, body, token) => {
@@ -37,7 +43,7 @@ const failures = []; const fail = (m) => failures.push(m);
     const admin = (await call('/api/auth/admin', { passphrase: 'ci-pass' })).body.token;
     const trainee = (await call('/api/auth/trainee', { name: 'Dee Drive', batch: 'B9' })).body.token;
     // the trainee saves their links and the day's output link (drive:<id> is theirs)
-    const w = await call('/api/storage/set', { key: 'drive:' + id, value: JSON.stringify({ folder: 'https://drive.google.com/drive/folders/abc', tracker: SHEET, monitor: DOC, days: { [D]: { links: [{ label: 'Typing Test AM', url: 'https://drive.google.com/file/d/xyz/view' }] } } }) }, trainee);
+    const w = await call('/api/storage/set', { key: 'drive:' + id, value: JSON.stringify({ folder: 'https://drive.google.com/drive/folders/abcFolderId01', tracker: SHEET, monitor: DOC, days: { [D]: { links: [{ label: 'Typing Test AM', url: 'https://drive.google.com/file/d/xyz/view' }] } } }) }, trainee);
     if (w.status !== 200) fail(`a trainee couldn't save their Drive links: ${JSON.stringify(w)}`);
     const nope = await call('/api/storage/set', { key: 'trackerreview:' + id, value: '{}' }, trainee);
     if (nope.status !== 403) fail('a trainee could write their own check (trackerreview)');
@@ -60,20 +66,23 @@ const failures = []; const fail = (m) => failures.push(m);
     const r2 = await call('/api/drive/check', { id }, admin);
     const day2 = r2.body.review.days[D];
     if (day2.trainerScore !== 90 || day2.comment !== 'Good notes.' || r2.body.review.monitor.comment !== 'Complete.') fail(`a new check lost the trainer's input: ${JSON.stringify(day2)}`);
-    // an answer sheet submitted by its link: the platform reads the file's own name (js/ft-process.js checks it)
-    const nm = await call('/api/drive/name', { url: DOC }, trainee);
-    if (!nm.body || nm.body.name !== 'PI Overview_Answers (Dee)') fail(`the answer sheet's name wasn't read from Drive: ${JSON.stringify(nm)}`);
-    const bad = await call('/api/drive/name', { url: 'https://example.com/x' }, trainee);
-    if (!bad.body || bad.body.error !== 'link') fail(`a link that isn't Google Drive's should be refused: ${JSON.stringify(bad)}`);
+    // the answer sheets in the trainee's Assessment and Activities Folder: none without the service account, then found through it
+    const noSA = await call('/api/drive/answers', {}, trainee);
+    if (!noSA.body || noSA.body.error !== 'no-access') fail(`without the service account the folder can't be read: ${JSON.stringify(noSA)}`);
+    const kp = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+    const pk = Buffer.from(await crypto.subtle.exportKey('pkcs8', kp.privateKey)).toString('base64');
+    env.GDRIVE_SA_EMAIL = 'ci@lsh.iam.gserviceaccount.com'; env.GDRIVE_SA_KEY = `-----BEGIN PRIVATE KEY-----\\n${pk}\\n-----END PRIVATE KEY-----`;
+    const found = await call('/api/drive/answers', {}, trainee);
+    const names = ((found.body || {}).files || []).map(f => f.name).sort().join(' | ');
+    if (names !== 'PI Overview_Answers (Dee) | Typing Test 10.26.26AM') fail(`the folder's files (and its sub-folder's) weren't listed: ${JSON.stringify(found.body)}`);
+    delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
     // a file that isn't shared: Google answers with its sign-in page
     shared = false;
-    const nm2 = await call('/api/drive/name', { url: DOC }, trainee);
-    if (!nm2.body || nm2.body.error !== 'not-shared') fail(`an unreadable answer sheet should say so: ${JSON.stringify(nm2)}`);
     const r3 = await call('/api/drive/check', { id }, admin);
     const sheetRule = (r3.body.review.days[D].rules || [])[0];
     if (!sheetRule || sheetRule.id !== 'sheet' || !/can't open this file.*file's own link/.test(sheetRule.detail)) fail(`an unreadable sheet should say to check its link: ${JSON.stringify(sheetRule)}`);
     if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, an answer sheet\'s name read from its link, an unreadable file explained).');
+    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, an unreadable file explained).');
 })().catch(e => { console.error(e); process.exit(1); });

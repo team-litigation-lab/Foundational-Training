@@ -445,11 +445,11 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention, submitted by link on time
-  ["answer-sheets", "Setting Expectations: Submit Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
       {h:"Save It Daily in Your Assessment and Activities Folder", steps:["Your Assessment and Activities Folder is where you save your outputs, every day.", "Save each answer sheet there on the day you answer it."]},
-      {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "The platform reads your file’s name from Drive and checks it."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
-      {h:"Submit Its Link on Time", steps:["Open the file in Drive and copy its link from the address bar.", "Paste it on the Knowledge Check and submit, before the end of your shift."], tip:"Attention to detail, following instructions and timely submission are all checked."},
+      {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Spell it exactly, with your first name in ( )."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
+      {h:"The Platform Checks It", steps:["Save it before the end of your shift. There is no link to paste.", "The platform finds it in your folder and checks its name and when it was saved."], tip:"Attention to detail, following instructions and timely submission are all checked."},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>

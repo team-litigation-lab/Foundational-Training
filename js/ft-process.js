@@ -7,8 +7,8 @@
      • Trainees answer each question (saved to process:<id> as they type) and
        submit the sheet. The answer sheet itself is a file the trainee saves in
        their Assessment and Activities Folder that day, named by its
-       convention, and submits by its link: the platform reads the file's name
-       from Drive and checks it, and records whether it came in on time.
+       convention: the platform finds it there, checks its name, and records
+       whether it was saved on time.
      • Admins open the same ✍️ Knowledge Check button and get every trainee's
        sheets: batch → trainee → each answer sheet (submitted or not, how many
        answered, the answers), and the line for the ranking report ("Out of N
@@ -121,20 +121,43 @@ const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
-/* 📄 The answer sheet as a deliverable: the trainee saves it in their Assessment and Activities Folder that day,
-   named by its convention (the rule, with "Your First Name": not a name to copy), and submits its link here (the folder's
-   sharing is set up in the LSH community, so the trainee doesn't share anything). The platform reads the file's own name from Drive (/api/drive/name), checks it against the
-   convention, and records when it came in against its due time: the end of the day the sheet was given (the day the
-   trainee first opened it). Attention to Detail and Following Instructions (the name), Timely Submission (the time). Kept on
-   the sheet: x.file = {url, name, at, nameOk, onTime}, x.assignedOn, x.fileTries. */
+/* 📄 The answer sheet as a deliverable: the trainee only saves it in their Assessment and Activities Folder that day, named by
+   its convention (the rule, with "Your First Name": not a name to copy). The platform finds it there itself
+   (/api/drive/answers: the folder's files, read through the service account), checks its name against the convention and
+   records whether it was saved by its due time: the end of the day the sheet was given (the day the trainee first opened
+   it). Attention to Detail and Following Instructions (the name), Timely Submission (the time). Kept on the sheet:
+   x.file = {name, link, at, nameOk, onTime}, x.assignedOn. */
 const normName = t => String(t || "").replace(/[‘’`]/g, "'").replace(/\s+/g, " ").trim();
 const ptDay = d => window.FTTrackerRules ? FTTrackerRules.ptDate(d ? new Date(d) : new Date()) : new Date(d || Date.now()).toISOString().slice(0, 10);
-const nameMatches = (set, n) => normName(String(n || "").replace(/\.(docx?|pdf|txt|rtf|odt)$/i, "")) === normName(fileName(set));
+const bare = n => String(n || "").replace(/\.(docx?|pdf|txt|rtf|odt)$/i, "");
+const nameMatches = (set, n) => normName(bare(n)) === normName(fileName(set));
+// a file that is this sheet but named another way: the convention's words in it, whatever the spaces, underscores and capitals
+const key = t => String(t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const looksLike = (set, n) => key(bare(n)).includes(key(set.file));
 const prettyDay = d => { const t = new Date(d + "T12:00:00Z"); return isNaN(t) ? d : t.toLocaleDateString(undefined, {weekday:"short", month:"short", day:"numeric", timeZone:"UTC"}); };
 const isTraineeHere = () => !!state.traineeId && !state.isAdmin;
-// when the trainee first sees the sheet's submit box, the sheet is theirs to deliver that day
+// when the trainee first sees the sheet's box, the sheet is theirs to deliver that day
 function assignedOn(set){ const x = sheet(set.id); if(!x.assignedOn && isTraineeHere()){ x.assignedOn = ptDay(); queueSave(); } return x.assignedOn || ptDay(); }
-// the result of a submitted link, for the trainee and the trainer alike
+// the folder's check: the sheet's file in the folder (named right first, else the earliest that looks like it)
+const FOLDER = {at:0, busy:false, error:"", files:null};
+async function checkFolder(force){
+  if(!isTraineeHere() || FOLDER.busy || (!force && Date.now() - FOLDER.at < 120000)) return;
+  FOLDER.busy = true; FOLDER.at = Date.now();
+  try{ const r = await authFetch("/api/drive/answers", {}); const j = await r.json().catch(() => ({})); FOLDER.error = j.error || ""; FOLDER.files = j.files || null; }
+  catch(err){ FOLDER.error = "offline"; }
+  FOLDER.busy = false;
+  let changed = false;
+  if(FOLDER.files) PROCESS_SETS.forEach(set => {
+    const x = FP.data.sets[set.id]; if(!x || !x.assignedOn) return;
+    const mine = FOLDER.files.filter(f => looksLike(set, f.name)).sort((a, b) => (nameMatches(set, b.name) - nameMatches(set, a.name)) || String(a.created).localeCompare(String(b.created)));
+    const f = mine[0]; if(!f) return;
+    const nf = {name: f.name, link: f.link, at: f.created || f.modified, nameOk: nameMatches(set, f.name), onTime: ptDay(f.created || f.modified) <= x.assignedOn};
+    if(JSON.stringify(nf) !== JSON.stringify(x.file || null)){ x.file = nf; changed = true; }
+  });
+  if(changed) queueSave();
+  if(["process", "kc"].includes(state.view)) render();
+}
+// the result, for the trainee and the trainer alike
 function fileStatus(set, x){
   const f = x && x.file; if(!f) return "";
   return `<span class="fp-pill ${f.nameOk ? "ok" : "bad"}">${f.nameOk ? "✓ Named by the convention" : "✗ Name doesn’t follow the convention"}</span>
@@ -142,22 +165,27 @@ function fileStatus(set, x){
 }
 function fileCard(set, many){
   const x = sheet(set.id), f = x.file, due = assignedOn(set), today = ptDay();
+  const why = FOLDER.error === "no-folder" ? "Link your Assessment and Activities Folder first (📁 Drive links on 📚 Dashboard)."
+    : FOLDER.error === "no-access" ? "The platform can’t open your folder yet. Tell your trainer."
+    : FOLDER.error ? "Couldn’t check your folder just now. Try again in a moment." : "";
   return `<div class="fp-file" data-set="${e(set.id)}">
       ${many ? `<b class="fp-file-h">${e(set.title)}</b>` : ""}
       <p class="fp-file-rule"><span>Naming convention</span> <code>${e(set.file)} (Your First Name)</code>
         <span class="fp-muted">${due < today ? `Was due ${e(prettyDay(due))}` : "Due today, by the end of your shift"}</span></p>
-      <div class="fp-folder-row"><input id="fpFile_${e(set.id)}" type="url" placeholder="Your answer sheet’s link: https://docs.google.com/document/d/…" value="${e(f ? f.url : "")}">
-        <button class="btn btn-navy btn-sm" type="button" ${isTraineeHere() ? "" : "disabled title=\"Trainees submit their own answer sheets\""} onclick="FTProcess.submitFile('${set.id}')">${f ? "Submit again" : "Submit link"}</button></div>
-      ${f ? `<p class="fp-file-res">${fileStatus(set, x)} <span class="fp-muted">“${e(f.name)}” · ${e(new Date(f.at).toLocaleString())}</span></p>
-        ${f.nameOk ? "" : `<p class="fp-muted">Rename the file in Drive to the convention, with your first name in ( ), and submit again.</p>`}` : ""}
+      ${f ? `<p class="fp-file-res">${fileStatus(set, x)} ${f.link ? `<a href="${e(f.link)}" target="_blank" rel="noopener noreferrer">“${e(f.name)}” ↗</a>` : `“${e(f.name)}”`}
+          <span class="fp-muted">saved ${e(new Date(f.at).toLocaleString())}</span></p>
+        ${f.nameOk ? "" : `<p class="fp-muted">Rename the file in your folder to the convention, with your first name in ( ).</p>`}`
+        : `<p class="fp-file-res"><span class="fp-pill bad">Not in your folder yet</span>${why ? ` <span class="fp-muted">${e(why)}</span>` : ""}</p>`}
+      ${isTraineeHere() ? `<button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.checkFolder()"${FOLDER.busy ? " disabled" : ""}>${FOLDER.busy ? "Checking…" : "🔄 Check my folder"}</button>` : ""}
     </div>`;
 }
 function fileSteps(){
   const folder = FP.driveFolder;
+  if(isTraineeHere()) checkFolder();
   return `<ol class="fp-file-steps">
-      <li>Save your answer sheet <b>today</b> in your ${folder ? `<a href="${e(folder)}" target="_blank" rel="noopener noreferrer">📁 Assessment and Activities Folder</a>` : "📁 Assessment and Activities Folder"}.</li>
+      <li>Save your answer sheet <b>today</b> in your ${folder ? `<a href="${e(folder)}" target="_blank" rel="noopener noreferrer">📁 Assessment and Activities Folder</a>` : "📁 Assessment and Activities Folder"}, before the end of your shift.</li>
       <li>Name it by its naming convention: every space, underscore and capital, and your first name in ( ).</li>
-      <li>Paste its link below and submit, before the end of your shift.</li></ol>`;
+      <li>That’s all: the platform finds it in your folder and checks its name and when it was saved.</li></ol>`;
 }
 // An admin can reword a question (a typo, a clearer phrasing) without a new deploy: "processq:overrides" holds
 // {[set.id]: {[questionIndex]: "the edited wording"}}, loaded once and read by every question shown, trainee
@@ -293,10 +321,10 @@ function renderPage(){
   if(lesson) return `<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
-      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, and submit its link below before the end of your shift. <span class="fp-save" id="fpSave"></span></p></div>
+      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there. <span class="fp-save" id="fpSave"></span></p></div>
     ${moduleCard(lesson)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
-      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day and submitted by its link: its name and its time are checked.</p></div>
+      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day: the platform finds it there and checks its name and when it was saved.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
 }
 
@@ -327,21 +355,8 @@ window.FTProcess = {
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
-  // 📄 the answer sheet's link: the file's name read from Drive and checked, and the time it came in
-  async submitFile(sid){
-    const set = PROCESS_SETS.find(s=>s.id===sid); if(!set || !isTraineeHere()) return;
-    const url = String((document.getElementById("fpFile_" + sid) || {}).value || "").trim();
-    if(!/^https:\/\/(docs|drive)\.google\.com\//.test(url)){ toast("Paste your answer sheet’s Google Drive link (it starts with https://docs.google.com/ or https://drive.google.com/)."); return; }
-    let j = {};
-    try{ const r = await authFetch("/api/drive/name", {url}); j = await r.json().catch(() => ({})); }catch(err){ toast("Couldn’t reach the platform. Check your connection and try again."); return; }
-    if(j.error === "not-shared"){ toast("The platform can’t open this file. Check that it’s your answer sheet in your Assessment and Activities Folder, copy its link again and submit."); return; }
-    if(j.error || !j.name){ toast("That link doesn’t open a file. Open your answer sheet in Drive and copy the link from the address bar."); return; }
-    const x = sheet(sid), at = new Date().toISOString();
-    x.file = {url, name: j.name, at, nameOk: nameMatches(set, j.name), onTime: ptDay(at) <= assignedOn(set)};
-    x.fileTries = (x.fileTries || 0) + 1; if(!x.fileFirstAt) x.fileFirstAt = at;
-    queueSave(); render();
-    toast(x.file.nameOk ? "✓ Answer sheet submitted." : `Submitted, but “${j.name}” doesn’t follow the naming convention. Rename it and submit again.`);
-  },
+  // 📄 look in the trainee's folder for their answer sheets again
+  checkFolder(){ checkFolder(true); render(); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
 
@@ -401,7 +416,7 @@ function renderAdminProcess(){
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
             ${kcAdmin(x)}
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
-              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>${a && a.file ? ` ${fileStatus(s, a)} <a href="${e(a.file.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(a.file.name)}” ↗</a>${a.fileTries > 1 ? ` <span class="fp-muted">(${a.fileTries} submissions)</span>` : ""}` : ` <span class="fp-pill bad">No file submitted</span>`}</div>
+              return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>${a && a.file ? ` ${fileStatus(s, a)} <a href="${e(a.file.link || a.file.url || "#")}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(a.file.name)}” ↗</a>` : ` <span class="fp-pill bad">Not found in their folder</span>`}</div>
                 ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has started the Process Questions yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTProcessAdmin.refresh()">Refresh</button></div></div>`;
@@ -581,10 +596,10 @@ function renderKc(){
     </div>
     ${kcSave(qs)}`;
 }
-// 📄 Submitting the lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, delivered by its link
+// 📄 The lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, found there by the platform
 function kcSave(qs){
   const sets = [...new Set(qs.map(x=>x.set))];
-  return `<div class="card kc-card kc-save"><h3>📄 Submit your answer sheet</h3>
+  return `<div class="card kc-card kc-save"><h3>📄 Save your answer sheet</h3>
     ${fileSteps()}
     ${sets.map(set => fileCard(set, sets.length > 1)).join("")}
   </div>`;
