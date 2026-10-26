@@ -654,7 +654,8 @@ function sheetPages(sheet){
     // (scaled a little to fit, if it must, as far as a reading page is: 0.72)
     if(read) for(let i = 0; i < out.length - 1; i++){
       const p = out[i], nx = out[i + 1], row = nx[0];
-      if(sumH(p) >= capAll * 0.5 || !row.classList.contains("ftdd-pi-row") || p.some(x => x.classList.contains("ftdd-pi-row"))) continue;
+      // (a page that opens with a heading, a section's introduction, keeps its own page at full size)
+      if(sumH(p) >= capAll * 0.5 || /^H[1-6]$/.test(p[0].tagName) || !row.classList.contains("ftdd-pi-row") || p.some(x => x.classList.contains("ftdd-pi-row"))) continue;
       row.classList.add("ftdd-pi-compact");
       if(sumH(p) + sumH(nx) <= capAll / 0.72){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
     }
