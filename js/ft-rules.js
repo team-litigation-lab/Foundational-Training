@@ -391,9 +391,9 @@ const SLIDES = [
     return `<div class="ftr-flow">${stages.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) goes in that day’s folder in your Assessment and Activities Folder, named by its convention.</p>
+    <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
-      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in today’s day folder in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
+      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
       ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
     ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
       ["📒", "3. Your Training Monitoring Sheet", "As soon as a discussion is fully covered: the date and 5 takeaways in complete, specific sentences."],
@@ -445,9 +445,9 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  // the answer sheets, in the Hubstaff how-tos' way: saved in the day's folder, named by the convention, submitted by link on time
+  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention, submitted by link on time
   ["answer-sheets", "Setting Expectations: Submit Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Save It in Today’s Day Folder", steps:["Your Assessment and Activities Folder has a folder for each training day.", "Save each answer sheet in that day’s folder."]},
+      {h:"Save It Daily in Your Assessment and Activities Folder", steps:["Your Assessment and Activities Folder is where you save your outputs, every day.", "Save each answer sheet there on the day you answer it."]},
       {h:"Name It by Its Convention", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "The platform reads your file’s name from Drive and checks it."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
       {h:"Submit Its Link on Time", steps:["Open the file in Drive and copy its link from the address bar.", "Paste it on the Knowledge Check and submit, before the end of your shift."], tip:"Attention to detail, following instructions and timely submission are all checked."},
     ].map((p,i)=>`<div class="ftr-part">

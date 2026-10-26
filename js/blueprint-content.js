@@ -52,7 +52,7 @@ window.LSH_BLUEPRINT = {
       { icon: '🧭', title: 'Getting around', points: [
           '📁 Client Profile: your firm, its rules and the case files assigned to you. Every Practice Session is checked against them.',
           '🛠 Practice Lab: your real-time Practice Sessions and the activities with your trainer.',
-          '✍️ Knowledge Check: every lesson\'s answer sheet in one place. 70% passes, graded in your facilitator\'s style. Save each sheet in the day\'s folder in your Assessment and Activities Folder, named by its convention, and submit its link before the end of your shift.',
+          '✍️ Knowledge Check: every lesson\'s answer sheet in one place. 70% passes, graded in your facilitator\'s style. Save each sheet daily in your Assessment and Activities Folder, named by its convention, and submit its link before the end of your shift.',
           '🎯 Focus: your trainer\'s feedback and what to work on next.',
           '🏠 Main Portal: every program you are in, your evaluations \u2014 and where you log out.'],
         where: 'The top bar, on every page. On a phone, everything is under ☰ Menu.',

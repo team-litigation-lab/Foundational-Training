@@ -6,7 +6,7 @@
    Knowledge Check inside the lesson. The graded view (#/kc) belongs to this feature too, not to the modules.
      • Trainees answer each question (saved to process:<id> as they type) and
        submit the sheet. The answer sheet itself is a file the trainee saves in
-       that day's folder in their Assessment and Activities Folder, named by its
+       their Assessment and Activities Folder that day, named by its
        convention, and submits by its link: the platform reads the file's name
        from Drive and checks it, and records whether it came in on time.
      • Admins open the same ✍️ Knowledge Check button and get every trainee's
@@ -121,7 +121,7 @@ const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
 // The sheet's naming convention, with the trainee's first name: VA_Essentials_Process_Question_Answers (Jamie)
 const fileName = (set, first) => `${set.file} (${first || firstName() || "VA’s first name"})`;
-/* 📄 The answer sheet as a deliverable: the trainee saves it in that day's folder in their Assessment and Activities Folder,
+/* 📄 The answer sheet as a deliverable: the trainee saves it in their Assessment and Activities Folder that day,
    named by its convention (the rule, with "Your First Name": not a name to copy), and submits its link here (the folder's
    sharing is set up in the LSH community, so the trainee doesn't share anything). The platform reads the file's own name from Drive (/api/drive/name), checks it against the
    convention, and records when it came in against its due time: the end of the day the sheet was given (the day the
@@ -155,7 +155,7 @@ function fileCard(set, many){
 function fileSteps(){
   const folder = FP.driveFolder;
   return `<ol class="fp-file-steps">
-      <li>Save your answer sheet in <b>today’s day folder</b> in your ${folder ? `<a href="${e(folder)}" target="_blank" rel="noopener noreferrer">📁 Assessment and Activities Folder</a>` : "📁 Assessment and Activities Folder"}.</li>
+      <li>Save your answer sheet <b>today</b> in your ${folder ? `<a href="${e(folder)}" target="_blank" rel="noopener noreferrer">📁 Assessment and Activities Folder</a>` : "📁 Assessment and Activities Folder"}.</li>
       <li>Name it by its naming convention: every space, underscore and capital, and your first name in ( ).</li>
       <li>Paste its link below and submit, before the end of your shift.</li></ol>`;
 }
@@ -293,10 +293,10 @@ function renderPage(){
   if(lesson) return `<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
-      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet in today’s day folder in your Assessment and Activities Folder, named by its convention, and submit its link below before the end of your shift. <span class="fp-save" id="fpSave"></span></p></div>
+      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, and submit its link below before the end of your shift. <span class="fp-save" id="fpSave"></span></p></div>
     ${moduleCard(lesson)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
-      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in that day's folder in your Assessment and Activities Folder and submitted by its link: its name and its time are checked.</p></div>
+      <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day and submitted by its link: its name and its time are checked.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
 }
 
@@ -581,7 +581,7 @@ function renderKc(){
     </div>
     ${kcSave(qs)}`;
 }
-// 📄 Submitting the lesson's answer sheet: saved in the day's folder, named by its convention, delivered by its link
+// 📄 Submitting the lesson's answer sheet: saved that day in the Assessment and Activities Folder, named by its convention, delivered by its link
 function kcSave(qs){
   const sets = [...new Set(qs.map(x=>x.set))];
   return `<div class="card kc-card kc-save"><h3>📄 Submit your answer sheet</h3>

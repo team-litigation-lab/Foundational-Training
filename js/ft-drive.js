@@ -64,7 +64,7 @@ function linksCard(auto = true){
   return `<div class="card fdr-card"><h2>📁 My Drive links</h2>
     <p class="fdr-muted">Your Task Tracker and Monitoring Sheet live in your <b>Assessment and Activities Folder</b> in Google Drive, where the system checks them for you.</p>
     ${stepsHtml(auto)}
-    ${row("folder", "📁 Assessment and Activities Folder (where you save each day’s outputs, in its day folder)", "https://drive.google.com/drive/folders/…", "")}
+    ${row("folder", "📁 Assessment and Activities Folder (where you save your outputs, every day)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Your own copy of the tracker. Link the Daily Task Tracker tab.")}
     ${row("monitor", "📒 Training Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "One entry per discussion: the date, 5 takeaways, 3 questions, and your rating.")}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
