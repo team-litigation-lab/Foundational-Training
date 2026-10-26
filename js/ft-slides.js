@@ -118,7 +118,7 @@ const css = `
    slide and its Previous / Next bar fit on one screen (fitPages() below sizes the page to what's left). */
 @media (min-width:1000px){
   body.ft-fit main:has(#lessonStage){display:flow-root;padding-top:12px;padding-right:8px !important;}
-  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){float:right;clear:right;width:176px;margin:0 0 10px;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage):not(.back-link){float:right;clear:right;width:176px;margin:0 0 10px;}
   body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 188px 0 0;}
   body.ft-fit main:has(#lessonStage) > #navBackSlot:empty{display:none;}
   /* the footer line about an inch under the slide, and the page ends there */
@@ -228,26 +228,44 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
   main:has(> #lessonStage) #lessonStage:not(:fullscreen) .stage-presenter{display:none !important;}
   /* a wider side column (240 px, from 200), so the presenter in it is bigger */
   body:not(.ft-fit) main:has(> #lessonStage){grid-template-columns:minmax(0,1fr) 240px !important;}
-  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){width:240px !important;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage):not(.back-link){width:240px !important;}
   body.ft-fit main:has(#lessonStage) > #lessonStage{margin-right:256px !important;}
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:flex-end;height:auto;margin:auto -16px 0 0 !important;justify-content:normal;
-    transform:scaleX(-1);pointer-events:none;user-select:none;filter:drop-shadow(0 10px 16px rgba(0,0,0,.35));}
+  /* she stands at the foot of the column, as wide as it, her bottom on the slide's bottom edge; the artwork ends at
+     her knees, so her legs fade out over the last fifth instead of stopping on a hard line */
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:stretch;margin:auto 0 0 !important;padding:0 !important;pointer-events:none;user-select:none;position:relative;z-index:30;overflow:visible;}
+  /* her wand reaches over the slide: nothing she stands in clips her, and she is drawn above the stage */
+  main:has(> #lessonStage) .ls-top:has(> .ft-side-presenter){overflow:visible !important;position:relative;z-index:30;}
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:var(--pw, 100%);max-width:none;height:auto;margin-left:calc((100% - var(--pw, 100%)) * .55);transform:scaleX(-1);
+    filter:drop-shadow(0 10px 16px rgba(0,0,0,.25));-webkit-mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);
+    transform-origin:50% 100%;animation:ftPresFloat 6s ease-in-out infinite;will-change:transform;}
+  @keyframes ftPresFloat{
+    0%,100%{transform:scaleX(-1) translateY(0) rotate(0deg);}
+    25%{transform:scaleX(-1) translateY(-5px) rotate(-.6deg);}
+    50%{transform:scaleX(-1) translateY(-8px) rotate(0deg);}
+    75%{transform:scaleX(-1) translateY(-4px) rotate(.6deg);}
+  }
+  @media (prefers-reduced-motion: reduce){ main:has(> #lessonStage) .ls-top > .ft-side-presenter img{animation:none;} }
 }`;
 document.head.appendChild(sideCss);
 function placePresenter(){
   const top = document.querySelector("main > .ls-top"), stage = document.getElementById("lessonStage");
   let img = top && top.querySelector(":scope > .ft-side-presenter");
-  if(!top || !stage || window.innerWidth <= 1000 || document.fullscreenElement){ if(img) img.style.width = "0px"; return; }
+  if(!top || !stage || window.innerWidth <= 1000 || document.fullscreenElement){ if(img) img.style.display = "none"; return; }
   if(!img){
-    img = document.createElement("img"); img.className = "ft-side-presenter"; img.alt = ""; img.setAttribute("aria-hidden", "true");
-    img.src = typeof PRESENTER_IMG !== "undefined" ? PRESENTER_IMG : "/img/presenter.webp";
+    img = document.createElement("div"); img.className = "ft-side-presenter"; img.setAttribute("aria-hidden", "true");
+    img.innerHTML = `<img alt="" src="${typeof PRESENTER_IMG !== "undefined" ? PRESENTER_IMG : "/img/presenter.webp"}">`;
     top.appendChild(img);
   }
-  // as big as the room left under the controls, down to the slide's bottom edge (and no wider than the column)
-  img.style.width = "0px";
-  const room = stage.getBoundingClientRect().bottom - img.getBoundingClientRect().top - 4;
-  const w = Math.min(top.clientWidth + 16, 300, Math.floor(room * 564 / 520));   // (she may stand 16 px into the page's margin)
-  img.style.width = (w < 80 ? 0 : w) + "px";
+  // bigger than the column (she leans out past its right edge), standing down to the foot of the Previous / Next bar
+  img.style.display = ""; img.style.height = "0px"; img.style.marginTop = "";
+  const nav = stage.querySelector(".slide-nav"), foot = (nav || stage).getBoundingClientRect().bottom;
+  const r = img.getBoundingClientRect(), room = foot + 36 - r.top;   // (she stands a little below the bar)
+  if(room < 120){ img.style.display = "none"; return; }
+  const w = Math.min(Math.round(r.width * 1.5), Math.floor(room * 564 / 520), 420);   // her width; her height follows
+  const h = Math.round(w * 520 / 564);
+  img.style.setProperty("--pw", w + "px");
+  img.style.height = h + "px";
+  img.style.marginTop = Math.max(0, room - h) + "px";   // her feet's line on the bar's foot
 }
 // A deck page (.cs-page) is sized to the room it has, so nothing needs scrolling: on the lesson page the
 // whole page fits the screen (the slide, its Previous / Next bar and, about an inch below, the footer line);
@@ -397,4 +415,52 @@ if(typeof Narrator !== "undefined"){
   };
   window.ftSayText = ftSayText;
 }
+})();
+
+/* The Previous / Next bar is drawn like the Activity decks': one white bar with ← Previous, "Step N of M" and the
+   progress dots beside it, Autoplay and Next →. The dots leave their row above the slide, so the slide gets that
+   height (lessons and the orientation, not full screen or the room's window). */
+(function(){
+  const __after = window.afterRender;
+  window.afterRender = function(){
+    const r = __after ? __after.apply(this, arguments) : undefined;
+    try{
+      const st = document.querySelector("#lessonStage:not(:fullscreen)"), dots = st && st.querySelector(":scope > .slide-dots"), nav = st && st.querySelector(":scope > .slide-nav");
+      const c = nav && nav.querySelector(".slide-counter");
+      if(dots && c && !document.getElementById("audienceRoot")){ dots.classList.add("slide-dots-nav"); c.insertAdjacentElement("afterend", dots); }
+      nextUp(st);
+    }catch(e){}
+    return r;
+  };
+  // 👉 "Next up" over the Next button: what the next slide is (its title), or where Next goes on the last slide
+  function nextUp(st){
+    document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
+    const nav = st && st.querySelector(":scope > .slide-nav");
+    if(!nav || document.getElementById("audienceRoot") || typeof buildDaySlides !== "function") return;
+    const d = (typeof DAYS !== "undefined" && DAYS.find(x => x.id === state.dayId)) || (window.FT_ORIENTATION && FT_ORIENTATION.id === state.dayId ? FT_ORIENTATION : null);
+    if(!d) return;
+    const list = buildDaySlides(d), i = state.lessonSlide || 0, cur = list[i], nx = list[i + 1], secs = d.sections || [];
+    const own = cur && cur.type === "ftSection" && secs[cur.index] && (window.FT_NEXT_UP || {})[secs[cur.index].id];
+    const titleOf = x => !x ? "" : x.type === "ftSection" ? (secs[x.index] || {}).h : x.type === "ftDivider" ? (secs[x.before] || {}).h : "";
+    const isOrient = window.FT_ORIENTATION && d.id === FT_ORIENTATION.id;
+    const t = own || (nx ? titleOf(nx) : (isOrient ? "🧰 Know Your Tools, then the Reading Task" : "📋 This lesson’s Classroom Activity"));
+    if(!t) return;
+    nav.style.position = "relative";
+    const el = document.createElement("div"); el.className = "ftr-nextup"; el.setAttribute("role", "status");
+    el.innerHTML = `<button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span></span>`;
+    el.querySelector("span").textContent = String(t).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+    nav.appendChild(el);
+  }
+  const css = document.createElement("style");
+  css.textContent = `/* the lesson card (lessons and the orientation, the navy panel the slide sits in) has the American-flag photo, under a
+   navy wash so the slide and its buttons stand out, like the page behind the Activity decks */
+#lessonStage.lesson-stage:not(:fullscreen){background:linear-gradient(135deg, rgba(31,36,64,.74) 0%, rgba(43,49,88,.66) 60%, rgba(53,60,104,.60) 100%), url("/img/bg-flag-law.webp") center / cover no-repeat !important;}
+.lesson-stage .slide-done-banner{display:none !important;}   /* the last slide is the same size as the others; Next up says what's next */
+#lessonStage:not(:fullscreen) > .slide-nav{background:rgba(255,255,255,.82);border:1px solid rgba(38,43,69,.12);border-radius:14px;padding:8px 12px !important;margin:10px 0 0 !important;backdrop-filter:blur(6px);gap:12px;flex-wrap:nowrap;}
+#lessonStage:not(:fullscreen) > .slide-nav .slide-counter{margin-left:auto;font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;}
+.lesson-stage .slide-dots-nav{margin:0 auto 0 0 !important;justify-content:center;flex-wrap:nowrap;overflow:hidden;gap:5px !important;min-width:0;max-width:34%;}
+.lesson-stage .slide-dots-nav .slide-dot{background:#C9CFDD;}
+.lesson-stage .slide-dots-nav .slide-dot.visited{background:#8E97C4;}
+.lesson-stage .slide-dots-nav .slide-dot.active{background:#DB8437;}`;
+  document.head.appendChild(css);
 })();

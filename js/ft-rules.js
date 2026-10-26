@@ -253,7 +253,7 @@ const habitCard = h=>`<div class="ftr-chan ftr-test">
       <ul class="ftr-list">${h.lines.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
       ${h.to ? `<div class="ftr-to"><b>Send To</b>${h.to.map(a=>`<span>${esc(a)}</span>`).join("")}</div>` : ""}
       ${h.example ? `<div class="ftr-eg"><div>❌ <b>General:</b> “${esc(h.example[0])}”</div><div>✅ <b>Specific:</b> “${esc(h.example[1])}”</div></div>` : ""}
-      ${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}
+      ${h.links.length ? `<div class="ftr-linkgrid">${h.links.map(l=>`<div class="ftr-aux"><span><b>${esc(l[0])}</b><br><small>${esc(l[2])}</small></span><a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">Open ↗</a></div>`).join("")}</div>` : ""}
     </div>`;
 
 const SLIDES = [
@@ -302,20 +302,22 @@ const SLIDES = [
     ${NOTE_PARTS.filter(p=>p.fig).map(p=>fig(FIGS[p.fig]())).join("")}</div>`],
   ["time-adjustment", "Lost Hours? Manual Time Adjustment Request", ()=>`
     <p class="ftr-sub">If you lose hours on your tracker because of a system issue, send this request by email. Keep it for future reference.</p>
-    <div class="ftr-part">
+    <div class="ftr-adj"><div class="ftr-part">
+      <div class="ftr-part-h">📧 The Email</div>
       ${copyRow("Subject", TIME_ADJ.subject)}
       ${copyRow("Send To", TIME_ADJ.to)}
       ${TIME_ADJ.cc.map(c=>copyRow("CC", c[1], c[0])).join("")}
-      <p class="ftr-when" style="margin-top:10px!important;"><b>In the Email:</b></p>
+    </div><div class="ftr-part">
+      <div class="ftr-part-h">📝 In the Email</div>
       <ul class="ftr-list">${TIME_ADJ.include.map(l=>`<li>${esc(l)}</li>`).join("")}</ul>
-    </div>`],
+    </div></div>`],
   // Breaks and auxes
   ["schedule", "Breaks: Your Schedule and Your Hour of Breaks", ()=>
     rule(`⏰ Hubstaff Tracking Is Strict: ${esc(SHIFT)}`, "We follow a strict schedule. Log out no later than 5:00 PM. No tracking is allowed beyond it.") +
     rule("🕗 Managing Your Time Is Essential", "If you don’t finish a deliverable by the end of your shift, stop tracking and finish it unpaid, since you didn’t manage your time well. You may keep tracking only if you ask your trainer and they approve it.") +
     rule("🕖 Log In Up to 10 Minutes Early", "You may log in up to 10 minutes before your shift, no earlier. Use it to prepare your tools, and as a buffer for any break beyond your 1-hour total.") +
     rule("☕ Breaks: 1 Hour Total, Maximum", "The prescribed total break during training is 1 hour. How you split it is up to you, as long as you don’t go over 1 hour. Going over is your choice only if you accept not getting 8 hours for your shift, since tracking beyond 5:00 PM isn’t allowed.")],
-  ["auxes", "Auxes: Reporting Your Status", ()=>`
+  ["auxes", "Auxes: Reporting Your Status", ()=>`<div class="ftr-bold">
     <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post the update in both channels during training:</p>
     <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
       <div class="ftr-chan-h">${esc(c.ch)}</div>
@@ -327,7 +329,7 @@ const SLIDES = [
       <div class="ftr-part-h">💬 Your Discord Profile Status</div>
       <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
       <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
-    </div>`],
+    </div></div>`],
   // Camera, then Discord
   ["camera", "Camera: On in Every Meeting", ()=>
     `<div class="ftr-goal"><b>📷 Your Camera Is Part of Showing Up</b><p>Training is a simulation of working with a client, and your trainers are your first clients: in every meeting and classroom discussion, they see you.</p></div>` +
@@ -425,20 +427,14 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
 // split into pages by the engine. It also sets the progress line under the lesson's title (--ftr-prog).
 // The orientation's last slide goes on to 🧰 Know Your Tools (it has no Activity deck), then the Reading Task: its
 // 📋 Classroom Activity button and the banner under it say so (js/ft-day-decks.js sends the button there).
-// "What's next" on a slide is a small pop-up card by the Next button, not a line on the slide (✕ closes it)
+// "What's next" on a slide, in its own words, for the Next up card by the Next button (js/ft-slides.js)
 const NEXT_UP = {why: "Your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training."};
-function orientNextUp(){
-  document.querySelectorAll(".ftr-nextup").forEach(x=>x.remove());
-  const s = ORIENT.sections[state.lessonSlide || 0], t = s && NEXT_UP[s.id], nav = document.querySelector("body.ft-orient .lesson-stage .slide-nav");
-  if(!t || !nav || FT_AUDIENCE()) return;
-  nav.style.position = nav.style.position || "relative";
-  nav.insertAdjacentHTML("beforeend", `<div class="ftr-nextup" role="status"><button type="button" class="ftr-nextup-x" aria-label="Close" onclick="this.parentNode.remove()">✕</button><b>Next up</b><span>${esc(t)}</span></div>`);
-}
+// (js/ft-slides.js draws the "Next up" card on every slide; this slide's own wording replaces the next slide's title)
+window.FT_NEXT_UP = NEXT_UP;
+function orientNextUp(){}
 function orientLastStep(){
   const b = document.querySelector('.slide-nav button[onclick^="goToKnowledgeCheckWithInterstitial"]');
   if(b){ b.textContent = "🧰 Next: Know Your Tools →"; b.title = "The orientation is done: go on to Know Your Tools"; }
-  const n = document.querySelector(".slide-done-banner");
-  if(n) n.textContent = "🎉 That’s the whole orientation. Next: 🧰 Know Your Tools, then the Reading Task, What Is Personal Injury?";
 }
 function fitOrient(w){
   try{
@@ -667,15 +663,27 @@ body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:18px;fon
 body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:16px !important;line-height:1.35 !important;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
+/* a slide whose body text is all bold (Auxes) */
+body.ft-orient #lessonSlideWrap .ftr-bold :is(p, span, li, code, .ftr-when, .ftr-sub){font-weight:700 !important;}
+/* the habit cards' links (Sample Updated Trackers, the Monitoring Sheet): a navy block ruled in orange */
+body.ft-orient #lessonSlideWrap .ftr-linkgrid{margin-top:12px;background:#1E2340;border:2px solid #E8590C;border-radius:12px;overflow:hidden;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux{padding:10px 14px !important;margin:0 !important;border:0 !important;border-top:1.5px solid #E8590C !important;background:transparent;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux:first-child{border-top:0 !important;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux b{color:#F4B77A !important;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux small{color:#E6E8F2 !important;}
+body.ft-orient #lessonSlideWrap .ftr-linkgrid .ftr-aux .btn{background:#fff !important;color:#1E2340 !important;border-color:#E8590C !important;}
+body.ft-orient #lessonSlideWrap .ftr-adj{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-adj .ftr-part{margin:0;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-adj{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
-body.ft-orient .ftr-nextup{position:absolute;right:0;bottom:calc(100% + 10px);z-index:6;max-width:340px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:10px 34px 10px 14px;box-shadow:0 10px 26px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;}
-body.ft-orient .ftr-nextup::after{content:"";position:absolute;right:28px;bottom:-10px;border:8px solid transparent;border-top-color:#E8590C;border-bottom:0;}
-body.ft-orient .ftr-nextup b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;margin-bottom:2px;}
-body.ft-orient .ftr-nextup span{display:block;color:#fff;}
-body.ft-orient .ftr-nextup-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 11px/1 'Inter',sans-serif;cursor:pointer;}
+.ftr-nextup{position:absolute;right:0;bottom:calc(100% + 10px);z-index:6;max-width:340px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:10px 34px 10px 14px;box-shadow:0 10px 26px rgba(30,35,64,.35);font:500 13.5px/1.45 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;}
+.ftr-nextup::after{content:"";position:absolute;right:28px;bottom:-10px;border:8px solid transparent;border-top-color:#E8590C;border-bottom:0;}
+.ftr-nextup b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;margin-bottom:2px;}
+.ftr-nextup span{display:block;color:#fff;}
+.ftr-nextup-x{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font:700 11px/1 'Inter',sans-serif;cursor:pointer;}
 @keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
