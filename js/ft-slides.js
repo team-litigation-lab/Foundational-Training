@@ -232,8 +232,10 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
   body.ft-fit main:has(#lessonStage) > #lessonStage{margin-right:256px !important;}
   /* she stands at the foot of the column, as wide as it, her bottom on the slide's bottom edge; the artwork ends at
      her knees, so her legs fade out over the last fifth instead of stopping on a hard line */
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:stretch;margin:auto 0 0 !important;padding:0 !important;pointer-events:none;user-select:none;}
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:var(--pw, 100%);max-width:none;height:auto;margin-left:calc((100% - var(--pw, 100%)) * .3);transform:scaleX(-1);
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:stretch;margin:auto 0 0 !important;padding:0 !important;pointer-events:none;user-select:none;position:relative;z-index:30;overflow:visible;}
+  /* her wand reaches over the slide: nothing she stands in clips her, and she is drawn above the stage */
+  main:has(> #lessonStage) .ls-top:has(> .ft-side-presenter){overflow:visible !important;position:relative;z-index:30;}
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:var(--pw, 100%);max-width:none;height:auto;margin-left:calc((100% - var(--pw, 100%)) * .55);transform:scaleX(-1);
     filter:drop-shadow(0 10px 16px rgba(0,0,0,.25));-webkit-mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);
     transform-origin:50% 100%;animation:ftPresFloat 6s ease-in-out infinite;will-change:transform;}
   @keyframes ftPresFloat{
@@ -257,9 +259,9 @@ function placePresenter(){
   // bigger than the column (she leans out past its right edge), standing down to the foot of the Previous / Next bar
   img.style.display = ""; img.style.height = "0px"; img.style.marginTop = "";
   const nav = stage.querySelector(".slide-nav"), foot = (nav || stage).getBoundingClientRect().bottom;
-  const r = img.getBoundingClientRect(), room = foot - r.top - 2;
+  const r = img.getBoundingClientRect(), room = foot + 36 - r.top;   // (she stands a little below the bar)
   if(room < 120){ img.style.display = "none"; return; }
-  const w = Math.min(Math.round(r.width * 1.3), Math.floor(room * 564 / 520), 360);   // her width; her height follows
+  const w = Math.min(Math.round(r.width * 1.5), Math.floor(room * 564 / 520), 420);   // her width; her height follows
   const h = Math.round(w * 520 / 564);
   img.style.setProperty("--pw", w + "px");
   img.style.height = h + "px";
