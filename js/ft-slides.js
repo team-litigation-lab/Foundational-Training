@@ -233,7 +233,7 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
   /* she stands at the foot of the column, as wide as it, her bottom on the slide's bottom edge; the artwork ends at
      her knees, so her legs fade out over the last fifth instead of stopping on a hard line */
   main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:stretch;margin:auto 0 0 !important;padding:0 !important;pointer-events:none;user-select:none;}
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:100%;height:auto;transform:scaleX(-1);
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:var(--pw, 100%);max-width:none;height:auto;margin-left:calc((100% - var(--pw, 100%)) * .3);transform:scaleX(-1);
     filter:drop-shadow(0 10px 16px rgba(0,0,0,.25));-webkit-mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);
     transform-origin:50% 100%;animation:ftPresFloat 6s ease-in-out infinite;will-change:transform;}
   @keyframes ftPresFloat{
@@ -254,14 +254,16 @@ function placePresenter(){
     img.innerHTML = `<img alt="" src="${typeof PRESENTER_IMG !== "undefined" ? PRESENTER_IMG : "/img/presenter.webp"}">`;
     top.appendChild(img);
   }
-  // the column's width, as tall as the room left under the controls allows (down to the slide's bottom edge)
+  // bigger than the column (she leans out past its right edge), standing down to the foot of the Previous / Next bar
   img.style.display = ""; img.style.height = "0px"; img.style.marginTop = "";
-  const r = img.getBoundingClientRect(), room = stage.getBoundingClientRect().bottom - r.top - 2;
-  const need = Math.round(r.width * 520 / 564);   // the picture's height at the column's width
+  const nav = stage.querySelector(".slide-nav"), foot = (nav || stage).getBoundingClientRect().bottom;
+  const r = img.getBoundingClientRect(), room = foot - r.top - 2;
   if(room < 120){ img.style.display = "none"; return; }
-  img.style.height = Math.min(need, room) + "px";
-  // the panel's bottom on the slide's bottom edge
-  img.style.marginTop = Math.max(0, room - Math.min(need, room)) + "px";
+  const w = Math.min(Math.round(r.width * 1.3), Math.floor(room * 564 / 520), 360);   // her width; her height follows
+  const h = Math.round(w * 520 / 564);
+  img.style.setProperty("--pw", w + "px");
+  img.style.height = h + "px";
+  img.style.marginTop = Math.max(0, room - h) + "px";   // her feet's line on the bar's foot
 }
 // A deck page (.cs-page) is sized to the room it has, so nothing needs scrolling: on the lesson page the
 // whole page fits the screen (the slide, its Previous / Next bar and, about an inch below, the footer line);
