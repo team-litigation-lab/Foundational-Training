@@ -117,7 +117,7 @@ function kindOf(s, html){
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
-  return {ic: "📝", label: "Read & do"};
+  return {ic: "📝", label: "Read & Do"};
 }
 const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
 const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
@@ -402,8 +402,7 @@ const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-gh
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
   const h = String(s.h || ""), out = [];
-  // Day 1's Reading Task: its questions are the Reading Task sheet of Lesson 1's ✍️ Knowledge Check (open before the lesson)
-  if(DD.day === 1 && s.id === "reading" && root.FTProcess) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTProcess.openLesson(1)">✍️ Answer the Reading Task questions</button>`);
+  // (Day 1's Reading Task has its ✍️ Knowledge Check button on the slide itself, under the reading: FTDayDecks.toKC)
   const has = re => re.test(h);
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
@@ -726,7 +725,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
    {d, s} is the day and the slide id it opens (build/days/), {go} a platform page instead.
    ============================================================ */
 // the pills a row carries, as the card names its kind
-const PILLS = {classroom: "Classroom", read: "Read & do", interactive: "Interactive activity", homework: "Homework",
+const PILLS = {classroom: "Classroom", read: "Read & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
@@ -823,6 +822,13 @@ const LESSON_CARDS = {
 };
 // open a row's slide: the deck loads first, so the slide is found by its id (the agenda and the split-off Call
 // Listening slide shift the numbers); a slide the deck doesn't have opens the day's agenda
+// ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
+// which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
+function toKC(l){
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null;
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: s ? s.h : "", l: Number(l)})); }catch(e){}
+  if(root.FTProcess) FTProcess.openLesson(l);
+}
 function openSlide(n, id, alt){
   loadDecks().then(() => {
     const d = decks() && decks()[n];
@@ -1155,7 +1161,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -1612,6 +1618,8 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
+.ft-body .ftdd-embed.ftdd-embed-pdf{height:max(360px, 52vh);}
+.ft-body .ftdd-kc-go{display:flex;justify-content:center;margin:12px 0 4px;}
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
