@@ -1427,7 +1427,7 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 .ftdd-tools{display:block;height:100%;min-height:0;}
 .ftdd-tools-bar{flex-wrap:wrap;}
 .ftdd-tools-bar .ftdd-tools-list{flex-direction:row;flex-wrap:wrap;gap:6px;width:100%;}
-.ftdd-tools-bar .ftdd-tools-tab{flex:1 1 0;justify-content:center;padding:4px 6px;font-size:12px;line-height:1.15;white-space:normal;text-align:center;background:#fff;}
+.ftdd-tools-bar .ftdd-tools-tab{flex:1 1 0;justify-content:center;padding:4px 6px;font-size:13.5px;font-weight:800;line-height:1.15;white-space:normal;text-align:center;background:#fff;}
 .ftdd-tools-bar .ftdd-tools-tab span:last-child{overflow:visible;text-overflow:clip;white-space:normal;}
 .ftdd-tools-bar .ftdd-tools-tab.on{background:#E8590C !important;border-color:#E8590C !important;color:#fff !important;}
 .ftdd-tools-list{display:flex;flex-direction:column;gap:4px;min-height:0;}
