@@ -209,12 +209,13 @@ The Litigation Week (Case Management) and Executive Week (EA / PA) calendars wer
   12. Building your habits: Update Your Trackers.
   13–14. The Daily Task Tracker: the sheet (two columns), the other tabs and the daily check, in high-contrast tables.
   15. Your Training Monitoring Sheet, embedded, with 📁 Link My Task Tracker and Monitoring Sheet.
-  16. Building your habits: Send Your EOD Email, with the Training Matrix embedded beside it (its Google Doc preview, with Open or Download ↗).
+  16. Building your habits: Send Your EOD Email.
   17. The EOD template, with 📋 Copy the Template.
-  18. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
-  19. You're a General VA, ready for any role.
-  20. Your work and the use of AI.
-  21. Free Upskill Training, after your shift.
+  18. Your Training Matrix: the matrix embedded on the left, its cover picture on the right (`TRAINING_MATRIX_IMG`, once it is in the repository).
+  19. Setting expectations: training isn't the end goal, it's hard on purpose, your trainers are your first clients.
+  20. You're a General VA, ready for any role.
+  21. Your work and the use of AI.
+  22. Free Upskill Training, after your shift.
 - **How the slides work:**
   - A slide's HTML is built when it's shown, so the file name has the trainee's name and the Copy buttons work.
   - The Hubstaff picture is SVG, drawn after the trainer's screenshot.

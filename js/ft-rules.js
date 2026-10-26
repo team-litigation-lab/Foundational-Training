@@ -69,6 +69,8 @@ const HABITS = [
    }
 ];
 // The EOD email (Setting of Expectations).
+// The Training Matrix's cover picture, shown beside the embedded matrix (null until the picture is in the repository)
+const TRAINING_MATRIX_IMG = null;
 const EOD = {
   subject:"Daily Report mm/dd/yy", subjectAlt:"EOD Report mm/dd/yy",
   parts:[["Accomplishments/Completed Tasks:", "All the tasks you accomplished and completed for the day.", 4],
@@ -372,8 +374,7 @@ const SLIDES = [
     (FT_AUDIENCE() ? "" : `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>`) + `</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-habit-emb"><div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>
-      <div class="ftr-keep"><div class="ftr-part-h">🗂 Training Matrix</div><p class="ftr-tip">${esc(HABITS[0].matrix.note)}</p>${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div></div>`],
+    <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
   ["eod", "Your EOD Email: The Template", ()=>`
     <div class="ftr-part ftr-eod">
       <div class="ftr-part-h">📧 Your EOD Email</div>
@@ -382,6 +383,12 @@ const SLIDES = [
       <div class="ftr-links" style="margin-top:10px;"><button class="btn btn-navy btn-sm" type="button" data-copy="${esc(EOD.body)}" data-toast="Copied. Paste it in your EOD email." onclick="ftrCopy(this)">📋 Copy the Template</button></div>
     </div>
     <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
+  // the Training Matrix on its own slide, after the EOD template: the matrix itself embedded on the left, its cover
+  // (TRAINING_MATRIX_IMG, the picture in the document) on the right
+  ["matrix", "Your Training Matrix", ()=>`
+    <p class="ftr-sub">${esc(HABITS[0].matrix.note)} Use it for the <b>On queue for tomorrow</b> part of your EOD email.</p>
+    <div class="ftr-matrix"><div class="ftr-keep">${embed(HABITS[0].matrix.url, "Training Matrix", HABITS[0].matrix.url)}</div>
+      ${TRAINING_MATRIX_IMG ? `<figure class="ftr-matrix-img"><img src="${esc(TRAINING_MATRIX_IMG)}" alt="Virtual Assistant Training Matrix"></figure>` : ""}</div>`],
   // Setting of expectations
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
@@ -636,9 +643,12 @@ body.ft-orient #lessonSlideWrap .ftr-goal{border:1.5px solid #E8590C;border-left
 body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left:5px solid #C0392B;}
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
-body.ft-orient #lessonSlideWrap .ftr-habit-emb{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start;}
-body.ft-orient #lessonSlideWrap .ftr-habit-emb .ftr-embed{height:max(300px, min(50vh, 30cqw)) !important;}
-@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-habit-emb{grid-template-columns:minmax(0,1fr);} }
+/* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
+body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
+body.ft-orient #lessonSlideWrap .ftr-matrix:has(.ftr-matrix-img){grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);}
+body.ft-orient #lessonSlideWrap .ftr-matrix .ftr-embed{height:max(320px, min(56vh, 34cqw)) !important;}
+body.ft-orient #lessonSlideWrap .ftr-matrix-img{margin:0;} body.ft-orient #lessonSlideWrap .ftr-matrix-img img{display:block;width:100%;height:auto;border:2px solid #343C66;border-radius:12px;box-shadow:0 4px 14px rgba(30,35,64,.14);}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-matrix{grid-template-columns:minmax(0,1fr);} }
 /* The Sheet: two columns, so its three tables fill the width */
 body.ft-orient #lessonSlideWrap .ftr-cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:14px;align-items:start;}
 body.ft-orient #lessonSlideWrap .ftr-cols2 .ftr-def{grid-template-columns:minmax(0,36%) minmax(0,1fr);}
