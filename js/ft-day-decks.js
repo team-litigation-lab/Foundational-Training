@@ -359,9 +359,45 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   });
   // a lesson that runs over several days flows straight on into its next day, with a divider between the days
   const lid = lessonOfDay(Number(d.day)), days = lid != null ? (LESSON_CARDS[lid] || {days: []}).days : [];
-  if(days.includes(Number(d.day) + 1)) out.push({id: "next-day", h: `End of Day ${d.day}`, divider: true, html: ""});
-  return out;
+  const deck = inCardOrder(Number(d.day), out);
+  if(days.includes(Number(d.day) + 1)) deck.push({id: "next-day", h: `End of Day ${d.day}`, divider: true, html: ""});
+  return deck;
 };
+/* 📋 The deck runs in the day's own order, the order of its card: each of the card's rows is a stop, in turn. A row that is
+   a slide brings that slide (with the slides that continue it: the reading's parts, a recording set's log); a row that
+   opens something else (💬 Classroom Discussion: the lesson; 🎬 the video; ✍️ Process Questions: the Knowledge Check) is a
+   slide of its own with that button. A slide no row names keeps its place, right after the slide before it in the guide. */
+function inCardOrder(n, out){
+  const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return out;
+  const head = out.filter(s => s.agenda), body = out.filter(s => !s.agenda), rows = dayRows(n), used = new Set(), ordered = [];
+  const take = s => { if(!used.has(s)){ used.add(s); ordered.push(s); } };
+  rows.forEach((r, k) => {
+    if(r.s){
+      const i = body.findIndex(s => s.id === r.s); if(i < 0) return;
+      take(body[i]);
+      for(let j = i + 1; j < body.length && (body[j].id.startsWith(r.s + "-") || (body[j].id === "listen" && /call listening/i.test(body[i].h))); j++) take(body[j]);
+      return;
+    }
+    if(r.go || r.run) ordered.push({id: `go-${k}`, h: r.t, launch: r, html: ""});
+  });
+  body.forEach((s, i) => { if(used.has(s)) return;
+    let at = -1; for(let j = i - 1; j >= 0; j--){ const x = ordered.indexOf(body[j]); if(x >= 0){ at = x; break; } }
+    ordered.splice(at + 1, 0, s); used.add(s); });
+  return head.concat(ordered);
+}
+// the day's card rows, as its card lists them (dayCard)
+function dayRows(n){
+  const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return [];
+  return standardRows(n, c, lid, n === c.days[0], lessonTitle(lid), cardRows(c, (X.data && X.data.days) || {}).filter(r => rowDay(c, r) === n));
+}
+// a stop that opens something other than a slide: the lesson, the video, the day's Knowledge Check
+function launchSlide(s){
+  const c = cardOf(lessonOfDay(DD.day)), r = s.launch;
+  const label = r.go === "lesson" ? "▶ Start Training" : /toKC/.test(r.run || "") ? "✍️ Knowledge Check →" : /ftVideoOrAsk/.test(r.run || "") ? "🎬 Open the video" : "Open →";
+  return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
+    ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
+    <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="${c ? rowGo(c, r) : ""}">${label}</button></div>`;
+}
 // 🔀 the divider at the end of a day whose lesson continues tomorrow: today is done, and the next day's instructions
 // begin on the next slide (Next goes straight on into that day's deck)
 function dividerSlide(n){
@@ -495,7 +531,7 @@ function taskSlide(n, info){
 }
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day) : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
+  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -506,7 +542,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null || s.divider ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
+      <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}">${body}</div>`}
@@ -1000,9 +1036,13 @@ function nextKC(){
 function toKC(l){
   const d0 = decks() && decks()[DD.day];
   if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
-  // the way back is to the classroom's next activity (the slide after this one)
-  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [], s = list[DD.i + 1] || list[DD.i] || null;
-  const h = s ? String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity") : "";
+  // the way back is to the day's next activity: the slide after the day's ✍️ Process Questions stop (wherever the sheet
+  // was opened from: that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
+  // end of a day whose lesson goes on, that's the divider into the next day
+  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
+  const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
+  const from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i, s = list[from + 1] || null;
+  const h = !s ? "" : s.divider ? `Day ${DD.day + 1}` : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l)})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }
@@ -1375,6 +1415,8 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   hintClose: toolsHintClose,
   tools: () => TOOLS.map(t => t.name),
   // the index of a day's first slide of its own (after its day card and Training Agenda)
+  // the index of a slide by its id (the guide's own slide ids, as js/ft-day-decks-data.js has them)
+  at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
   first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
