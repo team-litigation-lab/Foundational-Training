@@ -1213,7 +1213,7 @@ if(!document.getElementById("ftdd-deck-font")){
 (function(){ const st = document.createElement("style"); st.id = "ft-day-decks"; st.textContent = `
 main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:flex;flex-direction:column;gap:10px;}
 /* the day picker and the day's lesson sit in rails either side, so the slide itself takes the width */
-.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:stretch;min-height:0;}
+.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 196px;gap:12px;align-items:stretch;min-height:0;}
 .ftdd-mid{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;}
 .ftdd-slides{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-height:0;}
 .ftdd-stage-split .ftdd-slides{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -1225,8 +1225,8 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-ctl{text-align:left;white-space:normal;}
 .ftdd-ctl.on{background:#262B45;color:#fff;border-color:#262B45;}
 .ftdd-rail-note{margin:0;font-size:11.5px;color:var(--ink-soft);}
-.ftdd-rail-kick{margin:4px 0 0;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;white-space:nowrap;}
-.ftdd-rail-title{margin:0 0 4px;font:600 19px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
+.ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;white-space:nowrap;}
+.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 18px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
 @media(max-width:1100px){
   .ftdd-stage{grid-template-columns:minmax(0,1fr);}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
@@ -1618,7 +1618,7 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
-.ft-body .ftdd-reader{height:max(320px, 46vh);margin:10px 0;padding:18px 26px;border:1.5px solid #9AA0AB;border-radius:10px;overflow-y:auto;background:#fff;color:#11131F;font-size:16px;line-height:1.6;text-align:left;}
+.ft-body .ftdd-reader{height:max(320px, 52vh);margin:10px 0;padding:18px 26px;border:1.5px solid #9AA0AB;border-radius:10px;overflow-y:auto;background:#fff;color:#11131F;font-size:16px;line-height:1.6;text-align:left;}
 .ft-body .ftdd-reader h2{font-size:22px;margin:22px 0 8px;color:#B42318;} .ft-body .ftdd-reader h2:first-child{margin-top:0;}
 .ft-body .ftdd-reader h3{font-size:17px;margin:16px 0 6px;color:#11131F;}
 .ft-body .ftdd-reader p{margin:0 0 10px;} .ft-body .ftdd-reader ul{margin:0 0 10px 22px;}
@@ -1632,9 +1632,11 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
-   Tools): a round close button, top right, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
-body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;
-  display:inline-flex !important;align-items:center;justify-content:center;align-self:flex-end;border-radius:50%;background:#1E2340;border:2px solid #fff;
+   Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
+   full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
+body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 !important;
+  position:fixed;right:22px;bottom:22px;z-index:60;
+  display:inline-flex !important;align-items:center;justify-content:center;border-radius:50%;background:#1E2340;border:2px solid #fff;
   box-shadow:0 0 0 2px #1E2340, 0 4px 12px rgba(30,35,64,.45);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
 body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:800 18px/1 'Inter',sans-serif;color:#fff;}
 body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;box-shadow:0 0 0 2px #E8590C, 0 4px 12px rgba(30,35,64,.45);}
