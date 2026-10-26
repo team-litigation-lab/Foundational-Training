@@ -5,7 +5,7 @@
    check by screenshot:
      • the Hubstaff To-Do, set daily from the guide's templates ("To-Do: Classroom Discussion: Intake Training
        Day 1", and on a shadowing day "To-Do: Shadowing Intake Specialist Role (buddy's name)"). The platform now
-       shows each day's exact text with 📋 Copy, in the 🛠 Practice Lab and on this page (#/shadowing), so there
+       shows each day's exact text with 📋 Copy, on this page (#/shadowing), so there
        is nothing to remember or retype.
      • the recorded shadowing videos the guide provides for when no buddy is free: each one's title is the link.
      • the shadowing session itself: instead of a screenshot of the TAM, the trainee writes a short log — who they
