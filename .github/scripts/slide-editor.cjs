@@ -52,7 +52,7 @@ async function workerChecks() {
   // and the Training Agenda before it are drawn by the platform, and nobody edits them.
   await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; render(); }); await page.waitForTimeout(700);
   if (await page.$('text=✏️ Edit this slide')) fail('the Training Agenda, which the platform draws, is offered for editing');
-  await page.evaluate(() => FTDayDecks.to(FTDayDecks.first(FTDayDecks.state().day))); await page.waitForTimeout(900);
+  await page.evaluate(() => FTDayDecks.to(FTDayDecks.at(FTDayDecks.state().day, FT_DAY_DECKS[FTDayDecks.state().day].slides[0].id))); await page.waitForTimeout(900);
   const sid = await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-rail button')].find(x => /Edit this slide/.test(x.textContent));
     const m = b && /FTSlideEdit\.open\(\d+,\s*'([^']+)'/.exec(b.getAttribute('onclick') || ''); return m ? m[1] : ''; });
   if (!sid) fail('the trainer has no ✏️ Edit this slide on the deck');

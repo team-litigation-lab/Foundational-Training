@@ -284,7 +284,7 @@ function renderPage(){
   const lesson = state.pqLesson && kcQuestionsFor(state.pqLesson).length ? state.pqLesson : null;
   // opened from a deck slide (Day 1's Reading Task, FTDayDecks.toKC): the way back to the classroom's next activity comes first
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
-  const backBtn = back && Number(back.l) === Number(lesson) && back.day && window.FTDayDecks
+  const backBtn = back && Number(back.l) === Number(lesson) && back.day && back.id && window.FTDayDecks
     ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>` : "";
   if(lesson) return `<div class="fp-hero">${backBtn}<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
