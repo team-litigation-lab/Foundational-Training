@@ -22,7 +22,7 @@
      • The Hubstaff picture is drawn after the trainer's screenshot (SVG): the Add Work Notes box.
    ============================================================ */
 (function(){
-const SHIFT = "8:00 AM – 5:00 PM PST";
+const SHIFT = "8:00 AM – 5:00 PM EST";
 
 // The camera: how you show up on it, in every meeting (the orientation's Camera slide).
 const CAMERA = [
