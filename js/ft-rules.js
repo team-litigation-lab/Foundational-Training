@@ -427,7 +427,7 @@ const SLIDES = [
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
-      ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><b>${esc(h)}</b><span>${esc(t)}</span></li>`).join("")}</ol></div>`],
+      ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><div><b>${esc(h)}</b><span>${esc(t)}</span></div></li>`).join("")}</ol></div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -725,9 +725,9 @@ body.ft-orient #lessonSlideWrap .ftr-notes .ftr-fig svg{min-width:0;max-height:n
 /* the Monitoring Sheet preview fills its slide: the sheet as big as the screen allows, on a light frame */
 body.ft-orient #lessonSlideWrap .ftr-mon-entry{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:center;}
 body.ft-orient #lessonSlideWrap .ftr-mon-steps{list-style:none;counter-reset:mon;margin:0;padding:0;display:grid;gap:10px;}
-body.ft-orient #lessonSlideWrap .ftr-mon-steps li{counter-increment:mon;position:relative;padding:8px 12px 8px 46px;border:2px solid #343C66;border-radius:10px;background:#fff;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li{display:grid !important;grid-template-columns:26px minmax(0,1fr);gap:12px;align-items:start;margin:0 !important;padding:8px 12px !important;border:2px solid #343C66;border-radius:10px;background:#fff;}
 body.ft-orient #lessonSlideWrap .ftr-mon-steps li::before{content:none !important;}
-body.ft-orient #lessonSlideWrap .ftr-mon-steps li i{position:absolute;left:10px;top:9px;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;font:800 14px/26px 'Inter',sans-serif;font-style:normal;text-align:center;}
+body.ft-orient #lessonSlideWrap .ftr-mon-steps li i{position:static !important;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;font:800 14px/26px 'Inter',sans-serif;font-style:normal;text-align:center;}
 body.ft-orient #lessonSlideWrap .ftr-mon-steps b{display:block;color:#1E2340;font-size:16px;} body.ft-orient #lessonSlideWrap .ftr-mon-steps span{display:block;color:#2A2F4A;font-size:14px;line-height:1.35;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig{margin:0;}
 body.ft-orient #lessonSlideWrap .ftr-mon-entry .ftr-fig-scroll{background:#EEF1F8;padding:8px;box-shadow:none;}
