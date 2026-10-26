@@ -43,8 +43,23 @@ const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons
 const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : v; }catch(err){ return (s || {}).html; } };
 // a lesson is open when the trainer has opened it for the batch (Admin → 📅 Open Lessons)
 const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
-// a lesson this trainee has finished: its cards say Finished and their Start becomes Review
-const lessonDone = l => { try{ return !!(forTrainee() && state.progress && (state.progress[Number(l)] || {}).done); }catch(err){ return false; } };
+/* ✓ Finished: a lesson runs over one day or several (Reception, Days 3–5; Intake, Days 7–9), so its cards say Finished and
+   Start becomes Review only when it is fully done: the lesson itself finished, and every one of its days' Activity decks
+   read to its last slide (decks-done, saved with the trainee's account). */
+let decksDone = null;
+function doneDays(){
+  if(decksDone == null){ decksDone = []; if(typeof storeGet === "function") Promise.resolve(storeGet("decks-done")).then(v => { if(Array.isArray(v)){ decksDone = [...new Set(decksDone.concat(v.map(Number)))]; if(state.view === "modules") render(); } }).catch(() => {}); }
+  return decksDone;
+}
+function markDayDone(n){
+  if(!forTrainee()) return;
+  const d = doneDays(); if(d.includes(Number(n))) return;
+  d.push(Number(n)); if(typeof storeSet === "function") storeSet("decks-done", d.slice());
+}
+const lessonDone = l => { try{
+  if(!forTrainee() || !state.progress || !(state.progress[Number(l)] || {}).done) return false;
+  const c = LESSON_CARDS[Number(l)]; return !c || c.days.every(n => doneDays().includes(Number(n)));
+}catch(err){ return false; } };
 const lessonTitle = l => { try{ return ftName(Number(l)) || ("Lesson " + l); }catch(err){ return "Lesson " + l; } };
 const COUNT = () => (root.FTDays && FTDays.COUNT) || 18;
 // the day the trainee is on in the curriculum (js/ft-next-step.js: the first day with an unfinished lesson)
@@ -759,6 +774,8 @@ root.render = function(){
   }
   if(state.view !== "daydeck"){ if(DD.auto) stopAuto(); return __render.apply(this, arguments); }
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  // the last slide of a day's deck reached: that day is done (a lesson is Finished when all its days are)
+  try{ const d = decks() && decks()[DD.day]; if(d && DD.i >= slidesOf(d).length - 1) markDayDone(DD.day); }catch(err){}
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ftdd">${renderDeck()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
