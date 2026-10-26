@@ -253,7 +253,9 @@ Return ONLY JSON: {"summary":"..."}`;
 FTSessions.cards = function(){
   if(isTrainee()) load();
   const f = isTrainee() ? FF().myFirm() : null;
-  return SESSIONS.map(s => {
+  // a trainee sees a session from the day its lesson opens (js/ft-simulators.js: the Practice Lab goes by the day)
+  const shown = s => !isTrainee() || state.adminPreview || window.dayUnlocked(s.lesson);
+  return SESSIONS.filter(shown).map(s => {
     const c = isTrainee() ? caseFor(s) : null, run = isTrainee() ? runOf(s, c) : null, rv = run ? reviewOf(keyOf(s, c)) : null, sc = scoreOf(run, rv);
     const open = state.isAdmin || state.adminPreview || window.dayUnlocked(s.lesson);
     const status = !run ? "" : run.submittedAt ? `<span class="fss-pill ${sc >= PASS ? "ok" : "mid"}">${tScore(rv) != null ? "🧑‍🏫 " : ""}${sc}%</span>` : run.startedAt ? `<span class="fss-pill live">🟢 In progress</span>` : "";
@@ -379,7 +381,9 @@ FTSessions.forDay = function(day){
 FTSessions.trainerCards = function(){
   if(isTrainee()) load();
   const mine = ((S.review || {}).acts) || {};
-  return acts().filter(a => DAYS.find(d => d.id === a.lesson) || !a.lesson).map(a => { const r = mine[a.id] || {}, sc = tScore(r);
+  // a trainee sees an activity from its lesson's opening, or (no lesson) from the first day that has it
+  const shown = a => !isTrainee() || state.adminPreview || (a.lesson ? window.dayUnlocked(a.lesson) : (window.ftsReached ? ftsReached(window.FTDays ? FTDays.forAct(a.id) : []) : true));
+  return acts().filter(a => DAYS.find(d => d.id === a.lesson) || !a.lesson).filter(shown).map(a => { const r = mine[a.id] || {}, sc = tScore(r);
     const dayT = window.FTDays ? FTDays.label(FTDays.forAct(a.id)) : "";
     return `<div class="card fts-card"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
       <h3>${e(a.title)} ${r.status ? `<span class="fss-pill ${r.status === "Passed" ? "ok" : r.status === "Redo" ? "mid" : ""}">${e(r.status)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
