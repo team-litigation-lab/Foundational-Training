@@ -152,7 +152,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (!/2 OF/i.test(s2.n)) fail('→ did not turn to slide 2');
   if (s2.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
   await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(400);
-  if (!/^Day 5\b/.test(await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || {}).innerText || ''))) fail('a trainee can\'t open Day 5\'s instructions');
+  if (await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || { dataset: {} }).dataset.day) !== '5') fail('a trainee can\'t open Day 5\'s instructions');
   // an admin opens any day too
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);
   s = await at();
@@ -240,7 +240,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
 
-  // ✍️ Process Questions on the days the guide runs the questions, and only there; 🎮 Knowledge Games are off for now
+  // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are off for now
   // (js/ft-kcgames.js GAMES_ON): no 🎮 button anywhere, and #/kcgames goes to ✍️ Knowledge Check
   const pqDays = [];
   for (let d = 1; d <= 16; d++) {
@@ -248,7 +248,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     if (await page.evaluate(() => !!document.querySelector('.ftdd-lcslide .ftlc-pqbox'))) pqDays.push(d);
     if (await page.evaluate(() => !!document.querySelector('.ftlc-games, .ftdd-games') || /Knowledge Games/.test(document.querySelector('main').innerText))) fail(`Day ${d}'s deck still offers the Knowledge Games`);
   }
-  if (pqDays.join() !== '1,2,3,7,10,13') fail(`the Process Questions show on days ${pqDays.join(', ')}, not 1, 2, 3, 7, 10 and 13`);
+  if (pqDays.length) fail(`a ✍️ Knowledge Check button still shows on the day card of days ${pqDays.join(', ')}`);
   if (await page.evaluate(() => typeof window.FTKCGames !== 'undefined')) fail('the Knowledge Games are still offered (window.FTKCGames)');
   await page.evaluate(() => goto('kcgames')); await page.waitForTimeout(800);
   if (await page.evaluate(() => state.view) !== 'process') fail('#/kcgames doesn\'t go to ✍️ Knowledge Check while the games are off');
