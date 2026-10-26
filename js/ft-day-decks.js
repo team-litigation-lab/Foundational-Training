@@ -1310,6 +1310,8 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
   hintClose: toolsHintClose,
   tools: () => TOOLS.map(t => t.name),
+  // the index of a day's first slide of its own (after its day card and Training Agenda)
+  first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
   // 📝 What I learned for a video on this slide, from the button above the sheet
   learn(n){
     const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
