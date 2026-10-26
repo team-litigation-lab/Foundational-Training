@@ -39,7 +39,7 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     v = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('.ftd1-lock'), i: FTDayDecks.state().i, day: FTDayDecks.state().day }));
     if (v.view !== 'daydeck' || v.lock || v.i !== 0 || Number(v.day) !== 1) fail(`with the reading unlocked the Dashboard didn't open Day 1's Classroom Activity card, the deck's start: ${JSON.stringify(v)}`);
     // strictly in order: no skipping ahead in the deck, nothing of a locked step, and the video waits (no request)
-    v = await page.evaluate(() => { const from = FTDayDecks.state().i; FTDayDecks.to(from + 3); const skip = FTDayDecks.state().i; FTDayDecks.to(FTDayDecks.list(1).findIndex(s => s.id === 'discussion')); return {from, skip, locked: FTDayDecks.state().i, video: ftVideoUnlocked(1), ask: FTDay1.videoByStep(1)}; });
+    v = await page.evaluate(() => { const from = FTDayDecks.state().i; FTDayDecks.to(from + 3); const skip = FTDayDecks.state().i; FTDayDecks.to(FTDayDecks.list(1).findIndex(s => s.launch && s.launch.go === 'lesson')); return {from, skip, locked: FTDayDecks.state().i, video: ftVideoUnlocked(1), ask: FTDay1.videoByStep(1)}; });
     if (v.skip !== v.from) fail(`the deck skipped ahead from slide ${v.from} to ${v.skip}`);
     if (v.locked !== v.from) fail('the dots went on to the Classroom Discussion before the trainer unlocked it');
     if (v.video || !v.ask) fail(`Day 1's video was open (or asked for) before Handouts and Videos was unlocked: ${JSON.stringify(v)}`);
