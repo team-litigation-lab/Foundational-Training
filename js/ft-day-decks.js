@@ -366,7 +366,7 @@ function agendaHtml(d, info){
         if(!ls.length) return "";
         const today = (info.items || []).some(x => x.at === "tool" && x.id === "process") || /ftdd-pq/.test(all);
         return `<p class="ftdd-ag-h">✍️ Process Questions</p><ul class="ftdd-ag-ls">${ls.map(l =>
-          `<li><a class="ftdd-link" onclick="FTProcess.openLesson(${Number(l)})">${e(lessonTitle(l))} →</a>${root.FTKCGames ? ` · <a class="ftdd-link" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</a>` : ""}</li>`).join("")}</ul>
+          `<li><a class="ftdd-link" onclick="FTDayDecks.toKC(${Number(l)})">${e(lessonTitle(l))} →</a>${root.FTKCGames ? ` · <a class="ftdd-link" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</a>` : ""}</li>`).join("")}</ul>
           <p class="ftdd-ag-pq">${today ? "Answered today, after the activities." : "Answered on the day the guide sets them; the sheet stays open."}</p>`;
       })()}
     </div></div>`;
@@ -386,7 +386,7 @@ function slideAgendaGo(s, info){
   if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
   if(/process question/i.test(h) && root.FTProcess){
     const l = (info.lessons || []).find(x => hasPQ(x));
-    if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTProcess.openLesson(${Number(l)})`};
+    if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTDayDecks.toKC(${Number(l)})`};
   }
   return null;
 }
@@ -397,7 +397,7 @@ function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.f
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || ""))); }
 // ✍️ Answer and 🎮 Knowledge Games for a lesson's Process Questions (the games review the same lesson, as a game show)
-const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTProcess.openLesson(${Number(l)})">✍️ Process Questions: ${e(lessonTitle(l))}</button>` +
+const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTDayDecks.toKC(${Number(l)})">✍️ Knowledge Check: ${e(lessonTitle(l))}</button>` +
   (root.FTKCGames ? `<button type="button" class="${cls || "btn btn-ghost btn-sm"} ftdd-games" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</button>` : "");
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
@@ -432,7 +432,7 @@ function waitBox(s, info){
   if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
   if(root.FTKCGames) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTKCGames.open(${l})">🎮 Knowledge Games: ${e(lessonTitle(l))}</button>`);
   if(lessonOpen(l)) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${l})">📘 Review the ${e(lessonTitle(l))} lesson</button>`);
-  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTProcess.openLesson(${l})">✍️ Knowledge Check</button>`);
+  if(hasPQ(l) && root.FTProcess) acts.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.toKC(${l})">✍️ Knowledge Check</button>`);
   if(!acts.length) return "";
   const what = /demo/i.test(h) ? "the demo" : "the mock calls";
   return `<div class="ftdd-wait"><p><b>⏳ While you wait for your turn in ${what}, review with your tools:</b></p><div class="ftdd-wait-acts">${acts.join("")}</div>
@@ -780,7 +780,7 @@ const LESSON_CARDS = {
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
-      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTProcess.openLesson(1)"},
+      {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
     tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
@@ -1029,7 +1029,7 @@ function dayCard(n, ex){
         ${(() => { // the day's own Process Questions (the lessons the day discusses), on the days the guide runs them
           const pl = dayHasPQ(n) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
           return pl.length ? `<div class="ftlc-pqbox"><p class="ftlc-h2">✍️ Today’s Process Questions</p>${pl.map(l => `
-          <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTProcess.openLesson(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Answer on Knowledge Check →</button>
+          <div class="ftlc-pqacts"><button type="button" class="ftlc-pqbtn" onclick="FTDayDecks.toKC(${Number(l)})">✍️ ${pl.length > 1 ? e(lessonTitle(l)) + ": " : ""}Knowledge Check →</button>
           ${root.FTKCGames ? `<button type="button" class="ftlc-pqbtn ftlc-games" onclick="FTKCGames.open(${Number(l)})">🎮 Review with the Knowledge Games</button>` : ""}</div>`).join("")}</div>` : ""; })()}
       </aside>
     </div>
@@ -1285,7 +1285,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -1723,6 +1723,7 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
 .ftdd-bar:not(:has(*)){display:none;}
+.ft-body .ftdd-pq-go{margin-top:10px;}
 main.main-ftdd.ftdd-settling .ftdd-sheet > *{visibility:hidden;}   /* the day card slide has no pill or buttons up here */
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
 .ftdd-dot.done{background:#8E97C4;}

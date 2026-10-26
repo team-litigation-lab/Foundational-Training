@@ -96,7 +96,9 @@ const PENDING = {};
 const EXTRA = {};
 
 const load = n => { const c = {}; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(R, "build/days", `day${String(n).padStart(2, "0")}.js`), "utf8") + `;this.d=DAY${n};`, c); return c.d; };
-const PQ_NOTE = `<div class="ftdd-pq">✍️ <b>Today’s Process Questions</b> are answered in <a class="ftdd-link" onclick="goto('process')">✍️ Knowledge Check</a>, after the day’s activities — not here.</div>\n`;
+// (its button opens the day's lesson's own Knowledge Check sheet, where the questions are answered, and comes back to
+// the classroom's next activity: FTDayDecks.toKC; never the trainers' all-trainees page)
+const PQ_NOTE = `<div class="ftdd-pq">✍️ <b>Today’s Process Questions</b> are answered in the day’s Knowledge Check, after the day’s activities.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.toKC(FTDayDecks.dayLesson())">✍️ Knowledge Check →</button></div></div>\n`;
 // a Process Questions list: from the element that says PROCESS QUESTIONS to the naming convention's value
 // (the element after "Naming Convention:"), plus the divider after it
 function stripPQ(html){
