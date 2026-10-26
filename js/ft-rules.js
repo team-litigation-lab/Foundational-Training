@@ -65,7 +65,7 @@ const HABITS = [
     "Update your Monitoring Sheet after each discussion or activity. Add the date and 5 takeaways in full sentences. It is for your training only."],
    example:["I learned about auto liability.", "Auto liability insurance covers damages and injuries caused to others in an accident where the policyholder is at fault, including both bodily injury and property damage."],
    links:[["Sample Updated Trackers", "https://docs.google.com/spreadsheets/d/1oaquY4HnuUh2Kqf1T1MKZiHMDChnDHMo/edit?gid=2024469516#gid=2024469516", "The LSH Daily Task Tracker, filled in."],
-          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "Make your copy in your main Google Drive. You link it on the last slide of this orientation."]],
+          ["Training Progress Monitoring Sheet", "https://docs.google.com/document/d/1bCi0oCAR9Xc83--_SZzS0CIxxp3TGuL3/edit?usp=drive_link&ouid=118231985581105611442&rtpof=true&sd=true", "It is in the Google Drive you got during onboarding. You link it on the last slide."]],
    }
 ];
 // The EOD email (Setting of Expectations).
@@ -240,7 +240,7 @@ function figMonitor(){
   return `<svg viewBox="0 0 760 470" role="img" aria-label="A Training Progress Monitoring Sheet entry: the classroom discussion and its date, 5 major takeaways, 3 questions you still have, and your rating of your understanding.">
     <rect x="1" y="1" width="758" height="468" rx="10" fill="#fff" stroke="#5b6178" stroke-width="2"/>
     <rect x="1" y="1" width="758" height="44" rx="10" fill="#1E2340"/><rect x="1" y="34" width="758" height="11" fill="#1E2340"/>
-    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">your copy · your main Google Drive</text>
+    <text x="24" y="29" font-size="16" font-weight="800" fill="#fff">Training Progress Monitoring Sheet</text><text x="736" y="29" font-size="13" fill="#F4B77A" text-anchor="end">in your Google Drive</text>
     <text x="24" y="74" font-size="14" font-weight="800" fill="#1E2340">Classroom Discussion: Virtual Assistant Essentials</text><text x="700" y="74" font-size="13" fill="#5b6178" text-anchor="end">Date: 10/26/2026</text>
     <text x="24" y="104" font-size="12" font-weight="800" fill="#E8590C" letter-spacing="1">5 MAJOR TAKEAWAYS FROM THIS DISCUSSION</text>
     ${row(126, "1", "A VA supports the attorney’s team remotely, inside the firm’s own tools.")}${row(150, "2", "Jurisdiction decides which court and which state’s rules apply to a case.")}
@@ -257,8 +257,8 @@ function figMonitor(){
 const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
 // 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
 const MON_PARTS = [
-  {h:"Make Your Copy", steps:[
-    "Copy the Monitoring Sheet into your main Google Drive.",
+  {h:"Find It", steps:[
+    "It is in the Google Drive you got during onboarding.",
     "You link it on the last slide."]},
   {h:"Update It", steps:[
     "Update your Monitoring Sheet.",
@@ -454,7 +454,7 @@ const SLIDES = [
   // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
   // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
   ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Your Tracker and Monitoring Sheet", steps:["Both are in your main Google Drive."]},
+      {h:"Your Tracker and Monitoring Sheet", steps:["Both are in the Google Drive you got during onboarding."]},
       {h:"Your Assessment and Activities Folder", steps:["Save your daily outputs here."]},
       {h:"Link Them Once", steps:["Paste the link of your Task Tracker.", "Paste the link of your Monitoring Sheet.", "Paste the link of your folder, then save."], link:true},
     ].map((p,i)=>`<div class="ftr-part">
