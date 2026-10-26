@@ -518,7 +518,10 @@ async function ftLoadOpenDays(){
   // Both settings in one request (/api/storage/get-many).
   // and, for a trainee, the AI discussion videos they asked for and the ones their trainer approved
   const me = state.traineeId && !state.isAdmin && !state.adminPreview ? state.traineeId : null;
-  const [v, vv, vr, va] = await sharedGetMany(["settings:opendays", "settings:openvideos"].concat(me ? ["videoreq:" + me, "videoaccess:" + me] : []));
+  // (and Day 1's steps, js/ft-day1-flow.js: settings:day1steps, in the same request)
+  const [v, vv, d1, vr, va] = await sharedGetMany(["settings:opendays", "settings:openvideos", "settings:day1steps"].concat(me ? ["videoreq:" + me, "videoaccess:" + me] : []));
+  const d1next = (d1 && typeof d1 === "object") ? {all: Number(d1.all) || 0, batches: d1.batches || {}} : {all: 0, batches: {}};
+  const d1changed = JSON.stringify(d1next) !== JSON.stringify(state.ftDay1Steps); state.ftDay1Steps = d1next;
   if(me){
     const req = (vr && vr.lessons) || {}, acc = (va && va.lessons) || {};
     const was = JSON.stringify([state.ftVideoReq, state.ftVideoAccess]);
@@ -530,7 +533,7 @@ async function ftLoadOpenDays(){
   if(v == null && vv == null && state.ftOpenDays) return false;
   const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: x.batches || {}} : {all: [], batches: {}};
   const next = shape(v), nextV = shape(vv);
-  const changed = JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos) || !!state.ftVideosChanged;
+  const changed = d1changed || JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos) || !!state.ftVideosChanged;
   state.ftVideosChanged = false;
   state.ftOpenDays = next; state.ftOpenVideos = nextV;
   return changed;
@@ -577,7 +580,7 @@ function ftRefreshOpenDays(minAge){
   if(FT_IS_AUDIENCE || !(state.traineeId || state.isAdmin)) return;
   if(document.visibilityState === "hidden") return;
   if(minAge && Date.now() - ftOpenDaysAt < minAge) return;
-  ftLoadOpenDays().then(changed=>{ if(changed && ["dashboard","day"].includes(state.view)) render(); });
+  ftLoadOpenDays().then(changed=>{ if(changed && ["dashboard","modules","day","daydeck","knowtools","kc","process"].includes(state.view)) render(); });
 }
 setTimeout(()=>ftRefreshOpenDays(), 300);
 setInterval(()=>ftRefreshOpenDays(), FT_OPEN_DAYS_EVERY);
@@ -804,7 +807,7 @@ window.renderAdmin = function(){
     const bar = out.slice(0, end).replace(/admin-tab-btn active/g, "admin-tab-btn") + "</div>";
     if(!state.adminData && typeof loadAdminData === "function" && !state.adminLoading) loadAdminData();
     if(!state.ftOpenVideos) ftLoadOpenDays().then(()=>{ if(state.adminTab==="opendays") render(); });
-    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays() + renderFtOpenVideos();
+    return ftTrimAdminTabs(bar, odTab + curTab) + renderFtOpenDays() + (window.renderFtDay1Steps ? renderFtDay1Steps() : "") + renderFtOpenVideos();
   }
   return ftTrimAdminTabs(__ftRenderAdmin(), odTab + curTab);
 };

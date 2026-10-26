@@ -232,7 +232,10 @@ const sheetIcon = set => /^Reading Task/i.test(set.title || "") ? "📖" : "✍�
 const SHEET_PAGE = {};
 function bySheet(qs, each){
   const sets = [...new Set(qs.map(x => x.set))];
-  const one = set => `<ol class="fp-qs">${qs.filter(x => x.set === set).map(each).join("")}</ol>`;
+  // (Day 1 in order, js/ft-day1-flow.js: the Virtual Assistant Essentials sheet waits for its Process Questions step)
+  const locked = set => !!(window.FTDay1 && FTDay1.sheetLocked(set));
+  const one = set => locked(set) ? `<p class="fp-muted fp-sheet-lock">🔒 This answer sheet opens with ${e(FTDay1.label(6))}, when your trainer unlocks it.</p>`
+    : `<ol class="fp-qs">${qs.filter(x => x.set === set).map(each).join("")}</ol>`;
   if(sets.length < 2) return sets.map(one).join("");
   const key = sets.map(x => x.id).join("+"), at = Math.min(SHEET_PAGE[key] || 0, sets.length - 1), set = sets[at];
   const done = st => { const mine = qs.filter(x => x.set === st); return mine.filter(x => has(((FP.data && FP.data.sets[st.id]) || {answers: []}).answers[x.i])).length + " of " + mine.length; };
