@@ -60,7 +60,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
-  // the session's order (▶ Start Training on top, then 🎬 Video and 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
+  // the session's order (▶ Start Training on top, then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
@@ -72,18 +72,14 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    if (c.steps[0] !== 'Start Training' || !/^(Video|Request Video|Requested)$/.test(c.steps[1] || '') || c.steps[2] !== 'Classroom' || c.steps.length !== 3) fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
+    if (c.steps[0] !== 'Start Training' || !/^(Video|Request Video|Requested)$/.test(c.steps[1] || '') || c.steps.length !== 2) fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
   // the eight fit one screen
   const fits = await page.evaluate(() => ({ page: document.documentElement.scrollHeight - innerHeight, main: (m => m.scrollHeight - m.clientHeight)(document.querySelector('main.main-dash')) }));
   if (fits.page > 2 || fits.main > 2) fail(`📚 Dashboard doesn't fit one screen: ${JSON.stringify(fits)}`);
-  // 🏠 Classroom opens the lesson's offline activity: Day 2's homework slide
-  await page.click('#dayl-2 .ftli-class'); await page.waitForTimeout(1500);
-  const cls = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
-  if (cls.view !== 'daydeck' || !/HOMEWORK: Softphones/i.test(cls.h)) fail(`Lesson 2's Classroom opened ${JSON.stringify(cls)}`);
-  await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
+  if (await page.$('.ftli-class')) fail('a lesson card still has the 🏠 Classroom button');
   // 📋 the days card opens the day deck on the full Classroom Activity card, and a row opens its own slide
   await page.click('#dayd-1'); await page.waitForTimeout(1500);
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');

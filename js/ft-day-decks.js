@@ -1139,7 +1139,7 @@ function dayCard(n, ex){
    ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
-  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), off = offlineRow(c), n = c.days[0];
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.days[0];
   const t = document.createElement("template"); t.innerHTML = String(moduleCard(l)).trim();
   const card = t.content.firstElementChild; if(!card) return "";
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
@@ -1162,8 +1162,7 @@ function introCard(l, cur, ex, tags){
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
   grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? (done ? "▶ Review" : "▶ Start Training") : "🔒 Start Training"}</button>
-    ${vid ? vid.outerHTML : ""}
-    <button type="button" class="btn btn-ghost btn-sm module-finish-btn ftli-class" onclick="event.stopPropagation(); ${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">🏠 Classroom</button>`;
+    ${vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
   return card.outerHTML;
 }
@@ -1604,6 +1603,7 @@ main.main-dash .module-grid > .ftli .module-body{flex:1 1 auto;min-height:0;}
 main.main-dash .module-grid > .ftli .mh-day{font-family:'Inter',sans-serif !important;}
 main.main-dash .module-grid > .ftli .mh-day .lp-kc{margin-left:6px;}
 main.main-dash .module-grid > .ftli .mc-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+main.main-dash .module-grid > .ftli .mc-grid.mc-n1{grid-template-columns:minmax(0,1fr) !important;}   /* the video button alone, full width */
 main.main-dash .module-grid > .ftli .ftli-days{cursor:pointer;}
 main.main-dash .module-grid > .ftli .ftli-days:hover .module-icon,main.main-dash .module-grid > .ftli .ftli-days:focus-visible .module-icon{transform:scale(1.12);}
 main.main-dash .module-grid > .ftli .mc-grid > button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
