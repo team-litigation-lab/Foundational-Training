@@ -365,31 +365,8 @@ ftAdminTab("sops", "📋 SOPs", renderAdminSOPs);
 ftAdminTab("randomtasks", "🎲 Random Tasks", renderAdminRandomTasks);
 ftAdminTab("dbmaint", "🗄 Database Maintenance", renderAdminDbMaint);
 
-/* ---------- 🎲 Tasks for the trainee: the landing page carries the live one ---------- */
-// The engine shows an active task on its own dashboard, which this program doesn't use, and only
-// looks for one on the views it knows. Both are hooked to 📚 Dashboard here, so a task a trainer
-// sends actually reaches the trainee.
-(window.LSH_HOME_NOTICES = window.LSH_HOME_NOTICES || []).push(function(){
-  if(!state.traineeId || state.isAdmin || typeof renderSurpriseTaskCard !== "function") return "";
-  try{ return renderSurpriseTaskCard(); }catch(err){ return ""; }
-});
-// Every request counts against the Cloudflare allowance the LSH sites share, so the landing page
-// looks for a task at most once every two minutes, however often a trainee comes back to it.
-const TASK_EVERY = 120000;
-const __opsAfter = window.afterRender;
-window.afterRender = function(){
-  const out = __opsAfter ? __opsAfter.apply(this, arguments) : undefined;
-  if(state.view === "modules" && state.traineeId && !state.isAdmin && typeof checkSurpriseTask === "function"
-     && Date.now() - (state.surpriseTaskAt || 0) > TASK_EVERY){
-    state.surpriseTaskAt = Date.now();
-    const before = typeof taskLog === "function" ? taskLog().length : 0;
-    checkSurpriseTask().then(function(){
-      const now = typeof taskLog === "function" ? taskLog().length : 0;
-      if(state.view === "modules" && (state.activeSurpriseTask || now !== before)) render();
-    }).catch(function(){});
-  }
-  return out;
-};
+/* (🎲 Tasks for the trainee: no live-task card on 📚 Dashboard and no looking for one; the unannounced tasks are gone
+   from the trainee's side of this program) */
 
 const css = document.createElement("style");
 css.id = "ft-admin-ops-css";
