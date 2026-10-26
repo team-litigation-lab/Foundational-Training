@@ -341,14 +341,17 @@ const SLIDES = [
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
   // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
   ["matrix", "Your Training Matrix", ()=>{
-    // the training's flow, one card per day, from the day map (js/ft-day-activities.js): the day's role and its main
-    // activities (the typing and spelling tests and the upskill run every day, so they're left off the cards)
+    // the training's flow, calm and at a glance: one light card per stage of the training (the days that share a role,
+    // from the day map, js/ft-day-activities.js), each day on one line with its main activity (the typing and spelling
+    // tests and the upskill run every day, so they're left off)
     const days = (window.FTDays && FTDays.DAYS) || [];
     const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
-    const card = d=>{ const items = (d.items || []).filter(x=>!skip.has(x.kind)).slice(0, 3);
-      return `<div class="ftr-flow-card"><div class="ftr-flow-hd"><span class="ftr-flow-n">Day ${d.day}</span><b>${esc(d.role)}</b></div>
-        <ul>${items.map(x=>`<li>${esc(String(x.t).replace(/\s*\([^)]*\)\s*$/, ""))}</li>`).join("")}</ul></div>`; };
-    return `<div class="ftr-flow">${days.map(card).join("")}</div>`; }],
+    const stages = days.reduce((a, d)=>{ const last = a[a.length - 1]; if(last && last.role === d.role) last.days.push(d); else a.push({role: d.role, days: [d]}); return a; }, []);
+    const main = d=>{ const x = (d.items || []).find(x=>!skip.has(x.kind)); return x ? String(x.t).replace(/\s*\([^)]*\)\s*$/, "") : ""; };
+    const card = (st, i)=>{ const a = st.days[0].day, b = st.days[st.days.length - 1].day;
+      return `<div class="ftr-flow-card ftr-flow-s${i % 6}"><div class="ftr-flow-hd"><span class="ftr-flow-n">${a === b ? `Day ${a}` : `Days ${a}–${b}`}</span><b>${esc(st.role)}</b></div>
+        <ul>${st.days.map(d=>`<li><span>Day ${d.day}</span>${esc(main(d))}</li>`).join("")}</ul></div>`; };
+    return `<div class="ftr-flow">${stages.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below.</p>
@@ -667,15 +670,19 @@ body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 /* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
-body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 22px;counter-reset:none;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card{position:relative;background:#1E2340;color:#fff;border-radius:12px;border-top:4px solid #E8590C;padding:12px 14px 10px;box-shadow:0 4px 12px rgba(30,35,64,.18);}
-body.ft-orient #lessonSlideWrap .ftr-flow-card:not(:nth-child(4n)):not(:last-child)::after{content:"→";position:absolute;right:-18px;top:50%;transform:translateY(-50%);color:#E8590C;font:900 16px/1 'Inter',sans-serif;}
-body.ft-orient #lessonSlideWrap .ftr-flow-n{display:inline-block;flex:0 0 auto;font:800 14px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;background:#E8590C;color:#fff;border-radius:999px;padding:5px 10px;margin:0;}
-body.ft-orient #lessonSlideWrap .ftr-flow-hd{display:flex;align-items:center;gap:10px;margin-bottom:6px;} body.ft-orient #lessonSlideWrap .ftr-flow-hd b{margin:0 !important;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;font:800 20px/1.2 'Poppins','Inter',sans-serif;color:#F4B77A;margin-bottom:4px;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card ul{margin:0;padding-left:18px;font-size:16px;line-height:1.35;color:#E6E8F2;}
-body.ft-orient #lessonSlideWrap .ftr-flow-card li{margin:1px 0;color:#E6E8F2 !important;font-size:16px !important;line-height:1.35 !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card{--c:#E8590C;background:#fff;color:#1E2340;border:1px solid #E1E4EE;border-top:5px solid var(--c);border-radius:14px;padding:14px 18px 12px;box-shadow:0 2px 8px rgba(30,35,64,.06);}
+body.ft-orient #lessonSlideWrap .ftr-flow-s1{--c:#2F7DD1;} body.ft-orient #lessonSlideWrap .ftr-flow-s2{--c:#2E9C6A;} body.ft-orient #lessonSlideWrap .ftr-flow-s3{--c:#8A5CC2;}
+body.ft-orient #lessonSlideWrap .ftr-flow-s4{--c:#C2862E;} body.ft-orient #lessonSlideWrap .ftr-flow-s5{--c:#C24E6E;}
+body.ft-orient #lessonSlideWrap .ftr-flow-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+body.ft-orient #lessonSlideWrap .ftr-flow-n{font:700 12.5px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--c);}
+body.ft-orient #lessonSlideWrap .ftr-flow-card b{display:block;margin:0 !important;font:800 21px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card ul{list-style:none;margin:0;padding:0;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li{display:flex;gap:10px;margin:0;padding:5px 0;border-top:1px solid #EEF0F5;color:#2A2F4A !important;font-size:17px !important;font-weight:600;line-height:1.35 !important;padding-left:0 !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li span{flex:0 0 60px;color:#7A8099;font:700 14px/1.6 'IBM Plex Mono',monospace;}
 body.ft-orient #lessonSlideWrap .ftr-flow-card li::marker{color:#E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li::before{content:none !important;display:none !important;}
+body.ft-orient #lessonSlideWrap .ftr-flow-card li:first-child{border-top:0;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-flow{grid-template-columns:minmax(0,1fr);} body.ft-orient #lessonSlideWrap .ftr-flow-card::after{display:none;} }
 /* a slide whose body text is all bold (Auxes) */
 body.ft-orient #lessonSlideWrap .ftr-bold :is(p, span, li, code, .ftr-when, .ftr-sub){font-weight:700 !important;}
