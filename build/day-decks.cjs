@@ -33,7 +33,9 @@ const PI_FILE = "1VAn-xmcozdHqr-7pzpnY0Rlsc4-4T43O";
 const PI_PARTS = 8;
 const PI_BESIDE = 130;   // the most words of text beside a chart
 // sections of the reading that read together: one page, two cards side by side (the first heading, then the second)
-const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
+const PI_PAIRS = [["Step 2", "Step 3"], ["Step 4", "Step 5"], ["Step 6", "Step 7"], ["Step 8", "Jury Selection in a Car Accident Trial"], ["How Does the Statute of Limitations Work", "The Standard Statute of Limitations in Personal Injury Cases"]];
+// a section read beside another one that isn't next to it in the overview: moved up to sit right after it
+const PI_MOVE = {"Jury Selection in a Car Accident Trial": "Step 8"};
 // sections kept in the same part as the one before them: a pair's second card, and the statute of limitations section
 // (its introduction, How Does It Work, the Standard Statute and the Discovery Rule) as one part
 const PI_JOIN = [...PI_PAIRS.flatMap(p => p.slice(1)), "How Does the Statute of Limitations Work", 'The "Discovery Rule" Exception'];
@@ -53,7 +55,11 @@ function piRows(html){
 function piParts(){
   const src = fs.readFileSync(path.join(R, "build/days/pi-overview.html"), "utf8").trim();
   // a pair (PI_PAIRS) and the statute of limitations section (PI_JOIN) are one unit, never split between two parts
-  const units = src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean)
+  const units = Object.entries(PI_MOVE).reduce((us, [sec, after]) => {
+      const i = us.findIndex(u => u.startsWith(`<h3>${sec}`)); if(i < 0) throw new Error(`Day 1's reading has no "${sec}" to move`);
+      const [u] = us.splice(i, 1), j = us.findIndex(x => x.startsWith(`<h3>${after}`)); if(j < 0) throw new Error(`Day 1's reading has no "${after}"`);
+      us.splice(j + 1, 0, u); return us;
+    }, src.split(/(?=<h[23]>)/).map(x => x.trim()).filter(Boolean))
     .reduce((a, u) => { if(PI_PAIR.test(u) && a.length) a[a.length - 1] += "\n" + u; else a.push(u); return a; }, []);
   // a chart reads like ~60 words
   const size = u => u.replace(/<figure>[\s\S]*?<\/figure>/g, " ").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length + 60 * (u.match(/<figure>/g) || []).length;
