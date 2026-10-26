@@ -675,7 +675,7 @@ root.render = function(){
   app.innerHTML = renderTopbar() + `<main class="main-ftdd">${renderDeck()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   document.querySelectorAll(".ftdd-sheet, .ftdd-onnavy").forEach(x => { x.scrollTop = 0; });
-  fitSheets();
+  fitSheets(); wireReaders();
   // the card settles a frame later (its own head, ribbon and buttons), and a page dealt against a sheet that
   // was still growing comes out half empty: deal them again once the slide has its real height
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); });
@@ -822,9 +822,26 @@ const LESSON_CARDS = {
 };
 // open a row's slide: the deck loads first, so the slide is found by its id (the agenda and the split-off Call
 // Listening slide shift the numbers); a slide the deck doesn't have opens the day's agenda
+// 📖 A reading on a slide (Day 1's Reading Task, .ftdd-reader): its ✍️ Knowledge Check button stays locked until the
+// trainee has scrolled the reading to its end; that is remembered (this browser), so it stays open after. Trainers
+// and admins are never locked out.
+const readKey = () => `ftReadDone:${state.traineeId || "-"}:${DD.day}:${(slidesOf((decks() || {})[DD.day] || {slides: []})[DD.i] || {}).id || ""}`;
+function readDone(){ try{ return localStorage.getItem(readKey()) === "1"; }catch(e){ return false; } }
+function wireReaders(){
+  const r = document.querySelector(".ftdd-sheet .ftdd-reader"), go = document.querySelector(".ftdd-sheet .ftdd-kc-go .btn");
+  if(!r || !go) return;
+  const label = go.dataset.label || (go.dataset.label = go.textContent);
+  const unlock = () => { go.disabled = false; go.textContent = label; go.title = ""; const n = document.querySelector(".ftdd-sheet .ftdd-kc-lock"); if(n) n.remove(); };
+  if(!forTrainee() || readDone()){ unlock(); return; }
+  go.disabled = true; go.textContent = "🔒 " + label.replace(/^✍️\s*/, ""); go.title = "Read to the end of the reading first";
+  if(!document.querySelector(".ftdd-sheet .ftdd-kc-lock")) go.insertAdjacentHTML("afterend", `<span class="ftdd-kc-lock">Read to the end of the reading to answer its questions.</span>`);
+  const check = () => { if(r.scrollTop + r.clientHeight >= r.scrollHeight - 12){ try{ localStorage.setItem(readKey(), "1"); }catch(e){} r.removeEventListener("scroll", check); unlock(); } };
+  r.addEventListener("scroll", check, {passive: true}); check();
+}
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
 function toKC(l){
+  if(forTrainee() && document.querySelector(".ftdd-sheet .ftdd-reader") && !readDone()) return;   // the reading comes first
   const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null;
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: s ? s.h : "", l: Number(l)})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
@@ -1623,7 +1640,8 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 .ft-body .ftdd-reader h3{font-size:17px;margin:16px 0 6px;color:#11131F;}
 .ft-body .ftdd-reader p{margin:0 0 10px;} .ft-body .ftdd-reader ul{margin:0 0 10px 22px;}
 .ft-body .ftdd-reader figure{margin:12px 0;text-align:center;} .ft-body .ftdd-reader figure img{max-width:100%;height:auto;}
-.ft-body .ftdd-kc-go{display:flex;justify-content:center;margin:12px 0 4px;}
+.ft-body .ftdd-kc-go{display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0 4px;}
+.ft-body .ftdd-kc-go .btn:disabled{opacity:.6;cursor:not-allowed;} .ft-body .ftdd-kc-lock{font-size:13px;color:#5A6072;}
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
