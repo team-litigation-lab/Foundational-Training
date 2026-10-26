@@ -584,10 +584,29 @@ function sheetPages(sheet){
   // the next page, and fitSheets scales the page down to fit
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room / (read ? 1 : PAGE_ZOOM)){ pages.push(page); page = []; used = 0; }
+    if(page.length && used + h > room / (read ? 1 : PAGE_ZOOM)){
+      // a heading never ends a page: it moves to the next one with the text it heads
+      const carry = [];
+      while(page.length > 1 && /^H[1-6]$/.test(page[page.length - 1].tagName)) carry.unshift(page.pop());
+      pages.push(page); page = carry; used = carry.reduce((a, x) => a + hOf(x), 0);
+    }
     page.push(k); used += h;
   });
   if(page.length) pages.push(page);
+  // the same number of pages, filled about evenly, so the last page isn't a line or two on its own: the smallest page
+  // height that still deals the slide into that many pages (a heading still never ends a page)
+  if(pages.length > 1){
+    const total = units.reduce((a, x) => a + hOf(x), 0), cap = room / (read ? 1 : PAGE_ZOOM), tallest = Math.max(...units.map(hOf));
+    const deal = limit => { const out = []; let pg = [], u = 0;
+      units.forEach(k => { const h = hOf(k);
+        if(pg.length && u + h > limit){ const carry = []; while(pg.length > 1 && /^H[1-6]$/.test(pg[pg.length - 1].tagName)) carry.unshift(pg.pop());
+          out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
+        pg.push(k); u += h; });
+      if(pg.length) out.push(pg); return out; };
+    for(let limit = Math.max(total / pages.length, tallest); limit < cap; limit += Math.max(8, cap / 60)){
+      const even = deal(limit); if(even.length <= pages.length) return even;
+    }
+  }
   return pages.length ? pages : [kids];
 }
 function fitSheets(){
@@ -702,7 +721,9 @@ root.render = function(){
   fitSheets(); wireReaders(); deckNextUp(); deckPresenter();
   // the card settles a frame later (its own head, ribbon and buttons), and a page dealt against a sheet that
   // was still growing comes out half empty: deal them again once the slide has its real height
-  requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); });
+  // (the sheet stays hidden until then, so its pages are never seen being dealt twice: no flicker)
+  const mid = document.querySelector("main.main-ftdd"); if(mid) mid.classList.add("ftdd-settling");
+  requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); requestAnimationFrame(() => { const m = document.querySelector("main.main-ftdd"); if(m) m.classList.remove("ftdd-settling"); }); });
 };
 // ← / → turn the slides (not while typing)
 document.addEventListener("keydown", ev => {
@@ -1701,7 +1722,8 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftdd-next:disabled{opacity:.65;cursor:not-allowed;filter:none;}
 .ftdd-stepno{font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;margin-left:auto;}
 .ftdd-dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-right:auto;}
-.ftdd-bar:not(:has(*)){display:none;}   /* the day card slide has no pill or buttons up here */
+.ftdd-bar:not(:has(*)){display:none;}
+main.main-ftdd.ftdd-settling .ftdd-sheet > *{visibility:hidden;}   /* the day card slide has no pill or buttons up here */
 .ftdd-dot{width:9px;height:9px;border-radius:50%;border:none;background:#E3E6EE;cursor:pointer;padding:0;}
 .ftdd-dot.done{background:#8E97C4;}
 .ftdd-dot.on{background:#DB8437;transform:scale(1.25);}
@@ -1751,7 +1773,7 @@ main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
 .ft-body .ftdd-pi-card{background:#fff;border:2px solid #343C66;border-radius:12px;padding:12px 16px;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 .ft-body .ftdd-pi-card > h3:first-child{margin-top:0 !important;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
-.ft-body .ftdd-pi-chart img{max-height:40vh;width:auto;margin:0 auto;display:block;}
+.ft-body .ftdd-pi-chart img{max-height:30vh;width:auto;margin:0 auto;display:block;}
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:16.5px !important;line-height:1.5 !important;}
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
