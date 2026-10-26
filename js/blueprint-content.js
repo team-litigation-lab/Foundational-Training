@@ -38,7 +38,7 @@ window.LSH_BLUEPRINT = {
       { icon: '📷', title: 'Classroom discussions', points: [
           'Your trainer presents each lesson live, on the same slides you have on the platform. Nothing extra to install.',
           'Cameras on for the whole discussion. Meeting schedules are sent on the discussion\'s date and time \u2014 keep your notifications on.',
-          'After each discussion, fill in your Monitoring Sheet: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.',
+          'After each discussion or activity, following its specific instructions, fill in your Monitoring Sheet: the date, 5 major takeaways, 3 questions you still have, and how well you understood it.',
           'Free Upskill Training runs right after your shift, for an hour or so: communication, accent reduction, grammar, email writing and client interviews. Unpaid and not mandatory, but highly encouraged.'],
         where: 'Discord, on the date and time of the discussion · 📒 Monitoring Sheet under 📚 Dashboard.',
         tip: 'Missed a Free Upskill session? Ask your trainers what was covered, review the materials and do the practice on your own time.' },
