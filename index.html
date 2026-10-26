@@ -2653,7 +2653,7 @@ body::before{opacity:.40;}
   .topbar,.btn-primary,.btn-navy{background-image:none;box-shadow:none;}
 }
 </style>
-<script src="/js/portal-gate.js?v=ft-2026.10.26-rbac"></script>
+<script src="/js/portal-gate.js?v=ft-2026.10.26-resume"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -5636,7 +5636,7 @@ const mem = {}; // in-memory fallback if window.storage is unavailable
 const PERSONAL_KEYS = ["day-progress","practice-progress","lab-attempts-global","lab-attempts-by-day","admin-unlocked-days","notes","completed-lab-actions",
   "day10-window","submissions","roleplayHistory","slide-progress","last-slide","attn-detail-findings",
   "calendar-custom","calendar-edits","call-log","inbox-filing","inbox-interactions","inbox-labels","trainee-batch",
-  "quick-check-answers","day-order-migrated","qc-options-reordered","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since","outbound-calls","c6-audit"];
+  "quick-check-answers","day-order-migrated","qc-options-reordered","last-view","lab-drafts","work-log","cert-name","reg-name","intro-seen","task-log","task-day-since","outbound-calls","c6-audit","tools-seen","decks-done"];
 const PERSONAL_KEY_SET = new Set(PERSONAL_KEYS);
 let cloudSaveTimer = null;
 function scheduleCloudSave(){
@@ -8328,15 +8328,17 @@ function renderFooter(){
      ("lab-drafts") and restored when the tool is reopened.
    Both are part of the cloud progress record.
    ============================================================ */
-const RESUMABLE_VIEWS = ["day","tool","practice","dashboard","clientprofile","notes","handouts","openroleplay","crisisroleplay"];
+const RESUMABLE_VIEWS = ["day","tool","daydeck","knowtools","practice","dashboard","clientprofile","notes","handouts","openroleplay","crisisroleplay"];
 function bookmarkView(){
   if(!state.traineeId || state.isAdmin || state.resumePending) return;
-  if(state.view!=="day" && state.view!=="tool") return; // bookmark real work, not menus
-  const bm = {view:state.view, dayId:state.dayId||null, toolId:state.toolId||null,
+  if(!["day","tool","daydeck","knowtools"].includes(state.view)) return; // bookmark real work, not menus
+  // an Activity deck: its day and slide (js/ft-day-decks.js), so the trainee is brought back to that slide
+  const dd = state.view==="daydeck" && window.FTDayDecks ? FTDayDecks.state() : null;
+  const bm = {view:state.view, dayId:state.dayId||null, toolId:state.toolId||null, deck: dd ? {day:dd.day, i:dd.i||0} : null,
               wizardIndex:(state.view==="tool" && typeof toolState!=="undefined" && toolState.wizardIndex) || 0, at:Date.now()};
   if(state.view==="openroleplay") bm.view = "crisisroleplay"; // a live call can't be resumed mid-call
   const prev = state.lastView;
-  if(prev && prev.view===bm.view && prev.dayId===bm.dayId && prev.toolId===bm.toolId && prev.wizardIndex===bm.wizardIndex) return;
+  if(prev && prev.view===bm.view && prev.dayId===bm.dayId && prev.toolId===bm.toolId && prev.wizardIndex===bm.wizardIndex && JSON.stringify(prev.deck||null)===JSON.stringify(bm.deck)) return;
   state.lastView = bm; storeSet("last-view", bm);
 }
 /* ============================================================
@@ -8456,12 +8458,15 @@ function resumeLabel(){
   const lv = state.lastView; if(!lv) return "";
   if(lv.view==="day" && lv.dayId){ const idx = resumeSlideFor(lv.dayId); const d = DAYS.find(x=>x.id===lv.dayId); const sl = buildDaySlides(d)[idx]; return `${ftName(lv.dayId)} · ${sl ? daySlideTitle(d, sl) : "Lesson"}`; }
   if(lv.view==="tool" && lv.toolId){ const t = PRACTICE_TOOLS.find(x=>x.id===lv.toolId); return t ? `Practice Lab · ${t.title}` : ""; }
+  if(lv.view==="daydeck" && lv.deck) return `Day ${lv.deck.day} · Activity Deck, step ${(lv.deck.i||0) + 1}`;
+  if(lv.view==="knowtools") return "Day 1 · Know Your Tools";
   return "";
 }
 function resumeWhereLeftOff(saved){
   const lv = saved || state.lastView; state.resumePending = false; if(!lv) return;
   if(lv.view==="day" && lv.dayId){ goto("day", lv.dayId); return; }
   if(lv.view==="tool" && lv.toolId){ state.pendingWizardIndex = lv.wizardIndex||0; state.pendingWizardScrollTop = true; goto("tool", lv.toolId); return; }
+  if(lv.view==="daydeck" && lv.deck && window.FTDayDecks){ FTDayDecks.open(lv.deck.day, lv.deck.i||0); return; }
   goto(lv.view);
 }
 window.resumeWhereLeftOff = resumeWhereLeftOff;
@@ -18890,7 +18895,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-updates.js?v=ft-2026.10.26-lecturecard"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.26-nextup3"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.26-nextorder"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.08-drive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.08-drive"></script>
@@ -18913,7 +18918,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.26-noshadow"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.26-steppairs"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.26-fullydone"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>
@@ -18937,7 +18942,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.08-lines"></script>
 <script src="/js/lsh-topbar.js?v=2"></script>
 <script src="/js/ft-program.js?v=ft-2026.10.23-ktcard"></script>
-<script src="/js/lsh-program.js?v=ft-2026.10.26-graystart"></script>
+<script src="/js/lsh-program.js?v=ft-2026.10.26-resume"></script>
 <script src="/js/lsh-tool-links.js?v=ft-2026.10.26-kb"></script>
 <script src="/js/ft-theme.js?v=ft-2026.10.09-grad"></script>
 <script src="/js/ft-presenter-cues.js?v=ft-2026.10.15-cues"></script>

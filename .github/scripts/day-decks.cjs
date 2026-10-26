@@ -161,9 +161,9 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);
   s = await at();
   if (s.open.length !== 16) fail(`an admin can open ${s.open.length} days, not 16`);
-  await page.evaluate(() => FTDayDecks.to(1)); await page.waitForTimeout(400);
+  await page.evaluate(() => FTDayDecks.to(FTDayDecks.first(16))); await page.waitForTimeout(400);
   s = await at();
-  if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s second slide is "' + s.h + '"');
+  if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s first slide of its own is "' + s.h + '"');
   if (!s.tiles) fail('Day 16\'s links are not shown as tiles');
   // 📌 a no-discussion day: the trainer adds the day's activities and instructions on its last slide
   const extrasBefore = await get('settings:dayextras');
@@ -193,13 +193,13 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (tv.form) fail('a trainee sees the trainer\'s form');
   if (tv.bold || !/<b>quietly<\/b>/.test(tv.text)) fail('a title from the trainer was drawn as HTML');
   // a slide too long even at half size is read in pages, and Next turns the page before the slide
-  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(7, 1); }); await page.waitForTimeout(1600);
-  const paged = await page.evaluate(() => ({ pages: FTDayDecks.state().pages, page: FTDayDecks.state().page, over: (() => { const x = document.querySelector('.ftdd-sheet'); return x.scrollHeight - x.clientHeight; })() }));
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(7, FTDayDecks.first(7)); }); await page.waitForTimeout(1600);
+  const paged = await page.evaluate(() => ({ i: FTDayDecks.state().i, pages: FTDayDecks.state().pages, page: FTDayDecks.state().page, over: (() => { const x = document.querySelector('.ftdd-sheet'); return x.scrollHeight - x.clientHeight; })() }));
   if (!(paged.pages > 1)) fail(`Day 7's instruction slide isn't read in pages: ${JSON.stringify(paged)}`);
   if (paged.over > 4) fail(`a page of it overflows by ${paged.over}px`);
   await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(700);
   const after = await page.evaluate(() => ({ i: FTDayDecks.state().i, page: FTDayDecks.state().page, mark: (document.querySelector('.ftdd-n') || {}).innerText || '' }));
-  if (after.i !== 1 || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
+  if (after.i !== paged.i || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
   // the slide says what it opens: its lesson, and the Call Listening log on its own slide
   const acts = await page.evaluate(() => [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()));
   if (!acts.some(x => /Open the lesson/.test(x))) fail(`a classroom discussion slide has no lesson button: ${JSON.stringify(acts)}`);
@@ -235,16 +235,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   // the guidelines the guide writes as a wall of headings are read as cards, and the day's offline work is named
-  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, 2); }); await page.waitForTimeout(1600);
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.first(6) + 1); }); await page.waitForTimeout(1600);
   const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
   if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
-  await page.evaluate(() => FTDayDecks.open(2, 0)); await page.waitForTimeout(1300);
-  const off = await page.evaluate(() => { const h = [...document.querySelectorAll('.ftdd-lcslide .ftlc-h2')].find(x => /Outside training hours/i.test(x.innerText));
-    return h ? [...h.nextElementSibling.querySelectorAll('li')].map(x => x.innerText) : []; });
+  // every day's card follows Day 1's; the day's outside-hours work is on its Training Agenda, the slide after the card
+  await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
+  const off = await page.evaluate(() => [...document.querySelectorAll('.ftdd-ag-off li')].map(x => x.innerText));
+  if (await page.evaluate(() => [...document.querySelectorAll('.ftlc-h2')].some(x => /Outside training hours/i.test(x.innerText)))) fail("Day 2's card still has the outside-hours list (the agenda has it)");
   if (off.length < 3 || !off.some(x => /upload/i.test(x))) fail(`Day 2's outside-hours work isn't on its agenda: ${JSON.stringify(off)}`);
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
   // Day 9's mock call preparation is no longer a blank slide
-  await page.evaluate(() => FTDayDecks.open(9, 2)); await page.waitForTimeout(1500);
+  await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.first(9) + 1)); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score-l li').length }));
   if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
