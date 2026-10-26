@@ -365,7 +365,14 @@ window.FTProcess = {
     if(v && !/^https:\/\/drive\.google\.com\//.test(v)){ toast("Paste your trainee folder’s Google Drive link (it starts with https://drive.google.com/)."); return; }
     FP.data.folder = v; queueSave(); toast(v ? "Trainee folder saved." : "Trainee folder removed."); render();
   },
-  reload(){ FP.id = null; FP.err = ""; render(); }
+  reload(){ FP.id = null; FP.err = ""; render(); },
+  // the folder link, on the orientation's Save Your Answer Sheets slide (js/ft-rules.js)
+  folderField(){
+    if(!state.traineeId || state.isAdmin) return `<p class="fp-muted">Each trainee pastes their Trainee Folder’s Google Drive link here.</p>`;
+    if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
+    if(!FP.data || FP.id !== state.traineeId) return `<p class="fp-muted">Loading…</p>`;
+    return folderField() + (FP.data.folder ? `<p class="fp-muted">✓ Linked. <a href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a></p>` : "");
+  }
 };
 
 /* ---------- a lesson's Knowledge Check questions ---------- */
@@ -604,6 +611,13 @@ function renderKc(){
     </div>
     ${kcSave(qs)}`;
 }
+// 📁 My Trainee Folder: its Google Drive link, set once (the orientation's Save Your Answer Sheets slide, or here until
+// it's set), so each new answer sheet opens in it
+function folderField(){
+  return `<label class="kc-folder" for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
+    <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
+      <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>`;
+}
 // Saving the lesson's answer sheet with its proper name (to Google Drive or as a Word file), on the Knowledge Check page.
 function kcSave(qs){
   const sets = [...new Set(qs.map(x=>x.set))];
@@ -611,10 +625,7 @@ function kcSave(qs){
     ${sets.map(set=>`${namePractice(set)}
       <div class="fp-actions">${saveBtn(set, false)}
         ${FP.data.folder ? `<a class="btn btn-ghost btn-sm" href="${e(FP.data.folder)}" target="_blank" rel="noopener noreferrer">📁 Open My Trainee Folder</a>` : ""}</div>`).join("")}
-    <label class="kc-folder" for="fpFolder"><b>📁 My Trainee Folder</b> <span class="fp-muted">(its Google Drive link, so new documents are created there)</span></label>
-    <div class="fp-folder-row"><input id="fpFolder" type="url" placeholder="https://drive.google.com/drive/folders/…" value="${e(FP.data.folder||"")}">
-      <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcess.saveFolder()">Save</button></div>
-    <p class="fp-muted"><b>📁 Save to My Trainee Folder</b> copies your answers and opens a new Google Doc in your Trainee Folder, already given the file name you typed. Paste them in with Ctrl+V. Answer sheets aren't downloaded: they live in your Trainee Folder.</p>
+    ${FP.data.folder ? "" : folderField()}
   </div>`;
 }
 window.FTKc = {

@@ -404,11 +404,11 @@ const SLIDES = [
   ["habits-trackers", "Building Your Habits: Update Your Task Tracker", ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
-  ["tracker", "Building Your Habits: Your Task Tracker, The Sheet", ()=>`
+  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Top of the Sheet", TRACKER_PARTS.top)}${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
-  ["tracker-tabs", "Building Your Habits: Your Task Tracker, Other Tabs and the Daily Check", ()=>`
+  ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
     <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   ["habits-monitoring", "Building Your Habits: Update Your Monitoring Sheet", ()=>`
@@ -416,14 +416,14 @@ const SLIDES = [
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
   // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
   // 📁 Link button), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
-  ["monitoring", "Building Your Habits: Your Monitoring Sheet, How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
+  ["monitoring", "Your Training Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
       ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Monitoring Sheet</button></div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   // the sheet with numbered arrows, and beside it what goes at each number
-  ["monitoring-entry", "Building Your Habits: Your Monitoring Sheet, A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+  ["monitoring-entry", "Your Training Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
@@ -431,7 +431,7 @@ const SLIDES = [
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
-  ["eod", "Building Your Habits: Your EOD Email, The Template", ()=>`
+  ["eod", "Your EOD Email: The Template", ()=>`
     <div class="ftr-part ftr-eod">
       <div class="ftr-part-h">📧 Your EOD Email</div>
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
@@ -446,6 +446,17 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
+  // the answer sheets, in the Hubstaff how-tos' way: link the folder once (right here), name each sheet, save it there
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Link Your Trainee Folder", steps:["Open your Trainee Folder in Google Drive and copy its link.", "Paste it here and press Save. You do this once."], field:true},
+      {h:"Name Each Answer Sheet", steps:["Every Knowledge Check shows its naming convention, e.g. PI Overview_Answers (Your First Name).", "Type the file name yourself: it’s checked as you type."], tip:"Spaces, underscores, capitals and your first name in ( ) all count."},
+      {h:"Save It to Your Trainee Folder", steps:["📁 Save to My Trainee Folder opens a new Google Doc in your folder, with the name you typed.", "Your answers are copied: paste them in with Ctrl+V."], tip:"Answer sheets aren’t downloaded: they live in your Trainee Folder."}
+    ].map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.field && !FT_AUDIENCE() && window.FTProcess && FTProcess.folderField ? `<div class="ftr-folder">${FTProcess.folderField()}</div>` : ""}
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
@@ -703,6 +714,7 @@ body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo .btn{padding:2px 8px !i
 body.ft-orient #lessonSlideWrap .ftr-todos-one .ftr-todo-n{width:20px;height:20px;font-size:10px;flex:none;}
 body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
+body.ft-orient #lessonSlideWrap .ftr-folder .fp-folder-row{display:flex;gap:6px;margin-top:6px;} body.ft-orient #lessonSlideWrap .ftr-folder input{flex:1;min-width:0;padding:6px 8px;border:1px solid #C9CFE6;border-radius:8px;font-size:13px;} body.ft-orient #lessonSlideWrap .ftr-folder .kc-folder{display:none;}
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
 body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
