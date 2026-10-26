@@ -3,7 +3,8 @@
 //   - reads the trainee's sheet and checks the day with the tracker rules (every open task's Daily Note, the day's output links);
 //   - checks the Monitoring Sheet per discussion;
 //   - keeps the trainer's score and comment when it checks again, and lets a trainee check at most every 3 minutes;
-//   - says how to share the file when Google answers with its sign-in page (a file not shared).
+//   - reads a submitted answer sheet's file name (/api/drive/name);
+//   - says the file can't be opened when Google answers with its sign-in page.
 // Usage: node .github/scripts/drive.cjs   (no browser, no network)
 const path = require('path'); const { pathToFileURL } = require('url');
 const failures = []; const fail = (m) => failures.push(m);
@@ -26,6 +27,7 @@ const failures = []; const fail = (m) => failures.push(m);
             `⬇ FOR COMPLETION ⬇\n${us},LSH-TRAINING,Reception lesson,Dee,"Finished the slides, took notes",Learned the spiel,ASAP,Ongoing,\n⬇ RECURRING ⬇\n,LSH-TRAINING,Typing Test,Dee,,,,Ongoing,\n`);
         if (u.includes('1MonitorDocIdForTheCiTest000001/export?format=txt')) return new Response(
             'Virtual Assistant Essentials - Day 1\nDate: 10/01/2026\n5 Major Takeaways From This Discussion\n1. A Legal VA supports the attorney with case tasks.\n2. Federal courts hear cases between parties in different states.\n3. Solo attorneys gain the most from a VA handling intake.\n4. Clear written updates build the client’s trust.\n5. Deadlines are tracked in the firm’s calendar every day.\n3 Questions That You Still Have\n1. How are court deadlines counted?\nRate Your Understanding\n[x] I am confident that I can do this on my own.\n');
+        if (u === DOC) return new Response('<!doctype html><html><head><meta property="og:title" content="PI Overview_Answers (Dee)"><title>PI Overview_Answers (Dee) - Google Docs</title></head></html>');
         return new Response('not found', { status: 404 });
     };
     const call = async (p, body, token) => {
@@ -58,13 +60,20 @@ const failures = []; const fail = (m) => failures.push(m);
     const r2 = await call('/api/drive/check', { id }, admin);
     const day2 = r2.body.review.days[D];
     if (day2.trainerScore !== 90 || day2.comment !== 'Good notes.' || r2.body.review.monitor.comment !== 'Complete.') fail(`a new check lost the trainer's input: ${JSON.stringify(day2)}`);
+    // an answer sheet submitted by its link: the platform reads the file's own name (js/ft-process.js checks it)
+    const nm = await call('/api/drive/name', { url: DOC }, trainee);
+    if (!nm.body || nm.body.name !== 'PI Overview_Answers (Dee)') fail(`the answer sheet's name wasn't read from Drive: ${JSON.stringify(nm)}`);
+    const bad = await call('/api/drive/name', { url: 'https://example.com/x' }, trainee);
+    if (!bad.body || bad.body.error !== 'link') fail(`a link that isn't Google Drive's should be refused: ${JSON.stringify(bad)}`);
     // a file that isn't shared: Google answers with its sign-in page
     shared = false;
+    const nm2 = await call('/api/drive/name', { url: DOC }, trainee);
+    if (!nm2.body || nm2.body.error !== 'not-shared') fail(`an unreadable answer sheet should say so: ${JSON.stringify(nm2)}`);
     const r3 = await call('/api/drive/check', { id }, admin);
     const sheetRule = (r3.body.review.days[D].rules || [])[0];
-    if (!sheetRule || sheetRule.id !== 'sheet' || !/Anyone with the link/.test(sheetRule.detail)) fail(`an unshared sheet should say how to share it: ${JSON.stringify(sheetRule)}`);
-    if (!/Anyone with the link/.test(r3.body.review.monitor.error || '')) fail('an unshared Monitoring Sheet should say how to share it');
+    if (!sheetRule || sheetRule.id !== 'sheet' || !/can't open this file.*file's own link/.test(sheetRule.detail)) fail(`an unreadable sheet should say to check its link: ${JSON.stringify(sheetRule)}`);
+    if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, an unshared file explained).');
+    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, an answer sheet\'s name read from its link, an unreadable file explained).');
 })().catch(e => { console.error(e); process.exit(1); });
