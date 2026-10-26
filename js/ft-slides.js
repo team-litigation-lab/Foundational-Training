@@ -118,7 +118,7 @@ const css = `
    slide and its Previous / Next bar fit on one screen (fitPages() below sizes the page to what's left). */
 @media (min-width:1000px){
   body.ft-fit main:has(#lessonStage){display:flow-root;padding-top:12px;padding-right:8px !important;}
-  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){float:right;clear:right;width:176px;margin:0 0 10px;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage):not(.back-link){float:right;clear:right;width:176px;margin:0 0 10px;}
   body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 188px 0 0;}
   body.ft-fit main:has(#lessonStage) > #navBackSlot:empty{display:none;}
   /* the footer line about an inch under the slide, and the page ends there */
@@ -228,7 +228,7 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
   main:has(> #lessonStage) #lessonStage:not(:fullscreen) .stage-presenter{display:none !important;}
   /* a wider side column (240 px, from 200), so the presenter in it is bigger */
   body:not(.ft-fit) main:has(> #lessonStage){grid-template-columns:minmax(0,1fr) 240px !important;}
-  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){width:240px !important;}
+  body.ft-fit main:has(#lessonStage) > *:not(#lessonStage):not(.back-link){width:240px !important;}
   body.ft-fit main:has(#lessonStage) > #lessonStage{margin-right:256px !important;}
   /* she stands at the foot of the column, as wide as it, her bottom on the slide's bottom edge; the artwork ends at
      her knees, so her legs fade out over the last fifth instead of stopping on a hard line */
@@ -452,7 +452,10 @@ if(typeof Narrator !== "undefined"){
     nav.appendChild(el);
   }
   const css = document.createElement("style");
-  css.textContent = `.lesson-stage .slide-done-banner{display:none !important;}   /* the last slide is the same size as the others; Next up says what's next */
+  css.textContent = `/* the lesson card (lessons and the orientation, the navy panel the slide sits in) has the American-flag photo, under a
+   navy wash so the slide and its buttons stand out, like the page behind the Activity decks */
+#lessonStage.lesson-stage:not(:fullscreen){background:linear-gradient(135deg, rgba(31,36,64,.74) 0%, rgba(43,49,88,.66) 60%, rgba(53,60,104,.60) 100%), url("/img/bg-flag-law.webp") center / cover no-repeat !important;}
+.lesson-stage .slide-done-banner{display:none !important;}   /* the last slide is the same size as the others; Next up says what's next */
 #lessonStage:not(:fullscreen) > .slide-nav{background:rgba(255,255,255,.82);border:1px solid rgba(38,43,69,.12);border-radius:14px;padding:8px 12px !important;margin:10px 0 0 !important;backdrop-filter:blur(6px);gap:12px;flex-wrap:nowrap;}
 #lessonStage:not(:fullscreen) > .slide-nav .slide-counter{margin-left:auto;font:600 13px 'IBM Plex Mono',monospace;color:#262B45;white-space:nowrap;}
 .lesson-stage .slide-dots-nav{margin:0 auto 0 0 !important;justify-content:center;flex-wrap:nowrap;overflow:hidden;gap:5px !important;min-width:0;max-width:34%;}
