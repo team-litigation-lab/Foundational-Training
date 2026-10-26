@@ -43,6 +43,8 @@ const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons
 const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : v; }catch(err){ return (s || {}).html; } };
 // a lesson is open when the trainer has opened it for the batch (Admin → 📅 Open Lessons)
 const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
+// a lesson this trainee has finished: its cards say Finished and their Start becomes Review
+const lessonDone = l => { try{ return !!(forTrainee() && state.progress && (state.progress[Number(l)] || {}).done); }catch(err){ return false; } };
 const lessonTitle = l => { try{ return ftName(Number(l)) || ("Lesson " + l); }catch(err){ return "Lesson " + l; } };
 const COUNT = () => (root.FTDays && FTDays.COUNT) || 18;
 // the day the trainee is on in the curriculum (js/ft-next-step.js: the first day with an unfinished lesson)
@@ -670,11 +672,25 @@ root.addEventListener("resize", () => { if(state.view !== "daydeck") return; cle
 /* 🧰 Know Your Tools has a card of its own on 📚 Dashboard, beside the 📌 Setting of Training Expectations card, and
    its own page (#/knowtools), drawn like a deck slide: the tools on the left, the picked one's screenshot, purpose,
    place and features (toolsSlide below). */
+// Know Your Tools is finished once the trainee has opened every tool (tools-seen, saved with their account): its card then
+// says Finished, and Start becomes Review, as the orientation's card does
+let toolsSeen = null;
+function seenTools(){
+  if(toolsSeen == null){ toolsSeen = []; if(typeof storeGet === "function") Promise.resolve(storeGet("tools-seen")).then(v => { if(Array.isArray(v)){ toolsSeen = [...new Set(toolsSeen.concat(v))]; if(state.view === "modules") render(); } }).catch(() => {}); }
+  return toolsSeen;
+}
+function markTool(i){
+  if(!forTrainee()) return;
+  const seen = seenTools(); if(seen.includes(i)) return;
+  seen.push(i); if(typeof storeSet === "function") storeSet("tools-seen", seen.slice());
+}
+const toolsDone = () => forTrainee() && TOOLS.every((t, i) => seenTools().includes(i));
 function toolsCard(){
-  return `<div class="module-card mc-open mc-clean ftkt-card" id="module-tools">
-    <div class="module-head"><div class="mh-day">🧰 Day 1</div><div class="mh-title">Know Your Tools</div></div>
+  const done = toolsDone();
+  return `<div class="module-card mc-open mc-clean ftkt-card${done ? " mc-done" : ""}" id="module-tools">
+    <div class="module-head"><div class="mh-day">${done ? "Finished" : "🧰 Day 1"}</div><div class="mh-title">Know Your Tools</div></div>
     <div class="module-body"></div>
-    <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">Start</button></div></div>`;
+    <div class="mc-grid mc-n0"><button type="button" class="btn module-start-btn btn-navy" onclick="goto('knowtools')">${done ? "Review" : "Start"}</button></div></div>`;
 }
 // one of the pinned cards (window.FT_TOOLS_PIN, listed by js/ft-program.js after the orientation): the dashboard
 // draws a pinned card with moduleCard(), which draws this one as its own card
@@ -734,6 +750,7 @@ const __render = root.render;
 root.render = function(){
   if(state.view !== "knowtools") toolsHintClose();
   if(state.view === "knowtools"){
+    markTool(Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)));   // the tool on screen counts as opened
     if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
     document.getElementById("app").innerHTML = renderTopbar() + `<main class="main-ftdd">${renderToolsPage()}</main>` + renderFooter();
     try{ afterRender(); }catch(err){}
@@ -1055,7 +1072,7 @@ function dayCard(n, ex){
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
       <div class="ftlc-acts">
-        <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶ Start Training" : "🔒 Not open yet"}</button>
+        <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? (lessonDone(c.lesson) ? "▶ Review" : "▶ Start Training") : "🔒 Not open yet"}</button>
         <button type="button" class="ftlc-tag" onclick="${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">Classroom</button>
       </div>
     </header>
@@ -1089,7 +1106,9 @@ function introCard(l, cur, ex, tags){
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
   card.classList.add("ftli"); if(cur != null && c.days.includes(cur)) card.classList.add("now");
   const kick = card.querySelector(".mh-day");
-  if(kick) kick.innerHTML = `Classroom Activity · ${e(FTDays.label(c.days))}${tags || ""}`;
+  const done = lessonDone(l.id);
+  if(kick) kick.innerHTML = `${done ? "✓ Finished" : "Classroom Activity"} · ${e(FTDays.label(c.days))}${tags || ""}`;
+  if(done) card.classList.add("ftli-done");
   const grid = card.querySelector(".mc-grid"); if(!grid) return card.outerHTML;
   // the lesson card's own 🎬 Video Presentation button (🔒 until the trainer unlocks it), kept, with a short label
   const vid = [...grid.querySelectorAll("button")].find(b => /Video/.test(b.textContent));
@@ -1102,7 +1121,7 @@ function introCard(l, cur, ex, tags){
   if(body){ body.id = `dayd-${n}`; body.classList.add("ftli-days"); body.setAttribute("role", "button"); body.tabIndex = 0;
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
-  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? "▶" : "🔒"} Start Training</button>
+  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? (done ? "▶ Review" : "▶ Start Training") : "🔒 Start Training"}</button>
     ${vid ? vid.outerHTML : ""}
     <button type="button" class="btn btn-ghost btn-sm module-finish-btn ftli-class" onclick="event.stopPropagation(); ${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">🏠 Classroom</button>`;
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
@@ -1335,7 +1354,7 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   // 🗺 Map: the training roadmap
   map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
-  tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); render(); },
+  tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
   tools: () => TOOLS.map(t => t.name),
   // the index of a day's first slide of its own (after its day card and Training Agenda)
