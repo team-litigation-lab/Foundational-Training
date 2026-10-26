@@ -45,14 +45,8 @@ window.LSH_PROGRAM = {
   // 📚 Dashboard: the modules, then these pages (who: "trainee", "admin" or both). Their own top bar buttons
   // move here, and their pages get the section's bar of tabs.
   modules: [
-    {view:"tracker", icon:"📋", label:"Task Tracker", who:"trainee", about:"Your Daily Task Tracker in your main Google Drive: its link, each day’s output links, and the daily check."},
-    {view:"monitoring", icon:"📒", label:"Monitoring Sheet", who:"trainee", about:"Your Training Progress Monitoring Sheet in your main Google Drive, checked per discussion or activity."},
-    {view:"notes", icon:"🗒", label:"My Notes", who:"trainee", about:"Your own notes from the lessons."},
-    {view:"learn", icon:"🎬", label:"Video Notes", who:"trainee", about:"What you learned from each training video: your takeaways, the new terms, a question for your trainer, and how you’ll use it on the job."},
-    {run:"openFocusPanel()", icon:"🎯", label:"My Focus", who:"trainee", about:"Your trainer’s feedback and what to work on next.", badge:() => typeof window.focusNewCount === "function" ? window.focusNewCount() : 0},
-    {view:"tasks", icon:"🎲", label:"Tasks", who:"trainee", about:"The unannounced tasks your trainer sends during a session: acknowledge, plan and resolve each one before its timer ends. Graded.", badge:() => typeof window.openTasksCount === "function" ? window.openTasksCount() : 0},
-    {view:"myfeedback", icon:"📬", label:"My Feedback", who:"trainee", about:"Everything your trainer sent you about your work: the feedback on your transcriptions, video notes, process guides and letters, the mock calls’ and demos’ scorecards, and the reviews of your sessions and Knowledge Checks."},
-    {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
+    {view:"notes", icon:"🗒", label:"Notes", who:"trainee", about:"Your own notes from the lessons."},
+    {view:"scorecard", icon:"🏅", label:"My Performance", who:"trainee", about:"Your focus, your trainer’s feedback and every grade the platform gives you, from all of its grading systems — the same scores the Main Portal's scorecard collects."},
     {view:"orientation", icon:"🧭", label:"Orientation", who:"admin", about:"The platform orientation slides (the Blueprint PDF)."}
   ],
   // No 📁 Client Profile button in the top bar — My Firm (js/ft-firms.js) is still reachable from the
