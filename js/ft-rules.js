@@ -370,19 +370,6 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // the Training Matrix on its own slide (11), after Discord: the matrix itself embedded on the left, its cover
-  ["matrix", "Your Training Matrix", ()=>{
-    // the training's flow, calm and at a glance: one light card per stage of the training (the days that share a role,
-    // from the day map, js/ft-day-activities.js), each day on one line with its main activity (the typing and spelling
-    // tests and the upskill run every day, so they're left off)
-    const days = (window.FTDays && FTDays.DAYS) || [];
-    const skip = new Set(["Skill test", "Upskill", "Buffer", "Offline"]);
-    const stages = days.reduce((a, d)=>{ const last = a[a.length - 1]; if(last && last.role === d.role) last.days.push(d); else a.push({role: d.role, days: [d]}); return a; }, []);
-    const main = d=>{ const x = (d.items || []).find(x=>!skip.has(x.kind)); return x ? String(x.t).replace(/\s*\([^)]*\)\s*$/, "") : ""; };
-    const card = (st, i)=>{ const a = st.days[0].day, b = st.days[st.days.length - 1].day;
-      return `<div class="ftr-flow-card ftr-flow-s${i % 6}"><div class="ftr-flow-hd"><span class="ftr-flow-n">${a === b ? `Day ${a}` : `Days ${a}–${b}`}</span><b>${esc(st.role)}</b></div>
-        <ul>${st.days.map(d=>`<li><span>Day ${d.day}</span>${esc(main(d))}</li>`).join("")}</ul></div>`; };
-    return `<div class="ftr-flow">${stages.map(card).join("")}</div>`; }],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
   ["deliverables", "Your 4 Daily Deliverables", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. The next slides show your tracker, your Monitoring Sheet and your EOD email; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
