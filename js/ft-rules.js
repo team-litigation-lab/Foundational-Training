@@ -267,7 +267,7 @@ const SLIDES = [
   // Hubstaff: why it matters, and the reminder that integrity is a must in a virtual setting (the To-Dos, notes and lost
   // hours are the slides that follow)
   ["howto", "Hubstaff: How-Tos and Why They Matter", ()=>`<div class="ftr-why"><b>Why it matters:</b> Hubstaff is where your training time is tracked. Your To-Dos and notes help the audit team review your work easily, and keep a clear record of what you completed each day. Set them every day, for the session you’re in. Don’t miss this routine.</div>
-    <div class="ftr-remind"><b>🛡 A reminder: integrity is a must</b>
+    <div class="ftr-remind"><b>🛡 A reminder: Integrity is a must.</b>
       <p>We work in a virtual setting, so the trust your trainers, your team and our clients place in you rests on your honesty. Track only the time you truly work, keep your To-Dos and notes accurate, and do what is expected of you every day, whether or not anyone is watching.</p></div>`],
   // the Hubstaff To-Dos, laid out like the Notes slide: Part 1 (how to add today's) and Part 2 (the 16 To-Dos to copy)
   // on the left, the Hubstaff picture big on the right (📋 Copy each, 📋 Copy All puts every To-Do on the clipboard, one per line)
