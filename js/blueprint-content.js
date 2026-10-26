@@ -51,7 +51,7 @@ window.LSH_BLUEPRINT = {
         tip: 'Opening the training from the LSH Training Portal brings you straight here, already signed in.' },
       { icon: '🧭', title: 'Getting around', points: [
           '📁 Client Profile: your firm, its rules and the case files assigned to you. Every Practice Session is checked against them.',
-          '🛠 Practice Lab: your real-time Practice Sessions, the activities with your trainer, and Skill Building.',
+          '🛠 Practice Lab: your real-time Practice Sessions and the activities with your trainer.',
           '✍️ Knowledge Check: every lesson\'s answer sheet in one place. 70% passes, graded in your facilitator\'s style.',
           '🎯 Focus: your trainer\'s feedback and what to work on next.',
           '🏠 Main Portal: every program you are in, your evaluations \u2014 and where you log out.'],

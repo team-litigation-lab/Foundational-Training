@@ -6,7 +6,6 @@
      • 🧰 Drafting Tools: the document tools — the LOR Drafting Activity (js/ft-lor.js), which replaced the
        Claims Specialist Practice Session. A template is filled in on the page and comes out as a PDF under the
        trainers' naming convention, which the trainee can edit. Drafted here, never a CMS case file.
-     • 🧪 Skill Building: the daily typing and spelling tests.
      • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
        (js/lsh-tool-links.js). The Call Simulator is ☎ LSH Ring Channel's (the training phone) and the Calendaring
        Simulators are the Main Portal's: both open in their own tab, on the trainee's Portal sign-in. New tab ↗: its own tab.
@@ -58,28 +57,11 @@ function addWho(q){
 }
 // The Portal's Calendaring Simulators (the Google Calendar Simulator): their own tab, with the trainee's name and batch.
 function portalHref(page){ return PORTAL + page + "?" + addWho(new URLSearchParams({program:"FT"})); }
-// 🧪 Practice Lab: Skill Building — the daily Typing and Spelling Tests, taken on the platform (js/ft-skilltests.js, #/skills):
-// each result is logged with its date and AM/PM slot, so there is no screenshot to take, name or upload. The Training
-// Orientation and Rules slide and the day map's daily step point here.
-function renderSkills(){
-  const tests = window.FT_SKILL_TESTS || [];
-  if(!tests.length) return "";
-  return `<section class="fts-group" id="fts-skills"><h2>🧪 Practice Lab: Skill Building</h2>
-      <p class="fts-sub">Your daily Typing and Spelling Tests. LSH’s clients look for VAs who type at least 60 WPM. Take them here: every result is saved with its date and time, and your trainer sees it, so there is no screenshot to take.</p>
-      <div class="fts-grid">${tests.map(t=>`<div class="card fts-card">
-        <div class="fts-kicker">${window.FTDays ? `Days 1–${FTDays.COUNT}` : ""}</div>
-        <h3>${t.icon} ${esc(t.name)}</h3>
-        <p class="fts-note"><b>When:</b> ${esc(t.when)}</p>
-        <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('skills')">Take the ${esc(t.name.toLowerCase())}</button></div>
-        <div class="fts-label">Extra practice in your idle time</div>
-        <div class="fts-tool-act">${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0])} ↗</a>`).join("")}</div>
-      </div>`).join("")}</div></section>`;
-}
 // The orientation slide's "Open the Practice Lab" and the day map's daily step: the tests themselves.
 window.ftsGotoSkills = function(){ goto("skills"); };
 
 // The Practice Lab: real-time Practice Sessions at the trainee's own firm (js/ft-sessions.js, js/ft-firms.js), the activities
-// done live with the trainer, and Skill Building. The demo-preparation cards are gone: the demos are done live with the
+// done live with the trainer. The demo-preparation cards are gone: the demos are done live with the
 // trainer (🧑‍🏫 With your trainer), so a card per demo only repeated them. The simulators' cards (the
 // separate Calendaring Simulators, the mock-call lines and All simulators) are gone: the calls and the Google Calendar
 // Simulator are tools inside their sessions (the Calendar Management Mock Calls are part of the Calendaring Practice Lab).
@@ -93,10 +75,12 @@ function renderSimulators(){
       <div class="fts-grid">${ftLorCard()}${window.ftGuideCard ? ftGuideCard() : ""}${window.ftTranscribeCard ? ftTranscribeCard() : ""}${window.ftDrillsCard ? ftDrillsCard() : ""}</div></section>` : ""}
     <section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${FTSessions.trainerCards()}</div></section>` : ""}
+    <section class="fts-group"><h2>📚 Knowledge Base</h2><p class="fts-sub">The LSH library of SOPs, guides and training videos. Look up how a task is done before you ask, and come back to it once you are working with your clients.</p>
+      <div class="fts-grid"><div class="card fts-card"><div class="fts-kicker">Any day</div><h3>📚 LSH Knowledge Base</h3>
+        <p class="fts-note">SOPs, guides and training videos, searchable, in one place. It opens signed in.</p>
+        <div class="fts-tool-act"><a class="btn btn-navy btn-sm" href="https://lsh-knowledge-base.legalsupporthelp.workers.dev/" target="_blank" rel="noopener">Open the Knowledge Base ↗</a></div></div></div></section>
     ${window.ftCasesSection ? ftCasesSection() : ""}
-    ${window.ftListenSection ? ftListenSection() : ""}
-    ${window.ftShadowSection ? ftShadowSection() : ""}
-    ${renderSkills()}`;
+    ${window.ftListenSection ? ftListenSection() : ""}`;
 }
 
 // Open here: the tool fills the window in its own panel, outside the page, so the page

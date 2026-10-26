@@ -117,7 +117,7 @@ function kindOf(s, html){
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
-  return {ic: "📝", label: "Read & do"};
+  return {ic: "📝", label: "Read & Do"};
 }
 const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
 const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
@@ -402,8 +402,7 @@ const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-gh
 function slideActions(s, info, body, i){
   if(s.agenda || s.trainer) return "";
   const h = String(s.h || ""), out = [];
-  // Day 1's Reading Task: its questions are the Reading Task sheet of Lesson 1's ✍️ Knowledge Check (open before the lesson)
-  if(DD.day === 1 && s.id === "reading" && root.FTProcess) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTProcess.openLesson(1)">✍️ Answer the Reading Task questions</button>`);
+  // (Day 1's Reading Task has its ✍️ Knowledge Check button on the slide itself, under the reading: FTDayDecks.toKC)
   const has = re => re.test(h);
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
@@ -676,7 +675,7 @@ root.render = function(){
   app.innerHTML = renderTopbar() + `<main class="main-ftdd">${renderDeck()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
   document.querySelectorAll(".ftdd-sheet, .ftdd-onnavy").forEach(x => { x.scrollTop = 0; });
-  fitSheets();
+  fitSheets(); wireReaders();
   // the card settles a frame later (its own head, ribbon and buttons), and a page dealt against a sheet that
   // was still growing comes out half empty: deal them again once the slide has its real height
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); });
@@ -726,7 +725,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
    {d, s} is the day and the slide id it opens (build/days/), {go} a platform page instead.
    ============================================================ */
 // the pills a row carries, as the card names its kind
-const PILLS = {classroom: "Classroom", read: "Read & do", interactive: "Interactive activity", homework: "Homework",
+const PILLS = {classroom: "Classroom", read: "Read & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
@@ -823,6 +822,30 @@ const LESSON_CARDS = {
 };
 // open a row's slide: the deck loads first, so the slide is found by its id (the agenda and the split-off Call
 // Listening slide shift the numbers); a slide the deck doesn't have opens the day's agenda
+// 📖 A reading on a slide (Day 1's Reading Task, .ftdd-reader): its ✍️ Knowledge Check button stays locked until the
+// trainee has scrolled the reading to its end; that is remembered (this browser), so it stays open after. Trainers
+// and admins are never locked out.
+const readKey = () => `ftReadDone:${state.traineeId || "-"}:${DD.day}:${(slidesOf((decks() || {})[DD.day] || {slides: []})[DD.i] || {}).id || ""}`;
+function readDone(){ try{ return localStorage.getItem(readKey()) === "1"; }catch(e){ return false; } }
+function wireReaders(){
+  const r = document.querySelector(".ftdd-sheet .ftdd-reader"), go = document.querySelector(".ftdd-sheet .ftdd-kc-go .btn");
+  if(!r || !go) return;
+  const label = go.dataset.label || (go.dataset.label = go.textContent);
+  const unlock = () => { go.disabled = false; go.textContent = label; go.title = ""; const n = document.querySelector(".ftdd-sheet .ftdd-kc-lock"); if(n) n.remove(); };
+  if(!forTrainee() || readDone()){ unlock(); return; }
+  go.disabled = true; go.textContent = "🔒 " + label.replace(/^✍️\s*/, ""); go.title = "Read to the end of the reading first";
+  if(!document.querySelector(".ftdd-sheet .ftdd-kc-lock")) go.insertAdjacentHTML("afterend", `<span class="ftdd-kc-lock">Read to the end of the reading to answer its questions.</span>`);
+  const check = () => { if(r.scrollTop + r.clientHeight >= r.scrollHeight - 12){ try{ localStorage.setItem(readKey(), "1"); }catch(e){} r.removeEventListener("scroll", check); unlock(); } };
+  r.addEventListener("scroll", check, {passive: true}); check();
+}
+// ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
+// which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
+function toKC(l){
+  if(forTrainee() && document.querySelector(".ftdd-sheet .ftdd-reader") && !readDone()) return;   // the reading comes first
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null;
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: s ? s.h : "", l: Number(l)})); }catch(e){}
+  if(root.FTProcess) FTProcess.openLesson(l);
+}
 function openSlide(n, id, alt){
   loadDecks().then(() => {
     const d = decks() && decks()[n];
@@ -1092,7 +1115,7 @@ const TOOLS = [
       "Videos, documents and decks open right on the slide; 📝 What I learned keeps your notes on each video",
       "◫ Split screen shows two slides side by side; ▶ Autoplay turns them for you",
       "📋 Today’s To-Do and 📘 the day’s lesson are one click away"]},
-  {ic: "🗂", name: "LSH Case Management System (CMS)", short: "CMS (Case Management)", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
+  {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
     feats: ["🔍 Search cases by client name (Ctrl / Cmd + K); when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
@@ -1104,12 +1127,12 @@ const TOOLS = [
       "🔎 Case lookup, 📇 Directory and 📘 Rules while you talk; Hold and Transfer like a real phone",
       "📝 The message slip or case note is filled in during the call, and your trainer sees it live",
       "🎧 Practice with an AI caller any time; graded calls count toward their lesson"]},
-  {ic: "🛠", name: "Practice Lab", img: "practice-lab", go: "goto('simulators')", where: "🛠 Practice Lab in the top bar",
-    what: "Real work, in real time, for your firm: each Practice Session is done live in the CMS and on the Call Simulator, checked against your firm’s rules and reviewed by your trainer.",
-    feats: ["🟢 Practice Sessions by day: Reception and Intake Mock Calls, the Calendaring Practice Lab, Medical Records requests",
-      "🎯 A graded call counts toward its lesson",
-      "Home of 🧰 Drafting Tools and the simulators",
-      "Each session opens with its lesson, so you practise what you just learned"]},
+  {ic: "🟢", name: "Practice Sessions", img: "practice-lab", go: "goto('simulators')", where: "🛠 Practice Lab → 🟢 Practice Sessions",
+    what: "Real work, in real time, for your law firm: each session is a task done live in the CMS on your assigned case, checked against your firm’s rules and reviewed by your trainer.",
+    feats: ["By day: the Reception and Intake Mock Calls, the Calendaring Practice Lab, Medical Records requests",
+      "Each session opens with its lesson, so you practise what you just learned",
+      "Record what you did and submit it: it’s evaluated against your case and your 🏛 firm’s rules",
+      "🎯 A graded call counts toward its lesson"]},
   {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
@@ -1122,6 +1145,12 @@ const TOOLS = [
       "✎ Edit in Word or ✎ Edit in PDF on your own computer, then upload it",
       "Your upload is checked, and the score goes to your progress",
       "It shows the file name to save it under"]},
+  {ic: "📚", name: "LSH Knowledge Base", short: "Knowledge Base", img: "knowledge-base", href: "https://lsh-knowledge-base.legalsupporthelp.workers.dev/", where: "🛠 Practice Lab → 📚 Knowledge Base (it opens in its own tab)",
+    what: "The LSH library of SOPs, training videos and know-how from the whole LSH VA community: look up how a task is done before you ask.",
+    feats: ["SOPs and step-by-step guides for the work you do for your clients",
+      "Training videos from the LSH VA community",
+      "Opens signed in: no second log-in, straight from this platform",
+      "Yours to keep using once you are working with your clients"]},
   {ic: "✍️", name: "Knowledge Check", img: "knowledge-check", go: "goto('process')", where: "✍️ Knowledge Check in the top bar",
     what: "Each module’s Process Questions, answered in writing on the platform and graded.",
     feats: ["A module’s questions open once you finish the module",
@@ -1149,7 +1178,7 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -1201,7 +1230,7 @@ if(!document.getElementById("ftdd-deck-font")){
 (function(){ const st = document.createElement("style"); st.id = "ft-day-decks"; st.textContent = `
 main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:flex;flex-direction:column;gap:10px;}
 /* the day picker and the day's lesson sit in rails either side, so the slide itself takes the width */
-.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;align-items:stretch;min-height:0;}
+.ftdd-stage{display:grid;grid-template-columns:minmax(0,1fr) 196px;gap:12px;align-items:stretch;min-height:0;}
 .ftdd-mid{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0;}
 .ftdd-slides{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-height:0;}
 .ftdd-stage-split .ftdd-slides{grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -1213,8 +1242,8 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 18px 14px;display:fle
 .ftdd-ctl{text-align:left;white-space:normal;}
 .ftdd-ctl.on{background:#262B45;color:#fff;border-color:#262B45;}
 .ftdd-rail-note{margin:0;font-size:11.5px;color:var(--ink-soft);}
-.ftdd-rail-kick{margin:4px 0 0;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;white-space:nowrap;}
-.ftdd-rail-title{margin:0 0 4px;font:600 19px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
+.ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;white-space:nowrap;}
+.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 18px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
 @media(max-width:1100px){
   .ftdd-stage{grid-template-columns:minmax(0,1fr);}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
@@ -1606,6 +1635,13 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
+.ft-body .ftdd-reader{height:max(320px, 52vh);margin:10px 0;padding:18px 26px;border:1.5px solid #9AA0AB;border-radius:10px;overflow-y:auto;background:#fff;color:#11131F;font-size:16px;line-height:1.6;text-align:left;}
+.ft-body .ftdd-reader h2{font-size:22px;margin:22px 0 8px;color:#B42318;} .ft-body .ftdd-reader h2:first-child{margin-top:0;}
+.ft-body .ftdd-reader h3{font-size:17px;margin:16px 0 6px;color:#11131F;}
+.ft-body .ftdd-reader p{margin:0 0 10px;} .ft-body .ftdd-reader ul{margin:0 0 10px 22px;}
+.ft-body .ftdd-reader figure{margin:12px 0;text-align:center;} .ft-body .ftdd-reader figure img{max-width:100%;height:auto;}
+.ft-body .ftdd-kc-go{display:flex;flex-direction:column;align-items:center;gap:6px;margin:12px 0 4px;}
+.ft-body .ftdd-kc-go .btn:disabled{opacity:.6;cursor:not-allowed;} .ft-body .ftdd-kc-lock{font-size:13px;color:#5A6072;}
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
@@ -1614,9 +1650,11 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
-   Tools): a round close button, top right, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
-body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 0 6px auto !important;
-  display:inline-flex !important;align-items:center;justify-content:center;align-self:flex-end;border-radius:50%;background:#1E2340;border:2px solid #fff;
+   Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
+   full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
+body.one-screen main:has(#lessonSlideWrap) > a.back-link, .ftdd-mid > a.back-link{font-size:0 !important;width:38px;height:38px;padding:0 !important;margin:0 !important;
+  position:fixed;right:22px;bottom:22px;z-index:60;
+  display:inline-flex !important;align-items:center;justify-content:center;border-radius:50%;background:#1E2340;border:2px solid #fff;
   box-shadow:0 0 0 2px #1E2340, 0 4px 12px rgba(30,35,64,.45);cursor:pointer;text-decoration:none !important;flex:0 0 auto;}
 body.one-screen main:has(#lessonSlideWrap) > a.back-link::before, .ftdd-mid > a.back-link::before{content:"✕";font:800 18px/1 'Inter',sans-serif;color:#fff;}
 body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover, .ftdd-mid > a.back-link:hover{background:#E8590C;box-shadow:0 0 0 2px #E8590C, 0 4px 12px rgba(30,35,64,.45);}

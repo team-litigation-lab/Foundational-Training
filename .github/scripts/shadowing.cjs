@@ -44,11 +44,9 @@ async function workerChecks() {
   await put('shadow:' + id, null);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
 
-  // 🛠 Practice Lab: the day's To-Do, in the exact wording of the guide's template
+  // 🛠 Practice Lab: no Shadowing & To-Do section (the To-Do and the shadowing log keep their own page)
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1500);
-  const strip = await page.evaluate(() => [...document.querySelectorAll('.fts-group')].map(x => x.innerText).find(t => /Shadowing & the day/.test(t)) || '');
-  if (!/To-Do: Classroom Discussion: Virtual Assistant Essentials - Day 1/.test(strip)) fail(`the Practice Lab's To-Do isn't the guide's Day 1 wording: ${strip.slice(0, 200)}`);
-  if (!/Copy/.test(strip)) fail('the Practice Lab\'s To-Do has no Copy button');
+  if (await page.evaluate(() => [...document.querySelectorAll('.fts-group h2')].some(h => /Shadowing & the day/.test(h.textContent)))) fail('the Practice Lab still has the Shadowing & To-Do section');
   // the 📚 Dashboard keeps its one-screen lesson grid: nothing of ours is added above it
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
   const over = await page.evaluate(() => { const g = document.querySelector('.module-grid'); return g ? g.scrollHeight - g.clientHeight : 0; });
@@ -78,9 +76,9 @@ async function workerChecks() {
   if (vids.d11.length) fail('a day the guide gives no videos for has some');
 
   // the trainee's log: part-filled doesn't count
-  await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1000);
-  await page.click('text=All 16 days & the shadowing log'); await page.waitForTimeout(900);
-  if (await page.evaluate(() => state.view) !== 'shadowing') fail('the Practice Lab\'s button doesn\'t open #/shadowing');
+  // (its way in is the Activity Deck's 📋 Today's To-Do: goto('shadowing'))
+  await page.evaluate(() => goto('shadowing')); await page.waitForTimeout(900);
+  if (await page.evaluate(() => state.view) !== 'shadowing') fail('#/shadowing doesn\'t open');
   await page.evaluate(() => FTShadow.day(7)); await page.waitForTimeout(600);
 
   // every one of the 16 days shows its own activities, and the Process Questions of the lesson it discusses

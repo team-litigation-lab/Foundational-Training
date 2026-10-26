@@ -61,12 +61,11 @@ async function workerChecks() {
   await put('skills:' + id, { typing: [{ id: 'seed1', at: old.toISOString(), date: oldK, slot: 'AM', net: 45, gross: 47, acc: 97, errors: 1, chars: 230, secs: 60 }], spelling: [] });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
 
-  // the Practice Lab card opens the tests
+  // the tests have their own page: no Skill Building section on the Practice Lab; the orientation's and the day map's way in opens them
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
-  if (!(await page.$('#fts-skills >> text=Take the typing test'))) fail('the Practice Lab\'s Skill Building card doesn\'t open the typing test');
-  if (await page.$('#fts-skills .fts-file')) fail('the Practice Lab still asks for a screenshot file name');
-  await page.click('#fts-skills >> text=Take the typing test'); await page.waitForTimeout(1200);
-  if (await page.evaluate(() => state.view) !== 'skills') fail('the card didn\'t open #/skills');
+  if (await page.$('#fts-skills') || /Skill Building/.test(await page.evaluate(() => [...document.querySelectorAll('.fts-group h2')].map(h => h.textContent).join('|')))) fail('the Practice Lab still has a Skill Building section');
+  await page.evaluate(() => ftsGotoSkills()); await page.waitForTimeout(1200);
+  if (await page.evaluate(() => state.view) !== 'skills') fail('ftsGotoSkills() didn\'t open #/skills');
 
   // ⌨ typing: pasting is off; the passage typed in full ends the test and saves it
   await page.click('text=Start the typing test'); await page.waitForTimeout(300);
@@ -148,5 +147,5 @@ async function workerChecks() {
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Typing & Spelling test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Typing & Spelling test passed (the log append-only with the server\'s time, results kept in range, no deleting, no writing another\'s; the Practice Lab card opens the tests; typing with pasting off, saved with the date and slot; spelling with the corrections; today\'s card; a missed slot made up; the trainer\'s grid and the compliance line in the facilitator\'s wording; the Weekly Ranking\'s column filled from it; My Performance).');
+  console.log('Typing & Spelling test passed (the log append-only with the server\'s time, results kept in range, no deleting, no writing another\'s; no Skill Building section on the Practice Lab, ftsGotoSkills() opens the tests; typing with pasting off, saved with the date and slot; spelling with the corrections; today\'s card; a missed slot made up; the trainer\'s grid and the compliance line in the facilitator\'s wording; the Weekly Ranking\'s column filled from it; My Performance).');
 })().catch(e => { console.error(e); process.exit(1); });
