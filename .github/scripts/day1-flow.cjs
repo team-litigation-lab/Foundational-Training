@@ -54,7 +54,9 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     await page.evaluate(() => { state.dayId = 1; goto('kc'); }); await page.waitForTimeout(1500);
     if (await page.evaluate(() => state.view) !== 'kc') fail('the Knowledge Check (the reading\'s sheet) didn\'t open with the reading unlocked');
     else {
-      await page.evaluate(() => { const t = [...document.querySelectorAll('.fp-sheet-tab')].pop(); if (t) t.click(); }); await page.waitForTimeout(600);
+      if (await page.$('.fp-sheet-tab')) fail('the Knowledge Check still shows sheet tabs (the route picks the sheet)');
+      // opened from the Process Questions stop: the lesson's own sheet, still locked
+      await page.evaluate(() => { sessionStorage.setItem('ftKCBack', JSON.stringify({ day: 1, id: 'pm', h: 'SA', l: 1, sheet: 'pq' })); render(); }); await page.waitForTimeout(600);
       if (!(await page.$('.fp-sheet-lock'))) fail('the Virtual Assistant Essentials sheet opened before its Process Questions step');
     }
     // Finish: the Dashboard as usual

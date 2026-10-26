@@ -1047,7 +1047,8 @@ function toKC(l){
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
   const s = list[from + 1] || null;
   const h = !s ? "" : s.end ? s.h : s.divider ? `Day ${DD.day + 1}` : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l)})); }catch(e){}
+  // (and which answer sheet: the reading's, from the reading; the lesson's own, from its Process Questions stop)
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }
 function openSlide(n, id, alt){
