@@ -76,7 +76,7 @@ async function workerChecks() {
   if (vids.d11.length) fail('a day the guide gives no videos for has some');
 
   // the trainee's log: part-filled doesn't count
-  // (its way in is the Activity Deck's 📋 Today's To-Do: goto('shadowing'))
+  // (its way in is a shadowing slide's 👥 Shadowing log: FTShadow.open(day))
   await page.evaluate(() => goto('shadowing')); await page.waitForTimeout(900);
   if (await page.evaluate(() => state.view) !== 'shadowing') fail('#/shadowing doesn\'t open');
   await page.evaluate(() => FTShadow.day(7)); await page.waitForTimeout(600);

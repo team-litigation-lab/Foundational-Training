@@ -20,7 +20,7 @@ const forTrainee = () => !!state.traineeId && !state.isAdmin;
 const DD = {day: null, i: 0, loading: null, failed: false, split: false, auto: false, timer: null};
 const PREF = k => { try{ return localStorage.getItem("ft_dd_" + k) === "1"; }catch(err){ return false; } };
 const setPref = (k, v) => { try{ localStorage.setItem("ft_dd_" + k, v ? "1" : "0"); }catch(err){} };
-DD.split = PREF("split");
+DD.split = false;   // (the side panel's Split screen is gone: one slide at a time)
 DD.page = 0;   // a long slide is read in pages, each one a screenful (fitSheets below)
 const AUTOPLAY_SECS = 20;
 const SRC = (function(){ const s = document.currentScript; const v = s && /\?v=([^&]+)/.exec(s.src); return "/js/ft-day-decks-data.js" + (v ? "?v=" + v[1] : ""); })();
@@ -476,7 +476,7 @@ function slideActions(s, info, body, i){
   // themselves stay on ✍️ Knowledge Check — the slide only points at them
   if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(pqButtons(l)); });
   if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
-  if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log &amp; today’s To-Do</button>`);
+  if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log</button>`);
   if(has(/mock call/i) && root.FTSessions){
     const sid = /reception/i.test(h) ? "reception" : /calendar/i.test(h) ? "calendaring" : /intake/i.test(h) ? "intake" : "";
     if(sid) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTSessions.open('${sid}')">☎ Open the Practice Session</button>`);
@@ -562,9 +562,6 @@ function renderDeck(){
   if(root.FTSlideEdit) FTSlideEdit.load();
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
-  const lessons = (info.lessons || []).map(l => lessonOpen(l)
-    ? `<button type="button" class="btn btn-ghost btn-sm" onclick="goto('day', ${Number(l)})">📘 ${e(lessonTitle(l))}</button>`
-    : `<span class="ftdd-locked">🔒 ${e(lessonTitle(l))}</span>`).join("");
   const pair = DD.split && DD.i + 1 < n;   // the slide beside it, for reading the instructions and the sample together
   return `<div class="ftdd-stage${DD.split ? " ftdd-stage-split" : ""}">
     <div class="ftdd-mid">${back}
@@ -582,10 +579,6 @@ function renderDeck(){
     <aside class="ftdd-rail ftdd-rail-r">
       <p class="ftdd-rail-kick">Activity Deck · Day ${e(DD.day)} of ${COUNT()}</p>
       <h2 class="ftdd-rail-title">Day ${e(DD.day)} · ${e(info.role || d.title)}</h2>
-      ${lessons ? `<p class="ftdd-rail-h">Today’s lesson</p><div class="ftdd-lessons">${lessons}</div>` : ""}
-      <p class="ftdd-rail-h">How you read it</p>
-      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl${DD.split ? " on" : ""}" onclick="FTDayDecks.split()">${DD.split ? "◫ One slide" : "◫ Split screen"}</button>
-      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('shadowing')">📋 Today’s To-Do</button>
       ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
         ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
@@ -792,9 +785,6 @@ function renderToolsPage(){
     <aside class="ftdd-rail ftdd-rail-r">
       <p class="ftdd-rail-kick">Day 1</p>
       <h2 class="ftdd-rail-title">Know Your Tools</h2>
-      <p class="ftdd-rail-h">Start here</p>
-      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="goto('day', 12)">📌 Setting of Training Expectations</button>
-      <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTDayDecks.open(1)">📋 Day 1 Activity Deck</button>
     </aside>
   </div>`;
 }
