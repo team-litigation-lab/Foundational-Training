@@ -230,12 +230,19 @@ const sideCss = document.createElement("style"); sideCss.id = "ft-side-presenter
   body:not(.ft-fit) main:has(> #lessonStage){grid-template-columns:minmax(0,1fr) 240px !important;}
   body.ft-fit main:has(#lessonStage) > *:not(#lessonStage){width:240px !important;}
   body.ft-fit main:has(#lessonStage) > #lessonStage{margin-right:256px !important;}
-  /* she stands in a framed panel the width of the column: the artwork ends at her knees, so the panel's bottom edge
-     is where she is cut, lined up with the slide's bottom edge, and it reads as a portrait, not as missing feet */
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:stretch;margin:auto 0 0 !important;padding:0 !important;
-    border-radius:16px;overflow:hidden;background:radial-gradient(120% 90% at 50% 20%, #3A4170 0%, #262B45 70%);border:2px solid rgba(255,255,255,.18);
-    box-shadow:0 10px 24px rgba(16,19,36,.35);pointer-events:none;user-select:none;}
-  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:100%;height:auto;transform:scaleX(-1);margin-top:6%;}
+  /* she stands at the foot of the column, as wide as it, her bottom on the slide's bottom edge; the artwork ends at
+     her knees, so her legs fade out over the last fifth instead of stopping on a hard line */
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter{display:block;order:99;align-self:stretch;margin:auto 0 0 !important;padding:0 !important;pointer-events:none;user-select:none;}
+  main:has(> #lessonStage) .ls-top > .ft-side-presenter img{display:block;width:100%;height:auto;transform:scaleX(-1);
+    filter:drop-shadow(0 10px 16px rgba(0,0,0,.25));-webkit-mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);mask-image:linear-gradient(to bottom, #000 78%, transparent 100%);
+    transform-origin:50% 100%;animation:ftPresFloat 6s ease-in-out infinite;will-change:transform;}
+  @keyframes ftPresFloat{
+    0%,100%{transform:scaleX(-1) translateY(0) rotate(0deg);}
+    25%{transform:scaleX(-1) translateY(-5px) rotate(-.6deg);}
+    50%{transform:scaleX(-1) translateY(-8px) rotate(0deg);}
+    75%{transform:scaleX(-1) translateY(-4px) rotate(.6deg);}
+  }
+  @media (prefers-reduced-motion: reduce){ main:has(> #lessonStage) .ls-top > .ft-side-presenter img{animation:none;} }
 }`;
 document.head.appendChild(sideCss);
 function placePresenter(){
@@ -250,7 +257,7 @@ function placePresenter(){
   // the column's width, as tall as the room left under the controls allows (down to the slide's bottom edge)
   img.style.display = ""; img.style.height = "0px"; img.style.marginTop = "";
   const r = img.getBoundingClientRect(), room = stage.getBoundingClientRect().bottom - r.top - 2;
-  const need = Math.round(r.width * 520 / 564 * 1.06);   // the picture's height at the column's width (and its 6% headroom)
+  const need = Math.round(r.width * 520 / 564);   // the picture's height at the column's width
   if(room < 120){ img.style.display = "none"; return; }
   img.style.height = Math.min(need, room) + "px";
   // the panel's bottom on the slide's bottom edge
