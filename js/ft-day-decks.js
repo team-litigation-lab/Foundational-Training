@@ -478,7 +478,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-bar"><span class="ftdd-pill">${k.ic} ${e(k.label)}</span>
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
-      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}">${body}</div>`}
+      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}">${body}</div>`}
     </div>`;
 }
 function renderDeck(){
@@ -537,6 +537,8 @@ let fitT = null;
    says which page it is. Nothing scrolls.
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
 const FIT_MIN = 0.5;
+// a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
+const isReadPart = s => !!s && Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id));
 const PAGE_ZOOM = 0.75;   // a page holds up to a third more than the screen, scaled down to fit: fuller pages, fewer of them
 // a slide with room to spare is drawn bigger, up to max, so its content fills the sheet instead of sitting small in it
 function zoomUp(box, max){
@@ -566,8 +568,8 @@ function sheetPages(sheet){
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
-  const room = sheet.clientHeight;
-  if(!room || zoomToFit(sheet, FIT_MIN)) return [kids];
+  const room = sheet.clientHeight, read = sheet.classList.contains("ftdd-read");
+  if(!room || (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN))) return [kids];
   kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
   const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // a block taller than the screen on its own (a long list, a table) is dealt out by its own rows
@@ -581,7 +583,7 @@ function sheetPages(sheet){
   // the next page, and fitSheets scales the page down to fit
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room / PAGE_ZOOM){ pages.push(page); page = []; used = 0; }
+    if(page.length && used + h > room / (read ? 1 : PAGE_ZOOM)){ pages.push(page); page = []; used = 0; }
     page.push(k); used += h;
   });
   if(page.length) pages.push(page);
@@ -597,8 +599,9 @@ function fitSheets(){
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, 0.4);
-    else if(!sheet.classList.contains("ftdd-sheet-edit") && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
+    const read = sheet.classList.contains("ftdd-read");
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? 0.85 : 0.4);
+    else if(!sheet.classList.contains("ftdd-sheet-edit") && !read && pages.length < 2 && !DD.split) zoomUp(sheet, 1.4);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
@@ -1688,6 +1691,8 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
 .ft-body h2.ftdd-pi-h{font-size:24px;margin:0 0 10px;color:#B42318;}
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:19px !important;line-height:1.6 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
 .ft-body figure.ftdd-pi-fig{margin:12px 0;text-align:center;} .ft-body figure.ftdd-pi-fig img{max-width:100%;height:auto;}
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
