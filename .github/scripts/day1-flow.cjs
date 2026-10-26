@@ -38,8 +38,19 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
     v = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('.ftd1-lock'), sheet: !!document.querySelector('.ftdd-sheet') }));
     if (v.view !== 'daydeck' || v.lock || !v.sheet) fail(`with the reading unlocked the Dashboard didn't open the reading: ${JSON.stringify(v)}`);
+    // strictly in order: no skipping ahead in the deck, nothing of a locked step, and the video waits (no request)
+    v = await page.evaluate(() => { const from = FTDayDecks.state().i; FTDayDecks.to(from + 3); const skip = FTDayDecks.state().i; FTDayDecks.to(FTDayDecks.list(1).findIndex(s => s.id === 'discussion')); return {from, skip, locked: FTDayDecks.state().i, video: ftVideoUnlocked(1), ask: FTDay1.videoByStep(1)}; });
+    if (v.skip !== v.from) fail(`the deck skipped ahead from slide ${v.from} to ${v.skip}`);
+    if (v.locked !== v.from) fail('the dots went on to the Classroom Discussion before the trainer unlocked it');
+    if (v.video || !v.ask) fail(`Day 1's video was open (or asked for) before Handouts and Videos was unlocked: ${JSON.stringify(v)}`);
+    await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(500);
+    if (await page.evaluate(() => FTDayDecks.state().i) !== v.from && (await page.evaluate(() => FTDayDecks.state().pages)) < 2) fail('Next didn\'t go on one slide');
     await page.evaluate(() => goto('day', 1)); await page.waitForTimeout(600);
     if (await page.evaluate(() => state.view === 'day' && Number(state.dayId) === 1)) fail('Lesson 1 opened with only the reading unlocked');
+    // Handouts and Videos unlocked: the video opens, no request
+    await setSteps(page, { all: 0, batches: { b101026: 5 } });
+    if (!(await page.evaluate(() => ftVideoUnlocked(1) && !FTDay1.videoByStep(1)))) fail('Day 1\'s video didn\'t open with Handouts and Videos unlocked');
+    await setSteps(page, { all: 0, batches: { b101026: 3 } });
     await page.evaluate(() => { state.dayId = 1; goto('kc'); }); await page.waitForTimeout(1500);
     if (await page.evaluate(() => state.view) !== 'kc') fail('the Knowledge Check (the reading\'s sheet) didn\'t open with the reading unlocked');
     else {
@@ -59,5 +70,5 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     await b.close();
   }
   if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-  console.log('Day 1 flow test passed (nothing unlocked: the Dashboard opens Setting of Training Expectations and the later steps are locked; up to the reading: the Dashboard opens it, Lesson 1 and the Virtual Assistant Essentials sheet still wait; Finish: the Dashboard as usual; the trainer\'s 🔓 Day 1 Steps).');
+  console.log('Day 1 flow test passed (nothing unlocked: the Dashboard opens Setting of Training Expectations and the later steps are locked; up to the reading: the Dashboard opens it, Lesson 1 and the Virtual Assistant Essentials sheet still wait, the deck goes one slide at a time, the video waits for Handouts and Videos; Finish: the Dashboard as usual; the trainer\'s 🔓 Day 1 Steps).');
 })().catch(e => { console.error(e); process.exit(1); });

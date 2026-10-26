@@ -92,10 +92,13 @@ function go(step){
   const by = DD.split && Math.abs(step) === 1 ? step * 2 : step;
   const i = Math.max(0, Math.min(n - 1, DD.i + by));
   if(i === DD.i){ if(DD.auto) stopAuto(); return; }
+  if(!deckMayGo(DD.day, i)){ if(DD.auto) stopAuto(); return; }
   DD.i = i; DD.page = step < 0 ? 99 : 0; DD.pages = 1; render();
 }
 /* ▶ Autoplay: the slides turn themselves, so a trainer can present hands-free and a trainee can watch through.
    It stops at the last slide, and any click on Previous/Next or a dot leaves it running from there. */
+// 🔓 Day 1 in order (js/ft-day1-flow.js): a trainee on Day 1 goes slide by slide, only as far as the trainer has unlocked
+const deckMayGo = (n, i) => !root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), Number(DD.day) === Number(n) ? DD.i : -1);
 function startAuto(){ stopAuto(); DD.auto = true; DD.timer = setInterval(() => {
   const d = decks() && decks()[DD.day]; if(!d) return stopAuto();
   if(DD.i >= slidesOf(d).length - 1) return stopAuto();
@@ -870,7 +873,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
-      {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: "ftVideoOrAsk(1)"},
+      {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here once your trainer unlocks it", k: "watch", run: "ftVideoOrAsk(1)"},
       {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
@@ -1397,18 +1400,20 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
   // 🗺 Map: the training roadmap
-  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
+  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
   tools: () => TOOLS.map(t => t.name),
   // the index of a day's first slide of its own (after its day card and Training Agenda)
   // the index of a slide by its id (the guide's own slide ids, as js/ft-day-decks-data.js has them)
+  // a day's slides, in the deck's order
+  list: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d) : []; },
   at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
   first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
   // 📝 What I learned for a video on this slide, from the button above the sheet
