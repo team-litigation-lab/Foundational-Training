@@ -601,6 +601,9 @@ function sheetPages(sheet){
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
   const room = sheet.clientHeight, read = sheet.classList.contains("ftdd-read");
+  // a reading's text-and-chart row is never taller than the page, even drawn up to 1.15: its chart gives way, so its text
+  // isn't shrunk to fit a tall chart
+  if(read && room) sheet.style.setProperty("--ftdd-pi-h", Math.floor(room / 1.15 - 8) + "px");
   if(!room || (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN))) return [kids];
   kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
   const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
@@ -616,8 +619,9 @@ function sheetPages(sheet){
   const capAll = room / (read ? 1 : PAGE_ZOOM), sumH = p => p.reduce((a, x) => a + hOf(x), 0);
   // and a first page that is only a heading and its introduction (the reading's "Time Limits …" over the statute of
   // limitations sections) goes on top of the page after it, so the heading opens the page its sections are on
+  // (on the reading, only where it fits: the reading is never shrunk to hold it)
   const fold = ps => { const out = ps.reduce((out, p) => { const prev = out[out.length - 1];
-    if(prev && sumH(p) < capAll * 0.3 && sumH(prev) + sumH(p) <= capAll * 1.35) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
+    if(prev && sumH(p) < capAll * 0.3 && sumH(prev) + sumH(p) <= capAll * (read ? 1 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
     const introOnly = p => p.length <= 3 && /^H[1-6]$/.test(p[0].tagName) && sumH(p) < capAll * 0.5;
     if(out.length > 1 && introOnly(out[0]) && sumH(out[0]) + sumH(out[1]) <= capAll / (read ? 0.6 : FIT_MIN)) out.splice(0, 2, out[0].concat(out[1]));   // (fitSheets scales it to fit)
     return out; };
@@ -1911,11 +1915,14 @@ main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 .ft-body .ftdd-pi-chart{display:flex;flex-direction:column;justify-content:center;gap:12px;background:#F7F8FB;}
 .ft-body .ftdd-pi-chart img{width:100%;height:auto;max-height:56vh;object-fit:contain;margin:0 auto;display:block;}   /* a small chart is scaled up to fill its half */
 /* the charts fill their card: each figure takes an equal share of the card's height, its chart as big as fits */
-.ft-body .ftdd-pi-row:not(.ftdd-pi-pair){min-height:min(54vh, 560px);}
+.ft-body .ftdd-pi-row:not(.ftdd-pi-pair){min-height:min(54vh, 560px, var(--ftdd-pi-h, 560px));}
+/* the reading's text beside its chart: the text has the wider share, bigger and bolder */
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);}
 .ft-body .ftdd-pi-chart > figure.ftdd-pi-fig{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;}
 .ft-body .ftdd-pi-chart > figure.ftdd-pi-fig img{width:100%;height:100%;max-height:none;object-fit:contain;}
 /* a text-and-chart row is split in two, half text, half chart: the text big and bold so it fills its half, the chart as big as its half */
-main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:17px !important;font-weight:600 !important;line-height:1.45 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:20px !important;font-weight:700 !important;line-height:1.5 !important;color:#1E2340;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !important;}
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair) > .ftdd-pi-card:first-child{display:flex;flex-direction:column;justify-content:center;}
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
