@@ -340,10 +340,22 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
     }
     out.push(slide);
   });
+  // a lesson that runs over several days flows straight on into its next day, with a divider between the days
+  const lid = lessonOfDay(Number(d.day)), days = lid != null ? (LESSON_CARDS[lid] || {days: []}).days : [];
+  if(days.includes(Number(d.day) + 1)) out.push({id: "next-day", h: `End of Day ${d.day}`, divider: true, html: ""});
   return out;
 };
+// 🔀 the divider at the end of a day whose lesson continues tomorrow: today is done, and the next day's instructions
+// begin on the next slide (Next goes straight on into that day's deck)
+function dividerSlide(n){
+  const lid = lessonOfDay(n), c = LESSON_CARDS[lid] || {days: []}, k = c.days.indexOf(n + 1) + 1, info = dayInfo(n + 1);
+  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of Day ${n}</p>
+    <p class="ftdd-dv-k">Next</p><h2 class="ftdd-dv-h">Day ${n + 1}${info.role ? " · " + e(info.role) : ""}</h2>
+    <p class="ftdd-dv-sub">${e(lessonTitle(lid))} · day ${k} of ${c.days.length}</p>
+    <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="FTDayDecks.pick(${n + 1})">Start Day ${n + 1}’s instructions →</button></div>`;
+}
 function agendaHtml(d, info){
-  const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda).map(([s, i], j) => {
+  const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda && !s.divider).map(([s, i], j) => {
     const t = timeOf(s.h), k = kindOf(s, visual(slideSrc(d.day, s)));
     const go = slideAgendaGo(s, info);
     return `<li><button type="button" onclick="FTDayDecks.to(${i})"><span class="ftdd-ag-n">${String(j + 1).padStart(2, "0")}</span>
@@ -466,7 +478,7 @@ function taskSlide(n, info){
 }
 function slideCard(d, info, list, i){
   const n = list.length, s = list[i];
-  const body = s.agenda ? "" : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
+  const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day) : s.trainer ? trainerSlide(DD.day) : s.task ? taskSlide(DD.day, info) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
@@ -477,7 +489,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-dhead"><h1 class="ftdd-dtitle">Day ${DD.day} · ${e(info.role || d.title)}</h1>
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
-      <div class="ftdd-bar">${lc != null ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
+      <div class="ftdd-bar">${lc != null || s.divider ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}">${body}</div>`}
@@ -1662,6 +1674,11 @@ main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36p
 main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
 main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#F4F6FB;border:2px solid #343C66;}
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
+.ftdd-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;min-height:100%;padding:24px;}
+.ftdd-dv-done{margin:0 !important;font:800 15px 'Inter',sans-serif !important;color:#1E7A46 !important;letter-spacing:.04em;}
+.ftdd-dv-k{margin:14px 0 0 !important;font:800 12px 'IBM Plex Mono',monospace !important;letter-spacing:.12em;text-transform:uppercase;color:#E8590C !important;}
+.ftdd-dv-h{margin:0;font:800 32px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}
+.ftdd-dv-sub{margin:0 0 14px !important;font:600 17px 'Inter',sans-serif !important;color:#4A5070 !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:14px 0 8px;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar:first-child{margin-top:0;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar b, main.main-ftdd .ftdd-sheet p.ftdd-hbar strong{color:inherit !important;}
