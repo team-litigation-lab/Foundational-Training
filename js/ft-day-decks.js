@@ -548,7 +548,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
-      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}">${body}</div>`}
+      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}">${body}</div>`}
     </div>`;
 }
 function renderDeck(){
@@ -629,7 +629,7 @@ function sheetPages(sheet){
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
-  const room = sheet.clientHeight, read = sheet.classList.contains("ftdd-read");
+  const room = sheet.clientHeight, read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
   // a reading's text-and-chart row is never taller than the page, even drawn up to 1.15: its chart gives way, so its text
   // isn't shrunk to fit a tall chart
   if(read && room) sheet.style.setProperty("--ftdd-pi-h", Math.floor(room / 1.15 - 8) + "px");
@@ -727,7 +727,7 @@ function fitSheets(){
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
-    const read = sheet.classList.contains("ftdd-read");
+    const read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
     if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.4);   // a text-and-chart row is never split, so it may shrink a little more
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
@@ -2004,6 +2004,21 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
+/* 🖥 Day 1's Installation of SA: every step the same, centered: its text big and bold, its screenshots bigger and centered
+   under it (a step's one or two screenshots sit side by side in the middle, not to the left) */
+main.main-ftdd .ftdd-sheet.ftdd-sa > p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa > ol li, main.main-ftdd .ftdd-sheet.ftdd-sa > ul li{font:600 20px/1.5 'Inter',sans-serif !important;color:#1E2340 !important;text-align:center;}
+main.main-ftdd .ftdd-sheet.ftdd-sa > p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
+main.main-ftdd .ftdd-sheet.ftdd-sa > h3{font-size:20px !important;text-align:center;}
+/* its screenshots as the curriculum shows them: three to a row, each numbered at its lower right, all of a set together */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:14px 26px !important;margin:10px 0 18px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
+/* Sanders' and Ivan's Discord IDs side by side, each over its profile */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts{display:grid;grid-template-columns:repeat(2,minmax(0,360px));justify-content:center;gap:24px;margin:8px 0 14px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p{margin:0 0 8px !important;text-align:center;font:800 20px/1.3 'Inter',sans-serif !important;color:#1E2340 !important;background:none !important;padding:0 !important;border:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots{grid-template-columns:minmax(0,1fr) !important;margin:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:19vh !important;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{position:absolute;right:-18px;bottom:0;margin:0 !important;font:600 17px/1 'Inter',sans-serif;color:#1E2340;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */

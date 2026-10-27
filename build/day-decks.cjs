@@ -93,14 +93,43 @@ const TRIM = {1: {reading: html => {
   // the reading itself follows, word for word, split over this slide and the next ones (PI_PARTS below)
   return lead + "<!--pi-reading-->\n" + html.slice(at + 4).replace(/^\n/, "");
 }, pm: html => {
+  // the Smart Advocate steps as the curriculum's own instructions give them, word for word, each step's screenshots
+  // numbered as there (0–4, 5.0, 5.1–5.3, 6–11, 12–14), then the help contacts (Sanders and Ivan, with their Discord
+  // profiles) and the heads-up; the links are the curriculum's own
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
-  // the help line keeps the SA contact only (the Nitro Pro contact goes with its installation)
-  const sa = html.slice(i).replace(/<p>For those who still have issues installing Nitro Pro[\s\S]*?<\/div>\n/, () =>
-    `<p>If you have issues installing the SA plug-ins, reach out to Ivan on Discord. His shift starts at 8:00 AM PST.</p>\n<p><b>Ivan: kuchiq</b></p>\n` +
-    `<div class="shots">\n  <figure><a href="/ft/day1/img/discord-ivan.png" target="_blank"><img src="/ft/day1/img/discord-ivan.png" alt="Ivan on Discord" loading="lazy"></a></figure>\n</div>\n`);
-  if(/Nitro/i.test(sa)) throw new Error("Day 1's Installation of SA still mentions Nitro Pro");
-  // its screenshots are drawn big (ftdd-big-shots: two or three to a row, in js/ft-day-decks.js)
-  return `<p>Install the Smart Advocate (SA) plug-ins on your computer: follow the steps and the screenshots below, from the training curriculum. Ask in the training GC if a step doesn’t match what you see.</p>\n` + sa.replace(/<div class="shots">/g, '<div class="shots ftdd-big-shots">');
+  const src = html.slice(i);
+  const link = re => { const m = src.match(re); if(!m) throw new Error("Day 1's Installation of SA lost a link: " + re); return `<p class="url-list">${m[0]}</p>`; };
+  const handler = link(/<a [^>]*19eFGdoQNXJo2iE46M2G8s2bMJNEIeO8k[^>]*>[^<]*<\/a>/), folder = link(/<a [^>]*1lJlDxRx_HjzuhHjcjymNbyw4yBr09qU_[^>]*>[^<]*<\/a>/);
+  const win = link(/<a [^>]*71237633[^>]*>[^<]*<\/a>/), mac = link(/<a [^>]*876020096[^>]*>[^<]*<\/a>/);
+  const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
+    return `  <figure><a href="/ft/day1/img/${f}" target="_blank"><img src="/ft/day1/img/${f}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
+  const shots = list => `<div class="shots ftdd-big-shots">\n${list.join("")}</div>\n`;
+  const sa = n => `sa-${String(n).padStart(2, "0")}.png`;
+  const range = (from, caps) => caps.map((c, k) => img(sa(from + k), "Screenshot " + c, c));
+  return `<h3>How to install the Smart Advocate/SA plug-ins:</h3>\n` +
+    `<p>1. Install the SA Document Handler/Launcher. Unzip its folder first, then right-click on the zipped file and select "Extract Here." Proceed with the installation.</p>\n` +
+    `<p><b>Note: Download and share this zipped folder in the training GC.</b></p>\n` +
+    `<p>SA Document Handler/Launcher</p>\n${handler}\n<p>Screenshots</p>\n${folder}\n` +
+    shots(range(2, ["0", "1", "2", "3", "4"])) +
+    `<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n${win}\n` +
+    shots(range(7, ["5.0"])) +
+    `<p>For Mac Users, access the link and download plugin on your desktop. Follow the steps indicated below the link on this page:</p>\n${mac}\n` +
+    shots(range(8, ["5.1", "5.2", "5.3"])) +
+    `<p>3. Once you have downloaded the Microsoft Word, Excel, and Outlook plugins, double-click the "Set Up" application to install.</p>\n` +
+    shots(range(11, ["6", "7", "8", "9", "10", "11"])) +
+    `<p><b>Note: This process may take a little longer to complete the download and installation.</b></p>\n` +
+    `<p>4. Lastly, double click the Registry to install.</p>\n` +
+    shots(range(17, ["12", "13", "14"])) +
+    `<hr class="stars">\n` +
+    `<p>For those who still have issues installing Nitro Pro despite carefully following the correct process, you may seek technical assistance from Sanders. For the SA plugins issue, you may reach out to Ivan. Message them at 8AM PST.</p>\n` +
+    `<p>Here are the Discord IDs of Sanders and Ivan. Please be reminded once again that their shift starts at 8:00 AM PST.</p>\n` +
+    // the two Discord IDs together, each over its own profile (one block, so a page never splits them)
+    `<div class="ftdd-sa-contacts">\n` +
+    `  <div><p><b>Sanders: sndrrsss9920</b></p>\n${shots([img("discord-sanders.png", "Sanders on Discord")])}</div>\n` +
+    `  <div><p><b>Ivan: kuchiq</b></p>\n${shots([img("discord-ivan.png", "Ivan on Discord")])}</div>\n</div>\n` +
+    `<hr class="stars">\n` +
+    `<p>Just a heads-up, for the SA plug-ins, for now, there is no way for us to check whether they have successfully installed. We will only know if the installation was successful when we start using the firm’s CMS (SA) which is scheduled for around the 8th or 9th of your classroom training. As long as you have this in your list of installed apps then you're good for now.</p>\n` +
+    shots([img("sa-20.png", "Installed apps: SADocumentHandler_2023 and WordSADocumentMergeAddIn")]);
 }},
 // Day 5's Attorney Calendar Management Activity: four cards (the activity, the time zone, the whole calendar, the upload)
 5: {s3: html => {
