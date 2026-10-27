@@ -99,7 +99,7 @@ const TRIM = {1: {reading: html => {
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
   const src = html.slice(i);
   const link = re => { const m = src.match(re); if(!m) throw new Error("Day 1's Installation of SA lost a link: " + re); return `<p class="url-list">${m[0]}</p>`; };
-  const handler = link(/<a [^>]*19eFGdoQNXJo2iE46M2G8s2bMJNEIeO8k[^>]*>[^<]*<\/a>/), folder = link(/<a [^>]*1lJlDxRx_HjzuhHjcjymNbyw4yBr09qU_[^>]*>[^<]*<\/a>/);
+  const handler = link(/<a [^>]*19eFGdoQNXJo2iE46M2G8s2bMJNEIeO8k[^>]*>[^<]*<\/a>/);
   const win = link(/<a [^>]*71237633[^>]*>[^<]*<\/a>/), mac = link(/<a [^>]*876020096[^>]*>[^<]*<\/a>/);
   const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
     return `  <figure><a href="/ft/day1/img/${f}" target="_blank"><img src="/ft/day1/img/${f}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
@@ -108,7 +108,7 @@ const TRIM = {1: {reading: html => {
   const range = (from, caps) => caps.map((c, k) => img(sa(from + k), "Screenshot " + c, c));
   // each instruction on the left, its own screenshots beside it on the right (one block, so a page never splits them)
   const row = (text, list) => `<div class="ftdd-sa-row">\n<div class="ftdd-sa-text">\n${text}</div>\n${shots(list)}</div>\n`;
-  return row(`<p><b>Note: Download and share this zipped folder in the training GC.</b></p>\n<p>SA Document Handler/Launcher</p>\n${handler}\n<p>Screenshots</p>\n${folder}\n`, range(2, ["0"])) +
+  return row(`<p><b>Note: Download and share this zipped folder in the training GC.</b></p>\n<p>SA Document Handler/Launcher</p>\n${handler}\n`, range(2, ["0"])) +
     row(`<h3>How to install the Smart Advocate/SA plug-ins:</h3>\n<p>1. Install the SA Document Handler/Launcher. Unzip its folder first, then right-click on the zipped file and select "Extract Here."</p>\n`, range(3, ["1"])) +
     row(`<p>Proceed with the installation.</p>\n`, range(4, ["2", "3", "4"])) +
     row(`<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n${win}\n`, range(7, ["5.0"])) +
