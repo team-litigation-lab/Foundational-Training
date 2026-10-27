@@ -2019,6 +2019,19 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !imp
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots{grid-template-columns:minmax(0,1fr) !important;margin:0 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:19vh !important;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{position:absolute;right:-18px;bottom:0;margin:0 !important;font:600 17px/1 'Inter',sans-serif;color:#1E2340;}
+/* each step side by side: its instruction on the left, its own screenshots on the right */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px 30px;align-items:center;margin:0 0 20px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text p:not(.ftdd-hbar){font:600 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;text-align:left;margin:0 0 8px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text h3{font:800 20px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:10px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 12px !important;text-align:left;}
+/* a Note's 💡 sits in its own space at the left of the bar, never over the word */
+main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
+main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots{margin:0 !important;justify-content:center;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child){grid-template-columns:minmax(0,1fr) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child) a{height:26vh !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .ftdd-sa-contacts{margin:0;grid-template-columns:repeat(2,minmax(0,1fr));}
+@media (max-width:760px){main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row{grid-template-columns:minmax(0,1fr);}}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
