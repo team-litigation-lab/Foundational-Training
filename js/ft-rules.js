@@ -347,19 +347,22 @@ const SLIDES = [
     rule("🕗 Managing Your Time Is Essential", "If you don’t finish a deliverable by the end of your shift, stop tracking and finish it unpaid, since you didn’t manage your time well. You may keep tracking only if you ask your trainer and they approve it.") +
     rule("🕖 Log In Up to 10 Minutes Early", "You may log in up to 10 minutes before your shift, no earlier. Use it to prepare your tools, and as a buffer for any break beyond your 1-hour total.") +
     rule("☕ Breaks: 1 Hour Total, Maximum", "The prescribed total break during training is 1 hour. How you split it is up to you, as long as you don’t go over 1 hour. Going over is your choice only if you accept not getting 8 hours for your shift, since tracking beyond 5:00 PM isn’t allowed.")],
-  ["auxes", "Auxes: Reporting Your Status", ()=>`<div class="ftr-bold">
-    <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post the update in both channels during training:</p>
-    <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
-      <div class="ftr-chan-h">${esc(c.ch)}</div>
-      <p>${esc(c.what)}</p>
-      ${c.rows.map(r=>`<div class="ftr-aux"><span>${esc(r[0])}</span><code>${esc(r[1])}</code></div>`).join("")}
-    </div>`).join("")}</div>
-    <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each aux once in each channel.</span></div>
-    <div class="ftr-part ftr-status">
-      <div class="ftr-part-h">💬 Your Discord Profile Status</div>
-      <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
-      <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
-    </div></div>`],
+  // one table: each status, its command in #⏳-timestamps and its update in #trainingchannel, side by side; then the
+  // no-double-stamping rule and the Discord profile status, side by side under it
+  ["auxes", "Auxes: Reporting Your Status", ()=>{ const [bot, chan] = AUX_CHANNELS; return `<div class="ftr-auxes">
+    <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post it in both channels.</p>
+    <table class="ftr-aux-tbl"><thead><tr><th>Your Status</th>
+      <th>${esc(bot.ch)}<small>LSH BOT: type the command, then check its reply.</small></th>
+      <th>${esc(chan.ch)}<small>Your batch’s channel: the same update, at the same time.</small></th></tr></thead>
+      <tbody>${bot.rows.map(([label, cmd]) => { const other = (chan.rows.find(r => r[0] === label) || [])[1] || "";
+        return `<tr><td>${esc(label)}</td><td><code>${esc(cmd)}</code></td><td><code>${esc(other)}</code></td></tr>`; }).join("")}</tbody></table>
+    <div class="ftr-aux-foot">
+      <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each aux once in each channel.</span></div>
+      <div class="ftr-part ftr-status">
+        <div class="ftr-part-h">💬 Your Discord Profile Status</div>
+        <p class="ftr-when">Format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
+        <p class="ftr-when">Example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
+      </div></div></div>`; }],
   // Camera, then Discord
   ["camera", "Camera: On in Every Meeting", ()=>
     `<div class="ftr-goal"><b>📷 Your Camera Is Part of Showing Up</b><p>Training is a simulation of working with a client, and your trainers are your first clients: in every meeting and classroom discussion, they see you.</p></div>` +
@@ -369,15 +372,6 @@ const SLIDES = [
     rule("⏱ Be Mindful of Discord: Reply Within 5 Minutes", "Responsiveness is a key trait of an effective and efficient VA. You’re expected to be in front of your computer during your shift, so there’s no reason not to reply within 5 minutes of a message. Turn on your notifications so you never miss one.") +
     rule("✅ Respond With a Message or Acknowledge With a Reaction", "Acknowledge every instruction and activity posted in your channel, with a message or an emoji reaction, so we know everything was received correctly.") +
     rule("📅 All Meetings and Schedules Are Sent: No Need to Ask", "Every discussion meeting is posted on its day, so you don’t need to ask for it.")],
-  // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
-  ["deliverables", "Your 4 Daily Deliverables", ()=>`
-    <p class="ftr-sub">Every training day, these four are yours to deliver. Your EOD email, your tracker and your Monitoring Sheet each have their own slides near the end (Building Your Habits); the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
-    <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
-      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
-      ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
-    ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
-      ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
-      ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   // Setting of expectations
   ["why", "Setting Expectations: What Training Is", ()=>`
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
@@ -385,16 +379,6 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
-  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
-      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends."]},
-      {h:"It Is Checked", steps:["The platform checks the name.", "It checks that it was on time."]},
-    ].map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
@@ -410,6 +394,25 @@ const SLIDES = [
     <div class="ftr-why"><b>Why It Matters:</b> These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm. Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
     ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
+  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
+      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends."]},
+      {h:"It Is Checked", steps:["The platform checks the name.", "It checks that it was on time."]},
+    ].map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`],
+  // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
+  ["deliverables", "Your 4 Daily Deliverables", ()=>`
+    <p class="ftr-sub">Every training day, these four are yours to deliver. Your EOD email, your tracker and your Monitoring Sheet each have their own slides next, in that order; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
+    <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
+      <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
+      ${TESTS.map(t=>`<span class="ftr-test-links"><b>${t.icon} ${esc(t.name)}:</b> ${t.links.map(l=>`<a class="btn btn-ghost btn-sm" href="${esc(l[1])}" target="_blank" rel="noopener noreferrer">${esc(l[0].replace(/^Alternative:\s*/, ""))} ↗</a>`).join("")}</span>`).join("")}</div>
+    ${[["📋", "2. Your Daily Task Tracker", "Before the end of your shift: a Daily Note for every open task, as detailed as you can make it."],
+      ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
+      ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -670,6 +673,19 @@ body.ft-orient #lessonSlideWrap .ftr-slide :is(.ftr-part-h,.ftr-chan-h,.ftr-goal
 body.ft-orient #lessonSlideWrap .ftr-embed{height:max(220px, min(34vh, 24cqw)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
+/* Auxes: one table, big and aligned, the status in the first column and each channel's post in its own */
+body.ft-orient #lessonSlideWrap .ftr-auxes .ftr-sub{font:600 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;margin:0 0 12px;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl{width:100%;border-collapse:separate;border-spacing:0;border:2px solid #1E2340;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.14);}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl th{background:#1E2340;color:#fff;text-align:left;vertical-align:top;padding:10px 16px;font:800 21px/1.25 'Poppins','Inter',sans-serif;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl th:first-child{width:22%;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl th small{display:block;margin-top:4px;font:500 14.5px/1.4 'Inter',sans-serif;color:#E6E8F2;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl td{padding:7px 16px;border-top:1px solid #D8DCE8;font:700 20px/1.3 'Inter',sans-serif;color:#1E2340;vertical-align:middle;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl tbody tr:nth-child(even) td{background:#F4F6FB;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl td code{display:inline-block;padding:5px 12px;border-radius:8px;background:#1E2340;color:#fff;font:700 18px/1.2 ui-monospace,Menlo,Consolas,monospace;}
+body.ft-orient #lessonSlideWrap .ftr-aux-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;margin-top:14px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-aux-foot .ftr-rule{margin:0;display:flex;flex-direction:column;justify-content:center;gap:6px;}
+body.ft-orient #lessonSlideWrap .ftr-aux-foot .ftr-part{margin:0;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-aux-foot{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
 body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
 /* bigger type on the sheet: the boxes, rules, lists and cards all at 18px, their headings at 21px (a slide too long for
@@ -728,8 +744,12 @@ body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):has(> :is(.ftr-part-h,
 body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):not(:has(> .ftr-def)) > :is(.ftr-part-h, .ftr-chan-h):first-child{background:#1E2340;color:#fff !important;margin:0 -18px 12px;padding:10px 18px;border-bottom:3px solid #E8590C;}
 body.ft-orient #lessonSlideWrap .ftr-to{background:#1E2340;color:#fff;border-left:4px solid #E8590C;} body.ft-orient #lessonSlideWrap .ftr-to b{color:#F4B77A;}
 body.ft-orient #lessonSlideWrap .ftr-eg{background:#EEF1F8;border-left:4px solid #343C66;color:#1B1E2E;}
-body.ft-orient #lessonSlideWrap .ftr-lesson{border:1.5px solid #343C66;border-left:5px solid #E8590C;box-shadow:0 3px 10px rgba(30,35,64,.12);}
-body.ft-orient #lessonSlideWrap .ftr-lesson b{color:#1E2340;} body.ft-orient #lessonSlideWrap .ftr-lesson span{color:#2B2F45;}
+/* every card in the orientation reads the same, high contrast: a navy title bar ruled in orange over white, the text in navy */
+body.ft-orient #lessonSlideWrap .ftr-lesson{background:#fff !important;border:2px solid #1E2340 !important;border-radius:12px;overflow:hidden;padding:0 16px 10px !important;box-shadow:0 4px 14px rgba(30,35,64,.16);}
+body.ft-orient #lessonSlideWrap .ftr-lesson > b{display:block;background:#1E2340;color:#fff !important;margin:0 -16px 8px;padding:7px 16px;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-lesson span{color:#1E2340 !important;font-weight:500;}
+body.ft-orient #lessonSlideWrap .ftr-lesson span b{color:#1E2340 !important;background:none;display:inline;margin:0;padding:0;border:0;}
+body.ft-orient #lessonSlideWrap .ftr-sub{color:#1E2340 !important;font-weight:600;}
 body.ft-orient #lessonSlideWrap .ftr-why{border:1.5px solid #E8590C;border-left:5px solid #E8590C;color:#1B1E2E;}
 body.ft-orient #lessonSlideWrap .ftr-goal{border:1.5px solid #E8590C;border-left:5px solid #E8590C;}
 body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left:5px solid #C0392B;}
