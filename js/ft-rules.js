@@ -347,19 +347,22 @@ const SLIDES = [
     rule("🕗 Managing Your Time Is Essential", "If you don’t finish a deliverable by the end of your shift, stop tracking and finish it unpaid, since you didn’t manage your time well. You may keep tracking only if you ask your trainer and they approve it.") +
     rule("🕖 Log In Up to 10 Minutes Early", "You may log in up to 10 minutes before your shift, no earlier. Use it to prepare your tools, and as a buffer for any break beyond your 1-hour total.") +
     rule("☕ Breaks: 1 Hour Total, Maximum", "The prescribed total break during training is 1 hour. How you split it is up to you, as long as you don’t go over 1 hour. Going over is your choice only if you accept not getting 8 hours for your shift, since tracking beyond 5:00 PM isn’t allowed.")],
-  ["auxes", "Auxes: Reporting Your Status", ()=>`<div class="ftr-bold">
-    <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post the update in both channels during training:</p>
-    <div class="ftr-grid">${AUX_CHANNELS.map(c=>`<div class="ftr-chan">
-      <div class="ftr-chan-h">${esc(c.ch)}</div>
-      <p>${esc(c.what)}</p>
-      ${c.rows.map(r=>`<div class="ftr-aux"><span>${esc(r[0])}</span><code>${esc(r[1])}</code></div>`).join("")}
-    </div>`).join("")}</div>
-    <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each aux once in each channel.</span></div>
-    <div class="ftr-part ftr-status">
-      <div class="ftr-part-h">💬 Your Discord Profile Status</div>
-      <p class="ftr-when">Set your Discord status in this format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
-      <p class="ftr-when">For example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
-    </div></div>`],
+  // one table: each status, its command in #⏳-timestamps and its update in #trainingchannel, side by side; then the
+  // no-double-stamping rule and the Discord profile status, side by side under it
+  ["auxes", "Auxes: Reporting Your Status", ()=>{ const [bot, chan] = AUX_CHANNELS; return `<div class="ftr-auxes">
+    <p class="ftr-sub">Your aux is your status: logging in, taking a break, logging out, or an outage. Every time it changes, post it in both channels.</p>
+    <table class="ftr-aux-tbl"><thead><tr><th>Your Status</th>
+      <th>${esc(bot.ch)}<small>LSH BOT: type the command, then check its reply.</small></th>
+      <th>${esc(chan.ch)}<small>Your batch’s channel: the same update, at the same time.</small></th></tr></thead>
+      <tbody>${bot.rows.map(([label, cmd]) => { const other = (chan.rows.find(r => r[0] === label) || [])[1] || "";
+        return `<tr><td>${esc(label)}</td><td><code>${esc(cmd)}</code></td><td><code>${esc(other)}</code></td></tr>`; }).join("")}</tbody></table>
+    <div class="ftr-aux-foot">
+      <div class="ftr-rule ftr-rule-aux"><b>🚫 No Double Stamping</b><span>Post each aux once in each channel.</span></div>
+      <div class="ftr-part ftr-status">
+        <div class="ftr-part-h">💬 Your Discord Profile Status</div>
+        <p class="ftr-when">Format: <code class="ftr-code">${esc(DISCORD_STATUS.format)}</code></p>
+        <p class="ftr-when">Example: <code class="ftr-code">${esc(DISCORD_STATUS.example)}</code> ${esc(DISCORD_STATUS.note)}</p>
+      </div></div></div>`; }],
   // Camera, then Discord
   ["camera", "Camera: On in Every Meeting", ()=>
     `<div class="ftr-goal"><b>📷 Your Camera Is Part of Showing Up</b><p>Training is a simulation of working with a client, and your trainers are your first clients: in every meeting and classroom discussion, they see you.</p></div>` +
@@ -670,6 +673,19 @@ body.ft-orient #lessonSlideWrap .ftr-slide :is(.ftr-part-h,.ftr-chan-h,.ftr-goal
 body.ft-orient #lessonSlideWrap .ftr-embed{height:max(220px, min(34vh, 24cqw)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-fig svg{max-height:min(34vh, 25cqw);}
 body.ft-orient #lessonSlideWrap .ftr-chan .ftr-aux{padding:5px 0;}
+/* Auxes: one table, big and aligned, the status in the first column and each channel's post in its own */
+body.ft-orient #lessonSlideWrap .ftr-auxes .ftr-sub{font:600 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;margin:0 0 12px;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl{width:100%;border-collapse:separate;border-spacing:0;border:2px solid #1E2340;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 14px rgba(30,35,64,.14);}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl th{background:#1E2340;color:#fff;text-align:left;vertical-align:top;padding:10px 16px;font:800 21px/1.25 'Poppins','Inter',sans-serif;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl th:first-child{width:22%;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl th small{display:block;margin-top:4px;font:500 14.5px/1.4 'Inter',sans-serif;color:#E6E8F2;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl td{padding:7px 16px;border-top:1px solid #D8DCE8;font:700 20px/1.3 'Inter',sans-serif;color:#1E2340;vertical-align:middle;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl tbody tr:nth-child(even) td{background:#F4F6FB;}
+body.ft-orient #lessonSlideWrap .ftr-aux-tbl td code{display:inline-block;padding:5px 12px;border-radius:8px;background:#1E2340;color:#fff;font:700 18px/1.2 ui-monospace,Menlo,Consolas,monospace;}
+body.ft-orient #lessonSlideWrap .ftr-aux-foot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;margin-top:14px;align-items:stretch;}
+body.ft-orient #lessonSlideWrap .ftr-aux-foot .ftr-rule{margin:0;display:flex;flex-direction:column;justify-content:center;gap:6px;}
+body.ft-orient #lessonSlideWrap .ftr-aux-foot .ftr-part{margin:0;}
+@media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-aux-foot{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-chan p{margin:4px 0 6px;}
 body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
 /* bigger type on the sheet: the boxes, rules, lists and cards all at 18px, their headings at 21px (a slide too long for
