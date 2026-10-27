@@ -388,16 +388,6 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
-  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
-      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends."]},
-      {h:"It Is Checked", steps:["The platform checks the name.", "It checks that it was on time."]},
-    ].map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>`],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
@@ -413,6 +403,16 @@ const SLIDES = [
     <div class="ftr-why"><b>Why It Matters:</b> These sessions develop important skills beyond the legal training: communication, accent reduction, grammar, email writing and client interviews. They directly affect your performance and professionalism in a law firm. Attendance isn’t mandatory, but taking initiative is part of being a professional. We provide the opportunity and the resources; you’re responsible for making the effort. Take advantage of these sessions while they’re available: they help you become more confident, capable and prepared when you start working with a law firm.</div>
     ${rule("🕔 Unpaid, and Not Mandatory, but Highly Encouraged", "Don’t track your time for them. Everyone is highly encouraged to attend.")}
     ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
+  // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
+  ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
+      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
+      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends."]},
+      {h:"It Is Checked", steps:["The platform checks the name.", "It checks that it was on time."]},
+    ].map((p,i)=>`<div class="ftr-part">
+      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
+      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
+    </div>`).join("")}</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
@@ -744,8 +744,12 @@ body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):has(> :is(.ftr-part-h,
 body.ft-orient #lessonSlideWrap :is(.ftr-part, .ftr-chan):not(:has(> .ftr-def)) > :is(.ftr-part-h, .ftr-chan-h):first-child{background:#1E2340;color:#fff !important;margin:0 -18px 12px;padding:10px 18px;border-bottom:3px solid #E8590C;}
 body.ft-orient #lessonSlideWrap .ftr-to{background:#1E2340;color:#fff;border-left:4px solid #E8590C;} body.ft-orient #lessonSlideWrap .ftr-to b{color:#F4B77A;}
 body.ft-orient #lessonSlideWrap .ftr-eg{background:#EEF1F8;border-left:4px solid #343C66;color:#1B1E2E;}
-body.ft-orient #lessonSlideWrap .ftr-lesson{border:1.5px solid #343C66;border-left:5px solid #E8590C;box-shadow:0 3px 10px rgba(30,35,64,.12);}
-body.ft-orient #lessonSlideWrap .ftr-lesson b{color:#1E2340;} body.ft-orient #lessonSlideWrap .ftr-lesson span{color:#2B2F45;}
+/* every card in the orientation reads the same, high contrast: a navy title bar ruled in orange over white, the text in navy */
+body.ft-orient #lessonSlideWrap .ftr-lesson{background:#fff !important;border:2px solid #1E2340 !important;border-radius:12px;overflow:hidden;padding:0 16px 10px !important;box-shadow:0 4px 14px rgba(30,35,64,.16);}
+body.ft-orient #lessonSlideWrap .ftr-lesson > b{display:block;background:#1E2340;color:#fff !important;margin:0 -16px 8px;padding:7px 16px;border-bottom:3px solid #E8590C;}
+body.ft-orient #lessonSlideWrap .ftr-lesson span{color:#1E2340 !important;font-weight:500;}
+body.ft-orient #lessonSlideWrap .ftr-lesson span b{color:#1E2340 !important;background:none;display:inline;margin:0;padding:0;border:0;}
+body.ft-orient #lessonSlideWrap .ftr-sub{color:#1E2340 !important;font-weight:600;}
 body.ft-orient #lessonSlideWrap .ftr-why{border:1.5px solid #E8590C;border-left:5px solid #E8590C;color:#1B1E2E;}
 body.ft-orient #lessonSlideWrap .ftr-goal{border:1.5px solid #E8590C;border-left:5px solid #E8590C;}
 body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left:5px solid #C0392B;}
