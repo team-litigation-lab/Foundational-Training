@@ -98,7 +98,14 @@ function go(step){
 /* ▶ Autoplay: the slides turn themselves, so a trainer can present hands-free and a trainee can watch through.
    It stops at the last slide, and any click on Previous/Next or a dot leaves it running from there. */
 // 🔓 Day 1 in order (js/ft-day1-flow.js): a trainee on Day 1 goes slide by slide, only as far as the trainer has unlocked
-const deckMayGo = (n, i) => !root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), Number(DD.day) === Number(n) ? DD.i : -1);
+// (from the slide showing on that day's deck; from anywhere else, the dashboard or a lesson, it is -1)
+const deckMayGo = (n, i) => !root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), state.view === "daydeck" && Number(DD.day) === Number(n) ? DD.i : -1);
+// is slide i of day n behind a step the trainer hasn't unlocked? (asked quietly: the 🗺 Map draws it 🔒 rather than toast)
+function slideLocked(n, i){
+  if(!root.FTDay1 || !FTDay1.mayGo) return false;
+  const t = root.toast; root.toast = () => {};
+  try{ return !FTDay1.mayGo(Number(n), Number(i), -1); }catch(err){ return false; }finally{ root.toast = t; }
+}
 function startAuto(){ stopAuto(); DD.auto = true; DD.timer = setInterval(() => {
   const d = decks() && decks()[DD.day]; if(!d) return stopAuto();
   if(DD.i >= slidesOf(d).length - 1) return stopAuto();
@@ -1334,13 +1341,14 @@ function mapHtml(){
   const seen = new Set();
   const dayRow = n => {
     seen.add(n);
-    const d = all[n], open = dayOpen(n), info = dayInfo(n), list = d ? slidesOf(d) : [];
+    // a day the trainer hasn't unlocked, and each step's slides until it is, show 🔒 and don't link
+    const d = all[n], open = dayOpen(n) && !slideLocked(n, 0), info = dayInfo(n), list = d ? slidesOf(d) : [];
     const title = (d && (info.role || d.title)) || `Day ${n}`;
     const state_ = n === here ? "here" : n < at ? "done" : "";
     const slides = list.map((x, i) => {
       const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Activity card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-      const on = onDeck && n === here && i === DD.i;
-      return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${open ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span></button></li>`;
+      const on = onDeck && n === here && i === DD.i, ok = open && !slideLocked(n, i);
+      return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${ok ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}${ok ? "" : " (opens when your trainer unlocks it)"}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span>${ok ? "" : `<span class="ftmap-lock">🔒</span>`}</button></li>`;
     }).join("");
     return `<li class="ftmap-day${state_ ? " " + state_ : ""}${open ? "" : " locked"}">
       <button type="button" class="ftmap-dayh" ${open ? `onclick="FTDayDecks.mapGo(${n}, 0)"` : "disabled"}><span class="ftmap-dn">${state_ === "done" ? "✓" : n}</span><span class="ftmap-dt"><b>Day ${n}</b> · ${e(title)}</span>${n === here ? `<span class="ftmap-you">You are here</span>` : ""}${open ? "" : `<span class="ftmap-lock">🔒</span>`}</button>
@@ -1461,7 +1469,8 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
   // 🗺 Map: the training roadmap
-  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
+  // (the deck already showing moves to the slide; from anywhere else, the dashboard or a lesson, the deck opens on it)
+  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
@@ -1943,6 +1952,7 @@ hr.ftdd-rule{border:none;border-top:2px dashed #E3D9CB;margin:14px 0;}
 .ftmap-slide:disabled{cursor:not-allowed;color:#A0A6B8;}
 .ftmap-sn{font:600 11px 'IBM Plex Mono',monospace;color:#8A90A6;flex:0 0 34px;}
 .ftmap-st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.ftmap-lock{margin-left:auto;padding-left:6px;font-size:11px;opacity:.7;}
 @media(max-width:760px){ .ftmap-body{grid-template-columns:minmax(0,1fr);} }
 .ftdd-prev:disabled{opacity:.45;}
 .ftdd-next{background:linear-gradient(135deg,#E8913A,#C9742B);border:1px solid #C9742B;color:#fff;}
