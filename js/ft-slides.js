@@ -519,6 +519,10 @@ main:has(> #lessonStage) > .ls-top > :not(.ft-side-presenter){display:none !impo
   const css = document.createElement("style"); css.id = "ft-tools-fit";
   css.textContent = `
 main.main-ftdd .ftdd-tool{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}
-main.main-ftdd .ftdd-tool-shot{max-height:46vh;}`;
+main.main-ftdd .ftdd-tool-shot{max-height:46vh;}
+/* the tools' tabs: no icons, each name centred in its tab, in the decks' heading type */
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-ic{display:none !important;}
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab{justify-content:center !important;text-align:center !important;font:700 15px/1.2 'Poppins','Inter',sans-serif !important;letter-spacing:.01em;color:#1E2340;padding:6px 10px !important;}
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab.on{color:#fff !important;}`;
   document.head.appendChild(css);
 })();
