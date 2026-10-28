@@ -6,7 +6,7 @@ const DAY5 = {
     {
       "id": "s1",
       "h": "AM: Buffer Time (1–2 hrs) for Reception Mock Calls",
-      "html": "<p>Carryover period for completing any pending Day 4 tasks. </p>"
+      "html": "<p>Carryover period for completing any pending tasks from the last session. </p>"
     },
     {
       "id": "s2",

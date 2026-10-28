@@ -258,7 +258,7 @@ for(let n = 1; n <= 16; n++){
   const extra = EXTRA[n] || [];
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));
   else slides.push({id: "to-be-added", h: "To be added", placeholder: true,
-    html: ph("ftdd-ph-blank", "📌", "More for Day " + n + " is on its way", "Your trainer will add the rest of today’s material here. Until then, follow the slides before this one and the training GC.")});
+    html: ph("ftdd-ph-blank", "📌", "More is on its way", "Your trainer will add the rest of today’s material here. Until then, follow the slides before this one and the training GC.")});
   for(const s of slides){
     if(/class=\\?"facilitator|Answer Key|Correct Answer|Ideal Answer|Facilitator[’']s (Note|Guide)/i.test(s.html)) throw new Error(`facilitator content in Day ${n} ${s.id}`);
     if(/PROCESS QUESTIONS/.test(s.html)) throw new Error(`Process Questions left in Day ${n} ${s.id}`);

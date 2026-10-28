@@ -30,7 +30,8 @@ const STEPS = [
 const FINISH = 8;
 const key = b => typeof ftBatchKey === "function" ? ftBatchKey(b) : String(b || "").trim().toLowerCase();
 // the last step unlocked for this batch
-function stepsFor(batch){ const o = state.ftDay1Steps || {}; return Math.max(1, Number(o.all) || 0, Number((o.batches || {})[key(batch)]) || 0); }
+// (and ⏰ by the day's schedule, when the trainer put Day 1 on one: js/ft-day-locks.js)
+function stepsFor(batch){ const o = state.ftDay1Steps || {}, sc = window.FTDayLocks ? FTDayLocks.day1(batch) : 0; return Math.max(1, Number(o.all) || 0, Number((o.batches || {})[key(batch)]) || 0, sc); }
 function active(){
   if(!state.traineeId || state.isAdmin || state.adminPreview || !state.ftOpenDays) return false;   // (nothing decided before the open lessons load)
   const p = (state.progress || {})[1]; if(p && p.done) return false;
@@ -129,11 +130,25 @@ window.render = function(){
   const r = __render.apply(this, arguments);
   if(state.view === "daydeck" && active() && d && Number(d.day) === 1 && deckList().length){
     const n = stepAt(d.i), box = document.querySelector("main.main-ftdd .ftdd-slides");
-    if(n > at() && box) box.innerHTML = `<div class="ftd1-lock"><b>🔒 ${esc(step(n).label)}</b>
-        <span>This step opens when your trainer unlocks it. Day 1 goes in order, one step at a time.</span>
-        <button type="button" class="btn btn-navy" onclick="FTDay1.goCurrent()">Go to ${esc(step(at()).label)} →</button></div>`;
+    if(n > at() && box) ftLockSlides(box, `<b>🔒 ${esc(step(n).label)}</b>
+        <span>This step opens when your trainer unlocks it. The training goes in order, one step at a time.</span>
+        <button type="button" class="btn btn-navy" onclick="FTDay1.goCurrent()">Go to ${esc(step(at()).label)} →</button>`);
   }
   return r;
+};
+
+/* 🔒 A locked slide stays where it is, blurred, with the lock over it (js/ft-day-locks.js uses this too). What is under the
+   blur can't be used: its links lose their address, its embedded videos and documents are unloaded, its buttons are
+   disabled, and none of it takes a click, a tab or a screen reader's focus. */
+window.ftLockSlides = function(box, msg){
+  box.querySelectorAll("a[href]").forEach(a => { a.removeAttribute("href"); a.removeAttribute("target"); });
+  box.querySelectorAll("iframe, video, audio, embed, object").forEach(x => x.remove());
+  box.querySelectorAll("button, input, select, textarea").forEach(x => { x.disabled = true; });
+  box.querySelectorAll("[onclick]").forEach(x => x.removeAttribute("onclick"));
+  const under = document.createElement("div"); under.className = "ftlk-under"; under.setAttribute("aria-hidden", "true"); under.inert = true;
+  while(box.firstChild) under.appendChild(box.firstChild);
+  const lock = document.createElement("div"); lock.className = "ftd1-lock ftlk-over"; lock.setAttribute("role", "alert"); lock.innerHTML = msg;
+  box.classList.add("ftlk"); box.append(under, lock);
 };
 
 /* 🛡 Admin → 📅 Open Lessons: 🔓 Day 1 Steps, for all batches or one */
@@ -158,6 +173,11 @@ window.ftSetDay1Step = async function(n){
 const st = document.createElement("style"); st.id = "ft-day1-flow"; st.textContent = `
 .ftd1-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:320px;padding:28px;border-radius:14px;background:#fff;text-align:center;}
 .ftd1-lock b{font:800 22px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;} .ftd1-lock span{font-size:15px;color:var(--ink-soft);max-width:460px;}
+.ftlk{position:relative;}
+.ftlk > .ftlk-under{filter:blur(7px) grayscale(.35);opacity:.75;pointer-events:none;user-select:none;}
+.ftlk > .ftlk-over{position:absolute;inset:0;z-index:5;min-height:0;background:rgba(255,255,255,.55);backdrop-filter:blur(2px);
+  box-shadow:inset 0 0 0 2px rgba(30,35,64,.12);}
+.ftlk-badge{display:inline-flex;align-items:center;gap:6px;}
 .ftd1-steps{list-style:none;margin:0;padding:0;display:grid;gap:6px;}
 .ftd1-steps li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;}
 .ftd1-steps li.on{background:#EAF6EE;border-color:#B9E0C6;} .ftd1-steps li i{font-size:12.5px;color:var(--ink-soft);}
