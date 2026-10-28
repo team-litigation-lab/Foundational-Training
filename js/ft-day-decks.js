@@ -2034,7 +2034,11 @@ main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;tr
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots{margin:0 !important;justify-content:center;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child){grid-template-columns:minmax(0,1fr) !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child) a{height:26vh !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child) a{height:40vh !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row:has(> .shots > figure:only-child){grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:not(:has(> figure:only-child)) a{height:24vh !important;}
+/* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
+main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .ftdd-sa-contacts{margin:0;grid-template-columns:repeat(2,minmax(0,1fr));}
 @media (max-width:760px){main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row{grid-template-columns:minmax(0,1fr);}}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your

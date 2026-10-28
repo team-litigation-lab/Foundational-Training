@@ -453,8 +453,8 @@ if(typeof Narrator !== "undefined"){
     const t = own || (nx ? titleOf(nx) : (isOrient ? "🧰 Know Your Tools, then the Reading Task" : "📋 This lesson’s Classroom Activity"));
     if(!t || !window.FTNextUp) return;
     // the bar's forward button is its last (Next →, or 📋 Classroom Activity on the last slide): the label goes just before it
-    const btn = [...nav.children].filter(b => b.matches("button, a.btn") && b.offsetParent).pop();
-    FTNextUp(nav, btn, t, nx ? `Step ${i + 2} of ${list.length}` : (isOrient ? "Day 1" : "Activity Deck"));
+    const btn = nav.querySelector(':scope > button[onclick^="nextSlide"], :scope > button[onclick^="goToKnowledgeCheckWithInterstitial"]') || [...nav.children].filter(b => b.matches("button, a.btn") && b.offsetParent).pop();
+    FTNextUp(nav, btn, t, nx ? "" : (isOrient ? "Day 1" : "Activity Deck"));   // (no "Step N of M": the title has two lines)
   }
   const css = document.createElement("style");
   css.textContent = `/* the lesson card (lessons and the orientation, the navy panel the slide sits in) has the American-flag photo, under a
@@ -467,5 +467,28 @@ if(typeof Narrator !== "undefined"){
 .lesson-stage .slide-dots-nav .slide-dot{background:#C9CFDD;}
 .lesson-stage .slide-dots-nav .slide-dot.visited{background:#8E97C4;}
 .lesson-stage .slide-dots-nav .slide-dot.active{background:#DB8437;}`;
+  document.head.appendChild(css);
+})();
+
+/* No side column on the lesson and orientation slides: the slide takes the page's width, and its controls
+   (🎧 Listen, the reading speed, ⛶ Full screen) sit in the Previous / Next bar after Next. The lesson's title,
+   Objectives and the keyboard tip are gone; the presenter keeps her place at the lower right of the screen,
+   so the slide leaves her that much room. */
+(function(){
+  const css = document.createElement("style"); css.id = "ft-noside";
+  css.textContent = `
+main:has(> #lessonStage) > .day-head-compact, main:has(> #lessonStage) > #navBackSlot:empty{display:none !important;}
+main:has(> #lessonStage) > .ls-top{position:absolute !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;overflow:visible !important;float:none !important;}
+main:has(> #lessonStage) > .ls-top > :not(.ft-side-presenter){display:none !important;}
+@media(min-width:1000px){
+  main:has(> #lessonStage){display:block !important;grid-template-columns:none !important;padding-right:calc(clamp(170px, 13vw, 250px) + 18px) !important;}
+  main:has(> #lessonStage) > #lessonStage, body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 !important;grid-column:auto !important;}
+}
+#lessonStage > .slide-nav > .nav-tools{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+#lessonStage > .slide-nav > .nav-tools .btn{white-space:nowrap;}
+#lessonStage > .slide-nav > .nav-tools #narrBtn.on{background:#1E2340;color:#fff;border-color:#1E2340;}
+#lessonStage > .slide-nav > .nav-tools .audio-rate{font:600 13px 'Inter',sans-serif;padding:5px 6px;border:1px solid #C9CFDD;border-radius:8px;background:#fff;color:#1E2340;}
+#audienceRoot .nav-tools{display:none !important;}
+@media(max-width:760px){ #lessonStage > .slide-nav{flex-wrap:wrap !important;} #lessonStage > .slide-nav > .nav-tools{width:100%;justify-content:center;} }`;
   document.head.appendChild(css);
 })();

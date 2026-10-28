@@ -6,11 +6,7 @@
        intake, claims, medical records), its calendar color rule, statute of limitations, LOR deadline,
        records vendor and record types, and its caseload (Training Library cases in the CMS, MC-01 …).
        Until an admin saves them, the three profiles in DEFAULT_FIRMS are used.
-     • The trainer hands out the work: Admin → 🗂 Case Assignment sets each trainee's firm and the cases
-       they are given, written to assign:<id> — a record the trainer writes and the trainee only reads
-       (worker.js). Nothing is handed out on its own: a trainee has no case until a trainer assigns one,
-       and a session that needs one says so. A trainee with no firm set works for the first profile, so
-       they are never waiting on a trainer just to read their firm's rules.
+     • Every trainee works for the first firm profile, on that firm's caseload (no per-trainee assignment).
      • 🏛 My Firm (#/firm): 📁 Client Profile in the top bar — the firm's profile and rules, to read and
        acknowledge (✓ I've read my firm's rules, saved in sessions:<id>).
      • Every Practice Session (js/ft-sessions.js) is set at that firm and checked against its rules.
@@ -25,7 +21,7 @@ const caseById = id => CASES.find(c => c.id === id) || null;
 const range = (a, b) => Array.from({length:b - a + 1}, (_, i) => "MC-" + String(a + i).padStart(2, "0"));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId;   // a trainee session is never an admin one
-// The practice areas a trainee is assigned cases in (the lessons they practice).
+// The practice areas a trainee works cases in (the lessons they practice).
 const AREAS = [
   {id:"pi", icon:"⚖️", label:"PI Process Flow", lesson:3},
   {id:"intake", icon:"📋", label:"Intake", lesson:6},
@@ -103,35 +99,14 @@ const firmById = id => firms().find(f => f.id === id) || null;
 function rerender(){ if(["firm", "simulators", "session"].includes(state.view) || (state.view === "admin" && state.adminTab === "firms")) render(); }
 // Every trainee works for the same firm, and gets it the moment they arrive: the first profile.
 
-/* WHAT A TRAINEE WORKS ON IS THE TRAINER'S TO HAND OUT.
-   A trainer assigns each trainee their firm and their cases in Admin → 🗂 Case Assignment, saved in
-   assign:<id> — a record the trainer writes and the trainee only reads (worker.js). A trainee with nothing
-   assigned yet works for the first firm profile, so they are never stuck, and has no cases until their
-   trainer gives them some: a session that needs one says so, and names no case of its own. */
-const MY = {id: null, rec: null, loading: null};
-// returns a promise so a caller can wait for it; the screens simply draw again when it lands
-function loadMine(force){
-  const id = state.traineeId;
-  if(!id || !isTrainee()) return Promise.resolve(null);
-  if(force){ MY.rec = null; MY.loading = null; }
-  if(MY.id === id && MY.rec !== null) return Promise.resolve(MY.rec);
-  if(MY.loading) return MY.loading;
-  MY.id = id;
-  MY.loading = sharedGet("assign:" + id).then(v => { MY.rec = v && typeof v === "object" ? v : {}; })
-    .catch(() => { MY.rec = {}; })
-    .then(() => { MY.loading = null; rerender(); return MY.rec; });
-  return MY.loading;
-}
-function mine(){ loadMine(); return MY.rec || {}; }
-function myFirm(){ loadFirms(); if(!isTrainee()) return null;
-  const f = firmById(mine().firm); return f || firms()[0] || null; }
-// the cases the trainer handed this trainee, in the order they were given
-function myCases(){ loadFirms(); if(!isTrainee()) return [];
-  return (mine().cases || []).map(caseById).filter(Boolean); }
+// Every trainee works for the first firm profile, on its caseload, in the order the profile lists it:
+// nothing is handed out per trainee.
+function myFirm(){ loadFirms(); if(!isTrainee()) return null; return firms()[0] || null; }
+function myCases(){ const f = myFirm(); return f ? (f.cases || []).map(caseById).filter(Boolean) : []; }
 const caseHref = (c, program) => CMS + "?" + new URLSearchParams({program:program || "cm", mock:c.id, from:"standard"});
 
 window.FTFirms = {AREAS, RULE_AREAS, GCAL, firms, firmById, myFirm, myCases, caseById, caseHref, loadFirms,
-  loadMine, mine, defaults: DEFAULT_FIRMS};
+  defaults: DEFAULT_FIRMS};
 
 /* ---------- 🏛 My Firm (#/firm) ---------- */
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["firm"]);
@@ -148,7 +123,7 @@ function firmFacts(f){
       <div><h4>Team</h4>${(f.team || []).map(a => `<p><b>${e(a.name)}</b><span>${e(a.role)}${a.ext ? " · ext " + e(a.ext) : ""}</span></p>`).join("")}</div></div>`;
 }
 function renderMyFirm(){
-  if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>A trainee sees the firm you assign them in <a class="ff-link" onclick="state.adminTab='assign'; goto('admin')">Admin → 🗂 Case Assignment</a> — its profile, its rules and the cases you give them. Until you set one they work for the first profile in <a class="ff-link" onclick="state.adminTab='firms'; goto('admin')">🏛 Law Firms</a> and have no cases.</p></div>`;
+  if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Every trainee works for the first profile in <a class="ff-link" onclick="state.adminTab='firms'; goto('admin')">🏛 Law Firms</a>, on its caseload — its profile and its rules are what they see here.</p></div>`;
   const f = myFirm();
   if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>No firm profile is set up yet. A trainer adds one in Admin → 🏛 Law Firms, and it reaches every trainee at once.</p></div>`;
   const ack = window.FTSessions && FTSessions.ack();
@@ -160,7 +135,7 @@ function renderMyFirm(){
       <div class="ff-ack">${acked ? `<span class="ff-ok">✓ You confirmed you read these rules on ${e(new Date(ack.at).toLocaleDateString())}.</span>`
         : `<button class="btn btn-navy" onclick="FTSessions.acknowledge('${e(f.id)}')">✓ I’ve read and understood my firm’s rules</button>`}</div></div>
     <div class="card ff-card"><h2>🗂 Your cases</h2>
-      <p class="ff-muted">Cases are not handed out on the platform at the moment — how you get them is being worked out. The sessions that work on a case say so when you open them; the rest run as they are.</p></div>`;
+      <p class="ff-muted">Your Practice Sessions open on your firm’s own cases${f.cases && f.cases.length ? ` (${e(f.cases.join(", "))})` : ""} in the CMS.</p></div>`;
 }
 const __render = window.render;
 window.render = function(){
@@ -189,7 +164,7 @@ window.ftAdminTab = function(id, label, renderTab){
   };
 };
 
-/* ---------- Admin → 🏛 Law Firms: the profiles (🗂 Case Assignment hands them out) ---------- */
+/* ---------- Admin → 🏛 Law Firms: the profiles ---------- */
 const FA = {loaded:false, loading:false, edit:null};
 // Nothing per-trainee is read here any more — the screen is the firm profiles alone — so this loads
 // those and nothing else. Forced, so an admin always sees what is saved rather than a cached list.
@@ -246,7 +221,7 @@ function renderAdminFirms(){
       <div class="ff-acts"><button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.edit('')">➕ New firm</button>${F.firms ? `<button class="btn btn-ghost btn-sm" onclick="FTFirmsAdmin.restore()">↺ Restore the starting profiles</button>` : ""}</div></div>
     ${FA.edit ? firmForm(FA.edit) : ""}
     <div class="card ff-admin"><h3>👥 Who works here</h3>
-      <p class="ff-muted">Nobody assigns a firm any more: every trainee works for the first profile above from the moment they arrive, and its rules are what their Practice Sessions are checked against. Cases are not handed out here — that plan is being written.</p></div>`;
+      <p class="ff-muted">Nobody assigns a firm any more: every trainee works for the first profile above from the moment they arrive, and its rules are what their Practice Sessions are checked against. Their sessions open on that firm's caseload, in the order listed in its profile.</p></div>`;
 }
 async function saveFirms(list){
   const ok = await sharedSet("settings:firms", {v:1, firms:list, updatedAt:new Date().toISOString()});
@@ -290,110 +265,9 @@ window.FTFirmsAdmin = {
   },
 };
 ftAdminTab("firms", "🏛 Law Firms", renderAdminFirms);
-// 🛠 the Practice Lab's section: the cases the trainer assigned this trainee, each one a way into the CMS.
-// Nothing shows until a trainer has assigned something — the platform hands out no case of its own.
-window.ftCasesSection = () => {
-  if(!isTrainee()) return "";
-  loadMine(); loadFirms();
-  const cs = myCases(), f = myFirm();
-  return `<section class="fts-group"><h2>🗂 My cases</h2>
-    <p class="fts-sub">The cases your trainer assigned you${f ? ` at ${e(f.name)}` : ""}. Your Practice Sessions and the CMS work on these; nobody else's cases are yours to open.</p>
-    ${cs.length ? `<div class="fts-grid">${cs.map(c => `<div class="card ff-mycase"><b>${e(c.id)}</b><span class="fss-muted">${e(c.level || "")} · ${e(c.type || "")}</span>
-        <p>${e(c.summary || "")}</p>
-        <p class="fss-muted">${e((c.client || {}).name || "")}${c.phase ? ` · ${e(c.phase)}` : ""}</p>
-        <a class="btn btn-ghost btn-sm" href="${e(caseHref(c))}" target="_blank" rel="noopener noreferrer">Open in the CMS ↗</a></div>`).join("")}</div>`
-      : `<div class="card ff-mycase ff-nocase"><b>No case yet</b><p>Your trainer assigns the cases you work on. Until then there is nothing to open here — ask in the training GC if you think you should have one.</p></div>`}
-  </section>`;
-};
-
-/* ---------- Admin → 🗂 Case Assignment: the trainer hands out the firm and the cases ----------
-   One row per approved trainee: the firm they work for and the cases they are given, written to
-   assign:<id>. Nothing is handed out automatically — a case belongs to a trainee only once a trainer
-   has said so, and the trainee's side only reads it. */
-const AS = {rows: null, loading: false, batch: "", open: {}, saving: ""};
-async function loadAssign(){
-  AS.loading = true;
-  try{
-    let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
-    const keys = people.map(r => "assign:" + r.id), vals = [];
-    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
-    AS.rows = people.map((r, i) => ({id: r.id, name: r.name || r.id, batch: r.batch || "",
-      rec: (vals[i] && typeof vals[i] === "object") ? vals[i] : {}}))
-      .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    if(!AS.batch){ const bs = [...new Set(AS.rows.map(r => r.batch).filter(Boolean))].sort(); AS.batch = bs[bs.length - 1] || ""; }
-  }catch(err){ AS.rows = AS.rows || []; }
-  AS.loading = false; if(state.view === "admin" && state.adminTab === "assign") render();
-}
-const rowById = id => (AS.rows || []).find(r => r.id === id) || null;
-async function saveAssign(id, rec){
-  const r = rowById(id); if(!r) return false;
-  AS.saving = id; render();
-  const out = Object.assign({v: 1}, rec, {at: new Date().toISOString()});
-  const ok = await sharedSet("assign:" + id, out);
-  if(ok) r.rec = out; else toast("Couldn’t save the assignment. Check your connection.");
-  AS.saving = ""; render();
-  return ok;
-}
-function assignHtml(){
-  if(!AS.rows){ if(!AS.loading) loadAssign(); loadFirms(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-  const batches = [...new Set(AS.rows.map(r => r.batch).filter(Boolean))].sort();
-  const rows = AS.rows.filter(r => !AS.batch || r.batch === AS.batch);
-  return `<div class="card ff-card"><div class="ff-bar"><div><h3>🗂 Case Assignment</h3>
-      <p class="fss-muted">The firm each trainee works for and the cases they are given. Nothing is handed out on its own: a trainee has no case until you assign one here, and they can only read what you set. Their Practice Sessions and the CMS open on these cases.</p></div>
-      <span><select onchange="FTFirmAssign.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Firm</th><th>Cases</th><th></th></tr></thead><tbody>
-      ${rows.map(r => { const rec = r.rec || {}, got = (rec.cases || []).length, f = firmById(rec.firm) || firms()[0];
-        return `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
-          <td><select onchange="FTFirmAssign.firm('${e(r.id)}', this.value)">${firms().map(x => `<option value="${e(x.id)}" ${x.id === (rec.firm || (firms()[0] || {}).id) ? "selected" : ""}>${e(x.name)}</option>`).join("")}</select></td>
-          <td>${got ? `<b>${got}</b> assigned<span class="fss-muted"> · ${e((rec.cases || []).slice(0, 4).join(", "))}${got > 4 ? "…" : ""}</span>` : `<span class="fss-muted">none yet</span>`}</td>
-          <td><button class="btn btn-ghost btn-sm" ${AS.saving === r.id ? "disabled" : ""} onclick="FTFirmAssign.open('${e(r.id)}')">${AS.open[r.id] ? "Close" : "Assign"} ${AS.open[r.id] ? "▾" : "▸"}</button></td></tr>
-          ${AS.open[r.id] ? `<tr><td colspan="4">${casePicker(r, f)}</td></tr>` : ""}`; }).join("")}
-    </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AS.batch ? " in this batch" : ""}.</p>`}</div>`;
-}
-function casePicker(r, f){
-  const rec = r.rec || {}, has = new Set(rec.cases || []);
-  const ids = (f && f.cases || []).filter(id => caseById(id));
-  if(!ids.length) return `<p class="fss-muted">${e((f || {}).name || "This firm")} has no cases in its caseload yet — add them to the firm profile in 🏛 Law Firms.</p>`;
-  return `<div class="ff-assign">
-    <p class="fss-muted">Tick the cases ${e(r.name)} works on. They see only these, in this order, in their Practice Sessions and the CMS.</p>
-    <div class="ff-cases">${ids.map(id => { const c = caseById(id);
-      return `<label class="ff-case${has.has(id) ? " on" : ""}"><input type="checkbox" ${has.has(id) ? "checked" : ""} onchange="FTFirmAssign.tick('${e(r.id)}', '${e(id)}', this.checked)">
-        <span><b>${e(id)} · ${e(c.level || "")}</b><small>${e(c.summary || "")}</small></span></label>`; }).join("")}</div>
-    <div class="ff-assign-acts"><button class="btn btn-ghost btn-sm" onclick="FTFirmAssign.clear('${e(r.id)}')">Clear all</button>
-      <span class="fss-muted">${has.size} of ${ids.length} assigned${rec.at ? ` · last set ${e(String(rec.at).slice(0, 10))}` : ""}</span></div></div>`;
-}
-window.FTFirmAssign = {
-  batch(b){ AS.batch = b; render(); },
-  open(id){ AS.open[id] = !AS.open[id]; render(); },
-  reload: () => { AS.rows = null; return loadAssign(); },
-  state: () => AS,
-  async firm(id, firm){ const r = rowById(id); if(!r) return; await saveAssign(id, Object.assign({}, r.rec, {firm})); },
-  async tick(id, caseId, on){
-    const r = rowById(id); if(!r) return;
-    const list = (r.rec.cases || []).slice(), i = list.indexOf(caseId);
-    if(on && i < 0) list.push(caseId); else if(!on && i >= 0) list.splice(i, 1);
-    await saveAssign(id, Object.assign({}, r.rec, {cases: list}));
-  },
-  async clear(id){ const r = rowById(id); if(!r) return;
-    if(!confirm(`Take every case back from ${r.name}?`)) return;
-    await saveAssign(id, Object.assign({}, r.rec, {cases: []})); }
-};
-ftAdminTab("assign", "🗂 Case Assignment", assignHtml);
-
-
 (function(){ const s = document.createElement("style"); s.id = "ft-firms"; s.textContent = `
 main.main-ff{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ff-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .ff-hero > p{margin:0 0 16px;color:var(--ink-soft);font-size:15px;}
-.ff-mycase{padding:12px 14px;display:flex;flex-direction:column;gap:4px;} .ff-mycase b{color:var(--navy);font-size:15px;}
-.ff-mycase p{margin:0;font-size:13px;} .ff-mycase .btn{align-self:flex-start;margin-top:6px;}
-.ff-nocase{background:#FFFBF5;border-color:#E9C9A6;}
-.ff-assign{padding:4px 2px 8px;} .ff-cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin:8px 0;}
-.ff-case{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid #E3E7F0;border-radius:10px;background:#fff;cursor:pointer;}
-.ff-case.on{border-color:#DB8437;background:#FFFBF5;}
-.ff-case span{display:flex;flex-direction:column;min-width:0;} .ff-case b{font-size:13px;color:var(--navy);} .ff-case small{font-size:11.5px;color:var(--ink-soft);}
-.ff-assign-acts{display:flex;gap:10px;align-items:center;}
 .ff-card{padding:18px 20px;margin-bottom:16px;} .ff-card h1{margin:0 0 8px;color:var(--navy);} .ff-card h2{margin:0 0 10px;color:var(--navy);font-size:20px;}
 .ff-facts{display:flex;gap:8px;flex-wrap:wrap;} .ff-facts span{background:#F3F4F8;border-radius:999px;padding:5px 12px;font-size:13.5px;color:#4A5070;}
 .ff-greet{margin:12px 0;font-size:14.5px;} .ff-muted{color:var(--ink-soft);font-size:13.5px;} .ff-link{cursor:pointer;color:var(--orange-deep);font-weight:700;}
