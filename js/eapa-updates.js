@@ -3322,7 +3322,7 @@ ${obTranscript(i)}
 
 Reply with your next line only: 1-3 short sentences, natural spoken English. React to how well the coordinator is doing: clear, polite, specific and within scope earns trust and cooperation; vague, pushy, rambling or anything resembling legal advice earns pushback or a quick goodbye. Never volunteer every fact at once; give details when asked. When the call has naturally finished (a time is agreed and confirmed, a message is taken, or you've said goodbye), end your line with [HANGS UP].`;
   let reply;
-  try{ reply = String(await callAIText(prompt, 200, undefined, "call")||"").trim().replace(/^["“]+|["”]+$/g,""); }
+  try{ reply = String(await callAIText(prompt, 200, undefined, "chat")||"").trim().replace(/^["“]+|["”]+$/g,""); }
   catch(e){ reply = "[Connection issue — try sending again.]"; }
   if(obState().active!==i) return;
   const hangs = /\[\s*hangs? up\s*\]/i.test(reply);
