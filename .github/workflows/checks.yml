@@ -77,6 +77,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/day1-flow.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Every day in Day 1's order, each step unlocked by the trainer (a segment per day on the lesson cards; ten process questions per sheet)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/day-locks.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Transcription Activity (Day 9's minutes, end to end; the trainer's view)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules

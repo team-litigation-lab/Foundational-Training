@@ -30,7 +30,8 @@ const STEPS = [
 const FINISH = 8;
 const key = b => typeof ftBatchKey === "function" ? ftBatchKey(b) : String(b || "").trim().toLowerCase();
 // the last step unlocked for this batch
-function stepsFor(batch){ const o = state.ftDay1Steps || {}; return Math.max(1, Number(o.all) || 0, Number((o.batches || {})[key(batch)]) || 0); }
+// (and ⏰ by the day's schedule, when the trainer put Day 1 on one: js/ft-day-locks.js)
+function stepsFor(batch){ const o = state.ftDay1Steps || {}, sc = window.FTDayLocks ? FTDayLocks.day1(batch) : 0; return Math.max(1, Number(o.all) || 0, Number((o.batches || {})[key(batch)]) || 0, sc); }
 function active(){
   if(!state.traineeId || state.isAdmin || state.adminPreview || !state.ftOpenDays) return false;   // (nothing decided before the open lessons load)
   const p = (state.progress || {})[1]; if(p && p.done) return false;

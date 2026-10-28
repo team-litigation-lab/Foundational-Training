@@ -32,6 +32,8 @@ const ASSETS = {
 // Day 1 runs one step at a time, each unlocked by the trainer (js/ft-day1-flow.js): the tests of everything else start with
 // Day 1 unlocked to its end, and the Day 1 flow test sets its own steps (FT_DAY1_LOCKED=1 starts it locked instead)
 if (!process.env.FT_DAY1_LOCKED) store.set('ft:settings:day1steps', JSON.stringify({ all: 8, batches: {} }));
+// and every other day open to its end (js/ft-day-locks.js): the Activity Locks test sets its own (FT_DAYS_LOCKED=1 starts them locked)
+if (!process.env.FT_DAYS_LOCKED) store.set('ft:settings:daysteps', JSON.stringify({ all: Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 2, 999])), batches: {} }));
 const env = { LSH_KV: KV, ASSETS, SESSION_SECRET: 'ci-only-secret' };
 http.createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);

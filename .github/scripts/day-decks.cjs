@@ -89,6 +89,11 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
+  // 🔓 a day waits for its trainer (js/ft-day-locks.js): with no lesson open, a trainee's Day 2 shows its lock, not its card
+  await page.evaluate(() => FTDayDecks.open(2)); await page.waitForTimeout(600);
+  if (!(await page.$('main.main-ftdd .ftd1-lock')) || await page.$('.ftdd-lcslide .ftlc')) fail('a trainee opened Day 2 before the trainer opened it');
+  // once its lesson is open (the test server opens every day's steps, server.mjs), every day opens on its card
+  await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }); await page.evaluate(() => ftLoadOpenDays());
   const dayCards = [];
   for (let n = 1; n <= 16; n++) {
     await page.evaluate(n => FTDayDecks.open(n), n); await page.waitForTimeout(500);
@@ -182,7 +187,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.evaluate(() => { const b = document.querySelector('#dayd-4'); return !b || b.disabled; })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
   // the trainer's additions are a row of their own on the lesson's Classroom Activity card, and it opens their slide
   await page.click('#dayd-4'); await page.waitForTimeout(1500);
-  await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer · Day 4")'); await page.waitForTimeout(1500);
+  await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer")'); await page.waitForTimeout(1500);
   const tv = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', steps: document.querySelectorAll('.ftdd-x').length, form: !!document.querySelector('.ftdd-xform'),
     sim: !!document.querySelector('.ftdd-x a[href*="call.html"]'), bold: !!document.querySelector('.ftdd-x b b'), text: (document.querySelector('.ftdd-body') || {}).innerText || '' }));
   if (!/From your trainer/.test(tv.h)) fail(`📌 didn't open Day 4's "From your trainer" slide: ${tv.h}`);
