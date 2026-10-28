@@ -800,6 +800,7 @@ function renderToolsPage(){
       </div></div>
       <div class="ftdd-nav">
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
+        <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
           : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.open(1, 0)" title="Day 1's Classroom Activity card, the start of Day 1's Activity deck">📋 Next: Day 1 · Classroom Activity →</button>`}
@@ -1311,7 +1312,8 @@ root.goToKnowledgeCheckWithInterstitial = async function(){
    you are on are marked, the days before it are ticked, and any open day or slide is a click away. Escape, ✕ or a
    click outside closes it. */
 function mapHtml(){
-  const all = decks() || {}, here = DD.day, at = placeDay();
+  // opened from a lesson or orientation slide (not a deck), "here" is the day the trainee is on
+  const onDeck = state.view === "daydeck", all = decks() || {}, at = placeDay(), here = onDeck ? DD.day : at;
   const lessons = Object.keys(LESSON_CARDS).map(Number).sort((a, b) => a - b);
   const seen = new Set();
   const dayRow = n => {
@@ -1321,7 +1323,7 @@ function mapHtml(){
     const state_ = n === here ? "here" : n < at ? "done" : "";
     const slides = list.map((x, i) => {
       const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Day card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-      const on = n === here && i === DD.i;
+      const on = onDeck && n === here && i === DD.i;
       return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${open ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span></button></li>`;
     }).join("");
     return `<li class="ftmap-day${state_ ? " " + state_ : ""}${open ? "" : " locked"}">
@@ -1342,7 +1344,7 @@ function mapHtml(){
   return `<div class="ftmap-box" role="document">
     <button type="button" class="ftmap-x" onclick="FTDayDecks.mapClose()" aria-label="Close the map">✕</button>
     <div class="ftmap-head"><p class="ftmap-kick">Standard Foundational Training · ${total} days · 8 lessons</p><h2>🗺 Training Roadmap</h2>
-      <p class="ftmap-sub">You are on <b>Day ${e(here)}</b>, slide ${DD.i + 1}. Tap any day or slide to go there.</p>
+      <p class="ftmap-sub">${onDeck ? `You are on <b>Day ${e(here)}</b>, slide ${DD.i + 1}.` : `You are on <b>${e(typeof ftName === "function" && state.dayId != null ? ftName(state.dayId) : "Day " + here)}</b>${state.view === "day" ? `, step ${(state.lessonSlide || 0) + 1}` : ""}.`} Tap any day or slide to go there.</p>
       <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (at - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
     <div class="ftmap-body">${groups}${restHtml}</div></div>`;
 }

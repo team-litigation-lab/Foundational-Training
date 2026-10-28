@@ -488,7 +488,8 @@ main:has(> #lessonStage) > .ls-top > :not(.ft-side-presenter){display:none !impo
 #lessonStage > .slide-nav > .nav-tools .btn{white-space:nowrap;}
 #lessonStage > .slide-nav > .nav-tools #narrBtn.on{background:#1E2340;color:#fff;border-color:#1E2340;}
 #lessonStage > .slide-nav > .nav-tools .audio-rate{font:600 13px 'Inter',sans-serif;padding:5px 6px;border:1px solid #C9CFDD;border-radius:8px;background:#fff;color:#1E2340;}
-#audienceRoot .nav-tools{display:none !important;}
+#audienceRoot .nav-tools, #audienceRoot .nav-map{display:none !important;}
+#lessonStage > .slide-nav .nav-map{white-space:nowrap;}
 @media(max-width:760px){ #lessonStage > .slide-nav{flex-wrap:wrap !important;} #lessonStage > .slide-nav > .nav-tools{width:100%;justify-content:center;} }`;
   document.head.appendChild(css);
 })();
