@@ -484,7 +484,7 @@ if(typeof window.paginateSlideUnits === "function" && !window.paginateSlideUnits
 // One slide on one sheet, the way the Case Management course fits its slides (fitSlideZoom there): the sheet's content
 // is scaled down until it fits, to half size at the smallest, and only a slide that would have to shrink further is
 // split into pages by the engine. It also sets the progress line under the lesson's title (--ftr-prog).
-// The orientation's last slide ends the module: ✅ End of Module in place of Next, a marker, not a link (index.html).
+// The orientation's last slide ends the module: ✅ End of Module in place of Next, back to 📚 Dashboard (index.html).
 // "What's next" on a slide, in its own words, for the Next up card by the Next button (js/ft-slides.js)
 const NEXT_UP = {why: "Your role as a General VA, the rules for your work and the use of AI, and Free Upskill Training."};
 // (js/ft-slides.js draws the "Next up" card on every slide; this slide's own wording replaces the next slide's title)
@@ -790,8 +790,6 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
 .ftr-nextup{flex:0 0 auto;width:auto;min-width:250px;max-width:min(600px,52vw);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:5px 12px;font:700 14px/1.25 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;margin-left:auto;}
-/* ✅ End of Module (the orientation's and Know Your Tools' last step): a marker, not a link, drawn as the bar's button but not faded */
-.btn.ft-endmod:disabled{opacity:1;cursor:default;pointer-events:none;}
 .ftr-nextup b{display:block;font:800 10.5px/1.1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
 /* the card grows with the title so it reads in full; only a title longer than the widest card wraps, to two lines */
 .ftr-nextup .ftr-nextup-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;color:#fff;white-space:normal;overflow:hidden;overflow-wrap:anywhere;line-height:1.2;}
