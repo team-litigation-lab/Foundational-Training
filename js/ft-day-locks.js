@@ -175,7 +175,8 @@ function launch(d){
   if(isTrainee()){
     const l = lessonOf(d);
     if(l != null && !lessonOpen(l)){ toast("🔒 This lesson opens when your trainer opens it for your batch."); return; }
-    if(d === 1){ if(root.FTDay1 && FTDay1.active && FTDay1.active()){ FTDay1.goCurrent(); return; } FTDayDecks.open(1, 0); return; }
+    // (Lesson 1 starts on the Reading Task until it is finished, as its ▶ Start Training did)
+    if(d === 1){ if(root.FTDay1 && FTDay1.active && FTDay1.active()){ FTDay1.goCurrent(); return; } if(!(state.progress && (state.progress[1] || {}).done)){ FTDayDecks.slide(1, 'reading'); return; } FTDayDecks.open(1, 0); return; }
     if(!dayStarted(d)){ toast("🔒 This part of the training opens when your trainer unlocks it."); return; }
     if(active(d)){ if(!decksIn()){ loadDecks().then(() => launch(d)); return; } openCurrent(d); return; }
   }
