@@ -450,6 +450,7 @@ if(typeof Narrator !== "undefined"){
     const own = cur && cur.type === "ftSection" && secs[cur.index] && (window.FT_NEXT_UP || {})[secs[cur.index].id];
     const titleOf = x => !x ? "" : x.type === "ftSection" ? (secs[x.index] || {}).h : x.type === "ftDivider" ? (secs[x.before] || {}).h : "";
     const isOrient = window.FT_ORIENTATION && d.id === FT_ORIENTATION.id;
+    if(isOrient && !nx) return;   // (the orientation's last slide is the End of Module: nothing comes next from it)
     const t = own || (nx ? titleOf(nx) : (isOrient ? "🧰 Know Your Tools, then the Reading Task" : "📋 This lesson’s Classroom Activity"));
     if(!t || !window.FTNextUp) return;
     // the bar's forward button is its last (Next →, or 📋 Classroom Activity on the last slide): the label goes just before it
