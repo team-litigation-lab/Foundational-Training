@@ -47,11 +47,27 @@ async function workerChecks() {
   for (const p of [t, a]) p.on('pageerror', e => fail(`page error: ${e.message}`));
   const put = (p, k, v) => p.evaluate(([k, v]) => fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k, value: JSON.stringify(v) }) }), [k, v]);
   const get = (p, k) => p.evaluate(async k => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) }).then(r => r.json())).value || 'null'), k);
+  let openWas, stepsWas = null, locks = false;
   try {
     // two trainees in the batch: Ray (signed up, then this browser signs in as Tia)
     await t.goto(BASE); await signIn(t, 'Ray', 'Buffer', BATCH); const ray = await t.evaluate(() => state.traineeId);
     await t.evaluate(() => localStorage.clear()); await t.goto(BASE); await signIn(t, 'Tia', 'Buffer', BATCH); const tia = await t.evaluate(() => state.traineeId);
-    for (const id of [ray, tia]) { const r = await get(t, 'trainee:' + id); r.approved = true; r.archived = false; await put(t, 'trainee:' + id, r); }
+    for (const id of [ray, tia]) { const r = await get(t, 'trainee:' + id); r.approved = true; r.archived = false; await put(t, 'trainee:' + id, r); await put(t, 'buffer:' + id, { acts: {}, released: {} }); }
+    // every lesson open for the batch (where a day's steps wait for its lesson, js/ft-day-locks.js); put back at the end
+    openWas = await get(t, 'settings:opendays');
+    await put(t, 'settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8, 9], batches: {} });
+    await t.evaluate(() => typeof ftLoadOpenDays === 'function' && ftLoadOpenDays());
+    // where Activity Locks run (js/ft-day-locks.js), Day 6 is held at its mock calls: the release must open the next step
+    locks = await t.evaluate(() => !!window.FTDayLocks);
+    if (locks) {
+      stepsWas = await get(t, 'settings:daysteps');
+      await t.evaluate(() => FTDayDecks.open(6, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 6's steps are known)
+      const s6 = await t.evaluate(() => { const i = FTDayDecks.at(6, 's1'); const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+      if (!s6) fail('Day 6\'s mock call step isn\'t among its Activity Locks steps');
+      const all = Object.assign({}, (stepsWas || {}).all || {}, { 6: s6 });
+      await put(t, 'settings:daysteps', Object.assign({}, stepsWas || {}, { all, batches: {} }));
+      await t.evaluate(() => ftLoadOpenDays());
+    }
     const open = async (p, d, s) => { await p.evaluate(d => FTDayDecks.open(d, 0), d); await p.waitForTimeout(1200); await p.evaluate(([d, s]) => FTDayDecks.open(d, FTDayDecks.at(d, s)), [d, s]); await p.waitForTimeout(2200); };
     // the panel is at the foot of the slide: turn to the page it's on
     const toPanel = async (p) => { for (let k = 0; k < 8; k++) { if (await p.evaluate(() => { const x = document.querySelector('.ftbf'); return !!(x && x.offsetParent); })) return true; await p.evaluate(() => FTDayDecks.go(1)); await p.waitForTimeout(600); } return false; };
@@ -114,6 +130,10 @@ async function workerChecks() {
       if (!/Completed: 2 \/ 2 Trainees/.test(v.text) || v.locked || !/🎉 All trainees have completed their mock calls! You are ready to begin the debrief\./.test(v.banner)) fail(`all done, the tracker reads: ${JSON.stringify(v).slice(0, 300)}`);
       await a.click('.ftbf-tr .ftbf-foot .ftbf-done'); await a.waitForTimeout(2200);
       for (const id of [ray, tia]) if (!(((await get(a, 'buffer:' + id)) || {}).released || {})['6:s1']) fail(`Start Group Debrief didn't release ${id}`);
+      if (locks) {
+        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const i = FTDayDecks.at(6, 's1') + 1; const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+        if (Number((((ds || {}).batches || {})[b] || {})[6]) !== want) fail(`the release didn't unlock Day 6's next step for the batch: ${JSON.stringify((ds || {}).batches)}`);
+      }
       // the trainee's slide moves on by itself (it checks every 20 s)
       const was = await t.evaluate(() => FTDayDecks.state().i);
       await t.waitForTimeout(23000);
@@ -127,6 +147,7 @@ async function workerChecks() {
       if (!(await a.evaluate(() => state.view === 'daydeck' && FTDayDecks.state().day === 6 && !!document.querySelector('.ftbf-tr')))) fail('↩︎ Back didn\'t return to the live session');
     }
   } catch (err) { fail('test crashed: ' + err.message); }
+  try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, the confirmation, Screen 2 with its scorecard; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
