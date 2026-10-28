@@ -1441,7 +1441,7 @@ function toolsSlide(){
         <p class="ftdd-tool-where"><b>Where:</b> ${e(t.where)}</p>
         <p class="ftdd-tool-fh">Features</p>
         <ul>${t.feats.map(f => `<li>${e(f)}</li>`).join("")}</ul>
-        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.slide(1, 'reading')">📖 Next: the Reading Task →</button>`}</div>
+        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : ""}</div>
       </div>
     </div>
   </div>`;
