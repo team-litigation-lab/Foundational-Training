@@ -1,23 +1,35 @@
-# AI Capacity Plan: no mid-session token exhaustion for live cohorts
+# AI Capacity Plan (free tier only): no mid-session token exhaustion for live cohorts
 
-**Scope:** every AI call the LSH training stack makes during a live cohort of ~20 trainees. That covers the call and chat simulators, the practice labs, the CMS activity evaluations, the transcript auto-grading and the trainer tools.
-**Goal:** a cohort never sees a 429, an "AI is busy" message, or a stalled simulator, at any hour of the training day.
-**Status:** this is the plan only. No code changes ship with this document. Each phase in §8 is a separate, small PR.
+**Scope:** every AI call the LSH training stack makes during a live cohort of ~20 trainees: the call and chat simulators, the practice labs, the CMS activity evaluations, the transcript auto-grading and the trainer tools.
+
+**Constraint: free tiers only.** There are no paid provider tiers, no prepay and no second paid vendor. The plan uses:
+- the **Gemini API free tier** (what runs today);
+- **Cloudflare Workers AI's free daily allocation**;
+- **Cloudflare primitives** this Worker already uses (Durable Objects, KV, cron).
+
+**Goal:** within that ceiling, a cohort never hits a 429 *in the middle of a session*. If the day's free capacity can't cover a session, the session doesn't start: the platform says so before the trainee begins, and offers the non-AI version.
+
+**Status:** this is the plan only. No code changes ship with this document. Each phase in §9 is a separate, small PR.
 
 ---
 
 ## 0. Summary
 
-| # | Change | Fixes | Effort |
-|---|---|---|---|
-| 1 | **Move off the free tier.** Use one billing-linked Gemini project at Tier 2, plus a Claude API org as the second vendor. | Daily quota exhaustion (RPD), the main cause of afternoon outages | Config + ~$100 prepay |
-| 2 | **Stop retry amplification.** A chat turn can turn into dozens of upstream calls (see §1.2). | 429 storms that feed on themselves | Small |
-| 3 | **Cap the simulator context.** Use a frozen system prompt, a rolling summary and the last 8 messages, with a hard 3,000-token input cap. | Context snowballing, TPM spikes late in a session | Small–medium |
-| 4 | **Use one shared limiter.** A Durable Object token bucket per provider and model, with separate lanes for chat and grading. | Isolates that can't see each other's limits; grading bursts starving chat | Medium |
-| 5 | **Queue the grading.** Cloudflare Queues sends grading through the batch lane, never the live lane. | End-of-session grading spikes colliding with live simulators | Medium |
-| 6 | **Router with circuit breakers.** Exponential backoff with full jitter, and a per-workload model ladder that crosses vendors. | Single-provider outages and per-model quota walls | Medium |
+Free capacity is fixed, so the plan works on four levers:
+- **Spend fewer tokens and fewer requests:** cap the context, pre-generate what can be pre-generated, and check grading with rules before calling the AI.
+- **Pace the day:** don't let the morning use up the afternoon's quota.
+- **Reserve before starting:** a session reserves its whole turn budget up front, so once a session starts it can always finish.
+- **Add a second free pool:** Workers AI takes overflow and background work.
 
-Steps 1–3 remove most of today's 429s. Steps 4–6 make the system hold up under load spikes and provider incidents.
+| # | Change | Fixes | Cost |
+|---|---|---|---|
+| 1 | **Stop retry amplification.** A chat turn can become dozens of upstream calls (§1.2), and all of them use free quota. | 429 storms that feed on themselves; wasted daily quota | $0 |
+| 2 | **Cap the simulator context, with no LLM summaries.** Frozen system prompt + pinned opening + last 6 messages, a hard 2,400-token input cap and minimal thinking. | Context snowball, TPM spikes, extra summary calls | $0 |
+| 3 | **Cut request count.** Pre-generated caller openings, scripted wrap-ups, a rule-based pre-check, one grading call per session, a KV cache for repeatable prompts. | Daily request quota (RPD), the real wall | $0 |
+| 4 | **Pace the day and reserve per session.** A Durable Object holds the day's budget, spreads it across shift hours, and **reserves each session's turns before it starts**. | Running out mid-session in the afternoon | $0 |
+| 5 | **Second free pool: Workers AI.** A Llama 3.1 8B model as the live-chat overflow, and for all background work. | Peak-minute RPM; a reserve when Gemini is exhausted | $0 (10,000 Neurons/day free) |
+| 6 | **One shared limiter with circuit breakers.** Instead of each Worker isolate keeping its own memory of exhausted keys. | Isolates hitting keys another isolate already knows are exhausted | $0 |
+| 7 | **Defer grading.** Trainees get an instant rule-based checklist at once; the AI narrative feedback comes from a queue when budget allows, overnight at the latest. | Grading bursts competing with live sessions | $0 |
 
 ---
 
@@ -29,622 +41,461 @@ Steps 1–3 remove most of today's 429s. Steps 4–6 make the system hold up und
 |---|---|
 | Every AI feature goes through `POST /api/claude` (alias `/api/ai`) to `callGemini()`. | `worker.js` |
 | The keys are a pool of **free-tier** Gemini keys: `GEMINI_API_KEY5…9`, with `GEMINI_API_KEY`, `GEMINI_API_KEY1` and `GEMINI_API_KEY2` as spares. | `worker.js` (`GEMINI_POOL`) |
-| Model ladder: chat starts on `gemini-3.5-flash-lite`; grading and trainer tools start on Flash (`gemini-3.8-flash` → `3.6` → `3.5`), then fall back to Flash-Lite. | `geminiModels()` |
-| **A key's "resting" state lives in an in-memory `Map` inside each Worker isolate.** A key one isolate just saw hit its limit is still "fresh" to every other isolate. | `geminiRest` |
-| The client retries 429/5xx up to 3 more times (2.5 s, 6 s and 12 s, with jitter). | `index.html` → `callAIText` |
-| Each simulator turn sends the **full client dossier (≈5,700 chars ≈ 1,400 tokens) plus the entire transcript so far** as a single user message, with no system prompt and no window. | `index.html` → `rpSendMessage` and the other sims |
+| Model ladder: chat starts on `gemini-3.5-flash-lite`; grading and trainer tools start on Flash, then fall back to Flash-Lite. The code's own notes put free-tier Flash-Lite at about 15 RPM / 500 RPD, and Flash at about 5 RPM / 20 RPD **per project**. | `geminiModels()` and its comments |
+| **A key's "resting" state lives in an in-memory `Map` inside each Worker isolate.** Other isolates don't see it. | `geminiRest` |
+| The client retries 429/5xx up to 3 more times (2.5 s, 6 s and 12 s). | `index.html` → `callAIText` |
+| Each simulator turn sends the **full client dossier (≈1,400 tokens) plus the entire transcript so far** in one user message. Simulator openings are also AI calls. | `index.html` → `rpSendMessage` and the other sims |
 | Chat asks for `max_tokens: 200`, but the Worker sends `maxOutputTokens = max(2×200, 2048)` with `thinkingLevel: "low"`, so thinking tokens are spent on every chat line. | `callGemini()` |
-| An optional shared gateway exists: the Main Portal's `/api/ai-gateway`, used when `AI_GATEWAY_SECRET` is set. | `viaGateway()` |
 
 ### 1.2 Failure mechanics
 
-1. **Daily quota (RPD) is the hard wall.** Free-tier limits are per Google Cloud project, not per key. Flash has a small daily allowance, and Flash-Lite a few hundred to about a thousand requests per project per day. A cohort of 20 uses the whole pool by early afternoon (see §1.3). After that, every model in the ladder returns 429 until midnight Pacific time.
-2. **Retry amplification.** A single chat turn that meets a busy pool can, in the worst case, trigger:
-   - the client sending the request 4 times (1 + 3 retries);
-   - the Worker trying up to 8 keys × 4 models per request.
+1. **Daily quota (RPD) is the hard wall.** Free-tier limits are per Google Cloud project, and Flash in particular has a very small daily allowance. Once the morning uses a project's allowance, every model on it returns 429 until midnight Pacific time.
+2. **Retry amplification burns quota.** One chat turn on a busy pool can become, in the worst case, about 128 upstream calls:
+   - the client sends the request 4 times (1 + 3 retries);
+   - the Worker tries up to 8 keys × 4 models each time;
+   - a new isolate starts from scratch, because the "resting" list is per isolate.
 
-   That's up to about 128 upstream calls for one simulator line. The per-isolate rest map only partly limits this, because each new isolate tries again from scratch. On a hot afternoon this turns a short rate-limit blip into a sustained storm.
-3. **Context snowball.** Input per turn grows by about 60–80 tokens per message. A 40-message roleplay sends about 4,500 tokens on its last turn, against about 1,600 on its first. The TPM need climbs during the session, so limits trip near the end of a session, when trainees are most invested.
-4. **Grading collides with chat.** Trainees finish a simulator together, so about 20 grading calls of roughly 8,000 tokens each arrive in the same minute. They land on the same keys and minutes as the live chat traffic of everyone still in a call.
+   Rate-limited calls still count against the per-minute limits, so the storm feeds itself.
+3. **Context snowball.** Input per turn grows by about 60–80 tokens per message. Late turns cost about three times as much as early ones.
+4. **Grading competes with live chat.** About 20 grading calls arrive in the same minute when trainees finish a simulator together.
 
-### 1.3 Demand model (20 concurrent trainees)
+### 1.3 Free-tier rules that shape this plan
 
-Assumptions, calibrated from the code paths above:
-- **Chat:** at peak a trainee sends one line every 15 s, which is 4 RPM per trainee.
-- **Grading:** one evaluation per finished session.
-- **Day total:** about 6 simulator sessions per trainee per day, at about 15 turns each.
-
-| Workload | Peak RPM | Input tokens / request | Peak input TPM | Requests / day |
-|---|---|---|---|---|
-| Chat, today (no window) | 80 | 1,600 → 4,500 (grows) | ~280,000 | ~1,800 |
-| Chat, with the window in §2 | 80 | ≤ 3,000 (flat; ~1,600 of it cacheable) | ≤ 240,000 (≤ 110,000 uncached) | ~1,800 |
-| Rolling summaries (§2) | ≤ 15 | ~1,400 | ~20,000 | ~300 |
-| Grading and evaluations | 20 (burst) | ~8,000–14,000 | ~200,000 (burst) | ~200 |
-| Trainer tools, tracker review | < 5 | 1,000–3,000 | < 15,000 | < 100 |
-| **Total (with the window)** | **~120** | | **~475,000 burst** | **~2,400** |
-
-**Design target, with 2× headroom:** 250 RPM, 1,000,000 input TPM, 150,000 output TPM and 5,000 requests a day. The live lane never waits more than 1.5 s for capacity.
+- **Don't add projects to raise the limit.** Google's API terms say you *"will not attempt to circumvent"* documented usage limits, and that you need *"Google's express consent"* to go beyond them ([developers.google.com/terms](https://developers.google.com/terms), §2d).
+  - Creating extra free projects for the sole purpose of getting more free quota risks the keys being suspended, which would be a full outage.
+  - So **this plan is sized to work with one Gemini project (§2, Scenario A)**. Any extra existing projects are treated as a bonus, never as planned capacity.
+- **No personal data in prompts.** The Gemini terms say Google uses Unpaid Services content *"to provide, improve, and develop"* its products, that *"human reviewers may read"* it, and *"Do not submit sensitive, confidential, or personal information to the Unpaid Services."*
+  - Prompts must use **"Trainee"**, never a trainee's name, email or batch ID.
+  - The training dossiers are fictional, which is fine.
+- **Region:** the free tier isn't available everywhere. The existing `GeminiRelay` (pinned to western North America) handles "location not supported".
+- **Reset times:**
+  - Gemini RPD resets at **midnight Pacific** (03:00 US Eastern).
+  - Workers AI resets at **00:00 UTC** (19:00–20:00 US Eastern).
+  - Both reset outside the 08:00–17:00 Eastern shift, so **each shift lives inside one daily budget of each**.
 
 ---
 
-## 2. Context optimization and window management
+## 2. Free capacity versus demand
 
-### 2.1 Token budget per simulator request
+### 2.1 Supply per day
 
-| Segment | Content | Budget (tokens) | Cache |
+Check the per-model numbers in [AI Studio → Rate limits](https://aistudio.google.com/rate-limit); the Gemini figures below are the code's own working assumptions.
+
+| Pool | RPM | Requests / day | Notes |
 |---|---|---|---|
-| **S: frozen system prompt** | Persona rules, scenario card, client dossier, output rules. Byte-identical for the whole session, and always sent first. | ≤ 1,600 | Yes: Claude `cache_control`, Gemini implicit prefix caching |
-| **M: rolling memory** | A third-person summary of everything before the window: facts disclosed, commitments made, caller mood and its trend, open issues. | ≤ 200 | No |
-| **W: verbatim window** | The last 8 messages, with each message clipped to 120 tokens. | ≤ 1,000 | No |
-| **U: the new trainee message** | Clipped to 250 tokens. | ≤ 250 | No |
-| **Hard input cap** | S + M + W + U | **≤ 3,000** | |
-| **Output** | 1–3 sentences in character | `max_tokens` 160 (Claude) / `maxOutputTokens` 256, thinking minimal (Gemini) | |
-| **Session cap** | After 40 messages the caller wraps up the call (scripted close), and the session goes to grading. | 40 messages | |
+| Gemini free, `gemini-3.5-flash-lite`, **per project** | ~15 | ~500 | Live chat and grading |
+| Gemini free, Flash models, per project | ~5 | ~20 | Too small to plan on; trainer tools only |
+| **Workers AI** free, `@cf/meta/llama-3.1-8b-instruct-fp8-fast` | 300 (text generation default) | **~600 turns** | 10,000 Neurons/day; at 4,119 Neurons/M input and 34,868/M output, a 2,400-in / 100-out turn costs ~13.4 Neurons |
+| KV response cache | — | unlimited reuse | Repeatable prompts (trainer tools, fixed rubrics on fixed answers) |
 
-These are the rules for the window:
+### 2.2 Demand after the reductions in §3
+
+| Workload | Before | After | Requests / day (20 trainees) |
+|---|---|---|---|
+| Simulator turns | up to ~40 msgs/session, 6 sessions/day | **12 trainee turns per session** (then a scripted wrap-up), **N sessions per trainee per day** (§2.3) | 12 × N × 20 |
+| Simulator openings | 1 AI call per session | **0**: pre-generated, served from KV | 0 |
+| Rolling summaries | (would be 1 per 6 msgs) | **0**: deterministic pinning (§3.1) | 0 |
+| Grading | ~1 per session + per-sheet calls | **1 call per session**, after a rule-based pre-check; can wait until budget allows | 1 × N × 20 |
+| Tracker / notes review | cron | Workers AI, nightly | 0 Gemini |
+| Trainer tools | ad hoc | Flash first, KV cache | < 20 |
+
+### 2.3 Sessions per trainee per day (the number to plan the cohort around)
+
+daily live budget = (Gemini Flash-Lite RPD × projects + Workers AI turns) × 0.9 safety − grading − trainer tools
+
+| Scenario | Supply (turns/day) | Grading (1/session) | Simulator sessions per trainee per day (12 turns each) |
+|---|---|---|---|
+| **A: one Gemini project + Workers AI** (planned) | 500 + 600 = 1,100 → 990 at 0.9 | 20·N | **N = 3** (720 turns + 60 grading = 780; 210 spare for pacing error) |
+| B: today's 5 pool projects, if each is a legitimate separate project | 2,500 + 600 = 3,100 → 2,790 | 20·N | N = 9 (cap at 6 for headroom) |
+
+**Peak-minute check (Scenario A):**
+- Gemini gives ~15 RPM. At peak, 20 trainees send 1 turn every ~15 s, which is 80 RPM.
+- **Workers AI's 300 RPM covers the overflow:** the router sends live turns there whenever Gemini's minute bucket is empty.
+- Daily Neurons, not RPM, are the binding limit, and the session reservation (§4) accounts for them.
+
+**Stagger the cohort:** split the 20 trainees into **two groups of 10**, so that one group is in an AI simulator while the other does a non-AI activity (reading, Knowledge Check, scripted sim). This halves the peak RPM, at no cost.
+
+---
+
+## 3. Spend fewer tokens and fewer requests
+
+### 3.1 Token budget per simulator request (no LLM summaries)
+
+On the free tier, every summary is an extra request out of the daily quota. So the memory is **deterministic**:
+- **Pin the opening exchange:** the first 2 messages, where the caller states the issue.
+- **Keep the last 6 messages.**
+- **Cap everything** at 2,400 tokens.
+
+| Segment | Content | Budget (tokens) |
+|---|---|---|
+| **S: frozen system prompt** | Persona rules, a **compressed scenario card** (not the full ≈1,400-token dossier: only the dossier sections this scenario uses), output rules. Byte-identical for the whole session, and always first. | ≤ 1,000 |
+| **P: pinned opening** | Messages 1–2, each clipped to 150 tokens | ≤ 300 |
+| **W: verbatim window** | The last 6 messages, each clipped to 120 tokens | ≤ 720 |
+| **U: the new trainee message** | Clipped to 200 tokens | ≤ 200 |
+| **Hard input cap** | S + P + W + U | **≤ 2,400** |
+| **Output** | 1–3 sentences in character | Gemini `maxOutputTokens: 200`, **thinking minimal**; Workers AI `max_tokens: 160` |
+| **Session cap** | After 12 trainee turns the caller wraps up with a **scripted closing line** (no AI call), and the session goes to grading. | 12 turns |
+
+The rules for the window:
 - **Pruning order when over the cap:**
-  1. Drop the oldest window message, down to a floor of 4 messages.
-  2. Truncate M to 120 tokens.
+  1. Drop window messages from the oldest, down to 3.
+  2. Clip P to 80 tokens per message.
   3. Clip U.
-  4. S is never truncated. It has to fit its budget by construction, which a build-time check enforces.
-- **Token estimate:** ceil(chars / 3.5) is a conservative estimate for English. Claude Haiku 5.5's tokenizer counts about 30% more tokens than older Haiku, and the 3.5-chars rule already covers that. Re-baseline with `count_tokens` once.
+  4. S is never truncated. It has to fit by construction, which a build-time check enforces.
+- **Token estimate:** ceil(chars / 3.5), which is conservative for English.
 
-These are the rules for the summary:
-- **When it runs:** a summary is due when 6 or more messages have aged out of the window since the last summary, or when W exceeds 1,000 tokens.
-- **How it runs:** the summary runs in the **background lane** (§3) and is never on the live path. It is computed after the reply is sent, from the old M plus the messages that aged out.
-- **If it fails:** keep the old M and let the hard cap prune. A missed summary costs some memory, never an error.
+### 3.2 Request-count reductions
 
-### 2.2 Grading budgets (never summarized)
+| Change | Saves | How |
+|---|---|---|
+| **Pre-generated openings** | 1 call per session | For each scenario × persona, generate 5 caller openings **nightly** with leftover quota (cron, after the Gemini reset at 03:00 Eastern). Store them in KV at `simopen:<scenario>:<persona>`, and serve one at random. |
+| **Scripted wrap-up** | 1 call per session | A fixed closing line per persona at turn 12. |
+| **Scripted holding line instead of a retry** | Retry storms | When no route has capacity: "Sorry, you cut out. Could you say that again?" with no AI call. The trainee's next message is a fresh turn. |
+| **Rule-based pre-check before grading** | Grading tokens; an instant result | Deterministic checks (required phrases, greeting, confirming name/date of birth, empathy markers, word count) give an **instant checklist**. The AI call only writes the narrative feedback and the rubric judgement, from a short transcript. |
+| **One grading call per session** | Several calls | All rubric criteria in one JSON response; Process-Question sheets graded in one call per sheet, not per answer. |
+| **KV response cache** | Repeats | Key = SHA-256 of (model, system, messages). For trainer tools and identical-answer grading only, **never for chat**. TTL 30 days. |
+| **Workers AI for background** | Gemini RPD | Tracker notes review, nightly checks and opening pre-generation (if Gemini is short) all run on Workers AI. |
 
-Grading must see the real transcript, because fairness and evidence quoting depend on it.
-
-| Segment | Budget |
-|---|---|
-| Rubric + grading rules (frozen) | ≤ 1,500 tokens (cached) |
-| Transcript | ≤ 12,000 tokens verbatim |
-| Session metadata | ≤ 300 tokens |
-| Output (strict JSON) | `max_tokens` 1,200 |
-| Transcript > 12,000 tokens | Map-reduce: split into chunks of 6,000 tokens, have each chunk extract evidence per criterion (≤ 400 tokens), then make one reduce call that scores the criteria from that evidence |
-
-### 2.3 Code: rolling window and pruning (browser or Worker)
+### 3.3 Code: deterministic window and pruning
 
 ```js
-// Context builder for a simulator turn: frozen system prompt + rolling memory + last N messages, hard-capped.
-const BUDGET = { system: 1600, memory: 200, window: 1000, msgClip: 120, user: 250, hardCap: 3000, minWindow: 4, windowMsgs: 8 };
-const tok = (s) => Math.ceil(String(s || "").length / 3.5);                 // conservative estimate
-const clip = (s, maxTok) => { const max = maxTok * 3.5 | 0; s = String(s || ""); return s.length <= max ? s : s.slice(0, max - 1) + "…"; };
+// Context builder for a simulator turn on the free tier: frozen system + pinned opening + last 6 messages, hard-capped.
+// No summary calls: every LLM request counts against the free daily quota.
+const B = { system: 1000, pin: 150, pinMin: 80, msg: 120, user: 200, cap: 2400, window: 6, minWindow: 3, maxTurns: 12 };
+const tok = (s) => Math.ceil(String(s || "").length / 3.5);
+const clip = (s, t) => { const n = (t * 3.5) | 0; s = String(s || ""); return s.length <= n ? s : s.slice(0, n - 1) + "…"; };
 
-/**
- * session = { system, memory, history: [{role:"user"|"assistant", text}], summarizedUpTo }
- * returns { system, messages, needsSummary }
- */
+/** session = { system, history: [{role:"user"|"assistant", text}], turns } → { system, messages } | { wrapUp: true } */
 function buildChatContext(session, userText) {
-  if (tok(session.system) > BUDGET.system) throw new Error("system prompt over budget: fix it at build time");
-  const user = clip(userText, BUDGET.user);
-  let windowMsgs = session.history.slice(-BUDGET.windowMsgs).map((m) => ({ role: m.role, text: clip(m.text, BUDGET.msgClip) }));
-  let memory = clip(session.memory || "", BUDGET.memory);
-
-  const total = () => tok(session.system) + tok(memory) + windowMsgs.reduce((n, m) => n + tok(m.text), 0) + tok(user);
-  while (total() > BUDGET.hardCap && windowMsgs.length > BUDGET.minWindow) windowMsgs.shift(); // 1. oldest first
-  if (total() > BUDGET.hardCap) memory = clip(memory, 120);                                     // 2. shrink memory
-
-  // Messages that aged out of the window and aren't in the memory yet.
-  const agedOut = session.history.length - BUDGET.windowMsgs - (session.summarizedUpTo || 0);
-  const windowTok = windowMsgs.reduce((n, m) => n + tok(m.text), 0);
-
-  const messages = [];
-  if (memory) messages.push({ role: "user", text: `[Earlier in this call]\n${memory}` }, { role: "assistant", text: "(continuing the call)" });
-  for (const m of windowMsgs) messages.push(m);
-  messages.push({ role: "user", text: user });
-  return { system: session.system, messages: mergeSameRole(messages), needsSummary: agedOut >= 6 || windowTok > BUDGET.window };
+  if (session.turns >= B.maxTurns) return { wrapUp: true };                  // scripted closing line, no AI call
+  if (tok(session.system) > B.system) throw new Error("scenario card over budget: fix it at build time");
+  const h = session.history;
+  let pinned = h.slice(0, 2).map((m) => ({ ...m, text: clip(m.text, B.pin) }));
+  let windowMsgs = h.slice(Math.max(2, h.length - B.window)).map((m) => ({ ...m, text: clip(m.text, B.msg) }));
+  const user = { role: "user", text: clip(userText, B.user) };
+  const total = () => tok(session.system) + [...pinned, ...windowMsgs, user].reduce((n, m) => n + tok(m.text), 0);
+  while (total() > B.cap && windowMsgs.length > B.minWindow) windowMsgs.shift();
+  if (total() > B.cap) pinned = pinned.map((m) => ({ ...m, text: clip(m.text, B.pinMin) }));
+  const gap = h.length > 2 + windowMsgs.length ? [{ role: "user", text: "[…the call continued…]" }] : [];
+  return { system: session.system, messages: mergeSameRole([...pinned, ...gap, ...windowMsgs, user]) };
 }
-
-// Both providers want alternating roles: merge consecutive messages from the same speaker.
 function mergeSameRole(list) {
-  return list.reduce((out, m) => {
-    const last = out[out.length - 1];
-    if (last && last.role === m.role) last.text += "\n" + m.text; else out.push({ ...m });
-    return out;
-  }, []);
+  return list.reduce((out, m) => { const l = out[out.length - 1]; if (l && l.role === m.role) l.text += "\n" + m.text; else out.push({ ...m }); return out; }, []);
 }
-
-// Background summary prompt (background lane, max_tokens 220; on failure keep the old memory).
-const SUMMARY_PROMPT = (memory, agedOut) => `Update the running notes of this training call.
-Keep: facts the caller disclosed, what the trainee promised, the caller's mood and its trend, open issues.
-Max 150 words, third person, no quotes.
-PREVIOUS NOTES:\n${memory || "(none)"}\nNEW MESSAGES:\n${agedOut.map((m) => `${m.role === "user" ? "TRAINEE" : "CALLER"}: ${m.text}`).join("\n")}`;
 ```
 
-The rules for the system prompt:
-- **What it contains:** the dossier, the persona and the scenario move into `system`. Today they're inside the user message.
-- **No per-turn values in it:** no timestamps and no "turn 7 of …" counters, so the cache prefix stays byte-stable.
-- **Build-time check:** a check in `.github/scripts/` fails the build if any scenario's frozen system prompt is over 1,600 tokens.
+Prompt hygiene:
+- **The system prompt goes in `systemInstruction`, not in the user message.** Gemini can then reuse the stable prefix (implicit caching), and the prompt is clean.
+- **No personal data:** use "Trainee", never a name or an ID.
+- **No volatile values in the system prompt:** no timestamps, no turn counters.
 
 ---
 
-## 3. Asynchronous job queuing and rate smoothing
+## 4. Pace the day and reserve per session (the core of "no mid-session exhaustion")
 
-### 3.1 Platform mapping (we're on Cloudflare Workers, not a Node server)
+### 4.1 Rules
 
-The brief names Redis + BullMQ or Celery. The Cloudflare equivalents keep us on the platform we already deploy to, with no new servers:
+- **Daily budget:** one `DailyBudget` Durable Object per pool keeps the day's **budget** (from §2.1 × 0.9), the **used** count, and the open **reservations**. The pools are Gemini Flash-Lite and Workers AI Neurons.
+- **Pacing:**
+  - The shift runs 08:00–17:00 Eastern, 9 hours.
+  - The amount *available* by time *t* is `budget × (elapsed shift fraction) + 15% burst`.
+  - Live traffic that's ahead of pace is routed to Workers AI, and keeps going to Workers AI until Gemini's usage is back under pace.
+- **Admission and reservation:**
+  - **Starting** an AI simulator calls `POST /api/ai/session/start`. That reserves 12 turns, plus 1 grading call, from the combined pools.
+  - **If the reservation can't be made,** the session doesn't start. The page offers **"AI practice is full for now: try the scripted version, or the next slot at HH:MM"** (the next time the pace allows it).
+  - **A session that started can always finish:** each turn draws from its own reservation.
+  - **Unused turns go back** at session end, or automatically after 30 minutes idle.
+- **Grading reserve:** 10% of the day's budget is held back for grading. Grading that doesn't fit runs overnight after the Gemini reset, so feedback is ready the next morning.
 
-| Need | Redis / BullMQ | Cloudflare (recommended) |
-|---|---|---|
-| Durable job queue with retries, delay and dead-letter | BullMQ queue | **Cloudflare Queues** (producer binding + `queue()` consumer, `max_retries`, `retry_delay`, dead-letter queue) |
-| Globally consistent counters / token buckets | Redis `INCR` + Lua | **Durable Object** (single-threaded, strongly consistent, ~ms latency) |
-| Job results / status | Redis hash | **KV** (`gradejob:<id>`), as the Worker already does for records |
-| Scheduled sweeps | BullMQ repeatable jobs | Cron trigger (already in `wrangler.json`) |
-
-The same design ports directly to Redis + BullMQ:
-- each lane becomes a BullMQ queue;
-- the limiter becomes a Lua token bucket;
-- the circuit-breaker state lives in Redis.
-
-### 3.2 Lanes
-
-| Lane | Traffic | Path | Capacity share | Wait budget |
-|---|---|---|---|---|
-| **live** | Simulator and chat turns, interactive lab hints | Synchronous request → Router | Reserved **60%** of each bucket; can use 100% when the other lanes are idle | ≤ 1.5 s for a token, then fail over to the next route |
-| **grade** | Transcript grading, CMS activity evaluations, Process-Question scoring | Queue → consumer → Router | ≤ **35%**, borrows idle capacity | Minutes; the trainee sees "Grading… (usually under 1 min)" |
-| **background** | Rolling summaries, tracker notes review, nightly checks | Queue (lowest priority) → Router | ≤ **5%**, borrows idle capacity | Best effort; skipped if it isn't done within 2 min |
-
-### 3.3 Rate limiter: a token bucket per (provider, project, model), in one Durable Object
-
-Why a token bucket:
-- **It matches the providers.** The Claude API documents a token-bucket algorithm (continuous replenishment), and Gemini enforces per-minute windows.
-- **It shapes traffic smoothly.** Requests flow continuously instead of bursting at the start of each minute.
-- **It supports reservations.** Lane shares are implemented as reserved capacity inside one bucket.
-
-How the buckets are set:
-- **Each bucket refills at 80% of the provider's published limit.** The other 20% covers estimation error and traffic that bypasses the limiter.
-- **The live lane can always draw.** The other lanes can draw only while the bucket stays above the live reserve.
+### 4.2 Code: `DailyBudget` Durable Object (pacing + reservations)
 
 ```js
-// LlmLimiter Durable Object: one instance per provider+project+model (idFromName("gemini|projA|gemini-3.5-flash-lite")).
-// Strongly consistent across every Worker isolate, unlike today's per-isolate geminiRest Map.
-export class LlmLimiter {
-  constructor(state, env) { this.state = state; this.b = null; }
-  async load() {
-    if (this.b) return;
-    this.b = (await this.state.storage.get("b")) || null;
-  }
-  // cfg = { rpm, tpm, safety: 0.8, liveReserve: 0.6 }
-  refill(cfg) {
-    const now = Date.now(), b = this.b;
-    const cap = { req: cfg.rpm * cfg.safety, tok: cfg.tpm * cfg.safety };
-    const dt = (now - b.at) / 60000;                       // minutes elapsed
-    b.req = Math.min(cap.req, b.req + dt * cap.req);
-    b.tok = Math.min(cap.tok, b.tok + dt * cap.tok);
-    b.at = now;
-    return cap;
+// One instance per pool: env.DAILY_BUDGET.idFromName("gemini-fl") / ("workers-ai").
+// Strongly consistent across every Worker isolate; all state in DO storage (no KV writes).
+export class DailyBudget {
+  constructor(state, env) { this.state = state; }
+  async get() {
+    const s = (await this.state.storage.get("s")) || null;
+    const day = dayKey(this.pool);
+    return s && s.day === day ? s : { day, used: 0, reserved: {}, };
   }
   async fetch(request) {
-    const { op, cfg, lane, tokens, actual } = await request.json();
-    await this.load();
-    if (!this.b) this.b = { req: cfg.rpm * cfg.safety, tok: cfg.tpm * cfg.safety, at: Date.now(), openUntil: 0 };
-    const cap = this.refill(cfg);
-    if (op === "acquire") {
-      if (this.b.openUntil > Date.now()) return Response.json({ ok: false, retryMs: this.b.openUntil - Date.now(), reason: "circuit-open" });
-      // Non-live lanes may not dip into the live reserve.
-      const floorReq = lane === "live" ? 0 : cap.req * cfg.liveReserve;
-      const floorTok = lane === "live" ? 0 : cap.tok * cfg.liveReserve;
-      if (this.b.req - 1 >= floorReq && this.b.tok - tokens >= floorTok) {
-        this.b.req -= 1; this.b.tok -= tokens;
-        await this.state.storage.put("b", this.b);
-        return Response.json({ ok: true });
-      }
-      const needTok = Math.max(0, tokens - (this.b.tok - floorTok)), needReq = Math.max(0, 1 - (this.b.req - floorReq));
-      const retryMs = Math.ceil(Math.max(needTok / cap.tok, needReq / cap.req) * 60000);
-      return Response.json({ ok: false, retryMs, reason: "bucket" });
-    }
-    if (op === "settle") {                                  // correct the estimate with the real usage
-      this.b.tok = Math.min(cap.tok, this.b.tok + (tokens - actual));
-      await this.state.storage.put("b", this.b);
-      return Response.json({ ok: true });
-    }
-    if (op === "open") {                                    // circuit breaker trip (see §4.2)
-      this.b.openUntil = Math.max(this.b.openUntil, Date.now() + Number(actual || 30000));
-      await this.state.storage.put("b", this.b);
-      return Response.json({ ok: true });
-    }
-    return new Response("bad op", { status: 400 });
+    const { op, pool, budget, sessionId, units, now = Date.now() } = await request.json();
+    this.pool = pool;
+    const s = await this.get();
+    const reservedTotal = Object.values(s.reserved).reduce((n, r) => n + r.left, 0);
+    const paced = budget * Math.min(1, shiftFraction(now) + 0.15);          // what may be used by now
+    const free = Math.min(budget, paced) - s.used - reservedTotal;
+    let out;
+    if (op === "reserve") {                       // session start: take N units or refuse
+      out = free >= units ? (s.reserved[sessionId] = { left: units, at: now }, { ok: true }) : { ok: false, free, nextAt: nextSlot(budget, s, units, now) };
+    } else if (op === "draw") {                   // one turn: from the session's reservation, else from the free pool
+      const r = s.reserved[sessionId];
+      if (r && r.left > 0) { r.left -= units; s.used += units; out = { ok: true, from: "reservation" }; }
+      else if (free >= units) { s.used += units; out = { ok: true, from: "pool" }; }
+      else out = { ok: false, free };
+    } else if (op === "release") {                // session end or idle sweep: return what's left
+      delete s.reserved[sessionId]; out = { ok: true };
+    } else if (op === "status") out = { ...s, free, paced };
+    // expire reservations idle for 30 min
+    for (const [id, r] of Object.entries(s.reserved)) if (now - r.at > 30 * 60000) delete s.reserved[id];
+    await this.state.storage.put("s", s);
+    return Response.json(out);
   }
 }
-```
-
-Lane behaviour:
-- **live:** acquire, and if the call is refused, wait up to 1.5 s in total, in 250 ms steps. After that, move to the next route in the ladder (§4.3). Never queue a chat turn.
-- **grade / background:** acquire, and if the call is refused, `message.retry({ delaySeconds: ceil(retryMs/1000) })` returns the job to the queue. No Worker CPU is spent waiting.
-
-### 3.4 Grading queue (producer + consumer)
-
-`wrangler.json` additions. These are the only config changes; they're additive and touch none of the existing bindings:
-
-```jsonc
-{
-  "queues": {
-    "producers": [{ "binding": "GRADE_Q", "queue": "ft-grade" }, { "binding": "BG_Q", "queue": "ft-background" }],
-    "consumers": [
-      { "queue": "ft-grade", "max_batch_size": 4, "max_batch_timeout": 2, "max_concurrency": 4, "max_retries": 8, "dead_letter_queue": "ft-grade-dlq" },
-      { "queue": "ft-background", "max_batch_size": 10, "max_batch_timeout": 5, "max_concurrency": 1, "max_retries": 2 }
-    ]
-  },
-  "durable_objects": { "bindings": [
-    { "name": "GEMINI_RELAY", "class_name": "GeminiRelay" },
-    { "name": "LLM_LIMITER", "class_name": "LlmLimiter" }
-  ] },
-  "migrations": [
-    { "tag": "v1-gemini-relay", "new_sqlite_classes": ["GeminiRelay"] },
-    { "tag": "v2-llm-limiter", "new_sqlite_classes": ["LlmLimiter"] }
-  ]
+// Gemini RPD resets at midnight Pacific; Workers AI at 00:00 UTC. Either way the 08:00–17:00 Eastern shift is one "day".
+const dayKey = (pool) => new Date(Date.now() - (pool === "workers-ai" ? 0 : 8 * 3600000)).toISOString().slice(0, 10);
+function shiftFraction(now) {
+  const et = new Date(new Date(now).toLocaleString("en-US", { timeZone: "America/New_York" }));
+  const h = et.getHours() + et.getMinutes() / 60;
+  return Math.max(0, Math.min(1, (h - 8) / 9));
+}
+function nextSlot(budget, s, units, now) {   // first time the pace will cover `units` more
+  for (let m = 5; m <= 9 * 60; m += 5) {
+    const t = now + m * 60000;
+    if (budget * Math.min(1, shiftFraction(t) + 0.15) - s.used >= units) return t;
+  }
+  return null;                               // not today: offer the scripted version
 }
 ```
+
+A session reserves its units in both pools: for example 12 Gemini turns, falling back to 12 × 14 Workers AI Neurons when Gemini can't cover it. Each turn draws from the pool its route used.
+
+---
+
+## 5. Per-minute smoothing and one shared limiter
+
+Daily pacing (§4) protects the day. Inside the minute, a **token bucket per (pool, model)**, also in a Durable Object, protects the provider's RPM and TPM.
+
+- **Shared state:** the bucket is shared by every isolate, replacing today's per-isolate `geminiRest` Map.
+- **Refill:** each bucket refills at **80% of the free-tier RPM/TPM**. For Gemini Flash-Lite that's about 12 RPM per project.
+- **Lanes:**
+
+| Lane | Traffic | Share of each bucket | When the bucket is empty |
+|---|---|---|---|
+| **live** | Simulator turns, lab hints | Can use 100% | Wait ≤ 1 s, then **next route** (Workers AI); then the scripted holding line |
+| **grade** | Narrative grading, CMS evaluations | Only above a **60% live reserve** | Back into the queue with a delay (§6) |
+| **background** | Opening pre-generation, tracker review | Only above the live reserve, and **only off-shift** | Skip until tonight |
 
 ```js
-// Producer: POST /api/grade enqueues and returns at once. The page polls GET /api/grade/<jobId> (or listens for a KV write).
-async function enqueueGrading(env, { traineeId, kind, rubricId, transcript }) {
-  const jobId = `${traineeId}:${kind}:${Date.now()}`;
-  await kvOf(env).put(`gradejob:${jobId}`, JSON.stringify({ status: "queued", at: new Date().toISOString() }), { expirationTtl: 86400 * 7 });
-  await env.GRADE_Q.send({ jobId, traineeId, kind, rubricId, transcript });   // ≤ 128 KB per message; bigger transcripts go to R2 by key
-  return jobId;
+// LlmLimiter Durable Object: one per pool|project|model, e.g. idFromName("gemini|A|gemini-3.5-flash-lite").
+export class LlmLimiter {
+  constructor(state) { this.state = state; }
+  async fetch(request) {
+    const { op, cfg, lane, tokens = 0, ms = 0 } = await request.json();   // cfg = { rpm, tpm, safety: 0.8, liveReserve: 0.6 }
+    const now = Date.now();
+    const cap = { r: cfg.rpm * cfg.safety, t: cfg.tpm * cfg.safety };
+    const b = (await this.state.storage.get("b")) || { r: cap.r, t: cap.t, at: now, openUntil: 0, fails: [] };
+    const dt = (now - b.at) / 60000; b.r = Math.min(cap.r, b.r + dt * cap.r); b.t = Math.min(cap.t, b.t + dt * cap.t); b.at = now;
+    let out;
+    if (op === "acquire") {
+      if (b.openUntil > now) out = { ok: false, retryMs: b.openUntil - now, reason: "open" };
+      else {
+        const fr = lane === "live" ? 0 : cap.r * cfg.liveReserve, ft = lane === "live" ? 0 : cap.t * cfg.liveReserve;
+        if (b.r - 1 >= fr && b.t - tokens >= ft) { b.r -= 1; b.t -= tokens; out = { ok: true }; }
+        else out = { ok: false, retryMs: Math.ceil(Math.max((1 - (b.r - fr)) / cap.r, (tokens - (b.t - ft)) / cap.t, 0) * 60000), reason: "bucket" };
+      }
+    } else if (op === "fail") {                       // transient failure: trip after 5 in 30 s
+      b.fails = [...b.fails.filter((t) => now - t < 30000), now];
+      if (b.fails.length >= 5) { b.openUntil = now + Math.min(300000, 30000 * 2 ** (b.trips = (b.trips || 0) + 1)); b.fails = []; }
+      out = { ok: true };
+    } else if (op === "open") { b.openUntil = Math.max(b.openUntil, now + ms); out = { ok: true }; }   // rate/quota signals
+    else if (op === "ok") { b.trips = 0; out = { ok: true }; }
+    await this.state.storage.put("b", b);
+    return Response.json(out);
+  }
 }
+```
 
-// Consumer: exported next to fetch() and scheduled() in worker.js.
-export default {
-  // fetch, scheduled: unchanged
-  async queue(batch, env) {
-    for (const msg of batch.messages) {
-      const job = msg.body;
+---
+
+## 6. Deferred grading queue (free: a Durable Object with alarms)
+
+Cloudflare Queues may not be on the account's plan, so the queue is a Durable Object that wakes itself with **alarms**. That's free, and it needs no new product.
+
+```js
+// GradeQueue: one instance (idFromName("grade")). Jobs live in DO storage; an alarm drains them at the pace the budget allows.
+export class GradeQueue {
+  constructor(state, env) { this.state = state; this.env = env; }
+  async fetch(request) {                                       // POST {job} → enqueue
+    const job = await request.json();
+    const id = `job:${Date.now()}:${crypto.randomUUID().slice(0, 8)}`;
+    await this.state.storage.put(id, { ...job, attempts: 0, notBefore: 0 });
+    if (!(await this.state.storage.getAlarm())) await this.state.storage.setAlarm(Date.now() + 1000);
+    return Response.json({ id });
+  }
+  async alarm() {
+    const jobs = await this.state.storage.list({ prefix: "job:", limit: 4 });
+    let next = Date.now() + 60000;
+    for (const [id, job] of jobs) {
+      if (job.notBefore > Date.now()) { next = Math.min(next, job.notBefore); continue; }
       try {
-        const out = await routeCall(env, "grade", buildGradingRequest(job));   // §4: router + limiter + breaker
-        await kvOf(env).put(`gradejob:${job.jobId}`, JSON.stringify({ status: "done", result: out.json, model: out.model, at: new Date().toISOString() }));
-        msg.ack();
+        const out = await routeCall(this.env, "grade", job);                     // budget + limiter + breaker inside
+        await this.env.LSH_KV.put(`gradefb:${job.traineeId}:${job.kind}`, JSON.stringify({ status: "done", ...out, at: new Date().toISOString() }));
+        await this.state.storage.delete(id);
       } catch (e) {
-        if (e.retryMs) msg.retry({ delaySeconds: Math.min(300, Math.ceil(e.retryMs / 1000)) });   // capacity: come back later
-        else if (msg.attempts >= 8) { await markFailed(env, job, e); msg.ack(); }                // goes to the DLQ via max_retries otherwise
-        else msg.retry({ delaySeconds: backoffSeconds(msg.attempts) });
+        job.attempts++;
+        // Capacity: come back when the limiter or the day's pace says; else full-jitter backoff (5 s → 30 min)
+        job.notBefore = Date.now() + (e.retryMs ?? Math.random() * Math.min(1800000, 5000 * 2 ** job.attempts));
+        if (job.attempts > 12) { await this.state.storage.put(`dead:${id}`, { ...job, error: String(e) }); await this.state.storage.delete(id); }
+        else await this.state.storage.put(id, job);
+        next = Math.min(next, job.notBefore);
       }
     }
+    if ((await this.state.storage.list({ prefix: "job:", limit: 1 })).size) await this.state.storage.setAlarm(next);
   }
-};
-const backoffSeconds = (attempt) => Math.ceil(Math.random() * Math.min(300, 5 * 2 ** attempt));   // full jitter, 5 s → 5 min cap
+}
 ```
 
 What the trainee sees:
-- The result page shows **"Grading in progress"** with a spinner, and the score appears when the job is done.
-- A grading failure never blocks moving on to the next step. Failed jobs go to `ft-grade-dlq`, and an admin can retry them from Database Maintenance.
+- **At once:** the rule-based checklist and a score band.
+- **Then:** **"Trainer-style feedback: on its way"** until the AI narrative is written, usually within minutes. On a full day it arrives the next morning.
+- **Dead jobs:** those older than 12 attempts are listed in Admin → Database Maintenance, with a Retry button.
 
 ---
 
-## 4. Multi-provider routing and fallback
+## 7. Routing and failover (free pools only)
 
-### 4.1 Router layer: where it lives
+### 7.1 Model ladders
 
-Rate limits are per provider project or organization. So **two independent limiters sharing one key pool will fight**. The router and limiter therefore belong in **one place for all programs**: the Main Portal's existing `/api/ai-gateway` (this Worker already forwards to it when `AI_GATEWAY_SECRET` is set).
+| Workload | Route 1 | Route 2 | Last resort |
+|---|---|---|---|
+| **live: simulators, chat** | Gemini `gemini-3.5-flash-lite` (project A), minimal thinking | Workers AI `@cf/meta/llama-3.1-8b-instruct-fp8-fast` | Scripted holding line (no error banner mid-call); the next message is a fresh turn |
+| **grade** (narrative feedback) | Gemini `gemini-3.5-flash-lite` | — | **Wait** in the queue (never switch the grading model mid-cohort: consistency) |
+| **background** (openings, tracker review) | Workers AI 8B | Gemini Flash-Lite, off-shift only | Skip until tonight |
+| **trainer tools** | Gemini Flash (≤ 20/day) | Gemini Flash-Lite | "Try again in a few minutes" (trainers only) |
 
-The plan has two phases:
-- **Phase A (this repo):** implement the Router + `LlmLimiter` in `worker.js`. This program is covered even when the gateway is off.
-- **Phase B (Portal repo):** move the same module into the Portal gateway. This Worker sets `AI_GATEWAY_SECRET` and keeps only the context builder and the queue.
+**Test before relying on Workers AI:** before turning on Route 2 for live chat, run 10 scripted test calls per scenario through the 8B model and have a trainer approve the persona's tone. If 8B isn't good enough, try `@cf/google/gemma-4-26b-a4b-it` (≈ 25 Neurons per turn, so about 360 turns/day).
 
-An off-the-shelf proxy such as **LiteLLM** fits a Node/Python server, but it would add a server we don't run today. **Cloudflare AI Gateway** is a useful extra layer in front of both providers: it adds logging, analytics, caching and its own retries, and needs no code. It isn't a substitute for the shared limiter, because it doesn't know our lane priorities.
+### 7.2 Failover criteria
 
-### 4.2 Failover criteria
+| Signal | Action |
+|---|---|
+| Gemini 429, per-minute | `open` that bucket for `retry-after` or 60 s; next route now |
+| Gemini 429, per-day / daily | `open` until midnight Pacific; tell `DailyBudget` the pool is spent; next route |
+| Workers AI daily-allocation error | `open` until 00:00 UTC; live falls to the holding line, and **new sessions stop being admitted** |
+| 400/401/403 "API key" | `open` for 10 min; alert admins |
+| 5xx / timeout / network | `fail` (5 in 30 s trips the breaker: 30 s doubling to 5 min); one retry with full jitter (≤ 2 s), then next route |
+| Other 400 (bad request) | Don't retry, don't fail over: log it and return the error |
+| Empty text / safety block | Next route once |
 
-| Signal | Classification | Action |
-|---|---|---|
-| 429 with "per minute" / RPM / TPM | Rate | Open the breaker for that bucket for `retry-after` (or 60 s); try the next route now (live) or `retry` (queue) |
-| 429 with "per day" / RPD / daily | Quota | Open the breaker **until the provider reset** (Gemini: next midnight Pacific); next route |
-| 429 `enforced_spend_limit_reached` (Claude, no `retry-after`) | Spend cap | Open until 00:00 UTC on the 1st, alert admins at once; next route |
-| 402, or a billing/credit message | Billing | Open for 1 h; alert; next route |
-| 400/401/403 "API key" | Bad key | Open for 10 min; alert; next route |
-| 500 / 502 / 503 / 529 / timeout / network | Transient | Count toward the breaker; backoff with jitter, then the same route once, then the next route |
-| 400 bad request (other) | Caller bug | **Don't retry, don't fail over.** Return the error; log the payload hash |
-| `stop_reason: "refusal"` (Claude) | Policy | Opus 5.5: the server-side `fallbacks` handles it (§4.5); Haiku 5.5 has no server-side fallback, so the next route |
-| Empty text / `MAX_TOKENS` on chat | Quality | Next route once |
+**Only the router retries.** Specifically:
+- The browser's `callAIText` stops retrying 429/503 from `/api/ai`.
+- The Worker answers a fully exhausted live request with **200 + the holding line**, so the trainee doesn't see an error mid-call.
+- The live deadline is 8 s end to end.
 
-Circuit breaker, one per (provider, project, model):
-- **Closed → Open:** 5 transient failures in 30 s, **or** ≥ 50% failures over the last 10+ calls, **or** any Rate/Quota/Spend/Billing/Bad-key signal above.
-- **Open:** for 30 s, doubling on each re-open up to 5 min (quota and spend opens use their reset time instead).
-- **Half-open:** one probe request is let through. If it succeeds the breaker closes; if it fails, the breaker re-opens for twice as long.
-- **Where the state lives:** in the `LlmLimiter` DO (`openUntil`), so every isolate sees it at once.
-
-### 4.3 Model ladders (dynamic downgrading)
-
-| Workload | Route 1 (primary) | Route 2 | Route 3 | Last resort |
-|---|---|---|---|---|
-| **live: simulators, chat** | Gemini `gemini-3.5-flash-lite` (paid project A) | Claude `claude-haiku-5-5` (effort `low`) | Gemini `gemini-3.5-flash-lite` (project B, if kept) | Scripted holding line ("Sorry, could you repeat that? You cut out.") and one silent retry 5 s later. **Never an error banner mid-call.** |
-| **grade: transcripts, CMS evaluations** | Claude `claude-opus-5-5` (effort `medium`, server-side refusal `fallbacks`) | Gemini `gemini-3.8-flash` (paid) | — | **Wait, don't downgrade**: requeue with backoff. Grading consistency matters more than speed; the result records the model used. |
-| **background: summaries, tracker review** | Gemini `gemini-3.5-flash-lite` | Claude `claude-haiku-5-5` | — | Skip; keep the previous summary |
-| **trainer tools** (lesson expansion etc.) | Claude `claude-opus-5-5` | Gemini `gemini-3.8-flash` | — | Error with "try again in a minute" (trainers, not trainees) |
-
-Rules:
-- **Grading model choice:** a cohort's grading runs on one primary model. Switching graders between trainees in the same cohort is unfair, so a downgrade of grading is a delay, not a model swap. The Route 2 for grading exists only for a provider outage longer than 15 minutes, and it's logged.
-- **Test before switching models:** before putting `claude-sonnet-5-5` in place of `claude-opus-5-5` for grading, to save cost, run both on 30 past transcripts and compare the scores.
-
-### 4.4 Code: router with exponential backoff, full jitter and breakers
+### 7.3 Code: router
 
 ```js
 const ROUTES = {
-  live:       [{ p: "gemini", proj: "A", model: "gemini-3.5-flash-lite" }, { p: "claude", model: "claude-haiku-5-5" }],
-  grade:      [{ p: "claude", model: "claude-opus-5-5" }, { p: "gemini", proj: "A", model: "gemini-3.8-flash" }],
-  background: [{ p: "gemini", proj: "A", model: "gemini-3.5-flash-lite" }, { p: "claude", model: "claude-haiku-5-5" }],
+  live:       [{ p: "gemini", proj: "A", model: "gemini-3.5-flash-lite" }, { p: "wai", model: "@cf/meta/llama-3.1-8b-instruct-fp8-fast" }],
+  grade:      [{ p: "gemini", proj: "A", model: "gemini-3.5-flash-lite" }],
+  background: [{ p: "wai", model: "@cf/meta/llama-3.1-8b-instruct-fp8-fast" }, { p: "gemini", proj: "A", model: "gemini-3.5-flash-lite", offShiftOnly: true }],
 };
-// Bucket limits at the paid tier: copy the real numbers from AI Studio / the Claude Console Rate limits page.
-const LIMITS = {
-  "gemini|A|gemini-3.5-flash-lite": { rpm: 1000, tpm: 1_000_000 },     // placeholder: set from AI Studio
-  "gemini|A|gemini-3.8-flash":      { rpm: 500,  tpm: 1_000_000 },     // placeholder: set from AI Studio
-  "claude||claude-haiku-5-5":       { rpm: 1000, tpm: 2_000_000 },     // Start tier (input TPM; cached reads don't count)
-  "claude||claude-opus-5-5":        { rpm: 1000, tpm: 2_000_000 },     // Start tier
+const LIMITS = {   // free tier, from AI Studio / Workers AI limits; ×0.8 applied in the limiter
+  "gemini|A|gemini-3.5-flash-lite": { rpm: 15, tpm: 250000 },      // placeholder: confirm in AI Studio
+  "wai||@cf/meta/llama-3.1-8b-instruct-fp8-fast": { rpm: 300, tpm: 1e9 },
 };
-const LIVE_DEADLINE_MS = 12000, LIVE_WAIT_MS = 1500;
+const HOLDING_LINE = "Sorry, you cut out for a second. Could you say that again?";
 
 async function routeCall(env, lane, req) {
-  const deadline = Date.now() + (lane === "live" ? LIVE_DEADLINE_MS : 90000);
-  let lastErr;
+  const deadline = Date.now() + (lane === "live" ? 8000 : 60000);
+  let last;
   for (const r of ROUTES[lane]) {
+    if (r.offShiftOnly && shiftFraction(Date.now()) > 0 && shiftFraction(Date.now()) < 1) continue;
     const key = `${r.p}|${r.proj || ""}|${r.model}`;
     const lim = env.LLM_LIMITER.get(env.LLM_LIMITER.idFromName(key));
     const cfg = { ...LIMITS[key], safety: 0.8, liveReserve: 0.6 };
-    const est = req.estInputTokens + req.maxOutput;
-
-    // 1. Capacity: the live lane waits briefly, the queued lanes hand back retryMs.
-    const got = await acquire(lim, cfg, lane, est, lane === "live" ? LIVE_WAIT_MS : 0);
-    if (!got.ok) { lastErr = Object.assign(new Error(got.reason), { retryMs: got.retryMs }); continue; }
-
-    // 2. Call, with up to 2 attempts on transient errors (full-jitter backoff), inside the deadline.
-    for (let attempt = 0; attempt < 2 && Date.now() < deadline; attempt++) {
-      try {
-        const out = r.p === "gemini" ? await callGeminiOnce(env, r, req) : await callClaudeOnce(env, r, req);
-        await post(lim, { op: "settle", cfg, tokens: est, actual: out.usageTokens });
-        return { ...out, route: key };
-      } catch (e) {
-        lastErr = e;
-        const cls = classify(e);                                   // §4.2 table
-        if (cls === "caller") throw e;                             // never fail over a bad request
-        if (["rate", "quota", "spend", "billing", "badkey"].includes(cls)) {
-          await post(lim, { op: "open", cfg, actual: openMs(cls, e) });
-          break;                                                   // next route now
-        }
-        // transient: backoff with full jitter, honouring retry-after
-        const wait = e.retryAfterMs ?? Math.random() * Math.min(8000, 400 * 2 ** attempt);
-        if (Date.now() + wait > deadline) break;
-        await sleep(wait);
+    const got = await call(lim, { op: "acquire", cfg, lane, tokens: req.estTokens });
+    if (!got.ok) { last = Object.assign(new Error(got.reason), { retryMs: got.retryMs }); continue; }
+    try {
+      const out = r.p === "gemini" ? await geminiOnce(env, r.model, req) : await workersAiOnce(env, r.model, req);
+      await call(lim, { op: "ok", cfg });
+      return { ...out, route: key };
+    } catch (e) {
+      last = e;
+      const c = classify(e);                                  // §7.2
+      if (c === "caller") throw e;
+      await call(lim, c === "transient" ? { op: "fail", cfg } : { op: "open", cfg, ms: openMs(c, e) });
+      if (c === "transient" && Date.now() + 2000 < deadline) {   // one jittered retry on the same route
+        await new Promise((res) => setTimeout(res, Math.random() * 2000));
+        try { const out = r.p === "gemini" ? await geminiOnce(env, r.model, req) : await workersAiOnce(env, r.model, req); return { ...out, route: key }; }
+        catch (e2) { last = e2; }
       }
     }
   }
-  throw Object.assign(lastErr || new Error("no route"), { retryMs: lastErr?.retryMs ?? 30000 });
+  if (lane === "live") return { text: HOLDING_LINE, route: "holding" };      // never an error banner mid-call
+  throw Object.assign(last || new Error("no route"), { retryMs: last?.retryMs ?? 60000 });
 }
 
-async function acquire(lim, cfg, lane, tokens, waitMs) {
-  const until = Date.now() + waitMs;
-  for (;;) {
-    const r = await post(lim, { op: "acquire", cfg, lane, tokens });
-    if (r.ok || Date.now() + Math.min(250, r.retryMs) > until) return r;
-    await sleep(Math.min(250, r.retryMs));
-  }
-}
-const post = async (stub, body) => (await stub.fetch("https://limiter/", { method: "POST", body: JSON.stringify(body) })).json();
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-function openMs(cls, e) {
-  if (cls === "quota") return msUntilMidnightPacific();              // Gemini RPD resets at midnight PT
-  if (cls === "spend") return msUntilFirstOfMonthUtc();
-  if (cls === "billing") return 3600000;
-  if (cls === "badkey") return 600000;
-  return e.retryAfterMs ?? 60000;                                   // rate
-}
-```
-
-One retry policy for the whole system:
-- **Only the router retries.** The browser's `callAIText` stops retrying 429s, and the Worker answers a fully exhausted request with `503` + `Retry-After`. Retries happen in one place, which ends the ×4 × ×32 amplification.
-- **Retry budget per lane:**
-  - live: at most 2 attempts per route, at most 2 routes, a 12 s deadline;
-  - grade: 8 queue attempts over about 20 min;
-  - background: 2 attempts.
-- **SDK retries are off:** construct the Anthropic client with `maxRetries: 0` so the SDK doesn't add retries under the router.
-
-### 4.5 Code: the provider calls
-
-```js
-import Anthropic from "@anthropic-ai/sdk";   // runs on Workers; bundled by wrangler from package.json
-
-function claude(env) { return new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 0, timeout: 60_000 }); }
-
-// live lane on Claude Haiku 5.5: cached frozen system prompt, short low-effort reply.
-async function claudeChat(env, { system, messages }) {
-  const res = await claude(env).messages.create({
-    model: "claude-haiku-5-5",
-    max_tokens: 160,
-    output_config: { effort: "low" },
-    system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],   // 5-min TTL: turns are < 5 min apart
-    messages: messages.map((m) => ({ role: m.role, content: m.text })),
+async function workersAiOnce(env, model, { system, messages, maxOutput = 160 }) {   // needs "ai": { "binding": "AI" } in wrangler.json
+  const r = await env.AI.run(model, {
+    messages: [{ role: "system", content: system }, ...messages.map((m) => ({ role: m.role, content: m.text }))],
+    max_tokens: maxOutput,
   });
-  if (res.stop_reason === "refusal") throw Object.assign(new Error("refusal"), { cls: "refusal" });   // next route
-  const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("").trim();
-  const u = res.usage;
-  return { text, model: res.model, usageTokens: (u.input_tokens + (u.cache_creation_input_tokens || 0)) + u.output_tokens };
+  const text = String(r && r.response || "").trim();
+  if (!text) throw Object.assign(new Error("empty"), { cls: "empty" });
+  return { text, model };
 }
-
-// grade lane on Claude Opus 5.5: cached rubric, server-side refusal fallback, JSON parsed and validated by the caller.
-async function claudeGrade(env, { rubric, transcript, meta }) {
-  const res = await claude(env).beta.messages.create({
-    model: "claude-opus-5-5",
-    max_tokens: 1200,
-    output_config: { effort: "medium" },
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    system: [{ type: "text", text: rubric, cache_control: { type: "ephemeral" } }],
-    messages: [{ role: "user", content: `${meta}\n\nTRANSCRIPT:\n${transcript}\n\nReturn only the JSON object described in the rubric.` }],
-  });
-  if (res.stop_reason === "refusal") throw Object.assign(new Error("refusal"), { cls: "refusal" });
-  const text = res.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-  return { text, model: res.model, usageTokens: res.usage.input_tokens + res.usage.output_tokens };
-}
-
-// Error classification for Claude: typed SDK errors, never message matching (most specific first).
-function classifyClaude(e) {
-  if (e instanceof Anthropic.RateLimitError) {
-    const code = e.error?.error?.details?.error_code;
-    if (code === "enforced_spend_limit_reached") return "spend";
-    return "rate";                                  // read retry-after from e.headers
-  }
-  if (e instanceof Anthropic.AuthenticationError || e instanceof Anthropic.PermissionDeniedError) return "badkey";
-  if (e instanceof Anthropic.BadRequestError) return "caller";
-  if (e instanceof Anthropic.APIConnectionError || e instanceof Anthropic.InternalServerError) return "transient";
-  if (e instanceof Anthropic.APIError) return e.status >= 500 ? "transient" : "caller";
-  return "transient";
-}
+const call = async (stub, body) => (await stub.fetch("https://do/", { method: "POST", body: JSON.stringify(body) })).json();
 ```
 
-Gemini keeps the current `callGemini` request shape, with three changes:
-- **Chat output:** for chat, `maxOutputTokens: 256` and a minimal `thinkingConfig` instead of `max(2×, 2048)` with `thinkingLevel: "low"`. Thinking tokens on a one-line roleplay reply only add latency and TPM.
-- **System prompt:** `systemInstruction` carries the frozen system prompt, so Gemini's implicit prefix caching can apply.
-- **Error routing:** errors go through `classify()` into the §4.2 table, not through the per-isolate `geminiRest` Map.
+`geminiOnce` is today's `callGemini` request body for **one** key and **one** model, with the loops removed. For chat it sends `systemInstruction`, `maxOutputTokens: 200` and minimal thinking. The router owns key/model choice and retries.
 
 ---
 
-## 5. Cost and tier structure
-
-### 5.1 Minimum provider setup for 20 concurrent trainees
-
-| Provider | Minimum | Why | What it gives (check the live pages) |
-|---|---|---|---|
-| **Gemini API** (primary for live) | **One project, billing linked, Tier 2.** Qualify by paying $100, then wait 3 days. | Free tier per-day limits are the outage cause. Paid limits are **per project** (not per key), so one paid project beats 5–8 free ones. **Tier 1 alone is capped at $10 per 10 minutes and $250 total**; Tier 2 lifts this to $50 / 10 min and a $2,000 cap. | RPM/TPM/RPD per model: [AI Studio → Rate limits](https://aistudio.google.com/rate-limit). Paid limits are far above our 250 RPM / 1M TPM target. |
-| **Claude API** (second vendor; primary for grading) | **Start tier** (credit purchase; monthly spend cap $500) | Start tier per model class: 1,000 RPM, 2,000,000 input TPM (cached reads don't count), 400,000 output TPM. That's well above our target. Projected spend (§5.3) is well under the $500 cap. | [Rate limits](https://platform.claude.com/docs/en/api/rate-limits). New orgs can start in an **Evaluation tier** with lower limits. Create the org and send real traffic **2+ weeks before** the first cohort that relies on it. |
-| Second Gemini project (optional) | Free tier is fine | Only for failover (Route 3); never planned capacity | — |
-
-**Retire the free key pool as planned capacity.** Keep at most one free key as the very last route.
-
-### 5.2 Workload → model class
-
-| Workload | Need | Model class | Model |
-|---|---|---|---|
-| Simulator / chat turns | Latency < 1.5 s, very high request volume, short output | Ultra-low-latency, high-TPM | `gemini-3.5-flash-lite` → `claude-haiku-5-5` (effort `low`) |
-| Rolling summaries, tracker notes | Cheap, tolerant of delay | Low-cost | `gemini-3.5-flash-lite` / `claude-haiku-5-5` |
-| Transcript grading, CMS evaluations | Rubric reasoning, evidence quoting, consistency | High-reasoning | `claude-opus-5-5` (effort `medium`); assess `claude-sonnet-5-5` with the 30-transcript comparison |
-| Trainer tools (lesson expansion, quizzes) | Quality, rare | High-reasoning | `claude-opus-5-5` |
-| Overnight re-grading / analytics | No one waiting | Batch | Message Batches API (50% price; results within 24 h). Note: server-side `fallbacks` aren't accepted on Batches. |
-
-### 5.3 Monthly cost estimate (one cohort, 22 training days)
-
-**Claude**, using the per-MTok prices from the model docs (Haiku 5.5 $0.10 in / $0.50 out; Opus 5.5 $4 in / $20 out; cache reads billed at a fraction of input):
-
-| Item | Tokens per day | $ per day | $ per month |
-|---|---|---|---|
-| Chat on Haiku 5.5, if **all** chat failed over (worst case) | 1,800 × 3,000 in (≈ 50% cached) + 1,800 × 80 out | ≈ $0.35 | ≈ $8 |
-| Grading on Opus 5.5 | 200 × 12,000 in + 200 × 1,000 out | ≈ $9.60 + $4.00 | ≈ $300 |
-| Grading on Sonnet 5.5, if the comparison passes ($2 / $10) | same | ≈ $6.80 | ≈ $150 |
-
-**Gemini** (paid Flash-Lite primary): about 6M input and 0.2M output tokens per cohort day. Price these at the current rates on the Gemini pricing page; the Flash-Lite class is the cheapest tier.
-
-**Budget guardrails:**
-- Claude: set a **workspace spend limit** in the Claude Console at 1.5× the projected month.
-- Gemini: set a project budget alert at 50% / 90%.
-- The router alerts at 80% of either.
-
----
-
-## 6. Architecture diagrams
-
-### 6.1 Request flow (Mermaid)
-
-```mermaid
-flowchart LR
-  subgraph Browser["Trainee browser"]
-    SIM["Simulator / lab page<br/>buildChatContext (≤3k tokens)"]
-    RES["Result page<br/>polls grade job"]
-  end
-  subgraph Worker["Cloudflare Worker (foundational-training)"]
-    API["/api/ai (live lane)"]
-    GAPI["/api/grade (enqueue)"]
-    ROUTER["Router<br/>ladders · backoff · classify"]
-    CONS["queue() consumer"]
-  end
-  subgraph DO["Durable Objects"]
-    LIM[("LlmLimiter<br/>token buckets + breakers<br/>per provider|project|model")]
-  end
-  subgraph Q["Cloudflare Queues"]
-    GQ[["ft-grade"]]
-    BQ[["ft-background"]]
-    DLQ[["ft-grade-dlq"]]
-  end
-  KV[("KV: gradejob:*")]
-  GEM["Gemini API<br/>paid project A (Tier 2)"]
-  CLA["Claude API<br/>Start tier"]
-
-  SIM -->|turn| API --> ROUTER
-  SIM -->|session end| GAPI --> GQ --> CONS --> ROUTER
-  API -.->|summary due| BQ --> CONS
-  ROUTER <-->|acquire / settle / open| LIM
-  ROUTER -->|route 1| GEM
-  ROUTER -->|route 2| CLA
-  CONS --> KV --> RES
-  GQ -.->|8 failures| DLQ
-```
-
-### 6.2 Lanes and the shared bucket (ASCII)
-
-```
-                one bucket per provider|project|model, refilled at 80% of the published limit
-   ┌─────────────────────────────────────────────────────────────────────────────┐
-   │ ███████████████████████ live reserve (60%) ███████████ │ grade ≤35% │bg≤5% │
-   └─────────────────────────────────────────────────────────────────────────────┘
-     live:  may draw down to 0                → wait ≤1.5 s → next route → holding line
-     grade: may draw only above the reserve   → retryMs → queue.retry(delay)
-     bg:    same as grade, lowest priority     → skip after 2 min
-
-   circuit breaker per bucket:  CLOSED ──5 fails/30s or quota 429──▶ OPEN (30s…5min, or until reset)
-                                   ▲                                    │
-                                   └──── probe ok ─── HALF-OPEN ◀───────┘
-```
-
----
-
-## 7. Configuration summary
+## 8. Configuration summary
 
 | Parameter | Value |
 |---|---|
-| Chat system prompt budget | ≤ 1,600 tokens (frozen, cached) |
-| Rolling memory | ≤ 200 tokens; refresh when ≥ 6 messages have aged out or the window is > 1,000 tokens |
-| Verbatim window | last 8 messages, 120 tokens each, ≤ 1,000 total, floor 4 |
-| Chat hard input cap / output | 3,000 / 160 tokens (Gemini `maxOutputTokens` 256, minimal thinking) |
-| Session length | 40 messages, then a scripted wrap-up |
-| Grading input / output | rubric ≤ 1,500 + transcript ≤ 12,000 (map-reduce above) / 1,200 |
-| Bucket safety factor | 0.8 of the published limit |
-| Lane shares | live 60% reserved (can use 100%) · grade ≤ 35% · background ≤ 5% |
-| Live wait / deadline | 1.5 s for capacity / 12 s end to end |
-| Backoff | full jitter, base 400 ms, cap 8 s (live); 5 s → 5 min (queue) |
-| Breaker | open on 5 fails in 30 s or ≥ 50% of 10+; 30 s doubling to 5 min; quota → reset time; half-open 1 probe |
-| Queue `ft-grade` | batch 4, concurrency 4, max_retries 8, DLQ `ft-grade-dlq` |
-| Client retries | none for 429/503 from `/api/ai`; show the holding line instead |
-| SDK retries | `maxRetries: 0` (the router owns retries) |
+| Providers | Gemini API **free tier** (one planned project); Cloudflare **Workers AI free** (10,000 Neurons/day) |
+| Simulator input cap | 2,400 tokens: system ≤ 1,000 + pinned 2 msgs ≤ 300 + last 6 msgs ≤ 720 + user ≤ 200 |
+| Simulator output | Gemini 200 (minimal thinking) / Workers AI 160 |
+| Turns per session | 12, then a scripted wrap-up |
+| AI simulator sessions per trainee per day | **3** in Scenario A (one project); recalculate with §2.3 |
+| Cohort staggering | 2 groups of 10; one group in AI sims at a time |
+| Daily budget safety | 0.9 of the supply; 10% held for grading |
+| Pacing | budget × shift fraction (08:00–17:00 ET) + 15% burst |
+| Session reservation | 12 turns + 1 grading; release at end or after 30 min idle |
+| Minute buckets | 0.8 × free RPM/TPM; live 100%; grade/background only above a 60% live reserve |
+| Breaker | 5 fails in 30 s → open for 30 s, doubling to 5 min; daily quota → open until reset |
+| Live deadline | 8 s, then the holding line |
+| Client retries on `/api/ai` | none |
+| Grading | rule-based checklist at once; AI narrative via `GradeQueue`, ≤ 12 attempts, overnight at the latest |
+| Personal data in prompts | none: "Trainee" only (free-tier content may be human-reviewed) |
+| State storage | Durable Objects (not KV writes, which are capped on the Workers Free plan) |
 
 ### Monitoring (definition of "done")
 
-- **Log one line per call:** lane, route, model, input/output/cached tokens, latency, outcome class. Use `console.log` JSON, which Workers Logs keeps.
-- **SLOs during cohort hours:**
-  - live p95 latency < 2.5 s;
-  - live failures (holding line shown) < 0.5% of turns;
-  - **zero** trainee-visible 429s;
-  - grading p95 queue time < 2 min;
-  - DLQ empty at the end of the day.
-- **Alerts:**
-  - any breaker open > 5 min;
-  - any quota, spend or billing open;
-  - DLQ depth > 0;
-  - spend > 80% of the monthly guardrail.
+- **Log one line per call:** lane, route, model, tokens, latency, outcome; and one line per session (reserved, used, released).
+- **SLOs during the shift:**
+  - **zero** sessions that start and then hit a 429;
+  - holding line on < 1% of turns;
+  - live p95 latency < 3 s;
+  - grading narrative within 15 min on ≥ 90% of days.
+- **Daily report on the admin dashboard:**
+  - budget vs used for each pool;
+  - sessions refused at admission;
+  - the hour the pace was first exceeded.
+
+  This tells the trainers when to stagger more, or cut sessions per day.
 
 ---
 
-## 8. Rollout (each phase is its own small PR, no overlap with open PRs)
+## 9. Rollout (each phase is its own small PR, no overlap with open PRs)
 
 | Phase | Change | Files | Risk |
 |---|---|---|---|
-| **0 (ops, no code)** | Gemini paid project at Tier 2; Claude org on Start tier, with keys as Worker secrets (`ANTHROPIC_API_KEY`); spend limits and alerts | Cloudflare and provider consoles | None |
-| **1** | Stop retry amplification: no client retries on 429/503 for `/api/ai`; the Worker returns `503` + `Retry-After` when exhausted; chat `maxOutputTokens` 256 with minimal thinking | `index.html` (`callAIText`), `worker.js` (`callGemini`) | Low |
-| **2** | `buildChatContext` in every simulator: frozen system prompt, memory, window, hard cap; background summaries | `index.html` simulators, `js/*` sims, new `.github/scripts` budget check | Low–medium |
-| **3** | `LlmLimiter` DO + router with breakers and ladders; Claude as Route 2 (`@anthropic-ai/sdk` via `package.json`) | `worker.js`, `wrangler.json` (DO migration `v2-llm-limiter`) | Medium |
-| **4** | Grading queue (`ft-grade`, `ft-background`, DLQ) + "Grading in progress" UI | `worker.js`, `wrangler.json` (queues), grading pages | Medium |
-| **5** | Move the router and limiter into the Portal's `/api/ai-gateway` so every program shares one budget; this Worker sets `AI_GATEWAY_SECRET` | Portal repo | Medium |
-| **6** | Load test: 25 simulated trainees (Playwright) × 45 min against a preview deploy, with a grading burst at minute 30; check the SLOs above | `.github/scripts/load-ai.cjs` | — |
+| **1** | Stop retry amplification: no client retries on 429/503 from `/api/ai`; the Worker returns the holding line (live) or 503 + `Retry-After` (other); chat output 200 with minimal thinking | `index.html` (`callAIText`), `worker.js` (`callGemini`) | Low |
+| **2** | `buildChatContext` in every simulator; system prompt into `systemInstruction`; scenario cards compressed; 12-turn cap with a scripted wrap-up; no personal data in prompts; build-time budget check | `index.html`, `js/*` sims, `.github/scripts/` | Low–medium |
+| **3** | Pre-generated openings (nightly cron → KV); rule-based grading pre-check; one grading call per session; KV cache for trainer tools | `worker.js` (cron), grading pages | Low–medium |
+| **4** | `DailyBudget` (pacing + reservations) + `/api/ai/session/start|end` + the "AI practice is full" UI | `worker.js`, `wrangler.json` (DO migration), sim pages | Medium |
+| **5** | `LlmLimiter` + router; Workers AI as live Route 2 (`"ai": {"binding": "AI"}`), after the persona check in §7.1 | `worker.js`, `wrangler.json` | Medium |
+| **6** | `GradeQueue` (DO + alarms) + "feedback on its way" UI + the dead-job list in Database Maintenance | `worker.js`, `wrangler.json`, grading pages | Medium |
+| **7** | Load test: 20 simulated trainees (Playwright) in 2 staggered groups over a compressed "day" against a preview deploy; check the SLOs | `.github/scripts/load-ai.cjs` | — |
 
-Phases 1–2 can ship before the next cohort, and together with Phase 0 they remove the daily-quota and amplification failures. Phases 3–4 make the system hold up against provider incidents and grading bursts.
+Phases 1–3 cut requests and tokens the most, and need no new infrastructure. Phase 4 is what guarantees that a session which starts can finish.
+
+**If free capacity is still short after Phase 4:**
+- The levers left are **fewer AI sessions per trainee** and **more staggering**. The admin daily report shows which.
+- **More free Gemini projects are not a lever** (§1.3).
