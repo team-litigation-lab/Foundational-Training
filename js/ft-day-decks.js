@@ -2044,6 +2044,14 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5{grid-template-columns:repea
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:26vh !important;min-height:170px;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:24vh !important;}
+/* step 1's first screenshot (the group chat with the files to download) is the big one: on the left, as tall as the
+   two rows of shots 2–5 beside it */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{grid-template-columns:minmax(0,1.9fr) repeat(2,minmax(0,1fr)) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child{grid-row:span 2;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child a{height:calc(24vh + 48px) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:not(:first-child) a{height:12vh !important;min-height:80px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{gap:10px 22px !important;margin-bottom:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 figcaption{font-size:20px !important;margin-top:4px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{margin:8px 0 0 !important;text-align:center;font:800 28px/1 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
 /* text on one side, its picture on the other (step 3's file list and its note; the heads-up and the installed apps;
    the help line and the Discord profiles) */
