@@ -93,38 +93,43 @@ const TRIM = {1: {reading: html => {
   // the reading itself follows, word for word, split over this slide and the next ones (PI_PARTS below)
   return lead + "<!--pi-reading-->\n" + html.slice(at + 4).replace(/^\n/, "");
 }, pm: html => {
-  // the Smart Advocate steps as the curriculum's own instructions give them, word for word, each step beside its screenshots
-  // numbered as there (0–4, 5.0, 5.1–5.3, 6–11, 12–14), then the help contacts (Sanders and Ivan, with their Discord
-  // profiles) and the heads-up; the links are the curriculum's own
+  // the Smart Advocate steps laid out as the curriculum's own pages: each step's instruction across the top (its link
+  // beside it), then its screenshots in one row under it, numbered 1, 2, 3 … under each; then the help line in its
+  // rounded box beside Sanders' and Ivan's Discord profiles, and the heads-up beside the installed apps; the links are the curriculum's own
   const i = html.indexOf(SA_FROM); if(i < 0) throw new Error("Day 1's Smart Advocate steps are no longer where the build looks for them");
   const src = html.slice(i);
-  const link = re => { const m = src.match(re); if(!m) throw new Error("Day 1's Installation of SA lost a link: " + re); return `<p class="url-list">${m[0]}</p>`; };
-  const handler = link(/<a [^>]*19eFGdoQNXJo2iE46M2G8s2bMJNEIeO8k[^>]*>[^<]*<\/a>/);
-  const win = link(/<a [^>]*71237633[^>]*>[^<]*<\/a>/), mac = link(/<a [^>]*876020096[^>]*>[^<]*<\/a>/);
+  const tag = re => { const m = src.match(re); if(!m) throw new Error("Day 1's Installation of SA lost a link: " + re); return m[0]; };
+  // the link with its own words: "Link: SA Document Handler/Launcher", and the knowledge base pages written out
+  const handler = `<p class="ftdd-sa-link">Link: ${tag(/<a [^>]*19eFGdoQNXJo2iE46M2G8s2bMJNEIeO8k[^>]*>/)}SA Document Handler/Launcher</a></p>\n`;
+  const url = re => `<p class="url-list">${tag(new RegExp(`<a [^>]*${re}[^>]*>[^<]*<\\/a>`))}</p>\n`;
+  const win = url("71237633"), mac = url("876020096");
   const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
     return `  <figure><a href="/ft/day1/img/${f}" target="_blank"><img src="/ft/day1/img/${f}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
-  const shots = list => `<div class="shots ftdd-big-shots">\n${list.join("")}</div>\n`;
   const sa = n => `sa-${String(n).padStart(2, "0")}.png`;
-  const range = (from, caps) => caps.map((c, k) => img(sa(from + k), "Screenshot " + c, c));
-  // each instruction on the left, its own screenshots beside it on the right (one block, so a page never splits them)
-  const row = (text, list) => `<div class="ftdd-sa-row">\n<div class="ftdd-sa-text">\n${text}</div>\n${shots(list)}</div>\n`;
-  return row(`<p><b>Note: Download and share this zipped folder in the training GC.</b></p>\n<p>SA Document Handler/Launcher</p>\n${handler}\n`, range(2, ["0"])) +
-    row(`<h3>How to install the Smart Advocate/SA plug-ins:</h3>\n<p>1. Install the SA Document Handler/Launcher. Unzip its folder first, then right-click on the zipped file and select "Extract Here."</p>\n`, range(3, ["1"])) +
-    row(`<p>Proceed with the installation.</p>\n`, range(4, ["2", "3", "4"])) +
-    row(`<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n${win}\n`, range(7, ["5.0"])) +
-    row(`<p>For Mac Users, access the link and download plugin on your desktop. Follow the steps indicated below the link on this page:</p>\n${mac}\n`, range(8, ["5.1", "5.2", "5.3"])) +
-    row(`<p>3. Once you have downloaded the Microsoft Word, Excel, and Outlook plugins, double-click the "Set Up" application to install.</p>\n<p><b>Note: This process may take a little longer to complete the download and installation.</b></p>\n`, range(11, ["6", "7", "8", "9", "10", "11"])) +
-    row(`<p>4. Lastly, double click the Registry to install.</p>\n`, range(17, ["12", "13", "14"])) +
-    `<hr class="stars">\n` +
-    // the help line beside Sanders' and Ivan's Discord IDs, each over its own profile (one block, so a page never splits them)
-    `<div class="ftdd-sa-row">\n<div class="ftdd-sa-text">\n` +
-    `<p>For those who still have issues installing Nitro Pro despite carefully following the correct process, you may seek technical assistance from Sanders. For the SA plugins issue, you may reach out to Ivan. Message them at 8AM PST.</p>\n` +
-    `<p>Here are the Discord IDs of Sanders and Ivan. Please be reminded once again that their shift starts at 8:00 AM PST.</p>\n</div>\n` +
-    `<div class="ftdd-sa-contacts">\n` +
-    `  <div><p><b>Sanders: sndrrsss9920</b></p>\n${shots([img("discord-sanders.png", "Sanders on Discord")])}</div>\n` +
-    `  <div><p><b>Ivan: kuchiq</b></p>\n${shots([img("discord-ivan.png", "Ivan on Discord")])}</div>\n</div>\n</div>\n` +
-    `<hr class="stars">\n` +
-    row(`<p>Just a heads-up, for the SA plug-ins, for now, there is no way for us to check whether they have successfully installed. We will only know if the installation was successful when we start using the firm’s CMS (SA) which is scheduled for around the 8th or 9th of your classroom training. As long as you have this in your list of installed apps then you're good for now.</p>\n`, [img("sa-20.png", "Installed apps: SADocumentHandler_2023 and WordSADocumentMergeAddIn")]);
+  // a row of a step's screenshots, numbered from `first` under each (no number: `first` null)
+  const strip = (from, n, first = 1) => `<div class="shots ftdd-sa-strip ftdd-sa-n${n}">\n${Array.from({length: n}, (_, k) => img(sa(from + k), "Screenshot " + (first == null ? from + k : first + k), first == null ? null : first + k)).join("")}</div>\n`;
+  const step = (...units) => `<div class="ftdd-sa-step">\n${units.join("")}</div>\n`;
+  // an instruction and its own screenshots, one block, so a step too long for one page is turned at a block's edge,
+  // never between an instruction and its screenshots
+  const unit = body => `<div class="ftdd-sa-unit">\n${body}</div>\n`;
+  // text on one side, a picture (or pictures) on the other, in one block so a page never splits them
+  const pair = (left, right, cls = "") => `<div class="ftdd-sa-pair${cls}">\n<div class="ftdd-sa-text">\n${left}</div>\n<div class="ftdd-sa-side">\n${right}</div>\n</div>\n`;
+  return step(unit(`<h3>How to install the Smart Advocate/SA plug-ins:</h3>\n<p>1. Install the SA Document Handler/Launcher. Unzip its folder first, then right-click on the zipped file and select "Extract Here." Proceed with the installation.</p>\n` +
+      `<div class="ftdd-sa-file">\n${img(sa(0), "SADocumentHandler_2023")}${img(sa(1), "SADocumentHandler_2023.rar")}${handler}</div>\n` + strip(2, 5))) +
+    step(unit(`<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n${win}` + strip(7, 2, null)),
+      unit(`<p>For Mac Users, access the link and download plugin on your desktop. Follow the steps indicated below the link on this page:</p>\n${mac}` + strip(9, 2, null))) +
+    step(unit(pair(`<p>3. Once you have downloaded the Microsoft Word, Excel, and Outlook plugins, double-click the "Set Up" application to install.</p>\n` + strip(11, 1, null),
+        `<p class="ftdd-sa-note"><b>Note: This process may take a little longer to complete the download and installation.</b></p>\n`, " ftdd-sa-pair-wide") +
+      strip(12, 5, 3))) +
+    step(unit(`<p>4. Lastly, double click the Registry to install.</p>\n` + strip(17, 3)),
+      unit(pair(`<p><b>Just a heads-up, for the SA plug-ins, for now, there is no way for us to check whether they have successfully installed. We will only know if the installation was successful when we start using the firm’s CMS (SA) which is scheduled for around the 8th or 9th of your classroom training.</b></p>\n<p><b>As long as you have this in your list of installed apps then you're good for now.</b></p>\n`,
+        `<div class="shots ftdd-sa-strip ftdd-sa-n1">\n${img("sa-20.png", "Installed apps: SADocumentHandler_2023 and WordSADocumentMergeAddIn")}</div>\n`))) +
+    // the help line in its rounded box, beside Sanders' and Ivan's Discord IDs, each name under its own profile
+    step(pair(`<p class="ftdd-sa-help">For those who still have issues installing Nitro Pro despite carefully following the correct process, you may seek technical assistance from Sanders. For the SA plugins issue, you may reach out to Ivan. Message them at 8AM PST.</p>\n`,
+      `<p class="ftdd-sa-banner">Here are the Discord IDs of Sanders and Ivan. Please be reminded once again that their shift starts at 8:00 AM PST.</p>\n` +
+      `<div class="ftdd-sa-contacts">\n` +
+      `  <div><div class="shots">\n${img("discord-sanders.png", "Sanders on Discord")}</div><p><b>Sanders: sndrrsss9920</b></p></div>\n` +
+      `  <div><div class="shots">\n${img("discord-ivan.png", "Ivan on Discord")}</div><p><b>Ivan: kuchiq</b></p></div>\n</div>\n`, " ftdd-sa-pair-help"));
 }},
 // Day 5's Attorney Calendar Management Activity: four cards (the activity, the time zone, the whole calendar, the upload)
 5: {s3: html => {

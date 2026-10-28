@@ -167,7 +167,8 @@ function visual(html){
   // 1. a line that is only a link (or links) becomes tiles; the short line before it names the tile
   root.querySelectorAll("p").forEach(p => {
     const as = [...p.querySelectorAll("a[href]")];
-    if(!as.length || p.closest(".trainer-slot, .ftdd-tiles")) return;
+    // (Day 1's Installation of SA writes its links out, as the curriculum's pages do)
+    if(!as.length || p.closest(".trainer-slot, .ftdd-tiles, .ftdd-sa-step")) return;
     const rest = p.textContent.replace(/https?:\/\/\S+/g, "").replace(/[\s,]+/g, "");
     if(rest.length) return;                                  // a link inside a sentence stays a link
     let prev = p.previousElementSibling, label = "";
@@ -626,6 +627,8 @@ function zoomToFit(box, min){
 function sheetPages(sheet){
   const kids = [...sheet.children];
   kids.forEach(k => { k.style.display = ""; k.classList.remove("ftdd-pi-compact"); });
+  // (a block dealt out by its own rows had them hidden page by page: they are shown again before the slide is dealt anew)
+  sheet.querySelectorAll("[data-ftdd-paged]").forEach(k => { k.style.display = ""; k.removeAttribute("data-ftdd-paged"); });
   sheet.style.zoom = "";
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
@@ -699,7 +702,7 @@ function sheetPages(sheet){
 function contrastMarks(sheet){
   sheet.querySelectorAll("p:not(.ftdd-hbar)").forEach(p => {
     const b = p.children.length === 1 && /^(B|STRONG)$/.test(p.children[0].tagName) ? p.children[0] : null, t = p.textContent.trim();
-    if(b && t && t === b.textContent.trim() && t.length <= 120 && !p.closest(".ftdd-step, .ftdd-pq, .ftdd-task, .ftdd-pi-card, table")) p.classList.add("ftdd-hbar");
+    if(b && t && t === b.textContent.trim() && t.length <= 120 && !p.closest(".ftdd-step, .ftdd-pq, .ftdd-task, .ftdd-pi-card, .ftdd-sa-step, table")) p.classList.add("ftdd-hbar");
   });
 }
 // Day 1's card's scale for a slide box of this size: its natural height there against the box's
@@ -723,7 +726,7 @@ function fitSheets(){
     const pages = sheetPages(sheet);
     if(idx === 0){ DD.pages = pages.length; if(DD.page >= pages.length) DD.page = pages.length - 1; if(DD.page < 0) DD.page = 0; }
     const show = idx === 0 ? pages[DD.page] || pages[0] : pages[0];
-    if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; }));
+    if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; if(k.parentNode !== sheet) k.setAttribute("data-ftdd-paged", "1"); }));
     sheet.scrollTop = 0;
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
@@ -1996,6 +1999,14 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:not(.ftdd-pi-pair):not(.ftdd-p
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card p, main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card li{font-size:20px !important;font-weight:700 !important;line-height:1.5 !important;color:#1E2340;}
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !important;}
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair) > .ftdd-pi-card:first-child{display:flex;flex-direction:column;justify-content:center;}
+/* a chart drawn over its legend (Personal Injury Outcomes) is shown as the donut and its legend side by side, so the
+   donut is drawn big instead of shrunk to fit a tall picture; its card takes the wider share of the row */
+.ft-body .ftdd-pi-chart > figure.ftdd-pi-fig:has(.ftdd-pi-legend){flex-direction:row;gap:22px;}
+.ft-body .ftdd-pi-chart > figure.ftdd-pi-fig:has(.ftdd-pi-legend) img{width:auto;height:auto;max-width:none;min-width:0;object-fit:contain;max-height:100%;}
+.ft-body .ftdd-pi-chart > figure.ftdd-pi-fig:has(.ftdd-pi-legend) img:not(.ftdd-pi-legend){flex:1.5 1 0;}
+.ft-body .ftdd-pi-chart > figure.ftdd-pi-fig img.ftdd-pi-legend{flex:1 1 0;}
+main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);}
+@media(max-width:900px){ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr);} }
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
@@ -2004,34 +2015,61 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
-/* 🖥 Day 1's Installation of SA: every step the same, centered: its text big and bold, its screenshots bigger and centered
-   under it (a step's one or two screenshots sit side by side in the middle, not to the left) */
-main.main-ftdd .ftdd-sheet.ftdd-sa > p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa > ol li, main.main-ftdd .ftdd-sheet.ftdd-sa > ul li{font:600 20px/1.5 'Inter',sans-serif !important;color:#1E2340 !important;text-align:center;}
-main.main-ftdd .ftdd-sheet.ftdd-sa > p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
-main.main-ftdd .ftdd-sheet.ftdd-sa > h3{font-size:20px !important;text-align:center;}
-/* its screenshots as the curriculum shows them: three to a row, each numbered at its lower right, all of a set together */
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:14px 26px !important;margin:10px 0 18px !important;}
+/* 🖥 Day 1's Installation of SA, laid out as the curriculum's own pages: each step's instruction across the top, big and
+   bold, then its screenshots side by side in one row under it, each numbered under its middle (1, 2, 3 …) */
+main.main-ftdd .ftdd-sheet.ftdd-sa p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa li{font:700 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;text-align:left;margin:0 0 8px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.url-list{font-size:16px !important;font-weight:700 !important;word-break:break-all;text-decoration:underline;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step{margin:0 0 34px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit + .ftdd-sa-unit{margin-top:14px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step h3{display:inline-block;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:10px 18px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 14px !important;text-align:left;}
+/* step 1: the file's icon and its name, with the link at the right */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-file{display:flex;align-items:center;gap:22px;margin:6px 0 12px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-file > figure{margin:0 !important;flex:0 0 auto;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-file > figure a{display:block;border:0 !important;padding:0 !important;background:none !important;height:auto !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-file > figure:first-child img{height:110px !important;width:auto !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-file > figure:nth-child(2) img{height:46px !important;width:auto !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link{margin:0 0 0 auto !important;color:#E8590C !important;white-space:nowrap;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link a{color:#E8590C !important;text-decoration:underline;margin-left:10px;}
+/* a step's screenshots: one row, as many columns as it has screenshots, all the same height */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-strip{display:grid;gap:18px 22px !important;margin:10px 0 18px !important;align-items:start;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n1{grid-template-columns:minmax(0,1fr) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n2{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n3{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
-/* Sanders' and Ivan's Discord IDs side by side, each over its profile */
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts{display:grid;grid-template-columns:repeat(2,minmax(0,360px));justify-content:center;gap:24px;margin:8px 0 14px;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p{margin:0 0 8px !important;text-align:center;font:800 20px/1.3 'Inter',sans-serif !important;color:#1E2340 !important;background:none !important;padding:0 !important;border:0 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:26vh !important;min-height:170px;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:24vh !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{margin:8px 0 0 !important;text-align:center;font:800 28px/1 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
+/* text on one side, its picture on the other (step 3's file list and its note; the heads-up and the installed apps;
+   the help line and the Discord profiles) */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 34px;align-items:center;margin:0 0 14px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair .shots{margin:6px 0 0 !important;}
+/* (step 3's file list is a short, wide picture: drawn lower, so the step and its five screenshots share one page) */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:17vh !important;min-height:120px;}
+/* on a short screen the screenshots are drawn a little lower, so a step still fits its page */
+@media (max-height:800px){
+  main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:22vh !important;min-height:140px;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:19vh !important;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:14vh !important;min-height:100px;}
+}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:center !important;}
+/* the help line in a rounded navy-edged box at the left; the black banner and the two profiles at the right */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-help{grid-template-columns:minmax(0,0.8fr) minmax(0,1.35fr);}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-help{font:800 22px/1.4 'Poppins','Inter',sans-serif !important;border:10px solid #1E2340;border-radius:40px;padding:26px 30px !important;background:#fff;margin:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-banner{background:#000;color:#fff !important;border-radius:10px;padding:12px 30px !important;font:800 18px/1.4 'Poppins','Inter',sans-serif !important;margin:0 0 14px !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts{display:grid;grid-template-columns:repeat(2,minmax(0,280px));justify-content:center;gap:28px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots{grid-template-columns:minmax(0,1fr) !important;margin:0 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:19vh !important;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{position:absolute;right:-18px;bottom:0;margin:0 !important;font:600 17px/1 'Inter',sans-serif;color:#1E2340;}
-/* each step side by side: its instruction on the left, its own screenshots on the right */
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px 30px;align-items:center;margin:0 0 20px;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text p:not(.ftdd-hbar){font:600 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;text-align:left;margin:0 0 8px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text h3{font:800 20px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:10px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 12px !important;text-align:left;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts .shots a{height:30vh !important;border:0 !important;padding:0 !important;background:none !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p{margin:10px 0 0 !important;text-align:center !important;font:800 20px/1.3 'Inter',sans-serif !important;color:#1E2340 !important;background:none !important;padding:0 !important;border:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !important;}
+@media (max-width:760px){
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair, main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-strip{grid-template-columns:minmax(0,1fr) !important;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-file{flex-wrap:wrap;} main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link{margin:0 !important;white-space:normal;}
+}
 /* a Note's 💡 sits in its own space at the left of the bar, never over the word */
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-text p.url-list{font-size:15px !important;font-weight:500 !important;word-break:break-all;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots{margin:0 !important;justify-content:center;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child){grid-template-columns:minmax(0,1fr) !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .shots:has(> figure:only-child) a{height:26vh !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row > .ftdd-sa-contacts{margin:0;grid-template-columns:repeat(2,minmax(0,1fr));}
-@media (max-width:760px){main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-row{grid-template-columns:minmax(0,1fr);}}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
