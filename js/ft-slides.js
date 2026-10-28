@@ -495,3 +495,30 @@ main:has(> #lessonStage) > .ls-top > :not(.ft-side-presenter){display:none !impo
 @media(max-width:760px){ #lessonStage > .slide-nav{flex-wrap:wrap !important;} #lessonStage > .slide-nav > .nav-tools{width:100%;justify-content:center;} }`;
   document.head.appendChild(css);
 })();
+
+/* The bars, simpler: no "Step N of M" (the progress dots and the line under the title say where you are), nothing
+   under the Next up card's title (it says only what is next), and 🎧 Listen, its speed and ⛶ Full screen beside
+   ← Previous on the left, with Next up and Next → on the right. */
+(function(){
+  const css = document.createElement("style"); css.id = "ft-bars";
+  css.textContent = `
+#lessonStage > .slide-nav > .slide-counter, main.main-ftdd .ftdd-nav .ftdd-stepno{display:none !important;}
+.ftr-nextup .ftr-nextup-s{display:none !important;}
+#lessonStage > .slide-nav > *{order:3;}
+#lessonStage > .slide-nav > span:first-child{order:1;}
+#lessonStage > .slide-nav > .nav-tools{order:2;}
+#lessonStage > .slide-nav > .slide-dots-nav{margin:0 auto 0 6px !important;}
+/* the Next up card longer: as wide as its title needs, on one line where it fits */
+#lessonStage > .slide-nav > .ftr-nextup, main.main-ftdd .ftdd-nav > .ftr-nextup{flex:0 1 auto !important;width:auto !important;min-width:260px;max-width:min(560px, 44vw);}`;
+  document.head.appendChild(css);
+})();
+
+/* 🧰 Know Your Tools on the full-width deck: the screenshot (a fixed 16:10 frame) would grow with the width until the
+   tool no longer fits its sheet at any size, so the words get more of the width and the picture a height limit */
+(function(){
+  const css = document.createElement("style"); css.id = "ft-tools-fit";
+  css.textContent = `
+main.main-ftdd .ftdd-tool{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}
+main.main-ftdd .ftdd-tool-shot{max-height:46vh;}`;
+  document.head.appendChild(css);
+})();
