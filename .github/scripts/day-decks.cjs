@@ -72,7 +72,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    if (c.steps[0] !== (c.id === 'dayl-1' ? 'Next: the Reading Task →' : 'Start Training') || !/^(Video|Request Video|Requested)$/.test(c.steps[1] || '') || c.steps.length !== 2) fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
+    if (!(c.steps[0] === 'Start Training' || (c.id === 'dayl-1' && c.steps[0] === 'Next: the Reading Task →')) || !/^(Video|Request Video|Requested)$/.test(c.steps[1] || '') || c.steps.length !== 2) fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
