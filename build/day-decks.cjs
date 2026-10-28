@@ -104,7 +104,9 @@ const TRIM = {1: {reading: html => {
   const url = re => `<p class="url-list">${tag(new RegExp(`<a [^>]*${re}[^>]*>[^<]*<\\/a>`))}</p>\n`;
   const win = url("71237633"), mac = url("876020096");
   const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
-    return `  <figure><a href="/ft/day1/img/${f}" target="_blank"><img src="/ft/day1/img/${f}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
+    // (?v: the screenshots were redrawn 3× sharper, the address changes so browsers fetch them anew)
+    const u = `/ft/day1/img/${f}${/^sa-/.test(f) ? "?v=3x" : ""}`;
+    return `  <figure><a href="${u}" target="_blank"><img src="${u}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
   const sa = n => `sa-${String(n).padStart(2, "0")}.png`;
   // a row of a step's screenshots, numbered from `first` under each (no number: `first` null)
   const strip = (from, n, first = 1) => `<div class="shots ftdd-sa-strip ftdd-sa-n${n}">\n${Array.from({length: n}, (_, k) => img(sa(from + k), "Screenshot " + (first == null ? from + k : first + k), first == null ? null : first + k)).join("")}</div>\n`;
@@ -114,13 +116,17 @@ const TRIM = {1: {reading: html => {
   const unit = body => `<div class="ftdd-sa-unit">\n${body}</div>\n`;
   // text on one side, a picture (or pictures) on the other, in one block so a page never splits them
   const pair = (left, right, cls = "") => `<div class="ftdd-sa-pair${cls}">\n<div class="ftdd-sa-text">\n${left}</div>\n<div class="ftdd-sa-side">\n${right}</div>\n</div>\n`;
-  return step(unit(`<h3>How to install the Smart Advocate/SA plug-ins:</h3>\n<p>1. Install the SA Document Handler/Launcher. Unzip its folder first, then right-click on the zipped file and select "Extract Here." Proceed with the installation.</p>\n` +
-      `<div class="ftdd-sa-file">\n${img(sa(0), "SADocumentHandler_2023")}${img(sa(1), "SADocumentHandler_2023.rar")}${handler}</div>\n` + strip(2, 5))) +
+  // (step 1's instruction and its files on the left, its first screenshot, a tall one, drawn tall beside them)
+  return step(unit(`<h3>How to install the Smart Advocate/SA plug-ins:</h3>\n` + pair(`<p>1. Install the SA Document Handler/Launcher. Unzip its folder first, then right-click on the zipped file and select "Extract Here." Proceed with the installation.</p>\n` +
+      `<div class="ftdd-sa-file">\n${img(sa(0), "SADocumentHandler_2023")}${img(sa(1), "SADocumentHandler_2023.rar")}${handler}</div>\n`, strip(2, 1), " ftdd-sa-pair-first")),
+      // (its screenshots 2–5 follow two to a page, so every screenshot is drawn big)
+      unit(strip(3, 2, 2)), unit(strip(5, 2, 4))) +
     step(unit(`<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n${win}` + strip(7, 2, null)),
       unit(`<p>For Mac Users, access the link and download plugin on your desktop. Follow the steps indicated below the link on this page:</p>\n${mac}` + strip(9, 2, null))) +
     step(unit(pair(`<p>3. Once you have downloaded the Microsoft Word, Excel, and Outlook plugins, double-click the "Set Up" application to install.</p>\n` + strip(11, 1, null),
-        `<p class="ftdd-sa-note"><b>Note: This process may take a little longer to complete the download and installation.</b></p>\n`, " ftdd-sa-pair-wide") +
-      strip(12, 5, 3))) +
+        `<p class="ftdd-sa-note"><b>Note: This process may take a little longer to complete the download and installation.</b></p>\n`, " ftdd-sa-pair-wide")),
+      // (its screenshots 3–7: three, then two, to a page)
+      unit(strip(12, 3, 3)), unit(strip(15, 2, 6))) +
     step(unit(`<p>4. Lastly, double click the Registry to install.</p>\n` + strip(17, 3)),
       unit(pair(`<p><b>Just a heads-up, for the SA plug-ins, for now, there is no way for us to check whether they have successfully installed. We will only know if the installation was successful when we start using the firm’s CMS (SA) which is scheduled for around the 8th or 9th of your classroom training.</b></p>\n<p><b>As long as you have this in your list of installed apps then you're good for now.</b></p>\n`,
         `<div class="shots ftdd-sa-strip ftdd-sa-n1">\n${img("sa-20.png", "Installed apps: SADocumentHandler_2023 and WordSADocumentMergeAddIn")}</div>\n`))) +
@@ -220,7 +226,7 @@ for(let n = 1; n <= 16; n++){
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
     const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
     if(html.includes("<!--pi-reading-->")){
-      const parts = piParts(), of = i => `Reading Task: Personal Injury · Part ${i + 1} of ${parts.length}`, wrap = x => piRows(x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
+      const parts = piParts(), of = "Reading Task: Personal Injury", wrap = x => piRows(x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
         // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
         const figs = sec.match(/<figure>[\s\S]*?<\/figure>/g); if(!figs) return sec;
         const text = sec.replace(/<figure>[\s\S]*?<\/figure>\s*/g, "").trim();
@@ -231,8 +237,8 @@ for(let n = 1; n <= 16; n++){
         const beside = blocks.slice(0, k).join("\n"), after = blocks.slice(k).join("\n");
         return `<div class="ftdd-pi-row"><div class="ftdd-pi-card">\n${beside}\n</div><div class="ftdd-pi-card ftdd-pi-chart">${figs.map(f => f.replace("<figure>", '<figure class="ftdd-pi-fig">').replace(' loading="lazy"', "")).join("")}</div></div>\n${after ? after + "\n" : ""}`;
       }).join(""));   // and each group (PI_PAIRS): its cards side by side, in one row
-      slides.push({id: s.id, h: of(0), html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
-      parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of(i + 1), html: wrap(x)}));
+      slides.push({id: s.id, h: of, html: html.replace("<!--pi-reading-->", wrap(parts[0]))});
+      parts.slice(1).forEach((x, i) => slides.push({id: `${s.id}-${i + 2}`, h: of, html: wrap(x)}));
       continue;
     }
     // a slide that holds several topics (Day 8's Intake Process / Intake Documents) is one slide per topic, so each reads

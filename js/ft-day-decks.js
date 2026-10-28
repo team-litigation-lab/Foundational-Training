@@ -366,12 +366,11 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
     }
     out.push(slide);
   });
-  // a lesson that runs over several days flows straight on into its next day, with a divider between the days
-  const lid = lessonOfDay(Number(d.day)), days = lid != null ? (LESSON_CARDS[lid] || {days: []}).days : [];
+  // every day's deck ends with ✅ End of Module (back to 📚 Dashboard): it never runs on into the next day's deck, even
+  // where the lesson goes on tomorrow; the trainee opens that day from the Dashboard
   const deck = inCardOrder(Number(d.day), out);
-  if(days.includes(Number(d.day) + 1)) deck.push({id: "next-day", h: "End of today’s training", divider: true, html: ""});
-  // every other day closes as Day 1 does, on its own end slide (Finish → 📚 Dashboard); no slide names the day
-  else deck.push({id: "end-day", h: "End of today’s training", divider: true, end: true, html: ""});
+  // every day closes on its own end slide (✅ End of Module → 📚 Dashboard); no slide names the day
+  deck.push({id: "end-day", h: "End of today’s training", divider: true, end: true, html: ""});
   return deck;
 };
 /* 📋 The deck runs in the day's own order, the order of its card: each of the card's rows is a stop, in turn. A row that is
@@ -438,20 +437,12 @@ function launchSlide(s){
     ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
     <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="${c ? rowGo(c, r) : ""}">${label}</button></div>`;
 }
-// 🔀 the divider at the end of a day whose lesson continues tomorrow: today is done, and the next day's instructions
-// begin on the next slide (Next goes straight on into that day's deck)
-// what the next day holds, by name (a slide never says "Day N")
-const nextTitle = n => DAY_TITLES[Number(n) + 1] || (lessonOfDay(Number(n) + 1) != null ? lessonTitle(lessonOfDay(Number(n) + 1)) : dayInfo(Number(n) + 1).role) || "The next session";
-function dividerSlide(n, s){
-  if(s && s.end) return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of today’s training</p>
+// 🔀 the end of a day's deck: today's training is done, ✅ End of Module back to 📚 Dashboard (never on into the next day)
+function dividerSlide(){
+  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of today’s training</p>
     <h2 class="ftdd-dv-h">Today’s training is complete</h2>
     <p class="ftdd-dv-sub">Update your Training Progress Monitoring Sheet before the end of your shift.</p>
-    <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="goto('modules')">Finish → 📚 Dashboard</button></div>`;
-  const lid = lessonOfDay(n), c = LESSON_CARDS[lid] || {days: []}, k = c.days.indexOf(n + 1) + 1, info = dayInfo(n + 1);
-  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of today’s training</p>
-    <p class="ftdd-dv-k">Next</p><h2 class="ftdd-dv-h">${e(nextTitle(n))}</h2>
-    <p class="ftdd-dv-sub">${e(lessonTitle(lid))} · part ${k} of ${c.days.length}</p>
-    <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="FTDayDecks.pick(${n + 1})">Continue to the next session →</button></div>`;
+    <button type="button" class="btn ftdd-next ftdd-dv-go ft-endmod" onclick="goto('modules')" title="Back to the 📚 Dashboard">✅ End of Module</button></div>`;
 }
 function agendaHtml(d, info){
   const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda && !s.divider).map(([s, i], j) => {
@@ -595,8 +586,7 @@ function renderDeck(){
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
-          : DD.day < COUNT() && dayOpen(DD.day + 1) && !(list[n - 1] && list[n - 1].end) ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.pick(${DD.day + 1})">Next session →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')">📚 Dashboard</button>`)}
+          : `<button type="button" class="btn ftdd-next ft-endmod" onclick="goto('modules')" title="The end of today's deck: back to the 📚 Dashboard">✅ End of Module</button>`)}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -670,18 +660,18 @@ function sheetPages(sheet){
   // limitations sections) goes on top of the page after it, so the heading opens the page its sections are on
   // (on the reading too: a section's last paragraph stays with its section, the page scaled a little to hold it)
   const fold = ps => { const out = ps.reduce((out, p) => { const prev = out[out.length - 1];
-    if(prev && sumH(p) < capAll * (read ? 0.55 : 0.3) && sumH(prev) + sumH(p) <= capAll * (read ? 1.42 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
+    if(prev && sumH(p) < capAll * (read ? 0.55 : 0.3) && sumH(prev) + sumH(p) <= capAll * (read ? 1.12 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
     const introOnly = p => p.length <= 3 && /^H[1-6]$/.test(p[0].tagName) && sumH(p) < capAll * 0.5;
     if(out.length > 1 && introOnly(out[0]) && sumH(out[0]) + sumH(out[1]) <= capAll / (read ? 0.6 : FIT_MIN)) out.splice(0, 2, out[0].concat(out[1]));   // (fitSheets scales it to fit)
     // the reading: a short page that is only the end of a section (the text under a text-and-chart row) goes on top of
     // the next page, whose row is then drawn compact (only as tall as its text) to make room, so it never stands alone
-    // (scaled a little to fit, if it must, as far as a reading page is: 0.72)
+    // (scaled only a little to fit, 0.9 at most: the reading stays big, a page more rather than smaller text)
     if(read) for(let i = 0; i < out.length - 1; i++){
       const p = out[i], nx = out[i + 1], row = nx[0];
       // (a page that opens with a heading, a section's introduction, keeps its own page at full size)
       if(sumH(p) >= capAll * 0.5 || /^H[1-6]$/.test(p[0].tagName) || !row.classList.contains("ftdd-pi-row") || p.some(x => x.classList.contains("ftdd-pi-row"))) continue;
       row.classList.add("ftdd-pi-compact");
-      if(sumH(p) + sumH(nx) <= capAll / 0.72){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
+      if(sumH(p) + sumH(nx) <= capAll / 0.9){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
     }
     return out; };
   const pages = []; let page = [], used = 0;
@@ -744,6 +734,8 @@ function fitSheets(){
     if(idx === 0){ DD.pages = pages.length; if(DD.page >= pages.length) DD.page = pages.length - 1; if(DD.page < 0) DD.page = 0; }
     const show = idx === 0 ? pages[DD.page] || pages[0] : pages[0];
     if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; if(k.parentNode !== sheet) k.setAttribute("data-ftdd-paged", "1"); }));
+    // (a block dealt out by its own rows, all of them on other pages, is hidden too: its margins would push this page over)
+    if(pages.length > 1) [...sheet.children].forEach(k => { if(k.children.length && [...k.children].every(c => c.style.display === "none")) k.style.display = "none"; });
     sheet.scrollTop = 0;
     // the reading: a section's introduction sharing its page with a text-and-chart row is drawn big and bold at the top,
     // and the row's cards take only the height they need below it, so the page needn't shrink to fit (ftdd-pi-shared)
@@ -832,7 +824,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next ft-endmod" disabled title="The end of Know Your Tools">✅ End of Module</button>`}
+          : `<button type="button" class="btn ftdd-next ft-endmod" onclick="goto('modules')" title="Know Your Tools is done: back to the 📚 Dashboard">✅ End of Module</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -1070,8 +1062,8 @@ function deckPresenter(){
   const w = Math.min(Math.round(r.width * 1.8), Math.floor(room * 564 / 520), 420), h = Math.round(w * 520 / 564);
   p.style.setProperty("--pw", w + "px"); p.style.height = h + "px"; p.style.marginTop = Math.max(0, room - h) + "px";
 }
-// 👉 "Next up" over the deck's Next button: the next slide's title, the questions on the reading's last part, or the
-// next day / 📚 Dashboard on the last slide (the same card as the lessons', js/ft-slides.js)
+// 👉 "Next up" over the deck's Next button: the next slide's title or the questions on the reading's last part; none on
+// the last slide, its ✅ End of Module (the same card as the lessons', js/ft-slides.js)
 function deckNextUp(){
   document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
   const nav = document.querySelector("main.main-ftdd .ftdd-nav"), d = decks() && decks()[DD.day]; if(!nav || !d || DD.split || !root.FTNextUp) return;
@@ -1081,9 +1073,7 @@ function deckNextUp(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h)); return; }   // (no "Page N of M" under it)
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
   if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
-  // (a day that closes with its own End of Day slide, Day 1, ends there: no next day after it)
-  if(DD.day < COUNT() && dayOpen(DD.day + 1) && !(cur && cur.end)) FTNextUp(nav, btn, nextTitle(DD.day), "Activity Deck");
-  else FTNextUp(nav, btn, "📚 Dashboard", "Your lessons");
+  // (the last slide is ✅ End of Module: nothing comes next from it, so no Next up card)
 }
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
@@ -1098,7 +1088,6 @@ function toKC(l){
   if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
   // the way back is to the day's next activity: the slide after the reading it was opened from, else the slide after the
   // day's ✍️ Process Questions stop (that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
-  // end of a day whose lesson goes on, that's the divider into the next day
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
   const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
   let from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i;
@@ -1106,7 +1095,7 @@ function toKC(l){
   const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => k.parts.test(list[DD.i].id));
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
   const s = list[from + 1] || null;
-  const h = !s ? "" : s.end ? s.h : s.divider ? nextTitle(DD.day) : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+  const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // (and which answer sheet: the reading's, from the reading; the lesson's own, from its Process Questions stop)
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
@@ -1321,7 +1310,7 @@ async function saveExtras(){
 const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
 root.goToKnowledgeCheckWithInterstitial = async function(){
   const l = Number(state.dayId), day = discussionDay(l);
-  // the orientation has no Activity deck (and isn't a lesson to finish): its last slide is ✅ End of Module, not a link
+  // the orientation has no Activity deck (and isn't a lesson to finish): its last slide is ✅ End of Module, back to 📚 Dashboard
   // (index.html), so this only ever runs for it from an older page: on to 🧰 Know Your Tools
   if(root.FT_ORIENTATION && l === Number(root.FT_ORIENTATION.id)) return goto("knowtools");
   if(!day) return __lessonDone.apply(this, arguments);
@@ -2027,8 +2016,11 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 /* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h:not(:first-child){margin-top:30px;}
-main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:18px !important;line-height:1.55 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
+/* the reading is big and bold everywhere, not only in its cards: the text under a chart row and a page of text alone read the same */
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:20px !important;font-weight:700 !important;line-height:1.5 !important;color:#1E2340;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3, main.main-ftdd .ftdd-sheet.ftdd-read h2.ftdd-pi-h{font-size:20px !important;}
+/* and its pages start at the top of the sheet (the cards right under the slide's bar), not in the middle */
+main.main-ftdd .ftdd-sheet.ftdd-read:not(.ftdd-sheet-edit){justify-content:flex-start;}
 /* a line of space between one step (or section) and the next */
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
@@ -2097,29 +2089,32 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n2{grid-template-columns:repea
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n3{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:26vh !important;min-height:170px;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:24vh !important;}
-/* step 1's first screenshot (the group chat with the files to download) is the big one: on the left, as tall as the
-   two rows of shots 2–5 beside it */
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{grid-template-columns:minmax(0,1.9fr) repeat(2,minmax(0,1fr)) !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child{grid-row:span 2;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child a{height:calc(24vh + 48px) !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:not(:first-child) a{height:12vh !important;min-height:80px;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{gap:10px 22px !important;margin-bottom:0 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 figcaption{font-size:20px !important;margin-top:4px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{margin:8px 0 0 !important;text-align:center;font:800 28px/1 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
+/* the screenshots big enough to read: tall boxes with a thin frame, the picture filling its box */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:40vh !important;min-height:240px;padding:2px !important;border:2px solid #343C66 !important;border-radius:8px !important;box-shadow:0 3px 10px rgba(30,35,64,.12);}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:40vh !important;}
+/* step 1's first screenshot (the group chat with the files to download, a tall picture) stands beside its instruction
+   and files, drawn tall; its screenshots 2–5 follow on a page of their own, in one row */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first .ftdd-sa-file{flex-wrap:wrap;gap:12px 22px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first p.ftdd-sa-link{margin:0 !important;flex:1 0 100%;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first .shots a{height:40vh !important;min-height:240px;}
+/* a page of screenshots only (two or three of a step's): each drawn as tall as the page allows */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit > .shots:only-child a{height:44vh !important;min-height:240px;}
+/* each screenshot's number: a bold orange badge under its middle, easy to find and to call out ("look at 3") */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{display:flex;align-items:center;justify-content:center;width:46px;height:46px;margin:10px auto 0 !important;padding:0 !important;border-radius:50%;background:#E8590C;color:#fff !important;font:800 24px/1 'Poppins','Inter',sans-serif !important;box-shadow:0 2px 6px rgba(232,89,12,.35);}
 /* text on one side, its picture on the other (step 3's file list and its note; the heads-up and the installed apps;
    the help line and the Discord profiles) */
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 34px;align-items:center;margin:0 0 14px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair .shots{margin:6px 0 0 !important;}
 /* (step 3's file list is a short, wide picture: drawn lower, so the step and its five screenshots share one page) */
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:17vh !important;min-height:120px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:30vh !important;min-height:180px;}
 /* on a short screen the screenshots are drawn a little lower, so a step still fits its page */
 @media (max-height:800px){
-  main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:22vh !important;min-height:140px;}
-  main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:19vh !important;}
-  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:14vh !important;min-height:100px;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:36vh !important;min-height:200px;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:36vh !important;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit > .shots:only-child a{height:40vh !important;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:26vh !important;min-height:150px;}
 }
 main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:center !important;}
 /* the help line in a rounded navy-edged box at the left; the black banner and the two profiles at the right */
