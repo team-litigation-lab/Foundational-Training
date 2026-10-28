@@ -101,7 +101,7 @@ function renderAdminSOPs(){
                                             an active trainee's graded calls are never swept
      sign-in attempt counts               → the lab attempt counts on a trainee with no ping in 30 days
      online status not seen for 30 days   → nothing to clear: this program stores no presence field
-   Kept: trainees, their progress, every grade and review, attendance, firms and case assignments,
+   Kept: trainees, their progress, every grade and review, attendance, the firm profiles,
    and the settings. Nothing is deleted until you press Clear, and the scan says exactly what would go.
    ============================================================ */
 const DB = {scan:null, scanning:false, clearing:false, done:"", err:""};
@@ -198,7 +198,7 @@ function renderAdminDbMaint(){
   return `
     <div class="ops-hero">
       <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>🗄 Database Maintenance</h1>
-      <p>The same rules as the Main Portal’s own sweep, read onto this program’s data: <b>pings</b> over 7 days old (the day’s attendance record keeps the times), <b>live-view copies</b> (the published blueprint PDF, which rebuilds itself on the next admin visit), <b>stopped alerts</b> — random tasks that ended over 30 days ago, <b>live-call records</b> left behind by a trainee who was deleted, and the <b>attempt counts</b> on a trainee with no ping in 30 days. This program stores no presence field, so there is no online status to clear. <b>Kept:</b> trainees, their progress, every grade and review — an active trainee’s graded calls are never swept — attendance, the firms and case assignments, and the settings. The scan below says exactly what would go; nothing is deleted until you press Clear.</p>
+      <p>The same rules as the Main Portal’s own sweep, read onto this program’s data: <b>pings</b> over 7 days old (the day’s attendance record keeps the times), <b>live-view copies</b> (the published blueprint PDF, which rebuilds itself on the next admin visit), <b>stopped alerts</b> — random tasks that ended over 30 days ago, <b>live-call records</b> left behind by a trainee who was deleted, and the <b>attempt counts</b> on a trainee with no ping in 30 days. This program stores no presence field, so there is no online status to clear. <b>Kept:</b> trainees, their progress, every grade and review — an active trainee’s graded calls are never swept — attendance, the firm profiles, and the settings. The scan below says exactly what would go; nothing is deleted until you press Clear.</p>
       <div class="ops-row">
         <button class="btn btn-navy btn-sm" onclick="FTOps.dbScan()" ${DB.scanning ? "disabled" : ""}>${DB.scanning ? "Scanning…" : "🔍 Scan the database"}</button>
         ${n ? `<button class="btn btn-ghost btn-sm ops-danger" onclick="FTOps.dbClear()" ${DB.clearing ? "disabled" : ""}>${DB.clearing ? "Clearing…" : `🗑 Clear ${n} item${n === 1 ? "" : "s"}`}</button>` : ""}

@@ -123,13 +123,14 @@ const failures = []; const fail = (m) => failures.push(m);
     await page.evaluate((f) => FTSessions.acknowledge(f), firmId); await page.waitForTimeout(800);
     if (!((await get('sessions:' + id)) || {}).ack) fail('✓ I\'ve read my firm\'s rules wasn\'t saved');
 
-    // 3. every session can be started: a session is gated by its lesson, not by a trainer's say-so. The cases
-    //    themselves ARE the trainer's to hand out (Admin → 🗂 Case Assignment), so 🗂 My cases may well say a
-    //    trainee has none yet — that is the design, and .github/scripts/assign.cjs covers it.
+    // 3. every session can be started: a session is gated by its lesson, not by a trainer's say-so, and works on
+    //    the firm's own caseload — there is no Case Assignment and no 🗂 My cases panel any more.
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const labTxt = await page.evaluate(() => document.querySelector('main').innerText);
     if (/Waiting for your firm/i.test(labTxt)) fail(`the Practice Lab still waits on a firm: ${labTxt.slice(0, 300)}`);
-    if (!/My cases/.test(labTxt)) fail('the Practice Lab doesn\'t show the cases the trainer assigned');
+    if (/My cases|Waiting for your case/.test(labTxt)) fail('the Practice Lab still shows the removed case assignment');
+    if (!(await page.evaluate(() => FTFirms.myCases().length))) fail('the trainee has no cases from their firm\'s caseload');
+    if (await page.evaluate(() => typeof window.FTFirmAssign !== 'undefined' || typeof window.ftCasesSection !== 'undefined')) fail('the Case Assignment code is still loaded');
     if (/Cases aren’t handed out/.test(labTxt)) fail('the Practice Lab still says cases are not handed out at all');
     const shut = await page.evaluate(() => ['reception', 'calendaring', 'intake', 'records'].filter(s => !FTSessions.openable(s)));
     if (shut.length) fail(`sessions that can't be opened: ${shut.join(', ')}`);
@@ -301,5 +302,5 @@ const failures = []; const fail = (m) => failures.push(m);
 
     await browser.close();
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Practice Sessions test passed (firm profiles, the trainer assigning the firm and cases in 🗂 Case Assignment, My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity opening the Portal\'s shared tool, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
+    console.log('Practice Sessions test passed (firm profiles, no Case Assignment (every trainee on the first firm\'s caseload), My Firm, the four sessions checked against the Training Guide and the firm (no PI Process Flow, no case needed), the Drafting Tools\' LOR Drafting Activity opening the Portal\'s shared tool, the trainer\'s review and inputs, the Knowledge Check\'s trainer score, the Scorecard, Trainee view reaching all of it, and Process Questions locked per module until each is finished).');
 })().catch(e => { console.error(e); process.exit(1); });

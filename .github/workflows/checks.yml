@@ -105,10 +105,6 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/drills.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Case Assignment (nothing handed out on its own; the trainer assigns the firm and the cases, the trainee only reads them)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/assign.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Slide editor (a trainer rewrites a day slide with the toolbar and saves it for the batch; a trainee has no editor; what is typed is cleaned)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
