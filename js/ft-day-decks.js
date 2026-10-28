@@ -651,18 +651,18 @@ function sheetPages(sheet){
   // limitations sections) goes on top of the page after it, so the heading opens the page its sections are on
   // (on the reading too: a section's last paragraph stays with its section, the page scaled a little to hold it)
   const fold = ps => { const out = ps.reduce((out, p) => { const prev = out[out.length - 1];
-    if(prev && sumH(p) < capAll * (read ? 0.55 : 0.3) && sumH(prev) + sumH(p) <= capAll * (read ? 1.42 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
+    if(prev && sumH(p) < capAll * (read ? 0.55 : 0.3) && sumH(prev) + sumH(p) <= capAll * (read ? 1.12 : 1.35)) out[out.length - 1] = prev.concat(p); else out.push(p); return out; }, []);
     const introOnly = p => p.length <= 3 && /^H[1-6]$/.test(p[0].tagName) && sumH(p) < capAll * 0.5;
     if(out.length > 1 && introOnly(out[0]) && sumH(out[0]) + sumH(out[1]) <= capAll / (read ? 0.6 : FIT_MIN)) out.splice(0, 2, out[0].concat(out[1]));   // (fitSheets scales it to fit)
     // the reading: a short page that is only the end of a section (the text under a text-and-chart row) goes on top of
     // the next page, whose row is then drawn compact (only as tall as its text) to make room, so it never stands alone
-    // (scaled a little to fit, if it must, as far as a reading page is: 0.72)
+    // (scaled only a little to fit, 0.9 at most: the reading stays big, a page more rather than smaller text)
     if(read) for(let i = 0; i < out.length - 1; i++){
       const p = out[i], nx = out[i + 1], row = nx[0];
       // (a page that opens with a heading, a section's introduction, keeps its own page at full size)
       if(sumH(p) >= capAll * 0.5 || /^H[1-6]$/.test(p[0].tagName) || !row.classList.contains("ftdd-pi-row") || p.some(x => x.classList.contains("ftdd-pi-row"))) continue;
       row.classList.add("ftdd-pi-compact");
-      if(sumH(p) + sumH(nx) <= capAll / 0.72){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
+      if(sumH(p) + sumH(nx) <= capAll / 0.9){ out.splice(i, 2, p.concat(nx)); } else row.classList.remove("ftdd-pi-compact");
     }
     return out; };
   const pages = []; let page = [], used = 0;
@@ -1989,8 +1989,11 @@ main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !imp
 /* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h:not(:first-child){margin-top:30px;}
-main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:18px !important;line-height:1.55 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-read h3{font-size:18px !important;}
+/* the reading is big and bold everywhere, not only in its cards: the text under a chart row and a page of text alone read the same */
+main.main-ftdd .ftdd-sheet.ftdd-read p, main.main-ftdd .ftdd-sheet.ftdd-read li{font-size:20px !important;font-weight:700 !important;line-height:1.5 !important;color:#1E2340;}
+main.main-ftdd .ftdd-sheet.ftdd-read h3, main.main-ftdd .ftdd-sheet.ftdd-read h2.ftdd-pi-h{font-size:20px !important;}
+/* and its pages start at the top of the sheet (the cards right under the slide's bar), not in the middle */
+main.main-ftdd .ftdd-sheet.ftdd-read:not(.ftdd-sheet-edit){justify-content:flex-start;}
 /* a line of space between one step (or section) and the next */
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5):not(:first-child){margin-top:30px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
