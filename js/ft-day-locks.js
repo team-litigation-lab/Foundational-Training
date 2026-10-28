@@ -105,15 +105,25 @@ function unlockedFor(n, batch){ return Math.max(manual(n, batch), bySchedule(n, 
 const at = n => unlockedFor(n, state.traineeBatch);
 // a trainee is held on a day of Days 2–16 until they have been through it (and once the trainer's settings have loaded:
 // nothing is decided before, as on Day 1)
+/* 🗂 Batches already under way keep their days open: the first time an admin opens the platform with the locks, the lessons
+   open at that moment are kept (settings:daysteps.legacy = {all: [lesson ids], batches: {"<batch key>": [lesson ids]}}),
+   and the days of those lessons are never held for that batch. Only a lesson opened after that is locked step by step.
+   Until the record is written nothing is held, so the locks never land on a trainee before it is. */
+const enforced = () => !!(state.ftDaySteps && state.ftDaySteps.legacy);
+function legacyOpen(n, batch){
+  const g = (state.ftDaySteps || {}).legacy || {}, l = lessonOf(n); if(l == null) return false;
+  return [].concat(g.all || [], (g.batches || {})[key(batch)] || []).map(Number).includes(l);
+}
 function active(n){
   n = Number(n);
-  if(!isTrainee() || !state.ftOpenDays || !state.ftDaySteps || n < FIRST || n > LAST()) return false;
+  if(!isTrainee() || !state.ftOpenDays || !enforced() || n < FIRST || n > LAST()) return false;
+  if(legacyOpen(n, state.traineeBatch)) return false;
   return !doneDays().includes(n);
 }
 // is day n open to this trainee at all (its lesson opened, and its first step unlocked)?
 function dayStarted(n){
   n = Number(n);
-  if(!isTrainee()) return true;
+  if(!isTrainee() || !enforced()) return true;
   const l = lessonOf(n); if(l != null && !lessonOpen(l)) return false;
   return !active(n) || at(n) >= 1;
 }
@@ -297,6 +307,15 @@ function dayPanel(n){
     </div>
     <ol class="ftdl-steps">${rows}</ol></details>`;
 }
+function legacyNote(sel){
+  const g = S().legacy; if(!g) return "";
+  const ls = sel === "__all" ? (g.all || []) : [].concat(g.all || [], (g.batches || {})[sel] || []);
+  const names = [...new Set(ls.map(Number))].filter(l => l >= 2 && l <= 8).sort((a, b) => a - b).map(l => typeof ftName === "function" ? ftName(l) : "Lesson " + l);
+  const any = (g.all || []).length || Object.values(g.batches || {}).some(x => (x || []).length);
+  if(!any) return "";
+  return `<p class="ftdl-legacy">🗂 Already under way when the locks began${g.at ? ` (${esc_(new Date(g.at).toLocaleDateString())})` : ""}: ${names.length ? `the days of <b>${names.map(esc_).join(", ")}</b> stay open for ${sel === "__all" ? "every batch" : "this batch"}` : "nothing for this choice"}. Lessons opened since are locked step by step.
+    ${names.length ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayLocks.lockLegacy()">🔒 Lock these too</button>` : ""}</p>`;
+}
 function renderPanel(){
   if(!decksIn()){ loadDecks().then(() => { if(state.adminTab === "opendays") render(); }); return `<div class="card ft-open-days ftdl-admin"><h3>🔓 Activity Locks</h3><p>Loading the days…</p></div>`; }
   const sel = selKey(), times = Object.assign({}, DEF_TIMES, S().times || {});
@@ -308,15 +327,33 @@ function renderPanel(){
       <span style="display:block;margin-top:4px;font-size:12.5px;color:var(--ink-soft);">Day 1’s steps are in 🔓 Day 1 Steps above; ⏰ Day 1 can run on a schedule here too.</span>
       <span class="ftdl-sched">⏰ Day 1 runs on <input type="date" id="ftdlDate1" value="${esc_((c => c.sc && c.sc.am ? new Date(Date.parse(c.sc.am)).toLocaleDateString("en-CA") : "")(countFor(1)))}">
         <button type="button" class="btn btn-ghost btn-sm" onclick="FTDayLocks.schedule(1)">Schedule</button>${countFor(1).sc ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayLocks.schedule(1, true)">Clear</button>` : ""}</span></p>
+    ${legacyNote(sel)}
     ${days.map(dayPanel).join("")}</div>`;
 }
 const __panel = root.renderFtDay1Steps;
 root.renderFtDay1Steps = function(){ return (__panel ? __panel.apply(this, arguments) : "") + renderPanel(); };
+// the lessons open right now, for every batch: what the batches already under way keep open
+const legacyNow = () => { const o = state.ftOpenDays || {}; return {all: (o.all || []).map(Number), batches: JSON.parse(JSON.stringify(o.batches || {})), at: new Date().toISOString()}; };
+// the first admin to load the open lessons with the locks in place writes that record, once
+let legacyWriting = false;
+const __loadOpen = root.ftLoadOpenDays;
+if(typeof __loadOpen === "function") root.ftLoadOpenDays = async function(){
+  const r = await __loadOpen.apply(this, arguments);
+  if(state.isAdmin && !state.adminPreview && state.ftOpenDays && state.ftDaySteps && !state.ftDaySteps.legacy && !legacyWriting){
+    legacyWriting = true;
+    try{
+      const cur = (await sharedGet(KEY)) || {};
+      if(!cur.legacy){ const next = Object.assign({}, cur, {legacy: legacyNow()}); if(await sharedSet(KEY, next) !== false) state.ftDaySteps = Object.assign({}, state.ftDaySteps, {legacy: next.legacy}); }
+      else state.ftDaySteps = Object.assign({}, state.ftDaySteps, {legacy: cur.legacy});
+    }catch(err){} finally{ legacyWriting = false; }
+  }
+  return r;
+};
 async function save(change, msg){
   const cur = (await sharedGet(KEY)) || {};
   const next = {all: Object.assign({}, cur.all || {}), batches: JSON.parse(JSON.stringify(cur.batches || {})),
     sched: {all: Object.assign({}, (cur.sched || {}).all || {}), batches: JSON.parse(JSON.stringify((cur.sched || {}).batches || {}))},
-    times: Object.assign({}, DEF_TIMES, cur.times || {})};
+    times: Object.assign({}, DEF_TIMES, cur.times || {}), legacy: cur.legacy || legacyNow()};
   change(next);
   const ok = await sharedSet(KEY, next);
   if(ok === false){ toast("Couldn’t save. Check your connection and try again."); return; }
@@ -328,6 +365,12 @@ root.FTDayLocks = {
   labOpen: days => !isTrainee() || !days || !days.length || days.some(d => Number(d) === 1 || dayStarted(d)),
   current(n){ openCurrent(Number(n)); },
   toggle(n, o){ A.open[n] = !!o; },
+  // the trainer applies the locks to the days a batch already had open (all batches: every one's)
+  lockLegacy(){
+    const sel = selKey();
+    if(!confirm(sel === "__all" ? "Lock the days every batch already had open? Their trainees will need you to unlock each step." : "Lock the days this batch already had open? Its trainees will need you to unlock each step.")) return;
+    return save(o => { if(sel === "__all") o.legacy = {all: [], batches: {}, at: o.legacy.at}; else { o.legacy = JSON.parse(JSON.stringify(o.legacy)); o.legacy.batches[sel] = []; if((o.legacy.all || []).length){ toast("Those were opened for all batches: choose All batches to lock them."); } } }, "✓ The locks now apply to those days too.");
+  },
   // the trainer: unlock day n up to step k (0 locks the day) for the batch chosen in Open Lessons
   set(n, k){
     const sel = selKey(), st = steps(n).length, v = Math.max(0, Math.min(ALL, Number(k) || 0));
@@ -378,6 +421,7 @@ const st = document.createElement("style"); st.id = "ft-day-locks"; st.textConte
 .ftdl-steps{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:6px;}
 .ftdl-steps li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;}
 .ftdl-steps li.on{background:#EAF6EE;border-color:#B9E0C6;} .ftdl-steps li i{font-size:12.5px;color:var(--ink-soft);}
+.ftdl-legacy{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#FFF7EA;border:1px solid #F0D9B5;font-size:13.5px;}
 .ftdl-steps li.ftdl-slot{background:#F4F5FA;border-style:dashed;font-weight:700;}
 `;
 document.head.appendChild(st);

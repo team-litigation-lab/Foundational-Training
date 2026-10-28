@@ -24,7 +24,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.goto(BASE); await signIn(page, 'Lock', 'Step', 'B102826'); await page.waitForTimeout(1200);
     openWas = await get(page, 'settings:opendays'); stepsWas = await get(page, 'settings:daysteps');
     await put(page, 'settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} });
-    await put(page, 'settings:daysteps', { all: {}, batches: {} });
+    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: {} } });
     await page.evaluate(() => FTDayDecks.load());
     // ✍️ ten process questions at most on every answer sheet
     const kc = await page.evaluate(() => [1, 2, 3, 4, 6, 7, 8].map(l => { const q = ftKcQuestions(l), by = {}; q.forEach(x => { by[x.set.id] = (by[x.set.id] || 0) + 1; }); return [l, by]; }));
@@ -50,7 +50,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.innerText).join(' | '));
     if (/Intake Mock Calls|MedLOR/.test(lab)) fail(`the Practice Lab shows sessions of days not opened yet: ${lab}`);
     // Day 7 open to its second step, for this batch
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 2 } } });
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 2 } }, legacy: { all: [], batches: {} } });
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
     const s7 = await page.evaluate(() => [...document.querySelectorAll('#dayl-6 .ftseg-b')].map(x => x.classList.contains('locked')));
     if (s7.join() !== 'false,true,true') fail(`with Day 7 opened, Intake's segments read ${JSON.stringify(s7)}`);
@@ -64,10 +64,22 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     if (!(await page.evaluate(() => FTDayLocks.held(6, /ftVideoOrAsk/)))) fail('Intake\'s Handouts / Video opened before its step');
     // ⏰ Day 8 on a schedule: the AM session has started, the PM breakout hasn't
     const past = new Date(Date.now() - 3600e3).toISOString(), later = new Date(Date.now() + 3600e3).toISOString(), last = new Date(Date.now() + 7200e3).toISOString();
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 999 } }, sched: { all: {}, batches: { b102826: { 8: { am: past, pm: later, out: last } } } } });
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 999 } }, sched: { all: {}, batches: { b102826: { 8: { am: past, pm: later, out: last } } } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => { const st = FTDayLocks.steps(8), am = st.filter(s => s.slot === 'am').length, pm = st.find(s => s.slot === 'pm');
       return { at: FTDayLocks.at(8), am, pmOpen: pm ? FTDayLocks.stepOpen(8, pm.n) : null, pmN: pm && pm.n }; });
     if (v.at !== v.am || v.pmOpen !== false) fail(`Day 8's schedule didn't open just its AM session: ${JSON.stringify(v)}`);
+    // 🗂 batches already under way keep their days: before the record of them is written, nothing is held …
+    await put(page, 'settings:daysteps', { all: {}, batches: {} });
+    if (await page.evaluate(() => FTDayLocks.active(8) || !FTDayLocks.dayStarted(8))) fail('a day was held before the batches under way were recorded');
+    // … and a lesson the batch had open then keeps its days open; one opened since is locked
+    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: { b102826: [6] } } });
+    v = await page.evaluate(() => ({ d8: FTDayLocks.active(8), d8open: FTDayLocks.dayStarted(8), d10: FTDayLocks.dayStarted(10) }));
+    if (v.d8 || !v.d8open || v.d10) fail(`the batch under way didn't keep Intake's days open, or a new lesson's day wasn't locked: ${JSON.stringify(v)}`);
+    // the first admin to load the open lessons records the batches under way, once
+    await put(page, 'settings:daysteps', { all: {}, batches: {} });
+    await page.evaluate(async () => { state.isAdmin = true; await ftLoadOpenDays(); state.isAdmin = false; });
+    const rec = await get(page, 'settings:daysteps');
+    if (!rec || !rec.legacy || !(rec.legacy.all || []).includes(6)) fail(`the admin's visit didn't record the lessons open then: ${JSON.stringify(rec && rec.legacy)}`);
     // the admin's 🔓 Activity Locks
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'opendays'; goto('admin'); }); await page.waitForTimeout(1500);
     const n = await page.evaluate(() => document.querySelectorAll('.ftdl-admin .ftdl-day').length);

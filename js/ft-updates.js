@@ -521,7 +521,7 @@ async function ftLoadOpenDays(){
   // (and Day 1's steps, js/ft-day1-flow.js: settings:day1steps, and every other day's, js/ft-day-locks.js: settings:daysteps,
   // in the same request)
   const [v, vv, d1, ds, vr, va] = await sharedGetMany(["settings:opendays", "settings:openvideos", "settings:day1steps", "settings:daysteps"].concat(me ? ["videoreq:" + me, "videoaccess:" + me] : []));
-  const dsnext = (ds && typeof ds === "object") ? {all: ds.all || {}, batches: ds.batches || {}, sched: ds.sched || {all: {}, batches: {}}, times: ds.times || {}} : {all: {}, batches: {}, sched: {all: {}, batches: {}}, times: {}};
+  const dsnext = (ds && typeof ds === "object") ? {all: ds.all || {}, batches: ds.batches || {}, sched: ds.sched || {all: {}, batches: {}}, times: ds.times || {}, legacy: ds.legacy || null} : {all: {}, batches: {}, sched: {all: {}, batches: {}}, times: {}};
   const dschanged = JSON.stringify(dsnext) !== JSON.stringify(state.ftDaySteps); state.ftDaySteps = dsnext;
   const d1next = (d1 && typeof d1 === "object") ? {all: Number(d1.all) || 0, batches: d1.batches || {}} : {all: 0, batches: {}};
   const d1changed = JSON.stringify(d1next) !== JSON.stringify(state.ftDay1Steps); state.ftDay1Steps = d1next;
