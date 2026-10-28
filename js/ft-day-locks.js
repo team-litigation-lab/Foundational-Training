@@ -56,21 +56,26 @@ function slotOf(s, prev){
 }
 // does slide s continue the step before it (a topic's other parts, the Call Listening log after its slide, the divider)?
 const continues = (s, lead) => !!lead && (s.divider || s.id.startsWith(lead.id + "-") || (s.id === "listen" && /call listening/i.test(lead.h || "")));
+// (the steps are rebuilt from the deck at most every two seconds per day: a render asks for them many times over)
 const memo = {};
+const extrasOf = n => { try{ return (((FTDayDecks.extras && FTDayDecks.extras()) || {}).days || {})[n] || []; }catch(err){ return []; } };
 function steps(n){
   n = Number(n);
+  const mk = [decksIn() ? 1 : 0, !!state.isAdmin && !state.adminPreview ? 1 : 0, extrasOf(n).length, Math.floor(Date.now() / 2000)].join("|");
+  if(memo[n] && memo[n].mk === mk) return memo[n].steps;
   const list = root.FTDayDecks && FTDayDecks.list ? FTDayDecks.list(n) : [];
-  const sig = list.map(s => s.id).join("|");
-  if(memo[n] && memo[n].sig === sig) return memo[n].steps;
   const out = []; let lead = null, slot = "am";
   list.forEach((s, i) => {
     if(s.agenda){ out.push({n: out.length + 1, label: "Activity card: today’s activities", slot: "am", from: i, to: i, ids: [s.id]}); return; }
-    if(out.length && continues(s, lead)){ const st = out[out.length - 1]; st.to = i; st.ids.push(s.id); return; }
+    // 📌 From your trainer counts as a step only once the trainer has added something (a trainer always sees the slide, to add
+    // to it; a trainee doesn't), so the trainer's panel and the trainee number the steps alike
+    const emptyX = s.trainer && !extrasOf(n).length;
+    if(out.length && (emptyX || continues(s, lead))){ const st = out[out.length - 1]; st.to = i; st.ids.push(s.id); return; }
     slot = slotOf(s, slot); lead = s;
     out.push({n: out.length + 1, label: clean(s.launch ? s.launch.t : s.h) || "Activity", slot, from: i, to: i, ids: [s.id],
       go: s.launch ? (s.launch.go || s.launch.run || "") : ""});
   });
-  memo[n] = {sig, steps: out};
+  memo[n] = {mk, steps: out};
   return out;
 }
 const stepAt = (n, i) => { const st = steps(n); const x = st.find(s => i >= s.from && i <= s.to); return x ? x.n : (st.length ? st[st.length - 1].n : 1); };
@@ -79,13 +84,16 @@ const stepWith = (n, test) => { const x = steps(n).find(test); return x ? x.n : 
 
 /* ---------- what the trainer has unlocked ---------- */
 const S = () => state.ftDaySteps || {all: {}, batches: {}, sched: {all: {}, batches: {}}, times: {}};
+// a batch's own setting, once the trainer has made one, stands in for the all-batches one: so a batch can be locked below
+// the rest, or taken off a schedule they share (null: "none for this batch")
+const own = (o, k, n) => Object.prototype.hasOwnProperty.call(o || {}, k) && Object.prototype.hasOwnProperty.call(o[k] || {}, n);
 function manual(n, batch){
-  const o = S(), b = (o.batches || {})[key(batch)] || {};
-  return Math.max(Number((o.all || {})[n]) || 0, Number(b[n]) || 0);
+  const o = S(), k = key(batch);
+  return Number(own(o.batches, k, n) ? o.batches[k][n] : (o.all || {})[n]) || 0;
 }
 function schedFor(n, batch){
-  const s = S().sched || {}, b = ((s.batches || {})[key(batch)] || {})[n];
-  return b || (s.all || {})[n] || null;
+  const s = S().sched || {}, k = key(batch);
+  return (own(s.batches, k, n) ? s.batches[k][n] : (s.all || {})[n]) || null;
 }
 // the latest time block that has started, by the trainer's schedule (0: none yet)
 function rankNow(sc){
@@ -110,9 +118,15 @@ const at = n => unlockedFor(n, state.traineeBatch);
    and the days of those lessons are never held for that batch. Only a lesson opened after that is locked step by step.
    Until the record is written nothing is held, so the locks never land on a trainee before it is. */
 const enforced = () => !!(state.ftDaySteps && state.ftDaySteps.legacy);
+// the day a batch started, from its code (B + MMDDYY: B102826 → 2026-10-28), else null
+function batchStart(batch){ const m = /^b(\d{2})(\d{2})(\d{2})$/.exec(key(batch)); return m ? Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00`) : null; }
 function legacyOpen(n, batch){
-  const g = (state.ftDaySteps || {}).legacy || {}, l = lessonOf(n); if(l == null) return false;
-  return [].concat(g.all || [], (g.batches || {})[key(batch)] || []).map(Number).includes(l);
+  const g = (state.ftDaySteps || {}).legacy || {}, l = lessonOf(n), k = key(batch); if(l == null) return false;
+  if((g.except || []).includes(k)) return false;   // the trainer applied the locks to this batch too
+  if(((g.batches || {})[k] || []).map(Number).includes(l)) return true;
+  // a lesson opened for all batches then is kept for the batches already under way, not for one that starts later
+  const since = Date.parse(g.at || ""), start = batchStart(batch);
+  return (g.all || []).map(Number).includes(l) && !(isFinite(since) && start != null && start > since);
 }
 function active(n){
   n = Number(n);
@@ -147,11 +161,17 @@ function mayGo(n, i, from){
   return true;
 }
 if(root.FTDay1) FTDay1.mayGo = mayGo; else root.FTDay1 = {mayGo};
+// where the trainee left off on a day (this browser), so a segment or "Go to" opens there, not on the last unlocked step
+const posKey = n => `ftdlPos:${state.traineeId || "-"}:${n}`;
+const posOf = n => { try{ const v = localStorage.getItem(posKey(n)); return v == null ? null : Number(v); }catch(err){ return null; } };
+function keepPos(n, i){ try{ if((posOf(n) == null || i > posOf(n))) localStorage.setItem(posKey(n), String(i)); }catch(err){} }
 function openCurrent(n){
   const x = current(n); if(!x){ goto("modules"); return; }
-  FTDayDecks.open(n, x.from);
+  const p = posOf(n), i = p != null && stepAt(n, p) <= at(n) ? p : p != null ? x.from : 0;
+  FTDayDecks.open(n, i);
 }
 
+const NOLOAD = "The training couldn’t load. Check your connection and try again.";
 /* ---------- 📚 Dashboard: one segment per day the lesson runs ---------- */
 function segState(d){
   if(!isTrainee()) return "open";
@@ -176,9 +196,9 @@ function launch(d){
     const l = lessonOf(d);
     if(l != null && !lessonOpen(l)){ toast("🔒 This lesson opens when your trainer opens it for your batch."); return; }
     // (Lesson 1 starts on the Reading Task until it is finished, as its ▶ Start Training did)
-    if(d === 1){ if(root.FTDay1 && FTDay1.active && FTDay1.active()){ FTDay1.goCurrent(); return; } if(!(state.progress && (state.progress[1] || {}).done)){ FTDayDecks.slide(1, 'reading'); return; } FTDayDecks.open(1, 0); return; }
+    if(d === 1){ if(root.FTDay1 && FTDay1.active && FTDay1.active()){ FTDay1.goCurrent(); return; } if(FTDayDecks.readFirst && FTDayDecks.readFirst(1)){ FTDayDecks.slide(1, "reading"); return; } FTDayDecks.open(1, 0); return; }
     if(!dayStarted(d)){ toast("🔒 This part of the training opens when your trainer unlocks it."); return; }
-    if(active(d)){ if(!decksIn()){ loadDecks().then(() => launch(d)); return; } openCurrent(d); return; }
+    if(active(d)){ if(!decksIn()){ loadDecks().then(x => x ? launch(d) : toast(NOLOAD)); return; } openCurrent(d); return; }
   }
   FTDayDecks.open(d, 0);
 }
@@ -197,48 +217,63 @@ if(typeof __grid === "function") root.LSH_HOME_GRID_LAYOUT = function(ctx){
 };
 
 /* ---------- the lesson deck, its video, its Knowledge Check and the tools wait for their step ---------- */
-const firstDay = l => { const d = root.FTDayDecks && FTDayDecks.discussionDay ? FTDayDecks.discussionDay(l) : null; return d == null ? null : Number(d); };
-// the day and step a lesson's stop is on (its discussion day: 💬 the lesson, 🎬 its video, ✍️ its Process Questions)
-function lessonStop(l, re){
-  for(let n = FIRST; n <= LAST(); n++){
-    if(lessonOf(n) !== Number(l) && firstDay(l) !== n) continue;
-    const k = stepWith(n, s => re.test(s.go || ""));
-    if(k) return {n, k};
-  }
+// a lesson's own stops: 💬 its deck (a "lesson" launch on a day of its own card), 🎬 its video and ✍️ its Process Questions
+// (each launch names its lesson). Day 3 discusses Lessons 3 and 4, so the day alone doesn't say whose stop it is.
+const STOPS = {
+  lesson: (s, n, l) => s.go === "lesson" && lessonOf(n) === l,
+  video: (s, n, l) => new RegExp(`ftVideoOrAsk\\(${l}\\)`).test(s.go || ""),
+  kc: (s, n, l) => new RegExp(`toKC\\(${l}\\)`).test(s.go || "")
+};
+function lessonStop(l, kind){
+  for(let n = FIRST; n <= LAST(); n++){ const k = stepWith(n, s => STOPS[kind](s, n, l)); if(k) return {n, k}; }
   return null;
 }
-// held back for a trainee: true (and a toast) when the stop's step isn't open yet
-function held(l, re){
+// held back for a trainee: true (and a toast) when the stop's step isn't open yet. Before the decks have loaded the steps
+// aren't known, so nothing opens: "wait", and the caller tries again once they have
+function held(l, kind){
   l = Number(l);
-  if(!isTrainee() || l < 2 || l > 8) return false;
-  if(!decksIn()){ loadDecks(); return false; }
-  const x = lessonStop(l, re); if(!x || stepOpen(x.n, x.k)) return false;
+  if(!isTrainee() || !enforced() || !(l >= 2 && l <= 8)) return false;
+  if(!decksIn()) return "wait";
+  const x = lessonStop(l, kind); if(!x || stepOpen(x.n, x.k)) return false;
   toast(lockMsg(x.n, x.k)); return true;
 }
+// retry fn once the decks are in (or say they couldn't load)
+const later = fn => { loadDecks().then(x => x ? fn() : toast(NOLOAD)); };
 // the platform tools a day's step opens: where each is, by slide
 const TOOL_STOPS = {listening: s => s.ids.includes("listen"), lor: s => s.go === "lor", transcribe: (s, n) => n === 9 && s.ids.includes("s3")};
+const toolStops = view => { const test = TOOL_STOPS[view], out = []; if(!test) return out;
+  for(let n = FIRST; n <= LAST(); n++){ const k = stepWith(n, s => test(s, n)); if(k) out.push({n, k}); }
+  return out; };
 function toolHeld(view){
-  const test = TOOL_STOPS[view]; if(!test || !isTrainee()) return false;
-  if(!decksIn()){ loadDecks(); return false; }
-  const at_ = [];
-  for(let n = FIRST; n <= LAST(); n++){ const k = stepWith(n, s => test(s, n)); if(k) at_.push({n, k}); }
+  if(!TOOL_STOPS[view] || !isTrainee() || !enforced()) return false;
+  if(!decksIn()) return "wait";
+  const at_ = toolStops(view);
   if(!at_.length || at_.some(x => stepOpen(x.n, x.k))) return false;
   toast(lockMsg(at_[0].n, at_[0].k)); return true;
+}
+// is a tool's step open on day n (a Call Listening set opens with its day's Call Listening step)?
+function toolOpen(view, n){
+  if(!isTrainee() || !enforced()) return true;
+  if(!decksIn()){ loadDecks(); return false; }
+  const x = toolStops(view).find(x => x.n === Number(n));
+  return x ? stepOpen(x.n, x.k) : dayStarted(n);
 }
 const __goto = root.goto;
 root.goto = function(view, arg){
   if(isTrainee()){
-    if(view === "day" && arg != null && held(arg, /^lesson$/)) return;
-    if(toolHeld(view)) return;
+    const self = this, args = arguments;
+    const h = view === "day" && arg != null ? held(arg, "lesson") : (view === "process" || view === "kc") && arg != null ? held(arg, "kc") : toolHeld(view);
+    if(h === "wait"){ later(() => root.goto.apply(self, args)); return; }
+    if(h) return;
   }
   return __goto.apply(this, arguments);
 };
 const __video = root.ftVideoOrAsk;
-if(__video) root.ftVideoOrAsk = function(id){ if(held(id, /ftVideoOrAsk/)) return; return __video.apply(this, arguments); };
+if(__video) root.ftVideoOrAsk = function(id){ const h = held(id, "video"); if(h === "wait"){ later(() => root.ftVideoOrAsk(id)); return; } if(h) return; return __video.apply(this, arguments); };
 function wrapKC(){
   if(root.FTProcess && FTProcess.openLesson && !FTProcess.openLesson.__ftdl){
     const f = FTProcess.openLesson;
-    FTProcess.openLesson = function(l){ if(held(l, /toKC/)) return; return f.apply(this, arguments); };
+    FTProcess.openLesson = function(l){ const h = held(l, "kc"); if(h === "wait"){ later(() => FTProcess.openLesson(l)); return; } if(h) return; return f.apply(this, arguments); };
     FTProcess.openLesson.__ftdl = true;
   }
 }
@@ -253,6 +288,7 @@ root.render = function(){
   const d = root.FTDayDecks && FTDayDecks.state ? FTDayDecks.state() : null;
   if(state.view === "daydeck" && d && active(d.day) && decksIn() && steps(d.day).length){
     const n = Number(d.day), k = stepAt(n, d.i), box = document.querySelector("main.main-ftdd .ftdd-slides");
+    if(dayStarted(n) && k <= at(n)) keepPos(n, d.i);
     if(box && (!dayStarted(n) || k > at(n))){
       const cur = at(n) >= 1 && dayStarted(n) ? current(n) : null;
       ftLockSlides(box, `<b>🔒 ${esc_(at(n) >= 1 ? label(n, k) : "Not open yet")}</b>
@@ -269,7 +305,8 @@ setInterval(() => {
   if(document.hidden || !isTrainee() || !state.ftDaySteps) return;
   const s = []; for(let n = 1; n <= LAST(); n++) s.push(rankNow(schedFor(n, state.traineeBatch)));
   const now = s.join(",");
-  if(sig && now !== sig && ["daydeck", "modules", "simulators", "day"].includes(state.view)) render();
+  const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) || (document.activeElement || {}).isContentEditable;
+  if(sig && now !== sig && ["daydeck", "modules", "simulators", "day"].includes(state.view)){ if(typing) return; render(); }
   sig = now;
 }, 30000);
 
@@ -278,9 +315,8 @@ const A = {open: {}};
 const selKey = () => state.ftOdBatch || "__all";
 function countFor(n){
   const o = S(), sel = selKey();
-  const m = sel === "__all" ? Number((o.all || {})[n]) || 0 : Math.max(Number((o.all || {})[n]) || 0, Number(((o.batches || {})[sel] || {})[n]) || 0);
-  const sc = sel === "__all" ? ((o.sched || {}).all || {})[n] : (((o.sched || {}).batches || {})[sel] || {})[n] || ((o.sched || {}).all || {})[n];
-  return {m, sc};
+  if(sel === "__all") return {m: Number((o.all || {})[n]) || 0, sc: ((o.sched || {}).all || {})[n] || null};
+  return {m: manual(n, sel), sc: schedFor(n, sel)};
 }
 const fmt = iso => { const t = Date.parse(iso || ""); return isFinite(t) ? new Date(t).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) : ""; };
 function dayPanel(n){
@@ -310,6 +346,7 @@ function dayPanel(n){
 }
 function legacyNote(sel){
   const g = S().legacy; if(!g) return "";
+  if(sel !== "__all" && (g.except || []).includes(sel)) return "";
   const ls = sel === "__all" ? (g.all || []) : [].concat(g.all || [], (g.batches || {})[sel] || []);
   const names = [...new Set(ls.map(Number))].filter(l => l >= 2 && l <= 8).sort((a, b) => a - b).map(l => typeof ftName === "function" ? ftName(l) : "Lesson " + l);
   const any = (g.all || []).length || Object.values(g.batches || {}).some(x => (x || []).length);
@@ -333,9 +370,11 @@ function renderPanel(){
 }
 const __panel = root.renderFtDay1Steps;
 root.renderFtDay1Steps = function(){ return (__panel ? __panel.apply(this, arguments) : "") + renderPanel(); };
-// the lessons open right now, for every batch: what the batches already under way keep open
-const legacyNow = () => { const o = state.ftOpenDays || {}; return {all: (o.all || []).map(Number), batches: JSON.parse(JSON.stringify(o.batches || {})), at: new Date().toISOString()}; };
-// the first admin to load the open lessons with the locks in place writes that record, once
+// the lessons open for every batch, as just read from the server: what the batches already under way keep open
+const legacyOf = o => ({all: ((o || {}).all || []).map(Number), batches: JSON.parse(JSON.stringify((o || {}).batches || {})), except: [], at: new Date().toISOString()});
+// read a record strictly: a server that doesn't answer throws, so it is never taken for "nothing saved yet"
+const strict = k => typeof sharedGetStrict === "function" ? sharedGetStrict(k) : sharedGet(k);
+// the first admin to load the open lessons with the locks in place writes that record, once, from a read that worked
 let legacyWriting = false;
 const __loadOpen = root.ftLoadOpenDays;
 if(typeof __loadOpen === "function") root.ftLoadOpenDays = async function(){
@@ -343,18 +382,20 @@ if(typeof __loadOpen === "function") root.ftLoadOpenDays = async function(){
   if(state.isAdmin && !state.adminPreview && state.ftOpenDays && state.ftDaySteps && !state.ftDaySteps.legacy && !legacyWriting){
     legacyWriting = true;
     try{
-      const cur = (await sharedGet(KEY)) || {};
-      if(!cur.legacy){ const next = Object.assign({}, cur, {legacy: legacyNow()}); if(await sharedSet(KEY, next) !== false) state.ftDaySteps = Object.assign({}, state.ftDaySteps, {legacy: next.legacy}); }
-      else state.ftDaySteps = Object.assign({}, state.ftDaySteps, {legacy: cur.legacy});
-    }catch(err){} finally{ legacyWriting = false; }
+      const [cur, od] = [await strict(KEY), await strict("settings:opendays")];
+      if(cur && cur.legacy) state.ftDaySteps = Object.assign({}, state.ftDaySteps, {legacy: cur.legacy});
+      else{ const next = Object.assign({}, cur || {}, {legacy: legacyOf(od)}); if(await sharedSet(KEY, next) !== false) state.ftDaySteps = Object.assign({}, state.ftDaySteps, {legacy: next.legacy}); }
+    }catch(err){ /* the server didn't answer: nothing is written, and the next check tries again */ } finally{ legacyWriting = false; }
   }
   return r;
 };
 async function save(change, msg){
-  const cur = (await sharedGet(KEY)) || {};
+  let cur;
+  try{ cur = (await strict(KEY)) || {}; }catch(err){ toast("Couldn’t reach the server, so nothing was changed. Try again."); return; }
+  if(!cur.legacy){ try{ cur.legacy = legacyOf(await strict("settings:opendays")); }catch(err){ toast("Couldn’t reach the server, so nothing was changed. Try again."); return; } }
   const next = {all: Object.assign({}, cur.all || {}), batches: JSON.parse(JSON.stringify(cur.batches || {})),
     sched: {all: Object.assign({}, (cur.sched || {}).all || {}), batches: JSON.parse(JSON.stringify((cur.sched || {}).batches || {}))},
-    times: Object.assign({}, DEF_TIMES, cur.times || {}), legacy: cur.legacy || legacyNow()};
+    times: Object.assign({}, DEF_TIMES, cur.times || {}), legacy: JSON.parse(JSON.stringify(cur.legacy))};
   change(next);
   const ok = await sharedSet(KEY, next);
   if(ok === false){ toast("Couldn’t save. Check your connection and try again."); return; }
@@ -364,13 +405,16 @@ root.FTDayLocks = {
   steps, at, active, stepOpen, dayStarted, mayGo, launch, segments, held, unlockedFor,
   // 🛠 the Practice Lab: may a trainee see a session, tool, trainer activity or recording set used on these days?
   labOpen: days => !isTrainee() || !days || !days.length || days.some(d => Number(d) === 1 || dayStarted(d)),
+  toolOpen,
   current(n){ openCurrent(Number(n)); },
   toggle(n, o){ A.open[n] = !!o; },
   // the trainer applies the locks to the days a batch already had open (all batches: every one's)
   lockLegacy(){
     const sel = selKey();
     if(!confirm(sel === "__all" ? "Lock the days every batch already had open? Their trainees will need you to unlock each step." : "Lock the days this batch already had open? Its trainees will need you to unlock each step.")) return;
-    return save(o => { if(sel === "__all") o.legacy = {all: [], batches: {}, at: o.legacy.at}; else { o.legacy = JSON.parse(JSON.stringify(o.legacy)); o.legacy.batches[sel] = []; if((o.legacy.all || []).length){ toast("Those were opened for all batches: choose All batches to lock them."); } } }, "✓ The locks now apply to those days too.");
+    return save(o => { if(sel === "__all") o.legacy = {all: [], batches: {}, except: [], at: o.legacy.at};
+      else { o.legacy.batches = o.legacy.batches || {}; delete o.legacy.batches[sel]; o.legacy.except = [...new Set((o.legacy.except || []).concat(sel))]; } },
+      "✓ The locks now apply to those days too.");
   },
   // the trainer: unlock day n up to step k (0 locks the day) for the batch chosen in Open Lessons
   set(n, k){
@@ -387,7 +431,8 @@ root.FTDayLocks = {
   // ⏰ day n runs on the date picked: each block's start, in this browser's time zone, as an instant every trainee reads alike
   schedule(n, clear){
     const sel = selKey();
-    if(clear) return save(o => { if(sel === "__all") delete o.sched.all[n]; else if(o.sched.batches[sel]) delete o.sched.batches[sel][n]; }, `✓ Day ${n} is off the schedule.`);
+    if(clear) return save(o => { if(sel === "__all") delete o.sched.all[n]; else (o.sched.batches[sel] = o.sched.batches[sel] || {})[n] = null; },
+      `✓ Day ${n} is off the schedule${sel === "__all" ? "" : " for this batch"}.`);
     const date = String((document.getElementById("ftdlDate" + n) || {}).value || "").trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast("Pick the date the day runs."); return; }
     const t = Object.assign({}, DEF_TIMES, S().times || {}), at_ = hm => new Date(`${date}T${hm}:00`).toISOString();

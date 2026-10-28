@@ -115,7 +115,7 @@ const PROCESS_SETS = [
 ].filter(set=>DAYS.find(d=>d.id===set.lesson))   // a lesson taken off the platform (build/lessons/off/) takes its set with it
 // ✍️ ten process questions at most on every answer sheet (its Knowledge Check): the first ten, so the answers already saved
 // (kept by the question's place on the sheet) stay with their questions
- .map(set=>Object.assign(set, {questions:set.questions.slice(0, KC_MAX)}, set.kc ? {kc:Object.fromEntries(Object.entries(set.kc).map(([l, q])=>[l, q.filter(i=>i < KC_MAX)]))} : {}));
+ .map(set=>Object.assign(set, {questions:set.questions.slice(0, KC_MAX)}));
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";

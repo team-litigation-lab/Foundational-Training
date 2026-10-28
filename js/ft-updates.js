@@ -521,6 +521,9 @@ async function ftLoadOpenDays(){
   // (and Day 1's steps, js/ft-day1-flow.js: settings:day1steps, and every other day's, js/ft-day-locks.js: settings:daysteps,
   // in the same request)
   const [v, vv, d1, ds, vr, va] = await sharedGetMany(["settings:opendays", "settings:openvideos", "settings:day1steps", "settings:daysteps"].concat(me ? ["videoreq:" + me, "videoaccess:" + me] : []));
+  // Nothing back (the server didn't answer: offline, or Cloudflare's request limit): everything already read stands until
+  // the next check — the open lessons, and the days' steps too (a blip must neither lock a day nor switch the locks off)
+  if(v == null && vv == null && d1 == null && ds == null && state.ftOpenDays) return false;
   const dsnext = (ds && typeof ds === "object") ? {all: ds.all || {}, batches: ds.batches || {}, sched: ds.sched || {all: {}, batches: {}}, times: ds.times || {}, legacy: ds.legacy || null} : {all: {}, batches: {}, sched: {all: {}, batches: {}}, times: {}};
   const dschanged = JSON.stringify(dsnext) !== JSON.stringify(state.ftDaySteps); state.ftDaySteps = dsnext;
   const d1next = (d1 && typeof d1 === "object") ? {all: Number(d1.all) || 0, batches: d1.batches || {}} : {all: 0, batches: {}};
@@ -531,9 +534,6 @@ async function ftLoadOpenDays(){
     state.ftVideoReq = req; state.ftVideoAccess = acc;
     if(was !== JSON.stringify([req, acc]) && (v != null || vv != null)) state.ftVideosChanged = true;
   }
-  // Nothing back (the server didn't answer: offline, or Cloudflare's request limit): the lessons already
-  // open stay open until the next check, rather than locking for everyone in the meantime.
-  if(v == null && vv == null && state.ftOpenDays) return false;
   const shape = x => (x && typeof x === "object") ? {all: x.all || [], batches: x.batches || {}} : {all: [], batches: {}};
   const next = shape(v), nextV = shape(vv);
   const changed = d1changed || dschanged || JSON.stringify(next) !== JSON.stringify(state.ftOpenDays) || JSON.stringify(nextV) !== JSON.stringify(state.ftOpenVideos) || !!state.ftVideosChanged;

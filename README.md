@@ -237,16 +237,14 @@ Every lesson's process questions are its **Knowledge Check**, answered in writin
 
 | Lesson | Answer sheet | Knowledge Check |
 |---|---|---|
-| 1 Virtual Assistant Essentials | VA Essentials | 10 questions |
+| 1 Virtual Assistant Essentials | VA Essentials, and the Reading Task: Personal Injury Overview sheet | 10 questions, and the Reading Task's 6 |
 | 2 Law Firm Communication | Law Firm Communications Training | 10 |
-| 3 Personal Injury Process Flow | PI Workflow and Reception Training, questions 1–3 | 3 |
-| 4 Receptionist Training | the same sheet, questions 4–10 | 7 |
+| 3 Personal Injury Process Flow | PI Workflow | 3 |
+| 4 Receptionist Training | Receptionist Training | 7 |
 | 5 Calendaring & Appointment Setting | — | none: the lesson finishes as before |
 | 6 Intake Specialist Training | Intake Specialist Training | 10 |
 | 7 Claims Specialist Training | Claims Specialist Training | 10 |
 | 8 Medical Records Specialist Training | Medical Records Specialist Training | 10 |
-
-A sheet shared by two lessons lists which questions each one asks (`kc:{3:[0,1,2], 4:[3,4,5,6,7,8,9]}`).
 
 **Ten process questions at most on every answer sheet** (`KC_MAX` in `js/ft-process.js`): a sheet keeps its first ten. Law Firm Communication and Lien Negotiator Training had twelve and now ask ten; the answers already saved are kept by the question's place on the sheet, so cutting from the end keeps each answer with its question.
 
@@ -420,7 +418,10 @@ Day 1 goes one step at a time, each unlocked by the trainer (`js/ft-day1-flow.js
 
 - **Trainer unlock:** Admin → 📅 Open Lessons → **🔓 Activity Locks**, for all batches or the batch picked above it. Each day lists its steps under its time blocks: 🔓 Unlock (or *up to here*), 🔒 Lock from here, 🔓 Open the AM session / PM breakout / Outside hours, 🔓 Open the whole day, 🔒 Lock the day.
 - **Locked by default:** a day is locked until the trainer opens it, and a later step until it is unlocked. Unlocking a step opens every step before it, so nothing can be skipped.
-- **Batches already under way stay open:** the first time an admin opens the platform with the locks, the lessons open at that moment are recorded for every batch (`legacy` in `settings:daysteps`), and the days of those lessons are never held for that batch. Only lessons opened after that are locked step by step. Until that record is written nothing is held, so a lock never lands on a trainee mid-programme. 🔒 *Lock these too* in the panel applies the locks to them as well.
+- **Batches already under way stay open:** the first time an admin opens the platform with the locks, the lessons open at that moment are recorded (`legacy` in `settings:daysteps`), read straight from the server (a read that fails writes nothing and is tried again at the next check). The days of those lessons are never held for the batches they were open for: a lesson opened for one batch, for that batch; a lesson opened for *All batches*, for every batch whose code (B + MMDDYY, its start date) is not after that day, so a batch that starts later is locked step by step from its first lesson. Only lessons opened after that are locked step by step. Until the record is written nothing is held, so a lock never lands on a trainee mid-programme. 🔒 *Lock these too* applies the locks to them as well, for all batches or for the one chosen (`legacy.except`).
+- **A batch's own setting stands in for *All batches*:** once the trainer unlocks, locks or schedules a day for one batch, that batch follows its own setting, so it can be held back behind the rest or taken off a schedule they share (*Clear* for a batch saves "no schedule for this batch").
+- **Where the trainee left off:** a day's segment opens the slide the trainee reached (this browser), never past what is unlocked; the first time, the day's card.
+- **Never on a guess:** until the day decks have loaded, a locked lesson, video, Knowledge Check or tool doesn't open; it opens (or says it is locked) once they have. A server that doesn't answer leaves the last settings read in place, rather than locking the days or switching the locks off.
 - **What waits:** for a trainee:
   - a locked step's slide shows its lock (*Go to the step you are on →*), and Next, the dots and the 🗺 Map don't go there;
   - the deck goes one slide at a time, as Day 1's does;

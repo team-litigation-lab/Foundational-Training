@@ -48,7 +48,7 @@ const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayU
    read to its last slide (decks-done, saved with the trainee's account). */
 let decksDone = null;
 function doneDays(){
-  if(decksDone == null){ decksDone = []; if(typeof storeGet === "function") Promise.resolve(storeGet("decks-done")).then(v => { if(Array.isArray(v)){ decksDone = [...new Set(decksDone.concat(v.map(Number)))]; if(state.view === "modules") render(); } }).catch(() => {}); }
+  if(decksDone == null){ decksDone = []; if(typeof storeGet === "function") Promise.resolve(storeGet("decks-done")).then(v => { if(Array.isArray(v)){ decksDone = [...new Set(decksDone.concat(v.map(Number)))]; if(state.view === "modules" || state.view === "daydeck") render(); } }).catch(() => {}); }
   return decksDone;
 }
 function markDayDone(n){
@@ -1512,7 +1512,7 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   async moveX(n, i, d){ if(!isAdminView()) return; await loadExtras(true); const l = X.data.days[n] || [], j = i + d; if(j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; await saveExtras(); },
   extras: () => X.data};
 // for 🔓 the Activity Locks (js/ft-day-locks.js): the lesson whose card holds a day, what the day holds, the days read through
-Object.assign(root.FTDayDecks, {lessonOfDay, dayTitle: n => DAY_TITLES[Number(n)] || ""});
+Object.assign(root.FTDayDecks, {lessonOfDay, readFirst, dayTitle: n => DAY_TITLES[Number(n)] || ""});
 root.FTDecksDone = () => doneDays().slice();
 
 if(!document.getElementById("ftdd-deck-font")){
