@@ -80,6 +80,21 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(async () => { state.isAdmin = true; await ftLoadOpenDays(); state.isAdmin = false; });
     const rec = await get(page, 'settings:daysteps');
     if (!rec || !rec.legacy || !(rec.legacy.all || []).includes(6)) fail(`the admin's visit didn't record the lessons open then: ${JSON.stringify(rec && rec.legacy)}`);
+    // 🔒 a locked slide is blurred under its lock, and Day 1's handouts are locked and blurred until Handouts and Videos
+    // is unlocked (with a later lesson open the batch is past Day 1's step-by-step flow, so the slide itself shows)
+    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: {} } });
+    await page.evaluate(() => FTDayDecks.open(8, 0)); await page.waitForTimeout(800);
+    v = await page.evaluate(() => ({ blur: getComputedStyle(document.querySelector('.ftdd-slides.ftlk > .ftlk-under') || document.body).filter, live: document.querySelectorAll('.ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under iframe').length }));
+    if (!/blur/.test(v.blur) || v.live) fail(`a locked slide isn't blurred, or what's under it still opens: ${JSON.stringify(v)}`);
+    const d1Was = await get(page, 'settings:day1steps');
+    for (const [n, want] of [[4, true], [8, false]]) {
+      await put(page, 'settings:day1steps', { all: n, batches: {} });
+      await page.evaluate(() => FTDayDecks.open(1, FTDayDecks.list(1).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(800);
+      v = await page.evaluate(() => ({ locked: !!document.querySelector('.ftdd-ho-locked .ftdd-ho-list.ftlk > .ftd1-lock'), links: document.querySelectorAll('a.ftdd-ho[href]').length, badge: (document.querySelector('.ftdd-ho-when') || {}).textContent || '' }));
+      if (want && (!v.locked || v.links)) fail(`Day 1's handouts aren't locked and blurred before Handouts and Videos: ${JSON.stringify(v)}`);
+      if (!want && (v.locked || v.links !== 5 || !/Unlocked/.test(v.badge))) fail(`Day 1's handouts didn't open with Handouts and Videos unlocked: ${JSON.stringify(v)}`);
+    }
+    await put(page, 'settings:day1steps', d1Was || { all: 8, batches: {} });
     // the admin's 🔓 Activity Locks
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'opendays'; goto('admin'); }); await page.waitForTimeout(1500);
     const n = await page.evaluate(() => document.querySelectorAll('.ftdl-admin .ftdl-day').length);

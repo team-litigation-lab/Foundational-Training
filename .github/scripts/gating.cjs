@@ -44,7 +44,7 @@ const failures = []; const fail = m => failures.push(m);
 
   // the deck of a day far ahead waits for its lesson: it shows its lock, not its slides
   await page.evaluate(() => FTDayDecks.open(14)); await page.waitForTimeout(1200);
-  const deck = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('main.main-ftdd .ftd1-lock'), card: !!document.querySelector('.ftdd-lcslide .ftlc') }));
+  const deck = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('main.main-ftdd .ftdd-slides.ftlk > .ftd1-lock'), card: !!document.querySelector('.ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under button:not([disabled])') }));
   if (deck.view !== 'daydeck' || !deck.lock || deck.card) fail(`Day 14's deck opened for a trainee on Day 1: ${JSON.stringify(deck)}`);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
 

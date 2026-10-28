@@ -92,7 +92,8 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   // card of that day's own rows
   // 🔓 a day waits for its trainer (js/ft-day-locks.js): with no lesson open, a trainee's Day 2 shows its lock, not its card
   await page.evaluate(() => FTDayDecks.open(2)); await page.waitForTimeout(600);
-  if (!(await page.$('main.main-ftdd .ftd1-lock')) || await page.$('.ftdd-lcslide .ftlc')) fail('a trainee opened Day 2 before the trainer opened it');
+  // (the slide stays, blurred under its lock, with nothing on it to click)
+  if (!(await page.$('main.main-ftdd .ftdd-slides.ftlk > .ftd1-lock')) || await page.$('.ftdd-slides > .ftdd-deck .ftlc, .ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under button:not([disabled])')) fail('a trainee opened Day 2 before the trainer opened it');
   // once its lesson is open (the test server opens every day's steps, server.mjs), every day opens on its card
   await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }); await page.evaluate(() => ftLoadOpenDays());
   const dayCards = [];

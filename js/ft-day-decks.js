@@ -405,13 +405,22 @@ const HANDOUTS = {1: {items: [
   ["Western Culture", "https://drive.google.com/file/d/1EkJ1eqoZqccdThFJ0-O1tPXEyjLLeIX0/view"],
   ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]}};
 function handoutsSlide(h){
+  // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
+  // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
+  const lid = lessonOfDay(DD.day);
+  const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
+  const cards = h.items.map(([t, u], i) => locked
+    ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
+    : `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("");
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
-  return `<div class="ftdd-handouts">
-    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">🔓 Opens when your trainer unlocks it</p></div>
+  return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
+    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol></div>
-      <div class="ftdd-ho-list">${h.items.map(([t, u], i) => `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("")}</div>
+      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert>${cards}</div>
+        <div class="ftd1-lock ftlk-over" role="alert"><b>🔒 Handouts locked</b><span>Your trainer unlocks them when the breakout session starts.</span></div></div>`
+        : `<div class="ftdd-ho-list">${cards}</div>`}
     </div></div>`;
 }
 function launchSlide(s){
@@ -541,7 +550,8 @@ function slideCard(d, info, list, i){
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
   const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
-  const ribbon = lc != null ? (lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Activity card") : s.agenda ? "Training Agenda" : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+  // (the handouts' slide is the Breakout Session: its ribbon says so, not the row's "Handouts / Video")
+  const ribbon = s.launch && /ftVideoOrAsk/.test(s.launch.run || "") && HANDOUTS[DD.day] ? "Breakout Session / Group Activity" : lc != null ? (lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Activity card") : s.agenda ? "Training Agenda" : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
   return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
@@ -1822,6 +1832,11 @@ main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-k{margin:0;font:800 14px/1.2 'Inter',sans-serif !important;letter-spacing:.12em !important;text-transform:uppercase;color:#C2410C !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-when{display:inline-block;margin:0;padding:6px 16px;border-radius:999px;background:#E8590C;color:#fff !important;font:800 17px/1.2 'Inter',sans-serif !important;}
+main.main-ftdd .ftdd-handouts:not(.ftdd-ho-locked) .ftdd-ho-when{background:#2E7D4F;}   /* unlocked: green */
+main.main-ftdd .ftdd-handouts .ftdd-ho-list.ftlk{display:block;}   /* locked: the five cards keep their grid, under the blur */
+main.main-ftdd .ftdd-handouts .ftdd-ho-list.ftlk > .ftlk-under{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:10px;height:100%;}
+main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over{border-radius:12px;gap:6px;padding:16px;min-height:0;}
+main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over b{font-size:20px;} main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over span{font-size:14.5px;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}

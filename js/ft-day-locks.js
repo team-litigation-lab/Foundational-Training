@@ -255,10 +255,10 @@ root.render = function(){
     const n = Number(d.day), k = stepAt(n, d.i), box = document.querySelector("main.main-ftdd .ftdd-slides");
     if(box && (!dayStarted(n) || k > at(n))){
       const cur = at(n) >= 1 && dayStarted(n) ? current(n) : null;
-      box.innerHTML = `<div class="ftd1-lock"><b>🔒 ${esc_(at(n) >= 1 ? label(n, k) : "Not open yet")}</b>
+      ftLockSlides(box, `<b>🔒 ${esc_(at(n) >= 1 ? label(n, k) : "Not open yet")}</b>
         <span>${at(n) >= 1 ? "This step opens when your trainer unlocks it. The training goes in order, one step at a time." : "This part of the training opens when your trainer unlocks it."}</span>
         ${cur ? `<button type="button" class="btn btn-navy" onclick="FTDayLocks.current(${n})">Go to ${esc_(cur.label)} →</button>`
-          : `<button type="button" class="btn btn-navy" onclick="goto('modules')">← Back to 📚 Dashboard</button>`}</div>`;
+          : `<button type="button" class="btn btn-navy" onclick="goto('modules')">← Back to 📚 Dashboard</button>`}`);
     }
   }
   return r;
