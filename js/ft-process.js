@@ -21,6 +21,7 @@
      • PROCESS_SETS: one per lesson. Add a lesson's questions there.
    ============================================================ */
 (function(){
+const KC_MAX = 10;
 const PROCESS_SETS = [
   // Day 1's Reading Task (the Personal Injury overview, read on the Activity deck): its questions are answered here, with
   // Lesson 1's Knowledge Check, not in the training GC
@@ -53,9 +54,7 @@ const PROCESS_SETS = [
     "Evaluate the responsibility of a Legal VA in protecting attorney-client privilege. What steps must they actively take?",
     "Assess how remote work increases both the risk and need for maintaining privileged communication boundaries.",
     "Analyze the type of information that can be shared with each party (e.g., client, insurance adjuster, court staff). What factors determine what can and cannot be disclosed?",
-    "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff.",
-    "Evaluate the risks of providing incomplete or incorrect information to each type of entity. Which scenario could be most legally damaging?",
-    "Assess how understanding each party's role in a case helps the Legal VA communicate more effectively and ethically."]},
+    "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff."]},
   // one answer sheet for two lessons: questions 1–3 are Personal Injury Process Flow's, 4–10 Receptionist Training's
   {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_Process_Question_Answers", questions:[
     "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
@@ -112,10 +111,11 @@ const PROCESS_SETS = [
     "Evaluate the importance of reviewing the release terms with the client. What issues could arise if the client signs without understanding?",
     "Analyze how the closing statement reflects the full financial breakdown of a personal injury case.",
     "Evaluate the role of transparency in the closing statement. How does it support trust and prevent disputes?",
-    "Analyze the net sheet’s function in summarizing what the client will receive after deductions. Why must it match the closing statement exactly?",
-    "Judge whether the net sheet should be presented before or after lien negotiations are finalized and why.",
-    "Assess whether it’s appropriate for the legal team to pressure clients to accept settlements. Where is the ethical boundary?"]}
-].filter(set=>DAYS.find(d=>d.id===set.lesson));   // a lesson taken off the platform (build/lessons/off/) takes its set with it
+    "Analyze the net sheet’s function in summarizing what the client will receive after deductions. Why must it match the closing statement exactly?"]}
+].filter(set=>DAYS.find(d=>d.id===set.lesson))   // a lesson taken off the platform (build/lessons/off/) takes its set with it
+// ✍️ ten process questions at most on every answer sheet (its Knowledge Check): the first ten, so the answers already saved
+// (kept by the question's place on the sheet) stay with their questions
+ .map(set=>Object.assign(set, {questions:set.questions.slice(0, KC_MAX)}));
 const has = v => String(v == null ? "" : v).trim().length > 0;
 const e = v => esc(String(v == null ? "" : v));
 const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";

@@ -38,6 +38,9 @@ async function workerChecks() {
   const get = k => page.evaluate(async k => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) }).then(r => r.json())).value || 'null'), k);
   await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
   await put('settings:todo', null);
+  // the days' tools open with their lessons (🔓 js/ft-day-locks.js): open every lesson for this test, and put it back after
+  const openWas = await get('settings:opendays');
+  await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} });
   await signIn(page, 'Sam', 'Shadow', BATCH);
   const id = await page.evaluate(() => state.traineeId);
   const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
@@ -151,6 +154,7 @@ async function workerChecks() {
 
   await put('shadow:' + id, null); await put('settings:todo', null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
+  await put('settings:opendays', openWas || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Shadowing & To-Do test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Shadowing & To-Do test passed (every day\'s To-Do in the guide\'s wording and the six shadowing days\' lines, each day\'s own activities and the Process Questions of the lesson it discusses (Calendaring\'s absent sheet said so, not offered), the Practice Lab\'s To-Do with Copy and the Dashboard\'s lesson grid still on one screen; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer setting the buddy and note and reading the write-up, which the trainee then sees; the worker\'s rules).');

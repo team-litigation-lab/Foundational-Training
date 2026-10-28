@@ -1,7 +1,6 @@
-// 🔓 Every day is open; the trainer sets the pace (js/ft-day-decks.js): a trainee can open any day's
-//   instructions deck, in any order, finished or not — no day card is locked and none waits on the day before
-//   it. What paces the programme is the trainer's 📅 Open Lessons (settings:opendays): a lesson card waits for
-//   the trainer to open that lesson for the batch, and a trainer (and a trainer in Trainee view) sees all of it.
+// 🔓 The trainer sets the pace: a lesson card (its segment per day, js/ft-day-locks.js) waits for the trainer to open that
+//   lesson for the batch (📅 Open Lessons, settings:opendays), and a day far ahead stays locked until then; the steps
+//   inside a day are day-locks.cjs's. A trainer (and a trainer in Trainee view) sees all of it.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/gating.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
@@ -25,8 +24,10 @@ const failures = []; const fail = m => failures.push(m);
 
   const openDays = () => page.evaluate(() => Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)));
   // the lesson cards (their ▶ Start Training) and, on each, 📋 the days card
-  const cards = () => page.evaluate(() => [...[...document.querySelectorAll('.ftli')].map(c => { const b = c.querySelector('.ftli-live') || {};
-      return { id: c.id, locked: !!b.disabled, off: !!b.disabled, lock: /🔒/.test(b.innerText || '') }; }),
+  // (a lesson card is locked when every one of its day segments is)
+  const cards = () => page.evaluate(() => [...[...document.querySelectorAll('.ftli')].map(c => { const b = [...c.querySelectorAll('.ftseg-b')];
+      const shut = !b.length || b.every(x => x.classList.contains('locked'));
+      return { id: c.id, locked: shut, off: shut, lock: b.some(x => /🔒/.test(x.innerText || '')) }; }),
     ...[...document.querySelectorAll('.ftli-days')].map(b => ({ id: b.id, locked: false, off: b.disabled, lock: /🔒/.test(b.innerText) }))]);
 
   // a brand-new trainee, with nothing finished and nothing opened: every day is theirs to read
@@ -41,10 +42,10 @@ const failures = []; const fail = m => failures.push(m);
   const padlock = dayCards.filter(c => c.lock).map(c => c.id);
   if (padlock.length) fail(`a day card still shows a padlock: ${JSON.stringify(padlock.slice(0, 4))}`);
 
-  // the deck of a day far ahead opens, with nothing finished
+  // the deck of a day far ahead waits for its lesson: it shows its lock, not its slides
   await page.evaluate(() => FTDayDecks.open(14)); await page.waitForTimeout(1200);
-  const deck = await page.evaluate(() => ({ view: state.view, t: (document.querySelector('.ftdd-dtitle') || { dataset: {} }).dataset.day || '' }));
-  if (deck.view !== 'daydeck' || deck.t !== '14') fail(`Day 14's deck didn't open for a trainee on Day 1: ${JSON.stringify(deck)}`);
+  const deck = await page.evaluate(() => ({ view: state.view, lock: !!document.querySelector('main.main-ftdd .ftdd-slides.ftlk > .ftd1-lock'), card: !!document.querySelector('.ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under button:not([disabled])') }));
+  if (deck.view !== 'daydeck' || !deck.lock || deck.card) fail(`Day 14's deck opened for a trainee on Day 1: ${JSON.stringify(deck)}`);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
 
   // the lessons, though, are the trainer's to open: locked until 📅 Open Lessons says otherwise
@@ -52,7 +53,7 @@ const failures = []; const fail = m => failures.push(m);
   if (!les.length) fail('the dashboard has no lesson cards');
   if (les.some(c => !c.locked || !c.off)) fail(`a lesson is open before the trainer opened it: ${JSON.stringify(les.filter(c => !c.locked).map(c => c.id))}`);
   await page.evaluate(() => goto('day', 4)); await page.waitForTimeout(900);
-  if (!/is locked/.test(await page.evaluate(() => (document.querySelector('main') || {}).innerText || ''))) fail('a lesson the trainer has not opened is readable');
+  if (await page.evaluate(() => state.view === 'day' && Number(state.dayId) === 4 && !/is locked/.test((document.querySelector('main') || {}).innerText || ''))) fail('a lesson the trainer has not opened is readable');
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
 
   // the trainer opens two of them for the batch: those two, and only those two, open
@@ -82,5 +83,5 @@ const failures = []; const fail = m => failures.push(m);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Open days test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Open days test passed (every one of the 16 day cards and decks open to a trainee with nothing finished, a day far ahead included; the lessons wait for the trainer\'s 📅 Open Lessons and open exactly as it says; a trainer and a trainer in Trainee view read all of it).');
+  console.log('Open days test passed (a day far ahead stays locked for a trainee on Day 1; the lessons wait for the trainer\'s 📅 Open Lessons and open exactly as it says; a trainer and a trainer in Trainee view read all of it).');
 })().catch(e => { console.error(e); process.exit(1); });
