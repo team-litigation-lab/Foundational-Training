@@ -263,8 +263,7 @@ const MON_PARTS = [
     "Update your Monitoring Sheet.",
     "Finish before your shift ends.",
     "It is checked at 5:00 PM ET.",
-    "Your trainer adds feedback."],
-   tip:"It is for your training only."}
+    "Your trainer adds feedback."]}
 ];
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
@@ -493,7 +492,7 @@ const NEXT_UP = {why: "Your role as a General VA, the rules for your work and th
 window.FT_NEXT_UP = NEXT_UP;
 function orientNextUp(){}
 // 👉 The one "Next up" card, over the Next button of every slide, deck and page (js/ft-slides.js, js/ft-day-decks.js):
-// always the same size, centered over the button, with what comes next and, under it, where that is
+// as wide as its title needs (up to about half the bar), centered over the button, with what comes next and, under it, where that is
 window.FTNextUp = function(nav, btn, title, sub){
   document.querySelectorAll(".ftr-nextup").forEach(x => x.remove());
   if(!nav || !title) return;
@@ -795,16 +794,17 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two{display:grid;grid-template-columns:
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-embed{margin-top:0;height:max(320px, calc(100vh - 380px)) !important;}
 body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-mon-two{grid-template-columns:minmax(0,1fr);} }
-.ftr-nextup{flex:0 0 250px;width:250px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:5px 12px;font:700 14px/1.25 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;margin-left:auto;min-width:0;}
+.ftr-nextup{flex:0 0 auto;width:auto;min-width:250px;max-width:min(600px,52vw);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:5px 12px;font:700 14px/1.25 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;margin-left:auto;}
 .ftr-nextup b{display:block;font:800 10.5px/1.1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
-.ftr-nextup .ftr-nextup-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;color:#fff;white-space:normal;overflow:hidden;line-height:1.2;}
+/* the card grows with the title so it reads in full; only a title longer than the widest card wraps, to two lines */
+.ftr-nextup .ftr-nextup-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;color:#fff;white-space:normal;overflow:hidden;overflow-wrap:anywhere;line-height:1.2;}
 .ftr-nextup .ftr-nextup-s{display:block;color:#C9CFE6;font:600 11.5px/1.2 'Inter',sans-serif;}
 .ftr-nextup .ftr-nextup-s:empty{display:none;}
-@media(max-width:1100px){ .ftr-nextup{flex-basis:190px;width:190px;} }
+@media(max-width:1100px){ .ftr-nextup{min-width:190px;max-width:min(420px,46vw);} }
 /* in a lesson's bar the buttons keep their size and the progress dots give way to the card */
 #lessonStage > .slide-nav > :not(.slide-dots){flex-shrink:0;white-space:nowrap;}
 #lessonStage > .slide-nav > .slide-dots{flex:1 1 auto;min-width:0;overflow:hidden;}
-#lessonStage > .slide-nav > .ftr-nextup{flex-basis:220px;width:220px;margin-left:0;}
+#lessonStage > .slide-nav > .ftr-nextup{flex-basis:auto;width:auto;margin-left:0;}
 @media(max-width:760px){ .ftr-nextup{display:none !important;} }
 @keyframes ftrNextIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 body.ft-orient #lessonSlideWrap .ftr-matrix{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;}
