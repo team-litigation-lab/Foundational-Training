@@ -6110,7 +6110,8 @@ async function callAITextOnce(prompt, maxTokens, timeoutMs, feature){
   try{
     const response = await fetch("/api/claude", {
       method:"POST", headers:authHeaders(),
-      // feature picks the model on the Worker (chat starts on Flash-Lite); every feature shares the Worker's Gemini key pool
+      // feature picks the model on the Worker (chat starts on Flash-Lite; "call", a call simulator's live turn, runs on Claude when
+      // the Worker has ANTHROPIC_API_KEY, else like chat); every other feature uses the Worker's Gemini key pool
       body: JSON.stringify({ model:"gemini", feature: feature||"", max_tokens:maxTokens||600, messages:[{role:"user", content:prompt}] }),
       signal: controller.signal
     });
@@ -7157,7 +7158,7 @@ ${s.persona ? `\nCALLER PERSONA: ${s.persona.label} — ${s.persona.desc}` : ""}
 
 Open immediately with the specific, in-character problem itself — never a generic time-pressure line like "What is it, I have ninety seconds." Write ONLY the opening line this caller would actually say — 1-3 sentences, realistic, dropping the EA/PA straight into the situation with no preamble. Do not narrate the scene or explain who's calling — just speak as them.`;
   try{
-    const opening = await callAIText(prompt, 150, undefined, "chat");
+    const opening = await callAIText(prompt, 150, undefined, "call");
     s.chatHistory = [{role:"client", text: opening.trim().replace(/^["“]+|["”]+$/g,"")}];
   }catch(e){
     s.chatHistory = [{role:"client", text:"[Connection issue generating the scenario — try Restart below.]"}];
@@ -7253,7 +7254,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, realistic in tone for this situation and persona. If the EA/PA is handling it well, you may show some de-escalation. If they're vague, evasive, or clearly wrong, apply more pressure or push back.`;
   try{
-    const reply = await callAIText(prompt, 200, undefined, "chat");
+    const reply = await callAIText(prompt, 200, undefined, "call");
     s.chatHistory = s.chatHistory.filter(m=>!m.pending);
     s.chatHistory.push({role:"client", text: reply.trim().replace(/^["“]+|["”]+$/g,"")});
   }catch(e){
@@ -9448,7 +9449,10 @@ function renderDaySlideshow(d){
       </span>
       <span class="slide-counter">Step ${idx+1} of ${total}</span>
       ${isLast
-        ? `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()" title="Open this lesson’s Activity deck">📋 Classroom Activity</button>`
+        ? (window.FT_ORIENTATION && Number(d.id) === Number(window.FT_ORIENTATION.id)
+          // (the orientation is a module of its own, with no Activity deck: it simply ends here, no link)
+          ? `<button type="button" class="btn btn-primary ft-endmod" disabled title="The end of Setting of Training Expectations">✅ End of Module</button>`
+          : `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()" title="Open this lesson’s Activity deck">📋 Classroom Activity</button>`)
         : `<button class="btn btn-primary" onclick="nextSlide()">Next &rarr;</button>`}
       <span class="nav-tools">
         <button class="btn btn-ghost btn-sm ${state.audioMode?"on":""}" id="narrBtn" onclick="listenToggle()" title="Read the slides aloud, moving on by itself after each one">${state.audioMode?"⏸ Stop":"🎧 Listen"}</button>
@@ -12382,7 +12386,7 @@ CALLER CONTEXT: ${persona.context}
 
 Open immediately with how this specific caller would actually start the call — 1-3 sentences, realistic to their situation and tone. Do not narrate the scene — just speak as them.`;
   try{
-    const opening = await callAIText(prompt, 150, undefined, "chat");
+    const opening = await callAIText(prompt, 150, undefined, "call");
     ic.chatHistory = [{role:"caller", text: opening.trim().replace(/^["“]+|["”]+$/g,"")}];
   }catch(e){
     ic.chatHistory = [{role:"caller", text:"[Connection issue generating the call — try Restart below.]"}];
@@ -12462,7 +12466,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, realistic in tone for this caller. If the intake coordinator is handling things well (staying within scope, being patient, asking good questions), you may show trust building or start answering more fully. If they're vague, if they overstep into giving legal advice, or if they mishandle your tone, react accordingly — push back, repeat yourself, or get more frustrated, consistent with who you are.`;
   try{
-    const reply = await callAIText(prompt, 200, undefined, "chat");
+    const reply = await callAIText(prompt, 200, undefined, "call");
     ic.chatHistory = ic.chatHistory.filter(m=>!m.pending);
     ic.chatHistory.push({role:"caller", text: reply.trim().replace(/^["“]+|["”]+$/g,"")});
   }catch(e){
@@ -17261,7 +17265,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, stressed but not cartoonish, true to the personality established for whoever is speaking (Elias is blunt/direct; David Reyes is measured but exacting; a vendor or school contact is procedural but not unkind). If the EA has handled things well, you may show de-escalation. If they're vague or stall, apply more pressure.`;
   try{
-    const reply = await callAIText(prompt, 220, undefined, "chat");
+    const reply = await callAIText(prompt, 220, undefined, "call");
     toolState.cr.chatHistory = toolState.cr.chatHistory.filter(m=>!m.pending);
     toolState.cr.chatHistory.push({role:"client", text: reply});
   }catch(e){
@@ -17470,7 +17474,7 @@ ${transcript}
 
 Respond with the next line only — 1-3 sentences, stressed but not cartoonish, true to the personality established for whoever is speaking. If the EA has handled things well, you may show de-escalation. If they're vague, deflect blame, or stall, apply more pressure.`;
   try{
-    const reply = await callAIText(prompt, 220, undefined, "chat");
+    const reply = await callAIText(prompt, 220, undefined, "call");
     toolState.c6cr.chatHistory = toolState.c6cr.chatHistory.filter(m=>!m.pending);
     toolState.c6cr.chatHistory.push({role:"client", text: reply});
   }catch(e){
@@ -18901,14 +18905,14 @@ window.addEventListener("unhandledrejection", (ev)=>{ const e = ev.reason; if(e 
 window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message && !/ResizeObserver|Script error/.test(ev.message)) showActionError(new Error(ev.message), ""); });
 
 </script>
-<script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
+<script src="/js/eapa-updates.js?v=ft-2026.10.28-claudecalls"></script>
 <script src="/js/ft-updates.js?v=ft-2026.10.26-day1strict"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.28-bars3-m"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.29-endmod"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-process.js?v=ft-2026.10.26-backbtn"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.28-day1layout"></script>
+<script src="/js/ft-rules.js?v=ft-2026.10.29-endmod"></script>
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
@@ -18926,7 +18930,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.26-noshadow"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.28-readfirst-m"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.29-endmod2"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>
