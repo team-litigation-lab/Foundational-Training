@@ -580,8 +580,6 @@ function renderDeck(){
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
-      <p class="ftdd-rail-kick">Activity Deck · Day ${e(DD.day)} of ${COUNT()}</p>
-      <h2 class="ftdd-rail-title">Day ${e(DD.day)} · ${e(info.role || d.title)}</h2>
       ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
         ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
@@ -808,8 +806,6 @@ function renderToolsPage(){
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
-      <p class="ftdd-rail-kick">Day 1</p>
-      <h2 class="ftdd-rail-title">Know Your Tools</h2>
     </aside>
   </div>`;
 }
@@ -1052,7 +1048,7 @@ function deckNextUp(){
   const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1], btn = nav.querySelector(".ftdd-next");
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // the slide's own pages come first: Next turns them
-  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h)); return; }   // (no "Page N of M" under it)
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
   if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
   // (a day that closes with its own End of Day slide, Day 1, ends there: no next day after it)
@@ -1941,6 +1937,15 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
   main.main-ftdd .ftdd-slides{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1fr);}   /* a tall slide shrinks to the screen instead of pushing the bar off it */
   main.main-ftdd .ftdd-deck{height:100%;min-height:0;}
   main.main-ftdd .ftdd-sheet, main.main-ftdd .ftdd-onnavy{flex:1 1 auto;min-height:0;}
+}
+/* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
+   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
+   ✏️ Edit this slide still gets its panel. */
+@media(min-width:1001px){
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)){grid-template-columns:minmax(0,1fr);}
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
+  main.main-ftdd{padding-right:18px;}
+  main.main-ftdd .ftdd-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 10px);}
 }
 @media(max-width:760px){
   .ftdd-deck{padding:14px 16px 12px;}
