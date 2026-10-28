@@ -807,7 +807,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.open(1, 0)" title="Day 1's Classroom Activity card, the start of Day 1's Activity deck">📋 Next: Day 1 · Classroom Activity →</button>`}
+          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')" title="Know Your Tools is done: back to the 📚 Dashboard">✅ End of Module</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
