@@ -2,7 +2,7 @@
    🟢 Practice Sessions: real work, in real time, for the trainee's own firm
    Loaded after js/ft-simulators.js (whose 🛠 Practice Lab page shows these cards) and js/ft-firms.js.
    Instead of simulators, each session is the real task done live: the trainee starts it (the clock runs),
-   does the work in the CMS on their assigned case at their assigned firm (js/ft-firms.js), records what they
+   does the work in the CMS on their firm's case (js/ft-firms.js), records what they
    did on the session's form, and submits it. Each one is then:
      1. checked automatically against the case file (js/ft-cases-data.js) and the firm's rules (a % per check);
      2. evaluated by the AI in the facilitator's feedback DNA (js/ft-facilitator-dna.js);
@@ -167,7 +167,7 @@ window.addEventListener("focus", () => { if(isTrainee() && S.id && Date.now() - 
 async function save(){ if(!S.data) return false; S.data.updatedAt = new Date().toISOString(); return sharedSet("sessions:" + S.id, S.data); }
 const keyOf = (s, c) => s.id + "|" + (c ? c.id : "-");
 const caseFor = s => s.area ? (FF().myCases(s.area)[0] || null) : null;
-// An admin has no assigned case, so the preview borrows the first firm's first case. The session
+// An admin has no firm of their own, so the preview borrows the first firm's first case. The session
 // page and its tool buttons have to agree on which case that is: a tool's link is built from it
 // (🗂 MC-01 in the CMS), and a tool is opened by its position in the same list.
 const previewFirm = () => FF().firms()[0] || null;
@@ -240,7 +240,7 @@ Return ONLY JSON: {"summary":"..."}`;
   links(id){ const s = sessionById(id); return s ? (s.tools(s.area ? caseFor(s) : null) || []).map(t => t[1]) : []; },
   // Can a trainee open this session right now? The Practice Lab card's own gate, in one place, so a
   // screen that links straight to a session (js/ft-next-step.js) cannot get round the lesson lock or
-  // offer a session that works on a case before the trainer has assigned one.
+  // offer a session that works on a case when the firm has none in its caseload.
   openable(id){
     const s = sessionById(id); if(!s) return false;
     if(state.isAdmin || state.adminPreview) return true;
@@ -264,10 +264,10 @@ FTSessions.cards = function(){
     return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
-      ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case. Your trainer assigns you one — ask in the training GC if you have none yet."}</p>` : ""}
+      ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case, and your firm has none in its caseload yet — ask in the training GC."}</p>` : ""}
       <div class="fts-tool-act">${!open ? `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`
         : isTrainee() && !f ? `<button class="btn btn-ghost btn-sm" disabled>Waiting for your firm</button>`
-        : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled title="Your trainer assigns the case this session works on">Waiting for your case</button>`
+        : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled title="Your firm has no case for this session yet">No case yet</button>`
         : `<button class="btn btn-navy btn-sm" onclick="FTSessions.open('${s.id}')">${run && run.submittedAt ? "Review / redo" : run && run.startedAt ? "▶ Continue" : "▶ Start the session"}</button>`}</div></div>`;
   }).join("");
 };
