@@ -472,8 +472,8 @@ if(typeof Narrator !== "undefined"){
 
 /* No side column on the lesson and orientation slides: the slide takes the page's width, and its controls
    (🎧 Listen, the reading speed, ⛶ Full screen) sit in the Previous / Next bar after Next. The lesson's title,
-   Objectives and the keyboard tip are gone; the presenter keeps her place at the lower right of the screen,
-   so the slide leaves her that much room. */
+   Objectives and the keyboard tip are gone; the presenter floats at the lower right of the screen, over the
+   slide's corner (the standard on every day's slides and decks). */
 (function(){
   const css = document.createElement("style"); css.id = "ft-noside";
   css.textContent = `
@@ -481,7 +481,10 @@ main:has(> #lessonStage) > .day-head-compact, main:has(> #lessonStage) > #navBac
 main:has(> #lessonStage) > .ls-top{position:absolute !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;overflow:visible !important;float:none !important;}
 main:has(> #lessonStage) > .ls-top > :not(.ft-side-presenter){display:none !important;}
 @media(min-width:1000px){
-  main:has(> #lessonStage){display:block !important;grid-template-columns:none !important;padding-right:calc(clamp(170px, 13vw, 250px) + 18px) !important;}
+  main:has(> #lessonStage){display:block !important;grid-template-columns:none !important;padding-right:24px !important;}
+  /* the presenter floats over the slide's lower-right corner, as on the Activity decks: only the Previous / Next bar
+     stops short of her, so its buttons are never under her */
+  #lessonStage:not(:fullscreen) > .slide-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 30px) !important;}
   main:has(> #lessonStage) > #lessonStage, body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 !important;grid-column:auto !important;}
 }
 #lessonStage > .slide-nav > .nav-tools{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
