@@ -211,10 +211,11 @@ function candidateIds(name, batch) {
 // settings:feedback-style is the facilitator voice the platform's AI feedback is written in.
 // settings:monitor is the Training Progress Monitoring Sheet's discussions and key points (trainers set it).
 // settings:openvideos is which lessons' videos trainers have unlocked (Admin → 📅 Open Lessons → 🎬 Unlock Videos).
+// settings:day1steps and settings:daysteps are the steps of each day trainers have unlocked (js/ft-day1-flow.js, js/ft-day-locks.js).
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
 // own HTML, every trainee reads it in place of the built slide.
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
@@ -231,7 +232,7 @@ const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
+  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key === `buffer:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
@@ -299,6 +300,15 @@ async function traineeWrite(env, tok, key, value) {
     const lessons = {}, src = (incoming && incoming.lessons) || {}, was = (existing && existing.lessons) || {};
     for (const k of Object.keys(src).slice(0, 40)) if (/^\d{1,3}$/.test(k)) lessons[k] = was[k] || { at: new Date().toISOString() };
     await kv.put(key, JSON.stringify({ lessons })); return null;
+  }
+  if (key === `buffer:${id}`) {
+    // ✅ Done on a buffer, mock call or demo slide (js/ft-buffer.js): {acts: {"<day>:<slide id>": {done, by}}, released: {…}}.
+    // A trainee can only mark an activity done (at the server's time); undoing a Done and the trainer's release of the
+    // batch are the trainer's (admins write the key whole), so whatever else the trainee sends is ignored.
+    if (value.length > 8000) return "Too large";
+    const acts = Object.assign({}, (existing && existing.acts) || {}), src = (incoming && incoming.acts) || {};
+    for (const k of Object.keys(src).slice(0, 60)) if (/^\d{1,2}:[a-z0-9-]{1,30}$/.test(k) && src[k] && src[k].done && !(acts[k] && acts[k].done)) acts[k] = { done: new Date().toISOString(), by: "trainee" };
+    await kv.put(key, JSON.stringify({ acts, released: (existing && existing.released) || {} })); return null;
   }
   if (key === `skills:${id}`) {
     // The daily Typing and Spelling Tests (js/ft-skilltests.js). Append-only: the entries already saved stay as they

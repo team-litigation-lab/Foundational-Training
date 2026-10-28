@@ -60,10 +60,11 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
-  // the session's order (▶ Start Training on top — Lesson 1's is 📖 Next: the Reading Task →, the Reading Task before its deck — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
+  // the session's order (on top a segment per day the lesson runs, Day 1 · Day 2 …, in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
+    segs: [...c.querySelectorAll('.mc-grid > .ftseg > .ftseg-b')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()),
     steps: [...c.querySelectorAll('.mc-grid > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()), first: (c.querySelector('.module-body.ftli-days') || {}).id })));
   if (grid.length !== 8) fail(`📚 Dashboard draws ${grid.length} lesson cards, not 8`);
   if (grid.map(c => c.id).join() !== 'dayl-1,dayl-2,dayl-3,dayl-4,dayl-5,dayl-6,dayl-7,dayl-8') fail(`the lesson cards run ${grid.map(c => c.id).join()}`);
@@ -72,7 +73,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    if (!(c.steps[0] === 'Start Training' || (c.id === 'dayl-1' && c.steps[0] === 'Next: the Reading Task →')) || !/^(Video|Request Video|Requested)$/.test(c.steps[1] || '') || c.steps.length !== 2) fail(`${c.id}'s buttons are ${c.steps.join(' | ')}`);
+    if (c.segs.join() !== c.days.map((d, k) => 'Day ' + (k + 1)).join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
@@ -89,6 +90,12 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
+  // 🔓 a day waits for its trainer (js/ft-day-locks.js): with no lesson open, a trainee's Day 2 shows its lock, not its card
+  await page.evaluate(() => FTDayDecks.open(2)); await page.waitForTimeout(600);
+  // (the slide stays, blurred under its lock, with nothing on it to click)
+  if (!(await page.$('main.main-ftdd .ftdd-slides.ftlk > .ftd1-lock')) || await page.$('.ftdd-slides > .ftdd-deck .ftlc, .ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under button:not([disabled])')) fail('a trainee opened Day 2 before the trainer opened it');
+  // once its lesson is open (the test server opens every day's steps, server.mjs), every day opens on its card
+  await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }); await page.evaluate(() => ftLoadOpenDays());
   const dayCards = [];
   for (let n = 1; n <= 16; n++) {
     await page.evaluate(n => FTDayDecks.open(n), n); await page.waitForTimeout(500);
@@ -182,7 +189,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.evaluate(() => { const b = document.querySelector('#dayd-4'); return !b || b.disabled; })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
   // the trainer's additions are a row of their own on the lesson's Classroom Activity card, and it opens their slide
   await page.click('#dayd-4'); await page.waitForTimeout(1500);
-  await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer · Day 4")'); await page.waitForTimeout(1500);
+  await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer")'); await page.waitForTimeout(1500);
   const tv = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', steps: document.querySelectorAll('.ftdd-x').length, form: !!document.querySelector('.ftdd-xform'),
     sim: !!document.querySelector('.ftdd-x a[href*="call.html"]'), bold: !!document.querySelector('.ftdd-x b b'), text: (document.querySelector('.ftdd-body') || {}).innerText || '' }));
   if (!/From your trainer/.test(tv.h)) fail(`📌 didn't open Day 4's "From your trainer" slide: ${tv.h}`);

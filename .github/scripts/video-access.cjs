@@ -47,10 +47,10 @@ async function workerChecks() {
   await put('settings:openvideos', { all: [], batches: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-  const btn = () => page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-2 .mc-grid > button')][1]; return b ? b.innerText.trim() : ''; });
+  const btn = () => page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-2 .mc-grid > button')].pop(); return b ? b.innerText.trim() : ''; });
   // Day 1's video is never asked for: it opens with the trainer's Handouts and Videos unlock (js/ft-day1-flow.js; the
   // test server starts with Day 1 unlocked to its end)
-  const l1 = await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-1 .mc-grid > button')][1]; return b ? b.innerText.trim() : ''; });
+  const l1 = await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-1 .mc-grid > button')].pop(); return b ? b.innerText.trim() : ''; });
   if (/Request/.test(l1)) fail(`Lesson 1's video offers a request: "${l1}"`);
   if (!/Request Video/.test(await btn())) fail(`a locked video doesn't offer 🔒 Request Video: "${await btn()}"`);
   // the trainee asks for it
@@ -67,7 +67,7 @@ async function workerChecks() {
   await page.evaluate(() => { state.isAdmin = false; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
   if (!/^.?.?\s*Video$/.test(await btn()) || /Request|Requested/.test(await btn())) fail(`after the approval, the button reads "${await btn()}", not 🎬 Video`);
-  if (!/Request Video/.test(await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-3 .mc-grid > button')][1]; return b ? b.innerText : ''; }))) fail('approving one lesson\'s video opened another\'s');
+  if (!/Request Video/.test(await page.evaluate(() => { const b = [...document.querySelectorAll('#dayl-3 .mc-grid > button')].pop(); return b ? b.innerText : ''; }))) fail('approving one lesson\'s video opened another\'s');
 
   await put('settings:openvideos', vidsBefore || { all: [], batches: {} });
   await browser.close();

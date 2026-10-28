@@ -113,8 +113,9 @@ function recHtml(s, r, next){
 }
 function renderPage(){
   if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-  // every set is open, like every lesson and Practice Lab on this platform: a trainee listens ahead or catches up
-  const open = SETS;
+  // a set opens with its day: 🔓 once the trainer has opened the day (js/ft-day-locks.js); a trainee catches up on any set opened
+  const open = SETS.filter(setOpen);
+  if(!open.length) return `<div class="card" style="padding:24px;"><h2 style="margin:0 0 6px;">🔒 Call Listening</h2><p style="margin:0;">The recordings open when your trainer unlocks the Call Listening step of the day.</p></div>`;
   const cur = setLive(R.set && open.some(s => s.id === R.set) ? R.set : open[0].id); R.set = cur.id;
   const k = countDone(R.rec, cur);
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
@@ -145,10 +146,12 @@ window.FTListen = {
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },
   state: () => R, reload: () => { X.at = 0; return Promise.all([load(true), loadSets(true)]); }
 };
+// a set opens with its day's 🎧 Call Listening step (js/ft-day-locks.js), not just with its day
+const setOpen = s => !window.FTDayLocks || FTDayLocks.toolOpen("listening", s.day);
 // 🛠 the Practice Lab's section
 window.ftListenSection = () => `<section class="fts-group"><h2>🎧 Call Listening</h2>
     <p class="fts-sub">The sample recordings from the Call Listening sessions. Log each call as you listen — who called, what they wanted, how the VA handled it, a phrase worth reusing — and your trainer can see what you heard without a write-up anywhere else.</p>
-    <div class="fts-grid">${SETS.map(s => { const l = setLive(s.id);
+    <div class="fts-grid">${SETS.filter(setOpen).map(s => { const l = setLive(s.id);
       return `<div class="card fts-card"><div class="fts-kicker">Day ${s.day} · ${l.n} recordings</div><h3>${s.icon} ${e(s.title)}</h3>
         <p class="fts-note">${e(s.about)}</p>
         <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="FTListen.open('${e(s.id)}')">Open the log</button></div></div>`; }).join("")}</div></section>`;

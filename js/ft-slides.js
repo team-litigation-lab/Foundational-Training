@@ -455,7 +455,7 @@ if(typeof Narrator !== "undefined"){
     if(!t || !window.FTNextUp) return;
     // the bar's forward button is its last (Next →, or 📋 Classroom Activity on the last slide): the label goes just before it
     const btn = nav.querySelector(':scope > button[onclick^="nextSlide"], :scope > button[onclick^="goToKnowledgeCheckWithInterstitial"]') || [...nav.children].filter(b => b.matches("button, a.btn") && b.offsetParent).pop();
-    FTNextUp(nav, btn, t, nx ? "" : (isOrient ? "Day 1" : "Activity Deck"));   // (no "Step N of M": the title has two lines)
+    FTNextUp(nav, btn, t, nx ? "" : (isOrient ? "Know Your Tools" : "Activity Deck"));   // (no "Step N of M": the title has two lines)
   }
   const css = document.createElement("style");
   css.textContent = `/* the lesson card (lessons and the orientation, the navy panel the slide sits in) has the American-flag photo, under a

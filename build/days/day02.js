@@ -6,7 +6,7 @@ const DAY2 = {
     {
       "id": "s1",
       "h": "AM: Buffer Time (1–2 hrs)",
-      "html": "<p>Carryover period for completing any pending Day 1 tasks.</p>\n<p class=\"li\" style=\"--lvl:0\"><span class=\"lbl\">2.</span><span><b>AM:</b><b><i> Common Terms Used &amp; Auto Liability Insurance</i></b></span></p>\n<p>Kindly proceed right away to your first set of tasks in today&#x27;s training session. Thank you.                                      </p>"
+      "html": "<p>Carryover period for completing any pending tasks from the last session.</p>\n<p class=\"li\" style=\"--lvl:0\"><span class=\"lbl\">2.</span><span><b>AM:</b><b><i> Common Terms Used &amp; Auto Liability Insurance</i></b></span></p>\n<p>Kindly proceed right away to your first set of tasks in today&#x27;s training session. Thank you.                                      </p>"
     },
     {
       "id": "s2",

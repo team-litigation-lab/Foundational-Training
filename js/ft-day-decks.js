@@ -48,7 +48,7 @@ const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayU
    read to its last slide (decks-done, saved with the trainee's account). */
 let decksDone = null;
 function doneDays(){
-  if(decksDone == null){ decksDone = []; if(typeof storeGet === "function") Promise.resolve(storeGet("decks-done")).then(v => { if(Array.isArray(v)){ decksDone = [...new Set(decksDone.concat(v.map(Number)))]; if(state.view === "modules") render(); } }).catch(() => {}); }
+  if(decksDone == null){ decksDone = []; if(typeof storeGet === "function") Promise.resolve(storeGet("decks-done")).then(v => { if(Array.isArray(v)){ decksDone = [...new Set(decksDone.concat(v.map(Number)))]; if(state.view === "modules" || state.view === "daydeck") render(); } }).catch(() => {}); }
   return decksDone;
 }
 function markDayDone(n){
@@ -118,7 +118,7 @@ function timeOf(h){
   const t = String(h || "");
   if(/^homework/i.test(t)) return {ic: "🏠", label: "Homework"};
   if(/buffer/i.test(t)) return {ic: "⏳", label: "Buffer time"};
-  if(/^entire day/i.test(t)) return {ic: "📅", label: "Entire day"};
+  if(/^entire day/i.test(t)) return {ic: "📅", label: "AM & PM"};   // (no "Day" on a slide)
   if(/^pm\b/i.test(t)) return {ic: "🌇", label: "Afternoon"};
   if(/^am\b/i.test(t)) return {ic: "🌅", label: "Morning"};
   return null;
@@ -344,7 +344,7 @@ function listenSlide(day, time){
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
   // the first slide: the lesson's day card where the day has one (there is no Training Agenda slide)
-  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Day card", agenda: true}] : [];   // (no Training Agenda slide)
+  const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Activity card", agenda: true}] : [];   // (no Training Agenda slide)
   d.slides.forEach(s => {
     // a lesson day's "To be added" slide has no slide of its own (no 🎲 Today's Task: the unannounced task lands in 🎲 Tasks)
     if(s.placeholder && !only) return;
@@ -362,8 +362,8 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   // every day's deck ends with ✅ End of Module (back to 📚 Dashboard): it never runs on into the next day's deck, even
   // where the lesson goes on tomorrow; the trainee opens that day from the Dashboard
   const deck = inCardOrder(Number(d.day), out);
-  // Day 1 closes with its own End of Day 1, after the Installation of SA
-  if(Number(d.day) === 1) deck.push({id: "end-day", h: "End of Day 1", divider: true, end: true, html: ""});
+  // every day closes on its own end slide (✅ End of Module → 📚 Dashboard); no slide names the day
+  deck.push({id: "end-day", h: "End of today’s training", divider: true, end: true, html: ""});
   return deck;
 };
 /* 📋 The deck runs in the day's own order, the order of its card: each of the card's rows is a stop, in turn. A row that is
@@ -404,13 +404,22 @@ const HANDOUTS = {1: {items: [
   ["Western Culture", "https://drive.google.com/file/d/1EkJ1eqoZqccdThFJ0-O1tPXEyjLLeIX0/view"],
   ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]}};
 function handoutsSlide(h){
+  // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
+  // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
+  const lid = lessonOfDay(DD.day);
+  const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
+  const cards = h.items.map(([t, u], i) => locked
+    ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
+    : `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("");
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
-  return `<div class="ftdd-handouts">
-    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">🔓 Opens when your trainer unlocks it</p></div>
+  return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
+    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol></div>
-      <div class="ftdd-ho-list">${h.items.map(([t, u], i) => `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("")}</div>
+      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert>${cards}</div>
+        <div class="ftd1-lock ftlk-over" role="alert"><b>🔒 Handouts locked</b><span>Your trainer unlocks them when the breakout session starts.</span></div></div>`
+        : `<div class="ftdd-ho-list">${cards}</div>`}
     </div></div>`;
 }
 function launchSlide(s){
@@ -421,10 +430,10 @@ function launchSlide(s){
     ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
     <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="${c ? rowGo(c, r) : ""}">${label}</button></div>`;
 }
-// 🔀 Day 1's End of Day slide: the day is done, back to 📚 Dashboard
-function dividerSlide(n){
-  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of Day ${n}</p>
-    <h2 class="ftdd-dv-h">Day ${n} is done</h2>
+// 🔀 the end of a day's deck: today's training is done, ✅ End of Module back to 📚 Dashboard (never on into the next day)
+function dividerSlide(){
+  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of today’s training</p>
+    <h2 class="ftdd-dv-h">Today’s training is complete</h2>
     <p class="ftdd-dv-sub">Update your Training Progress Monitoring Sheet before the end of your shift.</p>
     <button type="button" class="btn ftdd-next ftdd-dv-go ft-endmod" onclick="goto('modules')" title="Back to the 📚 Dashboard">✅ End of Module</button></div>`;
 }
@@ -531,8 +540,9 @@ function slideCard(d, info, list, i){
   const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : visual(slideSrc(DD.day, s)) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
-  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Day card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
-  const ribbon = lc != null ? `Day ${DD.day} · ${lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Day card"}` : s.agenda ? `Day ${DD.day} · Training Agenda` : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
+  // (the handouts' slide is the Breakout Session: its ribbon says so, not the row's "Handouts / Video")
+  const ribbon = s.launch && /ftVideoOrAsk/.test(s.launch.run || "") && HANDOUTS[DD.day] ? "Breakout Session / Group Activity" : lc != null ? (lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Activity card") : s.agenda ? "Training Agenda" : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
   const short = !s.agenda && body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().length < 220 && !/<img|<iframe|ftdd-tile/.test(body);
   return `<div class="ftdd-deck${s.placeholder ? " ftdd-deck-ph" : ""}${s.agenda ? " ftdd-deck-ag" : ""}" data-slide="${i}">
@@ -554,7 +564,7 @@ function renderDeck(){
     loadDecks();
     return `${back}<div class="ftdd-deck ftdd-msg"><p>${DD.failed ? "The day decks couldn’t load. Check your connection and open the deck again." : "Loading the day deck…"}</p></div>`;
   }
-  const d = all[DD.day]; if(!d) return `${back}<div class="ftdd-deck ftdd-msg"><p>There is no deck for Day ${e(DD.day)}.</p></div>`;
+  const d = all[DD.day]; if(!d) return `${back}<div class="ftdd-deck ftdd-msg"><p>There is no deck for this session.</p></div>`;
   // the trainer's own edits of these slides (js/ft-slide-editor.js), so a trainee opens the deck as it now reads
   if(root.FTSlideEdit) FTSlideEdit.load();
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
@@ -920,7 +930,7 @@ const LESSON_CARDS = {
     takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
-      {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for any pending Day 1 tasks", k: "buffer", d: 2, s: "s1"},
+      {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 2, s: "s1"},
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2"},
       {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2"},
       {t: "Breakout Session: Digital Handouts", sub: "Group activity · handouts posted in the training GC", k: "interactive", d: 2, s: "s3"},
@@ -931,7 +941,7 @@ const LESSON_CARDS = {
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
-      {t: "Checking of Assignments", sub: "Day 2’s homework and assessments reviewed", k: "classroom", d: 3, s: "s1"},
+      {t: "Checking of Assignments", sub: "The last session’s homework and assessments reviewed", k: "classroom", d: 3, s: "s1"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
       {t: "Confidentiality & Call Response Exercise", k: "interactive", d: 3, s: "s1"},
       {t: "Reception Activity on VA Oscar’s Recordings", sub: "Extract the 5 data points into your assessment sheet", k: "assessment", d: 3, s: "s1"},
@@ -948,9 +958,9 @@ const LESSON_CARDS = {
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "Receptionist_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
-      {t: "Buffer Time for Reception Mock Calls", time: "Day 5 AM", sub: "Carryover for any pending Day 4 tasks", k: "buffer", d: 5, s: "s1"},
+      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 5, s: "s1"},
       {t: "Attorney Calendar Management Activity", sub: "Set the time zone and screenshot each appointment before saving", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendar Management Mock Calls", time: "Day 6 · entire day", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1"},
+      {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
     tools: [["Tools:", "Google Calendar Simulator, Booking Rule Check"], "The time zone visible in every screenshot",
@@ -961,12 +971,12 @@ const LESSON_CARDS = {
       {t: "Breakout Session: Intake Specialist Best Practices", sub: "Digital handouts · group activity", k: "interactive", d: 7, s: "s1"},
       {t: "Call Listening on the Intake Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
       {t: "Intake Scenario Exercise", k: "interactive", d: 7, s: "s1"},
-      {t: "Scheduled Shadowing", time: "Day 7 PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
-      {t: "Intake Process, Overview & Documents", time: "Day 8", sub: "The videos, the Intake Worksheet and your intake packet", k: "watch", d: 8, s: "s1"},
+      {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
+      {t: "Intake Process, Overview & Documents", time: "AM", sub: "The videos, the Intake Worksheet and your intake packet", k: "watch", d: 8, s: "s1"},
       {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet and extracted documents in SA", k: "watch", d: 8, s: "s2"},
-      {t: "Saving the Intake Packet to SA", time: "Day 8 PM", k: "demo", d: 8, s: "s3"},
-      {t: "Intake Mock Call Preparation", time: "Day 9", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
-      {t: "Transcription Activity & Mock Calls", time: "Day 9 PM", sub: "Minutes of the meeting: client-to-attorney", k: "interactive", d: 9, s: "s3"}],
+      {t: "Saving the Intake Packet to SA", time: "PM", k: "demo", d: 8, s: "s3"},
+      {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
+      {t: "Transcription Activity & Mock Calls", time: "PM", sub: "Minutes of the meeting: client-to-attorney", k: "interactive", d: 9, s: "s3"}],
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
@@ -974,25 +984,25 @@ const LESSON_CARDS = {
     rows: [
       {t: "Breakout Session: Claims Specialist Best Practices", sub: "Digital handouts · individual activity", k: "interactive", d: 10, s: "s1"},
       {t: "Claims Terminology Exercise", k: "interactive", d: 10, s: "s1"},
-      {t: "Insurance Communication Videos & Articles", time: "Day 10 PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
-      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "Day 11", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
+      {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
+      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters", k: "interactive", go: "lor", day: 11},
-      {t: "Shadowing", time: "Day 11 PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
-      {t: "Uploading & Sending 1P and 3P LORs", time: "Day 12 · entire day", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1"}],
+      {t: "Shadowing", time: "PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
+      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1"}],
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
       "Never share the client’s DOB, email, SSN or VIN with the 3P insurer"],
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
-      {t: "Buffer Time for the LOR Drafting Demo", time: "Day 13 AM", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
+      {t: "Buffer Time for the LOR Drafting Demo", time: "AM", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
       {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
-      {t: "Breakout Session & Document Detectives Exercise", time: "Day 13 PM", k: "interactive", d: 13, s: "s3"},
+      {t: "Breakout Session & Document Detectives Exercise", time: "PM", k: "interactive", d: 13, s: "s3"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
-      {t: "Sending MedLOR & Requesting Bills and Records", time: "Day 14", sub: "Tutorial video · build your own work guide", k: "watch", d: 14, s: "s1"},
-      {t: "Shadowing Session", time: "Day 14 PM", k: "shadow", d: 14, s: "s2"},
-      {t: "MedLOR & Records Request", time: "Day 15 · entire day", sub: "Recorded demonstration", k: "demo", d: 15, s: "s1"},
-      {t: "Lien Balance Verification Request", time: "Day 16", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
-      {t: "Demo and Shadowing", time: "Day 16 PM", k: "demo", d: 16, s: "s2"}],
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · build your own work guide", k: "watch", d: 14, s: "s1"},
+      {t: "Shadowing Session", time: "PM", k: "shadow", d: 14, s: "s2"},
+      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration", k: "demo", d: 15, s: "s1"},
+      {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
+      {t: "Demo and Shadowing", time: "PM", k: "demo", d: 16, s: "s2"}],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
       "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
     takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
@@ -1107,7 +1117,7 @@ const lessonOfDay = n => { const k = Object.keys(LESSON_CARDS).find(l => LESSON_
 function cardRows(c, ex){
   const rows = c.rows.slice();
   c.days.filter(n => instructionOnlyDays().includes(n) && ((ex || {})[n] || []).length).forEach(n =>
-    rows.push({t: `From your trainer · Day ${n}`, sub: `${ex[n].length} ${ex[n].length === 1 ? "activity" : "activities"} and instructions`, k: "trainer", d: n, s: "trainer"}));
+    rows.push({t: "From your trainer", sub: `${ex[n].length} ${ex[n].length === 1 ? "activity" : "activities"} and instructions`, k: "trainer", d: n, s: "trainer"}));
   return rows;
 }
 const cardOf = lid => LESSON_CARDS[lid] ? Object.assign({lesson: Number(lid)}, LESSON_CARDS[lid]) : null;
@@ -1162,7 +1172,7 @@ function dayCard(n, ex){
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
-  const of = c.days.length > 1 ? ` · Day ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";
+  const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
   const head = first ? title : (DAY_TITLES[n] || title);
@@ -1177,7 +1187,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol>${seq}</ol>
-        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="Day ${d}’s card">📋 Day ${d}</button>`).join("")}</div>` : ""}</section>
+        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -1271,15 +1281,15 @@ function trainerSlide(n){
   if(!X.data){ loadExtras(); return `<p>Loading your trainer’s activities…</p>`; }
   const items = X.data.days[n] || [], f = X.form;
   const list = items.length ? items.map((x, i) => itemHtml(x, n, i)).join("")
-    : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : `More for Day ${n} is on its way`}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
-  return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to Day ${n} <span>— every trainee sees it on this slide</span></p>
+    : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : "More is on its way"}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
+  return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to this slide <span>— every trainee sees it here</span></p>
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
       <div class="ftdd-xgrid">
         <label>Type<select id="ftddXKind">${KINDS.map(k => `<option value="${k[0]}"${f.kind === k[0] ? " selected" : ""}>${k[1]} ${k[2]}</option>`).join("")}</select></label>
         <label class="wide">Title<input id="ftddXTitle" value="${e(f.title || "")}" placeholder="e.g. Practise intake calls on the Call Simulator"></label>
         <label class="full">Instructions<textarea id="ftddXText" rows="3" placeholder="What the trainee does, step by step">${e(f.text || "")}</textarea></label>
         <label class="full">Link (optional — a video, a document, a folder or a simulator)<input id="ftddXUrl" value="${e(f.url || "")}" placeholder="https://…"></label>
-      </div><button type="button" class="btn btn-navy btn-sm" onclick="FTDayDecks.addX(${n})">➕ Add to Day ${n}</button></div>` : ""}`;
+      </div><button type="button" class="btn btn-navy btn-sm" onclick="FTDayDecks.addX(${n})">➕ Add it</button></div>` : ""}`;
 }
 async function saveExtras(){
   const ok = await sharedSet("settings:dayextras", X.data);
@@ -1328,7 +1338,7 @@ function mapHtml(){
     const title = (d && (info.role || d.title)) || `Day ${n}`;
     const state_ = n === here ? "here" : n < at ? "done" : "";
     const slides = list.map((x, i) => {
-      const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Day card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
+      const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Activity card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
       const on = onDeck && n === here && i === DD.i;
       return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${open ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span></button></li>`;
     }).join("");
@@ -1480,7 +1490,8 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
     return false;
   }, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day, discussionDay, instructionOnlyDays,
   // the no-discussion day's last slide, "From your trainer"
-  trainer(n){ open(n, 999); },
+  // (its own slide: the deck now ends on its end slide, after it)
+  trainer(n){ loadDecks().then(() => { const d = decks() && decks()[Number(n)], i = d ? slidesOf(d).findIndex(s => s.trainer) : -1; open(n, i >= 0 ? i : 999); }); },
   async addX(n){
     if(!isAdminView()) return;
     const v = id => String((document.getElementById(id) || {}).value || "").trim();
@@ -1496,6 +1507,9 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   async delX(n, i){ if(!isAdminView() || !confirm("Remove this from the day?")) return; await loadExtras(true); (X.data.days[n] || []).splice(i, 1); await saveExtras(); },
   async moveX(n, i, d){ if(!isAdminView()) return; await loadExtras(true); const l = X.data.days[n] || [], j = i + d; if(j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; await saveExtras(); },
   extras: () => X.data};
+// for 🔓 the Activity Locks (js/ft-day-locks.js): the lesson whose card holds a day, what the day holds, the days read through
+Object.assign(root.FTDayDecks, {lessonOfDay, readFirst, dayTitle: n => DAY_TITLES[Number(n)] || ""});
+root.FTDecksDone = () => doneDays().slice();
 
 if(!document.getElementById("ftdd-deck-font")){
   const f = document.createElement("link"); f.id = "ftdd-deck-font"; f.rel = "stylesheet";
@@ -1814,6 +1828,11 @@ main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-k{margin:0;font:800 14px/1.2 'Inter',sans-serif !important;letter-spacing:.12em !important;text-transform:uppercase;color:#C2410C !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-when{display:inline-block;margin:0;padding:6px 16px;border-radius:999px;background:#E8590C;color:#fff !important;font:800 17px/1.2 'Inter',sans-serif !important;}
+main.main-ftdd .ftdd-handouts:not(.ftdd-ho-locked) .ftdd-ho-when{background:#2E7D4F;}   /* unlocked: green */
+main.main-ftdd .ftdd-handouts .ftdd-ho-list.ftlk{display:block;}   /* locked: the five cards keep their grid, under the blur */
+main.main-ftdd .ftdd-handouts .ftdd-ho-list.ftlk > .ftlk-under{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:10px;height:100%;}
+main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over{border-radius:12px;gap:6px;padding:16px;min-height:0;}
+main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over b{font-size:20px;} main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over span{font-size:14.5px;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
