@@ -9448,7 +9448,10 @@ function renderDaySlideshow(d){
       </span>
       <span class="slide-counter">Step ${idx+1} of ${total}</span>
       ${isLast
-        ? `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()" title="Open this lesson’s Activity deck">📋 Classroom Activity</button>`
+        ? (window.FT_ORIENTATION && Number(d.id) === Number(window.FT_ORIENTATION.id)
+          // (the orientation is a module of its own, with no Activity deck: it simply ends here, no link)
+          ? `<button type="button" class="btn btn-primary ft-endmod" disabled title="The end of Setting of Training Expectations">✅ End of Module</button>`
+          : `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()" title="Open this lesson’s Activity deck">📋 Classroom Activity</button>`)
         : `<button class="btn btn-primary" onclick="nextSlide()">Next &rarr;</button>`}
       <span class="nav-tools">
         <button class="btn btn-ghost btn-sm ${state.audioMode?"on":""}" id="narrBtn" onclick="listenToggle()" title="Read the slides aloud, moving on by itself after each one">${state.audioMode?"⏸ Stop":"🎧 Listen"}</button>
@@ -18903,12 +18906,12 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-updates.js?v=ft-2026.10.26-day1strict"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.28-bars3-m"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.29-endmod"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-process.js?v=ft-2026.10.26-backbtn"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.28-day1layout"></script>
+<script src="/js/ft-rules.js?v=ft-2026.10.29-endmod"></script>
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
@@ -18926,7 +18929,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.26-noshadow"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.28-toolsnolinks"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.29-endmod"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>
