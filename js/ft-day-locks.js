@@ -21,8 +21,9 @@
        Questions) wait for their step;
      • the platform tools a step opens (🎧 Call Listening, 🧰 the LOR Drafting Activity, the Transcription Activity) wait
        for it, and the 🛠 Practice Lab's sessions, simulators and trainer activities wait until one of their days is opened.
-   📚 Dashboard's lesson cards carry one segment per day the lesson runs (Day 1, Day 2, Day 3: the lesson's own days),
-   each opening that day's deck: 🔒 until the trainer opens the day, ✓ once the trainee has been through it.
+   📚 Dashboard's lesson cards carry one segment per part of the lesson (Start for a one-part lesson, else Part 1, Part 2 …:
+   a day each, or the Training Guide's own split, PARTS below), each opening its day's deck: 🔒 until the trainer opens
+   the day, ✓ once the trainee has been through it.
    Only a trainee is held to it: an admin and the 👁 trainee view are not, and a day the trainee has finished (read to its
    last slide) stays open to review.
    ============================================================ */
@@ -172,7 +173,15 @@ function openCurrent(n){
 }
 
 const NOLOAD = "The training couldn’t load. Check your connection and try again.";
-/* ---------- 📚 Dashboard: one segment per day the lesson runs ---------- */
+/* ---------- 📚 Dashboard: the lesson's parts, one segment each ----------
+   a one-part lesson's segment reads Start; a lesson in parts reads Part 1 · Part 2 … (no "Day" on the card). A part is
+   one day, except where the Training Guide splits a lesson otherwise (PARTS). Which lesson a day belongs to (its locks,
+   its progress) doesn't change: only the card's buttons are grouped. */
+// Receptionist: Part 1 is Day 3's classroom session (the Guide's "Classroom Discussion on PI Workflow, Reception Training
+// and Call Listening", the same session as the PI Workflow lesson's), Part 2 Day 4. Medical Records: Part 1 MedLOR
+// (Days 13–15), Part 2 Lien Balance Verification (Day 16)
+const PARTS = {4: [[3], [4]], 8: [[13, 14, 15], [16]]};
+const partsOf = (lid, days) => PARTS[lid] || days.map(d => [d]);
 function segState(d){
   if(!isTrainee()) return "open";
   if(d === 1){ const l = lessonOf(1); return l != null && !lessonOpen(l) ? "locked" : doneDays().includes(1) ? "done" : "open"; }
@@ -182,13 +191,19 @@ function segState(d){
 function segments(lid, days, title){
   const cur = isTrainee() && root.FTNextStep && FTNextStep.place ? (p => p && p.day ? Number(p.day.day) : null)(FTNextStep.place()) : null;
   const titles = root.FTDayDecks && FTDayDecks.dayTitle ? FTDayDecks.dayTitle : () => "";
-  const b = days.map((d, k) => {
-    const st = segState(d), t = titles(d) || title;
-    const tip = st === "locked" ? `Day ${k + 1} of ${days.length}: opens when your trainer unlocks it` : `Day ${k + 1} of ${days.length}: ${t}`;
-    return `<button type="button" class="ftseg-b ${st}${cur === d ? " now" : ""}" data-day="${d}" ${st === "locked" ? `aria-disabled="true"` : ""}
-      onclick="event.stopPropagation(); FTDayLocks.launch(${d})" title="${esc_(tip)}">${st === "locked" ? "🔒 " : st === "done" ? "✓ " : ""}Day ${k + 1}</button>`;
+  const parts = partsOf(lid, days), one = parts.length === 1;
+  const b = parts.map((p, k) => {
+    // a day of another lesson's (Receptionist's Day 3) waits for this lesson too
+    const sts = p.map(d => lessonOf(d) !== lid && isTrainee() && !lessonOpen(lid) ? "locked" : segState(d));
+    const st = sts.includes("open") ? "open" : sts.every(x => x === "done") ? "done" : sts.includes("done") ? "open" : "locked";
+    // the part opens on its day the trainee is on (the first one open, else the last one done); an admin, on its first
+    const d = !isTrainee() ? p[0] : p[sts.indexOf("open")] || p[sts.lastIndexOf("done")] || p[0];
+    const label = one ? "Start" : `Part ${k + 1}`, t = titles(d) || title;
+    const tip = (one ? title : `Part ${k + 1} of ${parts.length}`) + (st === "locked" ? ": opens when your trainer unlocks it" : `: ${t}`);
+    return `<button type="button" class="ftseg-b ${st}${p.includes(cur) ? " now" : ""}" data-day="${d}" data-days="${p.join(",")}" ${st === "locked" ? `aria-disabled="true"` : ""}
+      onclick="event.stopPropagation(); FTDayLocks.launch(${d})" title="${esc_(tip)}">${st === "locked" ? "🔒 " : st === "done" ? "✓ " : ""}${label}</button>`;
   }).join("");
-  return `<div class="ftseg ftseg-n${days.length}" role="group" aria-label="${esc_("Training days: " + title)}">${b}</div>`;
+  return `<div class="ftseg ftseg-n${parts.length}" role="group" aria-label="${esc_((one ? "Start: " : "Training parts: ") + title)}">${b}</div>`;
 }
 function launch(d){
   d = Number(d);

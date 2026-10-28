@@ -60,7 +60,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
-  // the session's order (on top a segment per day the lesson runs, Day 1 · Day 2 …, in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
+  // the session's order (on top a segment per part of the lesson, Start for a one-part lesson, else Part 1 · Part 2 … (Receptionist: Day 3's session and Day 4; Medical Records: MedLOR and Lien Verification), in place of ▶ Start Training (js/ft-day-locks.js) — then 🎬 Video, and no 🏠 Classroom; the lesson's icon opens its day card), and every one of the sixteen days on
   // exactly one card (Intake is Days 7–9, Medical Records Days 13–16)
   const grid = await page.evaluate(() => [...document.querySelectorAll('main.main-dash .module-grid > .ftli')].map(c => ({ id: c.id,
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
@@ -73,7 +73,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    if (c.segs.join() !== c.days.map((d, k) => 'Day ' + (k + 1)).join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
+    if (c.segs.join() !== (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-4': 2, 'dayl-8': 2 }[c.id] || c.days.length).join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
