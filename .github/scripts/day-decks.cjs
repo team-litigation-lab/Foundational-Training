@@ -124,9 +124,10 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
       if (img && !img.complete) await new Promise(r => { img.addEventListener('load', r, { once: true }); img.addEventListener('error', r, { once: true }); setTimeout(r, 3000); });
       const sh = document.querySelector('.ftdd-mid .ftdd-sheet');
       return { name: (document.querySelector('.ftdd-tool-txt h3') || {}).textContent || '', shot: !!(img && img.naturalWidth), what: !!document.querySelector('.ftdd-tool-what'),
-        where: !!document.querySelector('.ftdd-tool-where'), feats: document.querySelectorAll('.ftdd-tool-txt li').length, open: !!document.querySelector('.ftdd-tool-acts .btn-navy'),
+        where: !!document.querySelector('.ftdd-tool-where'), feats: document.querySelectorAll('.ftdd-tool-txt li').length, acts: !!document.querySelector('.ftdd-tool-acts, .ftdd-tool-txt a.btn, .ftdd-tool-txt button'),
         on: (document.querySelector('.ftdd-tools-tab.on') || {}).title || '', over: sh ? sh.scrollHeight - sh.clientHeight : -1 }; });
-    if (!tool.shot || !tool.what || !tool.where || tool.feats < 3 || !tool.open) fail(`Know Your Tools, tool ${t + 1}, is missing its screenshot, purpose, place, features or Open button: ${JSON.stringify(tool)}`);
+    if (!tool.shot || !tool.what || !tool.where || tool.feats < 3) fail(`Know Your Tools, tool ${t + 1}, is missing its screenshot, purpose, place or features: ${JSON.stringify(tool)}`);
+    if (tool.acts) fail(`Know Your Tools, tool ${t + 1}, still has an Open, counter or Next tool button: ${JSON.stringify(tool)}`);
     if (!tool.on || tool.name.indexOf(tool.on) < 0) fail(`Know Your Tools: the picked tab isn't the tool shown: ${JSON.stringify(tool)}`);
     if (tool.over > 4) fail(`Know Your Tools, ${tool.name}: the slide runs over its sheet by ${tool.over}px`);
   }

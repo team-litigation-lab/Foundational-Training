@@ -1433,18 +1433,16 @@ function toolsTabs(){
 }
 function toolsSlide(){
   const k = Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)), t = TOOLS[k];
-  const open = t.href ? `<a class="btn btn-navy btn-sm" href="${e(t.href)}" target="_blank" rel="noopener">Open ${e(t.name.split(" · ")[0])} ↗</a>`
-    : t.go ? `<button type="button" class="btn btn-navy btn-sm" onclick="${e(t.go)}">Open ${e(t.name.split(" · ")[0])} →</button>` : "";
+  // no Open button, counter or Next tool button on the tool: the tabs above pick a tool, the bar's Next → moves on
   return `<div class="ftdd-tools">
     <div class="ftdd-tool" role="tabpanel">
       <a class="ftdd-tool-shot" href="${TOOL_IMG}${t.img}.webp" target="_blank" rel="noopener" title="Open the screenshot full size"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></a>
       <div class="ftdd-tool-txt">
         <h3>${t.ic} ${e(t.name)}</h3>
-        <p class="ftdd-tool-what"><b>What it’s for:</b> ${e(t.what)}</p>
-        <p class="ftdd-tool-where"><b>Where:</b> ${e(t.where)}</p>
+        <p class="ftdd-tool-what"><b>What it’s for</b>${e(t.what)}</p>
+        <p class="ftdd-tool-where"><b>Where</b>${e(t.where)}</p>
         <p class="ftdd-tool-fh">Features</p>
         <ul>${t.feats.map(f => `<li>${e(f)}</li>`).join("")}</ul>
-        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.slide(1, 'reading')">📖 Next: the Reading Task →</button>`}</div>
       </div>
     </div>
   </div>`;
@@ -1627,6 +1625,11 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b{font:700 11.5px 'IB
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt .ftdd-tool-fh{margin:10px 0 4px !important;font:700 11.5px 'IBM Plex Mono',monospace !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;}
 .ftdd-tool-txt ul{margin:0 0 10px;padding-left:18px;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt li{font-size:15px;line-height:1.45;margin:0 0 4px;}
+main.main-ftdd .ftdd-nav:not(:has(.ftdd-dots)) .ftdd-map{margin-right:auto;}   /* Know Your Tools: 🗺 Map beside ← Previous */
+/* one type on the tool's page: every line the same font, size and colour; each section's label ("What it's for",
+   "Where", "Features") the same small orange heading over it */
+main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what, main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-where, main.main-ftdd .ftdd-sheet .ftdd-tool-txt li{font:600 19px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;margin:0 0 6px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-where b, main.main-ftdd .ftdd-sheet .ftdd-tool-txt .ftdd-tool-fh{display:block;margin:12px 0 4px !important;font:800 13px/1.2 'Poppins','Inter',sans-serif !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B !important;}
 .ftdd-tool-acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .ftdd-tool-n{font:600 12px 'IBM Plex Mono',monospace;color:var(--ink-soft);}
 @media(max-width:1100px){ .ftdd-tool{grid-template-columns:minmax(0,1fr);} }
