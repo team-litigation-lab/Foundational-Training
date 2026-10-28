@@ -1149,6 +1149,11 @@ function standardRows(n, c, lid, first, title, rows){
   const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
   return [...lead, ...mid, ...body, ...pqRows, ...tail];
 }
+// Lesson 1's ▶ Start Training (on its Dashboard card and on Day 1's card) goes to the Reading Task first, the way Know
+// Your Tools' last tool used to: "📖 Next: the Reading Task →"; the lesson deck comes after it, in Day 1's order
+const readFirst = id => Number(id) === 1 && !lessonDone(1);
+const startLabel = (id, done) => readFirst(id) ? "📖 Next: the Reading Task →" : done ? "▶ Review" : "▶ Start Training";
+const startGo = id => readFirst(id) ? "FTDayDecks.slide(1, 'reading')" : `goto('day', ${Number(id)})`;
 function dayCard(n, ex){
   n = Number(n);
   const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return "";
@@ -1170,7 +1175,7 @@ function dayCard(n, ex){
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
       <div class="ftlc-acts">
-        <button type="button" class="ftlc-start" ${open_ ? `onclick="goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? (lessonDone(c.lesson) ? "▶ Review" : "▶ Start Training") : "🔒 Not open yet"}</button>
+        <button type="button" class="ftlc-start" ${open_ ? `onclick="${startGo(c.lesson)}"` : "disabled"} title="${open_ ? e(readFirst(c.lesson) ? "The Reading Task, then the lesson" : "Open the lesson: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? startLabel(c.lesson, lessonDone(c.lesson)) : "🔒 Not open yet"}</button>
         <button type="button" class="ftlc-tag" onclick="${rowGo(c, off)}" title="${e("The offline activity: " + off.t)}">Classroom</button>
       </div>
     </header>
@@ -1216,7 +1221,7 @@ function introCard(l, cur, ex, tags){
   if(body){ body.id = `dayd-${n}`; body.classList.add("ftli-days"); body.setAttribute("role", "button"); body.tabIndex = 0;
     body.title = `📋 The day card: ${FTDays.label(c.days)}, ${acts} activities`;
     body.setAttribute("onclick", `FTDayDecks.open(${n})`); body.setAttribute("onkeydown", `if(event.key==='Enter'||event.key===' '){event.preventDefault();FTDayDecks.open(${n});}`); }
-  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); goto('day', ${c.lesson})"` : "disabled"} title="${open_ ? e("The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? (done ? "▶ Review" : "▶ Start Training") : "🔒 Start Training"}</button>
+  grid.innerHTML = `<button type="button" class="btn module-start-btn ftli-live" ${open_ ? `onclick="event.stopPropagation(); ${startGo(c.lesson)}"` : "disabled"} title="${open_ ? e(readFirst(c.lesson) ? "The Reading Task, then the lesson deck" : "The lesson deck: " + title) : "Opens when your batch reaches this lesson"}">${open_ ? startLabel(c.lesson, done) : "🔒 Start Training"}</button>
     ${vid ? vid.outerHTML : ""}`;   // (no 🏠 Classroom button: the day card has the offline activity)
   grid.className = "mc-grid mc-n" + grid.querySelectorAll(":scope > button:not(.module-start-btn)").length;
   return card.outerHTML;
