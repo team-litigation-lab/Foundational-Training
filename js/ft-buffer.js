@@ -23,6 +23,8 @@ const root = window;
 // the slides that get a screen, by "<day>:<slide id>" (js/ft-day-decks-data.js); act: the activity in 🧑‍🏫 Trainer Inputs
 const ACTS = {
   "2:s1": {kind: "buffer"},
+  // a set of tasks that ends on Done, as a buffer does (the trainer's tracker and release the same), on the slide's own content
+  "2:s2": {kind: "buffer", task: true},
   "5:s1": {kind: "buffer"},
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
@@ -78,8 +80,8 @@ function traineePanel(h){
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
     <p class="ftbf-status"><span class="ftbf-dot"></span>${a.kind === "buffer" ? "Waiting for your trainer to unlock the next activity…" : "Waiting for the group debrief to start…"}</p></div>`;
-  if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">⏳ Buffer Time</p>
-    <p class="ftbf-lead">Use this buffer to finish all your pending tasks. Hit Done when you are.</p>
+  if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"}</p>
+    <p class="ftbf-lead">${a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."}</p>
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
@@ -176,7 +178,7 @@ function trackerHtml(h){
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" ${all && !T.busy ? "" : "disabled"} onclick="FTBuffer.release()">${rel ? "↻ Release again" : go}</button>
       ${all ? "" : `<p class="ftbf-muted">Waiting for all trainees to ${plural}...</p>`}</div></div>`;
 }
-const trTitle = a => a.kind === "mock" ? "Mock Call Progress Tracker" : a.kind === "demo" ? "Demo Progress Tracker" : "Buffer Progress Tracker";
+const trTitle = a => a.kind === "mock" ? "Mock Call Progress Tracker" : a.kind === "demo" ? "Demo Progress Tracker" : a.task ? "Task Progress Tracker" : "Buffer Progress Tracker";
 // the tracker reads the batch again every 15 s while it is on screen, and is redrawn in place (no page turn)
 function watchRoster(){
   clearTimeout(T.timer);
@@ -240,7 +242,7 @@ function paint(){
   box.innerHTML = traineePanel(h); sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's)
-  if(h.a.kind === "buffer") sheet.classList.add("ftbf-only");
+  if(h.a.kind === "buffer" && !h.a.task) sheet.classList.add("ftbf-only");
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
   if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => {
     const n = here(); if(!n || n.k !== h.k) return;

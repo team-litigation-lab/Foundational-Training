@@ -217,6 +217,22 @@ function visual(html){
       b.textContent = "📝 What I learned"; w.appendChild(b); return w;
     });
     tiles.length = 0; wrapped.forEach(x => tiles.push(x));
+    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
+    // "📝 What I learned"
+    const src = as.length === 1 && as[0].hasAttribute("data-embed") && typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(as[0].getAttribute("href")) : null;
+    if(src){
+      const x = tiles[0], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
+      const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
+      box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
+      // (its name: the one the build gave it, else the tile's)
+      const nm = (as[0].getAttribute("data-title") || "").trim() || tile.querySelector("b").textContent;
+      box.querySelector("b").textContent = (vid ? "🎬 " : "📊 ") + nm;
+      const f = box.querySelector("iframe"); f.setAttribute("src", src); f.setAttribute("title", nm);
+      if(learn0) learn0.setAttribute("data-title", nm);
+      const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
+      if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
+      return;
+    }
     const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-tiles") ? p.previousElementSibling : null;
     const box = absorb ? null : last;
     const grid = box || document.createElement("div"); grid.className = "ftdd-tiles";
@@ -409,7 +425,13 @@ const HANDOUTS = {1: {items: [
   ["LSH Services and VA Task List", "https://drive.google.com/file/d/12xvxXorgh_wjR9DidEewbnfokItzpzNY/view"],
   ["LSH Clients and Clientele", "https://drive.google.com/file/d/1-x8NMuG0sR994yqodr5xBgHaHDfrWv6v/view"],
   ["Western Culture", "https://drive.google.com/file/d/1EkJ1eqoZqccdThFJ0-O1tPXEyjLLeIX0/view"],
-  ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]}};
+  ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]},
+  // Day 2: Law Firm Communication's breakout session (the trainer runs it in the afternoon, 1:00–3:00 PM)
+  2: {items: [
+  ["Softphones", "https://drive.google.com/file/d/1QQh6TvcT5YRj-uNQvGpsh5cGdyoEtMdY/view"],
+  ["Law Firm Call Guide", "https://drive.google.com/file/d/11uAKj6HqrSGXnQJ1IdnCc4d-64KVcuUr/view"],
+  ["Call Handling", "https://drive.google.com/file/d/1gK2a5X1gY0fxA3I-XTk4AHdL2wwBTqaE/view"],
+  ["Attorney-Client Privilege", "https://drive.google.com/file/d/1KogqilWL3R8V4FdPUblq4md9hCHKsUBn/view"]]}};
 function handoutsSlide(h){
   // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
   // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
@@ -417,14 +439,14 @@ function handoutsSlide(h){
   const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
   const cards = h.items.map(([t, u], i) => locked
     ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
-    : `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("");
+    : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
     <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol></div>
-      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert>${cards}</div>
+      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert style="grid-template-rows:repeat(${h.items.length},minmax(0,1fr))">${cards}</div>
         <div class="ftd1-lock ftlk-over" role="alert"><b>🔒 Handouts locked</b><span>Your trainer unlocks them when the breakout session starts.</span></div></div>`
         : `<div class="ftdd-ho-list">${cards}</div>`}
     </div></div>`;
@@ -651,7 +673,8 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline)
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -938,9 +961,10 @@ const LESSON_CARDS = {
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
       {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 2, s: "s1"},
-      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2"},
-      {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2"},
-      {t: "Breakout Session: Digital Handouts", sub: "Group activity · handouts posted in the training GC", k: "interactive", d: 2, s: "s3"},
+      // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
+      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
+      {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2-2", lead: true},
+      {t: "Handouts / Video", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
       {t: "Escalation Handling Exercise", k: "interactive", d: 2, s: "s3"},
       {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "homework", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
@@ -1150,7 +1174,7 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
 function standardRows(n, c, lid, first, title, rows){
   const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
   const lead = []; let i = 0;
-  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t))) lead.push(rows[i++]);
+  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
   const body = rows.slice(i), tail = [];
   while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
   const mid = [];
@@ -2060,7 +2084,14 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);}
 @media(max-width:900px){ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr);} }
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
-.ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
+.ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}
+/* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
+.ft-body .ftdd-inline{margin:12px 0 16px;}
+.ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
+.ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+.ft-body .ftdd-inline-h .ftdd-learn{margin:0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:700 14px/1.2 'Inter',sans-serif;}
+.ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
+.ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
    three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */

@@ -21,7 +21,8 @@ const R = path.resolve(__dirname, "..");
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
 const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"]};   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
 // slide titles that named the Process Questions, which aren't on the slides
-const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"}};
+const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
+  2: {s2: "Common Terms Used & Auto Liability Insurance", s3: "Escalation Handling Exercise"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -80,7 +81,11 @@ function piParts(){
   return parts;
 }
 // slides that hold several topics, split at each topic's own line (one slide per topic)
-const SPLIT = {8: {s1: /(?=<p><b>Topic \d+:|<h4>Additional Instruction|<p><b>Added on )/}};
+const SPLIT = {8: {s1: /(?=<p><b>Topic \d+:|<h4>Additional Instruction|<p><b>Added on )/},
+  // Day 2's first set of tasks (the videos, ✅ Done) and, on a slide of its own, the assessments that follow it
+  2: {s2: /(?=<div class="trainer-slot" data-slot="2:s2-1">)/}};
+// a split slide's own names, where its parts don't name themselves (null: the slide's own name)
+const SPLIT_NAMES = {2: {s2: [null, "Common Terms Used & Auto Liability Insurance: Assessments"]}};
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -148,8 +153,24 @@ const TRIM = {1: {reading: html => {
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
     card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
 }},
-// Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide
-2: {s4: html => {
+// Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
+// and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it
+2: {s2: html => {
+  const ids = [["1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D", "Common Terms Used"], ["1tmV26rq_1z1mpq1C5hUweLytfyJUtkai", "Common Terms Used: the reference sheet"],
+    ["1K9AXO0XZJjGFXHPugLAbjeVgcC3fIZuE", "How Auto Liability Insurance Works"]];
+  let out = html;
+  ids.forEach(([id, t]) => { const re = new RegExp(`<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*${id})`); if(!re.test(out)) throw new Error(`Day 2's Common Terms slide lost the link ${id}`);
+    out = out.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); });
+  const note = /<p><b>Note:<\/b> As soon as you are done watching the videos, please type done here in our GC\.\s*Thank you\.<\/p>/;
+  if(!note.test(out)) throw new Error("Day 2's Common Terms note is no longer where the build looks for it");
+  out = out.replace(note, "<p><b>Note:</b> Hit ✅ Done below when you are.</p>").replace(/<hr class="stars">\n?(?=<div class="trainer-slot" data-slot="2:s2-1">)/, "");
+  return out;
+},
+// Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide; the
+// Softphones video plays in the slide
+s4: html => {
+  if(!/<a class="viewer-link"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/.test(html)) throw new Error("Day 2's Homework lost the Softphones video");
+  html = html.replace(/<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/, '<a class="viewer-link" data-embed$1 data-title="Softphones: the instructional video"');
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
     .replace(/<p>2026 VERSION<\/p>\n<p><a [^>]*(1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r)[^>]*>[^<]*<\/a> ?<\/p>/, (m, id) =>
       `<p><b>The handouts (2026 version)</b></p>\n<div class="ftdd-embed ftdd-embed-folder"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy"></iframe></div>`);
@@ -248,7 +269,8 @@ for(let n = 1; n <= 16; n++){
       const parts = html.split(split).filter(x => x.replace(/<[^>]+>/g, "").trim());
       if(parts.length < 2) throw new Error(`Day ${n} ${s.id} no longer splits at its topics`);
       // the lead-in before the first topic stays with it
-      const first = split.test(parts[0]) ? 0 : 1, lead = first ? parts[0] : "";
+      // (a split that names its parts, SPLIT_NAMES, has no lead-in: its first part is a slide of its own)
+      const first = split.test(parts[0]) || (SPLIT_NAMES[n] || {})[s.id] ? 0 : 1, lead = first ? parts[0] : "";
       let topic = "";
       parts.slice(first).forEach((x, i) => {
         // a topic's own line names the slide; a section of it (Additional Instruction, a dated addition) follows its topic's name
@@ -256,7 +278,8 @@ for(let n = 1; n <= 16; n++){
         if(own) topic = own;
         const t = own || [topic, sub].filter(Boolean).join(" · ");
         const when = (h.match(/^(AM|PM|Entire Day)\s*:/i) || [""])[0];
-        slides.push({id: i ? `${s.id}-${i + 1}` : s.id, h: t ? `${when ? when + " " : ""}${t}` : h, html: (i ? "" : lead) + x}); });
+        const nm = ((SPLIT_NAMES[n] || {})[s.id] || [])[i];
+        slides.push({id: i ? `${s.id}-${i + 1}` : s.id, h: nm || (t ? `${when ? when + " " : ""}${t}` : h), html: (i ? "" : lead) + x}); });
       continue;
     }
     slides.push({id: s.id, h, html});
