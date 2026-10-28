@@ -238,6 +238,9 @@ function paint(){
     watchRoster(); return;
   }
   box.innerHTML = traineePanel(h); sheet.appendChild(box);
+  // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
+  // the carryover note and the next item's name, are the trainer's)
+  if(h.a.kind === "buffer") sheet.classList.add("ftbf-only");
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
   if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => {
     const n = here(); if(!n || n.k !== h.k) return;
@@ -313,6 +316,13 @@ const st = document.createElement("style"); st.id = "ft-buffer"; st.textContent 
 .ftdd-sheet .ftbf-slot{margin:18px 0 0;}
 .ftdd-sheet .ftbf-slot:first-child{margin:0 0 18px;}
 .ftbf{border:2px solid #1E2340;border-radius:14px;padding:18px 22px;background:#fff;}
+/* a trainee's buffer slide: the panel alone, centred, gray with an orange frame */
+main.main-ftdd .ftdd-sheet.ftbf-only > :not(.ftbf-slot){display:none !important;}
+main.main-ftdd .ftdd-sheet.ftbf-only{justify-content:center;align-items:center;}
+main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width:min(760px,100%);}
+.ftbf-only .ftbf{background:#EEF0F4;border:3px solid #E8590C;border-radius:18px;padding:34px 40px;text-align:center;box-shadow:0 6px 18px rgba(30,35,64,.12);}
+.ftbf-only .ftbf .ftbf-h{font-size:24px !important;margin-bottom:18px !important;}
+.ftbf-only .ftbf p{font-size:20px;}
 .ftbf .ftbf-h{display:inline-block;margin:0 0 12px !important;padding:9px 16px !important;background:#1E2340;color:#fff !important;border-left:5px solid #E8590C;border-radius:8px;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;}
 .ftbf p{font:700 18px/1.45 'Inter',sans-serif;color:#1E2340;margin:0 0 10px;}
 .ftbf .ftbf-lead{font-size:19px;}
