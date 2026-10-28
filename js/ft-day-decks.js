@@ -1048,9 +1048,9 @@ function deckNextUp(){
   const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1], btn = nav.querySelector(".ftdd-next");
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // the slide's own pages come first: Next turns them
-  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h)); return; }   // (no "Page N of M" under it)
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
-  if(nx){ FTNextUp(nav, btn, clean(nx.h), `Step ${DD.i + 2} of ${list.length}`); return; }
+  if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
   // (a day that closes with its own End of Day slide, Day 1, ends there: no next day after it)
   if(DD.day < COUNT() && dayOpen(DD.day + 1) && !(cur && cur.end)) FTNextUp(nav, btn, `Day ${DD.day + 1}`, "Activity Deck");
   else FTNextUp(nav, btn, "📚 Dashboard", "Your lessons");
