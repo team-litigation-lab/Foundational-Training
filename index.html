@@ -9449,6 +9449,12 @@ function renderDaySlideshow(d){
       ${isLast
         ? `<button class="btn btn-primary" onclick="goToKnowledgeCheckWithInterstitial()" title="Open this lesson’s Activity deck">📋 Classroom Activity</button>`
         : `<button class="btn btn-primary" onclick="nextSlide()">Next &rarr;</button>`}
+      <span class="nav-tools">
+        <button class="btn btn-ghost btn-sm ${state.audioMode?"on":""}" id="narrBtn" onclick="listenToggle()" title="Read the slides aloud, moving on by itself after each one">${state.audioMode?"⏸ Stop":"🎧 Listen"}</button>
+        <select class="audio-rate" onchange="setAudioRate(this.value)" title="Reading speed">${["0.85","1","1.15","1.3"].map(v=>`<option value="${v}" ${String(Narrator.rate())===v?"selected":""}>${v}×</option>`).join("")}</select>
+        <button class="btn btn-navy btn-sm" onclick="lessonFullscreen()" title="${state.isAdmin ? "Present full screen" : "Full screen"}">⛶ Full screen</button>
+        ${state.isAdmin && typeof presenterStart === "function" ? `<button class="btn btn-primary btn-sm" onclick="presenterStart()" title="Share only the slides in Google Meet while you see the trainer cues here">🖥 Presenter</button>` : ""}
+      </span>
     </div>
     ${isLast ? `<div class="slide-done-banner">🎉 That's everything for this lesson — click Classroom Activity to go on to its activities.</div>` : ""}
   `;
@@ -9457,13 +9463,7 @@ function renderDaySlideshow(d){
   return `
     <div class="ls-top">
       <span class="or-tip">${state.isAdmin ? "Share this tab in Google Meet — trainer cues are never shown here." : "Tip: use ← → keys to move between slides."}</span>
-      <span class="audio-bar">
-        <button class="btn btn-ghost btn-sm" id="narrBtn" onclick="narrToggle()">▶ Listen</button>
-        <select class="audio-rate" onchange="setAudioRate(this.value)" title="Reading speed">${["0.85","1","1.15","1.3"].map(v=>`<option value="${v}" ${String(Narrator.rate())===v?"selected":""}>${v}×</option>`).join("")}</select>
-        <button class="btn btn-ghost btn-sm ${state.audioMode?"on":""}" id="audioModeBtn" onclick="toggleAudioMode()" title="Read every slide aloud and move on automatically">${state.audioMode?"🎧 Audio mode: on":"🎧 Audio mode"}</button>
-      </span>
-      <button class="btn btn-ghost btn-sm" onclick="showDayIntro()" title="What today covers">📋 Objectives</button>
-      <button class="btn btn-navy btn-sm" onclick="lessonFullscreen()">${state.isAdmin ? "⛶ Present full screen" : "⛶ Full screen"}</button>
+      <!-- Listen, its speed and Full screen are in the Previous / Next bar, after Next -->
     </div>
     <div class="lesson-stage" id="lessonStage">${inner}</div>`;
 }
@@ -9676,12 +9676,19 @@ const Narrator = {
   },
   afterSlideChange(){ this.stop(true); if(state.audioMode && state.view==="day" && state.dayViewMode!=="knowledgeCheck") setTimeout(()=>this.play(), 350); else this.paint(); },
   paint(){
-    const b = document.getElementById("narrBtn"); if(b) b.innerHTML = this.playing ? (speechSynthesis.paused ? "▶ Resume" : "⏸ Pause") : "▶ Listen";
+    const b = document.getElementById("narrBtn"); if(b){ const on = !!state.audioMode || this.playing; b.classList.toggle("on", on); b.innerHTML = on ? "⏸ Stop" : "🎧 Listen"; }
     const m = document.getElementById("audioModeBtn"); if(m){ m.classList.toggle("on", !!state.audioMode); m.innerHTML = state.audioMode ? "🎧 Audio mode: on" : "🎧 Audio mode"; }
   }
 };
-state.audioMode = localStorage.getItem("lsh_audio_mode")==="1";
+state.audioMode = false;   // 🎧 Listen starts fresh on each visit (it is one button now: read aloud and move on)
+try{ localStorage.removeItem("lsh_audio_mode"); }catch(e){}
 function narrToggle(){ if(Narrator.playing) Narrator.pause(); else Narrator.play(); }
+// 🎧 Listen (Listen and Audio mode in one): reads this slide aloud and moves on by itself; pressed again, it stops
+function listenToggle(){
+  if(state.audioMode || Narrator.playing){ state.audioMode = false; Narrator.stop(); }
+  else { state.audioMode = true; Narrator.play(); }
+  Narrator.paint();
+}
 function toggleAudioMode(){
   state.audioMode = !state.audioMode; localStorage.setItem("lsh_audio_mode", state.audioMode ? "1" : "0");
   if(state.audioMode){ toast("🎧 Audio mode on — each slide is read aloud and moves on by itself. Press Pause any time."); Narrator.play(); }
@@ -9689,7 +9696,7 @@ function toggleAudioMode(){
   Narrator.paint();
 }
 function setAudioRate(v){ localStorage.setItem("lsh_audio_rate", v); if(Narrator.playing) Narrator.play(); }
-Object.assign(window, {narrToggle, toggleAudioMode, setAudioRate});
+Object.assign(window, {narrToggle, toggleAudioMode, listenToggle, setAudioRate});
 if("speechSynthesis" in window) speechSynthesis.onvoiceschanged = ()=>{};
 
 function renderLessonCard(l,i,d,unused,part){
@@ -18895,20 +18902,20 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-updates.js?v=ft-2026.10.26-day1strict"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.26-presenter"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.28-noside"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-process.js?v=ft-2026.10.26-backbtn"></script>
-<script src="/js/ft-rules.js?v=ft-2026.10.27-orient3"></script>
+<script src="/js/ft-rules.js?v=ft-2026.10.28-day1layout"></script>
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.08-stdonly"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
-<script src="/js/ft-firms.js?v=ft-2026.10.18-assign"></script>
+<script src="/js/ft-firms.js?v=ft-2026.10.27-noassign"></script>
 <script src="/js/ft-day-activities.js?v=ft-2026.10.22-medlor"></script>
 <script src="/js/ft-simulators.js?v=ft-2026.10.26-labfit"></script>
 <script src="/js/ft-rubrics.js?v=ft-2026.10.16-rubrics"></script>
-<script src="/js/ft-sessions.js?v=ft-2026.10.26-labfit"></script>
+<script src="/js/ft-sessions.js?v=ft-2026.10.28-noassign"></script>
 <script src="/js/ft-ranking.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-skilltests.js?v=ft-2026.10.16-skills"></script>
 <script src="/js/ft-drills.js?v=ft-2026.10.19-hint"></script>
@@ -18918,7 +18925,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.26-noshadow"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.27-sarows2"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.28-day1layout"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>
@@ -18929,7 +18936,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-drive.js?v=ft-2026.10.26-onboard"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/ft-admin-ops.js?v=ft-2026.10.26-notasks"></script>
+<script src="/js/ft-admin-ops.js?v=ft-2026.10.28-noassign"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
 <!-- 🧭 The blueprints live on the Main Portal; this builds /blueprint.pdf from the trainee slides -->

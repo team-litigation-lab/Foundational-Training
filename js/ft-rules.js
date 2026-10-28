@@ -396,11 +396,12 @@ const SLIDES = [
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
   ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
       {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
-      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends."]},
-      {h:"It Is Checked", steps:["The platform checks the name.", "It checks that it was on time."]},
+      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends.",
+        ["Your daily output is automatically monitored and scored on:", ["Naming Convention", "Timely Submission", "Accuracy and Attention to Detail", "Quality of Output"]]]},
+      {h:"It Is Checked", steps:["You are expected to consistently follow this workflow all throughout your training."]},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      <ol>${p.steps.map(x=>Array.isArray(x) ? `<li>${esc(x[0])}<ol type="a" class="ftr-sub-ol">${x[1].map(y=>`<li>${esc(y)}</li>`).join("")}</ol></li>` : `<li>${esc(x)}</li>`).join("")}</ol>
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
@@ -690,6 +691,14 @@ body.ft-orient #lessonSlideWrap .ftr-lesson{cursor:pointer;}
 /* bigger type on the sheet: the boxes, rules, lists and cards all at 18px, their headings at 21px (a slide too long for
    its sheet is still scaled down to fit, by fitOrient) */
 body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-goal p, .ftr-stakes p, .ftr-rule span, .ftr-lesson span, .ftr-list, .ftr-list li, .ftr-part ol, .ftr-part li, .ftr-def, .ftr-when, .ftr-aux, .ftr-tip, .ftr-chan p){font-size:18px !important;line-height:1.45 !important;}
+/* the body text bold on every slide (the standard across the decks: js/ft-day-decks.js does the same on the Activity decks) */
+body.ft-orient #lessonSlideWrap :is(.ftr-sub, .ftr-why, .ftr-goal p, .ftr-stakes p, .ftr-rule span, .ftr-lesson span, .ftr-list, .ftr-list li, .ftr-part ol, .ftr-part li, .ftr-def, .ftr-when, .ftr-aux, .ftr-tip, .ftr-chan p){font-weight:600 !important;}
+/* the cards of a three-card slide (the camera rules, the Hubstaff and answer-sheet parts) are taller, filling the sheet */
+body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how > .ftr-part{min-height:36vh;}
+body.ft-orient #lessonSlideWrap .ftr-cam > .ftr-part{min-height:27vh;}
+/* a step's own lettered list (a. b. c. …) */
+body.ft-orient #lessonSlideWrap .ftr-part ol.ftr-sub-ol{list-style:lower-alpha;margin:4px 0 0;padding-left:26px;}
+body.ft-orient #lessonSlideWrap .ftr-part ol.ftr-sub-ol li{margin:2px 0;}
 /* the 16 To-Dos stay smaller, one line each */
 body.ft-orient #lessonSlideWrap .ftr-todo-parts .ftr-todo-tx{font-size:14.5px !important;line-height:1.3 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-goal b, .ftr-stakes b, .ftr-rule b, .ftr-lesson b, .ftr-part-h, .ftr-chan-h){font-size:21px !important;}
@@ -788,7 +797,7 @@ body.ft-orient #lessonSlideWrap .ftr-mon-two .ftr-mon{margin-top:12px;}
 .ftr-nextup{flex:0 0 auto;width:auto;min-width:250px;max-width:min(600px,52vw);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1px;background:#1E2340;color:#fff;border:2px solid #E8590C;border-radius:12px;padding:5px 12px;font:700 14px/1.25 'Inter',sans-serif;animation:ftrNextIn .3s ease-out;margin-left:auto;}
 .ftr-nextup b{display:block;font:800 10.5px/1.1 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;}
 /* the card grows with the title so it reads in full; only a title longer than the widest card wraps, to two lines */
-.ftr-nextup .ftr-nextup-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;color:#fff;white-space:normal;overflow:hidden;overflow-wrap:anywhere;}
+.ftr-nextup .ftr-nextup-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-width:100%;color:#fff;white-space:normal;overflow:hidden;overflow-wrap:anywhere;line-height:1.2;}
 .ftr-nextup .ftr-nextup-s{display:block;color:#C9CFE6;font:600 11.5px/1.2 'Inter',sans-serif;}
 .ftr-nextup .ftr-nextup-s:empty{display:none;}
 @media(max-width:1100px){ .ftr-nextup{min-width:190px;max-width:min(420px,46vw);} }

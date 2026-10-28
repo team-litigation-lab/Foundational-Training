@@ -1057,7 +1057,7 @@ function deckNextUp(){
   // the slide's own pages come first: Next turns them
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
-  if(nx){ FTNextUp(nav, btn, clean(nx.h), `Step ${DD.i + 2} of ${list.length}`); return; }
+  if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
   // (a day that closes with its own End of Day slide, Day 1, ends there: no next day after it)
   if(DD.day < COUNT() && dayOpen(DD.day + 1) && !(cur && cur.end)) FTNextUp(nav, btn, `Day ${DD.day + 1}`, "Activity Deck");
   else FTNextUp(nav, btn, "📚 Dashboard", "Your lessons");
@@ -2070,6 +2070,8 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !imp
 /* a Note's 💡 sits in its own space at the left of the bar, never over the word */
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
+/* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
+main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
