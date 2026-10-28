@@ -1,9 +1,0 @@
-{
-  "name": "foundational-training",
-  "private": true,
-  "description": "LSH Foundational Training Worker. The only runtime dependency is the Anthropic SDK, loaded lazily by worker.js for the call simulators.",
-  "type": "module",
-  "dependencies": {
-    "@anthropic-ai/sdk": "1.3.0"
-  }
-}

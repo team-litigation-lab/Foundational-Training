@@ -34,10 +34,6 @@ jobs:
         run: node .github/scripts/sso.cjs
       - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
         run: node .github/scripts/gemini-keys.mjs
-      - name: Install the Worker's dependency (the Anthropic SDK, for the call simulators)
-        run: npm ci --no-audit --no-fund
-      - name: The call simulators on Claude (Haiku 5.5 first, any Claude failure falls back to Gemini, nothing else uses Claude)
-        run: node .github/scripts/claude-calls.mjs
       - name: Documents served from R2 (ranges, 304s, static assets as the fallback)
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
