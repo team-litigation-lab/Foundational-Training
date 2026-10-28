@@ -818,7 +818,7 @@ function renderToolsPage(){
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
-          : `<button type="button" class="btn ftdd-next" onclick="goto('modules')" title="Know Your Tools is done: back to the 📚 Dashboard">✅ End of Module</button>`}
+          : `<button type="button" class="btn ftdd-next ft-endmod" disabled title="The end of Know Your Tools">✅ End of Module</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
@@ -1307,8 +1307,8 @@ async function saveExtras(){
 const __lessonDone = root.goToKnowledgeCheckWithInterstitial;
 root.goToKnowledgeCheckWithInterstitial = async function(){
   const l = Number(state.dayId), day = discussionDay(l);
-  // the orientation has no Activity deck (and isn't a lesson to finish): its last slide goes on to 🧰 Know Your Tools,
-  // which in turn ends on Day 1's Classroom Activity card, the start of Day 1's Activity deck
+  // the orientation has no Activity deck (and isn't a lesson to finish): its last slide is ✅ End of Module, not a link
+  // (index.html), so this only ever runs for it from an older page: on to 🧰 Know Your Tools
   if(root.FT_ORIENTATION && l === Number(root.FT_ORIENTATION.id)) return goto("knowtools");
   if(!day) return __lessonDone.apply(this, arguments);
   if(state.traineeId && !state.isAdmin){
