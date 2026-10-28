@@ -1460,7 +1460,8 @@ root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOf
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
   // 🗺 Map: the training roadmap
-  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
+  // (the deck already showing moves to the slide; from anywhere else, the dashboard or a lesson, the deck opens on it)
+  map: mapOpen, mapClose, mapGo(n, i){ mapClose(); if(!dayOpen(n) || !deckMayGo(n, i)) return; stopAuto(); if(state.view === "daydeck" && Number(n) === DD.day) FTDayDecks.to(i); else open(n, i); },
   // 🧰 Know Your Tools: show this tool
   tool(i){ toolsHintClose(); DD.tool = Math.max(0, Math.min(TOOLS.length - 1, Number(i) || 0)); markTool(DD.tool); render(); },
   hintClose: toolsHintClose,
