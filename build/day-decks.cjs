@@ -19,10 +19,14 @@ const R = path.resolve(__dirname, "..");
 // (Personal Injury) and the Smart Advocate plug-ins installation are on it: the Day 1 card runs Reading Task →
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
-const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"]};   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
+const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"],
+  4: ["s1"]};   // (Day 4's one-line introduction joins the slide it introduces: TRIM[4].s2)   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
-  2: {s2: "Common Terms Used & Auto Liability Insurance", s3: "Escalation Handling Exercise"}};
+  2: {s2: "Common Terms Used & Auto Liability Insurance", s3: "Escalation Handling Exercise"},
+  // (Day 3's first slide keeps "and Call Listening" in its name: it brings the 🎧 Call Listening slide, js/ft-day-decks.js slidesOf)
+  3: {s1: "Checking of Assignments & the Discussion Deck: PI Workflow, Reception Training and Call Listening", s2: "Homework: CRM/CMS Training Videos"},
+  4: {s2: "Training Video Viewing and Mock Call Preparation", s3: "PM: Reception Mock Calls (One-on-One)"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -83,9 +87,14 @@ function piParts(){
 // slides that hold several topics, split at each topic's own line (one slide per topic)
 const SPLIT = {8: {s1: /(?=<p><b>Topic \d+:|<h4>Additional Instruction|<p><b>Added on )/},
   // Day 2's first set of tasks (the videos, ✅ Done) and, on a slide of its own, the assessments that follow it
-  2: {s2: /(?=<div class="trainer-slot" data-slot="2:s2-1">)/}};
+  2: {s2: /(?=<div class="trainer-slot" data-slot="2:s2-1">)/},
+  // Day 3: Part 1 (the discussion deck, the sample recordings and SOP) and Part 2 (the activities), TRIM[3].s1;
+  // Day 4: Julio's video, the mock call preparation with its tools, and how the mock calls are run and scored, TRIM[4].s2
+  3: {s1: /<!--part-->\n?/}, 4: {s2: /<!--part-->\n?/}};
 // a split slide's own names, where its parts don't name themselves (null: the slide's own name)
-const SPLIT_NAMES = {2: {s2: [null, "Common Terms Used & Auto Liability Insurance: Assessments"]}};
+const SPLIT_NAMES = {2: {s2: [null, "Common Terms Used & Auto Liability Insurance: Assessments"]},
+  3: {s1: [null, "Confidentiality & Call Response Exercise", "Reception Activity on VA Oscar’s Recordings"]},
+  4: {s2: [null, "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", "Instructions for Mock Calls & Metrics"]}};
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -152,6 +161,83 @@ const TRIM = {1: {reading: html => {
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
     card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
+}},
+// Day 3, in the guide's two parts. Part 1: the discussion deck (PI Workflow and Reception Training) in the slide, the
+// Process Questions' naming convention, and the sample recordings and SOP as links (a new tab, not the viewer); the
+// Confidentiality exercise on a slide of its own. Part 2: the Reception Activity on Oscar's recordings, where the PI
+// reception calls (made elsewhere) are to be added.
+3: {s1: html => {
+  const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i + 1) : html.length; if(i < 0 || j < 0) throw new Error(`Day 3's slide no longer has "${from}"`); return html.slice(i, j); };
+  const lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
+  const deck = '<p><b>The Discussion Deck</b></p>\n<div class="canva-frame" id="cvDAGnZtLpFlA"><iframe loading="lazy" title="Discussion Deck" src="https://www.canva.com/design/DAGnZtLpFlA/0BPHCZmHCpIqY398SUNVXg/view?embed" allowfullscreen="allowfullscreen" allow="fullscreen"></iframe></div>' +
+    '<div class="actions"><span></span><div class="btn-row"><button class="btn ghost" type="button" data-fullscreen="cvDAGnZtLpFlA">⛶ Full screen</button><a class="btn" href="https://www.canva.com/design/DAGnZtLpFlA/0BPHCZmHCpIqY398SUNVXg/view" target="_blank" rel="noopener noreferrer">Open in Canva ↗</a></div></div>\n';
+  const pq = cut('<div class="ftdd-pq">', "<p><b>Confidentiality"), ex = cut("<p><b>Confidentiality", '<hr class="stars">\n<div class="trainer-slot" data-slot="3:s1-4">');
+  const shots = cut('<div class="shots"><figure><a href="/ft/day3/img/image12.png"', '<p class="li" style="--lvl:0"><span class="lbl">3.</span>');
+  const oscarFolder = "https://drive.google.com/drive/folders/1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn?usp=drive_link";
+  if(!html.includes("1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn") || !html.includes("1qCEqeoGJTf-0OvmP_cdxYJWmqlBU06aU")) throw new Error("Day 3's Reception Activity links moved");
+  const extra = cut("<p>4. Carlos &amp; remaining", '<hr class="stars">', 0);
+  return '<div class="trainer-slot" data-slot="3:s1-1"></div>\n<div class="trainer-slot" data-slot="3:s1-2"></div>\n<div class="trainer-slot" data-slot="3:s1-3"></div>\n' +
+    deck + pq + "<p><b>Naming convention:</b> PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)</p>\n" +
+    '<div class="trainer-slot" data-slot="3:s1-4"></div>\n' +
+    lnk("Sample Call Recordings", "https://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU?usp=sharing") +
+    lnk("Sample SOP", "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link") + shots +
+    "<!--part-->\n" + ex + "<!--part-->\n" +
+    "<p>Please refer to the provided recordings and complete the assessment activity by extracting the data specified in your assessment sheet. Ensure you extract a total of 5 data points from Oscar’s recordings. Upload the completed assessment document to your respective trainee folder and work directly from there to finalize it. Thank you.</p>\n" +
+    lnk("Oscar’s recordings", oscarFolder) + lnk("The assessment sheet", "https://docs.google.com/document/d/1qCEqeoGJTf-0OvmP_cdxYJWmqlBU06aU/edit?usp=drive_link") +
+    '<div class="shots"><figure><a href="/ft/day3/img/image14.png" target="_blank"><img src="/ft/day3/img/image14.png" alt="" loading="lazy"></a></figure></div>\n<div class="trainer-slot" data-slot="3:s1-5"></div>\n' +
+    ph("ftdd-ph-link", "🎧", "Link coming: the PI reception calls", "Five calls to a Personal Injury firm’s front desk, each with a challenge (background noise, connection issues, a language barrier …): extract 5 data points from each. Your trainer adds them here.") + "\n" +
+    extra.replace(/<p>Carlos’ Reception Recordings<\/p>/, "<p>Carlos’ Reception Recordings</p>").replace(/ class="viewer-link" data-kind="doc" data-title="[^"]*"/g, ' target="_blank" rel="noopener noreferrer"');
+},
+// Day 3's homework: the five CRM/CMS videos, each named, and when they may be finished
+s2: html => {
+  let k = 0;
+  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-kind="video" data-title="CRM/CMS Training Video ${++k}"`)
+    .replace(/<\/a>\s*,\s*<\/p>/g, "</a></p>");
+  if(k !== 5) throw new Error(`Day 3's homework has ${k} CRM/CMS videos, not 5`);
+  return out.replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
+}},
+// Day 4 (Receptionist Training, Part 2): Julio's video in the slide and the Monitoring Sheet update; the mock call
+// preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
+// one-on-one mock calls run and are scored (the metrics); then the mock calls themselves (s3, with Done: js/ft-buffer.js)
+4: {s2: html => {
+  if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
+  const sim = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", line = sim + "&line=Reception+Mock+Calls";
+  const cms = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
+  const lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
+  return "<p>For those who have already completed the tasks, please watch these videos on Reception Training to understand the roles and responsibilities of a Receptionist, as well as the necessary attributes required for the role.</p>\n" +
+    "<p><b>Topic: Handling Reception Tasks</b></p>\n" +
+    "<p>Task 1 - Watch this training video with one of our virtual receptionists. Here you would see the VA demonstrating how to handle all sorts of calls and general receptionist tasks.</p>\n" +
+    '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
+    "<p>Task 2 - Update items #10 &amp; 11 in your monitoring sheet.</p>\n" + '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
+    "<!--part-->\n" +
+    "<p>Get ready for this afternoon’s one-on-one mock call: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n" +
+    lnk("📞 Practice a caller: the Call Simulator’s Reception line (an AI caller)", line) +
+    lnk("☎ The Ring Channel: the training phone your mock call rings on", sim) +
+    lnk("🗂 The CMS (Case Management System): the case files", cms) +
+    lnk("☎️ Front Desk Drill in the CMS", cms + "?program=reception&flow=reception&drill=1&from=standard") +
+    "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
+    "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
+    "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
+    "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with Ctrl / Cmd + K; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
+    "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
+    "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
+    "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
+    ph("ftdd-ph-link", "🎧", "Link coming: AI Mock Calls Listening", "Recordings of AI mock calls to listen to before your own. Your trainer adds them here.") + "\n" +
+    "<!--part-->\n" +
+    "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
+    "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
+    "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
+    "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
+    "<p>Step 4 - Only hit ✅ Done on the mock call slide after you have completely finished your one-on-one with the trainer.</p>\n" +
+    "<p><b>Reception Mock Calls Metrics</b></p>\n" +
+    '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
+    "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fourteen, which reaches your Scorecard.</p>\n";
+},
+// Day 4's mock calls: the metrics are on the slide before (how the calls run and are scored)
+s3: html => {
+  const out = html.replace(/<p><b>Reception Mock Calls Metrics<\/b><\/p>\n?<div class="shots"><figure><a href="\/ft\/day4\/img\/image7\.png"[\s\S]*?<\/div>\n?/, "");
+  if(out === html) throw new Error("Day 4's mock call metrics are no longer where the build looks for them");
+  return "<p>Your one-on-one Reception mock call with the trainer, scored on the Reception Mock Calls Metrics (the slide before).</p>\n" + out;
 }},
 // Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
 // and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it

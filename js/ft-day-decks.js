@@ -401,7 +401,8 @@ function inCardOrder(n, out){
     if(r.s){
       const i = body.findIndex(s => s.id === r.s); if(i < 0) return;
       take(body[i]);
-      for(let j = i + 1; j < body.length && (body[j].id.startsWith(r.s + "-") || (body[j].id === "listen" && /call listening/i.test(body[i].h))); j++) take(body[j]);
+      // (the slides that continue it come with it, unless the card gives one a place of its own: Day 3's split parts)
+      for(let j = i + 1; j < body.length && ((body[j].id.startsWith(r.s + "-") && !rows.some(x => x.s === body[j].id)) || (body[j].id === "listen" && /call listening/i.test(body[i].h))); j++) take(body[j]);
       return;
     }
     if(r.go || r.run) ordered.push({id: `go-${k}`, h: r.t, launch: r, html: ""});
@@ -553,6 +554,9 @@ const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calenda
 function waitBox(s, info){
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
+  // the tools itself, and its instructions and metrics)
+  if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
   const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
   const sim = SIM_OF[l], acts = [];
   if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
@@ -623,14 +627,14 @@ let fitT = null;
 /* ONE SCREEN FOR ALL OF THEM, the way the Case Management course's slides fit (fitSlideZoom / paginateLessonSlide
    in its js/cm-updates.js). The slide's frame takes the room left on the screen; its header, ribbon and bar keep
    their size, and only what is on its card (the sheet, or the day card on navy) is scaled down until the whole
-   slide fits, to half size at the smallest. Only a slide that would have to shrink further is read in pages: its
+   slide fits, to 80% at the smallest (smaller text read as a different, harder slide). Only a slide that would have to shrink further is read in pages: its
    blocks are dealt into screenfuls, Previous / Next turn the pages before moving to the next slide, and the bar
    says which page it is. Nothing scrolls.
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
-const FIT_MIN = 0.5;
+const FIT_MIN = 0.8;
 // a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
 const isReadPart = s => !!s && Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id));
-const PAGE_ZOOM = 0.75;   // a page holds up to a third more than the screen, scaled down to fit: fuller pages, fewer of them
+const PAGE_ZOOM = 0.85;   // a page holds a little more than the screen, scaled down to fit (to 85%: the text stays readable)
 // a slide with room to spare is drawn bigger, up to max, so its content fills the sheet instead of sitting small in it
 function zoomUp(box, max){
   const inner = [...box.children].filter(k => k.style.display !== "none");
@@ -770,7 +774,7 @@ function fitSheets(){
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.4);   // a text-and-chart row is never split, so it may shrink a little more
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
     else if(!sheet.classList.contains("ftdd-sheet-edit") && !DD.split) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
@@ -972,21 +976,25 @@ const LESSON_CARDS = {
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
-      {t: "Checking of Assignments", sub: "The last session’s homework and assessments reviewed", k: "classroom", d: 3, s: "s1"},
+      // Part 1: the discussion deck (PI Workflow and Reception Training), the lesson deck and its video, the Process
+      // Questions, the sample recordings; Part 2: the activities
+      {t: "Checking of Assignments & the Discussion Deck", sub: "PI Workflow and Reception Training · the sample recordings and SOP", k: "classroom", d: 3, s: "s1"},
+      {t: "Process Questions: Submit", sub: "All ten (PI Workflow and Reception Training) in ✍️ Knowledge Check · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(3)"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
-      {t: "Confidentiality & Call Response Exercise", k: "interactive", d: 3, s: "s1"},
-      {t: "Reception Activity on VA Oscar’s Recordings", sub: "Extract the 5 data points into your assessment sheet", k: "assessment", d: 3, s: "s1"},
-      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet", k: "homework", d: 3, s: "s2"}],
-    tools: ["The sample SOP and the 10 sample call recordings are on the day’s slide",
-      "Upload the Reception Activity to your Assessments/Activities folder", "Process Questions: five of the ten where time is short"],
-    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_Process_Question_Answers (VA First Name)"},
+      {t: "Confidentiality & Call Response Exercise", k: "interactive", d: 3, s: "s1-2"},
+      {t: "Reception Activity on VA Oscar’s Recordings", sub: "Extract the 5 data points into your assessment sheet", k: "assessment", d: 3, s: "s1-3"},
+      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
+    tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
+      "Upload the Reception Activity to your respective trainee folder"],
+    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
-      {t: "Training Video Viewing & Mock Call Preparation", sub: "The receptionist’s roles, responsibilities and attributes", k: "watch", d: 4, s: "s1"},
-      {t: "Reception Training with Julio", time: "1:49:49", sub: "Watch it, then update items #10–11 on your Monitoring Sheet", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
+      {t: "Training Video Viewing & Mock Call Preparation", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet", k: "watch", d: 4, s: "s2"},
+      {t: "Mock Call Preparation", sub: "Direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them", k: "interactive", d: 4, s: "s2-2"},
+      {t: "Instructions for Mock Calls & Metrics", sub: "The one-on-one with your trainer · fourteen criteria, 0–5 each, weighted average", k: "interactive", d: 4, s: "s2-3"},
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
-    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "Receptionist_Training_Process_Question_Answers (VA First Name)"},
+    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 5, s: "s1"},
@@ -1572,7 +1580,7 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display
 .ftdd-ctl.on{background:#262B45;color:#fff;border-color:#262B45;}
 .ftdd-rail-note{margin:0;font-size:11.5px;color:var(--ink-soft);}
 .ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;}
-.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 16px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
+.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:700 15px/1.25 'Inter',system-ui,sans-serif;color:#262B45;}
 @media(max-width:1100px){
   .ftdd-stage{grid-template-columns:minmax(0,1fr);}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
@@ -1610,11 +1618,12 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display
 /* the content: a white sheet */
 .ftdd-sheet{background:#fff;color:var(--ink);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:18px 24px;box-shadow:0 8px 22px rgba(0,0,0,.18);overflow:auto;min-height:0;}
 /* the type, as the Case Management course's Case Flow slides set it: body text in Inter 500 at 17px, bold at 700
-   (not the engine's 700 / 900 everywhere), the slide's opening line as a Fraunces lead, section headings in Poppins */
+   (not the engine's 700 / 900 everywhere), the slide's opening line as a lead in the same Inter, bigger and bold (one
+   type family on the sheet: a serif lead read as a different font), section headings in Poppins */
 main.main-ftdd .ftdd-sheet{font:500 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:500;line-height:1.45;color:#1B1E2E;}
 main.main-ftdd .ftdd-sheet :is(b,strong){font-weight:700;}
-main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:600 21px/1.32 'Fraunces',Georgia,serif;color:#1B1E2E;letter-spacing:-.005em;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:700 20px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 15.5px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;letter-spacing:.01em;margin:14px 0 6px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:600;line-height:1.45;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t b{font-weight:700;}
@@ -1664,7 +1673,7 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 .ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:cover;object-position:top center;}   /* every screenshot in the same 16:10 frame, from its top */
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt h3{margin:0 0 8px !important;font:800 22px/1.2 'Poppins','Inter',sans-serif !important;color:#fff !important;letter-spacing:0;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p{margin:0 0 8px;font-size:15px;line-height:1.45;}
-main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what{font:600 18px/1.35 'Fraunces',Georgia,serif;color:#1B1E2E;}
+main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what{font:700 18px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b{font:700 11.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;display:block;margin-bottom:2px;}
 .ftdd-tool-where{color:var(--ink-soft);}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt .ftdd-tool-fh{margin:10px 0 4px !important;font:700 11.5px 'IBM Plex Mono',monospace !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;}
