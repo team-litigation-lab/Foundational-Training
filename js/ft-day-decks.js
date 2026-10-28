@@ -717,6 +717,8 @@ function fitSheets(){
     if(idx === 0){ DD.pages = pages.length; if(DD.page >= pages.length) DD.page = pages.length - 1; if(DD.page < 0) DD.page = 0; }
     const show = idx === 0 ? pages[DD.page] || pages[0] : pages[0];
     if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; if(k.parentNode !== sheet) k.setAttribute("data-ftdd-paged", "1"); }));
+    // (a block dealt out by its own rows, all of them on other pages, is hidden too: its margins would push this page over)
+    if(pages.length > 1) [...sheet.children].forEach(k => { if(k.children.length && [...k.children].every(c => c.style.display === "none")) k.style.display = "none"; });
     sheet.scrollTop = 0;
     // the reading: a section's introduction sharing its page with a text-and-chart row is drawn big and bold at the top,
     // and the row's cards take only the height they need below it, so the page needn't shrink to fit (ftdd-pi-shared)
@@ -2058,29 +2060,32 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n2{grid-template-columns:repea
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n3{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5{grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:26vh !important;min-height:170px;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:24vh !important;}
-/* step 1's first screenshot (the group chat with the files to download) is the big one: on the left, as tall as the
-   two rows of shots 2–5 beside it */
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{grid-template-columns:minmax(0,1.9fr) repeat(2,minmax(0,1fr)) !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child{grid-row:span 2;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child a{height:calc(24vh + 48px) !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:not(:first-child) a{height:12vh !important;min-height:80px;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{gap:10px 22px !important;margin-bottom:0 !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 figcaption{font-size:20px !important;margin-top:4px !important;}
-main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{margin:8px 0 0 !important;text-align:center;font:800 28px/1 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
+/* the screenshots big enough to read: tall boxes with a thin frame, the picture filling its box */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:40vh !important;min-height:240px;padding:2px !important;border:2px solid #343C66 !important;border-radius:8px !important;box-shadow:0 3px 10px rgba(30,35,64,.12);}
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:40vh !important;}
+/* step 1's first screenshot (the group chat with the files to download, a tall picture) stands beside its instruction
+   and files, drawn tall; its screenshots 2–5 follow on a page of their own, in one row */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);align-items:center;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first .ftdd-sa-file{flex-wrap:wrap;gap:12px 22px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first p.ftdd-sa-link{margin:0 !important;flex:1 0 100%;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-first .shots a{height:40vh !important;min-height:240px;}
+/* a page of screenshots only (two or three of a step's): each drawn as tall as the page allows */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit > .shots:only-child a{height:44vh !important;min-height:240px;}
+/* each screenshot's number: a bold orange badge under its middle, easy to find and to call out ("look at 3") */
+main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{display:flex;align-items:center;justify-content:center;width:46px;height:46px;margin:10px auto 0 !important;padding:0 !important;border-radius:50%;background:#E8590C;color:#fff !important;font:800 24px/1 'Poppins','Inter',sans-serif !important;box-shadow:0 2px 6px rgba(232,89,12,.35);}
 /* text on one side, its picture on the other (step 3's file list and its note; the heads-up and the installed apps;
    the help line and the Discord profiles) */
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 34px;align-items:center;margin:0 0 14px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair .shots{margin:6px 0 0 !important;}
 /* (step 3's file list is a short, wide picture: drawn lower, so the step and its five screenshots share one page) */
-main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:17vh !important;min-height:120px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:30vh !important;min-height:180px;}
 /* on a short screen the screenshots are drawn a little lower, so a step still fits its page */
 @media (max-height:800px){
-  main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:22vh !important;min-height:140px;}
-  main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:19vh !important;}
-  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:14vh !important;min-height:100px;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:36vh !important;min-height:200px;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:36vh !important;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit > .shots:only-child a{height:40vh !important;}
+  main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:26vh !important;min-height:150px;}
 }
 main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:center !important;}
 /* the help line in a rounded navy-edged box at the left; the black banner and the two profiles at the right */
