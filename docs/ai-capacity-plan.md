@@ -11,6 +11,13 @@
 
 **Status:** this is the plan only. No code changes ship with this document. Each phase in §9 is a separate, small PR.
 
+**Update: prepaid Claude credits for the call simulators.** There is **$100 of prepaid Claude API credit**. It is spent **only on the call simulators' live turns**, on **Claude Haiku 5.5** (`claude-haiku-5-5`): the fast, low-cost model, at $0.10 per million input tokens and $0.50 per million output tokens. That's about $0.0004 per turn (3,000 tokens in, 100 out).
+- **What this changes for the call simulators:** Claude becomes Route 1, and the free Gemini and Workers AI pools become their fallbacks (§7.1).
+- **What it frees up:** most of the free Gemini quota, for grading and everything else.
+- **How long it lasts:** a 20-trainee cohort's call simulators cost well under $1 a day, so the credit lasts months, not days.
+- **Shipped separately:** the Worker change is PR #308. It routes `feature: "call"` to Claude first and falls back to Gemini on any Claude failure, including running out of credit.
+- **No Claude for anything else:** grading and the other features stay on the free tiers.
+
 ---
 
 ## 0. Summary
@@ -87,6 +94,7 @@ Check the per-model numbers in [AI Studio → Rate limits](https://aistudio.goog
 | Gemini free, Flash models, per project | ~5 | ~20 | Too small to plan on; trainer tools only |
 | **Workers AI** free, `@cf/meta/llama-3.1-8b-instruct-fp8-fast` | 300 (text generation default) | **~600 turns** | 10,000 Neurons/day; at 4,119 Neurons/M input and 34,868/M output, a 2,400-in / 100-out turn costs ~13.4 Neurons |
 | KV response cache | — | unlimited reuse | Repeatable prompts (trainer tools, fixed rubrics on fixed answers) |
+| **Claude API, prepaid $100** (call simulators only) | Start tier: 1,000 RPM per model class (new orgs may begin lower) | not a daily limit: **≈ 250,000 turns of credit** at ~$0.0004 each | Spent only by `feature: "call"`; on "credit balance too low" every turn falls back to Gemini |
 
 ### 2.2 Demand after the reductions in §3
 
@@ -107,6 +115,8 @@ daily live budget = (Gemini Flash-Lite RPD × projects + Workers AI turns) × 0.
 |---|---|---|---|
 | **A: one Gemini project + Workers AI** (planned) | 500 + 600 = 1,100 → 990 at 0.9 | 20·N | **N = 3** (720 turns + 60 grading = 780; 210 spare for pacing error) |
 | B: today's 5 pool projects, if each is a legitimate separate project | 2,500 + 600 = 3,100 → 2,790 | 20·N | N = 9 (cap at 6 for headroom) |
+
+**With the Claude credits:** the call simulators' turns (12 × N × 20) move off Gemini and Workers AI. In Scenario A, the free pools then carry only grading, other chat and background work. **The cap on AI simulator sessions per trainee is then set by the trainers, not by quota**, for as long as the credit lasts. The pacing and reservations in §4 still apply to the free pools. They're also the safety net if the credit runs out mid-cohort: set a monthly spend limit in the Claude Console, so running out is a planned event rather than a surprise.
 
 **Peak-minute check (Scenario A):**
 - Gemini gives ~15 RPM. At peak, 20 trainees send 1 turn every ~15 s, which is 80 RPM.
@@ -360,7 +370,8 @@ What the trainee sees:
 
 | Workload | Route 1 | Route 2 | Last resort |
 |---|---|---|---|
-| **live: simulators, chat** | Gemini `gemini-3.5-flash-lite` (project A), minimal thinking | Workers AI `@cf/meta/llama-3.1-8b-instruct-fp8-fast` | Scripted holding line (no error banner mid-call); the next message is a fresh turn |
+| **live: call simulators** (`feature: "call"`) | **Claude `claude-haiku-5-5`** (prepaid credits; thinking off, effort `low`; PR #308) | Gemini `gemini-3.5-flash-lite` (project A), then Workers AI 8B | Scripted holding line (no error banner mid-call); the next message is a fresh turn |
+| **live: other chat** | Gemini `gemini-3.5-flash-lite` (project A), minimal thinking | Workers AI `@cf/meta/llama-3.1-8b-instruct-fp8-fast` | Scripted holding line (no error banner mid-call); the next message is a fresh turn |
 | **grade** (narrative feedback) | Gemini `gemini-3.5-flash-lite` | — | **Wait** in the queue (never switch the grading model mid-cohort: consistency) |
 | **background** (openings, tracker review) | Workers AI 8B | Gemini Flash-Lite, off-shift only | Skip until tonight |
 | **trainer tools** | Gemini Flash (≤ 20/day) | Gemini Flash-Lite | "Try again in a few minutes" (trainers only) |
