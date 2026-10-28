@@ -231,7 +231,7 @@ const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
+  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key === `buffer:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
@@ -299,6 +299,15 @@ async function traineeWrite(env, tok, key, value) {
     const lessons = {}, src = (incoming && incoming.lessons) || {}, was = (existing && existing.lessons) || {};
     for (const k of Object.keys(src).slice(0, 40)) if (/^\d{1,3}$/.test(k)) lessons[k] = was[k] || { at: new Date().toISOString() };
     await kv.put(key, JSON.stringify({ lessons })); return null;
+  }
+  if (key === `buffer:${id}`) {
+    // ✅ Done on a buffer, mock call or demo slide (js/ft-buffer.js): {acts: {"<day>:<slide id>": {done, by}}, released: {…}}.
+    // A trainee can only mark an activity done (at the server's time); undoing a Done and the trainer's release of the
+    // batch are the trainer's (admins write the key whole), so whatever else the trainee sends is ignored.
+    if (value.length > 8000) return "Too large";
+    const acts = Object.assign({}, (existing && existing.acts) || {}), src = (incoming && incoming.acts) || {};
+    for (const k of Object.keys(src).slice(0, 60)) if (/^\d{1,2}:[a-z0-9-]{1,30}$/.test(k) && src[k] && src[k].done && !(acts[k] && acts[k].done)) acts[k] = { done: new Date().toISOString(), by: "trainee" };
+    await kv.put(key, JSON.stringify({ acts, released: (existing && existing.released) || {} })); return null;
   }
   if (key === `skills:${id}`) {
     // The daily Typing and Spelling Tests (js/ft-skilltests.js). Append-only: the entries already saved stay as they
