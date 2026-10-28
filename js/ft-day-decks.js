@@ -738,6 +738,13 @@ function fitSheets(){
     const show = idx === 0 ? pages[DD.page] || pages[0] : pages[0];
     if(pages.length > 1) pages.forEach(p => p.forEach(k => { k.style.display = p === show ? "" : "none"; if(k.parentNode !== sheet) k.setAttribute("data-ftdd-paged", "1"); }));
     sheet.scrollTop = 0;
+    // the reading: a section's introduction sharing its page with a text-and-chart row is drawn big and bold at the top,
+    // and the row's cards take only the height they need below it, so the page needn't shrink to fit (ftdd-pi-shared)
+    const onPage = (pages.length > 1 ? show : pages[0]) || [];
+    // (only an introduction that comes before the row: a paragraph trailing a row stays as it is)
+    const rowAt = onPage.findIndex(k => k.classList && k.classList.contains("ftdd-pi-row"));
+    sheet.classList.toggle("ftdd-pi-shared", sheet.matches(".ftdd-read") && rowAt > 0
+      && onPage.slice(0, rowAt).some(k => k.matches && k.matches("p:not(:empty), h2.ftdd-pi-h")));
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
@@ -2026,6 +2033,13 @@ main.main-ftdd .ftdd-sheet .ftdd-pi-row:not(:first-child){margin-top:30px;}
 /* the charts fill their card: each figure takes an equal share of the card's height, its chart as big as fits */
 .ft-body .ftdd-pi-row:not(.ftdd-pi-pair){min-height:min(54vh, 560px, var(--ftdd-pi-h, 560px));}
 .ft-body .ftdd-pi-row.ftdd-pi-compact{min-height:0;}
+/* a section's introduction and its chart row on one page: the introduction big and bold at the top, the row's cards only
+   as tall as their text, below it */
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-pi-shared > p + .ftdd-pi-row{min-height:0;margin-top:24px;}
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-pi-shared > h2.ftdd-pi-h:has(~ .ftdd-pi-row){font-size:22px !important;padding:10px 16px;margin:0 0 10px;}
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-pi-shared > p:not(.ftdd-hbar):has(~ .ftdd-pi-row){font:700 21px/1.5 'Inter',sans-serif !important;color:#1E2340 !important;margin:0 0 10px;}
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-pi-shared > p + .ftdd-pi-row .ftdd-pi-chart{overflow:hidden;}
+main.main-ftdd .ftdd-sheet.ftdd-read.ftdd-pi-shared > p + .ftdd-pi-row .ftdd-pi-chart img{height:27vh !important;width:auto !important;max-width:100% !important;}
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row.ftdd-pi-compact:not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);}
 /* the reading's text beside its chart: the text has the wider share, bigger and bolder */
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);}
