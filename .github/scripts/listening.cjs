@@ -38,6 +38,9 @@ async function workerChecks() {
   const get = k => page.evaluate(async k => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) }).then(r => r.json())).value || 'null'), k);
   await page.goto(BASE, { waitUntil: 'load' }); await page.waitForTimeout(800);
   await put('settings:listening', null);
+  // the days' tools open with their lessons (🔓 js/ft-day-locks.js): open every lesson for this test, and put it back after
+  const openWas = await get('settings:opendays');
+  await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} });
   await signIn(page, 'Lena', 'Listener', BATCH);
   const id = await page.evaluate(() => state.traineeId);
   const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
@@ -105,6 +108,7 @@ async function workerChecks() {
 
   await put('listening:' + id, null); await put('settings:listening', null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
+  await put('settings:opendays', openWas || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Call Listening Log test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
   console.log('Call Listening Log test passed (the four sets on their days and the day map\'s steps; a part-filled log saved but not counted, a full one counted, saved and on My Performance; the trainer reads a log and changes a set\'s recordings, which the trainee then sees; the worker\'s rules).');
