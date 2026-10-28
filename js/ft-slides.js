@@ -472,8 +472,8 @@ if(typeof Narrator !== "undefined"){
 
 /* No side column on the lesson and orientation slides: the slide takes the page's width, and its controls
    (🎧 Listen, the reading speed, ⛶ Full screen) sit in the Previous / Next bar after Next. The lesson's title,
-   Objectives and the keyboard tip are gone; the presenter keeps her place at the lower right of the screen,
-   so the slide leaves her that much room. */
+   Objectives and the keyboard tip are gone; the presenter floats at the lower right of the screen, over the
+   slide's corner (the standard on every day's slides and decks). */
 (function(){
   const css = document.createElement("style"); css.id = "ft-noside";
   css.textContent = `
@@ -481,14 +481,49 @@ main:has(> #lessonStage) > .day-head-compact, main:has(> #lessonStage) > #navBac
 main:has(> #lessonStage) > .ls-top{position:absolute !important;width:0 !important;height:0 !important;margin:0 !important;padding:0 !important;overflow:visible !important;float:none !important;}
 main:has(> #lessonStage) > .ls-top > :not(.ft-side-presenter){display:none !important;}
 @media(min-width:1000px){
-  main:has(> #lessonStage){display:block !important;grid-template-columns:none !important;padding-right:calc(clamp(170px, 13vw, 250px) + 18px) !important;}
+  main:has(> #lessonStage){display:block !important;grid-template-columns:none !important;padding-right:24px !important;}
+  /* the presenter floats over the slide's lower-right corner, as on the Activity decks: only the Previous / Next bar
+     stops short of her, so its buttons are never under her */
+  #lessonStage:not(:fullscreen) > .slide-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 30px) !important;}
   main:has(> #lessonStage) > #lessonStage, body.ft-fit main:has(#lessonStage) > #lessonStage{margin:0 !important;grid-column:auto !important;}
 }
 #lessonStage > .slide-nav > .nav-tools{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
 #lessonStage > .slide-nav > .nav-tools .btn{white-space:nowrap;}
 #lessonStage > .slide-nav > .nav-tools #narrBtn.on{background:#1E2340;color:#fff;border-color:#1E2340;}
 #lessonStage > .slide-nav > .nav-tools .audio-rate{font:600 13px 'Inter',sans-serif;padding:5px 6px;border:1px solid #C9CFDD;border-radius:8px;background:#fff;color:#1E2340;}
-#audienceRoot .nav-tools{display:none !important;}
+#audienceRoot .nav-tools, #audienceRoot .nav-map{display:none !important;}
+#lessonStage > .slide-nav .nav-map{white-space:nowrap;}
 @media(max-width:760px){ #lessonStage > .slide-nav{flex-wrap:wrap !important;} #lessonStage > .slide-nav > .nav-tools{width:100%;justify-content:center;} }`;
+  document.head.appendChild(css);
+})();
+
+/* The bars, simpler: no "Step N of M" (the progress dots and the line under the title say where you are), nothing
+   under the Next up card's title (it says only what is next), and 🎧 Listen, its speed and ⛶ Full screen beside
+   ← Previous on the left, with Next up and Next → on the right. */
+(function(){
+  const css = document.createElement("style"); css.id = "ft-bars";
+  css.textContent = `
+#lessonStage > .slide-nav > .slide-counter, main.main-ftdd .ftdd-nav .ftdd-stepno{display:none !important;}
+.ftr-nextup .ftr-nextup-s{display:none !important;}
+#lessonStage > .slide-nav > *{order:3;}
+#lessonStage > .slide-nav > span:first-child{order:1;}
+#lessonStage > .slide-nav > .nav-tools{order:2;}
+#lessonStage > .slide-nav > .slide-dots-nav{margin:0 auto 0 6px !important;}
+/* the Next up card longer: as wide as its title needs, on one line where it fits */
+#lessonStage > .slide-nav > .ftr-nextup, main.main-ftdd .ftdd-nav > .ftr-nextup{flex:0 1 auto !important;width:auto !important;min-width:260px;max-width:min(560px, 44vw);}`;
+  document.head.appendChild(css);
+})();
+
+/* 🧰 Know Your Tools on the full-width deck: the screenshot (a fixed 16:10 frame) would grow with the width until the
+   tool no longer fits its sheet at any size, so the words get more of the width and the picture a height limit */
+(function(){
+  const css = document.createElement("style"); css.id = "ft-tools-fit";
+  css.textContent = `
+main.main-ftdd .ftdd-tool{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);}
+main.main-ftdd .ftdd-tool-shot{max-height:46vh;}
+/* the tools' tabs: no icons, each name centred in its tab, in the decks' heading type */
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-ic{display:none !important;}
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab{justify-content:center !important;text-align:center !important;font:700 15px/1.2 'Poppins','Inter',sans-serif !important;letter-spacing:.01em;color:#1E2340;padding:6px 10px !important;}
+main.main-ftdd .ftdd-tools-bar .ftdd-tools-tab.on{color:#fff !important;}`;
   document.head.appendChild(css);
 })();

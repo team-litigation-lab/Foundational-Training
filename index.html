@@ -9443,6 +9443,7 @@ function renderDaySlideshow(d){
     <div class="slide-nav">
       <span style="display:flex;gap:8px;align-items:center;">
         <button class="btn btn-ghost" ${idx===0?'disabled':''} onclick="prevSlide()">&larr; Previous</button>
+        ${window.FTDayDecks ? `<button class="btn btn-ghost nav-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>` : ""}
         ${state.isAdmin && idx>0 ? `<button class="btn btn-ghost btn-sm" onclick="goToSlide(0)" title="Admin: go back to the first slide of ${ftName(d.id)}">⏮ Slide 1</button>` : ""}
       </span>
       <span class="slide-counter">Step ${idx+1} of ${total}</span>
@@ -18902,7 +18903,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 </script>
 <script src="/js/eapa-updates.js?v=ft-2026.10.15-dashboard"></script>
 <script src="/js/ft-updates.js?v=ft-2026.10.26-day1strict"></script>
-<script src="/js/ft-slides.js?v=ft-2026.10.28-noside"></script>
+<script src="/js/ft-slides.js?v=ft-2026.10.28-bars3-m"></script>
 <script src="/js/ft-tracker-rules.js?v=ft-2026.10.26-maindrive"></script>
 <script src="/js/ft-tracker.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-monitoring.js?v=ft-2026.10.26-maindrive"></script>
@@ -18925,7 +18926,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-listening.js?v=ft-2026.10.16-listening"></script>
 <script src="/js/ft-todo.js?v=ft-2026.10.26-noshadow"></script>
 <script src="/js/ft-next-step.js?v=ft-2026.10.22-medlor"></script>
-<script src="/js/ft-day-decks.js?v=ft-2026.10.28-day1layout"></script>
+<script src="/js/ft-day-decks.js?v=ft-2026.10.28-toolsnolinks"></script>
 <script src="/js/ft-slide-editor.js?v=ft-2026.10.19-edit"></script>
 <script src="/js/ft-lor-data.js?v=ft-2026.10.08-lor"></script>
 <script src="/js/ft-transcribe.js?v=ft-2026.10.16-feedback"></script>

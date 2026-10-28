@@ -581,8 +581,6 @@ function renderDeck(){
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
-      <p class="ftdd-rail-kick">Activity Deck · Day ${e(DD.day)} of ${COUNT()}</p>
-      <h2 class="ftdd-rail-title">Day ${e(DD.day)} · ${e(info.role || d.title)}</h2>
       ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
         ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
@@ -805,14 +803,13 @@ function renderToolsPage(){
       </div></div>
       <div class="ftdd-nav">
         <button type="button" class="btn ftdd-prev" ${k ? "" : "disabled"} onclick="FTDayDecks.tool(${k - 1})">← Previous</button>
+        <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Tool ${k + 1} of ${n}</span>
         ${k < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.tool(${k + 1})">Next →</button>`
           : `<button type="button" class="btn ftdd-next" onclick="goto('modules')" title="Know Your Tools is done: back to the 📚 Dashboard">✅ End of Module</button>`}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
-      <p class="ftdd-rail-kick">Day 1</p>
-      <h2 class="ftdd-rail-title">Know Your Tools</h2>
     </aside>
   </div>`;
 }
@@ -1055,7 +1052,7 @@ function deckNextUp(){
   const list = slidesOf(d), cur = list[DD.i], nx = list[DD.i + 1], btn = nav.querySelector(".ftdd-next");
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // the slide's own pages come first: Next turns them
-  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h), `Page ${DD.page + 2} of ${DD.pages}`); return; }
+  if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h)); return; }   // (no "Page N of M" under it)
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
   if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
   // (a day that closes with its own End of Day slide, Day 1, ends there: no next day after it)
@@ -1318,7 +1315,8 @@ root.goToKnowledgeCheckWithInterstitial = async function(){
    you are on are marked, the days before it are ticked, and any open day or slide is a click away. Escape, ✕ or a
    click outside closes it. */
 function mapHtml(){
-  const all = decks() || {}, here = DD.day, at = placeDay();
+  // opened from a lesson or orientation slide (not a deck), "here" is the day the trainee is on
+  const onDeck = state.view === "daydeck", all = decks() || {}, at = placeDay(), here = onDeck ? DD.day : at;
   const lessons = Object.keys(LESSON_CARDS).map(Number).sort((a, b) => a - b);
   const seen = new Set();
   const dayRow = n => {
@@ -1328,7 +1326,7 @@ function mapHtml(){
     const state_ = n === here ? "here" : n < at ? "done" : "";
     const slides = list.map((x, i) => {
       const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Day card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-      const on = n === here && i === DD.i;
+      const on = onDeck && n === here && i === DD.i;
       return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${open ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span></button></li>`;
     }).join("");
     return `<li class="ftmap-day${state_ ? " " + state_ : ""}${open ? "" : " locked"}">
@@ -1349,7 +1347,7 @@ function mapHtml(){
   return `<div class="ftmap-box" role="document">
     <button type="button" class="ftmap-x" onclick="FTDayDecks.mapClose()" aria-label="Close the map">✕</button>
     <div class="ftmap-head"><p class="ftmap-kick">Standard Foundational Training · ${total} days · 8 lessons</p><h2>🗺 Training Roadmap</h2>
-      <p class="ftmap-sub">You are on <b>Day ${e(here)}</b>, slide ${DD.i + 1}. Tap any day or slide to go there.</p>
+      <p class="ftmap-sub">${onDeck ? `You are on <b>Day ${e(here)}</b>, slide ${DD.i + 1}.` : `You are on <b>${e(typeof ftName === "function" && state.dayId != null ? ftName(state.dayId) : "Day " + here)}</b>${state.view === "day" ? `, step ${(state.lessonSlide || 0) + 1}` : ""}.`} Tap any day or slide to go there.</p>
       <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (at - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
     <div class="ftmap-body">${groups}${restHtml}</div></div>`;
 }
@@ -1430,18 +1428,16 @@ function toolsTabs(){
 }
 function toolsSlide(){
   const k = Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)), t = TOOLS[k];
-  const open = t.href ? `<a class="btn btn-navy btn-sm" href="${e(t.href)}" target="_blank" rel="noopener">Open ${e(t.name.split(" · ")[0])} ↗</a>`
-    : t.go ? `<button type="button" class="btn btn-navy btn-sm" onclick="${e(t.go)}">Open ${e(t.name.split(" · ")[0])} →</button>` : "";
+  // no Open button, counter or Next tool button on the tool: the tabs above pick a tool, the bar's Next → moves on
   return `<div class="ftdd-tools">
     <div class="ftdd-tool" role="tabpanel">
       <a class="ftdd-tool-shot" href="${TOOL_IMG}${t.img}.webp" target="_blank" rel="noopener" title="Open the screenshot full size"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></a>
       <div class="ftdd-tool-txt">
         <h3>${t.ic} ${e(t.name)}</h3>
-        <p class="ftdd-tool-what"><b>What it’s for:</b> ${e(t.what)}</p>
-        <p class="ftdd-tool-where"><b>Where:</b> ${e(t.where)}</p>
+        <p class="ftdd-tool-what"><b>What it’s for</b>${e(t.what)}</p>
+        <p class="ftdd-tool-where"><b>Where</b>${e(t.where)}</p>
         <p class="ftdd-tool-fh">Features</p>
         <ul>${t.feats.map(f => `<li>${e(f)}</li>`).join("")}</ul>
-        <div class="ftdd-tool-acts">${open}<span class="ftdd-tool-n">${k + 1} of ${TOOLS.length}</span>${k < TOOLS.length - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.tool(${k + 1})">Next tool: ${TOOLS[k + 1].ic} ${e(TOOLS[k + 1].short || TOOLS[k + 1].name)} →</button>` : ""}</div>
       </div>
     </div>
   </div>`;
@@ -1624,6 +1620,11 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b{font:700 11.5px 'IB
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt .ftdd-tool-fh{margin:10px 0 4px !important;font:700 11.5px 'IBM Plex Mono',monospace !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;}
 .ftdd-tool-txt ul{margin:0 0 10px;padding-left:18px;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt li{font-size:15px;line-height:1.45;margin:0 0 4px;}
+main.main-ftdd .ftdd-nav:not(:has(.ftdd-dots)) .ftdd-map{margin-right:auto;}   /* Know Your Tools: 🗺 Map beside ← Previous */
+/* one type on the tool's page: every line the same font, size and colour; each section's label ("What it's for",
+   "Where", "Features") the same small orange heading over it */
+main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what, main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-where, main.main-ftdd .ftdd-sheet .ftdd-tool-txt li{font:600 19px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;margin:0 0 6px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-where b, main.main-ftdd .ftdd-sheet .ftdd-tool-txt .ftdd-tool-fh{display:block;margin:12px 0 4px !important;font:800 13px/1.2 'Poppins','Inter',sans-serif !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B !important;}
 .ftdd-tool-acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .ftdd-tool-n{font:600 12px 'IBM Plex Mono',monospace;color:var(--ink-soft);}
 @media(max-width:1100px){ .ftdd-tool{grid-template-columns:minmax(0,1fr);} }
@@ -1945,6 +1946,15 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
   main.main-ftdd .ftdd-deck{height:100%;min-height:0;}
   main.main-ftdd .ftdd-sheet, main.main-ftdd .ftdd-onnavy{flex:1 1 auto;min-height:0;}
 }
+/* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
+   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
+   ✏️ Edit this slide still gets its panel. */
+@media(min-width:1001px){
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)){grid-template-columns:minmax(0,1fr);}
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
+  main.main-ftdd{padding-right:18px;}
+  main.main-ftdd .ftdd-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 10px);}
+}
 @media(max-width:760px){
   .ftdd-deck{padding:14px 16px 12px;}
   .ftdd-dhead{gap:12px;} .ftdd-dtitle{font-size:21px !important;}
@@ -2039,6 +2049,14 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5{grid-template-columns:repea
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figure{position:relative;margin:0 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots a{height:26vh !important;min-height:170px;padding:4px !important;border:1.5px solid #9AA0AB !important;border-radius:4px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots.ftdd-sa-n5 a{height:24vh !important;}
+/* step 1's first screenshot (the group chat with the files to download) is the big one: on the left, as tall as the
+   two rows of shots 2–5 beside it */
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{grid-template-columns:minmax(0,1.9fr) repeat(2,minmax(0,1fr)) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child{grid-row:span 2;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:first-child a{height:calc(24vh + 48px) !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 > figure:not(:first-child) a{height:12vh !important;min-height:80px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5{gap:10px 22px !important;margin-bottom:0 !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step:first-child .shots.ftdd-sa-n5 figcaption{font-size:20px !important;margin-top:4px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .shots figcaption{margin:8px 0 0 !important;text-align:center;font:800 28px/1 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
 /* text on one side, its picture on the other (step 3's file list and its note; the heads-up and the installed apps;
    the help line and the Discord profiles) */
