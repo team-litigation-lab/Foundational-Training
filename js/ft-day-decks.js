@@ -2615,6 +2615,11 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sop-shots a:hover{border-color:#E8762B;box-shadow:0 4px 14px rgba(30,35,64,.18);}
 .ftdd-sop-shots img{width:100%;height:100%;object-fit:contain;object-position:top;}
 .ftdd-sop-shots figcaption{font-size:12.5px;font-weight:700;color:#5A6072;margin-top:4px;}
+/* Day 4's mock-call links, a slide of their own (build/day-decks.cjs MOCK_LINKS): big, one per line */
+.ftdd-biglinks .ftdd-tiles{gap:18px;margin:18px 0;}
+.ftdd-biglinks .ftdd-tile-ic{font-size:26px;}
+.ftdd-biglinks .ftdd-tile-t b{font-size:24px;line-height:1.35;}
+.ftdd-biglinks .ftdd-tile-t small{font-size:16px;margin-left:12px;}
 .ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
