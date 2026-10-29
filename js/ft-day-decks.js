@@ -456,19 +456,12 @@ function listenSlide(day, time){
      ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
-   calls, then the six practice calls made for the PI Reception Activity, each with its challenge). A Drive recording
-   plays in the slide once its file's id is in (id); until then its card opens the folder. */
-const LISTEN_CARDS = {3: [
-  ...["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel", "Potential Client Call - Slip & Fall",
-    "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
-  {t: "The Tow Yard", src: "/ft/day3/audio/pi-call-1.mp3", kind: "Practice call", tag: "Background noise"},
-  {t: "Breaking Up on the Highway", src: "/ft/day3/audio/pi-call-2.mp3", kind: "Practice call", tag: "Connection issues"},
-  {t: "Hablo Poquito Inglés", src: "/ft/day3/audio/pi-call-3.mp3", kind: "Practice call", tag: "Language barrier"},
-  {t: "The Speakerphone Echo", src: "/ft/day3/audio/pi-call-4.mp3", kind: "Practice call", tag: "Poor audio quality"},
-  {t: "The Fast-Talking Adjuster", src: "/ft/day3/audio/pi-call-5.mp3", kind: "Practice call", tag: "Background noise and a fast talker"},
-  {t: "Mom on the Line", src: "/ft/day3/audio/pi-call-6.mp3", kind: "Practice call", tag: "Background noise and an unauthorized caller"}]};
+   calls; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
+   A Drive recording plays in the slide once its file's id is in (id); until then its card opens the folder. */
+const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
+  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"}))};
 function listenCards(cards, folder){
-  // (numbered within their kind: Sample call 1–10, Practice call 1–6)
+  // (numbered within their kind: Sample call 1–10)
   return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
     ${c.src ? `<audio controls preload="none" src="${e(c.src)}"></audio>`
       : c.id ? `<div class="ftln-aud"><iframe src="https://drive.google.com/file/d/${e(c.id)}/preview" title="${e(c.t)}" loading="lazy" allow="autoplay"></iframe></div>`
