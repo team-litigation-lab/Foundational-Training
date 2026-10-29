@@ -9,6 +9,9 @@
      • Open here: a CMS tool fills the window (✕ Close comes back), signed in with the trainee's ticket
        (js/lsh-tool-links.js). The Call Simulator is ☎ LSH Ring Channel's (the training phone) and the Calendaring
        Simulators are the Main Portal's: both open in their own tab, on the trainee's Portal sign-in. New tab ↗: its own tab.
+     • 🗓 Attorney Calendar Management Activity (Day 5): a card among the Practice Sessions (window.ftCalActivityCard,
+       js/ft-calendar.js) that opens this platform's own 📅 Calendaring Simulators on the activity (goto('calsim','attorney-activity')),
+       where it is checked, submitted and graded.
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
      • The main landing page (the dashboard) has no Simulators or Blueprint card: 🛠 Practice Lab is in the top bar.
    ============================================================ */
@@ -84,7 +87,7 @@ const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; ret
 window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
 function renderSimulators(){
   const tool = (fn, id) => typeof window[fn] === "function" && toolOn(id) ? window[fn]() : "";
-  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
+  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalActivityCard", "calactivity") + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
   const drafting = window.ftLorCard ? tool("ftLorCard", "lor") + tool("ftGuideCard", "guide") + tool("ftTranscribeCard", "transcribe") + tool("ftDrillsCard", "drills") : "";
   const trainer = window.FTSessions ? FTSessions.trainerCards() : "";
   // 📚 the Knowledge Base: a card beside the Drafting Tools (its own section when there are none yet), so the Lab fits one screen

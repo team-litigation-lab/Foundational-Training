@@ -25,6 +25,7 @@
              "tool"     a platform tool  (id: "lor" = 🧰 LOR Drafting Activity, "medlor" / "lienbv" = the same tool
                         on the MedLOR + HIPAA packet / the Lien Balance Verification, "skills" = 🧪 Skill Building,
                         "process" = ✍️ Process Questions, "calsim" = 📅 Google Calendar Simulator,
+                        "calactivity" = 🗓 Attorney Calendar Management Activity (done on the 📅 Calendaring Simulators, graded through the Calendar Activity Check),
                         "calweek" = 📅 Standard Training - Calendaring Activity,
                         "callsim" = ☎ Call Simulator on LSH Ring Channel)
              "drive"    uploaded to the trainee's Assessments/Activities folder
@@ -86,6 +87,7 @@ const DAYS = [
   {day:5, role:"Reception Training", lessons:[4, 5], items:[
     {t:"Buffer Time (1–2 hrs) for Reception Mock Calls", kind:"Buffer", at:"session", id:"reception"},
     {t:"Classroom Discussion on Appointment Setting and Calendar Management", kind:"Discussion", at:"room"},
+    {t:"Attorney Calendar Management Activity on the 📅 Calendaring Simulators (done there, graded through the 📅 Calendar Activity Check)", kind:"Activity", at:"tool", id:"calactivity"},
     {t:"Attorney Calendar Management Activity (each event checked on the 📅 Calendar Activity Check before the upload)", kind:"Activity", at:"tool", id:"calcheck"},
     {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"}
   ]},
