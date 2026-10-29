@@ -31,6 +31,11 @@
    the day, ✓ once the trainee has been through it.
    Only a trainee is held to it: an admin and the 👁 trainee view are not, and a day the trainee has finished (read to its
    last slide) stays open to review.
+   🧑‍🏫 The trainer's deck is the trainee's deck, slide for slide, never held by the locks; what it adds is each segment's
+   lock (a segment: a topic or activity, a step of the day; Day 1's are its own steps, js/ft-day1-flow.js), for the batch
+   picked: the slide's 🔒 / 🔓 chip, the dots of the segments still locked, and 🔓 Segment lock in the side panel, where
+   the trainer unlocks or locks the segment right there, as the pace of the training and the trainees' task completion
+   call for (TRAINER below). 📚 Dashboard's segments show the trainer the same 🔒 the batch's trainees see.
    ============================================================ */
 (function(){
 const root = window;
@@ -287,6 +292,8 @@ function segState(d){
 }
 function segments(lid, days, title){
   const cur = isTrainee() && root.FTNextStep && FTNextStep.place ? (p => p && p.day ? Number(p.day.day) : null)(FTNextStep.place()) : null;
+  // (the trainer: a part every day of which is still locked for the batch picked shows its 🔒, and still opens, to unlock it)
+  const tl = p => isTrainer() && p.every(d => !segOpenFor(d, 1));
   const titles = root.FTDayDecks && FTDayDecks.dayTitle ? FTDayDecks.dayTitle : () => "";
   const parts = partsOf(lid, days), one = parts.length === 1;
   const b = parts.map((p, k) => {
@@ -296,9 +303,11 @@ function segments(lid, days, title){
     // the part opens on its day the trainee is on (the first one open, else the last one done); an admin, on its first
     const d = !isTrainee() ? p[0] : p[sts.indexOf("open")] || p[sts.lastIndexOf("done")] || p[0];
     const named = (PART_LABELS[lid] || [])[k], label = named || (one ? "Start" : `Part ${k + 1}`), t = titles(d) || title;
-    const tip = (named ? `${label}: ${title}` : one ? title : `Part ${k + 1} of ${parts.length}`) + (st === "locked" ? ": opens when your trainer unlocks it" : `: ${t}`);
-    return `<button type="button" class="ftseg-b ${st}${p.includes(cur) ? " now" : ""}" data-day="${d}" data-days="${p.join(",")}" ${st === "locked" ? `aria-disabled="true"` : ""}
-      onclick="event.stopPropagation(); FTDayLocks.launch(${d})" title="${esc_(tip)}">${st === "locked" ? "🔒 " : st === "done" ? "✓ " : ""}${label}</button>`;
+    const tlk = tl(p);
+    const tip = (named ? `${label}: ${title}` : one ? title : `Part ${k + 1} of ${parts.length}`) + (st === "locked" ? ": opens when your trainer unlocks it" : `: ${t}`)
+      + (tlk ? ` · 🔒 locked for ${batchName(selKey())}: open the deck to unlock it` : "");
+    return `<button type="button" class="ftseg-b ${st}${tlk ? " tlocked" : ""}${p.includes(cur) ? " now" : ""}" data-day="${d}" data-days="${p.join(",")}" ${st === "locked" ? `aria-disabled="true"` : ""}
+      onclick="event.stopPropagation(); FTDayLocks.launch(${d})" title="${esc_(tip)}">${st === "locked" || tlk ? "🔒 " : st === "done" ? "✓ " : ""}${label}</button>`;
   }).join("");
   return `<div class="ftseg ftseg-n${parts.length}" role="group" aria-label="${esc_((one ? "Start: " : "Training parts: ") + title)}">${b}</div>`;
 }
@@ -426,6 +435,81 @@ setInterval(() => {
 /* ---------- 🛡 Admin → 📅 Open Lessons: 🔓 Activity Locks, for all batches or one ---------- */
 const A = {open: {}};
 const selKey = () => state.ftOdBatch || "__all";
+
+/* ---------- 🧑‍🏫 TRAINER: the trainer's deck, each segment's lock set right on it ----------
+   The batch is the one picked in Admin → 📅 Open Lessons (state.ftOdBatch), shared with the panel there. */
+const isTrainer = () => !!state.isAdmin && !state.adminPreview;
+const D1 = () => root.FTDay1 || {};
+const segList = n => n === 1 ? (D1().STEPS || []) : steps(n);
+const segAt = (n, i) => n === 1 ? (D1().stepAt ? D1().stepAt(i) : 3) : stepAt(n, i);
+const segLabel = (n, k) => n === 1 ? (D1().label ? D1().label(k) : "This activity") : label(n, k);
+// the last segment open for the batch (Day 1: its own steps, at least the first; js/ft-day1-flow.js)
+const segCount = (n, sel) => n === 1 ? (D1().stepsFor ? D1().stepsFor(sel) : 1) : unlockedFor(n, sel);
+const lessonsFor = sel => { const o = state.ftOpenDays || {}; return [].concat(o.all || [], sel === "__all" ? [] : (o.batches || {})[sel] || []).map(Number); };
+function batchName(sel){
+  if(sel === "__all") return "all batches";
+  const b = typeof ftKnownBatches === "function" ? ftKnownBatches().find(([k]) => k === sel) : null;
+  return b && b[1] !== sel ? b[1] : String(sel).toUpperCase();
+}
+// the batches to pick from: the trainees' (read once if the admin pages haven't yet) and every one a setting names
+let ledger = false;
+function batchList(){
+  if(!state.adminData && !ledger && typeof loadAdminLedgerQuiet === "function"){ ledger = true; loadAdminLedgerQuiet().then(() => { if(state.view === "daydeck") render(); }).catch(() => {}); }
+  const m = new Map(typeof ftKnownBatches === "function" ? ftKnownBatches() : []);
+  [S().batches, (state.ftDay1Steps || {}).batches].forEach(o => Object.keys(o || {}).forEach(k => { if(!m.has(k)) m.set(k, k.toUpperCase()); }));
+  return [...m.entries()].map(([k, n]) => [k, n === k ? k.toUpperCase() : n]).sort((a, b) => a[1].localeCompare(b[1]));
+}
+// where segment k of day n stands for the batch picked: "lesson" (the lesson isn't open for it: 📅 Open Lessons),
+// "kept" (open: the batch was under way when the locks began, or is past Day 1), "open" or "locked"
+function segStatus(n, k, sel){
+  n = Number(n); sel = sel || selKey();
+  const l = lessonOf(n); if(l != null && !lessonsFor(sel).includes(l)) return "lesson";
+  if(n === 1 ? lessonsFor(sel).some(id => id > 1 && id !== 12) : (n >= FIRST && n <= LAST() && legacyOpen(n, sel))) return "kept";
+  if(n > LAST()) return "open";
+  return segCount(n, sel) >= k ? "open" : "locked";
+}
+const segOpenFor = (d, k) => { const x = segStatus(d, k); return x === "open" || x === "kept"; };
+const deckOk = n => isTrainer() && decksIn() && segList(n).length && (Number(n) === 1 || (Number(n) >= FIRST && Number(n) <= LAST()));
+const CHIP = {open: ["🔓", "Open to trainees"], kept: ["🔓", "Open to trainees"], locked: ["🔒", "Locked for trainees"], lesson: ["🔒", "Lesson not open"]};
+// the slide's chip on the trainer's deck
+function chip(n, i){
+  n = Number(n); if(!deckOk(n)) return "";
+  const k = segAt(n, i), x = segStatus(n, k), [ic, t] = CHIP[x];
+  return `<span class="ftdl-chip ${x}" title="${esc_(`Segment ${k} of ${segList(n).length}: ${segLabel(n, k)} · ${t} (${batchName(selKey())})`)}">${ic} ${esc_(t)}</span>`;
+}
+const dotLocked = (n, i) => { n = Number(n); return deckOk(n) && !segOpenFor(n, segAt(n, i)); };
+// 🔓 Segment lock, in the side panel of the trainer's deck
+function panel(n, i){
+  n = Number(n); if(!deckOk(n)) return "";
+  const sel = selKey(), list = segList(n), total = list.length, k = segAt(n, i), x = segStatus(n, k);
+  const on = Math.min(segCount(n, sel), total), d1 = n === 1;
+  const sc = d1 ? schedFor(1, sel) : schedFor(n, sel);
+  const btn = (cls, to, t) => `<button type="button" class="btn ${cls} btn-sm ftdd-ctl" onclick="FTDayLocks.segSet(${n}, ${to})">${t}</button>`;
+  const acts = x === "lesson"
+    ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="state.adminTab = 'opendays'; goto('admin')">📅 Open the lesson in Open Lessons →</button>`
+    : x === "kept" ? `<p class="ftdd-rail-note">${d1 ? "This batch is past Day 1: its steps aren’t held." : "Already under way when the locks began, so this day isn’t held for this batch. 🔒 Lock these too is in Admin → 📅 Open Lessons → 🔓 Activity Locks."}</p>`
+    : (x === "locked" ? btn("btn-navy", k, `🔓 Unlock this segment${k > on + 1 ? " (and the ones before it)" : ""}`) : (!d1 || k > 2) ? btn("btn-ghost", k - 1, "🔒 Lock from here") : "")
+      + (on < total ? btn("btn-ghost", d1 ? 8 : ALL, "🔓 Open the whole day") : "")
+      + (on > (d1 ? 1 : 0) ? btn("btn-ghost", d1 ? 1 : 0, "🔒 Lock the day") : "");
+  return `<div class="ftdl-tpanel" role="group" aria-label="Segment lock">
+    <p class="ftdd-rail-h">🔓 Segment lock</p>
+    <select class="ftdl-tsel" aria-label="Batch" onchange="ftSetOdBatch(this.value)">
+      <option value="__all" ${sel === "__all" ? "selected" : ""}>All batches</option>
+      ${batchList().map(([b, name]) => `<option value="${esc_(b)}" ${sel === b ? "selected" : ""}>${esc_(name)}</option>`).join("")}
+    </select>
+    <p class="ftdl-tseg"><span>Segment ${k} of ${total}</span><b>${esc_(segLabel(n, k))}</b></p>
+    <span class="ftdl-chip ${x}">${CHIP[x][0]} ${esc_(CHIP[x][1])}</span>
+    ${x === "lesson" || x === "kept" ? "" : `<p class="ftdd-rail-note">Trainees are on: <b>${esc_(on >= 1 ? segLabel(n, on) : "nothing yet (the day is locked)")}</b>${on >= 1 ? ` · ${on} of ${total} open` : ""}</p>`}
+    ${acts}
+    ${sc && x !== "lesson" && x !== "kept" ? `<p class="ftdd-rail-note">⏰ On schedule: ${SLOTS.map(([s, ic]) => sc[s] ? `${ic} ${esc_(fmt(sc[s]))}` : "").filter(Boolean).join(" · ")}</p>` : ""}
+  </div>`;
+}
+// unlock day n up to segment k (0 locks the day) for the batch picked, from the trainer's deck
+function segSet(n, k){
+  n = Number(n); k = Number(k) || 0;
+  if(n === 1){ if(typeof root.ftSetDay1Step === "function") return root.ftSetDay1Step(Math.max(1, Math.min(8, k))); return; }
+  return root.FTDayLocks.set(n, k);
+}
 function countFor(n){
   const o = S(), sel = selKey();
   if(sel === "__all") return {m: stepNum(o, null, n), sc: ((o.sched || {}).all || {})[n] || null};
@@ -517,6 +601,8 @@ async function save(change, msg){
 }
 root.FTDayLocks = {
   steps, at, active, stepOpen, dayStarted, mayGo, launch, segments, held, unlockedFor,
+  // 🧑‍🏫 the trainer's deck (js/ft-day-decks.js): the slide's chip, the locked dots, 🔓 Segment lock, and its buttons
+  chip, dotLocked, panel, segSet, segStatus,
   // a settings:daysteps record's counts as card-row steps (js/ft-buffer.js, before it writes one); one count of it
   migrate, stepNum: (o, batch, n) => stepNum(o, batch == null ? null : key(batch), n),
   // 🛠 the Practice Lab: may a trainee see a session, tool, trainer activity or recording set used on these days?
@@ -585,6 +671,17 @@ const st = document.createElement("style"); st.id = "ft-day-locks"; st.textConte
 .ftdl-steps li.on{background:#EAF6EE;border-color:#B9E0C6;} .ftdl-steps li i{font-size:12.5px;color:var(--ink-soft);}
 .ftdl-legacy{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#FFF7EA;border:1px solid #F0D9B5;font-size:13.5px;}
 .ftdl-steps li.ftdl-slot{background:#F4F5FA;border-style:dashed;font-weight:700;}
+.ftseg-b.tlocked{color:#8A90A6;background:rgba(220,223,232,.55);} .ftseg-b.tlocked:hover{background:#353B57;color:#fff;}
+.ftdl-chip{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;padding:3px 10px;border-radius:999px;font:700 12px/1.3 'Inter',sans-serif;white-space:nowrap;
+  background:#EAF6EE;color:#2E7D4F;border:1px solid #B9E0C6;}
+.ftdl-chip.locked, .ftdl-chip.lesson{background:#F3E3E3;color:#8A2F2F;border-color:#E6C4C4;}
+.ftdl-tpanel{display:flex;flex-direction:column;gap:6px;padding:0 0 8px;margin:0 0 4px;border-bottom:1px solid var(--line, #E3E6EE);}
+.ftdl-tsel{width:100%;padding:5px 6px;border:1px solid var(--line, #DDE1EC);border-radius:8px;background:#fff;font:600 12.5px 'Inter',sans-serif;color:#262B45;}
+.ftdl-tseg{margin:0;display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:1.3;color:#262B45;}
+.ftdl-tseg span{font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;}
+.ftdd-dot.lk{background:repeating-linear-gradient(45deg,#C9CDD9 0 2px,#EEF0F5 2px 4px);box-shadow:inset 0 0 0 1px #A9AFC2;}
+.ftdd-dot.lk.on{background:#DB8437;box-shadow:0 0 0 2px #8A2F2F;}
+@media(max-width:1100px){ .ftdl-tpanel{flex-direction:row;flex-wrap:wrap;align-items:center;border-bottom:0;} .ftdl-tsel{width:auto;} }
 `;
 document.head.appendChild(st);
 })();

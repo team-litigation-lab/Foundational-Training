@@ -81,6 +81,8 @@ window.FTDay1 = {STEPS, active, at, stepsFor, label: n => step(n).label,
   // a lesson 1 answer sheet: the Reading Task's opens with the reading, the Virtual Assistant Essentials one with Process Questions
   sheetLocked: set => active() && Number(set.lesson) === 1 && set.id !== "pi-overview" && at() < 6,
   goCurrent, openStep, mayGo,
+  // the step slide i of Day 1's deck belongs to (the trainer's deck shows each step's lock: js/ft-day-locks.js)
+  stepAt,
   // 🎬 Day 1's video waits for Handouts and Videos (no request): true while it is locked
   videoByStep: id => Number(id) === 1 && !!state.traineeId && !state.isAdmin && !state.adminPreview && !videoOpen()};
 // Day 1's video is open once the trainer has unlocked Handouts and Videos for the batch (and locks again from there),

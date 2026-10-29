@@ -13,6 +13,9 @@
 //   - the admin's 🔓 Activity Locks lists Days 2–16.
 // The test server starts with every day open to its end (server.mjs); this test sets its own steps and lessons, and puts
 // both back.
+//   - 🧑‍🏫 the trainer's deck: never held, each segment's 🔒 / 🔓 for the batch picked (the slide's chip, the dots, 🔓 Segment
+//     lock), unlocked and locked from the deck, for all batches or one; Day 1 by its own steps; the trainer's 📚 Dashboard
+//     segments show the batch's 🔒; a trainee's deck has none of it.
 // Usage: node .github/scripts/day-locks.cjs [base-url]
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
@@ -143,6 +146,34 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
       if (!want && (v.locked || v.links !== 5 || !/Unlocked/.test(v.badge))) fail(`Day 1's handouts didn't open with Handouts and Videos unlocked: ${JSON.stringify(v)}`);
     }
     await put(page, 'settings:day1steps', d1Was || { all: 8, batches: {} });
+    // 🧑‍🏫 the trainer's deck: the trainee's deck, never held, with each segment's lock for the batch picked, set right there
+    await put(page, 'settings:daysteps', { all: { 7: 2 }, batches: {}, rows: { all: { 7: 1 } }, legacy: { all: [], batches: {} } });
+    await page.evaluate(() => { state.isAdmin = true; state.ftOdBatch = null; const st = FTDayLocks.steps(7); FTDayDecks.open(7, st[4].from); }); await page.waitForTimeout(1200);
+    v = await page.evaluate(() => ({ lock: !!document.querySelector('main.main-ftdd .ftd1-lock'), chip: (document.querySelector('.ftdd-bar .ftdl-chip') || {}).textContent || '',
+      panel: (document.querySelector('.ftdd-rail .ftdl-tpanel') || {}).innerText || '', dots: document.querySelectorAll('.ftdd-dot.lk').length, want: FTDayDecks.list(7).length - FTDayLocks.steps(7)[1].to - 1 }));
+    if (v.lock) fail('the trainer\'s deck is held by the locks');
+    if (!/Locked for trainees/.test(v.chip) || !/Segment 5 of 7/.test(v.panel) || !/2 of 7 open/.test(v.panel)) fail(`the trainer's deck doesn't show the segment locked for the trainees: ${JSON.stringify(v)}`);
+    if (v.dots !== v.want) fail(`the trainer's deck marks ${v.dots} dots locked, not the ${v.want} slides of the locked segments`);
+    await page.click('.ftdl-tpanel button:has-text("Unlock this segment")'); await page.waitForTimeout(1200);
+    if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 5) fail('🔓 Unlock this segment on the trainer\'s deck didn\'t unlock Day 7 up to it');
+    if (!/Open to trainees/.test(await page.evaluate(() => (document.querySelector('.ftdd-bar .ftdl-chip') || {}).textContent || ''))) fail('the slide\'s chip didn\'t turn 🔓 once unlocked');
+    await page.click('.ftdl-tpanel button:has-text("Lock from here")'); await page.waitForTimeout(1200);
+    if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 4) fail('🔒 Lock from here on the trainer\'s deck didn\'t lock Day 7 from the segment');
+    // … for one batch: its own count, from the batch picked on the deck
+    await page.evaluate(() => { state.ftOdBatch = 'b102826'; render(); }); await page.waitForTimeout(600);
+    await page.click('.ftdl-tpanel button:has-text("Open the whole day")'); await page.waitForTimeout(1200);
+    v = await get(page, 'settings:daysteps');
+    if (((v.batches || {}).b102826 || {})[7] !== 999 || v.all[7] !== 4) fail(`Open the whole day on the trainer's deck didn't open Day 7 for the batch picked alone: ${JSON.stringify(v)}`);
+    // … Day 1 by its own steps, and 📚 Dashboard's segments show the trainer the batch's locks
+    await page.evaluate(() => { state.ftOdBatch = null; FTDayDecks.open(1, 0); }); await page.waitForTimeout(800);
+    if (!/Segment 3 of 8/.test(await page.evaluate(() => (document.querySelector('.ftdl-tpanel') || {}).innerText || ''))) fail('Day 1\'s deck doesn\'t show its own steps as the trainer\'s segments');
+    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: {} } });
+    await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
+    v = await page.evaluate(() => [...document.querySelectorAll('#dayl-6 .ftseg-b')].map(x => x.classList.contains('tlocked') && !x.classList.contains('locked')));
+    if (v.join() !== 'true,true,true') fail(`the trainer's 📚 Dashboard doesn't show Intake's locked days (still openable): ${JSON.stringify(v)}`);
+    // a trainee's deck has none of it
+    await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(2, 0); }); await page.waitForTimeout(800);
+    if (await page.$('.ftdl-tpanel, .ftdl-chip, .ftdd-dot.lk')) fail('a trainee\'s deck shows the trainer\'s segment locks');
     // the admin's 🔓 Activity Locks
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'opendays'; goto('admin'); }); await page.waitForTimeout(1500);
     const n = await page.evaluate(() => document.querySelectorAll('.ftdl-admin .ftdl-day').length);
@@ -159,5 +190,5 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await b.close();
   }
   if (failures.length) { console.error(`${failures.length} failure(s):\n` + failures.map((f, i) => `${i + 1}. ${f}`).join('\n')); process.exit(1); }
-  console.log('Activity Locks test passed (Days 2–16: a step per card row, named as the card names it, each holding its row\'s slides; old slide-step counts read as the card-row steps they had opened, and rewritten so, flagged, on the trainer\'s next save; a segment per day on the lesson cards, locked until opened; nothing unlocked: the deck, the lesson, the LOR activity and the Practice Lab\'s sessions wait; one step: the deck goes no further, the lesson opens, its video waits; ⏰ a schedule opens its AM session only; the trainer\'s 🔓 Activity Locks; ten process questions at most per sheet).');
+  console.log('Activity Locks test passed (Days 2–16: a step per card row, named as the card names it, each holding its row\'s slides; old slide-step counts read as the card-row steps they had opened, and rewritten so, flagged, on the trainer\'s next save; a segment per day on the lesson cards, locked until opened; nothing unlocked: the deck, the lesson, the LOR activity and the Practice Lab\'s sessions wait; one step: the deck goes no further, the lesson opens, its video waits; ⏰ a schedule opens its AM session only; 🧑‍🏫 the trainer\'s deck: never held, each segment\'s lock for the batch picked shown and set right on it, Day 1 included, and the batch\'s 🔒 on the trainer\'s Dashboard; the trainer\'s 🔓 Activity Locks; ten process questions at most per sheet).');
 })();

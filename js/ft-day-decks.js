@@ -708,10 +708,13 @@ function slideCard(d, info, list, i){
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
       <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
-        ${s.agenda ? "" : slideActions(s, info, body, i)}</div>
+        ${segChip(i)}${s.agenda ? "" : slideActions(s, info, body, i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}">${body}</div>`}
     </div>`;
 }
+// 🔓 the trainer's deck: each segment's lock for the batch picked (js/ft-day-locks.js; nothing for a trainee)
+const segChip = i => root.FTDayLocks && FTDayLocks.chip ? FTDayLocks.chip(DD.day, i) : "";
+const segLocked = i => !!(root.FTDayLocks && FTDayLocks.dotLocked && FTDayLocks.dotLocked(DD.day, i));
 function renderDeck(){
   const back = `<a class="back-link" title="Close: back to the 📚 Dashboard" onclick="goto('modules')">&larr; Back to 📚 Dashboard</a>`;
   if(DD.day == null) DD.day = currentDay();
@@ -734,12 +737,13 @@ function renderDeck(){
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
-        <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}" title="${e(x.h)}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
+        <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
           : `<button type="button" class="btn ftdd-next ft-endmod" onclick="goto('modules')" title="The end of today's deck: back to the 📚 Dashboard">✅ End of Module</button>`)}
       </div>
     </div>
     <aside class="ftdd-rail ftdd-rail-r">
+      ${root.FTDayLocks && FTDayLocks.panel ? FTDayLocks.panel(DD.day, DD.i) : ""}
       ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
         ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
