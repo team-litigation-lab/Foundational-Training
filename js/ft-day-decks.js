@@ -1269,7 +1269,9 @@ const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.k
    of its own (js/ft-process.js), whose button goes back to the deck, on to `back` (else the slide after this one) */
 const ASSESS_NEXT = {2: {
   s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
-  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment"}}};
+  // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
+  // the 📒 Monitoring Sheet update, TAM, and its 📤 Submit)
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update TAM"}}};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
@@ -1284,7 +1286,7 @@ function toAssessNext(a){
   // is to this slide, to submit there)
   if(list[i] && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)) i = DD.i;
   const s = list[i] || null;
-  const h = !s ? "" : i === DD.i ? String(s.h || "") + ": 📤 Submit" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  const h = !s ? "" : i === DD.i ? String(s.h || "") + ": 📤 Submit" : i === DD.i + 1 && a.next ? a.next : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
   if(root.FTProcess) FTProcess.openLesson(a.l);
 }
