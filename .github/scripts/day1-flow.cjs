@@ -43,6 +43,14 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     if (v.skip !== v.from) fail(`the deck skipped ahead from slide ${v.from} to ${v.skip}`);
     if (v.locked !== v.from) fail('the dots went on to the Classroom Discussion before the trainer unlocked it');
     if (v.video || !v.ask) fail(`Day 1's video was open (or asked for) before Handouts and Videos was unlocked: ${JSON.stringify(v)}`);
+    // a batch given a later lesson is past Day 1, unless the trainer set its Day 1 steps themselves (🔓 Segment lock)
+    await setOpen(page, JSON.stringify({ all: [1, 4], batches: {} }));
+    await setSteps(page, { all: 0, batches: {} });
+    if (await page.evaluate(() => FTDay1.active())) fail('a batch with a later lesson open was still held to Day 1\'s steps');
+    await setSteps(page, { all: 0, batches: { b101026: 3 } });
+    if (!(await page.evaluate(() => FTDay1.active() && FTDay1.at() === 3))) fail('the trainer locked Day 1 for a batch with a later lesson open, and its steps didn\'t hold it');
+    await setOpen(page, JSON.stringify({ all: [1], batches: {} }));
+    await setSteps(page, { all: 0, batches: { b101026: 3 } });
     await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(500);
     if (await page.evaluate(() => FTDayDecks.state().i) !== v.from && (await page.evaluate(() => FTDayDecks.state().pages)) < 2) fail('Next didn\'t go on one slide');
     await page.evaluate(() => goto('day', 1)); await page.waitForTimeout(600);

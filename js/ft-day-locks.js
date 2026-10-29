@@ -465,7 +465,8 @@ function batchList(){
 function segStatus(n, k, sel){
   n = Number(n); sel = sel || selKey();
   const l = lessonOf(n); if(l != null && !lessonsFor(sel).includes(l)) return "lesson";
-  if(n === 1 ? lessonsFor(sel).some(id => id > 1 && id !== 12) : (n >= FIRST && n <= LAST() && legacyOpen(n, sel))) return "kept";
+  // (Day 1: past it once a later lesson is open, unless the trainer set the batch's Day 1 steps themselves)
+  if(n === 1 ? lessonsFor(sel).some(id => id > 1 && id !== 12) && !(sel !== "__all" && D1().ownSteps && D1().ownSteps(sel)) : (n >= FIRST && n <= LAST() && legacyOpen(n, sel))) return "kept";
   if(n > LAST()) return "open";
   return segCount(n, sel) >= k ? "open" : "locked";
 }
@@ -488,7 +489,11 @@ function panel(n, i){
   const btn = (cls, to, t) => `<button type="button" class="btn ${cls} btn-sm ftdd-ctl" onclick="FTDayLocks.segSet(${n}, ${to})">${t}</button>`;
   const acts = x === "lesson"
     ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="state.adminTab = 'opendays'; goto('admin')">📅 Open the lesson in Open Lessons →</button>`
-    : x === "kept" ? `<p class="ftdd-rail-note">${d1 ? "This batch is past Day 1: its steps aren’t held." : "Already under way when the locks began, so this day isn’t held for this batch. 🔒 Lock these too is in Admin → 📅 Open Lessons → 🔓 Activity Locks."}</p>`
+    // (a day the batch isn't held to: the trainer can hold it again from here, Day 1 for a batch picked, a day under
+    // way when the locks began with 🔒 Lock these too)
+    : x === "kept" ? (d1 ? (sel === "__all" ? `<p class="ftdd-rail-note">These batches are past Day 1, so its steps aren’t held. Pick a batch to hold it to Day 1’s steps again.</p>`
+        : `<p class="ftdd-rail-note">This batch is past Day 1, so its steps aren’t held until you lock one.</p>` + (k > 1 ? btn("btn-navy", k - 1, "🔒 Lock from here") : "") + btn("btn-ghost", 1, "🔒 Lock the day"))
+      : `<p class="ftdd-rail-note">Already under way when the locks began, so this day isn’t held for this batch.</p><button type="button" class="btn btn-navy btn-sm ftdd-ctl" onclick="FTDayLocks.lockLegacy()">🔒 Lock these too</button>`)
     : (x === "locked" ? btn("btn-navy", k, `🔓 Unlock this segment${k > on + 1 ? " (and the ones before it)" : ""}`) : (!d1 || k > 2) ? btn("btn-ghost", k - 1, "🔒 Lock from here") : "")
       + (on < total ? btn("btn-ghost", d1 ? 8 : ALL, "🔓 Open the whole day") : "")
       + (on > (d1 ? 1 : 0) ? btn("btn-ghost", d1 ? 1 : 0, "🔒 Lock the day") : "");
