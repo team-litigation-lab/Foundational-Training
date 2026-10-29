@@ -834,3 +834,11 @@ node .github/scripts/requests.cjs http://localhost:8787/
 ```
 
 `server.mjs` runs the Worker in open mode (no admin password) and with no AI keys, so nothing outside your computer is called. The requests test takes about a minute.
+
+**Only the tests a change affects.** On a pull request the Checks workflow's browser job runs only the tests the change can affect, three at a time, each on a test server of its own; every test runs on a push to `main` and on *Run workflow*. `.github/scripts/affected.mjs` picks them from the code itself: a test runs when a changed file defines, uses or patches something it drives (a platform object such as `FTDayDecks`, a page it opens with `goto('…')`) or a quoted line of text it checks, plus the server requests test for any code change (it fails on any page error). A change to what every page shares (`index.html`, `worker.js`, the core scripts, the test server, the workflow) runs them all, and so does a file it can't place. To do the same locally:
+
+```
+node .github/scripts/affected.mjs --why origin/main             # which tests, and why
+node .github/scripts/smoke.mjs $(node .github/scripts/affected.mjs origin/main)   # run them (SMOKE_JOBS=3 at a time)
+node .github/scripts/smoke.mjs ALL                               # every browser test
+```

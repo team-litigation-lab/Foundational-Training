@@ -49,9 +49,11 @@ jobs:
   smoke:
     name: Server requests in a browser
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -61,98 +63,21 @@ jobs:
         run: |
           npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1 jspdf@4.2.1
           "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Server requests (sparing, batched, none in the background)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+      # 🎯 on a pull request, only the browser tests its change can affect (.github/scripts/affected.mjs: the tests that drive
+      # what the changed files define, use or patch, and always the server requests test); every test on a push to main,
+      # on Run workflow, and when the change touches what every page shares. They run 3 at a time, each on its own test
+      # server (.github/scripts/smoke.mjs)
+      - name: Pick the browser tests this change affects
+        id: pick
         run: |
-          node .github/scripts/server.mjs 8787 > "$RUNNER_TEMP/server.log" 2>&1 &
-          sleep 2
-          node .github/scripts/requests.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Graded calls count in their lesson (the Modules stat row, its lesson rows, the mock-call cards)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node .github/scripts/affected.mjs --why "${{ github.event.pull_request.base.sha }}"
+            echo "tests=$(node .github/scripts/affected.mjs "${{ github.event.pull_request.base.sha }}" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+          else
+            echo "ALL (a push to main, or Run workflow)"; echo "tests=ALL" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run them (each on its own test server, 3 at a time)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/graded-calls.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Blueprints (the Trainer blueprint and its PDF; the Trainee blueprint republished after every deploy)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/blueprint.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Day decks (one per day, nothing facilitator-only, no Process Questions; opened from the Dashboard band)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/day-decks.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Day 1 in order, each step unlocked by the trainer
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/day1-flow.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Every day in Day 1's order, each step unlocked by the trainer (a segment per day on the lesson cards; ten process questions per sheet)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/day-locks.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Transcription Activity (Day 9's minutes, end to end; the trainer's view)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/transcribe.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Video Notes and Process Guide (what was learned from each video; the Word-like guide before each demo)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/guide-notes.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Practice Sessions (firms and case assignment, the sessions' checks, the trainer's review and inputs, the Scorecard)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/practice-sessions.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Weekly Ranking Report (the facilitator's format, marks out of 5, the final average and the ranking, the Word file)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/ranking.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Trainer feedback (Send Feedback, the trainee's card, My Feedback, the scorecards and the Weekly Ranking in My Performance)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/feedback.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Typing & Spelling Tests (the append-only log, both tests, make-ups, the trainer's grid and compliance line, the Weekly Ranking's column)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/skilltests.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Naming & Reporting Drills (every question against its convention, the guide's samples, a round saved)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/drills.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Slide editor (a trainer rewrites a day slide with the toolbar and saves it for the batch; a trainee has no editor; what is typed is cleaned)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/slide-editor.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Open days (every day card and deck open to a trainee; the lessons wait on the trainer's 📅 Open Lessons)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/gating.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Video access (a trainee asks for a lesson's AI discussion video, the trainer approves it, and it opens for that trainee only)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/video-access.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Knowledge Games (the bank for every lesson, Survey Says matching, all eight games played to the end and saved, the trainer's questions, the worker's rules)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/kcgames.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Calendar Mock Call Booking Rule Check (every scheduling rule, a booking recorded and saved, the trainer's tab and scorecard fill, the worker's rules)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/calrules.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Standard Training - Calendaring Activity (the current week resolver, next-week offsets, the isolated /api/calweek controller and webhook, the page and its Day 5 links)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/calweek.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Calendar Activity Check (Day 5's answer key at 100%, each wrong field caught, the accepted zones and reminders, a draft saved and sent, the trainer's tab, the Day 5 slide, the worker's rules)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/calcheck.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Call Listening Log (the four sets, a part-filled and a full log, the trainer's reading and set editing, the worker's rules)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/listening.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Shadowing log and the day's To-Do (the guide's wording, the Practice Lab's To-Do, a logged session, the trainer's buddy and reading)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/shadowing.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
-      - name: Buffer time, mock calls and demos (the trainee's Done and Debrief Prep, the trainer's live tracker and release, the worker's rules)
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
-        run: node .github/scripts/buffer.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+          SMOKE_JOBS: 3
+        run: node .github/scripts/smoke.mjs ${{ steps.pick.outputs.tests }}
