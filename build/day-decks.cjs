@@ -406,6 +406,8 @@ s2: html => {
     if(!m) throw new Error(`Day 2's video ${id} is no longer where the build looks for it`); out = out.replace(m[0], m[0] + add); };
   after("1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D", ct + '<div class="ftdd-pgbreak"></div>\n');
   after("1K9AXO0XZJjGFXHPugLAbjeVgcC3fIZuE", al);
+  // (no "📝 What I learned" on this slide's videos: js/ft-day-decks.js visual)
+  out = '<div class="ftdd-nolearn" hidden></div>\n' + out;
   const kindly = "kindly accomplish the following:", two = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>Please upload your completed assessments[^]*?<\/p>\n<p class="li" style="--lvl:0"><span class="lbl">3\.<\/span><span>Checking and feedback[^]*?<\/p>\n/;
   if(!out.includes(kindly) || !two.test(out) || !out.includes('<span class="lbl">4.</span>')) throw new Error("Day 2's assessment instructions are no longer where the build looks for them");
   out = out.replace(kindly, "kindly accomplish the <b>Common Terms Used – Assessment</b> and the <b>Auto Liability Insurance – Assessment</b>: each follows its video on the slide before, and both are on ✍️ Knowledge Check.")

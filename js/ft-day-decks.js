@@ -177,6 +177,8 @@ const cleanTitle = t => { const s = String(t || "").replace(/https?:\/\/\S+/g, "
 function visual(html){
   const t = document.createElement("template"); t.innerHTML = html;
   const root = t.content;
+  // (a slide the build marks ftdd-nolearn, Day 2's Common Terms, has no "📝 What I learned" beside its videos)
+  const learnOn = !root.querySelector(".ftdd-nolearn");
   // 1. a line that is only a link (or links) becomes tiles; the short line before it names the tile
   root.querySelectorAll("p").forEach(p => {
     const as = [...p.querySelectorAll("a[href]")];
@@ -213,11 +215,21 @@ function visual(html){
       btn.innerHTML = `<span class="ftdd-tile-ic">🎧</span><span class="ftdd-tile-t"><b>Transcribe Interview Recording ${m[1]}</b><small>Open the Transcription Activity →</small></span>`;
       tiles[j] = btn;
     });
-    // (no "📝 What I learned" beside a video on a slide: 🎬 Video Notes keeps its own page, js/ft-video-notes.js)
-    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it
+    // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
+    const wrapped = tiles.map(x => {
+      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn) return x;
+      const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
+      const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
+      b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
+      b.setAttribute("onclick", "FTVideoNotes.openFrom(this)");
+      b.textContent = "📝 What I learned"; w.appendChild(b); return w;
+    });
+    tiles.length = 0; wrapped.forEach(x => tiles.push(x));
+    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
+    // "📝 What I learned"
     const src = as.length === 1 && as[0].hasAttribute("data-embed") && typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(as[0].getAttribute("href")) : null;
     if(src){
-      const tile = tiles[0], vid = tile.classList.contains("k-video");
+      const x = tiles[0], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
       const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       // (its name: the one the build gave it, else the tile's)
@@ -231,8 +243,8 @@ function visual(html){
       // a document to work in (Day 2's assessments, data-full): the page's full height
       if(as[0].hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
       if(crop > 0){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
-      // (a video's address and name, for 🎬 Video Notes: videos below)
-      if(vid){ box.setAttribute("data-url", href); box.setAttribute("data-title", nm); }
+      if(learn0) learn0.setAttribute("data-title", nm);
+      const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
       if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
       return;
     }
@@ -572,6 +584,9 @@ function slideActions(s, info, body, i){
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
+  // (a video that plays in the slide counts too: ftdd-inline)
+  const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
+  if(vids && root.FTVideoNotes && !/ftdd-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
@@ -987,8 +1002,8 @@ function videos(n){
       const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
       out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});
     });
-    // (and a video that plays in the slide: its box carries its address and name)
-    t.content.querySelectorAll(".ftdd-inline.is-video[data-url]").forEach(b => {
+    // (and a video that plays in the slide: its 📝 What I learned button carries its address and name)
+    t.content.querySelectorAll(".ftdd-inline.is-video .ftdd-learn").forEach(b => {
       const url = b.getAttribute("data-url"); if(!url || seen.has(url)) return; seen.add(url);
       out.push({url, title: b.getAttribute("data-title") || "Video", day: n, slide: i + 1});
     });
@@ -1235,7 +1250,7 @@ function toKC(l){
   if(root.FTProcess) FTProcess.openLesson(l);
 }
 // 📄 an assessment opened from a slide (Day 2's, under each video): ✍️ Knowledge Check shows only that assessment, and
-// its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), Next named `h`
+// its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), named `h`
 function toAssess(l, doc, at, h){
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
@@ -1628,6 +1643,14 @@ root.FTDayDecks = {open, go, next: nextKC,
   dayRows, rowLabel,
   at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
   first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
+  // 📝 What I learned for a video on this slide, from the button above the sheet
+  learn(n){
+    const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
+    const b = card.querySelector(".ftdd-sheet .ftdd-learn");
+    if(!b || !root.FTVideoNotes) return;
+    FTDayDecks.reveal(b);
+    FTVideoNotes.openFrom(b);
+  },
   // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
   reveal(elOrSel){
     const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;
