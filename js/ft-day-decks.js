@@ -141,7 +141,9 @@ function go(step){
    It stops at the last slide, and any click on Previous/Next or a dot leaves it running from there. */
 // 🔓 Day 1 in order (js/ft-day1-flow.js): a trainee on Day 1 goes slide by slide, only as far as the trainer has unlocked
 // (from the slide showing on that day's deck; from anywhere else, the dashboard or a lesson, it is -1)
-const deckMayGo = (n, i) => !root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), state.view === "daydeck" && Number(DD.day) === Number(n) ? DD.i : -1);
+const deckMayGo = (n, i) => (!root.FTDay1 || !FTDay1.mayGo || FTDay1.mayGo(Number(n), Number(i), state.view === "daydeck" && Number(DD.day) === Number(n) ? DD.i : -1))
+  // (and a slide that opens with a task's Done, Day 2's Personal Injury readings after the 📤 Submit: js/ft-buffer.js holds)
+  && !(root.FTBuffer && FTBuffer.holds && FTBuffer.holds(Number(n), Number(i)));
 // is slide i of day n behind a step the trainer hasn't unlocked? (asked quietly: the 🗺 Map draws it 🔒 rather than toast)
 function slideLocked(n, i){
   if(!root.FTDay1 || !FTDay1.mayGo) return false;
@@ -1113,7 +1115,8 @@ const LESSON_CARDS = {
     rows: [
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
-      {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2b", lead: true},
+      // (the readings open once the Common Terms tasks' 📤 Submit is in: js/ft-buffer.js ACTS["2:s2l"].opens)
+      {t: "Personal Injury Readings", sub: "Read both in the slide while your batch finishes · opens when you hit 📤 Submit", k: "read", d: 2, s: "s2b", lead: true},
       // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; the lesson's AI discussion video is
       // its 📚 Dashboard lesson card's 🎬 Video, not on the deck. Then ✍️ Process Questions: the Classroom Activity slide
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
@@ -1240,6 +1243,8 @@ function kcNext(s){
 }
 function toAssessNext(a){
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [], i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1, s = list[i] || null;
+  // (the way on is shut until this slide's Done is in, Day 2's 📤 Submit: the assessment waits for it too)
+  if(s && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)){ toast("📤 Submit your Monitoring Sheet update first."); return; }
   const h = !s ? "" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
   if(root.FTProcess) FTProcess.openLesson(a.l);

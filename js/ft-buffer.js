@@ -28,7 +28,10 @@ const ACTS = {
   // Monitoring Sheet's items #5–7 first, /api/monitor/items: Timely Completion, the context of the progress, red flags
   // and things to improve)
   "2:s2l": {kind: "buffer", task: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
-    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}},
+    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s2b"},
+  // (opens: a slide that stays shut for a trainee until this Done is in, the Personal Injury readings; there the Done is
+  // the same one, key, so they show the wait for the trainer's release and move on with it)
+  "2:s2b": {kind: "buffer", task: true, key: "2:s2"},
   // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever
   // still has their one-on-one to do; a plain buffer shows the trainee only its panel)
   "5:s1": {kind: "buffer", show: true},
@@ -289,6 +292,15 @@ function paint(){
 
 root.FTBuffer = {
   ACTS,
+  // is slide i of day n shut until a task's Done (ACTS[…].opens)? Only a trainee is held, and only once their record is read
+  holds(n, i){
+    if(!trainee() || !root.FTDayDecks) return false;
+    const s = (FTDayDecks.list(n) || [])[i]; if(!s) return false;
+    const by = Object.keys(ACTS).find(k => ACTS[k].opens === s.id && k.split(":")[0] === String(n)); if(!by) return false;
+    const k = ACTS[by].key || by;
+    if(!M.rec){ loadMine().then(() => { if(mine(k)) render(); }); return true; }
+    return !mine(k);
+  },
   ask(){ const h = here(); if(h) confirmBox(h); },
   cancel(){ document.querySelectorAll(".ftbf-modal").forEach(x => x.remove()); },
   async done(){
