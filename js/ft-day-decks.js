@@ -135,6 +135,8 @@ function kindOf(s, html){
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
   if(s.placeholder) return {ic: "📌", label: "To be added"};
   if(s.id === "tools") return {ic: "🧰", label: "Know Your Tools"};
+  // a demo the trainer runs live, one trainee at a time (Day 8's PM), not a recorded one
+  if(/Trainer Facilitated Demo/.test(html)) return {ic: "🧑‍🏫", label: "Trainer Facilitated Demo"};
   if(/transcription/i.test(h)) return {ic: "🎧", label: "Transcription"};
   if(/mock call/i.test(h)) return {ic: "📞", label: "Mock calls"};
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
@@ -1023,7 +1025,7 @@ const LESSON_CARDS = {
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
       {t: "Intake Process, Overview & Documents", time: "AM", sub: "The videos, the Intake Worksheet and your intake packet", k: "watch", d: 8, s: "s1"},
       {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet and extracted documents in SA", k: "watch", d: 8, s: "s2"},
-      {t: "Saving the Intake Packet to SA", time: "PM", k: "demo", d: 8, s: "s3"},
+      {t: "Saving the Intake Packet to SA", time: "PM", sub: "Trainer facilitated demo, one at a time · scored on the Demo Metrics", k: "demo", d: 8, s: "s3"},
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
       {t: "Transcription Activity & Mock Calls", time: "PM", sub: "Minutes of the meeting: client-to-attorney", k: "interactive", d: 9, s: "s3"}],
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
