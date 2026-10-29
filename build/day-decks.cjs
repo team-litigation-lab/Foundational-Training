@@ -411,11 +411,15 @@ s2: html => {
   out = out.replace(kindly, "kindly accomplish the <b>Common Terms Used – Assessment</b> and the <b>Auto Liability Insurance – Assessment</b>: each follows its video on the slide before, and both are on ✍️ Knowledge Check.")
     .replace(two, "").replace('<span class="lbl">4.</span>', '<span class="lbl">2.</span>');
   // the two videos play on the slide without the guide's lines that sent the trainee to them (the slide's pill says
-  // Watch & Do: js/ft-day-decks.js kindOf); the monitoring sheet's update is the one step left
+  // Watch & Do: js/ft-day-decks.js kindOf)
   const intro = [/<p>Task 1 - Please go to this link to watch the video presentation on Common Terms Used<\/p>\n/,
     /<p>Task 2 - Watch this video presentation about how auto liability insurance works[^<]*<\/p>\n/];
   intro.forEach(re => { if(!re.test(out)) throw new Error("Day 2's Common Terms task lines are no longer where the build looks for them"); out = out.replace(re, ""); });
-  out = out.replace(/<p>Task 3 - (Update items #5 -7 in your monitoring sheet)/, "<p>Task 1 - $1");
+  // the monitoring sheet's update is a line, not a numbered step, that opens 📒 Monitoring Sheet; the slide's ✅ Done
+  // card says the rest, so the note goes
+  const check = /<p>Task \d+ - Update items #5 -7 in your monitoring sheet\.<\/p>/, done = /<p><b>Note:<\/b> Hit ✅ Done below when you are\.<\/p>\n?/;
+  if(!check.test(out) || !done.test(out)) throw new Error("Day 2's monitoring sheet step or its note is no longer where the build looks for it");
+  out = out.replace(check, `<p>Update items #5–7 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`).replace(done, "");
   return out;
 },
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide; the
