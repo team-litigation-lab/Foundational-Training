@@ -496,19 +496,21 @@ def transcript(call):
     return out
 
 def worksheet(meta):
-    """the trainee's worksheet (handouts/): a table per call with the 5 data points and the challenge to fill in"""
+    """the trainee's worksheet (handouts/): a table per call with the 5 data points and the challenge's reflection
+    (the obstacle, the VA's response) to fill in"""
     from docx import Document
     from docx.shared import Pt, RGBColor
     from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
     d = Document()
     st = d.styles["Normal"]; st.font.name = "Calibri"; st.font.size = Pt(11)
-    d.add_heading("PI Reception Activity: 6 Practice Calls", 0)
+    d.add_heading("Call Intake & Data Extraction: 6 Practice Calls", 0)
     d.add_paragraph(f"{FIRM} (fictional) · Day 3, Reception Training")
-    d.add_paragraph("Listen to each call on the Day 3 slide and fill in its 5 data points, then the call's challenge: what made it hard, and what the VA did about it.")
+    d.add_paragraph("Listen to each call on the Day 3 slide and fill in its 5 data points, then reflect on the call's challenge: the obstacle (what made the call difficult) and the VA's response (how the receptionist handled it).")
     d.add_paragraph("Name: ____________________________        Batch: ______________        Date: ______________")
     rows = ["1. Caller (name, and who they are)", "2. Callback number", "3. Verified? (how, or why nothing could be shared)",
-            "4. Reason for the call", "5. Action taken (who it went to, and how)", "The challenge, and how the VA handled it"]
+            "4. Reason for the call", "5. Action taken (who it went to, and how)",
+            "Reflection: the obstacle (what made the call difficult)", "Reflection: the VA's response (how the receptionist handled it)"]
     def shade(cell, hexcolor):
         tc = cell._tc.get_or_add_tcPr(); sh = OxmlElement("w:shd")
         sh.set(qn("w:val"), "clear"); sh.set(qn("w:color"), "auto"); sh.set(qn("w:fill"), hexcolor); tc.append(sh)

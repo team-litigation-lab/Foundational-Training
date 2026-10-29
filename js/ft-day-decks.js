@@ -191,7 +191,7 @@ function kindOf(s, html){
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
   if(/^(Common Terms Used|Auto Liability Insurance)$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
-  // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
+  // a slide of recordings to play (Day 3's Call Intake & Data Extraction calls) is listened to, not read
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   return {ic: "📝", label: "Read & Do"};
 }
@@ -735,7 +735,7 @@ let fitT = null;
 const FIT_MIN = 0.8;
 // a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
 // (and a slide the build marks read: Day 11's LOR Drafting guidelines)
-const isReadPart = s => !!s && (!!s.read || Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id)));
+const isReadPart = s => !!s && (!!s.read || Object.values(KC_NEXT[DD.day] || {}).some(k => isPart(k, s.id)));
 const PAGE_ZOOM = 0.85;   // a page holds a little more than the screen, scaled down to fit (to 85%: the text stays readable)
 // a slide with room to spare is drawn bigger, up to max, so its content fills the sheet instead of sitting small in it
 function zoomUp(box, max){
@@ -1142,10 +1142,11 @@ const LESSON_CARDS = {
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
       // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
       {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
-      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into the worksheet on ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
+      // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
+      {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The PI Reception Activity worksheet and its naming convention: on ✍️ Knowledge Check"],
+      "The Call Intake & Data Extraction worksheet and its naming convention: on ✍️ Knowledge Check"],
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
@@ -1234,7 +1235,11 @@ const LESSON_CARDS = {
 // 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
-const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
+// 🎧 Day 3's Call Intake & Data Extraction: the six calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
+// nothing to read first, and the way back is the slide after it)
+const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}},
+  3: {"s1d": {l: 3, label: "Next: ✍️ Knowledge Check →"}}};
+const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
 const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? {l: Number(s.launch.kc), label: `Next: ✍️ Knowledge Check: ${lessonTitle(s.launch.kc)} →`} : null));
 /* 📄 a slide whose Next is its assessment (Day 2's videos): Next opens that assessment alone, on a Knowledge Check page
@@ -1268,7 +1273,7 @@ function unread(k){
 // called after each draw: the slide being read counts once its last page shows; then the Knowledge Check Next unlocks
 function wireReaders(){
   const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null;
-  if(s && forTrainee() && Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id)) && !((DD.pages || 1) > 1 && DD.page < DD.pages - 1)){
+  if(s && forTrainee() && Object.values(KC_NEXT[DD.day] || {}).some(k => isPart(k, s.id)) && !((DD.pages || 1) > 1 && DD.page < DD.pages - 1)){
     const seen = readParts(); if(!seen.includes(s.id)){ seen.push(s.id); try{ localStorage.setItem(readKey(), JSON.stringify(seen)); }catch(e){} }
   }
   const go = document.querySelector("main.main-ftdd .ftdd-next-kc"); if(!go) return;
@@ -1328,8 +1333,10 @@ function toKC(l, here){
   // (from a stop whose Next is this Knowledge Check, kc: past the Process Questions stop that follows it, answered now)
   if(from === DD.i && stop === DD.i + 1) from = stop;
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
-  const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => k.parts.test(list[DD.i].id));
+  const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => isPart(k, list[DD.i].id));
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
+  // (from a slide whose Next is the Knowledge Check, Day 3's six calls: back to the slide after it)
+  else if(list[DD.i] && (KC_NEXT[DD.day] || {})[list[DD.i].id]) from = DD.i;
   const s = list[from + 1] || null;
   const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // (and which answer sheet: the reading's, from the reading; the lesson's own, from its Process Questions stop)
@@ -2104,7 +2111,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
-/* 🎧 the PI Reception Activity's practice calls (Day 3; small on Day 4): three cards to a row, each with its player */
+/* 🎧 Call Intake & Data Extraction's practice calls (Day 3; small on Day 4): three cards to a row, each with its player */
 .ftdd-pic-points{border:2px solid #343C66;border-radius:12px;background:#F6F7FB;padding:0 16px 10px;margin:10px 0 14px;overflow:hidden;}
 .ftdd-sheet .ftdd-pic-points > p.ftdd-pic-points-h{margin:0 -16px 8px !important;padding:8px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-pic-points ol{margin:0 0 6px;padding-left:22px;columns:2;column-gap:36px;}
@@ -2122,7 +2129,20 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 .ftdd-pic-audio{width:100%;height:40px;margin:4px 0 2px;}
 .ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
 .ftdd-sheet .ftdd-pic-sm > p.ftdd-pic-h{font-size:15px !important;}
-@media(max-width:900px){ .ftdd-pic-row{grid-template-columns:minmax(0,1fr);} }
+/* Day 3's Call Intake & Data Extraction: its task in cards (Listen, Analyze, Extract), and the challenge's two halves */
+.ftdd-sheet p.ftdd-cix-lead{font-size:17px !important;line-height:1.5 !important;}
+.ftdd-cix-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:10px 0 14px;}
+.ftdd-cix{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 14px 10px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
+.ftdd-sheet .ftdd-cix > p{margin:0 0 4px !important;font-size:15px !important;line-height:1.45 !important;}
+.ftdd-sheet .ftdd-cix > p.ftdd-cix-h{margin:0 -14px 8px !important;padding:8px 14px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;display:flex;align-items:center;gap:8px;}
+.ftdd-cix-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 12px;}
+.ftdd-cix-grid > .ftdd-pic-points{margin:0;}
+.ftdd-cix-grid .ftdd-pic-points ol{columns:1;}
+.ftdd-sheet .ftdd-cix-grid li, .ftdd-sheet .ftdd-cix-grid p.ftdd-cix-note{font-size:15px !important;line-height:1.45 !important;margin:2px 0 !important;}
+.ftdd-cix-two{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:4px;}
+.ftdd-cix-two > div{font-size:15px;line-height:1.45;}
+.ftdd-cix-two > div > b{display:block;color:#1E2340;margin-bottom:2px;}
+@media(max-width:900px){ .ftdd-pic-row, .ftdd-cix-row, .ftdd-cix-grid{grid-template-columns:minmax(0,1fr);} }
 /* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
    headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
    navy-bordered boxes */
