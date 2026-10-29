@@ -371,6 +371,7 @@ const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, 
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
   // the first slide: the lesson's day card where the day has one (there is no Training Agenda slide)
   const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Activity card", agenda: true}] : [];   // (no Training Agenda slide)
+  let listened = false;
   d.slides.forEach(s => {
     // a lesson day's "To be added" slide has no slide of its own (no 🎲 Today's Task: the unannounced task lands in 🎲 Tasks)
     if(s.placeholder && !only) return;
@@ -380,11 +381,14 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
     if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
       out.push(Object.assign({}, slide, {h: splitHeading(slide.h)}));
-      const ls = listenSlide(d.day, t); if(ls) out.push(ls);
+      const ls = listenSlide(d.day, t); if(ls){ out.push(ls); listened = true; }
       return;
     }
     out.push(slide);
   });
+  // a day whose card has a 🎧 Call Listening row but no slide of the guide's that names it (Day 13: its classroom discussion's
+  // slide is off the deck, build/day-decks.cjs SKIP) still gets the log slide; its row puts it in place (inCardOrder)
+  if(!listened){ const r = dayRows(Number(d.day)).find(x => x.s === "listen"), ls = r ? listenSlide(d.day, /^\s*PM\b/i.test(String(r.time || "")) ? "PM" : "AM") : null; if(ls) out.push(ls); }
   // every day's deck ends with ✅ End of Module (back to 📚 Dashboard): it never runs on into the next day's deck, even
   // where the lesson goes on tomorrow; the trainee opens that day from the Dashboard
   const deck = inCardOrder(Number(d.day), out);
@@ -1036,14 +1040,13 @@ const LESSON_CARDS = {
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
-      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 5, s: "s1"},
-      {t: "Attorney Calendar Management Activity", sub: "Set the time zone and screenshot each appointment before saving", k: "interactive", d: 5, s: "s3"},
+      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for pending tasks · the mock call prep: Call Simulator, Ring Channel, CMS, AI listening, the metrics", k: "buffer", d: 5, s: "s1"},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
     tools: [["Tools:", "Google Calendar Simulator, Booking Rule Check"], "The time zone visible in every screenshot",
       "Collect from every caller: name, callback number, DOB and DOL"],
-    discuss: {5: "s2"},
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
@@ -1102,7 +1105,6 @@ const LESSON_CARDS = {
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},
       {t: "Demo and Shadowing", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "demo", d: 16, s: "s2"}],
-    discuss: {13: "s2"},
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
       "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
     takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
@@ -1922,6 +1924,12 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
 /* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
 .ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}
+/* 📅 Day 5's Attorney Calendar Management Activity, its own words on the slide: the colour legend's swatches (Google
+   Calendar's colours), each activity item a block under its own number, and the Calendar Simulator's hook (empty: no room) */
+.ft-body p.li .lbl .ftdd-sw{display:inline-block;width:18px;height:18px;border-radius:5px;vertical-align:-3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
+.ft-body .ftdd-cal-item{border-left:5px solid #E8590C;background:#F6F7FB;border-radius:0 10px 10px 0;padding:8px 14px 8px 14px;margin:0 0 12px;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !important;color:#fff !important;}   /* (drawn as a heading bar, white on navy, in the reading too) */
+.ft-body .ftdd-calsim{margin:12px 0;} .ft-body .ftdd-calsim:empty{display:none;}
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}

@@ -1,0 +1,106 @@
+# Day 5 · Attorney Calendar Management Activity: its Instructions and its ten Activity Items, word for word as the
+# trainer gave them (2026-10-28). build/day-decks.cjs reads this file onto Day 5's activity slide (ROWS[5].s3), in place of
+# sending the trainee to the activity file for them. Lines starting with "#" are not read.
+Instructions:
+1. Manage the calendar of an attorney by reviewing and scheduling the provided appointments.
+2. Review the given appointment details carefully.
+3. Use your work Google Calendar for this, treating it as your attorney’s official calendar to plot all appointments.
+4. Apply time-blocking and color-coding for clarity:
+o Green – Client Meetings
+o Blue – Internal Meetings
+o Red – Court-Related Tasks
+o Purple – External Events
+o Yellow – Internal Tasks
+o Orange – Personal Wellness
+o Pink – Personal Events
+5. Add reminders with appropriate notes for each appointment to ensure all details are covered
+6. For travel blocks reminders, set a practical or reasonable reminder time for your attorney that ensures they have sufficient notice to prepare and depart without rushing, allowing enough buffer to account for traffic, last-minute preparations, and the required early arrival time at the airport or point of departure. (Need to ask Mitch’s preferences)
+7. Review the calendar to ensure there are no conflicts, such as overlapping appointments or insufficient time buffers between events.
+8. For the location, if it does not provide the exact address, just manually input the location indicated in the activity item. For Travel Blocks, ensure the location is specific, including both the departure point and the destination.
+e.g., John F. Kennedy International Airport → LAX
+9. Add Guests’ email addresses (if applicable):
+Martin Anthony - martin@legalsupporthelp.com
+Michelle Velarde - michelle.velarde@legalsupporthelp.com
+John Michael Dela Cruz - john.delacruz@legalsupporthelp.com
+Lei Lee Abut - team-litigation@legalsupporthelp.com
+
+Activity Items:
+1. Client Meeting
+• Date: July 06, 2026
+• Time: 10:00 AM – 11:00 AM PST
+• Location: Conference Room B
+• Details: Client consultation for Alyssa Lynn Arehart regarding a car accident case. Set a reminder for 15 minutes before the meeting (notification). Ensure all case documents are accessible during the meeting.
+• Guests: Martin Anthony & Michelle Velarde
+2. Team Meeting
+• Date: July 07, 2026
+• Time: 3:00 PM – 4:00 PM MST
+• Location: Google Meet
+• Details: Weekly team check-in. Set a reminder for 30 minutes before the meeting (email).
+• Guests: Martin Anthony, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Abut
+3. Deposition Meeting
+• Date: July 08, 2026
+• Time: 11:00 AM – 1:00 PM EST
+• Location: Attorney’s Office (or Zoom for remote attendees: zoom.us/deposition-meeting-02-04-25)
+• Details: Deposition preparation with another attorney. Set a reminder 1 day before (email).
+• Guests: Martin Anthony & Michelle Velarde
+4. Gym Session
+• Date: July 08, 2026
+• Time: 6:30 AM – 7:30 AM EST
+• Location: Downtown Seattle Fitness Center
+• Details: Morning workout. Set a 10-minute reminder before (notification).
+5. Doctor’s Appointment
+• Date: July 09, 2026
+• Time: 9:00 AM – 10:00 AM PST
+• Location: Central Medical Clinic
+• Details: Routine check-up. Set a 1-day reminder to prepare any necessary documents or insurance details (email).
+6. Court Appearance
+• Date: July 10, 2026
+• Time: 9:00 AM – 12:00 PM PST
+• Location: Washington County Court
+• Details: Attorney has a scheduled court hearing. Set a reminder for 30 minutes before the hearing (notification).
+• Travel Blocks:
+- 8:00 AM – 9:00 AM for travel to court.
+- 12:00 PM – 1:00 PM for return travel.
+7. Recorded Statement Meeting
+• Date: July 10, 2026
+• Time: 4:00 PM – 5:00 PM CST
+• Location: Google Meet
+• Details: Recorded statement meeting with an insurance adjuster regarding a premises liability case. Set a reminder 15 minutes before (notification).
+• Guests: Martin Anthony, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Abut
+8. Networking Dinner Event
+• Date: July 13, 2026
+• Time: 6:00 PM – 8:00 PM PST
+• Location: The Ritz-Carlton, San Francisco (600 Stockton St, San Francisco, CA 94108)
+• Details: Attorney attending a networking dinner with potential clients.
+• Travel Schedule for the Out-of-State Event:
+➢ Travel to San Francisco:
+▪ Date: July 13, 2026
+▪ Time:
+- 8:30 AM – 9:00 AM: Transportation to Seattle Airport (SEA).
+- 9:00 AM – 12:00 PM: Flight from Seattle (SEA) to San Francisco (SFO).
+▪ Note: Confirm flight details, check in luggage, bring travel documents, bring business cards ,and prepare attire for the event. Set a 1-day reminder before (email).
+➢ Networking Event:
+▪ Time:
+- 6:00 PM – 8:00 PM: Attend the event.
+- Arrival: Block 5:45 PM – 6:00 PM for early arrival.
+▪ Note: Bring business cards and prepare a short personal introduction. Set a 30-minute reminder before (notification).
+➢ Overnight Stay:
+▪ Details: Attorney will stay overnight in San Francisco.
+▪ Preparation: Confirm hotel booking and plan transportation after the event.
+➢ Return Travel to Seattle:
+▪ Date: July 14, 2026
+▪ Time:
+- 8:00 AM – 8:30 AM: Check out of the hotel and travel to the airport.
+- 10:00 AM – 1:00 PM: Flight from San Francisco (SFO) to Seattle (SEA).
+▪ Reminder: 1 day before (email): Confirm hotel check-out and transportation to the airport.
+9. Document Review Session
+• Date: July 15, 2026
+• Time: 1:30 PM – 3:00 PM CST
+• Location: Attorney’s Office
+• Details: Allocate time for the attorney to review a high-priority case file. Set a 30-minute reminder before (notification).
+10. Family Dinner
+• Date: July 15, 2026
+• Time: 7:00 PM – 9:00 PM MST
+• Location: Home
+• Details: Dinner with family.
+• Reminder: 1 hour before (notification): Pick up groceries on the way home.

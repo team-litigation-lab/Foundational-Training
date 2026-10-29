@@ -3,7 +3,7 @@
 const DAY5 = {
   id: 5,
   title: "Calendaring & Appointment Setting Training",
-  video: "https://drive.google.com/file/d/184V9IXnd_FFSp63pSCPu3gDx_SzIusz5/view",
+  video: "https://drive.google.com/file/d/1DbOa8sOB5W6YJQUywJoGwcb5S1_XqR1s/view",
   deck: "Calendar_Management_Training_compressed.pdf (sent in chat)",
   heading: "Calendaring & Appointment Setting Training",
   sections: [
