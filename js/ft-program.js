@@ -55,13 +55,13 @@ window.LSH_PROGRAM = {
   // 📌 Setting of Training Expectations and Company Policies, then 🧰 Know Your Tools (js/ft-day-decks.js), before Lesson 1
   pinned: () => [window.FT_ORIENTATION, window.FT_TOOLS_PIN].filter(Boolean),
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "calweek", "calpractice", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
-    lab: ["calscores", "sessions", "trainerinputs", "calrules", "listening"],
+    lab: ["calscores", "sessions", "trainerinputs", "calrules", "calweek", "listening"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
   sources: [

@@ -37,6 +37,7 @@
  */
 import "./js/ft-tracker-rules.js";
 import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
+import { handleCalWeek } from "./calweek-api.js";   // 📅 Standard Training - Calendaring Activity: its own routes and record
 const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
@@ -870,7 +871,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const kv = kvOf(env);
     try {
       const url = new URL(request.url);
@@ -1006,6 +1007,9 @@ export default {
 
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
+
+      /* ---------- 📅 Standard Training - Calendaring Activity and 🧪 its VA Practice Only clone: isolated controller (calweek-api.js) ---------- */
+      if (path.startsWith("/api/calweek/") || path.startsWith("/api/calpractice/")) return await handleCalWeek(path, request, env, ctx, tok, kv);
 
       /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
          A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's

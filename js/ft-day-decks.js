@@ -143,6 +143,8 @@ function kindOf(s, html){
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
+  // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
+  if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   return {ic: "📝", label: "Read & Do"};
 }
 const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
@@ -217,6 +219,23 @@ function visual(html){
       b.textContent = "📝 What I learned"; w.appendChild(b); return w;
     });
     tiles.length = 0; wrapped.forEach(x => tiles.push(x));
+    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
+    // "📝 What I learned"
+    const src = as.length === 1 && as[0].hasAttribute("data-embed") && typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(as[0].getAttribute("href")) : null;
+    if(src){
+      const x = tiles[0], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
+      const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
+      box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
+      // (its name: the one the build gave it, else the tile's)
+      const nm = (as[0].getAttribute("data-title") || "").trim() || tile.querySelector("b").textContent;
+      const href = as[0].getAttribute("href") || "";
+      box.querySelector("b").textContent = (vid ? "🎬 " : /\/folders\//.test(href) ? "📁 " : /spreadsheets/.test(href) ? "📊 " : "📄 ") + nm;
+      const f = box.querySelector("iframe"); f.setAttribute("src", src); f.setAttribute("title", nm);
+      if(learn0) learn0.setAttribute("data-title", nm);
+      const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
+      if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
+      return;
+    }
     const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-tiles") ? p.previousElementSibling : null;
     const box = absorb ? null : last;
     const grid = box || document.createElement("div"); grid.className = "ftdd-tiles";
@@ -385,7 +404,8 @@ function inCardOrder(n, out){
     if(r.s){
       const i = body.findIndex(s => s.id === r.s); if(i < 0) return;
       take(body[i]);
-      for(let j = i + 1; j < body.length && (body[j].id.startsWith(r.s + "-") || (body[j].id === "listen" && /call listening/i.test(body[i].h))); j++) take(body[j]);
+      // (the slides that continue it come with it, unless the card gives one a place of its own: Day 3's split parts)
+      for(let j = i + 1; j < body.length && ((body[j].id.startsWith(r.s + "-") && !rows.some(x => x.s === body[j].id)) || (body[j].id === "listen" && /call listening/i.test(body[i].h))); j++) take(body[j]);
       return;
     }
     if(r.go || r.run) ordered.push({id: `go-${k}`, h: r.t, launch: r, html: ""});
@@ -410,6 +430,12 @@ const HANDOUTS = {1: {items: [
   ["LSH Clients and Clientele", "https://drive.google.com/file/d/1-x8NMuG0sR994yqodr5xBgHaHDfrWv6v/view"],
   ["Western Culture", "https://drive.google.com/file/d/1EkJ1eqoZqccdThFJ0-O1tPXEyjLLeIX0/view"],
   ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]},
+  // Day 2: Law Firm Communication's breakout session (the trainer runs it in the afternoon, 1:00–3:00 PM)
+  2: {items: [
+  ["Softphones", "https://drive.google.com/file/d/1QQh6TvcT5YRj-uNQvGpsh5cGdyoEtMdY/view"],
+  ["Law Firm Call Guide", "https://drive.google.com/file/d/11uAKj6HqrSGXnQJ1IdnCc4d-64KVcuUr/view"],
+  ["Call Handling", "https://drive.google.com/file/d/1gK2a5X1gY0fxA3I-XTk4AHdL2wwBTqaE/view"],
+  ["Attorney-Client Privilege", "https://drive.google.com/file/d/1KogqilWL3R8V4FdPUblq4md9hCHKsUBn/view"]]},
   // Day 7: the Intake Specialist Training breakout (Training Guide: "Digital Handouts for Breakout Session (Group Activity)")
   7: {items: [
   ["Intake Documents to Support the Claim", "https://drive.google.com/file/d/1DenG0yNjuWZe9Kc3e5zAnZJOjP4yQB6X/view"],
@@ -422,14 +448,14 @@ function handoutsSlide(h){
   const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
   const cards = h.items.map(([t, u], i) => locked
     ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
-    : `<a class="ftdd-ho" href="${e(u)}" target="_blank" rel="noopener"><span>${i + 1}</span><b>${e(t)}</b><i>Open ↗</i></a>`).join("");
+    : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
     <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol></div>
-      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert>${cards}</div>
+      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert style="grid-template-rows:repeat(${h.items.length},minmax(0,1fr))">${cards}</div>
         <div class="ftd1-lock ftlk-over" role="alert"><b>🔒 Handouts locked</b><span>Your trainer unlocks them when the breakout session starts.</span></div></div>`
         : `<div class="ftdd-ho-list">${cards}</div>`}
     </div></div>`;
@@ -458,7 +484,7 @@ function agendaHtml(d, info){
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
-  const vids = d.slides.reduce((t, s) => t + (visual(slideSrc(d.day, s)).match(/ftdd-tile k-video/g) || []).length, 0);
+  const vids = d.slides.reduce((t, s) => t + (visual(slideSrc(d.day, s)).match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length, 0);
   const folders = count(/drive\.google\.com\/drive\/folders\//g), decksN = count(/class="canva-frame"/g);
   const lessons = (info.lessons || []).map(l => `<li>📘 ${e(lessonTitle(l))}</li>`).join("");
   return `<div class="ftdd-ag"><ol class="ftdd-ag-list">${rows}</ol>
@@ -523,9 +549,11 @@ function slideActions(s, info, body, i){
     const sid = /reception/i.test(h) ? "reception" : /calendar/i.test(h) ? "calendaring" : /intake/i.test(h) ? "intake" : "";
     if(sid) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTSessions.open('${sid}')">☎ Open the Practice Session</button>`);
   }
+  if(has(/attorney calendar management/i) && root.FTCalWeek) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTCalWeek.open()">📅 Standard Training - Calendaring Activity</button>`);
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
-  const vids = (String(body || "").match(/ftdd-tile k-video/g) || []).length;
+  // (a video that plays in the slide counts too: ftdd-inline)
+  const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
   if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
@@ -536,6 +564,9 @@ const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calenda
 function waitBox(s, info){
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
+  // the tools itself, and its instructions and metrics)
+  if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
   const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
   const sim = SIM_OF[l], acts = [];
   if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
@@ -606,14 +637,14 @@ let fitT = null;
 /* ONE SCREEN FOR ALL OF THEM, the way the Case Management course's slides fit (fitSlideZoom / paginateLessonSlide
    in its js/cm-updates.js). The slide's frame takes the room left on the screen; its header, ribbon and bar keep
    their size, and only what is on its card (the sheet, or the day card on navy) is scaled down until the whole
-   slide fits, to half size at the smallest. Only a slide that would have to shrink further is read in pages: its
+   slide fits, to 80% at the smallest (smaller text read as a different, harder slide). Only a slide that would have to shrink further is read in pages: its
    blocks are dealt into screenfuls, Previous / Next turn the pages before moving to the next slide, and the bar
    says which page it is. Nothing scrolls.
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
-const FIT_MIN = 0.5;
+const FIT_MIN = 0.8;
 // a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
 const isReadPart = s => !!s && Object.values(KC_NEXT[DD.day] || {}).some(k => k.parts.test(s.id));
-const PAGE_ZOOM = 0.75;   // a page holds up to a third more than the screen, scaled down to fit: fuller pages, fewer of them
+const PAGE_ZOOM = 0.85;   // a page holds a little more than the screen, scaled down to fit (to 85%: the text stays readable)
 // a slide with room to spare is drawn bigger, up to max, so its content fills the sheet instead of sitting small in it
 function zoomUp(box, max){
   const inner = [...box.children].filter(k => k.style.display !== "none");
@@ -656,7 +687,8 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline)
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -752,7 +784,7 @@ function fitSheets(){
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.4);   // a text-and-chart row is never split, so it may shrink a little more
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
     else if(!sheet.classList.contains("ftdd-sheet-edit") && !DD.split) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
@@ -897,6 +929,11 @@ function videos(n){
       const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
       out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});
     });
+    // (and a video that plays in the slide: its 📝 What I learned button carries its address and name)
+    t.content.querySelectorAll(".ftdd-inline.is-video .ftdd-learn").forEach(b => {
+      const url = b.getAttribute("data-url"); if(!url || seen.has(url)) return; seen.add(url);
+      out.push({url, title: b.getAttribute("data-title") || "Video", day: n, slide: i + 1});
+    });
   });
   return out;
 }
@@ -924,7 +961,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
    {d, s} is the day and the slide id it opens (build/days/), {go} a platform page instead.
    ============================================================ */
 // the pills a row carries, as the card names its kind
-const PILLS = {classroom: "Classroom", read: "Read & Do", interactive: "Interactive activity", homework: "Homework",
+const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
@@ -943,9 +980,10 @@ const LESSON_CARDS = {
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
       {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 2, s: "s1"},
-      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2"},
-      {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2"},
-      {t: "Breakout Session: Digital Handouts", sub: "Group activity · handouts posted in the training GC", k: "interactive", d: 2, s: "s3"},
+      // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
+      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
+      {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2-2", lead: true},
+      {t: "Handouts / Video", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
       {t: "Escalation Handling Exercise", k: "interactive", d: 2, s: "s3"},
       {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "homework", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
@@ -953,21 +991,25 @@ const LESSON_CARDS = {
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
-      {t: "Checking of Assignments", sub: "The last session’s homework and assessments reviewed", k: "classroom", d: 3, s: "s1"},
+      // Part 1: the discussion deck (PI Workflow and Reception Training), the lesson deck and its video, the Process
+      // Questions, the sample recordings; Part 2: the activities
+      {t: "Checking of Assignments & the Discussion Deck", sub: "PI Workflow and Reception Training · the sample recordings and SOP", k: "classroom", d: 3, s: "s1"},
+      {t: "Process Questions: Submit", sub: "All ten (PI Workflow and Reception Training) in ✍️ Knowledge Check · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(3)"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
-      {t: "Confidentiality & Call Response Exercise", k: "interactive", d: 3, s: "s1"},
-      {t: "Reception Activity on VA Oscar’s Recordings", sub: "Extract the 5 data points into your assessment sheet", k: "assessment", d: 3, s: "s1"},
-      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet", k: "homework", d: 3, s: "s2"}],
-    tools: ["The sample SOP and the 10 sample call recordings are on the day’s slide",
-      "Upload the Reception Activity to your Assessments/Activities folder", "Process Questions: five of the ten where time is short"],
-    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_Process_Question_Answers (VA First Name)"},
+      {t: "Confidentiality & Call Response Exercise", sub: "Then the supplementary recordings (Carlos & Oscar), for idle time", k: "interactive", d: 3, s: "s1-2"},
+      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "listen-pi"},
+      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
+    tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
+      "Upload the PI Reception Activity worksheet to your Assessments/Activities folder"],
+    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
-      {t: "Training Video Viewing & Mock Call Preparation", sub: "The receptionist’s roles, responsibilities and attributes", k: "watch", d: 4, s: "s1"},
-      {t: "Reception Training with Julio", time: "1:49:49", sub: "Watch it, then update items #10–11 on your Monitoring Sheet", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
+      {t: "Training Video Viewing & Mock Call Preparation", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet", k: "watch", d: 4, s: "s2"},
+      {t: "Mock Call Preparation", sub: "Direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them", k: "interactive", d: 4, s: "s2-2"},
+      {t: "Instructions for Mock Calls & Metrics", sub: "The one-on-one with your trainer · fourteen criteria, 0–5 each, weighted average", k: "interactive", d: 4, s: "s2-3"},
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
-    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "Receptionist_Training_Process_Question_Answers (VA First Name)"},
+    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 5, s: "s1"},
@@ -1158,7 +1200,7 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
 function standardRows(n, c, lid, first, title, rows){
   const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
   const lead = []; let i = 0;
-  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t))) lead.push(rows[i++]);
+  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
   const body = rows.slice(i), tail = [];
   while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
   const mid = [];
@@ -1558,7 +1600,7 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display
 .ftdd-ctl.on{background:#262B45;color:#fff;border-color:#262B45;}
 .ftdd-rail-note{margin:0;font-size:11.5px;color:var(--ink-soft);}
 .ftdd-rail-kick{margin:4px 0 0;padding-left:12px;font:600 11px 'IBM Plex Mono',monospace;color:#C9742B;letter-spacing:0;}
-.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:600 16px/1.25 'Fraunces',Georgia,serif;color:#262B45;}
+.ftdd-rail-title{margin:0 0 4px;padding-left:12px;font:700 15px/1.25 'Inter',system-ui,sans-serif;color:#262B45;}
 @media(max-width:1100px){
   .ftdd-stage{grid-template-columns:minmax(0,1fr);}
   .ftdd-rail{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;}
@@ -1596,11 +1638,12 @@ main.main-ftdd{max-width:1760px;margin:0 auto;padding:12px 6px 14px 18px;display
 /* the content: a white sheet */
 .ftdd-sheet{background:#fff;color:var(--ink);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:18px 24px;box-shadow:0 8px 22px rgba(0,0,0,.18);overflow:auto;min-height:0;}
 /* the type, as the Case Management course's Case Flow slides set it: body text in Inter 500 at 17px, bold at 700
-   (not the engine's 700 / 900 everywhere), the slide's opening line as a Fraunces lead, section headings in Poppins */
+   (not the engine's 700 / 900 everywhere), the slide's opening line as a lead in the same Inter, bigger and bold (one
+   type family on the sheet: a serif lead read as a different font), section headings in Poppins */
 main.main-ftdd .ftdd-sheet{font:500 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:500;line-height:1.45;color:#1B1E2E;}
 main.main-ftdd .ftdd-sheet :is(b,strong){font-weight:700;}
-main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:600 21px/1.32 'Fraunces',Georgia,serif;color:#1B1E2E;letter-spacing:-.005em;}
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:700 20px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 15.5px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;letter-spacing:.01em;margin:14px 0 6px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:600;line-height:1.45;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t b{font-weight:700;}
@@ -1650,7 +1693,7 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 .ftdd-sheet .ftdd-tool-shot img{display:block;width:100%;height:100%;max-height:none;object-fit:cover;object-position:top center;}   /* every screenshot in the same 16:10 frame, from its top */
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt h3{margin:0 0 8px !important;font:800 22px/1.2 'Poppins','Inter',sans-serif !important;color:#fff !important;letter-spacing:0;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p{margin:0 0 8px;font-size:15px;line-height:1.45;}
-main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what{font:600 18px/1.35 'Fraunces',Georgia,serif;color:#1B1E2E;}
+main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what{font:700 18px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b{font:700 11.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;display:block;margin-bottom:2px;}
 .ftdd-tool-where{color:var(--ink-soft);}
 main.main-ftdd .ftdd-sheet .ftdd-tool-txt .ftdd-tool-fh{margin:10px 0 4px !important;font:700 11.5px 'IBM Plex Mono',monospace !important;letter-spacing:.08em;text-transform:uppercase;color:#C9742B;}
@@ -1745,7 +1788,7 @@ main.main-ftdd .ftdd-lcslide > .ftlc > .ftlc-body{flex:1 0 auto;}
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
-.ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo{background:#7A5A2E;}
+.ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo,.ftlc-pill.k-listendo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
 .ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 .ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
@@ -1827,6 +1870,25 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
+/* 🎧 the PI Reception Activity's practice calls (Day 3; small on Day 4): three cards to a row, each with its player */
+.ftdd-pic-points{border:2px solid #343C66;border-radius:12px;background:#F6F7FB;padding:0 16px 10px;margin:10px 0 14px;overflow:hidden;}
+.ftdd-sheet .ftdd-pic-points > p.ftdd-pic-points-h{margin:0 -16px 8px !important;padding:8px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
+.ftdd-pic-points ol{margin:0 0 6px;padding-left:22px;columns:2;column-gap:36px;}
+.ftdd-pic-points li{margin:2px 0;}
+.ftdd-sheet .ftdd-pic-points p.ftdd-pic-plus{margin:6px 0 0 !important;}
+.ftdd-pic-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 14px;}
+.ftdd-pic{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 14px 12px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);display:flex;flex-direction:column;}
+.ftdd-sheet .ftdd-pic > p{margin:0 0 6px !important;}
+.ftdd-sheet .ftdd-pic > p.ftdd-pic-h{margin:0 -14px 10px !important;padding:9px 14px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;display:flex;align-items:center;gap:10px;}
+.ftdd-pic-n{flex:none;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+.ftdd-pic-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.ftdd-pic-tag{display:inline-block;padding:2px 9px;border-radius:999px;background:#FDEBDD;color:#8A3A06;font:700 13px/1.5 'Inter',sans-serif;}
+.ftdd-pic-tag.ftdd-pic-who{background:#E8EBF5;color:#343C66;}
+.ftdd-sheet .ftdd-pic > p.ftdd-pic-about{font-size:15px !important;line-height:1.45 !important;color:#30364F;flex:1;}
+.ftdd-pic-audio{width:100%;height:40px;margin:4px 0 2px;}
+.ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
+.ftdd-sheet .ftdd-pic-sm > p.ftdd-pic-h{font-size:15px !important;}
+@media(max-width:900px){ .ftdd-pic-row{grid-template-columns:minmax(0,1fr);} }
 /* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
    headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
    navy-bordered boxes */
@@ -2071,7 +2133,62 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 @media(max-width:900px){ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr);} }
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}
-.ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */   /* a folder's file list is short: it doesn't shrink the slide around it */
+/* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
+/* 📅 Day 5's sample event editor, drawn (Google Calendar's dark editor): the time zone boxed in red, as the guide's picture */
+.ft-body .ftdd-gcal{background:#1F1F1F;border-radius:10px;padding:12px 14px;margin:8px 0;color:#E3E3E3;font:500 14px/1.3 'Inter',system-ui,sans-serif;}
+.ft-body .ftdd-gcal-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.ft-body .ftdd-gcal-x{color:#C4C7C5;font-size:16px;}
+.ft-body .ftdd-gcal-title{flex:1;font:500 19px/1.2 'Inter',system-ui,sans-serif;color:#E3E3E3;border-bottom:1px solid #8E918F;padding-bottom:4px;}
+.ft-body .ftdd-gcal-save{background:#A8C7FA;color:#062E6F;border-radius:999px;padding:5px 16px;font-weight:700;}
+.ft-body .ftdd-gcal-more{color:#A8C7FA;font-weight:600;font-size:13px;}
+.ft-body .ftdd-gcal-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.ft-body .ftdd-gcal-f{background:#2D2F31;border-radius:6px;padding:6px 10px;color:#E3E3E3;}
+.ft-body .ftdd-gcal-to{color:#C4C7C5;}
+.ft-body .ftdd-gcal-tz{outline:3px solid #E5262B;outline-offset:2px;font-weight:700;}
+.ft-body .ftdd-gcal-link{color:#A8C7FA;font-weight:600;}
+main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B6178 !important;margin:4px 0 0 !important;}
+/* 📅 Day 6's sample event, drawn (Google Calendar's event editor): the client's name and the date, time and time zone boxed in red */
+.ft-body .ftdd-ev{background:#fff;border:1.5px solid #DADCE0;border-radius:12px;padding:14px 16px;margin:8px 0;font:500 14px/1.35 'Inter',system-ui,sans-serif;color:#1F1F1F;}
+.ft-body .ftdd-ev-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.ft-body .ftdd-ev-x{color:#444746;font-size:16px;}
+.ft-body .ftdd-ev-title{font:500 22px/1.25 'Inter',system-ui,sans-serif;border-bottom:1px solid #747775;padding-bottom:3px;}
+.ft-body .ftdd-ev-mark{outline:2.5px solid #D93025;outline-offset:2px;}
+.ft-body .ftdd-ev-note{color:#1A56DB;font:700 14px/1 'IBM Plex Mono',monospace;}
+.ft-body .ftdd-ev-save{margin-left:auto;background:#0B57D0;color:#fff;border-radius:999px;padding:6px 18px;font-weight:700;}
+.ft-body .ftdd-ev-when{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 8px;padding:7px;outline:2.5px solid #D93025;}
+.ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
+.ft-body .ftdd-ev-f.wide{display:flex;margin:4px 0;}
+.ft-body .ftdd-ev-hl{background:#FFF200;padding:1px 4px;}
+.ft-body .ftdd-ev-link{color:#0B57D0;font-weight:600;}
+.ft-body .ftdd-ev-sub{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
+.ft-body .ftdd-ev-box{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid #444746;border-radius:3px;font-size:11px;color:#fff;margin-right:6px;}
+.ft-body .ftdd-ev-box.on{background:#0B57D0;border-color:#0B57D0;}
+.ft-body .ftdd-ev-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;}
+.ft-body .ftdd-ev-tabs{display:flex;gap:18px;margin:0 0 8px;color:#444746;} .ft-body .ftdd-ev-tabs b{color:#0B57D0;border-bottom:3px solid #0B57D0;padding-bottom:4px;}
+.ft-body .ftdd-ev-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;} .ft-body .ftdd-ev-line small{color:#444746;}
+.ft-body .ftdd-ev-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#33B679;}
+.ft-body .ftdd-ev-desc{background:#E9EEF6;border-radius:8px;padding:10px 12px;margin-top:8px;}
+.ft-body .ftdd-ev-desc ol{margin:0;padding-left:20px;} .ft-body .ftdd-ev-desc li{font-size:14px !important;margin:2px 0 !important;}
+.ft-body .ftdd-ev-side > div{margin:6px 0;display:flex;align-items:center;gap:6px;}
+.ft-body .ftdd-ev-guest small{display:block;color:#444746;font-size:12px;} .ft-body .ftdd-ev-guest b{font-weight:600;}
+.ft-body .ftdd-ev-av{width:24px;height:24px;border-radius:50%;background:#0B57D0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size:14px !important;font-weight:600 !important;}
+@media(max-width:900px){ .ft-body .ftdd-ev-body{grid-template-columns:minmax(0,1fr);} }
+/* 📤 the 19 screenshots, numbered in the order they are uploaded */
+.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the whole row) */
+.ft-body .ftdd-sheet > .ftdd-card4, main.main-ftdd .ftdd-sheet > .ftdd-card4{margin:0 0 14px;}   /* (the list takes the card's whole row, in two columns) */
+.ft-body ol.ftdd-seq{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-rows:repeat(10,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px 14px;}
+@media(max-width:900px){ .ft-body ol.ftdd-seq{grid-auto-flow:row;grid-template-rows:none;} }
+.ft-body ol.ftdd-seq li{display:flex;align-items:center;gap:8px;margin:0 !important;padding:5px 10px;border-radius:6px;background:#F4F6FB;font:600 16px/1.3 'Inter',system-ui,sans-serif !important;color:#1E2340 !important;}
+.ft-body ol.ftdd-seq li:nth-child(even){background:#EBEEF6;}
+.ft-body .ftdd-seq-n{flex:0 0 auto;min-width:28px;height:28px;border-radius:50%;background:#E8590C;color:#fff;font:800 13px/28px 'Inter',sans-serif;text-align:center;}
+.ft-body .ftdd-inline{margin:12px 0 16px;}
+.ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
+.ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+.ft-body .ftdd-inline-h .ftdd-learn{margin:0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:700 14px/1.2 'Inter',sans-serif;}
+.ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
+.ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
+.ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
    three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */
