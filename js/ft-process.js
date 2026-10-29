@@ -203,9 +203,32 @@ const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Questions": {t: 
   href: "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx", file: "PI_Reception_Activity"}};
 function worksheetBox(set){
   const w = WORKSHEETS[set.file]; if(!w) return "";
+  // (📤 Submit to my Drive Folder: the trainee picks the finished Word file, saved into their folder under the convention)
   return `<div class="fp-pdf fp-ws"><a class="btn btn-ghost btn-sm" href="${e(w.href)}" target="_blank" rel="noopener noreferrer" download>📝 ${e(w.t)} · ⬇ Download the Word file</a>
     <p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(w))}</code></p>
-    <p class="fp-muted fp-ws-note">Upload the completed worksheet to your Assessment and Activities Folder${FP.driveFolder ? ` (<a href="${e(FP.driveFolder)}" target="_blank" rel="noopener noreferrer">📁 open it</a>)` : ""} and work directly from there to finalize it.</p></div>`;
+    <button class="btn btn-ghost btn-sm fp-ws-drive" type="button" onclick="this.nextElementSibling.click()">📤 Submit to my Drive Folder</button>
+    <input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden onchange="FTProcess.submitWorksheet('${e(set.file)}', this)">
+    <p class="fp-muted fp-ws-note">Fill it in, then 📤 Submit to my Drive Folder: it is saved to your Assessment and Activities Folder${FP.driveFolder ? ` (<a href="${e(FP.driveFolder)}" target="_blank" rel="noopener noreferrer">📁 open it</a>)` : ""}, named by the convention.</p></div>`;
+}
+async function submitWorksheet(file, input){
+  const w = WORKSHEETS[file], f = input && input.files && input.files[0]; if(input) input.value = "";
+  if(!w || !f) return;
+  if(!isTraineeHere()){ toast("👁 Trainee view — a trainee submits their own worksheet to their folder."); return; }
+  if(!/\.docx$/i.test(f.name)){ toast("Pick the worksheet's Word file (.docx)."); return; }
+  if(f.size > 2900000){ toast("That file is too large to submit (3 MB at most)."); return; }
+  const name = fileName(w) + ".docx";
+  document.querySelectorAll(".fp-ws-drive").forEach(b => { b.disabled = true; b.textContent = "Submitting…"; });
+  let j = {};
+  try{
+    const b64 = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = no; r.readAsDataURL(f); });
+    const r = await authFetch("/api/drive/save", {name, docx: b64}); j = await r.json().catch(() => ({}));
+  }catch(err){ j = {error: "offline"}; }
+  if(j.ok){ checkFolder(true); toast(`✓ Submitted to your Assessment and Activities Folder: ${name}`); }
+  else {
+    if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
+    toast(`${DRIVE_WHY[j.error] || "Couldn’t reach Google Drive."} Upload it to your Assessment and Activities Folder as “${name}”${FP.driveFolder ? " (it just opened)" : ""}.`);
+  }
+  render();
 }
 // beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder, then its worksheet, if any
 function pdfBox(lesson){
@@ -449,7 +472,7 @@ window.FTProcess = {
     toast(`✓ ${set.title} Process Questions submitted.`); render();
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
-  savePdf,
+  savePdf, submitWorksheet,
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
@@ -830,7 +853,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
 .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
 .fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
-.fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
+.fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-drive{margin-left:auto;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
 .fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
 .fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
