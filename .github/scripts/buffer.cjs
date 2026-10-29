@@ -74,7 +74,7 @@ async function workerChecks() {
     const panel = p => p.evaluate(() => (document.querySelector('.ftbf') || {}).innerText || '');
 
     // a slide that isn't a buffer, mock call or demo has none
-    await open(t, 4, 's1');
+    await open(t, 4, 's2');   // (Day 4's Training Video Viewing: its one-line introduction joined it, build/day-decks.cjs SKIP)
     if (await t.evaluate(() => !!document.querySelector('.ftbf'))) fail('Day 4\'s Training Video Viewing slide got a buffer panel');
 
     // 🌅 a buffer slide: the line and Done, no dialog

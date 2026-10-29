@@ -261,7 +261,8 @@ s3: html => {
   if(out === html) throw new Error("Day 4's mock call metrics are no longer where the build looks for them");
   return "<p>Your one-on-one Reception mock call with the trainer, scored on the Reception Mock Calls Metrics (the slide before).</p>\n" + out;
 }},
-// Day 6 (Calendaring, Part 2): the three training videos play in the slide; the Loom references stay links; the guide's
+// Day 6 (Calendaring, Part 2): s2, the Mock Call Scenarios, is the guide's wording as text and lists (it came through as a
+// heading per line), with what the trainee should do; the scenarios themselves are the trainer's (6:s2-2). s1: the three training videos play in the slide; the Loom references stay links; the guide's
 // sample event (image33) is drawn as the slide's own: "An optimized calendar schedule should follow this structure"
 6: {s1: html => {
   let out = html.replace("<p>While waiting for your turn to perform, kindly watch the following training videos. Thank you.</p>", "<p>While waiting for your turn to perform, watch the following training videos.</p>");
@@ -289,6 +290,26 @@ s3: html => {
     '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
   return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
+},
+s2: html => {
+  if(!/data-slot="6:s2-1"/.test(html) || !/data-slot="6:s2-2"/.test(html) || !/Free Communication Upskill/.test(html)) throw new Error("Day 6's Mock Call Scenarios are no longer where the build looks for them");
+  const ul = xs => "<ul>" + xs.map(x => `<li>${x}</li>`).join("") + "</ul>\n";
+  return '<div class="trainer-slot" data-slot="6:s2-1"></div>\n' +
+    "<p>This activity reinforces proper calendar management through mock calls based on common scheduling scenarios handled by the firm. Trainees will respond to simulated inbound calls involving consultations, follow-ups, case meetings, document signings, and urgent attorney requests.</p>\n" +
+    "<p><b>Trainee should:</b></p>\n" + ul(["Accurately schedule appointments by confirming availability, meeting type, duration, and format (phone, video, or in-office).",
+      "Create complete and accurate calendar entries, including appropriate titles and detailed notes reflecting case context and caller demeanor.",
+      "Follow proper call flow and maintain professionalism, adapting to different caller tones (easy, anxious, irritated, impatient, or emotional).",
+      "Set reminders accordingly for the attorney to be reminded."]) +
+    "<p><b>Please take note of the following guidelines:</b></p>\n<p><b>Minimum Information to Collect from Caller</b> · VA must obtain:</p>\n" +
+    ul(["Name", "Callback Number", "Date of Birth (DOB)", "Date of Loss (DOL)"]) +
+    "<p><b>✅ Scheduling Rules</b></p>\n" + ul(["Identify available slots only", "Avoid lunch, buffer time, and blocked events", "Offer 2–3 alternative times when a requested slot is unavailable",
+      "Clarify meeting type (phone, video, or in-person)", "Plot the appointment in the attorney’s calendar.", "Calendar should be in EST time zone.", "Set an email reminder a day before the event."]) +
+    "<p><b>📌 Additional Notes</b></p>\n" + ul(["The attorney does not take new client consults after 5:00 PM.", "New client consults are only scheduled on Tuesdays and Thursdays.",
+      "The attorney accepts max 3 new client consults per day.", "Phone consults, status updates, follow up calls, review, regular and urgent meetings, and signing meetings are max 30 minutes.",
+      "Follow-ups are not scheduled during mornings.", "All consultation meetings are phone consults only.",
+      "Phone consults only between 9:30 AM – 3:00 PM; Attorney will call the client - VA must confirm callback number.", "Preparation, strategy, and settlement meetings are max 45 minutes.",
+      "Conference meetings are max 1 hour.", "Attorney requires 15-minute buffer before and after every meeting.", "Same-day bookings require attorney approval."]) +
+    '<div class="trainer-slot" data-slot="6:s2-2"></div>\n<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>\n';
 }},
 // Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
 // and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it
