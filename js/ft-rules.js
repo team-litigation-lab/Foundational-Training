@@ -254,17 +254,25 @@ function figMonitor(){
   </svg>`;
 }
 const FIGS = {note: figNote, todo: figTodo, monitor: figMonitor};
-// 📒 the Monitoring Sheet, in the Hubstaff how-tos' way: the parts, then the picture
+// 📒 the Monitoring Sheet, on the orientation's last slide: get it (it isn't in the onboarding Drive: download the sheet,
+// js/ft-monitoring.js FT_MONITOR_DOC, and upload it to your Drive), then keep it
 const MON_PARTS = [
-  {h:"Find It", steps:[
-    "It is in the Google Drive you got during onboarding.",
-    "You link it on the last slide."]},
+  {h:"Your Monitoring Sheet", get:true, steps:[
+    "Download the Monitoring Sheet below.",
+    "Upload it to your Google Drive.",
+    "You link it in Part 5."]},
   {h:"Update It", steps:[
-    "Update your Monitoring Sheet.",
+    "Update your Monitoring Sheet after each discussion or activity.",
     "Finish before your shift ends.",
     "It is checked at 5:00 PM ET.",
     "Your trainer adds feedback."]}
 ];
+// ⬇ the Monitoring Sheet's own file (Drive: its download, and the file to look at first)
+function monGet(){
+  const d = window.FT_MONITOR_DOC, m = d && String(d.view || "").match(/\/d\/([a-zA-Z0-9_-]{20,})/); if(!m) return "";
+  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="https://drive.google.com/uc?export=download&id=${esc(m[1])}" target="_blank" rel="noopener noreferrer">⬇ Download the Monitoring Sheet</a>
+    <a class="btn btn-ghost btn-sm" href="${esc(d.view)}" target="_blank" rel="noopener noreferrer">Open it ↗</a></div>`;
+}
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
 
@@ -429,24 +437,17 @@ const SLIDES = [
   ["habits-trackers", "Your Daily Task Tracker: Update It Every Day", ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
-  ["tracker", "Your Daily Task Tracker: The Sheet", ()=>`
+  ["tracker", "Your Daily Task Tracker", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
-  ["tracker-tabs", "Your Daily Task Tracker: Other Tabs and the Daily Check", ()=>`
-    <div class="ftr-parts">${tpart("The Other Tabs", TRACKER_PARTS.tabs)}</div>
-    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
+  // (the tracker's Other Tabs slide is off the orientation; its Daily Check is read with the Monitoring Sheet slide next)
   ["habits-monitoring", "Your Daily Monitoring Sheet: Update It After Each Activity", ()=>`
     <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
-    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>`],
-  // the Monitoring Sheet, as the Hubstaff how-tos, in two so each fits one screen: how it works (the parts and the
-  // the copy; the 📁 link is the last slide), then a drawn preview of a filled-in entry (the sheet itself isn't embedded, so it needs no sharing)
-  ["monitoring", "Your Training Progress Monitoring Sheet: How It Works", ()=>`<div class="ftr-parts ftr-mon-how">${MON_PARTS.map((p,i)=>`<div class="ftr-part">
-      <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
-      <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-      ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Task Tracker and Progress Monitoring Sheet</button></div>` : ""}
-      ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
-    </div>`).join("")}</div>`],
+    <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>
+    <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
+  // the Monitoring Sheet: a drawn preview of a filled-in entry (where to get it, and how it is kept, are on the last slide:
+  // MON_PARTS)
   // the sheet with numbered arrows, and beside it what goes at each number
   ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
@@ -454,14 +455,18 @@ const SLIDES = [
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],
       ["Rate Your Understanding", "Tick the one line that fits you honestly. It tells your trainer where to help."]].map(([h, t], i) => `<li><i>${i + 1}</i><div><b>${esc(h)}</b><span>${esc(t)}</span></div></li>`).join("")}</ol></div>`],
   // the last step of the orientation, in its order: once the tracker, the Monitoring Sheet and the answer sheets have all
-  // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js)
+  // been explained, the trainee links their Drive (📁 the Drive links window, js/ft-drive.js). Only the Task Tracker is
+  // given at onboarding: the Monitoring Sheet is downloaded here (MON_PARTS, the sheet in js/ft-monitoring.js), put in
+  // the trainee's own Drive and linked with the rest
   ["drive-link", "Last Step: Link Your Google Drive", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Your Tracker and Monitoring Sheet", steps:["Both are in the Google Drive you got during onboarding."]},
+      {h:"Your Task Tracker", steps:["It is in the Google Drive you got during onboarding."]},
+      MON_PARTS[0], MON_PARTS[1],
       {h:"Your Assessment and Activities Folder", steps:["Save your daily outputs here."]},
-      {h:"Link Them Once", steps:["Paste the link of your Task Tracker.", "Paste the link of your Monitoring Sheet.", "Paste the link of your folder, then save."], link:true},
+      {h:"Link Them Once", steps:["Paste the link of your Task Tracker.", "Paste the link of your Monitoring Sheet (the copy in your Drive).", "Paste the link of your folder, then save."], link:true},
     ].map((p,i)=>`<div class="ftr-part">
       <div class="ftr-part-h"><span>Part ${i+1}</span>${esc(p.h)}</div>
       <ol>${p.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
+      ${p.get ? monGet() : ""}
       ${p.link && !FT_AUDIENCE() ? `<div class="ftr-links ftr-mon"><button class="btn btn-navy btn-sm" type="button" onclick="FTDrive.linkMine()">📁 Link My Google Drive</button></div>` : ""}
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`]
@@ -725,6 +730,8 @@ body.ft-orient #lessonSlideWrap .ftr-todos-h{display:flex;align-items:center;jus
 @media(max-width:900px){ body.ft-orient #lessonSlideWrap .ftr-todos-grid{grid-template-columns:minmax(0,1fr);} }
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:stretch;}
 body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr));}   /* two parts share the width */
+body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(5):last-child){grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}   /* the last slide's five */
+@media(max-width:1100px){ body.ft-orient #lessonSlideWrap .ftr-parts.ftr-mon-how:has(> .ftr-part:nth-child(5):last-child){grid-template-columns:repeat(2,minmax(0,1fr));} }
 body.ft-orient #lessonSlideWrap .ftr-mon-how .ftr-mon{margin:6px 0 0;}
 body.ft-orient #lessonSlideWrap .ftr-notes-wide{grid-template-columns:minmax(0,1fr) minmax(0,1.75fr);}
 body.ft-orient #lessonSlideWrap .ftr-notes .ftr-part{padding:12px 16px;}
