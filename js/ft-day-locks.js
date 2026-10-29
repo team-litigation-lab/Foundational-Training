@@ -341,7 +341,8 @@ function held(l, kind){
   l = Number(l);
   if(!isTrainee() || !enforced() || !(l >= 2 && l <= 8)) return false;
   if(!decksIn()) return "wait";
-  const x = lessonStop(l, kind); if(!x || stepOpen(x.n, x.k)) return false;
+  // a video with no stop of its own on a deck (its link is on the lesson card only) waits for its lesson's step
+  const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || stepOpen(x.n, x.k)) return false;
   toast(lockMsg(x.n, x.k)); return true;
 }
 // retry fn once the decks are in (or say they couldn't load)
