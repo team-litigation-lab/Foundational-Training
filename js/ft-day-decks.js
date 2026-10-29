@@ -1142,10 +1142,10 @@ const LESSON_CARDS = {
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
       // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
       {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
-      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "s1c"},
+      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into the worksheet on ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "Upload the PI Reception Activity worksheet to your Assessments/Activities folder"],
+      "The PI Reception Activity worksheet and its naming convention: on ✍️ Knowledge Check"],
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
@@ -1316,14 +1316,15 @@ function nextKC(){
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
-function toKC(l){
+// (here: opened from a slide's own link, Day 3's PI Reception Activity worksheet: the way back is the slide after this one)
+function toKC(l, here){
   const d0 = decks() && decks()[DD.day];
   if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
   // the way back is to the day's next activity: the slide after the reading it was opened from, else the slide after the
   // day's ✍️ Process Questions stop (that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
   const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
-  let from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i;
+  let from = here || (list[DD.i] && list[DD.i].launch) ? DD.i : stop >= 0 ? stop : DD.i;
   // (from a stop whose Next is this Knowledge Check, kc: past the Process Questions stop that follows it, answered now)
   if(from === DD.i && stop === DD.i + 1) from = stop;
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion

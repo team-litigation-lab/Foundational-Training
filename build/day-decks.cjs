@@ -470,7 +470,6 @@ function piCallRows(compact){
   for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
-const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
 // the slide: Day 3's PI Reception Activity row (ROWS[3].s1, s1c), in place of VA Oscar's activity
 const PI_H = "AM: PI Reception Activity: 6 Practice Calls";
 const PI_HTML =
@@ -484,8 +483,9 @@ const PI_HTML =
   `<p class="ftdd-pic-plus">➕ And the call’s <b>challenge</b>: what made the call hard, and what the VA did about it.</p></div>\n` +
   piCallRows(false) +
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n` +
-  `<div class="ftdd-tiles"><a class="ftdd-tile k-doc" href="${PI_WORKSHEET}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>PI Reception Activity worksheet</b><small>Download the Word file</small></span></a></div>\n` +
-  `<p><b>Naming Convention:</b> PI_Reception_Activity (VA’s first name). Upload the completed worksheet to your Assessment and Activities Folder and work directly from there to finalize it.</p>\n`;
+  // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
+  // (js/ft-process.js WORKSHEETS): the slide only links there
+  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(3, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>PI Reception Activity worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: PI Reception Activity: the 5 data points of each call</h4>\n` +
   PI_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
