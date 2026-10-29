@@ -673,7 +673,8 @@ function slideActions(s, info, body, i){
   const h = String(s.h || ""), out = [];
   // (Day 1's Reading Task has its ✍️ Knowledge Check button on the slide itself, under the reading: FTDayDecks.toKC)
   const has = re => re.test(h);
-  if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
+  // (and the lesson's own stop, whatever it is called: Day 3's reads PI Workflow / Reception Training)
+  if(has(/classroom discussion|discussion on/i) || (s.launch && s.launch.go === "lesson")) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
   // themselves stay on ✍️ Knowledge Check — the slide only points at them
   if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) pqLessons(DD.day, info).forEach(l => out.push(pqButtons(l)));
@@ -1183,7 +1184,7 @@ const LESSON_CARDS = {
       // Part 1: 💬 Classroom Discussion (▶ Start Training: the lesson deck, as on Days 1 and 2), whose Next is ✍️ Personal
       // Injury Process Flow's Knowledge Check (kc: Receptionist Training's is its own, not Day 3's), the handouts, then the
       // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
-      {t: "Classroom Discussion: Personal Injury Process Flow", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
+      {t: "PI Workflow / Reception Training", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
       {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
       // (no Digital Handouts stop: the day has no handouts, and the AI discussion video is its lesson card's 🎬 Video)
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
