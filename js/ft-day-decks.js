@@ -2587,11 +2587,12 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdt-yes i,.ft-body .ftdt-no i{font-style:normal;background:#fff;border-radius:7px;padding:4px 7px;font-size:13px;}
 .ft-body .ftdt-tag{margin:6px 0 0;text-align:right;font:700 12px/1.2 'Inter',sans-serif;color:#5B6178;}
 /* 🎧 the recordings on a Call Listening slide, a card each (LISTEN_CARDS) */
-main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#1E2340 !important;font-size:14px;text-decoration:none;}
+main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;color:#C2410C !important;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;background:#1E2340;border-color:#1E2340;font-size:14px;font-weight:700;text-decoration:none;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn:hover{background:#E8590C;border-color:#E8590C;}
 main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:12px;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-h b{font-size:16px;}
 .ft-body .ftln-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
-.ft-body .ftln-card{border:1px solid #C9CDE0;border-radius:12px;padding:10px 12px;background:#F8F9FC;display:flex;flex-direction:column;gap:6px;}
+.ft-body .ftln-card{border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;padding:10px 12px;background:#fff;box-shadow:0 2px 6px rgba(30,35,64,.10);display:flex;flex-direction:column;gap:6px;}
 .ft-body .ftln-card b{font-size:15px;color:#1E2340;} .ft-body .ftln-card audio{width:100%;}
 .ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#E8590C;}
 .ft-body .ftln-tag{color:#7A5A2E;text-transform:none;letter-spacing:0;} .ft-body .ftln-aud{height:60px;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
@@ -2608,13 +2609,13 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
    viewer below; then one big link to the document and its ⬇ Download */
-.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px;margin:10px 0 12px;}
+.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),300px));justify-content:center;gap:18px;margin:10px auto 14px;}
 .ftdd-sop-shots figure{margin:0;text-align:center;}
-.ftdd-sop-shots a{display:flex;align-items:flex-start;justify-content:center;height:300px;padding:6px;background:#fff;border:1.5px solid #9AA0AB;border-radius:8px;cursor:zoom-in;transition:box-shadow .15s,border-color .15s;}
-.ftdd-sop-shots a:hover{border-color:#E8762B;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+.ftdd-sop-shots a{display:flex;align-items:flex-start;justify-content:center;height:420px;padding:8px;background:#fff;border:2px solid #343C66;border-radius:8px;box-shadow:0 2px 8px rgba(30,35,64,.14);cursor:zoom-in;transition:box-shadow .15s,border-color .15s;}
+.ftdd-sop-shots a:hover{border-color:#E8590C;box-shadow:0 4px 14px rgba(30,35,64,.18);}
 .ftdd-sop-shots img{width:100%;height:100%;object-fit:contain;object-position:top;}
-.ftdd-sop-shots figcaption{font-size:12.5px;font-weight:700;color:#5A6072;margin-top:4px;}
-.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 18px;margin:6px 0 10px;}
+.ftdd-sop-shots figcaption{display:inline-block;font:800 13px/1.2 'Poppins','Inter',sans-serif;color:#fff;background:#1E2340;border-radius:6px;padding:4px 12px;margin-top:8px;}
+.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
