@@ -313,7 +313,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => { state.isAdmin = true; FTDayDecks.open(4, 0); }); await page.waitForTimeout(1300);
   const score = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
     for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-score'); if (b) return { h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftdd-score-l li').length, shot: !!b.querySelector('img') }; } return null; });
-  if (!score || score.items < 10 || !/How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
+  if (!score || score.items < 10 || /How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)

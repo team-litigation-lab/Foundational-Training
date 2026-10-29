@@ -342,8 +342,8 @@ function visual(html){
     if(!rb) return;
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
-    box.innerHTML = `<div class="ftdd-score-h"><b>📋 How this ${/call/i.test(rb.title) ? "call" : "activity"} is scored</b><span>${rb.criteria.length} criteria · each 0–5 · the weighted average is your score</span></div>
-      <ol class="ftdd-score-l">${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>
+    // (no "📋 How this call is scored" title line over it: the list starts the box)
+    box.innerHTML = `<ol class="ftdd-score-l">${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>
       <p class="ftdd-score-f">Your trainer fills this in with you after the ${/call/i.test(rb.title) ? "call" : "activity"}${rb.feedback ? ", with a note on each line" : ""}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`;
     if(shots){ shots.classList.add("ftdd-score-shot"); box.appendChild(shots); }
     p.replaceWith(box);
@@ -2193,8 +2193,6 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
 .ftdd-score{margin:6px 0 12px;}
-.ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
-.ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
 /* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
 .ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}
