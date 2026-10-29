@@ -2615,7 +2615,9 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sop-shots figcaption{display:inline-block;font:800 13px/1.2 'Poppins','Inter',sans-serif;color:#fff;background:#1E2340;border-radius:6px;padding:4px 12px;margin-top:8px;}
 /* the Reception mock calls (build/day-decks.cjs MOCK_PREP, MOCK_BTNS): the seven steps, one block kept on one page, a
    little tighter; the tools as one row of buttons under how the one-on-one runs */
-main.main-ftdd .ftdd-sheet .ftdd-steps7 .ftdd-step{margin:6px 0 2px;}
+main.main-ftdd .ftdd-sheet .ftdd-mockpage .ftdd-step{padding:7px 12px;margin:6px 0;}
+main.main-ftdd .ftdd-sheet .ftdd-mockpage .ftdd-step-n{width:30px;height:30px;}
+main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0;}
 .ft-body .ftdd-mock-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:18px 0 12px;}
 .ft-body a.ftdd-mock-btn{display:inline-flex;align-items:center;padding:10px 18px;border-radius:8px;background:#1E2340;color:#fff !important;font:700 16px/1.2 'Inter',sans-serif;text-decoration:none !important;border-bottom:3px solid #E8590C;}
 .ft-body a.ftdd-mock-btn:hover{background:#E8590C;}
