@@ -93,10 +93,10 @@ async function workerChecks() {
       const prep = await t.evaluate(() => { const sh = document.querySelector('main.main-ftdd .ftdd-sheet'); return { only: !!(sh && sh.classList.contains('ftbf-only')), text: (sh || {}).textContent || '' }; });
       if (prep.only || !/Call Simulator’s Reception line/.test(prep.text) || !/Reception Mock Calls Metrics/.test(prep.text)) fail(`Day 5's buffer doesn't show the trainee its mock call preparation: ${JSON.stringify({ only: prep.only, len: prep.text.length })}`);
     }
-    // 📅 Day 5's Attorney Calendar Management Activity: "signify done" is its Done, at the end of its slides
+    // 📅 Day 5's Attorney Calendar Management Activity: its 📤 Submit, as Day 2's panel, is its Done, at the end of its slides
     await open(t, 5, 's3b');
     if (!(await toPanel(t))) fail('Day 5\'s Attorney Calendar Management Activity has no Done');
-    else if (!/Finished the activity\?/.test(await panel(t)) || !(await t.$('.ftbf .ftbf-done'))) fail(`the activity's Done panel reads: ${await panel(t)}`);
+    else if (!/Upload your 19 screenshots[^]*Once done, hit Submit[^]*Submit/.test(await panel(t)) || !(await t.$('.ftbf .ftbf-done'))) fail(`the activity's Done panel reads: ${await panel(t)}`);
 
     // 🧪 a demo slide: Demo Preparation
     await open(t, 8, 's3'); await toPanel(t);
