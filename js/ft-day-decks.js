@@ -192,6 +192,8 @@ function kindOf(s, html){
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & Do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
   if(/^(Common Terms Used|Auto Liability Insurance)$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
+  // (recordings to play in the slide: Day 3's supplementary reception recordings)
+  if(/ftdd-recs/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   // a slide of recordings to play (Day 3's Call Intake & Data Extraction calls) is listened to, not read
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
@@ -1182,8 +1184,8 @@ const LESSON_CARDS = {
       // (no Handouts / Video stop: the day has no handouts, and the AI discussion video is its lesson card's 🎬 Video)
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "The call-handling decision trees and the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening on the Sample Recordings", sub: "A card per recording, played on the slide · log each call as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
-      {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
+      // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
+      {t: "Carlos & Oscar’s Reception Recordings", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
       // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
       {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "watch", d: 3, s: "s2"}],
@@ -1297,10 +1299,13 @@ function kcNext(s){
   return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(k.label)}</button>`;
 }
 function toAssessNext(a){
-  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [], i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1, s = list[i] || null;
-  // (the way on is shut until this slide's Done is in, Day 2's 📤 Submit: the assessment waits for it too)
-  if(s && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)){ toast("📤 Submit your Monitoring Sheet update first."); return; }
-  const h = !s ? "" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
+  let i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1;
+  // (the assessment always opens; while the way on is shut until this slide's Done is in, Day 2's 📤 Submit, its way back
+  // is to this slide, to submit there)
+  if(list[i] && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)) i = DD.i;
+  const s = list[i] || null;
+  const h = !s ? "" : i === DD.i ? String(s.h || "") + ": 📤 Submit" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
   if(root.FTProcess) FTProcess.openLesson(a.l);
 }
@@ -1323,7 +1328,8 @@ function wireReaders(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go.disabled = false; go.textContent = "Next →"; go.title = ""; return; }
   const left = unread(kcOf(s));
   go.disabled = left.length > 0;
-  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || go.textContent;
+  // (on its last page, the button names where it goes: the reading's questions, or the slide's assessment)
+  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
   go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
 }
 // 👩‍🏫 the presenter at the foot of the side panel (Activity decks and Know Your Tools), as on the lesson slides
@@ -2085,6 +2091,11 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
+.ftdd-recs-note{margin:0 0 12px;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
+.ftdd-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:0 0 14px;}
+.ftdd-rec{border:1px solid #D9DEEA;border-radius:12px;padding:10px 12px;background:#fff;break-inside:avoid;}
+.ftdd-rec-h{margin:0 0 6px;font-weight:700;color:#262B45;} .ftdd-rec-play{height:220px;border-radius:8px;overflow:hidden;background:#F4F6FB;}
+.ftdd-rec-play iframe{width:100%;height:100%;border:0;} .ftdd-rec-go{margin:6px 0 0;font-size:13px;}
 .ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo,.ftlc-pill.k-listendo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
 .ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
