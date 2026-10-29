@@ -196,11 +196,22 @@ const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder firs
 // the lesson's files: one per naming convention among the sheets on its page
 const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs = moduleStudied(lesson) ? all : all.filter(x => x.set.open), seen = new Set();
   return [...new Set(qs.map(x => x.set))].filter(set => !seen.has(set.file) && seen.add(set.file)); };
-// beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder
+/* 📝 A day's worksheet, done in Word, embedded with the answer sheet it goes with (by the sheet's file): its download and
+   its naming convention live here, beside 📄 Save PDF to my Folder, not on the deck (the deck's slide links here,
+   FTDayDecks.toKC). Day 3's Call Intake & Data Extraction (PI Reception Activity): the six practice calls' data points (build/calls/pi_reception_calls.py). */
+const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Questions": {t: "Call Intake & Data Extraction worksheet",
+  href: "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx", file: "PI_Reception_Activity"}};
+function worksheetBox(set){
+  const w = WORKSHEETS[set.file]; if(!w) return "";
+  return `<div class="fp-pdf fp-ws"><a class="btn btn-ghost btn-sm" href="${e(w.href)}" target="_blank" rel="noopener noreferrer" download>📝 ${e(w.t)} · ⬇ Download the Word file</a>
+    <p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(w))}</code></p>
+    <p class="fp-muted fp-ws-note">Upload the completed worksheet to your Assessment and Activities Folder${FP.driveFolder ? ` (<a href="${e(FP.driveFolder)}" target="_blank" rel="noopener noreferrer">📁 open it</a>)` : ""} and work directly from there to finalize it.</p></div>`;
+}
+// beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder, then its worksheet, if any
 function pdfBox(lesson){
   const sets = lessonFiles(lesson); if(!sets.length) return "";
   return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
-    <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button></div>`;
+    <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button></div>${sets.map(worksheetBox).join("")}`;
 }
 async function savePdf(lesson){
   if(!isTraineeHere()){ toast("👁 Trainee view — a trainee saves their own answer sheet to their folder."); return; }
@@ -819,6 +830,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
 .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
 .fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
+.fp-ws > a.btn{text-decoration:none;} .fp-ws .fp-ws-note{flex:1 1 100%;margin:0;font-size:13px;}
 .fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
 .fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
