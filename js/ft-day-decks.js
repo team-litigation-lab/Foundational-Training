@@ -213,21 +213,11 @@ function visual(html){
       btn.innerHTML = `<span class="ftdd-tile-ic">🎧</span><span class="ftdd-tile-t"><b>Transcribe Interview Recording ${m[1]}</b><small>Open the Transcription Activity →</small></span>`;
       tiles[j] = btn;
     });
-    // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
-    const wrapped = tiles.map(x => {
-      if(!x.classList.contains("k-video") || !window.FTVideoNotes) return x;
-      const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
-      const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
-      b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
-      b.setAttribute("onclick", "FTVideoNotes.openFrom(this)");
-      b.textContent = "📝 What I learned"; w.appendChild(b); return w;
-    });
-    tiles.length = 0; wrapped.forEach(x => tiles.push(x));
-    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
-    // "📝 What I learned"
+    // (no "📝 What I learned" beside a video on a slide: 🎬 Video Notes keeps its own page, js/ft-video-notes.js)
+    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it
     const src = as.length === 1 && as[0].hasAttribute("data-embed") && typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(as[0].getAttribute("href")) : null;
     if(src){
-      const x = tiles[0], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
+      const tile = tiles[0], vid = tile.classList.contains("k-video");
       const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       // (its name: the one the build gave it, else the tile's)
@@ -241,8 +231,8 @@ function visual(html){
       // a document to work in (Day 2's assessments, data-full): the page's full height
       if(as[0].hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
       if(crop > 0){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
-      if(learn0) learn0.setAttribute("data-title", nm);
-      const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
+      // (a video's address and name, for 🎬 Video Notes: videos below)
+      if(vid){ box.setAttribute("data-url", href); box.setAttribute("data-title", nm); }
       if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
       return;
     }
@@ -582,9 +572,6 @@ function slideActions(s, info, body, i){
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
-  // (a video that plays in the slide counts too: ftdd-inline)
-  const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
-  if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
@@ -1000,8 +987,8 @@ function videos(n){
       const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
       out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});
     });
-    // (and a video that plays in the slide: its 📝 What I learned button carries its address and name)
-    t.content.querySelectorAll(".ftdd-inline.is-video .ftdd-learn").forEach(b => {
+    // (and a video that plays in the slide: its box carries its address and name)
+    t.content.querySelectorAll(".ftdd-inline.is-video[data-url]").forEach(b => {
       const url = b.getAttribute("data-url"); if(!url || seen.has(url)) return; seen.add(url);
       out.push({url, title: b.getAttribute("data-title") || "Video", day: n, slide: i + 1});
     });
@@ -1247,12 +1234,20 @@ function toKC(l){
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }
-function openSlide(n, id, alt){
+// 📄 an assessment opened from a slide (Day 2's, under each video): ✍️ Knowledge Check shows only that assessment, and
+// its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), Next named `h`
+function toAssess(l, doc, at, h){
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at})); }catch(e){}
+  if(root.FTProcess) FTProcess.openLesson(l);
+}
+function openSlide(n, id, alt, at){
   loadDecks().then(() => {
     const d = decks() && decks()[n];
     const i = d ? slidesOf(d).findIndex(s => s.id === id) : -1;
     if(i < 0 && alt){ goto(alt); return; }
     open(n, Math.max(0, i));
+    // (and the page of it that holds `at`, once the slide is drawn)
+    if(at) setTimeout(() => FTDayDecks.reveal(`main.main-ftdd ${at}`), 150);
   });
 }
 function rowGo(c, r){
@@ -1614,7 +1609,7 @@ function toolsSlide(){
 
 root.FTDayDecks = {open, go, next: nextKC,
   // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
-  refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+  refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, toAssess, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -1633,14 +1628,6 @@ root.FTDayDecks = {open, go, next: nextKC,
   dayRows, rowLabel,
   at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
   first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
-  // 📝 What I learned for a video on this slide, from the button above the sheet
-  learn(n){
-    const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
-    const b = card.querySelector(".ftdd-sheet .ftdd-learn");
-    if(!b || !root.FTVideoNotes) return;
-    FTDayDecks.reveal(b);
-    FTVideoNotes.openFrom(b);
-  },
   // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
   reveal(elOrSel){
     const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;

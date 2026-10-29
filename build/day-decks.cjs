@@ -392,15 +392,18 @@ s2: html => {
   const sheet = /<a class="viewer-link" data-embed(?=[^>]*1tmV26rq_1z1mpq1C5hUweLytfyJUtkai)/, task2 = /<p>Task 2 - Watch this video presentation about how auto liability insurance works/;
   if(!sheet.test(out) || !task2.test(out)) throw new Error("Day 2's reference sheet or its Task 2 is no longer where the build looks for it");
   out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<div class="ftdd-pgbreak"></div>\n' + m);
-  // each video's assessment follows it, shown in the slide on a page of its own (data-full: the page's full height):
-  // Common Terms video → its assessment → the reference sheet; Auto Liability video → its assessment. The assessments
-  // slide (ROWS[2].s2, s2b) keeps the homework line and the readings; its upload and next-day checking lines go
+  // each video's assessment is a link under it, to ✍️ Knowledge Check (Lesson 2's 📄 Assessments, that one only:
+  // FTDayDecks.toAssess), whose way back is this slide's reference sheet page: Common Terms video → its assessment →
+  // the reference sheet; Auto Liability video → its assessment. The assessments slide (ROWS[2].s2, s2b) keeps the
+  // homework line and the readings; its upload and next-day checking lines go
   const doc = (label, id) => { const re = new RegExp(`<p>${label}</p>\\n<p><a class="viewer-link" data-kind="doc" data-title="AS YOUR HOMEWORK"(?=[^>]*${id})[^]*?</p>\\n`);
     const m = out.match(re); if(!m) throw new Error(`Day 2's ${label} is no longer where the build looks for it`);
-    out = out.replace(m[0], ""); return m[0].replace('data-kind="doc" data-title="AS YOUR HOMEWORK"', `data-embed data-full data-kind="doc" data-title="${label}"`); };
+    out = out.replace(m[0], "");
+    return `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="window.FTDayDecks && FTDayDecks.toAssess(2, '${id}', '.ftdd-embed-crop', 'Common Terms Used: the reference sheet')"><span class="ftdd-tile-ic">📄</span>` +
+      `<span class="ftdd-tile-t"><b>${label}</b><small>Open it on ✍️ Knowledge Check →</small></span></button></div>\n`; };
   const ct = doc("Common Terms Used – Assessment", "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"), al = doc("Auto Liability Insurance – Assessment", "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C");
   const after = (id, add) => { const re = new RegExp(`<p><a class="viewer-link" data-embed data-kind="video"(?=[^>]*${id})[^]*?</p>\\n`); const m = out.match(re);
-    if(!m) throw new Error(`Day 2's video ${id} is no longer where the build looks for it`); out = out.replace(m[0], m[0] + '<div class="ftdd-pgbreak"></div>\n' + add); };
+    if(!m) throw new Error(`Day 2's video ${id} is no longer where the build looks for it`); out = out.replace(m[0], m[0] + add); };
   after("1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D", ct + '<div class="ftdd-pgbreak"></div>\n');
   after("1K9AXO0XZJjGFXHPugLAbjeVgcC3fIZuE", al);
   const kindly = "kindly accomplish the following:", two = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>Please upload your completed assessments[^]*?<\/p>\n<p class="li" style="--lvl:0"><span class="lbl">3\.<\/span><span>Checking and feedback[^]*?<\/p>\n/;
