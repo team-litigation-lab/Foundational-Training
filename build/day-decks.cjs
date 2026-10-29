@@ -148,6 +148,20 @@ const TRIM = {1: {reading: html => {
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
     card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
 }},
+// Day 3: VA Oscar's Reception Activity is now the PI Reception Activity (ROWS[3].s1, s1d), so its instruction, the GC
+// screenshot, the trainer's "share this activity sheet" note (3:s1-5) and the old activity sheet come off; its heading
+// stays, where ROWS cuts the slide; Oscar's activity recordings are listed with his other recordings, as supplementary
+3: {s1: html => {
+  const head = '<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR’s recordings</span></p>\n';
+  const at = html.indexOf(head), from = at < 0 ? -1 : at + head.length;
+  const sheet = html.indexOf('data-title="DAY 3 Reception Training"', from), to = sheet < 0 ? -1 : html.indexOf("</p>", sheet) + 4;
+  const oscar = html.match(/<p><a [^>]*1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn[^>]*>[^<]*<\/a><\/p>/);
+  if(at < 0 || to <= from || !oscar || oscar.index < from || oscar.index > to) throw new Error("Day 3's Reception Activity on VA Oscar's recordings is no longer where the build looks for it");
+  const out = html.slice(0, from) + html.slice(to).replace(/^\n/, ""), sup = "<p>Oscar’s Reception Recordings</p>\n";
+  if(!out.includes(sup) || /3:s1-5|1qCEqeoGJTf|image14\.png/.test(out)) throw new Error("Day 3's supplementary recordings are no longer where the build looks for them");
+  return out.replace(sup, sup + oscar[0].replace(/data-title="[^"]*"/, 'data-title="Oscar’s Reception Activity recordings"') + "\n");
+}},
+4: {s1: html => html + "\n" + PI_WARMUP},
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide
 2: {s4: html => {
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
@@ -156,6 +170,48 @@ const TRIM = {1: {reading: html => {
   if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
   return out;
 }}};
+// 🎧 The PI Reception Activity (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
+// Harbor & Pine Injury Law, each with a challenge (background noise, a line that breaks up, a Spanish-speaking caller, a
+// speakerphone echo, a fast-talking adjuster, an upset family member not on the file), played on the slide. The calls,
+// their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
+// build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
+const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
+const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const CH_ICON = [[/connection/i, "📶"], [/language/i, "🌐"], [/audio quality|echo/i, "🎚️"], [/fast/i, "⏩"], [/not on the file|unauthori/i, "🔒"], [/upset/i, "😟"], [/noise/i, "🔊"]];
+const chIcon = t => (CH_ICON.find(([re]) => re.test(t)) || [0, "👤"])[1];
+const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+// the calls, three cards to a row (each row is one block, so a page never splits a card)
+function piCallRows(compact){
+  const card = c => `<div class="ftdd-pic${compact ? " ftdd-pic-sm" : ""}"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
+    `<p class="ftdd-pic-tags">${(compact ? [c.challenge] : c.tags).map(t => `<span class="ftdd-pic-tag${/client|provider|adjuster/i.test(t) && !/not on/i.test(t) ? " ftdd-pic-who" : ""}">${chIcon(t)} ${hx(t)}</span>`).join("")}</p>` +
+    (compact ? "" : `<p class="ftdd-pic-about">${hx(c.about)}</p>`) +
+    `<audio class="ftdd-pic-audio" controls preload="none" src="${c.file}" title="Call ${c.id}: ${hx(c.title)}"></audio></div>`;
+  const rows = [];
+  for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
+  return rows.join("\n") + "\n";
+}
+const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
+// the slide: Day 3's Reception Activity row (ROWS[3].s1, s1d), in place of VA Oscar's activity
+const PI_H = "AM: PI Reception Activity: 6 Practice Calls";
+const PI_HTML =
+  `<p><b>Six calls to ${hx(PI_CALLS.firm)}</b>, a personal injury firm in Tampa, Florida. Each call has a challenge a receptionist meets on the line. Listen to each one (replay it as often as you need) and extract its <b>5 data points</b> into your worksheet.</p>\n` +
+  `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">📋 The 5 data points of every call</p><ol>` +
+  `<li><b>Caller</b>: their name, and who they are (client, potential client, provider, adjuster, family …)</li>` +
+  `<li><b>Callback number</b>: with the extension or best time, if given</li>` +
+  `<li><b>Verified?</b>: how the VA verified the caller (name, DOB, date of the accident), or why nothing could be shared</li>` +
+  `<li><b>Reason for the call</b>: the case and what they need</li>` +
+  `<li><b>Action taken</b>: who it went to, and how (message, transfer, callback)</li></ol>` +
+  `<p class="ftdd-pic-plus">➕ And the call’s <b>challenge</b>: what made the call hard, and what the VA did about it.</p></div>\n` +
+  piCallRows(false) +
+  `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n` +
+  `<div class="ftdd-tiles"><a class="ftdd-tile k-doc" href="${PI_WORKSHEET}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>PI Reception Activity worksheet</b><small>Download the Word file</small></span></a></div>\n` +
+  `<p><b>Naming Convention:</b> PI_Reception_Activity (VA’s first name). Upload the completed worksheet to your Assessment and Activities Folder and work directly from there to finalize it.</p>\n`;
+// the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
+const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: PI Reception Activity: the 5 data points of each call</h4>\n` +
+  PI_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
+    `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
+// Day 4: the same calls, small, to replay while waiting for the mock call
+const PI_WARMUP = `<hr class="stars">\n<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p>Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 /* 📋 EVERY DAY IN DAY 1'S SHAPE (Days 2–16): each row of a day's card (js/ft-day-decks.js LESSON_CARDS) leads to a slide
    of its own, in the card's order, the way Day 1's Reading Task, its stops and its Installation of SA do. Where the guide
    writes several of a card's activities under one heading, that section is cut here into one slide per activity.
@@ -261,8 +317,10 @@ const ROWS = {
       {id: "s1c", h: "AM: Confidentiality & Call Response Exercise", parts: [["<p><b>Confidentiality &amp; Call Response Exercise</b></p>", SLOT(3, "s1-4")],
         ['<p class="li" style="--lvl:0"><span class="lbl">2.</span><span>Sample SOP</span></p>', '<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR’s recordings</span></p>']],
         fix: [['<p class="li" style="--lvl:0"><span class="lbl">2.</span><span>Sample SOP</span></p>', "<p>Sample SOP</p>"]]},
-      {id: "s1d", h: "AM: Reception Activity on VA Oscar’s Recordings", parts: [['<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR’s recordings</span></p>', null]],
-        fix: [['<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR’s recordings</span></p>', ""], ["<p>4. Carlos &amp;", "<p>Carlos &amp;"]]}]
+      // (VA Oscar's Reception Activity is the PI Reception Activity: the six practice calls, then the supplementary
+      // recordings that followed it, Oscar's activity recordings among them: TRIM[3].s1)
+      {id: "s1d", h: PI_H, pre: PI_HTML, parts: [['<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR’s recordings</span></p>', null]],
+        fix: [['<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR’s recordings</span></p>', ""], ["<p>4. Carlos &amp; remaining Oscar’s’ Reception Recordings", "<p>Carlos &amp; Oscar’s Reception Recordings"]]}]
   },
   6: {
     // the card lists the mock calls first, then the videos to watch while waiting for a turn
@@ -475,5 +533,8 @@ for(let n = 1; n <= 16; n++){
 const out = "// Generated by build/day-decks.cjs from build/days/*.js — edit the day files or that script, not this file.\n"
   + "window.FT_DAY_DECKS = " + JSON.stringify(decks) + ";\n";
 fs.writeFileSync(path.join(R, "js/ft-day-decks-data.js"), out);
+// the PI Reception Activity's key, in the trainer-only notes (kept there by build/curriculum/convert.py)
+const NOTES = path.join(R, "trainer/notes.json"), notes = JSON.parse(fs.readFileSync(NOTES, "utf8"));
+if(notes.slots["3:pi-calls"] !== PI_KEY){ notes.slots["3:pi-calls"] = PI_KEY; fs.writeFileSync(NOTES, JSON.stringify(notes, null, 1)); }
 console.log(`js/ft-day-decks-data.js: ${Object.keys(decks).length} day decks, ${Object.values(decks).reduce((a, d) => a + d.slides.length, 0)} slides, ${pqs} Process Questions lists replaced by the Knowledge Check pointer, ${qs} task question lists replaced by the assessment note, ${(out.length / 1024).toFixed(0)} KB`);
 for(const d of Object.values(decks)) console.log(`  Day ${d.day} · ${d.title}: ${d.slides.map(s => s.h.slice(0, 40)).join(" | ")}`);

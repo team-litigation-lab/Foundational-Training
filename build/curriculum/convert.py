@@ -292,7 +292,8 @@ def render(idxs, trainer, day):
 
 # ---------- days 2..18 ----------
 notes = json.load(open(os.path.join(REPO, "trainer", "notes.json"), encoding="utf8"))["slots"]
-notes = {k: v for k, v in notes.items() if k.startswith("1:")}
+# (Day 1's notes, and the slots build/day-decks.cjs writes: the PI Reception Activity's key, 3:pi-calls)
+notes = {k: v for k, v in notes.items() if k.startswith("1:") or ":pi-" in k}
 summary = []
 for n in range(2, 19):
     lo, hi = day_range(n)

@@ -13,10 +13,6 @@
  *                        Each request starts on the next key in turn; a key that hits its limit is
  *                        rested and the next key takes over. At least one is required.
  *   GEMINI_API_KEY, GEMINI_API_KEY1, GEMINI_API_KEY2 — optional: used only after every pool key.
- *   ANTHROPIC_API_KEY  — optional: the Claude API key (prepaid credits). When set, the call simulators' live turns
- *                        (feature "call": the roleplay, intake, classroom and outbound calls) run on Claude Haiku 5.5
- *                        first, and fall back to the Gemini pool on any failure (no credit left, a limit, an outage).
- *                        Nothing else uses it; grading and the other AI features stay on Gemini. See callClaude.
  *   GEMINI_MODEL       — optional: first model for grading and trainer tools (default gemini-3.8-flash).
  *                        Live chat always starts on gemini-3.5-flash-lite (the free tier's daily limit
  *                        is ~500 requests there, 20 on the Flash models); see geminiModels.
@@ -41,6 +37,7 @@
  */
 import "./js/ft-tracker-rules.js";
 import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
+import { handleCalWeek } from "./calweek-api.js";   // 📅 Standard Training - Calendaring Activity: its own routes and record
 const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
@@ -466,7 +463,7 @@ function geminiKeyOrder(env) {
   return [...pool.slice(start), ...pool.slice(0, start), ...spare];
 }
 const GEMINI_FLASH = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash"], GEMINI_LITE = "gemini-3.5-flash-lite";
-const geminiModels = (env, feature) => (feature === "chat" || feature === "call" || feature === "tracker" || !feature   // high-volume features start on Flash-Lite
+const geminiModels = (env, feature) => (feature === "chat" || feature === "tracker" || !feature   // high-volume features start on Flash-Lite
   ? [GEMINI_LITE, ...GEMINI_FLASH]
   : [env.GEMINI_MODEL, ...GEMINI_FLASH, GEMINI_LITE]).filter((v, i, a) => v && a.indexOf(v) === i);
 
@@ -521,54 +518,8 @@ async function viaGateway(env, req, user) {
   return json({ error: { message: (status === 429 ? "rate limit (shared AI budget): " : "") + ((data && data.error) || "AI gateway error " + r.status) } }, status);
 }
 
-/* ---------- Claude (Anthropic API) for the call simulators ----------
-   With ANTHROPIC_API_KEY set, a call simulator's live turn (feature "call") goes to Claude Haiku 5.5 first: the fast,
-   low-cost model, with thinking off and low effort, so the caller answers quickly. Any failure (no credit left, a rate
-   limit, an outage, a refusal) falls back to the Gemini path below, so a call never stops because of Claude. The SDK
-   is loaded only when a call turn first needs it, so the rest of the Worker (and its tests) never load it. */
-const CLAUDE_CALL_MODEL = "claude-haiku-5-5";
-const claudeOn = (env) => !!String((env && env.ANTHROPIC_API_KEY) || "").trim();
-let AnthropicSDK = null;
-async function callClaude(env, req) {
-  if (!AnthropicSDK) AnthropicSDK = (await import("@anthropic-ai/sdk")).default;
-  const client = new AnthropicSDK({ apiKey: String(env.ANTHROPIC_API_KEY).trim(), maxRetries: 0, timeout: 20000 });   // the Gemini fallback is the retry
-  const toText = (c) => typeof c === "string" ? c : (Array.isArray(c) ? c.map((p) => p && p.text ? p.text : "").join("\n") : "");
-  const messages = (req.messages || []).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: toText(m.content) })).filter((m) => m.content);
-  const res = await client.messages.create({
-    model: CLAUDE_CALL_MODEL,
-    max_tokens: Math.min(Math.max(Number(req.max_tokens) || 200, 64), 600),
-    thinking: { type: "disabled" },
-    output_config: { effort: "low" },
-    ...(req.system ? { system: toText(req.system) } : {}),
-    messages
-  });
-  if (res.stop_reason === "refusal") throw new Error("Claude declined this turn (refusal)");
-  const text = (res.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
-  if (!text) throw new Error("Claude returned no text");
-  return { text, model: res.model, stop_reason: res.stop_reason === "max_tokens" ? "max_tokens" : "end_turn" };
-}
-// why a Claude call fell back, for the Worker log (typed SDK errors, most specific first)
-function claudeFailure(e) {
-  const A = AnthropicSDK;
-  if (A && e instanceof A.RateLimitError) return "rate limit (429)";
-  if (A && e instanceof A.AuthenticationError) return "key rejected (401)";
-  if (A && e instanceof A.PermissionDeniedError) return "not permitted (403)";
-  if (A && e instanceof A.BadRequestError) return "bad request or no credit left (400): " + String(e.message || "").slice(0, 160);
-  if (A && e instanceof A.APIConnectionError) return "unreachable";
-  if (A && e instanceof A.APIError) return "API error " + e.status;
-  return String((e && e.message) || e).slice(0, 160);
-}
-
 async function callGemini(env, rawBody, user) {
   let req; try { req = JSON.parse(rawBody); } catch (e) { return json({ error: "Invalid request" }, 400); }
-  if (req.feature === "call" && claudeOn(env)) {
-    try {
-      const out = await callClaude(env, req);
-      return json({ content: [{ type: "text", text: out.text }], model: out.model, stop_reason: out.stop_reason, provider: "claude" });
-    } catch (e) {
-      console.log(JSON.stringify({ ai: "claude-fallback", feature: "call", reason: claudeFailure(e) }));   // then Gemini, as before
-    }
-  }
   if (gatewayOn(env)) return await viaGateway(env, req, user);
   // Keys in turn (see geminiKeyOrder): when a key's free-tier limit is used up (429), the key is
   // rejected, or it is out of credits or has billing off, it rests and the next key takes the request.
@@ -920,7 +871,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const kv = kvOf(env);
     try {
       const url = new URL(request.url);
@@ -1057,6 +1008,9 @@ export default {
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
 
+      /* ---------- 📅 Standard Training - Calendaring Activity: isolated controller (calweek-api.js) ---------- */
+      if (path.startsWith("/api/calweek/")) return await handleCalWeek(path, request, env, ctx, tok, kv);
+
       /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
          A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
          ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. Trainees only:
@@ -1085,7 +1039,7 @@ export default {
       // (the path keeps its old name so pages already open in browsers keep working)
       if (path === "/api/claude" || path === "/api/ai") {
         const body = await request.text();
-        if (!hasGemini(env) && !gatewayOn(env) && !claudeOn(env)) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
+        if (!hasGemini(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker. Add GEMINI_API_KEY5 as a Secret in Cloudflare." }, 500);
         return await callGemini(env, body, tok && tok.id);
       }
 

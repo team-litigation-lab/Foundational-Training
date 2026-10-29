@@ -25,15 +25,15 @@ const KEY = "settings:dayslides";
 /* ---------- what may be in a slide ---------- */
 const TAGS = new Set(["p", "br", "b", "strong", "i", "em", "u", "s", "strike", "sub", "sup", "span", "div", "section",
   "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "a", "img", "figure", "figcaption", "blockquote", "code", "pre",
-  "table", "thead", "tbody", "tfoot", "tr", "td", "th", "hr", "small", "iframe", "font"]);
+  "table", "thead", "tbody", "tfoot", "tr", "td", "th", "hr", "small", "iframe", "font", "audio", "source"]);
 const ATTRS = new Set(["class", "style", "href", "src", "alt", "title", "target", "rel", "colspan", "rowspan", "width",
-  "height", "loading", "allow", "allowfullscreen", "frameborder", "referrerpolicy", "data-slot", "data-kind", "data-title", "start"]);
+  "height", "loading", "allow", "allowfullscreen", "frameborder", "referrerpolicy", "data-slot", "data-kind", "data-title", "start", "controls", "preload"]);
 // the styles a slide may carry: the ones the toolbar sets, and the ones the built slides already use
 const STYLES = /^(color|background-color|background|font-size|font-weight|font-style|font-family|text-align|text-decoration|text-decoration-line|line-height|letter-spacing|width|max-width|height|max-height|margin|margin-top|margin-bottom|margin-left|margin-right|padding|padding-top|padding-bottom|padding-left|padding-right|border|border-left|border-radius|white-space|display|float|aspect-ratio|object-fit)$/i;
 // an embed may only come from where the curriculum's own embeds come from
 const EMBED_HOSTS = /^(www\.)?(docs\.google\.com|drive\.google\.com|youtube\.com|www\.youtube\.com|youtube-nocookie\.com|www\.youtube-nocookie\.com|youtu\.be|player\.vimeo\.com|canva\.com|www\.canva\.com)$/i;
-// a link may go to a secure page, an address or a phone number, and nowhere else
-const okHref = u => { const v = String(u || "").trim(); return /^(https:\/\/|mailto:|tel:)/i.test(v) || /^#[\w-]*$/.test(v) ? v : ""; };
+// a link may go to a secure page, a page of this site (a handout: /handouts/…), an address or a phone number, and nowhere else
+const okHref = u => { const v = String(u || "").trim(); return /^(https:\/\/|mailto:|tel:)/i.test(v) || /^#[\w-]*$/.test(v) || /^\/(?![\/\\])/.test(v) ? v : ""; };
 const okSrc = u => { const v = String(u || "").trim();
   if(/^data:image\/(png|jpeg|jpg|gif|webp);base64,[a-z0-9+/=\s]+$/i.test(v)) return v;
   if(/^https:\/\//i.test(v) || /^\//.test(v)) return v;
@@ -58,6 +58,9 @@ function clean(html){
       if(tag === "script" || tag === "style" || tag === "link" || tag === "meta" || tag === "object" || tag === "embed" || tag === "form" || tag === "input" || tag === "button" || tag === "select" || tag === "textarea"){
         x.remove(); return;
       }
+      // a trainer slot is kept empty: the facilitator's notes fill it in trainer view (js/ft-updates.js), also inside the
+      // editor, and a saved slide is read by trainees, so the notes must never be saved with it
+      if(x.classList && x.classList.contains("trainer-slot")){ x.innerHTML = ""; x.classList.remove("trainer-slot-in"); }
       if(!TAGS.has(tag)){ const f = document.createDocumentFragment(); [...x.childNodes].forEach(c => f.appendChild(c)); x.replaceWith(f); walk(node); return; }
       // the browser's own editing commands still leave <font color> and <font size> behind: a slide keeps the
       // colour and the size as a style, so they survive the clean-up and read the same everywhere

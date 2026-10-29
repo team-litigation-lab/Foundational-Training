@@ -34,10 +34,6 @@ jobs:
         run: node .github/scripts/sso.cjs
       - name: The Gemini key pool (a key out of credits, with billing off, rejected or busy hands over to the next key)
         run: node .github/scripts/gemini-keys.mjs
-      - name: Install the Worker's dependency (the Anthropic SDK, for the call simulators)
-        run: npm ci --no-audit --no-fund
-      - name: The call simulators on Claude (Haiku 5.5 first, any Claude failure falls back to Gemini, nothing else uses Claude)
-        run: node .github/scripts/claude-calls.mjs
       - name: Documents served from R2 (ranges, 304s, static assets as the fallback)
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
@@ -133,6 +129,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/calrules.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Standard Training - Calendaring Activity (the current week resolver, next-week offsets, the isolated /api/calweek controller and webhook, the page and its Day 5 links)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/calweek.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Call Listening Log (the four sets, a part-filled and a full log, the trainer's reading and set editing, the worker's rules)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules

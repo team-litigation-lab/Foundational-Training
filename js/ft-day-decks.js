@@ -143,6 +143,8 @@ function kindOf(s, html){
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
+  // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
+  if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   return {ic: "📝", label: "Read & Do"};
 }
 const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
@@ -538,6 +540,7 @@ function slideActions(s, info, body, i){
     const sid = /reception/i.test(h) ? "reception" : /calendar/i.test(h) ? "calendaring" : /intake/i.test(h) ? "intake" : "";
     if(sid) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTSessions.open('${sid}')">☎ Open the Practice Session</button>`);
   }
+  if(has(/attorney calendar management/i) && root.FTCalWeek) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTCalWeek.open()">📅 Standard Training - Calendaring Activity</button>`);
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   const vids = (String(body || "").match(/ftdd-tile k-video/g) || []).length;
@@ -949,7 +952,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
    {d, s} is the day and the slide id it opens (build/days/), {go} a platform page instead.
    ============================================================ */
 // the pills a row carries, as the card names its kind
-const PILLS = {classroom: "Classroom", read: "Read & Do", interactive: "Interactive activity", homework: "Homework",
+const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
@@ -985,10 +988,10 @@ const LESSON_CARDS = {
       {t: "Checking of Assignments", sub: "Your Common Terms & Auto Liability assessments reviewed, with feedback", k: "classroom", d: 3, s: "s1"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "s1b", go: "listening"},
       {t: "Confidentiality & Call Response Exercise", sub: "The exercise deck, the Sample SOP and its two charts", k: "interactive", d: 3, s: "s1c"},
-      {t: "Reception Activity on VA Oscar’s Recordings", sub: "Extract the 5 data points into your assessment sheet", k: "assessment", d: 3, s: "s1d"},
+      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "s1d"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are on the day’s slide",
-      "Upload the Reception Activity to your Assessments/Activities folder", "Process Questions: five of the ten where time is short"],
+      "Upload the PI Reception Activity worksheet to your Assessments/Activities folder", "Process Questions: five of the ten where time is short"],
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_Process_Question_Answers (VA First Name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
@@ -1506,10 +1509,10 @@ function toolsTabs(){
 }
 function toolsSlide(){
   const k = Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)), t = TOOLS[k];
-  // no Open button, counter or Next tool button on the tool: the tabs above pick a tool, the bar's Next → moves on
+  // no Open button, screenshot link, counter or Next tool button on the tool: the tabs above pick a tool, the bar's Next → moves on
   return `<div class="ftdd-tools">
     <div class="ftdd-tool" role="tabpanel">
-      <a class="ftdd-tool-shot" href="${TOOL_IMG}${t.img}.webp" target="_blank" rel="noopener" title="Open the screenshot full size"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></a>
+      <div class="ftdd-tool-shot"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></div>
       <div class="ftdd-tool-txt">
         <h3>${t.ic} ${e(t.name)}</h3>
         <p class="ftdd-tool-what"><b>What it’s for</b>${e(t.what)}</p>
@@ -1808,7 +1811,7 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
-.ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo{background:#7A5A2E;}
+.ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo,.ftlc-pill.k-listendo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
 .ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 .ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
@@ -1890,6 +1893,25 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
+/* 🎧 the PI Reception Activity's practice calls (Day 3; small on Day 4): three cards to a row, each with its player */
+.ftdd-pic-points{border:2px solid #343C66;border-radius:12px;background:#F6F7FB;padding:0 16px 10px;margin:10px 0 14px;overflow:hidden;}
+.ftdd-sheet .ftdd-pic-points > p.ftdd-pic-points-h{margin:0 -16px 8px !important;padding:8px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
+.ftdd-pic-points ol{margin:0 0 6px;padding-left:22px;columns:2;column-gap:36px;}
+.ftdd-pic-points li{margin:2px 0;}
+.ftdd-sheet .ftdd-pic-points p.ftdd-pic-plus{margin:6px 0 0 !important;}
+.ftdd-pic-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 14px;}
+.ftdd-pic{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 14px 12px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);display:flex;flex-direction:column;}
+.ftdd-sheet .ftdd-pic > p{margin:0 0 6px !important;}
+.ftdd-sheet .ftdd-pic > p.ftdd-pic-h{margin:0 -14px 10px !important;padding:9px 14px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;display:flex;align-items:center;gap:10px;}
+.ftdd-pic-n{flex:none;width:26px;height:26px;border-radius:50%;background:#E8590C;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+.ftdd-pic-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.ftdd-pic-tag{display:inline-block;padding:2px 9px;border-radius:999px;background:#FDEBDD;color:#8A3A06;font:700 13px/1.5 'Inter',sans-serif;}
+.ftdd-pic-tag.ftdd-pic-who{background:#E8EBF5;color:#343C66;}
+.ftdd-sheet .ftdd-pic > p.ftdd-pic-about{font-size:15px !important;line-height:1.45 !important;color:#30364F;flex:1;}
+.ftdd-pic-audio{width:100%;height:40px;margin:4px 0 2px;}
+.ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
+.ftdd-sheet .ftdd-pic-sm > p.ftdd-pic-h{font-size:15px !important;}
+@media(max-width:900px){ .ftdd-pic-row{grid-template-columns:minmax(0,1fr);} }
 /* every Activity deck slide in the bigger, high-contrast style (as the orientation's): 19px text in near-black, section
    headings as navy bars with an orange edge, each numbered step a box with a navy border, notes and file names in
    navy-bordered boxes */
