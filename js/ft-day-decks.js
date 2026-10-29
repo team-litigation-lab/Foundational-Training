@@ -456,19 +456,12 @@ function listenSlide(day, time){
      ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
-   calls, then the six practice calls made for the PI Reception Activity, each with its challenge). A Drive recording
-   plays in the slide once its file's id is in (id); until then its card opens the folder. */
-const LISTEN_CARDS = {3: [
-  ...["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel", "Potential Client Call - Slip & Fall",
-    "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
-  {t: "The Tow Yard", src: "/ft/day3/audio/pi-call-1.mp3", kind: "Practice call", tag: "Background noise"},
-  {t: "Breaking Up on the Highway", src: "/ft/day3/audio/pi-call-2.mp3", kind: "Practice call", tag: "Connection issues"},
-  {t: "Hablo Poquito Inglés", src: "/ft/day3/audio/pi-call-3.mp3", kind: "Practice call", tag: "Language barrier"},
-  {t: "The Speakerphone Echo", src: "/ft/day3/audio/pi-call-4.mp3", kind: "Practice call", tag: "Poor audio quality"},
-  {t: "The Fast-Talking Adjuster", src: "/ft/day3/audio/pi-call-5.mp3", kind: "Practice call", tag: "Background noise and a fast talker"},
-  {t: "Mom on the Line", src: "/ft/day3/audio/pi-call-6.mp3", kind: "Practice call", tag: "Background noise and an unauthorized caller"}]};
+   calls; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
+   A Drive recording plays in the slide once its file's id is in (id); until then its card opens the folder. */
+const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
+  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"}))};
 function listenCards(cards, folder){
-  // (numbered within their kind: Sample call 1–10, Practice call 1–6)
+  // (numbered within their kind: Sample call 1–10)
   return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
     ${c.src ? `<audio controls preload="none" src="${e(c.src)}"></audio>`
       : c.id ? `<div class="ftln-aud"><iframe src="https://drive.google.com/file/d/${e(c.id)}/preview" title="${e(c.t)}" loading="lazy" allow="autoplay"></iframe></div>`
@@ -1097,6 +1090,33 @@ root.render = function(){
   const mid = document.querySelector("main.main-ftdd"); if(mid) mid.classList.add("ftdd-settling");
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); requestAnimationFrame(() => { const m = document.querySelector("main.main-ftdd"); if(m) m.classList.remove("ftdd-settling"); }); });
 };
+// 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
+(() => {
+  let box = null, list = [], at = 0;
+  const show = () => { const a = list[at]; box.querySelector("img").src = a.getAttribute("href"); box.querySelector(".ftdd-zoom-cap").textContent = `Sample SOP · page ${at + 1} of ${list.length}`; };
+  const close = () => { if(box){ box.remove(); box = null; } };
+  const turn = d => { at = (at + d + list.length) % list.length; show(); };
+  document.addEventListener("click", ev => {
+    const a = ev.target.closest && ev.target.closest(".ftdd-sop-shots a");
+    if(!a || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+    ev.preventDefault();
+    list = [...a.closest(".ftdd-sop-shots").querySelectorAll("a")]; at = list.indexOf(a);
+    close();
+    box = document.createElement("div"); box.className = "ftdd-zoom";
+    box.innerHTML = '<div class="ftdd-zoom-cap"></div><img alt=""><button type="button" class="ftdd-zoom-prev" title="Previous page">‹</button>' +
+      '<button type="button" class="ftdd-zoom-next" title="Next page">›</button><button type="button" class="ftdd-zoom-x" title="Close">✕</button>';
+    box.addEventListener("click", e => {
+      if(e.target.closest(".ftdd-zoom-prev")) turn(-1); else if(e.target.closest(".ftdd-zoom-next")) turn(1); else close();
+    });
+    document.body.appendChild(box); show();
+  });
+  // (before the deck's own ← / →, so turning a page here doesn't turn the slide)
+  document.addEventListener("keydown", ev => {
+    if(!box) return;
+    if(ev.key === "Escape") close(); else if(ev.key === "ArrowRight") turn(1); else if(ev.key === "ArrowLeft") turn(-1); else return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+  }, true);
+})();
 // ← / → turn the slides (not while typing)
 document.addEventListener("keydown", ev => {
   if(state.view !== "daydeck" || ev.altKey || ev.ctrlKey || ev.metaKey) return;
@@ -2586,6 +2606,25 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
+/* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
+   viewer below; then one big link to the document and its ⬇ Download */
+.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px;margin:10px 0 12px;}
+.ftdd-sop-shots figure{margin:0;text-align:center;}
+.ftdd-sop-shots a{display:flex;align-items:flex-start;justify-content:center;height:300px;padding:6px;background:#fff;border:1.5px solid #9AA0AB;border-radius:8px;cursor:zoom-in;transition:box-shadow .15s,border-color .15s;}
+.ftdd-sop-shots a:hover{border-color:#E8762B;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+.ftdd-sop-shots img{width:100%;height:100%;object-fit:contain;object-position:top;}
+.ftdd-sop-shots figcaption{font-size:12.5px;font-weight:700;color:#5A6072;margin-top:4px;}
+.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 18px;margin:6px 0 10px;}
+.ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
+.ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
+.ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
+.ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
+.ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}
+.ftdd-zoom img{max-width:94vw;max-height:88vh;background:#fff;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
+.ftdd-zoom-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:14px;}
+.ftdd-zoom button{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:26px;cursor:pointer;}
+.ftdd-zoom button:hover{background:rgba(255,255,255,.32);}
+.ftdd-zoom .ftdd-zoom-prev{left:18px;} .ftdd-zoom .ftdd-zoom-next{right:18px;} .ftdd-zoom .ftdd-zoom-x{top:30px;right:18px;transform:none;}
 /* 🖥 Day 1's Installation of SA, laid out as the curriculum's own pages: each step's instruction across the top, big and
    bold, then its screenshots side by side in one row under it, each numbered under its middle (1, 2, 3 …) */
 main.main-ftdd .ftdd-sheet.ftdd-sa p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa li{font:700 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;text-align:left;margin:0 0 8px !important;}
