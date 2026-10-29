@@ -476,7 +476,7 @@ function agendaHtml(d, info){
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
-  const vids = d.slides.reduce((t, s) => t + (visual(slideSrc(d.day, s)).match(/ftdd-tile k-video/g) || []).length, 0);
+  const vids = d.slides.reduce((t, s) => t + (visual(slideSrc(d.day, s)).match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length, 0);
   const folders = count(/drive\.google\.com\/drive\/folders\//g), decksN = count(/class="canva-frame"/g);
   const lessons = (info.lessons || []).map(l => `<li>📘 ${e(lessonTitle(l))}</li>`).join("");
   return `<div class="ftdd-ag"><ol class="ftdd-ag-list">${rows}</ol>
@@ -543,7 +543,8 @@ function slideActions(s, info, body, i){
   }
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
-  const vids = (String(body || "").match(/ftdd-tile k-video/g) || []).length;
+  // (a video that plays in the slide counts too: ftdd-inline)
+  const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
   if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
@@ -918,6 +919,11 @@ function videos(n){
     t.content.querySelectorAll("a.ftdd-tile.k-video").forEach(a => {
       const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
       out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});
+    });
+    // (and a video that plays in the slide: its 📝 What I learned button carries its address and name)
+    t.content.querySelectorAll(".ftdd-inline.is-video .ftdd-learn").forEach(b => {
+      const url = b.getAttribute("data-url"); if(!url || seen.has(url)) return; seen.add(url);
+      out.push({url, title: b.getAttribute("data-title") || "Video", day: n, slide: i + 1});
     });
   });
   return out;
