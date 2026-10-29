@@ -32,11 +32,14 @@ const key = b => typeof ftBatchKey === "function" ? ftBatchKey(b) : String(b || 
 // the last step unlocked for this batch
 // (and ⏰ by the day's schedule, when the trainer put Day 1 on one: js/ft-day-locks.js)
 function stepsFor(batch){ const o = state.ftDay1Steps || {}, sc = window.FTDayLocks ? FTDayLocks.day1(batch) : 0; return Math.max(1, Number(o.all) || 0, Number((o.batches || {})[key(batch)]) || 0, sc); }
+// has the trainer set this batch's Day 1 steps of its own (settings:day1steps batches)?
+const ownSteps = batch => ((state.ftDay1Steps || {}).batches || {})[key(batch)] != null;
 function active(){
   if(!state.traineeId || state.isAdmin || state.adminPreview || !state.ftOpenDays) return false;   // (nothing decided before the open lessons load)
   const p = (state.progress || {})[1]; if(p && p.done) return false;
   const o = state.ftOpenDays || {}, open = [].concat(o.all || [], (o.batches || {})[key(state.traineeBatch)] || []).map(Number);
-  if(open.some(id => id > 1 && id !== 12)) return false;   // the batch is past Day 1 already
+  // the batch is past Day 1 already, unless the trainer set its Day 1 steps themselves (🔓 Segment lock on the deck)
+  if(open.some(id => id > 1 && id !== 12) && !ownSteps(state.traineeBatch)) return false;
   return stepsFor(state.traineeBatch) < FINISH;
 }
 const at = () => stepsFor(state.traineeBatch);
@@ -77,7 +80,7 @@ function mayGo(n, i, from){
   return true;
 }
 const goCurrent = () => { try{ (new Function(step(at()).go))(); }catch(err){ goto("day", 12); } };
-window.FTDay1 = {STEPS, active, at, stepsFor, label: n => step(n).label,
+window.FTDay1 = {STEPS, active, at, stepsFor, ownSteps, label: n => step(n).label,
   // a lesson 1 answer sheet: the Reading Task's opens with the reading, the Virtual Assistant Essentials one with Process Questions
   sheetLocked: set => active() && Number(set.lesson) === 1 && set.id !== "pi-overview" && at() < 6,
   goCurrent, openStep, mayGo,
