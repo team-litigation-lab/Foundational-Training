@@ -84,7 +84,7 @@ const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; ret
 window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
 function renderSimulators(){
   const tool = (fn, id) => typeof window[fn] === "function" && toolOn(id) ? window[fn]() : "";
-  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
+  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
   const drafting = window.ftLorCard ? tool("ftLorCard", "lor") + tool("ftGuideCard", "guide") + tool("ftTranscribeCard", "transcribe") + tool("ftDrillsCard", "drills") : "";
   const trainer = window.FTSessions ? FTSessions.trainerCards() : "";
   // 📚 the Knowledge Base: a card beside the Drafting Tools (its own section when there are none yet), so the Lab fits one screen
