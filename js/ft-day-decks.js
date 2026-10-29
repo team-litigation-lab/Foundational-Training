@@ -1128,7 +1128,7 @@ const LESSON_CARDS = {
       // (a classroom activity, not homework: before the day's ✍️ Process Questions)
       {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "classroom", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
-      "Upload both assessments to your Assessments/Activities subfolder", "Process Questions: five of the ten where time is short"],
+      "Upload both assessments to your Assessments/Activities subfolder"],
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [

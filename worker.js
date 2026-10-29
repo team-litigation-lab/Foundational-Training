@@ -37,7 +37,8 @@
  */
 import "./js/ft-tracker-rules.js";
 import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
-import { handleCalWeek } from "./calweek-api.js";   // 📅 Standard Training - Calendaring Activity: its own routes and record
+import { handleCalWeek } from "./calweek-api.js";
+import { ASSESS_KEYS } from "./assess-keys.js";   // 🔑 the on-platform assessments' answer keys (js/ft-assess.js): never sent to a page   // 📅 Standard Training - Calendaring Activity: its own routes and record
 const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
@@ -213,7 +214,7 @@ function candidateIds(name, batch) {
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
 // own HTML, every trainee reads it in place of the built slide.
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
@@ -280,6 +281,13 @@ async function traineeWrite(env, tok, key, value) {
     // LOR Drafting Activity (js/ft-lor.js): the trainee's own drafts of the two letters. The case they
     // were assigned is in lorassign:<id>, which only admins write.
     if (value.length > 300000) return "The drafts are too large to save";
+    if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
+    await kv.put(key, value); return null;
+  }
+  if (key === `assess:${id}`) {
+    // 📄 the assessments answered on the platform (js/ft-assess.js): the trainee's own answers. The grades are the Worker's
+    // (/api/assess/grade), in trackerreview:<id>, which a trainee never writes.
+    if (value.length > 200000) return "The answers are too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     await kv.put(key, value); return null;
   }
@@ -1152,6 +1160,58 @@ export default {
         cur.items[key] = { at: now.toISOString(), activity, onTime, when, ai: !!g, result: g };
         await kv.put(rk, JSON.stringify(cur));
         return json({ ok: true, item: cur.items[key] });
+      }
+
+      /* ---------- 📝 an on-platform assessment's Submit for Grading (js/ft-assess.js): the trainee's answers (assess:<id>) graded
+         against its key (assess-keys.js, never sent to a page): a matching item exactly; a short answer or identification by
+         Gemini against the key's answer (else by the key's pattern); an essay by Gemini out of its points (else left for the
+         trainer). The trainee's own, at most every 30 seconds; the result goes to trackerreview:<id>.assess["<doc id>"] ---------- */
+      if (path === "/api/assess/grade") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id, doc = String(b.doc || ""), K = ASSESS_KEYS[doc];
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        if (!K) return json({ error: "No such assessment" }, 400);
+        const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+        cur.assess = cur.assess || {};
+        const last = cur.assess[doc] && cur.assess[doc].at ? Date.parse(cur.assess[doc].at) : 0;
+        if (tok.role !== "a" && Date.now() - last < 30 * 1000) return json({ error: "Graded a moment ago. Try again in a few seconds.", code: "wait" }, 429);
+        const mine = JSON.parse((await kv.get(`assess:${id}`)) || "null") || {}, ans = ((mine.docs || {})[doc] || {}).answers || {};
+        const norm = (v) => String(v == null ? "" : v).trim();
+        const items = {}, ask = [];
+        for (const [k, it] of Object.entries(K.items)) {
+          const a = norm(ans[k]);
+          if (!a) { items[k] = { ok: false, pts: 0, note: "No answer." }; continue; }
+          if (!it.essay && /^[A-T]$/.test(it.answer)) { const ok = a.toUpperCase() === it.answer; items[k] = { ok, pts: ok ? it.pts : 0 }; continue; }
+          ask.push({ id: k, essay: !!it.essay, points: it.pts, key: it.answer, answer: a.slice(0, 2500) });
+        }
+        let ai = false;
+        if (ask.length && hasGemini(env)) {
+          try {
+            const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+            const raw = await aiText(env, "You are a training supervisor at Legal Support Help grading a trainee virtual assistant's assessment on personal injury terms and auto insurance. Never mention that you are an AI. Answer with JSON only." + voice,
+              `Assessment: ${K.title}\nGrade each answer against its key. A short answer is right when it says what the key says (wording, spelling and extra detail don't matter; a wrong or missing essential part does). An essay is scored from 0 to its points for how fully and correctly it covers the key's points and gives a sound rationale.\n\n` +
+              ask.map((x) => `[${x.id}] ${x.essay ? `essay, ${x.points} points` : "short answer, 1 point"}\nKey: ${x.key}\nAnswer: ${x.answer}`).join("\n\n") +
+              `\n\nReply with this JSON and nothing else: {"results":[{"id":"<id>","points":<points earned>,"note":"<one sentence of feedback to the trainee: what is right or what is missing, without giving the key's answer away>"}]}`, 1800);
+            const m = String(raw || "").match(/\{[\s\S]*\}/), j = m ? JSON.parse(m[0]) : null;
+            for (const r of (j && Array.isArray(j.results) ? j.results : [])) {
+              const x = ask.find((q) => q.id === String(r.id)); if (!x) continue;
+              const pts = Math.max(0, Math.min(x.points, Math.round(Number(r.points) || 0)));
+              items[x.id] = { ok: pts >= x.points, pts, note: String(r.note || "").slice(0, 400) };
+            }
+            ai = true;
+          } catch (e) { ai = false; }
+        }
+        // (what the AI didn't grade: a short answer by the key's pattern; an essay waits for the trainer)
+        for (const x of ask) if (!items[x.id]) {
+          const it = K.items[x.id];
+          if (x.essay) items[x.id] = { ok: false, pts: 0, pending: true, note: "Your trainer grades this one." };
+          else { let ok = false; try { ok = it.accept ? new RegExp(it.accept, "i").test(x.answer) : false; } catch (e) {} items[x.id] = { ok, pts: ok ? it.pts : 0 }; }
+        }
+        const max = Object.values(K.items).reduce((t, it) => t + it.pts, 0), score = Object.values(items).reduce((t, r) => t + (r.pts || 0), 0);
+        const now = new Date(), when = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(now) + " ET";
+        cur.assess[doc] = { at: now.toISOString(), when, title: K.title, score, max, pct: Math.round(100 * score / max), pending: Object.values(items).some((r) => r.pending), ai, items };
+        await kv.put(rk, JSON.stringify(cur));
+        return json({ ok: true, score, max, pending: cur.assess[doc].pending });
       }
 
       /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */

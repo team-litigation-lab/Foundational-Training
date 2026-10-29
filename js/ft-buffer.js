@@ -262,6 +262,9 @@ async function unlockNext(h){
 const __after = root.afterRender;
 root.afterRender = function(){
   const out = __after ? __after.apply(this, arguments) : undefined;
+  // (a trainee's Done record is read as soon as a deck opens, not on the first slide that needs it: a slide that waits
+  // for a Done, FTBuffer.holds, is then shut or open from the first Next)
+  try{ if(trainee() && state.view === "daydeck" && !M.rec && !M.loading) loadMine().then(() => { if(state.view === "daydeck") render(); }); }catch(err){}
   try{ paint(); }catch(err){}
   return out;
 };
