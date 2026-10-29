@@ -26,7 +26,7 @@ function data(){
   if(window.FT_INTAKE_SAMPLES) return Promise.resolve(window.FT_INTAKE_SAMPLES);
   if(loading) return loading;
   loading = new Promise((ok, no) => { const s = document.createElement("script"); s.src = "/js/ft-intake-samples.js" + V;
-    s.onload = () => ok(window.FT_INTAKE_SAMPLES); s.onerror = () => { loading = null; no(new Error("load")); }; document.head.appendChild(s); });
+    s.onload = () => ok(window.FT_INTAKE_SAMPLES); s.onerror = () => { loading = null; s.remove(); no(new Error("load")); }; document.head.appendChild(s); });
   return loading;
 }
 
@@ -65,33 +65,35 @@ function consultHtml(d){
 
 /* ---------- Day 8: choose your Intake Packet ---------- */
 const PKEY = "ftis-packet";
+const PFOLDER = "https://drive.google.com/drive/folders/1JbAieyhJ6XVsRvNXMUUtVfRwY_0KNymT?usp=sharing";   // the Redacted Intake Packets
 const getP = () => { try{ return Number(localStorage.getItem(PKEY)) || 0; }catch(err){ return 0; } };
 const setP = n => { try{ n ? localStorage.setItem(PKEY, String(n)) : localStorage.removeItem(PKEY); }catch(err){} };
 function packetHtml(el){
-  const n = getP(), who = firstName() || "VA’s Name", folder = el.getAttribute("data-folder") || "";
-  const name = n ? `INTAKE - Packet ${n} (${who})` : "INTAKE - Packet # (VA’s Name)";
+  const n = getP(), who = firstName() || "VA’s Name", folder = el.getAttribute("data-folder") || PFOLDER;
+  const name = `INTAKE - Packet (${who})`;   // the trainer's naming convention (Day 8's NOTE)
   return `<div class="ftis-pk-h"><b>📦 Your Intake Packet</b>
       <label>Packet <select onchange="FTIntake.packet(this.value)"><option value="">Choose…</option>${Array.from({length: 10}, (_, i) => `<option value="${i + 1}"${n === i + 1 ? " selected" : ""}>Packet ${i + 1}</option>`).join("")}</select></label></div>
     <ol class="ftis-pk-steps">
       <li>Open the <a class="viewer-link" data-kind="doc" data-title="Redacted Intake Packets" href="${e(folder)}">Redacted Intake Packets folder</a> and find ${n ? `<b>Intake Packet ${n}</b>` : "the packet you chose (or the one your trainer assigned)"}.</li>
-      <li>Download it: open the file, then <b>⋮ → Download</b> (or right-click it in the folder → <b>Download</b>). Save it to your computer, not your Drive.</li>
-      <li>Rename the downloaded packet: <code class="ftis-name">${e(name)}</code> ${n ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</li>
+      <li>Download it: open the file, then <b>⋮ → Download</b> (or right-click it in the folder → <b>Download</b>).</li>
+      <li>Rename the downloaded packet: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</li>
       <li>In your <b>Assessments/Activities</b> folder, create a subfolder named after the packet’s client. Upload the renamed packet and every document you extract from it there. The completed Intake Worksheet goes directly in Assessments/Activities, not in the subfolder.</li>
     </ol>
     <p class="ftis-pk-note">${n ? `✓ Packet ${n} chosen (remembered in this browser). If your trainer assigns a different packet, choose that one.` : "Your choice is remembered in this browser. If your trainer assigned a packet, choose that one."}</p>`;
 }
 
 /* ---------- filling the slides ---------- */
-function refit(){ try{ window.dispatchEvent(new Event("resize")); }catch(err){} }
+// the deck re-measures its pages without going back to page 1; any other page gets a resize
+function refit(){ try{ if(window.FTDayDecks && FTDayDecks.refit) FTDayDecks.refit(); else window.dispatchEvent(new Event("resize")); }catch(err){} }
 function fill(){
-  document.querySelectorAll(".ftis-packet:not([data-on])").forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = packetHtml(el); refit(); });
-  const want = document.querySelectorAll(".ftis-calls:not([data-on]), .ftis-consult:not([data-on])");
+  [...document.querySelectorAll(".ftis-packet:not([data-on])")].filter(el => !el.closest("#ftseBody")).forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = packetHtml(el); refit(); });
+  const want = [...document.querySelectorAll(".ftis-calls:not([data-on]), .ftis-consult:not([data-on])")].filter(el => !el.closest("#ftseBody"));
   if(!want.length) return;
   want.forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = `<p class="ftis-wait">Loading the recordings…</p>`; });
   data().then(d => {
     want.forEach(el => { el.innerHTML = el.classList.contains("ftis-calls") ? callsHtml(d) : consultHtml(d); });
     refit();
-  }).catch(() => want.forEach(el => { el.innerHTML = `<p class="ftis-wait">The recordings didn’t load. Check your connection and open this slide again.</p>`; el.removeAttribute("data-on"); }));
+  }).catch(() => want.forEach(el => { el.innerHTML = `<p class="ftis-wait">The recordings didn’t load. Check your connection and open this slide again.</p>`; }));
 }
 let queued = false;
 new MutationObserver(() => { if(queued) return; queued = true; requestAnimationFrame(() => { queued = false; fill(); }); })

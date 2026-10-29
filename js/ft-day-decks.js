@@ -1472,7 +1472,9 @@ function toolsSlide(){
   </div>`;
 }
 
-root.FTDayDecks = {open, go, next: nextKC, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+root.FTDayDecks = {open, go, next: nextKC,
+  // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
+  refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
