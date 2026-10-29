@@ -1488,10 +1488,10 @@ function toolsTabs(){
 }
 function toolsSlide(){
   const k = Math.max(0, Math.min(TOOLS.length - 1, Number(DD.tool) || 0)), t = TOOLS[k];
-  // no Open button, counter or Next tool button on the tool: the tabs above pick a tool, the bar's Next → moves on
+  // no Open button, screenshot link, counter or Next tool button on the tool: the tabs above pick a tool, the bar's Next → moves on
   return `<div class="ftdd-tools">
     <div class="ftdd-tool" role="tabpanel">
-      <a class="ftdd-tool-shot" href="${TOOL_IMG}${t.img}.webp" target="_blank" rel="noopener" title="Open the screenshot full size"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></a>
+      <div class="ftdd-tool-shot"><img src="${TOOL_IMG}${t.img}.webp" alt="Screenshot: ${e(t.name)}" width="1200" height="718"></div>
       <div class="ftdd-tool-txt">
         <h3>${t.ic} ${e(t.name)}</h3>
         <p class="ftdd-tool-what"><b>What it’s for</b>${e(t.what)}</p>
