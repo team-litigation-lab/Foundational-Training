@@ -201,7 +201,7 @@ window.FTCalRules = {
     if(s && L && !L.value) L.value = String(s.max); if(s && F && !F.value) F.value = s.consult ? "Phone" : s.format || ""; render(); },
   reload: () => load(true), state: () => R
 };
-// 🛠 the Practice Lab's card, beside the Calendaring Practice Lab
+// 🛠 the Practice Lab's card, beside Standard Training - Appointment Setting Mock Calls
 window.ftCalRulesCard = () => `<div class="card fts-card"><div class="fts-kicker">Day 6 · after each calendar mock call</div><h3>📅 Booking Rule Check</h3>
     <p class="fts-note">Record the booking you made on the call: it’s checked against the guide’s scheduling rules on the spot (consult days, phone hours, buffers, length limits, EST, the reminder).</p>
     <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calrules')">Check a booking</button></div></div>`;
