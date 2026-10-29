@@ -31,7 +31,8 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
-  2: {s2: "Common Terms Used & Auto Liability Insurance"},
+  // (Day 2's Softphones and PPTs are a classroom activity, not homework: js/ft-day-decks.js LESSON_CARDS[2])
+  2: {s2: "Common Terms Used & Auto Liability Insurance", s4: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"},
   // (Day 3's first slide keeps "and Call Listening" in its name: it brings the 🎧 Call Listening slide, js/ft-day-decks.js slidesOf)
   3: {s1: "Checking of Assignments & the Discussion Deck: PI Workflow, Reception Training and Call Listening", s2: "Homework: CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing and Mock Call Preparation", s3: "PM: Reception Mock Calls (One-on-One)"},
@@ -135,6 +136,8 @@ function calActivity(){
    platform address (#/…) opens in the same tab; an outside one in a new tab. */
 const CALSIM_ACTIVITY = {label: "📅 Do this activity on the Calendar Simulator", href: "#/calsim/attorney-activity"};
 const calsimHook = () => `<div class="ftdd-calsim" data-calsim-activity="5:s3">${CALSIM_ACTIVITY ? `<a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}"${/^#/.test(CALSIM_ACTIVITY.href) ? "" : ' target="_blank" rel="noopener noreferrer"'}>${hx(CALSIM_ACTIVITY.label)}</a>` : ""}</div>\n`;
+// (a slide whose videos carry no "📝 What I learned": js/ft-day-decks.js visual)
+const NOLEARN = '<div class="ftdd-nolearn" hidden></div>\n';
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -384,8 +387,9 @@ s2: html => {
   const ids = [["1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D", "Common Terms Used"], ["1tmV26rq_1z1mpq1C5hUweLytfyJUtkai", "Common Terms Used: the reference sheet"],
     ["1K9AXO0XZJjGFXHPugLAbjeVgcC3fIZuE", "How Auto Liability Insurance Works"]];
   let out = html;
+  // (the two videos without the name bar over them, data-bare: the slide's ribbon names them, so they play larger)
   ids.forEach(([id, t]) => { const re = new RegExp(`<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*${id})`); if(!re.test(out)) throw new Error(`Day 2's Common Terms slide lost the link ${id}`);
-    out = out.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); });
+    out = out.replace(re, `<a class="viewer-link" data-embed${/1tmV26/.test(id) ? "" : " data-bare"}$1 data-title="${t}"`); });
   const note = /<p><b>Note:<\/b> As soon as you are done watching the videos, please type done here in our GC\.\s*Thank you\.<\/p>/;
   if(!note.test(out)) throw new Error("Day 2's Common Terms note is no longer where the build looks for it");
   out = out.replace(note, "<p><b>Note:</b> Hit ✅ Done below when you are.</p>").replace(/<hr class="stars">\n?(?=<div class="trainer-slot" data-slot="2:s2-1">)/, "");
@@ -394,23 +398,21 @@ s2: html => {
   // on a page of its own: Task 2 starts the next page (ftdd-pgbreak, js/ft-day-decks.js sheetPages)
   const sheet = /<a class="viewer-link" data-embed(?=[^>]*1tmV26rq_1z1mpq1C5hUweLytfyJUtkai)/, task2 = /<p>Task 2 - Watch this video presentation about how auto liability insurance works/;
   if(!sheet.test(out) || !task2.test(out)) throw new Error("Day 2's reference sheet or its Task 2 is no longer where the build looks for it");
-  out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<div class="ftdd-pgbreak"></div>\n' + m);
-  // each video's assessment is a link under it, to ✍️ Knowledge Check (Lesson 2's 📄 Assessments, that one only:
-  // FTDayDecks.toAssess), whose way back is this slide's reference sheet page: Common Terms video → its assessment →
-  // the reference sheet; Auto Liability video → its assessment. The assessments slide (ROWS[2].s2, s2b) keeps the
-  // homework line and the readings; its upload and next-day checking lines go
+  out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<!--cut:al-->\n' + m);
+  // the assessments are not on the slides: each video's Next opens its own, on a Knowledge Check page of its own
+  // (js/ft-day-decks.js ASSESS_NEXT), whose way back goes on: Common Terms video → its assessment → the reference sheet
+  // → the Auto Liability video → its assessment → the Assessments slide (s2b), which keeps the homework line and the
+  // readings (its upload and next-day checking lines go). ROWS[2].s2 cuts the three slides at <!--cut:ref--> and
+  // <!--cut:al-->: the Common Terms video, the reference sheet, the Auto Liability video
   const doc = (label, id) => { const re = new RegExp(`<p>${label}</p>\\n<p><a class="viewer-link" data-kind="doc" data-title="AS YOUR HOMEWORK"(?=[^>]*${id})[^]*?</p>\\n`);
     const m = out.match(re); if(!m) throw new Error(`Day 2's ${label} is no longer where the build looks for it`);
-    out = out.replace(m[0], "");
-    return `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="window.FTDayDecks && FTDayDecks.toAssess(2, '${id}', '[data-sheet], .ftdd-embed-crop', 'Common Terms Used: the reference sheet')"><span class="ftdd-tile-ic">📄</span>` +
-      `<span class="ftdd-tile-t"><b>${label}</b><small>Open it on ✍️ Knowledge Check →</small></span></button></div>\n`; };
-  const ct = doc("Common Terms Used – Assessment", "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"), al = doc("Auto Liability Insurance – Assessment", "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C");
-  const after = (id, add) => { const re = new RegExp(`<p><a class="viewer-link" data-embed data-kind="video"(?=[^>]*${id})[^]*?</p>\\n`); const m = out.match(re);
-    if(!m) throw new Error(`Day 2's video ${id} is no longer where the build looks for it`); out = out.replace(m[0], m[0] + add); };
-  after("1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D", ct + '<div class="ftdd-pgbreak"></div>\n');
-  after("1K9AXO0XZJjGFXHPugLAbjeVgcC3fIZuE", al);
-  // (no "📝 What I learned" on this slide's videos: js/ft-day-decks.js visual)
-  out = '<div class="ftdd-nolearn" hidden></div>\n' + out;
+    out = out.replace(m[0], ""); };
+  doc("Common Terms Used – Assessment", "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"); doc("Auto Liability Insurance – Assessment", "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C");
+  const ctv = new RegExp(`<p><a class="viewer-link" data-embed data-bare data-kind="video"(?=[^>]*1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D)[^]*?</p>\\n`), m = out.match(ctv);
+  if(!m) throw new Error("Day 2's Common Terms video is no longer where the build looks for it");
+  out = out.replace(m[0], m[0] + "<!--cut:ref-->\n");
+  // (no "📝 What I learned" on the videos: js/ft-day-decks.js visual)
+  out = NOLEARN + out;
   const kindly = "kindly accomplish the following:", two = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>Please upload your completed assessments[^]*?<\/p>\n<p class="li" style="--lvl:0"><span class="lbl">3\.<\/span><span>Checking and feedback[^]*?<\/p>\n/;
   if(!out.includes(kindly) || !two.test(out) || !out.includes('<span class="lbl">4.</span>')) throw new Error("Day 2's assessment instructions are no longer where the build looks for them");
   out = out.replace(kindly, "kindly accomplish the <b>Common Terms Used – Assessment</b> and the <b>Auto Liability Insurance – Assessment</b>: each follows its video on the slide before, and both are on ✍️ Knowledge Check.")
@@ -420,11 +422,11 @@ s2: html => {
   const intro = [/<p>Task 1 - Please go to this link to watch the video presentation on Common Terms Used<\/p>\n/,
     /<p>Task 2 - Watch this video presentation about how auto liability insurance works[^<]*<\/p>\n/];
   intro.forEach(re => { if(!re.test(out)) throw new Error("Day 2's Common Terms task lines are no longer where the build looks for them"); out = out.replace(re, ""); });
-  // the monitoring sheet's update is a line, not a numbered step, that opens 📒 Monitoring Sheet; the slide's ✅ Done
-  // card says the rest, so the note goes
-  const check = /<p>Task \d+ - Update items #5 -7 in your monitoring sheet\.<\/p>/, done = /<p><b>Note:<\/b> Hit ✅ Done below when you are\.<\/p>\n?/;
+  // the monitoring sheet's update and its note go: the slide's panel says it, in plain words, with 📤 Submit, which has
+  // the platform check and grade items #5–7 (js/ft-buffer.js ACTS["2:s2l"])
+  const check = /<p>Task \d+ - Update items #5 -7 in your monitoring sheet\.<\/p>\n?/, done = /<p><b>Note:<\/b> Hit ✅ Done below when you are\.<\/p>\n?/;
   if(!check.test(out) || !done.test(out)) throw new Error("Day 2's monitoring sheet step or its note is no longer where the build looks for it");
-  out = out.replace(check, `<p>Update items #5–7 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`).replace(done, "");
+  out = out.replace(check, "").replace(done, "");
   return out;
 },
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide large (its own
@@ -439,7 +441,13 @@ s4: html => {
   if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
   const mon = /<p>Task 3 - Update items #8-9 in your monitoring sheet\.<\/p>/;
   if(!mon.test(out)) throw new Error("Day 2's Homework monitoring sheet line is no longer where the build looks for it");
-  return out.replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
+  // the Softphones task in three short lines around its video (Task, Action, Note), and no "outside training hours": it is a
+  // classroom activity
+  const pin = /<p>📌To be accomplished outside training hours\. 📌<\/p>\n/, soft = /<p><b>Topic: Softphones<\/b><\/p>\n<p>Task 1 – Please follow this link to view the instructional video on Softphones\.[^<]*<\/p>\n(<p><a class="viewer-link"[^]*?<\/p>\n)/;
+  if(!pin.test(out) || !soft.test(out)) throw new Error("Day 2's Softphones task is no longer where the build looks for it");
+  return out.replace(pin, "").replace(soft, (m, video) => "<p><b>Task:</b> Watch ONE softphone type in this video:</p>\n" + video +
+      "<p><b>Action:</b> Log your takeaways on your monitoring sheet.</p>\n<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
+    .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
 // 🎧 The PI Reception Activity (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
 // Harbor & Pine Injury Law, each with a challenge (background noise, a line that breaks up, a Spanish-speaking caller, a
@@ -609,7 +617,10 @@ const EDIT = {
 };
 const ROWS = {
   2: {
-    s2: [{id: "s2", parts: [[null, SLOT(2, "s2-1")]]},
+    // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
+    s2: [{id: "s2", h: "Common Terms Used", parts: [[null, "<!--cut:ref-->"]]},
+      {id: "s2r", h: "Common Terms Used: the reference sheet", parts: [["<!--cut:ref-->", "<!--cut:al-->"]], fix: [["<!--cut:ref-->\n", ""]]},
+      {id: "s2l", h: "Auto Liability Insurance", pre: NOLEARN, parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
       {id: "s2b", h: "Common Terms Used & Auto Liability Insurance: Assessments", parts: [[SLOT(2, "s2-1"), null]], fix: [
         ['data-title="https://drive.google.com/file/d/1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4/view?usp=sharing"', 'data-title="Personal Injury reading 1"'],
         ['data-title="https://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view?usp=sharing"', 'data-title="Personal Injury reading 2"']]}],

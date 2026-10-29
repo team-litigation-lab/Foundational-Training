@@ -280,6 +280,10 @@ window.ftDriveItems = ctx => {
     out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)"}); }
   const m = rv.monitor;
   if(m && !m.error) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`});
+  // 📒 the Monitoring Sheet items a slide's 📤 Submit had graded (Day 2's #5–7: /api/monitor/items, js/ft-buffer.js): the
+  // score is here, not on the slide (the slide keeps the feedback)
+  Object.entries(rv.items || {}).forEach(([k, x]) => { if(!x || !x.result) return;
+    out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim()}); });
   return out;
 };
 

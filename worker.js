@@ -1081,6 +1081,50 @@ export default {
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
       }
 
+      /* ---------- 📒 Submit a Monitoring Sheet update: some numbered items of the trainee's linked Monitoring Sheet (Day 2's
+         #5–7, js/ft-buffer.js), checked and graded now: Timely Completion (submitted by 5:00 PM ET, the training day's
+         check), and from Gemini, what the entries show of the trainee's progress, red flags and things to improve. The
+         trainee's own, at most once a minute; the result goes to trackerreview:<id>.items["5-7"] (trainees read it) ---------- */
+      if (path === "/api/monitor/items") {
+        const b = await request.json().catch(() => ({}));
+        const id = tok.role === "a" ? String(b.id || "") : tok.id;
+        if (!id) return json({ error: "Missing trainee" }, 400);
+        const nums = (Array.isArray(b.items) ? b.items : []).map(Number).filter(n => Number.isInteger(n) && n > 0 && n < 100).slice(0, 10);
+        if (!nums.length) return json({ error: "Which items?" }, 400);
+        const key = nums.join("-"), rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+        cur.items = cur.items || {};
+        const last = cur.items[key] && cur.items[key].at ? Date.parse(cur.items[key].at) : 0;
+        if (tok.role !== "a" && Date.now() - last < 60 * 1000) return json({ error: "Submitted a moment ago. Try again in a minute.", code: "wait" }, 429);
+        const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+        if (!drive || !drive.monitor) return json({ error: "Link your Monitoring Sheet first: 📁 Link My Google Drive, on your 📚 Dashboard.", code: "no-link" }, 400);
+        let text = "";
+        try {
+          const f = TR.googleFile(drive.monitor);
+          text = await fetchGoogle(f.exportUrl, env);
+          if (f.kind === "sheet") text = TR.parseCsv(text).map((r) => r.filter((c) => String(c).trim()).join(" ")).join("\n");
+        } catch (e) { return json({ error: DRIVE_UNREADABLE, code: "unreadable" }, 400); }
+        // ⏱ Timely Completion: by 5:00 PM Eastern on the day it is submitted (the hour the Monitoring Sheet is checked)
+        const now = new Date(), et = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hourCycle: "h23", weekday: "short" }).formatToParts(now).map(p => [p.type, p.value]));
+        const onTime = Number(et.hour) < 17, when = `${et.weekday} ${String(et.hour).padStart(2, "0")}:${et.minute} ET`;
+        const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null"), activity = String(b.activity || "").slice(0, 160);
+        const voice = facilitatorVoice(JSON.parse((await kv.get("settings:feedback-style")) || "null"));
+        let g = null;
+        try {
+          const raw = await aiText(env, "You are a training supervisor at Legal Support Help reviewing items of a trainee virtual assistant's Training Progress Monitoring Sheet. Never mention that you are an AI. Answer with JSON only." + voice,
+            `Trainee: ${(rec && rec.name) || "Trainee"}\nActivity: ${activity || "the day's activity"}\nItems to review: #${nums.join(", #")} (find them by their numbers in the sheet below)\nSubmitted: ${when} (${onTime ? "on time, before 5:00 PM ET" : "late, after 5:00 PM ET"})\n\nThe sheet:\n${text.slice(0, 12000)}\n\n` +
+            `Reply with this JSON and nothing else: {"items":[{"n":<item number>,"found":<true if the item is filled in>,"title":"<the item's title, short>"}],` +
+            `"context":"<2 to 3 sentences: what these entries show of the trainee's progress and understanding>","redFlags":["<each problem: an item missing or blank, too short, generic or copied, off-topic, or a misunderstanding; [] if none>"],` +
+            `"improve":["<1 to 3 specific things to do better in these entries>"],"score":<0 to 100>}`, 700);
+          const m = String(raw || "").match(/\{[\s\S]*\}/);
+          if (m) { const j = JSON.parse(m[0]); g = { items: Array.isArray(j.items) ? j.items.slice(0, 10).map(x => ({ n: Number(x.n) || 0, found: !!x.found, title: String(x.title || "").slice(0, 120) })) : [],
+            context: String(j.context || "").slice(0, 800), redFlags: (Array.isArray(j.redFlags) ? j.redFlags : []).map(x => String(x).slice(0, 300)).slice(0, 8),
+            improve: (Array.isArray(j.improve) ? j.improve : []).map(x => String(x).slice(0, 300)).slice(0, 5), score: Math.max(0, Math.min(100, Math.round(Number(j.score) || 0))) }; }
+        } catch (e) { g = null; }
+        cur.items[key] = { at: now.toISOString(), activity, onTime, when, ai: !!g, result: g };
+        await kv.put(rk, JSON.stringify(cur));
+        return json({ ok: true, item: cur.items[key] });
+      }
+
       /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */
       if (path === "/api/drive/answers") {
         const b = await request.json().catch(() => ({}));

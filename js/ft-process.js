@@ -301,6 +301,18 @@ function assessCard(lesson){
       <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div>`).join("")}</div></div>`;
 }
 
+// 📄 an assessment opened by its video's Next on the deck (Day 2's: js/ft-day-decks.js ASSESS_NEXT): a Knowledge Check
+// page of its own, the assessment and nothing else (no Process Questions, no other check), and the button on to the
+// deck's next slide
+function assessPage(b){
+  const x = (ASSESSMENTS[b.l] || []).find(a => a.id === b.assess); if(!x) return "";
+  return `<div class="fp-hero"><h1>📄 ${e(x.t)}</h1>
+      <p>Answer it in its document, then upload it to your Assessments/Activities subfolder.</p></div>
+    <div class="card fp-set fp-assess"><div class="fp-body"><div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>
+    ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>` : ""}`;
+}
+
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
   // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
@@ -309,6 +321,8 @@ function renderPage(){
   if(state.isAdmin && !state.adminPreview && !fromDeck) return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>Every trainee’s answer sheets, by batch, and the Knowledge Check each one is graded as. Trainees answer the process questions on this same page.</p></div>
     ${renderAdminProcess()}`;
+  const only = (()=>{ try{ const b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); return b && b.only && b.assess && Number(b.l) === Number(state.pqLesson) ? b : null; }catch(err){ return null; } })();
+  if(only) return assessPage(only);
   if(FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
   loadReview();
   if(FP.err) return `<div class="card" style="padding:28px;">${e(FP.err)} <button class="btn btn-ghost btn-sm" onclick="FTProcess.reload()">Try again</button></div>`;
