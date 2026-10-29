@@ -186,8 +186,10 @@ function kindOf(s, html){
   if(/demo/i.test(h)) return {ic: "🎥", label: "Demo"};
   // a shadowing session is part of the day's Classroom Activity; a homework that names Shadowing Etiquette stays Homework
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
+  // (Day 3's Frontline Management: its decision trees and SOP are to listen and do by, not a discussion)
+  if(/^Frontline Management/i.test(h)) return {ic: "🎧", label: "Listen & Do"};
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
-  if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
+  if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & Do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
   if(/^(Common Terms Used|Auto Liability Insurance)$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
   // (recordings to play in the slide: Day 3's supplementary reception recordings)
@@ -448,10 +450,29 @@ function listenSlide(day, time){
   const sets = (root.FTListen && FTListen.sets) || [];
   const set = sets.find(x => Number(x.day) === Number(day)); if(!set) return null;
   const live = FTListen.setLive(set.id);
-  return {id: "listen", h: `${time || "AM"}: Call Listening on the sample recordings`, html:
+  return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
     `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
      <p>There is no right answer to find — the log is what your trainer reads, and it saves you writing the calls up anywhere else.</p>
-     ${live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+     ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+}
+/* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
+   calls, then the six practice calls made for the PI Reception Activity, each with its challenge). A Drive recording
+   plays in the slide once its file's id is in (id); until then its card opens the folder. */
+const LISTEN_CARDS = {3: [
+  ...["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel", "Potential Client Call - Slip & Fall",
+    "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
+  {t: "The Tow Yard", src: "/ft/day3/audio/pi-call-1.mp3", kind: "Practice call", tag: "Background noise"},
+  {t: "Breaking Up on the Highway", src: "/ft/day3/audio/pi-call-2.mp3", kind: "Practice call", tag: "Connection issues"},
+  {t: "Hablo Poquito Inglés", src: "/ft/day3/audio/pi-call-3.mp3", kind: "Practice call", tag: "Language barrier"},
+  {t: "The Speakerphone Echo", src: "/ft/day3/audio/pi-call-4.mp3", kind: "Practice call", tag: "Poor audio quality"},
+  {t: "The Fast-Talking Adjuster", src: "/ft/day3/audio/pi-call-5.mp3", kind: "Practice call", tag: "Background noise and a fast talker"},
+  {t: "Mom on the Line", src: "/ft/day3/audio/pi-call-6.mp3", kind: "Practice call", tag: "Background noise and an unauthorized caller"}]};
+function listenCards(cards, folder){
+  // (numbered within their kind: Sample call 1–10, Practice call 1–6)
+  return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
+    ${c.src ? `<audio controls preload="none" src="${e(c.src)}"></audio>`
+      : c.id ? `<div class="ftln-aud"><iframe src="https://drive.google.com/file/d/${e(c.id)}/preview" title="${e(c.t)}" loading="lazy" allow="autoplay"></iframe></div>`
+      : folder ? `<a class="btn btn-ghost btn-sm" href="${e(folder)}" target="_blank" rel="noopener noreferrer">▶ Play it from the folder</a>` : ""}</div>`).join("")}</div>`;
 }
 const splitHeading = h => String(h || "").replace(/\s+and\s+Call\s+Listening/i, "");
 const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day));
@@ -1123,7 +1144,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
    ============================================================ */
 // the pills a row carries, as the card names its kind
 const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
-  watch: "Watch & do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
+  watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
 const LESSON_CARDS = {
@@ -1160,14 +1181,14 @@ const LESSON_CARDS = {
       // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
       {t: "Classroom Discussion: Personal Injury Process Flow", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
       {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
-      {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: "ftVideoOrAsk(3)"},
-      {t: "Call Listening Sessions", sub: "The sample call recordings and the sample SOP", k: "listen", d: 3, s: "s1"},
-      {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
+      // (no Handouts / Video stop: the day has no handouts, and the AI discussion video is its lesson card's 🎬 Video)
+      {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
+      {t: "Call Listening on the Sample Recordings", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
       {t: "Carlos & Oscar’s Reception Recordings", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
       // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
       {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
+      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "watch", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
       "The Call Intake & Data Extraction worksheet and its naming convention: on ✍️ Knowledge Check"],
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
@@ -1443,7 +1464,8 @@ function standardRows(n, c, lid, first, title, rows){
   const mid = [];
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
-  if(first && !has(/ftVideoOrAsk|Handouts \/ Video/)) mid.push({t: "Handouts / Video", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
+  // (a Handouts / Video stop only where the day has handouts: the lesson's AI discussion video is its 📚 Dashboard card's)
+  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video/)) mid.push({t: "Handouts / Video", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
@@ -1755,7 +1777,11 @@ function toolsSlide(){
 
 root.FTDayDecks = {open, go, next: nextKC,
   // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
-  refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, stop: openStop,
+  refit(){ if(state.view === "daydeck") fitSheets(); },
+  // ⛶ a decision tree bigger: it fills the screen, and again (or Esc) brings it back
+  treeFull(btn){ const t = btn && btn.closest(".ftdt"); if(!t) return; const d = document;
+    if(d.fullscreenElement || d.webkitFullscreenElement){ (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
+    const req = t.requestFullscreen || t.webkitRequestFullscreen; if(req) req.call(t); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, stop: openStop,
   refFull(btn){
     const em = btn && btn.closest(".ftdd-embed-terms"); if(!em) return;
     const doc = document, on = doc.fullscreenElement || doc.webkitFullscreenElement;
@@ -2516,6 +2542,33 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body table.ftdd-terms td.ftdd-terms-t{font-weight:800;}
 .ft-body table.ftdd-terms tr.ftdd-terms-sec td{background:#EEF0F7;font:800 15px/1.2 'Poppins','Inter',sans-serif;padding:6px 10px;}
 .ft-body table.ftdd-terms a{color:#1A56C4;}
+/* 🌳 the decision trees (Day 3's Frontline Management, build/day-decks.cjs TREES): two to a row */
+.ft-body .ftdt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 12px;}
+@media(max-width:900px){ .ft-body .ftdt-grid{grid-template-columns:minmax(0,1fr);} }
+.ft-body .ftdt{border:2px solid #343C66;border-radius:12px;background:#fff;overflow:hidden;display:flex;flex-direction:column;}
+.ft-body .ftdt:fullscreen{overflow:auto;border:0;border-radius:0;} .ft-body .ftdt:fullscreen .ftdt-body{font-size:1.5em;}
+.ft-body .ftdt-h{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#1E2340;border-bottom:3px solid #E8590C;padding:8px 12px;}
+.ft-body .ftdt-h b{color:#fff;font:800 16px/1.25 'Poppins','Inter',sans-serif;}
+.ft-body .ftdt-big{border:1px solid #fff;background:none;color:#fff;border-radius:999px;padding:3px 10px;font:700 12px/1.2 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
+.ft-body .ftdt-body{padding:10px 12px;display:flex;flex-direction:column;align-items:stretch;gap:4px;font-size:14px;line-height:1.35;}
+.ft-body .ftdt-start,.ft-body .ftdt-do,.ft-body .ftdt-q{text-align:center;border-radius:10px;padding:7px 10px;font-weight:700;}
+.ft-body .ftdt-start{background:#1E2340;color:#fff;} .ft-body .ftdt-do{background:#EEF0F7;color:#1E2340;}
+.ft-body .ftdt-q{background:#FFF4E5;border:2px dashed #E8590C;color:#1E2340;} .ft-body .ftdt-arrow{text-align:center;color:#E8590C;font-weight:800;line-height:1;}
+.ft-body .ftdt-br{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
+.ft-body .ftdt-yes,.ft-body .ftdt-no{border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;gap:4px;}
+.ft-body .ftdt-yes{background:#EAF6EE;border:1px solid #9CD3AE;} .ft-body .ftdt-no{background:#FDECEC;border:1px solid #F0A8A8;}
+.ft-body .ftdt-yes span,.ft-body .ftdt-no span{font:800 12px/1 'Inter',sans-serif;letter-spacing:.08em;} .ft-body .ftdt-yes span{color:#2E7D4F;} .ft-body .ftdt-no span{color:#C0392B;}
+.ft-body .ftdt-yes i,.ft-body .ftdt-no i{font-style:normal;background:#fff;border-radius:7px;padding:4px 7px;font-size:13px;}
+.ft-body .ftdt-tag{margin:6px 0 0;text-align:right;font:700 12px/1.2 'Inter',sans-serif;color:#5B6178;}
+/* 🎧 the recordings on a Call Listening slide, a card each (LISTEN_CARDS) */
+main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#1E2340 !important;font-size:14px;text-decoration:none;}
+main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:12px;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-h b{font-size:16px;}
+.ft-body .ftln-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
+.ft-body .ftln-card{border:1px solid #C9CDE0;border-radius:12px;padding:10px 12px;background:#F8F9FC;display:flex;flex-direction:column;gap:6px;}
+.ft-body .ftln-card b{font-size:15px;color:#1E2340;} .ft-body .ftln-card audio{width:100%;}
+.ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#E8590C;}
+.ft-body .ftln-tag{color:#7A5A2E;text-transform:none;letter-spacing:0;} .ft-body .ftln-aud{height:60px;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
 /* (its cells 1pt smaller than the slide's text, main.main-ftdd .ftdd-sheet td) */
 main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt);}
 .ft-body table.ftdd-terms .ftdd-terms-img{display:block;margin-top:8px;}
