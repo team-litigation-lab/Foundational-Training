@@ -190,6 +190,8 @@ function kindOf(s, html){
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
   if(/^(Common Terms Used|Auto Liability Insurance)$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
+  // (recordings to play in the slide: Day 3's supplementary reception recordings)
+  if(/ftdd-recs/.test(html)) return {ic: "🎧", label: "Listen & Do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
@@ -1140,8 +1142,8 @@ const LESSON_CARDS = {
       {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: "ftVideoOrAsk(3)"},
       {t: "Call Listening Sessions", sub: "The sample call recordings and the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
-      {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
+      // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
+      {t: "Carlos & Oscar’s Reception Recordings", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
       {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
@@ -2015,6 +2017,11 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
+.ftdd-recs-note{margin:0 0 12px;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
+.ftdd-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:0 0 14px;}
+.ftdd-rec{border:1px solid #D9DEEA;border-radius:12px;padding:10px 12px;background:#fff;break-inside:avoid;}
+.ftdd-rec-h{margin:0 0 6px;font-weight:700;color:#262B45;} .ftdd-rec-play{height:220px;border-radius:8px;overflow:hidden;background:#F4F6FB;}
+.ftdd-rec-play iframe{width:100%;height:100%;border:0;} .ftdd-rec-go{margin:6px 0 0;font-size:13px;}
 .ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo,.ftlc-pill.k-listendo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
 .ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}

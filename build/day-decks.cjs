@@ -250,27 +250,21 @@ s3: html => {
 }},
 // Day 3, in the guide's two parts. Part 1: the Call Listening Sessions, the sample recordings and SOP as links (a new tab,
 // not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
-// Training, as on Days 1 and 2), whose Next is ✍️ the Process Questions (named by the convention on 💾 Save to Drive), so
-// neither the Process Questions note nor its naming convention is on the slide. The Confidentiality exercise on a slide of its own, then the supplementary recordings (Carlos's and Oscar's, his activity
-// recordings among them). The PI Reception Activity is a slide of its own after these. (ROWS[3].s1 cuts the parts into
-// their card rows' slides: s1, s1b, and s1c for the activity)
+// Training, as on Days 1 and 2), whose Next is ✍️ the Process Questions (named by the convention beside 📄 Save PDF to my
+// Folder), so neither the Process Questions note nor its naming convention is on the slide. The Confidentiality exercise
+// is off the deck; Carlos's and Oscar's recordings are a slide of their own (s1b, REF_RECS), then the PI Reception Activity
+// (s1c). (ROWS[3].s1 places them as their card rows' slides)
 3: {s1: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i + 1) : html.length; if(i < 0 || j < 0) throw new Error(`Day 3's slide no longer has "${from}"`); return html.slice(i, j); };
   const lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
-  const ex = cut("<p><b>Confidentiality", '<hr class="stars">\n<div class="trainer-slot" data-slot="3:s1-4">');
   const shots = cut('<div class="shots"><figure><a href="/ft/day3/img/image12.png"', '<p class="li" style="--lvl:0"><span class="lbl">3.</span>');
-  const oscarFolder = "https://drive.google.com/drive/folders/1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn?usp=drive_link";
-  if(!html.includes("1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn")) throw new Error("Day 3's Reception Activity links moved");
-  const extra = cut("<p>4. Carlos &amp; remaining", '<hr class="stars">');
-  if(!extra.includes("<p>Oscar’s Reception Recordings</p>\n")) throw new Error("Day 3's supplementary recordings are no longer where the build looks for them");
+  // (the Confidentiality exercise is off the deck; Carlos's and Oscar's recordings are a slide of their own, REF_RECS: the
+  // build stops if the guide no longer has their folders)
+  REF_RECS.flatMap(g => g.folders).forEach(id => { if(!html.includes(id)) throw new Error(`Day 3's supplementary recordings lost the folder ${id}`); });
   return '<div class="trainer-slot" data-slot="3:s1-1"></div>\n<div class="trainer-slot" data-slot="3:s1-2"></div>\n<div class="trainer-slot" data-slot="3:s1-3"></div>\n' +
     '<div class="trainer-slot" data-slot="3:s1-4"></div>\n' +
     lnk("Sample Call Recordings", "https://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU?usp=sharing") +
-    lnk("Sample SOP", "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link") + shots +
-    ex +
-    extra.replace("<p>4. Carlos &amp; remaining Oscar’s’ Reception Recordings", "<p>3. Carlos &amp; Oscar’s Reception Recordings")
-      .replace("<p>Oscar’s Reception Recordings</p>\n", `<p>Oscar’s Reception Recordings</p>\n<p>Oscar’s Reception Activity recordings</p>\n<p><a href="${oscarFolder}" target="_blank" rel="noopener noreferrer">${oscarFolder}</a></p>\n`)
-      .replace(/ class="viewer-link" data-kind="doc" data-title="[^"]*"/g, ' target="_blank" rel="noopener noreferrer"');
+    lnk("Sample SOP", "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link") + shots;
 },
 // Day 3's homework: the five CRM/CMS videos, each named, and when they may be finished
 s2: html => {
@@ -472,6 +466,21 @@ function piCallRows(compact){
 }
 const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
 // the slide: Day 3's PI Reception Activity row (ROWS[3].s1, s1c), in place of VA Oscar's activity
+/* 🎧 Day 3's supplementary reception recordings (Carlos's and Oscar's), optional: one card per recording, played in the
+   slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
+   Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
+const REF_RECS = [
+  {h: "Carlos’ Reception Recordings", folders: ["1bP8yBy9WhPgUOnfh-IAvWI4V6UVeYyeI", "1S3L8ecBadvrN_AmGpeQD98mY1148Rvof"], recs: []},
+  {h: "Oscar’s Reception Recordings", folders: ["1ZGr22vm6RW4avTBCn8tCfGexkZMfsavX"], recs: []},
+  {h: "Oscar’s Reception Activity Recordings", folders: ["1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn"], recs: []}];
+function REF_RECS_HTML(){
+  const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
+    `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
+  return '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n' +
+    REF_RECS.map(g => `<p><b>${hx(g.h)}</b></p>\n<div class="ftdd-recs">` + (g.recs.length
+      ? g.recs.map(([t, id]) => card("🎧 " + t, `https://drive.google.com/file/d/${id}/preview`, `https://drive.google.com/file/d/${id}/view`))
+      : g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`))).join("") + "</div>\n").join("");
+}
 const PI_H = "AM: PI Reception Activity: 6 Practice Calls";
 const PI_HTML =
   `<p><b>Six calls to ${hx(PI_CALLS.firm)}</b>, a personal injury firm in Tampa, Florida. Each call has a challenge a receptionist meets on the line. Listen to each one (replay it as often as you need) and extract its <b>5 data points</b> into your worksheet.</p>\n` +
@@ -641,10 +650,12 @@ const ROWS = {
   },
   3: {
     // Part 1 (TRIM[3].s1): the Call Listening Sessions, the
-    // sample recordings and SOP; Part 2: the Confidentiality exercise, then the supplementary recordings (Carlos's and
-    // Oscar's, his activity recordings among them); then the PI Reception Activity, in place of VA Oscar's activity
-    s1: [{id: "s1", parts: [[null, "<p><b>Confidentiality &amp; Call Response Exercise</b></p>"]]},
-      {id: "s1b", h: "Confidentiality & Call Response Exercise", parts: [["<p><b>Confidentiality &amp; Call Response Exercise</b></p>", null]]},
+    // sample recordings and SOP; Part 2: the supplementary recordings (Carlos's and Oscar's, his activity recordings
+    // among them: REF_RECS); then the PI Reception Activity, in place of VA Oscar's activity
+    s1: [{id: "s1", parts: [[null, null]]},
+      // (Carlos's and Oscar's supplementary recordings, optional: one card per recording, played in the slide; the
+      // Confidentiality exercise is off the deck)
+      {id: "s1b", h: "Carlos & Oscar’s Reception Recordings", pre: REF_RECS_HTML(), parts: []},
       // (none of the guide's section: the six practice calls are the activity now)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []}]
   },
@@ -822,8 +833,6 @@ function stripLessonDeck(h, html){
 const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
 // a slide that keeps more than its exercise: its new name (and a fix to what it keeps)
 const EX_RENAME = {
-  // (Day 3: Carlos's and Oscar's supplementary reception recordings, the guide's item 3)
-  3: {s1b: {h: "Carlos & Oscar’s Reception Recordings", fix: x => rep(x, "<p>3. Carlos &amp; Oscar’s Reception Recordings", "<p>Carlos &amp; Oscar’s Reception Recordings", 1, "Day 3 s1b")}},
   // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
   13: {s3: {h: "PM: Breakout Session"}}};
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
