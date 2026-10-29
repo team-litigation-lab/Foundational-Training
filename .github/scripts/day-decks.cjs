@@ -170,11 +170,12 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     }
     if (n === 2 && !/^Law Firm Communication$/.test(r.title.trim())) fail(`Day 2's deck is headed "${r.title}"`);
   }
-  // Day 2's Breakout Session: its four handouts and the lesson's video on one stop (one handouts row on the card)
+  // Day 2's Breakout Session: its four handouts on one stop (one handouts row on the card); the lesson's AI discussion
+  // video is not on the deck (its lesson card's 🎬 Video on 📚 Dashboard only)
   await page.evaluate(() => FTDayDecks.open(2, FTDayDecks.list(2).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(600);
   const ho2 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-ho').length, video: !!document.querySelector('.ftdd-ho-video'), ribbon: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '',
     rows: FTDayDecks.dayRows(2).filter(r => /Handouts/.test(r.t)).length }));
-  if (ho2.cards !== 4 || !ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its handouts and video on one stop: ${JSON.stringify(ho2)}`);
+  if (ho2.cards !== 4 || ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
   await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
   // Day 1's card runs the trainers' order: Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA

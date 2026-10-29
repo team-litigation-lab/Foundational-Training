@@ -19,7 +19,10 @@ const R = path.resolve(__dirname, "..");
 // (Personal Injury) and the Smart Advocate plug-ins installation are on it: the Day 1 card runs Reading Task →
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
-const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"],   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
+const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"],
+  // (Day 2's Classroom Activity slide and its Escalation Handling Exercise are off the deck: after the 🎬 Handouts / Video
+  // stop comes ✍️ Process Questions, the Knowledge Check)
+  2: ["s3"],   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
   4: ["s1"],   // (Day 4's one-line introduction joins the slide it introduces: TRIM[4].s2)
   // (Days 5 and 13: the classroom discussion's slide only said that the lesson deck opens from ▶ Start Training, which is the
   // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
@@ -27,7 +30,7 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   5: ["s2"], 13: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
-  // (Day 2's Escalation Handling Exercise is its own slide, s3b: ROWS; Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
+  // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
   2: {s2: "Common Terms Used & Auto Liability Insurance"},
   // (Day 3's first slide keeps "and Call Listening" in its name: it brings the 🎧 Call Listening slide, js/ft-day-decks.js slidesOf)
   3: {s1: "Checking of Assignments & the Discussion Deck: PI Workflow, Reception Training and Call Listening", s2: "Homework: CRM/CMS Training Videos"},
@@ -607,10 +610,6 @@ const ROWS = {
       {id: "s2b", h: "Common Terms Used & Auto Liability Insurance: Assessments", parts: [[SLOT(2, "s2-1"), null]], fix: [
         ['data-title="https://drive.google.com/file/d/1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4/view?usp=sharing"', 'data-title="Personal Injury reading 1"'],
         ['data-title="https://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view?usp=sharing"', 'data-title="Personal Injury reading 2"']]}],
-    // the discussion's own part (its lesson note, its trainer notes, the Process Questions pointer) goes with the
-    // card's Classroom Discussion stop; the exercise is a slide of its own
-    s3: [{id: "s3", parts: [[null, "<p><b>Escalation Handling Exercise</b></p>"]]},
-      {id: "s3b", h: "Escalation Handling Exercise", parts: [["<p><b>Escalation Handling Exercise</b></p>", null]]}]
   },
   3: {
     // Part 1 (TRIM[3].s1): the assignments checked, the discussion deck, the Process Questions' naming convention, the
@@ -793,9 +792,19 @@ function stripLessonDeck(h, html){
   if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
   return {html: html.replace(LESSON_DECK, LESSON_NOTE), n: 1};
 }
-const decks = {}; let pqs = 0, qs = 0, decksOff = 0;
+// an exercise's deck on a slide: "<p><b>… Exercise</b></p>", its Canva frame and that frame's actions row
+const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
+// a slide that keeps more than its exercise: its new name (and a fix to what it keeps)
+const EX_RENAME = {
+  // (Day 3: Carlos's and Oscar's supplementary reception recordings, the guide's item 3)
+  3: {s1b: {h: "Carlos & Oscar’s Reception Recordings", fix: x => rep(x, "<p>3. Carlos &amp; Oscar’s Reception Recordings", "<p>Carlos &amp; Oscar’s Reception Recordings", 1, "Day 3 s1b")}},
+  // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
+  13: {s3: {h: "PM: Breakout Session"}}};
+const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [], carry = {}, cut = new Set();
+  // (a day whose Process Questions were on a slide that is off the deck, Day 2's Classroom Activity, still has them: pq)
+  const pqDay = d.sections.some(s => !s.trainerOnly && s.html.includes("PROCESS QUESTIONS"));
   for(const s of d.sections){
     if(s.trainerOnly || (SKIP[n] || []).includes(s.id)) continue;
     const r = stripPQ(s.html); pqs += r.n;
@@ -832,6 +841,17 @@ for(let n = 1; n <= 16; n++){
   }
   if(Object.keys(carry).length) throw new Error(`Day ${n}: a fragment was meant for ${Object.keys(carry).join(", ")}, which the day doesn't have after it`);
   Object.keys(ROWS[n] || {}).forEach(sid => { if(!cut.has(sid)) throw new Error(`Day ${n} has no section ${sid} to cut into its rows' slides`); });
+  // 🧩 no exercises on the decks: an exercise's deck (its name line, the Canva frame and its ⛶ Full screen / Open in Canva
+  // row) goes; a slide left with nothing else goes with it (its card row too, js/ft-day-decks.js LESSON_CARDS), and one
+  // that keeps more is renamed for what it keeps (EX_RENAME)
+  for(let i = slides.length - 1; i >= 0; i--){
+    const x = slides[i], m = x.html.match(EXERCISE); if(!m) continue;
+    x.html = x.html.replace(EXERCISE, ""); exOff += m.length;
+    if(!x.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, "").trim()) { slides.splice(i, 1); continue; }
+    const nm = (EX_RENAME[n] || {})[x.id];
+    if(!nm) throw new Error(`Day ${n} ${x.id}: its exercise is off the slide, and the slide needs a new name (EX_RENAME)`);
+    x.h = nm.h; if(nm.fix) x.html = nm.fix(x.html);
+  }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));
@@ -843,7 +863,7 @@ for(let n = 1; n <= 16; n++){
     if(/Password|Username/.test(s.html)) throw new Error(`log-in details in Day ${n} ${s.id}`);
     if(/classroom discussion|discussion on/i.test(s.h) && LESSON_DECK.test(s.html)) throw new Error(`the lesson deck is still embedded on Day ${n} ${s.id}`);
   }
-  decks[n] = {day: n, title: d.title, heading: d.heading, slides};
+  decks[n] = Object.assign({day: n, title: d.title, heading: d.heading}, pqDay ? {pq: true} : {}, {slides});
 }
 const out = "// Generated by build/day-decks.cjs from build/days/*.js — edit the day files or that script, not this file.\n"
   + "window.FT_DAY_DECKS = " + JSON.stringify(decks) + ";\n";
