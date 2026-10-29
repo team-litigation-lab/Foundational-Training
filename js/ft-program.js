@@ -55,13 +55,13 @@ window.LSH_PROGRAM = {
   // 📌 Setting of Training Expectations and Company Policies, then 🧰 Know Your Tools (js/ft-day-decks.js), before Lesson 1
   pinned: () => [window.FT_ORIENTATION, window.FT_TOOLS_PIN].filter(Boolean),
   moduleViews: ["day"],   // 📚 Dashboard holds the modules. ✍️ Knowledge Check (#/process) and its graded view (#/kc) are their own feature, with their own button in the top bar (js/ft-process.js)
-  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calrules", "calweek", "calpractice", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
+  labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calcheck", "calrules", "calweek", "calpractice", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts"],   // the trainer-led activities' names
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
-    lab: ["calscores", "sessions", "trainerinputs", "calrules", "calweek", "listening"],
+    lab: ["calscores", "sessions", "trainerinputs", "calcheck", "calrules", "calweek", "listening"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
   sources: [
@@ -117,6 +117,9 @@ window.LSH_PROGRAM = {
     {id:"listening", icon:"🎧", label:"Call Listening", key:"listening:",
       about:"The Call Listening recordings you logged: who called, what they wanted, how the VA handled it and a phrase worth reusing. The share of each set logged in full.",
       items: ctx => typeof window.ftListenItems === "function" ? window.ftListenItems(ctx) : []},
+    {id:"calcheck", icon:"📅", label:"Calendar activity check", key:"calcheck:",
+      about:"Day 5’s Attorney Calendar Management Activity: each event you entered in Google Calendar, checked field by field against the activity (the share of fields right on your latest submission).",
+      items: ctx => typeof window.ftCalCheckItems === "function" ? window.ftCalCheckItems(ctx) : []},
     {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:",
       about:"Your calendar mock-call bookings, each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart.",
       items: ctx => typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) : []},
