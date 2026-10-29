@@ -3,8 +3,12 @@
 //   - 📚 Dashboard's lesson cards carry one segment per day the lesson runs (Day 1, Day 2, Day 3), 🔒 until the trainer opens it;
 //   - nothing unlocked: a trainee's Day 7 shows its lock, the lesson deck waits, the Practice Lab hides the days' sessions
 //     and the LOR Drafting Activity waits for its step;
-//   - Day 7 open to its second step (the Classroom Discussion): its segment opens the deck there, Next and the dots don't go
-//     past it, the lesson deck opens and its video still waits;
+//   - Days 2–16: a step per row of the day's card, in the card's order, named as the card names it (the day card read with
+//     the first row, as Day 1's is with its reading);
+//   - Day 7 open to its first step (the card and the Classroom Discussion): its segment opens the deck there, Next and the
+//     dots don't go past it, the lesson deck opens and its video still waits;
+//   - a count saved when a step was a slide of the deck (no rows flag) reads as the card-row steps it had opened, and the
+//     trainer's next save rewrites it so (flagged);
 //   - ⏰ Day 8 on a schedule whose AM session has started: its AM steps are open and its PM ones are not;
 //   - the admin's 🔓 Activity Locks lists Days 2–16.
 // The test server starts with every day open to its end (server.mjs); this test sets its own steps and lessons, and puts
@@ -50,8 +54,18 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.innerText).join(' | '));
     if (/Intake Mock Calls|MedLOR/.test(lab)) fail(`the Practice Lab shows sessions of days not opened yet: ${lab}`);
-    // Day 7 open to its second step, for this batch
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 2 } }, legacy: { all: [], batches: {} } });
+    // Days 2–16: one step per card row, labelled as the card labels it, each holding its own slides in the card's order
+    const shape = await page.evaluate(() => { const out = []; for (let n = 2; n <= 16; n++) {
+      const rows = FTDayDecks.dayRows(n).map(r => FTDayDecks.rowLabel(n, r)), st = FTDayLocks.steps(n), list = FTDayDecks.list(n);
+      out.push({ n, rows, labels: st.map(s => s.label), first: st[0] && st[0].ids, last: st.length && st[st.length - 1].ids,
+        runs: st.every((s, i) => s.ids.length && s.to - s.from + 1 === s.ids.length && (!i || s.from === st[i - 1].to + 1)), all: st.length ? st[st.length - 1].to === list.length - 1 : false }); } return out; });
+    shape.forEach(d => {
+      if (JSON.stringify(d.rows) !== JSON.stringify(d.labels)) fail(`Day ${d.n}'s steps aren't its card's rows: ${JSON.stringify(d.labels)} vs ${JSON.stringify(d.rows)}`);
+      if (!d.runs || !d.all) fail(`Day ${d.n}'s steps don't hold the deck's slides in runs, one after the other`);
+      if ((d.first || [])[0] !== 'agenda' || !(d.last || []).includes('end-day')) fail(`Day ${d.n}: the day card isn't read with its first row, or End of Module with its last: ${JSON.stringify([d.first, d.last])}`);
+    });
+    // Day 7 open to its first step (its card, ▶ the lesson and the guide's discussion slide), for this batch
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 1 } }, rows: { all: {}, batches: { b102826: { 7: 1 } } }, legacy: { all: [], batches: {} } });
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
     const s7 = await page.evaluate(() => [...document.querySelectorAll('#dayl-6 .ftseg-b')].map(x => x.classList.contains('locked')));
     if (s7.join() !== 'false,true,true') fail(`with Day 7 opened, Intake's segments read ${JSON.stringify(s7)}`);
@@ -59,8 +73,8 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     // the first time, a day's segment opens its card; Next goes on to the unlocked step and no further, and the dots don't skip
     let v = await page.evaluate(() => ({ view: state.view, day: FTDayDecks.state().day, i: FTDayDecks.state().i, lock: !!document.querySelector('main.main-ftdd .ftd1-lock'), step: FTDayLocks.steps(7)[1] }));
     if (v.view !== 'daydeck' || v.day !== 7 || v.lock || !v.step || v.i !== 0) fail(`Day 7's segment didn't open its deck on its card: ${JSON.stringify(v)}`);
-    v = await page.evaluate(() => { FTDayDecks.go(1); const one = FTDayDecks.state().i; FTDayDecks.go(1); const two = FTDayDecks.state().i; FTDayDecks.to(one + 3); return { one, two, skip: FTDayDecks.state().i, step: FTDayLocks.steps(7)[1].from }; });
-    if (v.one !== v.step || v.two !== v.one || v.skip !== v.one) fail(`the deck didn't stop at the steps the trainer unlocked: ${JSON.stringify(v)}`);
+    v = await page.evaluate(() => { const seen = []; for (let k = 0; k < 6; k++) { FTDayDecks.go(1); seen.push(FTDayDecks.state().i); } const one = FTDayDecks.state().i; FTDayDecks.to(one + 3); return { seen, one, skip: FTDayDecks.state().i, step: FTDayLocks.steps(7)[0].to }; });
+    if (v.one !== v.step || v.skip !== v.one) fail(`the deck didn't stop at the step the trainer unlocked: ${JSON.stringify(v)}`);
     // … and the next time, it opens where the trainee left off
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
     await page.click('#dayl-6 .ftseg-b[data-day="7"]'); await page.waitForTimeout(1200);
@@ -68,6 +82,17 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(() => goto('day', 6)); await page.waitForTimeout(800);
     if (!(await page.evaluate(() => state.view === 'day' && Number(state.dayId) === 6))) fail('the Intake lesson deck didn\'t open with its step unlocked');
     if (!(await page.evaluate(() => FTDayLocks.held(6, 'video')))) fail('Intake\'s Handouts / Video opened before its step');
+    // a count saved as the old slide steps (no rows flag) reads as the card-row steps it had opened … (Day 8's 2, its
+    // card and its whole morning, s1 and its parts: the five rows cut from the morning's text)
+    await put(page, 'settings:daysteps', { all: { 9: 999 }, batches: { b102826: { 2: 6, 3: 2, 7: 2, 8: 2, 11: 2, 13: 3 } }, legacy: { all: [], batches: {} } });
+    v = await page.evaluate(() => [2, 3, 7, 8, 9, 11, 13].map(n => FTDayLocks.at(n)));
+    if (v.join() !== '6,1,1,5,999,1,1') fail(`the old slide-step counts didn't read as the card-row steps they had opened: ${v.join()} (want 6,1,1,5,999,1,1)`);
+    // … and the trainer's next save writes every count as card-row steps, flagged so
+    await page.evaluate(async () => { state.isAdmin = true; state.ftOdBatch = 'b102826'; await FTDayLocks.set(11, 2); state.isAdmin = false; state.ftOdBatch = null; });
+    const saved = await get(page, 'settings:daysteps'), sb = ((saved || {}).batches || {}).b102826 || {}, fb = (((saved || {}).rows || {}).batches || {}).b102826 || {};
+    if (sb[11] !== 2 || sb[8] !== 5 || sb[2] !== 6 || sb[3] !== 1 || !fb[11] || !fb[8] || !fb[2] || !(((saved || {}).rows || {}).all || {})[9] || saved.all[9] !== 999) fail(`the trainer's save didn't rewrite the old counts as card-row steps: ${JSON.stringify({ batches: saved && saved.batches, rows: saved && saved.rows, all: saved && saved.all })}`);
+    v = await page.evaluate(() => [2, 8, 11].map(n => FTDayLocks.at(n)));
+    if (v.join() !== '6,5,2') fail(`after the save Days 2, 8 and 11 read ${v.join()}, not 6,5,2`);
     // ⏰ Day 8 on a schedule: the AM session has started, the PM breakout hasn't
     const past = new Date(Date.now() - 3600e3).toISOString(), later = new Date(Date.now() + 3600e3).toISOString(), last = new Date(Date.now() + 7200e3).toISOString();
     await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 999 } }, sched: { all: {}, batches: { b102826: { 8: { am: past, pm: later, out: last } } } }, legacy: { all: [], batches: {} } });
@@ -120,6 +145,11 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'opendays'; goto('admin'); }); await page.waitForTimeout(1500);
     const n = await page.evaluate(() => document.querySelectorAll('.ftdl-admin .ftdl-day').length);
     if (n !== 15) fail(`🔓 Activity Locks lists ${n} days, not Days 2–16`);
+    // its steps are the days' card rows
+    const p7 = await page.evaluate(() => { const d = [...document.querySelectorAll('.ftdl-admin .ftdl-day')].find(x => /^Day 7\b/.test(x.querySelector('summary').innerText.trim()));
+      return d ? [...d.querySelectorAll('.ftdl-steps li:not(.ftdl-slot) > span')].map(x => x.textContent.replace(/^\d+\.\s*/, '').trim()) : null; });
+    const want7 = (shape.find(d => d.n === 7) || {}).rows || [];
+    if (JSON.stringify(p7) !== JSON.stringify(want7)) fail(`🔓 Activity Locks lists Day 7's steps as ${JSON.stringify(p7)}, not its card's rows ${JSON.stringify(want7)}`);
   } catch (e) { fail(e.stack || String(e)); }
   finally {
     await put(page, 'settings:opendays', openWas || { all: [], batches: {} }).catch(() => {});
@@ -127,5 +157,5 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await b.close();
   }
   if (failures.length) { console.error(`${failures.length} failure(s):\n` + failures.map((f, i) => `${i + 1}. ${f}`).join('\n')); process.exit(1); }
-  console.log('Activity Locks test passed (a segment per day on the lesson cards, locked until opened; nothing unlocked: the deck, the lesson, the LOR activity and the Practice Lab\'s sessions wait; one step: the deck goes no further, the lesson opens, its video waits; ⏰ a schedule opens its AM session only; the trainer\'s 🔓 Activity Locks; ten process questions at most per sheet).');
+  console.log('Activity Locks test passed (Days 2–16: a step per card row, named as the card names it, each holding its row\'s slides; old slide-step counts read as the card-row steps they had opened, and rewritten so, flagged, on the trainer\'s next save; a segment per day on the lesson cards, locked until opened; nothing unlocked: the deck, the lesson, the LOR activity and the Practice Lab\'s sessions wait; one step: the deck goes no further, the lesson opens, its video waits; ⏰ a schedule opens its AM session only; the trainer\'s 🔓 Activity Locks; ten process questions at most per sheet).');
 })();

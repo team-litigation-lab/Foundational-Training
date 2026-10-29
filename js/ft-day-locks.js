@@ -2,11 +2,16 @@
    🔓 Every day in Day 1's order, one step at a time, each opened by the trainer (Days 2–16)
    Loaded after js/ft-day1-flow.js, which does the same for Day 1. Each day's Activity deck is its steps, in the order the
    day runs (the order of its card: the opening task, 💬 the Classroom Discussion and 🎬 Handouts / Video on a lesson's
-   first day, the day's activities, ✍️ Process Questions, the homework); a step is a slide of the deck and the slides that
-   continue it (the parts of a topic, a recording set's log). Step 1 is the day card.
+   first day, the day's activities, ✍️ Process Questions, the homework). As on Day 1, a step is a row of the day's card,
+   named as the card names it, and holds that row's slides (js/ft-day-decks.js stamps each slide with its row): the day
+   card itself is read with the first row, and the ✅ End of Module divider with the last.
    settings:daysteps = {
      all:     {"<day>": n},                       the last step unlocked on each day, for every batch (0: the day is locked)
      batches: {"<batch key>": {"<day>": n}},      the same, for one batch (the higher of the two counts)
+     rows:    {all: {"<day>": 1}, batches: {"<batch key>": {"<day>": 1}}}
+                                                  which of those counts are card-row steps; one without it was saved when a
+                                                  step was a slide of the deck, and is read through LEGACY below (and
+                                                  rewritten in card-row steps the next time the trainer saves)
      sched:   {all: {"<day>": {am, pm, out}}, batches: {"<batch key>": {"<day>": {am, pm, out}}}}
                                                   ⏰ the day's time blocks, as instants (ISO): when the AM session, the PM
                                                   breakout or the outside-hours block starts, its steps unlock by themselves
@@ -60,11 +65,9 @@ const continues = (s, lead) => !!lead && (s.divider || s.id.startsWith(lead.id +
 // (the steps are rebuilt from the deck at most every two seconds per day: a render asks for them many times over)
 const memo = {};
 const extrasOf = n => { try{ return (((FTDayDecks.extras && FTDayDecks.extras()) || {}).days || {})[n] || []; }catch(err){ return []; } };
-function steps(n){
-  n = Number(n);
-  const mk = [decksIn() ? 1 : 0, !!state.isAdmin && !state.adminPreview ? 1 : 0, extrasOf(n).length, Math.floor(Date.now() / 2000)].join("|");
-  if(memo[n] && memo[n].mk === mk) return memo[n].steps;
-  const list = root.FTDayDecks && FTDayDecks.list ? FTDayDecks.list(n) : [];
+// the steps as they were before a step was a card row: a slide of the deck each (and the slides continuing it), the day
+// card a step of its own. Day 1 keeps them (its own flow, js/ft-day1-flow.js, is what holds a trainee there).
+function slideSteps(n, list){
   const out = []; let lead = null, slot = "am";
   list.forEach((s, i) => {
     if(s.agenda){ out.push({n: out.length + 1, label: "Activity card: today’s activities", slot: "am", from: i, to: i, ids: [s.id]}); return; }
@@ -76,8 +79,97 @@ function steps(n){
     out.push({n: out.length + 1, label: clean(s.launch ? s.launch.t : s.h) || "Activity", slot, from: i, to: i, ids: [s.id],
       go: s.launch ? (s.launch.go || s.launch.run || "") : ""});
   });
+  return out;
+}
+// Days 2–16: a step per row of the day's card, labelled as the card labels the row, holding the slides of that row (in the
+// card's order, so each step's slides run on from one another); the day card is read with the first row, the end-of-day
+// divider with the last, and a slide no row names (📌 From your trainer before the trainer has added anything) with the
+// step before it. Its time block: the row's own time (AM, PM), else its slide's heading, else the block before it.
+function rowSteps(n, list){
+  const rows = (FTDayDecks.dayRows && FTDayDecks.dayRows(n)) || [];
+  if(!rows.length) return slideSteps(n, list);
+  const out = rows.map((r, k) => ({n: k + 1, label: FTDayDecks.rowLabel ? FTDayDecks.rowLabel(n, r) : r.t, slot: "", from: -1, to: -1, ids: [], go: r.go || r.run || ""}));
+  let cur = 0;
+  list.forEach((s, i) => {
+    const k = s.row != null && out[s.row] && !(s.trainer && !extrasOf(n).length) && !s.divider ? Math.max(cur, Number(s.row)) : cur;
+    const st = out[k]; if(st.from < 0) st.from = i; st.to = i; st.ids.push(s.id); cur = k;
+  });
+  let slot = "am", last = -1;
+  out.forEach((st, k) => {
+    const r = rows[k], t = String(r.time || "");
+    // (a row with no slide of its own, which a day's card shouldn't have, is never reached: it sits on the step before it)
+    if(st.from < 0){ st.from = st.to = Math.max(0, last); }
+    last = st.to;
+    const first = list.slice(st.from, st.to + 1).find(x => !x.agenda && !x.divider && !x.launch);
+    slot = /^\s*AM\b/i.test(t) ? "am" : /^\s*PM\b/i.test(t) ? "pm" : r.k === "homework" ? "out" : first ? slotOf(first, slot) : slot;
+    st.slot = slot;
+  });
+  return out;
+}
+function steps(n){
+  n = Number(n);
+  const mk = [decksIn() ? 1 : 0, !!state.isAdmin && !state.adminPreview ? 1 : 0, extrasOf(n).length, Math.floor(Date.now() / 2000)].join("|");
+  if(memo[n] && memo[n].mk === mk) return memo[n].steps;
+  const list = root.FTDayDecks && FTDayDecks.list ? FTDayDecks.list(n) : [];
+  const out = n >= FIRST ? rowSteps(n, list) : slideSteps(n, list);
   memo[n] = {mk, steps: out};
   return out;
+}
+/* A count saved when a step was a slide of the deck (no rows flag): each of those old steps, as it was (the slide ids it
+   held; "@…" a stop that opened the lesson, its video, its Knowledge Check or the LOR tool). It is read as the card-row
+   steps that slide ids it had opened cover: the longest run of steps from the first, each with something it had opened
+   (a slide cut from one of them counts, s.of), and none a stop it hadn't opened. A whole day stays the whole day. */
+const LEGACY = {
+  2: ["agenda", "s1", "@lesson", "@ftVideoOrAsk(2)", "s2", "s3", "@FTDayDecks.toKC(2)", "s4"],
+  3: ["agenda", "s1", "@lesson", "@ftVideoOrAsk(3)", "listen", "@FTDayDecks.toKC(3)", "s2"],
+  4: ["agenda", "@lesson", "@ftVideoOrAsk(4)", "s1", "s2", "s3"],
+  5: ["agenda", "s1", "s2", "@lesson", "@ftVideoOrAsk(5)", "s3"],
+  6: ["agenda", "s1", "s2"],
+  7: ["agenda", "@lesson", "@ftVideoOrAsk(6)", "s1", "listen", "s2", "@FTDayDecks.toKC(6)"],
+  8: ["agenda", "s1 s1-2 s1-3 s1-4", "s2", "s3"],
+  9: ["agenda", "s1", "s2", "s3"],
+  10: ["agenda", "@lesson", "@ftVideoOrAsk(7)", "s1", "s2", "@FTDayDecks.toKC(7)"],
+  11: ["agenda", "s1", "@lor", "s2"],
+  12: ["agenda", "s1"],
+  13: ["agenda", "s1", "s2", "@lesson", "@ftVideoOrAsk(8)", "listen", "s3", "@FTDayDecks.toKC(8)"],
+  14: ["agenda", "s1", "s2"],
+  15: ["agenda", "s1", "s2"],
+  16: ["agenda", "s1", "s2"]
+};
+const GATED = /^(lesson|lor)$|ftVideoOrAsk|toKC/;   // the stops a step opens (STOPS, TOOL_STOPS below)
+function fromLegacy(n, v){
+  n = Number(n); v = Number(v) || 0;
+  const old = LEGACY[n]; if(!old || v <= 0) return v;
+  if(v >= old.length) return ALL;
+  if(!decksIn()) return 1;   // (until the decks are in, only "the day has started" is known)
+  const had = new Set(old.slice(0, v).join(" ").split(" "));
+  const list = root.FTDayDecks && FTDayDecks.list ? FTDayDecks.list(n) : [];
+  let k = 0;
+  for(const st of steps(n)){
+    const own = list.slice(st.from, st.to + 1);
+    const opened = own.some(s => s.launch ? had.has("@" + (s.launch.go || s.launch.run || "")) : (had.has(s.id) || (s.of && had.has(s.of))));
+    if(!opened || (GATED.test(st.go || "") && !had.has("@" + st.go))) break;
+    k = st.n;
+  }
+  // (a day that had started stays started: its first step, the day card with the card's first row, even where that row is a
+  // stop the old count hadn't opened, as Day 4's first step, the lesson, is; a count of 0 would lock the whole day again)
+  return Math.max(1, k);
+}
+// a saved count (all batches: k null), in card-row steps
+const isRows = (o, k, n) => !!(k == null ? (((o || {}).rows || {}).all || {})[n] : ((((o || {}).rows || {}).batches || {})[k] || {})[n]);
+function stepNum(o, k, n){
+  const raw = k == null ? ((o || {}).all || {})[n] : (((o || {}).batches || {})[k] || {})[n];
+  return isRows(o, k, n) ? Number(raw) || 0 : fromLegacy(n, raw);
+}
+// every count of a settings:daysteps record in card-row steps, each flagged so (the trainer's next save, the buffer's release)
+// (asRows: the counts not flagged yet were just written as card-row steps, so they are only flagged)
+function migrate(o, asRows){
+  o = o || {}; o.all = o.all || {}; o.batches = o.batches || {};
+  const rows = o.rows = {all: Object.assign({}, (o.rows || {}).all || {}), batches: JSON.parse(JSON.stringify((o.rows || {}).batches || {}))};
+  Object.keys(o.all).forEach(n => { if(!rows.all[n]){ if(!asRows) o.all[n] = stepNum(o, null, n); rows.all[n] = 1; } });
+  Object.keys(o.batches).forEach(b => { const x = o.batches[b] || {}; rows.batches[b] = rows.batches[b] || {};
+    Object.keys(x).forEach(n => { if(!rows.batches[b][n]){ if(!asRows) x[n] = stepNum(o, b, n); rows.batches[b][n] = 1; } }); });
+  return o;
 }
 const stepAt = (n, i) => { const st = steps(n); const x = st.find(s => i >= s.from && i <= s.to); return x ? x.n : (st.length ? st[st.length - 1].n : 1); };
 // the step a slide or a launch belongs to: by the slide's id, or by what it launches
@@ -90,7 +182,7 @@ const S = () => state.ftDaySteps || {all: {}, batches: {}, sched: {all: {}, batc
 const own = (o, k, n) => Object.prototype.hasOwnProperty.call(o || {}, k) && Object.prototype.hasOwnProperty.call(o[k] || {}, n);
 function manual(n, batch){
   const o = S(), k = key(batch);
-  return Number(own(o.batches, k, n) ? o.batches[k][n] : (o.all || {})[n]) || 0;
+  return own(o.batches, k, n) ? stepNum(o, k, n) : stepNum(o, null, n);
 }
 function schedFor(n, batch){
   const s = S().sched || {}, k = key(batch);
@@ -330,7 +422,7 @@ const A = {open: {}};
 const selKey = () => state.ftOdBatch || "__all";
 function countFor(n){
   const o = S(), sel = selKey();
-  if(sel === "__all") return {m: Number((o.all || {})[n]) || 0, sc: ((o.sched || {}).all || {})[n] || null};
+  if(sel === "__all") return {m: stepNum(o, null, n), sc: ((o.sched || {}).all || {})[n] || null};
   return {m: manual(n, sel), sc: schedFor(n, sel)};
 }
 const fmt = iso => { const t = Date.parse(iso || ""); return isFinite(t) ? new Date(t).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) : ""; };
@@ -374,7 +466,7 @@ function renderPanel(){
   const sel = selKey(), times = Object.assign({}, DEF_TIMES, S().times || {});
   const days = []; for(let n = FIRST; n <= LAST(); n++) days.push(n);
   return `<div class="card ft-open-days ftdl-admin"><h3>🔓 Activity Locks: Days ${FIRST}–${LAST()}</h3>
-    <p style="margin:0 0 10px;color:var(--ink-soft);font-size:14px;">Every day goes in Day 1’s order, one step at a time. A trainee opens only the steps you unlock, for the batch chosen above${sel === "__all" ? " (all batches)" : ""}: every lesson, activity, practical task and simulator waits for its step, and a day stays locked until you open it. Unlock step by step, a whole time block, the whole day, or put the day on a schedule and each block opens when it starts.</p>
+    <p style="margin:0 0 10px;color:var(--ink-soft);font-size:14px;">Every day goes in Day 1’s order, one step at a time: each step is a row of the day’s card, in the card’s order, named as the card names it. A trainee opens only the steps you unlock, for the batch chosen above${sel === "__all" ? " (all batches)" : ""}: every lesson, activity, practical task and simulator waits for its step, and a day stays locked until you open it. Unlock step by step, a whole time block, the whole day, or put the day on a schedule and each block opens when it starts.</p>
     <p class="ftdl-times">⏰ Time blocks: 🌅 AM session <input type="time" id="ftdlTam" value="${esc_(times.am)}"> · 🌇 PM breakout <input type="time" id="ftdlTpm" value="${esc_(times.pm)}"> · 🏠 Outside hours <input type="time" id="ftdlTout" value="${esc_(times.out)}">
       <button type="button" class="btn btn-ghost btn-sm" onclick="FTDayLocks.times()">Save times</button>
       <span style="display:block;margin-top:4px;font-size:12.5px;color:var(--ink-soft);">Day 1’s steps are in 🔓 Day 1 Steps above; ⏰ Day 1 can run on a schedule here too.</span>
@@ -406,18 +498,21 @@ if(typeof __loadOpen === "function") root.ftLoadOpenDays = async function(){
 };
 async function save(change, msg){
   let cur;
-  try{ cur = (await strict(KEY)) || {}; }catch(err){ toast("Couldn’t reach the server, so nothing was changed. Try again."); return; }
+  try{ await loadDecks(); cur = (await strict(KEY)) || {}; }catch(err){ toast("Couldn’t reach the server, so nothing was changed. Try again."); return; }
   if(!cur.legacy){ try{ cur.legacy = legacyOf(await strict("settings:opendays")); }catch(err){ toast("Couldn’t reach the server, so nothing was changed. Try again."); return; } }
   const next = {all: Object.assign({}, cur.all || {}), batches: JSON.parse(JSON.stringify(cur.batches || {})),
     sched: {all: Object.assign({}, (cur.sched || {}).all || {}), batches: JSON.parse(JSON.stringify((cur.sched || {}).batches || {}))},
-    times: Object.assign({}, DEF_TIMES, cur.times || {}), legacy: JSON.parse(JSON.stringify(cur.legacy))};
-  change(next);
+    times: Object.assign({}, DEF_TIMES, cur.times || {}), legacy: JSON.parse(JSON.stringify(cur.legacy)), rows: JSON.parse(JSON.stringify(cur.rows || {}))};
+  // (the counts saved as slide steps are rewritten as card-row steps first, so the change and the rest read alike)
+  migrate(next); change(next); migrate(next, true);
   const ok = await sharedSet(KEY, next);
   if(ok === false){ toast("Couldn’t save. Check your connection and try again."); return; }
   state.ftDaySteps = next; toast(msg); render();
 }
 root.FTDayLocks = {
   steps, at, active, stepOpen, dayStarted, mayGo, launch, segments, held, unlockedFor,
+  // a settings:daysteps record's counts as card-row steps (js/ft-buffer.js, before it writes one); one count of it
+  migrate, stepNum: (o, batch, n) => stepNum(o, batch == null ? null : key(batch), n),
   // 🛠 the Practice Lab: may a trainee see a session, tool, trainer activity or recording set used on these days?
   labOpen: days => !isTrainee() || !days || !days.length || days.some(d => Number(d) === 1 || dayStarted(d)),
   toolOpen,

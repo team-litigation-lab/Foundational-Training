@@ -40,6 +40,12 @@ async function workerChecks() {
   await signIn(page, 'Sam', 'Slide', BATCH);
   const id = await page.evaluate(() => state.traineeId);
   const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
+  // Day 3 open for the trainee: its lesson (📅 Open Lessons) and all its steps (Activity Locks). Without them every slide of
+  // the deck is behind 🔒 and the trainee can't turn to the edited one, whatever an earlier test on the server left there
+  // (a fresh server opens no lesson); put back at the end
+  const openWas = await get('settings:opendays'), stepsWas = await get('settings:daysteps');
+  await put('settings:opendays', { all: await page.evaluate(() => DAYS.map(d => d.id)), batches: {} });
+  await put('settings:daysteps', Object.assign({}, stepsWas || {}, { all: Object.assign({}, (stepsWas || {}).all || {}, { 3: 999 }), batches: {} }));
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2200);
 
   // a trainee has no editor: no ✏️ button on the deck, and the editor refuses to open
@@ -145,6 +151,8 @@ async function workerChecks() {
   if (/Trainer wrote this line/.test(await page.evaluate(() => (document.querySelector('.ftdd-sheet') || {}).innerText || ''))) fail('the built slide didn\'t come back');
 
   await put('settings:dayslides', { v: 1, days: {} });
+  await put('settings:opendays', openWas || { all: [], batches: {} });
+  if (stepsWas) await put('settings:daysteps', stepsWas);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Slide editor test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
