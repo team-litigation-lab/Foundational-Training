@@ -426,8 +426,8 @@ s2: html => {
   const intro = [/<p>Task 1 - Please go to this link to watch the video presentation on Common Terms Used<\/p>\n/,
     /<p>Task 2 - Watch this video presentation about how auto liability insurance works[^<]*<\/p>\n/];
   intro.forEach(re => { if(!re.test(out)) throw new Error("Day 2's Common Terms task lines are no longer where the build looks for them"); out = out.replace(re, ""); });
-  // the monitoring sheet's update and its note go: the slide's panel says it, in plain words, with 📤 Submit, which has
-  // the platform check and grade items #5–7 (js/ft-buffer.js ACTS["2:s2l"])
+  // the monitoring sheet's update and its note go: the readings' panel says it, after the Auto Liability Insurance –
+  // Assessment, in plain words, with 📤 Submit, which has the platform check and grade items #5–7 (js/ft-buffer.js ACTS["2:s2b"])
   const check = /<p>Task \d+ - Update items #5 -7 in your monitoring sheet\.<\/p>\n?/, done = /<p><b>Note:<\/b> Hit ✅ Done below when you are\.<\/p>\n?/;
   if(!check.test(out) || !done.test(out)) throw new Error("Day 2's monitoring sheet step or its note is no longer where the build looks for it");
   out = out.replace(check, "").replace(done, "");
@@ -639,7 +639,7 @@ const ROWS = {
     s2: [{id: "s2", h: "Common Terms Used", parts: [[null, "<!--cut:ref-->"]]},
       {id: "s2r", h: "Common Terms Used: the reference sheet", parts: [["<!--cut:ref-->", "<!--cut:al-->"]], fix: [["<!--cut:ref-->\n", ""]]},
       {id: "s2l", h: "Auto Liability Insurance", pre: NOLEARN, parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
-      // the Personal Injury readings, opened once the Common Terms tasks' 📤 Submit is in (js/ft-buffer.js ACTS["2:s2l"].opens):
+      // the Personal Injury readings, read once the Common Terms tasks' 📤 Submit, at their head, is in (js/ft-buffer.js ACTS["2:s2b"]):
       // the two readings read in the slide, a page each, under the guide's line about them; its 📌 and the assessments'
       // homework line go (each assessment follows its video's Next: js/ft-day-decks.js ASSESS_NEXT)
       {id: "s2b", h: "Personal Injury Readings", parts: [[SLOT(2, "s2-1"), null]], fix: [
