@@ -293,7 +293,9 @@ const ASSESSMENTS = {2: [
   {t: "Common Terms Used – Assessment", id: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"},
   {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"}]};
 function assessCard(lesson){
-  const xs = ASSESSMENTS[lesson]; if(!xs) return "";
+  // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
+  let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
+  const xs = (ASSESSMENTS[lesson] || []).filter(x => !(back && back.assess && Number(back.l) === Number(lesson)) || x.id === back.assess); if(!xs.length) return "";
   return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">Answer each in its document, then upload it to your Assessments/Activities subfolder</span></div>
     <div class="fp-body">${xs.map(x => `<div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
       <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div>`).join("")}</div></div>`;
@@ -318,13 +320,16 @@ function renderPage(){
   // 📝 Submit for Grading at the foot of the sheet
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const backBtn = back && Number(back.l) === Number(lesson) && back.day && back.id && window.FTDayDecks
-    ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>` : "";
+    ? (back.assess ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">← Back to the deck · 📊 ${e(back.h || `Day ${Number(back.day)}`)}</button>`
+      : `<button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.backToClass()">Back to the classroom · Next: ${back.h ? e(back.h) : `Day ${Number(back.day)}`} →</button>`) : "";
+  // (opened from an assessment's link on the slide, FTDayDecks.toAssess: the way back is right under that assessment too)
+  const assessBack = backBtn && back.assess ? `<div class="fp-assess-back">${backBtn}</div>` : "";
   // (opened from the deck, the way on is the classroom's next activity only: no ← Back to Process Questions beside it)
   if(lesson) return `<div class="fp-hero">${backBtn ? "" : `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>`}
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there. <span class="fp-save" id="fpSave"></span></p></div>
-    ${assessCard(lesson)}${moduleCard(lesson, backBtn)}`;
+    ${assessCard(lesson)}${assessBack}${moduleCard(lesson, backBtn)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day: the platform finds it there and checks its name and when it was saved.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
@@ -336,7 +341,7 @@ window.FTProcess = {
   // Back to the classroom: the deck's next activity after the slide the sheet was opened from (see FTDayDecks.toKC)
   backToClass(){
     let b = null; try{ b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); sessionStorage.removeItem("ftKCBack"); }catch(err){}
-    if(b && b.day && window.FTDayDecks) FTDayDecks.slide(Number(b.day), String(b.id || "")); else goto("process");
+    if(b && b.day && window.FTDayDecks) FTDayDecks.slide(Number(b.day), String(b.id || ""), "", b.at || ""); else goto("process");
   },
   openLesson(lesson){
     const l = Number(lesson);
@@ -730,6 +735,7 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-body{border-top:1px solid var(--line);padding:12px 16px 16px;}
 .fp-assess-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 8px;color:var(--navy);font-size:16px;}
 .fp-assess-h + .fp-assess-doc{margin-bottom:16px;}
+.fp-assess-back{margin:-4px 0 16px;}
 .fp-assess-doc{height:70vh;min-height:360px;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
