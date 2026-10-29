@@ -1128,15 +1128,15 @@ const LESSON_CARDS = {
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
-      // Part 1: the assignments checked, the discussion deck (PI Workflow and Reception Training), the lesson deck and its
-      // video, the Process Questions, the sample recordings; Part 2: the activities
-      {t: "Checking of Assignments & the Discussion Deck", sub: "PI Workflow and Reception Training · the sample recordings and SOP", k: "classroom", d: 3, s: "s1"},
+      // Part 1: 💬 Classroom Discussion (▶ Start Training: the lesson deck, as on Days 1 and 2) with the sample recordings
+      // and SOP read after it (discuss), the Process Questions; Part 2: the activities
       {t: "Process Questions: Submit", sub: "All ten (PI Workflow and Reception Training) in ✍️ Knowledge Check · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(3)"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
       // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
       {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
       {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
+    discuss: {3: "s1"},
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
       "Upload the PI Reception Activity worksheet to your Assessments/Activities folder"],
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
