@@ -514,10 +514,13 @@ const REF_RECS = [
 function REF_RECS_HTML(){
   const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
     `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
-  return '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n' +
-    REF_RECS.map(g => `<p><b>${hx(g.h)}</b></p>\n<div class="ftdd-recs">` + (g.recs.length
-      ? g.recs.map(([t, id]) => card("🎧 " + t, `https://drive.google.com/file/d/${id}/preview`, `https://drive.google.com/file/d/${id}/view`))
-      : g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`))).join("") + "</div>\n").join("");
+  // (a recording whose file id is in, recs: [title, id], is a card that plays it in the pop-up viewer when clicked, as Day 3's
+  // CRM/CMS videos are, data-card: js/ft-day-decks.js visual; until then its folder plays in the slide)
+  const rec = ([t, id]) => `<p><a class="viewer-link" data-card data-kind="video" data-title="${hx(t)}" href="https://drive.google.com/file/d/${id}/view">https://drive.google.com/file/d/${id}/view</a></p>\n`;
+  const note = '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n';
+  return REF_RECS.map(g => `<p><b>${hx(g.h)}</b></p>\n` + (g.recs.length ? g.recs.map(rec).join("")
+      : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
+    note;
 }
 // the activity: Day 3's Call Intake & Data Extraction row (ROWS[3].s1), in place of VA Oscar's activity, on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
@@ -709,7 +712,7 @@ const ROWS = {
     s1: [{id: "s1", parts: [[null, null]]},
       // (Carlos's and Oscar's supplementary recordings, optional: one card per recording, played in the slide; the
       // Confidentiality exercise is off the deck)
-      {id: "s1b", h: "Carlos & Oscar’s Reception Recordings", pre: REF_RECS_HTML(), parts: []},
+      {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []},
       // (none of the guide's section: the six practice calls are the activity now, its task in cards, then the calls)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
       {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []}]
