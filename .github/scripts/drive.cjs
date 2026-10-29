@@ -4,6 +4,7 @@
 //   - checks the Monitoring Sheet per discussion;
 //   - keeps the trainer's score and comment when it checks again, and lets a trainee check at most every 3 minutes;
 //   - lists the answer sheets in the trainee's Assessment and Activities Folder through the service account (/api/drive/answers);
+//   - 📄 Save PDF to my Folder: writes an answer sheet into that folder as a PDF, and replaces it when saved again (/api/drive/save);
 //   - says the file can't be opened when Google answers with its sign-in page.
 // Usage: node .github/scripts/drive.cjs   (no browser, no network)
 const path = require('path'); const { pathToFileURL } = require('url');
@@ -19,8 +20,19 @@ const failures = []; const fail = (m) => failures.push(m);
     store.set('ft:trainee:' + id, JSON.stringify({ id, name: 'Dee Drive', batch: 'B9', approved: true }));
     const SHEET = 'https://docs.google.com/spreadsheets/d/1TrackerSheetIdForTheCiTest0001/edit#gid=7', DOC = 'https://docs.google.com/document/d/1MonitorDocIdForTheCiTest000001/edit';
     let shared = true;
-    globalThis.fetch = async (url) => {
+    const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
+    let saveError = null;
+    globalThis.fetch = async (url, init = {}) => {
         const u = String(url);
+        if (u.startsWith('https://www.googleapis.com/upload/drive/v3/files')) {
+            if (saveError) return new Response(JSON.stringify({ error: { errors: [{ reason: saveError }] } }), { status: 403 });
+            const body = init.body && init.body.text ? await init.body.text() : String(init.body || ''); uploads.push({ url: u, method: init.method, body });
+            const meta = JSON.parse(body.split('\r\n\r\n')[1].split('\r\n')[0]);
+            return new Response(JSON.stringify({ id: 'saved1', name: meta.name, webViewLink: 'https://docs.google.com/document/d/saved1/edit', createdTime: '2026-10-29T15:00:00Z' }));
+        }
+        if (u.startsWith('https://www.googleapis.com/drive/v3/files?') && decodeURIComponent(u).includes(' and name = ')) {
+            return new Response(JSON.stringify({ files: uploads.length ? [{ id: 'saved1' }] : [] }));
+        }
         if (!shared) return new Response('<!doctype html><html>Sign in</html>', { status: 200 });
         if (u.includes('1TrackerSheetIdForTheCiTest0001/export?format=csv&gid=7')) return new Response(
             `LSH DAILY TASK TRACKER\nDate Received,Type of Task,Task Details,Accountable VA,${us},VA Notes,Deadline,Status,Actual Completion Date\n` +
@@ -79,7 +91,22 @@ const failures = []; const fail = (m) => failures.push(m);
     const found = await call('/api/drive/answers', {}, trainee);
     const names = ((found.body || {}).files || []).map(f => f.name).sort().join(' | ');
     if (names !== 'PI Overview_Answers (Dee) | Typing Test 10.26.26AM') fail(`the folder's files (and its sub-folder's) weren't listed: ${JSON.stringify(found.body)}`);
+    // 📄 Save PDF to my Folder: an answer sheet written into the trainee's folder as a PDF, by its name; saving again replaces it
+    const doc = { name: 'PI_Workflow_and_Reception_Training_Process_Questions (Dee).pdf', pdf: Buffer.from('%PDF-1.3 the answers').toString('base64') };
+    const s1 = await call('/api/drive/save', doc, trainee);
+    const up1 = uploads[0] || {};
+    if (!s1.body || !s1.body.ok || s1.body.updated || up1.method !== 'POST' || !/"parents":\["abcFolderId01"\]/.test(up1.body) || !/"mimeType":"application\/pdf"/.test(up1.body) || !up1.body.includes('%PDF-1.3 the answers')) fail(`an answer sheet wasn't created in the folder: ${JSON.stringify(s1.body)} ${up1.body}`);
+    const s2 = await call('/api/drive/save', doc, trainee);
+    if (!s2.body || !s2.body.ok || !s2.body.updated || (uploads[1] || {}).method !== 'PATCH' || !/files\/saved1\?/.test((uploads[1] || {}).url || '')) fail(`saving again should update the same file: ${JSON.stringify(s2.body)}`);
+    if ((await call('/api/drive/save', doc, admin)).status !== 403) fail('an admin saved into a trainee folder');
+    if ((await call('/api/drive/save', { name: doc.name, pdf: Buffer.from('<html>').toString('base64') }, trainee)).status !== 400) fail('something that is not a PDF was saved');
+    saveError = 'storageQuotaExceeded';
+    const s3 = await call('/api/drive/save', doc, trainee);
+    if (!s3.body || s3.body.error !== 'quota') fail(`a folder the account can't create files in should say so: ${JSON.stringify(s3.body)}`);
+    saveError = null;
     delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
+    const s4 = await call('/api/drive/save', doc, trainee);
+    if (!s4.body || s4.body.error !== 'no-sa') fail(`without the service account, saving should say it isn't set up: ${JSON.stringify(s4.body)}`);
     // a file that isn't shared: Google answers with its sign-in page
     shared = false;
     const r3 = await call('/api/drive/check', { id }, admin);
@@ -88,5 +115,5 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, an unreadable file explained).');
+    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, an unreadable file explained).');
 })().catch(e => { console.error(e); process.exit(1); });

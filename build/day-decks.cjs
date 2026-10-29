@@ -33,9 +33,9 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
   // (Day 2's Softphones and PPTs are a classroom activity, not homework: js/ft-day-decks.js LESSON_CARDS[2])
   2: {s2: "Common Terms Used & Auto Liability Insurance", s4: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"},
-  // (Day 3's first slide keeps "and Call Listening" in its name: it brings the 🎧 Call Listening slide, js/ft-day-decks.js slidesOf;
-  // it is read right after the card's 💬 Classroom Discussion stop, which opens the lesson deck as Days 1 and 2 do)
-  3: {s1: "PI Workflow & Reception Training: Sample Recordings, SOP and Call Listening", s2: "Homework: CRM/CMS Training Videos"},
+  // (Day 3's first slide: the sample recordings and SOP, its card's 🎧 Call Listening Sessions row; "Call Listening" in its
+  // name brings the 🎧 Call Listening log button, js/ft-day-decks.js slideActions)
+  3: {s1: "Call Listening Sessions", s2: "Homework: CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing and Mock Call Preparation", s3: "PM: Reception Mock Calls (One-on-One)"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
@@ -248,22 +248,22 @@ s3: html => {
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
     card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq + check)) + "\n" + cut("<p><b><i>*** Free Communication");
 }},
-// Day 3, in the guide's two parts. Part 1: the Process Questions' naming convention (the discussion itself is the lesson
-// deck, opened from the card's 💬 Classroom Discussion stop, ▶ Start Training, as on Days 1 and 2), and the sample
-// recordings and SOP as links (a new tab, not the viewer); the Confidentiality exercise on a slide of its own, then the supplementary recordings (Carlos's and Oscar's, his activity
+// Day 3, in the guide's two parts. Part 1: the Call Listening Sessions, the sample recordings and SOP as links (a new tab,
+// not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
+// Training, as on Days 1 and 2), whose Next is ✍️ the Process Questions (named by the convention on 💾 Save to Drive), so
+// neither the Process Questions note nor its naming convention is on the slide. The Confidentiality exercise on a slide of its own, then the supplementary recordings (Carlos's and Oscar's, his activity
 // recordings among them). The PI Reception Activity is a slide of its own after these. (ROWS[3].s1 cuts the parts into
 // their card rows' slides: s1, s1b, and s1c for the activity)
 3: {s1: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i + 1) : html.length; if(i < 0 || j < 0) throw new Error(`Day 3's slide no longer has "${from}"`); return html.slice(i, j); };
   const lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
-  const pq = cut('<div class="ftdd-pq">', "<p><b>Confidentiality"), ex = cut("<p><b>Confidentiality", '<hr class="stars">\n<div class="trainer-slot" data-slot="3:s1-4">');
+  const ex = cut("<p><b>Confidentiality", '<hr class="stars">\n<div class="trainer-slot" data-slot="3:s1-4">');
   const shots = cut('<div class="shots"><figure><a href="/ft/day3/img/image12.png"', '<p class="li" style="--lvl:0"><span class="lbl">3.</span>');
   const oscarFolder = "https://drive.google.com/drive/folders/1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn?usp=drive_link";
   if(!html.includes("1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn")) throw new Error("Day 3's Reception Activity links moved");
   const extra = cut("<p>4. Carlos &amp; remaining", '<hr class="stars">');
   if(!extra.includes("<p>Oscar’s Reception Recordings</p>\n")) throw new Error("Day 3's supplementary recordings are no longer where the build looks for them");
   return '<div class="trainer-slot" data-slot="3:s1-1"></div>\n<div class="trainer-slot" data-slot="3:s1-2"></div>\n<div class="trainer-slot" data-slot="3:s1-3"></div>\n' +
-    pq + "<p><b>Naming convention:</b> PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)</p>\n" +
     '<div class="trainer-slot" data-slot="3:s1-4"></div>\n' +
     lnk("Sample Call Recordings", "https://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU?usp=sharing") +
     lnk("Sample SOP", "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link") + shots +
@@ -640,7 +640,7 @@ const ROWS = {
         }]}],
   },
   3: {
-    // Part 1 (TRIM[3].s1): the Process Questions' naming convention, the
+    // Part 1 (TRIM[3].s1): the Call Listening Sessions, the
     // sample recordings and SOP; Part 2: the Confidentiality exercise, then the supplementary recordings (Carlos's and
     // Oscar's, his activity recordings among them); then the PI Reception Activity, in place of VA Oscar's activity
     s1: [{id: "s1", parts: [[null, "<p><b>Confidentiality &amp; Call Response Exercise</b></p>"]]},

@@ -647,22 +647,25 @@ function facilitatorVoice(saved) {
    trainee's folder shared inside the LSH community (with the account added) needs no public link. Without it, the files are
    read by their public export, as before. */
 const driveSA = env => !!(env && env.GDRIVE_SA_EMAIL && env.GDRIVE_SA_KEY);
-let SA_TOKEN = { token: "", exp: 0 };
-async function driveToken(env) {
+// (one token per scope: reading is drive.readonly; 💾 Save to Drive writes, with the drive scope, as GDRIVE_SA_SUBJECT when it is set)
+const SA_TOKENS = {};
+async function driveToken(env, write) {
+  const scope = write ? "https://www.googleapis.com/auth/drive" : "https://www.googleapis.com/auth/drive.readonly";
+  const SA_TOKEN = SA_TOKENS[scope] || { token: "", exp: 0 };
   if (SA_TOKEN.token && Date.now() < SA_TOKEN.exp) return SA_TOKEN.token;
   const b64url = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const b64text = t => b64url(new TextEncoder().encode(t));
   const pem = String(env.GDRIVE_SA_KEY).replace(/\\n/g, "\n").replace(/-----(BEGIN|END) PRIVATE KEY-----/g, "").replace(/\s+/g, "");
   const key = await crypto.subtle.importKey("pkcs8", Uint8Array.from(atob(pem), c => c.charCodeAt(0)), { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
   const now = Math.floor(Date.now() / 1000);
-  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify({ iss: env.GDRIVE_SA_EMAIL, scope: "https://www.googleapis.com/auth/drive.readonly", aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }));
+  const unsigned = b64text(JSON.stringify({ alg: "RS256", typ: "JWT" })) + "." + b64text(JSON.stringify(Object.assign({ iss: env.GDRIVE_SA_EMAIL, scope, aud: "https://oauth2.googleapis.com/token", iat: now, exp: now + 3600 }, write && env.GDRIVE_SA_SUBJECT ? { sub: env.GDRIVE_SA_SUBJECT } : {})));
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: "grant_type=" + encodeURIComponent("urn:ietf:params:oauth:grant-type:jwt-bearer") + "&assertion=" + unsigned + "." + b64url(sig) });
   const j = await res.json().catch(() => ({}));
   if (!res.ok || !j.access_token) throw new Error("drive-auth");
-  SA_TOKEN = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
-  return SA_TOKEN.token;
+  SA_TOKENS[scope] = { token: j.access_token, exp: Date.now() + 50 * 60 * 1000 };
+  return j.access_token;
 }
 async function fetchGoogle(url, env) {
   if (!url) throw new Error("link");
@@ -695,6 +698,32 @@ async function folderFiles(env, folderUrl) {
     for (const sub of out.filter(f => f.mimeType === FOLDER).slice(0, 40)) await list(sub.id);
   } catch (e) { return { error: e.message === "no-access" ? "no-access" : "drive" }; }
   return { files: out.filter(f => f.mimeType !== FOLDER).map(f => ({ name: f.name, link: f.webViewLink || "", created: f.createdTime || "", modified: f.modifiedTime || "" })) };
+}
+/* 📄 Save PDF to my Folder (js/ft-process.js): a Knowledge Check answer sheet, as a PDF, written into the trainee's
+   Assessment and Activities Folder under its naming convention. The same name in the folder is replaced in place, so
+   saving again never leaves two copies. Needs the service account with Editor access to the folder; a folder in a
+   personal My Drive also needs GDRIVE_SA_SUBJECT (a Workspace user the account acts as, by domain-wide delegation), since
+   a service account has no storage of its own to own a new file in. */
+const folderId = u => (String(u || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
+async function saveToFolder(env, folderUrl, name, bytes) {
+  const fid = folderId(folderUrl);
+  if (!fid) return { error: "no-folder" };
+  if (!driveSA(env)) return { error: "no-sa" };
+  let token;
+  try { token = await driveToken(env, true); } catch (e) { return { error: "drive-auth" }; }
+  const auth = { Authorization: "Bearer " + token }, PDF = "application/pdf";
+  const q = encodeURIComponent(`'${fid}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${PDF}' and trashed = false`);
+  const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
+  if (!found.ok) return { error: found.status === 404 || found.status === 403 ? "no-access" : "drive" };
+  const old = ((await found.json().catch(() => ({}))).files || [])[0];
+  const b = "lsh" + crypto.randomUUID().replace(/-/g, ""), enc = new TextEncoder();
+  const meta = old ? { name } : { name, mimeType: PDF, parents: [fid] };
+  const body = new Blob([enc.encode(`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: ${PDF}\r\n\r\n`), bytes, enc.encode(`\r\n--${b}--`)]);
+  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files${old ? "/" + old.id : ""}?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,createdTime,modifiedTime`,
+    { method: old ? "PATCH" : "POST", headers: Object.assign({ "Content-Type": `multipart/related; boundary=${b}` }, auth), body });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: /storageQuota/i.test(JSON.stringify(j)) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive" };
+  return { ok: true, updated: !!old, file: { name: j.name || name, link: j.webViewLink || `https://drive.google.com/file/d/${j.id}/view`, created: j.createdTime || "", modified: j.modifiedTime || "" } };
 }
 /* Without the service account: the folder the trainee linked, read through Google's own folder view (as its link opens it
    for anyone it is shared with), with each file's name, its link and the day it was last changed, and the folders in it
@@ -1132,6 +1161,20 @@ export default {
         if (!id) return json({ error: "Missing trainee" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
         try { return json(await folderFiles(env, drive && drive.folder)); } catch (e) { return json({ error: "drive" }); }
+      }
+
+      /* ---------- 📄 Save PDF to my Folder: a Knowledge Check answer sheet into the trainee's own folder (trainees only) ---------- */
+      if (path === "/api/drive/save") {
+        if (tok.role !== "t") return json({ error: "Trainees save their own answer sheets" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const name = String(b.name || "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 200), pdf = String(b.pdf || "");
+        if (!/\.pdf$/i.test(name) || !pdf) return json({ error: "Missing name or PDF" }, 400);
+        if (pdf.length > 4000000) return json({ error: "Too large" }, 413);
+        let bytes;
+        try { bytes = Uint8Array.from(atob(pdf), c => c.charCodeAt(0)); } catch (e) { return json({ error: "Not a PDF" }, 400); }
+        if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-") return json({ error: "Not a PDF" }, 400);
+        const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
+        try { return json(await saveToFolder(env, drive && drive.folder, name, bytes)); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
