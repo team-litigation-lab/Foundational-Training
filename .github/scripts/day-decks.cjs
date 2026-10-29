@@ -111,12 +111,13 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   const fits = await page.evaluate(() => ({ page: document.documentElement.scrollHeight - innerHeight, main: (m => m.scrollHeight - m.clientHeight)(document.querySelector('main.main-dash')) }));
   if (fits.page > 2 || fits.main > 2) fail(`📚 Dashboard doesn't fit one screen: ${JSON.stringify(fits)}`);
   if (await page.$('.ftli-class')) fail('a lesson card still has the 🏠 Classroom button');
-  // 📋 the days card opens the day deck on the full Classroom Activity card, and a row opens its own slide
+  // 📋 the days card opens the day deck on the full Classroom Activity card, and a row opens its own slide (with no
+  // Process Questions file name on it: that naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder)
   await page.click('#dayd-1'); await page.waitForTimeout(1500);
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || !card.file)
+  if (!card || !/^Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
