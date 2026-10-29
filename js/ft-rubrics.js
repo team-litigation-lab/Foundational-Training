@@ -35,6 +35,14 @@ const R = {
   lv: {title: "LV Demonstration", acts: ["lv-demo"], time: "The ideal completion time is 45 minutes; going beyond it is a significant deduction under Time Management & Efficiency.", criteria: C(
     "Task Preparation & Familiarity", "Contact Card Navigation", "Document Drafting & Editing", "Uploading Files to SA", "Task Reporting & Notes Documentation",
     "Email Drafting", "Time Management & Efficiency")},
+  // Day 9's Transcription Activity (js/ft-transcribe.js): the minutes of Atty. Magdalena's client interviews, scored against
+  // the PI sample guide's minutes (js/ft-intake-samples.js); accuracy and completeness weigh double
+  transcription: {title: "Transcription Activity (Minutes of the Meeting)", acts: ["transcription-1", "transcription-2"],
+    time: "The ideal time is about three times the recording's length; going far beyond it is a deduction under Time Management", criteria: C(
+    {n: "Accuracy (names, dates, amounts, places exactly as said)", w: 2}, {n: "Completeness (every point discussed, in order)", w: 2},
+    "Speaker Attribution (A for Attorney, C for Client)", "Minutes Format (date, time, attendees, purpose, discussion)", "Timestamps at Each New Point",
+    "Client's Concerns & Attorney's Advice Captured", "Action Items & Next Steps (who does what, by when)", "Grammar, Spelling & Professional Wording",
+    "Naming Convention & Filing (Assessments/Activities)", "Report-Back to the Attorney", "Time Management")},
   settlement: {title: "Reduction / Closing & Settlement Demo", acts: ["settlement-demo"], criteria: C(
     "Task Preparation, Independence & Process Understanding", "Calculation & Excel Proficiency", "Analytical & Decision-Making Skills",
     "Attention to Detail & Accuracy", "Adherence to Instructions", "Independent Execution & Organization", "Communication & Process Explanation",
@@ -43,7 +51,7 @@ const R = {
 // an activity's rubric: the one it names (`rubric` in Trainer Inputs' list), else the one listing its id, else by its title
 const BY_TITLE = [[/reception.*mock|mock.*reception/i, "reception"], [/calendar.*mock|mock.*calendar/i, "calendar"], [/intake.*mock|mock.*intake/i, "intake"],
   [/intake packet/i, "intake-packet"], [/\bLOR\b.*(upload|send|saving)|saving LORs/i, "lor"], [/medlor/i, "medlor"], [/\bLV\b|lien verification/i, "lv"],
-  [/reduction|closing statement|settlement/i, "settlement"]];
+  [/reduction|closing statement|settlement/i, "settlement"], [/transcription/i, "transcription"]];
 function forAct(a){
   if(!a) return null;
   if(a.rubric) return R[a.rubric] ? Object.assign({key: a.rubric}, R[a.rubric]) : null;
