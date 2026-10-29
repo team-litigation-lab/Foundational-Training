@@ -320,7 +320,7 @@ s2: html => {
 // Day 4 (Receptionist Training, Part 2): Julio's video in the slide and the Monitoring Sheet update; the mock call
 // preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
 // one-on-one mock calls run and are scored (the metrics); then the mock calls themselves (s3, with Done: js/ft-buffer.js)
-// (ROWS[4].s2 cuts it into its card rows' slides: s2, s2b, s2c)
+// (ROWS[4].s2 cuts it into its card rows' slides: s2, s2b with its steps s2b-2, s2c)
 4: {s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return "<p>For those who have already completed the tasks, please watch these videos on Reception Training to understand the roles and responsibilities of a Receptionist, as well as the necessary attributes required for the role.</p>\n" +
@@ -584,11 +584,14 @@ const PI_WARMUP = `<hr class="stars">\n<p><b>🎧 Warm-up before your mock call:
    MOCK_ONE: the one-on-one mock call's own line (where the metrics are, on that day's slides). */
 const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const tabLink = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
-const MOCK_PREP =
+// (MOCK_LINKS and MOCK_STEPS: Day 4 puts each on a slide of its own, the links in big type: ROWS[4].s2)
+const MOCK_INSTR = "<p><b>Instructions on Your Mock Call</b></p>\n";
+const MOCK_LINKS = '<div class="ftdd-biglinks">\n' +
   tabLink("📞 Practice a caller: the Call Simulator’s Reception line (an AI caller)", CALL_SIM + "&line=Reception+Mock+Calls") +
   tabLink("☎ The Ring Channel: the training phone your mock call rings on", CALL_SIM) +
   tabLink("🗂 The CMS (Case Management System): the case files", CMS) +
-  tabLink("☎️ Front Desk Drill in the CMS", CMS + "?program=reception&flow=reception&drill=1&from=standard") +
+  tabLink("☎️ Front Desk Drill in the CMS", CMS + "?program=reception&flow=reception&drill=1&from=standard") + "</div>\n";
+const MOCK_STEPS = MOCK_INSTR +
   "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
   "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
@@ -597,6 +600,7 @@ const MOCK_PREP =
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
   ph("ftdd-ph-link", "🎧", "Link coming: AI Mock Calls Listening", "Recordings of AI mock calls to listen to before your own. Your trainer adds them here.") + "\n" + PI_WARMUP + "\n";
+const MOCK_PREP = MOCK_LINKS + MOCK_STEPS;
 const MOCK_RUN =
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
   "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
@@ -720,7 +724,9 @@ const ROWS = {
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)
     s2: [{id: "s2", parts: [[null, "<p>Get ready for this afternoon’s one-on-one mock call"]]},
-      {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [["<p>Get ready for this afternoon’s one-on-one mock call", "<p><b>How the mock calls run (one-on-one)</b></p>"]]},
+      {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [["<p>Get ready for this afternoon’s one-on-one mock call", MOCK_INSTR]]},
+      // (the steps continue the links' slide, under the same card row: "s2b-2")
+      {id: "s2b-2", h: "Mock Call Preparation: Instructions on Your Mock Call", parts: [[MOCK_INSTR, "<p><b>How the mock calls run (one-on-one)</b></p>"]]},
       {id: "s2c", h: "Instructions for Mock Calls & Metrics", parts: [["<p><b>How the mock calls run (one-on-one)</b></p>", null]]}]
   },
   5: {
