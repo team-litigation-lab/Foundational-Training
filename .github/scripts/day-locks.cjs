@@ -40,7 +40,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
       [...c.querySelectorAll('.mc-grid .ftseg .ftseg-b')].map(x => ({ t: x.innerText.replace(/^[^A-Za-z]+/, '').trim(), locked: x.classList.contains('locked') }))])));
     if ((segs['dayl-6'] || []).map(s => s.t).join() !== 'Part 1,Part 2,Part 3') fail(`Intake's card doesn't have Part 1 · Part 2 · Part 3: ${JSON.stringify(segs['dayl-6'])}`);
     if ((segs['dayl-1'] || []).map(s => s.t).join() !== 'Start') fail(`Lesson 1's card doesn't have one Start button: ${JSON.stringify(segs['dayl-1'])}`);
-    if ((segs['dayl-8'] || []).length !== 2 || (segs['dayl-4'] || []).length !== 2 || (segs['dayl-1'] || []).length !== 1) fail(`the cards' segments don't match their days: ${JSON.stringify(segs)}`);
+    if ((segs['dayl-8'] || []).length !== 2 || (segs['dayl-4'] || []).map(s => s.t).join() !== 'Part 2' || (segs['dayl-3'] || []).map(s => s.t).join() !== 'Part 1' || (segs['dayl-1'] || []).length !== 1) fail(`the cards' segments don't match their days: ${JSON.stringify(segs)}`);
     if (!(segs['dayl-6'] || []).every(s => s.locked)) fail('Intake\'s days were open before the trainer opened them');
     if ((segs['dayl-1'] || [{}])[0].locked) fail('Lesson 1\'s Day 1 is locked with the lesson open');
     if (await page.$('.ftli .mc-grid > .module-start-btn')) fail('a lesson card still has its single ▶ Start Training button');

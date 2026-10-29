@@ -55,14 +55,14 @@ const PROCESS_SETS = [
     "Assess how remote work increases both the risk and need for maintaining privileged communication boundaries.",
     "Analyze the type of information that can be shared with each party (e.g., client, insurance adjuster, court staff). What factors determine what can and cannot be disclosed?",
     "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff."]},
-  // one answer sheet for two lessons, answered on Day 3 (their shared classroom session): questions 1–3 are Personal
-  // Injury Process Flow's, 4–10 Receptionist Training's, all ten on Lesson 3's sheet (kc) and the seven on Lesson 4's;
-  // one file, the guide's PI_Workflow_and_Reception_Training_Process_Questions (VA's name)
+  // two lessons discussed on Day 3, each its own Knowledge Check: Personal Injury Process Flow's three questions (Day 3's,
+  // after its Classroom Discussion), Receptionist Training's seven (its own); one file for both, the guide's
+  // PI_Workflow_and_Reception_Training_Process_Questions (VA's name): 💾 Save PDF writes both sheets into it
   {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Questions", questions:[
     "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
     "Examine how missing documentation (e.g., police reports, medical records) at the intake or treatment stage could affect the value and outcome of a case.",
     "Evaluate how efficient case intake impacts the strength and pace of a personal injury claim. What are the potential legal and financial consequences of a disorganized intake?"]},
-  {id:"reception-training", lesson:4, title:"Receptionist Training", file:"PI_Workflow_and_Reception_Training_Process_Questions", kc:{3:[0,1,2,3,4,5,6], 4:[0,1,2,3,4,5,6]}, questions:[
+  {id:"reception-training", lesson:4, title:"Receptionist Training", file:"PI_Workflow_and_Reception_Training_Process_Questions", questions:[
     "Analyze the role of a receptionist in shaping a law firm’s first impression. What verbal and non-verbal cues matter most?",
     "Evaluate how poor receptionist behavior can affect client trust and case intake efficiency.",
     "Assess the importance of triaging calls and visitors correctly. What are the consequences of misdirecting a client or opposing counsel?",
@@ -163,6 +163,66 @@ function fileStatus(set, x){
   const f = x && x.file; if(!f) return "";
   return `<span class="fp-pill ${f.nameOk ? "ok" : "bad"}">${f.nameOk ? "✓ Named by the convention" : "✗ Name doesn’t follow the convention"}</span>
     <span class="fp-pill ${f.onTime ? "ok" : "mid"}">${f.onTime ? "✓ On time" : "⚠ Late"}</span>`;
+}
+/* 📄 Save PDF to my Folder: the answer sheet as a PDF, named by its convention (fileName, shown beside the button: the
+   naming convention lives here, not on the deck), saved straight into the trainee's Assessment and Activities Folder (the
+   one linked once, in 📁 My Drive links): the Worker writes it there (/api/drive/save) and saving again replaces the same
+   file. Sets that share a file (Day 3's two lessons) go into the one PDF. The name is the convention's, word for word, so
+   it counts as named right (Attention to Detail) and its time as when it was saved (Timely Submission): checkFolder
+   records both. Where the platform can't write to the folder (no access yet), the PDF downloads under the same name and
+   the folder opens, to drop it in. */
+const pdfName = set => fileName(set) + ".pdf";
+const sameFile = set => PROCESS_SETS.filter(x => x.file === set.file);
+async function sheetPdf(set){
+  if(typeof ensureJsPdf !== "function" || !(await ensureJsPdf())) return null;
+  const { jsPDF } = window.jspdf, doc = typeof safeDoc === "function" ? safeDoc(new jsPDF({unit:"pt", format:"letter"})) : new jsPDF({unit:"pt", format:"letter"});
+  if(typeof drawPdfHeader === "function") drawPdfHeader(doc, fileName(set), "Process Questions · Knowledge Check");
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), X = 54;
+  let y = 118;
+  const line = (t, bold, size, color) => { doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(size); doc.setTextColor(...color);
+    doc.splitTextToSize(String(t), W - X * 2).forEach(w => { if(y > H - 60){ doc.addPage(); y = 60; } doc.text(w, X, y); y += size + 4; }); };
+  line(`Trainee: ${String(state.certName || state.traineeName || "").replace(/"/g, "")}`, false, 10, [27,30,46]);
+  line(`Date: ${prettyDay(ptDay())}`, false, 10, [27,30,46]); y += 8;
+  sameFile(set).forEach(st => {
+    const ans = sheet(st.id).answers || [];
+    if(!st.questions.some((q, i) => has(ans[i]))) return;
+    y += 6; line(st.title, true, 13, [38,43,69]); y += 2;
+    st.questions.forEach((q, i) => { line(`${i + 1}. ${qtext(st, i)}`, true, 10.5, [38,43,69]); line(has(ans[i]) ? String(ans[i]).trim() : "(no answer)", false, 10, [27,30,46]); y += 8; });
+  });
+  return doc;
+}
+const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder first (📁 My Drive links).", "no-access": "The platform can’t write to your folder yet: share it with the training account as Editor.",
+  quota: "The platform can’t create files in your folder yet: ask your trainer.", "no-sa": "Saving to your folder isn’t set up yet: ask your trainer.", "drive-auth": "Saving to your folder isn’t set up yet: ask your trainer."};
+// the lesson's files: one per naming convention among the sheets on its page
+const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs = moduleStudied(lesson) ? all : all.filter(x => x.set.open), seen = new Set();
+  return [...new Set(qs.map(x => x.set))].filter(set => !seen.has(set.file) && seen.add(set.file)); };
+// beside 📝 Submit for Grading: each file's naming convention and its 📄 Save PDF to my Folder
+function pdfBox(lesson){
+  const sets = lessonFiles(lesson); if(!sets.length) return "";
+  return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
+    <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button></div>`;
+}
+async function savePdf(lesson){
+  if(!isTraineeHere()){ toast("👁 Trainee view — a trainee saves their own answer sheet to their folder."); return; }
+  const sets = lessonFiles(lesson).filter(set => sameFile(set).some(st => (sheet(st.id).answers || []).some(has)));
+  if(!sets.length){ toast("Answer the questions first, then 📄 Save PDF to my Folder."); return; }
+  document.querySelectorAll(".fp-drive").forEach(b => { b.disabled = true; b.textContent = "Saving the PDF…"; });
+  const saved = [], failed = [];
+  for(const set of sets){
+    const doc = await sheetPdf(set);
+    if(!doc){ toast("Couldn't load the PDF tools — try again."); break; }
+    const name = pdfName(set), b64 = doc.output("datauristring").split(",")[1];
+    let j = {};
+    try{ const r = await authFetch("/api/drive/save", {name, pdf: b64}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
+    if(j.ok){ sameFile(set).forEach(st => { const x = sheet(st.id); assignedOn(st); x.drive = {at: new Date().toISOString(), link: (j.file || {}).link || ""}; }); saved.push(name); }
+    else { doc.save(name); failed.push({name, error: j.error || "drive"}); }
+  }
+  if(saved.length){ queueSave(); checkFolder(true); toast(`✓ Saved to your Assessment and Activities Folder: ${saved.join(", ")}`); }
+  if(failed.length){
+    if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
+    toast(`${DRIVE_WHY[failed[0].error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${failed[0].name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`);
+  }
+  render();
 }
 // An admin can reword a question (a typo, a clearer phrasing) without a new deploy: "processq:overrides" holds
 // {[set.id]: {[questionIndex]: "the edited wording"}}, loaded once and read by every question shown, trainee
@@ -268,6 +328,7 @@ function moduleCard(lesson, after){   // after: a button beside 📝 Submit for 
       </div>
       ${studied ? "" : `<p class="fp-muted fp-lockwhy">🔒 The rest of this module's questions open when you finish the module (📋 Classroom Activity on its last slide). Your answers here save as you type, and you submit them all together for grading then.</p>`}
     </div></div>
+    ${studied ? pdfBox(lesson) : ""}
     ${kcSave(qs)}`;
 }
 // The index: one row per module, its status at a glance, linking to that module's own page — not its
@@ -306,10 +367,12 @@ function assessCard(lesson){
 // deck's next slide
 function assessPage(b){
   const x = (ASSESSMENTS[b.l] || []).find(a => a.id === b.assess); if(!x) return "";
+  // (answered on the platform where js/ft-assess.js has it, with 📝 Submit for Grading; else its document)
+  const here = window.FTAssess && FTAssess.has(x.id);
   return `<div class="fp-hero"><h1>📄 ${e(x.t)}</h1>
-      <p>Answer it in its document, then upload it to your Assessments/Activities subfolder.</p></div>
-    <div class="card fp-set fp-assess"><div class="fp-body">
-      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>
+      <p>${here ? "Answer every item here: your answers save as you type. Then hit <b>📝 Submit for Grading</b>." : "Answer it in its document, then upload it to your Assessments/Activities subfolder."}</p></div>
+    ${here ? FTAssess.html(x.id) : `<div class="card fp-set fp-assess"><div class="fp-body">
+      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>`}
     ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>` : ""}`;
 }
 
@@ -342,7 +405,7 @@ function renderPage(){
   if(lesson) return `<div class="fp-hero">${backBtn ? "" : `<button class="btn btn-ghost btn-sm" type="button" onclick="goto('process')">← Back to Process Questions</button>`}
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
-      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there. <span class="fp-save" id="fpSave"></span></p></div>
+      <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then <b>📄 Save PDF to my Folder</b> before the end of your shift: your answer sheet is saved as a PDF in your Assessment and Activities Folder, named by its convention. <span class="fp-save" id="fpSave"></span></p></div>
     ${assessCard(lesson)}${assessBack}${moduleCard(lesson, backBtn)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day: the platform finds it there and checks its name and when it was saved.</p></div>
@@ -375,6 +438,7 @@ window.FTProcess = {
     toast(`✓ ${set.title} Process Questions submitted.`); render();
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
+  savePdf,
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
@@ -612,6 +676,7 @@ function renderKc(){
       <div class="fp-actions"><button class="btn btn-navy" id="kcSubmit" type="button" onclick="FTKc.submit(${id})">${shown ? "🔁 Retake: Submit for Grading" : "Submit for Grading"}</button>
         <span class="fp-save" id="fpSave"></span></div>
       <p class="fp-muted">Your answers save as you type.</p>
+      ${pdfBox(id)}
     </div>
     ${kcSave(qs)}`;
 }
@@ -752,6 +817,9 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-assess-back{margin:-4px 0 16px;}
 .fp-assess-doc{height:70vh;min-height:360px;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
+.fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
+.fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
+.fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
 .fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
 .fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}
