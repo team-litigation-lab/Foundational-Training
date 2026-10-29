@@ -4,7 +4,8 @@
 //   booking saved weeks ago snaps to the new next week), the isolated controller (/api/calweek/*: a trainee's own record
 //   only, calweek:<id> closed to /api/storage, the signed webhook), and the page: the Practice Lab card, this week as the
 //   default view, a task booked on next week and checked, Day 5's Attorney Calendar Management Activity linked both ways,
-//   and the renamed Practice Session (Standard Training - Appointment Setting Mock Calls).
+//   and the renamed Practice Session (Standard Training - Appointment Setting Mock Calls); and 🧪 the VA Practice Only clone
+//   (its own week, /api/calpractice/* and calpractice:<id>: never graded, sent, listed or webhooked; ↺ Start over).
 // Usage: NODE_PATH=…/node_modules node .github/scripts/calweek.cjs http://localhost:8787/
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -50,10 +51,17 @@ function coreChecks() {
   // the cloned week is frozen: nothing changes it at runtime
   try { C.WEEK.tasks[0].dur = 5; } catch (e) {}
   eq('the week is frozen', C.WEEK.tasks[0].dur, 60);
-  return perfect;
+  // 🧪 the practice clone: its own week, its own tasks, solvable, and a booking of one week means nothing on the other
+  if (C.PRACTICE.id === C.WEEK.id || C.PRACTICE.attorney === C.WEEK.attorney || !C.PRACTICE.practice) fail('the practice calendar is not its own week');
+  const practice = [['deposprep', 0, 780, 120], ['hearprep', 0, 615, 60], ['medprep', 1, 780, 90], ['expert', 2, 780, 60], ['clientcall', 0, 915, 30], ['demand', 0, 690, 30]]
+    .map(([task, d, m, dur]) => { const k = C.taskOf(task, C.PRACTICE); return { task, d, m, dur, desc: 'About the case, with the client', color: C.COLOR_RULE[dur] || '', meet: !!(k.needs && k.needs.meet), remind: !!(k.needs && k.needs.remind) }; });
+  const pr = C.review(practice, C.PRACTICE);
+  if (pr.pct !== 100) fail(`the perfect practice week scores ${pr.pct}%`);
+  eq('a practice booking on the activity\'s week', C.clean([{ task: 'hearprep', d: 0, m: 600, dur: 60 }]).length, 0);
+  return { perfect, practice };
 }
 
-async function workerChecks(perfect) {
+async function workerChecks({ perfect, practice }) {
   const worker = (await import(pathToFileURL(path.join(process.cwd(), 'worker.js')).href)).default;
   const store = new Map([['ft:trainee:ana-cruz--b1', JSON.stringify({ id: 'ana-cruz--b1', name: 'Ana Cruz', batch: 'B1', approved: true })]]);
   const hooks = []; const realFetch = global.fetch;
@@ -91,12 +99,28 @@ async function workerChecks(perfect) {
   // a webhook that fails never fails the save
   global.fetch = async () => { throw new Error('down'); };
   if ((await call('/api/calweek/save', { events: perfect }, t)).status !== 200) fail('a failing webhook failed the save');
+  await Promise.all(waits);   // the failing webhook settles before fetch is swapped back
+  global.fetch = async (url, init) => { if (String(url).startsWith('https://hooks.test/')) { hooks.push({ url, init }); return new Response('ok'); } return realFetch(url, init); };
+
+  // 🧪 VA Practice Only: its own record and week, checked but never sent, listed or webhooked
+  const before = store.get('ft:calweek:ana-cruz--b1'), hooksBefore = hooks.length;
+  const ps = await call('/api/calpractice/save', { events: practice }, t); await Promise.all(waits);
+  if (ps.status !== 200 || ps.body.review.pct !== 100 || ps.body.record.activity !== 'std-calpractice') fail(`practice save: ${JSON.stringify(ps.body && ps.body.review && ps.body.review.pct)}`);
+  if (!store.has('ft:calpractice:ana-cruz--b1') || store.get('ft:calweek:ana-cruz--b1') !== before) fail('practice wrote outside its own record');
+  if (hooks.length !== hooksBefore) fail('a practice save sent the webhook');
+  if ((await call('/api/calpractice/save', { events: practice, submit: true }, t)).status !== 400) fail('practice was submitted to the trainer');
+  if ((await call('/api/calpractice/list', { ids: ['ana-cruz--b1'] }, at)).status !== 404) fail('practice has a trainer list');
+  if ((await call('/api/storage/set', { key: 'calpractice:ana-cruz--b1', value: '{}' }, t)).status === 200) fail('a trainee wrote calpractice:<id> around the controller');
+  if ((await call('/api/calweek/reset', {}, t)).status !== 404) fail('the graded activity can be reset');
+  if ((await call('/api/calpractice/save', { events: practice, id: 'ben-diaz--b1' }, t)) && store.has('ft:calpractice:ben-diaz--b1')) fail('a trainee wrote another trainee\'s practice');
+  const rs = await call('/api/calpractice/reset', {}, t);
+  if (rs.status !== 200 || store.has('ft:calpractice:ana-cruz--b1') || rs.body.record !== null || store.get('ft:calweek:ana-cruz--b1') !== before) fail('↺ Start over did not clear practice alone');
   global.fetch = realFetch;
 }
 
 (async () => {
-  const perfect = coreChecks();
-  await workerChecks(perfect);
+  const weeks = coreChecks();
+  await workerChecks(weeks);
   const { chromium } = require('playwright');
   const signIn = require('./sign-in.cjs');
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
@@ -118,6 +142,7 @@ async function workerChecks(perfect) {
   if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Practice Session isn't renamed: ${JSON.stringify(lab)}`);
   if (lab.some(t => /Calendaring Practice Lab/.test(t))) fail('the old name is still on the Practice Lab');
   if (!lab.some(t => /Standard Training - Calendaring Activity/.test(t))) fail(`no Calendaring Activity card: ${JSON.stringify(lab)}`);
+  if (!lab.some(t => /VA Practice Only/.test(t))) fail(`no VA Practice Only card: ${JSON.stringify(lab)}`);
 
   // the page opens on this week, from the server's clock
   await page.evaluate(() => goto('calweek')); await page.waitForTimeout(1200);
@@ -143,7 +168,24 @@ async function workerChecks(perfect) {
   const slide = await page.evaluate(() => ({ view: state.view, acts: [...document.querySelectorAll('.ftdd-acts button')].map(b => b.textContent) }));
   if (slide.view !== 'daydeck' || !slide.acts.some(t => /Standard Training - Calendaring Activity/.test(t))) fail(`the Attorney Calendar Management Activity slide doesn't link back: ${JSON.stringify(slide)}`);
 
+  // 🧪 the practice page: Attorney Chen's week, no Submit, ↺ Start over, and the graded calendar untouched
+  const graded = await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events));
+  await page.evaluate(() => FTCalPractice.open()); await page.waitForTimeout(1200);
+  const pv = await page.evaluate(() => ({ h: (document.querySelector('.cw-hero h1') || {}).textContent, note: !!document.querySelector('.cw-practice'), submit: [...document.querySelectorAll('.cw-score button')].map(b => b.textContent), tasks: document.querySelectorAll('.cw-task').length }));
+  if (!/VA Practice Only/.test(pv.h || '') || !pv.note || pv.tasks !== 6) fail(`the practice page: ${JSON.stringify(pv)}`);
+  if (pv.submit.some(t => /Submit/.test(t)) || !pv.submit.some(t => /Start over/.test(t))) fail(`the practice page offers: ${JSON.stringify(pv.submit)}`);
+  await page.evaluate(() => FTCalPractice.edit('demand')); await page.waitForTimeout(300);
+  await page.selectOption('#cwDay', '0'); await page.selectOption('#cwStart', '690'); await page.selectOption('#cwLen', '30'); await page.selectOption('#cwColor', 'tangerine');
+  await page.fill('#cwDesc', 'Review the Reyes demand letter');
+  await page.evaluate(() => FTCalPractice.book()); await page.waitForTimeout(1200);
+  const pb = await page.evaluate(() => ({ ev: FTCalPractice.state().data.record && FTCalPractice.state().data.record.events, ok: !!document.querySelector('.cw-task.ok') }));
+  if (!pb.ev || pb.ev.length !== 1 || pb.ev[0].task !== 'demand' || !pb.ok) fail(`a practice booking: ${JSON.stringify(pb)}`);
+  await page.evaluate(() => FTCalPractice.reset()); await page.waitForTimeout(1200);
+  if (await page.evaluate(() => FTCalPractice.state().data.record) !== null) fail('↺ Start over left the practice calendar');
+  await page.evaluate(() => { FTCalWeek.state().data = null; FTCalWeek.open(); }); await page.waitForTimeout(1200);
+  if (await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events)) !== graded) fail('practising changed the graded calendar');
+
   await browser.close();
   if (failures.length) { console.error('✗ ' + failures.join('\n✗ ')); process.exit(1); }
-  console.log('✓ Standard Training - Calendaring Activity: the week resolver, the relative engine, the controller, the page and the links');
+  console.log('✓ Standard Training - Calendaring Activity: the week resolver, the relative engine, the controller, the page and the links; 🧪 the VA Practice Only clone, kept apart and never graded');
 })().catch(e => { console.error(e); process.exit(1); });

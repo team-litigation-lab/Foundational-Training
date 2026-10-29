@@ -1008,8 +1008,8 @@ export default {
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
 
-      /* ---------- 📅 Standard Training - Calendaring Activity: isolated controller (calweek-api.js) ---------- */
-      if (path.startsWith("/api/calweek/")) return await handleCalWeek(path, request, env, ctx, tok, kv);
+      /* ---------- 📅 Standard Training - Calendaring Activity and 🧪 its VA Practice Only clone: isolated controller (calweek-api.js) ---------- */
+      if (path.startsWith("/api/calweek/") || path.startsWith("/api/calpractice/")) return await handleCalWeek(path, request, env, ctx, tok, kv);
 
       /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
          A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
