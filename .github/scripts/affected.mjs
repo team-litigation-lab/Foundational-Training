@@ -42,15 +42,42 @@ const DEFS = Object.fromEntries(JS.map(f => [f, defsOf(f)]));
 const coreNames = new Set();
 for (const f of JS.filter(f => CORE.some(re => re.test(f)))) DEFS[f].forEach(n => coreNames.add(n));
 for (const m of read('index.html').matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)) coreNames.add(m[1]);
+// (the names index.html itself defines are every page's: render, goto, state … a file that wraps one of those doesn't tie
+// it to every test. A name only a core script defines, LSH_BLUEPRINT say, is still matched for the other file defining it)
+const pageNames = new Set();
+for (const m of read('index.html').matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)) pageNames.add(m[1]);
+for (const m of read('index.html').matchAll(/\b(?:window|root|globalThis)\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) pageNames.add(m[1]);
+['render', 'goto', 'renderTopbar', 'state', 'afterRender', 'toast', 'esc'].forEach(n => pageNames.add(n));
 const owner = new Map();
 for (const f of JS) for (const n of DEFS[f]) if (!coreNames.has(n)) { if (!owner.has(n)) owner.set(n, new Set()); owner.get(n).add(f); }
 const words = t => new Set(t.match(/[A-Za-z_$][\w$]*/g) || []);
-// a file's reach: what it defines, and what of the other files it uses or patches
+// a file's reach: what it defines, and what of the other files it uses or patches; and what the files that read what it
+// defines define themselves (one step: js/ft-lor-data.js's FT_LOR_TEMPLATES is read by js/ft-lor.js, whose Drafting
+// Tools a test opens)
+// (a page the core draws that many files check, view:admin say, stays every page's; one only a few check, as
+// js/ft-my-pages.js does view:scorecard, is still matched for them)
+const viewFiles = new Map();
+for (const f of JS.filter(f => !CORE.some(re => re.test(f)))) for (const n of DEFS[f]) if (n.startsWith('view:')) viewFiles.set(n, (viewFiles.get(n) || 0) + 1);
+const own = f => new Set([...DEFS[f] || []].filter(n => !pageNames.has(n) && !(n.startsWith('view:') && coreNames.has(n) && (viewFiles.get(n) || 0) > 3)));
+// a data file: it defines nothing but data (FT_LOR_TEMPLATES, FT_REF_TERMS …), so what it changes is what its readers do
+const isData = f => { const d = [...own(f)]; return d.length > 0 && d.every(n => /^[A-Z][A-Z0-9_]+$/.test(n)); };
 const reach = f => {
-  const t = read(f), w = words(t), out = new Set([...DEFS[f] || []].filter(n => !coreNames.has(n)));
+  const t = read(f), w = words(t), out = own(f);
   for (const n of w) if (owner.has(n) && !owner.get(n).has(f)) out.add(n);
+  const mine = own(f);
+  if (isData(f)) for (const g of JS) if (g !== f && !CORE.some(re => re.test(g)) && [...mine].some(n => words(read(g)).has(n))) own(g).forEach(n => out.add(n));
   return out;
 };
+// the page parts a test looks for by CSS selector (#dayl-2, .ft-video-ask, .ftmp-focus …) that a file writes: a test that
+// checks what a page draws runs when the file drawing it changes. Only distinctive ones (with a hyphen, or 6 letters or
+// more) and none index.html has too; an id ending in a number (dayl-2) is matched by its stem (dayl-)
+const pageHtml = read('index.html');
+const sel = s => { const out = new Set();
+  for (const q of s.matchAll(/(["'`])((?:(?!\1).){1,300})\1/g)) for (const m of q[2].matchAll(/(?:^|[\s>+~,(])[.#]([a-z][\w-]{2,})/gi)) {
+    const k = m[1]; if ((k.includes('-') || k.length >= 6) && !pageHtml.includes(k) && !/^(github|scripts|js|html|cjs|mjs)$/.test(k)) out.add(k); }
+  return out; };
+const SELS = Object.fromEntries(TESTS.map(t => [t, sel(read(t))]));
+const draws = (f, k) => { const t = read(f), stem = k.replace(/-\d+$/, '-'); return t.includes(k) || (stem !== k && t.includes(stem)); };
 // and the words it puts on screen that a test looks for: its quoted text of 18 characters or more (a slide title, a
 // button), so a test that checks a page by what it says runs when that page's file changes
 const texts = f => new Set([...read(f).matchAll(/(["'`])([^"'`\n$<>{}]{18,120})\1/g)].map(m => m[2].trim()).filter(x => /[a-z] [a-z]/i.test(x)));
@@ -82,7 +109,8 @@ for (const f0 of files || []) {
     if (!r.size && !x.size) { all = `${f0} defines nothing a test can be matched on`; break; }
     for (const t of TESTS) {
       const hit = [...r].filter(n => USES[t].has(n)), src = read(t), said = hit.length ? [] : [...x].filter(s => src.includes(s));
-      if (hit.length || said.length) pick.set(t, (pick.get(t) || []).concat(`${f0}: ${hit.length ? hit.slice(0, 4).join(', ') : '"' + said[0] + '"'}`));
+      const drawn = hit.length || said.length ? [] : [...SELS[t]].filter(k => draws(f, k));
+      if (hit.length || said.length || drawn.length) pick.set(t, (pick.get(t) || []).concat(`${f0}: ${hit.length ? hit.slice(0, 4).join(', ') : said.length ? '"' + said[0] + '"' : drawn.slice(0, 3).map(k => '.' + k).join(', ')}`));
     }
   }
 }

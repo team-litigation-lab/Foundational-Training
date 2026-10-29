@@ -7,7 +7,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 
 const ROOT = process.cwd(), S = '.github/scripts';
-const JOBS = Math.max(1, Number(process.env.SMOKE_JOBS) || 3), TIMEOUT = 20 * 60 * 1000;
+const JOBS = Math.max(1, Number(process.env.SMOKE_JOBS) || 3), TIMEOUT = 10 * 60 * 1000;
 const read = f => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch (e) { return ''; } };
 const EVERY = fs.readdirSync(path.join(ROOT, S)).filter(f => f.endsWith('.cjs') && f !== 'sign-in.cjs' && /http:\/\/localhost:8787\//.test(read(`${S}/${f}`))).map(f => `${S}/${f}`).sort();
 const want = process.argv.slice(2).filter(Boolean);
