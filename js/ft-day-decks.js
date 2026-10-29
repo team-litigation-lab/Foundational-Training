@@ -1118,9 +1118,9 @@ const LESSON_CARDS = {
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
-      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
-      // (the readings open once the Common Terms tasks' 📤 Submit is in: js/ft-buffer.js ACTS["2:s2l"].opens)
-      {t: "Personal Injury Readings", sub: "Read both in the slide while your batch finishes · opens when you hit 📤 Submit", k: "read", d: 2, s: "s2b", lead: true},
+      {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · take each one's assessment", k: "watch", d: 2, s: "s2", lead: true},
+      // (the readings open once the Common Terms tasks' 📤 Submit, on their slide, is in: js/ft-buffer.js ACTS["2:s2b"])
+      {t: "Personal Injury Readings", sub: "Update items #5–7 on your Monitoring Sheet and hit 📤 Submit · then read both while your batch finishes", k: "read", d: 2, s: "s2b", lead: true},
       // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; the lesson's AI discussion video is
       // its 📚 Dashboard lesson card's 🎬 Video, not on the deck. Then ✍️ Process Questions: the Classroom Activity slide
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
