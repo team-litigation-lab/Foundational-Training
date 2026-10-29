@@ -98,6 +98,12 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!s1.body || !s1.body.ok || s1.body.updated || up1.method !== 'POST' || !/"parents":\["abcFolderId01"\]/.test(up1.body) || !/"mimeType":"application\/pdf"/.test(up1.body) || !up1.body.includes('%PDF-1.3 the answers')) fail(`an answer sheet wasn't created in the folder: ${JSON.stringify(s1.body)} ${up1.body}`);
     const s2 = await call('/api/drive/save', doc, trainee);
     if (!s2.body || !s2.body.ok || !s2.body.updated || (uploads[1] || {}).method !== 'PATCH' || !/files\/saved1\?/.test((uploads[1] || {}).url || '')) fail(`saving again should update the same file: ${JSON.stringify(s2.body)}`);
+    // 📤 Submit to my Drive Folder: a day's worksheet, a Word file (a zip underneath), written into the folder as one
+    const ws = { name: 'PI_Reception_Activity (Dee).docx', docx: Buffer.from('PK\u0003\u0004 the worksheet').toString('base64') };
+    const s5 = await call('/api/drive/save', ws, trainee), up5 = uploads[uploads.length - 1] || {};
+    if (!s5.body || !s5.body.ok || !/Content-Type: application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/.test(up5.body || '') || !(up5.body || '').includes('the worksheet')) fail(`a worksheet wasn't saved in the folder as a Word file: ${JSON.stringify(s5.body)} ${up5.body}`);
+    if ((await call('/api/drive/save', { name: ws.name, docx: Buffer.from('<html>').toString('base64') }, trainee)).status !== 400) fail('something that is not a Word file was saved as one');
+    if ((await call('/api/drive/save', { name: 'PI_Reception_Activity (Dee).exe', docx: ws.docx }, trainee)).status !== 400) fail('a worksheet was saved under a name that is not a .docx');
     if ((await call('/api/drive/save', doc, admin)).status !== 403) fail('an admin saved into a trainee folder');
     if ((await call('/api/drive/save', { name: doc.name, pdf: Buffer.from('<html>').toString('base64') }, trainee)).status !== 400) fail('something that is not a PDF was saved');
     saveError = 'storageQuotaExceeded';

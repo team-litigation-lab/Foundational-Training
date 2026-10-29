@@ -713,13 +713,13 @@ async function folderFiles(env, folderUrl) {
    personal My Drive also needs GDRIVE_SA_SUBJECT (a Workspace user the account acts as, by domain-wide delegation), since
    a service account has no storage of its own to own a new file in. */
 const folderId = u => (String(u || "").match(/folders\/([a-zA-Z0-9_-]{10,})/) || String(u || "").match(/[?&]id=([a-zA-Z0-9_-]{10,})/) || [])[1] || "";
-async function saveToFolder(env, folderUrl, name, bytes) {
+async function saveToFolder(env, folderUrl, name, bytes, mime) {
   const fid = folderId(folderUrl);
   if (!fid) return { error: "no-folder" };
   if (!driveSA(env)) return { error: "no-sa" };
   let token;
   try { token = await driveToken(env, true); } catch (e) { return { error: "drive-auth" }; }
-  const auth = { Authorization: "Bearer " + token }, PDF = "application/pdf";
+  const auth = { Authorization: "Bearer " + token }, PDF = mime || "application/pdf";
   const q = encodeURIComponent(`'${fid}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${PDF}' and trashed = false`);
   const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
   if (!found.ok) return { error: found.status === 404 || found.status === 403 ? "no-access" : "drive" };
@@ -1223,18 +1223,21 @@ export default {
         try { return json(await folderFiles(env, drive && drive.folder)); } catch (e) { return json({ error: "drive" }); }
       }
 
-      /* ---------- 📄 Save PDF to my Folder: a Knowledge Check answer sheet into the trainee's own folder (trainees only) ---------- */
+      /* ---------- 📄 Save PDF to my Folder: a Knowledge Check answer sheet into the trainee's own folder (trainees only);
+         📤 Submit to my Drive Folder: a day's worksheet, done in Word (docx: a .docx, a zip file underneath) ---------- */
       if (path === "/api/drive/save") {
         if (tok.role !== "t") return json({ error: "Trainees save their own answer sheets" }, 403);
         const b = await request.json().catch(() => ({}));
-        const name = String(b.name || "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 200), pdf = String(b.pdf || "");
-        if (!/\.pdf$/i.test(name) || !pdf) return json({ error: "Missing name or PDF" }, 400);
-        if (pdf.length > 4000000) return json({ error: "Too large" }, 413);
+        const word = !b.pdf && !!b.docx, data = String((word ? b.docx : b.pdf) || "");
+        const name = String(b.name || "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, 200);
+        if (!(word ? /\.docx$/i : /\.pdf$/i).test(name) || !data) return json({ error: "Missing name or file" }, 400);
+        if (data.length > 4000000) return json({ error: "Too large" }, 413);
         let bytes;
-        try { bytes = Uint8Array.from(atob(pdf), c => c.charCodeAt(0)); } catch (e) { return json({ error: "Not a PDF" }, 400); }
-        if (String.fromCharCode(...bytes.slice(0, 5)) !== "%PDF-") return json({ error: "Not a PDF" }, 400);
+        try { bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0)); } catch (e) { return json({ error: word ? "Not a Word file" : "Not a PDF" }, 400); }
+        const magic = String.fromCharCode(...bytes.slice(0, 5));
+        if (word ? magic.slice(0, 4) !== "PK\u0003\u0004" : magic !== "%PDF-") return json({ error: word ? "Not a Word file" : "Not a PDF" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${tok.id}`)) || "null");
-        try { return json(await saveToFolder(env, drive && drive.folder, name, bytes)); } catch (e) { return json({ error: "drive" }); }
+        try { return json(await saveToFolder(env, drive && drive.folder, name, bytes, word ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "")); } catch (e) { return json({ error: "drive" }); }
       }
 
       /* ---------- cohort ranking (first name + initial only) ---------- */
