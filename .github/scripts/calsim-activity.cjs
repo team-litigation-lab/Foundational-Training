@@ -152,6 +152,8 @@ const bad = [
   ['the ride to SEA naming only the airport (🎨)', (ev, g) => { g('8.2').loc = 'Seattle-Tacoma International Airport (SEA)'; }, '8.2', 'route', /Home → Seattle-Tacoma International Airport \(SEA\)/],
   ['the return travel with no reminder (🎨)', (ev, g) => { g('6.3').reminders = []; }, '6.3', 'trem', /30 minutes to 1 day before.*\(instruction 6\)\. Yours: none/],
   ['the travel to court reminded 10 minutes before (🎨)', (ev, g) => { g('6.2').reminders = [{ type: 'notification', n: 10, unit: 'minutes' }]; }, '6.2', 'trem', /Yours: Notification 10 minutes before/],
+  ['the return flight with no reminder, the trip\'s email on the ride (🎨)', (ev, g) => { g('8.7').reminders = []; }, '8.7', 'trem', /no reminder at all: the trip’s 1-day email is on the other event.*Yours: none/],
+  ['the ride to SEA with no reminder, the trip\'s email on the flight (🎨)', (ev, g) => { g('8.2').reminders = []; g('8.3').reminders = [{ type: 'email', n: 1, unit: 'days' }]; }, '8.2', 'trem', /no reminder at all/],
   ['a lunch on top of the document review (🎨)', ev => { ev.push({ id: 'x3', title: 'Lunch', date: '2026-07-15', start: 12 * 60, dur: 60, tz: A.CAL_TZ, loc: '', guests: [], desc: '', color: '', reminders: [] }); }, 'calendar', 'overlap', /“Lunch” \(Wed Jul 15, 12 PM – 1 PM\) overlaps “Document Review Session” \(Wed Jul 15, 11:30 AM – 1 PM\)|“Document Review Session” \(Wed Jul 15, 11:30 AM – 1 PM\) overlaps “Lunch”/],
   ['the client meeting entered twice (🎨)', ev => { ev.push(Object.assign({}, ev[0], { id: 'dup' })); }, 'calendar', 'dupes', /repeats “Client Meeting”: keep one event per appointment/],
 ];

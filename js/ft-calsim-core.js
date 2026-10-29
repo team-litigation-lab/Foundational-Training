@@ -278,11 +278,12 @@ const remText = r => `${r.type === "email" ? "Email" : "Notification"} ${leadTex
    The simulator's own checks (each one field, scored with the Check's): what the Check, typed text, can't see or doesn't ask:
      • the colour (instruction 4);
      • the guests' email addresses (instruction 9): the item's guests at their directory addresses, and no one else;
-     • a travel block's location naming where the attorney leaves from and where they go (instruction 8), and, for a travel
-       block the activity gives no reminder (6.2, 6.3), a practical reminder of its own (instruction 6: 30 minutes to a day);
+     • a travel block's location naming where the attorney leaves from and where they go (instruction 8), and a reminder on
+       every travel block (instruction 6): where the activity gives none (6.2, 6.3), a practical one, 30 minutes to a day
+       before; on the trip's legs (8.2/8.3, 8.6/8.7), whose 1-day email sits on one leg only, a reminder of some kind;
      • and on the whole calendar, no overlapping events and no duplicates (instruction 7).
-   The same moment typed in Pacific counts in the Check itself (FTCalCheck.pacificOf). Advice that isn't graded (an extra
-   practical reminder on the flights' travel blocks) shows as ℹ lines.
+   The same moment typed in Pacific counts in the Check itself (FTCalCheck.pacificOf). Advice that isn't graded (the lead time
+   of the trip legs' own reminders) shows as ℹ lines.
    ------------------------------------------------------------ */
 const CK = () => root.FTCalCheck && Array.isArray(root.FTCalCheck.key) && typeof root.FTCalCheck.checkAll === "function" ? root.FTCalCheck : null;
 const GAP = "The activity gives 8:30–9:00 AM to reach SEA, right before the 9:00 AM flight: keep the given times. Your trainer may talk through a more realistic airport buffer with you.";
@@ -456,7 +457,7 @@ function travelRems(C, o, x){
 // The simulator's own checks of one expected event (see the answer key's note): [key, label] for each that applies to it
 function simList(C, o){
   return [["color", "Color"]].concat(o.ck.guests ? [["emails", "Guests’ email addresses"]] : [],
-    o.travel ? [["route", "Location: from → to"]] : [], o.travel && !remOf(C, o.n) ? [["trem", "Travel reminder"]] : []);
+    o.travel ? [["route", "Location: from → to"]] : [], o.travel ? [["trem", "Travel reminder"]] : []);
 }
 const EMAIL_OF = name => (PEOPLE.find(p => p.name === name) || {}).email;
 function simChecks(C, o, x){
@@ -471,6 +472,10 @@ function simChecks(C, o, x){
     }
     if(key === "route"){ const ok = !!splitTravel(x.loc);
       return {key, label, ok, info:"", why:ok ? "" : `Name where the attorney leaves from and where they go, e.g. “${o.eg}” (instruction 8). Yours: ${x.loc ? `“${x.loc}”` : "empty"}.`}; }
+    // a leg of the trip (8.2/8.3, 8.6/8.7): the activity's 1-day email sits on one leg, so each leg needs a reminder of some kind;
+    // its lead time is the ℹ line's advice, not graded
+    if(remOf(C, o.n)){ const ok = (x.reminders || []).length > 0;
+      return {key, label, ok, info:"", why:ok ? "" : `This leg of the trip has no reminder at all: the trip’s 1-day email is on the other event, so add one here too, e.g. Notification 1 hour before, so the attorney can leave without rushing (instruction 6). Yours: none.`}; }
     const own = (x.reminders || []).filter(r => remMin(r) >= TRAVEL_MIN && remMin(r) <= TRAVEL_MAX), ok = own.length > 0;
     return {key, label, ok, info:"", why:ok ? "" : `Add a practical reminder, ${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before (e.g. Notification 1 hour before), so the attorney can leave without rushing (instruction 6). Yours: ${x.reminders && x.reminders.length ? x.reminders.map(remText).join(", ") : "none"}.`};
   });

@@ -48,7 +48,9 @@ const day = d => { const m = String(d || "").match(/^(\d{4})-(\d\d)-(\d\d)$/); r
    The attorney's own calendar is in Pacific Time (Seattle), so an event typed in Pacific Time - Los Angeles at the same
    moment also counts: the activity's time in the region's first zone (Denver, New York, Chicago: July's daylight time),
    e.g. the 3:00–4:00 PM MST team meeting as 2:00–3:00 PM Pacific. Its dates, times and zone are then checked against
-   that Pacific time (PAC_OF); the activity's own clock time in Pacific (3:00–4:00 PM) is still the wrong zone. */
+   that Pacific time (PAC_OF); the activity's own clock time in Pacific (3:00–4:00 PM) is still the wrong zone. The Pacific
+   moment of the region's other accepted zone counts too (PACS_OF: 11 AM EST in Panama is 9 AM Pacific), except where it
+   falls on the activity's own clock time (Phoenix: see PACS_OF). */
 // (the options put the city first, so it still shows on a phone's narrow list: Google shows "(GMT-07:00) Pacific Time - Los Angeles")
 const TZ = [["America/Los_Angeles", "Los Angeles · Pacific Time (GMT-07:00)"], ["America/Denver", "Denver · Mountain Time (GMT-06:00)"],
   ["America/Phoenix", "Phoenix · Mountain Standard Time (GMT-07:00)"], ["America/Chicago", "Chicago · Central Time (GMT-05:00)"],
@@ -79,6 +81,18 @@ function PAC_OF(k){
   if(!PACS.has(k)){ const z = REGION[k.tz].ok[0], s = moveZone(k.date, k.start, z, PAC), e = moveZone(k.endDate || k.date, k.end, z, PAC);
     PACS.set(k, s && e ? {sd: s.d, st: s.t, ed: e.d, et: e.t} : null); }
   return PACS.get(k);
+}
+// every Pacific time the Check accepts for it: the same moment as each zone the Check accepts at the activity's clock time
+// (Denver or Phoenix, New York or Panama, Chicago or Regina; the first zone's first). One that falls on the activity's own clock
+// time is left out: 3:00 PM MST in Phoenix is 3:00 PM Pacific in July, but 3:00 PM typed in Pacific can't be told from the
+// time left unconverted, the mistake this field is there to catch, so Phoenix counts only when Phoenix is the zone picked.
+const PACL = new Map();
+function PACS_OF(k){
+  if(!PACL.has(k)){ const first = PAC_OF(k), out = first ? [Object.assign({z: REGION[k.tz].ok[0]}, first)] : [];
+    if(first) REGION[k.tz].ok.slice(1).forEach(z => { const s = moveZone(k.date, k.start, z, PAC), e = moveZone(k.endDate || k.date, k.end, z, PAC);
+      if(s && e && !(s.d === k.date && s.t === k.start && e.d === (k.endDate || k.date) && e.t === k.end) && !out.some(w => w.st === s.t && w.sd === s.d)) out.push({z, sd: s.d, st: s.t, ed: e.d, et: e.t}); });
+    PACL.set(k, out); }
+  return PACL.get(k);
 }
 const UNITS = [["minutes", 1], ["hours", 60], ["days", 1440], ["weeks", 10080]];
 
@@ -174,9 +188,11 @@ function check(k, v, ents){
     out.push(["Start time", null, ""], ["End time", null, ""]);
   } else {
     // typed in Pacific: the same moment in Pacific, unless more of the four fields match the activity's own clock time
-    const own = {sd: k.date, st: k.start, ed: k.endDate || k.date, et: k.end}, pt = PAC_OF(k), hits = w => ["sd", "st", "ed", "et"].filter(f => v[f] === w[f]).length;
+    const own = {sd: k.date, st: k.start, ed: k.endDate || k.date, et: k.end}, hits = w => ["sd", "st", "ed", "et"].filter(f => v[f] === w[f]).length;
+    const pt = PACS_OF(k).reduce((b, w) => !b || hits(w) > hits(b) ? w : b, null);
     pac = !allDay && v.tz === PAC && !!pt && hits(pt) >= hits(own);
-    const w = pac ? pt : own, at = pac ? ` Pacific (the same moment as ${when})` : ` (${when})`;
+    const zn = pt && pt.z !== REGION[k.tz].ok[0] ? ` in ${(TZ.find(t => t[0] === pt.z) || [, pt.z])[1].replace(/ \(GMT.*$/, "").split(" · ").reverse().join(" - ")}` : "";
+    const w = pac ? pt : own, at = pac ? ` Pacific (the same moment as ${when}${zn})` : ` (${when})`;
     out.push(["Start date", v.sd === w.sd, day(w.sd)], ["End date", v.ed === w.ed, day(w.ed)]);
     out.push(["Start time", !allDay && v.st === w.st, allDay ? `Not all day: it starts at ${hhmm(k.start)}` : `${hhmm(w.st)}${at}`]);
     out.push(["End time", !allDay && v.et === w.et, allDay ? `Not all day: it ends at ${hhmm(k.end)}` : `${hhmm(w.et)}${at}`]);
@@ -399,7 +415,7 @@ window.render = function(){
   try{ afterRender(); }catch(err){}
 };
 window.FTCalCheck = {
-  key: KEY, seq: SEQ, zones: TZ, pacificOf: PAC_OF, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
+  key: KEY, seq: SEQ, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
   toggle(n, open){ R.open[n] = !!open; },
   save: () => save(), reload: () => load(true), state: () => R
 };

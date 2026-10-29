@@ -111,6 +111,7 @@ async function load(){
   catch(err){ S.data = blank(); S.err = "Couldn’t load your saved work. You can still practice; check your connection to save."; }
   S.loading = false;
   S.events = C.cleanFor(scn(), S.data.drafts[scn().id]);
+  S.caTop = null;     // the grid opens at the week's earliest saved event (a render while loading had none)
   if(state.view === "calsim" || state.view === "simulators") render();
 }
 function queueSave(){

@@ -95,7 +95,11 @@ async function workerChecks() {
     expect('the team meeting in Pacific at the same moment', change('2', { tz: 'America/Los_Angeles', st: '14:00', et: '15:00' }), []);
     expect('the gym in Pacific at the same moment', change('4', { tz: 'America/Los_Angeles', st: '03:30', et: '04:30' }), []);
     expect('the team meeting at its MST clock time in Pacific', change('2', { tz: 'America/Los_Angeles' }), ['2:Time zone']);
-    expect('the deposition in Pacific an hour late', change('3', { tz: 'America/Los_Angeles', st: '09:00', et: '11:00' }), ['3:Start time', '3:End time']);
+    // EST in Panama (accepted) is 9:00 AM Pacific; in New York, 8:00 AM: the same moment as either counts. MST in Phoenix falls on
+    // the activity's 3:00 PM clock time, which stays the wrong zone (above)
+    expect('the deposition in Pacific at Panama\'s moment', change('3', { tz: 'America/Los_Angeles', st: '09:00', et: '11:00' }), []);
+    expect('the deposition in Pacific at New York\'s moment', change('3', { tz: 'America/Los_Angeles', st: '08:00', et: '10:00' }), []);
+    expect('the deposition in Pacific half an hour late', change('3', { tz: 'America/Los_Angeles', st: '08:30', et: '10:30' }), ['3:Start time', '3:End time']);
     expect('1 day as 24 hours', change('3', { ramt: '24', runit: 'hours' }), []);
     expect('1 hour as 60 minutes', change('10', { ramt: '60', runit: 'minutes' }), []);
     expect('titles in another case, with dashes and the client', change('1', { title: 'CLIENT-MEETING – Alyssa Lynn Arehart' }), []);
