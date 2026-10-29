@@ -52,6 +52,8 @@ const isAct = C.isAct, X = C.act;
 const apx = min => min / C.STEP * ASH, ACT_H = apx(1440);
 const trackOf = () => C.trackOf(scn().track);
 const e = v => esc(String(v == null ? "" : v));
+// a value inside an onclick="…('…')" handler: a JS string literal, then HTML-escaped (esc alone lets ' through once decoded)
+const js = v => e(JSON.stringify(String(v == null ? "" : v)));
 const isTrainee = () => !!state.traineeId && !state.isAdmin;
 // The Standard weeks open with Lesson 5; the activity with Day 5, as its 🛠 Practice Lab card does (js/ft-simulators.js).
 function actOpen(){
@@ -97,6 +99,8 @@ function norm(d){
   d.drafts = d.drafts || {}; d.autos = d.autos || []; d.submissions = d.submissions || []; d.reviews = d.reviews || {}; d.external = d.external || [];
   // Records from the first version of the scheduler held placements, not events: they have nothing to show here.
   d.submissions = d.submissions.filter(x => Array.isArray(x.events));
+  // a submission's time stamp and scenario id are the trainee's own writing: only real ones (they key reviews and the trainer's buttons)
+  d.submissions = d.submissions.filter(x => typeof x.at === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,3})?Z$/.test(x.at) && typeof x.scn === "string" && /^[a-z0-9-]{1,40}$/.test(x.scn));
   Object.keys(d.drafts).forEach(k => { if(!Array.isArray(d.drafts[k])) delete d.drafts[k]; });
   return d;
 }
@@ -245,7 +249,7 @@ function actBlockHTML(x, p, why, ln){
   const icons = (x.meet ? " 📹" : "") + (x.reminders.length ? " 🔔" : "") + (x.guests.length ? " 👥" : ""), warn = why ? "⚠ " : "", t = e(x.title || "(no title)");
   const label = len <= 30 ? `<b>${warn}${t}<em>, ${hh(p.start)}${icons}</em>${tag}</b>` : `<b>${warn}${t}</b><span>${hh(p.start)} – ${X.fmtE(end)}${icons}${tag}</span>${len >= 90 && x.loc ? `<span>${e(x.loc)}</span>` : ""}`;
   const tip = why ? why.join("; ") : `${col ? col.name : "No color yet"}${x.tz !== X.CAL_TZ ? `. Event zone: ${X.zoneText(x)}` : ""}. Drag to move, drag the bottom edge to resize, double-click to edit`;
-  return `<div class="cs-ev cs-req ca-ev ${col ? "" : "ca-nocol"} ${why ? "ca-bad" : ""} ${S.sel === x.id ? "cs-sel" : ""}" data-ev="${e(x.id)}" tabindex="0" role="button" title="${e(tip)}" aria-label="${e(x.title)}, ${e(X.whenOf(x))} Pacific${col ? ", " + e(col.name) : ""}. Arrow keys move it, Shift plus arrow resizes, Enter edits, Delete removes it." style="top:${apx(p.start)}px;height:${Math.max(apx(end) - apx(p.start) - 1, 11)}px;${ln && ln.n > 1 ? `left:calc(${ln.lane * 100 / ln.n}% + 2px);right:calc(${(ln.n - ln.lane - 1) * 100 / ln.n}% + 2px);` : ""}${paintOf(x)}">${label}<button class="cs-x" data-del="${e(x.id)}" aria-label="Delete ${e(x.title)}" tabindex="-1">✕</button><i class="cs-rs" data-rs="${e(x.id)}"></i></div>`;
+  return `<div class="cs-ev cs-req ca-ev ${len <= 20 ? "ca-tiny" : len <= 30 ? "ca-short" : ""} ${col ? "" : "ca-nocol"} ${why ? "ca-bad" : ""} ${S.sel === x.id ? "cs-sel" : ""}" data-ev="${e(x.id)}" tabindex="0" role="button" title="${e(tip)}" aria-label="${e(x.title)}, ${e(X.whenOf(x))} Pacific${col ? ", " + e(col.name) : ""}. Arrow keys move it, Shift plus arrow resizes, Enter edits, Delete removes it." style="top:${apx(p.start)}px;height:${Math.max(apx(end) - apx(p.start) - 1, 11)}px;${ln && ln.n > 1 ? `left:calc(${ln.lane * 100 / ln.n}% + 2px);right:calc(${(ln.n - ln.lane - 1) * 100 / ln.n}% + 2px);` : ""}${paintOf(x)}">${label}<button class="cs-x" data-del="${e(x.id)}" aria-label="Delete ${e(x.title)}" tabindex="-1">✕</button><i class="cs-rs" data-rs="${e(x.id)}"></i></div>`;
 }
 function actGridHTML(s, events){
   const fl = C.flags(s, events), w0 = S.week * 7, days = [0, 1, 2, 3, 4, 5, 6].map(i => w0 + i), off = d => d > X.LAST;
@@ -256,9 +260,11 @@ function actGridHTML(s, events){
   const ad = d => pacs.filter(o => o.p.allDay && d >= o.p.day && d < o.p.day + o.p.span).map(o => chip(o.x)).join("");
   const times = []; for(let m = 60; m < 1440; m += 60) times.push(`<div class="cs-time" style="top:${apx(m) - 7}px">${hh(m)}</div>`);
   const cols = days.map(d => `<div class="cs-col ca-col ${off(d) ? "ca-off" : ""}" data-day="${d}" style="height:${ACT_H}px">${(list => { const ln = lanesOf(list); return list.map(o => actBlockHTML(o.x, o.p, fl[o.x.id], ln.get(o.x.id))).join(""); })(pacs.filter(o => !o.p.allDay && o.p.day === d))}</div>`).join("");
-  return `<div class="ca-cal" id="caScroll"><div class="ca-sticky"><div class="ca-row"><div class="ca-gmt">${e(gmt(X.absAt(X.dIso(w0), 720, X.CAL_TZ)))}</div>${days.map(hd).join("")}</div>
-      <div class="ca-row ca-adrow"><div class="ca-adl">All day</div>${days.map(d => `<div class="ca-ad ${off(d) ? "ca-off" : ""}">${ad(d)}</div>`).join("")}</div></div>
-    <div class="ca-row ca-body"><div class="cs-timecol" style="height:${ACT_H}px">${times.join("")}</div>${cols}</div></div>`;
+  // the greyed days after the activity get narrow columns, so the activity's days keep the width
+  const tpl = days.some(off) ? ` style="grid-template-columns:56px ${days.map(d => off(d) ? "minmax(34px,.3fr)" : "minmax(92px,1fr)").join(" ")};min-width:${56 + days.reduce((n, d) => n + (off(d) ? 34 : 92), 0)}px"` : "";
+  return `<div class="ca-cal" id="caScroll"><div class="ca-sticky"><div class="ca-row"${tpl}><div class="ca-gmt">${e(gmt(X.absAt(X.dIso(w0), 720, X.CAL_TZ)))}</div>${days.map(hd).join("")}</div>
+      <div class="ca-row ca-adrow"${tpl}><div class="ca-adl">All day</div>${days.map(d => `<div class="ca-ad ${off(d) ? "ca-off" : ""}">${ad(d)}</div>`).join("")}</div></div>
+    <div class="ca-row ca-body"${tpl}><div class="cs-timecol" style="height:${ACT_H}px">${times.join("")}</div>${cols}</div></div>`;
 }
 // Read-only (a submission, the trainer's views): the calendar as Google's Schedule view, a row per event, by date.
 function actAgendaHTML(s, events, hl){
@@ -268,7 +274,7 @@ function actAgendaHTML(s, events, hl){
   return `<div class="ca-agenda">${rows.map(({x, p}) => { const d = dayParts(p.day), col = C.colorOf(x.color), why = fl[x.id], zt = X.zoneText(x), first = p.day !== last; last = p.day;
     return `<div class="ca-ar ${first ? "ca-first" : ""} ${why && why.some(w => /^Overlaps/.test(w)) ? "ca-rbad" : ""} ${hl === x.id ? "ca-hl" : ""}" data-row="${e(x.id)}">
       <div class="ca-ad1">${first ? `<b>${d[2]}</b><span>${d[1].toUpperCase()}, ${d[0].toUpperCase()}</span>` : ""}</div>
-      <div class="ca-at">${p.allDay ? "All day" : `${hh(p.start)} – ${X.fmtE(Math.min(p.end, 1440))}`}</div>
+      <div class="ca-at">${p.allDay ? (p.span > 1 ? `All day, to ${X.dLabel(p.day + p.span - 1)}` : "All day") : `${hh(p.start)} – ${X.fmtE(Math.min(p.end, 1440))}`}</div>
       <div><i class="ca-adot ${col ? "" : "ca-nocol"}" style="${col ? "background:" + col.hex : ""}" title="${e(col ? col.name : "No color")}"></i></div>
       <div class="ca-ax"><b>${why ? "⚠ " : ""}${e(x.title || "(no title)")}</b>${col ? ` <span class="ca-cn">${e(col.name)}</span>` : ' <span class="ca-cn">no color</span>'}
         <div class="ca-ameta">${[x.loc ? "📍 " + e(x.loc) : "", x.meet ? "📹 Google Meet" : "", x.guests.length ? "👥 " + e(x.guests.join(", ")) : "", x.reminders.length ? "🔔 " + e(x.reminders.map(X.remText).join(", ")) : ""].filter(Boolean).join(" · ")}</div>
@@ -294,7 +300,7 @@ function feedbackPanel(s, sub, r){
   const busy = !!S.aiBusy[subKey(sub)] && !sub.ai, fin = released(r);
   return `<div class="cs-fb"><div class="cs-fb-hd"><h3>Feedback on your ${e(s.short)} submission</h3><span class="cs-pill ${fin ? "ok" : "warn"}">${fin ? "Final feedback" : "Waiting for your trainer"}</span></div>
     ${aiBlock(sub.ai, busy)}${sub.ai && !sub.ai.error && !fin ? taskFeedback(s, sub.ai, null) : ""}
-    ${fin ? finalHTML(s, r, sub) + `<div class="cs-fb-btns"><button class="btn btn-navy btn-sm" onclick="FTCalSim.download('${e(s.id)}')">⬇ Download my feedback</button><button class="btn btn-ghost btn-sm" onclick="FTCalSim.print('${e(s.id)}')">🖨 Print / save as PDF</button></div>`
+    ${fin ? finalHTML(s, r, sub) + `<div class="cs-fb-btns"><button class="btn btn-navy btn-sm" onclick="FTCalSim.download(${js(s.id)})">⬇ Download my feedback</button><button class="btn btn-ghost btn-sm" onclick="FTCalSim.print(${js(s.id)})">🖨 Print / save as PDF</button></div>`
       : `<p class="cs-hint">Your trainer will go through this feedback with you, add anything the AI missed and their own notes. The finalized feedback report, with a copy you can download, appears here when they finish.</p>`}</div>`;
 }
 // The finalized report's three parts, from the facts of the rules plus the AI's wording: done correctly, needs improvement, missed.
@@ -329,17 +335,35 @@ function reviewHTML(g, notes){
 }
 // The activity's panel: the Calendar Activity Check's verdict on every field of each event (✓, or ✗ with the Check's fix), the
 // simulator's own checks (🎨 the colour; the whole calendar's overlaps and duplicates), and the ℹ lines that aren't scored.
-const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="goto('calcheck')">✅ Check with the Calendar Activity Check</button>` : "";
+const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="FTCalSim.toCheck()" title="Copies this calendar’s events into your Calendar Activity Check, then opens it: each field is checked there">✅ Check this calendar in the Calendar Activity Check</button>` : "";
+// ✅ the Calendar Activity Check (#/calcheck) verifies what is done here: this calendar's events, as the Check's entries (the review's
+// own mapping), go into the trainee's Check draft (asked first when the draft holds other entries), then the Check opens. Its 19th
+// screenshot answers and submissions stay. A trainer's preview, or an empty calendar, only opens it.
+async function toCheck(){
+  const K = window.FTCalCheck, s = scn();
+  if(!K || !isAct(s) || !isTrainee() || !S.events.length){ goto("calcheck"); return; }
+  const g = C.review(s, S.events);
+  if(g.error || !g.entries){ goto("calcheck"); return; }
+  try{ await K.reload(); }catch(err){}
+  const R = K.state();
+  if(!R || !R.rec || R.failed){ toast("Couldn’t read your Calendar Activity Check, so nothing was copied. Check your connection."); goto("calcheck"); return; }
+  const typed = Object.values(R.rec.entries || {}).some(v => Object.entries(v || {}).some(([f, x]) => f !== "runit" && x !== "" && x !== false && x != null));
+  if(typed && JSON.stringify(R.rec.entries) !== JSON.stringify(g.entries) && !confirm("Copy this calendar into your Calendar Activity Check?\n\nIts events replace the ones typed there now. Your answers on the 19th screenshot and your submissions stay.")){ goto("calcheck"); return; }
+  R.rec.entries = JSON.parse(JSON.stringify(g.entries));
+  const ok = await K.save();
+  toast(ok === false ? "Couldn’t save to the Calendar Activity Check. Check your connection." : `📋 ${Object.keys(g.entries).length} events copied into your Calendar Activity Check: each field is checked there.`);
+  goto("calcheck");
+}
 function actReviewHTML(g, notes){
   if(g.error) return `<div class="cs-err">${e(g.error)}</div>`;
   const info = g.extras.filter(x => !x.why.length && x.info), bad = g.extras.filter(x => x.why.length);
   const field = c => c.ok ? `<li class="ok">✓ ${e(c.label)}${c.sim ? " 🎨" : ""}</li>` : `<li class="no">✗ <b>${e(c.label)}${c.sim ? " 🎨" : ""}</b><span>${e(c.why)}</span></li>`;
   return `<div class="cs-result ca-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? "✅ Passes" : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} events perfect · ${g.score} of ${g.max} fields right</span></div>
-    <div class="ca-ckline">📅 <b>Calendar Activity Check:</b> ${g.check.met} of ${g.check.total} fields right (${g.check.pct}%) · 🎨 <b>Simulator checks</b> (color, overlaps, duplicates): ${g.sim.met} of ${g.sim.total} ${CHECK_LINK()}</div>
+    <div class="ca-ckline">📅 <b>Calendar Activity Check:</b> ${g.check.met} of ${g.check.total} fields right (${g.check.pct}%) · 🎨 <b>Simulator checks</b> (color, guests’ emails, travel routes and reminders, overlaps, duplicates): ${g.sim.met} of ${g.sim.total} ${CHECK_LINK()}</div>
     ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b>${i.event ? `<em class="ca-as">“${e(i.event.title || "(no title)")}”</em>` : ""} <span>${i.pts} / ${i.weight}</span></div>
       <ul class="ca-fields">${i.checks.filter(c => c.ok).map(field).join("")}${i.checks.filter(c => !c.ok).map(field).join("")}</ul>${(i.info || []).map(t => `<div class="cs-tinfo">ℹ ${e(t)}</div>`).join("")}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
     ${bad.length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${bad.map(x => `<li><b>${e(x.title)}</b> (${e(x.when)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}${info.length ? `<div class="cs-item"><div class="cs-item-hd">ℹ <b>Other events</b></div><ul class="cs-tinfo-ul">${info.map(x => `<li><b>${e(x.title || "(no title)")}</b> (${e(x.when)}): ${e(x.info)}</li>`).join("")}</ul></div>` : ""}
-    <p class="cs-hint">✓/✗ without 🎨 are the 📅 Calendar Activity Check’s own verdicts (the same check, field by field); 🎨 are this calendar’s (the Check can’t see colors or the whole calendar). Every field counts one.</p></div>`;
+    <p class="cs-hint">✓/✗ without 🎨 are the 📅 Calendar Activity Check’s own verdicts (the same check, field by field); 🎨 are this calendar’s (what the Check can’t see or doesn’t ask: colors, email addresses, a travel block’s route and reminder, the whole calendar). Every field counts one.</p></div>`;
 }
 function resultHTML(){ return S.result ? reviewHTML(S.result) + `<p class="cs-hint">Fix what’s marked, then run the review again. Submit when you’re happy with it.</p>` : ""; }
 const bestAuto = id => (S.data ? S.data.autos : []).filter(a => a.scn === id).reduce((m, a) => Math.max(m, a.pct), -1);
@@ -652,7 +676,7 @@ function onUp(ev){
     editor(base, true, v => { if(!v) return; S.events.push(Object.assign(base, v)); S.sel = base.id; changed(); repaint(); });
     return;
   }
-  if(!d.moved){ if(d.mode !== "new" && d.id){ S.sel = d.id; repaint(); const el = document.querySelector(`.cs-req[data-ev="${CSS.escape(d.id)}"]`); if(el) el.focus(); } return; }
+  if(!d.moved){ if(d.mode !== "new" && d.id) select(d.id); return; }
   if(!cur){ repaint(); return; }
   if(d.mode === "new"){
     if(S.events.length >= maxEv()){ tooMany(); return; }
@@ -667,6 +691,13 @@ function onUp(ev){
     Object.assign(d.x, {date:c.date, start:c.start, dur:c.dur}); S.sel = d.id;
   }else{ Object.assign(d.x, {day:cur.day, start:cur.start, dur:cur.dur}); S.sel = d.id; }
   changed(); repaint();
+}
+// A click selects an event without repainting the grid, so the same element gets the second click of a double-click (the editor).
+function select(id){
+  S.sel = id;
+  document.querySelectorAll(".cs-sel").forEach(n => n.classList.remove("cs-sel"));
+  document.querySelectorAll(`.cs-req[data-ev="${CSS.escape(id)}"], .ca-adev[data-adev="${CSS.escape(id)}"]`).forEach(n => n.classList.add("cs-sel"));
+  const el = document.querySelector(`.cs-req[data-ev="${CSS.escape(id)}"]`); if(el) el.focus({preventScroll:true});
 }
 function onCancel(){ endDrag(); repaint(); }
 const evOf = id => S.events.find(x => x.id === id);
@@ -777,9 +808,10 @@ THE ACTIVITY ITEMS:
 ${items}
 
 RULES OF THIS SIMULATOR:
-- The attorney is in Seattle: the calendar shows Pacific Time. PST, MST, CST and EST in the items are US Pacific, Mountain, Central and Eastern Time (July is daylight time). As on the Calendar Activity Check, each event is entered in the item's own time zone with the item's clock time (e.g. 3:00 PM with the event's time zone set to Mountain Time - Denver, or Mountain Standard Time - Phoenix); the same moment typed in Pacific (2:00 PM Pacific) is marked as the wrong start time and zone.
+- The attorney is in Seattle: the calendar shows Pacific Time. PST, MST, CST and EST in the items are US Pacific, Mountain, Central and Eastern Time (July is daylight time). As on the Calendar Activity Check, each event is entered either in the item's own time zone with the item's clock time (e.g. 3:00 PM with the event's time zone set to Mountain Time - Denver, or Mountain Standard Time - Phoenix), or in Pacific Time at the same moment (2:00 PM Pacific): both are right. The item's clock time typed in Pacific (3:00 PM Pacific) is the wrong zone: the meeting would be an hour off.
 - Hours far from the office are expected: the gym session (6:30 AM EST) is 3:30 AM on the attorney's Pacific calendar. That is not a mistake.
-- Travel blocks and sub-blocks are their own events. The activity asks for "departure → destination" as their location and a practical reminder of their own (${X.leadText(X.TRAVEL_MIN)} to ${X.leadText(X.TRAVEL_MAX)} before); the automated check doesn't grade either, so suggest them, and the trainer confirms the attorney's preferred lead time: don't call one lead time wrong. The trip's 1-day email and notes may sit on either event of its travel block.
+- Travel blocks and sub-blocks are their own events. The activity asks for "departure → destination" as their location (the automated check grades it), and a practical reminder (${X.leadText(X.TRAVEL_MIN)} to ${X.leadText(X.TRAVEL_MAX)} before: graded on the court travel blocks, which the activity gives no reminder; the flights' blocks have the trip's 1-day email, and a reminder of their own beside it is only a suggestion). The trainer confirms the attorney's preferred lead time: don't call a lead time in that range wrong.
+- Guests are invited by their directory email addresses (instruction 9), and only the item's guests. The trip's 1-day email and notes may sit on either event of its travel block.
 - The activity gives 8:30–9:00 AM for the ride to SEA, right before the 9:00 AM flight: the given times are expected. You may suggest talking through a more realistic airport buffer with the trainer, but don't mark the times wrong.
 - The overnight stay in San Francisco is an all-day event on July 13 (it may end on July 13 or 14).
 - Accepted color alternatives:
@@ -829,11 +861,14 @@ async function submit(){
     return;
   }
   const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), events:JSON.parse(JSON.stringify(S.events)), auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true};
+  const before = S.data.submissions.slice();
   S.data.submissions.push(sub);
   if(S.data.submissions.length > 20) S.data.submissions = S.data.submissions.slice(-20);
   // the activity's calendars are bigger: its last ACT_SUBS submissions are kept (the trainer's reviews of older ones stay)
-  if(isAct(s)){ const mine = S.data.submissions.filter(x => x.scn === s.id), drop = new Set(mine.slice(0, Math.max(0, mine.length - ACT_SUBS))); if(drop.size) S.data.submissions = S.data.submissions.filter(x => !drop.has(x)); }
-  if(!fits()){ S.data.submissions = S.data.submissions.filter(x => x !== sub); toast(BIG); return; }
+  // (the oldest unreviewed ones go first; one the trainer has reviewed stays, so Calendar Scores can still open it)
+  if(isAct(s)){ const mine = S.data.submissions.filter(x => x.scn === s.id && x !== sub), over = mine.length + 1 - ACT_SUBS;
+    const drop = new Set(over > 0 ? mine.filter(x => !S.data.reviews[subKey(x)]).slice(0, over) : []); if(drop.size) S.data.submissions = S.data.submissions.filter(x => !drop.has(x)); }
+  if(!fits()){ S.data.submissions = before; toast(BIG); return; }
   const key = subKey(sub); S.aiBusy[key] = true;
   clearTimeout(S.timer); repaint(); toast("Calendar submitted. The AI is checking it against the rules…");
   await saveRec();                                                  // the submission is safe before the AI answers
@@ -883,7 +918,7 @@ function finalOf(scnId){
   return s && sub && released(r) ? {s, sub, r, name:state.certName || state.traineeName || ""} : null;
 }
 window.FTCalSim = {
-  submit,
+  submit, toCheck,
   download(id){ const f = finalOf(id); if(!f){ toast("Your final feedback isn’t released yet."); return; }
     const blob = new Blob([feedbackDoc(f.s, f.sub, f.r, f.name)], {type:"text/html"}), a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = `Calendar feedback - ${f.s.short} - ${f.name || "trainee"}.html`.replace(/[\\/:*?"<>|]+/g, "");
@@ -971,7 +1006,7 @@ function renderAdminScores(){
     ${feedHTML()}${guideHTML()}
     <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
-      ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row('${e(x.id)}')">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
+      ${A.closed[b] ? "" : groups[b].map(x => { const n = x.d.submissions.length, u = unreviewed(x); return `<div class="fp-arow"><div class="fp-arow-hd" onclick="FTCalAdmin.row(${js(x.id)})">${A.open[x.id] ? "▾" : "▸"} <b>${e(x.name)}</b>
         ${n ? `<span class="cs-pill ok">📤 ${n} submitted</span>` : `<span class="cs-pill">Not submitted</span>`}${scoresOf(x)}${u ? `<span class="cs-pill warn">${u} to review</span>` : n ? `<span class="cs-pill ok">All reviewed</span>` : ""}</div>
         ${A.open[x.id] ? detailHTML(x) : ""}</div>`; }).join("")}</section>`).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has used the Calendar Scheduler yet.</div>`}
@@ -985,7 +1020,7 @@ function feedHTML(){
   all.sort((a, b) => b.z.at.localeCompare(a.z.at));
   return `<div class="cs-feed"><div class="cs-feed-hd"><b>📡 Live submissions</b><label class="cs-feed-auto"><input type="checkbox" ${A.auto ? "checked" : ""} onchange="FTCalAdmin.auto(this.checked)"> update on its own</label>${A.stale ? '<button class="btn btn-primary btn-sm" onclick="FTCalAdmin.refresh()">New activity: refresh</button>' : ""}</div>
     ${all.length ? all.slice(0, 5).map(({x, z}) => { const s = C.SCENARIOS.find(q => q.id === z.scn), st = aiState(z), r = x.d.reviews[subKey(z)];
-      return `<div class="cs-feed-row"><span><b>${e(x.name)}</b> · ${e(s ? s.short : z.scn)} · ${e(new Date(z.at).toLocaleTimeString())}</span><span class="cs-pill ${st[0]}">${st[1]}</span>${released(r) ? '<span class="cs-pill ok">Report finalized</span>' : ""}<button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live('${e(x.id)}','${e(subKey(z))}')">🖥 Open live review</button></div>`; }).join("") : '<p class="cs-hint">Nothing submitted yet. New submissions and their AI feedback appear here as they happen.</p>'}</div>`;
+      return `<div class="cs-feed-row"><span><b>${e(x.name)}</b> · ${e(s ? s.short : z.scn)} · ${e(new Date(z.at).toLocaleTimeString())}</span><span class="cs-pill ${st[0]}">${st[1]}</span>${released(r) ? '<span class="cs-pill ok">Report finalized</span>' : ""}<button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live(${js(x.id)},${js(subKey(z))})">🖥 Open live review</button></div>`; }).join("") : '<p class="cs-hint">Nothing submitted yet. New submissions and their AI feedback appear here as they happen.</p>'}</div>`;
 }
 const GUIDE_KEYS = [["all", "All weeks"]];
 function guideHTML(){
@@ -1024,18 +1059,18 @@ function detailHTML(x){
     return `<div class="cs-sub"><div class="cs-sub-hd">📤 <b>${e(s.title)}</b> · submitted ${e(new Date(z.at).toLocaleString())} · ${events.length} event${events.length === 1 ? "" : "s"} for ${isAct(s) ? s.key.length + " expected events" : s.tasks.length + " tasks"} · <span class="cs-pill ${g.passed ? "ok" : ""}">🤖 Automated: ${g.pct}%</span>
       <span class="cs-pill ${aiState(z)[0]}">${aiState(z)[1]}</span>
       ${i === 0 ? '<span class="cs-pill ok">latest</span>' : ""}${rel ? `<span class="cs-pill ok">Released${r.score != null ? ": " + e(r.score) + "/100" : ""}</span>` : r ? '<span class="cs-pill warn">Draft saved</span>' : '<span class="cs-pill warn">To review</span>'}
-      <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live('${e(x.id)}','${e(k)}')">🖥 Live review</button>
-      <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.view('${e(key)}')">${shown ? "Hide details" : "👁 View calendar and feedback"}</button></div>
+      <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.live(${js(x.id)},${js(k)})">🖥 Live review</button>
+      <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.view(${js(key)})">${shown ? "Hide details" : "👁 View calendar and feedback"}</button></div>
       ${shown ? `<div class="cs-gridwrap">${gridHTML(s, events, true)}</div>
-        <div class="cs-lab">🤖 AI feedback <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.regen('${e(x.id)}','${e(k)}')">↻ ${z.ai ? "Regenerate" : "Generate"}</button></div>${z.ai ? aiBlock(z.ai) + (z.ai.error ? "" : taskFeedback(s, z.ai, r)) : '<p class="cs-hint">The AI check runs when the trainee submits. Generate it here if it’s missing.</p>'}
+        <div class="cs-lab">🤖 AI feedback <button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.regen(${js(x.id)},${js(k)})">↻ ${z.ai ? "Regenerate" : "Generate"}</button></div>${z.ai ? aiBlock(z.ai) + (z.ai.error ? "" : taskFeedback(s, z.ai, r)) : '<p class="cs-hint">The AI check runs when the trainee submits. Generate it here if it’s missing.</p>'}
         <div class="cs-lab">🤖 Automated review (the attorney’s rules)</div>${reviewHTML(g, r && r.tasks)}
         <div class="cs-lab">👤 Your feedback</div>
         <div class="cs-rv"><label>Score (0–100) <input type="number" min="0" max="100" id="csrs_${e(key)}" value="${r && r.score != null ? e(r.score) : ""}"></label>
           <label class="cs-rv-c">Written insights for the trainee <textarea id="csrc_${e(key)}" rows="3">${r ? e(r.comment) : ""}</textarea></label></div>
         <label class="cs-rv-t">Also missed: points the AI left out (one per line)<textarea id="csrx_${e(key)}" rows="3" class="cs-rv-ta">${r ? e((r.extra || []).join("\n")) : ""}</textarea></label>
         <div class="cs-rv-ts">${tk}</div>
-        <div class="cs-m-btns"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}',false)">💾 Save draft</button>
-          <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review('${e(x.id)}','${e(k)}','${e(key)}',true)">${rel ? "📄 Update the final report" : "📄 Finalize and generate the report"}</button>${rel ? `<button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.withdraw('${e(x.id)}','${e(k)}')">↩ Withdraw (back to draft)</button>` : ""}</div>
+        <div class="cs-m-btns"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.review(${js(x.id)},${js(k)},${js(key)},false)">💾 Save draft</button>
+          <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review(${js(x.id)},${js(k)},${js(key)},true)">${rel ? "📄 Update the final report" : "📄 Finalize and generate the report"}</button>${rel ? `<button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.withdraw(${js(x.id)},${js(k)})">↩ Withdraw (back to draft)</button>` : ""}</div>
         <p class="cs-hint">The trainee sees the AI feedback as soon as they submit. When you finalize, they get the finalized report (done correctly, needs improvement, missed requirements, your additions and insights) to review and download.</p>` : ""}</div>`;
   }).join("");
   const ext = x.d.external.slice().reverse().map(z => `<div class="cs-att-ext">🔗 ${e(new Date(z.at).toLocaleString())} · ${e(z.title)} · <b>${Math.round(z.score)}/${Math.round(z.max)}</b></div>`).join("");
@@ -1130,11 +1165,11 @@ function paintLive(){
   let m = document.getElementById("csLive"); if(!m){ m = document.createElement("div"); m.id = "csLive"; m.className = "cs-liveov"; document.body.appendChild(m); }
   const s = L.s, n = s.tasks.length, st = L.step, ai = L.z.ai && !L.z.ai.error ? L.z.ai : null, by = Object.fromEntries(((ai && ai.items) || []).map(x => [x.id, x]));
   const t = s.tasks[st - 1], gi = t && L.g.items.find(x => x.id === t.id), a = t && by[t.id];
-  const steps = ["Overview"].concat(s.tasks.map((x, i) => (i + 1) + ". " + x.title), ["Anything missed?"]);
+  const steps = ["Overview"].concat(s.tasks.map((x, i) => isAct(s) ? x.title : (i + 1) + ". " + x.title), ["Anything missed?"]);   // (the activity's titles carry their item numbers)
   let body;
   if(st === 0){
     body = `<h2>${e(L.name)} · ${e(s.title)}</h2>
-      <div class="cs-live-score"><b>${L.g.pct}%</b><span>automated review · ${L.g.done} of ${n} ${isAct(s) ? "checks perfect" : "tasks perfect"}</span></div>
+      <div class="cs-live-score"><b>${L.g.pct}%</b><span>automated review · ${L.g.done} of ${n} ${isAct(s) ? "events perfect" : "tasks perfect"}</span></div>
       ${ai ? aiBlock(ai) : aiPendingNow() ? `<div class="cs-ai"><b>🤖 AI feedback</b><p class="cs-hint cs-pulse">The AI is checking the calendar against the rules and notes… it will appear here as soon as it’s ready. The rule results below are already in.</p></div>` : `<p class="cs-hint">${L.z.ai ? "The AI check wasn’t available. Go through the rule results task by task." : "No AI feedback was saved for this submission. Go through the rule results task by task, or generate it from the list."}</p>`}
       <div class="cs-live-sum">${["correct", "improve", "missed"].map((k, i) => { const n = reportSections(s, L.z, null)[k].length; return `<span class="cs-chip2 ${["met", "partial", "missed"][i]}">${["✅ Done correctly", "🔧 Needs improvement", "❗ Missed"][i]}: ${n}</span>`; }).join(" ")}</div>`;
   }else if(t){
@@ -1339,10 +1374,15 @@ main.main-calsim.ca-wide{max-width:1560px;}
 .cs-col.ca-col.ca-off{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent ${ASH * 4 - 1}px,#e8eaed ${ASH * 4 - 1}px,#e8eaed ${ASH * 4}px),repeating-linear-gradient(135deg,#f8f9fa,#f8f9fa 6px,#f1f3f4 6px,#f1f3f4 12px);}
 .cs-col.ca-col::before,.cs-col.ca-col::after{content:none;}
 .ca-ev{padding:1px 6px;font-size:11.5px;line-height:1.2;} .ca-ev b{font-size:11.5px;} .ca-ev span{font-size:10.5px;}
+.ca-ev.ca-short{padding-top:0;padding-bottom:0;} .ca-ev.ca-short b{line-height:20px;}
+.ca-ev.ca-tiny{padding:0 6px;} .ca-ev.ca-tiny b{font-size:10px;line-height:10px;} .ca-ev.ca-tiny .ca-zt{font-size:8.5px;line-height:9px;}
+.ca-ev .cs-x{opacity:0;} .ca-ev:hover .cs-x,.ca-ev.cs-sel .cs-x,.ca-ev:focus-within .cs-x{opacity:1;} .ca-ev.ca-tiny .cs-x{height:10px;line-height:10px;top:0;}
+.ca-ev:not(.ca-short):not(.ca-tiny) span{white-space:normal;overflow:hidden;}
 .ca-ev.ca-nocol,.cs-req.ca-nocol{background:#e8f0fe;color:#1967d2;border-left-color:#1a73e8;} .ca-ev.ca-nocol .cs-x{color:#1967d2;background:rgba(26,115,232,.12);}
 .ca-zt{font-style:normal;font-size:9.5px;font-weight:700;background:rgba(255,255,255,.3);border-radius:3px;padding:0 3px;margin-left:3px;} .ca-nocol .ca-zt{background:#d2e3fc;}
 .cs-req.ca-bad,.ca-adev.ca-bad{box-shadow:0 0 0 2px #d93025,0 0 0 4px rgba(217,48,37,.25)!important;outline:none;}
-.ca-dlg{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;gap:10px;padding-bottom:14px;} .ca-dlg .cs-m-title{margin-top:4px;}
+.ca-dlg{width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;gap:10px;padding-bottom:14px;}
+.ca-dlg > .cs-m-btns{position:sticky;bottom:-14px;z-index:3;background:inherit;background-color:#fff;margin:0 -2px -14px;padding:10px 2px 14px;border-top:1px solid #f1f3f4;} .ca-dlg .cs-m-title{margin-top:4px;}
 .ca-when{flex-wrap:wrap;} .ca-times{display:inline-flex;gap:6px;align-items:center;} .ca-times[hidden]{display:none;} .cs-m-row[hidden]{display:none;}
 .ca-sub2{margin-top:-4px;} .ca-chk{display:inline-flex;gap:6px;align-items:center;cursor:pointer;} .ca-dnr{font-size:12px;color:#70757a;}
 .ca-pac{margin:-4px 0 0 36px;font-size:12.5px;color:#137333;background:#e6f4ea;border-radius:6px;padding:5px 10px;} .ca-pac.bad{color:#a50e0e;background:#fce8e6;}

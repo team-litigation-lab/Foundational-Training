@@ -7,7 +7,8 @@
    The trainer used to open every screenshot and compare it with the activity by eye. Now the trainee also records what
    each event holds here (#/calcheck), and every field is checked as they type against the activity's answer key:
      • the title (it must name the event; case, spacing and dashes don't matter);
-     • the start and end dates and times, exactly, and the end after the start;
+     • the start and end dates and times, exactly (or the same moment in Pacific Time, the attorney's: see TZ_RULE), and
+       the end after the start;
      • the time zone, in the event's region (see TZ_RULE below);
      • the location, the guests (each by first and last name) and the reminder (its type, and its time: 1 day = 24 hours);
      • the key details in the description (a few words per event);
@@ -43,7 +44,11 @@ const day = d => { const m = String(d || "").match(/^(\d{4})-(\d\d)-(\d\d)$/); r
    activity writes them and asks only for a zone in the right region: PST → Pacific Time - Los Angeles; MST → Mountain
    Time - Denver or Mountain Standard Time - Phoenix (Arizona keeps MST all year); EST → Eastern Time - New York or
    Eastern Standard Time - Panama (the trainer's sample); CST → Central Time - Chicago (the sample) or Central Standard
-   Time - Regina. The offsets shown are July's. */
+   Time - Regina. The offsets shown are July's.
+   The attorney's own calendar is in Pacific Time (Seattle), so an event typed in Pacific Time - Los Angeles at the same
+   moment also counts: the activity's time in the region's first zone (Denver, New York, Chicago: July's daylight time),
+   e.g. the 3:00–4:00 PM MST team meeting as 2:00–3:00 PM Pacific. Its dates, times and zone are then checked against
+   that Pacific time (PAC_OF); the activity's own clock time in Pacific (3:00–4:00 PM) is still the wrong zone. */
 // (the options put the city first, so it still shows on a phone's narrow list: Google shows "(GMT-07:00) Pacific Time - Los Angeles")
 const TZ = [["America/Los_Angeles", "Los Angeles · Pacific Time (GMT-07:00)"], ["America/Denver", "Denver · Mountain Time (GMT-06:00)"],
   ["America/Phoenix", "Phoenix · Mountain Standard Time (GMT-07:00)"], ["America/Chicago", "Chicago · Central Time (GMT-05:00)"],
@@ -55,6 +60,26 @@ const REGION = {PST: {ok: ["America/Los_Angeles"], region: "Pacific", say: "Paci
   MST: {ok: ["America/Denver", "America/Phoenix"], region: "Mountain", say: "Mountain Time - Denver (or Mountain Standard Time - Phoenix)"},
   EST: {ok: ["America/New_York", "America/Panama"], region: "Eastern", say: "Eastern Time - New York (or Eastern Standard Time - Panama)"},
   CST: {ok: ["America/Chicago", "America/Regina"], region: "Central", say: "Central Time - Chicago (or Central Standard Time - Regina)"}};
+// the same moment as a wall-clock date and time in another zone ({d: "2026-07-07", t: "14:00"}), from Intl's offsets
+const PAC = "America/Los_Angeles";
+function offAt(tz, ms){
+  const p = {}; new Intl.DateTimeFormat("en-US", {timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric"})
+    .formatToParts(new Date(ms)).forEach(x => { p[x.type] = x.value; });
+  return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - ms) / 60000);
+}
+function moveZone(d, t, from, to){
+  const m = String(d || "").match(/^(\d{4})-(\d\d)-(\d\d)$/), n = mins(t); if(!m || n == null) return null;
+  try{ const l = Date.UTC(+m[1], +m[2] - 1, +m[3]) + n * 60000, ms = l - offAt(from, l - offAt(from, l) * 60000) * 60000, w = new Date(ms + offAt(to, ms) * 60000).toISOString();
+    return {d: w.slice(0, 10), t: w.slice(11, 16)}; }catch(_){ return null; }
+}
+// an event outside Pacific: the activity's time as the attorney's Pacific calendar shows it (null for PST and the overnight stay)
+const PACS = new Map();
+function PAC_OF(k){
+  if(k.tz === "PST" || k.overnight || !REGION[k.tz]) return null;
+  if(!PACS.has(k)){ const z = REGION[k.tz].ok[0], s = moveZone(k.date, k.start, z, PAC), e = moveZone(k.endDate || k.date, k.end, z, PAC);
+    PACS.set(k, s && e ? {sd: s.d, st: s.t, ed: e.d, et: e.t} : null); }
+  return PACS.get(k);
+}
 const UNITS = [["minutes", 1], ["hours", 60], ["days", 1440], ["weeks", 10080]];
 
 /* ---------- the activity's answer key (July 2026; wall-clock times in the zone given) ----------
@@ -138,6 +163,7 @@ function remRows(k, v){
 // [field, met (true/false, or null when the activity asks nothing of it), what to fix (quoting the activity)]
 function check(k, v, ents){
   v = obj(v);
+  let pac = false;
   const allDay = !!v.allday, title = words(v.title), when = `${day(k.date)}, ${hhmm(k.start)} – ${hhmm(k.end)} ${k.tz}`;
   const out = [["Title", has(v.title) && groupsIn(title, k.title).length === k.title.length && !wrongWay(k, title), `Name it “${k.n} ${k.name}”${k.plus ? ". " + k.plus : ""}`]];
   if(k.overnight){
@@ -147,16 +173,21 @@ function check(k, v, ents){
     out.push(["End date", allDay ? !has(v.ed) || v.ed === k.date || v.ed === k.endDate : v.ed === k.endDate, allDay ? `${day(k.date)} (all day) or ${day(k.endDate)}` : `${day(k.endDate)}: the stay runs overnight`]);
     out.push(["Start time", null, ""], ["End time", null, ""]);
   } else {
-    const ed = k.endDate || k.date;
-    out.push(["Start date", v.sd === k.date, day(k.date)], ["End date", v.ed === ed, day(ed)]);
-    out.push(["Start time", !allDay && v.st === k.start, allDay ? `Not all day: it starts at ${hhmm(k.start)}` : `${hhmm(k.start)} (${when})`]);
-    out.push(["End time", !allDay && v.et === k.end, allDay ? `Not all day: it ends at ${hhmm(k.end)}` : `${hhmm(k.end)} (${when})`]);
+    // typed in Pacific: the same moment in Pacific, unless more of the four fields match the activity's own clock time
+    const own = {sd: k.date, st: k.start, ed: k.endDate || k.date, et: k.end}, pt = PAC_OF(k), hits = w => ["sd", "st", "ed", "et"].filter(f => v[f] === w[f]).length;
+    pac = !allDay && v.tz === PAC && !!pt && hits(pt) >= hits(own);
+    const w = pac ? pt : own, at = pac ? ` Pacific (the same moment as ${when})` : ` (${when})`;
+    out.push(["Start date", v.sd === w.sd, day(w.sd)], ["End date", v.ed === w.ed, day(w.ed)]);
+    out.push(["Start time", !allDay && v.st === w.st, allDay ? `Not all day: it starts at ${hhmm(k.start)}` : `${hhmm(w.st)}${at}`]);
+    out.push(["End time", !allDay && v.et === w.et, allDay ? `Not all day: it ends at ${hhmm(k.end)}` : `${hhmm(w.et)}${at}`]);
   }
   const a = allDay ? (v.sd || "") : `${v.sd || ""}T${v.st || ""}`, b = allDay ? (v.ed || v.sd || "") : `${v.ed || ""}T${v.et || ""}`;
   const okOrder = has(v.sd) && (allDay ? b >= a : has(v.st) && has(v.ed) && has(v.et) && b > a);
   out.push(["Ends after it starts", okOrder, "The end date and time come after the start"]);
   // (the overnight stay has no time to check, so its zone counts only once a start time is entered)
-  out.push(["Time zone", allDay || (k.overnight && !has(v.st)) ? null : REGION[k.tz].ok.includes(v.tz), `${k.tz} means the ${REGION[k.tz].region} zone: “${REGION[k.tz].say}”`]);
+  const pt = PAC_OF(k);
+  out.push(["Time zone", allDay || (k.overnight && !has(v.st)) ? null : pac || REGION[k.tz].ok.includes(v.tz),
+    `${k.tz} means the ${REGION[k.tz].region} zone: “${REGION[k.tz].say}”${pt ? `, or keep Pacific Time - Los Angeles (the attorney’s calendar) and enter ${hhmm(pt.st)} – ${hhmm(pt.et)}, the same moment` : ""}`]);
   out.push(["Location", k.loc ? has(v.loc) && k.loc.some(p => words(v.loc).includes(" " + norm(p) + " ")) : null, k.loc ? `“${k.locShow}”` : ""]);
   if(k.link) out.push(["Zoom link for remote attendees", words(`${v.loc || ""} ${v.notes || ""}`).includes(" " + norm(k.link) + " "), `Add ${k.link} to the location or the description`]);
   const gw = words(v.guests), missing = (k.guests || []).filter(g => norm(g).split(" ").some(w => !gw.includes(" " + w + " ")));
@@ -368,7 +399,7 @@ window.render = function(){
   try{ afterRender(); }catch(err){}
 };
 window.FTCalCheck = {
-  key: KEY, seq: SEQ, zones: TZ, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
+  key: KEY, seq: SEQ, zones: TZ, pacificOf: PAC_OF, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
   toggle(n, open){ R.open[n] = !!open; },
   save: () => save(), reload: () => load(true), state: () => R
 };

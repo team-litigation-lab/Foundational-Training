@@ -275,9 +275,14 @@ const remText = r => `${r.type === "email" ? "Email" : "Notification"} ${leadTex
      SIM[n]   per Check event (its n): cat, the legend's colour category, and alt: other categories accepted (altWhy: the ℹ line
               that says so); travel: a travel block (eg: a departure → destination location, for the ℹ advice); info: a line
               the review always shows on it.
-   The simulator's own checks (each one field, scored with the Check's): the colour (the Check is typed text: it has no colour),
-   and on the whole calendar, no overlapping events and no duplicates. Advice the Check doesn't grade (a travel block's own
-   reminder, its departure → destination location, the same moment typed in Pacific) shows as ℹ lines and isn't scored.
+   The simulator's own checks (each one field, scored with the Check's): what the Check, typed text, can't see or doesn't ask:
+     • the colour (instruction 4);
+     • the guests' email addresses (instruction 9): the item's guests at their directory addresses, and no one else;
+     • a travel block's location naming where the attorney leaves from and where they go (instruction 8), and, for a travel
+       block the activity gives no reminder (6.2, 6.3), a practical reminder of its own (instruction 6: 30 minutes to a day);
+     • and on the whole calendar, no overlapping events and no duplicates (instruction 7).
+   The same moment typed in Pacific counts in the Check itself (FTCalCheck.pacificOf). Advice that isn't graded (an extra
+   practical reminder on the flights' travel blocks) shows as ℹ lines.
    ------------------------------------------------------------ */
 const CK = () => root.FTCalCheck && Array.isArray(root.FTCalCheck.key) && typeof root.FTCalCheck.checkAll === "function" ? root.FTCalCheck : null;
 const GAP = "The activity gives 8:30–9:00 AM to reach SEA, right before the 9:00 AM flight: keep the given times. Your trainer may talk through a more realistic airport buffer with you.";
@@ -328,7 +333,7 @@ function noteOf(o){
   const when = o.allDay ? `${dLabel(dIdx(o.date))}: an All day event (it may end on ${dLabel(dIdx(o.date))} or ${dLabel(dIdx(o.endDate))})`
     : `${dLabel(dIdx(o.date))}, ${range(o.start, o.end)} ${o.tz} in its own time zone (${z.word} Time${z.id === CAL_TZ ? "" : `; ${range(o.pt.start, o.pt.end)} on the attorney’s Pacific calendar`})`;
   return [when, k.loc ? `location: ${k.locShow}${k.link ? ` (with ${k.link})` : ""}` : o.travel ? `location: departure → destination, e.g. ${o.eg}` : "",
-    k.guests ? "guests: " + k.guests.join(", ") : "no guests",
+    k.guests ? "guests: " + k.guests.map(n => `${n} (${EMAIL_OF(n)})`).join(", ") : "no guests",
     rem ? `reminder: ${rem.type} ${rem.show} before${pair ? ` (on ${[o.n, pair].sort().join(" or ")})` : ""}` : "",
     nk ? `notes: ${nk.notesShow}${pair ? ` (on ${[o.n, pair].sort().join(" or ")})` : ""}` : "",
     `color ${catText(o.cat)}${o.alt ? ", or " + o.alt.map(c => CATS[c].legend).join(" / ") + " accepted" : ""}`].filter(Boolean).join(" · ");
@@ -437,16 +442,47 @@ function infoFor(C, o, x){
   const out = o.info ? [o.info] : [];
   if(!x) return out;
   if(o.travel){
-    const want = remOf(C, o.n), left = (x.reminders || []).filter(r => !(want && REM_TYPE[r.type] === want.type && remMin(r) === want.m));
-    const own = left.filter(r => remMin(r) >= TRAVEL_MIN && remMin(r) <= TRAVEL_MAX);
-    out.push(own.length ? `Travel reminder: ${own.map(remText).join(", ")}. Your trainer confirms the attorney’s preferred lead time.`
-      : `A travel block: the activity asks for a practical reminder of its own (${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before, e.g. 1 hour) so the attorney can leave without rushing. The Check doesn’t grade it; your trainer confirms the attorney’s preference.`);
-    if(!splitTravel(x.loc)) out.push(`A travel block’s location names where the attorney leaves from and where they go, e.g. “${o.eg}” (instruction 8). The Check doesn’t grade it; your trainer looks at it.`);
+    const own = travelRems(C, o, x);
+    if(own.length) out.push(`Travel reminder: ${own.map(remText).join(", ")}. Your trainer confirms the attorney’s preferred lead time.`);
+    else if(remOf(C, o.n)) out.push(`A travel block: besides the activity’s 1-day email, a practical reminder of its own (${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before, e.g. 1 hour) helps the attorney leave without rushing. It isn’t graded; your trainer confirms the attorney’s preference.`);
   }
-  // the same moment, typed in another zone (usually Pacific): the Check reads the event's own zone and its clock time
-  if(!o.allDay && !x.allDay && x.tz !== o.tzId){ const a = evAbs(x); if(a.s === o.abs.s && a.e === o.abs.e){ const z = tzOf(o.tz) || TZS[0];
-    out.push(`It is at the right moment on the attorney’s calendar, but Google Calendar shows an event in its own zone, and the Check reads it that way: set the event’s time zone to ${z.word} Time and enter ${range(o.start, o.end)}.`); } }
   return out;
+}
+// a travel block's own practical reminders: 30 minutes to a day before, not counting the one the activity gives (8.2/8.3, 8.6/8.7)
+function travelRems(C, o, x){
+  const want = remOf(C, o.n);
+  return (x.reminders || []).filter(r => !(want && REM_TYPE[r.type] === want.type && remMin(r) === want.m) && remMin(r) >= TRAVEL_MIN && remMin(r) <= TRAVEL_MAX);
+}
+// The simulator's own checks of one expected event (see the answer key's note): [key, label] for each that applies to it
+function simList(C, o){
+  return [["color", "Color"]].concat(o.ck.guests ? [["emails", "Guests’ email addresses"]] : [],
+    o.travel ? [["route", "Location: from → to"]] : [], o.travel && !remOf(C, o.n) ? [["trem", "Travel reminder"]] : []);
+}
+const EMAIL_OF = name => (PEOPLE.find(p => p.name === name) || {}).email;
+function simChecks(C, o, x){
+  return simList(C, o).map(([key, label]) => {
+    if(key === "color"){ const c = colorRow(o, x); return {key, label, ok:c.ok, why:c.ok ? "" : c.why, info:c.info}; }
+    if(key === "emails"){
+      const want = o.ck.guests.map(EMAIL_OF), have = x.guests || [], odd = have.filter(g => !PEOPLE.some(p => p.email === g)), extra = have.filter(g => !want.includes(g) && !odd.includes(g));
+      const miss = want.filter(g => !have.includes(g)), ok = !odd.length && !extra.length && !miss.length;
+      return {key, label, ok, info:"", why:ok ? "" : [miss.length ? `Invite ${miss.map(g => `${who(g)} (${g})`).join(", ")}.` : "",
+        odd.length ? `Not a directory address: ${odd.join(", ")}. Use the addresses in instruction 9 (e.g. ${who(want[0])}: ${want[0]}).` : "",
+        extra.length ? `Not invited to this item: ${extra.map(who).join(", ")}. Invite only ${o.ck.guests.join(", ")}.` : ""].filter(Boolean).join(" ")};
+    }
+    if(key === "route"){ const ok = !!splitTravel(x.loc);
+      return {key, label, ok, info:"", why:ok ? "" : `Name where the attorney leaves from and where they go, e.g. “${o.eg}” (instruction 8). Yours: ${x.loc ? `“${x.loc}”` : "empty"}.`}; }
+    const own = (x.reminders || []).filter(r => remMin(r) >= TRAVEL_MIN && remMin(r) <= TRAVEL_MAX), ok = own.length > 0;
+    return {key, label, ok, info:"", why:ok ? "" : `Add a practical reminder, ${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before (e.g. Notification 1 hour before), so the attorney can leave without rushing (instruction 6). Yours: ${x.reminders && x.reminders.length ? x.reminders.map(remText).join(", ") : "none"}.`};
+  });
+}
+// What the event holds, after a Check field's fix: "Notification (yours: Email 15 minutes before)"
+const dayOr = iso => /^\d{4}-\d\d-\d\d$/.test(iso || "") ? dLabel(dIdx(iso)) : "none";
+function yours(f, x, v){
+  const z = tzOf(x.tz), at = t => x.allDay ? "All day" : `${fmtE(mm(t))} ${z ? z.word : ""}`.trim();
+  const out = {"Title":`“${x.title || ""}”`, "Start date":dayOr(v.sd), "End date":dayOr(v.ed), "Start time":at(v.st), "End time":at(v.et),
+    "Time zone":x.allDay ? "" : z ? z.name : String(x.tz || "none"), "Location":v.loc ? `“${v.loc}”` : "empty", "Guests":v.guests || "none",
+    "Reminder type":(x.reminders || []).length ? x.reminders.map(remText).join(", ") : "no reminder"}[f === "Reminder time" ? "Reminder type" : f];
+  return out ? ` (yours: ${out})` : "";
 }
 function colorRow(o, x){
   const col = colorOf(x.color), main = CATS[o.cat].colors, alts = (o.alt || []).flatMap(c => CATS[c].colors), ok = main.includes(x.color) || alts.includes(x.color);
@@ -462,10 +498,10 @@ function reviewAct(scn, events){
   // the Check's verdict on every field of the 18 events ("11", the 19th screenshot and the upload, are Google Calendar's, not this calendar's)
   const rows = C.checkAll({entries}).filter(r => r[0] !== "11"), simRows = [];
   const items = K.map(o => {
-    const x = m[o.n], mine = rows.filter(r => r[0] === o.n && r[2] !== null), col = x ? colorRow(o, x) : {ok:false, why:"", info:""};
-    simRows.push([o.n, "Color", col.ok, col.why || `Add the event: ${catText(o.cat)}`]);
-    const cs = x ? mine.map(r => ({key:r[1], w:1, ok:r[2], label:r[1], why:r[2] ? "" : r[3], info:""})).concat([{key:"color", w:1, ok:col.ok, label:"Color", why:col.ok ? "" : col.why, info:col.info, sim:true}])
-      : [{key:"found", w:mine.length + 1, ok:false, label:"On the calendar", why:`Not found. Add “${o.title}”: ${noteOf(o)}.`, info:""}];
+    const x = m[o.n], mine = rows.filter(r => r[0] === o.n && r[2] !== null), sims = x ? simChecks(C, o, x) : simList(C, o).map(([key, label]) => ({key, label, ok:false, why:"Add the event", info:""}));
+    sims.forEach(c => simRows.push([o.n, c.label, c.ok, c.why]));
+    const cs = x ? mine.map(r => ({key:r[1], w:1, ok:r[2], label:r[1], why:r[2] ? "" : r[3] + yours(r[1], x, entries[o.n]), info:""})).concat(sims.map(c => Object.assign({w:1, sim:true}, c)))
+      : [{key:"found", w:mine.length + sims.length, ok:false, label:"On the calendar", why:`Not found. Add “${o.title}”: ${noteOf(o)}.`, info:""}];
     const tw = cs.reduce((n, c) => n + c.w, 0), pw = cs.filter(c => c.ok).reduce((n, c) => n + c.w, 0);
     return {id:o.n, title:o.title, weight:tw, pts:pw, perfect:!!x && cs.every(c => c.ok), found:!!x, via:"", event:x || null, checks:cs,
       info:infoFor(C, o, x).concat(cs.map(c => c.info).filter(Boolean))};

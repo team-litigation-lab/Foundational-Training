@@ -3,12 +3,12 @@
 //   - the simulator has no answer key of its own: its expected events are the Check's (FTCalCheck.key), its zones the Check's,
 //     and every expected event has a colour category;
 //   - a perfect calendar built from FTCalCheck.key scores 100 through FTCalCheck (and the Check's own score of the same entries is
-//     100), with the accepted variants (Phoenix / Regina / Panama, colours, 24 hours for 1 day, Google Meet, the trip's reminder
-//     and notes on either event of its travel block, the overnight stay over two days);
+//     100), with the accepted variants (Phoenix / Regina / Panama, the same moment typed in Pacific, colours, 24 hours for 1 day,
+//     Google Meet, the trip's reminder and notes on either event of its travel block, the overnight stay over two days);
 //   - the simulator and the Check agree: the review's rows are exactly FTCalCheck.checkAll of the entries it built, and each
-//     mistake is the field the Check marks ✗ on the hand-typed entry, with the Check's fix;
-//   - the simulator's own checks (colour, overlaps, duplicates) and its ℹ lines (travel reminders, travel locations, the same
-//     moment typed in Pacific) are caught;
+//     mistake is the field the Check marks ✗ on the hand-typed entry, with the Check's fix and what the event holds;
+//   - the simulator's own checks (colour, the guests' directory addresses, a travel block's from → to location and its own
+//     reminder, overlaps, duplicates) and its ℹ lines (a practical reminder beside the trip's email) are caught;
 //   - saved events are cleaned (the 15-minute grid, midnight, the calendar's dates, guests, reminders), the grid's warnings, the
 //     editor's rules;
 //   - the Standard weeks (Rivera, Chen) review exactly as before: their results are pinned.
@@ -113,29 +113,31 @@ const ok = {
   'the return\'s email and notes on the return flight (8.7)': (ev, g) => { g('8.7').reminders.push({ type: 'email', n: 1, unit: 'days' }); g('8.7').desc = g('8.6').desc; g('8.6').desc = ''; g('8.6').reminders = [{ type: 'notification', n: 2, unit: 'hours' }]; },
   'titles with the item\'s number': ev => { ev.forEach(x => { x.title = x.id.slice(2) + ' ' + x.title; }); },
   'an extra event of the trainee\'s own': ev => { ev.push({ id: 'x1', title: 'Hotel check-in', date: '2026-07-13', start: 13 * 60, dur: 30, tz: A.CAL_TZ, loc: 'Ritz', guests: [], desc: '', color: 'grape', reminders: [] }); },
-  'a travel block without a reminder of its own (ℹ only: the Check doesn\'t grade it)': (ev, g) => { g('6.2').reminders = []; },
-  'a travel block naming one place (ℹ only)': (ev, g) => { g('6.2').loc = 'Washington County Court'; },
+  'the flight with only the trip\'s 1-day email (ℹ only)': (ev, g) => { g('8.3').reminders = [{ type: 'email', n: 1, unit: 'days' }]; },
+  'the team meeting typed as 2 PM Pacific (the same moment)': (ev, g) => { Object.assign(g('2'), { tz: A.CAL_TZ, start: 14 * 60 }); },
+  'the gym typed as 3:30 AM Pacific (the same moment)': (ev, g) => { Object.assign(g('4'), { tz: A.CAL_TZ, start: 210 }); },
+  'a court travel reminder by email a day before': (ev, g) => { g('6.2').reminders = [{ type: 'email', n: 1, unit: 'days' }]; },
 };
 for (const [name, fn] of Object.entries(ok)) { const g = mut(fn); if (g.pct !== 100) fail(`accepted, but scores ${g.pct}%: ${name}: ${problems(g)}`); }
 { const g = mut((ev, g) => { g('3').color = 'peacock'; }); if (!g.items.find(i => i.id === '3').info.some(t => /Blue is accepted/.test(t))) fail('an accepted alternative color has no ℹ line saying so'); }
-{ const g = mut((ev, g) => { g('6.2').reminders = []; g('6.2').loc = 'Washington County Court'; }), inf = g.items.find(i => i.id === '6.2').info.join(' ');
-  if (!/a practical reminder of its own/.test(inf) || !/where the attorney leaves from and where they go, e\.g\. “Office → Washington County Court”/.test(inf)) fail(`a travel block's ℹ lines: ${inf}`); }
+{ const g = mut((ev, g) => { g('8.3').reminders = [{ type: 'email', n: 1, unit: 'days' }]; }), inf = g.items.find(i => i.id === '8.3').info.join(' ');
+  if (!/a practical reminder of its own/.test(inf)) fail(`a travel block's ℹ lines: ${inf}`); }
 { const g = mut(ev => { ev.push({ id: 'x1', title: 'Hotel check-in', date: '2026-07-13', start: 780, dur: 30, tz: A.CAL_TZ }); }); if (!(g.extras.length === 1 && !g.extras[0].why.length && /your trainer will look at it/.test(g.extras[0].info))) fail('an unmatched event isn\'t shown as an ℹ for the trainer'); }
 
 // ---------- each mistake: the field the Check marks ✗, with the Check's fix (and the simulator's own checks) ----------
 const bad = [
-  ['the team meeting’s 3 PM left in Pacific', (ev, g) => { g('2').tz = A.CAL_TZ; }, '2', 'Time zone', /MST means the Mountain zone: “Mountain Time - Denver \(or Mountain Standard Time - Phoenix\)”/],
-  ['the team meeting typed as 2 PM Pacific (the same moment)', (ev, g) => { Object.assign(g('2'), { tz: A.CAL_TZ, start: 14 * 60 }); }, '2', 'Start time', /3:00 PM \(July 7, 2026, 3:00 PM – 4:00 PM MST\)/],
+  ['the team meeting’s 3 PM left in Pacific', (ev, g) => { g('2').tz = A.CAL_TZ; }, '2', 'Time zone', /MST means the Mountain zone: “Mountain Time - Denver \(or Mountain Standard Time - Phoenix\)”, or keep Pacific Time - Los Angeles \(the attorney’s calendar\) and enter 2:00 PM – 3:00 PM, the same moment \(yours: Pacific Time - Los Angeles\)/],
+  ['the team meeting at 2:30 PM Pacific', (ev, g) => { Object.assign(g('2'), { tz: A.CAL_TZ, start: 870 }); }, '2', 'Start time', /2:00 PM Pacific \(the same moment as July 7, 2026, 3:00 PM – 4:00 PM MST\) \(yours: 2:30 PM Pacific\)/],
   ['the gym in Central Time', (ev, g) => { g('4').tz = 'America/Chicago'; }, '4', 'Time zone', /EST means the Eastern zone/],
-  ['the team meeting on the wrong day', (ev, g) => { g('2').date = '2026-07-08'; }, '2', 'Start date', /July 7, 2026/],
+  ['the team meeting on the wrong day', (ev, g) => { g('2').date = '2026-07-08'; }, '2', 'Start date', /July 7, 2026 \(yours: Wed Jul 8\)/],
   ['the court appearance ending at 11', (ev, g) => { g('6.1').dur = 120; }, '6.1', 'End time', /12:00 PM/],
   ['the client meeting titled “Consultation”', (ev, g) => { g('1').title = 'Consultation'; }, '1', 'Title', /Name it “1 Client Meeting”/],
   ['the outbound flight named the other way round', (ev, g) => { g('8.3').title = 'Flight from SFO to Seattle'; }, '8.3', 'Title', /Name it “8\.3 Flight from Seattle \(SEA\) to San Francisco \(SFO\)”/],
   ['the dinner without the Ritz-Carlton', (ev, g) => { g('8.1').loc = '600 Stockton St'; }, '8.1', 'Location', /The Ritz-Carlton, San Francisco/],
   ['the deposition without the Zoom link', (ev, g) => { g('3').loc = 'Attorney’s Office'; }, '3', 'Zoom link for remote attendees', /zoom\.us\/deposition-meeting-02-04-25/],
   ['the team meeting without Lei Lee', (ev, g) => { g('2').guests = g('2').guests.slice(0, 3); }, '2', 'Guests', /Invite Lei Lee Abut/],
-  ['the client meeting’s reminder by email', (ev, g) => { g('1').reminders = [{ type: 'email', n: 15, unit: 'minutes' }]; }, '1', 'Reminder type', /Notification/],
-  ['the deposition’s reminder 1 hour before', (ev, g) => { g('3').reminders = [{ type: 'email', n: 1, unit: 'hours' }]; }, '3', 'Reminder time', /1 day before/],
+  ['the client meeting’s reminder by email', (ev, g) => { g('1').reminders = [{ type: 'email', n: 15, unit: 'minutes' }]; }, '1', 'Reminder type', /Notification \(yours: Email 15 minutes before\)/],
+  ['the deposition’s reminder 1 hour before', (ev, g) => { g('3').reminders = [{ type: 'email', n: 1, unit: 'hours' }]; }, '3', 'Reminder time', /1 day before \(yours: Email 1 hour before\)/],
   ['the flight’s 1-day email on neither event of the trip', (ev, g) => { g('8.3').reminders = [{ type: 'notification', n: 1, unit: 'hours' }]; }, '8.3', 'Reminder type', /Email \(on 8\.2 or 8\.3: either event of the travel block\)/],
   ['the family dinner without the groceries', (ev, g) => { g('10').desc = 'Dinner with family.'; }, '10', 'Description', /missing: “groceries”/],
   ['the overnight stay ending July 15', (ev, g) => { g('8.5').span = 3; }, '8.5', 'End date', /July 13, 2026 \(all day\) or July 14, 2026/],
@@ -144,6 +146,12 @@ const bad = [
   ['the client meeting in Tomato (🎨)', (ev, g) => { g('1').color = 'tomato'; }, '1', 'color', /Tomato: this one is Green \(Client Meetings: Basil or Sage\)/],
   ['the client meeting with no color (🎨)', (ev, g) => { g('1').color = ''; }, '1', 'color', /No color \(the calendar’s default\)/],
   ['the recorded statement in Lavender (🎨)', (ev, g) => { g('7').color = 'lavender'; }, '7', 'color', /Lavender isn’t one of the legend’s colors/],
+  ['Lei Lee at an address that isn’t hers (🎨)', (ev, g) => { g('2').guests[3] = 'lei.lee.abut@legalsupporthelp.com'; }, '2', 'emails', /Invite Lei Lee Abut \(team-litigation@legalsupporthelp\.com\)\. Not a directory address: lei\.lee\.abut@legalsupporthelp\.com/],
+  ['all four guests at the client meeting (🎨)', (ev, g) => { g('1').guests = g('2').guests.slice(); }, '1', 'emails', /Not invited to this item: John Michael Dela Cruz, Lei Lee Abut\. Invite only Martin Anthony, Michelle Velarde/],
+  ['the return travel naming one place (🎨)', (ev, g) => { g('6.3').loc = 'Washington County Court'; }, '6.3', 'route', /e\.g\. “Washington County Court → Office” \(instruction 8\)\. Yours: “Washington County Court”/],
+  ['the ride to SEA naming only the airport (🎨)', (ev, g) => { g('8.2').loc = 'Seattle-Tacoma International Airport (SEA)'; }, '8.2', 'route', /Home → Seattle-Tacoma International Airport \(SEA\)/],
+  ['the return travel with no reminder (🎨)', (ev, g) => { g('6.3').reminders = []; }, '6.3', 'trem', /30 minutes to 1 day before.*\(instruction 6\)\. Yours: none/],
+  ['the travel to court reminded 10 minutes before (🎨)', (ev, g) => { g('6.2').reminders = [{ type: 'notification', n: 10, unit: 'minutes' }]; }, '6.2', 'trem', /Yours: Notification 10 minutes before/],
   ['a lunch on top of the document review (🎨)', ev => { ev.push({ id: 'x3', title: 'Lunch', date: '2026-07-15', start: 12 * 60, dur: 60, tz: A.CAL_TZ, loc: '', guests: [], desc: '', color: '', reminders: [] }); }, 'calendar', 'overlap', /“Lunch” \(Wed Jul 15, 12 PM – 1 PM\) overlaps “Document Review Session” \(Wed Jul 15, 11:30 AM – 1 PM\)|“Document Review Session” \(Wed Jul 15, 11:30 AM – 1 PM\) overlaps “Lunch”/],
   ['the client meeting entered twice (🎨)', ev => { ev.push(Object.assign({}, ev[0], { id: 'dup' })); }, 'calendar', 'dupes', /repeats “Client Meeting”: keep one event per appointment/],
 ];
@@ -157,8 +165,10 @@ for (const [name, fn, id, key, re] of bad) {
   if (JSON.stringify(rows) !== JSON.stringify(g.rows) || JSON.stringify(CK.score(rows)) !== JSON.stringify(g.check)) fail(`${name}: the review and the Check disagree`);
   if (key !== 'found' && !/🎨/.test(name) && !rows.some(r => r[0] === id && r[1] === key && r[2] === false)) fail(`${name}: the Check doesn't mark ${id}/${key} ✗`);
 }
-// the same moment typed in Pacific: the Check marks it, and the simulator says why
-{ const g = mut((ev, g) => { Object.assign(g('2'), { tz: A.CAL_TZ, start: 14 * 60 }); }); if (!g.items.find(i => i.id === '2').info.some(t => /right moment on the attorney’s calendar.*Mountain Time and enter 3 PM – 4 PM/.test(t))) fail('the same moment in Pacific has no ℹ line saying why'); }
+// the simulator's own checks are scored with the Check's, and a missing event misses them too
+{ const g = mut((ev, g) => { g('6.3').loc = 'Court'; }); if (g.sim.total !== g.sim.met + 1 || g.score !== g.max - 1) fail(`a travel route counts ${g.max - g.score} fields (sim ${g.sim.met}/${g.sim.total})`); }
+{ const g = mut((ev, g, del) => { del(g('6.3')); }), it = g.items.find(i => i.id === '6.3'), want = CK.check(CK.key.find(k => k.n === '6.3'), {}).filter(c => c[1] !== null).length + 3;
+  if (it.weight !== want) fail(`a missing travel block weighs ${it.weight}, expected ${want} (its Check fields, its colour, route and reminder)`); }
 { const g = mut(ev => { ev.push(Object.assign({}, ev[0], { id: 'dup' })); }), cal = g.items.find(i => i.id === 'calendar');
   if (!cal.checks.find(c => c.key === 'overlap').ok) fail('a duplicate is also counted as an overlap'); }
 // the big ones fail the pass mark
