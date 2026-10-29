@@ -35,7 +35,7 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   2: {s2: "Common Terms Used & Auto Liability Insurance", s4: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"},
   // (Day 3's first slide: the sample recordings and SOP, its card's 🎧 Call Listening Sessions row; "Call Listening" in its
   // name brings the 🎧 Call Listening log button, js/ft-day-decks.js slideActions)
-  3: {s1: "Call Listening Sessions", s2: "Homework: CRM/CMS Training Videos"},
+  3: {s1: "Frontline Management: Operations, Logistics, and Escalations Protocols", s2: "Homework: CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing and Mock Call Preparation", s3: "PM: Reception Mock Calls (One-on-One)"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
@@ -139,6 +139,34 @@ const CALSIM_ACTIVITY = {label: "📅 Do this activity on the Calendar Simulator
 const calsimHook = () => `<div class="ftdd-calsim" data-calsim-activity="5:s3">${CALSIM_ACTIVITY ? `<a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}"${/^#/.test(CALSIM_ACTIVITY.href) ? "" : ' target="_blank" rel="noopener noreferrer"'}>${hx(CALSIM_ACTIVITY.label)}</a>` : ""}</div>\n`;
 // (a slide whose videos carry no "📝 What I learned": js/ft-day-decks.js visual)
 const NOLEARN = '<div class="ftdd-nolearn" hidden></div>\n';
+// 🌳 Day 3's call-handling decision trees, drawn on the slide (Frontline Management): the guide's two (its screenshots,
+// ft/day3/img/image12.png and image17.png: Authorization, Payment Calls) and the PI firm's other frontline calls. Each:
+// what starts it, its steps (a question with what to do on YES and on NO, or a step to take), and its protocol
+const TREES = [
+  {h: "Authorization Decision Tree", tag: "Information Security Protocol", start: "Caller requests information", steps: [
+    {q: "Is the caller listed as authorized in the CRM?", yes: ["Proceed per SOP"], no: ["Take a message", "Route to the attorney/paralegal", "Do NOT disclose information"]}]},
+  {h: "Payment Calls Decision Tree", tag: "Settlement & Payment Protocol", start: "Caller asks about payment/settlement", steps: [
+    {do: "Authenticate name + case"},
+    {q: "Is the caller requesting numbers or timelines?", yes: ["Do NOT answer", "Route to the legal team"], no: ["General inquiry", "Take a message", "Route"]}]},
+  {h: "New Caller Decision Tree", tag: "Intake Protocol", start: "A new caller reports an accident or injury", steps: [
+    {q: "Is it a personal injury matter (MVA, slip & fall, dog bite, premises)?", yes: ["Go on to the next question"], no: ["Take a message", "Route to the attorney for review (referral per firm policy)"]},
+    {q: "Is the date of loss within the statute of limitations (Nevada: 2 years)?", yes: ["Take the intake basics: name, callback number, DOB, DOL, injuries", "Schedule the intake / transfer to the Intake Specialist"], no: ["Take the details", "Route to the attorney now: do not promise representation"]}]},
+  {h: "Medical Provider Call Decision Tree", tag: "HIPAA Protocol", start: "A provider calls about a client’s bills, records or lien", steps: [
+    {do: "Verify the provider, and the client: name, DOB, DOL"},
+    {q: "Is the client’s signed HIPAA authorization on file?", yes: ["Take the request (bills, records, lien balance)", "Route to the Medical Records Specialist"], no: ["Do NOT share PHI", "Take a message", "Route to the case manager to get the HIPAA authorization"]}]},
+  {h: "Insurance Adjuster Call Decision Tree", tag: "Claims Communication Protocol", start: "An adjuster calls about a claim", steps: [
+    {q: "Is our Letter of Representation on file and the claim number known?", yes: ["Never give a recorded statement or settlement figures", "Take the message", "Route to the case manager on the claim"], no: ["Take the adjuster’s name, company, claim no. and callback", "Confirm nothing about the case", "Route to the case manager"]}]},
+  {h: "Urgent / Distressed Caller Decision Tree", tag: "Escalation Protocol", start: "The caller is upset or reports an emergency", steps: [
+    {q: "Is anyone in immediate danger or in a medical emergency?", yes: ["Tell them to call 911 now", "Note the call", "Escalate to the attorney right away"], no: ["Stay calm, listen and empathize", "Take a detailed message", "Escalate the same day to the attorney/case manager"]}]}
+];
+const esc_ = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// (a row of two to a grid: a long slide is dealt into pages by its blocks, so each row can share a page)
+const treeHtml = t => `<div class="ftdt"><div class="ftdt-h"><b>🌳 ${esc_(t.h)}</b><button type="button" class="ftdt-big" onclick="FTDayDecks.treeFull(this)" title="Show this tree bigger">⛶ Bigger</button></div>` +
+  `<div class="ftdt-body"><div class="ftdt-start">${esc_(t.start)}</div>` +
+  t.steps.map(s => s.do ? `<div class="ftdt-arrow">↓</div><div class="ftdt-do">${esc_(s.do)}</div>`
+    : `<div class="ftdt-arrow">↓</div><div class="ftdt-q">${esc_(s.q)}</div><div class="ftdt-br"><div class="ftdt-yes"><span>YES</span>${s.yes.map(x => `<i>${esc_(x)}</i>`).join("")}</div><div class="ftdt-no"><span>NO</span>${s.no.map(x => `<i>${esc_(x)}</i>`).join("")}</div></div>`).join("") +
+  `<p class="ftdt-tag">🛡 ${esc_(t.tag)}</p></div></div>`;
+const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -263,11 +291,17 @@ s3: html => {
   if(!html.includes("1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn")) throw new Error("Day 3's Reception Activity links moved");
   const extra = cut("<p>4. Carlos &amp; remaining", '<hr class="stars">');
   if(!extra.includes("<p>Oscar’s Reception Recordings</p>\n")) throw new Error("Day 3's supplementary recordings are no longer where the build looks for them");
+  // (Frontline Management: the call-handling decision trees drawn on the slide, two to a row, in place of the guide's two
+  // screenshots (the Authorization and Payment Calls trees), with the PI firm's other frontline calls beside them (TREES);
+  // then the Sample SOP read in the slide, a tile opening it larger. The sample call recordings are the 🎧 Call Listening
+  // slide's, a card each: js/ft-day-decks.js LISTEN_CARDS)
+  if(!/image12\.png/.test(shots) || !/image17\.png/.test(shots)) throw new Error("Day 3's decision tree screenshots are no longer where the build looks for them");
+  const SOP = "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link";
   return '<div class="trainer-slot" data-slot="3:s1-1"></div>\n<div class="trainer-slot" data-slot="3:s1-2"></div>\n<div class="trainer-slot" data-slot="3:s1-3"></div>\n' +
-    '<div class="trainer-slot" data-slot="3:s1-4"></div>\n' +
-    lnk("Sample Call Recordings", "https://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU?usp=sharing") +
-    lnk("Sample SOP", "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link") + shots +
-    ex +
+    '<div class="trainer-slot" data-slot="3:s1-4"></div>\n' + TREES_HTML +
+    '<div class="ftdd-pgbreak"></div>\n' +
+    `<p><a class="viewer-link" data-embed data-full data-kind="doc" data-title="Sample SOP" href="${SOP}">${SOP}</a></p>\n` +
+    `<p>Sample SOP: the bigger view</p>\n<p><a class="viewer-link" data-kind="doc" data-title="Sample SOP" href="${SOP}">${SOP}</a></p>\n` + ex +
     extra.replace("<p>4. Carlos &amp; remaining Oscar’s’ Reception Recordings", "<p>3. Carlos &amp; Oscar’s Reception Recordings")
       .replace("<p>Oscar’s Reception Recordings</p>\n", `<p>Oscar’s Reception Recordings</p>\n<p>Oscar’s Reception Activity recordings</p>\n<p><a href="${oscarFolder}" target="_blank" rel="noopener noreferrer">${oscarFolder}</a></p>\n`)
       .replace(/ class="viewer-link" data-kind="doc" data-title="[^"]*"/g, ' target="_blank" rel="noopener noreferrer"');
