@@ -25,6 +25,46 @@ DD.page = 0;   // a long slide is read in pages, each one a screenful (fitSheets
 const AUTOPLAY_SECS = 20;
 const SRC = (function(){ const s = document.currentScript; const v = s && /\?v=([^&]+)/.exec(s.src); return "/js/ft-day-decks-data.js" + (v ? "?v=" + v[1] : ""); })();
 const decks = () => root.FT_DAY_DECKS || null;
+/* 📊 Day 2's Common Terms Used reference sheet, drawn as a table of its own (js/ft-ref-terms-data.js, built from the Google
+   Sheet by build/ref-terms.py): all of it, a tab per sheet tab, every column with the cells' own links and pictures, and
+   the columns sized for what they hold, TERM, PAGE SOURCE, LEARN MORE and REMARKS narrow, DEFINITION and EXAMPLE wide.
+   Loaded the first time the slide is drawn; the sheet's embed until then. */
+const REF_SHEET = /1tmV26rq_1z1mpq1C5hUweLytfyJUtkai/;
+const REF_SRC = SRC.replace("ft-day-decks-data.js", "ft-ref-terms-data.js");
+let refLoading = false;
+function loadRefTerms(){
+  if(root.FT_REF_TERMS || refLoading) return;
+  refLoading = true;
+  const s = document.createElement("script"); s.src = REF_SRC; s.async = true;
+  s.onload = () => { if(state.view === "daydeck") render(); };
+  document.head.appendChild(s);
+}
+// a cell: its text (a web address in it a link), else {t, a: the cell's own link, img: the pictures placed in it}
+const refLink = (u, t) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`;
+const refText = c => String(typeof c === "string" ? c : c.t || "");
+function refCell(c){
+  const t = refText(c), x = typeof c === "string" ? {} : c;
+  let h = x.a ? refLink(x.a, e(t)) : e(t).replace(/https?:\/\/[^\s<]+/g, u => refLink(u, u));
+  h = h.replace(/\n/g, "<br>");
+  (x.img || []).forEach(src => { h += `<a class="ftdd-terms-img" href="${e(src)}" target="_blank" rel="noopener noreferrer"><img src="${e(src)}" alt="${e(t || "Picture")}" loading="lazy"></a>`; });
+  return h;
+}
+function refTermsHtml(k){
+  const R = root.FT_REF_TERMS, tab = R.tabs[k] || R.tabs[0];
+  // (a row of a lone letter, the sheet's A, B, C …, heads its terms)
+  const rows = tab.rows.map(r => /^[A-Z]$/.test(refText(r[0])) && !r.slice(1).some(c => refText(c) || typeof c !== "string") ? `<tr class="ftdd-terms-sec"><td colspan="${R.head.length}">${e(refText(r[0]))}</td></tr>`
+    : `<tr>${r.map((c, i) => `<td${i ? "" : ' class="ftdd-terms-t"'}>${refCell(c)}</td>`).join("")}</tr>`).join("");
+  return `<div class="ftdd-terms-tabs">${R.tabs.map((t, i) => `<button type="button" class="${t === tab ? "on" : ""}" onclick="FTDayDecks.refTab(${i})">${e(t.name)}</button>`).join("")}</div>
+    <div class="ftdd-terms-scroll"><table class="ftdd-terms"><colgroup><col style="width:10%"><col style="width:27%"><col style="width:27%"><col style="width:12%"><col style="width:12%"><col style="width:12%"></colgroup>
+    <thead><tr>${R.head.map(h => `<th>${e(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function refTermsInto(box){
+  if(!root.FT_REF_TERMS){ loadRefTerms(); return false; }
+  const em = box.querySelector(".ftdd-embed");
+  em.className = "ftdd-embed ftdd-embed-terms"; em.innerHTML = refTermsHtml(DD.refTab || 0);
+  box.classList.add("is-terms");
+  return true;
+}
 function loadDecks(){
   if(decks()) return Promise.resolve(decks());
   if(DD.loading) return DD.loading;
@@ -238,7 +278,11 @@ function visual(html){
       const crop = parseInt(as[0].getAttribute("data-crop"), 10);
       // a document to work in (Day 2's assessments, data-full): the page's full height
       if(as[0].hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
-      if(crop > 0){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
+      // 📊 Day 2's Common Terms Used reference sheet: the platform's own table in place of the embed (refTerms below),
+      // the embed while its data loads
+      if(REF_SHEET.test(href)) box.setAttribute("data-sheet", REF_SHEET.source);
+      const terms = REF_SHEET.test(href) && refTermsInto(box);
+      if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
       if(learn0) learn0.setAttribute("data-title", nm);
       const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
       if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
@@ -1612,7 +1656,8 @@ function toolsSlide(){
 
 root.FTDayDecks = {open, go, next: nextKC,
   // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
-  refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+  refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide,
+  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
@@ -2314,6 +2359,21 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 /* a sheet cut to its first columns (fitCrops scales its frame to the box): the page's full height, under its name */
 .ft-body .ftdd-embed.ftdd-embed-crop, .ft-body .ftdd-embed.ftdd-embed-full{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
 .ft-body .ftdd-inline.is-crop{margin:0;}
+/* 📊 the reference sheet as a table (refTerms): the page's full height, its tabs above, the rows scrolling under the header */
+.ft-body .ftdd-embed.ftdd-embed-terms{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));display:flex;flex-direction:column;margin-top:10px;border:2px solid #343C66;border-radius:8px;background:#fff;}
+.ft-body .ftdd-inline.is-terms{margin:0;}
+.ft-body .ftdd-terms-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid #D9DCE8;background:#F4F5FA;}
+.ft-body .ftdd-terms-tabs button{border:1px solid #C9CDE0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:600 13px/1.3 'Inter',sans-serif;cursor:pointer;}
+.ft-body .ftdd-terms-tabs button.on{background:#1E2340;border-color:#1E2340;color:#fff;}
+.ft-body .ftdd-terms-scroll{flex:1;min-height:0;overflow:auto;}
+.ft-body table.ftdd-terms{width:100%;table-layout:fixed;border-collapse:collapse;margin:0;font:14px/1.45 'Inter',sans-serif;color:#1E2340;}
+.ft-body table.ftdd-terms th{position:sticky;top:0;z-index:1;background:#93C47D;color:#111;font:800 14px/1.25 'Inter',sans-serif;text-align:center;padding:8px 6px;border:1px solid #7FAF6A;}
+.ft-body table.ftdd-terms td{vertical-align:top;padding:8px 10px;border:1px solid #E1E3EC;overflow-wrap:anywhere;}
+.ft-body table.ftdd-terms td.ftdd-terms-t{font-weight:800;}
+.ft-body table.ftdd-terms tr.ftdd-terms-sec td{background:#EEF0F7;font:800 15px/1.2 'Poppins','Inter',sans-serif;padding:6px 10px;}
+.ft-body table.ftdd-terms a{color:#1A56C4;}
+.ft-body table.ftdd-terms .ftdd-terms-img{display:block;margin-top:8px;}
+.ft-body table.ftdd-terms .ftdd-terms-img img{display:block;max-width:100%;height:auto;border:1px solid #E1E3EC;border-radius:6px;}
 /* a page break the build puts in a slide (sheetPages): nothing to see */
 .ft-body .ftdd-pgbreak{display:none !important;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
