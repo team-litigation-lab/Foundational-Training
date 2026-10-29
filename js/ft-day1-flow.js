@@ -11,8 +11,8 @@
      • a later step's page, deck slide, video or answer sheet says it is locked and goes back to the current step;
      • Day 1's Activity deck goes strictly in order: Next, one slide at a time; no skipping ahead from the dots or the 🗺 Map
        (going back to a slide already passed is fine).
-   🎬 Day 1's video (the day card's Handouts / Video, the lesson card's 🎬 Video) is never requested: it opens once the
-   trainer unlocks Handouts and Videos, and locks again if the trainer locks from there.
+   🎬 Day 1's video (the lesson card's 🎬 Video: the lesson's AI discussion video, not on the decks) is never requested: it
+   opens once the trainer unlocks Handouts and Videos, and locks again if the trainer locks from there.
    Only a trainee on Day 1 is held to it: an admin, the 👁 trainee view, a trainee who finished Lesson 1 and a batch
    already given a later lesson are not.
    ============================================================ */
@@ -83,8 +83,10 @@ window.FTDay1 = {STEPS, active, at, stepsFor, label: n => step(n).label,
   goCurrent, openStep, mayGo,
   // 🎬 Day 1's video waits for Handouts and Videos (no request): true while it is locked
   videoByStep: id => Number(id) === 1 && !!state.traineeId && !state.isAdmin && !state.adminPreview && !videoOpen()};
-// Day 1's video is open once the trainer has unlocked Handouts and Videos for the batch (and locks again from there)
-const videoOpen = () => stepsFor(state.traineeBatch) >= 5;
+// Day 1's video is open once the trainer has unlocked Handouts and Videos for the batch (and locks again from there),
+// or, for a trainee no longer held to Day 1's steps (Lesson 1 finished, the batch past Day 1), once the trainer has
+// unlocked it as any lesson's video is (🎬 Unlock Videos, or approved for them)
+const videoOpen = () => stepsFor(state.traineeBatch) >= 5 || (!active() && !!__unlocked && __unlocked(1));
 
 /* the pages: 📚 Dashboard opens the current step; Know Your Tools, Lesson 1 and its Knowledge Check wait for theirs */
 const __goto = window.goto;
@@ -108,9 +110,8 @@ if(__video) window.ftVideoOrAsk = function(id){
   if(Number(id) === 1) return ftOpenVideo(1);
   return __video.apply(this, arguments);
 };
-// Day 1's 🎬 Video (the lesson card's, the day card's Handouts / Video) is its Breakout Session handouts: their slide
-const __open = window.ftOpenVideo;
-if(__open) window.ftOpenVideo = function(id){ if(Number(id) === 1 && window.FTDayDecks){ openStep(5); return; } return __open.apply(this, arguments); };
+// (Day 1's 🎬 Video on the lesson card plays the lesson's AI discussion video, as every lesson's does: js/ft-updates.js
+// ftOpenVideo. The decks don't open the video: the day card's Handouts / Video row opens its handouts slide)
 const __ask = window.ftRequestVideo;
 if(__ask) window.ftRequestVideo = function(id){ if(Number(id) === 1 && isTrainee()){ toast(VIDEO_LOCKED); return; } return __ask.apply(this, arguments); };
 
