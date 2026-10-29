@@ -2,3 +2,6 @@
 node_modules/
 __pycache__/
 build/calls/.cache/
+# 📋 the Day decks' slides: built from build/days/ by build/day-decks.cjs on every deploy and preview (wrangler.json
+# "build"), and before the checks run; not committed, so two pull requests that change the decks never conflict on it
+js/ft-day-decks-data.js
