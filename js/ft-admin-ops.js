@@ -2,8 +2,7 @@
    🛡 Admin: the operations tabs the platform spec lists for every program —
      📋 SOPs                 the program's standard operating procedures, written and kept by trainers
      🗄 Database Maintenance clear the data that is only needed for a while; the records are kept
-   The spec's other three are already their own tabs: Assign Case File (🏛 Law Firms, this program
-   only), the Trainer Feedback Tool (💬 Trainee Feedback) and Trainee Progress Monitoring (the
+   The spec's other two are already their own tabs: the Trainer Feedback Tool (💬 Trainee Feedback) and Trainee Progress Monitoring (the
    Trainee Audit, 📋 Task Trackers and 📒 Monitoring Sheets; attendance is taken on the Training
    Portal, Master Control → 🕘 Attendance, per program per batch).
    Loaded after js/ft-firms.js (window.ftAdminTab) and before js/ft-program.js, which puts these
