@@ -1919,6 +1919,9 @@ main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:m
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps{margin:0;padding-left:26px;font:600 20px/1.55 'Inter',sans-serif !important;color:#fff !important;}
+/* (Day 2's breakout: the lesson's AI discussion video, on the same stop as its handouts) */
+main.main-ftdd .ftdd-handouts .ftdd-ho-video{margin-top:16px;border:0;border-radius:999px;padding:10px 20px;background:#DB8437 !important;color:#fff !important;font:800 16px/1.2 'Inter',sans-serif !important;cursor:pointer;}
+main.main-ftdd .ftdd-handouts .ftdd-ho-video:hover{background:#C9742B !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li{color:#fff !important;font:600 20px/1.55 'Inter',sans-serif !important;margin:2px 0 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-steps li::marker{color:#F4B77A !important;font-weight:800;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-list{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:10px;}

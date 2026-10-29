@@ -156,5 +156,5 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await b.close();
   }
   if (failures.length) { console.error(`${failures.length} failure(s):\n` + failures.map((f, i) => `${i + 1}. ${f}`).join('\n')); process.exit(1); }
-  console.log('Activity Locks test passed (a segment per day on the lesson cards, locked until opened; nothing unlocked: the deck, the lesson, the LOR activity and the Practice Lab\'s sessions wait; one step: the deck goes no further, the lesson opens, its video waits; ⏰ a schedule opens its AM session only; the trainer\'s 🔓 Activity Locks; ten process questions at most per sheet).');
+  console.log('Activity Locks test passed (Days 2–16: a step per card row, named as the card names it, each holding its row\'s slides; old slide-step counts read as the card-row steps they had opened, and rewritten so, flagged, on the trainer\'s next save; a segment per day on the lesson cards, locked until opened; nothing unlocked: the deck, the lesson, the LOR activity and the Practice Lab\'s sessions wait; one step: the deck goes no further, the lesson opens, its video waits; ⏰ a schedule opens its AM session only; the trainer\'s 🔓 Activity Locks; ten process questions at most per sheet).');
 })();
