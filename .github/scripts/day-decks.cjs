@@ -10,10 +10,13 @@ const signIn = require('./sign-in.cjs');
 const BASE = process.argv[2] || 'http://localhost:8787/';
 const R = path.resolve(__dirname, '../..');
 const failures = []; const fail = m => failures.push(m);
-// the data file is what the generator writes today
-const data = path.join(R, 'js/ft-day-decks-data.js'), before = fs.readFileSync(data, 'utf8');
+// the data file is what the generator writes (built, not committed: wrangler.json "build", the Checks workflow), and the
+// generator writes the same file every time
+const data = path.join(R, 'js/ft-day-decks-data.js');
 cp.execFileSync('node', [path.join(R, 'build/day-decks.cjs')], { stdio: 'ignore' });
-if (fs.readFileSync(data, 'utf8') !== before) { fail('js/ft-day-decks-data.js is out of date: run node build/day-decks.cjs'); fs.writeFileSync(data, before); }
+const before = fs.readFileSync(data, 'utf8');
+cp.execFileSync('node', [path.join(R, 'build/day-decks.cjs')], { stdio: 'ignore' });
+if (fs.readFileSync(data, 'utf8') !== before) fail('build/day-decks.cjs writes a different js/ft-day-decks-data.js each time it runs');
 const ctx = { window: {} }; vm.createContext(ctx); vm.runInContext(before, ctx);
 const D = ctx.window.FT_DAY_DECKS || {};
 for (let n = 1; n <= 16; n++) {
@@ -337,5 +340,5 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Day decks test passed (16 decks from build/days, up to date; Days 2–16 in Day 1's shape: each card row its own slides in the card's order, ending on End of Module, nothing empty, the steps the card's rows, the card at about Day 1's size; Day 1's deck unchanged; Day 11's LOR guidelines inlined; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the icon opening the deck on the Classroom Activity card, every day on its own day card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; no side panel sections, To-Do or autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
+  console.log(`Day decks test passed (16 decks from build/days, built the same every time; Days 2–16 in Day 1's shape: each card row its own slides in the card's order, ending on End of Module, nothing empty, the steps the card's rows, the card at about Day 1's size; Day 1's deck unchanged; Day 11's LOR guidelines inlined; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the icon opening the deck on the Classroom Activity card, every day on its own day card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; no side panel sections, To-Do or autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -8,8 +8,12 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = process.cwd();
+// 📋 the Day decks' slides are built, not committed (wrangler.json "build" does it on deploy): built here first, from the
+// day files as they are now
+execFileSync(process.execPath, [path.join(ROOT, 'build/day-decks.cjs')], { stdio: 'ignore' });
 const PORT = Number(process.argv[2] || process.env.PORT || 8787);
 const worker = (await import(pathToFileURL(path.join(ROOT, 'worker.js')).href)).default;
 const store = new Map();
