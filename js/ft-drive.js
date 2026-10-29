@@ -140,6 +140,18 @@ window.FTDrive = {
     paintLinkModal();
   },
   closeLinks: closeLinkModal,
+  // 📒 the trainee's own Monitoring Sheet, in their Google Drive, from a slide that says to update it (Day 3's CRM/CMS
+  // videos): a new tab on the link they saved; no link saved yet, the 📁 My Drive links window to paste it in. A trainer
+  // (no sheet of their own) gets the sheet's template
+  async openMonitor(){
+    if(!isTrainee()){ const t = window.FT_MONITOR_DOC; if(t) window.open(t.open, "_blank", "noopener"); return; }
+    // (the links are loaded with 📚 Dashboard, so the tab opens on the click itself)
+    if(!ready()) await (D.loading || load(true));
+    const u = ready() && D.drive.monitor;
+    if(u){ window.open(u, "_blank", "noopener"); return; }
+    toast("📒 Paste your Monitoring Sheet’s link first: it opens from here after that.");
+    FTDrive.linkMine();
+  },
   day(d){ D.day = d; render(); },
   async saveLinks(){
     if(previewOnly()) return;

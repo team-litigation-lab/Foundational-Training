@@ -271,6 +271,27 @@ function visual(html){
       b.textContent = "📝 What I learned"; w.appendChild(b); return w;
     });
     tiles.length = 0; wrapped.forEach(x => tiles.push(x));
+    // 🎞 videos the build marks data-card (Day 3's five CRM/CMS videos) are cards side by side: the video's own preview,
+    // its name and "📝 What I learned" under it. A click anywhere on the card plays it bigger in the pop-up viewer (the
+    // preview only shows it: it takes no clicks)
+    const prevSrc = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
+    if(as.every(a => a.hasAttribute("data-card") && prevSrc(a)) && tiles.every(x => x.matches(".ftdd-vwrap, .ftdd-tile.k-video"))){
+      const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-vcards") ? p.previousElementSibling : null;
+      const grid = last || document.createElement("div"); grid.className = "ftdd-vcards";
+      tiles.forEach((x, j) => {
+        const card = x.matches(".ftdd-vwrap") ? x : document.createElement("div");
+        if(card !== x) card.appendChild(x);
+        card.className = "ftdd-vcard";
+        const tile = card.querySelector(".ftdd-tile"), pic = document.createElement("span");
+        pic.className = "ftdd-vcard-pic";
+        pic.innerHTML = `<iframe loading="lazy" tabindex="-1" aria-hidden="true"></iframe><span class="ftdd-vcard-play" aria-hidden="true">▶</span>`;
+        pic.querySelector("iframe").setAttribute("src", prevSrc(as[j]));
+        tile.querySelector(".ftdd-tile-ic").replaceWith(pic);
+        grid.appendChild(card);
+      });
+      if(last) p.remove(); else p.replaceWith(grid);
+      return;
+    }
     // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
     // "📝 What I learned"
     const src = as.length === 1 && as[0].hasAttribute("data-embed") && typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(as[0].getAttribute("href")) : null;
@@ -1145,10 +1166,10 @@ const LESSON_CARDS = {
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
       {t: "Carlos & Oscar’s Reception Recordings", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
       // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
-      {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into your worksheet · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
+      {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "Upload the Call Intake & Data Extraction worksheet to your Assessments/Activities folder"],
+      "The Call Intake & Data Extraction worksheet and its naming convention: on ✍️ Knowledge Check"],
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
@@ -1327,14 +1348,15 @@ function nextKC(){
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
-function toKC(l){
+// (here: opened from a slide's own link, Day 3's PI Reception Activity worksheet: the way back is the slide after this one)
+function toKC(l, here){
   const d0 = decks() && decks()[DD.day];
   if(unread(kcOf(d0 ? slidesOf(d0)[DD.i] : null)).length) return;   // the reading comes first
   // the way back is to the day's next activity: the slide after the reading it was opened from, else the slide after the
   // day's ✍️ Process Questions stop (that stop, the day card's row, its Today's Process Questions), else the slide after this one; at the
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
   const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
-  let from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i;
+  let from = here || (list[DD.i] && list[DD.i].launch) ? DD.i : stop >= 0 ? stop : DD.i;
   // (from a stop whose Next is this Knowledge Check, kc: past the Process Questions stop that follows it, answered now)
   if(from === DD.i && stop === DD.i + 1) from = stop;
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
@@ -1947,6 +1969,21 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-tile.k-video .ftdd-tile-t b{font-size:15.5px;}
 .ftdd-tile-t small{font-size:12.5px;font-weight:700;color:#B5651F;margin-left:8px;white-space:nowrap;}
 .ftdd-vwrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;}
+/* …except a set of videos the trainee is to watch one after another (Day 3's five CRM/CMS videos, data-card): cards side
+   by side, each with the video's preview, so the set reads as what to watch, and a click plays it bigger */
+.ftdd-vcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin:10px 0 14px;}
+.ftdd-vcard{display:flex;flex-direction:column;gap:6px;min-width:0;padding:8px 8px 10px;border:1px solid #E3E6EE;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(30,35,64,.08);transition:box-shadow .15s,transform .15s;}
+.ftdd-vcard:hover{box-shadow:0 6px 18px rgba(30,35,64,.16);transform:translateY(-2px);}
+.ft-body .ftdd-vcard a.ftdd-tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0;}
+.ftdd-vcard-pic{position:relative;display:block;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#1E2340;}
+.ftdd-vcard-pic iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;}
+.ftdd-vcard-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(201,116,43,.92);color:#fff;font-size:20px;line-height:48px;text-align:center;padding-left:3px;box-sizing:border-box;box-shadow:0 2px 8px rgba(0,0,0,.35);transition:transform .15s;}
+.ftdd-vcard:hover .ftdd-vcard-play{transform:translate(-50%,-50%) scale(1.12);}
+.ftdd-vcard .ftdd-tile-t{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.ftdd-vcard .ftdd-tile-t b{font-size:14.5px;}
+.ftdd-vcard .ftdd-tile-t small{margin-left:0;}
+.ftdd-vcard .ftdd-learn{align-self:flex-start;}
+.ftdd-monlink{color:#1F5B39;font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
 .ftdd-learn{border:0;background:none;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
 .ftdd-learn:hover{color:#2E7D4F;}
 .ftdd-learn.done{color:#2E7D4F;text-decoration:none;}

@@ -266,13 +266,18 @@ s3: html => {
     lnk("Sample Call Recordings", "https://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU?usp=sharing") +
     lnk("Sample SOP", "https://docs.google.com/document/d/1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm/edit?usp=drive_link") + shots;
 },
-// Day 3's homework: the five CRM/CMS videos, each named, and when they may be finished
+// Day 3's homework: the five CRM/CMS videos, each named, as cards with the video's preview (data-card: js/ft-day-decks.js
+// visual), a click playing it bigger in the pop-up viewer; "Monitoring Sheet" opens the trainee's own, in their Drive
+// (FTDrive.openMonitor); and when they may be finished
 s2: html => {
   let k = 0;
-  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-kind="video" data-title="CRM/CMS Training Video ${++k}"`)
+  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-card data-kind="video" data-title="CRM/CMS Training Video ${++k}"`)
     .replace(/<\/a>\s*,\s*<\/p>/g, "</a></p>");
   if(k !== 5) throw new Error(`Day 3's homework has ${k} CRM/CMS videos, not 5`);
-  return out.replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
+  const mon = /update item #12 in your Monitoring Sheet\./;
+  if(!mon.test(out)) throw new Error("Day 3's homework monitoring sheet line is no longer where the build looks for it");
+  return out.replace(mon, `update item #12 in your <a href="#/monitoring" class="ftdd-monlink" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>.`)
+    .replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
 }},
 // Day 4 (Receptionist Training, Part 2): Julio's video in the slide and the Monitoring Sheet update; the mock call
 // preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
@@ -464,7 +469,6 @@ function piCallRows(compact){
   for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
-const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
 /* 🎧 Day 3's supplementary reception recordings (Carlos's and Oscar's), optional: one card per recording, played in the
    slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
    Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
@@ -502,8 +506,9 @@ const PI_HTML =
   `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">💭 Analyze the call’s challenge</p><p class="ftdd-cix-note">In the reflection section for each call, document:</p>` +
   `<div class="ftdd-cix-two"><div><b>🚧 The Obstacle</b>What made the call difficult? (e.g., emotional distress, missing details, language barriers, aggressive demeanor, or emergency legal deadlines)</div>` +
   `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
-  `<div class="ftdd-tiles"><a class="ftdd-tile k-doc" href="${PI_WORKSHEET}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>Download the Word file</small></span></a></div>\n` +
-  `<p><b>Naming Convention:</b> PI_Reception_Activity (VA’s first name). Upload the completed worksheet to your Assessment and Activities Folder and work directly from there to finalize it.</p>\n`;
+  // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
+  // (js/ft-process.js WORKSHEETS): the slide only links there, and the way back is the calls' slide
+  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(3, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
 // the six calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
