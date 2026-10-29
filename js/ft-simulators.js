@@ -67,7 +67,7 @@ window.ftsGotoSkills = function(){ goto("skills"); };
 // done live with the trainer. The demo-preparation cards are gone: the demos are done live with the
 // trainer (🧑‍🏫 With your trainer), so a card per demo only repeated them. The simulators' cards (the
 // separate Calendaring Simulators, the mock-call lines and All simulators) are gone: the calls and the Google Calendar
-// Simulator are tools inside their sessions (the Calendar Management Mock Calls are part of the Calendaring Practice Lab).
+// Simulator are tools inside their sessions (the Calendar Management Mock Calls are part of Standard Training - Appointment Setting Mock Calls).
 // The 🏛 Your law firm banner is gone too: a session links to its firm's profile (🏛 The whole firm profile →).
 /* 📅 By the day: a trainee sees only what their training has reached, not the whole lab at once. A day is reached when
    its first lesson is open for the batch (the trainer's 📅 Open Lessons); a session or tool shows from the first day
@@ -84,9 +84,10 @@ const reached = days => seesAll() || !days || !days.length || Math.min(...days) 
 window.ftsReached = reached;
 // (and 🔓 once the trainer has opened one of the tool's days: js/ft-day-locks.js)
 const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; return reached(days) && (!window.FTDayLocks || FTDayLocks.labOpen(days)); };
+window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
 function renderSimulators(){
   const tool = (fn, id) => typeof window[fn] === "function" && toolOn(id) ? window[fn]() : "";
-  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalActivityCard", "calactivity") + tool("ftCalRulesCard", "calrules") : "";
+  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalActivityCard", "calactivity") + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
   const drafting = window.ftLorCard ? tool("ftLorCard", "lor") + tool("ftGuideCard", "guide") + tool("ftTranscribeCard", "transcribe") + tool("ftDrillsCard", "drills") : "";
   const trainer = window.FTSessions ? FTSessions.trainerCards() : "";
   // 📚 the Knowledge Base: a card beside the Drafting Tools (its own section when there are none yet), so the Lab fits one screen

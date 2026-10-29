@@ -25,7 +25,8 @@
              "tool"     a platform tool  (id: "lor" = 🧰 LOR Drafting Activity, "medlor" / "lienbv" = the same tool
                         on the MedLOR + HIPAA packet / the Lien Balance Verification, "skills" = 🧪 Skill Building,
                         "process" = ✍️ Process Questions, "calsim" = 📅 Google Calendar Simulator,
-                        "calactivity" = 🗓 Attorney Calendar Management Activity (📅 Calendaring Simulators),
+                        "calactivity" = 🗓 Attorney Calendar Management Activity (done on the 📅 Calendaring Simulators, graded through the Calendar Activity Check),
+                        "calweek" = 📅 Standard Training - Calendaring Activity,
                         "callsim" = ☎ Call Simulator on LSH Ring Channel)
              "drive"    uploaded to the trainee's Assessments/Activities folder
              "gc"       run in the training GC (the activity sheet / handouts are posted there)
@@ -75,7 +76,7 @@ const DAYS = [
     {t:"🎧 Call Listening on 10 Sample Recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
     {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
-    {t:"Reception Activity on VA OSCAR’s recordings", kind:"Activity", at:"gc"}
+    {t:"PI Reception Activity: 6 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
   ]},
   {day:4, role:"Reception Training", lessons:[4], items:[
     {t:"Training Video Viewing and Mock Call Preparation", kind:"Activity", at:"room"},
@@ -86,7 +87,9 @@ const DAYS = [
   {day:5, role:"Reception Training", lessons:[4, 5], items:[
     {t:"Buffer Time (1–2 hrs) for Reception Mock Calls", kind:"Buffer", at:"session", id:"reception"},
     {t:"Classroom Discussion on Appointment Setting and Calendar Management", kind:"Discussion", at:"room"},
-    {t:"Attorney Calendar Management Activity", kind:"Activity", at:"tool", id:"calactivity"}
+    {t:"Attorney Calendar Management Activity on the 📅 Calendaring Simulators (done there, graded through the 📅 Calendar Activity Check)", kind:"Activity", at:"tool", id:"calactivity"},
+    {t:"Attorney Calendar Management Activity (each event checked on the 📅 Calendar Activity Check before the upload)", kind:"Activity", at:"tool", id:"calcheck"},
+    {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"}
   ]},
   {day:6, role:"Calendar Management Training", lessons:[5], items:[
     {t:"Calendar Management Mock Calls", kind:"Session", at:"session", id:"calendaring"},

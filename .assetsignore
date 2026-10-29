@@ -1,4 +1,5 @@
 worker.js
+calweek-api.js
 wrangler.json
 *.md
 build

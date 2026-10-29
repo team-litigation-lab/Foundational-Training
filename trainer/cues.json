@@ -1386,11 +1386,11 @@
    },
    "v025": {
     "time": "2 hrs (breakout, 1:00–3:00 PM)",
-    "objective": "Close the deck, then run the afternoon: Process Questions, the confidentiality exercise, the call-listening set and Oscar's data-extraction activity.",
+    "objective": "Close the deck, then run the afternoon: Process Questions, the confidentiality exercise, the call-listening set and the PI Reception Activity (six practice calls, five data points each).",
     "talk": [
      "Post the sample recordings, then set the Process Questions.",
      "Run the Confidentiality & Call Response exercise after the questions.",
-     "Finish with the reception activity on VA Oscar's recordings — five data points — then give the CRM/CMS homework."
+     "Finish with the PI Reception Activity on the Day 3 slide: six calls to Harbor & Pine Injury Law, each with a challenge (noise, a dropped line, a Spanish-speaking caller, an echo, a fast adjuster, a family member not on the file); five data points per call — then give the CRM/CMS homework."
     ],
     "gc": [
      {
@@ -1398,8 +1398,8 @@
       "text": "Please listen to the sample call recordings below. Note how the VA greets, screens, triages and documents each call.\n\nhttps://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU\n\nType \"done\" here once finished. Thank you."
      },
      {
-      "label": "Reception activity — Oscar's recordings",
-      "text": "Please refer to the provided recordings and complete the assessment activity by extracting the data specified in your assessment sheet. Ensure you extract a total of 5 DATA POINTS from Oscar's recordings. Upload the completed assessment document to your respective trainee folder and work directly from there to finalize it. Thank you.\n\nRecordings: https://drive.google.com/drive/folders/1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn\nActivity sheet: https://docs.google.com/document/d/1qCEqeoGJTf-0OvmP_cdxYJWmqlBU06aU/edit"
+      "label": "Reception activity — PI practice calls",
+      "text": "Please open the PI Reception Activity on today's Day 3 slide and listen to the six practice calls. For each call, extract the 5 DATA POINTS (caller, callback number, verified?, reason for the call, action taken) and note the call's challenge and how the VA handled it, in the PI Reception Activity worksheet. Name it PI_Reception_Activity (your first name), upload it to your Assessment and Activities Folder and work directly from there to finalize it. Thank you."
      },
      {
       "label": "Homework — CRM/CMS video series",
@@ -1419,18 +1419,18 @@
     ],
     "pitfalls": [
      "Listening to the recordings without the activity sheet open, then going back to re-listen.",
-     "Extracting fewer than five data points, or extracting them from Carlos's supplementary recordings instead of Oscar's.",
+     "Extracting fewer than five data points from a call, or leaving out the call's challenge and how the VA handled it.",
      "Working on a local copy instead of the uploaded document in their own folder."
     ],
     "grade": {
-     "deliverable": "Reception activity — 5 data points from VA Oscar's recordings",
-     "file": "Completed activity sheet, uploaded in the trainee's own folder and finalized there",
+     "deliverable": "PI Reception Activity — 5 data points from each of the six practice calls",
+     "file": "Completed PI Reception Activity worksheet (PI_Reception_Activity (VA's first name)), uploaded in the trainee's own folder and finalized there",
      "ai": {
       "match": [
-       "Exactly 5 data points extracted",
-       "Caller name as spoken on the recording",
-       "Callback number, digit for digit",
-       "Date of Loss in mm/dd/yyyy",
+       "Exactly 5 data points per call, for all six calls",
+       "Caller name and who they are, as spoken on the recording",
+       "Callback number, digit for digit (with the extension where given)",
+       "Verification: DOB and Date of Loss in mm/dd/yyyy where the caller was verified, or why nothing could be shared",
        "Nature of the call / reason as stated",
        "Action taken or transfer destination"
       ],

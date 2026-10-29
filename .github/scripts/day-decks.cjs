@@ -196,15 +196,17 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (tv.steps !== 2 || !tv.sim) fail('the trainee doesn\'t see the trainer\'s two Day 4 steps with the Call Simulator link');
   if (tv.form) fail('a trainee sees the trainer\'s form');
   if (tv.bold || !/<b>quietly<\/b>/.test(tv.text)) fail('a title from the trainer was drawn as HTML');
-  // a slide too long even at half size is read in pages, and Next turns the page before the slide
-  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(7, FTDayDecks.at(7, FT_DAY_DECKS[7].slides[0].id)); }); await page.waitForTimeout(1600);
+  // a slide too long even at half size is read in pages, and Next turns the page before the slide (Day 8's Topic 2, the
+  // intake documents: its tasks, the packet picker and the worksheet)
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(8, FTDayDecks.at(8, 's1-2')); }); await page.waitForTimeout(1600);
   const paged = await page.evaluate(() => ({ i: FTDayDecks.state().i, pages: FTDayDecks.state().pages, page: FTDayDecks.state().page, over: (() => { const x = document.querySelector('.ftdd-sheet'); return x.scrollHeight - x.clientHeight; })() }));
-  if (!(paged.pages > 1)) fail(`Day 7's instruction slide isn't read in pages: ${JSON.stringify(paged)}`);
+  if (!(paged.pages > 1)) fail(`Day 8's Topic 2 slide isn't read in pages: ${JSON.stringify(paged)}`);
   if (paged.over > 4) fail(`a page of it overflows by ${paged.over}px`);
   await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(700);
   const after = await page.evaluate(() => ({ i: FTDayDecks.state().i, page: FTDayDecks.state().page, mark: (document.querySelector('.ftdd-n') || {}).innerText || '' }));
   if (after.i !== paged.i || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
-  // the slide says what it opens: its lesson, and the Call Listening log on its own slide
+  // the slide says what it opens: Day 7's discussion slide its lesson, and the Call Listening log on its own slide
+  await page.evaluate(() => FTDayDecks.open(7, FTDayDecks.at(7, 's1'))); await page.waitForTimeout(1200);
   const acts = await page.evaluate(() => [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()));
   if (!acts.some(x => /Open the lesson/.test(x))) fail(`a classroom discussion slide has no lesson button: ${JSON.stringify(acts)}`);
   const listen = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
@@ -234,10 +236,12 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (!score || score.items < 10 || !/How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
-  // the guidelines the guide writes as a wall of headings are read as cards, and the day's offline work is named
+  // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, FT_DAY_DECKS[6].slides[1].id)); }); await page.waitForTimeout(1600);
-  const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
-  if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
+  const mc = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body;
+    return { lists: sh.querySelectorAll('ul').length, items: sh.querySelectorAll('ul > li').length, bars: sh.querySelectorAll('.ftdd-sec, h3').length,
+      rules: /Tuesdays and Thursdays/.test(sh.textContent) && /EST time zone/.test(sh.textContent) && /Date of Loss/.test(sh.textContent) }; });   // (textContent: a long slide is read in pages, and the rules may be on a page not showing)
+  if (mc.lists < 4 || mc.items < 20 || !mc.rules || mc.bars > 2) fail(`Day 6's Mock Call Scenarios aren't read as the guide's text and lists: ${JSON.stringify(mc)}`);
   // no Training Agenda slide on any day: a lesson day opens on its card, a day without one on its first slide
   await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
   if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");

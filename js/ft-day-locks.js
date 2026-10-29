@@ -255,7 +255,7 @@ function held(l, kind){
 // retry fn once the decks are in (or say they couldn't load)
 const later = fn => { loadDecks().then(x => x ? fn() : toast(NOLOAD)); };
 // the platform tools a day's step opens: where each is, by slide
-const TOOL_STOPS = {listening: s => s.ids.includes("listen"), lor: s => s.go === "lor", transcribe: (s, n) => n === 9 && s.ids.includes("s3")};
+const TOOL_STOPS = {listening: s => s.ids.includes("listen"), lor: s => s.go === "lor", transcribe: (s, n) => n === 9 && (s.ids.includes("guide") || s.ids.includes("s3"))};
 const toolStops = view => { const test = TOOL_STOPS[view], out = []; if(!test) return out;
   for(let n = FIRST; n <= LAST(); n++){ const k = stepWith(n, s => test(s, n)); if(k) out.push({n, k}); }
   return out; };

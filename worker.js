@@ -37,6 +37,7 @@
  */
 import "./js/ft-tracker-rules.js";
 import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
+import { handleCalWeek } from "./calweek-api.js";   // 📅 Standard Training - Calendaring Activity: its own routes and record
 const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
@@ -212,7 +213,7 @@ function candidateIds(name, batch) {
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
 // own HTML, every trainee reads it in place of the built slide.
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
-const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`];
+const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
@@ -353,6 +354,20 @@ async function traineeWrite(env, tok, key, value) {
     // Calendar Mock Call booking rule check (js/ft-calrules.js): the trainee's bookings, each with its checks.
     if (value.length > 300000) return "The booking log is too large to save";
     if (!incoming || typeof incoming !== "object" || !Array.isArray(incoming.bookings)) return "Invalid record";
+    await kv.put(key, value); return null;
+  }
+  if (key === `calcheck:${id}`) {
+    // Calendar Activity Check (js/ft-calcheck.js): what the trainee entered in Google Calendar for each of the Day 5
+    // Attorney Calendar Management Activity's events, and the checked submissions sent to the trainer.
+    if (value.length > 300000) return "The calendar activity is too large to save";
+    // Every event an object, and every submission in the shape the page writes (the trainer's tab shows them), with
+    // the snapshot of what was entered that the trainer's tab scores again.
+    const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v), fin = (v) => typeof v === "number" && isFinite(v);
+    if (!isObj(incoming) || !isObj(incoming.entries) || !Object.values(incoming.entries).every(isObj)) return "Invalid record";
+    if ((incoming.final != null && !isObj(incoming.final)) || (incoming.drive != null && !isObj(incoming.drive))) return "Invalid record";
+    if (incoming.submits !== undefined && (!Array.isArray(incoming.submits) || incoming.submits.length > 8 || !incoming.submits.every((x) => isObj(x) && typeof x.at === "string" &&
+      fin(x.met) && fin(x.total) && fin(x.pct) && Array.isArray(x.checks) && x.checks.every((c) => Array.isArray(c) && c.length === 4) &&
+      isObj(x.snap) && isObj(x.snap.entries) && Object.values(x.snap.entries).every(isObj)))) return "Invalid record";
     await kv.put(key, value); return null;
   }
   if (key === `kcgames:${id}`) {
@@ -870,7 +885,7 @@ export default {
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runTrackerChecks(env, {}));
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const kv = kvOf(env);
     try {
       const url = new URL(request.url);
@@ -1006,6 +1021,9 @@ export default {
 
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
+
+      /* ---------- 📅 Standard Training - Calendaring Activity and 🧪 its VA Practice Only clone: isolated controller (calweek-api.js) ---------- */
+      if (path.startsWith("/api/calweek/") || path.startsWith("/api/calpractice/")) return await handleCalWeek(path, request, env, ctx, tok, kv);
 
       /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
          A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
