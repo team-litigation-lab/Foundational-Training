@@ -256,31 +256,41 @@ async function unlockNext(h){
   const list = FTDayDecks.list(h.day) || [], nx = h.i + 1;
   const st = nx < list.length ? FTDayLocks.steps(h.day).find(s => nx >= s.from && nx <= s.to) : null;
   // the day's last activity (ACTS[…].nextDay): the next day's deck opens too, unless the batch already has it
-  const n2 = h.day + 1;
-  if(h.a.nextDay){ try{ if(typeof ftLoadOpenDays === "function") await ftLoadOpenDays(); }catch(err){} }
-  const day2 = !!h.a.nextDay && n2 <= 16 && !(FTDayLocks.unlockedFor(n2, T.batch) >= 1);
-  if(h.a.nextDay) await openLesson(n2);
-  if(!st && !day2) return;
+  const n2 = h.day + 1, next = !!h.a.nextDay && n2 <= 16;
+  if(!st && !next) return;
+  // (what the batch has unlocked, read fresh: the all-batches count and a schedule count too, not only its own)
+  try{ if(typeof ftLoadOpenDays === "function") await ftLoadOpenDays(); }catch(err){}
+  const step = st && FTDayLocks.unlockedFor(h.day, T.batch) < st.n, day2 = next && !(FTDayLocks.unlockedFor(n2, T.batch) >= 1);
+  if(next) await openLesson(n2);
+  if(!step && !day2) return;
+  // (the record read strictly: a server that doesn't answer throws, so a failed read is never written back as an empty
+  // record, which would drop the other batches' counts, the schedules and the legacy record that keeps the locks on)
+  const cur = await strict("settings:daysteps"), b = ftKey(T.batch);
+  // (no record, or none with the legacy record yet: the locks aren't on, so no trainee is held and there is nothing to write)
+  if(!cur || typeof cur !== "object" || !cur.legacy) return;
   // (the record's counts read, and written, as card-row steps: FTDayLocks.migrate flags them so)
-  const cur = (await sharedGet("settings:daysteps")) || {}, b = ftKey(T.batch);
   if(typeof FTDayLocks.migrate === "function") FTDayLocks.migrate(cur);
   cur.batches = cur.batches || {}; cur.batches[b] = cur.batches[b] || {};
-  let dirty = false;
-  if(st && (Number(cur.batches[b][h.day]) || 0) < st.n){ cur.batches[b][h.day] = st.n; dirty = true; }
-  // (its first step: nothing for the batch on that day yet, so a count of 1 lowers nothing)
-  if(day2){ cur.batches[b][n2] = 1; dirty = true; }
-  if(!dirty) return;
+  // (never below what the batch had, its own count or the all-batches one: its own count stands in for both from now on)
+  const atLeast = (n, k) => Math.max(k, Number(FTDayLocks.stepNum(cur, null, n)) || 0, Number(FTDayLocks.stepNum(cur, T.batch, n)) || 0);
+  if(step) cur.batches[b][h.day] = atLeast(h.day, st.n);
+  if(day2) cur.batches[b][n2] = atLeast(n2, 1);
   if(typeof FTDayLocks.migrate === "function") FTDayLocks.migrate(cur, true);
-  if(await sharedSet("settings:daysteps", cur) !== false) state.ftDaySteps = cur;
+  if(await sharedSet("settings:daysteps", cur) === false) throw new Error("save");
+  state.ftDaySteps = Object.assign({}, state.ftDaySteps, cur);
 }
+const strict = k => typeof sharedGetStrict === "function" ? sharedGetStrict(k) : sharedGet(k);
 // the next day's lesson, opened for the batch (Admin → 📅 Open Lessons) if it isn't open for it yet
 async function openLesson(n){
   const l = FTDayDecks.lessonOfDay ? FTDayDecks.lessonOfDay(n) : null; if(l == null || typeof ftOpenFor !== "function") return;
   if(ftOpenFor(T.batch).has(Number(l))) return;
-  const o = (await sharedGet("settings:opendays")) || {}, b = ftKey(T.batch);
+  // (read strictly, as above: a failed read must never be written back as "no lesson open")
+  const o = await strict("settings:opendays"), b = ftKey(T.batch);
+  if(!o || typeof o !== "object") throw new Error("read");
   o.all = o.all || []; o.batches = o.batches || {};
   o.batches[b] = [...new Set((o.batches[b] || []).map(Number).concat(Number(l)))].sort((x, y) => x - y);
-  if(await sharedSet("settings:opendays", o) !== false) state.ftOpenDays = {all: o.all, batches: o.batches};
+  if(await sharedSet("settings:opendays", o) === false) throw new Error("save");
+  state.ftOpenDays = {all: o.all, batches: o.batches};
 }
 
 /* ---------- drawn on the slide ---------- */
@@ -456,7 +466,7 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf-badge.ok{background:#E3F4EA;color:#1C7A47;}
 /* a mock call's Done on its own (ACTS[…].simple): the line and the button, big, in the middle of the slide */
 .ftbf-simple{text-align:center;padding:28px 24px;}
-.ftbf-simple .ftbf-h{font-size:26px;margin-bottom:18px;}
+.ftbf-only .ftbf.ftbf-simple .ftbf-h{font-size:26px !important;margin-bottom:18px;}
 .ftbf-simple .ftbf-done{font-size:20px;padding:12px 44px;}
 /* the confirmation */
 .ftbf-modal{position:fixed;inset:0;z-index:300;background:rgba(17,20,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;}
