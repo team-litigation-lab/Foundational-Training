@@ -60,8 +60,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
 // slide that only says the lesson deck opens from ▶ Start Training
 {
   const sl = (n, id) => ((D[n] || { slides: [] }).slides.find(s => s.id === id) || {}).html || '';
-  const prep4 = sl(4, 's2b').slice(sl(4, 's2b').indexOf('<p>📞 Practice a caller')).trim(), run4 = sl(4, 's2c').trim(), buf5 = sl(5, 's1');
-  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/Front Desk Drill/.test(buf5) || !/Link coming: AI Mock Calls Listening/.test(buf5))
+  // (Day 4: the tools' links on a slide of their own, s2b, in big type; the steps, the run and the metrics on s2b-2)
+  const s2b = sl(4, 's2b-2'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), buf5 = sl(5, 's1');
+  const prep4 = s2b.slice(s2b.indexOf('<p>Step 1 - '), at).trim(), run4 = at < 0 ? '' : s2b.slice(at).trim();
+  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/class="ftdd-biglinks"/.test(sl(4, 's2b')) || !/class="ftdd-biglinks"/.test(buf5) || /Link coming: AI Mock Calls Listening|☎️ Front Desk Drill/.test(buf5) || sl(4, 's2c'))
     fail(`Day 5's buffer doesn't carry Day 4's mock call preparation and metrics: ${buf5.length} chars`);
   const act5 = D[5] && D[5].slides.find(s => s.id === 's3'), txt = (act5 || {}).html || '';
   const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = (txt.match(/class="ftdd-cal-item"/g) || []).length;
@@ -312,7 +314,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => { state.isAdmin = true; FTDayDecks.open(4, 0); }); await page.waitForTimeout(1300);
   const score = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
     for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-score'); if (b) return { h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftdd-score-l li').length, shot: !!b.querySelector('img') }; } return null; });
-  if (!score || score.items < 10 || !/How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
+  if (!score || score.items < 10 || /How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)

@@ -317,17 +317,14 @@ s2: html => {
   return out.replace(mon, "")
     .replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
 }},
-// Day 4 (Receptionist Training, Part 2): Julio's video in the slide and the Monitoring Sheet update; the mock call
+// Day 4 (Receptionist Training, Part 2): Julio's video in the slide (the Monitoring Sheet update is its own slide, ROWS[4].s2); the mock call
 // preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
 // one-on-one mock calls run and are scored (the metrics); then the mock calls themselves (s3, with Done: js/ft-buffer.js)
-// (ROWS[4].s2 cuts it into its card rows' slides: s2, s2b with its steps s2b-2, s2c)
+// (ROWS[4].s2 cuts it into its card rows' slides: s2 and the Monitoring Sheet's s2m, then s2b with its steps s2b-2)
 4: {s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
-  return "<p>For those who have already completed the tasks, please watch these videos on Reception Training to understand the roles and responsibilities of a Receptionist, as well as the necessary attributes required for the role.</p>\n" +
-    "<p><b>Topic: Handling Reception Tasks</b></p>\n" +
-    "<p>Task 1 - Watch this training video with one of our virtual receptionists. Here you would see the VA demonstrating how to handle all sorts of calls and general receptionist tasks.</p>\n" +
-    '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
-    "<p>Task 2 - Update items #10 &amp; 11 in your monitoring sheet.</p>\n" + '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
+  return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
+    '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
     "<p>Get ready for this afternoon’s one-on-one mock call: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n" +
     MOCK_PREP + MOCK_RUN;
 },
@@ -517,10 +514,13 @@ const REF_RECS = [
 function REF_RECS_HTML(){
   const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
     `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
-  return '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n' +
-    REF_RECS.map(g => `<p><b>${hx(g.h)}</b></p>\n<div class="ftdd-recs">` + (g.recs.length
-      ? g.recs.map(([t, id]) => card("🎧 " + t, `https://drive.google.com/file/d/${id}/preview`, `https://drive.google.com/file/d/${id}/view`))
-      : g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`))).join("") + "</div>\n").join("");
+  // (a recording whose file id is in, recs: [title, id], is a card that plays it in the pop-up viewer when clicked, as Day 3's
+  // CRM/CMS videos are, data-card: js/ft-day-decks.js visual; until then its folder plays in the slide)
+  const rec = ([t, id]) => `<p><a class="viewer-link" data-card data-kind="video" data-title="${hx(t)}" href="https://drive.google.com/file/d/${id}/view">https://drive.google.com/file/d/${id}/view</a></p>\n`;
+  const note = '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n';
+  return REF_RECS.map(g => `<p><b>${hx(g.h)}</b></p>\n` + (g.recs.length ? g.recs.map(rec).join("")
+      : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
+    note;
 }
 // the activity: Day 3's Call Intake & Data Extraction row (ROWS[3].s1), in place of VA Oscar's activity, on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
@@ -575,23 +575,23 @@ const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer F
 // the slots this build writes into the trainer-only notes (kept there by build/curriculum/convert.py)
 const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
 // Day 4: the same calls, small, to replay while waiting for the mock call
-const PI_WARMUP = `<hr class="stars">\n<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p>Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
+const PI_WARMUP = `<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p class="ftdd-warm-lead">Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
    Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2) and Day 5's Buffer Time for
    Reception Mock Calls (TRIM[5].s1). MOCK_PREP: direct links to the Call Simulator's Reception line, the Ring Channel,
-   the CMS and its Front Desk Drill, the step-by-step use of them, AI Mock Calls Listening ("link coming" until it has
-   one) and the PI practice calls' warm-up; MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
+   the CMS (MOCK_LINKS); then the PI practice calls' warm-up and the step-by-step use of them (MOCK_STEPS); MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
    MOCK_ONE: the one-on-one mock call's own line (where the metrics are, on that day's slides). */
 const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const tabLink = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
 // (MOCK_LINKS and MOCK_STEPS: Day 4 puts each on a slide of its own, the links in big type: ROWS[4].s2)
 const MOCK_INSTR = "<p><b>Instructions on Your Mock Call</b></p>\n";
 const MOCK_LINKS = '<div class="ftdd-biglinks">\n' +
-  tabLink("📞 Practice a caller: the Call Simulator’s Reception line (an AI caller)", CALL_SIM + "&line=Reception+Mock+Calls") +
+  tabLink("📞 Call Simulator in CMS: the Reception line (an AI caller)", CALL_SIM + "&line=Reception+Mock+Calls") +
   tabLink("☎ The Ring Channel: the training phone your mock call rings on", CALL_SIM) +
-  tabLink("🗂 The CMS (Case Management System): the case files", CMS) +
-  tabLink("☎️ Front Desk Drill in the CMS", CMS + "?program=reception&flow=reception&drill=1&from=standard") + "</div>\n";
+  tabLink("🗂 CMS Case Files: the Case Management System", CMS) + "</div>\n";
 const MOCK_STEPS = MOCK_INSTR +
+  // (the warm-up first, then the steps)
+  PI_WARMUP + "\n" +
   "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
   "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
@@ -599,7 +599,7 @@ const MOCK_STEPS = MOCK_INSTR +
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
-  ph("ftdd-ph-link", "🎧", "Link coming: AI Mock Calls Listening", "Recordings of AI mock calls to listen to before your own. Your trainer adds them here.") + "\n" + PI_WARMUP + "\n";
+  "";
 const MOCK_PREP = MOCK_LINKS + MOCK_STEPS;
 const MOCK_RUN =
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
@@ -716,7 +716,7 @@ const ROWS = {
     s1: [{id: "s1", parts: [[null, null]]},
       // (Carlos's and Oscar's supplementary recordings, optional: one card per recording, played in the slide; the
       // Confidentiality exercise is off the deck)
-      {id: "s1b", h: "Carlos & Oscar’s Reception Recordings", pre: REF_RECS_HTML(), parts: []},
+      {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []},
       // (none of the guide's section: the six practice calls are the activity now, its task in cards, then the calls)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
       {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []}]
@@ -724,10 +724,12 @@ const ROWS = {
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)
     s2: [{id: "s2", parts: [[null, "<p>Get ready for this afternoon’s one-on-one mock call"]]},
+      // the Monitoring Sheet's items #10–11 on a slide of their own: its panel says it, with 📤 Submit (js/ft-buffer.js ACTS["4:s2m"])
+      {id: "s2m", h: "Update Your Monitoring Sheet", parts: []},
+      // (the tools' links on a slide of their own, then the steps with how the one-on-one mock calls run and the metrics,
+      // under the same card row: "s2b-2")
       {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [["<p>Get ready for this afternoon’s one-on-one mock call", MOCK_INSTR]]},
-      // (the steps continue the links' slide, under the same card row: "s2b-2")
-      {id: "s2b-2", h: "Mock Call Preparation: Instructions on Your Mock Call", parts: [[MOCK_INSTR, "<p><b>How the mock calls run (one-on-one)</b></p>"]]},
-      {id: "s2c", h: "Instructions for Mock Calls & Metrics", parts: [["<p><b>How the mock calls run (one-on-one)</b></p>", null]]}]
+      {id: "s2b-2", h: "Mock Call Preparation: Instructions on Your Mock Call", parts: [[MOCK_INSTR, null]]}]
   },
   5: {
     // the activity's own words, read like Day 1's reading; then its files, the time zone, the screenshots and ✅ Done
