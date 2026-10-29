@@ -62,7 +62,7 @@ const DAYS = [
     {t:"Client Identification Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:2, role:"VA Essentials", lessons:[1, 2], items:[
-    {t:"Buffer Time (1–2 hrs): Day 1 carryover", kind:"Buffer", at:"room"},
+    {t:"Buffer Time: Day 1 carryover", kind:"Buffer", at:"room"},
     {t:"Common Terms Used — Assessment", kind:"Assessment", at:"drive"},
     {t:"Auto Liability Insurance — Assessment", kind:"Assessment", at:"drive"},
     {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
@@ -84,7 +84,7 @@ const DAYS = [
     {t:"Reception Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}
   ]},
   {day:5, role:"Reception Training", lessons:[4, 5], items:[
-    {t:"Buffer Time (1–2 hrs) for Reception Mock Calls", kind:"Buffer", at:"session", id:"reception"},
+    {t:"Buffer Time for Reception Mock Calls", kind:"Buffer", at:"session", id:"reception"},
     {t:"Classroom Discussion on Appointment Setting and Calendar Management", kind:"Discussion", at:"room"},
     {t:"Attorney Calendar Management Activity (each event checked on the 📅 Calendar Activity Check before the upload)", kind:"Activity", at:"tool", id:"calcheck"},
     {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"}
@@ -115,7 +115,7 @@ const DAYS = [
     {t:"Saving Intake Packet and Extracted Intake Documents to SA Demo", kind:"Demo", at:"trainer", id:"intake-packet-demo"}
   ]},
   {day:9, role:"Intake Training", lessons:[6], items:[
-    {t:"Buffer Time (1–2 hrs) for the Intake Demo", kind:"Buffer", at:"trainer", id:"intake-packet-demo"},
+    {t:"Buffer Time for the Intake Demo", kind:"Buffer", at:"trainer", id:"intake-packet-demo"},
     {t:"Intake Mock Call Preparation", kind:"Activity", at:"room"},
     {t:"Minutes of the Meeting Transcription Activity: Client-to-Attorney", kind:"Activity", at:"tool", id:"transcribe"},
     {t:"Intake Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"intake-live"},
@@ -140,7 +140,7 @@ const DAYS = [
     {t:"LOR Uploading and Sending Demo (1P & 3P)", kind:"Demo", at:"trainer", id:"lor-demo"}
   ]},
   {day:13, role:"Provider Communication Training", lessons:[8], items:[
-    {t:"Buffer Time (1–2 hrs) for the LOR Drafting Demo", kind:"Buffer", at:"trainer", id:"lor-demo"},
+    {t:"Buffer Time for the LOR Drafting Demo", kind:"Buffer", at:"trainer", id:"lor-demo"},
     {t:"Digital Handouts for Breakout Session (Individual Activity)", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the provider communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},

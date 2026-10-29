@@ -393,6 +393,21 @@ s2: html => {
   const sheet = /<a class="viewer-link" data-embed(?=[^>]*1tmV26rq_1z1mpq1C5hUweLytfyJUtkai)/, task2 = /<p>Task 2 - Watch this video presentation about how auto liability insurance works/;
   if(!sheet.test(out) || !task2.test(out)) throw new Error("Day 2's reference sheet or its Task 2 is no longer where the build looks for it");
   out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<div class="ftdd-pgbreak"></div>\n' + m);
+  // each video's assessment follows it, shown in the slide on a page of its own (data-full: the page's full height):
+  // Common Terms video → its assessment → the reference sheet; Auto Liability video → its assessment. The assessments
+  // slide (ROWS[2].s2, s2b) keeps the homework line and the readings; its upload and next-day checking lines go
+  const doc = (label, id) => { const re = new RegExp(`<p>${label}</p>\\n<p><a class="viewer-link" data-kind="doc" data-title="AS YOUR HOMEWORK"(?=[^>]*${id})[^]*?</p>\\n`);
+    const m = out.match(re); if(!m) throw new Error(`Day 2's ${label} is no longer where the build looks for it`);
+    out = out.replace(m[0], ""); return m[0].replace('data-kind="doc" data-title="AS YOUR HOMEWORK"', `data-embed data-full data-kind="doc" data-title="${label}"`); };
+  const ct = doc("Common Terms Used – Assessment", "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"), al = doc("Auto Liability Insurance – Assessment", "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C");
+  const after = (id, add) => { const re = new RegExp(`<p><a class="viewer-link" data-embed data-kind="video"(?=[^>]*${id})[^]*?</p>\\n`); const m = out.match(re);
+    if(!m) throw new Error(`Day 2's video ${id} is no longer where the build looks for it`); out = out.replace(m[0], m[0] + '<div class="ftdd-pgbreak"></div>\n' + add); };
+  after("1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D", ct + '<div class="ftdd-pgbreak"></div>\n');
+  after("1K9AXO0XZJjGFXHPugLAbjeVgcC3fIZuE", al);
+  const kindly = "kindly accomplish the following:", two = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>Please upload your completed assessments[^]*?<\/p>\n<p class="li" style="--lvl:0"><span class="lbl">3\.<\/span><span>Checking and feedback[^]*?<\/p>\n/;
+  if(!out.includes(kindly) || !two.test(out) || !out.includes('<span class="lbl">4.</span>')) throw new Error("Day 2's assessment instructions are no longer where the build looks for them");
+  out = out.replace(kindly, "kindly accomplish the <b>Common Terms Used – Assessment</b> and the <b>Auto Liability Insurance – Assessment</b>: each follows its video on the slide before, and both are on ✍️ Knowledge Check.")
+    .replace(two, "").replace('<span class="lbl">4.</span>', '<span class="lbl">2.</span>');
   return out;
 },
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide; the
@@ -576,7 +591,6 @@ const ROWS = {
   2: {
     s2: [{id: "s2", parts: [[null, SLOT(2, "s2-1")]]},
       {id: "s2b", h: "Common Terms Used & Auto Liability Insurance: Assessments", parts: [[SLOT(2, "s2-1"), null]], fix: [
-        h => seq(h, 'data-title="AS YOUR HOMEWORK"', ['data-title="Common Terms Used – Assessment"', 'data-title="Auto Liability Insurance – Assessment"'], "Day 2 s2b"),
         ['data-title="https://drive.google.com/file/d/1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4/view?usp=sharing"', 'data-title="Personal Injury reading 1"'],
         ['data-title="https://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view?usp=sharing"', 'data-title="Personal Injury reading 2"']]}],
     // the discussion's own part (its lesson note, its trainer notes, the Process Questions pointer) goes with the
@@ -779,7 +793,8 @@ for(let n = 1; n <= 16; n++){
     if(carry[s.id]){ html = html.replace(/\s*$/, "\n") + carry[s.id]; delete carry[s.id]; }
     for(const p of (PENDING[n] || []).filter(p => p.after === s.id))
       html += "\n" + ph("ftdd-ph-link", "🔗", `Link coming: ${p.name}`, p.note || "Your trainer adds the link here. Until then, ask in the training GC.");
-    const h = ((RENAME[n] || {})[s.id] || s.h).replace(/[:.\s]+$/, "");
+    // (a Buffer Time's "(1–2 hrs)" is not part of its name)
+    const h = ((RENAME[n] || {})[s.id] || s.h).replace(/\s*\(1–2 hrs\)/, "").replace(/[:.\s]+$/, "");
     if(html.includes("<!--pi-reading-->")){
       const parts = piParts(), of = "Reading Task: Personal Injury", wrap = x => piRows(x.replace(/<h2>/g, '<h2 class="ftdd-pi-h">').split(/(?=<h[23][ >])/).map(sec => {
         // a section with a chart is one row of two cards: its text on the left, its chart(s) on the right
