@@ -23,7 +23,12 @@ const root = window;
 // the slides that get a screen, by "<day>:<slide id>" (js/ft-day-decks-data.js); act: the activity in 🧑‍🏫 Trainer Inputs
 const ACTS = {
   // a set of tasks that ends on Done, as a buffer does (the trainer's tracker and release the same), on the slide's own content
-  "2:s2": {kind: "buffer", task: true},
+  // (Day 2's Common Terms tasks end on the Auto Liability video's slide, s2l: their Done is there, under the key it was
+  // saved under when the tasks were one slide. submit: the Done is 📤 Submit, which has the platform check and grade the
+  // Monitoring Sheet's items #5–7 first, /api/monitor/items: Timely Completion, the context of the progress, red flags
+  // and things to improve)
+  "2:s2l": {kind: "buffer", task: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}},
   // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever
   // still has their one-on-one to do; a plain buffer shows the trainee only its panel)
   "5:s1": {kind: "buffer", show: true},
@@ -64,6 +69,8 @@ async function loadMine(){
   if(!state.traineeId || M.loading) return M.rec;
   M.loading = true;
   try{ M.rec = (await sharedGet("buffer:" + state.traineeId)) || {acts: {}, released: {}}; M.at = Date.now(); }catch(err){}
+  // (and a Submit's result, to show under its panel: graded)
+  if(Object.values(ACTS).some(a => a.submit)) await loadReview();
   M.loading = false; return M.rec;
 }
 const mine = k => ((M.rec || {}).acts || {})[k] || null;
@@ -78,16 +85,16 @@ function traineePanel(h){
   const a = h.a, d = mine(h.k), rel = released(h.k), w = what(a);
   // (the day's last slide, as Day 4's mock calls are: there is no next slide to go to, the debrief is the trainer's)
   const more = h.i < (FTDayDecks.list(h.day) || []).length - 1;
-  if(d && rel) return `<div class="ftbf ftbf-go"><p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
+  if(d && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
-  if(d) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
+  if(d) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
     <p class="ftbf-status"><span class="ftbf-dot"></span>${a.kind === "buffer" ? "Waiting for your trainer to unlock the next activity…" : "Waiting for the group debrief to start…"}</p></div>`;
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
-    <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">Done</button></div></div>`;
+    <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">Done</button>`}</div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
       `While waiting for your turn, practice using the <a href="${e(callSim(a.line))}" target="_blank" rel="noopener">${e(a.name)} Call Simulator</a>.`,
@@ -110,6 +117,24 @@ function traineePanel(h){
       : live ? "Use the remaining time to prepare for your demo. Demos are conducted one by one with your trainer." : "Use the time to prepare and record your demonstration."}</p>
     <ol class="ftbf-steps">${steps.map(x => `<li>${x}</li>`).join("")}</ol>
     <div class="ftbf-foot"><p class="ftbf-warn">⚠️ ${e(warn)}</p><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
+}
+// 📤 a Submit's result (ACTS[…].submit): the items checked and graded (/api/monitor/items, kept in trackerreview:<id>)
+const subKey = a => (a.submit.items || []).join("-");
+function graded(a){
+  if(!a.submit) return "";
+  const r = ((M.review || {}).items || {})[subKey(a)]; if(!r) return "";
+  const g = r.result, li = xs => (xs || []).length ? `<ul>${xs.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : "";
+  return `<div class="ftbf-card ftbf-graded"><p class="ftbf-card-h">📒 Items #${e((a.submit.items || []).join(", #"))}: checked ${e(r.when || tm(r.at))}${g ? ` · ${Number(g.score) || 0}/100` : ""}</p>
+    <p><b>⏱ Timely Completion:</b> ${r.onTime ? "On time (before 5:00 PM ET)." : "Late: after 5:00 PM ET."}</p>
+    ${g ? `${(g.items || []).length ? `<p><b>📋 The items:</b> ${g.items.map(x => `#${Number(x.n) || "?"} ${e(x.title || "")} ${x.found ? "✓" : "✗ missing"}`).join(" · ")}</p>` : ""}
+      ${g.context ? `<p><b>📈 Context of your progress:</b> ${e(g.context)}</p>` : ""}
+      <p><b>🚩 Red flags:</b> ${(g.redFlags || []).length ? "" : "None."}</p>${li(g.redFlags)}
+      ${(g.improve || []).length ? `<p><b>🔧 Things to improve:</b></p>${li(g.improve)}` : ""}`
+    : `<p class="ftbf-muted">Your update is in: your trainer reviews it.</p>`}</div>`;
+}
+async function loadReview(){
+  if(!state.traineeId) return;
+  try{ M.review = (await sharedGet("trackerreview:" + state.traineeId)) || {}; }catch(err){}
 }
 function confirmBox(h){
   const a = h.a, q = a.kind === "mock" ? "Have you completed your 1-on-1 mock call with the trainer?"
@@ -278,6 +303,17 @@ root.FTBuffer = {
     render();
   },
   next(){ const h = here(); if(h) advance(h); },
+  // 📤 Submit (ACTS[…].submit): the platform checks and grades the items first, then it counts as the task's Done
+  async submit(){
+    const h = here(); if(!h || !h.a.submit || M.sending) return;
+    if(!trainee()){ toast("In 👁 Trainee view, Submit isn’t sent."); return; }
+    M.sending = true; const btn = document.querySelector(".ftbf-done"); if(btn){ btn.disabled = true; btn.textContent = "Checking your Monitoring Sheet…"; }
+    let j = {};
+    try{ const r = await authFetch("/api/monitor/items", {id: state.traineeId, items: h.a.submit.items, activity: h.a.submit.activity}); j = await r.json().catch(() => ({})); if(!r.ok) throw new Error(j.error || "send"); }
+    catch(err){ M.sending = false; toast(err.message && err.message !== "send" ? err.message : "Couldn’t submit. Check your connection and try again."); render(); return; }
+    M.sending = false; await loadReview();
+    await FTBuffer.done();
+  },
   // the trainer
   batch(b){ T.batch = b; const h = here(); if(h) paintTracker(h); },
   async mark(id, on){

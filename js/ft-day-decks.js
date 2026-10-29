@@ -187,7 +187,7 @@ function kindOf(s, html){
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
-  if(/^Common Terms Used & Auto Liability Insurance$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
+  if(/^(Common Terms Used|Auto Liability Insurance)$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
@@ -291,6 +291,9 @@ function visual(html){
       if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
       if(learn0) learn0.setAttribute("data-title", nm);
       const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
+      // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
+      // Day 2's Common Terms and Auto Liability videos)
+      if(as[0].hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
       if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
       return;
     }
@@ -933,7 +936,13 @@ function paintPageMark(){
   el.hidden = !(DD.pages > 1); el.textContent = DD.pages > 1 ? `Page ${DD.page + 1} of ${DD.pages}` : "";
   try{ wireReaders(); deckNextUp(); }catch(e){}
 }
-root.addEventListener("resize", () => { if(state.view !== "daydeck") return; clearTimeout(fitT); fitT = setTimeout(() => { DD.page = 0; fitSheets(); }, 120); });
+// (going in or out of ⛶ Full screen, the reference sheet's, resizes the window too: the slide keeps its page then, as the
+// element on screen is on it, and nothing is re-dealt while it fills the screen)
+let fsAt = 0;
+["fullscreenchange", "webkitfullscreenchange"].forEach(ev => document.addEventListener(ev, () => { fsAt = Date.now(); }));
+root.addEventListener("resize", () => { if(state.view !== "daydeck") return; clearTimeout(fitT);
+  const fs = !!(document.fullscreenElement || document.webkitFullscreenElement), kept = fs || Date.now() - fsAt < 1500;
+  fitT = setTimeout(() => { if(fs) return; if(!kept) DD.page = 0; fitSheets(); }, 120); });
 
 /* 🧰 Know Your Tools has a card of its own on 📚 Dashboard, beside the 📌 Setting of Training Expectations card, and
    its own page (#/knowtools), drawn like a deck slide: the tools on the left, the picked one's screenshot, purpose,
@@ -1216,9 +1225,23 @@ const LESSON_CARDS = {
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
 const kcOf = s => s && (KC_NEXT[DD.day] || {})[s.id];
+/* 📄 a slide whose Next is its assessment (Day 2's videos): Next opens that assessment alone, on a Knowledge Check page
+   of its own (js/ft-process.js), whose button goes back to the deck, on to `back` (else the slide after this one) */
+const ASSESS_NEXT = {2: {
+  s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment"}}};
+const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
+  const a = asOf(s);
+  if(a && root.FTProcess && !DD.split) return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e("Next: 📄 " + a.t + " →")}</button>`;
   const k = kcOf(s); if(!k || !root.FTProcess || DD.split) return "";
   return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(k.label)}</button>`;
+}
+function toAssessNext(a){
+  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [], i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1, s = list[i] || null;
+  const h = !s ? "" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
+  if(root.FTProcess) FTProcess.openLesson(a.l);
 }
 const readKey = () => `ftReadParts:${state.traineeId || "-"}:${DD.day}`;
 function readParts(){ try{ return JSON.parse(localStorage.getItem(readKey()) || "[]"); }catch(e){ return []; } }
@@ -1267,14 +1290,15 @@ function deckNextUp(){
   // the slide's own pages come first: Next turns them
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h)); return; }   // (no "Page N of M" under it)
   if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
+  if(asOf(cur)){ FTNextUp(nav, btn, "📄 " + asOf(cur).t, "Knowledge Check"); return; }
   if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
   // (the last slide is ✅ End of Module: nothing comes next from it, so no Next up card)
 }
 // Next on a slide whose Next is its Knowledge Check: the slide's pages first, then the questions
 function nextKC(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go(1); return; }
-  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s);
-  if(k) toKC(k.l); else go(1);
+  const d = decks() && decks()[DD.day], s = d ? slidesOf(d)[DD.i] : null, k = kcOf(s), a = asOf(s);
+  if(a && root.FTProcess) toAssessNext(a); else if(k) toKC(k.l); else go(1);
 }
 // ✍️ Knowledge Check from a slide (Day 1's Reading Task): the sheet opens with "← Back to the Classroom Activity",
 // which brings the trainee back to this slide (js/ft-process.js reads ftKCBack)
@@ -2382,6 +2406,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
 .ft-body .ftdd-inline-h .ftdd-learn{margin:0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:700 14px/1.2 'Inter',sans-serif;}
 .ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
+/* a video with no name bar over it (data-bare): the page's full height */
+.ft-body .ftdd-inline.is-bare{margin:0;}
+.ft-body .ftdd-inline.is-bare .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));margin-top:0;}
 .ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
@@ -2404,6 +2431,8 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body table.ftdd-terms td.ftdd-terms-t{font-weight:800;}
 .ft-body table.ftdd-terms tr.ftdd-terms-sec td{background:#EEF0F7;font:800 15px/1.2 'Poppins','Inter',sans-serif;padding:6px 10px;}
 .ft-body table.ftdd-terms a{color:#1A56C4;}
+/* (its cells 1pt smaller than the slide's text, main.main-ftdd .ftdd-sheet td) */
+main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt);}
 .ft-body table.ftdd-terms .ftdd-terms-img{display:block;margin-top:8px;}
 .ft-body table.ftdd-terms .ftdd-terms-img img{display:block;max-width:100%;height:auto;border:1px solid #E1E3EC;border-radius:6px;}
 /* a page break the build puts in a slide (sheetPages): nothing to see */
