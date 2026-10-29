@@ -1096,15 +1096,13 @@ const LESSON_CARDS = {
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
       {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2b", lead: true},
-      // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below, and the lesson's AI discussion video)
-      {t: "Handouts / Video", time: "PM", sub: "Breakout Session (Group Activity) · the four digital handouts and the AI discussion video open here", k: "watch", run: "ftVideoOrAsk(2)"},
-      {t: "Escalation Handling Exercise", k: "interactive", d: 2, s: "s3b"},
+      // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; the lesson's AI discussion video is
+      // its 📚 Dashboard lesson card's 🎬 Video, not on the deck. Then ✍️ Process Questions: the Classroom Activity slide
+      // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
+      {t: "Handouts / Video", time: "PM", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
       {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "homework", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
       "Upload both assessments to your Assessments/Activities subfolder", "Process Questions: five of the ten where time is short"],
-    // the guide's classroom-discussion slide (its trainer notes, the Process Questions pointer) is read with the card's
-    // 💬 Classroom Discussion stop, right after it: {day: slide id} (standardRows)
-    discuss: {2: "s3"},
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
@@ -1113,7 +1111,8 @@ const LESSON_CARDS = {
       {t: "Checking of Assignments & the Discussion Deck", sub: "PI Workflow and Reception Training · the sample recordings and SOP", k: "classroom", d: 3, s: "s1"},
       {t: "Process Questions: Submit", sub: "All ten (PI Workflow and Reception Training) in ✍️ Knowledge Check · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(3)"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
-      {t: "Confidentiality & Call Response Exercise", sub: "Then the supplementary recordings (Carlos & Oscar), for idle time", k: "interactive", d: 3, s: "s1b"},
+      // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
+      {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
       {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
@@ -1142,7 +1141,6 @@ const LESSON_CARDS = {
       // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; the AI video is on 📚 Dashboard)
       {t: "Breakout Session: Intake Specialist Best Practices", sub: "Group activity · the three digital handouts", k: "interactive", run: "ftVideoOrAsk(6)", day: 7},
       {t: "Call Listening on the Intake Recordings", sub: "Log each call as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
-      {t: "Intake Scenario Exercise", sub: "The scenario deck · full screen or open in Canva", k: "interactive", d: 7, s: "s1b"},
       {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
@@ -1166,7 +1164,6 @@ const LESSON_CARDS = {
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
     rows: [
       {t: "Breakout Session: Claims Specialist Best Practices", sub: "Digital handouts · individual activity · the AI discussion video opens here (🔒 Request Video)", k: "interactive", run: "ftVideoOrAsk(7)", day: 10},
-      {t: "Claims Terminology Exercise", sub: "The exercise deck · full screen or open in Canva", k: "interactive", d: 10, s: "s1b"},
       {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c"},
       {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
@@ -1184,7 +1181,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Buffer Time for the LOR Drafting Demo", time: "AM", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
       {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
-      {t: "Breakout Session & Document Detectives Exercise", time: "PM", k: "interactive", d: 13, s: "s3"},
+      {t: "Breakout Session", time: "PM", sub: "Sample recordings & documents · the communication upskill", k: "interactive", d: 13, s: "s3"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3b"},
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · build your own work guide", k: "watch", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming conventions, the HIPAA & MedLOR boxes, the NPIM doctors, the e-mail subject line", k: "read", d: 14, s: "s1b"},
