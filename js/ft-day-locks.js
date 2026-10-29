@@ -151,7 +151,9 @@ function fromLegacy(n, v){
     if(!opened || (GATED.test(st.go || "") && !had.has("@" + st.go))) break;
     k = st.n;
   }
-  return k;
+  // (a day that had started stays started: its first step, the day card with the card's first row, even where that row is a
+  // stop the old count hadn't opened, as Day 4's first step, the lesson, is; a count of 0 would lock the whole day again)
+  return Math.max(1, k);
 }
 // a saved count (all batches: k null), in card-row steps
 const isRows = (o, k, n) => !!(k == null ? (((o || {}).rows || {}).all || {})[n] : ((((o || {}).rows || {}).batches || {})[k] || {})[n]);
