@@ -20,9 +20,9 @@ const R = path.resolve(__dirname, "..");
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
 const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"],
-  // (Day 2's Classroom Activity slide and its Escalation Handling Exercise are off the deck: after the 🎬 Handouts / Video
-  // stop comes ✍️ Process Questions, the Knowledge Check)
-  2: ["s3"],   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
+  // (Day 2's Buffer Time is off the deck: the day starts on its Common Terms tasks. Its Classroom Activity slide and its
+  // Escalation Handling Exercise are off too: after the 🎬 Handouts / Video stop comes ✍️ Process Questions)
+  2: ["s1", "s3"],   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
   4: ["s1"],   // (Day 4's one-line introduction joins the slide it introduces: TRIM[4].s2)
   // (Days 5 and 13: the classroom discussion's slide only said that the lesson deck opens from ▶ Start Training, which is the
   // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
@@ -427,16 +427,19 @@ s2: html => {
   out = out.replace(check, `<p>Update items #5–7 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`).replace(done, "");
   return out;
 },
-// Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide; the
-// Softphones video plays in the slide
+// Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide large (its own
+// name line goes: the task above names them); the Softphones video plays in the slide; the monitoring sheet's update is
+// a line, not a numbered step, that opens 📒 Monitoring Sheet
 s4: html => {
   if(!/<a class="viewer-link"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/.test(html)) throw new Error("Day 2's Homework lost the Softphones video");
   html = html.replace(/<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/, '<a class="viewer-link" data-embed$1 data-title="Softphones: the instructional video"');
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
     .replace(/<p>2026 VERSION<\/p>\n<p><a [^>]*(1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r)[^>]*>[^<]*<\/a> ?<\/p>/, (m, id) =>
-      `<p><b>The handouts (2026 version)</b></p>\n<div class="ftdd-embed ftdd-embed-folder"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy"></iframe></div>`);
+      `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-big"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy"></iframe></div>`);
   if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
-  return out;
+  const mon = /<p>Task 3 - Update items #8-9 in your monitoring sheet\.<\/p>/;
+  if(!mon.test(out)) throw new Error("Day 2's Homework monitoring sheet line is no longer where the build looks for it");
+  return out.replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
 // 🎧 The PI Reception Activity (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
 // Harbor & Pine Injury Law, each with a challenge (background noise, a line that breaks up, a Spanish-speaking caller, a
