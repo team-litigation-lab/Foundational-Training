@@ -269,10 +269,15 @@ const NOLOAD = "The training couldn’t load. Check your connection and try agai
    a one-part lesson's segment reads Start; a lesson in parts reads Part 1 · Part 2 … (no "Day" on the card). A part is
    one day, except where the Training Guide splits a lesson otherwise (PARTS). Which lesson a day belongs to (its locks,
    its progress) doesn't change: only the card's buttons are grouped. */
-// Receptionist: Part 1 is Day 3's classroom session (the Guide's "Classroom Discussion on PI Workflow, Reception Training
-// and Call Listening", the same session as the PI Workflow lesson's), Part 2 Day 4. Medical Records: Part 1 MedLOR
-// (Days 13–15), Part 2 Lien Balance Verification (Day 16)
-const PARTS = {4: [[3], [4]], 8: [[13, 14, 15], [16]]};
+// Personal Injury Process Flow and Receptionist Training are one card pair: Day 3's classroom session (the Guide's
+// "Classroom Discussion on PI Workflow, Reception Training and Call Listening") is Part 1, on the PI Process Flow card,
+// titled "Personal Injury Process Flow / Reception" (CARD_TITLES); Day 4 is Part 2, on Receptionist Training's (its Day 3
+// isn't a button of its own: it is that Part 1). Medical Records: Part 1 MedLOR (Days 13–15), Part 2 Lien Balance
+// Verification (Day 16)
+const PARTS = {4: [[4]], 8: [[13, 14, 15], [16]]};
+// (a card whose parts are numbered on from another card's, or a one-part card that is a Part: the labels it shows)
+const PART_LABELS = {3: ["Part 1"], 4: ["Part 2"]};
+const CARD_TITLES = {3: "Personal Injury Process Flow / Reception"};
 const partsOf = (lid, days) => PARTS[lid] || days.map(d => [d]);
 function segState(d){
   if(!isTrainee()) return "open";
@@ -290,8 +295,8 @@ function segments(lid, days, title){
     const st = sts.includes("open") ? "open" : sts.every(x => x === "done") ? "done" : sts.includes("done") ? "open" : "locked";
     // the part opens on its day the trainee is on (the first one open, else the last one done); an admin, on its first
     const d = !isTrainee() ? p[0] : p[sts.indexOf("open")] || p[sts.lastIndexOf("done")] || p[0];
-    const label = one ? "Start" : `Part ${k + 1}`, t = titles(d) || title;
-    const tip = (one ? title : `Part ${k + 1} of ${parts.length}`) + (st === "locked" ? ": opens when your trainer unlocks it" : `: ${t}`);
+    const named = (PART_LABELS[lid] || [])[k], label = named || (one ? "Start" : `Part ${k + 1}`), t = titles(d) || title;
+    const tip = (named ? `${label}: ${title}` : one ? title : `Part ${k + 1} of ${parts.length}`) + (st === "locked" ? ": opens when your trainer unlocks it" : `: ${t}`);
     return `<button type="button" class="ftseg-b ${st}${p.includes(cur) ? " now" : ""}" data-day="${d}" data-days="${p.join(",")}" ${st === "locked" ? `aria-disabled="true"` : ""}
       onclick="event.stopPropagation(); FTDayLocks.launch(${d})" title="${esc_(tip)}">${st === "locked" ? "🔒 " : st === "done" ? "✓ " : ""}${label}</button>`;
   }).join("");
@@ -316,7 +321,8 @@ if(typeof __grid === "function") root.LSH_HOME_GRID_LAYOUT = function(ctx){
   t.content.querySelectorAll(".ftli[data-days]").forEach(card => {
     const start = card.querySelector(".mc-grid > .module-start-btn"); if(!start) return;
     const lid = Number(String(card.id).replace(/^dayl-/, "")), days = card.dataset.days.split(",").map(Number).filter(Boolean);
-    const title = (card.querySelector(".mh-title") || {}).textContent || "";
+    const head = card.querySelector(".mh-title"); if(head && CARD_TITLES[lid]) head.textContent = CARD_TITLES[lid];
+    const title = (head || {}).textContent || "";
     const w = document.createElement("template"); w.innerHTML = segments(lid, days, title.trim());
     start.replaceWith(w.content.firstElementChild);
   });
