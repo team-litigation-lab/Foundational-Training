@@ -233,6 +233,10 @@ function visual(html){
       const href = as[0].getAttribute("href") || "";
       box.querySelector("b").textContent = (vid ? "🎬 " : /\/folders\//.test(href) ? "📁 " : /spreadsheets/.test(href) ? "📊 " : "📄 ") + nm;
       const f = box.querySelector("iframe"); f.setAttribute("src", src); f.setAttribute("title", nm);
+      // a sheet cut to its first columns (data-crop: their width in the sheet's own pixels), drawn the slide's full width
+      // and the page's full height (fitCrops)
+      const crop = parseInt(as[0].getAttribute("data-crop"), 10);
+      if(crop > 0){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
       if(learn0) learn0.setAttribute("data-title", nm);
       const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
       if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
@@ -699,6 +703,26 @@ function sheetPages(sheet){
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
   const room = sheet.clientHeight, read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
+  // (a cropped sheet takes the page's full height: ftdd-embed-crop)
+  sheet.style.setProperty("--ftdd-room", room + "px");
+  // a slide with page breaks (ftdd-pgbreak, from the build) is read in pages even where it would fit on one: each part
+  // between breaks starts a page of its own, and a part longer than a page runs on over the next ones
+  if(room && kids.some(k => k.classList.contains("ftdd-pgbreak"))){
+    kids.forEach(k => { k.style.zoom = ""; });
+    const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
+    const pages = []; let page = [], used = 0;
+    kids.forEach(k => {
+      if(k.classList.contains("ftdd-pgbreak")){ if(page.length) pages.push(page); page = [k]; used = 0; return; }
+      const h = hOf(k);
+      if(page.some(x => !x.classList.contains("ftdd-pgbreak")) && used + h > room / PAGE_ZOOM){
+        const carry = []; while(page.length > 1 && /^H[1-6]$/.test(page[page.length - 1].tagName)) carry.unshift(page.pop());
+        pages.push(page); page = carry; used = carry.reduce((a, x) => a + hOf(x), 0);
+      }
+      page.push(k); used += h;
+    });
+    if(page.length) pages.push(page);
+    return pages;
+  }
   // a reading's text-and-chart row is never taller than the page, even drawn up to 1.15: its chart gives way, so its text
   // isn't shrunk to fit a tall chart
   if(read && room) sheet.style.setProperty("--ftdd-pi-h", Math.floor(room / 1.15 - 8) + "px");
@@ -786,6 +810,16 @@ function cardScale(box){
   }
   return cardScales[key];
 }
+// a cropped sheet (ftdd-embed-crop): its frame is as wide as the columns kept, scaled up to the box's width, so the
+// columns past them (and the blank space beside them) fall outside the box
+function fitCrops(sheet){
+  sheet.querySelectorAll(".ftdd-embed-crop[data-crop]").forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth, h = em.clientHeight, cw = Number(em.getAttribute("data-crop"));
+    if(!f || !w || !h || !cw) return;
+    const k = w / cw;
+    Object.assign(f.style, {width: cw + "px", height: Math.round(h / k) + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
+  });
+}
 function fitSheets(){
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
   sheets.forEach(contrastMarks);
@@ -797,6 +831,7 @@ function fitSheets(){
     // (a block dealt out by its own rows, all of them on other pages, is hidden too: its margins would push this page over)
     if(pages.length > 1) [...sheet.children].forEach(k => { if(k.children.length && [...k.children].every(c => c.style.display === "none")) k.style.display = "none"; });
     sheet.scrollTop = 0;
+    fitCrops(sheet);
     // the reading: a section's introduction sharing its page with a text-and-chart row is drawn big and bold at the top,
     // and the row's cards take only the height they need below it, so the page needn't shrink to fit (ftdd-pi-shared)
     const onPage = (pages.length > 1 ? show : pages[0]) || [];
@@ -2274,6 +2309,11 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
+/* a sheet cut to its first columns (fitCrops scales its frame to the box): the page's full height, under its name */
+.ft-body .ftdd-embed.ftdd-embed-crop{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
+.ft-body .ftdd-inline.is-crop{margin:0;}
+/* a page break the build puts in a slide (sheetPages): nothing to see */
+.ft-body .ftdd-pgbreak{display:none !important;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
    three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}

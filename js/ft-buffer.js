@@ -343,7 +343,7 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf-steps a, .ftbf p a{color:#E8590C;text-decoration:underline;font-weight:800;}
 .ftbf-foot{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:14px;text-align:center;}
 .ftbf .ftbf-warn{font:700 15.5px/1.4 'Inter',sans-serif;color:#9A3412;background:#FFF4E5;border:1px solid #F4B77A;border-radius:10px;padding:8px 14px;margin:0;}
-.btn.ftbf-done{min-width:200px;padding:12px 30px;font-size:18px;font-weight:800;background:#E8590C;border-color:#E8590C;color:#fff;box-shadow:0 4px 0 #A33F07;}
+.btn.ftbf-done{display:inline-flex;align-items:center;justify-content:center;text-align:center;align-self:center;margin:0 auto;min-width:200px;padding:12px 30px;font-size:18px;font-weight:800;background:#E8590C;border-color:#E8590C;color:#fff;box-shadow:0 4px 0 #A33F07;}
 .btn.ftbf-done:hover:not(:disabled){background:#C94C08;}
 .btn.ftbf-done:disabled{background:#C9CCD6;border-color:#C9CCD6;color:#5B6178;box-shadow:none;cursor:not-allowed;opacity:1;}
 .ftbf-wait{border-color:#2F855A;}

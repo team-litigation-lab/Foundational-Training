@@ -387,6 +387,12 @@ s2: html => {
   const note = /<p><b>Note:<\/b> As soon as you are done watching the videos, please type done here in our GC\.\s*Thank you\.<\/p>/;
   if(!note.test(out)) throw new Error("Day 2's Common Terms note is no longer where the build looks for it");
   out = out.replace(note, "<p><b>Note:</b> Hit ✅ Done below when you are.</p>").replace(/<hr class="stars">\n?(?=<div class="trainer-slot" data-slot="2:s2-1">)/, "");
+  // the reference sheet shows only its columns TERM … LEARN MORE (data-crop: their width in the sheet's own pixels; its
+  // REMARKS column and the blank space right of it are cut off), drawn the slide's full width and the page's full height,
+  // on a page of its own: Task 2 starts the next page (ftdd-pgbreak, js/ft-day-decks.js sheetPages)
+  const sheet = /<a class="viewer-link" data-embed(?=[^>]*1tmV26rq_1z1mpq1C5hUweLytfyJUtkai)/, task2 = /<p>Task 2 - Watch this video presentation about how auto liability insurance works/;
+  if(!sheet.test(out) || !task2.test(out)) throw new Error("Day 2's reference sheet or its Task 2 is no longer where the build looks for it");
+  out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<div class="ftdd-pgbreak"></div>\n' + m);
   return out;
 },
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide; the
