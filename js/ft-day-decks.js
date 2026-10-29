@@ -184,6 +184,8 @@ function kindOf(s, html){
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
+  // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
+  if(/^Common Terms Used & Auto Liability Insurance$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};
@@ -215,6 +217,8 @@ const cleanTitle = t => { const s = String(t || "").replace(/https?:\/\/\S+/g, "
 function visual(html){
   const t = document.createElement("template"); t.innerHTML = html;
   const root = t.content;
+  // (a slide the build marks ftdd-nolearn, Day 2's Common Terms, has no "📝 What I learned" beside its videos)
+  const learnOn = !root.querySelector(".ftdd-nolearn");
   // 1. a line that is only a link (or links) becomes tiles; the short line before it names the tile
   root.querySelectorAll("p").forEach(p => {
     const as = [...p.querySelectorAll("a[href]")];
@@ -253,7 +257,7 @@ function visual(html){
     });
     // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
     const wrapped = tiles.map(x => {
-      if(!x.classList.contains("k-video") || !window.FTVideoNotes) return x;
+      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn) return x;
       const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
       const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
       b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
@@ -626,7 +630,7 @@ function slideActions(s, info, body, i){
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   // (a video that plays in the slide counts too: ftdd-inline)
   const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
-  if(vids && root.FTVideoNotes) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
+  if(vids && root.FTVideoNotes && !/ftdd-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
@@ -1289,12 +1293,20 @@ function toKC(l){
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h, l: Number(l), sheet: rk ? "read" : "pq"})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
 }
-function openSlide(n, id, alt){
+// 📄 an assessment opened from a slide (Day 2's, under each video): ✍️ Knowledge Check shows only that assessment, and
+// its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), named `h`
+function toAssess(l, doc, at, h){
+  try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at})); }catch(e){}
+  if(root.FTProcess) FTProcess.openLesson(l);
+}
+function openSlide(n, id, alt, at){
   loadDecks().then(() => {
     const d = decks() && decks()[n];
     const i = d ? slidesOf(d).findIndex(s => s.id === id) : -1;
     if(i < 0 && alt){ goto(alt); return; }
     open(n, Math.max(0, i));
+    // (and the page of it that holds `at`, once the slide is drawn)
+    if(at) setTimeout(() => FTDayDecks.reveal(`main.main-ftdd ${at}`), 150);
   });
 }
 function rowGo(c, r){
@@ -1657,7 +1669,7 @@ function toolsSlide(){
 root.FTDayDecks = {open, go, next: nextKC,
   // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
   refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide,
-  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
   state: () => DD,
