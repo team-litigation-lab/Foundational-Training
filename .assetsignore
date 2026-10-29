@@ -1,6 +1,5 @@
 worker.js
 calweek-api.js
-assessments-api.js
 wrangler.json
 *.md
 build
