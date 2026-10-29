@@ -27,7 +27,7 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   5: ["s2"], 13: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
-  // (Day 2's Escalation Handling Exercise is its own slide, s3b: ROWS; Day 8's afternoon is the demo: Atty. Sandy's video is on its morning's Topic 2)
+  // (Day 2's Escalation Handling Exercise is its own slide, s3b: ROWS; Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
   2: {s2: "Common Terms Used & Auto Liability Insurance"},
   // (Day 3's first slide keeps "and Call Listening" in its name: it brings the 🎧 Call Listening slide, js/ft-day-decks.js slidesOf)
   3: {s1: "Checking of Assignments & the Discussion Deck: PI Workflow, Reception Training and Call Listening", s2: "Homework: CRM/CMS Training Videos"},
@@ -228,6 +228,10 @@ s3: html => {
     "8.4 Event Proper Arrival Block time", "8.5 Overnight Stay", "8.6 Return Travel to Seattle: Check out of the hotel and travel to the airport",
     "8.7 Return Travel to Seattle: Flight from San Francisco (SFO) to Seattle (SEA)", "9. Document Review Session", "10. Family Dinner", "11. Entire Calendar"];
   const seq = '<ol class="ftdd-seq">' + SEQ.map((t, i) => `<li><span class="ftdd-seq-n">${i + 1}</span><span>${t}</span></li>`).join("") + "</ol>\n";
+  // 📅 the Calendar Activity Check (js/ft-calcheck.js): before uploading, the trainee enters what each event holds and
+  // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
+  const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
+    '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you upload →</small></span></button></div>\n';
   // the activity's instruction in its card, then its Instructions and Activity Items; the activity and the samples
   // themselves, full size; the cards stand one under the other (not a grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0], signify = "don’t forget to signify done here as soon as you finish. Thanks.";
@@ -236,7 +240,7 @@ s3: html => {
     card("📝", "1. The activity", lead.replace(signify, "don’t forget to signify done (✅ Done, at the end of the activity’s slides) as soon as you finish. Thanks.")) + "\n" +
     calActivity() + calsimHook() +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
-    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq)) + "\n" + cut("<p><b><i>*** Free Communication");
+    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq + check)) + "\n" + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the discussion deck (PI Workflow and Reception Training) in the slide, the
 // Process Questions' naming convention, and the sample recordings and SOP as links (a new tab, not the viewer); the
@@ -320,6 +324,20 @@ s3: html => {
     '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
     '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
+  // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
+  const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
+  const mock = "<p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n" +
+    lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
+    lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
+    lnk("📅 The Calendaring Tool: the Google Calendar Simulator", sim + "calsim.html?program=FT&track=standard") +
+    "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
+    "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
+    "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules on the next slide before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
+    "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Simulator), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
+    "<p>Step 5 - Run the Calendaring Tool’s automated review and fix what it flags.</p>\n" +
+    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics below.</p>\n";
+  out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
+  if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
   return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
 },
 s2: html => {
@@ -585,23 +603,25 @@ const ROWS = {
   6: {
     // the card lists the mock calls first, then the videos to watch while waiting for a turn
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
-    s1: [{id: "s1", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p>Reminders:</p>"]]},
-      {id: "s1b", h: "Entire Day: Calendar Management Mock Calls", parts: [["<p>Reminders:</p>", null]]}]
+    // (the mock calls' slide opens on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
+    s1: [{id: "s1", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]},
+      {id: "s1b", h: "Entire Day: Calendar Management Mock Calls", parts: [["<p><b>☎ Mock Calls: how to access", null]]}]
   },
   7: {
     s1: [{id: "s1", parts: [[null, "<p><b>Intake Scenario Exercise</b></p>"]]},
       {id: "s1b", h: "AM: Intake Scenario Exercise", parts: [["<p><b>Intake Scenario Exercise</b></p>", null]]}]
   },
   8: {
-    s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p>Topic 2: Intake Calling (MVC) </p>"]]},
-      {id: "s1b", h: "AM: Topic 2: Intake Calling (MVC)", parts: [["<p>Topic 2: Intake Calling (MVC) </p>", "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
-      // (the guide numbers both Topic 2; its own "To ensure clarity" calls the documents Topic 3)
-      {id: "s1c", h: "AM: Topic 3: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<h4>Additional Instruction:</h4>"]],
-        fix: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<p><b>Topic 3: Intake Documents (MVA Cases)</b></p>"]]},
-      {id: "s1d", h: "AM: Additional Instruction: Naming Convention & Additional Intake Documents", parts: [["<h4>Additional Instruction:</h4>", '<div class="tbl-wrap"><table class="ft-table"><tr><td><p>@everyone </p>']]},
-      // the demo's preparation (and the fillable-forms video added for it) is read with the demo tutorial
-      {to: "s2", parts: [['<div class="tbl-wrap"><table class="ft-table"><tr><td><p>@everyone </p>', null]], fix: [h => {
-        const out = h.replace(/\*{2,3}(?=<b>)|(?<=<\/b>)\*{2,3}/g, ""); if(/\*\*/.test(out)) throw new Error("Day 8's demo preparation still has raw asterisks"); return out; }]}]
+    // the trainer's text (#323): Topic 1, Topic 2 with its packet picker, the naming convention and the additional
+    // documents, the Live Session Instructions, this afternoon's activities; the demo tutorial is its own section (s2)
+    s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
+      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<h4>Additional Instruction:</h4>"]]},
+      {id: "s1c", h: "AM: Additional Instruction: Naming Convention & Additional Intake Documents", parts: [["<h4>Additional Instruction:</h4>", "<h4>Additional Instruction: Live Session Instructions</h4>"]]},
+      {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<h4>Additional Instruction: Live Session Instructions</h4>", "<h4>Additional Instruction: This Afternoon’s Activities</h4>"]]},
+      {id: "s1e", h: "AM: Additional Instruction: This Afternoon’s Activities", parts: [["<h4>Additional Instruction: This Afternoon’s Activities</h4>", null]]}],
+    // the demo (TRIM[8].s3), then Atty. Sandy Van's MVC intake-call video, a slide of its own after it
+    s3: [{id: "s3", parts: [[null, "<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>"]]},
+      {id: "s3b", h: "PM: Atty. Sandy’s Video: Intake Calling (MVC)", parts: [["<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>", null]]}]
   },
   9: {
     s3: [{id: "s3", h: "PM: Transcription Activity: Minutes of the Meeting", parts: [[null, "<h5>3.2. Mock Calls</h5>"]]},
