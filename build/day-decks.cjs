@@ -272,13 +272,18 @@ s3: html => {
       .replace("<p>Oscar’s Reception Recordings</p>\n", `<p>Oscar’s Reception Recordings</p>\n<p>Oscar’s Reception Activity recordings</p>\n<p><a href="${oscarFolder}" target="_blank" rel="noopener noreferrer">${oscarFolder}</a></p>\n`)
       .replace(/ class="viewer-link" data-kind="doc" data-title="[^"]*"/g, ' target="_blank" rel="noopener noreferrer"');
 },
-// Day 3's homework: the five CRM/CMS videos, each named, and when they may be finished
+// Day 3's homework: the five CRM/CMS videos, each named, as cards with the video's preview (data-card: js/ft-day-decks.js
+// visual), a click playing it bigger in the pop-up viewer; "Monitoring Sheet" opens the trainee's own, in their Drive
+// (FTDrive.openMonitor); and when they may be finished
 s2: html => {
   let k = 0;
-  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-kind="video" data-title="CRM/CMS Training Video ${++k}"`)
+  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-card data-kind="video" data-title="CRM/CMS Training Video ${++k}"`)
     .replace(/<\/a>\s*,\s*<\/p>/g, "</a></p>");
   if(k !== 5) throw new Error(`Day 3's homework has ${k} CRM/CMS videos, not 5`);
-  return out.replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
+  const mon = /update item #12 in your Monitoring Sheet\./;
+  if(!mon.test(out)) throw new Error("Day 3's homework monitoring sheet line is no longer where the build looks for it");
+  return out.replace(mon, `update item #12 in your <a href="#/monitoring" class="ftdd-monlink" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>.`)
+    .replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
 }},
 // Day 4 (Receptionist Training, Part 2): Julio's video in the slide and the Monitoring Sheet update; the mock call
 // preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
