@@ -26,6 +26,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # (js/ft-day-decks-data.js isn't committed: it is built here, as wrangler.json's "build" builds it on deploy)
+      - name: Build the Day decks' slides (build/day-decks.cjs → js/ft-day-decks-data.js)
+        run: node build/day-decks.cjs
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
       - name: Batch IDs are B + MMDDYY (the page and the Worker read them the same way; older codes keep working)
@@ -52,6 +55,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - name: Build the Day decks' slides (build/day-decks.cjs → js/ft-day-decks-data.js)
+        run: node build/day-decks.cjs
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save --no-package-lock --prefix "$RUNNER_TEMP/pw" playwright@1.56.1 jspdf@4.2.1
