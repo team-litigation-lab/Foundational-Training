@@ -164,6 +164,16 @@ const TRIM = {1: {reading: html => {
   return out.replace(sup, sup + oscar[0].replace(/data-title="[^"]*"/, 'data-title="Oscar’s Reception Activity recordings"') + "\n");
 }},
 4: {s1: html => html + "\n" + PI_WARMUP},
+// Day 8's PM is a 🧑‍🏫 Trainer Facilitated Demo: the guide's Facilitator's Notes (the tasks posted for both SA training
+// accounts, the sample task, the files checked first, the 10–15 minutes in SA) came through as slide text; they go to the
+// trainer's own slot (8:dd-demo, DEMO_NOTE), and the slide says, in the trainee's words, how the demo runs, what to have
+// ready and the guide's Additional Reminder for Trainees, before its Facilitator's Guide (8:s3-1) and the Demo Metrics
+8: {s3: html => {
+  const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
+  const to = html.indexOf('<div class="trainer-slot" data-slot="8:s3-1"></div>');
+  if(from !== 0 || to < 0 || !/Give each trainee 10-15 minutes/.test(html.slice(from, to)) || !html.includes("Demo Metrics</b></p>")) throw new Error("Day 8's demo slide is no longer where the build looks for it");
+  return DEMO_SLIDE + `<div class="trainer-slot" data-slot="8:dd-demo"></div>\n` + html.slice(to);
+}},
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide
 2: {s4: html => {
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
@@ -212,6 +222,24 @@ const PI_SLIDE = {id: "listen-pi", h: "AM: PI Reception Activity: 6 Practice Cal
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: PI Reception Activity: the 5 data points of each call</h4>\n` +
   PI_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
+// Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
+const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
+  `<p>Your demonstration of saving your assigned Intake Packet and its extracted intake documents in SA (Smart Advocate) is run by your trainer, one trainee at a time. If your shadow buddy confirms a shadowing session, the demo runs at the same time: your trainer pulls you from the session for your turn. Without live shadowing, you watch a recorded shadowing session while you wait.</p>\n` +
+  `<p><b>Before your turn</b></p>\n<ul>` +
+  `<li>Every intake document is extracted from your assigned Intake Packet, and every file, the Intake Packet itself included, is renamed under the firm’s naming convention. These are the exact files you upload and report on SA, so this is done before the demo.</li>` +
+  `<li>Your task is posted in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>, naming the Intake Packets to save.</li>` +
+  `<li>SA lets only one user in at a time: your trainer gives you access for your turn, with 10–15 minutes first to explore it.</li></ul>\n` +
+  `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n`;
+const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer Facilitated Demo, Saving the Intake Packet and Extracted Intake Documents to SA</h4>\n` +
+  `<ul><li>The demo runs at the same time as the shadowing when a shadow buddy confirms a session: pull the trainees from it one by one for their individual demonstration. Without live shadowing, provide a recorded shadowing session.</li>` +
+  `<li>Provide the SA credentials, the <b>2nd</b> one listed. Change it back to the 1st one at the end of each shift, and to the 2nd again whenever trainees need the CMS: this keeps the active cases in the CMS safe from unsupervised exploring, and follows the firm’s policy, as directed by the Operations Manager, that VAs are not permitted to alter it.</li>` +
+  `<li>There are 2 training accounts in SA (Jane Doe &amp; John Doe / DOCGEN Dummy Account): post the tasks in the SA Tasks tab for BOTH accounts.</li></ul>\n` +
+  `<div class="shots"><figure><a href="/ft/day8/img/image21.png" target="_blank"><img src="/ft/day8/img/image21.png" alt="" loading="lazy"></a></figure></div>\n` +
+  `<p><b>Sample task in the DESCRIPTION box:</b></p>\n<p>***** Intake Packet and Intake Documents Saving Tasks: Batch B022026 ***<br>03/06/2025 Please save the client’s Intake Packet and extract intake documents in the client’s project.<br>Documents to save:<br>1. INTAKE PACKET - 1 (Martin)<br>2. INTAKE PACKET - 2 (Michelle)<br>3. INTAKE PACKET - 3 (Mikee)<br>Thank you!</p>\n` +
+  `<ul><li>Check before the demo that every intake document has been extracted from the assigned Intake Packet, and that every file, the Intake Packet included, is renamed under the firm’s naming convention: these are the exact files uploaded and reported on SA.</li>` +
+  `<li>Give each trainee 10–15 minutes to explore SA first: it doesn’t allow more than one user at the same time.</li></ul></div>`;
+// the slots this build writes into the trainer-only notes (kept there by build/curriculum/convert.py)
+const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
 // Day 4: the same calls, small, to replay while waiting for the mock call
 const PI_WARMUP = `<hr class="stars">\n<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p>Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 // slides added after a day's slide: {day: {after: [slide, …]}}
@@ -337,8 +365,10 @@ for(let n = 1; n <= 16; n++){
 const out = "// Generated by build/day-decks.cjs from build/days/*.js — edit the day files or that script, not this file.\n"
   + "window.FT_DAY_DECKS = " + JSON.stringify(decks) + ";\n";
 fs.writeFileSync(path.join(R, "js/ft-day-decks-data.js"), out);
-// the PI Reception Activity's key, in the trainer-only notes (kept there by build/curriculum/convert.py)
+// the slots in DECK_NOTES, in the trainer-only notes
 const NOTES = path.join(R, "trainer/notes.json"), notes = JSON.parse(fs.readFileSync(NOTES, "utf8"));
-if(notes.slots["3:pi-calls"] !== PI_KEY){ notes.slots["3:pi-calls"] = PI_KEY; fs.writeFileSync(NOTES, JSON.stringify(notes, null, 1)); }
+let notesChanged = false;
+for(const [k, f] of Object.entries(DECK_NOTES)){ const v = f(); if(notes.slots[k] !== v){ notes.slots[k] = v; notesChanged = true; } }
+if(notesChanged) fs.writeFileSync(NOTES, JSON.stringify(notes, null, 1));
 console.log(`js/ft-day-decks-data.js: ${Object.keys(decks).length} day decks, ${Object.values(decks).reduce((a, d) => a + d.slides.length, 0)} slides, ${pqs} Process Questions lists replaced by the Knowledge Check pointer, ${qs} task question lists replaced by the assessment note, ${(out.length / 1024).toFixed(0)} KB`);
 for(const d of Object.values(decks)) console.log(`  Day ${d.day} · ${d.title}: ${d.slides.map(s => s.h.slice(0, 40)).join(" | ")}`);
