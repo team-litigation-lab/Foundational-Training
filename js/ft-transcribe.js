@@ -124,6 +124,18 @@ function docHtml(n){
     <p style="margin-top:18pt;font-size:11pt">Prepared by: ${e(state.certName || state.traineeName || "")}</p></body></html>`;
 }
 
+/* ---------- 📘 the PI equivalent sample guide and the metrics (js/ft-intake.js fills .ftis-consult) ---------- */
+function guide(){
+  const rb = window.FT_RUBRICS && FT_RUBRICS.forAct({id: "transcription-" + T.n});
+  return `<details class="card tr-guide"><summary>📘 Sample guide first: a PI consultation with ${ATTY} (A = Attorney, C = Client), its transcript and the sample minutes</summary>
+      <p class="tr-muted">Listen, read the A / C transcript, then compare the sample minutes with what you would have written. Your own minutes are scored the same way.</p>
+      ${window.FTIntake ? `<div class="ftis-consult"></div>` : ""}
+      <details class="tr-sample" open><summary>📄 The firm’s Sample Minutes of the Meeting, the format to follow</summary>
+        <div class="tr-sample-f"><iframe src="https://drive.google.com/file/d/${SAMPLE}/preview" title="Sample Minutes of the Meeting" loading="lazy"></iframe></div></details>
+      ${rb ? `<div class="tr-metrics"><b>📋 How your minutes are scored</b> <span class="tr-muted">each criterion 0–5 · accuracy and completeness count double · the weighted average is your score</span>
+        <ol>${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>${rb.time ? `<p class="tr-muted">⏱ ${e(rb.time)}</p>` : ""}</div>` : ""}</details>`;
+}
+
 /* ---------- the page ---------- */
 const STEPS = [["📨", "The request"], ["🎧", "Listen"], ["📝", "Draft the minutes"], ["🏷", "Name & file it"], ["💬", "Report back"], ["📤", "Submit"]];
 function stepper(n){
@@ -155,6 +167,7 @@ function renderTrainee(){
       <p>Save the minutes as a Word document named <b>${e(fileWant(n))}</b> in your <b>Assessments/Activities</b> folder, and let me know once they are there.</p>
       <p>Thank you!<br>${ATTY}</p>
       <div class="tr-attach"><span>📎</span><b>${e(RECS[n].title)}</b><small>Recording · Google Drive</small></div></div>
+    ${guide()}
     <div class="tr-work">
       <aside class="card tr-side"><h3>🎧 Listen</h3>
         ${r.startedAt ? `<div class="tr-player"><iframe src="https://drive.google.com/file/d/${RECS[n].id}/preview" allow="autoplay" title="${e(RECS[n].title)}"></iframe></div>
@@ -257,6 +270,8 @@ ${FIELDS.map(([k, l]) => `${l}: ${String(f[k] || "(empty)").slice(0, 2500)}`).jo
 File name: ${r.file || "(none)"} (the convention: ${fileWant(n)})
 Report to the attorney: ${r.report || "(none)"}
 The automated checks (${pct}%): ${cs.map(c => `${c[1] ? "PASS" : "MISS"} ${c[0]}`).join("; ")}
+
+The minutes are scored on these metrics: ${((window.FT_RUBRICS && FT_RUBRICS.forAct({id: "transcription-" + n})) || {criteria: []}).criteria.map(c => c.n).join("; ")}. Name the weakest of them.
 
 Write the evaluation the way the facilitator writes it (her feedback DNA, below): a verdict label, then "Demonstrated … understanding of …" naming what was done well, then "However, improvement is needed in …" naming each gap, then the habit that prevents it. 3-5 sentences, third person.
 
@@ -364,6 +379,10 @@ a.tr-ref{display:block;padding:10px 12px;border-radius:10px;background:#EAF1FF;c
 .tr-tbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;} .tr-tbl th, .tr-tbl td{border-bottom:1px solid var(--line,#e5e7eb);padding:8px;text-align:left;vertical-align:top;}
 .tr-read{max-height:320px;overflow:auto;background:#F6F7FB;border-radius:8px;padding:8px 10px;margin-top:6px;} .tr-read p{margin:0 0 8px;}
 .tr-copy-h{margin:8px 0 0;color:#262B45;font-size:18px;}
+.tr-guide{padding:12px 18px;} .tr-sample{margin-top:10px;} .tr-sample > summary{cursor:pointer;font-weight:700;color:#262B45;font-size:14px;}
+.tr-sample-f{height:min(70vh,640px);margin-top:6px;border:1px solid #CBD2DF;border-radius:10px;overflow:hidden;background:#F6F7FB;} .tr-sample-f iframe{width:100%;height:100%;border:0;background:#fff;} .tr-guide > summary{cursor:pointer;font-weight:800;color:#262B45;font-size:15px;} .tr-guide[open] > summary{margin-bottom:8px;}
+.tr-metrics{margin-top:10px;padding:10px 14px;background:#F6F7FB;border-radius:10px;font-size:14px;} .tr-metrics ol{margin:6px 0 0;padding-left:20px;columns:2;column-gap:28px;}
+@media(max-width:700px){.tr-metrics ol{columns:1;}}
 @media(max-width:1000px){.tr-work, .tr-finish{grid-template-columns:minmax(0,1fr);} .tr-side{position:static;} .tr-steps{grid-template-columns:repeat(3,minmax(0,1fr));}}
 @media(max-width:600px){.tr-grid{grid-template-columns:minmax(0,1fr);} .tr-page{padding:18px;} .tr-steps{grid-template-columns:repeat(2,minmax(0,1fr));}}
 `; document.head.appendChild(s); })();

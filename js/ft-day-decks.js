@@ -235,9 +235,9 @@ function visual(html){
     if(!rb) return;
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
-    box.innerHTML = `<div class="ftdd-score-h"><b>📋 How this call is scored</b><span>${rb.criteria.length} criteria · each 0–5 · the weighted average is your score</span></div>
+    box.innerHTML = `<div class="ftdd-score-h"><b>📋 How this ${/call/i.test(rb.title) ? "call" : "activity"} is scored</b><span>${rb.criteria.length} criteria · each 0–5 · the weighted average is your score</span></div>
       <ol class="ftdd-score-l">${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>
-      <p class="ftdd-score-f">Your trainer fills this in with you after the call${rb.feedback ? ", with a note on each line" : ""}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`;
+      <p class="ftdd-score-f">Your trainer fills this in with you after the ${/call/i.test(rb.title) ? "call" : "activity"}${rb.feedback ? ", with a note on each line" : ""}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`;
     if(shots){ shots.classList.add("ftdd-score-shot"); box.appendChild(shots); }
     p.replaceWith(box);
   });
@@ -409,7 +409,12 @@ const HANDOUTS = {1: {items: [
   ["LSH Services and VA Task List", "https://drive.google.com/file/d/12xvxXorgh_wjR9DidEewbnfokItzpzNY/view"],
   ["LSH Clients and Clientele", "https://drive.google.com/file/d/1-x8NMuG0sR994yqodr5xBgHaHDfrWv6v/view"],
   ["Western Culture", "https://drive.google.com/file/d/1EkJ1eqoZqccdThFJ0-O1tPXEyjLLeIX0/view"],
-  ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]}};
+  ["US States and Time Zones", "https://drive.google.com/file/d/1gf1ieGAjHs6swYFwwx4mf1naWSrMKVn5/view"]]},
+  // Day 7: the Intake Specialist Training breakout (Training Guide: "Digital Handouts for Breakout Session (Group Activity)")
+  7: {items: [
+  ["Intake Documents to Support the Claim", "https://drive.google.com/file/d/1DenG0yNjuWZe9Kc3e5zAnZJOjP4yQB6X/view"],
+  ["Intake Packet", "https://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view"],
+  ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]}};
 function handoutsSlide(h){
   // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
   // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
@@ -978,11 +983,14 @@ const LESSON_CARDS = {
       {t: "Breakout Session: Intake Specialist Best Practices", sub: "Digital handouts · group activity", k: "interactive", d: 7, s: "s1"},
       {t: "Call Listening on the Intake Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
       {t: "Intake Scenario Exercise", k: "interactive", d: 7, s: "s1"},
+      {t: "Insurance Providers", sub: "The eight carriers you will hear on intake calls · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
+      {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The intake reference set, and four more sample intake recordings", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
       {t: "Intake Process, Overview & Documents", time: "AM", sub: "The videos, the Intake Worksheet and your intake packet", k: "watch", d: 8, s: "s1"},
       {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet and extracted documents in SA", k: "watch", d: 8, s: "s2"},
       {t: "Saving the Intake Packet to SA", time: "PM", k: "demo", d: 8, s: "s3"},
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
+      {t: "PI Equivalent Transcription: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity & Mock Calls", time: "PM", sub: "Minutes of the meeting: client-to-attorney", k: "interactive", d: 9, s: "s3"}],
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
@@ -1155,7 +1163,7 @@ function standardRows(n, c, lid, first, title, rows){
   while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
   const mid = [];
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"});
-  if(first && !has(/ftVideoOrAsk|Handouts \/ Video/)) mid.push({t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
+  if(first && !has(/ftVideoOrAsk|Handouts \/ Video/)) mid.push({t: "Handouts / Video", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video opens here (🔒 Request Video)", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
@@ -2060,7 +2068,8 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-card h2.ftdd-pi-h{font-size:20px !
 main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);}
 @media(max-width:900px){ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr);} }
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
-.ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}   /* a folder's file list is short: it doesn't shrink the slide around it */
+.ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}
+.ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* the step screenshots on an Activity deck slide (Day 1's Installation of SA and the others), big enough to read: two or
    three to a row, 360px tall. On every slide's .shots, so a slide a trainer edited (FTSlideEdit) gets them too. */
