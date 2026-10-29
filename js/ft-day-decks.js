@@ -1252,10 +1252,13 @@ function kcNext(s){
   return `<button type="button" class="btn ftdd-next ftdd-next-kc" onclick="FTDayDecks.next()">${e(k.label)}</button>`;
 }
 function toAssessNext(a){
-  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [], i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1, s = list[i] || null;
-  // (the way on is shut until this slide's Done is in, Day 2's 📤 Submit: the assessment waits for it too)
-  if(s && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)){ toast("📤 Submit your Monitoring Sheet update first."); return; }
-  const h = !s ? "" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+  const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
+  let i = a.back ? list.findIndex(x => x.id === a.back) : DD.i + 1;
+  // (the assessment always opens; while the way on is shut until this slide's Done is in, Day 2's 📤 Submit, its way back
+  // is to this slide, to submit there)
+  if(list[i] && root.FTBuffer && FTBuffer.holds && FTBuffer.holds(DD.day, i)) i = DD.i;
+  const s = list[i] || null;
+  const h = !s ? "" : i === DD.i ? String(s.h || "") + ": 📤 Submit" : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
   if(root.FTProcess) FTProcess.openLesson(a.l);
 }
@@ -1278,7 +1281,8 @@ function wireReaders(){
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ go.disabled = false; go.textContent = "Next →"; go.title = ""; return; }
   const left = unread(kcOf(s));
   go.disabled = left.length > 0;
-  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || go.textContent;
+  // (on its last page, the button names where it goes: the reading's questions, or the slide's assessment)
+  go.textContent = left.length ? `🔒 Read all the parts first (${left.length} left)` : (kcOf(s) || {}).label || (asOf(s) ? `Next: 📄 ${asOf(s).t} →` : go.textContent);
   go.title = left.length ? "Read every part of the reading, then answer its questions" : "";
 }
 // 👩‍🏫 the presenter at the foot of the side panel (Activity decks and Know Your Tools), as on the lesson slides
