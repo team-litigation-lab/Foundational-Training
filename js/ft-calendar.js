@@ -7,10 +7,14 @@
      • The activity (FTCalCore.act) is the attorney's own Google Calendar in Pacific Time, July 6–19, 2026 (the activity is
        July 6–15; the days after are greyed): week view, midnight to midnight, 15-minute steps, ‹ › for the two weeks and an
        All-day row. The trainee creates every event (drag, ＋ Create or ＋ Add event); the editor has Google Calendar's fields:
-       date, start/end, All day, the event's own time zone (Pacific / Mountain / Central / Eastern), location, guests (the four
+       date, start/end, All day, the event's own time zone (the Calendar Activity Check's list), location, guests (the four
        in the directory or any email), Google Meet, reminders (Notification or Email, minutes to weeks before), color and
        description. The left rail has the activity's instructions, its color legend in Google colors, the guests and the ten
        items. Read-only views (My submitted evaluation, the trainer's views) show the calendar as an agenda.
+     • The activity is graded THROUGH the 📅 Calendar Activity Check (window.FTCalCheck, js/ft-calcheck.js, #/calcheck): each
+       event is mapped to the Check's entry and checked field by field by the Check's own code (FTCalCore.act, review()), so the
+       two agree; the review panel shows the Check's ✓/✗ for every field with its fix, plus the simulator's own checks (colour,
+       overlaps, duplicates). The page links to the Check ("✅ Check with the Calendar Activity Check"), and the Check links back.
      • The week is a Monday to Friday grid in 15-minute steps (Eastern Time). The attorney's fixed events are locked. The brief lists
        the tasks to put on the calendar; the trainee builds their own calendar: drag on an empty part of the week to
        add an event, drag an event to move it, drag its bottom edge to resize it, double-click to rename it, ✕ to
@@ -316,11 +320,26 @@ function finalHTML(s, r, sub){
 // The automated review's panel (also used on the trainer's screen). `notes`: the trainer's comment on each task, if any.
 function reviewHTML(g, notes){
   notes = notes || {};
+  if(g.kind === "activity") return actReviewHTML(g, notes);
   const act = g.kind === "activity", info = g.extras.filter(x => !x.why.length && x.info);
   return `<div class="cs-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? (act ? "✅ Passes" : "✅ Meets the attorney’s rules") : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} ${act ? "events perfect" : "tasks perfect"}</span></div>
     ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b> <span>${i.pts} / ${i.weight}</span></div>
       ${i.perfect ? "" : `<ul>${i.checks.filter(c => !c.ok).map(c => `<li><b>${e(c.label)}:</b> ${e(c.why)}</li>`).join("")}</ul>`}${(i.info || []).map(t => `<div class="cs-tinfo">ℹ ${e(t)}</div>`).join("")}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
     ${g.extras.filter(x => x.why.length).length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${g.extras.filter(x => x.why.length).map(x => `<li><b>${e(x.title)}</b> (${x.when ? e(x.when) : C.DAYS[x.day].slice(0, 3) + " " + hh(x.start)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}${info.length ? `<div class="cs-item"><div class="cs-item-hd">ℹ <b>Other events</b></div><ul class="cs-tinfo-ul">${info.map(x => `<li><b>${e(x.title || "(no title)")}</b> (${e(x.when)}): ${e(x.info)}</li>`).join("")}</ul></div>` : ""}</div>`;
+}
+// The activity's panel: the Calendar Activity Check's verdict on every field of each event (✓, or ✗ with the Check's fix), the
+// simulator's own checks (🎨 the colour; the whole calendar's overlaps and duplicates), and the ℹ lines that aren't scored.
+const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="goto('calcheck')">✅ Check with the Calendar Activity Check</button>` : "";
+function actReviewHTML(g, notes){
+  if(g.error) return `<div class="cs-err">${e(g.error)}</div>`;
+  const info = g.extras.filter(x => !x.why.length && x.info), bad = g.extras.filter(x => x.why.length);
+  const field = c => c.ok ? `<li class="ok">✓ ${e(c.label)}${c.sim ? " 🎨" : ""}</li>` : `<li class="no">✗ <b>${e(c.label)}${c.sim ? " 🎨" : ""}</b><span>${e(c.why)}</span></li>`;
+  return `<div class="cs-result ca-result ${g.passed ? "ok" : "bad"}"><div class="cs-score"><b>${g.pct}%</b><span>${g.passed ? "✅ Passes" : "Not yet"} · ${C.PASS}% passes · ${g.done} of ${g.items.length} events perfect · ${g.score} of ${g.max} fields right</span></div>
+    <div class="ca-ckline">📅 <b>Calendar Activity Check:</b> ${g.check.met} of ${g.check.total} fields right (${g.check.pct}%) · 🎨 <b>Simulator checks</b> (color, overlaps, duplicates): ${g.sim.met} of ${g.sim.total} ${CHECK_LINK()}</div>
+    ${g.items.map(i => `<div class="cs-item ${i.perfect ? "ok" : "bad"}"><div class="cs-item-hd">${i.perfect ? "✓" : "✗"} <b>${e(i.title)}</b>${i.event ? `<em class="ca-as">“${e(i.event.title || "(no title)")}”</em>` : ""} <span>${i.pts} / ${i.weight}</span></div>
+      <ul class="ca-fields">${i.checks.filter(c => c.ok).map(field).join("")}${i.checks.filter(c => !c.ok).map(field).join("")}</ul>${(i.info || []).map(t => `<div class="cs-tinfo">ℹ ${e(t)}</div>`).join("")}${notes[i.id] ? `<div class="cs-tnote">👤 ${e(notes[i.id])}</div>` : ""}</div>`).join("")}
+    ${bad.length ? `<div class="cs-item bad"><div class="cs-item-hd">⚠ <b>Other events with problems</b></div><ul>${bad.map(x => `<li><b>${e(x.title)}</b> (${e(x.when)}): ${e(x.why.join("; "))}</li>`).join("")}</ul></div>` : ""}${info.length ? `<div class="cs-item"><div class="cs-item-hd">ℹ <b>Other events</b></div><ul class="cs-tinfo-ul">${info.map(x => `<li><b>${e(x.title || "(no title)")}</b> (${e(x.when)}): ${e(x.info)}</li>`).join("")}</ul></div>` : ""}
+    <p class="cs-hint">✓/✗ without 🎨 are the 📅 Calendar Activity Check’s own verdicts (the same check, field by field); 🎨 are this calendar’s (the Check can’t see colors or the whole calendar). Every field counts one.</p></div>`;
 }
 function resultHTML(){ return S.result ? reviewHTML(S.result) + `<p class="cs-hint">Fix what’s marked, then run the review again. Submit when you’re happy with it.</p>` : ""; }
 const bestAuto = id => (S.data ? S.data.autos : []).filter(a => a.scn === id).reduce((m, a) => Math.max(m, a.pct), -1);
@@ -361,7 +380,7 @@ function renderPage(){
   if(!open()) return `<div class="cs-wrap"><h1>📅 Calendaring Simulators</h1><div class="cs-tabs">${tabs}</div><div class="card" style="padding:20px;">🔒 ${isAct(s) ? "The Attorney Calendar Management Activity opens on Day 5, when your trainer opens it." : `This simulator opens with Lesson ${LESSON}, Calendaring &amp; Appointment Setting.`}</div></div>`;
   if(isAct(s)) return `<div class="cs-wrap cs-act"><div class="cs-top"><h1>📅 Calendaring Simulators</h1><div class="cs-tabs">${tracks}</div>
       <div class="ca-back"><button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button></div></div>
-    ${weeks ? `<div class="cs-tabs cs-weeks">${weeks}</div>` : ""}<p class="cs-blurb">${e(tk.blurb)}</p>
+    ${weeks ? `<div class="cs-tabs cs-weeks">${weeks}</div>` : ""}<p class="cs-blurb">${e(tk.blurb)} ${CHECK_LINK()}</p>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
     <div class="cs-main">${actTrayHTML()}<div class="gc-shell">${actToolbarHTML()}<div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">${e(ACT_HINT)}</p></div></div>
     <div class="cs-actions"><button class="btn btn-navy" onclick="FTCalSim.save()">💾 Save changes</button>
@@ -369,7 +388,7 @@ function renderPage(){
       <button class="btn btn-primary" onclick="FTCalSim.submit()">📤 Submit to my trainer</button>
       <button class="btn btn-ghost" onclick="FTCalSim.add()">＋ Add event</button>
       <button class="btn btn-ghost" onclick="FTCalSim.reset()">↺ Clear my events</button><span class="cs-save" id="csSave"></span></div>
-    <p class="cs-hint">The automated review checks each item and travel block (its date and time in its time zone, color, location, guests, reminders and notes) and the whole calendar (no overlaps, nothing missing, no duplicates), scored out of 100 (${C.PASS}% passes), and tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
+    <p class="cs-hint">The automated review is the 📅 Calendar Activity Check’s: every item and travel block, field by field (title, dates and times in the event’s own time zone, the zone, location, guests, reminder, notes), with this calendar’s own checks on top (the color, no overlaps, no duplicates). Every field counts one (${C.PASS}% passes), and it tells you what to fix. Your trainer then adds their own feedback to what you submit.</p>
     <div id="csResultBox">${resultHTML()}</div>
     ${historyHTML()}</div>`;
   return `<div class="cs-wrap"><div class="cs-top"><div><h1>📅 Calendaring Simulators</h1>
@@ -442,7 +461,7 @@ function startDrag(ev, mode, id){
   const el = id ? document.querySelector(`.cs-req[data-ev="${CSS.escape(id)}"]`) : null, rect = el && el.getBoundingClientRect();
   const r0 = col && col.getBoundingClientRect();
   S.drag = {mode, id, sx:ev.clientX, sy:ev.clientY, pid:ev.pointerId, moved:false, x, g, act, p:x ? (act ? X.pacOf(x) : {day:x.day, start:x.start}) : null, grab:rect ? ev.clientY - rect.top : 0, w:rect ? rect.width : 0,
-    stay:act ? (X.match(s, S.events).overnight || {}).id : null,
+    stay:act ? (X.match(s, S.events)[X.STAY] || {}).id : null,
     anchor:mode === "new" ? {day:+col.dataset.day, start:Math.max(g.top, Math.min(g.bottom - C.STEP, g.top + Math.floor((ev.clientY - r0.top) / g.sh) * C.STEP))} : null, prev:null, ghost:null, cur:null};
   window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp); window.addEventListener("pointercancel", onCancel);
 }
@@ -758,11 +777,11 @@ THE ACTIVITY ITEMS:
 ${items}
 
 RULES OF THIS SIMULATOR:
-- The attorney is in Seattle: the calendar shows Pacific Time. PST, MST, CST and EST in the items are US Pacific, Mountain, Central and Eastern Time (July is daylight time). An event is right when it is at the right moment: entered in the item's own time zone (e.g. 3:00 PM with the event's time zone set to Mountain Time) OR converted to Pacific (2:00 PM Pacific). Both are correct; do not ask for the other one.
+- The attorney is in Seattle: the calendar shows Pacific Time. PST, MST, CST and EST in the items are US Pacific, Mountain, Central and Eastern Time (July is daylight time). As on the Calendar Activity Check, each event is entered in the item's own time zone with the item's clock time (e.g. 3:00 PM with the event's time zone set to Mountain Time - Denver, or Mountain Standard Time - Phoenix); the same moment typed in Pacific (2:00 PM Pacific) is marked as the wrong start time and zone.
 - Hours far from the office are expected: the gym session (6:30 AM EST) is 3:30 AM on the attorney's Pacific calendar. That is not a mistake.
-- Travel blocks and sub-blocks are their own events, with "departure → destination" as the location. Each travel block needs its own reminder, apart from the item's own reminder, at a practical lead time (${X.leadText(X.TRAVEL_MIN)} to ${X.leadText(X.TRAVEL_MAX)} before). The activity says to ask Mitch's preferences, so the trainer confirms the preferred lead time: don't call one lead time wrong.
+- Travel blocks and sub-blocks are their own events. The activity asks for "departure → destination" as their location and a practical reminder of their own (${X.leadText(X.TRAVEL_MIN)} to ${X.leadText(X.TRAVEL_MAX)} before); the automated check doesn't grade either, so suggest them, and the trainer confirms the attorney's preferred lead time: don't call one lead time wrong. The trip's 1-day email and notes may sit on either event of its travel block.
 - The activity gives 8:30–9:00 AM for the ride to SEA, right before the 9:00 AM flight: the given times are expected. You may suggest talking through a more realistic airport buffer with the trainer, but don't mark the times wrong.
-- The overnight stay in San Francisco can be an all-day event on July 13, an evening block after the dinner (from 8 PM), a block on July 14 from 12 AM to 8 AM, or a note on the Networking Dinner event.
+- The overnight stay in San Francisco is an all-day event on July 13 (it may end on July 13 or 14).
 - Accepted color alternatives:
 ${alts}
 
@@ -901,7 +920,7 @@ window.goto = function(view, id){
 };
 // 🛠 the Practice Lab's card for the activity (js/ft-simulators.js: shown from Day 5)
 window.ftCalActivityCard = () => `<div class="card fts-card"><div class="fts-kicker">Day 5 · Calendar Management</div><h3>🗓 Attorney Calendar Management Activity</h3>
-    <p class="fts-note">Manage the attorney’s Google Calendar in Pacific Time: the ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes. Checked on the spot, then submitted to your trainer.</p>
+    <p class="fts-note">Manage the attorney’s Google Calendar in Pacific Time: the ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes. Checked on the spot by the 📅 Calendar Activity Check, then submitted to your trainer.</p>
     <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calsim','attorney-activity')">Open the activity</button></div></div>`;
 
 /* ---------- results from the connected simulators (Portal, CMS) ---------- */
@@ -1338,6 +1357,11 @@ main.main-calsim.ca-wide{max-width:1560px;}
 .ca-at{white-space:nowrap;color:#3c4043;padding-top:2px;} .ca-adot{display:block;width:12px;height:12px;border-radius:50%;margin-top:4px;} .ca-adot.ca-nocol{background:#e8f0fe;box-shadow:0 0 0 1px #1a73e8;}
 .ca-ax b{font-weight:500;color:#202124;} .ca-cn{font-size:11px;color:#70757a;} .ca-ameta,.ca-az,.ca-adesc{font-size:12px;color:#5f6368;margin-top:2px;overflow-wrap:anywhere;} .ca-az{color:#1967d2;} .ca-aw{font-size:12px;color:#b3261e;margin-top:2px;}
 .ca-ar.ca-rbad{background:#fce8e6;} .ca-ar.ca-hl{background:#fef7e0;box-shadow:inset 4px 0 0 #fbbc04;}
+.ca-ckline{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;color:var(--ink-soft);margin:6px 0 4px;} .ca-ckline b{color:var(--ink);}
+.ca-fields{list-style:none;margin:6px 0 0 !important;padding:0 !important;display:flex;flex-wrap:wrap;gap:4px 6px;color:inherit !important;}
+.ca-fields li{font-size:12.5px;border-radius:999px;padding:2px 9px;} .ca-fields li.ok{background:#ecfdf3;color:#166534;}
+.ca-fields li.no{flex:1 1 100%;border-radius:8px;background:#fef2f2;color:#7f1d1d;padding:4px 9px;} .ca-fields li.no span{display:block;font-size:12.5px;color:#7f1d1d;opacity:.9;}
+.ca-as{font-style:normal;font-size:12.5px;color:var(--ink-soft);font-weight:400;} .ca-cklink{white-space:nowrap;}
 .cs-tinfo{font-size:12.5px;color:#1e40af;background:#eff6ff;border-radius:6px;padding:3px 8px;margin-top:4px;} .cs-tinfo-ul{margin:4px 0 0 22px;padding:0;font-size:13px;color:#1e3a8a;}
 .cs-live-checks li.info{color:#1e40af;font-size:14px;}
 .cs-live-cal .ca-agenda{background:#fff;}

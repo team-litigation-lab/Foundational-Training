@@ -16,8 +16,10 @@
      • A second track, 🗓 Attorney Calendar Management Activity (Day 5; its scenario has kind:"activity"), is the attorney's
        own Google Calendar in Seattle (Pacific Time), July 6–15, 2026: the trainee creates every event (no fixed events) with
        Google Calendar's fields (date, start/end, the event's own time zone, location, guests, description, color, reminders).
-       Its answer key (ACT_KEY, below: the 10 items and their travel blocks) is data for trainers to adjust. flags(),
-       review() and cleanFor() hand an activity scenario to the activity's own code (api.act); the Standard weeks are unchanged.
+       It has no answer key of its own: review() grades the calendar THROUGH the 📅 Calendar Activity Check (window.FTCalCheck,
+       js/ft-calcheck.js: its key, check, checkAll and score), so the simulator and the Check agree field by field; only the
+       colour, overlaps and duplicates are the simulator's own. flags(), review() and cleanFor() hand an activity scenario to
+       the activity's own code (api.act); the Standard weeks are unchanged.
    ============================================================ */
 (function(root){
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -189,13 +191,23 @@ function review(scn, events){
    ============================================================ */
 const isAct = scn => !!scn && scn.kind === "activity";
 const act = (() => {
-// The activity's PST / MST / CST / EST are US Pacific / Mountain / Central / Eastern Time. Offsets come from the time-zone data
-// for each date (July 2026 is daylight time: PDT -7, MDT -6, CDT -5, EDT -4); `off` (the summer offset) is used only without it.
+// The event's own time zone: the 📅 Calendar Activity Check's list (FTCalCheck.zones, js/ft-calcheck.js), in the same order, so a
+// zone the Check accepts can be picked here and the two agree (calsim-activity.cjs checks the ids match). PST / MST / CST / EST are
+// US Pacific / Mountain / Central / Eastern Time; the Check also accepts Phoenix (MST all year), Regina and Panama. Offsets come
+// from the time-zone data for each date (July 2026 is daylight time); `off` (the July offset) is used only without it.
 const TZS = [
   {id:"America/Los_Angeles", short:"PST", dst:"PDT", name:"Pacific Time - Los Angeles", word:"Pacific", off:-420},
   {id:"America/Denver",      short:"MST", dst:"MDT", name:"Mountain Time - Denver",     word:"Mountain", off:-360},
+  {id:"America/Phoenix",     short:"MST", dst:"MST", name:"Mountain Standard Time - Phoenix", word:"Mountain Standard", off:-420},
   {id:"America/Chicago",     short:"CST", dst:"CDT", name:"Central Time - Chicago",     word:"Central", off:-300},
-  {id:"America/New_York",    short:"EST", dst:"EDT", name:"Eastern Time - New York",    word:"Eastern", off:-240}
+  {id:"America/Regina",      short:"CST", dst:"CST", name:"Central Standard Time - Regina", word:"Central Standard", off:-360},
+  {id:"America/New_York",    short:"EST", dst:"EDT", name:"Eastern Time - New York",    word:"Eastern", off:-240},
+  {id:"America/Panama",      short:"EST", dst:"EST", name:"Eastern Standard Time - Panama", word:"Eastern Standard", off:-300},
+  {id:"Pacific/Honolulu",    short:"HST", dst:"HST", name:"Hawaii-Aleutian Standard Time - Honolulu", word:"Hawaii", off:-600},
+  {id:"America/Anchorage",   short:"AKST", dst:"AKDT", name:"Alaska Time - Anchorage",  word:"Alaska", off:-480},
+  {id:"Asia/Manila",         short:"PHT", dst:"PHT", name:"Philippine Time - Manila",   word:"Philippine", off:480},
+  {id:"Etc/UTC",             short:"UTC", dst:"UTC", name:"Coordinated Universal Time", word:"UTC", off:0},
+  {id:"Europe/London",       short:"GMT", dst:"BST", name:"United Kingdom Time - London", word:"UK", off:60}
 ];
 const CAL_TZ = "America/Los_Angeles";
 const tzOf = id => TZS.find(z => z.id === id || z.short === id) || null;
@@ -255,117 +267,77 @@ const remMin = r => r.n * (REM_UNITS[r.unit] || 1);
 const leadText = m => m && m % 10080 === 0 ? `${m / 10080} week${m === 10080 ? "" : "s"}` : m && m % 1440 === 0 ? `${m / 1440} day${m === 1440 ? "" : "s"}` : m && m % 60 === 0 ? `${m / 60} hour${m === 60 ? "" : "s"}` : `${m} minute${m === 1 ? "" : "s"}`;
 const remText = r => `${r.type === "email" ? "Email" : "Notification"} ${leadText(r.min != null ? r.min : remMin(r))} before`;
 
-/* ---------- THE ANSWER KEY (trainers: adjust here) ----------
-   One entry per event the attorney's calendar should have: the ten items and their travel blocks / sub-blocks.
-     id       stable: the trainer's per-item comments and the AI feedback are keyed by it (don't rename after trainees submit)
-     item     the activity item (1–10) it belongs to; parent: the item's main event, for a travel block or sub-block
-     title    as shown in the review; keys: what recognizes it in a trainee's title (each group is "any of these")
-     date, tz, start, end   the item as given: its date, its zone (PST/MST/CST/EST), minutes from midnight in that zone.
-              The review compares absolute instants: the item's local time in its own zone OR the same instant in Pacific both count.
-              Keep every date inside the calendar (July 6–15, 2026; FROM / LAST above).
-     allDay/after/morning   (the overnight stay) an all-day event on the date, an evening block from `after` (Pacific), a block the
-              next day from 12 AM ending by `morning`; or a note on `noteOn`'s event
-     cat      the legend's category; alt: other categories accepted, altWhy: what the feedback says when one is used
-     loc      {any:[...]}: one of these in the location (meet:true: Google Meet added also counts);
-              {from:[...], to:[...]}: a travel block: the location names a departure AND a destination ("Seattle → Washington County Court"),
-              the destination side has one of `to`, the departure side one of `from` (empty = any place)
-     guests   the exact guest list ([] = none)
-     remind   required reminders {type, min (lead time in minutes), orOn:[ids of the same trip whose event may carry it instead]}
-     travel   a travel block: also needs its own travel reminder (TRAVEL_MIN to TRAVEL_MAX minutes before, any type), apart from
-              the item's required one (the trainer confirms the attorney's preference)
-     notes    key details the event must carry: each {any:[words/phrases], say:"what to add"}; searched in the title and description
-              (and the location when loc:true); orOn as for reminders
-     info     a line the review always shows on this event (ℹ)
-     weight   points out of 100 (the events add up to 90; the whole-calendar checks, CAL_W, are the other 10)
+/* ---------- THE ANSWER KEY: the 📅 Calendar Activity Check's (js/ft-calcheck.js, FTCalCheck.key) ----------
+   The simulator is where the trainee does the activity; the Calendar Activity Check (#/calcheck) checks it field by field. They
+   must agree, so the simulator has no answer key of its own: review() maps each event on the calendar to the Check's entry shape
+   and grades it with FTCalCheck.check / checkAll / score (the title, dates and times in the event's own zone, the zone, location,
+   guests, reminder, description). Trainers adjust the key in js/ft-calcheck.js. Here is only what the Check can't see:
+     SIM[n]   per Check event (its n): cat, the legend's colour category, and alt: other categories accepted (altWhy: the ℹ line
+              that says so); travel: a travel block (eg: a departure → destination location, for the ℹ advice); info: a line
+              the review always shows on it.
+   The simulator's own checks (each one field, scored with the Check's): the colour (the Check is typed text: it has no colour),
+   and on the whole calendar, no overlapping events and no duplicates. Advice the Check doesn't grade (a travel block's own
+   reminder, its departure → destination location, the same moment typed in Pacific) shows as ℹ lines and isn't scored.
    ------------------------------------------------------------ */
-const N = (say, any, o) => Object.assign({say, any}, o || {});
+const CK = () => root.FTCalCheck && Array.isArray(root.FTCalCheck.key) && typeof root.FTCalCheck.checkAll === "function" ? root.FTCalCheck : null;
 const GAP = "The activity gives 8:30–9:00 AM to reach SEA, right before the 9:00 AM flight: keep the given times. Your trainer may talk through a more realistic airport buffer with you.";
-const KEY = [
-  {id:"client", item:1, title:"Client Meeting: Alyssa Lynn Arehart", keys:[["client", "arehart", "alyssa"], ["meeting", "consult", "consultation"]],
-   date:"2026-07-06", tz:"PST", start:t(10), end:t(11), cat:"client", loc:{any:["conference room b"], say:"Conference Room B"}, guests:[MA, MV],
-   remind:[{type:"notification", min:15}], notes:[N("the client’s name (Alyssa Lynn Arehart)", ["arehart"]), N("the car accident case", ["car accident", "accident"]), N("that all case documents must be accessible", ["case document", "documents"])], weight:7},
-  {id:"team", item:2, title:"Team Meeting (weekly check-in)", keys:[["team", "weekly"], ["meeting", "check in", "checkin", "huddle"]],
-   date:"2026-07-07", tz:"MST", start:t(15), end:t(16), cat:"internal", loc:{any:["google meet", "meet google com"], meet:true, say:"Google Meet"}, guests:ALL4,
-   remind:[{type:"email", min:30}], notes:[N("weekly team check-in", ["weekly", "check in", "checkin"])], weight:6},
-  {id:"depo", item:3, title:"Deposition Meeting (prep with another attorney)", keys:[["deposition", "depo"], ["meeting", "prep", "preparation"]],
-   date:"2026-07-08", tz:"EST", start:t(11), end:t(13), cat:"court", alt:["internal"],
-   altWhy:"Blue is accepted for the deposition prep (a meeting with another attorney); Red, a court-related task, is the legend’s match.",
-   loc:{any:["attorney office", "attorneys office"], say:"Attorney’s Office"}, guests:[MA, MV], remind:[{type:"email", min:1440}],
-   notes:[N("that it is deposition preparation with another attorney", ["prep", "preparation"]), N("the Zoom link for remote attendees (zoom.us/deposition-meeting-02-04-25)", ["zoom us deposition meeting 02 04 25"], {loc:true})], weight:7},
-  {id:"gym", item:4, title:"Gym Session", keys:[["gym", "workout", "work out", "fitness", "exercise"]],
-   date:"2026-07-08", tz:"EST", start:t(6, 30), end:t(7, 30), cat:"wellness", loc:{any:["downtown seattle fitness"], say:"Downtown Seattle Fitness Center"}, guests:[],
-   remind:[{type:"notification", min:10}], notes:[N("morning workout", ["workout", "work out", "exercise"])], weight:6},
-  {id:"doctor", item:5, title:"Doctor’s Appointment", keys:[["doctor", "dr", "medical", "check up", "checkup", "physician", "physical", "appointment"]],
-   date:"2026-07-09", tz:"PST", start:t(9), end:t(10), cat:"wellness", alt:["personal"],
-   altWhy:"Pink is accepted for the doctor’s appointment (a personal event); Orange, personal wellness, is the legend’s match.",
-   loc:{any:["central medical clinic"], say:"Central Medical Clinic"}, guests:[], remind:[{type:"email", min:1440}],
-   notes:[N("routine check-up", ["check up", "checkup", "routine"]), N("to prepare documents or insurance details", ["insurance", "documents"])], weight:6},
-  {id:"courtTo", item:6, parent:"court", travel:true, title:"Travel to Washington County Court", keys:[["travel", "drive", "commute", "transport", "leave", "depart"], ["court"]],
-   date:"2026-07-10", tz:"PST", start:t(8), end:t(9), cat:"court", alt:["external"],
-   altWhy:"A travel block takes its appointment’s color (Red for the court appearance); Purple is accepted.",
-   loc:{from:[], to:["court"], eg:"Office → Washington County Court"}, guests:[], remind:[], notes:[], weight:3},
-  {id:"court", item:6, title:"Court Appearance (hearing)", keys:[["court", "hearing"], ["appearance", "hearing", "court"]],
-   date:"2026-07-10", tz:"PST", start:t(9), end:t(12), cat:"court", loc:{any:["washington county court"], say:"Washington County Court"}, guests:[],
-   remind:[{type:"notification", min:30}], notes:[N("the scheduled court hearing", ["hearing"])], weight:7},
-  {id:"courtBack", item:6, parent:"court", travel:true, title:"Return travel from court", keys:[["travel", "drive", "commute", "transport"], ["return", "back", "from court"]],
-   date:"2026-07-10", tz:"PST", start:t(12), end:t(13), cat:"court", alt:["external"],
-   altWhy:"A travel block takes its appointment’s color (Red for the court appearance); Purple is accepted.",
-   loc:{from:["court"], to:[], eg:"Washington County Court → Office"}, guests:[], remind:[], notes:[], weight:3},
-  {id:"statement", item:7, title:"Recorded Statement Meeting (insurance adjuster)", keys:[["recorded", "statement"], ["statement", "adjuster", "insurance"]],
-   date:"2026-07-10", tz:"CST", start:t(16), end:t(17), cat:"court", alt:["client", "external"],
-   altWhy:"The activity doesn’t name this one’s color: Red (a case task), Green (the client’s case) and Purple (an outside party, the adjuster) are all accepted. Your trainer confirms the attorney’s preference.",
-   loc:{any:["google meet", "meet google com"], meet:true, say:"Google Meet"}, guests:ALL4, remind:[{type:"notification", min:15}],
-   notes:[N("the insurance adjuster", ["adjuster"]), N("the premises liability case", ["premises liability", "premises"])], weight:6},
-  {id:"toSea", item:8, parent:"networking", travel:true, title:"Transportation to Seattle Airport (SEA)", keys:[["transport", "travel", "drive", "ride", "uber", "taxi", "car", "shuttle", "commute", "leave"], ["sea", "airport", "seattle tacoma", "seatac", "sea tac"]],
-   date:"2026-07-13", tz:"PST", start:t(8, 30), end:t(9), cat:"external", loc:{from:[], to:["sea", "airport", "seatac", "sea tac", "seattle tacoma"], eg:"Home → Seattle-Tacoma International Airport (SEA)"}, guests:[],
-   remind:[{type:"email", min:1440, orOn:["flightOut"]}], info:GAP,
-   notes:[N("confirm the flight details", ["flight"], {orOn:["flightOut"]}), N("check in luggage", ["luggage", "baggage", "bags"], {orOn:["flightOut"]}),
-          N("bring travel documents", ["travel document", "documents", "passport"], {orOn:["flightOut"]}), N("bring business cards", ["business card"], {orOn:["flightOut"]}),
-          N("prepare attire for the event", ["attire", "outfit", "clothes", "suit"], {orOn:["flightOut"]})], weight:4},
-  {id:"flightOut", item:8, parent:"networking", travel:true, title:"Flight SEA → SFO", keys:[["flight", "fly", "flying", "plane", "boarding"], ["sfo", "san francisco"]],
-   date:"2026-07-13", tz:"PST", start:t(9), end:t(12), cat:"external", loc:{from:["sea", "seattle"], to:["sfo", "san francisco"], eg:"SEA → SFO"}, guests:[], remind:[], notes:[], info:GAP, weight:4},
-  {id:"arrive", item:8, parent:"networking", title:"Early arrival: Networking Dinner", keys:[["early", "arrival", "arrive"]],
-   date:"2026-07-13", tz:"PST", start:t(17, 45), end:t(18), cat:"external", loc:{any:["ritz carlton", "600 stockton"], say:"The Ritz-Carlton, San Francisco"}, guests:[], remind:[], notes:[], weight:3},
-  {id:"networking", item:8, title:"Networking Dinner Event", keys:[["networking", "potential client"]],
-   date:"2026-07-13", tz:"PST", start:t(18), end:t(20), cat:"external", loc:{any:["600 stockton"], say:"the exact address given: The Ritz-Carlton, San Francisco (600 Stockton St, San Francisco, CA 94108)"}, guests:[],
-   remind:[{type:"notification", min:30, orOn:["arrive"]}],
-   notes:[N("bring business cards", ["business card"], {orOn:["arrive"]}), N("prepare a short personal introduction", ["introduction", "intro"], {orOn:["arrive"]})], weight:7},
-  {id:"overnight", item:8, parent:"networking", kind:"overnight", title:"Overnight stay in San Francisco", keys:[["overnight", "stay", "lodging", "accommodation", "hotel"]],
-   date:"2026-07-13", tz:"PST", allDay:true, after:t(20), morning:t(8), noteOn:"networking", cat:"external", loc:{any:["san francisco", "hotel", "ritz"], say:"San Francisco (the hotel)"}, guests:[], remind:[],
-   notes:[N("confirm the hotel booking", ["hotel"]), N("plan transportation after the event", ["transport", "ride", "uber", "taxi", "car", "shuttle"])], weight:2},
-  {id:"checkout", item:8, parent:"networking", travel:true, title:"Hotel check-out and travel to SFO", keys:[["check out", "checkout", "hotel"], ["travel", "airport", "sfo", "transport"]],
-   date:"2026-07-14", tz:"PST", start:t(8), end:t(8, 30), cat:"external", loc:{from:["hotel", "ritz", "san francisco"], to:["sfo", "airport"], eg:"The Ritz-Carlton, San Francisco → SFO"}, guests:[],
-   remind:[{type:"email", min:1440, orOn:["flightBack"]}], notes:[N("confirm the hotel check-out", ["check out", "checkout"], {orOn:["flightBack"]}), N("confirm transportation to the airport", ["transport", "ride", "uber", "taxi", "car", "shuttle"], {orOn:["flightBack"]})], weight:4},
-  {id:"flightBack", item:8, parent:"networking", travel:true, title:"Flight SFO → SEA", keys:[["flight", "fly", "flying", "plane", "return"], ["sea", "seattle", "home"]],
-   date:"2026-07-14", tz:"PST", start:t(10), end:t(13), cat:"external", loc:{from:["sfo", "san francisco"], to:["sea", "seattle"], eg:"SFO → SEA"}, guests:[], remind:[], notes:[], weight:3},
-  {id:"docreview", item:9, title:"Document Review Session", keys:[["document", "doc", "file"], ["review"]],
-   date:"2026-07-15", tz:"CST", start:t(13, 30), end:t(15), cat:"task", loc:{any:["attorney office", "attorneys office"], say:"Attorney’s Office"}, guests:[],
-   remind:[{type:"notification", min:30}], notes:[N("the high-priority case file", ["high priority", "priority", "urgent"]), N("the case file to review", ["case file", "file"])], weight:6},
-  {id:"family", item:10, title:"Family Dinner", keys:[["family"], ["dinner"]],
-   date:"2026-07-15", tz:"MST", start:t(19), end:t(21), cat:"personal", loc:{any:["home"], say:"Home"}, guests:[],
-   remind:[{type:"notification", min:60}], notes:[N("pick up groceries on the way home", ["groceries", "grocery"])], weight:6}
-];
-// The scoring (trainers: adjust here). A check's weight within its event; an event at the wrong time earns at most TIME_GATE of its points.
-const CHECK_W = {time:3, tz:1, color:4, loc:1, guests:1, remind:4, notes:2};
-const CAL_W = {overlap:5, complete:2, dupes:3};      // the whole-calendar checks (10 points)
-const TIME_GATE = 0.5;
-const TRAVEL_MIN = 30, TRAVEL_MAX = 1440;            // a travel block's own reminder: from 30 minutes to a day before
-function prep(K){
-  K.forEach(k => { k.tzId = tzOf(k.tz).id; if(!k.allDay){ k.abs = {s:absAt(k.date, k.start, k.tzId), e:absAt(k.date, k.end, k.tzId)}; const p = fromAbs(k.abs.s, CAL_TZ); k.pt = {day:p.day, start:p.start, end:p.start + k.abs.e - k.abs.s}; }
-    const d = dIdx(k.date); if(!(d >= 0 && d <= LAST) && typeof console !== "undefined") console.warn(`Calendar activity key "${k.id}": ${k.date} is outside the calendar's dates.`); });
-  return K;
+const TRAVEL_COL = "A travel block takes its appointment’s color (Red for the court appearance); Purple is accepted.";
+const SIM = {
+  "1": {cat:"client"}, "2": {cat:"internal"},
+  "3": {cat:"court", alt:["internal"], altWhy:"Blue is accepted for the deposition prep (a meeting with another attorney); Red, a court-related task, is the legend’s match."},
+  "4": {cat:"wellness"},
+  "5": {cat:"wellness", alt:["personal"], altWhy:"Pink is accepted for the doctor’s appointment (a personal event); Orange, personal wellness, is the legend’s match."},
+  "6.1": {cat:"court"},
+  "6.2": {cat:"court", alt:["external"], altWhy:TRAVEL_COL, travel:true, eg:"Office → Washington County Court"},
+  "6.3": {cat:"court", alt:["external"], altWhy:TRAVEL_COL, travel:true, eg:"Washington County Court → Office"},
+  "7": {cat:"court", alt:["client", "external"], altWhy:"The activity doesn’t name this one’s color: Red (a case task), Green (the client’s case) and Purple (an outside party, the adjuster) are all accepted. Your trainer confirms the attorney’s preference."},
+  "8.1": {cat:"external"},
+  "8.2": {cat:"external", travel:true, eg:"Home → Seattle-Tacoma International Airport (SEA)", info:GAP},
+  "8.3": {cat:"external", travel:true, eg:"SEA → SFO", info:GAP},
+  "8.4": {cat:"external"}, "8.5": {cat:"external"},
+  "8.6": {cat:"external", travel:true, eg:"The Ritz-Carlton, San Francisco → SFO"},
+  "8.7": {cat:"external", travel:true, eg:"SFO → SEA"},
+  "9": {cat:"task"}, "10": {cat:"personal"}
+};
+const TRAVEL_MIN = 30, TRAVEL_MAX = 1440;            // the ℹ advice on a travel block's own reminder: from 30 minutes to a day before
+const STAY = "8.5";                                  // the overnight stay: it overlaps whatever the evening holds
+const mm = v => { const m = String(v || "").match(/^(\d{1,2}):(\d\d)/); return m ? +m[1] * 60 + +m[2] : 0; };
+const hm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+// The expected events, in the Check's order, with what the page needs (the Pacific window, the colour): derived from FTCalCheck.key.
+let KL = null, KL_SRC = null;
+function keyList(){
+  const C = CK(); if(!C) return [];
+  if(KL && KL_SRC === C.key) return KL;
+  KL_SRC = C.key;
+  return KL = C.key.map(k => {
+    const s = SIM[k.n] || {cat:"external"}, z = tzOf(k.tz) || TZS[0];
+    const o = {id:k.n, n:k.n, item:parseInt(k.n, 10), name:k.name, title:`${k.n} ${k.name}`, date:k.date, endDate:k.endDate || k.date, tz:k.tz, tzId:z.id, allDay:!!k.overnight,
+      cat:s.cat, alt:s.alt, altWhy:s.altWhy, travel:!!s.travel, eg:s.eg, info:s.info, ck:k};
+    if(!o.allDay){ o.start = mm(k.start); o.end = mm(k.end); o.abs = {s:absAt(k.date, o.start, z.id), e:absAt(k.date, o.end, z.id)};
+      const p = fromAbs(o.abs.s, CAL_TZ); o.pt = {day:p.day, start:p.start, end:p.start + o.abs.e - o.abs.s}; }
+    return o;
+  });
 }
-prep(KEY);
-const zText = (z, abs) => `${z.word} Time, ${abbr(z, abs)}`;
+// The Check event whose reminder and notes may sit on this one instead (the travel blocks 8.2/8.3 and 8.6/8.7).
+const pairOf = (C, n) => { const k = C.key.find(x => x.n === n); return k && k.alt ? k.alt : (C.key.find(x => x.alt === n) || {}).n; };
+const remOf = (C, n) => { const k = C.key.find(x => x.n === n); return (k && k.rem) || (C.key.find(x => x.alt === n) || {}).rem || null; };
 // What an expected event is, in one line (the review's "not found", the trainer's live review and the AI prompt).
-function noteOf(k){
-  const z = tzOf(k.tz), when = k.allDay ? `${dLabel(dIdx(k.date))}: all day, or an evening block from ${fmt(k.after)} Pacific (or ${dLabel(dIdx(k.date) + 1)} from 12 AM to ${fmt(k.morning)}), or a note on the Networking Dinner event`
-    : `${dLabel(dIdx(k.date))}, ${range(k.start, k.end)} ${z.short}${z.id === CAL_TZ ? "" : ` (${zText(z, k.abs.s)}; ${range(k.pt.start, k.pt.end)} Pacific)`}`;
-  const loc = `location: ${k.loc.any ? k.loc.say + (k.loc.meet ? " as the location, or Add Google Meet" : "") : "departure → destination, e.g. " + k.loc.eg}`;
-  return [when, loc, `color ${catText(k.cat)}${k.alt ? ", or " + k.alt.map(c => CATS[c].legend).join(" / ") + " accepted" : ""}`,
-    k.guests.length ? "guests: " + k.guests.map(who).join(", ") : "no guests",
-    k.remind.length || k.travel ? "reminders: " + k.remind.map(remText).concat(k.travel ? [`its own travel reminder (${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before)`] : []).join(", ") : "",
-    k.notes.length ? "notes: " + k.notes.map(n => n.say).join("; ") : ""].filter(Boolean).join(" · ");
+function noteOf(o){
+  const C = CK(), k = o.ck, z = tzOf(o.tz) || TZS[0], pair = C && pairOf(C, o.n), rem = C && remOf(C, o.n);
+  const nk = k.notes ? k : pair && C ? C.key.find(x => x.n === pair && x.notes) : null;
+  const when = o.allDay ? `${dLabel(dIdx(o.date))}: an All day event (it may end on ${dLabel(dIdx(o.date))} or ${dLabel(dIdx(o.endDate))})`
+    : `${dLabel(dIdx(o.date))}, ${range(o.start, o.end)} ${o.tz} in its own time zone (${z.word} Time${z.id === CAL_TZ ? "" : `; ${range(o.pt.start, o.pt.end)} on the attorney’s Pacific calendar`})`;
+  return [when, k.loc ? `location: ${k.locShow}${k.link ? ` (with ${k.link})` : ""}` : o.travel ? `location: departure → destination, e.g. ${o.eg}` : "",
+    k.guests ? "guests: " + k.guests.join(", ") : "no guests",
+    rem ? `reminder: ${rem.type} ${rem.show} before${pair ? ` (on ${[o.n, pair].sort().join(" or ")})` : ""}` : "",
+    nk ? `notes: ${nk.notesShow}${pair ? ` (on ${[o.n, pair].sort().join(" or ")})` : ""}` : "",
+    `color ${catText(o.cat)}${o.alt ? ", or " + o.alt.map(c => CATS[c].legend).join(" / ") + " accepted" : ""}`].filter(Boolean).join(" · ");
+}
+let TL = null, TL_SRC = null;
+function taskList(){
+  const K = keyList(); if(TL && TL_SRC === K) return TL; TL_SRC = K;
+  return TL = K.map(o => ({id:o.id, title:o.title, note:noteOf(o), weight:1, item:o.item})).concat([{id:"calendar", title:"Whole calendar: no overlaps, no duplicates",
+    note:"No two timed events overlap (the overnight stay aside); no appointment is entered twice.", weight:2}]);
 }
 
 /* ---------- the trainee's events, checked before they're used ---------- */
@@ -403,10 +375,9 @@ const clash = (a, b) => timed(a) && timed(b) && a.id !== b.id && (p => p.a.s < p
 const whenOf = x => { const p = pacOf(x); return p.allDay ? `${dLabel(p.day)}${p.span > 1 ? " – " + dLabel(p.day + p.span - 1) : ""}, all day` : `${dLabel(p.day)}, ${range(p.start, p.end)}`; };
 // The event's own zone, when it isn't Pacific: "Mountain 3 PM – 4 PM (MDT)".
 const zoneText = x => { if(x.allDay || x.tz === CAL_TZ) return ""; const z = tzOf(x.tz) || TZS[0]; return `${z.word} ${range(x.start, x.start + x.dur)} (${abbr(z, evAbs(x).s)})`; };
-const stayOf = (K, m) => { const k = K.find(k => k.kind === "overnight"); return k && m[k.id] ? m[k.id].id : null; };
 // The grid's warnings: overlapping events (not the overnight stay), events off the activity's dates.
 function flagsAct(scn, events){
-  events = cleanAct(events); const K = (scn && scn.key) || KEY, stay = stayOf(K, matchAct(K, events)), out = {};
+  events = cleanAct(events); const stay = (matchAct(events)[STAY] || {}).id, out = {};
   events.forEach(x => { const why = [], hit = x.id !== stay && events.find(o => o.id !== stay && clash(x, o)); if(hit) why.push(`Overlaps “${hit.title || "(no title)"}”`);
     const p = pacOf(x); if(p.day < 0 || p.day > LAST) why.push("Outside the activity’s dates (July 6 to 15)");
     if(!p.allDay && p.end > 1440) why.push("Runs past midnight on the attorney’s calendar");
@@ -414,45 +385,43 @@ function flagsAct(scn, events){
   return out;
 }
 
-/* ---------- the automated review ---------- */
-const normText = v => " " + String(v || "").toLowerCase().replace(/['’`]/g, "").replace(/[^a-z0-9]+/g, " ").trim() + " ";
-// a word or phrase in normalized text: short words exactly, longer ones also as the start of a word (consult → consultation)
-const RES = new Map();
-function has(text, phrase){
-  let re = RES.get(phrase);
-  if(re === undefined){ const ws = normText(phrase).trim().split(" ").filter(Boolean);
-    re = ws.length ? new RegExp("\\s" + ws.map(w => w.length <= 3 ? w + "(?=\\s)" : w + "[a-z0-9]*").join("\\s+") + "(?=\\s)") : null; RES.set(phrase, re); }
-  return !!re && re.test(text);
+/* ---------- the automated review: through the 📅 Calendar Activity Check (FTCalCheck) ---------- */
+// An event as the Check's entry ({title, sd, st, ed, et, tz, allday, loc, guests, rtype, ramt, runit, notes}): what the trainee would
+// type on #/calcheck from this event as Google Calendar shows it, for the Check event n.
+//   • the dates and times in the event's own zone (an all-day event: its first and last day); the zone, its IANA id;
+//   • the location; Google Meet added shows as "Join with Google Meet" and its meet.google.com link, which the Check accepts as
+//     the location, so it is added to it;
+//   • the guests by name (the activity's directory; any other address as typed);
+//   • the Check takes one reminder: of the event's (up to five), the one the Check asks of n (or of its travel-block pair), else
+//     the one with its time, else its type, else the first;
+//   • the description as the notes.
+const REM_TYPE = {notification:"Notification", email:"Email"};
+function entryOf(x, n){
+  const C = CK(), want = C && n ? remOf(C, n) : null, list = x.reminders || [], t = r => REM_TYPE[r.type];
+  const r = (want && (list.find(q => t(q) === want.type && remMin(q) === want.m) || list.find(q => remMin(q) === want.m) || list.find(q => t(q) === want.type))) || list[0] || null;
+  const v = {title:x.title || "", allday:!!x.allDay, sd:x.date, tz:x.allDay ? "" : x.tz, loc:[x.loc, x.meet ? "Google Meet (meet.google.com)" : ""].filter(Boolean).join(" · "),
+    guests:(x.guests || []).map(who).join(", "), rtype:r ? t(r) : "", ramt:r ? String(r.n) : "", runit:r ? r.unit : "minutes", notes:x.desc || ""};
+  if(x.allDay) Object.assign(v, {ed:dIso(dIdx(x.date) + (x.span || 1) - 1), st:"", et:""});
+  else { const end = x.start + x.dur; Object.assign(v, {st:hm(x.start), ed:end >= 1440 ? dIso(dIdx(x.date) + 1) : x.date, et:hm(end % 1440)}); }
+  return v;
 }
-const titleFit = (k, title) => { const h = normText(title); return k.keys.filter(g => g.some(w => has(h, w))).length / k.keys.length; };
-function overnightAt(k, x){
-  const kd = dIdx(k.date);
-  if(x.allDay){ const d = dIdx(x.date); return d <= kd && d + (x.span || 1) > kd; }
-  const p = pacOf(x);
-  return (p.day === kd && p.start >= k.after) || (p.day === kd + 1 && p.start === 0 && p.end <= k.morning);
-}
-// How close an event's time is to an expected one: 1 = the expected window; less further away (within 4 hours, the same day); the
-// item's clock time typed in the wrong zone counts as close, so it's matched and the feedback can say so.
-function timeFit(k, x){
-  if(k.allDay) return overnightAt(k, x) ? (x.allDay ? 1 : 0.9 + Math.min(0.09, x.dur / 9000)) : 0;
-  if(x.allDay) return 0;
-  const a = evAbs(x), b = k.abs;
-  if(a.s === b.s && a.e === b.e) return 1;
-  const iou = Math.max(0, Math.min(a.e, b.e) - Math.max(a.s, b.s)) / (Math.max(a.e, b.e) - Math.min(a.s, b.s));
-  const gap = Math.abs(a.s - b.s), near = gap <= 240 ? (1 - gap / 240) * 0.8 : 0, slip = x.date === k.date && x.start === k.start ? 0.7 : 0;
-  return Math.max(iou, near, slip);
-}
-// Each expected event takes the best-fitting event not already taken (title first, then time).
-function matchAct(K, events){
+// [field, met] of the Check's rows for one event, alone
+const rowsFor = (C, k, x) => C.check(k, entryOf(x, k.n), {});
+const met = (rows, f) => (rows.find(r => r[0] === f) || [])[1] === true;
+// Each Check event takes the event that fits it best and isn't already taken: its title first (the Check's own title check),
+// then its date and start time, then how many of its fields the Check marks right.
+function matchAct(events){
+  const C = CK(); if(!C) return {};
   const pairs = [];
-  K.forEach(k => events.forEach(x => { const tf = titleFit(k, x.title), tm = timeFit(k, x);
-    if(tf >= 0.75 || (tf >= 0.5 && tm > 0) || (tf > 0 && tm >= 0.99)){ const sc = 0.6 * tf + 0.4 * tm; if(sc >= 0.3) pairs.push({k, x, sc}); } }));
+  C.key.forEach(k => events.forEach(x => {
+    const rows = rowsFor(C, k, x), title = met(rows, "Title"), when = met(rows, "Start date") && (k.overnight ? !!x.allDay : met(rows, "Start time"));
+    if(title || when) pairs.push({k, x, sc:(title ? 100 : 0) + (when ? 50 : 0) + rows.filter(r => r[1] === true).length});
+  }));
   pairs.sort((p, q) => q.sc - p.sc);
   const out = {}, used = {};
-  pairs.forEach(p => { if(!out[p.k.id] && !used[p.x.id]){ out[p.k.id] = p.x; used[p.x.id] = 1; } });
+  pairs.forEach(p => { if(!out[p.k.n] && !used[p.x.id]){ out[p.k.n] = p.x; used[p.x.id] = 1; } });
   return out;
 }
-const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
 function splitTravel(raw){
   raw = String(raw || "");
   for(const re of [/\s*(?:→|➔|➝|⟶|➡|->|=>|—>|–>|>)\s*/, /\s+to\s+/i, /\s+[-–—]\s+/]){
@@ -462,100 +431,65 @@ function splitTravel(raw){
   }
   return null;
 }
-function checksAct(K, k, x, m){
-  const out = [], add = (key, ok, label, why, info) => out.push({key, w:CHECK_W[key], ok:!!ok, label, why:ok ? "" : why, info:info || ""});
-  const z = tzOf(k.tz), ex = tzOf(x.tz), on = o => [x].concat((o.orOn || []).map(id => m[id]).filter(Boolean));
-  // 1. the time (an absolute instant: the item's own zone or Pacific both count)
-  if(k.allDay){
-    add("time", overnightAt(k, x), "Date and time", `Put the overnight stay on ${dLabel(dIdx(k.date))}: an All day event (best), or an evening block after the dinner (from ${fmt(k.after)}), or add it to the Networking Dinner event’s notes.`);
-  }else if(x.allDay){
-    add("time", false, "Date and time", `It’s an all-day event: give it its time, ${dLabel(dIdx(k.date))} ${range(k.start, k.end)} ${z.short}.`);
-  }else{
-    const a = evAbs(x), ok = a.s === k.abs.s && a.e === k.abs.e, slip = x.date === k.date && x.start === k.start && x.dur === k.end - k.start && x.tz !== k.tzId;
-    const want = `${dLabel(dIdx(k.date))}, ${range(k.start, k.end)} ${z.short}` + (z.id === CAL_TZ ? "" : ` (${zText(z, k.abs.s)}), which is ${range(k.pt.start, k.pt.end)} on the attorney’s Pacific calendar`);
-    add("time", ok, "Date and time", slip ? `You entered ${range(x.start, x.start + x.dur)} with the event in ${ex.word} Time, but the item is ${range(k.start, k.end)} ${z.short} (${z.word}). Set the event’s time zone to ${z.word} Time, or enter ${range(k.pt.start, k.pt.end)} Pacific.`
-      : `On the calendar: ${whenOf(x)} Pacific. This item is ${want}.`);
-    // 2. the time zone: the item's own zone or the calendar's (Pacific)
-    const tzOk = (x.tz === k.tzId || x.tz === CAL_TZ) && !(slip && x.tz === CAL_TZ);
-    add("tz", tzOk, "Time zone", slip ? `The item’s time is ${z.short} (${z.word}); the event is in ${ex.word} Time.`
-      : `The event is set to ${ex.name}. Use the item’s own zone (${z.word} Time, ${z.short}) or the attorney’s Pacific Time.`);
+const normTitle = v => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+// The ℹ lines: what the Check doesn't grade, but the activity or the trainer asks about.
+function infoFor(C, o, x){
+  const out = o.info ? [o.info] : [];
+  if(!x) return out;
+  if(o.travel){
+    const want = remOf(C, o.n), left = (x.reminders || []).filter(r => !(want && REM_TYPE[r.type] === want.type && remMin(r) === want.m));
+    const own = left.filter(r => remMin(r) >= TRAVEL_MIN && remMin(r) <= TRAVEL_MAX);
+    out.push(own.length ? `Travel reminder: ${own.map(remText).join(", ")}. Your trainer confirms the attorney’s preferred lead time.`
+      : `A travel block: the activity asks for a practical reminder of its own (${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before, e.g. 1 hour) so the attorney can leave without rushing. The Check doesn’t grade it; your trainer confirms the attorney’s preference.`);
+    if(!splitTravel(x.loc)) out.push(`A travel block’s location names where the attorney leaves from and where they go, e.g. “${o.eg}” (instruction 8). The Check doesn’t grade it; your trainer looks at it.`);
   }
-  // 3. the color
-  const col = colorOf(x.color), main = CATS[k.cat].colors, alts = (k.alt || []).flatMap(c => CATS[c].colors);
-  add("color", main.includes(x.color) || alts.includes(x.color), "Color", `${col ? col.name : "No color (the calendar’s default)"}: this one is ${catText(k.cat)}${k.alt ? `; ${k.alt.map(c => catText(c)).join(" or ")} is also accepted` : ""}.`
-      + (x.color === "lavender" ? " Lavender isn’t one of the legend’s colors: Purple is Grape, Blue is Peacock." : ""),
-    alts.includes(x.color) && !main.includes(x.color) ? k.altWhy : "");
-  // 4. the location
-  const L = normText(x.loc);
-  if(k.loc.any){
-    add("loc", k.loc.any.some(w => has(L, w)) || (k.loc.meet && x.meet), "Location", (x.loc ? `The location reads “${x.loc}”: it should be ` : "Add the location: ") + k.loc.say + (k.loc.meet ? " (or Add Google Meet)" : "") + ".");
-  }else{
-    const sp = splitTravel(x.loc), f = sp && normText(sp.from), d = sp && normText(sp.to);
-    const ok = sp && (!k.loc.from.length || k.loc.from.some(w => has(f, w))) && (!k.loc.to.length || k.loc.to.some(w => has(d, w)));
-    add("loc", ok, "Location (departure → destination)", !sp ? `${x.loc ? `“${x.loc}” names one place. ` : ""}A travel block’s location names where the attorney leaves from AND where they go, e.g. “${k.loc.eg}”.`
-      : `“${x.loc}” doesn’t read as this trip: it goes like “${k.loc.eg}”.`);
-  }
-  // 5. the guests (exactly the item's)
-  const miss = k.guests.filter(g => !x.guests.includes(g)), extra = x.guests.filter(g => !k.guests.includes(g));
-  add("guests", sameSet(x.guests, k.guests), "Guests", [miss.length ? "Add " + miss.map(g => `${who(g)} (${g})`).join(", ") + "." : "", extra.length ? (k.guests.length ? "Remove " : "This one has no guests: remove ") + extra.join(", ") + "." : ""].filter(Boolean).join(" "));
-  // 6. the reminders: the item's own, and a travel block's own travel reminder (apart from any item reminder it carries)
-  if(k.remind.length || k.travel){
-    const lack = k.remind.filter(r => !on(r).some(o => o.reminders.some(q => q.type === r.type && remMin(q) === r.min)));
-    let tr = true, trs = [];
-    if(k.travel){
-      const left = x.reminders.slice();
-      k.remind.concat(K.flatMap(o => o.remind.filter(r => (r.orOn || []).includes(k.id)))).forEach(r => { const i = left.findIndex(q => q.type === r.type && remMin(q) === r.min); if(i >= 0) left.splice(i, 1); });
-      trs = left.filter(q => remMin(q) >= TRAVEL_MIN && remMin(q) <= TRAVEL_MAX); tr = trs.length > 0;
-    }
-    add("remind", !lack.length && tr, "Reminders", [lack.length ? "Add: " + lack.map(remText).join(", ") + "." : "",
-      tr ? "" : `Set this travel block its own reminder, apart from the item’s: a practical lead time from ${leadText(TRAVEL_MIN)} to ${leadText(TRAVEL_MAX)} before (e.g. 1 hour), so the attorney can prepare and leave without rushing. Your trainer confirms the attorney’s preference.`].filter(Boolean).join(" "),
-      k.travel && tr ? `Travel reminder: ${trs.map(remText).join(", ")}. Your trainer confirms the attorney’s preferred lead time.` : "");
-  }
-  // 7. the notes
-  if(k.notes.length){
-    const lack = k.notes.filter(n => !on(n).some(o => n.any.some(w => has(normText(o.title + " " + o.desc + (n.loc ? " " + o.loc : "")), w))));
-    const empty = on(k.notes[0]).every(o => !String(o.desc).trim());
-    add("notes", !lack.length && !empty, "Notes", empty ? "Add notes (the description) with the item’s details: " + k.notes.map(n => n.say).join("; ") + "." : "Add to the notes: " + lack.map(n => n.say).join("; ") + ".");
-  }
+  // the same moment, typed in another zone (usually Pacific): the Check reads the event's own zone and its clock time
+  if(!o.allDay && !x.allDay && x.tz !== o.tzId){ const a = evAbs(x); if(a.s === o.abs.s && a.e === o.abs.e){ const z = tzOf(o.tz) || TZS[0];
+    out.push(`It is at the right moment on the attorney’s calendar, but Google Calendar shows an event in its own zone, and the Check reads it that way: set the event’s time zone to ${z.word} Time and enter ${range(o.start, o.end)}.`); } }
   return out;
+}
+function colorRow(o, x){
+  const col = colorOf(x.color), main = CATS[o.cat].colors, alts = (o.alt || []).flatMap(c => CATS[c].colors), ok = main.includes(x.color) || alts.includes(x.color);
+  return {ok, why:`${col ? col.name : "No color (the calendar’s default)"}: this one is ${catText(o.cat)}${o.alt ? `; ${o.alt.map(catText).join(" or ")} is also accepted` : ""}.`
+    + (x.color === "lavender" ? " Lavender isn’t one of the legend’s colors: Purple is Grape, Blue is Peacock." : ""), info:ok && !main.includes(x.color) ? o.altWhy : ""};
 }
 function reviewAct(scn, events){
   events = cleanAct(events);
-  const K = (scn && scn.key) || KEY, m = matchAct(K, events), taken = {}; Object.values(m).forEach(x => { taken[x.id] = 1; });
-  const items = K.map(k => {
-    let x = m[k.id], via = "", cs;
-    if(!x && k.noteOn && m[k.noteOn] && /overnight|hotel/i.test(m[k.noteOn].desc)){ x = m[k.noteOn]; via = "note"; }
-    if(!x) cs = [{key:"found", w:1, ok:false, label:"On the calendar", why:`Not found. Add “${k.title}”: ${noteOf(k).split(" · ")[0]}.`, info:""}];
-    else if(via) cs = checksAct(K, k, x, m).filter(c => c.key === "notes").concat([{key:"found", w:0, ok:true, label:"On the calendar", why:"", info:`Covered by a note on “${x.title}”.`}]);
-    else cs = checksAct(K, k, x, m);
+  const C = CK();
+  if(!C) return {kind:"activity", score:0, max:0, pct:0, passed:false, items:[], done:0, extras:[], rows:[], check:{met:0, total:0, pct:0}, sim:{met:0, total:0}, entries:{}, error:"The Calendar Activity Check isn’t loaded: reload the page."};
+  const K = keyList(), m = matchAct(events), entries = {}, taken = {};
+  K.forEach(o => { const x = m[o.n]; if(x){ entries[o.n] = entryOf(x, o.n); taken[x.id] = 1; } });
+  // the Check's verdict on every field of the 18 events ("11", the 19th screenshot and the upload, are Google Calendar's, not this calendar's)
+  const rows = C.checkAll({entries}).filter(r => r[0] !== "11"), simRows = [];
+  const items = K.map(o => {
+    const x = m[o.n], mine = rows.filter(r => r[0] === o.n && r[2] !== null), col = x ? colorRow(o, x) : {ok:false, why:"", info:""};
+    simRows.push([o.n, "Color", col.ok, col.why || `Add the event: ${catText(o.cat)}`]);
+    const cs = x ? mine.map(r => ({key:r[1], w:1, ok:r[2], label:r[1], why:r[2] ? "" : r[3], info:""})).concat([{key:"color", w:1, ok:col.ok, label:"Color", why:col.ok ? "" : col.why, info:col.info, sim:true}])
+      : [{key:"found", w:mine.length + 1, ok:false, label:"On the calendar", why:`Not found. Add “${o.title}”: ${noteOf(o)}.`, info:""}];
     const tw = cs.reduce((n, c) => n + c.w, 0), pw = cs.filter(c => c.ok).reduce((n, c) => n + c.w, 0);
-    // an event at the wrong time earns at most TIME_GATE of its points: the attorney would be in the wrong place
-    const late = cs.some(c => c.key === "time" && !c.ok), pts = x ? Math.round(k.weight * pw / (tw || 1) * (late ? TIME_GATE : 1) * 10) / 10 : 0;
-    return {id:k.id, title:k.title, weight:k.weight, pts, perfect:!!x && cs.every(c => c.ok), found:!!x, via, event:x || null, checks:cs,
-      info:(x && k.info ? [k.info] : []).concat(cs.map(c => c.info).filter(Boolean))};
+    return {id:o.n, title:o.title, weight:tw, pts:pw, perfect:!!x && cs.every(c => c.ok), found:!!x, via:"", event:x || null, checks:cs,
+      info:infoFor(C, o, x).concat(cs.map(c => c.info).filter(Boolean))};
   });
-  // the whole calendar
-  const stay = stayOf(K, m), missing = items.filter(i => !i.found);
-  const rest = events.filter(x => !taken[x.id]), dupes = [], extras = [];
-  rest.forEach(x => { const k = K.find(k => m[k.id] && titleFit(k, x.title) >= 0.75 && (normText(m[k.id].title) === normText(x.title) || (!k.allDay && clash(x, m[k.id]))));
-    (k ? dupes : extras).push({x, k}); });
+  // the whole calendar (the simulator's own: the Check sees one event at a time): no overlaps, no duplicates
+  const stay = m[STAY] ? m[STAY].id : null, rest = events.filter(x => !taken[x.id]), dupes = [], extras = [];
+  rest.forEach(x => { const o = K.find(o => m[o.n] && met(rowsFor(C, o.ck, x), "Title") && (normTitle(m[o.n].title) === normTitle(x.title) || clash(x, m[o.n])));
+    (o ? dupes : extras).push({x, o}); });
   // overlaps: not the overnight stay (a night away overlaps whatever the evening holds), and a duplicate isn't counted twice
-  const twin = new Set(dupes.map(d => d.x.id + "|" + m[d.k.id].id)), pairs = [];
+  const twin = new Set(dupes.map(d => d.x.id + "|" + m[d.o.n].id)), pairs = [];
   events.forEach((a, i) => events.slice(i + 1).forEach(b => { if(a.id !== stay && b.id !== stay && clash(a, b) && !twin.has(a.id + "|" + b.id) && !twin.has(b.id + "|" + a.id)) pairs.push([a, b]); }));
   const cal = [
-    {key:"overlap", w:CAL_W.overlap, ok:!pairs.length, label:"No overlapping events", why:pairs.slice(0, 6).map(([a, b]) => `“${a.title}” (${whenOf(a)}) overlaps “${b.title}” (${whenOf(b)}).`).join(" "), info:""},
-    {key:"complete", w:CAL_W.complete, ok:!missing.length, label:"Every item and travel block is on the calendar", why:"Missing: " + missing.map(i => i.title).join(", ") + ".", info:""},
-    {key:"dupes", w:CAL_W.dupes, ok:!dupes.length, label:"No duplicate events", why:dupes.map(d => `“${d.x.title}” (${whenOf(d.x)}) repeats “${m[d.k.id].title}”: keep one event per appointment.`).join(" "), info:""}
+    {key:"overlap", w:1, ok:!pairs.length, label:"No overlapping events", why:pairs.slice(0, 6).map(([a, b]) => `“${a.title}” (${whenOf(a)}) overlaps “${b.title}” (${whenOf(b)}).`).join(" "), info:"", sim:true},
+    {key:"dupes", w:1, ok:!dupes.length, label:"No duplicate events", why:dupes.map(d => `“${d.x.title}” (${whenOf(d.x)}) repeats “${m[d.o.n].title}”: keep one event per appointment.`).join(" "), info:"", sim:true}
   ].map(c => Object.assign(c, {why:c.ok ? "" : c.why}));
-  const cw = cal.filter(c => c.ok).reduce((n, c) => n + c.w, 0), cmax = CAL_W.overlap + CAL_W.complete + CAL_W.dupes;
-  items.push({id:"calendar", title:"Whole calendar: no overlaps, nothing missing, no duplicates", weight:cmax, pts:cw, perfect:cal.every(c => c.ok), found:true, via:"", event:null, checks:cal, info:[]});
-  // out of 100 (the events' weights and the calendar's); 100% only when every check passes (a small miss still shows as 99%)
-  const got = items.reduce((n, i) => n + i.pts, 0), max = items.reduce((n, i) => n + i.weight, 0), allOk = items.every(i => i.perfect);
-  const pct = allOk ? 100 : Math.min(99, Math.round(got / (max || 1) * 100));
+  cal.forEach(c => simRows.push(["calendar", c.label, c.ok, c.why]));
+  items.push({id:"calendar", title:"Whole calendar: no overlaps, no duplicates", weight:cal.length, pts:cal.filter(c => c.ok).length, perfect:cal.every(c => c.ok), found:true, via:"", event:null, checks:cal, info:[]});
+  // one score, the Check's (every field counts one): its rows and the simulator's; 100% only when every one is met
+  const all = rows.concat(simRows), sc = C.score(all), allOk = all.every(r => r[2] !== false), pct = allOk ? 100 : Math.min(99, sc.pct);
   const fl = flagsAct(scn, events);
-  return {kind:"activity", score:Math.round(got), max, pct, passed:pct >= PASS, items, done:items.filter(i => i.perfect).length,
-    extras:dupes.map(d => ({title:d.x.title, when:whenOf(d.x), why:[`A duplicate of “${m[d.k.id].title}”`].concat(fl[d.x.id] || [])}))
-      .concat(extras.map(d => ({title:d.x.title, when:whenOf(d.x), why:fl[d.x.id] || [], info:"Not matched to an item or travel block. If it is one, name it after the item (e.g. “Doctor’s Appointment”); if not, your trainer will look at it."})))};
+  return {kind:"activity", score:sc.met, max:sc.total, pct, passed:pct >= PASS, items, done:items.filter(i => i.perfect).length,
+    rows, check:C.score(rows), sim:{met:simRows.filter(r => r[2]).length, total:simRows.length}, entries,
+    extras:dupes.map(d => ({title:d.x.title, when:whenOf(d.x), why:[`A duplicate of “${m[d.o.n].title}”`].concat(fl[d.x.id] || [])}))
+      .concat(extras.map(d => ({title:d.x.title, when:whenOf(d.x), why:fl[d.x.id] || [], info:"Not matched to an item or travel block. If it is one, name it as the activity does (e.g. “Doctor’s Appointment”); if not, your trainer will look at it."})))};
 }
 
 /* ---------- the scenario: the activity's own words (verbatim), its legend, the guest directory and the ten items ---------- */
@@ -605,14 +539,15 @@ SCENARIOS.push({id:"attorney-activity", track:"activity", kind:"activity", short
     {n:10, title:"Family Dinner", date:"2026-07-15", lines:[["Date", "July 15, 2026"], ["Time", "7:00 PM – 9:00 PM MST"], ["Location", "Home"],
       ["Details", "Dinner with family."], ["Reminder", "1 hour before (notification): Pick up groceries on the way home."]]}
   ],
-  key:KEY,
-  // one "task" per expected event (and the whole calendar), so the per-task feedback, comments and live review work as for a week
-  tasks:KEY.map(k => ({id:k.id, title:k.title, note:noteOf(k), weight:k.weight, item:k.item})).concat([{id:"calendar", title:"Whole calendar: no overlaps, nothing missing, no duplicates", note:"No two timed events overlap (the overnight stay aside); every item and travel block is on the calendar; no appointment is entered twice.", weight:CAL_W.overlap + CAL_W.complete + CAL_W.dupes}])
+  // the expected events, and one "task" each (and the whole calendar) so the per-task feedback, comments and live review work as
+  // for a week: both read the Check's key (js/ft-calcheck.js loads after this file, so they are getters)
+  get key(){ return keyList(); },
+  get tasks(){ return taskList(); }
 });
 
-return {TZS, CAL_TZ, FROM, PEOPLE, CATS, KEY, REM_UNITS, TRAVEL_MIN, TRAVEL_MAX, CHECK_W, CAL_W, TIME_GATE, NDAYS, LAST, MAXEV, tzOf, tzLabel, abbr, offAt, dIdx, dIso, dLabel, fmtE, range,
-  absAt, fromAbs, evAbs, pacOf, fromPac, who, remMin, remText, leadText, catText, noteOf, normText, has, titleFit, timeFit, splitTravel, whenOf, zoneText, valid, prep,
-  clean:cleanAct, flags:flagsAct, match:(scn, events) => matchAct((scn && scn.key) || KEY, cleanAct(events)), review:reviewAct};
+return {TZS, CAL_TZ, FROM, PEOPLE, CATS, SIM, STAY, REM_UNITS, TRAVEL_MIN, TRAVEL_MAX, NDAYS, LAST, MAXEV, tzOf, tzLabel, abbr, offAt, dIdx, dIso, dLabel, fmtE, range,
+  absAt, fromAbs, evAbs, pacOf, fromPac, who, remMin, remText, leadText, catText, noteOf, splitTravel, whenOf, zoneText, valid, keyList, entryOf, check:CK,
+  clean:cleanAct, flags:flagsAct, match:(scn, events) => matchAct(cleanAct(events)), review:reviewAct};
 })();
 const cleanFor = (scn, events) => isAct(scn) ? act.clean(events) : clean(events);
 

@@ -347,7 +347,8 @@ function renderPage(){
   if(!R.rec){ load(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const last = R.rec.submits[R.rec.submits.length - 1], lastSc = last ? scored(last) : null;
   return `${preview() ? `<div class="card cc-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved or sent; each trainee checks their own calendar.</div>` : ""}<div class="cc-hero"><p class="cc-eyebrow">Day 5 · Attorney Calendar Management Activity</p><h1>📅 Calendar Activity Check</h1>
-      <p>For each event, enter exactly what you put in Google Calendar (as your screenshot shows it). Every field is checked as you type against the activity, with what to fix. When you’re done, send it to your trainer.</p></div>
+      <p>For each event, enter exactly what you put in Google Calendar (as your screenshot shows it). Every field is checked as you type against the activity, with what to fix. When you’re done, send it to your trainer.</p>
+      ${window.FTCalSim ? `<p class="cc-sim"><button class="btn btn-ghost btn-sm" type="button" onclick="goto('calsim','attorney-activity')">🗓 Do the activity on the Calendaring Simulator</button> <span class="cc-mono">the same check, on a practice Google Calendar</span></p>` : ""}</div>
     <div class="cc-sticky" id="ccSummary">${summaryHtml()}</div><div id="ccFix">${fixHtml()}</div>
     <div class="cc-list" oninput="FTCalCheck.edit(event)" onchange="FTCalCheck.edit(event)">${KEY.map(itemHtml).join("")}${finalHtml()}</div>
     <div class="cc-send"><button class="btn btn-navy" type="button" onclick="FTCalCheck.submit()">📤 Submit to my trainer</button>
@@ -430,6 +431,7 @@ if(!document.getElementById("ftdd-deck-font")){
 }
 (function(){ const st = document.createElement("style"); st.id = "ft-calcheck"; st.textContent = `
 main.main-cc{max-width:980px;margin:0 auto;padding:18px 16px 48px;display:flex;flex-direction:column;gap:14px;font-family:'Inter',sans-serif;box-sizing:border-box;width:100%;}
+.cc-sim{margin:10px 0 0 !important;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .cc-hero h1{margin:0 0 6px;font:800 30px/1.15 'Poppins','Inter',sans-serif;color:#1E2340;} .cc-hero p{margin:0;color:var(--ink-soft);max-width:76ch;font-size:16px;line-height:1.55;}
 .cc-eyebrow,.cc-mono,.cc-lbl{font:600 12px 'IBM Plex Mono',monospace;letter-spacing:.02em;}
 .cc-eyebrow{margin:0 0 6px;color:#E8590C;text-transform:uppercase;letter-spacing:.08em;} .cc-mono{color:var(--ink-soft);}
