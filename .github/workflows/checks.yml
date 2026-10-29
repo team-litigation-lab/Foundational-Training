@@ -129,6 +129,10 @@ jobs:
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules
         run: node .github/scripts/calrules.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
+      - name: Standard Training - Calendaring Activity (the current week resolver, next-week offsets, the isolated /api/calweek controller and webhook, the page and its Day 5 links)
+        env:
+          NODE_PATH: ${{ runner.temp }}/pw/node_modules
+        run: node .github/scripts/calweek.cjs http://localhost:8787/ || { echo "--- server log ---"; cat "$RUNNER_TEMP/server.log"; exit 1; }
       - name: Call Listening Log (the four sets, a part-filled and a full log, the trainer's reading and set editing, the worker's rules)
         env:
           NODE_PATH: ${{ runner.temp }}/pw/node_modules

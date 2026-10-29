@@ -40,7 +40,7 @@ const failures = []; const fail = (m) => failures.push(m);
     // the Practice Sessions' cards for the three mock-call lessons (js/ft-sessions.js): each shows its lesson's best graded call
     const cards = await page.evaluate(() => [...document.querySelectorAll('.fss-card')].map(c => ({ h: c.querySelector('h3').innerText, g: (c.querySelector('.fts-graded') || {}).innerText || '' })));
     const by = (t) => cards.find(c => c.h.indexOf(t) >= 0) || {};
-    if (!/best 90% · 1 call\b/.test(by('Reception Mock Calls').g) || !/best 82% · 2 calls/.test(by('Calendaring Practice Lab').g) || !/No graded call yet/.test(by('Intake Mock Calls').g)) fail(`the sessions' graded calls: ${JSON.stringify(cards)}`);
+    if (!/best 90% · 1 call\b/.test(by('Reception Mock Calls').g) || !/best 82% · 2 calls/.test(by('Standard Training - Appointment Setting Mock Calls').g) || !/No graded call yet/.test(by('Intake Mock Calls').g)) fail(`the sessions' graded calls: ${JSON.stringify(cards)}`);
     // their tools: the Call Simulator's graded calls (mode=graded) and practice calls on the session's line, opened from the Portal
     const links = await page.evaluate(() => ['reception', 'calendaring', 'intake'].map(id => FTSessions.links(id)));
     const lines = ['Reception Mock Calls', 'Calendar Management Mock Calls', 'Intake Mock Calls'];
