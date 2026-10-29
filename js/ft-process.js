@@ -202,6 +202,9 @@ function pdfBox(lesson){
   return `<div class="fp-pdf">${sets.map(set => `<p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(set))}</code></p>`).join("")}
     <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.savePdf(${Number(lesson)})">📄 Save PDF to my Folder</button></div>`;
 }
+async function uploadPdf(name, doc){
+  try{ const r = await authFetch("/api/drive/save", {name, pdf: doc.output("datauristring").split(",")[1]}); return await r.json().catch(() => ({})); }catch(err){ return {error: "offline"}; }
+}
 async function savePdf(lesson){
   if(!isTraineeHere()){ toast("👁 Trainee view — a trainee saves their own answer sheet to their folder."); return; }
   const sets = lessonFiles(lesson).filter(set => sameFile(set).some(st => (sheet(st.id).answers || []).some(has)));
@@ -211,9 +214,7 @@ async function savePdf(lesson){
   for(const set of sets){
     const doc = await sheetPdf(set);
     if(!doc){ toast("Couldn't load the PDF tools — try again."); break; }
-    const name = pdfName(set), b64 = doc.output("datauristring").split(",")[1];
-    let j = {};
-    try{ const r = await authFetch("/api/drive/save", {name, pdf: b64}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
+    const name = pdfName(set), j = await uploadPdf(name, doc);
     if(j.ok){ sameFile(set).forEach(st => { const x = sheet(st.id); assignedOn(st); x.drive = {at: new Date().toISOString(), link: (j.file || {}).link || ""}; }); saved.push(name); }
     else { doc.save(name); failed.push({name, error: j.error || "drive"}); }
   }
@@ -349,17 +350,58 @@ function moduleRow(lesson){
 }
 
 // 📄 A lesson's assessments (Day 2's, the guide's homework documents), shown in the page above its questions, in the
-// order they follow their videos on the day's slide; open whether or not the lesson's questions are yet
+// order they follow their videos on the day's slide; open whether or not the lesson's questions are yet. Each is answered
+// and graded here: the document itself above (its declaration pages and tables), the answer form under it (the
+// questions come from the Worker, /api/assess/form: the answer keys never reach this page), 📝 Submit for Grading
+// (/api/assess/grade: the matching by its letter, the rest by the AI against the key, alternatives accepted when they
+// are accurate and fit PI practice), the result in assessgrade:<id> (the Worker writes it, the trainee reads it), and
+// 📄 Save PDF to my Folder under its naming convention. The trainee's draft answers save as they type, in process:<id>.
 const ASSESSMENTS = {2: [
   {t: "Common Terms Used – Assessment", id: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"},
   {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"}]};
+const AS = {forms: {}, loading: {}, grades: null, gid: null, busy: {}};
+const asDraft = id => { const a = FP.data.assess || (FP.data.assess = {}); return a[id] || (a[id] = {answers: {}}); };
+const asName = x => `${x.t} (${firstName() || "VA’s first name"})`;
+function asForm(id){
+  if(AS.forms[id] || AS.loading[id]) return AS.forms[id] || null;
+  AS.loading[id] = authFetch("/api/assess/form", {id}).then(r => r.json()).then(f => { if(f && f.parts) AS.forms[id] = f; })
+    .catch(() => {}).then(() => { AS.loading[id] = null; if(["process", "kc"].includes(state.view)) render(); });
+  return null;
+}
+function asGrades(){
+  if(!state.traineeId || state.isAdmin) return {};
+  if(AS.gid !== state.traineeId){ AS.gid = state.traineeId; AS.grades = {};
+    sharedGet("assessgrade:" + state.traineeId).then(v => { AS.grades = v && typeof v === "object" ? v : {}; if(["process", "kc"].includes(state.view)) render(); }).catch(() => {}); }
+  return AS.grades || {};
+}
+const asTone = (sc, max) => sc >= max * 0.7 ? "ok" : sc >= max * 0.5 ? "mid" : "low";
+function assessForm(x){
+  const f = asForm(x.id); if(!f) return `<p class="fp-muted">Loading the questions…</p>`;
+  const d = asDraft(x.id).answers, g = asGrades()[x.id], it = k => g && g.items && g.items[k];
+  const fb = k => it(k) ? `<div class="kc-fb kc-${asTone(it(k).score, it(k).max)}"><b>${it(k).score}/${it(k).max}</b> ${e(it(k).feedback)}</div>` : "";
+  const field = (q) => q.kind === "match"
+    ? `<select onchange="FTProcess.asSet('${x.id}','${q.k}',this.value)"><option value="">—</option>${"ABCDEFGHIJKLMNOPQRST".split("").map(L => `<option${d[q.k] === L ? " selected" : ""}>${L}</option>`).join("")}</select>`
+    : `<textarea rows="${q.kind === "essay" ? 5 : 2}" placeholder="${q.kind === "essay" ? "Your answer and the reason for it, in complete sentences." : "Your answer."}" oninput="FTProcess.asSet('${x.id}','${q.k}',this.value)">${e(d[q.k] || "")}</textarea>`;
+  return `<div class="fp-asform">
+    ${g ? `<div class="fp-asres"><span class="fp-pill ${g.pct >= KC_PASS ? "ok" : "mid"}">Score ${g.score}/${g.total} · ${g.pct}%</span>${g.attempts > 1 ? `<span class="fp-muted">Best ${g.best}% · ${g.attempts} attempts</span>` : ""}${g.summary ? `<p>${e(g.summary)}</p>` : ""}</div>` : ""}
+    ${f.parts.map(p => `<div class="fp-aspart"><h4>${e(p.h)}</h4>${p.note ? `<p class="fp-muted">${e(p.note)}</p>` : ""}
+      ${p.options ? `<ol class="fp-asopts">${p.options.map(([L, t]) => `<li><b>${e(L)}.</b> ${e(t)}</li>`).join("")}</ol>` : ""}
+      <ol class="fp-asitems${p.options ? " is-match" : ""}">${p.items.map(q => `<li><div class="fp-q">${e(q.q)}${q.max > 1 ? ` <span class="fp-muted">(${q.max} points)</span>` : ""}</div>${field(q)}${fb(q.k)}</li>`).join("")}</ol></div>`).join("")}
+    <div class="fp-actions"><button class="btn btn-navy btn-sm" type="button" id="asGo-${x.id}" onclick="FTProcess.asGrade('${x.id}')">${g ? "🔁 Retake: Submit for Grading" : "📝 Submit for Grading"}</button><span class="fp-save" id="fpSave"></span></div>
+    <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(asName(x))}</code></p>
+      <button class="btn btn-ghost btn-sm fp-drive" type="button" onclick="FTProcess.asPdf('${x.id}')">📄 Save PDF to my Folder</button></div></div>`;
+}
+function assessDoc(x){
+  return `<div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div>
+      ${state.traineeId && !(state.isAdmin && !state.adminPreview) ? assessForm(x) : `<p class="fp-muted">Trainees answer it here; it is graded against its answer key, and their results are in each trainee’s assessments.</p>`}`;
+}
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const xs = (ASSESSMENTS[lesson] || []).filter(x => !(back && back.assess && Number(back.l) === Number(lesson)) || x.id === back.assess); if(!xs.length) return "";
-  return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">Answer each in its document, then upload it to your Assessments/Activities subfolder</span></div>
-    <div class="fp-body">${xs.map(x => `<div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
-      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div>`).join("")}</div></div>`;
+  return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">Answer each one here, 📝 Submit for Grading, then 📄 Save PDF to my Folder</span></div>
+    <div class="fp-body">${xs.map(assessDoc).join("")}</div></div>`;
 }
 
 // 📄 an assessment opened by its video's Next on the deck (Day 2's: js/ft-day-decks.js ASSESS_NEXT): a Knowledge Check
@@ -367,11 +409,51 @@ function assessCard(lesson){
 // deck's next slide
 function assessPage(b){
   const x = (ASSESSMENTS[b.l] || []).find(a => a.id === b.assess); if(!x) return "";
+  if(state.traineeId && FP.id !== state.traineeId && !FP.loading) load(state.traineeId);
+  if(state.traineeId && !FP.data) return `<div class="card" style="padding:28px;">Loading your answers…</div>`;
   return `<div class="fp-hero"><h1>📄 ${e(x.t)}</h1>
-      <p>Answer it in its document, then upload it to your Assessments/Activities subfolder.</p></div>
-    <div class="card fp-set fp-assess"><div class="fp-body"><div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
-      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>
+      <p>Read the assessment, answer every item below, then <b>📝 Submit for Grading</b>: it is checked against its answer key, and an answer in your own words counts when it is accurate. Then <b>📄 Save PDF to my Folder</b>.</p></div>
+    <div class="card fp-set fp-assess"><div class="fp-body">${assessDoc(x)}</div></div>
     ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>` : ""}`;
+}
+async function asGrade(id){
+  if(!isTraineeHere()){ toast("Trainees take the assessments."); return; }
+  const f = AS.forms[id], d = asDraft(id).answers; if(!f) return;
+  const items = f.parts.flatMap(p => p.items), blank = items.filter(q => !has(d[q.k])).length;
+  if(blank && !confirm(`${blank} of ${items.length} items are blank. Submit for grading anyway?`)) return;
+  if(AS.busy[id]) return; AS.busy[id] = true;
+  const btn = document.getElementById("asGo-" + id); if(btn){ btn.disabled = true; btn.textContent = "Grading your answers…"; }
+  try{
+    const r = await authFetch("/api/assess/grade", {id, answers: d}), j = await r.json().catch(() => ({}));
+    if(j.ok){ AS.grades = Object.assign({}, AS.grades || {}, {[id]: j.result}); toast(`✓ Graded: ${j.result.score}/${j.result.total} (${j.result.pct}%)`); }
+    else toast(j.error || "Couldn’t grade it. Try again.");
+  }catch(err){ toast("Couldn’t reach the grader. Check your connection."); }
+  AS.busy[id] = false; render();
+}
+async function asPdf(id){
+  if(!isTraineeHere()){ toast("👁 Trainee view — a trainee saves their own assessment to their folder."); return; }
+  const x = Object.values(ASSESSMENTS).flat().find(a => a.id === id), f = AS.forms[id], d = asDraft(id).answers, g = asGrades()[id];
+  if(!x || !f) return;
+  if(!Object.values(d).some(has)){ toast("Answer the assessment first, then 📄 Save PDF to my Folder."); return; }
+  if(typeof ensureJsPdf !== "function" || !(await ensureJsPdf())){ toast("Couldn't load the PDF tools — try again."); return; }
+  document.querySelectorAll(".fp-drive").forEach(b => { b.disabled = true; b.textContent = "Saving the PDF…"; });
+  const { jsPDF } = window.jspdf, doc = typeof safeDoc === "function" ? safeDoc(new jsPDF({unit:"pt", format:"letter"})) : new jsPDF({unit:"pt", format:"letter"});
+  if(typeof drawPdfHeader === "function") drawPdfHeader(doc, asName(x), "Assessment");
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), X = 54;
+  let y = 118;
+  const line = (t, bold, size, color) => { doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(size); doc.setTextColor(...color);
+    doc.splitTextToSize(String(t), W - X * 2).forEach(w => { if(y > H - 60){ doc.addPage(); y = 60; } doc.text(w, X, y); y += size + 4; }); };
+  line(`Name of VA: ${String(state.certName || state.traineeName || "").replace(/"/g, "")}`, false, 10, [27,30,46]);
+  line(`Date Taken: ${prettyDay(ptDay())}${g ? `   ·   Score: ${g.score}/${g.total} (${g.pct}%)` : ""}`, false, 10, [27,30,46]); y += 8;
+  f.parts.forEach(p => {
+    y += 6; line(p.h, true, 13, [38,43,69]);
+    p.items.forEach((q, i) => { line(`${i + 1}. ${q.q}`, true, 10.5, [38,43,69]); line(has(d[q.k]) ? String(d[q.k]).trim() : "(no answer)", false, 10, [27,30,46]); y += 6; });
+  });
+  const name = asName(x) + ".pdf", j = await uploadPdf(name, doc);
+  if(j.ok){ asDraft(id).drive = {at: new Date().toISOString(), link: (j.file || {}).link || ""}; queueSave(); toast(`✓ Saved to your Assessment and Activities Folder: ${name}`); }
+  else { doc.save(name); if(FP.driveFolder) window.open(FP.driveFolder, "_blank", "noopener");
+    toast(`${DRIVE_WHY[j.error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${name}”: upload it to your Assessment and Activities Folder${FP.driveFolder ? " (it just opened)" : ""}.`); }
+  render();
 }
 
 function renderPage(){
@@ -436,7 +518,8 @@ window.FTProcess = {
     toast(`✓ ${set.title} Process Questions submitted.`); render();
   },
   // 📝 Submit for Grading: the sheet's answers go to its lesson's Knowledge Check (the same answers), graded there.
-  savePdf,
+  savePdf, asGrade, asPdf,
+  asSet(id, k, v){ asDraft(id).answers[k] = v; asDraft(id).updatedAt = new Date().toISOString(); queueSave(); },
   grade(sid, lessonId){ FTKc.open(lessonId); setTimeout(()=>FTKc.submit(lessonId), 0); },
   reload(){ FP.id = null; FP.err = ""; render(); },
 };
@@ -460,8 +543,8 @@ async function loadAdmin(){
     const ids = keys.map(k=>String(k).replace(/^process:/, ""));
     const people = await sharedGetMany(ids.map(id=>"trainee:"+id));
     const rows = ids.map((id, i)=>{ const rec = people[i]; return {id, name:(rec&&rec.name)||id, batch:(rec&&rec.batch)||"", archived:!!(rec&&rec.archived)}; }).filter(x=>!x.archived);
-    const sheets = await ftGetMany(rows.map(x=>"process:"+x.id).concat(rows.map(x=>"kcreview:"+x.id)));
-    rows.forEach((x, i)=>{ x.p = sheets[i] || {sets:{}}; x.rv = sheets[rows.length + i] || {lessons:{}}; if(!x.rv.lessons) x.rv.lessons = {}; });
+    const sheets = await ftGetMany(rows.map(x=>"process:"+x.id).concat(rows.map(x=>"kcreview:"+x.id), rows.map(x=>"assessgrade:"+x.id)));
+    rows.forEach((x, i)=>{ x.p = sheets[i] || {sets:{}}; x.rv = sheets[rows.length + i] || {lessons:{}}; if(!x.rv.lessons) x.rv.lessons = {}; x.ag = sheets[2 * rows.length + i] || {}; });
     FPA.rows = rows.sort((a,b)=>(a.name||"").localeCompare(b.name||""));
   }catch(err){ FPA.rows = []; }
   FPA.loading = false;
@@ -496,11 +579,22 @@ function renderAdminProcess(){
           ${open ? `<pre class="fp-report">${e(reportLine(x))}</pre>
             <button class="btn btn-ghost btn-sm" type="button" onclick="FTProcessAdmin.copy('${x.id}')">📋 Copy for the Report</button>
             ${kcAdmin(x)}
+            ${asAdmin(x)}
             ${PROCESS_SETS.map(s=>{ const a = (x.p.sets||{})[s.id], st = statusOf(s, a), k = x.id+"|"+s.id;
               return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','${s.id}')">${FPA.sheetOpen[k]?"▾":"▸"} ${e(s.title)} <span class="fp-st st-${st.k}">${st.t}</span> <span class="fp-muted">${answered(s, a)} of ${s.questions.length} answered${a && a.submittedAt ? ` · ${e(new Date(a.submittedAt).toLocaleDateString())}` : ""}</span>${a && a.file ? ` ${fileStatus(s, a)} <a href="${e(a.file.link || a.file.url || "#")}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">“${e(a.file.name)}” ↗</a>` : ` <span class="fp-pill bad">Not found in their folder</span>`}</div>
                 ${FPA.sheetOpen[k] ? `<ol class="fp-aans">${s.questions.map((q,i)=>`<li><b>${e(qtext(s,i))}</b><div>${has(((a||{}).answers||[])[i]) ? e(a.answers[i]).replace(/\n/g, "<br>") : '<span class="fp-muted">(unanswered)</span>'}</div></li>`).join("")}</ol>` : ""}</div>`; }).join("")}` : ""}</div>`; }).join("")}</section>`; }).join("")
       : `<div class="fp-muted" style="margin:14px 0;">No trainee has started the Process Questions yet.</div>`}
     <div style="margin-top:12px;"><button class="btn btn-ghost btn-sm" onclick="FTProcessAdmin.refresh()">Refresh</button></div></div>`;
+}
+// 📄 Day 2's assessments as the trainee answered them and as they were graded (assessgrade:<id>, written by the Worker)
+function asAdmin(x){
+  const xs = Object.values(ASSESSMENTS).flat(); if(!xs.length) return "";
+  return `<div class="fp-kcadmin"><b class="fp-kcadmin-h">📄 Assessments: graded against their answer keys</b>
+    ${xs.map(a => { const g = (x.ag || {})[a.id], k = x.id + "|as|" + a.id, open = !!FPA.sheetOpen[k];
+      return `<div class="fp-asheet"><div class="fp-asheet-hd" onclick="FTProcessAdmin.sheet('${x.id}','as|${a.id}')">${open ? "▾" : "▸"} ${e(a.t)}
+          ${g ? `<span class="fp-pill ${g.pct >= KC_PASS ? "ok" : "mid"}">${g.score}/${g.total} · ${g.pct}%${g.attempts > 1 ? ` · best ${g.best}% · ${g.attempts} attempts` : ""}</span> <span class="fp-muted">${e(new Date(g.at).toLocaleString())}</span>` : `<span class="fp-pill bad">not graded</span>`}</div>
+        ${open && g ? `${g.summary ? `<p class="fp-muted">${e(g.summary)}</p>` : ""}<ol class="fp-aans">${Object.keys(g.items || {}).map(q => { const it = g.items[q];
+          return `<li><b>${e(({m: "Matching", s: "Short answer", i: "Identification", e: "Essay"})[q[0]] || "Item")} ${e(q.slice(1))}</b> <span class="fp-pill ${asTone(it.score, it.max) === "ok" ? "ok" : asTone(it.score, it.max) === "mid" ? "mid" : "bad"}">${it.score}/${it.max}</span><div>${has((g.answers || {})[q]) ? e(g.answers[q]).replace(/\n/g, "<br>") : '<span class="fp-muted">(blank)</span>'}</div><div class="fp-muted">${e(it.feedback)}</div></li>`; }).join("")}</ol>` : ""}</div>`; }).join("")}</div>`;
 }
 // The trainer's review of each Knowledge Check the trainee took: the graded attempt (score and the AI's feedback in the
 // facilitator's DNA, per answer), and the trainer's own comment per answer, overall comment and final score.
@@ -815,6 +909,13 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-assess-back{margin:-4px 0 16px;}
 .fp-assess-doc{height:70vh;min-height:360px;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
 .fp-assess-doc iframe{width:100%;height:100%;border:0;}
+.fp-asform{margin:12px 0 4px;} .fp-aspart h4{margin:14px 0 4px;color:var(--navy);font-size:16px;}
+.fp-asopts{columns:2 320px;margin:6px 0 10px;padding-left:0;list-style:none;font-size:13.5px;line-height:1.4;} .fp-asopts li{break-inside:avoid;margin-bottom:6px;}
+.fp-asitems{padding-left:22px;} .fp-asitems li{margin-bottom:12px;} .fp-asitems textarea{width:100%;box-sizing:border-box;margin-top:4px;}
+.fp-asitems.is-match{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:4px 24px;}
+.fp-asitems.is-match li{margin:0;} .fp-asitems.is-match li > .fp-q{display:inline-block;min-width:130px;}
+.fp-asitems.is-match select{margin:0 0 0 6px;min-width:64px;padding:3px 6px;font-size:14px;} .fp-asitems.is-match .kc-fb{margin:2px 0 6px;}
+.fp-asres{margin:4px 0 10px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;} .fp-asres p{flex-basis:100%;margin:4px 0 0;}
 .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
 .fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
 .fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}

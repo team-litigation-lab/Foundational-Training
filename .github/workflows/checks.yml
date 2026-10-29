@@ -41,6 +41,8 @@ jobs:
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
         run: node .github/scripts/drive.cjs
+      - name: Day 2's assessments graded on the platform (the keys never reach the page, matching by its letter, the rest by the AI, the result the Worker's to write)
+        run: node .github/scripts/assess.cjs
       - name: Attorney Calendar Management Activity simulator, graded through the Calendar Activity Check (a perfect calendar from its key scores 100, mistakes caught as the Check marks them, the Standard weeks unchanged)
         run: node .github/scripts/calsim-activity.cjs
       - name: Build the Worker without deploying (wrangler dry run)

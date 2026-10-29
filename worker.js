@@ -37,7 +37,8 @@
  */
 import "./js/ft-tracker-rules.js";
 import "./js/ft-facilitator-dna.js";   // the facilitator's feedback DNA: the default voice
-import { handleCalWeek } from "./calweek-api.js";   // 📅 Standard Training - Calendaring Activity: its own routes and record
+import { handleCalWeek } from "./calweek-api.js";
+import { ASSESSMENTS, publicForm, gradeAssessment } from "./assessments-api.js";   // 📄 Day 2's assessments and their answer keys (server only)   // 📅 Standard Training - Calendaring Activity: its own routes and record
 const TR = globalThis.FTTrackerRules;
 
 /* ---------- KV with the "ft:" namespace prefix ---------- */
@@ -224,7 +225,8 @@ const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemp
 //   trainerfb:<id>    the trainer's feedback on each activity's work, sent from Admin → 📝 Send Feedback (js/ft-trainer-feedback.js)
 //   rankshare:<id>    the trainee's own row of each Weekly Ranking Report the trainer shared (js/ft-ranking.js)
 //   videoaccess:<id>  the lessons' AI discussion videos the trainer approved for this trainee (js/ft-updates.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
+//   assessgrade:<id>  each assessment's graded result (assessments-api.js): the Worker writes it when the trainee submits
+const TRAINER_OWNED = (id) => [`assessgrade:${id}`, `kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
@@ -1161,6 +1163,35 @@ export default {
         if (!id) return json({ error: "Missing trainee" }, 400);
         const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
         try { return json(await folderFiles(env, drive && drive.folder)); } catch (e) { return json({ error: "drive" }); }
+      }
+
+      /* ---------- 📄 Day 2's assessments: the questions (never the keys), and 📝 Submit for Grading (trainees only) ---------- */
+      if (path === "/api/assess/form") {
+        const b = await request.json().catch(() => ({}));
+        const f = publicForm(String(b.id || ""));
+        return f ? json(f) : json({ error: "Unknown assessment" }, 404);
+      }
+      if (path === "/api/assess/grade") {
+        if (tok.role !== "t") return json({ error: "Trainees take the assessments" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const aid = String(b.id || "");
+        if (!ASSESSMENTS[aid]) return json({ error: "Unknown assessment" }, 404);
+        if (!hasGemini(env) && !gatewayOn(env)) return json({ error: "No AI key is configured on this Worker." }, 500);
+        const gk = `assessgrade:${tok.id}`, cur = JSON.parse((await kv.get(gk)) || "{}"), was = cur[aid] || {};
+        // (one grading every 30 seconds per assessment: a double click or a retry loop doesn't spend the AI budget)
+        if (was.at && Date.now() - Date.parse(was.at) < 30000) return json({ error: "Graded a moment ago. Try again in a few seconds." }, 429);
+        const ai = async (prompt) => {
+          const r = await callGemini(env, JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 3000, feature: "grading" }), tok.id);
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error("ai");
+          return ((j.content || [])[0] || {}).text || "";
+        };
+        const g = await gradeAssessment(aid, b.answers && typeof b.answers === "object" ? b.answers : {}, ai);
+        if (!g.ok) return json({ error: g.error }, 503);
+        const attempts = (was.attempts || 0) + 1, best = Math.max(was.best || 0, g.result.pct);
+        cur[aid] = Object.assign({}, g.result, { title: ASSESSMENTS[aid].title, attempts, best });
+        await kv.put(gk, JSON.stringify(cur));
+        return json({ ok: true, result: cur[aid] });
       }
 
       /* ---------- 📄 Save PDF to my Folder: a Knowledge Check answer sheet into the trainee's own folder (trainees only) ---------- */
