@@ -582,7 +582,7 @@ function agendaHtml(d, info){
       ${(() => {
         // the day's Process Questions, connected to the day: the sheet of each lesson the day discusses, and
         // whether the guide runs them today. The questions themselves stay on ✍️ Knowledge Check.
-        const ls = (info.lessons || []).filter(hasPQ);
+        const ls = pqLessons(DD.day, info);
         if(!ls.length) return "";
         const today = (info.items || []).some(x => x.at === "tool" && x.id === "process") || /ftdd-pq/.test(all);
         return `<p class="ftdd-ag-h">✍️ Process Questions</p><ul class="ftdd-ag-ls">${ls.map(l =>
@@ -605,7 +605,7 @@ function slideAgendaGo(s, info){
   if(/shadow/i.test(h) && !/shadow(?:ing)?\s+etiquette/i.test(h) && root.FTShadow) return {label: "logged on the platform", btn: "👥 Log", go: `FTShadow.open(${DD.day})`};
   if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
   if(/process question/i.test(h) && root.FTProcess){
-    const l = (info.lessons || []).find(x => hasPQ(x));
+    const l = pqLessons(DD.day, info)[0];
     if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTDayDecks.toKC(${Number(l)})`};
   }
   return null;
@@ -614,6 +614,10 @@ function slideAgendaGo(s, info){
 function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.ftKcQuestions(Number(l)).length > 0 : false; }catch(err){ return false; } }
 // a day has Process Questions when the guide runs them that day (its deck carries the ✍️ Process Questions note):
 // Days 1, 2, 3, 7, 10 and 13. Only those days link to them and to the 🎮 Knowledge Games.
+// the lessons whose Process Questions a day links to, where not all of its lessons: Day 3 discusses Personal Injury
+// Process Flow and Receptionist Training, and links only the first's Knowledge Check (Receptionist Training's is its own)
+const PQ_LESSONS = {3: [3]};
+const pqLessons = (n, info) => (PQ_LESSONS[Number(n)] || (info || dayInfo(n)).lessons || []).filter(hasPQ);
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 // (d.pq: the build's word for a day whose Process Questions were on a slide that is off the deck, build/day-decks.cjs)
 function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.pq || (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || "")))); }
@@ -628,7 +632,7 @@ function slideActions(s, info, body, i){
   if(has(/classroom discussion|discussion on/i)) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
   // themselves stay on ✍️ Knowledge Check — the slide only points at them
-  if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) (info.lessons || []).forEach(l => { if(hasPQ(l)) out.push(pqButtons(l)); });
+  if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) pqLessons(DD.day, info).forEach(l => out.push(pqButtons(l)));
   if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
   if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log</button>`);
   if(has(/mock call/i) && root.FTSessions){
@@ -1128,10 +1132,13 @@ const LESSON_CARDS = {
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
-      // Part 1: the assignments checked, the discussion deck (PI Workflow and Reception Training), the lesson deck and its
-      // video, the Process Questions, the sample recordings; Part 2: the activities
-      {t: "Checking of Assignments & the Discussion Deck", sub: "PI Workflow and Reception Training · the sample recordings and SOP", k: "classroom", d: 3, s: "s1"},
-      {t: "Process Questions: Submit", sub: "All ten (PI Workflow and Reception Training) in ✍️ Knowledge Check · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(3)"},
+      // Part 1: 💬 Classroom Discussion (▶ Start Training: the lesson deck, as on Days 1 and 2), whose Next is ✍️ Personal
+      // Injury Process Flow's Knowledge Check (kc: Receptionist Training's is its own, not Day 3's), the handouts, then the
+      // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
+      {t: "Classroom Discussion: Personal Injury Process Flow", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
+      {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
+      {t: "Handouts / Video", sub: "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: "ftVideoOrAsk(3)"},
+      {t: "Call Listening Sessions", sub: "The sample call recordings and the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
       // (its exercise is off the deck, build/day-decks.cjs EXERCISE: the slide keeps the supplementary recordings)
       {t: "Carlos & Oscar’s Reception Recordings", sub: "Supplementary recordings, for idle time", k: "listen", d: 3, s: "s1b"},
@@ -1228,7 +1235,8 @@ const LESSON_CARDS = {
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
-const kcOf = s => s && (KC_NEXT[DD.day] || {})[s.id];
+// (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
+const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? {l: Number(s.launch.kc), label: `Next: ✍️ Knowledge Check: ${lessonTitle(s.launch.kc)} →`} : null));
 /* 📄 a slide whose Next is its assessment (Day 2's videos): Next opens that assessment alone, on a Knowledge Check page
    of its own (js/ft-process.js), whose button goes back to the deck, on to `back` (else the slide after this one) */
 const ASSESS_NEXT = {2: {
@@ -1253,7 +1261,7 @@ const readKey = () => `ftReadParts:${state.traineeId || "-"}:${DD.day}`;
 function readParts(){ try{ return JSON.parse(localStorage.getItem(readKey()) || "[]"); }catch(e){ return []; } }
 // the parts of the reading not read yet (none, for a trainer)
 function unread(k){
-  if(!forTrainee() || !k) return [];
+  if(!forTrainee() || !k || !k.parts) return [];
   const d = decks() && decks()[DD.day], seen = readParts();
   return (d ? slidesOf(d) : []).filter(x => k.parts.test(x.id) && !seen.includes(x.id)).map(x => x.id);
 }
@@ -1295,7 +1303,7 @@ function deckNextUp(){
   const clean = h => String(h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // the slide's own pages come first: Next turns them
   if((DD.pages || 1) > 1 && DD.page < DD.pages - 1){ FTNextUp(nav, btn, clean(cur && cur.h)); return; }   // (no "Page N of M" under it)
-  if(kcOf(cur)){ FTNextUp(nav, btn, "✍️ The Reading Task questions", "Knowledge Check"); return; }
+  if(kcOf(cur)){ FTNextUp(nav, btn, kcOf(cur).parts ? "✍️ The Reading Task questions" : "✍️ " + lessonTitle(kcOf(cur).l), "Knowledge Check"); return; }
   if(asOf(cur)){ FTNextUp(nav, btn, "📄 " + asOf(cur).t, "Knowledge Check"); return; }
   if(nx){ FTNextUp(nav, btn, clean(nx.h)); return; }   // (no "Step N of M" under it: the title has the room)
   // (the last slide is ✅ End of Module: nothing comes next from it, so no Next up card)
@@ -1316,6 +1324,8 @@ function toKC(l){
   const d = decks() && decks()[DD.day], list = d ? slidesOf(d) : [];
   const stop = list.findIndex(x => x.launch && new RegExp(`toKC\\(${Number(l)}\\)`).test(x.launch.run || ""));
   let from = list[DD.i] && list[DD.i].launch ? DD.i : stop >= 0 ? stop : DD.i;
+  // (from a stop whose Next is this Knowledge Check, kc: past the Process Questions stop that follows it, answered now)
+  if(from === DD.i && stop === DD.i + 1) from = stop;
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
   const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => k.parts.test(list[DD.i].id));
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
@@ -1400,7 +1410,7 @@ function standardRows(n, c, lid, first, title, rows){
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
   if(first && !has(/ftVideoOrAsk|Handouts \/ Video/)) mid.push({t: "Handouts / Video", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
-  const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? (dayInfo(n).lessons || []).filter(hasPQ) : [];
+  const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
   const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
   return [...lead, ...mid, ...body, ...pqRows, ...tail];
@@ -1443,7 +1453,8 @@ function dayCard(n, ex){
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
         ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
-        ${first ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
+        ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
+        ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
         ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
       </aside>
     </div>

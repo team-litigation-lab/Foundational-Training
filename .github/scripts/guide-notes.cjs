@@ -32,9 +32,11 @@ const failures = []; const fail = m => failures.push(m);
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
 
   /* ---------- 🎬 Video Notes ---------- */
-  await page.evaluate(() => FTDayDecks.open(2)); await page.waitForTimeout(1500);
+  // (Day 4's first slide: Julio's Reception Training video. Day 2's videos are its Common Terms ones, which carry no
+  // notes, and the Softphones one, behind the Common Terms 📤 Submit)
+  await page.evaluate(() => FTDayDecks.open(4)); await page.waitForTimeout(1500);
   const slide = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); if (document.querySelector('.ftdd-learn')) return i; } return -1; });
-  if (slide < 0) fail('no video in the Day 2 deck carries "📝 What I learned"');
+  if (slide < 0) fail('no video in the Day 4 deck carries "📝 What I learned"');
   else {
     // the slide's own button sits above the sheet, so paging never hides it: it turns to the video's page itself
     const act = await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-acts .btn')].find(x => /What I learned/.test(x.innerText));
