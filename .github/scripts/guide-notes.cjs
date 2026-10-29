@@ -27,7 +27,7 @@ const failures = []; const fail = m => failures.push(m);
   const rec = await get('trainee:' + id); rec.approved = true; await put('trainee:' + id, rec);
   await put('learn:' + id, null); await put(`guide:${id}:medlor`, null);
   // (the trainee's Common Terms tasks submitted, so Day 2's deck goes on past them: its Personal Injury Readings wait for
-  // that 📤 Submit, js/ft-buffer.js ACTS["2:s2l"].opens)
+  // that 📤 Submit, js/ft-buffer.js ACTS["2:s2b"].opens)
   await put('buffer:' + id, { acts: { '2:s2': { done: new Date().toISOString(), by: 'trainee' } }, released: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
 

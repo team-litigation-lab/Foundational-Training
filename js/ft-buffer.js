@@ -23,15 +23,14 @@ const root = window;
 // the slides that get a screen, by "<day>:<slide id>" (js/ft-day-decks-data.js); act: the activity in 🧑‍🏫 Trainer Inputs
 const ACTS = {
   // a set of tasks that ends on Done, as a buffer does (the trainer's tracker and release the same), on the slide's own content
-  // (Day 2's Common Terms tasks end on the Auto Liability video's slide, s2l: their Done is there, under the key it was
-  // saved under when the tasks were one slide. submit: the Done is 📤 Submit, which has the platform check and grade the
-  // Monitoring Sheet's items #5–7 first, /api/monitor/items: Timely Completion, the context of the progress, red flags
-  // and things to improve)
-  "2:s2l": {kind: "buffer", task: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
-    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s2b"},
-  // (opens: a slide that stays shut for a trainee until this Done is in, the Personal Injury readings; there the Done is
-  // the same one, key, so they show the wait for the trainer's release and move on with it)
-  "2:s2b": {kind: "buffer", task: true, key: "2:s2"},
+  // (Day 2's Common Terms tasks end on the Personal Injury Readings, s2b, after the Auto Liability Insurance – Assessment,
+  // which the Auto Liability video's Next opens: their Done is there, under the key it was saved under when the tasks were
+  // one slide. submit: the Done is 📤 Submit, which has the platform check and grade the Monitoring Sheet's items #5–7
+  // first, /api/monitor/items: Timely Completion, the context of the progress, red flags and things to improve. gate: the
+  // trainee sees only the panel until then, and reads the slide's own content, the readings, while the batch finishes.
+  // opens: a slide that stays shut for a trainee until this Done is in, the Softphones and PPTs)
+  "2:s2b": {kind: "buffer", task: true, gate: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+    submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s4"},
   // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever
   // still has their one-on-one to do; a plain buffer shows the trainee only its panel)
   "5:s1": {kind: "buffer", show: true},
@@ -280,10 +279,13 @@ function paint(){
     if(!T.rows || Date.now() - T.at > 15000) loadRoster().then(() => { const n = here(); if(n && n.k === h.k) paintTracker(n); });
     watchRoster(); return;
   }
-  box.innerHTML = traineePanel(h); sheet.appendChild(box);
+  // (a gate's panel heads the slide: its content, below, is read once the Done is in)
+  box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
-  // the carryover note and the next item's name, are the trainer's)
-  if(h.a.kind === "buffer" && !h.a.task && !h.a.show) sheet.classList.add("ftbf-only");
+  // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
+  if(h.a.kind === "buffer" && ((!h.a.task && !h.a.show) || (h.a.gate && !mine(h.k)))){ sheet.classList.add("ftbf-only");
+    // (one page: the hidden content's page breaks go)
+    if(h.a.gate) sheet.querySelectorAll(":scope > .ftdd-pgbreak").forEach(x => x.remove()); }
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
   if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => {
     const n = here(); if(!n || n.k !== h.k) return;

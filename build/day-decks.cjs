@@ -460,8 +460,8 @@ s2: html => {
   const intro = [/<p>Task 1 - Please go to this link to watch the video presentation on Common Terms Used<\/p>\n/,
     /<p>Task 2 - Watch this video presentation about how auto liability insurance works[^<]*<\/p>\n/];
   intro.forEach(re => { if(!re.test(out)) throw new Error("Day 2's Common Terms task lines are no longer where the build looks for them"); out = out.replace(re, ""); });
-  // the monitoring sheet's update and its note go: the slide's panel says it, in plain words, with 📤 Submit, which has
-  // the platform check and grade items #5–7 (js/ft-buffer.js ACTS["2:s2l"])
+  // the monitoring sheet's update and its note go: the readings' panel says it, after the Auto Liability Insurance –
+  // Assessment, in plain words, with 📤 Submit, which has the platform check and grade items #5–7 (js/ft-buffer.js ACTS["2:s2b"])
   const check = /<p>Task \d+ - Update items #5 -7 in your monitoring sheet\.<\/p>\n?/, done = /<p><b>Note:<\/b> Hit ✅ Done below when you are\.<\/p>\n?/;
   if(!check.test(out) || !done.test(out)) throw new Error("Day 2's monitoring sheet step or its note is no longer where the build looks for it");
   out = out.replace(check, "").replace(done, "");
@@ -509,7 +509,6 @@ function piCallRows(compact){
   for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
-const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
 // the activity: Day 3's Call Intake & Data Extraction row (ROWS[3].s1), in place of VA Oscar's activity, on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
 // the six calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
@@ -532,8 +531,9 @@ const PI_HTML =
   `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">💭 Analyze the call’s challenge</p><p class="ftdd-cix-note">In the reflection section for each call, document:</p>` +
   `<div class="ftdd-cix-two"><div><b>🚧 The Obstacle</b>What made the call difficult? (e.g., emotional distress, missing details, language barriers, aggressive demeanor, or emergency legal deadlines)</div>` +
   `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
-  `<div class="ftdd-tiles"><a class="ftdd-tile k-doc" href="${PI_WORKSHEET}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>Download the Word file</small></span></a></div>\n` +
-  `<p><b>Naming Convention:</b> PI_Reception_Activity (VA’s first name). Upload the completed worksheet to your Assessment and Activities Folder and work directly from there to finalize it.</p>\n`;
+  // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
+  // (js/ft-process.js WORKSHEETS): the slide only links there, and the way back is the calls' slide
+  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(3, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
 // the six calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
@@ -673,7 +673,7 @@ const ROWS = {
     s2: [{id: "s2", h: "Common Terms Used", parts: [[null, "<!--cut:ref-->"]]},
       {id: "s2r", h: "Common Terms Used: the reference sheet", parts: [["<!--cut:ref-->", "<!--cut:al-->"]], fix: [["<!--cut:ref-->\n", ""]]},
       {id: "s2l", h: "Auto Liability Insurance", pre: NOLEARN, parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
-      // the Personal Injury readings, opened once the Common Terms tasks' 📤 Submit is in (js/ft-buffer.js ACTS["2:s2l"].opens):
+      // the Personal Injury readings, read once the Common Terms tasks' 📤 Submit, at their head, is in (js/ft-buffer.js ACTS["2:s2b"]):
       // the two readings read in the slide, a page each, under the guide's line about them; its 📌 and the assessments'
       // homework line go (each assessment follows its video's Next: js/ft-day-decks.js ASSESS_NEXT)
       {id: "s2b", h: "Personal Injury Readings", parts: [[SLOT(2, "s2-1"), null]], fix: [
