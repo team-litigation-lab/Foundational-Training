@@ -38,6 +38,8 @@ jobs:
         run: node .github/scripts/r2-docs.mjs
       - name: The tracker and the Monitoring Sheet in Google Drive (read, checked, the trainer's input kept)
         run: node .github/scripts/drive.cjs
+      - name: Attorney Calendar Management Activity (the answer key, a perfect calendar scores 100, mistakes caught, the Standard weeks unchanged)
+        run: node .github/scripts/calsim-activity.cjs
       - name: Build the Worker without deploying (wrangler dry run)
         run: npx --yes wrangler@4 deploy --dry-run --outdir "$RUNNER_TEMP/dist"
 

@@ -42,6 +42,7 @@ const WHERE = {
     guide:      {go: () => "goto('guide')",      note: "📘 Process Guide"},
     drills:     {go: () => "goto('drills')",     note: "🏷 Naming & Reporting Drills"},
     calrules:   {go: () => "goto('calrules')",   note: "📅 Booking Rule Check"},
+    calactivity: {go: () => "goto('calsim','attorney-activity')", note: "🗓 Attorney Calendar Management Activity"},
     listening:  {go: () => "goto('listening')",  note: "🎧 Call Listening Log"},
     shadowing:  {go: () => "goto('shadowing')",  note: "👥 Shadowing & To-Do"}
   },
