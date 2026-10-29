@@ -159,8 +159,24 @@ const TRIM = {1: {reading: html => {
   const whole = cut("<p>When taking a screenshot of the entire calendar", "<p>You should have a total of 19");
   const up = cut("<p>You should have a total of 19", "<p><b><i>*** Free Communication");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone
+  // boxed (image28) and the 19 screenshots in their order (image40)
+  const shot = f => new RegExp(`<div class="shots"><figure><a href="/ft/day5/img/${f}"[\\s\\S]*?</figure></div>\\n?`);
+  if(!shot("image28.png").test(tz) || !shot("image40.png").test(up)) throw new Error("Day 5's sample pictures are no longer where the build looks for them");
+  const editor = '<div class="ftdd-gcal" role="img" aria-label="Sample: the event editor, Recorded Statement Meeting, Feb 6, 2025, 2:00pm to 3:00pm, time zone (GMT-05:00) Central Time - Chicago">' +
+    '<div class="ftdd-gcal-top"><span class="ftdd-gcal-x">✕</span><span class="ftdd-gcal-title">Recorded Statement Meeting</span><span class="ftdd-gcal-save">Save</span><span class="ftdd-gcal-more">More actions ▾</span></div>' +
+    '<div class="ftdd-gcal-row"><span class="ftdd-gcal-f">Feb 6, 2025</span><span class="ftdd-gcal-f">2:00pm</span><span class="ftdd-gcal-to">to</span><span class="ftdd-gcal-f">3:00pm</span><span class="ftdd-gcal-f">Feb 6, 2025</span>' +
+    '<span class="ftdd-gcal-f ftdd-gcal-tz">(GMT-05:00) Central Time - Chicago</span><span class="ftdd-gcal-link">Time zone</span></div></div>\n' +
+    '<p class="ftdd-gcal-cap">The time zone, boxed in red, shows in every screenshot: set it before you save.</p>\n';
+  const SEQ = ["1. Client Meeting", "2. Team Meeting", "3. Deposition Meeting", "4. Gym Session", "5. Doctor’s Appointment", "6.1 Court Appearance",
+    "6.2 Court Appearance: Travel Block for travel to court", "6.3 Court Appearance: Travel Block for return travel", "7. Recorded Statement Meeting",
+    "8.1 Networking Dinner Event", "8.2 Transportation to Seattle Airport (SEA)", "8.3 Flight from Seattle (SEA) to San Francisco (SFO)",
+    "8.4 Event Proper Arrival Block time", "8.5 Overnight Stay", "8.6 Return Travel to Seattle: Check out of the hotel and travel to the airport",
+    "8.7 Return Travel to Seattle: Flight from San Francisco (SFO) to Seattle (SEA)", "9. Document Review Session", "10. Family Dinner", "11. Entire Calendar"];
+  const seq = '<ol class="ftdd-seq">' + SEQ.map((t, i) => `<li><span class="ftdd-seq-n">${i + 1}</span><span>${t}</span></li>`).join("") + "</ol>\n";
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
-    card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
+    card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + card("📸", "3. The whole calendar", whole) +
+    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq)) + "</div>\n" + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the discussion deck (PI Workflow and Reception Training) in the slide, the
 // Process Questions' naming convention, and the sample recordings and SOP as links (a new tab, not the viewer); the

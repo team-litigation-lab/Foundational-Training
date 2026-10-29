@@ -2095,6 +2095,26 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}
 /* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
+/* 📅 Day 5's sample event editor, drawn (Google Calendar's dark editor): the time zone boxed in red, as the guide's picture */
+.ft-body .ftdd-gcal{background:#1F1F1F;border-radius:10px;padding:12px 14px;margin:8px 0;color:#E3E3E3;font:500 14px/1.3 'Inter',system-ui,sans-serif;}
+.ft-body .ftdd-gcal-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.ft-body .ftdd-gcal-x{color:#C4C7C5;font-size:16px;}
+.ft-body .ftdd-gcal-title{flex:1;font:500 19px/1.2 'Inter',system-ui,sans-serif;color:#E3E3E3;border-bottom:1px solid #8E918F;padding-bottom:4px;}
+.ft-body .ftdd-gcal-save{background:#A8C7FA;color:#062E6F;border-radius:999px;padding:5px 16px;font-weight:700;}
+.ft-body .ftdd-gcal-more{color:#A8C7FA;font-weight:600;font-size:13px;}
+.ft-body .ftdd-gcal-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.ft-body .ftdd-gcal-f{background:#2D2F31;border-radius:6px;padding:6px 10px;color:#E3E3E3;}
+.ft-body .ftdd-gcal-to{color:#C4C7C5;}
+.ft-body .ftdd-gcal-tz{outline:3px solid #E5262B;outline-offset:2px;font-weight:700;}
+.ft-body .ftdd-gcal-link{color:#A8C7FA;font-weight:600;}
+main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B6178 !important;margin:4px 0 0 !important;}
+/* 📤 the 19 screenshots, numbered in the order they are uploaded */
+.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the card's whole row, in two columns) */
+.ft-body ol.ftdd-seq{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-rows:repeat(10,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px 14px;}
+@media(max-width:900px){ .ft-body ol.ftdd-seq{grid-auto-flow:row;grid-template-rows:none;} }
+.ft-body ol.ftdd-seq li{display:flex;align-items:center;gap:8px;margin:0 !important;padding:5px 10px;border-radius:6px;background:#F4F6FB;font:600 16px/1.3 'Inter',system-ui,sans-serif !important;color:#1E2340 !important;}
+.ft-body ol.ftdd-seq li:nth-child(even){background:#EBEEF6;}
+.ft-body .ftdd-seq-n{flex:0 0 auto;min-width:28px;height:28px;border-radius:50%;background:#E8590C;color:#fff;font:800 13px/28px 'Inter',sans-serif;text-align:center;}
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
