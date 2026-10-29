@@ -20,7 +20,11 @@ const R = path.resolve(__dirname, "..");
 // Discussion → Handouts / Video → Process Questions → Installation of SA. The reading task's questions stay off the
 // slide (they come with the assessment file the trainer posts in the GC, see Q_NOTE).
 const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitoring", "discussion", "client-id"],   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
-  4: ["s1"]};   // (Day 4's one-line introduction joins the slide it introduces: TRIM[4].s2)
+  4: ["s1"],   // (Day 4's one-line introduction joins the slide it introduces: TRIM[4].s2)
+  // (Days 5 and 13: the classroom discussion's slide only said that the lesson deck opens from ▶ Start Training, which is the
+  // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
+  // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
+  5: ["s2"], 13: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 2's Escalation Handling Exercise is its own slide, s3b: ROWS; Day 8's afternoon is the demo: Atty. Sandy's video is on its morning's Topic 2)
@@ -86,6 +90,49 @@ function piParts(){
   if(parts.join("\n").replace(/\s+/g, " ") !== units.join("\n").replace(/\s+/g, " ")) throw new Error("Day 1's reading lost text when it was split");
   return parts;
 }
+/* 📅 Day 5's Attorney Calendar Management Activity, its own words on the slide: its Instructions (1–9, the colour legend,
+   the guests' e-mails) and its ten Activity Items, from build/days/attorney-calendar-activity.txt (word for word as the
+   trainer gave them). Each item is one block, so a page turns between items, never inside a short one. */
+const CAL_TEXT = path.join(R, "build/days/attorney-calendar-activity.txt");
+// (Google Calendar's own colours for the legend's names)
+const CAL_COLORS = {Green: "#0B8043", Blue: "#039BE5", Red: "#D50000", Purple: "#8E24AA", Yellow: "#F6BF26", Orange: "#F4511E", Pink: "#E67C73"};
+function calActivity(){
+  const lines = fs.readFileSync(CAL_TEXT, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+  const li = (lvl, lbl, html) => `<p class="li" style="--lvl:${lvl}"><span class="lbl">${lbl}</span><span>${html}</span></p>\n`;
+  // "Date: July 06, 2026": its label in bold
+  const lab = t => { const m = t.match(/^([A-Z][A-Za-z’' -]{0,50}):\s*(.*)$/); return m ? `<b>${hx(m[1])}:</b>${m[2] ? " " + hx(m[2]) : ""}` : hx(t); };
+  let part = "", out = "", item = null, lvl = 0, steps = 0, items = 0, m;
+  const close = () => { if(item != null) out += item + "</div>\n"; item = null; };
+  for(const l of lines){
+    if(l === "Instructions:"){ part = "ins"; out += "<h3>Instructions</h3>\n"; continue; }
+    if(l === "Activity Items:"){ part = "items"; out += "<h3>Activity Items</h3>\n"; continue; }
+    if(part === "ins"){
+      if((m = l.match(/^(\d+)\.\s+(.*)$/))){ steps++; out += li(0, m[1] + ".", hx(m[2])); continue; }
+      if((m = l.match(/^o\s+(\w+)\s+–\s+(.*)$/))){
+        if(!CAL_COLORS[m[1]]) throw new Error(`Day 5's activity names a colour the build doesn't know: ${m[1]}`);
+        out += li(1, `<span class="ftdd-sw" style="background:${CAL_COLORS[m[1]]}"></span>`, `<b>${hx(m[1])}</b> – ${hx(m[2])}`); continue;
+      }
+      if((m = l.match(/^(.+?) - (\S+@\S+)$/))){ out += li(1, "•", `<b>${hx(m[1])}</b> - ${hx(m[2])}`); continue; }
+      out += li(1, "", hx(l)); continue;   // (the example under 8)
+    }
+    if(part !== "items") throw new Error(`Day 5's activity text has a line before its Instructions: ${l}`);
+    if((m = l.match(/^(\d+)\.\s+(.*)$/))){ close(); items++; lvl = 0; item = `<div class="ftdd-cal-item">\n<p class="ftdd-cal-h"><b>${m[1]}. ${hx(m[2])}</b></p>\n`; continue; }
+    if(item == null) throw new Error(`Day 5's activity has a line before its first item: ${l}`);
+    // • a detail; ➢ a part of the trip; ▪ its date, time or note; - a time under the line before
+    if((m = l.match(/^([•➢▪])\s*(.*)$/))){ lvl = {"•": 0, "➢": 1, "▪": 2}[m[1]]; item += li(lvl, m[1], lab(m[2])); continue; }
+    if((m = l.match(/^-\s*(.*)$/))){ item += li(lvl + 1, "-", hx(m[1])); continue; }
+    throw new Error(`Day 5's activity has a line the build doesn't read: ${l}`);
+  }
+  close();
+  if(steps !== 9 || items !== 10) throw new Error(`Day 5's activity has ${steps} instructions and ${items} items, not 9 and 10`);
+  return out;
+}
+/* 🤖 TODO (Calendar Simulator): a simulator for this activity is being built separately ("Focus in Automation // Calendar
+   Simulator - create a simulator for this activity"). When it is ready, set CALSIM_ACTIVITY to its button, {label, href}
+   (it opens in a new tab), and rebuild; or leave it null and fill the hook from js ([data-calsim-activity]). The hook sits
+   under the Activity Items on Day 5's activity slide; empty, it takes no room (js/ft-day-decks.js, .ftdd-calsim:empty). */
+const CALSIM_ACTIVITY = null;
+const calsimHook = () => `<div class="ftdd-calsim" data-calsim-activity="5:s3">${CALSIM_ACTIVITY ? `<a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}" target="_blank" rel="noopener noreferrer">${hx(CALSIM_ACTIVITY.label)}</a>` : ""}</div>\n`;
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
@@ -142,8 +189,21 @@ const TRIM = {1: {reading: html => {
       `  <div><div class="shots">\n${img("discord-sanders.png", "Sanders on Discord")}</div><p><b>Sanders: sndrrsss9920</b></p></div>\n` +
       `  <div><div class="shots">\n${img("discord-ivan.png", "Ivan on Discord")}</div><p><b>Ivan: kuchiq</b></p></div>\n</div>\n`, " ftdd-sa-pair-help"));
 }},
-// Day 5's Attorney Calendar Management Activity: four cards (the activity, the time zone, the whole calendar, the upload)
-5: {s3: html => {
+// Day 5's Buffer Time for Reception Mock Calls: the carryover, and the Reception mock calls' preparation for whoever still
+// has their one-on-one to do (the same text as Day 4's: MOCK_PREP, MOCK_RUN); a trainee reads it above the buffer's Done
+// (js/ft-buffer.js "5:s1", show)
+5: {s1: html => {
+  const line = "<p>Carryover period for completing any pending tasks from the last session. </p>";
+  if(html.trim() !== line) throw new Error("Day 5's Buffer Time is no longer the one line the build expects");
+  return line + "\n" + '<hr class="stars">\n' + "<p><b>☎ Reception Mock Calls (One-on-One)</b></p>\n" + MOCK_ONE("below") +
+    "<p>If yours is still to do, use this buffer to get ready: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n" +
+    "<p><b>Mock Call Preparation</b></p>\n" + MOCK_PREP + '<hr class="stars">\n' + "<p><b>Instructions for Mock Calls &amp; Metrics</b></p>\n" + MOCK_RUN;
+},
+// Day 5's Attorney Calendar Management Activity: the activity's own text (its Instructions and its ten Activity Items) read
+// on the slide, with the hook for the Calendar Simulator; then the activity file and samples, and three cards (the time
+// zone, the whole calendar, the upload), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b"). ROWS[5].s3 cuts it
+// at the second trainer slot: s3 (read like Day 1's reading), s3b.
+s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
   // the activity itself and its samples folder show in the slide (data-embed, js/ft-day-decks.js visual), under the instruction
   const act = [["1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP", "The Attorney Calendar Management Activity"], ["1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW", "Samples"]]
@@ -168,11 +228,14 @@ const TRIM = {1: {reading: html => {
     "8.4 Event Proper Arrival Block time", "8.5 Overnight Stay", "8.6 Return Travel to Seattle: Check out of the hotel and travel to the airport",
     "8.7 Return Travel to Seattle: Flight from San Francisco (SFO) to Seattle (SEA)", "9. Document Review Session", "10. Family Dinner", "11. Entire Calendar"];
   const seq = '<ol class="ftdd-seq">' + SEQ.map((t, i) => `<li><span class="ftdd-seq-n">${i + 1}</span><span>${t}</span></li>`).join("") + "</ol>\n";
-  // the activity's instruction in its card, then the activity and the samples themselves, full size under it; the cards
-  // stand one under the other (not a grid), so a long one turns the page cleanly
-  const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
-  return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n' +
-    card("📝", "1. The activity", lead) + "\n" + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
+  // the activity's instruction in its card, then its Instructions and Activity Items; the activity and the samples
+  // themselves, full size; the cards stand one under the other (not a grid), so a long one turns the page cleanly
+  const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0], signify = "don’t forget to signify done here as soon as you finish. Thanks.";
+  if(!lead.includes(signify)) throw new Error("Day 5's activity no longer asks to signify done where the build looks for it");
+  return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
+    card("📝", "1. The activity", lead.replace(signify, "don’t forget to signify done (✅ Done, at the end of the activity’s slides) as soon as you finish. Thanks.")) + "\n" +
+    calActivity() + calsimHook() +
+    '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
     card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq)) + "\n" + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the discussion deck (PI Workflow and Reception Training) in the slide, the
@@ -215,41 +278,19 @@ s2: html => {
 // (ROWS[4].s2 cuts it into its card rows' slides: s2, s2b, s2c)
 4: {s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
-  const sim = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", line = sim + "&line=Reception+Mock+Calls";
-  const cms = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
-  const lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
   return "<p>For those who have already completed the tasks, please watch these videos on Reception Training to understand the roles and responsibilities of a Receptionist, as well as the necessary attributes required for the role.</p>\n" +
     "<p><b>Topic: Handling Reception Tasks</b></p>\n" +
     "<p>Task 1 - Watch this training video with one of our virtual receptionists. Here you would see the VA demonstrating how to handle all sorts of calls and general receptionist tasks.</p>\n" +
     '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
     "<p>Task 2 - Update items #10 &amp; 11 in your monitoring sheet.</p>\n" + '<hr class="stars">\n<div class="trainer-slot" data-slot="4:s2-1"></div>\n' +
     "<p>Get ready for this afternoon’s one-on-one mock call: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n" +
-    lnk("📞 Practice a caller: the Call Simulator’s Reception line (an AI caller)", line) +
-    lnk("☎ The Ring Channel: the training phone your mock call rings on", sim) +
-    lnk("🗂 The CMS (Case Management System): the case files", cms) +
-    lnk("☎️ Front Desk Drill in the CMS", cms + "?program=reception&flow=reception&drill=1&from=standard") +
-    "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
-    "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
-    "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
-    "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with Ctrl / Cmd + K; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
-    "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
-    "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
-    "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
-    ph("ftdd-ph-link", "🎧", "Link coming: AI Mock Calls Listening", "Recordings of AI mock calls to listen to before your own. Your trainer adds them here.") + "\n" + PI_WARMUP + "\n" +
-    "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
-    "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
-    "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
-    "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
-    "<p>Step 4 - Only hit ✅ Done on the mock call slide after you have completely finished your one-on-one with the trainer.</p>\n" +
-    "<p><b>Reception Mock Calls Metrics</b></p>\n" +
-    '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
-    "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fourteen, which reaches your Scorecard.</p>\n";
+    MOCK_PREP + MOCK_RUN;
 },
 // Day 4's mock calls: the metrics are on the slide before (how the calls run and are scored)
 s3: html => {
   const out = html.replace(/<p><b>Reception Mock Calls Metrics<\/b><\/p>\n?<div class="shots"><figure><a href="\/ft\/day4\/img\/image7\.png"[\s\S]*?<\/div>\n?/, "");
   if(out === html) throw new Error("Day 4's mock call metrics are no longer where the build looks for them");
-  return "<p>Your one-on-one Reception mock call with the trainer, scored on the Reception Mock Calls Metrics (the slide before).</p>\n" + out;
+  return MOCK_ONE("the slide before") + out;
 }},
 // Day 6 (Calendaring, Part 2): s2, the Mock Call Scenarios, is the guide's wording as text and lists (it came through as a
 // heading per line), with what the trainee should do; the scenarios themselves are the trainer's (6:s2-2). s1: the three training videos play in the slide; the Loom references stay links; the guide's
@@ -332,6 +373,8 @@ s4: html => {
 // build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
 const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
 const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+// a "link coming" or placeholder box
+const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
 const CH_ICON = [[/connection/i, "📶"], [/language/i, "🌐"], [/audio quality|echo/i, "🎚️"], [/fast/i, "⏩"], [/not on the file|unauthori/i, "🔒"], [/upset/i, "😟"], [/noise/i, "🔊"]];
 const chIcon = t => (CH_ICON.find(([re]) => re.test(t)) || [0, "👤"])[1];
 const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
@@ -367,6 +410,37 @@ const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: PI Reception 
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
 // Day 4: the same calls, small, to replay while waiting for the mock call
 const PI_WARMUP = `<hr class="stars">\n<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p>Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
+/* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
+   Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2) and Day 5's Buffer Time for
+   Reception Mock Calls (TRIM[5].s1). MOCK_PREP: direct links to the Call Simulator's Reception line, the Ring Channel,
+   the CMS and its Front Desk Drill, the step-by-step use of them, AI Mock Calls Listening ("link coming" until it has
+   one) and the PI practice calls' warm-up; MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
+   MOCK_ONE: the one-on-one mock call's own line (where the metrics are, on that day's slides). */
+const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
+const tabLink = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
+const MOCK_PREP =
+  tabLink("📞 Practice a caller: the Call Simulator’s Reception line (an AI caller)", CALL_SIM + "&line=Reception+Mock+Calls") +
+  tabLink("☎ The Ring Channel: the training phone your mock call rings on", CALL_SIM) +
+  tabLink("🗂 The CMS (Case Management System): the case files", CMS) +
+  tabLink("☎️ Front Desk Drill in the CMS", CMS + "?program=reception&flow=reception&drill=1&from=standard") +
+  "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
+  "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
+  "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
+  "<p>Step 4 - Find the file in 🔎 Case lookup (in the CMS, search by the client’s name with Ctrl / Cmd + K; when names match, it asks for the date of the accident and the date of birth).</p>\n" +
+  "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
+  "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
+  "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
+  ph("ftdd-ph-link", "🎧", "Link coming: AI Mock Calls Listening", "Recordings of AI mock calls to listen to before your own. Your trainer adds them here.") + "\n" + PI_WARMUP + "\n";
+const MOCK_RUN =
+  "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
+  "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
+  "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
+  "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
+  "<p>Step 4 - Only hit ✅ Done on the mock call slide after you have completely finished your one-on-one with the trainer.</p>\n" +
+  "<p><b>Reception Mock Calls Metrics</b></p>\n" +
+  '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
+  "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fourteen, which reaches your Scorecard.</p>\n";
+const MOCK_ONE = where => `<p>Your one-on-one Reception mock call with the trainer, scored on the Reception Mock Calls Metrics (${where}).</p>\n`;
 /* 📋 EVERY DAY IN DAY 1'S SHAPE (Days 2–16): each row of a day's card (js/ft-day-decks.js LESSON_CARDS) leads to a slide
    of its own, in the card's order, the way Day 1's Reading Task, its stops and its Installation of SA do. Where the guide
    writes several of a card's activities under one heading, that section is cut here into one slide per activity.
@@ -468,6 +542,11 @@ const ROWS = {
     s2: [{id: "s2", parts: [[null, "<p>Get ready for this afternoon’s one-on-one mock call"]]},
       {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [["<p>Get ready for this afternoon’s one-on-one mock call", "<p><b>How the mock calls run (one-on-one)</b></p>"]]},
       {id: "s2c", h: "Instructions for Mock Calls & Metrics", parts: [["<p><b>How the mock calls run (one-on-one)</b></p>", null]]}]
+  },
+  5: {
+    // the activity's own words, read like Day 1's reading; then its files, the time zone, the screenshots and ✅ Done
+    s3: [{id: "s3", read: true, parts: [[null, SLOT(5, "s3-2")]]},
+      {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone, Screenshots & Upload", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
     // the card lists the mock calls first, then the videos to watch while waiting for a turn
@@ -626,7 +705,6 @@ function stripLessonDeck(h, html){
   if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
   return {html: html.replace(LESSON_DECK, LESSON_NOTE), n: 1};
 }
-const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [], carry = {}, cut = new Set();

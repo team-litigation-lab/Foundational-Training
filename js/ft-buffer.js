@@ -25,7 +25,11 @@ const ACTS = {
   "2:s1": {kind: "buffer"},
   // a set of tasks that ends on Done, as a buffer does (the trainer's tracker and release the same), on the slide's own content
   "2:s2": {kind: "buffer", task: true},
-  "5:s1": {kind: "buffer"},
+  // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever
+  // still has their one-on-one to do; a plain buffer shows the trainee only its panel)
+  "5:s1": {kind: "buffer", show: true},
+  // Day 5's Attorney Calendar Management Activity: "signify done" is its Done, at the end of its slides (s3, its text; s3b)
+  "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "✅ Finished the activity?", lead: "Signify done: hit Done once your 19 screenshots are uploaded."},
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon"},
@@ -82,8 +86,8 @@ function traineePanel(h){
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
     <p class="ftbf-status"><span class="ftbf-dot"></span>${a.kind === "buffer" ? "Waiting for your trainer to unlock the next activity…" : "Waiting for the group debrief to start…"}</p></div>`;
-  if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"}</p>
-    <p class="ftbf-lead">${a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."}</p>
+  if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
+    <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
@@ -247,7 +251,7 @@ function paint(){
   box.innerHTML = traineePanel(h); sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's)
-  if(h.a.kind === "buffer" && !h.a.task) sheet.classList.add("ftbf-only");
+  if(h.a.kind === "buffer" && !h.a.task && !h.a.show) sheet.classList.add("ftbf-only");
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
   if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => {
     const n = here(); if(!n || n.k !== h.k) return;
