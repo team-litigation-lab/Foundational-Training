@@ -287,6 +287,18 @@ function moduleRow(lesson){
   </button>`;
 }
 
+// 📄 A lesson's assessments (Day 2's, the guide's homework documents), shown in the page above its questions, in the
+// order they follow their videos on the day's slide; open whether or not the lesson's questions are yet
+const ASSESSMENTS = {2: [
+  {t: "Common Terms Used – Assessment", id: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"},
+  {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"}]};
+function assessCard(lesson){
+  const xs = ASSESSMENTS[lesson]; if(!xs) return "";
+  return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">Answer each in its document, then upload it to your Assessments/Activities subfolder</span></div>
+    <div class="fp-body">${xs.map(x => `<div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div>`).join("")}</div></div>`;
+}
+
 function renderPage(){
   if(!state.traineeId && !state.isAdmin && !state.adminPreview) return `<div class="card" style="padding:28px;">Sign in to answer the Process Questions.</div>`;
   // Admins get every trainee's answer sheets on this same page: ✍️ Process Questions is one feature, with no Admin tab.
@@ -312,7 +324,7 @@ function renderPage(){
       ${window.FTKCGames ? `<button class="btn btn-navy btn-sm" type="button" onclick="FTKCGames.open(${Number(lesson)})">🎮 Review with the Knowledge Games</button>` : ""}
       <h1>✍️ ${e(ftName(lesson))}</h1>
       <p>Answer every question in complete sentences, then <b>📝 Submit for Grading</b>: each answer is scored in your facilitator's own feedback style, and your trainer adds their review. Your answers save as you type. Then save your answer sheet today in your Assessment and Activities Folder, named by its convention, before the end of your shift: the platform finds it there. <span class="fp-save" id="fpSave"></span></p></div>
-    ${moduleCard(lesson, backBtn)}`;
+    ${assessCard(lesson)}${moduleCard(lesson, backBtn)}`;
   return `<div class="fp-hero"><h1>✍️ Knowledge Check</h1>
       <p>One set of questions per module, and each set is that module's Knowledge Check. A module's questions open when you finish the module — press <b>📋 Classroom Activity</b> on the module's last slide, do the day's activities, then answer them here. Each answer sheet is also saved in your Assessment and Activities Folder that day: the platform finds it there and checks its name and when it was saved.</p></div>
     <div class="fp-index">${DAYS.filter(d => kcQuestionsFor(d.id).length).map(d => moduleRow(d.id)).join("")}</div>`;
@@ -716,6 +728,10 @@ main.main-process{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fp-count{font-size:13px;color:var(--ink-soft);}
 .fp-st{font-size:12.5px;border-radius:999px;padding:3px 10px;} .fp-st.st-none{background:var(--bg);color:var(--ink-soft);} .fp-st.st-part{background:#FEF7C3;color:#7a5d00;} .fp-st.st-done{background:var(--success-bg);color:var(--success);}
 .fp-body{border-top:1px solid var(--line);padding:12px 16px 16px;}
+.fp-assess-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 8px;color:var(--navy);font-size:16px;}
+.fp-assess-h + .fp-assess-doc{margin-bottom:16px;}
+.fp-assess-doc{height:70vh;min-height:360px;border:2px solid #343C66;border-radius:10px;overflow:hidden;background:#fff;}
+.fp-assess-doc iframe{width:100%;height:100%;border:0;}
 .fp-file-steps{margin:0 0 12px;padding-left:22px;font-size:14.5px;line-height:1.5;color:var(--ink);} .fp-file-steps li{margin-bottom:4px;}
 .fp-file{background:#FBEBDD;border:1px solid var(--orange-soft);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:14px;}
 .fp-file-h{display:block;margin-bottom:6px;color:var(--navy);}
