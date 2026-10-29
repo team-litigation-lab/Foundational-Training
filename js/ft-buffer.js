@@ -27,12 +27,14 @@ const ACTS = {
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon"},
-  "6:s1": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today"},
-  "9:s3": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon"},
+  // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
+  // its own slide; its records keep the key they were saved under)
+  "6:s1b": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1"},
+  "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3"},
   "8:s3": {kind: "demo", name: "Saving the Intake Packet and Extracted Intake Documents", act: "intake-packet-demo"},
-  "12:s1": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true},
-  "14:s1": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true},
-  "15:s1": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true},
+  "12:s1d": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true, key: "12:s1"},
+  "14:s1e": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "14:s1"},
+  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "15:s1"},
   "16:s2": {kind: "demo", name: "LV (Lien Verification) Request", act: "lv-demo"}
 };
 const SIM = "https://cm-training-activity.pages.dev/simulators/call.html?";
@@ -48,7 +50,7 @@ const tm = iso => { const d = new Date(iso); return isFinite(d) ? d.toLocaleTime
 function here(){
   if(state.view !== "daydeck" || !root.FTDayDecks) return null;
   const st = FTDayDecks.state(), s = (FTDayDecks.list(st.day) || [])[st.i]; if(!s) return null;
-  const k = `${st.day}:${s.id}`; return ACTS[k] ? {day: Number(st.day), id: s.id, k, a: ACTS[k], i: st.i} : null;
+  const sk = `${st.day}:${s.id}`; return ACTS[sk] ? {day: Number(st.day), id: s.id, k: ACTS[sk].key || sk, a: ACTS[sk], i: st.i} : null;
 }
 
 /* ---------- the trainee ---------- */
@@ -208,10 +210,13 @@ async function unlockNext(h){
   if(!root.FTDayLocks || typeof FTDayLocks.steps !== "function" || h.day < 2) return;
   const list = FTDayDecks.list(h.day) || [], nx = h.i + 1; if(nx >= list.length) return;
   const st = FTDayLocks.steps(h.day).find(s => nx >= s.from && nx <= s.to); if(!st) return;
+  // (the record's counts read, and written, as card-row steps: FTDayLocks.migrate flags them so)
   const cur = (await sharedGet("settings:daysteps")) || {}, b = ftKey(T.batch);
+  if(typeof FTDayLocks.migrate === "function") FTDayLocks.migrate(cur);
   cur.batches = cur.batches || {}; cur.batches[b] = cur.batches[b] || {};
   if((Number(cur.batches[b][h.day]) || 0) >= st.n) return;
   cur.batches[b][h.day] = st.n;
+  if(typeof FTDayLocks.migrate === "function") FTDayLocks.migrate(cur, true);
   if(await sharedSet("settings:daysteps", cur) !== false) state.ftDaySteps = cur;
 }
 

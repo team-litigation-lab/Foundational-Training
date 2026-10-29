@@ -524,7 +524,7 @@ async function ftLoadOpenDays(){
   // Nothing back (the server didn't answer: offline, or Cloudflare's request limit): everything already read stands until
   // the next check — the open lessons, and the days' steps too (a blip must neither lock a day nor switch the locks off)
   if(v == null && vv == null && d1 == null && ds == null && state.ftOpenDays) return false;
-  const dsnext = (ds && typeof ds === "object") ? {all: ds.all || {}, batches: ds.batches || {}, sched: ds.sched || {all: {}, batches: {}}, times: ds.times || {}, legacy: ds.legacy || null} : {all: {}, batches: {}, sched: {all: {}, batches: {}}, times: {}};
+  const dsnext = (ds && typeof ds === "object") ? {all: ds.all || {}, batches: ds.batches || {}, sched: ds.sched || {all: {}, batches: {}}, times: ds.times || {}, legacy: ds.legacy || null, rows: ds.rows || {}} : {all: {}, batches: {}, sched: {all: {}, batches: {}}, times: {}};
   const dschanged = JSON.stringify(dsnext) !== JSON.stringify(state.ftDaySteps); state.ftDaySteps = dsnext;
   const d1next = (d1 && typeof d1 === "object") ? {all: Number(d1.all) || 0, batches: d1.batches || {}} : {all: 0, batches: {}};
   const d1changed = JSON.stringify(d1next) !== JSON.stringify(state.ftDay1Steps); state.ftDay1Steps = d1next;

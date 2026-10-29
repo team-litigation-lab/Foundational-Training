@@ -37,6 +37,16 @@ const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no pointer to ✍️ Knowledge Check where its Process Questions were');
+// a section cut into one slide per card row (build/day-decks.cjs ROWS): a new slide's id never reads as a continuation of
+// the one it was cut from, and every trainer slot is on exactly one slide
+for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
+  d.slides.filter(s => s.of && s.id !== s.of).forEach(s => { if (s.id.startsWith(s.of + '-')) fail(`Day ${n} ${s.id} reads as a continuation of ${s.of}`); });
+  const slots = d.slides.flatMap(s => s.html.match(/data-slot="[^"]+"/g) || []);
+  if (new Set(slots).size !== slots.length) fail(`Day ${n}: a trainer slot is on two slides`); }
+// Day 11's LOR Drafting guidelines are on its slides, read like Day 1's reading, in place of their Drive link
+const lor = D[11] && D[11].slides.filter(s => s.read);
+if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test(lor[0].html) || !/<h3>Activity 2: Letter of Representation/.test(lor[1].html) || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
+  fail(`Day 11's LOR Drafting guidelines aren't inlined over two read slides: ${JSON.stringify((lor || []).map(s => s.id))}`);
 
 (async () => {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
@@ -96,7 +106,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (!(await page.$('main.main-ftdd .ftdd-slides.ftlk > .ftd1-lock')) || await page.$('.ftdd-slides > .ftdd-deck .ftlc, .ftdd-slides.ftlk .ftlk-under a[href], .ftdd-slides.ftlk .ftlk-under button:not([disabled])')) fail('a trainee opened Day 2 before the trainer opened it');
   // once its lesson is open (the test server opens every day's steps, server.mjs), every day opens on its card
   await put('settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} }); await page.evaluate(() => ftLoadOpenDays());
-  const dayCards = [];
+  const dayCards = []; let d1zoom = 1;
   for (let n = 1; n <= 16; n++) {
     await page.evaluate(n => FTDayDecks.open(n), n); await page.waitForTimeout(500);
     dayCards.push(await page.evaluate(() => { const c = document.querySelector('.ftdd-lcslide .ftlc');
@@ -105,6 +115,47 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   dayCards.forEach((c, i) => { const n = i + 1;
     if (!c || c.day !== n || c.rows < 1) fail(`Day ${n}'s deck doesn't open on its own day card: ${JSON.stringify(c)}`);
     else if ([1, 2, 3, 4, 5, 7, 10, 13].includes(n) !== c.first || /^(Classroom Activity|Day \d+):/.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}" (first day: ${c.first})`); });
+  // 📋 Days 2–16 in Day 1's shape: every row of a day's card leads to its own slide(s), in the card's order, each row's slides
+  // one run, the deck ending on ✅ End of Module; a row's slides have something on them; the day's Activity Locks steps are its
+  // rows, named as the card names them. Day 1's deck is as it was.
+  await page.evaluate(() => { state.adminPreview = true; });
+  for (let n = 1; n <= 16; n++) {
+    await page.evaluate(n => FTDayDecks.open(n, 0), n); await page.waitForTimeout(500);
+    const r = await page.evaluate(n => {
+      const rows = FTDayDecks.dayRows(n), list = FTDayDecks.list(n);
+      const card = [...document.querySelectorAll('.ftdd-lcslide .ftlc-row .ftlc-t > b')].map(b => b.textContent.trim());
+      const z = parseFloat((document.querySelector('.ftdd-lcslide .ftlc') || { style: {} }).style.zoom) || 1;
+      return { ids: list.map(s => s.id), rowOf: list.map(s => s.agenda || s.divider ? null : s.row), rows: rows.map(r => FTDayDecks.rowLabel(n, r)), card, z,
+        end: !!(list[list.length - 1] || {}).end, steps: n > 1 ? FTDayLocks.steps(n).map(s => s.label) : null,
+        title: (document.querySelector('.ftdd-dtitle') || {}).textContent || '' };
+    }, n);
+    if (n === 1) {
+      if (r.ids.join() !== 'agenda,reading,reading-2,reading-3,reading-4,reading-5,reading-6,reading-7,reading-8,go-1,go-2,go-3,pm,end-day') fail(`Day 1's deck changed: ${r.ids.join()}`);
+      d1zoom = r.z; continue;
+    }
+    if (JSON.stringify(r.card) !== JSON.stringify(r.rows)) fail(`Day ${n}'s card doesn't show its rows: ${JSON.stringify(r.card)}`);
+    const seq = r.rowOf.filter(x => x != null);
+    r.rows.forEach((t, k) => { if (!seq.includes(k)) fail(`Day ${n}'s row ${k + 1} (${t}) has no slide of its own`); });
+    if (seq.some((x, i) => i && x < seq[i - 1])) fail(`Day ${n}'s slides don't run in its card's order: ${JSON.stringify(r.ids.map((id, i) => id + ':' + r.rowOf[i]))}`);
+    if (!r.end || r.ids[r.ids.length - 1] !== 'end-day') fail(`Day ${n}'s deck doesn't end on End of Module`);
+    if (JSON.stringify(r.steps) !== JSON.stringify(r.rows)) fail(`Day ${n}'s steps aren't its card's rows: ${JSON.stringify(r.steps)}`);
+    // the card's rows read at about Day 1's size (a fuller card lays them in two columns rather than shrink them)
+    if (r.z < d1zoom * 0.85 - 0.001) fail(`Day ${n}'s card is drawn at ${r.z}, below 85% of Day 1's ${d1zoom}`);
+    // every slide has something on it (a launch, its button)
+    for (let i = 1; i < r.ids.length - 1; i++) {
+      await page.evaluate(i => FTDayDecks.to(i), i); await page.waitForTimeout(150);
+      const has = await page.evaluate(() => { const sh = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-sheet'), go = document.querySelector('.ftdd-mid .ftdd-deck .ftdd-dv-go, .ftdd-mid .ftdd-deck .ftdd-ho');
+        return !!go || !!(sh && (sh.innerText.trim() || sh.querySelector('img, iframe, .ftdd-tile'))); });
+      if (!has) fail(`Day ${n}'s slide ${r.ids[i]} is empty`);
+    }
+    if (n === 2 && !/^Law Firm Communication$/.test(r.title.trim())) fail(`Day 2's deck is headed "${r.title}"`);
+  }
+  // Day 2's Breakout Session: its four handouts and the lesson's video on one stop (one handouts row on the card)
+  await page.evaluate(() => FTDayDecks.open(2, FTDayDecks.list(2).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(600);
+  const ho2 = await page.evaluate(() => ({ cards: document.querySelectorAll('.ftdd-ho').length, video: !!document.querySelector('.ftdd-ho-video'), ribbon: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '',
+    rows: FTDayDecks.dayRows(2).filter(r => /Handouts/.test(r.t)).length }));
+  if (ho2.cards !== 4 || !ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its handouts and video on one stop: ${JSON.stringify(ho2)}`);
+  await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
   // Day 1's card runs the trainers' order: Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
@@ -197,7 +248,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (tv.form) fail('a trainee sees the trainer\'s form');
   if (tv.bold || !/<b>quietly<\/b>/.test(tv.text)) fail('a title from the trainer was drawn as HTML');
   // a slide too long even at half size is read in pages, and Next turns the page before the slide
-  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(7, FTDayDecks.at(7, FT_DAY_DECKS[7].slides[0].id)); }); await page.waitForTimeout(1600);
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(7, FTDayDecks.at(7, 's1b')); }); await page.waitForTimeout(1600);
   const paged = await page.evaluate(() => ({ i: FTDayDecks.state().i, pages: FTDayDecks.state().pages, page: FTDayDecks.state().page, over: (() => { const x = document.querySelector('.ftdd-sheet'); return x.scrollHeight - x.clientHeight; })() }));
   if (!(paged.pages > 1)) fail(`Day 7's instruction slide isn't read in pages: ${JSON.stringify(paged)}`);
   if (paged.over > 4) fail(`a page of it overflows by ${paged.over}px`);
@@ -205,6 +256,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   const after = await page.evaluate(() => ({ i: FTDayDecks.state().i, page: FTDayDecks.state().page, mark: (document.querySelector('.ftdd-n') || {}).innerText || '' }));
   if (after.i !== paged.i || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
   // the slide says what it opens: its lesson, and the Call Listening log on its own slide
+  await page.evaluate(() => FTDayDecks.to(FTDayDecks.at(7, 's1'))); await page.waitForTimeout(600);
   const acts = await page.evaluate(() => [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()));
   if (!acts.some(x => /Open the lesson/.test(x))) fail(`a classroom discussion slide has no lesson button: ${JSON.stringify(acts)}`);
   const listen = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
@@ -235,7 +287,7 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   // the guidelines the guide writes as a wall of headings are read as cards, and the day's offline work is named
-  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, FT_DAY_DECKS[6].slides[1].id)); }); await page.waitForTimeout(1600);
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, 's2')); }); await page.waitForTimeout(1600);
   const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
   if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
   // no Training Agenda slide on any day: a lesson day opens on its card, a day without one on its first slide
@@ -265,5 +317,5 @@ if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no p
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Day decks test passed (16 decks from build/days, up to date; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the icon opening the deck on the Classroom Activity card, every day on its own day card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; no side panel sections, To-Do or autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
+  console.log(`Day decks test passed (16 decks from build/days, up to date; Days 2–16 in Day 1's shape: each card row its own slides in the card's order, ending on End of Module, nothing empty, the steps the card's rows, the card at about Day 1's size; Day 1's deck unchanged; Day 11's LOR guidelines inlined; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the icon opening the deck on the Classroom Activity card, every day on its own day card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; the slide's lesson and Call Listening buttons; no side panel sections, To-Do or autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
 })().catch(e => { console.error(e); process.exit(1); });

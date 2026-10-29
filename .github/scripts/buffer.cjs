@@ -62,10 +62,13 @@ async function workerChecks() {
     if (locks) {
       stepsWas = await get(t, 'settings:daysteps');
       await t.evaluate(() => FTDayDecks.open(6, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 6's steps are known)
-      const s6 = await t.evaluate(() => { const i = FTDayDecks.at(6, 's1'); const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+      const s6 = await t.evaluate(() => { const i = FTDayDecks.at(6, 's1b'); const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
       if (!s6) fail('Day 6\'s mock call step isn\'t among its Activity Locks steps');
+      // (Day 6's mock calls, the guide's s1 cut at its activities, are their own slide: s1b, the card's first row; its records keep 6:s1)
       const all = Object.assign({}, (stepsWas || {}).all || {}, { 6: s6 });
-      await put(t, 'settings:daysteps', Object.assign({}, stepsWas || {}, { all, batches: {} }));
+      // (a count in card-row steps, flagged so: js/ft-day-locks.js reads an unflagged one as a count of the old slide steps)
+      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 6: 1 }), batches: {} };
+      await put(t, 'settings:daysteps', Object.assign({}, stepsWas || {}, { all, batches: {}, rows }));
       await t.evaluate(() => ftLoadOpenDays());
     }
     const open = async (p, d, s) => { await p.evaluate(d => FTDayDecks.open(d, 0), d); await p.waitForTimeout(1200); await p.evaluate(([d, s]) => FTDayDecks.open(d, FTDayDecks.at(d, s)), [d, s]); await p.waitForTimeout(2200); };
@@ -93,7 +96,7 @@ async function workerChecks() {
     if (!/Practice Buffer: Demo Preparation/.test(await panel(t))) fail(`Day 8's intake packet demo has no Demo Preparation panel: ${(await panel(t)).slice(0, 120)}`);
 
     // ☎ a mock call: Practice Buffer, the links, the warning, Done → the dialog → Screen 2
-    await open(t, 6, 's1');
+    await open(t, 6, 's1b');
     if (!(await toPanel(t))) fail('Day 6\'s mock calls have no Practice Buffer panel');
     const p6 = await panel(t);
     for (const w of ['Practice Buffer: Mock Call Preparation', 'Use the remaining time to practice for your mock calls.', 'Log in to the Ring Channel while on standby.',
@@ -116,7 +119,7 @@ async function workerChecks() {
 
     // 🧑‍🏫 the trainer's tracker on the same slide
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });
-    await open(a, 6, 's1'); await a.waitForTimeout(1500);
+    await open(a, 6, 's1b'); await a.waitForTimeout(1500);
     await a.evaluate(b => FTBuffer.batch(b), BATCH); await a.waitForTimeout(300);
     const tr = () => a.evaluate(() => { const x = document.querySelector('.ftbf-tr'); return x ? { text: x.innerText, locked: x.querySelector('.ftbf-foot .ftbf-done').disabled, banner: (x.querySelector('.ftbf-banner') || {}).innerText || '' } : null; });
     let v = await tr();
@@ -131,8 +134,9 @@ async function workerChecks() {
       await a.click('.ftbf-tr .ftbf-foot .ftbf-done'); await a.waitForTimeout(2200);
       for (const id of [ray, tia]) if (!(((await get(a, 'buffer:' + id)) || {}).released || {})['6:s1']) fail(`Start Group Debrief didn't release ${id}`);
       if (locks) {
-        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const i = FTDayDecks.at(6, 's1') + 1; const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const i = FTDayDecks.at(6, 's1b') + 1; const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
         if (Number((((ds || {}).batches || {})[b] || {})[6]) !== want) fail(`the release didn't unlock Day 6's next step for the batch: ${JSON.stringify((ds || {}).batches)}`);
+        if (!((((ds || {}).rows || {}).batches || {})[b] || {})[6]) fail(`the release didn't flag Day 6's count as a card-row step: ${JSON.stringify((ds || {}).rows)}`);
       }
       // the trainee's slide moves on by itself (it checks every 20 s)
       const was = await t.evaluate(() => FTDayDecks.state().i);
