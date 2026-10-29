@@ -149,15 +149,18 @@ const TRIM = {1: {reading: html => {
     card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz) + card("📸", "3. The whole calendar", whole) + card("📤", "4. Upload your 19 screenshots", up) + "</div>\n" + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3: VA Oscar's Reception Activity is now the PI Reception Activity on a slide of its own (AFTER), so its lines come
-// off this slide; Oscar's activity recordings are listed with his other recordings, as supplementary material
+// off this slide: its heading and instruction, the GC screenshot, the trainer's "share this activity sheet" note (3:s1-5)
+// and the old activity sheet; Oscar's activity recordings are listed with his other recordings, as supplementary
+// material, and the list after it is numbered on (3., not 4.)
 3: {s1: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Reception Activity on VA OSCAR');
-  const shot = '<div class="shots"><figure><a href="/ft/day3/img/image14.png"', to = html.indexOf("</div>", html.indexOf(shot)) + 6;
+  const sheet = html.indexOf('data-title="DAY 3 Reception Training"', from), to = sheet < 0 ? -1 : html.indexOf("</p>", sheet) + 4;
   const oscar = html.match(/<p><a [^>]*1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn[^>]*>[^<]*<\/a><\/p>/);
-  if(from < 0 || to < 6 || !oscar) throw new Error("Day 3's Reception Activity on VA Oscar's recordings is no longer where the build looks for it");
-  const out = html.slice(0, from) + html.slice(to).replace(/^\n/, "");
-  const sup = "<p>Oscar’s Reception Recordings</p>\n";
-  if(!out.includes(sup)) throw new Error("Day 3's supplementary recordings are no longer where the build looks for them");
+  if(from < 0 || to <= from || !oscar || oscar.index < from || oscar.index > to) throw new Error("Day 3's Reception Activity on VA Oscar's recordings is no longer where the build looks for it");
+  let out = html.slice(0, from) + html.slice(to).replace(/^\n/, "");
+  const four = "<p>4. Carlos &amp; remaining Oscar’s’ Reception Recordings", sup = "<p>Oscar’s Reception Recordings</p>\n";
+  if(!out.includes(four) || !out.includes(sup) || /Reception Activity on VA OSCAR|3:s1-5|1qCEqeoGJTf/.test(out)) throw new Error("Day 3's supplementary recordings are no longer where the build looks for them");
+  out = out.replace(four, "<p>3. Carlos &amp; Oscar’s Reception Recordings");
   return out.replace(sup, sup + oscar[0].replace(/data-title="[^"]*"/, 'data-title="Oscar’s Reception Activity recordings"') + "\n");
 }},
 4: {s1: html => html + "\n" + PI_WARMUP},
@@ -190,7 +193,9 @@ function piCallRows(compact){
   return rows.join("\n") + "\n";
 }
 const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
-const PI_SLIDE = {id: "s1-pi", h: "AM: PI Reception Activity: 6 Practice Calls", html:
+// (its id continues the Call Listening slide's, "listen", so it is part of that step: js/ft-day-locks.js counts the
+// trainer's unlocked steps by number, and a step of its own would move every later step of Day 3 one on)
+const PI_SLIDE = {id: "listen-pi", h: "AM: PI Reception Activity: 6 Practice Calls", html:
   `<p><b>Six calls to ${hx(PI_CALLS.firm)}</b>, a personal injury firm in Tampa, Florida. Each call has a challenge a receptionist meets on the line. Listen to each one (replay it as often as you need) and extract its <b>5 data points</b> into your worksheet.</p>\n` +
   `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">📋 The 5 data points of every call</p><ol>` +
   `<li><b>Caller</b>: their name, and who they are (client, potential client, provider, adjuster, family …)</li>` +

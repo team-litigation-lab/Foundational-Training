@@ -12,7 +12,7 @@
    "about": "An existing client calls from the side of a busy road, with trucks and horns behind him.",
    "va": "Rina",
    "file": "/ft/day3/audio/pi-call-1.mp3",
-   "secs": 197,
+   "secs": 198,
    "key": [
     {
      "k": "Caller",
@@ -32,7 +32,7 @@
     },
     {
      "k": "Action taken",
-     "v": "Noted on the file; message to Mara Quintero (Case Manager) for a callback today; told not to give the adjuster a statement until Mara calls"
+     "v": "Noted on the file; message to Mara Quintero (Case Manager) for a callback today about the storage fees, the adjuster and the new treatment"
     }
    ],
    "handled": "Asked him to step away from the road, read the callback number back slowly when a truck covered it, and repeated every detail back.",
@@ -91,7 +91,7 @@
     },
     {
      "who": "Rina (VA)",
-     "text": "Got it, Monday, October twenty-sixth. Mr. Bell, I'll send all of this to your case manager, Mara Quintero, so she can advise you about the storage fees and the adjuster. Until she calls, it's best not to give the adjuster a statement. What's the best number for Mara to reach you?"
+     "text": "Got it, Monday, October twenty-sixth. Mr. Bell, I'll send all of this to your case manager, Mara Quintero, so she can get back to you about the storage fees and the adjuster. If the adjuster calls again before then, you can take his name and number and let us know. What's the best number for Mara to reach you?"
     },
     {
      "who": "Marcus Bell",
@@ -644,7 +644,7 @@
    "about": "A client's mother calls from a busy house, upset: her son is back in hospital and she wants to know about his case.",
    "va": "Paolo",
    "file": "/ft/day3/audio/pi-call-6.mp3",
-   "secs": 152,
+   "secs": 147,
    "key": [
     {
      "k": "Caller",
@@ -656,7 +656,7 @@
     },
     {
      "k": "Verified",
-     "v": "Not listed as an authorized person on the file: no case information shared"
+     "v": "Not the client and not authorized in writing: nothing shared or confirmed, not even whether there is a case"
     },
     {
      "k": "Reason for the call",
@@ -664,10 +664,10 @@
     },
     {
      "k": "Action taken",
-     "v": "Urgent message to Mara Quintero (Case Manager) to call Jordan directly today and explain how he can add his mother to the file; noted on the file"
+     "v": "Urgent message passed on internally (to Jordan's case manager, Mara Quintero) for someone to call Jordan directly today; told Jordan can call himself to authorize her; noted on the file"
     }
    ],
-   "handled": "Stayed calm and kind through the noise and the frustration, checked the file before saying anything, and said why nothing could be shared.",
+   "handled": "Stayed calm and kind through the noise and the frustration, confirmed nothing about a case, said why nothing could be shared, and still took the urgent message.",
    "transcript": [
     {
      "who": "Paolo (VA)",
@@ -687,19 +687,19 @@
     },
     {
      "who": "Paolo (VA)",
-     "text": "That's all right, Ms. Carter. I can hear this is a stressful time. I'll do my best to help you. May I ask, is Jordan Carter the client, and are you calling on his behalf?"
+     "text": "That's all right, Ms. Carter. I can hear this is a stressful time. I'll do my best to help you. May I ask, are you calling on someone's behalf today?"
     },
     {
      "who": "Linda Carter",
-     "text": "Yes. He fell again, because of his knee, and he's back in the hospital since last night. Tampa General. And I want to know when the settlement is coming, because the bills are piling up."
+     "text": "Yes, for my son, Jordan Carter. He fell again, because of his knee, and he's back in the hospital since last night. Tampa General. And I want to know when the settlement is coming, because the bills are piling up."
     },
     {
      "who": "Paolo (VA)",
-     "text": "I'm so sorry to hear Jordan is back in the hospital. Please give me one moment to check the file."
+     "text": "I'm so sorry to hear Jordan is in the hospital. Please give me one moment."
     },
     {
      "who": "Paolo (VA)",
-     "text": "Thank you for waiting, Ms. Carter. I checked Jordan's file, and I don't see you listed as an authorized person on it. Because of that, I'm not able to share any information about his case. I know that's frustrating to hear."
+     "text": "Thank you for waiting, Ms. Carter. For privacy, we can only discuss a case with the client, or with someone the client has authorized in writing, so I'm not able to share or confirm any information. I know that's frustrating to hear."
     },
     {
      "who": "Linda Carter",
@@ -707,7 +707,7 @@
     },
     {
      "who": "Paolo (VA)",
-     "text": "I completely understand, and I can hear how much you're doing for him. It's to protect Jordan's privacy. What I can do is make sure his case manager knows right away that he's in the hospital, and she can call Jordan directly. If Jordan would like you to be able to speak with us, she can explain how he can add you to his file."
+     "text": "I completely understand, and I can hear how much you're doing for him. It's to protect Jordan's privacy. What I can do is take a message and pass it on right away, so the right person can reach Jordan directly. If Jordan would like you to be able to speak with us, he's welcome to call us himself, and we'll explain how."
     },
     {
      "who": "Linda Carter",
@@ -735,7 +735,7 @@
     },
     {
      "who": "Paolo (VA)",
-     "text": "Thank you, Ms. Carter. I've noted it on Jordan's file and sent it to his case manager, Mara Quintero, as urgent. She'll reach out to Jordan today. Is there anything else I can help you with?"
+     "text": "Thank you, Ms. Carter. I've passed your message on as urgent, and someone will reach out to Jordan today. Is there anything else I can help you with?"
     },
     {
      "who": "Linda Carter",

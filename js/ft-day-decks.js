@@ -953,7 +953,7 @@ const LESSON_CARDS = {
       {t: "Checking of Assignments", sub: "The last session’s homework and assessments reviewed", k: "classroom", d: 3, s: "s1"},
       {t: "Call Listening on 10 Sample Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 3, s: "listen", go: "listening"},
       {t: "Confidentiality & Call Response Exercise", k: "interactive", d: 3, s: "s1"},
-      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "s1-pi"},
+      {t: "PI Reception Activity: 6 Practice Calls", sub: "Listen on the slide, then extract each call’s 5 data points into your worksheet", k: "listendo", d: 3, s: "listen-pi"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet", k: "homework", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are on the day’s slide",
       "Upload the PI Reception Activity worksheet to your Assessments/Activities folder", "Process Questions: five of the ten where time is short"],

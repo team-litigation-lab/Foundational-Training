@@ -29,7 +29,7 @@ GREET = "Harbor and Pine Injury Law, this is {va}. How may I help you today?"
 # a line: (who, text, options). who: "va", "c" (the caller) or another key of the call's voices.
 # options: gap (seconds of silence before the line; negative overlaps the line before it), rate / pitch (edge-tts),
 # fx (extra effects on this line: "drop" packet loss, "far" caller away from the phone), vol.
-# events: ("ring",), ("pickup",), ("hold", secs), ("drop",), ("redial", "555-014-2290"), ("bed", name) / ("bed", None)
+# events: ("ring",), ("pickup",), ("hold", secs), ("drop",), ("redial", "5550142290"), ("bed", name) / ("bed", None)
 # switch the caller's background on or off; ("pause", secs).
 CALLS = [
 {
@@ -44,7 +44,7 @@ CALLS = [
     ("c", "Yeah, hi, this is Marcus Bell, I'm a client there. Sorry, I'm, uh, I'm at the tow yard on Hillsborough, it's loud out here."),
     ("va", "That's all right, Mr. Bell. I'm having a little trouble hearing you over the traffic. If you can, could you step away from the road for a moment, or cup the phone?"),
     ("c", "Hang on. Hang on.", {"gap": 0.5}),
-    ("pause", 1.6),
+    ("pause", 1.6), ("bed", "street_far"),
     ("c", "Okay. Is that better?"),
     ("va", "Much better, thank you. Before we go on, I just need to verify your file. Can you give me your full name, your date of birth, and the date of the accident?"),
     ("c", "Marcus Bell. B, E, L, L. Birthday is April seventeenth, nineteen eighty-eight. And the accident was August second. This year."),
@@ -54,7 +54,7 @@ CALLS = [
     ("c", "Yeah. Oh, and the other thing, I started physical therapy. Bayshore Physical Therapy, twice a week. Mara said to tell you guys when I start anything new."),
     ("va", "Thank you for letting us know. Bayshore Physical Therapy, twice a week. And when was your first visit there?"),
     ("c", "Monday. This Monday. The twenty-sixth."),
-    ("va", "Got it, Monday, October twenty-sixth. Mr. Bell, I'll send all of this to your case manager, Mara Quintero, so she can advise you about the storage fees and the adjuster. Until she calls, it's best not to give the adjuster a statement. What's the best number for Mara to reach you?"),
+    ("va", "Got it, Monday, October twenty-sixth. Mr. Bell, I'll send all of this to your case manager, Mara Quintero, so she can get back to you about the storage fees and the adjuster. If the adjuster calls again before then, you can take his name and number and let us know. What's the best number for Mara to reach you?"),
     ("c", "This one. Five five five, oh one three, four four seven one."),
     ("va", "Let me read that back. Five five five, zero one three, four four seven one."),
     ("c", "Sorry, what? A truck just went by.", {"gap": 0.2}),
@@ -72,7 +72,7 @@ CALLS = [
     ("Callback number", "(555) 013-4471, before 5:00 PM Eastern today"),
     ("Verified", "Yes: full name, DOB 04/17/1988, DOL 08/02/2026"),
     ("Reason for the call", "The tow yard wants about $600 in storage fees; the property damage adjuster called him; new treatment: Bayshore Physical Therapy, twice a week, from 10/26/2026"),
-    ("Action taken", "Noted on the file; message to Mara Quintero (Case Manager) for a callback today; told not to give the adjuster a statement until Mara calls"),
+    ("Action taken", "Noted on the file; message to Mara Quintero (Case Manager) for a callback today about the storage fees, the adjuster and the new treatment"),
   ],
   "handled": "Asked him to step away from the road, read the callback number back slowly when a truck covered it, and repeated every detail back."
 },
@@ -93,7 +93,7 @@ CALLS = [
     ("c", "Two two nine zero. Two, two, nine, zero.", {"fx": "drop"}),
     ("va", "Thank you. Five five five, zero one four, two two nine zero. And that's Tanya Brooks. Could you spell your last name for me?"),
     ("c", "B, R, O, O, K, S. I'm driving to urgent care right now, my neck is... my neck is really...", {"fx": "drop2"}),
-    ("drop",),
+    ("drop",), ("bed", None),
     ("va", "Hello? Ms. Brooks? ... Hello?", {"gap": 0.4}),
     ("va", "I lost her. I'll call her back on the number she gave.", {"gap": 0.8, "vol": 0.8}),
     ("redial", "5550142290"),
@@ -254,20 +254,20 @@ CALLS = [
     ("c", "Yes, hi, my name is Linda Carter, my son Jordan is your client, and I need to know what is going on with his case, because nobody is telling us anything.", {"rate": "+8%"}),
     ("kid", "Grandma! He took my tablet!", {"gap": -0.6, "fx": "far", "vol": 0.55}),
     ("c", "Not now, baby! Sorry. Sorry.", {"rate": "+10%"}),
-    ("va", "That's all right, Ms. Carter. I can hear this is a stressful time. I'll do my best to help you. May I ask, is Jordan Carter the client, and are you calling on his behalf?"),
-    ("c", "Yes. He fell again, because of his knee, and he's back in the hospital since last night. Tampa General. And I want to know when the settlement is coming, because the bills are piling up.", {"rate": "+6%"}),
-    ("va", "I'm so sorry to hear Jordan is back in the hospital. Please give me one moment to check the file.", {"rate": "-4%"}),
+    ("va", "That's all right, Ms. Carter. I can hear this is a stressful time. I'll do my best to help you. May I ask, are you calling on someone's behalf today?"),
+    ("c", "Yes, for my son, Jordan Carter. He fell again, because of his knee, and he's back in the hospital since last night. Tampa General. And I want to know when the settlement is coming, because the bills are piling up.", {"rate": "+6%"}),
+    ("va", "I'm so sorry to hear Jordan is in the hospital. Please give me one moment.", {"rate": "-4%"}),
     ("pause", 2.0),
-    ("va", "Thank you for waiting, Ms. Carter. I checked Jordan's file, and I don't see you listed as an authorized person on it. Because of that, I'm not able to share any information about his case. I know that's frustrating to hear."),
+    ("va", "Thank you for waiting, Ms. Carter. For privacy, we can only discuss a case with the client, or with someone the client has authorized in writing, so I'm not able to share or confirm any information. I know that's frustrating to hear."),
     ("c", "I'm his mother! I'm the one driving him to all his appointments.", {"rate": "+10%"}),
-    ("va", "I completely understand, and I can hear how much you're doing for him. It's to protect Jordan's privacy. What I can do is make sure his case manager knows right away that he's in the hospital, and she can call Jordan directly. If Jordan would like you to be able to speak with us, she can explain how he can add you to his file."),
+    ("va", "I completely understand, and I can hear how much you're doing for him. It's to protect Jordan's privacy. What I can do is take a message and pass it on right away, so the right person can reach Jordan directly. If Jordan would like you to be able to speak with us, he's welcome to call us himself, and we'll explain how."),
     ("c", "Okay. Okay. Yes, please do that.", {"rate": "-2%"}),
     ("kid", "Grandma, the dog is out!", {"gap": -0.3, "fx": "far", "vol": 0.5}),
     ("va", "Thank you. What's the best number to reach you, in case she needs to?"),
     ("c", "Five five five, oh one eight, six six one two."),
     ("va", "Five five five, zero one eight, six six one two. And so I have it right: Jordan was admitted to Tampa General last night, October twenty-seventh, after a fall, because of his knee. Is that correct?"),
     ("c", "Yes. That's right."),
-    ("va", "Thank you, Ms. Carter. I've noted it on Jordan's file and sent it to his case manager, Mara Quintero, as urgent. She'll reach out to Jordan today. Is there anything else I can help you with?"),
+    ("va", "Thank you, Ms. Carter. I've passed your message on as urgent, and someone will reach out to Jordan today. Is there anything else I can help you with?"),
     ("c", "No. Thank you. I'm sorry I yelled.", {"rate": "-6%"}),
     ("va", "Please don't apologize. I hope Jordan feels better soon. Take care, Ms. Carter."),
     ("bed", None), ("hangup",)
@@ -275,11 +275,11 @@ CALLS = [
   "key": [
     ("Caller", "Linda Carter, mother of the client Jordan Carter"),
     ("Callback number", "(555) 018-6612"),
-    ("Verified", "Not listed as an authorized person on the file: no case information shared"),
+    ("Verified", "Not the client and not authorized in writing: nothing shared or confirmed, not even whether there is a case"),
     ("Reason for the call", "Jordan was admitted to Tampa General on 10/27/2026 after a fall (his knee); she asked when the settlement is coming"),
-    ("Action taken", "Urgent message to Mara Quintero (Case Manager) to call Jordan directly today and explain how he can add his mother to the file; noted on the file"),
+    ("Action taken", "Urgent message passed on internally (to Jordan's case manager, Mara Quintero) for someone to call Jordan directly today; told Jordan can call himself to authorize her; noted on the file"),
   ],
-  "handled": "Stayed calm and kind through the noise and the frustration, checked the file before saying anything, and said why nothing could be shared."
+  "handled": "Stayed calm and kind through the noise and the frustration, confirmed nothing about a case, said why nothing could be shared, and still took the urgent message."
 },
 ]
 
@@ -340,7 +340,7 @@ def line_fx(a, fx):
         return a
     if fx == "far":
         # a speakerphone in a big room: an echo, faint and muffled
-        return 0.5 * ffx(a, "aecho=0.8:0.7:70|160:0.45|0.3,lowpass=f=2200," + PHONE)
+        return ffx(a, "aecho=0.8:0.7:70|160:0.45|0.3,lowpass=f=2200," + PHONE)
     if fx in ("near", "near2"):
         a = ffx(a, "aecho=0.8:0.4:60:0.15," + PHONE)
         if fx == "near2":
@@ -366,6 +366,8 @@ def babble(lines, n, voices=("en-US-GuyNeural", "en-US-EmmaNeural", "en-US-EricN
     return norm(ffx(out, "lowpass=f=2800,aecho=0.6:0.5:40|90:0.3|0.2"), 1.0)
 
 def bed(kind, n):
+    if kind == "street_far":   # the caller has stepped away from the road: the same street, further off
+        return 0.4 * bed("street", n)
     if kind == "street":
         b = 0.5 * norm(ffx(brown(n), "lowpass=f=500"), 1.0)
         for _ in range(int(n / SR / 7)):   # trucks passing
@@ -422,7 +424,7 @@ def click(): return fade(np.concatenate([RNG.standard_normal(sec(0.02)).astype(n
 def dtmf(digits):
     rows = {"1": 697, "2": 697, "3": 697, "4": 770, "5": 770, "6": 770, "7": 852, "8": 852, "9": 852, "0": 941}
     cols = {"1": 1209, "2": 1336, "3": 1477, "4": 1209, "5": 1336, "6": 1477, "7": 1209, "8": 1336, "9": 1477, "0": 1336}
-    return np.concatenate([np.concatenate([fade(tone([rows[d], cols[d]], 0.09, 0.15)), silence(0.07)]) for d in digits])
+    return np.concatenate([np.concatenate([fade(tone([rows[d], cols[d]], 0.09, 0.15)), silence(0.07)]) for d in digits if d in rows])
 def ringback(k=2): return np.concatenate([np.concatenate([fade(tone([440, 480], 2.0, 0.08)), silence(1.2)]) for _ in range(k)])
 def hold_music(d):   # the firm's hold tone: a soft arpeggio
     notes, out, t = [262, 330, 392, 523, 392, 330], [], 0
@@ -460,7 +462,8 @@ def render(call):
             if who == "va": a = ffx(a, HEADSET) * 0.85
             elif o.get("internal"): a = ffx(a, "highpass=f=200,lowpass=f=4500") * 0.8
             else: a = line_fx(a, o.get("fx"))
-            a = norm(a, 0.8) * o.get("vol", 1.0)
+            # (a caller away from the phone is faint: the level is set after the line is normalized)
+            a = norm(a, 0.8) * o.get("vol", 0.4 if o.get("fx") == "far" and who == "c" else 1.0)
             put(a, o.get("gap", 0.35 if who != "va" else 0.45))
     if cur_bed: bed_spans.append((cur_bed, bed_from, at))
     total = at + sec(0.3)
