@@ -306,10 +306,12 @@ function assessCard(lesson){
 // deck's next slide
 function assessPage(b){
   const x = (ASSESSMENTS[b.l] || []).find(a => a.id === b.assess); if(!x) return "";
+  // (answered on the platform where js/ft-assess.js has it, with 📝 Submit for Grading; else its document)
+  const here = window.FTAssess && FTAssess.has(x.id);
   return `<div class="fp-hero"><h1>📄 ${e(x.t)}</h1>
-      <p>Answer it in its document, then upload it to your Assessments/Activities subfolder.</p></div>
-    <div class="card fp-set fp-assess"><div class="fp-body">
-      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>
+      <p>${here ? "Answer every item here: your answers save as you type. Then hit <b>📝 Submit for Grading</b>." : "Answer it in its document, then upload it to your Assessments/Activities subfolder."}</p></div>
+    ${here ? FTAssess.html(x.id) : `<div class="card fp-set fp-assess"><div class="fp-body">
+      <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div></div></div>`}
     ${b.day && window.FTDayDecks ? `<div class="fp-assess-back"><button class="btn btn-navy" type="button" onclick="FTProcess.backToClass()">Back to the deck · Next: ${e(b.h || `Day ${Number(b.day)}`)} →</button></div>` : ""}`;
 }
 
