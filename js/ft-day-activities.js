@@ -67,14 +67,14 @@ const DAYS = [
     {t:"Common Terms Used — Assessment", kind:"Assessment", at:"drive"},
     {t:"Auto Liability Insurance — Assessment", kind:"Assessment", at:"drive"},
     {t:"Digital Handouts for Breakout Session (Group Activity)", kind:"Breakout", at:"gc"},
-    {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
+    {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Escalation Handling Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:3, role:"Reception Training", lessons:[3, 4], items:[
     {t:"Classroom Discussion on PI Workflow", kind:"Discussion", at:"room"},
     {t:"Classroom Discussion on Reception Training (Lesson 4 on the platform)", kind:"Discussion", at:"room"},
     {t:"🎧 Call Listening on 10 Sample Recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
-    {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
+    {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
     {t:"PI Reception Activity: 6 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
   ]},
@@ -103,7 +103,7 @@ const DAYS = [
     {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Scheduled Shadowing: Intake Specialist Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
-    {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
+    {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Intake Scenario Exercise", kind:"Exercise", at:"gc"},
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
   ]},
@@ -125,7 +125,7 @@ const DAYS = [
   ]},
   {day:10, role:"Insurance Communication Training", lessons:[7], items:[
     {t:"Digital Handouts for Breakout Session (Individual Activity): Claims Specialist Best Practices", kind:"Breakout", at:"gc"},
-    {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
+    {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Claims Terminology Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:11, role:"Insurance Communication Training", lessons:[7], items:[
@@ -145,7 +145,7 @@ const DAYS = [
     {t:"Buffer Time for the LOR Drafting Demo", kind:"Buffer", at:"trainer", id:"lor-demo"},
     {t:"Digital Handouts for Breakout Session (Individual Activity)", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the provider communication recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
-    {t:"Process Questions (five of the ten where time is short)", kind:"Process questions", at:"tool", id:"process"},
+    {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Document Detectives Exercise", kind:"Exercise", at:"gc"}
   ]},
   {day:14, role:"Provider Communication Training", lessons:[8], items:[
