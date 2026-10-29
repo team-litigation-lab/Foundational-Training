@@ -621,9 +621,24 @@ const ROWS = {
     s2: [{id: "s2", h: "Common Terms Used", parts: [[null, "<!--cut:ref-->"]]},
       {id: "s2r", h: "Common Terms Used: the reference sheet", parts: [["<!--cut:ref-->", "<!--cut:al-->"]], fix: [["<!--cut:ref-->\n", ""]]},
       {id: "s2l", h: "Auto Liability Insurance", pre: NOLEARN, parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
-      {id: "s2b", h: "Common Terms Used & Auto Liability Insurance: Assessments", parts: [[SLOT(2, "s2-1"), null]], fix: [
+      // the Personal Injury readings, opened once the Common Terms tasks' 📤 Submit is in (js/ft-buffer.js ACTS["2:s2l"].opens):
+      // the two readings read in the slide, a page each, under the guide's line about them; its 📌 and the assessments'
+      // homework line go (each assessment follows its video's Next: js/ft-day-decks.js ASSESS_NEXT)
+      {id: "s2b", h: "Personal Injury Readings", parts: [[SLOT(2, "s2-1"), null]], fix: [
         ['data-title="https://drive.google.com/file/d/1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4/view?usp=sharing"', 'data-title="Personal Injury reading 1"'],
-        ['data-title="https://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view?usp=sharing"', 'data-title="Personal Injury reading 2"']]}],
+        ['data-title="https://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view?usp=sharing"', 'data-title="Personal Injury reading 2"'],
+        x => {
+          const pin = /<p>\s*📌<\/p>\n/, hw = /<p class="li" style="--lvl:0"><span class="lbl">1\.<\/span><span><b>AS YOUR HOMEWORK<\/b>[^]*?<\/p>\n/,
+            wait = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>(While waiting for your teammates to complete their tasks, please read through the articles below on Personal Injury\. Thanks\.)\s*<\/span><\/p>/;
+          if(!pin.test(x) || !hw.test(x) || !wait.test(x)) throw new Error("Day 2's Personal Injury readings slide is no longer what the build looks for");
+          x = x.replace(pin, "").replace(hw, "").replace(wait, "<p>$1</p>");
+          ["1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4", "1ni4Yg-dublrci2drQhlMVaqxo53xtfP1"].forEach((id, k) => {
+            const re = new RegExp(`<p><a class="viewer-link" data-kind="doc"(?=[^>]*${id})`);
+            if(!re.test(x)) throw new Error(`Day 2's Personal Injury reading ${k + 1} is no longer where the build looks for it`);
+            x = x.replace(re, (k ? '<div class="ftdd-pgbreak"></div>\n' : "") + '<p><a class="viewer-link" data-embed data-full data-kind="doc"');
+          });
+          return x;
+        }]}],
   },
   3: {
     // Part 1 (TRIM[3].s1): the assignments checked, the discussion deck, the Process Questions' naming convention, the
