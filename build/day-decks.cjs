@@ -231,7 +231,12 @@ const TRIM = {1: {reading: html => {
   if(html.trim() !== line) throw new Error("Day 5's Buffer Time is no longer the one line the build expects");
   return line + "\n" + '<hr class="stars">\n' + "<p><b>☎ Reception Mock Calls (One-on-One)</b></p>\n" + MOCK_ONE("below") +
     "<p>If yours is still to do, use this buffer to get ready: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n" +
-    "<p><b>Mock Call Preparation</b></p>\n" + MOCK_PREP + '<hr class="stars">\n' + "<p><b>Instructions for Mock Calls &amp; Metrics</b></p>\n" + MOCK_RUN;
+    "<p><b>Mock Call Preparation</b></p>\n" + MOCK_LINKS +
+    // (the warm-up, then its seven steps under the Instructions heading, one block on a page of its own, shrunk to fit:
+    // a block between page breaks is never split, js/ft-day-decks.js sheetPages; how the mock calls run follows on the next)
+    rep(rep(MOCK_STEPS, MOCK_INSTR, "", 1, "Day 5's Buffer Time"), "<p>Step 1 - Open the Call Simulator",
+      '<div class="ftdd-pgbreak"></div>\n<div class="ftdd-onepage">\n<p><b>Instructions for Mock Calls &amp; Metrics</b></p>\n<p>Step 1 - Open the Call Simulator', 1, "Day 5's Buffer Time") +
+    '</div>\n<div class="ftdd-pgbreak"></div>\n' + MOCK_RUN;
 },
 // Day 5's Attorney Calendar Management Activity: the activity's own text (its Instructions and its ten Activity Items) read
 // on the slide, with the hook for the Calendar Simulator; then the activity file and samples, and three cards (the time
