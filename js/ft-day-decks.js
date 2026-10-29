@@ -236,6 +236,8 @@ function visual(html){
       // a sheet cut to its first columns (data-crop: their width in the sheet's own pixels), drawn the slide's full width
       // and the page's full height (fitCrops)
       const crop = parseInt(as[0].getAttribute("data-crop"), 10);
+      // a document to work in (Day 2's assessments, data-full): the page's full height
+      if(as[0].hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
       if(crop > 0){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
       if(learn0) learn0.setAttribute("data-title", nm);
       const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
@@ -1046,7 +1048,7 @@ const LESSON_CARDS = {
     takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
-      {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 2, s: "s1"},
+      {t: "Buffer Time", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 2, s: "s1"},
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
       {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2b", lead: true},
@@ -1108,7 +1110,7 @@ const LESSON_CARDS = {
       {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet in SA", k: "watch", d: 8, s: "s2"},
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "Trainer facilitated, one at a time · the Demo Metrics", k: "demo", d: 8, s: "s3"},
       {t: "Atty. Sandy Van: Intake Calling (MVC)", time: "PM", sub: "Handling intake calls for MVC cases", k: "watch", d: 8, s: "s3b"},
-      {t: "Buffer Time", time: "1–2 hrs", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
+      {t: "Buffer Time", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
       {t: "PI Equivalent Transcription: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
@@ -2310,7 +2312,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* a sheet cut to its first columns (fitCrops scales its frame to the box): the page's full height, under its name */
-.ft-body .ftdd-embed.ftdd-embed-crop{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
+.ft-body .ftdd-embed.ftdd-embed-crop, .ft-body .ftdd-embed.ftdd-embed-full{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
 .ft-body .ftdd-inline.is-crop{margin:0;}
 /* a page break the build puts in a slide (sheetPages): nothing to see */
 .ft-body .ftdd-pgbreak{display:none !important;}
