@@ -2609,7 +2609,7 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
    viewer below; then one big link to the document and its ⬇ Download */
-.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px;margin:10px 0 12px;}
+.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),260px));justify-content:center;gap:14px;margin:10px 0 12px;}
 .ftdd-sop-shots figure{margin:0;text-align:center;}
 .ftdd-sop-shots a{display:flex;align-items:flex-start;justify-content:center;height:300px;padding:6px;background:#fff;border:1.5px solid #9AA0AB;border-radius:8px;cursor:zoom-in;transition:box-shadow .15s,border-color .15s;}
 .ftdd-sop-shots a:hover{border-color:#E8762B;box-shadow:0 4px 14px rgba(30,35,64,.18);}
@@ -2620,7 +2620,7 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-biglinks .ftdd-tile-ic{font-size:26px;}
 .ftdd-biglinks .ftdd-tile-t b{font-size:24px;line-height:1.35;}
 .ftdd-biglinks .ftdd-tile-t small{font-size:16px;margin-left:12px;}
-.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 18px;margin:6px 0 10px;}
+.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}

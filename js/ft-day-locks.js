@@ -660,6 +660,8 @@ const st = document.createElement("style"); st.id = "ft-day-locks"; st.textConte
 .ftseg-b:hover, .ftseg-b:focus-visible{background:#353B57;color:#fff;outline:none;}
 .ftseg-b.now{background:#1E2340;color:#fff;}
 .ftseg-b.done{color:#2E7D4F;} .ftseg-b.done:hover{color:#fff;}
+/* the part the trainee is on and has finished: light green on the navy (.done's green would be lost on it) */
+.ftseg-b.now.done{color:#9BE3B5;} .ftseg-b.now.done:hover{color:#fff;}
 .ftseg-b.locked{color:#8A90A6;cursor:not-allowed;background:rgba(220,223,232,.55);} .ftseg-b.locked:hover{background:rgba(205,209,222,.8);color:#5b6178;}
 .ftseg-n4 .ftseg-b{font-size:13px;padding:10px 2px;}
 .dash-main .module-card.ftr-card > .ftseg, .module-card .mc-grid > .ftseg{grid-column:1 / -1;}
