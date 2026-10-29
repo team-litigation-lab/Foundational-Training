@@ -252,8 +252,8 @@ s3: html => {
 // not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
 // Training, as on Days 1 and 2), whose Next is ✍️ the Process Questions (named by the convention beside 📄 Save PDF to my
 // Folder), so neither the Process Questions note nor its naming convention is on the slide. The Confidentiality exercise
-// is off the deck; Carlos's and Oscar's recordings are a slide of their own (s1b, REF_RECS), then the PI Reception Activity
-// (s1c). (ROWS[3].s1 places them as their card rows' slides)
+// is off the deck; Carlos's and Oscar's recordings are a slide of their own (s1b, REF_RECS), then Call Intake & Data
+// Extraction (the PI practice calls) on two slides of its own (s1c, s1d). (ROWS[3].s1 places them as their card rows' slides)
 3: {s1: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i + 1) : html.length; if(i < 0 || j < 0) throw new Error(`Day 3's slide no longer has "${from}"`); return html.slice(i, j); };
   const lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
@@ -442,7 +442,7 @@ s4: html => {
       "<p><b>Action:</b> Log your takeaways on your monitoring sheet.</p>\n<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
     .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
-// 🎧 The PI Reception Activity (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
+// 🎧 Call Intake & Data Extraction, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
 // Harbor & Pine Injury Law, each with a challenge (background noise, a line that breaks up, a Spanish-speaking caller, a
 // speakerphone echo, a fast-talking adjuster, an upset family member not on the file), played on the slide. The calls,
 // their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
@@ -465,7 +465,6 @@ function piCallRows(compact){
   return rows.join("\n") + "\n";
 }
 const PI_WORKSHEET = "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx";
-// the slide: Day 3's PI Reception Activity row (ROWS[3].s1, s1c), in place of VA Oscar's activity
 /* 🎧 Day 3's supplementary reception recordings (Carlos's and Oscar's), optional: one card per recording, played in the
    slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
    Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
@@ -481,22 +480,37 @@ function REF_RECS_HTML(){
       ? g.recs.map(([t, id]) => card("🎧 " + t, `https://drive.google.com/file/d/${id}/preview`, `https://drive.google.com/file/d/${id}/view`))
       : g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`))).join("") + "</div>\n").join("");
 }
-const PI_H = "AM: PI Reception Activity: 6 Practice Calls";
+// the activity: Day 3's Call Intake & Data Extraction row (ROWS[3].s1), in place of VA Oscar's activity, on two slides:
+// s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
+// the six calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
+const PI_H = "AM: Call Intake & Data Extraction";
+const PI_CALLS_H = "AM: Call Intake & Data Extraction: the 6 Practice Calls";
+const piStep = (n, ic, t, body) => `<div class="ftdd-cix"><p class="ftdd-cix-h"><span class="ftdd-pic-n">${n}</span><span>${ic} ${t}</span></p><p>${body}</p></div>`;
 const PI_HTML =
-  `<p><b>Six calls to ${hx(PI_CALLS.firm)}</b>, a personal injury firm in Tampa, Florida. Each call has a challenge a receptionist meets on the line. Listen to each one (replay it as often as you need) and extract its <b>5 data points</b> into your worksheet.</p>\n` +
-  `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">📋 The 5 data points of every call</p><ol>` +
+  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to six fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete intake information.</p>\n` +
+  `<div class="ftdd-cix-row">` +
+  piStep(1, "🎧", "Listen", "Play each audio track carefully. You may pause, rewind, and replay each recording as many times as necessary.") +
+  piStep(2, "🔍", "Analyze", "Identify the specific intake challenge and caller scenario presented in each recording.") +
+  piStep(3, "📝", "Extract", "Capture the <b>5 required data points</b> for each caller and log them directly into your designated worksheet.") +
+  `</div>\n` +
+  `<div class="ftdd-cix-grid"><div class="ftdd-pic-points"><p class="ftdd-pic-points-h">📋 The 5 data points of every call</p><ol>` +
   `<li><b>Caller</b>: their name, and who they are (client, potential client, provider, adjuster, family …)</li>` +
   `<li><b>Callback number</b>: with the extension or best time, if given</li>` +
   `<li><b>Verified?</b>: how the VA verified the caller (name, DOB, date of the accident), or why nothing could be shared</li>` +
   `<li><b>Reason for the call</b>: the case and what they need</li>` +
-  `<li><b>Action taken</b>: who it went to, and how (message, transfer, callback)</li></ol>` +
-  `<p class="ftdd-pic-plus">➕ And the call’s <b>challenge</b>: what made the call hard, and what the VA did about it.</p></div>\n` +
-  piCallRows(false) +
-  `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n` +
-  `<div class="ftdd-tiles"><a class="ftdd-tile k-doc" href="${PI_WORKSHEET}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>PI Reception Activity worksheet</b><small>Download the Word file</small></span></a></div>\n` +
+  `<li><b>Action taken</b>: who it went to, and how (message, transfer, callback)</li></ol></div>` +
+  `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">💭 Analyze the call’s challenge</p><p class="ftdd-cix-note">In the reflection section for each call, document:</p>` +
+  `<div class="ftdd-cix-two"><div><b>🚧 The Obstacle</b>What made the call difficult? (e.g., emotional distress, missing details, language barriers, aggressive demeanor, or emergency legal deadlines)</div>` +
+  `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
+  `<div class="ftdd-tiles"><a class="ftdd-tile k-doc" href="${PI_WORKSHEET}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>Download the Word file</small></span></a></div>\n` +
   `<p><b>Naming Convention:</b> PI_Reception_Activity (VA’s first name). Upload the completed worksheet to your Assessment and Activities Folder and work directly from there to finalize it.</p>\n`;
+// the six calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
+const PI_CALLS_HTML =
+  `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
+  piCallRows(false) +
+  `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
-const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: PI Reception Activity: the 5 data points of each call</h4>\n` +
+const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Call Intake &amp; Data Extraction: the 5 data points of each call</h4>\n` +
   PI_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
@@ -651,13 +665,14 @@ const ROWS = {
   3: {
     // Part 1 (TRIM[3].s1): the Call Listening Sessions, the
     // sample recordings and SOP; Part 2: the supplementary recordings (Carlos's and Oscar's, his activity recordings
-    // among them: REF_RECS); then the PI Reception Activity, in place of VA Oscar's activity
+    // among them: REF_RECS); then Call Intake & Data Extraction (the PI practice calls), in place of VA Oscar's activity
     s1: [{id: "s1", parts: [[null, null]]},
       // (Carlos's and Oscar's supplementary recordings, optional: one card per recording, played in the slide; the
       // Confidentiality exercise is off the deck)
       {id: "s1b", h: "Carlos & Oscar’s Reception Recordings", pre: REF_RECS_HTML(), parts: []},
-      // (none of the guide's section: the six practice calls are the activity now)
-      {id: "s1c", h: PI_H, pre: PI_HTML, parts: []}]
+      // (none of the guide's section: the six practice calls are the activity now, its task in cards, then the calls)
+      {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
+      {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []}]
   },
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)
