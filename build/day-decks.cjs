@@ -399,7 +399,7 @@ s2: html => {
   const doc = (label, id) => { const re = new RegExp(`<p>${label}</p>\\n<p><a class="viewer-link" data-kind="doc" data-title="AS YOUR HOMEWORK"(?=[^>]*${id})[^]*?</p>\\n`);
     const m = out.match(re); if(!m) throw new Error(`Day 2's ${label} is no longer where the build looks for it`);
     out = out.replace(m[0], "");
-    return `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="window.FTDayDecks && FTDayDecks.toAssess(2, '${id}', '.ftdd-embed-crop', 'Common Terms Used: the reference sheet')"><span class="ftdd-tile-ic">📄</span>` +
+    return `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="window.FTDayDecks && FTDayDecks.toAssess(2, '${id}', '[data-sheet], .ftdd-embed-crop', 'Common Terms Used: the reference sheet')"><span class="ftdd-tile-ic">📄</span>` +
       `<span class="ftdd-tile-t"><b>${label}</b><small>Open it on ✍️ Knowledge Check →</small></span></button></div>\n`; };
   const ct = doc("Common Terms Used – Assessment", "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"), al = doc("Auto Liability Insurance – Assessment", "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C");
   const after = (id, add) => { const re = new RegExp(`<p><a class="viewer-link" data-embed data-kind="video"(?=[^>]*${id})[^]*?</p>\\n`); const m = out.match(re);
