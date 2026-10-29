@@ -35,10 +35,10 @@ for (let n = 1; n <= 16; n++) {
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }
 if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'monitoring'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro homework, the Monitoring Sheet set-up or Setting of Expectations');
-// Day 3's homework: the five CRM/CMS videos as cards (data-card: a preview each, played bigger in the pop-up viewer), and
-// its Monitoring Sheet the trainee's own, in their Drive (FTDrive.openMonitor)
+// Day 3's CRM/CMS Training Videos: the five videos as cards (data-card: a preview each, played bigger in the pop-up viewer),
+// without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
 const crm = D[3] && D[3].slides.find(s => s.id === 's2');
-if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || !/FTDrive\.openMonitor\(\)/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards, or its Monitoring Sheet doesn't open the trainee's own");
+if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards, or the slide still has its 'Please watch' line");
 // Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck (its help line names Sanders for Nitro Pro)
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
@@ -185,10 +185,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (ho2.cards !== 4 || ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
   await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
-  // Day 1's card runs the trainers' order: Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA
+  // Day 1's card runs the trainers' order: Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
-  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Handouts \/ Video/, /^Process Questions/, /^Installation of SA/];
-  if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Handouts / Video → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
+  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Digital Handouts/, /^Process Questions/, /^Installation of SA/];
+  if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Reading Task")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
   if (row.view !== 'daydeck' || !/Reading Task/.test(row.h)) fail(`the Reading Task row opened ${JSON.stringify(row)}`);
