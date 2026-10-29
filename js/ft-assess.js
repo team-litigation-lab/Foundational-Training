@@ -14,7 +14,7 @@ const e = v => esc(String(v == null ? "" : v));
 const L = "ABCDEFGHIJKLMNOPQRST".split("");
 // the assessments: their parts, as the documents have them (the items' ids are assess-keys.js's)
 const FORMS = {
-  "14sz5f3HTQKmryc7Upvlc6qua008rPnmw": {title: "Common Terms Used – Assessment", max: 27, parts: [
+  "14sz5f3HTQKmryc7Upvlc6qua008rPnmw": {title: "Common Terms Used – Assessment", file: "Common_Terms_Used_Assessment", max: 27, parts: [
     {kind: "match", h: "Part I. Matching Type", lead: "Listed are the common terms and abbreviations that you may encounter in VLF. Match the terms in Column A to the correct definition in Column B: pick the letter of the correct definition for each term.",
       terms: ["1P", "HIPAA", "PI", "3P", "HITECH", "SOL", "PIP", "MVC Primary", "Tort", "Minor’s Comp", "BI", "MVC Secondary", "PL", "Lit", "DOL", "UM/UIM", "HICF", "Totaled", "Worker’s Comp", "Intake"],
       defs: ["A federal act that seeks to protect patient information from being disclosed without the patient’s approval.",
@@ -42,7 +42,7 @@ const FORMS = {
       scenario: "Jordan was driving along Baker’s Street on June 16, 2021 together with his girlfriend when he crossed an intersection and was T-boned by a speeding car which cut off a red light. The driver of the other car was a certain Mr. Sam Martin.",
       qs: ["Who is the 3P in the accident?", "Who is the 1P in the accident?", "Who is the Primary?", "Is there a Secondary? If yes, who?", "When was the DOL?",
         "When would be the SOL for this case if this happened in Nevada?", "If this happened in Washington, when would be the SOL for this case?"]}]},
-  "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C": {title: "Auto Liability Insurance – Assessment", max: 45, parts: [
+  "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C": {title: "Auto Liability Insurance – Assessment", file: "Auto_Liability_Insurance_Assessment", max: 45, parts: [
     {kind: "short", h: "Part I. Identification", id: "i", lead: "Write the correct answer that is being asked for the following questions or statements.",
       qs: ["This is the maximum amount that an insurance company is willing to pay to a covered insured depending on the type of insurance coverage the person holds.",
         "What is the minimum liability insurance coverage required by the state of Nevada?",
@@ -72,7 +72,37 @@ const FORMS = {
           "Assume that the Dec Page above is of the 3P coverage. Our client is the primary in this case with two secondaries involved with the following medical treatment billed: Primary – $55,000; First Secondary – $25,000; Second Secondary – $31,000. Would the above expenses suit the 3P insurance coverage? Explain your answer."]}]}]}
 };
 
-const A = {rec: null, id: null, loading: false, t: null, sending: false, review: null};
+const A = {rec: null, id: null, loading: false, t: null, sending: false, review: null, saving: false};
+/* 📄 Save PDF to my Folder, as the Process Questions' answer sheets have it (js/ft-process.js): the answers as a PDF, named
+   by the assessment's convention (shown beside the button: it lives here, not on the deck), written into the trainee's
+   Assessment and Activities Folder by the Worker (/api/drive/save; saving again replaces it). Where the platform can't
+   write to the folder, the PDF downloads under the same name and the folder opens, to drop it in. */
+const firstName = () => String(state.certName || state.traineeName || "").replace(/"/g, "").split(",").pop().trim().split(/\s+/)[0] || "";
+const fileName = doc => `${FORMS[doc].file} (${firstName() || "VA’s first name"})`;
+const DRIVE_WHY = {"no-folder": "Link your Assessment and Activities Folder first (📁 My Drive links).", "no-access": "The platform can’t write to your folder yet: share it with the training account as Editor.",
+  quota: "The platform can’t create files in your folder yet: ask your trainer.", "no-sa": "Saving to your folder isn’t set up yet: ask your trainer.", "drive-auth": "Saving to your folder isn’t set up yet: ask your trainer."};
+async function answersPdf(doc){
+  if(typeof ensureJsPdf !== "function" || !(await ensureJsPdf())) return null;
+  const f = FORMS[doc], a = answers(doc), { jsPDF } = window.jspdf;
+  const pdf = typeof safeDoc === "function" ? safeDoc(new jsPDF({unit: "pt", format: "letter"})) : new jsPDF({unit: "pt", format: "letter"});
+  if(typeof drawPdfHeader === "function") drawPdfHeader(pdf, fileName(doc), "Assessment · Knowledge Check");
+  const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight(), X = 54; let y = 118;
+  const line = (t, bold, size, color) => { pdf.setFont("helvetica", bold ? "bold" : "normal"); pdf.setFontSize(size); pdf.setTextColor(...color);
+    pdf.splitTextToSize(String(t), W - X * 2).forEach(w => { if(y > H - 60){ pdf.addPage(); y = 60; } pdf.text(w, X, y); y += size + 4; }); };
+  const ink = [27, 30, 46], navy = [38, 43, 69], ans = k => String(a[k] || "").trim() || "(no answer)";
+  line(`Trainee: ${String(state.certName || state.traineeName || "").replace(/"/g, "")}`, false, 10, ink);
+  line(`Date: ${new Date().toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric", year: "numeric"})}`, false, 10, ink); y += 8;
+  f.parts.forEach(p => {
+    y += 6; line(p.h, true, 13, navy); y += 2;
+    if(p.kind === "match") p.terms.forEach((t, i) => line(`${i + 1}. ${t}: ${ans("m" + (i + 1))}`, false, 10.5, ink));
+    else if(p.kind === "short"){ if(p.scenario) line(p.scenario, false, 10, ink);
+      p.qs.forEach((q, i) => { line(`${i + 1}. ${q}`, true, 10.5, navy); line(ans(p.id + (i + 1)), false, 10, ink); y += 4; }); }
+    else { let n = 0; p.groups.forEach(g => g.qs.forEach(q => { n++; line(`${n}. ${q}`, true, 10.5, navy); line(ans(p.id + n), false, 10, ink); y += 6; })); }
+  });
+  return pdf;
+}
+// (the trainee's Assessment and Activities Folder, from 📁 My Drive links: opened when the PDF has to be dropped in by hand)
+async function folderUrl(){ try{ const d = await sharedGet("drive:" + state.traineeId); return (d && d.folder) || ""; }catch(err){ return ""; } }
 const mineKey = () => "assess:" + state.traineeId;
 async function load(){
   if(!state.traineeId || A.loading || A.id === state.traineeId) return;
@@ -113,7 +143,9 @@ root.FTAssess = {
     const g = graded(doc);
     return `<div class="card fp-set fa-form">${f.parts.map(p => partHtml(doc, p)).join("")}
       <div class="fa-foot">${g ? `<p class="fa-done">✓ Graded ${e(g.when || "")}${g.pending ? " · your trainer grades the essays" : ""}. Your score is on 🏅 My Performance. You can correct your answers and submit again.</p>` : `<p class="fa-muted">Your answers save as you type.</p>`}
-        <button type="button" class="btn btn-primary fa-submit" onclick="FTAssess.submit('${doc}')"${A.sending ? " disabled" : ""}>${A.sending ? "Grading…" : "📝 Submit for Grading"}</button></div></div>`;
+        <button type="button" class="btn btn-primary fa-submit" onclick="FTAssess.submit('${doc}')"${A.sending ? " disabled" : ""}>${A.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>
+      <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(doc))}</code></p>
+        <button class="btn btn-ghost btn-sm fa-drive" type="button" onclick="FTAssess.savePdf('${doc}')"${A.saving ? " disabled" : ""}>${A.saving ? "Saving the PDF…" : "📄 Save PDF to my Folder"}</button></div></div>`;
   },
   set(doc, id, v){
     if(!state.traineeId) return;
@@ -138,6 +170,20 @@ root.FTAssess = {
     }catch(err){ toast(err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
     A.sending = false; render();
   },
+  async savePdf(doc){
+    if(!FORMS[doc] || A.saving) return;
+    if(!state.traineeId || state.isAdmin || state.adminPreview){ toast("👁 Trainee view — a trainee saves their own assessment to their folder."); return; }
+    if(!Object.values(answers(doc)).some(x => String(x).trim())){ toast("Answer the assessment first, then 📄 Save PDF to my Folder."); return; }
+    A.saving = true; render();
+    const pdf = await answersPdf(doc), name = fileName(doc) + ".pdf";
+    if(!pdf){ A.saving = false; render(); toast("Couldn't load the PDF tools — try again."); return; }
+    let j = {};
+    try{ const r = await authFetch("/api/drive/save", {name, pdf: pdf.output("datauristring").split(",")[1]}); j = await r.json().catch(() => ({})); }catch(err){ j = {error: "offline"}; }
+    if(j.ok) toast(`✓ Saved to your Assessment and Activities Folder: ${name}`);
+    else { pdf.save(name); const f = await folderUrl(); if(f) window.open(f, "_blank", "noopener");
+      toast(`${DRIVE_WHY[j.error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${name}”: upload it to your Assessment and Activities Folder${f ? " (it just opened)" : ""}.`); }
+    A.saving = false; render();
+  },
   // the result, for 🏅 My Performance (js/ft-drive.js ftDriveItems)
   title: doc => (FORMS[doc] || {}).title || "Assessment"
 };
@@ -158,5 +204,8 @@ root.FTAssess = {
 .fa-docframe iframe{width:100%;height:100%;border:0;}
 .fa-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px;}
 .fa-done{margin:0;color:var(--success);font-weight:700;} .fa-muted{margin:0;color:var(--ink-soft);}
+.fa-form .fp-pdf{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:12px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#F6F8FC;}
+.fa-form .fp-pdf-rule{margin:0;flex:1 1 320px;font-size:14px;} .fa-form .fp-pdf-rule > span{font-weight:800;color:var(--orange-deep);}
+.fa-form .fp-pdf-rule code{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;word-break:break-word;}
 `; document.head.appendChild(s); })();
 })();
