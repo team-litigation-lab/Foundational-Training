@@ -144,6 +144,8 @@ function kindOf(s, html){
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & do"};
+  // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
+  if(/^Common Terms Used & Auto Liability Insurance$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
   if(/canva-frame/.test(html)) return {ic: "🎨", label: "Training deck"};
   // a slide of recordings to play (Day 3's PI Reception Activity) is listened to, not read
   if(/<audio\b/.test(html)) return {ic: "🎧", label: "Listen & Do"};

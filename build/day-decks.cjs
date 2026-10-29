@@ -392,6 +392,12 @@ s2: html => {
   const sheet = /<a class="viewer-link" data-embed(?=[^>]*1tmV26rq_1z1mpq1C5hUweLytfyJUtkai)/, task2 = /<p>Task 2 - Watch this video presentation about how auto liability insurance works/;
   if(!sheet.test(out) || !task2.test(out)) throw new Error("Day 2's reference sheet or its Task 2 is no longer where the build looks for it");
   out = out.replace(sheet, '<a class="viewer-link" data-embed data-crop="1272"').replace(task2, m => '<div class="ftdd-pgbreak"></div>\n' + m);
+  // the two videos play on the slide without the guide's lines that sent the trainee to them (the slide's pill says
+  // Watch & Do: js/ft-day-decks.js kindOf); the monitoring sheet's update is the one step left
+  const intro = [/<p>Task 1 - Please go to this link to watch the video presentation on Common Terms Used<\/p>\n/,
+    /<p>Task 2 - Watch this video presentation about how auto liability insurance works[^<]*<\/p>\n/];
+  intro.forEach(re => { if(!re.test(out)) throw new Error("Day 2's Common Terms task lines are no longer where the build looks for them"); out = out.replace(re, ""); });
+  out = out.replace(/<p>Task 3 - (Update items #5 -7 in your monitoring sheet)/, "<p>Task 1 - $1");
   return out;
 },
 // Day 2's Homework: the handouts' 2026 version only (the old version's folder goes), shown in the slide; the
