@@ -22,7 +22,6 @@
 const root = window;
 // the slides that get a screen, by "<day>:<slide id>" (js/ft-day-decks-data.js); act: the activity in 🧑‍🏫 Trainer Inputs
 const ACTS = {
-  "2:s1": {kind: "buffer"},
   // a set of tasks that ends on Done, as a buffer does (the trainer's tracker and release the same), on the slide's own content
   "2:s2": {kind: "buffer", task: true},
   // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever

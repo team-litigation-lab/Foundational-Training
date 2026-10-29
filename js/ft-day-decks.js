@@ -54,7 +54,9 @@ function refTermsHtml(k){
   // (a row of a lone letter, the sheet's A, B, C …, heads its terms)
   const rows = tab.rows.map(r => /^[A-Z]$/.test(refText(r[0])) && !r.slice(1).some(c => refText(c) || typeof c !== "string") ? `<tr class="ftdd-terms-sec"><td colspan="${R.head.length}">${e(refText(r[0]))}</td></tr>`
     : `<tr>${r.map((c, i) => `<td${i ? "" : ' class="ftdd-terms-t"'}>${refCell(c)}</td>`).join("")}</tr>`).join("");
-  return `<div class="ftdd-terms-tabs">${R.tabs.map((t, i) => `<button type="button" class="${t === tab ? "on" : ""}" onclick="FTDayDecks.refTab(${i})">${e(t.name)}</button>`).join("")}</div>
+  // (⛶ Full screen: the table, tabs and all, fills the screen; again, or Esc, brings it back: FTDayDecks.refFull)
+  return `<div class="ftdd-terms-tabs">${R.tabs.map((t, i) => `<button type="button" class="${t === tab ? "on" : ""}" onclick="FTDayDecks.refTab(${i})">${e(t.name)}</button>`).join("")}
+    <button type="button" class="ftdd-terms-fs" onclick="FTDayDecks.refFull(this)" title="Show the sheet full screen">⛶ Full screen</button></div>
     <div class="ftdd-terms-scroll"><table class="ftdd-terms"><colgroup><col style="width:10%"><col style="width:27%"><col style="width:27%"><col style="width:12%"><col style="width:12%"><col style="width:12%"></colgroup>
     <thead><tr>${R.head.map(h => `<th>${e(h)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
@@ -524,7 +526,7 @@ function handoutsSlide(h){
     : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
-    <div class="ftdd-ho-head"><p class="ftdd-ho-k">Breakout Session · Group Activity</p><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
+    <div class="ftdd-ho-head"><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol>
@@ -1100,7 +1102,6 @@ const LESSON_CARDS = {
     takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
-      {t: "Buffer Time", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 2, s: "s1"},
       // (the day's first set of tasks, straight after the buffer: before the classroom discussion, as the guide runs it)
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · update items #5–7 on your Monitoring Sheet", k: "watch", d: 2, s: "s2", lead: true},
       {t: "Common Terms Used & Auto Liability Insurance Assessments", sub: "Finish both and upload them to your Activities subfolder", k: "assessment", d: 2, s: "s2b", lead: true},
@@ -1679,6 +1680,12 @@ function toolsSlide(){
 root.FTDayDecks = {open, go, next: nextKC,
   // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
   refit(){ if(state.view === "daydeck") fitSheets(); }, dayLesson: () => { const l = lessonOfDay(DD.day); return l != null ? l : ((dayInfo(DD.day).lessons || [])[0] || 1); }, pick: pickDay, slide: openSlide, stop: openStop,
+  refFull(btn){
+    const em = btn && btn.closest(".ftdd-embed-terms"); if(!em) return;
+    const doc = document, on = doc.fullscreenElement || doc.webkitFullscreenElement;
+    if(on){ (doc.exitFullscreen || doc.webkitExitFullscreen || (() => {})).call(doc); return; }
+    const req = em.requestFullscreen || em.webkitRequestFullscreen; if(req) req.call(em);
+  },
   refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   auto(){ if(DD.auto) stopAuto(); else { startAuto(); render(); } },
@@ -2091,7 +2098,6 @@ main.main-ftdd .ftdd-sheet p.ftdd-name{font-size:18px;color:#1E2340;background:#
 main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
 main.main-ftdd .ftdd-handouts{display:flex;flex-direction:column;gap:14px;padding:6px 10px;width:100%;max-width:1180px;margin:0 auto;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
-main.main-ftdd .ftdd-handouts .ftdd-ho-k{margin:0;font:800 14px/1.2 'Inter',sans-serif !important;letter-spacing:.12em !important;text-transform:uppercase;color:#C2410C !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-when{display:inline-block;margin:0;padding:6px 16px;border-radius:999px;background:#E8590C;color:#fff !important;font:800 17px/1.2 'Inter',sans-serif !important;}
 main.main-ftdd .ftdd-handouts:not(.ftdd-ho-locked) .ftdd-ho-when{background:#2E7D4F;}   /* unlocked: green */
@@ -2318,6 +2324,10 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 @media(max-width:900px){ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd-pi-pair):not(.ftdd-pi-n3){grid-template-columns:minmax(0,1fr);} }
 @media(max-width:900px){ .ft-body .ftdd-pi-row{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdd-embed.ftdd-embed-folder{height:260px;}
+/* (Day 2's homework handouts: Drive's folder view drawn twice its size, so its file previews read large: the frame is
+   half the box and scaled up to fill it) */
+.ft-body .ftdd-embed.ftdd-embed-folder-big{height:max(360px, calc(var(--ftdd-room, 70vh) - 170px));}
+.ft-body .ftdd-embed.ftdd-embed-folder-big iframe{width:50%;height:50%;transform:scale(2);transform-origin:0 0;}
 /* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
 /* 📅 Day 5's sample event editor, drawn (Google Calendar's dark editor): the time zone boxed in red, as the guide's picture */
 .ft-body .ftdd-gcal{background:#1F1F1F;border-radius:10px;padding:12px 14px;margin:8px 0;color:#E3E3E3;font:500 14px/1.3 'Inter',system-ui,sans-serif;}
@@ -2384,6 +2394,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdd-terms-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid #D9DCE8;background:#F4F5FA;}
 .ft-body .ftdd-terms-tabs button{border:1px solid #C9CDE0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:600 13px/1.3 'Inter',sans-serif;cursor:pointer;}
 .ft-body .ftdd-terms-tabs button.on{background:#1E2340;border-color:#1E2340;color:#fff;}
+.ft-body .ftdd-terms-tabs .ftdd-terms-fs{margin-left:auto;background:#1E2340;border-color:#1E2340;color:#fff;}
+.ft-body .ftdd-embed.ftdd-embed-terms:fullscreen{height:100vh;border:0;border-radius:0;}
+.ft-body .ftdd-embed.ftdd-embed-terms:-webkit-full-screen{height:100vh;border:0;border-radius:0;}
 .ft-body .ftdd-terms-scroll{flex:1;min-height:0;overflow:auto;}
 .ft-body table.ftdd-terms{width:100%;table-layout:fixed;border-collapse:collapse;margin:0;font:14px/1.45 'Inter',sans-serif;color:#1E2340;}
 .ft-body table.ftdd-terms th{position:sticky;top:0;z-index:1;background:#93C47D;color:#111;font:800 14px/1.25 'Inter',sans-serif;text-align:center;padding:8px 6px;border:1px solid #7FAF6A;}
