@@ -127,12 +127,11 @@ function calActivity(){
   if(steps !== 9 || items !== 10) throw new Error(`Day 5's activity has ${steps} instructions and ${items} items, not 9 and 10`);
   return out;
 }
-/* 🤖 TODO (Calendar Simulator): a simulator for this activity is being built separately ("Focus in Automation // Calendar
-   Simulator - create a simulator for this activity"). When it is ready, set CALSIM_ACTIVITY to its button, {label, href}
-   (it opens in a new tab), and rebuild; or leave it null and fill the hook from js ([data-calsim-activity]). The hook sits
-   under the Activity Items on Day 5's activity slide; empty, it takes no room (js/ft-day-decks.js, .ftdd-calsim:empty). */
-const CALSIM_ACTIVITY = null;
-const calsimHook = () => `<div class="ftdd-calsim" data-calsim-activity="5:s3">${CALSIM_ACTIVITY ? `<a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}" target="_blank" rel="noopener noreferrer">${hx(CALSIM_ACTIVITY.label)}</a>` : ""}</div>\n`;
+/* 📅 The Calendar Simulator for this activity (the Calendaring Simulators' Attorney Calendar Management Activity track,
+   graded through the Calendar Activity Check): its button sits under the Activity Items on Day 5's activity slide. A
+   platform address (#/…) opens in the same tab; an outside one in a new tab. */
+const CALSIM_ACTIVITY = {label: "📅 Do this activity on the Calendar Simulator", href: "#/calsim/attorney-activity"};
+const calsimHook = () => `<div class="ftdd-calsim" data-calsim-activity="5:s3">${CALSIM_ACTIVITY ? `<a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}"${/^#/.test(CALSIM_ACTIVITY.href) ? "" : ' target="_blank" rel="noopener noreferrer"'}>${hx(CALSIM_ACTIVITY.label)}</a>` : ""}</div>\n`;
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check

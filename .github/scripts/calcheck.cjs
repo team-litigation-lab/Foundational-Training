@@ -1,7 +1,7 @@
 // 📅 Calendar Activity Check (js/ft-calcheck.js): Day 5's Attorney Calendar Management Activity, field by field. The
 //   activity's answer key entered in full scores 100%; a wrong time zone, a wrong time, a missing guest and a wrong
 //   reminder each fail exactly that field of that event; the accepted alternatives pass (Phoenix for MST, Panama for EST,
-//   1 day = 24 hours, 1 hour = 60 minutes, an all-day or overnight stay, titles in any case or dashes); events with no
+//   the same moment typed in Pacific, 1 day = 24 hours, 1 hour = 60 minutes, an all-day or overnight stay, titles in any case or dashes); events with no
 //   guests or reminder aren't marked down; the folder lookup matches screenshots by number and name; a trainee's draft
 //   saves as they type and comes back after a reload, is sent to the trainer, shows on My Performance and the trainer's
 //   📅 Calendar Activity tab; the Day 5 slide and the Practice Lab point to it; the page fits a phone; the worker keeps
@@ -91,6 +91,15 @@ async function workerChecks() {
     expect('Phoenix for MST', change('2', { tz: 'America/Phoenix' }), []);
     expect('Panama for EST', change('3', { tz: 'America/Panama' }), []);
     expect('Regina for CST', change('7', { tz: 'America/Regina' }), []);
+    // the attorney's calendar is in Pacific: the same moment typed in Pacific counts; the activity's clock time in Pacific doesn't
+    expect('the team meeting in Pacific at the same moment', change('2', { tz: 'America/Los_Angeles', st: '14:00', et: '15:00' }), []);
+    expect('the gym in Pacific at the same moment', change('4', { tz: 'America/Los_Angeles', st: '03:30', et: '04:30' }), []);
+    expect('the team meeting at its MST clock time in Pacific', change('2', { tz: 'America/Los_Angeles' }), ['2:Time zone']);
+    // EST in Panama (accepted) is 9:00 AM Pacific; in New York, 8:00 AM: the same moment as either counts. MST in Phoenix falls on
+    // the activity's 3:00 PM clock time, which stays the wrong zone (above)
+    expect('the deposition in Pacific at Panama\'s moment', change('3', { tz: 'America/Los_Angeles', st: '09:00', et: '11:00' }), []);
+    expect('the deposition in Pacific at New York\'s moment', change('3', { tz: 'America/Los_Angeles', st: '08:00', et: '10:00' }), []);
+    expect('the deposition in Pacific half an hour late', change('3', { tz: 'America/Los_Angeles', st: '08:30', et: '10:30' }), ['3:Start time', '3:End time']);
     expect('1 day as 24 hours', change('3', { ramt: '24', runit: 'hours' }), []);
     expect('1 hour as 60 minutes', change('10', { ramt: '60', runit: 'minutes' }), []);
     expect('titles in another case, with dashes and the client', change('1', { title: 'CLIENT-MEETING – Alyssa Lynn Arehart' }), []);
