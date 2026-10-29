@@ -553,6 +553,7 @@ function slideActions(s, info, body, i){
   }
   if(has(/attorney calendar management/i) && root.FTCalWeek) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTCalWeek.open()">📅 Standard Training - Calendaring Activity</button>`);
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
+  if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   // (a video that plays in the slide counts too: ftdd-inline)
   const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
@@ -1015,11 +1016,11 @@ const LESSON_CARDS = {
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for any pending tasks from the last session", k: "buffer", d: 5, s: "s1"},
-      {t: "Attorney Calendar Management Activity", sub: "Set the time zone and screenshot each appointment before saving", k: "interactive", d: 5, s: "s3"},
+      {t: "Attorney Calendar Management Activity", sub: "Set the time zone and screenshot each appointment before saving, then 📅 Calendar Activity Check each event", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
-    tools: [["Tools:", "Google Calendar Simulator, Booking Rule Check"], "The time zone visible in every screenshot",
+    tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "The time zone visible in every screenshot",
       "Collect from every caller: name, callback number, DOB and DOL"],
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",

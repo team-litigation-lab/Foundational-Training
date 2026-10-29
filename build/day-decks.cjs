@@ -177,12 +177,16 @@ const TRIM = {1: {reading: html => {
     "8.4 Event Proper Arrival Block time", "8.5 Overnight Stay", "8.6 Return Travel to Seattle: Check out of the hotel and travel to the airport",
     "8.7 Return Travel to Seattle: Flight from San Francisco (SFO) to Seattle (SEA)", "9. Document Review Session", "10. Family Dinner", "11. Entire Calendar"];
   const seq = '<ol class="ftdd-seq">' + SEQ.map((t, i) => `<li><span class="ftdd-seq-n">${i + 1}</span><span>${t}</span></li>`).join("") + "</ol>\n";
+  // 📅 the Calendar Activity Check (js/ft-calcheck.js): before uploading, the trainee enters what each event holds and
+  // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
+  const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
+    '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you upload →</small></span></button></div>\n';
   // the activity's instruction in its card, then the activity and the samples themselves, full size under it; the cards
   // stand one under the other (not a grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n' +
     card("📝", "1. The activity", lead) + "\n" + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
-    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq)) + "\n" + cut("<p><b><i>*** Free Communication");
+    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq + check)) + "\n" + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the discussion deck (PI Workflow and Reception Training) in the slide, the
 // Process Questions' naming convention, and the sample recordings and SOP as links (a new tab, not the viewer); the
@@ -288,6 +292,20 @@ s3: html => {
     '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
     '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
+  // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
+  const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
+  const mock = "<p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n" +
+    lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
+    lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
+    lnk("📅 The Calendaring Tool: the Google Calendar Simulator", sim + "calsim.html?program=FT&track=standard") +
+    "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
+    "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
+    "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules on the next slide before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
+    "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Simulator), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
+    "<p>Step 5 - Run the Calendaring Tool’s automated review and fix what it flags.</p>\n" +
+    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics below.</p>\n";
+  out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
+  if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
   return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
 },
 s2: html => {
