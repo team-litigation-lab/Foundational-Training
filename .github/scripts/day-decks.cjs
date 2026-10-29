@@ -60,8 +60,9 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
 // slide that only says the lesson deck opens from ▶ Start Training
 {
   const sl = (n, id) => ((D[n] || { slides: [] }).slides.find(s => s.id === id) || {}).html || '';
-  const prep4 = sl(4, 's2b').slice(sl(4, 's2b').indexOf('<p>📞 Practice a caller')).trim(), run4 = sl(4, 's2c').trim(), buf5 = sl(5, 's1');
-  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/Front Desk Drill/.test(buf5) || !/Link coming: AI Mock Calls Listening/.test(buf5))
+  const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), buf5 = sl(5, 's1');
+  const prep4 = s2b.slice(s2b.indexOf('<p>Step 1 - '), at).trim(), run4 = at < 0 ? '' : s2b.slice(at).trim();
+  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/class="ftdd-mock-btns"/.test(buf5) || /Link coming: AI Mock Calls Listening/.test(buf5) || sl(4, 's2c'))
     fail(`Day 5's buffer doesn't carry Day 4's mock call preparation and metrics: ${buf5.length} chars`);
   const act5 = D[5] && D[5].slides.find(s => s.id === 's3'), txt = (act5 || {}).html || '';
   const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = (txt.match(/class="ftdd-cal-item"/g) || []).length;

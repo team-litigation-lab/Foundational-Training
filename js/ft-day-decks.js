@@ -1220,8 +1220,7 @@ const LESSON_CARDS = {
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
       {t: "Training Video Viewing", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet and hit 📤 Submit", k: "watch", d: 4, s: "s2"},
-      {t: "Mock Call Preparation", sub: "Direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them", k: "interactive", d: 4, s: "s2b"},
-      {t: "Instructions for Mock Calls & Metrics", sub: "The one-on-one with your trainer · fourteen criteria, 0–5 each, weighted average", k: "interactive", d: 4, s: "s2c"},
+      {t: "Mock Call Preparation", sub: "The Call Simulator, the Ring Channel and the CMS · how the one-on-one runs and its fourteen metrics", k: "interactive", d: 4, s: "s2b"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
@@ -2619,6 +2618,9 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
+.ft-body .ftdd-mock-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:16px 0 12px;}
+.ft-body a.ftdd-mock-btn{display:inline-flex;align-items:center;padding:10px 18px;border-radius:8px;background:#1E2340;color:#fff !important;font:700 15px/1.2 'Inter',sans-serif;text-decoration:none !important;border-bottom:3px solid #E8590C;}
+.ft-body a.ftdd-mock-btn:hover{background:#E8590C;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
 .ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}
