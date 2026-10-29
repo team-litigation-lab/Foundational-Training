@@ -320,7 +320,7 @@ s2: html => {
 // Day 4 (Receptionist Training, Part 2): Julio's video in the slide (the Monitoring Sheet update is its own slide, ROWS[4].s2); the mock call
 // preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
 // one-on-one mock calls run and are scored (the metrics); then the mock calls themselves (s3, with Done: js/ft-buffer.js)
-// (ROWS[4].s2 cuts it into its card rows' slides: s2, s2b, and the Monitoring Sheet's s2m)
+// (ROWS[4].s2 cuts it into its card rows' slides: s2 and the Monitoring Sheet's s2m, then s2b with its steps s2b-2)
 4: {s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
@@ -579,13 +579,18 @@ const PI_WARMUP = `<p><b>🎧 Warm-up before your mock call: the PI practice cal
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
    Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2) and Day 5's Buffer Time for
    Reception Mock Calls (TRIM[5].s1). MOCK_PREP: direct links to the Call Simulator's Reception line, the Ring Channel,
-   the CMS and its Front Desk Drill, the PI practice calls' warm-up first, then the step-by-step use of them; MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
+   the CMS (MOCK_LINKS); then the PI practice calls' warm-up and the step-by-step use of them (MOCK_STEPS); MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
    MOCK_ONE: the one-on-one mock call's own line (where the metrics are, on that day's slides). */
 const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
-// (the tools: one row of buttons under the steps, each opening in a new tab)
-const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
-const MOCK_PREP =
-  // (the warm-up first, then the steps and the tools)
+const tabLink = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
+// (MOCK_LINKS and MOCK_STEPS: Day 4 puts each on a slide of its own, the links in big type: ROWS[4].s2)
+const MOCK_INSTR = "<p><b>Instructions on Your Mock Call</b></p>\n";
+const MOCK_LINKS = '<div class="ftdd-biglinks">\n' +
+  tabLink("📞 Call Simulator in CMS: the Reception line (an AI caller)", CALL_SIM + "&line=Reception+Mock+Calls") +
+  tabLink("☎ The Ring Channel: the training phone your mock call rings on", CALL_SIM) +
+  tabLink("🗂 CMS Case Files: the Case Management System", CMS) + "</div>\n";
+const MOCK_STEPS = MOCK_INSTR +
+  // (the warm-up first, then the steps)
   PI_WARMUP + "\n" +
   "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
@@ -594,7 +599,8 @@ const MOCK_PREP =
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
-  `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n`;
+  "";
+const MOCK_PREP = MOCK_LINKS + MOCK_STEPS;
 const MOCK_RUN =
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
   "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
@@ -720,8 +726,10 @@ const ROWS = {
     s2: [{id: "s2", parts: [[null, "<p>Get ready for this afternoon’s one-on-one mock call"]]},
       // the Monitoring Sheet's items #10–11 on a slide of their own: its panel says it, with 📤 Submit (js/ft-buffer.js ACTS["4:s2m"])
       {id: "s2m", h: "Update Your Monitoring Sheet", parts: []},
-      // (the preparation, how the one-on-one mock calls run and the metrics, on one slide)
-      {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [["<p>Get ready for this afternoon’s one-on-one mock call", null]]}]
+      // (the tools' links on a slide of their own, then the steps with how the one-on-one mock calls run and the metrics,
+      // under the same card row: "s2b-2")
+      {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [["<p>Get ready for this afternoon’s one-on-one mock call", MOCK_INSTR]]},
+      {id: "s2b-2", h: "Mock Call Preparation: Instructions on Your Mock Call", parts: [[MOCK_INSTR, null]]}]
   },
   5: {
     // the activity's own words, read like Day 1's reading; then its files, the time zone, the screenshots and ✅ Done

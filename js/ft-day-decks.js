@@ -2613,13 +2613,15 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sop-shots a:hover{border-color:#E8590C;box-shadow:0 4px 14px rgba(30,35,64,.18);}
 .ftdd-sop-shots img{width:100%;height:100%;object-fit:contain;object-position:top;}
 .ftdd-sop-shots figcaption{display:inline-block;font:800 13px/1.2 'Poppins','Inter',sans-serif;color:#fff;background:#1E2340;border-radius:6px;padding:4px 12px;margin-top:8px;}
+/* Day 4's mock-call links, a slide of their own (build/day-decks.cjs MOCK_LINKS): big, one per line */
+.ftdd-biglinks .ftdd-tiles{gap:18px;margin:18px 0;}
+.ftdd-biglinks .ftdd-tile-ic{font-size:26px;}
+.ftdd-biglinks .ftdd-tile-t b{font-size:24px;line-height:1.35;}
+.ftdd-biglinks .ftdd-tile-t small{font-size:16px;margin-left:12px;}
 .ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
 main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
-.ft-body .ftdd-mock-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:16px 0 12px;}
-.ft-body a.ftdd-mock-btn{display:inline-flex;align-items:center;padding:10px 18px;border-radius:8px;background:#1E2340;color:#fff !important;font:700 15px/1.2 'Inter',sans-serif;text-decoration:none !important;border-bottom:3px solid #E8590C;}
-.ft-body a.ftdd-mock-btn:hover{background:#E8590C;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
 .ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}
