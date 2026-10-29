@@ -31,7 +31,8 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
-  2: {s2: "Common Terms Used & Auto Liability Insurance"},
+  // (Day 2's Softphones and PPTs are a classroom activity, not homework: js/ft-day-decks.js LESSON_CARDS[2])
+  2: {s2: "Common Terms Used & Auto Liability Insurance", s4: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"},
   // (Day 3's first slide keeps "and Call Listening" in its name: it brings the 🎧 Call Listening slide, js/ft-day-decks.js slidesOf)
   3: {s1: "Checking of Assignments & the Discussion Deck: PI Workflow, Reception Training and Call Listening", s2: "Homework: CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing and Mock Call Preparation", s3: "PM: Reception Mock Calls (One-on-One)"},
@@ -440,7 +441,13 @@ s4: html => {
   if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
   const mon = /<p>Task 3 - Update items #8-9 in your monitoring sheet\.<\/p>/;
   if(!mon.test(out)) throw new Error("Day 2's Homework monitoring sheet line is no longer where the build looks for it");
-  return out.replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
+  // the Softphones task in three short lines around its video (Task, Action, Note), and no "outside training hours": it is a
+  // classroom activity
+  const pin = /<p>📌To be accomplished outside training hours\. 📌<\/p>\n/, soft = /<p><b>Topic: Softphones<\/b><\/p>\n<p>Task 1 – Please follow this link to view the instructional video on Softphones\.[^<]*<\/p>\n(<p><a class="viewer-link"[^]*?<\/p>\n)/;
+  if(!pin.test(out) || !soft.test(out)) throw new Error("Day 2's Softphones task is no longer where the build looks for it");
+  return out.replace(pin, "").replace(soft, (m, video) => "<p><b>Task:</b> Watch ONE softphone type in this video:</p>\n" + video +
+      "<p><b>Action:</b> Log your takeaways on your monitoring sheet.</p>\n<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
+    .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
 // 🎧 The PI Reception Activity (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
 // Harbor & Pine Injury Law, each with a challenge (background noise, a line that breaks up, a Spanish-speaking caller, a

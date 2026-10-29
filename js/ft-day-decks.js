@@ -1118,7 +1118,8 @@ const LESSON_CARDS = {
       // its 📚 Dashboard lesson card's 🎬 Video, not on the deck. Then ✍️ Process Questions: the Classroom Activity slide
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
       {t: "Handouts / Video", time: "PM", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
-      {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "homework", d: 2, s: "s4"}],
+      // (a classroom activity, not homework: before the day's ✍️ Process Questions)
+      {t: "Softphones & the PPTs", sub: "Documents & Spreadsheets, Keyboard Shortcuts, Shadowing Etiquette", k: "classroom", d: 2, s: "s4"}],
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
       "Upload both assessments to your Assessments/Activities subfolder", "Process Questions: five of the ten where time is short"],
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},

@@ -124,13 +124,15 @@ function graded(a){
   if(!a.submit) return "";
   const r = ((M.review || {}).items || {})[subKey(a)]; if(!r) return "";
   const g = r.result, li = xs => (xs || []).length ? `<ul>${xs.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : "";
-  return `<div class="ftbf-card ftbf-graded"><p class="ftbf-card-h">📒 Items #${e((a.submit.items || []).join(", #"))}: checked ${e(r.when || tm(r.at))}${g ? ` · ${Number(g.score) || 0}/100` : ""}</p>
+  // (no score here: it is on 🏅 My Performance, js/ft-drive.js ftDriveItems)
+  return `<div class="ftbf-card ftbf-graded"><p class="ftbf-card-h">📒 Items #${e((a.submit.items || []).join(", #"))}: checked ${e(r.when || tm(r.at))}</p>
     <p><b>⏱ Timely Completion:</b> ${r.onTime ? "On time (before 5:00 PM ET)." : "Late: after 5:00 PM ET."}</p>
     ${g ? `${(g.items || []).length ? `<p><b>📋 The items:</b> ${g.items.map(x => `#${Number(x.n) || "?"} ${e(x.title || "")} ${x.found ? "✓" : "✗ missing"}`).join(" · ")}</p>` : ""}
       ${g.context ? `<p><b>📈 Context of your progress:</b> ${e(g.context)}</p>` : ""}
       <p><b>🚩 Red flags:</b> ${(g.redFlags || []).length ? "" : "None."}</p>${li(g.redFlags)}
       ${(g.improve || []).length ? `<p><b>🔧 Things to improve:</b></p>${li(g.improve)}` : ""}`
-    : `<p class="ftbf-muted">Your update is in: your trainer reviews it.</p>`}</div>`;
+    : `<p class="ftbf-muted">Your update is in: your trainer reviews it.</p>`}
+    ${g ? `<p class="ftbf-muted">Your score is on 🏅 My Performance.</p>` : ""}</div>`;
 }
 async function loadReview(){
   if(!state.traineeId) return;
