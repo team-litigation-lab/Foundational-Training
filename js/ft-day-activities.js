@@ -79,7 +79,8 @@ const DAYS = [
     {t:"Call Intake & Data Extraction: 6 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
   ]},
   {day:4, role:"Reception Training", lessons:[4], items:[
-    {t:"Training Video Viewing and Mock Call Preparation", kind:"Activity", at:"room"},
+    {t:"Training Video Viewing", kind:"Activity", at:"room"},
+    {t:"Mock Call Preparation", kind:"Activity", at:"room"},
     {t:"Reception Mock Calls", kind:"Session", at:"session", id:"reception"},
     {t:"Reception Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"reception-live"},
     {t:"Reception Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}
