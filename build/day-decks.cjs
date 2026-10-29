@@ -337,7 +337,8 @@ s2: html => {
 s3: html => {
   const out = html.replace(/<p><b>Reception Mock Calls Metrics<\/b><\/p>\n?<div class="shots"><figure><a href="\/ft\/day4\/img\/image7\.png"[\s\S]*?<\/div>\n?/, "");
   if(out === html) throw new Error("Day 4's mock call metrics are no longer where the build looks for them");
-  return MOCK_ONE("the slide before") + out;
+  // (its one line on the one-on-one goes: a trainee's screen is the ⏳ Buffer Time and Done, js/ft-buffer.js "4:s3" wait)
+  return out;
 }},
 // Day 6 (Calendaring, Part 2): s2, the Mock Call Scenarios, is the guide's wording as text and lists (it came through as a
 // heading per line), with what the trainee should do; the scenarios themselves are the trainer's (6:s2-2). s1: the three training videos play in the slide; the Loom references stay links; the guide's

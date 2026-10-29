@@ -42,7 +42,9 @@ const ACTS = {
   "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📸 Upload your 19 screenshots", lead: "Once done, hit Submit.", label: "📤 Submit"},
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
-  "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon"},
+  // (wait: while the mock calls run, the trainee's screen is only ⏳ Buffer Time and Done, as a buffer's is; after Done, the
+  // mock call's Debrief Prep as any other's)
+  "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", wait: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
   "6:s1b": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1"},
@@ -98,6 +100,10 @@ function traineePanel(h){
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
     <p class="ftbf-status"><span class="ftbf-dot"></span>${a.kind === "buffer" ? "Waiting for your trainer to unlock the next activity…" : "Waiting for the group debrief to start…"}</p></div>`;
+  // (a mock call's wait: its Done asks first, as the mock call's own does)
+  if(a.wait) return `<div class="ftbf"><p class="ftbf-h">⏳ Buffer Time</p>
+    <p class="ftbf-lead">Use this buffer to finish all your pending tasks. Hit Done when you are.</p>
+    <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
@@ -287,7 +293,7 @@ function paint(){
   box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
-  if(h.a.kind === "buffer" && ((!h.a.task && !h.a.show) || (h.a.gate && !mine(h.k)))){ sheet.classList.add("ftbf-only");
+  if((h.a.kind === "buffer" && ((!h.a.task && !h.a.show) || (h.a.gate && !mine(h.k)))) || (h.a.wait && !mine(h.k))){ sheet.classList.add("ftbf-only");
     // (one page: the hidden content's page breaks go)
     if(h.a.gate) sheet.querySelectorAll(":scope > .ftdd-pgbreak").forEach(x => x.remove()); }
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
