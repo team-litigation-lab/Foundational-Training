@@ -342,8 +342,8 @@ function visual(html){
     if(!rb) return;
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
-    box.innerHTML = `<div class="ftdd-score-h"><b>📋 How this ${/call/i.test(rb.title) ? "call" : "activity"} is scored</b><span>${rb.criteria.length} criteria · each 0–5 · the weighted average is your score</span></div>
-      <ol class="ftdd-score-l">${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>
+    // (no "📋 How this call is scored" title line over it: the list starts the box)
+    box.innerHTML = `<ol class="ftdd-score-l">${rb.criteria.map(c => `<li>${e(c.n)}</li>`).join("")}</ol>
       <p class="ftdd-score-f">Your trainer fills this in with you after the ${/call/i.test(rb.title) ? "call" : "activity"}${rb.feedback ? ", with a note on each line" : ""}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`;
     if(shots){ shots.classList.add("ftdd-score-shot"); box.appendChild(shots); }
     p.replaceWith(box);
@@ -1210,7 +1210,7 @@ const LESSON_CARDS = {
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening on the Sample Recordings", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
-      {t: "Carlos & Oscar’s Reception Recordings", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
+      {t: "Listening Activity", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
       // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
       {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "watch", d: 3, s: "s2"}],
@@ -1219,9 +1219,8 @@ const LESSON_CARDS = {
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
-      {t: "Training Video Viewing", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet", k: "watch", d: 4, s: "s2"},
-      {t: "Mock Call Preparation", sub: "Direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them", k: "interactive", d: 4, s: "s2b"},
-      {t: "Instructions for Mock Calls & Metrics", sub: "The one-on-one with your trainer · fourteen criteria, 0–5 each, weighted average", k: "interactive", d: 4, s: "s2c"},
+      {t: "Training Video Viewing", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet and hit 📤 Submit", k: "watch", d: 4, s: "s2"},
+      {t: "Mock Call Preparation", sub: "The Call Simulator, the Ring Channel and the CMS · how the one-on-one runs and its fourteen metrics", k: "interactive", d: 4, s: "s2b"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
@@ -2118,7 +2117,7 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-t .ftlc-pill{display:inline-block;margin-top:6px;}
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
-.ftdd-recs-note{margin:0 0 12px;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
+.ftdd-recs-note{margin:14px 0 0;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
 .ftdd-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:0 0 14px;}
 .ftdd-rec{border:1px solid #D9DEEA;border-radius:12px;padding:10px 12px;background:#fff;break-inside:avoid;}
 .ftdd-rec-h{margin:0 0 6px;font-weight:700;color:#262B45;} .ftdd-rec-play{height:220px;border-radius:8px;overflow:hidden;background:#F4F6FB;}
@@ -2194,8 +2193,6 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
 .ftdd-score{margin:6px 0 12px;}
-.ftdd-score-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin:0 0 8px;padding-bottom:6px;border-bottom:2px solid #F0E3D2;}
-.ftdd-score-h b{font-size:15.5px;color:#262B45;} .ftdd-score-h span{font-size:12.5px;color:#B5651F;font-weight:700;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
 /* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
 .ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}
@@ -2588,11 +2585,12 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdt-yes i,.ft-body .ftdt-no i{font-style:normal;background:#fff;border-radius:7px;padding:4px 7px;font-size:13px;}
 .ft-body .ftdt-tag{margin:6px 0 0;text-align:right;font:700 12px/1.2 'Inter',sans-serif;color:#5B6178;}
 /* 🎧 the recordings on a Call Listening slide, a card each (LISTEN_CARDS) */
-main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#1E2340 !important;font-size:14px;text-decoration:none;}
+main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;color:#C2410C !important;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;background:#1E2340;border-color:#1E2340;font-size:14px;font-weight:700;text-decoration:none;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn:hover{background:#E8590C;border-color:#E8590C;}
 main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:12px;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-h b{font-size:16px;}
 .ft-body .ftln-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
-.ft-body .ftln-card{border:1px solid #C9CDE0;border-radius:12px;padding:10px 12px;background:#F8F9FC;display:flex;flex-direction:column;gap:6px;}
+.ft-body .ftln-card{border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;padding:10px 12px;background:#fff;box-shadow:0 2px 6px rgba(30,35,64,.10);display:flex;flex-direction:column;gap:6px;}
 .ft-body .ftln-card b{font-size:15px;color:#1E2340;} .ft-body .ftln-card audio{width:100%;}
 .ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#E8590C;}
 .ft-body .ftln-tag{color:#7A5A2E;text-transform:none;letter-spacing:0;} .ft-body .ftln-aud{height:60px;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
@@ -2609,20 +2607,21 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
 /* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
    viewer below; then one big link to the document and its ⬇ Download */
-.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px;margin:10px 0 12px;}
+.ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),300px));justify-content:center;gap:18px;margin:10px auto 14px;}
 .ftdd-sop-shots figure{margin:0;text-align:center;}
-.ftdd-sop-shots a{display:flex;align-items:flex-start;justify-content:center;height:300px;padding:6px;background:#fff;border:1.5px solid #9AA0AB;border-radius:8px;cursor:zoom-in;transition:box-shadow .15s,border-color .15s;}
-.ftdd-sop-shots a:hover{border-color:#E8762B;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+.ftdd-sop-shots a{display:flex;align-items:flex-start;justify-content:center;height:420px;padding:8px;background:#fff;border:2px solid #343C66;border-radius:8px;box-shadow:0 2px 8px rgba(30,35,64,.14);cursor:zoom-in;transition:box-shadow .15s,border-color .15s;}
+.ftdd-sop-shots a:hover{border-color:#E8590C;box-shadow:0 4px 14px rgba(30,35,64,.18);}
 .ftdd-sop-shots img{width:100%;height:100%;object-fit:contain;object-position:top;}
-.ftdd-sop-shots figcaption{font-size:12.5px;font-weight:700;color:#5A6072;margin-top:4px;}
+.ftdd-sop-shots figcaption{display:inline-block;font:800 13px/1.2 'Poppins','Inter',sans-serif;color:#fff;background:#1E2340;border-radius:6px;padding:4px 12px;margin-top:8px;}
 /* Day 4's mock-call links, a slide of their own (build/day-decks.cjs MOCK_LINKS): big, one per line */
 .ftdd-biglinks .ftdd-tiles{gap:18px;margin:18px 0;}
 .ftdd-biglinks .ftdd-tile-ic{font-size:26px;}
 .ftdd-biglinks .ftdd-tile-t b{font-size:24px;line-height:1.35;}
 .ftdd-biglinks .ftdd-tile-t small{font-size:16px;margin-left:12px;}
-.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;gap:12px 18px;margin:6px 0 10px;}
+.ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
+main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
 .ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}

@@ -31,6 +31,9 @@ const ACTS = {
   // opens: a slide that stays shut for a trainee until this Done is in, the Softphones and PPTs)
   "2:s2b": {kind: "buffer", task: true, gate: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s4"},
+  // Day 4's Monitoring Sheet update after Julio's video: Day 2's panel and 📤 Submit, on a slide of its own (items #10–11)
+  "4:s2m": {kind: "buffer", task: true, gate: true, title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+    submit: {items: [10, 11], activity: "Reception Training with Julio"}},
   // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever
   // still has their one-on-one to do; a plain buffer shows the trainee only its panel)
   "5:s1": {kind: "buffer", show: true},
