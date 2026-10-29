@@ -226,7 +226,8 @@ function visual(html){
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       // (its name: the one the build gave it, else the tile's)
       const nm = (as[0].getAttribute("data-title") || "").trim() || tile.querySelector("b").textContent;
-      box.querySelector("b").textContent = (vid ? "🎬 " : "📊 ") + nm;
+      const href = as[0].getAttribute("href") || "";
+      box.querySelector("b").textContent = (vid ? "🎬 " : /\/folders\//.test(href) ? "📁 " : /spreadsheets/.test(href) ? "📊 " : "📄 ") + nm;
       const f = box.querySelector("iframe"); f.setAttribute("src", src); f.setAttribute("title", nm);
       if(learn0) learn0.setAttribute("data-title", nm);
       const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
@@ -679,7 +680,7 @@ function sheetPages(sheet){
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
     // (and an embedded video or sheet stays with its name: ftdd-inline)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline")) units.push(...inner); else units.push(k);
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -2114,8 +2115,36 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 .ft-body .ftdd-gcal-tz{outline:3px solid #E5262B;outline-offset:2px;font-weight:700;}
 .ft-body .ftdd-gcal-link{color:#A8C7FA;font-weight:600;}
 main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B6178 !important;margin:4px 0 0 !important;}
+/* 📅 Day 6's sample event, drawn (Google Calendar's event editor): the client's name and the date, time and time zone boxed in red */
+.ft-body .ftdd-ev{background:#fff;border:1.5px solid #DADCE0;border-radius:12px;padding:14px 16px;margin:8px 0;font:500 14px/1.35 'Inter',system-ui,sans-serif;color:#1F1F1F;}
+.ft-body .ftdd-ev-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.ft-body .ftdd-ev-x{color:#444746;font-size:16px;}
+.ft-body .ftdd-ev-title{font:500 22px/1.25 'Inter',system-ui,sans-serif;border-bottom:1px solid #747775;padding-bottom:3px;}
+.ft-body .ftdd-ev-mark{outline:2.5px solid #D93025;outline-offset:2px;}
+.ft-body .ftdd-ev-note{color:#1A56DB;font:700 14px/1 'IBM Plex Mono',monospace;}
+.ft-body .ftdd-ev-save{margin-left:auto;background:#0B57D0;color:#fff;border-radius:999px;padding:6px 18px;font-weight:700;}
+.ft-body .ftdd-ev-when{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 8px;padding:7px;outline:2.5px solid #D93025;}
+.ft-body .ftdd-ev-f{display:inline-flex;align-items:center;gap:6px;background:#F0F4F9;border-radius:6px;padding:6px 10px;}
+.ft-body .ftdd-ev-f.wide{display:flex;margin:4px 0;}
+.ft-body .ftdd-ev-hl{background:#FFF200;padding:1px 4px;}
+.ft-body .ftdd-ev-link{color:#0B57D0;font-weight:600;}
+.ft-body .ftdd-ev-sub{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
+.ft-body .ftdd-ev-box{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid #444746;border-radius:3px;font-size:11px;color:#fff;margin-right:6px;}
+.ft-body .ftdd-ev-box.on{background:#0B57D0;border-color:#0B57D0;}
+.ft-body .ftdd-ev-body{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px;}
+.ft-body .ftdd-ev-tabs{display:flex;gap:18px;margin:0 0 8px;color:#444746;} .ft-body .ftdd-ev-tabs b{color:#0B57D0;border-bottom:3px solid #0B57D0;padding-bottom:4px;}
+.ft-body .ftdd-ev-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;} .ft-body .ftdd-ev-line small{color:#444746;}
+.ft-body .ftdd-ev-dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#33B679;}
+.ft-body .ftdd-ev-desc{background:#E9EEF6;border-radius:8px;padding:10px 12px;margin-top:8px;}
+.ft-body .ftdd-ev-desc ol{margin:0;padding-left:20px;} .ft-body .ftdd-ev-desc li{font-size:14px !important;margin:2px 0 !important;}
+.ft-body .ftdd-ev-side > div{margin:6px 0;display:flex;align-items:center;gap:6px;}
+.ft-body .ftdd-ev-guest small{display:block;color:#444746;font-size:12px;} .ft-body .ftdd-ev-guest b{font-weight:600;}
+.ft-body .ftdd-ev-av{width:24px;height:24px;border-radius:50%;background:#0B57D0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
+main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size:14px !important;font-weight:600 !important;}
+@media(max-width:900px){ .ft-body .ftdd-ev-body{grid-template-columns:minmax(0,1fr);} }
 /* 📤 the 19 screenshots, numbered in the order they are uploaded */
-.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the card's whole row, in two columns) */
+.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the whole row) */
+.ft-body .ftdd-sheet > .ftdd-card4, main.main-ftdd .ftdd-sheet > .ftdd-card4{margin:0 0 14px;}   /* (the list takes the card's whole row, in two columns) */
 .ft-body ol.ftdd-seq{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-rows:repeat(10,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px 14px;}
 @media(max-width:900px){ .ft-body ol.ftdd-seq{grid-auto-flow:row;grid-template-rows:none;} }
 .ft-body ol.ftdd-seq li{display:flex;align-items:center;gap:8px;margin:0 !important;padding:5px 10px;border-radius:6px;background:#F4F6FB;font:600 16px/1.3 'Inter',system-ui,sans-serif !important;color:#1E2340 !important;}

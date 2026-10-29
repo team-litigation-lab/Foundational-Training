@@ -154,7 +154,10 @@ const TRIM = {1: {reading: html => {
 // Day 5's Attorney Calendar Management Activity: four cards (the activity, the time zone, the whole calendar, the upload)
 5: {s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
-  const act = cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">');
+  // the activity itself and its samples folder show in the slide (data-embed, js/ft-day-decks.js visual), under the instruction
+  const act = [["1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP", "The Attorney Calendar Management Activity"], ["1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW", "Samples"]]
+    .reduce((h, [id, t]) => { const re = new RegExp(`<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*${id})`); if(!re.test(h)) throw new Error(`Day 5's activity lost the link ${id}`);
+      return h.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); }, cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">'));
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const whole = cut("<p>When taking a screenshot of the entire calendar", "<p>You should have a total of 19");
   const up = cut("<p>You should have a total of 19", "<p><b><i>*** Free Communication");
@@ -174,9 +177,12 @@ const TRIM = {1: {reading: html => {
     "8.4 Event Proper Arrival Block time", "8.5 Overnight Stay", "8.6 Return Travel to Seattle: Check out of the hotel and travel to the airport",
     "8.7 Return Travel to Seattle: Flight from San Francisco (SFO) to Seattle (SEA)", "9. Document Review Session", "10. Family Dinner", "11. Entire Calendar"];
   const seq = '<ol class="ftdd-seq">' + SEQ.map((t, i) => `<li><span class="ftdd-seq-n">${i + 1}</span><span>${t}</span></li>`).join("") + "</ol>\n";
-  return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n<div class="ftdd-cards4">' +
-    card("📝", "1. The activity", act) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + card("📸", "3. The whole calendar", whole) +
-    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq)) + "</div>\n" + cut("<p><b><i>*** Free Communication");
+  // the activity's instruction in its card, then the activity and the samples themselves, full size under it; the cards
+  // stand one under the other (not a grid), so a long one turns the page cleanly
+  const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
+  return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n<div class="trainer-slot" data-slot="5:s3-2"></div>\n' +
+    card("📝", "1. The activity", lead) + "\n" + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
+    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq)) + "\n" + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the discussion deck (PI Workflow and Reception Training) in the slide, the
 // Process Questions' naming convention, and the sample recordings and SOP as links (a new tab, not the viewer); the
@@ -254,6 +260,35 @@ s3: html => {
   const out = html.replace(/<p><b>Reception Mock Calls Metrics<\/b><\/p>\n?<div class="shots"><figure><a href="\/ft\/day4\/img\/image7\.png"[\s\S]*?<\/div>\n?/, "");
   if(out === html) throw new Error("Day 4's mock call metrics are no longer where the build looks for them");
   return "<p>Your one-on-one Reception mock call with the trainer, scored on the Reception Mock Calls Metrics (the slide before).</p>\n" + out;
+}},
+// Day 6 (Calendaring, Part 2): the three training videos play in the slide; the Loom references stay links; the guide's
+// sample event (image33) is drawn as the slide's own: "An optimized calendar schedule should follow this structure"
+6: {s1: html => {
+  let out = html.replace("<p>While waiting for your turn to perform, kindly watch the following training videos. Thank you.</p>", "<p>While waiting for your turn to perform, watch the following training videos.</p>");
+  [["16zrBv2IsafvW0CphoJHf41JgvZZxcGa5", "Part 1", "Calendar Management Training: Part 1"], ["1jzhsqPS3pFS_PWK-c9m63wVs--OjtY7o", "Part 2", "Calendar Management Training: Part 2"],
+   ["1X9l-70zK3G4JjL_JSBTfHiDVcwzjOUmX", "Calendaring 101", "Calendaring 101"]].forEach(([id, label, t]) => {
+    const re = new RegExp(`<p><b>${label}\\s*</b></p>\\n<p><a class="viewer-link" data-kind="doc" data-title="[^"]*"(?=[^>]*${id})`);
+    if(!re.test(out)) throw new Error(`Day 6 lost the video ${label}`);
+    out = out.replace(re, `<p><a class="viewer-link" data-embed data-kind="video" data-title="${t}"`);
+  });
+  const sample = /<p><b>For example: Client Consultation Meeting – \[Client Name\]<\/b><\/p>\n<p>Please see the sample below for your reference\. Please be guided\. Thank you\.<\/p>\n<div class="shots"><figure><a href="\/ft\/day6\/img\/image33\.png"[\s\S]*?<\/figure><\/div>\n?/;
+  if(!sample.test(out)) throw new Error("Day 6's sample event is no longer where the build looks for it");
+  const chk = on => `<span class="ftdd-ev-box${on ? " on" : ""}">${on ? "✓" : ""}</span>`;
+  const ev = '<div class="ftdd-ev" role="img" aria-label="Sample event: Client Consultation Meeting - Martin Anthony Gan, Aug 11, 2026, 3:00pm to 4:00pm, (GMT-07:00) Pacific Time - Los Angeles; Google Meet; notification 15 minutes before; Client Meetings calendar; guests Michelle Velarde (organizer) and Martin Anthony Gan; notes in the description">' +
+    '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title">Client Consultation Meeting - <span class="ftdd-ev-mark">Martin Anthony Gan</span></span><span class="ftdd-ev-note">◀ Client’s Name</span><span class="ftdd-ev-save">Save</span></div>' +
+    '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Aug 11, 2026</span><span class="ftdd-ev-f">3:00pm</span><span>to</span><span class="ftdd-ev-f">4:00pm</span><span class="ftdd-ev-f">Aug 11, 2026</span><span>(GMT-07:00) <span class="ftdd-ev-hl">Pacific Time - Los Angeles</span></span><span class="ftdd-ev-link">Time zone</span></div>' +
+    `<div class="ftdd-ev-sub">${chk(false)} All day <span class="ftdd-ev-f">Does not repeat ▾</span></div>` +
+    '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
+    '<div class="ftdd-ev-line">🎥 <span class="ftdd-ev-link">Join with Google Meet</span> <small>meet.google.com/dyt-voan-kta</small></div>' +
+    '<div class="ftdd-ev-line">📍 <span class="ftdd-ev-f wide">meet.google.com/dyt-voan-kta</span></div>' +
+    '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-f">Notification ▾</span><span class="ftdd-ev-f">15</span><span class="ftdd-ev-f">minutes ▾</span></div>' +
+    '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-f">Michelle Velarde ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot"></span> Client Meetings ▾</span></div>' +
+    '<div class="ftdd-ev-line">💼 <span class="ftdd-ev-f">Busy ▾</span><span class="ftdd-ev-f">Default visibility ▾</span></div>' +
+    '<div class="ftdd-ev-desc"><ol><li>Review contract documents prior to the consultation.</li><li>Review the client’s observations, concerns, and instructions regarding the contract.</li><li>Be prepared to discuss the contract and address the client’s questions or concerns during the GMeet consultation.</li></ol></div></div>' +
+    '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
+    '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
+    `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
+  return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
 }},
 // Day 2's first set of tasks: both videos and the reference sheet play in the slide (data-embed, js/ft-day-decks.js visual),
 // and the note ends on ✅ Done (js/ft-buffer.js) instead of typing "done" in the GC; the assessments are split off after it
