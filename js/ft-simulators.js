@@ -81,6 +81,7 @@ const reached = days => seesAll() || !days || !days.length || Math.min(...days) 
 window.ftsReached = reached;
 // (and 🔓 once the trainer has opened one of the tool's days: js/ft-day-locks.js)
 const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; return reached(days) && (!window.FTDayLocks || FTDayLocks.labOpen(days)); };
+window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
 function renderSimulators(){
   const tool = (fn, id) => typeof window[fn] === "function" && toolOn(id) ? window[fn]() : "";
   const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
