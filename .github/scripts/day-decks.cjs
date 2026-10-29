@@ -286,10 +286,12 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (!score || score.items < 10 || !/How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
-  // the guidelines the guide writes as a wall of headings are read as cards, and the day's offline work is named
+  // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, 's2')); }); await page.waitForTimeout(1600);
-  const cards = await page.evaluate(() => ({ secs: document.querySelectorAll('.ftdd-sec').length, cards: document.querySelectorAll('.ftdd-card').length, chips: document.querySelectorAll('.ftdd-chip-i').length }));
-  if (cards.secs < 4 || cards.cards < 15) fail(`Day 6's calendar guidelines aren't read as cards: ${JSON.stringify(cards)}`);
+  const mc = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body;
+    return { lists: sh.querySelectorAll('ul').length, items: sh.querySelectorAll('ul > li').length, bars: sh.querySelectorAll('.ftdd-sec, h3').length,
+      rules: /Tuesdays and Thursdays/.test(sh.textContent) && /EST time zone/.test(sh.textContent) && /Date of Loss/.test(sh.textContent) }; });   // (textContent: a long slide is read in pages, and the rules may be on a page not showing)
+  if (mc.lists < 4 || mc.items < 20 || !mc.rules || mc.bars > 2) fail(`Day 6's Mock Call Scenarios aren't read as the guide's text and lists: ${JSON.stringify(mc)}`);
   // no Training Agenda slide on any day: a lesson day opens on its card, a day without one on its first slide
   await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
   if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");
