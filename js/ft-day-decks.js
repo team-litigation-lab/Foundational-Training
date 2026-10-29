@@ -2618,6 +2618,7 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ft-body .ftdd-sop-links{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px 18px;margin:6px 0 10px;}
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
+main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
 .ft-body .ftdd-mock-btns{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:16px 0 12px;}
 .ft-body a.ftdd-mock-btn{display:inline-flex;align-items:center;padding:10px 18px;border-radius:8px;background:#1E2340;color:#fff !important;font:700 15px/1.2 'Inter',sans-serif;text-decoration:none !important;border-bottom:3px solid #E8590C;}
 .ft-body a.ftdd-mock-btn:hover{background:#E8590C;}

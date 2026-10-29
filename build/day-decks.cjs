@@ -575,17 +575,18 @@ const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer F
 // the slots this build writes into the trainer-only notes (kept there by build/curriculum/convert.py)
 const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
 // Day 4: the same calls, small, to replay while waiting for the mock call
-const PI_WARMUP = `<hr class="stars">\n<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p>Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
+const PI_WARMUP = `<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p class="ftdd-warm-lead">Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
    Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2) and Day 5's Buffer Time for
    Reception Mock Calls (TRIM[5].s1). MOCK_PREP: direct links to the Call Simulator's Reception line, the Ring Channel,
-   the CMS and its Front Desk Drill, the step-by-step use of them, AI Mock Calls Listening ("link coming" until it has
-   one) and the PI practice calls' warm-up; MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
+   the CMS and its Front Desk Drill, the PI practice calls' warm-up first, then the step-by-step use of them; MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
    MOCK_ONE: the one-on-one mock call's own line (where the metrics are, on that day's slides). */
 const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 // (the tools: one row of buttons under the steps, each opening in a new tab)
 const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
 const MOCK_PREP =
+  // (the warm-up first, then the steps and the tools)
+  PI_WARMUP + "\n" +
   "<p>Step 1 - Open the Call Simulator’s Reception line and put your headset on. Take practice calls from the AI caller as many times as you like: practice calls are not graded.</p>\n" +
   "<p>Step 2 - Answer within 3 rings and greet with the firm’s name and your name.</p>\n" +
   "<p>Step 3 - Authenticate before you discuss anything: the caller’s name, date of loss (DOL), date of birth (DOB), claim number and case number.</p>\n" +
@@ -593,8 +594,7 @@ const MOCK_PREP =
   "<p>Step 5 - Handle the call by the firm’s rules (📘 Rules, 📇 Directory): answer what you may, or use Hold and Transfer to the right person, screening the call and taking notes before you transfer.</p>\n" +
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
-  `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n` +
-  PI_WARMUP + "\n";
+  `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n`;
 const MOCK_RUN =
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
   "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
