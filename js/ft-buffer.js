@@ -96,6 +96,9 @@ function traineePanel(h){
   if(d && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
+  // (simple: no Debrief Prep screen, no scorecard: the Done and the wait for the debrief, in the middle of the slide)
+  if(d && a.simple) return `<div class="ftbf ftbf-wait ftbf-simple"><p class="ftbf-h">✅ Done</p>
+    <p class="ftbf-status"><span class="ftbf-dot"></span>Waiting for the group debrief to start…</p></div>`;
   if(d) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
