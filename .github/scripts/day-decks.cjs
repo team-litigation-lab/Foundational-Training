@@ -47,6 +47,23 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
 const lor = D[11] && D[11].slides.filter(s => s.read);
 if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test(lor[0].html) || !/<h3>Activity 2: Letter of Representation/.test(lor[1].html) || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
   fail(`Day 11's LOR Drafting guidelines aren't inlined over two read slides: ${JSON.stringify((lor || []).map(s => s.id))}`);
+// Day 5: its buffer carries Day 4's Reception mock call preparation and its instructions & metrics, word for word (built
+// once); the Attorney Calendar Management Activity's own text (Instructions 1–9, the seven colours, the guests, the ten
+// Activity Items) on a read slide with the Calendar Simulator's hook, then its files and cards; Days 5 and 13 have no
+// slide that only says the lesson deck opens from ▶ Start Training
+{
+  const sl = (n, id) => ((D[n] || { slides: [] }).slides.find(s => s.id === id) || {}).html || '';
+  const prep4 = sl(4, 's2b').slice(sl(4, 's2b').indexOf('<p>📞 Practice a caller')).trim(), run4 = sl(4, 's2c').trim(), buf5 = sl(5, 's1');
+  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/Front Desk Drill/.test(buf5) || !/Link coming: AI Mock Calls Listening/.test(buf5))
+    fail(`Day 5's buffer doesn't carry Day 4's mock call preparation and metrics: ${buf5.length} chars`);
+  const act5 = D[5] && D[5].slides.find(s => s.id === 's3'), txt = (act5 || {}).html || '';
+  const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = (txt.match(/class="ftdd-cal-item"/g) || []).length;
+  if (!act5 || !act5.read || ins !== 9 || items !== 10 || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt) || !/data-calsim-activity/.test(txt))
+    fail(`Day 5's activity text isn't on its slide: ${JSON.stringify({ read: act5 && act5.read, ins, items })}`);
+  if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/ftdd-seq/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples and drawn pictures are no longer on its second slide');
+  [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
+    fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
+}
 
 (async () => {
   const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
