@@ -10,8 +10,11 @@
    The sessions:
      ☎️ Reception Mock Calls        lesson 4: the Call Simulator's line on ☎ LSH Ring Channel + the CMS Front Desk Drill;
                                     the call note
-     📅 Calendaring Practice Lab    lesson 5: the Calendar Management mock call (Ring Channel), then the appointment on the
-                                    Google Calendar Simulator, under the firm's calendar rules
+     📅 Standard Training - Appointment Setting Mock Calls
+                                    lesson 5 (id "calendaring", once the Calendaring Practice Lab): the Calendar Management
+                                    mock call (Ring Channel), then the appointment on the Google Calendar Simulator, under the
+                                    firm's calendar rules. Beside it, its own card: 📅 Standard Training - Calendaring
+                                    Activity (js/ft-calweek.js), the standalone next-week calendar.
      📋 Intake Mock Calls           lesson 6 (Days 8–9): Ring Channel's Intake Line, the details entered in the Prototype
                                     CMS; the intake recorded here — no case handed out, the caller is the lead
      (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 🧰 Drafting Tools'
@@ -71,7 +74,7 @@ const SESSIONS = [
       ["Routed to a person on the firm’s team", has(a.routed) && [...(f.attorneys || []), ...(f.team || [])].some(p => near(a.routed, p.name) || (p.ext && String(a.routed).includes(p.ext))), (f.team || []).map(p => p.name + (p.ext ? " " + p.ext : "")).join(", ")],
       ["Caller verified first", !!a.verified, ""],
       ["Initials on the note", has(a.initials), ""]]},
-  {id:"calendaring", icon:"📅", title:"Calendaring Practice Lab", lesson:5,
+  {id:"calendaring", icon:"📅", title:"Standard Training - Appointment Setting Mock Calls", lesson:5,
     about:"A caller phones in about one of the firm’s cases (the Call Simulator’s Calendar Management line, on ☎ LSH Ring Channel): get their name, verify them and find the file. Then book the appointment on the Google Calendar Simulator under your firm’s calendar rules, and record it here.",
     tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Simulator", "calsim:standard"]],
     fields: f => [["caller", "Who called", "text"], ["caseRef", "Which case (client name or case number)", "text"], ["kind", "Appointment", "text"], ["attorney", "With (attorney)", "select", (f.attorneys || []).map(x => x.name)],
