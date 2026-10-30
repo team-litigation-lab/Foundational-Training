@@ -1524,8 +1524,8 @@ const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.k
 const ASSESS_NEXT = {2: {
   s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
-  // the 📒 Monitoring Sheet update, TAM, and its 📤 Submit)
-  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update TAM"}}};
+  // the 📒 Monitoring Sheet update and its 📤 Submit)
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}}};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
