@@ -154,9 +154,13 @@ function paintStatus(tid){
   const el = document.getElementById("ftmSt-"+tid); if(el){ el.className = "ftm-c ftm-st st-"+s.k; el.textContent = s.t; }
   const c = document.getElementById("ftmCount"); if(c) c.textContent = countLine();
 }
+// Days 17–18's discussions (Lien Negotiator Training) run when the training hours permit: grayed out, and counted only
+// once started (js/ft-tracker-rules.js optionalTopic)
+const optT = t => !!(window.FTTrackerRules && FTTrackerRules.optionalTopic && FTTrackerRules.optionalTopic(t));
+const countOf = entries => FTM.topics.filter(t => !optT(t) || started((entries || {})[t.id])).length;
 function countLine(){
   const done = FTM.topics.filter(t=>statusOf(FTM.data.entries[t.id], t).k==="done").length;
-  return `${done} of ${FTM.topics.length} discussions filled`;
+  return `${done} of ${countOf(FTM.data.entries)} discussions filled`;
 }
 // The sheet, Google Sheets style (same look as 📋 Task Tracker, js/ft-tracker.js): column letters, row
 // numbers, and every field a fillable cell — one row per discussion, instead of a card per discussion.
@@ -175,9 +179,9 @@ function monGrid(){
   const body = FTM.topics.map((t, i)=>{
     const x = FTM.data.entries[t.id] || {takeaways:[], questions:[]}, s = statusOf(FTM.data.entries[t.id], t);
     const tk = k => e((x.takeaways||[])[k]||""), qs = k => e((x.questions||[])[k]||"");
-    return `<tr class="ftm-r">
+    return `<tr class="ftm-r${optT(t) ? " ftm-opt" : ""}">
       <th class="ftm-rn">${i+2}</th>
-      <td class="ftm-c ftm-topic-c"><b>${e(t.title)}</b></td>
+      <td class="ftm-c ftm-topic-c"><b>${e(t.title)}</b>${optT(t) ? `<small>Days 17–18 · when training hours permit</small>` : ""}</td>
       <td class="ftm-c"><input type="date" value="${e(x.date||"")}" oninput="FTMon.set('${t.id}','date',this.value)"></td>
       ${[0,1,2,3,4].map(k=>`<td class="ftm-c"><textarea rows="2" placeholder="A complete, specific sentence about what you learned." oninput="FTMon.set('${t.id}','takeaways',this.value,${k})">${tk(k)}</textarea></td>`).join("")}
       ${[0,1,2].map(k=>`<td class="ftm-c"><textarea rows="2" placeholder="${k?"":"No questions? Write “None”."}" oninput="FTMon.set('${t.id}','questions',this.value,${k})">${qs(k)}</textarea></td>`).join("")}
@@ -284,7 +288,7 @@ function renderAdminMonitor(){
       ${groups[b].map(x=>{ const s = traineeStats(x), open = !!FMA.open[x.id];
         const list = FTM.topics.map(t=>({t, x:(x.m.entries||{})[t.id]})).filter(o=>started(o.x));
         return `<tr class="ftm-trow" onclick="FTMonAdmin.row('${x.id}')"><td><span class="ftt-caret">${open?"▾":"▸"}</span> <b>${e(x.name)}</b></td>
-          <td>${s.filled} of ${FTM.topics.length}${s.started>s.filled?` <small class="ftm-muted">(${s.started-s.filled} in progress)</small>`:""}</td>
+          <td>${s.filled} of ${countOf(x.m.entries)}${s.started>s.filled?` <small class="ftm-muted">(${s.started-s.filled} in progress)</small>`:""}</td>
           <td>${s.avg==null?"—":`<span class="ftm-pill ${s.avg>=100?"ok":s.avg>=60?"mid":"bad"}">${s.avg}%</span>`}</td>
           <td>${s.help ? `<span class="ftm-help">${s.help}</span>` : '<span class="ftm-muted">—</span>'}</td></tr>
           ${open ? `<tr><td colspan="4">${list.length ? list.map(o=>entryReport(o.x, o.t, x.id)).join("") : '<div class="ftm-muted" style="padding:6px 0;">Nothing filled in yet.</div>'}</td></tr>` : ""}`; }).join("")}
@@ -464,6 +468,7 @@ main.main-monitor{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ftm-headrow th.ftm-rn{background:#f8f9fa;color:#5f6368;z-index:3;}
 .ftm-c{background:#fff;}
 .ftm-topic-c{background:#e8f0fe;color:#174ea6;}
+.ftm-r.ftm-opt td, .ftm-r.ftm-opt th{opacity:.55;} .ftm-r.ftm-opt .ftm-topic-c{background:#EEF0F4;color:#6B7088;} .ftm-topic-c small{display:block;font-size:10.5px;font-weight:600;}
 .ftm-c input[type=date]{width:100%;box-sizing:border-box;font:12.5px Arial,sans-serif;padding:4px;border:1px solid var(--line);border-radius:6px;}
 .ftm-c textarea{width:100%;box-sizing:border-box;font:12.5px Arial,sans-serif;padding:4px 6px;border:1px solid var(--line);border-radius:6px;resize:vertical;background:#fff;}
 .ftm-c select{width:100%;box-sizing:border-box;font:12.5px Arial,sans-serif;padding:4px;border:1px solid var(--line);border-radius:6px;background:#fff;}

@@ -245,6 +245,10 @@
     "Insurance Communication Training Day 1", "Insurance Communication Training Day 2", "Insurance Communication Training Day 3",
     "Provider Communication Training Day 1", "Provider Communication Training Day 2", "Provider Communication Training Day 3", "Provider Communication Training Day 4",
     "Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
+  // Days 17–18 (Lien Negotiator Training) run only when the training hours permit: their discussions stay on the list,
+  // grayed out, and count toward the total only once the trainee has written them (so a full sheet reads 16 of 16)
+  const OPTIONAL_MONITOR_TOPICS = ["Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
+  const optionalTopic = (t) => !!(t && t.optional) || OPTIONAL_MONITOR_TOPICS.includes(String((t && t.title) || t));
   const RATING_HINTS = ["really don", "on my own but", "confident that i can", "can teach this"];
   function gradeMonitorText(text, topics){
     const lines = String(text || "").split(/\r?\n/).map((l) => l.replace(/^[\s,]+|[\s,]+$/g, "")).filter(Boolean);
@@ -262,10 +266,13 @@
         ["5 takeaways", take.length >= 5], ["Questions", qs.length >= 1], ["Understanding rated", rated]];
       return {topic: x.t.title || x.t, takeaways: take.length, questions: qs.length, checks: checks.map(([label, ok]) => ({label, ok})), pct: Math.round(100 * checks.filter((c) => c[1]).length / checks.length)};
     });
+    entries.forEach((x) => { if(optionalTopic(x.topic)) x.optional = true; });
     const pct = entries.length ? Math.round(entries.reduce((a, x) => a + x.pct, 0) / entries.length) : 0;
-    return {pct, found: entries.length, total: (topics || []).length, entries};
+    const opt = (topics || []).filter(optionalTopic).map((t) => String(t.title || t));
+    const pending = opt.filter((t) => !entries.some((x) => x.topic === t));
+    return {pct, found: entries.length, total: (topics || []).length - pending.length, entries, optional: pending};
   }
 
-  root.FTTrackerRules = {MONITOR_TOPICS, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
+  root.FTTrackerRules = {MONITOR_TOPICS, OPTIONAL_MONITOR_TOPICS, optionalTopic, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
     ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, reviewPrompt};
 })(typeof globalThis !== "undefined" ? globalThis : this);
