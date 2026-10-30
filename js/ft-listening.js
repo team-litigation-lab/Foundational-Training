@@ -39,7 +39,7 @@ const SETS = [
     about:"The sample recordings from Day 13’s Medical Records Specialist discussion."},
   // 📝 Day 3's Reception Listening Activity answers: the five Harbor & Pine practice calls (build/calls/pi-reception-activity.json,
   // played here: audio), each logged with its 5 data points and its challenge (fields: ACT_FIELDS); the deck's stop after the
-  // calls opens it, and its ✅ End of training goes on to the day's end. Not in the Practice Lab's Call Listening list (activity)
+  // calls opens it, and its Next goes on to the CRM/CMS videos. Not in the Practice Lab's Call Listening list (activity)
   {id:"recact", icon:"📝", title:"Reception Listening Activity: answers", day:3, lesson:4, n:5, activity:true,
     titles:["Call 1: The Missing Email", "Call 2: Third Time Calling", "Call 3: Which Office?", "Call 4: Just Confirming", "Call 5: No Ride Tomorrow"],
     audio:[1, 2, 3, 4, 5].map(n => `/ft/day3/audio/pi-activity-${n}.mp3`),
@@ -162,7 +162,7 @@ function renderPage(){
   if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h1>📝 Reception Listening Activity: Answers</h1>
       <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p></div>
     ${actSheet(cur)}
-    ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 'end-day')">✅ End of training →</button></div>` : ""}`;
+    ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 's2')">Next: CRM/CMS Training Videos →</button></div>` : ""}`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
       <div class="ln-pills">${open.map(s => { const l = setLive(s.id), c = countDone(R.rec, l);

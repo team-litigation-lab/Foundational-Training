@@ -1388,11 +1388,11 @@ const LESSON_CARDS = {
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
-      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, whose 📝 Answer Sheet
-      // opens in a pop-up on the calls' slide (js/ft-listening.js "recact"), and the day's end: no ✍️ Knowledge Check between them)
+      // Reception Listening Activity, its task in cards and the five calls, whose 📝 Answer Sheet opens in a pop-up on the
+      // calls' slide (js/ft-listening.js "recact"); then the CRM/CMS videos and the day's end: no ✍️ Knowledge Check between them)
       {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
-      {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
+      {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
