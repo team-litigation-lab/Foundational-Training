@@ -879,6 +879,18 @@ function zoomUp(box, max){
     z = up;
   }
 }
+// a page shorter than its slide sits in the middle of it, not at the top with the white space all below (the reading's
+// short opening page): the spare height goes half above it, as padding, so nothing is moved out of the slide
+function centerPage(sheet){
+  if(sheet.matches(".ftdd-short, .ftdd-sheet-edit") || !sheet.clientHeight || sheet.scrollHeight > sheet.clientHeight + 2) return;
+  const shown = [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none");
+  if(!shown.length) return;
+  const st = getComputedStyle(sheet), pt = parseFloat(st.paddingTop) || 0, pb = parseFloat(st.paddingBottom) || 0;
+  const top = Math.min(...shown.map(k => k.getBoundingClientRect().top - (parseFloat(getComputedStyle(k).marginTop) || 0)));
+  const bottom = Math.max(...shown.map(k => k.getBoundingClientRect().bottom + (parseFloat(getComputedStyle(k).marginBottom) || 0)));
+  const spare = sheet.clientHeight - pt - pb - (bottom - top);
+  if(spare > 8) sheet.style.paddingTop = Math.floor(pt + spare / 2) + "px";
+}
 // scales the card's content down until it fits; true when it does
 function zoomToFit(box, min){
   const inner = [...box.children];
@@ -1024,6 +1036,7 @@ function fitSheets(){
   const sheets = [...document.querySelectorAll("main.main-ftdd .ftdd-sheet")];
   sheets.forEach(contrastMarks);
   sheets.forEach((sheet, idx) => {
+    sheet.style.paddingTop = "";   // (centerPage's room on top is taken off before the slide is measured anew)
     const pages = sheetPages(sheet);
     if(idx === 0){ DD.pages = pages.length; if(DD.page >= pages.length) DD.page = pages.length - 1; if(DD.page < 0) DD.page = 0; }
     const show = idx === 0 ? pages[DD.page] || pages[0] : pages[0];
@@ -1046,6 +1059,7 @@ function fitSheets(){
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
     else if(!sheet.classList.contains("ftdd-sheet-edit") && !DD.split) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
+    centerPage(sheet);
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });

@@ -16,7 +16,7 @@ const L = "ABCDEFGHIJKLMNOPQRST".split("");
 const FORMS = {
   "14sz5f3HTQKmryc7Upvlc6qua008rPnmw": {title: "Common Terms Used – Assessment", file: "Common_Terms_Used_Assessment", max: 27, parts: [
     {kind: "match", h: "Part I. Matching Type", lead: "Listed are the common terms and abbreviations that you may encounter in VLF. Match the terms in Column A to the correct definition in Column B: pick the letter of the correct definition for each term.",
-      terms: ["1P", "HIPAA", "PI", "3P", "HITECH", "SOL", "PIP", "MVC Primary", "Tort", "Minor’s Comp", "BI", "MVC Secondary", "PL", "Lit", "DOL", "UM/UIM", "HICF", "Totaled", "Worker’s Comp", "Intake"],
+      terms: ["1P", "HIPAA", "PI", "3P", "HITECH", "SOL", "PIP", "MVC Primary", "Tort", "Minor’s Comp", "BI", "MVC Secondary", "PL", "Lit", "DOL", "UM/UIM", "HCFA", "Totaled", "Worker’s Comp", "Intake"],
       defs: ["A federal act that seeks to protect patient information from being disclosed without the patient’s approval.",
         "The time elapsed that is allowed for a case to be brought to court for a civil suit.",
         "The driver of the car in the case we are handling.",
