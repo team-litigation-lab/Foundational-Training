@@ -373,6 +373,13 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => { state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
+  // the Reception and Calendar Management mock calls: a trainee sees the metrics (read only), not the ⏳ While you wait box
+  for (const [d, id, what] of [[4, 's3', 'Reception'], [6, 's2', 'Calendar Management']]) {
+    await page.evaluate(([d, id]) => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(d, FTDayDecks.at(d, id)); }, [d, id]); await page.waitForTimeout(1500);
+    const mm = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body, b = sh.querySelector('.ftdd-score');
+      return { rows: b ? b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length : 0, pick: !!(b && b.querySelector('.ftms-pick select')), wait: !!sh.querySelector('.ftdd-wait') }; });
+    if (mm.rows < 5 || mm.pick || mm.wait) fail(`Day ${d}'s ${what} mock calls don't show the trainee the metrics, read only, without the While you wait box: ${JSON.stringify(mm)}`);
+  }
   // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, 's2')); }); await page.waitForTimeout(1600);
   const mc = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body;

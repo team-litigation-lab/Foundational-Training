@@ -744,19 +744,26 @@ function dayRubric(title){
   return (byTitle && (cands.find(rb => rb.key === byTitle.key) || byTitle)) || cands[0] || null;
 }
 // 🧑‍🏫 during the mock calls and the demos the trainer scores on the slide itself: the activity's metrics as the scoring sheet
-// (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already
+// (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already. A trainee sees the mock calls' metrics
+// (Day 4's Reception, Day 6's Calendar Management, Day 9's Intake) as the guide's table, read only (FTMetrics.view), so they
+// know what the call is scored on; the demos' sheet stays the trainer's.
 function scoreBox(s, info, body){
-  const h = String(s.h || "");
-  if(!isAdminView() || !root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
+  const h = String(s.h || ""), admin = isAdminView();
+  if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
   if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  if(!admin && !/mock call/i.test(h)) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${FTMetrics.table(rb.key)}</div>`;
+  const M = root.FTMetrics;
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key) +
+    `<p class="ftdd-score-f">Your trainer scores each line with you after the call. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`}</div>`;
 }
 function waitBox(s, info){
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
+  if(/mock call/i.test(h)) return "";
   // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
   // the tools itself, and its instructions and metrics)
   if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";

@@ -366,7 +366,7 @@ s3: html => {
   return out;
 }},
 // Day 6 (Calendaring, Part 2): s2, the Mock Call Scenarios, is the guide's wording as text and lists (it came through as a
-// heading per line), with what the trainee should do; the scenarios themselves are the trainer's (6:s2-2). s1: the three training videos play in the slide; the Loom references stay links; the guide's
+// heading per line), with what the trainee should do and the guide's Possible Scenarios / Nature of Request (each title and its notes). s1: the three training videos play in the slide; the Loom references stay links; the guide's
 // sample event (image33) is drawn as the slide's own: "An optimized calendar schedule should follow this structure"
 6: {s1: html => {
   let out = html.replace("<p>While waiting for your turn to perform, kindly watch the following training videos. Thank you.</p>", "<p>While waiting for your turn to perform, watch the following training videos.</p>");
@@ -420,6 +420,24 @@ s2: html => {
       "Set reminders accordingly for the attorney to be reminded."]) +
     "<p><b>Please take note of the following guidelines:</b></p>\n<p><b>Minimum Information to Collect from Caller</b> · VA must obtain:</p>\n" +
     ul(["Name", "Callback Number", "Date of Birth (DOB)", "Date of Loss (DOL)"]) +
+    // (the guide's Possible Scenarios / Nature of Request, in its words: each title and its notes)
+    "<p><b>📌 Possible Scenarios / Nature of Request (to be calendared)</b></p>\n" + ul([
+      ["Client Consultation: New PI Case", "New PI case; (instructions provided by client)"],
+      ["Document Review Follow-Up", "Review contract documents; Zoom meeting; (observations and instructions)"],
+      ["Case Strategy Meeting", "Litigation planning; (observations and instructions)"],
+      ["New Intake Consultation", "New intake consultation"],
+      ["Deposition Preparation", "Preparation for deposition"],
+      ["Medical Records Review", "Review new PT notes"],
+      ["Attorney Phone Consultation", "Clarification regarding demand"],
+      ["Document Signing", "Settlement documents; in-office meeting"],
+      ["Case Review Consultation", "Possible wrongful termination"],
+      ["Post-Settlement Meeting", "Ensure full breakdown is available"],
+      ["Discovery Conference", "Review interrogatories &amp; RFPs"],
+      ["Follow-Up Call (Existing Client)", "Existing PI client; follow-up on insurance update"],
+      ["Missed Call Consultation", "Contract dispute"],
+      ["Case Status Update", "Insurance update ready for review"],
+      ["Urgent Meeting Request", "Urgent litigation update"],
+      ["Mediation Preparation Call", "Review mediation materials"]].map(([t, n]) => `<b>${t} – (Client Name)</b><br>Notes: ${n}`)) +
     "<p><b>✅ Scheduling Rules</b></p>\n" + ul(["Identify available slots only", "Avoid lunch, buffer time, and blocked events", "Offer 2–3 alternative times when a requested slot is unavailable",
       "Clarify meeting type (phone, video, or in-person)", "Plot the appointment in the attorney’s calendar.", "Calendar should be in EST time zone.", "Set an email reminder a day before the event."]) +
     "<p><b>📌 Additional Notes</b></p>\n" + ul(["The attorney does not take new client consults after 5:00 PM.", "New client consults are only scheduled on Tuesdays and Thursdays.",
