@@ -112,8 +112,8 @@ async function workerChecks() {
     await open(t, 9, 's3b'); await toPanel(t);
     const m9 = await panel(t);
     if (!/Mock Calls Ongoing/.test(m9) || !/Hit Done when you are done with your Mock Call\./.test(m9) || /Practice Buffer/.test(m9)) fail(`Day 9's mock calls aren't Day 4's Done panel: ${m9.slice(0, 120)}`);
-    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row - 1; })))
-      fail("Day 9's mock calls have no preparation slide, a row of its own, before them");
+    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's2' && l[i - 1].row === l[i].row - 1; })))
+      fail("Day 9's mock calls have no Intake Mock Calls Metrics slide, a row of its own, before them");
 
     // ☎ Day 9's Intake mock calls, Done → the dialog → ✅ Done and the way on (no trainer's release to wait for)
     if (!(await toPanel(t))) fail('Day 9\'s mock calls have no Done panel');

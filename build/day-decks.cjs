@@ -827,12 +827,50 @@ const edges = x => { let y = x, was; const rule = /^\s*(?:<hr class="stars">|<p>
 // their Drive link on Day 11, as Day 1's reading is (its header and the "Name of VA / Date Taken" fields are the form's, not the text)
 const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
+// Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
+// wording, each heading a card; the build stops if the guide's text changes under it
+function D12_CARDS(x){
+  for(const t of ["For BOTH 1P and 3P insurance entries", "Plaintiff Insurance Owner Field", "Defendant Insurance Owner field", "OWNER, FAKE",
+    "Driver’s name, if different from the owner", "Nitro Pro (pdf editing tool)", "LOR with Affidavit mm.dd.yy", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])
+    if(!x.includes(t)) throw new Error(`Day 12's insurance steps or naming convention changed: "${t}" is missing`);
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
+  const noAdj = "If no adjuster has been assigned yet, indicate: <b><i>“No adjuster assigned yet.”</i></b>";
+  // (one block, ftdd-one: one page, scaled to fit)
+  return '<div class="ftdd-one">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
+    '<div class="ftdd-cards3">' +
+    card("🔢", "Both 1P and 3P entries", "<p>Make sure to complete the following fields:</p>" + ul(["Policy Number", "Claim Number"])) +
+    card("🟦", "Adding the 1P insurance information", "<p>In the <b>Plaintiff Insurance Owner Field</b>, select: <b>Plaintiff&#x27;s Training Acct</b></p><p><b>In the Comments section, include:</b></p>" +
+      ul(["Actual insurance name of the owner", "Assigned adjuster details", noAdj, "Still add all other available insurance information even if no adjuster has been assigned."])) +
+    card("🟥", "Adding the 3P insurance information", "<p>In the <b>Defendant Insurance Owner field</b>, select: <b>OWNER, FAKE</b></p><p><b>In the Comments section, include:</b></p>" +
+      ul(["Actual insurance name of the owner", "Driver’s name, if different from the owner", "Assigned adjuster details", noAdj, "Still add all other available 3P insurance information even if no adjuster has been assigned."])) +
+    "</div>\n" + '<div class="ftdd-cards2">' +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
+      "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
+    "</div></div>\n";
+}
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
   // slide; the 3P Zurich sample and the VLF SOP stay documents
-  10: {s2: h => ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
-    .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h)},
+  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample and VLF's SOP embedded down the
+  // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
+  // divider go
+  10: {s2: h => {
+    const x = ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
+      .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h);
+    const block = re => { const m = x.match(re); if(!m) throw new Error(`Day 10 s2: ${re} is no longer where the build looks for it`); return m[0]; };
+    const intro = block(/<p>For your tasks this afternoon[^\n]*<\/p>\n/), oc = block(/<p><b>OPENING CLAIMS &amp; SENDING LOR<\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      zu = block(/<p><b>SAMPLE OPENING A CLAIM W\/ 3P ZURICH<\/b><\/p>\n<p><a [^\n]*<\/p>\n/), to = block(/<p><b>TOOLS OVERVIEW BY CYREL ALEGADO <\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      fa = block(/<p><b>FAMILIARIZING INTAKE DOCUMENTS <\/b><\/p>\n<p><a [^\n]*<\/p>\n/), co = block(/<p><b>OBTAINING COVERAGE INFORMATION<\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      aid = block(/<hr class="stars">\n<p>Kindly go over this job aid[^\n]*<\/p>\n/), sop = block(/<p><b>HOW TO OPEN A 3P AUTO INSURANCE CLAIM[^\n]*<\/p>\n<p><a [^\n]*<\/p>\n/);
+    // (embedded, the card's title is the title alone: the guide's data-title carries the start of the link after it)
+    const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
+    const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
+    return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
+      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + col(embed(sop), "ftdd-three-side") + "</div>\n");
+  }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
   11: {
@@ -1006,12 +1044,11 @@ const ROWS = {
   10: {
     s1: [{id: "s1", parts: [[null, "<p> Claims Terminology Exercise</p>"]]},
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
-      // (the opening-claims slide in three, each a card row of its own: what to share, the sample documents, the VA call
-      // recordings; the card runs the recordings before the documents, js/ft-day-decks.js LESSON_CARDS[7])
+      // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
+      // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]]},
-      {id: "s1d", h: "AM: Sample Insurance Communication Documents", parts: [[SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
-        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]},
-      {id: "s1e", h: "AM: Sample Recordings: Opening Claims", parts: [["<p><b>VA Call Recordings", null]]}]
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]}]
   },
   11: {
     // the LOR Drafting Activity: its guidelines read over two slides (Activity 1: 1P, Activity 2: 3P), then the templates,
@@ -1024,8 +1061,8 @@ const ROWS = {
   },
   12: {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
-      {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information", parts: [['<hr class="stars">\n<p>@everyone </p>', "<p><b>Tools:</b></p>"]], fix: [["<p>@everyone </p>\n", ""]]},
-      {id: "s1c", h: "AM: Tools & Naming Convention", parts: [["<p><b>Tools:</b></p>", SLOT(12, "s1-1")]]},
+      // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
+      {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
       {id: "s1d", parts: [[SLOT(12, "s1-1"), null]]}]
   },
   13: {
@@ -1155,7 +1192,8 @@ const EX_RENAME = {
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
-  9: {s3b: "PM: Intake Mock Calls: Instructions & Metrics"},
+  // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
+  9: {s3b: null},
   12: {s1d: "Entire Day: Demo Preparation: Uploading and Sending 1P & 3P LORs"},
   14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
@@ -1228,7 +1266,7 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, Object.assign({}, x, {id: id + "p", h}), {id, h: x.h, of: x.of, html: ""});
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: ""});
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
