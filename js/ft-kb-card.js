@@ -1,5 +1,5 @@
 /* ============================================================
-   📚 Dashboard's Knowledge Base card: every Knowledge Base article, by role (js/ft-kb-articles.js, made by
+   📚 Dashboard's Knowledge Base card: the Knowledge Base articles for the roles this course teaches (js/ft-kb-articles.js, made by
    build/kb-articles.cjs from the library's bundled pages). The card sits after the lesson cards, in the grid's free
    slot; a role's button opens a window with that role's articles, grouped by section, and 🔗 Open ↗ (the last button: the
    roles take the card's bottom row too, so they fit on a short screen) opens the library.
@@ -16,7 +16,7 @@ function card(){
   const n = R.reduce((t, r) => t + r.count, 0);
   const chips = R.map((r, k) => `<button type="button" class="ftkb-role" onclick="event.stopPropagation(); FTKBCard.open(${k})" title="${e(r.title)}: ${r.count} articles">${e(r.label)}</button>`).join("");
   return `<div class="module-card mc-clean ftkb" id="ftkb-card">
-    <div class="module-head"><div class="mh-day">📚 ${n} articles · every role</div><div class="mh-title">Knowledge Base</div></div>
+    <div class="module-head"><div class="mh-day">📚 ${n} articles · this course’s roles</div><div class="mh-title">Knowledge Base</div></div>
     <div class="module-body ftkb-body"><div class="ftkb-roles" role="group" aria-label="Knowledge Base articles by role">${chips}<button type="button" class="ftkb-role ftkb-open" onclick="event.stopPropagation(); window.open('${KB}', '_blank')" title="Open the LSH Knowledge Base in a new tab" aria-label="Open the Knowledge Base">🔗<span class="ftkb-ot"> Open ↗</span></button></div></div>
   </div>`;
 }

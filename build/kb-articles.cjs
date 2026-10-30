@@ -9,30 +9,27 @@ const KB = process.argv[2];
 if(!KB || !fs.existsSync(path.join(KB, "public/seed/docs.json"))) { console.error("Usage: node build/kb-articles.cjs <LSH-Knowledge-Base repo>"); process.exit(1); }
 const seed = f => JSON.parse(fs.readFileSync(path.join(KB, "public/seed", f), "utf8"));
 
-// the roles, in the order the card shows them: [key, the card's label, the window's title, the library collection (its 🔗 whole collection link)]
+// the roles this course teaches (Lessons 1-8), in the order the card shows them: [key, the card's label, the window's title, the library collection (its 🔗 whole collection link)]
 const ROLES = [
   ["va", "VA Basics", "Virtual Assistant Essentials & Law Firm Basics", "foundational"],
   ["reception", "Reception", "Reception", ""],
   ["calendar", "Calendar", "Calendaring & Appointment Setting", ""],
   ["intake", "Intake", "Intake Specialist", "intake"],
   ["claims", "Claims", "Claims Specialist & Insurance", "insurance"],
-  ["records", "Med Records", "Medical Records Specialist", "provider"],
-  ["liens", "Liens", "Liens & Subrogation", "lien"],
-  ["demands", "Demands", "Demands & Medical Summaries", "demands"],
-  ["practice", "Practice Areas", "Practice Areas", ""]
+  ["records", "Med Records", "Medical Records Specialist", "provider"]
 ];
 // a Foundational Training lesson's topics go to its role
 const LESSON = {1: "va", 2: "va", 3: "va", 4: "reception", 5: "calendar", 6: "intake", 7: "claims", 8: "records"};
-// a bundled document's collection → its role (Case Management's and Litigation's aren't on the card: "" leaves them out)
-const COLLECTION = {intake: "intake", insurance: "claims", provider: "records", "case-management": "", lien: "liens", demands: "demands", litigation: ""};
+// a bundled document's collection → its role ("" leaves it off the card: the course doesn't teach it)
+const COLLECTION = {intake: "intake", insurance: "claims", provider: "records", "case-management": "", lien: "", demands: "", litigation: ""};
 // the Tettra pages, one by one (their categories don't follow the roles: "Administrative" holds intake, records and calendar pages)
 const TETTRA = {
   829734: "intake", 829735: "intake", 829736: "intake", 829738: "intake", 918345: "intake",
   829763: "claims",
   972751: "records", 1024476: "records", 1024491: "records", 1031449: "records", 1031468: "records", 829767: "records",
-  829739: "liens", 829740: "liens", 829741: "liens", 829754: "liens", 829756: "liens", 829759: "liens", 829770: "liens",
-  848156: "demands", 848185: "demands",
-  919505: "", 1083562: "", 1083564: "", 1085903: "",   // Litigation: not on the card
+  829739: "", 829740: "", 829741: "", 829754: "", 829756: "", 829759: "", 829770: "",   // Liens, Demands, Litigation: not on the card
+  848156: "", 848185: "",
+  919505: "", 1083562: "", 1083564: "", 1085903: "",
   918335: "calendar",
   958866: "reception", 972748: "reception",
   972753: "va", 1086475: "va"
@@ -61,9 +58,9 @@ for(const d of seed("docs.json")){
   add(role, d.section || "Procedures & guides", d.title, `#/doc/${d.file}`);
 }
 for(const p of seed("tettra.json").pages){
-  const role = /^IV\. Practice/.test(p.category) ? "practice" : TETTRA[p.id]; if(role === "") continue;
+  const role = /^IV\. Practice/.test(p.category) ? "" : TETTRA[p.id]; if(role === "") continue;
   if(!role){ lost.push(`Tettra ${p.id} ${p.title}`); continue; }
-  add(role, role === "practice" ? "Practice areas" : "Guides & SOPs", p.title, `#/go/${p.id}`);
+  add(role, "Guides & SOPs", p.title, `#/go/${p.id}`);
 }
 if(lost.length){ console.error("No role for:\n  " + lost.join("\n  ")); process.exit(1); }
 
