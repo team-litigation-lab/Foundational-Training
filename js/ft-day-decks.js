@@ -579,8 +579,10 @@ function dayRows(n){
   const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return [];
   return standardRows(n, c, lid, n === c.days[0], lessonTitle(lid), cardRows(c, (X.data && X.data.days) || {}).filter(r => rowDay(c, r) === n));
 }
-// a row's time on its day's card: "Day 8 PM" reads "PM"
-const rowWhen = (n, r) => String(r.time || "").replace(new RegExp("^Day " + Number(n) + "\\b\\s*(·\\s*)?", "i"), "").replace(/^./, x => x.toUpperCase());
+// a row's time on its day's card, without AM / PM (the cards show no time of day): "Day 8 PM" on Day 8 reads nothing,
+// "Day 13 · AM" on Day 12 reads "Day 13"
+const rowWhen = (n, r) => String(r.time || "").replace(new RegExp("^Day " + Number(n) + "\\b\\s*(·\\s*)?", "i"), "")
+  .replace(/\s*(·\s*)?\b(AM|PM)\b(\s*&\s*(AM|PM)\b)?/gi, "").replace(/^\s*·\s*|\s*·\s*$/g, "").trim().replace(/^./, x => x.toUpperCase());
 // a row's title as its card shows it (the row's step in Activity Locks is named the same)
 const rowLabel = (n, r) => r.t + (rowWhen(n, r) ? ` · ${rowWhen(n, r)}` : "");
 // a stop that opens something other than a slide: the lesson, the video, the day's Knowledge Check
@@ -2546,6 +2548,9 @@ main.main-ftdd .ftdd-sheet .ftdd-cix-two > div > b{font-weight:800 !important;co
    navy-bordered boxes */
 main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
+/* (a scorecard's rows at the text's own height, not the slide's line spacing: a long one, Day 9's 17 Intake criteria, then
+   fits at the size of a short one, Day 12's, rather than zoomed down to fit) */
+main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.2 !important;padding-top:3px;padding-bottom:3px;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 /* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}

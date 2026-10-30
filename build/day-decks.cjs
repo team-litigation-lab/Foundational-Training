@@ -881,6 +881,12 @@ const EDIT = {
       const re = /(https:\/\/docs\.google\.com\/document\/d\/[\w-]+\/edit\?usp=sharing)&amp;amp;amp;[^"]*/g;
       if((out.match(re) || []).length !== 3) throw new Error("Day 11's LOR templates and case notes are no longer where the build looks for them");
       return out.replace(re, "$1");
+    },
+    // the shadowing: the TAM section's picture, the "in lieu" note and the recorded shadowing (Astred's) are off the slide
+    s2: h => {
+      const re = /<div class="shots"><figure><a href="\/ft\/day11\/img\/image32\.png"[^\n]*\n<hr class="stars">\n<p><b>Note:<\/b> To be given in lieu[^\n]*\n<p><b>SHADOWING ASTRED[^\n]*\n<p><a [^\n]*1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8[^\n]*\n/;
+      if(!re.test(h)) throw new Error("Day 11's shadowing slide is no longer what the build looks for");
+      return h.replace(re, "");
     }},
   14: {s2: h => rep(h, SLOT(14, "s2-1") + "\n", SLOT(14, "s2-1") + "\n" + SHADOW_HOWTO, 1, "Day 14 s2")},
   15: {
