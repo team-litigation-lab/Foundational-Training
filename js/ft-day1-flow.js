@@ -90,8 +90,9 @@ window.FTDay1 = {STEPS, active, at, stepsFor, ownSteps, label: n => step(n).labe
   videoByStep: id => Number(id) === 1 && !!state.traineeId && !state.isAdmin && !state.adminPreview && !videoOpen()};
 // Day 1's video is open once the trainer has unlocked Handouts and Videos for the batch (and locks again from there),
 // or, for a trainee no longer held to Day 1's steps (Lesson 1 finished, the batch past Day 1), once the trainer has
-// unlocked it as any lesson's video is (🎬 Unlock Videos, or approved for them)
-const videoOpen = () => stepsFor(state.traineeBatch) >= 5 || (!active() && !!__unlocked && __unlocked(1));
+// unlocked it as any lesson's video is (🎬 Unlock Videos, or approved for them); and once the trainee has finished Day 1
+// (✓ Finished on its card), it stays open, as the finished day does
+const videoOpen = () => stepsFor(state.traineeBatch) >= 5 || !!((state.progress || {})[1] || {}).done || (!active() && !!__unlocked && __unlocked(1));
 
 /* the pages: 📚 Dashboard opens the current step; Know Your Tools, Lesson 1 and its Knowledge Check wait for theirs */
 const __goto = window.goto;
