@@ -100,10 +100,10 @@ async function workerChecks() {
         const a = c.getBoundingClientRect(), b = s.getBoundingClientRect(); return { right: b.right - a.right, last: !c.nextElementSibling, metrics: /WEIGHTED AVERAGE/.test(s.textContent), only: s.classList.contains('ftbf-only') }; });
       if (!pos || pos.right > 60 || !pos.last || !pos.metrics || pos.only) fail(`the Monitoring Sheet card should be at the lower right of the metrics page, after it: ${JSON.stringify(pos)}`);
     }
-    // 📅 Day 5's Attorney Calendar Management Activity: its 📤 Submit, as Day 2's panel, is its Done, at the end of its slides
+    // 📅 Day 5's Attorney Calendar Management Activity: no Submit panel (and no tracker) on its slides: it is submitted on the Main Portal
     await open(t, 5, 's3b');
-    if (!(await toPanel(t))) fail('Day 5\'s Attorney Calendar Management Activity has no Done');
-    else if (!/Attorney Calendar Management Activity[^]*Once done, hit Submit[^]*Submit/.test(await panel(t)) || /screenshot/i.test(await panel(t)) || !(await t.$('.ftbf .ftbf-done'))) fail(`the activity's Done panel reads: ${await panel(t)}`);
+    for (let k = 0; k < 4; k++) { await t.evaluate(() => FTDayDecks.go(1)); await t.waitForTimeout(300); }
+    if (await t.evaluate(() => !!document.querySelector('.ftbf, .ftbf-slot'))) fail('Day 5\'s Attorney Calendar Management Activity still has a Submit panel');
 
     // 🧪 a demo slide, as Day 4's mock calls: only "Demos Ongoing", its line and Done; its instructions and metrics are on
     // the preparation slide before it (build/day-decks.cjs PREP), a card row and step of its own as on Day 4

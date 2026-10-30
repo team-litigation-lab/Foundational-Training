@@ -40,9 +40,8 @@ const ACTS = {
   // who submitted on Day 4 is done here too (the card's next stop is the lesson deck)
   "5:s1": {kind: "buffer", task: true, gate: true, key: "4:s2m", title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [10, 11], activity: "Reception Training with Julio"}},
-  // Day 5's Attorney Calendar Management Activity: "signify done" is its Done, at the end of its slides (s3, its text; s3b)
-  // (its panel as Day 2's: what to do, "Once done, hit Submit." and 📤 Submit, which counts as the Done; label: the button)
-  "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📅 Attorney Calendar Management Activity", lead: "Once done, hit Submit.", label: "📤 Submit"},
+  // (Day 5's Attorney Calendar Management Activity has no Submit panel or tracker here: it is submitted on the Main Portal's
+  // Calendaring Activity calendar, 📤 Submit for evaluation, and its scores come back to the Scorecard: simresults)
   // (Day 9's Buffer Time is off the deck: build/day-decks.cjs SKIP[9])
   "13:s1": {kind: "buffer"},
   // (simple: the trainee sees only "Mock Calls Ongoing", no Done: the trainer marks each trainee done; nextDay: the trainer's

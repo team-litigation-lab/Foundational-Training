@@ -280,7 +280,7 @@ const TRIM = {1: {reading: html => {
 // Day 5's Attorney Calendar Management Activity: the activity's own text, its Instructions as two cards and its ten
 // Activity Items as ten cards (calItems), under each Calendar Simulator's link (CAL_HEAD); then the samples, the time zone card
 // and the 📅 Calendar Activity Check (no screenshots are taken or uploaded: the guide's whole-calendar screenshot and
-// 19-screenshot upload are off the slide), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b").
+// 19-screenshot upload are off the slide), ending on its Time Zone & Submit slide (the activity is submitted on the Main Portal's Calendaring Activity calendar).
 // ROWS[5].s3 cuts it into s3 (the Instructions), s3i–s3l (the cards 1–4, 5–7, 8 alone, 9–10) and s3b (from the second trainer slot).
 s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
