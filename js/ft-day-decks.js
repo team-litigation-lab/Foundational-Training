@@ -854,7 +854,8 @@ function centerPage(sheet){
   // (Day 3's CRM/CMS Training Videos starts at the top: its "Choose one video" band leads the slide)
   if(sheet.matches(".ftdd-short, .ftdd-sheet-edit") || sheet.querySelector(":scope > .ftdd-pick-note") || !sheet.clientHeight || sheet.scrollHeight > sheet.clientHeight + 2) return;
   const shown = [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none");
-  if(!shown.length) return;
+  // (and Day 4's mock call preparation opens at the top: its lead, the tools' band and their buttons)
+  if(!shown.length || shown.some(k => k.classList.contains("ftdd-mock-warm"))) return;
   const st = getComputedStyle(sheet), pt = parseFloat(st.paddingTop) || 0, pb = parseFloat(st.paddingBottom) || 0;
   const top = Math.min(...shown.map(k => k.getBoundingClientRect().top - (parseFloat(getComputedStyle(k).marginTop) || 0)));
   const bottom = Math.max(...shown.map(k => k.getBoundingClientRect().bottom + (parseFloat(getComputedStyle(k).marginBottom) || 0)));
@@ -2885,6 +2886,10 @@ main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0
 .ft-body a.ftdd-sop-open{display:inline-flex;align-items:center;gap:10px;font-size:22px;line-height:1.3;color:#1F5B39;text-decoration:none;}
 .ft-body a.ftdd-sop-open b{text-decoration:underline;text-underline-offset:3px;}
 main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
+/* (Day 4's first page, at the top of the slide: each line with room around it) */
+main.main-ftdd .ftdd-sheet:has(> .ftdd-mock-warm:not([style*="display: none"])){justify-content:flex-start;}
+main.main-ftdd .ftdd-sheet .ftdd-mock-warm > p{line-height:1.65 !important;margin:0 0 24px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-mock-warm > .ftdd-mock-btns{margin:30px 0 8px;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
 /* (white over the slide's own link colour, which is more specific) */
