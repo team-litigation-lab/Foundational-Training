@@ -317,6 +317,9 @@ function visual(html){
       if(REF_SHEET.test(href)) box.setAttribute("data-sheet", REF_SHEET.source);
       const terms = REF_SHEET.test(href) && refTermsInto(box);
       if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
+      // 📁 a Drive folder (Day 10's VA call recordings): the slide's full width, Drive's grid laid out wide enough for a row
+      // of seven files and scaled down to the box (fitCrops)
+      if(/\/folders\//.test(href) && !(crop > 0)){ box.querySelector(".ftdd-embed").classList.add("ftdd-embed-row"); box.classList.add("is-row"); }
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
       if(a.hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
@@ -1014,12 +1017,22 @@ function cardScale(box){
 }
 // a cropped sheet (ftdd-embed-crop): its frame is as wide as the columns kept, scaled up to the box's width, so the
 // columns past them (and the blank space beside them) fall outside the box
+const FOLDER_ROW = [1700, 300];   // (Drive's folder grid: a file every 231px after a 65px margin, a row 300px tall with the band above it)
 function fitCrops(sheet){
   sheet.querySelectorAll(".ftdd-embed-crop[data-crop]").forEach(em => {
     const f = em.querySelector("iframe"), w = em.clientWidth, h = em.clientHeight, cw = Number(em.getAttribute("data-crop"));
     if(!f || !w || !h || !cw) return;
     const k = w / cw;
     Object.assign(f.style, {width: cw + "px", height: Math.round(h / k) + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
+  });
+  // a Drive folder's row (ftdd-embed-row): Drive lays its grid out FOLDER_ROW[0] wide (seven files to a row), scaled down to
+  // the box, and the box is one row of files tall
+  sheet.querySelectorAll(".ftdd-embed-row").forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth, [fw, fh] = FOLDER_ROW;
+    if(!f || !w) return;
+    const k = Math.min(1, w / fw);
+    em.style.height = Math.round(fh * k) + "px";
+    Object.assign(f.style, {width: Math.round(w / k) + "px", height: fh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
 }
 function fitSheets(){
@@ -2277,7 +2290,8 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 /* two things side by side on one slide (Day 7's two folders) */
 .ftdd-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0 12px;}
 @media(max-width:800px){.ftdd-two{grid-template-columns:minmax(0,1fr);}}
-.ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:start;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it) */
+.ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:end;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it; a row's cards line up along the bottom, so a name over two lines
+   reaches up instead of pushing its card down: Day 10's VLF SOP) */
 .ftdd-three > *{margin:0;}
 .ftdd-three .ftdd-three-h{grid-column:1 / -1;}
 .ftdd-three .ftdd-three-side{grid-column:3;}
@@ -2878,6 +2892,8 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* a sheet cut to its first columns (fitCrops scales its frame to the box): the page's full height, under its name */
+/* 📁 a Drive folder's row (fitCrops sizes it): the slide's full width */
+.ftdd-sheet.ftdd-d615 > .ftdd-inline.is-row{align-self:stretch;}
 .ft-body .ftdd-embed.ftdd-embed-crop, .ft-body .ftdd-embed.ftdd-embed-full{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
 .ft-body .ftdd-inline.is-crop{margin:0;}
 /* 📊 the reference sheet as a table (refTerms): the page's full height, its tabs above, the rows scrolling under the header */
