@@ -393,6 +393,31 @@ for n, h, secs in summary:
     for s in secs: print("   ", s)
 print("notes:", len(notes), "images copied:", copied)
 
+# ---------- corrections to the guide's wording (applied to every output, so a re-import keeps them) ----------
+TEXT_FIXES = [
+    ("Oscar’s’ Reception Recordings", "Oscar’s Reception Recordings"),
+    ("all extracted files. including", "all extracted files, including"),
+    ("Give this material after the following day activities or after the classroom discussion on Insurance Claims Specialist  training,  it depends on the flow or progress of the training.",
+     "Give this material after the activities that follow, or after the classroom discussion on Insurance Claims Specialist training, depending on the flow and progress of the training."),
+    # the shadowing videos' dates, all written MM/DD/YYYY like 09/29/2023
+    ("SHADOWING ASTRED 06/26:", "SHADOWING ASTRED 06/26/2023:"),
+    ("SHADOWING ASTRED 06/27:", "SHADOWING ASTRED 06/27/2023:"),
+    ("SHADOWING ASTRED 09/20:", "SHADOWING ASTRED 09/20/2023:"),
+    ("SHADOWING ASTRED 10/27:", "SHADOWING ASTRED 10/27/2023:"),
+    # an instruction line with nothing to act on: dropped, with its trainer slot
+    ('<h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4>\\n', ""),
+    ('<h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4>\n', ""),
+    ('<div class=\\"trainer-slot\\" data-slot=\\"11:s1-4\\"></div>\\n', ""),
+    ('  "11:s1-4": "<div class=\\"facilitator\\"><h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4></div>",\n', ""),
+]
+def apply_fixes(path):
+    body = open(path, encoding="utf8").read()
+    new = body
+    for old, rep in TEXT_FIXES: new = new.replace(old, rep)
+    if new != body: open(path, "w", encoding="utf8").write(new)
+for f in [os.path.join(REPO, "build", "days", f"day{n:02d}.js") for n in days] + [os.path.join(REPO, "trainer", x) for x in ("notes.json", "curriculum.json")]:
+    apply_fixes(f)
+
 # ---------- safety: no credential may reach the output ----------
 leaks = []
 for root, _, files in os.walk(REPO):
