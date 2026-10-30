@@ -50,14 +50,17 @@ const ACTS = {
   // its own slide; its records keep the key they were saved under)
   // (Day 6's as Day 4's: the mock calls on a slide of their own after the instructions, s1b, simple; no nextDay, the day's
   // Additional Activity follows)
-  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true},
-  // (Days 8–16 as Day 4: the instructions and metrics on the preparation slide before, build/day-decks.cjs PREP; here, simple)
-  "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true},
-  "8:s3": {kind: "demo", name: "Saving the Intake Packet and Extracted Intake Documents", act: "intake-packet-demo", simple: true},
-  "12:s1d": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true, key: "12:s1", simple: true},
-  "14:s1e": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "14:s1", simple: true},
-  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "15:s1", simple: true},
-  "16:s2": {kind: "demo", name: "LV (Lien Verification) Request", act: "lv-demo", simple: true}
+  // (what: the trainee's name for it, on the panel and the confirmation: Day 6 is the Calendaring Activity, done on the
+  // Calendar Simulator; the trainer's tracker and scorecard keep the mock call's)
+  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true, what: "Calendaring Activity"},
+  // (Days 8–16 as Day 4: the instructions and metrics on the preparation slide before, build/day-decks.cjs PREP; here, simple;
+  // nextDay, as Day 4's: mock calls and demos can run into the next day, so the debrief opens it for the batch)
+  "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true, nextDay: true},
+  "8:s3": {kind: "demo", name: "Saving the Intake Packet and Extracted Intake Documents", act: "intake-packet-demo", simple: true, nextDay: true},
+  "12:s1d": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true, key: "12:s1", simple: true, nextDay: true},
+  "14:s1e": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "14:s1", simple: true, nextDay: true},
+  "15:s1b": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "15:s1", simple: true, nextDay: true},
+  "16:s2": {kind: "demo", name: "LV (Lien Verification) Request", act: "lv-demo", simple: true, nextDay: true}
 };
 const SIM = "https://cm-training-activity.pages.dev/simulators/call.html?";
 const RING = SIM + "program=FT";
@@ -111,8 +114,8 @@ function traineePanel(h){
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
   // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
-  if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
-    <p class="ftbf-lead">Hit Done when you are done with your ${a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
+  if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
+    <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
@@ -158,7 +161,7 @@ async function loadReview(){
   try{ M.review = (await sharedGet("trackerreview:" + state.traineeId)) || {}; }catch(err){}
 }
 function confirmBox(h){
-  const a = h.a, q = a.kind === "mock" ? "Have you completed your 1-on-1 mock call with the trainer?"
+  const a = h.a, q = a.what ? `Have you completed your 1-on-1 ${a.what} with the trainer?` : a.kind === "mock" ? "Have you completed your 1-on-1 mock call with the trainer?"
     : a.rec ? "Have you finished and submitted your recorded demonstration?" : "Have you completed your 1-on-1 demo with the trainer?";
   const m = document.createElement("div"); m.className = "ftbf-modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true");
   m.innerHTML = `<div class="ftbf-modal-box"><p>${e(q)}</p><div class="ftbf-modal-acts"><button type="button" class="btn btn-ghost" onclick="FTBuffer.cancel()">Cancel</button>
@@ -328,7 +331,7 @@ function paint(){
   box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
-  if((h.a.kind === "buffer" && ((!h.a.task && !h.a.show) || (h.a.gate && !mine(h.k)))) || h.a.simple){ sheet.classList.add("ftbf-only");
+  if((h.a.kind === "buffer" && (!h.a.task || (h.a.gate && !mine(h.k)))) || h.a.simple){ sheet.classList.add("ftbf-only");
     // (one page: the hidden content's page breaks go)
     if(h.a.gate) sheet.querySelectorAll(":scope > .ftdd-pgbreak").forEach(x => x.remove()); }
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();

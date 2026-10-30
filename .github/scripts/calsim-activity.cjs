@@ -24,6 +24,9 @@ const sb = { document: { getElementById: () => null, createElement: () => ({}), 
 sb.window = sb; vm.createContext(sb); vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', 'ft-calcheck.js'), 'utf8'), sb, { filename: 'ft-calcheck.js' });
 const CK = sb.FTCalCheck; globalThis.FTCalCheck = CK;
 const C = require(path.join(ROOT, 'js', 'ft-calsim-core.js'));
+// and the core beside it, as the page has window.FTCalCore (the Check reads the core's current anchor from it: an unnamed record,
+// the simulator's {entries}, is checked at that anchor)
+sb.FTCalCore = C;
 const failures = []; const fail = m => failures.push(m);
 const expect = (label, got, want) => { if (JSON.stringify(got) !== JSON.stringify(want)) fail(`${label}: got ${JSON.stringify(got)}, expected ${JSON.stringify(want)}`); };
 const A = C.act, S = C.SCENARIOS.find(s => s.id === 'attorney-activity'), K = S ? S.key : [];
@@ -63,8 +66,8 @@ timedKey.forEach((a, i) => timedKey.slice(i + 1).forEach(b => { if (a.abs.s < b.
 const mm = t => +t.slice(0, 2) * 60 + +t.slice(3, 5);
 const email = name => (A.PEOPLE.find(p => p.name === name) || {}).email;
 const remOf = m => m % 1440 === 0 ? { n: m / 1440, unit: 'days' } : m % 60 === 0 ? { n: m / 60, unit: 'hours' } : { n: m, unit: 'minutes' };
-function perfect() {
-  return CK.key.map(k => {
+function perfect(key) {
+  return (key || CK.key).map(k => {
     const s = A.SIM[k.n];
     const x = { id: 'e_' + k.n, title: k.name, loc: k.loc ? k.locShow + (k.link ? ' (Zoom for remote attendees: ' + k.link + ')' : '') : s.eg || '', guests: (k.guests || []).map(email),
       desc: k.notesShow || '', color: A.CATS[s.cat].colors[0], meet: false,
@@ -210,6 +213,116 @@ expect('a drag to Tue 11 PM Pacific, in Eastern', A.fromPac(1, 23 * 60, 'America
 expect('travel locations', ['Seattle to Washington County Court', 'Ritz-Carlton → SFO', 'Office - Court', 'Washington County Court'].map(A.splitTravel),
   [{ from: 'Seattle', to: 'Washington County Court' }, { from: 'Ritz-Carlton', to: 'SFO' }, { from: 'Office', to: 'Court' }, null]);
 
+// ---------- the anchor: the activity's dates moved by whole weeks to the batch's Day 5 week (FTCalCore.act, THE ANCHOR) ----------
+expect('the default anchor', [A.FROM, A.anchor(), A.BASE_FROM, A.weeks(), A.SCN_ID], ['2026-07-06', '2026-07-06', '2026-07-06', 0, 'attorney-activity']);
+const winOf = () => Object.fromEntries(S.key.filter(k => !k.allDay).map(k => [k.id, `${A.dLabel(k.pt.day)} ${A.range(k.pt.start, k.pt.end)}`]));
+const clockOf = w => Object.fromEntries(Object.entries(w).map(([n, v]) => [n, v.replace(/^\w{3} \w{3} \d+ /, '')]));
+const wJuly = winOf();
+// switching the anchor and back: the key list, the Pacific windows and the zones' offsets follow it (no stale cache either way)
+expect('setAnchor to November', [A.setAnchor('2026-11-02'), A.FROM, A.anchor(), A.weeks(), A.dIso(0), A.dLabel(9), A.spanText(A.LAST)], ['2026-11-02', '2026-11-02', '2026-11-02', 17, '2026-11-02', 'Wed Nov 11', 'November 2 to 11']);
+expect('the key at November 2', S.key.map(k => k.date), CK.keyFor('2026-11-02').map(k => k.date));
+expect('the overnight stay at November 2', [S.key.find(k => k.id === '8.5').date, S.key.find(k => k.id === '8.5').endDate], ['2026-11-09', '2026-11-10']);
+const wNov = winOf();
+expect('the Pacific windows at November 2 (standard time: PST/MST/CST/EST are the regions\' wall clocks on the shifted dates)', wNov,
+  { 1: 'Mon Nov 2 10 AM – 11 AM', 2: 'Tue Nov 3 2 PM – 3 PM', 3: 'Wed Nov 4 8 AM – 10 AM', 4: 'Wed Nov 4 3:30 AM – 4:30 AM', 5: 'Thu Nov 5 9 AM – 10 AM',
+    6.1: 'Fri Nov 6 9 AM – 12 PM', 6.2: 'Fri Nov 6 8 AM – 9 AM', 6.3: 'Fri Nov 6 12 PM – 1 PM', 7: 'Fri Nov 6 2 PM – 3 PM', 8.1: 'Mon Nov 9 6 PM – 8 PM',
+    8.2: 'Mon Nov 9 8:30 AM – 9 AM', 8.3: 'Mon Nov 9 9 AM – 12 PM', 8.4: 'Mon Nov 9 5:45 PM – 6 PM', 8.6: 'Tue Nov 10 8 AM – 8:30 AM', 8.7: 'Tue Nov 10 10 AM – 1 PM',
+    9: 'Wed Nov 11 11:30 AM – 1 PM', 10: 'Wed Nov 11 6 PM – 8 PM' });
+expect('the zones in November (standard)', [A.tzLabel(A.TZS[0], A.absAt('2026-11-03', 720, A.CAL_TZ)), A.abbr(A.TZS[0], A.absAt('2026-11-03', 720, A.CAL_TZ)), A.tzLabel(A.TZS[5], A.absAt('2026-11-03', 720, 'America/New_York'))],
+  ['(GMT-08:00) Pacific Time - Los Angeles', 'PST', '(GMT-05:00) Eastern Time - New York']);
+expect('setAnchor back to July', A.setAnchor('2026-07-06'), '2026-07-06');
+expect('the Pacific windows after November and back', winOf(), wJuly);
+expect('the zones in July again (daylight)', [A.tzLabel(A.TZS[0], A.absAt('2026-07-07', 720, A.CAL_TZ)), A.abbr(A.TZS[0], A.absAt('2026-07-07', 720, A.CAL_TZ))], ['(GMT-07:00) Pacific Time - Los Angeles', 'PDT']);
+A.setAnchor('2026-11-02'); expect('November again (from the hour cache)', winOf(), wNov); A.setAnchor('2026-07-06');
+// an anchor that isn't one (not a Monday, before July 6, 2026, not a date) is July
+expect('invalid anchors', ['2026-11-03', '2026-06-29', '2026-02-30', 'soon', null].map(a => A.setAnchor(a)), ['2026-07-06', '2026-07-06', '2026-07-06', '2026-07-06', '2026-07-06']);
+expect('okAnchor / isMonday', [A.okAnchor('2026-11-02'), A.okAnchor('2026-06-29'), A.okAnchor('2026-11-03'), A.isMonday('2026-06-29'), A.isMonday('2026-11-01')], [true, false, false, true, false]);
+expect('shiftIso / weeksOf', [A.shiftIso('2026-07-13', 17), A.shiftIso('2026-07-14', 35), A.weeksOf('2026-11-02'), A.weeksOf('2027-03-08')], ['2026-11-09', '2027-03-16', 17, 35]);
+// withAnchor: fn runs at the anchor, and the anchor is put back after, even when fn throws
+expect('withAnchor', [A.withAnchor('2026-11-02', () => [A.anchor(), A.dIso(7)]), A.anchor()], [['2026-11-02', '2026-11-09'], '2026-07-06']);
+A.setAnchor('2026-10-26');
+{ let threw = false; try { A.withAnchor('2026-11-02', () => { S.key; throw new Error('boom'); }); } catch (e) { threw = e.message === 'boom'; }
+  if (!threw) fail('withAnchor swallowed the error'); expect('withAnchor puts the anchor back after a throw', [A.anchor(), S.key[0].date], ['2026-10-26', '2026-10-26']); }
+A.setAnchor('2026-07-06');
+expect('the July windows after withAnchor', winOf(), wJuly);
+// a record's anchor: its own (a valid one), else July for a record from before anchors (an activity draft with events, or an
+// activity submission), else none
+const ev1 = { id: 'e1', title: 'x', date: '2026-07-06', start: 600, dur: 60 };
+expect('anchorOfRecord', [
+  null, undefined, 'x', {}, { drafts: {}, submissions: [] },
+  { drafts: { 'attorney-activity': { events: [ev1] } } },          // a July draft
+  { drafts: { 'attorney-activity': [ev1] } },                      // a July draft, as a list
+  { drafts: { 'attorney-activity': { events: [] } } },             // an empty draft: none yet
+  { drafts: { rivera: { events: [ev1] } } },                       // a Standard week's draft only
+  { submissions: [{ scn: 'attorney-activity', events: [ev1] }] },  // a July submission
+  { submissions: [{ scn: 'rivera' }] },                            // a Standard week's submission only
+  { anchors: { 'attorney-activity': '2026-11-02' }, drafts: { 'attorney-activity': { events: [ev1] } }, submissions: [{ scn: 'attorney-activity' }] },  // stored wins
+  { anchors: { 'attorney-activity': '2026-11-02' } },
+  { anchors: { 'attorney-activity': '2026-11-03' }, drafts: { 'attorney-activity': { events: [ev1] } } },  // a Tuesday: ignored, legacy July
+  { anchors: { 'attorney-activity': '2026-06-29' } },                                                       // before July: ignored, none
+  { anchors: { 'attorney-activity': 'soon' }, submissions: [{ scn: 'attorney-activity' }] },
+  { anchors: { rivera: '2026-11-02' } }
+].map(A.anchorOfRecord), [null, null, null, null, null, '2026-07-06', '2026-07-06', null, null, '2026-07-06', null, '2026-11-02', '2026-11-02', '2026-07-06', null, '2026-07-06', null]);
+// a batch's anchor: the first Monday on or after its Day 5 (the fifth weekday from the start; a weekend start counts from the Monday after)
+expect('batchStart', ['B102626', 'b102826', ' B103126 ', 'B023026', 'B1026', 'X102626', '', null].map(A.batchStart), ['2026-10-26', '2026-10-28', '2026-10-31', null, null, null, null, null]);
+expect('anchorForBatch', ['B102626', 'B102826', 'B103126', 'B110126', 'B110626', 'B010425', 'nope'].map(A.anchorForBatch),
+  ['2026-11-02', '2026-11-09', '2026-11-09', '2026-11-09', '2026-11-16', '2026-07-06', null]);
+expect('anchorForStart', ['2026-10-26', '2026-10-27', '2026-10-30', '2026-11-01', '2026-12-28'].map(A.anchorForStart), ['2026-11-02', '2026-11-02', '2026-11-09', '2026-11-09', '2027-01-04']);
+// this week's batch, by Pacific's calendar date
+const at = s => Date.parse(s);
+expect('anchorNow', [
+  A.anchorNow(at('2026-10-30T20:00:00Z')),        // Fri Oct 30, 1 PM Pacific: the week of Oct 26 → Day 5 Fri Oct 30 → Mon Nov 2
+  A.anchorNow(at('2026-11-02T07:30:00Z')),        // Sun Nov 1, 11:30 PM Pacific (PST): still the week of Oct 26
+  A.anchorNow(at('2026-11-02T00:10:00+08:00')),   // Mon Nov 2, 00:10 Manila = Sun Nov 1, 8:10 AM Pacific: the week of Oct 26
+  A.anchorNow(at('2026-11-02T16:00:00Z')),        // Mon Nov 2, 8 AM Pacific: the week of Nov 2 → Day 5 Fri Nov 6 → Mon Nov 9
+  A.anchorNow(at('2026-11-02T07:59:00Z'))         // Sun Nov 1, 11:59 PM PST
+], ['2026-11-02', '2026-11-02', '2026-11-02', '2026-11-09', '2026-11-02']);
+if (!A.okAnchor(A.anchorNow())) fail('anchorNow() (now) is not an anchor: ' + A.anchorNow());
+// ensureAnchor: a record without one gets the batch's (the caller saves it); a legacy record keeps July and isn't touched
+{ const r = {}; expect('ensureAnchor from B102626', [A.ensureAnchor(r, 'B102626', at('2026-10-30T20:00:00Z')), r.anchors], [{ anchor: '2026-11-02', created: true }, { 'attorney-activity': '2026-11-02' }]);
+  expect('ensureAnchor again (kept)', [A.ensureAnchor(r, 'B110626'), r.anchors], [{ anchor: '2026-11-02', created: false }, { 'attorney-activity': '2026-11-02' }]); }
+{ const r = { anchors: { rivera: 'x' } }; expect('ensureAnchor from B102826 (other anchors kept)', [A.ensureAnchor(r, 'B102826'), r.anchors], [{ anchor: '2026-11-09', created: true }, { rivera: 'x', 'attorney-activity': '2026-11-09' }]); }
+{ const r = {}; expect('ensureAnchor from a weekend start (B103126: Sat → Day 5 Fri Nov 6)', [A.ensureAnchor(r, 'B103126'), r.anchors], [{ anchor: '2026-11-09', created: true }, { 'attorney-activity': '2026-11-09' }]); }
+{ const r = {}; expect('ensureAnchor with no Batch ID (this week\'s)', A.ensureAnchor(r, '', at('2026-11-02T00:10:00+08:00')), { anchor: '2026-11-02', created: true }); }
+{ const r = { anchors: { 'attorney-activity': '2026-11-03' } }; expect('ensureAnchor over an invalid stored anchor', [A.ensureAnchor(r, 'B102626'), r.anchors], [{ anchor: '2026-11-02', created: true }, { 'attorney-activity': '2026-11-02' }]); }
+{ const r = { drafts: { 'attorney-activity': { events: [ev1] } } }; expect('ensureAnchor on a July draft (legacy)', [A.ensureAnchor(r, 'B102626'), r.anchors], [{ anchor: '2026-07-06', created: false }, undefined]); }
+{ const r = { submissions: [{ scn: 'attorney-activity' }] }; expect('ensureAnchor on a July submission (legacy)', [A.ensureAnchor(r, 'B102626'), r.anchors], [{ anchor: '2026-07-06', created: false }, undefined]); }
+// the dates in the words: only "Month DD, YYYY" moves
+expect('rewriteDates', A.rewriteDates('July 06, 2026 · July 13, 2026 · zoom.us/deposition-meeting-02-04-25 · Feb 6, 2025 · July 6, 2026 · 2026-07-06 · February 30, 2026', 17),
+  'November 02, 2026 · November 09, 2026 · zoom.us/deposition-meeting-02-04-25 · Feb 6, 2025 · July 6, 2026 · 2026-07-06 · February 30, 2026');
+expect('rewriteDates by 0 weeks', A.rewriteDates('July 06, 2026', 0), 'July 06, 2026');
+expect('rewriteDates over a year end', A.rewriteDates('July 15, 2026', 26), 'January 13, 2027');
+expect('longDate', A.longDate('2026-11-09'), 'November 09, 2026');
+// the items at an anchor: their dates and the dates in their words (item 8's nested ▪ Date lines too); the activity's own stay July
+const nested = it => it.lines.find(l => Array.isArray(l[1]))[1].filter(t => /^▪ Date:/.test(t));
+A.withAnchor('2026-11-02', () => { const it = S.itemsNow, i8 = it.find(i => i.n === 8);
+  expect('itemsNow at November 2', it.map(i => [i.date, i.lines[0][1]]), S.items.map(i => [A.shiftIso(i.date, 17), A.longDate(A.shiftIso(i.date, 17))]));
+  expect('item 8\'s nested dates at November 2', nested(i8), ['▪ Date: November 09, 2026', '▪ Date: November 10, 2026']);
+  if (JSON.stringify(it).includes('July')) fail('itemsNow at November 2 still says July');
+  if (!JSON.stringify(it).includes('deposition-meeting-02-04-25')) fail('itemsNow rewrote the deposition link');
+  expect('the grid\'s warnings at November 2', C.flags(S, [{ id: 'z', title: 'Z', date: '2026-11-13', start: 540, dur: 60 }]), { z: ['Outside the activity’s dates (November 2 to 11)'] }); });
+expect('item 8\'s own dates', nested(S.items.find(i => i.n === 8)), ['▪ Date: July 13, 2026', '▪ Date: July 14, 2026']);
+expect('itemsNow at July is the items', JSON.stringify(S.itemsNow), JSON.stringify(S.items));
+// at each anchor: no key event on a Sunday (its own date or Pacific's), the same wall-clock windows as July, and a perfect calendar
+// built from the Check's key at that anchor (FTCalCheck.keyFor) scores 100 through the review at that anchor
+const ANCHORS = ['2026-07-06', '2026-10-26', '2026-11-02', '2027-03-08'];   // 10-26: DST ends Nov 1 mid-window; 2027-03-08: DST starts Mar 14 mid-window
+ANCHORS.forEach(a => A.withAnchor(a, () => {
+  if (A.anchor() !== a) fail(`${a}: withAnchor ran at ${A.anchor()}`);
+  S.key.forEach(k => { if (new Date(k.date + 'T00:00:00Z').getUTCDay() === 0 || (k.pt && /^Sun/.test(A.dLabel(k.pt.day)))) fail(`${a}: ${k.id} falls on a Sunday`);
+    if (k.date !== A.shiftIso(S.items.find(i => i.n === k.item).date, A.weeks()) && k.item !== 8) fail(`${a}: ${k.id} is on ${k.date}, not its item's day`); });
+  expect(`${a}: the Pacific wall-clock windows`, clockOf(winOf()), clockOf(wJuly));
+  if (!CK.keyFor) return;
+  const key = CK.keyFor(a), g = C.review(S, perfect(key));
+  expect(`${a}: the key list is the Check's keyFor`, S.key.map(k => [k.id, k.date]), key.map(k => [k.n, k.date]));
+  if (g.pct !== 100 || !g.passed || g.done !== 19 || g.extras.length) fail(`${a}: a perfect calendar from keyFor scores ${g.pct}% (${g.done} perfect, ${g.extras.length} extra): ${problems(g)}`);
+  const rows = CK.checkAll({ entries: g.entries }).filter(r => r[0] !== '11');
+  expect(`${a}: the review's rows are the Check's`, g.rows, rows);
+  expect(`${a}: the Check scores it`, CK.score(rows).pct, 100);
+  if (a !== '2026-07-06') { const j = C.review(S, perfect(CK.key)); if (j.pct >= 80) fail(`${a}: a July calendar scores ${j.pct}% at ${a}`); }
+}));
+if (CK.keyFor) { expect('keyFor(July) is the key', CK.keyFor('2026-07-06') === CK.key, true); expect('keyFor is cached', CK.keyFor('2026-11-02') === CK.keyFor('2026-11-02'), true); }
+expect('the anchor after the anchors', [A.anchor(), winOf()], ['2026-07-06', wJuly]);
+
 // ---------- the Standard weeks: exactly as before (sha256 of the results, pinned before the activity was added) ----------
 const h = v => crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex').slice(0, 16);
 const E = (id, title, day, start, dur, o) => Object.assign({ id, title, day, start, dur, desc: 'Prep and notes for this item', guests: '', meet: false, remind: false, color: '' }, o || {});
@@ -233,4 +346,4 @@ expect('Chen, Rivera\'s week', [h(cg), cg.pct], ['ef152a3b931321fd', 27]);
 expect('a Standard week, cleaned', h(C.clean(good)), 'e867ec7b73661dab');
 
 if (failures.length) { console.error(`✗ ${failures.length} problem(s):\n - ` + failures.join('\n - ')); process.exit(1); }
-console.log(`✓ Attorney Calendar Management Activity: the Check's key (${K.length} events, its zones, Pacific windows), a perfect calendar from FTCalCheck.key scores 100 through FTCalCheck, ${Object.keys(ok).length} accepted variants, ${bad.length} mistakes caught with the Check's fix and the Check agreeing, ${Object.keys(big).length} big ones fail, cleaning and warnings, and the Standard weeks unchanged.`);
+console.log(`✓ Attorney Calendar Management Activity: the Check's key (${K.length} events, its zones, Pacific windows), a perfect calendar from FTCalCheck.key scores 100 through FTCalCheck, ${Object.keys(ok).length} accepted variants, ${bad.length} mistakes caught with the Check's fix and the Check agreeing, ${Object.keys(big).length} big ones fail, cleaning and warnings, the anchor (set and back, withAnchor, records, batches, this week, the words' dates, ${ANCHORS.length} anchors${CK.keyFor ? ' scoring 100 through keyFor' : ''}), and the Standard weeks unchanged.`);

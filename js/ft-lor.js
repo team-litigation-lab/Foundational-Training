@@ -665,8 +665,9 @@ window.ftLorCard = function(){
   // request budget is untouched. The card names the case as soon as the read comes back.
   if(isTrainee() && L.id !== state.traineeId && !L.loading) load(state.traineeId);
   const no = isTrainee() && L.draft ? myCaseNo() : null;
-  const note = !open ? "" : adminOn() ? "Assign each trainee a case, and draft a test copy yourself."
-    : no ? `Your case: <b>${e(caseName(no))}</b>.` : "Waiting for your trainer to assign your case.";
+  // (no "assign each trainee a case" / "waiting for your trainer": the drafting opens on the Training Portal, js/ft-lor.js
+  // lshOpenPortalDrafting, where no case is assigned here)
+  const note = !open || adminOn() ? "" : no ? `Your case: <b>${e(caseName(no))}</b>.` : "";
   const dayT = window.FTDays ? FTDays.label(FTDays.forTool("lor")) : "";
   const medT = window.FTDays ? FTDays.label(FTDays.forTool("medlor")) : "", lvT = window.FTDays ? FTDays.label(FTDays.forTool("lienbv")) : "";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>

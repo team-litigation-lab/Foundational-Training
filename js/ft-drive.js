@@ -303,7 +303,8 @@ window.ftDriveItems = ctx => {
   if(days.length){ const vals = days.map(([d, x]) => tScore(x) != null ? tScore(x) : x.pct).filter(v => typeof v === "number");
     out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)"}); }
   const m = rv.monitor;
-  if(m && !m.error) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`});
+  // (the trainer's score stands even when the last automated check couldn't open the file)
+  if(m && (tScore(m) != null || !m.error)) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`});
   // 📒 the Monitoring Sheet items a slide's 📤 Submit had graded (Day 2's #5–7: /api/monitor/items, js/ft-buffer.js): the
   // score is here, not on the slide (the slide keeps the feedback)
   // 📄 the on-platform assessments graded by their Submit for Grading (js/ft-assess.js, /api/assess/grade)

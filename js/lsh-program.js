@@ -293,7 +293,8 @@ function compute(ctx){
     const g = items.filter(x => typeof x.pct === "number" && isFinite(x.pct));
     return {s, items, graded:g.length, avg:g.length ? Math.round(g.reduce((n, x) => n + x.pct, 0) / g.length) : null};
   });
-  const have = rows.filter(r => r.avg != null);
+  // (a source marked noOverall is shown with its own average but left out of the overall: its scores come from the others)
+  const have = rows.filter(r => r.avg != null && !r.s.noOverall);
   return {rows, overall:have.length ? Math.round(have.reduce((n, r) => n + r.avg, 0) / have.length) : null,
     graded:have.reduce((n, r) => n + r.graded, 0), systems:have.length, done:doneIn(ctx.progress), total:lessons().length};
 }
@@ -328,7 +329,8 @@ function ring(pct){
   const p = pct == null ? 0 : Math.max(0, Math.min(100, pct));
   return `<div class="sc-ring t-${tier(pct)}" style="--p:${p}"><span>${pctTxt(pct)}</span><small>overall</small></div>`;
 }
-const HOW = "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same.";
+const HOW = "Each grading system’s score is the average of its graded items; the overall score is the average of the grading systems that have a score, so each one counts the same." +
+  (CFG.sources.some(s => s.noOverall) ? ` (${CFG.sources.filter(s => s.noOverall).map(s => s.label).join(", ")}: shown, but not counted again in the overall, as its marks come from the other systems.)` : "");
 function renderScorecard(){
   const sc = compute(mineCtx()), loaded = !isTrainee() || SC.id === state.traineeId;
   return `<div class="card sc-hero">

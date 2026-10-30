@@ -19,9 +19,14 @@
    /api/drive/answers route and matches the files by their number and name. Where all 19 are found in order, that
    counts; otherwise (no folder link, a folder the platform can't read, or screenshots named another way) the trainee's
    own tick counts, and the page says which one did.
+   The activity's dates: July 6–15, 2026 in its words and in KEY, moved by whole weeks to the trainee's anchor Monday (the
+   first on or after their batch's Day 5: FTCalCore.act, js/ft-calsim-core.js). The anchor is kept ONCE, in the trainee's
+   calendar record (calsim:<id>.anchors["attorney-activity"]); load() reads it from there (or gives it one, from the Batch ID)
+   and the record below keeps a copy (anchor), as each snapshot does, so a submission is always scored at its own dates
+   (keyFor). A record from before anchors (entries or submissions, no anchor) keeps July 2026.
    Records: calcheck:<id> (the trainee's own; worker.js lets a trainee write only theirs, admins read everyone's)
-     {entries:{"<n>":{title, sd, st, ed, et, tz, allday, loc, guests, rtype, ramt, runit, notes}}, final:{lsh, seq},
-      drive:{at, n, found:[19 × bool], inOrder, error}, saved, submits:[{at, met, total, pct, checks:[[n, field, met, fix]]}]}
+     {anchor:"YYYY-MM-DD", entries:{"<n>":{title, sd, st, ed, et, tz, allday, loc, guests, rtype, ramt, runit, notes}}, final:{lsh, seq},
+      drive:{at, n, found:[19 × bool], inOrder, error}, saved, submits:[{at, met, total, pct, checks:[[n, field, met, fix]], snap:{anchor, entries, final, drive}}]}
    🏅 My Performance shows the latest submission (📅 Calendar activity check); Admin → 🛠 Practice Lab → 📅 Calendar
    Activity lists each trainee's latest submission with every field's result.
    ============================================================ */
@@ -39,25 +44,30 @@ const MON = ["January", "February", "March", "April", "May", "June", "July", "Au
 const day = d => { const m = String(d || "").match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? `${MON[Number(m[2]) - 1]} ${Number(m[3])}, ${m[1]}` : ""; };
 
 /* ---------- Google Calendar's time zones ----------
-   TZ_RULE: the activity writes PST, MST, EST and CST, but its dates are in July, when most of the US keeps daylight time.
-   Google Calendar names zones by region, not by standard/daylight, so the check takes the wall-clock times exactly as the
-   activity writes them and asks only for a zone in the right region: PST → Pacific Time - Los Angeles; MST → Mountain
-   Time - Denver or Mountain Standard Time - Phoenix (Arizona keeps MST all year); EST → Eastern Time - New York or
-   Eastern Standard Time - Panama (the trainer's sample); CST → Central Time - Chicago (the sample) or Central Standard
-   Time - Regina. The offsets shown are July's.
+   TZ_RULE: the activity writes PST, MST, EST and CST: they name the US region, and the time is that region's wall clock
+   on the event's own date, standard or daylight as that date has it (an anchor in the summer is daylight time, one in the
+   winter standard). Google Calendar names zones by region, not by standard/daylight, so the check takes the wall-clock
+   times exactly as the activity writes them and asks only for a zone in the right region: PST → Pacific Time - Los
+   Angeles; MST → Mountain Time - Denver or Mountain Standard Time - Phoenix (Arizona keeps MST all year); EST → Eastern
+   Time - New York or Eastern Standard Time - Panama (the trainer's sample); CST → Central Time - Chicago (the sample) or
+   Central Standard Time - Regina. The offsets shown are each zone's on the event's own date (tzOpts).
    The attorney's own calendar is in Pacific Time (Seattle), so an event typed in Pacific Time - Los Angeles at the same
-   moment also counts: the activity's time in the region's first zone (Denver, New York, Chicago: July's daylight time),
-   e.g. the 3:00–4:00 PM MST team meeting as 2:00–3:00 PM Pacific. Its dates, times and zone are then checked against
-   that Pacific time (PAC_OF); the activity's own clock time in Pacific (3:00–4:00 PM) is still the wrong zone. The Pacific
-   moment of the region's other accepted zone counts too (PACS_OF: 11 AM EST in Panama is 9 AM Pacific), except where it
-   falls on the activity's own clock time (Phoenix: see PACS_OF). */
-// (the options put the city first, so it still shows on a phone's narrow list: Google shows "(GMT-07:00) Pacific Time - Los Angeles")
-const TZ = [["America/Los_Angeles", "Los Angeles · Pacific Time (GMT-07:00)"], ["America/Denver", "Denver · Mountain Time (GMT-06:00)"],
-  ["America/Phoenix", "Phoenix · Mountain Standard Time (GMT-07:00)"], ["America/Chicago", "Chicago · Central Time (GMT-05:00)"],
-  ["America/Regina", "Regina · Central Standard Time (GMT-06:00)"], ["America/New_York", "New York · Eastern Time (GMT-04:00)"],
-  ["America/Panama", "Panama · Eastern Standard Time (GMT-05:00)"], ["Pacific/Honolulu", "Honolulu · Hawaii-Aleutian Standard Time (GMT-10:00)"],
-  ["America/Anchorage", "Anchorage · Alaska Time (GMT-08:00)"], ["Asia/Manila", "Manila · Philippine Time (GMT+08:00)"],
-  ["Etc/UTC", "UTC (GMT+00:00)"], ["Europe/London", "London · United Kingdom Time (GMT+01:00)"]];
+   moment also counts: the activity's time in the region's first zone (Denver, New York, Chicago), e.g. the 3:00–4:00 PM
+   MST team meeting as 2:00–3:00 PM Pacific. Its dates, times and zone are then checked against that Pacific time
+   (PAC_OF); the activity's own clock time in Pacific (3:00–4:00 PM) is still the wrong zone. The Pacific moment of the
+   region's other accepted zone counts too (PACS_OF: 11 AM EST in Panama is 9 AM Pacific in the summer), except where it
+   falls on the activity's own clock time (Phoenix in the summer: see PACS_OF). In the winter Phoenix, Panama and Regina keep
+   the same time as Denver, New York and Chicago, so only the first zone's Pacific moment counts (9 AM is then wrong). */
+// (the options put the city first, so it still shows on a phone's narrow list: Google shows "(GMT-07:00) Pacific Time - Los Angeles";
+// the ids and their order are FTCalCore.act's TZS too. The offset is added per event, on its own date: tzOpts)
+const TZ = [["America/Los_Angeles", "Los Angeles · Pacific Time"], ["America/Denver", "Denver · Mountain Time"],
+  ["America/Phoenix", "Phoenix · Mountain Standard Time"], ["America/Chicago", "Chicago · Central Time"],
+  ["America/Regina", "Regina · Central Standard Time"], ["America/New_York", "New York · Eastern Time"],
+  ["America/Panama", "Panama · Eastern Standard Time"], ["Pacific/Honolulu", "Honolulu · Hawaii-Aleutian Standard Time"],
+  ["America/Anchorage", "Anchorage · Alaska Time"], ["Asia/Manila", "Manila · Philippine Time"],
+  ["Etc/UTC", "UTC"], ["Europe/London", "London · United Kingdom Time"]];
+// the summer's offsets: the labels when neither the core nor Intl can give the date's own
+const TZ_JULY = ["-07:00", "-06:00", "-07:00", "-05:00", "-06:00", "-04:00", "-05:00", "-10:00", "-08:00", "+08:00", "+00:00", "+01:00"];
 const REGION = {PST: {ok: ["America/Los_Angeles"], region: "Pacific", say: "Pacific Time - Los Angeles"},
   MST: {ok: ["America/Denver", "America/Phoenix"], region: "Mountain", say: "Mountain Time - Denver (or Mountain Standard Time - Phoenix)"},
   EST: {ok: ["America/New_York", "America/Panama"], region: "Eastern", say: "Eastern Time - New York (or Eastern Standard Time - Panama)"},
@@ -83,9 +93,11 @@ function PAC_OF(k){
   return PACS.get(k);
 }
 // every Pacific time the Check accepts for it: the same moment as each zone the Check accepts at the activity's clock time
-// (Denver or Phoenix, New York or Panama, Chicago or Regina; the first zone's first). One that falls on the activity's own clock
-// time is left out: 3:00 PM MST in Phoenix is 3:00 PM Pacific in July, but 3:00 PM typed in Pacific can't be told from the
-// time left unconverted, the mistake this field is there to catch, so Phoenix counts only when Phoenix is the zone picked.
+// (Denver or Phoenix, New York or Panama, Chicago or Regina; the first zone's first), on the event's own date. One that falls on
+// the activity's own clock time is left out: 3:00 PM MST in Phoenix is 3:00 PM Pacific in the summer, but 3:00 PM typed in
+// Pacific can't be told from the time left unconverted, the mistake this field is there to catch, so Phoenix counts only when
+// Phoenix is the zone picked. One that is the first zone's moment again (Panama and New York in the winter) isn't listed twice.
+// (Cached by the key's own objects: keyFor gives the same ones for an anchor every time.)
 const PACL = new Map();
 function PACS_OF(k){
   if(!PACL.has(k)){ const first = PAC_OF(k), out = first ? [Object.assign({z: REGION[k.tz].ok[0]}, first)] : [];
@@ -96,7 +108,7 @@ function PACS_OF(k){
 }
 const UNITS = [["minutes", 1], ["hours", 60], ["days", 1440], ["weeks", 10080]];
 
-/* ---------- the activity's answer key (July 2026; wall-clock times in the zone given) ----------
+/* ---------- the activity's answer key (its own dates, July 2026: keyFor moves them to an anchor; wall-clock times in the zone given) ----------
    title: word groups the title must hold (each group: any one of its phrases); loc: the location holds one of these;
    guests: each by first and last name; rem: the reminder's type and its time in minutes; notes: word groups the
    description holds (notesMin of them, or all); link: a link in the location or the description; overnight: 8.5;
@@ -149,9 +161,46 @@ const KEY = [
   {n: "10", name: "Family Dinner", title: [["family dinner"]], date: "2026-07-15", start: "19:00", end: "21:00", tz: "MST",
     loc: ["home"], locShow: "Home", rem: {type: "Notification", m: 60, show: "1 hour"}, notes: [["groceries", "grocery"]], notesShow: "Pick up groceries on the way home"}
 ];
+/* ---------- the anchor: the key at a trainee's dates ----------
+   FTCalCore.act (js/ft-calsim-core.js, loaded before this file) knows the anchors; without it (a page or a test that loads only
+   this file) the same date sums are done here. An anchor that isn't one (not a Monday on or after July 6, 2026) is July. */
+const JULY = "2026-07-06";
+const CORE = () => { const C = (typeof window !== "undefined" && window.FTCalCore) || (typeof FTCalCore !== "undefined" ? FTCalCore : null); return C && C.act ? C.act : null; };
+const isoMs = iso => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+const okAnchor = a => { const A = CORE(); if(A) return A.okAnchor(a);
+  return /^\d{4}-\d\d-\d\d$/.test(String(a)) && new Date(isoMs(a)).toISOString().slice(0, 10) === a && new Date(isoMs(a)).getUTCDay() === 1 && a >= JULY; };
+const weeksOf = a => { const A = CORE(); return !okAnchor(a) ? 0 : A ? A.weeksOf(a) : Math.round((isoMs(a) - isoMs(JULY)) / (7 * 864e5)); };
+const shiftIso = (iso, k) => new Date(isoMs(iso) + k * 7 * 864e5).toISOString().slice(0, 10);
+// a record's (or a snapshot's) anchor: its own, else July 2026 (a record from before anchors)
+const anchorOf = rec => okAnchor(obj(rec).anchor) ? rec.anchor : JULY;
+// KEY at an anchor: date and endDate moved by its weeks. The same objects for an anchor every time (PACS / PACL and the
+// simulator's key list are cached by them); keyFor(JULY) is KEY itself.
+const KEYS = new Map([[0, KEY]]);
+function keyFor(anchor){
+  const k = weeksOf(anchor); let K = KEYS.get(k); if(K) return K;
+  K = KEY.map(x => Object.assign({}, x, {date: shiftIso(x.date, k)}, x.endDate ? {endDate: shiftIso(x.endDate, k)} : {}));
+  KEYS.set(k, K); return K;
+}
+// the anchor an unnamed record is checked at (the simulator's review passes {entries} alone): the core's current one
+const anchorNowSet = () => { const A = CORE(); return A ? A.anchor() : JULY; };
+// a date's long form ("November 2, 2026") and the activity's span at an anchor ("Nov 2 to Nov 11, 2026")
+const spanOf = anchor => { const A = CORE(), last = A ? A.LAST : 9;
+  return A ? A.withAnchor(anchor, () => `${A.spanText(last)}, ${A.dYear(last)}`) : `${day(anchor)} to ${day(new Date(isoMs(anchor) + last * 864e5).toISOString().slice(0, 10))}`; };
+// the zones' options for an event's date, each with its offset at noon that day (standard or daylight as the date has it;
+// absAt counts from whatever anchor the core is at, and tzLabel reads the zone at that very instant, so any anchor will do)
+const TZO = new Map();
+function tzOpts(date){
+  if(TZO.has(date)) return TZO.get(date);
+  const A = CORE(), ok = /^\d{4}-\d\d-\d\d$/.test(String(date));
+  const out = TZ.map(([id, label], i) => { let g = "";
+    try{ if(ok && A){ const z = A.TZS[i] && A.TZS[i].id === id ? A.TZS[i] : A.tzOf(id); if(z) g = (A.tzLabel(z, A.absAt(date, 720, z.id)).match(/GMT[+-]\d\d:\d\d/) || [""])[0]; }
+      else if(ok){ const o = offAt(id, isoMs(date) + 20 * 3600000), a = Math.abs(o); g = `GMT${o < 0 ? "-" : "+"}${String(Math.floor(a / 60)).padStart(2, "0")}:${String(a % 60).padStart(2, "0")}`; } }catch(_){}
+    return [id, `${label} (${g || "GMT" + TZ_JULY[i]})`]; });
+  TZO.set(date, out); return out;
+}
 // the upload order: the 18 events, then the whole calendar
 const SEQ = KEY.map(k => [k.n, k.name, k.title]).concat([["11", "Entire Calendar", [["entire calendar", "whole calendar", "full calendar", "calendar"]]]]);
-const keyOf = n => KEY.find(k => k.n === n);
+const keyOf = (n, K) => (K || KEY).find(k => k.n === n);
 
 /* ---------- the check ---------- */
 const inW = (txt, p) => txt.includes(" " + norm(p) + " ");
@@ -181,8 +230,8 @@ function check(k, v, ents){
   const allDay = !!v.allday, title = words(v.title), when = `${day(k.date)}, ${hhmm(k.start)} – ${hhmm(k.end)} ${k.tz}`;
   const out = [["Title", has(v.title) && groupsIn(title, k.title).length === k.title.length && !wrongWay(k, title), `Name it “${k.n} ${k.name}”${k.plus ? ". " + k.plus : ""}`]];
   if(k.overnight){
-    // the overnight stay: an all-day event on July 13 (Google may show it ending on the 13th or the 14th), or an event
-    // that starts on the evening of July 13 and ends on the morning of July 14
+    // the overnight stay: an all-day event on the networking dinner's day (July 13 in the activity's own dates; Google may show
+    // it ending on that day or the next), or an event that starts that evening and ends the next morning
     out.push(["Start date", v.sd === k.date, `${day(k.date)} (the night of the networking dinner)`]);
     out.push(["End date", allDay ? !has(v.ed) || v.ed === k.date || v.ed === k.endDate : v.ed === k.endDate, allDay ? `${day(k.date)} (all day) or ${day(k.endDate)}` : `${day(k.endDate)}: the stay runs overnight`]);
     out.push(["Start time", null, ""], ["End time", null, ""]);
@@ -220,9 +269,11 @@ function checkFinal(f, drive){
   return [["The LSH calendar unticked in the entire-calendar screenshot", !!f.lsh, "Untick the LSH calendar before the 11. Entire Calendar screenshot"],
     [auto ? "The 19 screenshots in the sequence (found in your folder)" : "The 19 screenshots uploaded in the sequence (your own tick)", auto || !!f.seq, "Upload all 19 in the sample’s order, 1. Client Meeting to 11. Entire Calendar"]];
 }
-function checkAll(rec){
+// a record's every row, at an anchor: the one given, else the record's own, else the core's current one (the simulator's review
+// passes {entries} alone, at the trainee's anchor; with no core, July)
+function checkAll(rec, anchor){
   rec = obj(rec); const rows = [], ents = obj(rec.entries);
-  KEY.forEach(k => check(k, ents[k.n], ents).forEach(c => rows.push([k.n, c[0], c[1], c[2]])));
+  keyFor(okAnchor(anchor) ? anchor : okAnchor(rec.anchor) ? rec.anchor : anchorNowSet()).forEach(k => check(k, ents[k.n], ents).forEach(c => rows.push([k.n, c[0], c[1], c[2]])));
   checkFinal(rec.final, rec.drive && typeof rec.drive === "object" ? rec.drive : null).forEach(c => rows.push(["11", c[0], c[1], c[2]]));
   return rows;
 }
@@ -231,9 +282,11 @@ const score = rows => { const on = rows.filter(c => c[c.length === 4 ? 2 : 1] !=
 /* ---------- the trainee's record ---------- */
 const R = {rec: null, recId: null, open: {"1": true}, timer: null, status: "", busy: false, failed: false, loading: null};
 const blank = () => ({entries: {}, final: {}, drive: null, saved: "", submits: []});
+// the key at the page's record's anchor
+const curKey = () => keyFor(anchorOf(R.rec));
 // a stored record made safe to read: every entry an object, and only the submissions that hold a snapshot
 const clean = v => { v = obj(v); const r = Object.assign(blank(), v); r.entries = {}; Object.keys(obj(v.entries)).forEach(n => { r.entries[n] = obj(v.entries[n]); });
-  r.final = obj(r.final); r.drive = r.drive && typeof r.drive === "object" && !Array.isArray(r.drive) ? r.drive : null;
+  if(!okAnchor(r.anchor)) delete r.anchor; r.final = obj(r.final); r.drive = r.drive && typeof r.drive === "object" && !Array.isArray(r.drive) ? r.drive : null;
   r.submits = (Array.isArray(r.submits) ? r.submits : []).filter(s => s && typeof s === "object" && s.snap && typeof s.snap === "object"); return r; };
 // 👁 Trainee view: a trainer has no trainee of their own, so the page shows empty and saves nothing
 const PREVIEW = "__preview";
@@ -241,16 +294,31 @@ const preview = () => !state.traineeId;
 const previewOnly = () => { if(!preview()) return false; toast("👁 Trainee view — nothing is saved here. A trainee checks their own calendar."); return true; };
 // The record is read strictly: a failed read must not look like "no record", or the next keystroke would save an empty
 // form over the trainee's draft and submissions. Until a read succeeds, nothing is saved.
+// The anchor is read with it, from the trainee's calendar record (calsim:<id>, read just as strictly: it is written back when it
+// gets its anchor, so a failed read must never become an empty calendar). A trainer's 👁 Trainee view shows the dates a batch
+// starting this week would get, and saves none.
 function load(force){
-  if(preview()){ if(R.recId !== PREVIEW){ R.recId = PREVIEW; R.rec = blank(); R.failed = false; } return Promise.resolve(); }
+  if(preview()){ if(R.recId !== PREVIEW){ R.recId = PREVIEW; R.rec = blank(); const A = CORE(); R.rec.anchor = A ? A.anchorNow() : JULY; R.failed = false; } return Promise.resolve(); }
   const id = state.traineeId;
   if(!force && R.recId === id && (R.rec || R.failed)) return Promise.resolve();   // (after a failed read, only ↻ Try again reads again)
   if(R.loading && R.recId === id) return R.loading;
   R.recId = id;
-  return R.loading = sharedGetStrict("calcheck:" + id).then(v => {
-    R.rec = v && v.entries && typeof v.entries === "object" ? clean(v) : blank(); R.failed = false; })
+  return R.loading = Promise.all([sharedGetStrict("calcheck:" + id), sharedGetStrict("calsim:" + id)]).then(async ([v, cal]) => {
+    const rec = v && v.entries && typeof v.entries === "object" ? clean(v) : blank();
+    rec.anchor = await anchorFor(id, rec, cal); R.rec = rec; R.failed = false; })
     .catch(() => { R.failed = !R.rec; })
     .then(() => { R.loading = null; if(state.view === "calcheck") render(); });
+}
+// the trainee's anchor: this record's own once kept; a Check record from before anchors (entries or submissions, no anchor)
+// keeps July 2026, the dates it was typed against; otherwise the calendar record's (FTCalCore.act.anchorOfRecord: its own, or
+// July for a calendar from before anchors), else the Batch ID's, the same one js/ft-calendar.js will keep in the calendar
+// record (its one writer: this page never writes that record, so a draft saved meanwhile is safe)
+async function anchorFor(id, rec, cal){
+  // (this record's own anchor first: once kept, its entries were typed against it, July 2026 for a record from before anchors)
+  if(okAnchor(rec.anchor)) return rec.anchor;
+  const A = CORE(); if(!A) return JULY;
+  if(Object.keys(rec.entries).some(n => touched(rec.entries[n])) || rec.submits.length) return JULY;
+  return A.anchorOfRecord(cal) || A.anchorForBatch(state.traineeBatch) || A.anchorNow();
 }
 function save(){
   clearTimeout(R.timer); R.timer = null;
@@ -279,13 +347,14 @@ function edit(ev){
 const touched = v => { v = obj(v); return v.allday === true || FIELDS.some(f => f !== "runit" && f !== "allday" && has(v[f])); };
 // a submission keeps a snapshot of what was entered, and the trainer's tab and My Performance score that snapshot again,
 // so they never rely on a score the page stored
-const snapOf = rec => JSON.parse(JSON.stringify({entries: rec.entries, final: rec.final, drive: rec.drive}));
-const scored = s => { const rows = checkAll(s.snap); return Object.assign({rows}, score(rows)); };
+// (with its anchor: a snapshot is scored at the dates it was typed against; one from before anchors, July)
+const snapOf = rec => JSON.parse(JSON.stringify({anchor: anchorOf(rec), entries: rec.entries, final: rec.final, drive: rec.drive}));
+const scored = s => { const rows = checkAll(s.snap, anchorOf(s.snap)); return Object.assign({rows}, score(rows)); };
 async function submit(){
   if(previewOnly()) return;
   await load(); if(!R.rec){ toast("Your draft couldn’t be loaded. Check your connection and try again."); return; }
   if(R.timer) clearTimeout(R.timer);
-  const rows = checkAll(R.rec), sc = score(rows);
+  const rows = checkAll(R.rec, anchorOf(R.rec)), sc = score(rows);
   if(!Object.keys(R.rec.entries).some(n => touched(R.rec.entries[n]))){ toast("Enter what you put in Google Calendar first."); return; }
   const at = new Date().toISOString();
   R.rec.submits = (R.rec.submits || []).concat([{at, met: sc.met, total: sc.total, pct: sc.pct, checks: rows, snap: snapOf(R.rec)}]).slice(-8);
@@ -343,7 +412,7 @@ function itemHtml(k){
       ${L("ed", "End date", `<input type="date" id="${id("ed")}" data-f="ed" value="${e(v.ed || "")}">`)}
       ${v.allday ? "" : L("et", "End time", `<input type="time" id="${id("et")}" data-f="et" value="${e(v.et || "")}">`)}
       <label class="ck"><input type="checkbox" data-f="allday" ${v.allday ? "checked" : ""}> All day</label>
-      ${v.allday ? "" : L("tz", "Time zone", `<select id="${id("tz")}" data-f="tz">${opt(TZ, v.tz, "Pick the event’s time zone…")}</select>`, "w2 tz")}
+      ${v.allday ? "" : L("tz", "Time zone", `<select id="${id("tz")}" data-f="tz">${opt(tzOpts(k.date), v.tz, "Pick the event’s time zone…")}</select>`, "w2 tz")}
       ${L("loc", "Location", `<input id="${id("loc")}" data-f="loc" value="${e(v.loc || "")}" autocomplete="off" maxlength="300">`, "w2")}
       ${L("guests", "Guests (names as shown)", `<input id="${id("guests")}" data-f="guests" value="${e(v.guests || "")}" autocomplete="off" maxlength="400">`, "w2")}
       ${L("rtype", "Reminder", `<select id="${id("rtype")}" data-f="rtype">${opt(["Notification", "Email"], v.rtype, "None")}</select>`)}
@@ -367,11 +436,11 @@ function finalHtml(){
 }
 const started = () => KEY.some(k => touched(R.rec.entries[k.n]));
 function summaryHtml(){
-  const sc = score(checkAll(R.rec)), go = started();
+  const sc = score(checkAll(R.rec, anchorOf(R.rec))), go = started();
   return `<div class="cc-total"><span class="cc-big ${go ? pctCls(sc.pct) : "none"}">${go ? sc.pct + "%" : "—"}</span><span><b>${sc.met} of ${sc.total} fields right</b><small>${e(R.status || (R.rec.saved ? "Draft saved ✓" : preview() ? "👁 Trainee view — nothing is saved" : "Your entries save as a draft as you type"))}</small></span></div>`;
 }
 function fixHtml(){
-  const miss = checkAll(R.rec).filter(c => c[2] === false), byItem = {}; miss.forEach(c => (byItem[c[0]] = byItem[c[0]] || []).push(c));
+  const miss = checkAll(R.rec, anchorOf(R.rec)).filter(c => c[2] === false), byItem = {}; miss.forEach(c => (byItem[c[0]] = byItem[c[0]] || []).push(c));
   // (only the events with something typed: an untouched one shows what it expects in its own card)
   Object.keys(byItem).forEach(n => { if(n !== "11" && !touched(R.rec.entries[n])) delete byItem[n]; });
   const count = Object.keys(byItem).reduce((a, n) => a + byItem[n].length, 0);
@@ -380,7 +449,7 @@ function fixHtml(){
 // the in-place painters behind edit()
 const paintStatus = () => { const el = document.querySelector(".cc-total small"); if(el) el.textContent = R.status; };
 function paintItem(n){
-  const k = keyOf(n), v = R.rec.entries[n] || {}, sc = itemScore(k, v), go = touched(v);
+  const k = keyOf(n, curKey()), v = R.rec.entries[n] || {}, sc = itemScore(k, v), go = touched(v);
   const out = document.querySelector(`[data-res="${n}"]`); if(out) out.innerHTML = resHtml(check(k, v, R.rec.entries), !go);
   const s = document.querySelector(`[data-sc="${n}"]`); if(s){ s.textContent = go ? `${sc.met}/${sc.total}` : "—"; s.className = `cc-sc ${go ? pctCls(sc.pct) : "none"}`; }
 }
@@ -395,9 +464,10 @@ function renderPage(){
   const last = R.rec.submits[R.rec.submits.length - 1], lastSc = last ? scored(last) : null;
   return `${preview() ? `<div class="card cc-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved or sent; each trainee checks their own calendar.</div>` : ""}<div class="cc-hero"><p class="cc-eyebrow">Day 5 · Attorney Calendar Management Activity</p><h1>📅 Calendar Activity Check</h1>
       <p>For each event, enter exactly what you put in Google Calendar (as your screenshot shows it). Every field is checked as you type against the activity, with what to fix. When you’re done, send it to your trainer.</p>
+      <p class="cc-dates">🗓 ${preview() ? "A batch starting this week has the activity on" : "Your activity’s dates"}: <b>${e(spanOf(anchorOf(R.rec)))}</b></p>
       ${window.FTCalSim ? `<p class="cc-sim"><button class="btn btn-ghost btn-sm" type="button" onclick="goto('calsim','attorney-activity')">🗓 Do the activity on the Calendaring Simulator</button> <span class="cc-mono">the same check, on a practice Google Calendar</span></p>` : ""}</div>
     <div class="cc-sticky" id="ccSummary">${summaryHtml()}</div><div id="ccFix">${fixHtml()}</div>
-    <div class="cc-list" oninput="FTCalCheck.edit(event)" onchange="FTCalCheck.edit(event)">${KEY.map(itemHtml).join("")}${finalHtml()}</div>
+    <div class="cc-list" oninput="FTCalCheck.edit(event)" onchange="FTCalCheck.edit(event)">${curKey().map(itemHtml).join("")}${finalHtml()}</div>
     <div class="cc-send"><button class="btn btn-navy" type="button" onclick="FTCalCheck.submit()">📤 Submit to my trainer</button>
       <span class="cc-mono">${last ? `Last sent ${e(new Date(last.at).toLocaleString())} · ${lastSc.pct}%` : "Not sent yet"}</span></div>`;
 }
@@ -415,7 +485,7 @@ window.render = function(){
   try{ afterRender(); }catch(err){}
 };
 window.FTCalCheck = {
-  key: KEY, seq: SEQ, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
+  key: KEY, keyFor, anchorOf, tzOpts, seq: SEQ, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
   toggle(n, open){ R.open[n] = !!open; },
   save: () => save(), reload: () => load(true), state: () => R
 };
@@ -458,7 +528,7 @@ function adminHtml(){
       <span><select onchange="FTCalCheckAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
       <button class="btn btn-ghost btn-sm" onclick="FTCalCheckAdmin.reload()">↻ Refresh</button></span></div>
     ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Sent</th><th>Score</th><th>Most missed</th><th></th></tr></thead><tbody>
-      ${rows.map(r => { const s = r.rec && r.rec.submits[r.rec.submits.length - 1], sc = s ? scored(s) : null, draft = r.rec && !s ? score(checkAll(r.rec)) : null;
+      ${rows.map(r => { const s = r.rec && r.rec.submits[r.rec.submits.length - 1], sc = s ? scored(s) : null, draft = r.rec && !s ? score(checkAll(r.rec, anchorOf(r.rec))) : null;
         // (the submission's snapshot is scored again here: what the trainee's page stored is never shown as it is)
         const miss = {}; (sc ? sc.rows : []).filter(c => c[2] === false).forEach(c => { miss[c[1]] = (miss[c[1]] || 0) + 1; });
         const top = Object.entries(miss).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, n]) => `${k} (${n})`).join("; ");
@@ -478,7 +548,7 @@ if(!document.getElementById("ftdd-deck-font")){
 }
 (function(){ const st = document.createElement("style"); st.id = "ft-calcheck"; st.textContent = `
 main.main-cc{max-width:980px;margin:0 auto;padding:18px 16px 48px;display:flex;flex-direction:column;gap:14px;font-family:'Inter',sans-serif;box-sizing:border-box;width:100%;}
-.cc-sim{margin:10px 0 0 !important;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.cc-hero p.cc-dates{margin:8px 0 0;font-size:15px;} .cc-sim{margin:10px 0 0 !important;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .cc-hero h1{margin:0 0 6px;font:800 30px/1.15 'Poppins','Inter',sans-serif;color:#1E2340;} .cc-hero p{margin:0;color:var(--ink-soft);max-width:76ch;font-size:16px;line-height:1.55;}
 .cc-eyebrow,.cc-mono,.cc-lbl{font:600 12px 'IBM Plex Mono',monospace;letter-spacing:.02em;}
 .cc-eyebrow{margin:0 0 6px;color:#E8590C;text-transform:uppercase;letter-spacing:.08em;} .cc-mono{color:var(--ink-soft);}

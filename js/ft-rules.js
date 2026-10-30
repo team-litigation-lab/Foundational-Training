@@ -117,7 +117,6 @@ const TESTS = [
    links:[["SpellQuiz (Grade 12)", "https://spellquiz.com/spelling-test/grade-12"], ["Alternative: Spelling-Test.com", "https://spelling-test.com/spelling-exercise#question_16"]],
    file:"Spelling Test [date taken][AM/PM]", sample:"/ft/day1/img/spelling-test-sample.png"}
 ];
-window.FT_SKILL_TESTS = TESTS;   // shown in the Practice Lab (js/ft-simulators.js)
 
 // Paste into Hubstaff one by one, as each session comes up (Day 1: Hubstaff To-Do Set-up).
 const TODOS = [
