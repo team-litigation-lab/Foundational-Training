@@ -101,20 +101,22 @@ async function workerChecks() {
     else if (!/Upload your 19 screenshots[^]*Once done, hit Submit[^]*Submit/.test(await panel(t)) || !(await t.$('.ftbf .ftbf-done'))) fail(`the activity's Done panel reads: ${await panel(t)}`);
 
     // 🧪 a demo slide, as Day 4's mock calls: only "Demos Ongoing", its line and Done; its instructions and metrics are on
-    // the preparation slide before it (build/day-decks.cjs PREP), the same card row
+    // the preparation slide before it (build/day-decks.cjs PREP), a card row and step of its own as on Day 4
     await open(t, 8, 's3'); await toPanel(t);
     const d8 = await panel(t);
     if (!/Demos Ongoing/.test(d8) || !/Hit Done when you are done with your Demo\./.test(d8) || /Practice Buffer/.test(d8)) fail(`Day 8's intake packet demo isn't Day 4's Done panel: ${d8.slice(0, 120)}`);
-    if (!(await t.evaluate(() => { const l = FTDayDecks.list(8), i = l.findIndex(s => s.id === 's3'); return i > 0 && l[i - 1].id === 's3p' && l[i - 1].row === l[i].row; })))
-      fail("Day 8's demo has no preparation slide before it, in its row");
+    if (!(await t.evaluate(() => { const l = FTDayDecks.list(8), i = l.findIndex(s => s.id === 's3'); return i > 0 && l[i - 1].id === 's3p' && l[i - 1].row === l[i].row - 1; })))
+      fail("Day 8's demo has no preparation slide, a row of its own, before it");
+    // (and, as Day 4's, its debrief opens the next day: nextDay)
+    if (!(await t.evaluate(() => ['9:s3b', '8:s3', '12:s1d', '14:s1e', '15:s1b', '16:s2'].every(k => FTBuffer.ACTS[k].simple && FTBuffer.ACTS[k].nextDay)))) fail('a Days 8–16 mock call or demo is not in Day 4\'s format (simple, nextDay)');
 
     // ☎ Day 9's Intake mock calls, as Day 4's: only "Mock Calls Ongoing", its line and Done; the instructions and metrics on
-    // the preparation slide before it (build/day-decks.cjs PREP), the same card row
+    // the preparation slide before it (build/day-decks.cjs PREP), a card row and step of its own as on Day 4
     await open(t, 9, 's3b'); await toPanel(t);
     const m9 = await panel(t);
     if (!/Mock Calls Ongoing/.test(m9) || !/Hit Done when you are done with your Mock Call\./.test(m9) || /Practice Buffer/.test(m9)) fail(`Day 9's mock calls aren't Day 4's Done panel: ${m9.slice(0, 120)}`);
-    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row; })))
-      fail("Day 9's mock calls have no preparation slide before them, in their row");
+    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row - 1; })))
+      fail("Day 9's mock calls have no preparation slide, a row of its own, before them");
 
     // ☎ Day 6's mock calls, as Day 4's: Mock Calls Ongoing and Done → the dialog → ✅ Done, waiting for the debrief
     await open(t, 6, 's1b-2');
