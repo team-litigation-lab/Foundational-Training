@@ -367,7 +367,7 @@ s2: html => {
   const mon = /<p>Please watch the CRM\/CMS training videos and then update item #12 in your Monitoring Sheet\. Thank you\.<\/p>\n?/;
   if(!mon.test(out)) throw new Error("Day 3's homework monitoring sheet line is no longer where the build looks for it");
   return out.replace(mon, "")
-    .replace(/^/, "<p><b>Choose one video and watch it now.</b> Watch the rest during your idle time.</p>\n")
+    .replace(/^/, "<p class=\"ftdd-pick-note\"><b>Choose one video and watch it now.</b> Watch the rest during your idle time.</p>\n")
     .replace(/(<p><b><i>\*\*\* Free Communication)/, "<p><b>Note:</b> If not finished during the workshift, you may go back to it later during your idle time.</p>\n$1");
 }},
 // Day 4 (Receptionist Training, Part 2): Julio's video in the slide (the Monitoring Sheet update is its own slide, ROWS[4].s2); the mock call

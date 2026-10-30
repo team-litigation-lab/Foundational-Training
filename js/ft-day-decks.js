@@ -2376,6 +2376,8 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
 .ftdd-recs-note{margin:14px 0 0;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
+/* Day 3's CRM/CMS Training Videos: "Choose one video …" centred and big, on a soft orange band */
+main.main-ftdd .ftdd-sheet p.ftdd-pick-note{margin:0 auto 16px;max-width:900px;padding:14px 20px;text-align:center;font-size:20px;line-height:1.4;color:#1E2340;background:#FFF4E5;border:2px solid #F6C08F;border-radius:12px;}
 .ftdd-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:0 0 14px;}
 .ftdd-rec{border:1px solid #D9DEEA;border-radius:12px;padding:10px 12px;background:#fff;break-inside:avoid;}
 .ftdd-rec-h{margin:0 0 6px;font-weight:700;color:#262B45;} .ftdd-rec-play{height:220px;border-radius:8px;overflow:hidden;background:#F4F6FB;}
