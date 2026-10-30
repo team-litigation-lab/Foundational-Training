@@ -2684,6 +2684,8 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
 @media(min-width:1001px){
   main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)){grid-template-columns:minmax(0,1fr);}
   main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
+  /* (only the presenter is drawn from it: the rest of a panel with no buttons, Hide panel ⇥ and the segment lock's name, would wrap a letter a line down the side) */
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail > :not(.ftdd-presenter){display:none;}
   main.main-ftdd{padding-right:18px;}
   main.main-ftdd .ftdd-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 10px);}
 }
