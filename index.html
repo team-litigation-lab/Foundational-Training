@@ -9073,6 +9073,10 @@ window.applyUpdate = applyUpdate;
   if(state.traineeId && await cloudRestore(state.traineeId)) await loadAll();
   loadPublishedContent().then(()=>{ if(["day","dashboard","admin"].includes(state.view)) render(); });
   if(sessionStorage.getItem("lsh_resume_after_update") && (state.isAdmin || state.traineeId)) setTimeout(()=>restoreAfterUpdate(), 400);
+  // (the routes below need every page script run first: js/lsh-program.js adds #/modules to the routes, js/ft-day-decks.js
+  // FTDayDecks. On a slow device the awaits above can finish while the scripts after this one still load, and a reload of
+  // #/modules then resumed the last deck instead)
+  if(document.readyState === "loading") await new Promise(r => document.addEventListener("DOMContentLoaded", r, {once: true}));
   if(state.isAdmin){ restoreBootRouteHash(); if(parseRouteHash()){ state.resumePending = true; setTimeout(()=>{ state.resumePending = false; openRouteFromHash(); state.routeReady = true; syncRouteHash(); fillNavBack(); }, 0); } }
   if(!state.traineeName){
     state.view = "login";
