@@ -1000,10 +1000,11 @@ window.goto = function(view, id){
   }
   return __gotoCal.apply(this, arguments);
 };
-// 🛠 the Practice Lab's card for the activity (js/ft-simulators.js: shown from Day 5)
+// 🛠 the Practice Lab's card for the activity (js/ft-simulators.js: shown from Day 5), with a link to the Portal's
+// Calendar Management Activity track (ftsCalsim('activity'), in its own tab)
 window.ftCalActivityCard = () => `<div class="card fts-card"><div class="fts-kicker">Day 5 · Calendar Management</div><h3>🗓 Attorney Calendar Management Activity</h3>
     <p class="fts-note">Manage the attorney’s Google Calendar in Pacific Time: the ten appointments and their travel blocks, each with its time zone, color, location, guests, reminders and notes. Checked on the spot by the 📅 Calendar Activity Check, then submitted to your trainer.</p>
-    <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calsim','attorney-activity')">Open the activity</button></div></div>`;
+    <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="goto('calsim','attorney-activity')">Open the activity</button> <button class="btn btn-ghost btn-sm" type="button" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('activity') : 0">📅 Standard Training - Calendar Management Activity ↗</button></div></div>`;
 
 /* ---------- results from the connected simulators (Portal, CMS) ---------- */
 window.addEventListener("message", ev => {

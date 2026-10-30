@@ -185,6 +185,7 @@ async function workerChecks() {
   if (await page.$('text=Check my calendar')) fail('the Calendar Activity Check shows on the Practice Lab before its day');
   await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
   if (!(await page.$('text=Check my calendar'))) fail('the Practice Lab has no 📅 Calendar Activity Check card');
+  if (!(await page.$('.fts-card button[onclick*="ftsCalsim(\'activity\')"]'))) fail('the Practice Lab\'s Attorney Calendar Management Activity card has no link to the Portal\'s Standard Training - Calendar Management Activity track');
   if (!(await page.evaluate(() => (FTDays.of(5).items || []).some(x => x.at === 'tool' && x.id === 'calcheck')))) fail('Day 5 doesn\'t point to the Calendar Activity Check');
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
   const deck = await page.evaluate(() => ({ bar: [...document.querySelectorAll('.ftdd-acts button')].map(b => b.innerText).join(' | '), tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
