@@ -660,9 +660,8 @@ function dividerSlide(n){
 }
 function agendaHtml(d, info){
   const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda && !s.divider).map(([s, i], j) => {
-    const k = kindOf(s, visual(slideSrc(d.day, s)));
     return `<li><button type="button" onclick="FTDayDecks.to(${i})"><span class="ftdd-ag-n">${String(j + 1).padStart(2, "0")}</span>
-      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${k.ic} ${k.label}</small></span></button></li>`;
+      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b></span></button></li>`;
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
@@ -1672,6 +1671,24 @@ const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring
 const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
+// 🎯 each day card's objective, under its focus: what the trainee can do by the end of that day
+const DAY_OBJECTIVE = {
+  1: "Understand the VA’s role in a US personal injury firm (jurisdiction, VA vs. in-house, the firm’s cultural values) and install the SA plug-ins you will use every day.",
+  2: "Speak for the firm with confidence: use the common PI and auto liability terms, know what each party may be told, and when and how to escalate.",
+  3: "Follow a PI case from intake to settlement, and handle a reception call: triage the caller, check who may be told what, and capture the call’s key details.",
+  4: "Take a reception call from greeting to transfer on your own, scored on the Reception Mock Calls Metrics.",
+  5: "Manage an attorney’s calendar: book every event by the scheduling rules, in the right time zone, with the caller’s details complete.",
+  6: "Set appointments on a live mock call, every booking checked against the scheduling rules.",
+  7: "Know the intake process: the documents and evidence a claim needs, the common insurance providers, and how an intake call runs.",
+  8: "Build, name and save a complete intake packet to Smart Advocate, demonstrated live to your trainer.",
+  9: "Run a full intake call one-on-one, and turn a client-to-attorney consultation into accurate minutes.",
+  10: "Open 1P and 3P claims: check for existing claims, share only what the insurer may be told, and send the LOR.",
+  11: "Read the Dec Pages to evaluate coverage and liability, then draft the 1P and 3P letters of representation.",
+  12: "Upload the 1P and 3P LORs to Smart Advocate under the right names and send them to the insurers, in a recorded demonstration.",
+  13: "Step into the Medical Records Specialist role: how providers are spoken to, and your HIPAA training completed.",
+  14: "Send a HIPAA-compliant MedLOR and request bills and records, following your work guide step by step.",
+  15: "Demonstrate the MedLOR and records request end to end, within the ideal time.",
+  16: "Verify a lien balance with the provider, log it in the right report format, and demonstrate it one-on-one."};
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
    carries its Classroom Activity card (▶ Start Training opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
@@ -1715,7 +1732,7 @@ function dayCard(n, ex){
   const rows = standardRows(n, c, lid, first, title, cardRows(c, ex).filter(r => rowDay(c, r) === n));
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
+      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b></span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
   const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
@@ -1737,6 +1754,7 @@ function dayCard(n, ex){
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
+        ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
         ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
@@ -2410,6 +2428,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static
 .ftlc-focus-t::before{content:"";flex:0 0 auto;width:10px;height:10px;background:#2E5A9A;border-radius:2px;}
 .ftlc-h2{margin:12px 0 4px !important;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#B5651F;}
 .ftlc-focus ul{margin:0;padding-left:18px;display:grid;gap:3px;}
+.ftlc-obj{font-weight:600;color:#1B1E2E;}
 .ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
