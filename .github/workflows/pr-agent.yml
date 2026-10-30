@@ -65,7 +65,10 @@ jobs:
           PR_AGENT_BRANCH_MAX_AGE_DAYS: ${{ vars.PR_AGENT_BRANCH_MAX_AGE_DAYS }}
           PR_AGENT_MAX_FIX_ATTEMPTS: ${{ vars.PR_AGENT_MAX_FIX_ATTEMPTS }}
           PR_AGENT_SKIP_BRANCHES: ${{ vars.PR_AGENT_SKIP_BRANCHES }}
-        run: node .github/scripts/pr-agent.mjs
+        # (main runs it, so a branch can't change what the agent does; until it is merged there, there is nothing to run)
+        run: |
+          if [ ! -f .github/scripts/pr-agent.mjs ]; then echo "::notice::The PR agent isn't on the default branch yet"; exit 0; fi
+          node .github/scripts/pr-agent.mjs
 
   fix:
     name: 'Fix #${{ matrix.pr.number }}'
