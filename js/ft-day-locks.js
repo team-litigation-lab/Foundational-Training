@@ -471,13 +471,22 @@ function segStatus(n, k, sel){
   return segCount(n, sel) >= k ? "open" : "locked";
 }
 const segOpenFor = (d, k) => { const x = segStatus(d, k); return x === "open" || x === "kept"; };
-const deckOk = n => isTrainer() && decksIn() && segList(n).length && (Number(n) === 1 || (Number(n) >= FIRST && Number(n) <= LAST()));
+const anyDay = n => decksIn() && segList(n).length && (Number(n) === 1 || (Number(n) >= FIRST && Number(n) <= LAST()));
+const deckOk = n => isTrainer() && anyDay(n);
+// (the slide's 🔓 Unlock / 🔒 Lock button is the trainer's in 👁 Trainee view too: their admin session stays signed in under it)
+const canSet = n => (isTrainer() || (!!state.adminPreview && !state.isAdmin)) && anyDay(n);
 const CHIP = {open: ["🔓", "Open to trainees"], kept: ["🔓", "Open to trainees"], locked: ["🔒", "Locked for trainees"], lesson: ["🔒", "Lesson not open"]};
 // the slide's chip on the trainer's deck
+// the slide's lock, for the batch picked, as a button: 🔒 Locked for trainees · 🔓 Unlock (this segment, and the ones before
+// it), or 🔓 Open to trainees · 🔒 Lock (from this segment on); a day kept open, or a lesson not open yet, only says so
 function chip(n, i){
-  n = Number(n); if(!deckOk(n)) return "";
-  const k = segAt(n, i), x = segStatus(n, k), [ic, t] = CHIP[x];
-  return `<span class="ftdl-chip ${x}" title="${esc_(`Segment ${k} of ${segList(n).length}: ${segLabel(n, k)} · ${t} (${batchName(selKey())})`)}">${ic} ${esc_(t)}</span>`;
+  n = Number(n); if(!canSet(n)) return "";
+  const k = segAt(n, i), x = segStatus(n, k), [ic, t] = CHIP[x], b = batchName(selKey());
+  const tip = `Segment ${k} of ${segList(n).length}: ${segLabel(n, k)} · ${t} (${b})`;
+  const to = x === "locked" ? k : x === "open" && (n !== 1 || k > 2) ? k - 1 : null;
+  if(to == null) return `<span class="ftdl-chip ${x}" title="${esc_(tip)}">${ic} ${esc_(t)}</span>`;
+  return `<button type="button" class="ftdl-chip ftdl-chipbtn ${x}" onclick="FTDayLocks.segSet(${n}, ${to})"
+    title="${esc_(tip + (x === "locked" ? `: unlock it for ${b}` : `: lock it again for ${b}`))}">${ic} ${esc_(t)} <b>${x === "locked" ? "🔓 Unlock" : "🔒 Lock"}</b></button>`;
 }
 const dotLocked = (n, i) => { n = Number(n); return deckOk(n) && !segOpenFor(n, segAt(n, i)); };
 // 🔓 Segment lock, in the side panel of the trainer's deck
@@ -681,6 +690,12 @@ const st = document.createElement("style"); st.id = "ft-day-locks"; st.textConte
 .ftdl-chip{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;padding:3px 10px;border-radius:999px;font:700 12px/1.3 'Inter',sans-serif;white-space:nowrap;
   background:#EAF6EE;color:#2E7D4F;border:1px solid #B9E0C6;}
 .ftdl-chip.locked, .ftdl-chip.lesson{background:#F3E3E3;color:#8A2F2F;border-color:#E6C4C4;}
+/* (on a day's card the slide's bar is otherwise empty: the lock floats at the ribbon's right end, so the card keeps its room) */
+.ftdd-deck-ag > .ftdd-bar:has(> .ftdl-chip){position:relative;}
+.ftdd-deck-ag > .ftdd-bar > .ftdl-chip{position:absolute;right:10px;bottom:calc(100% + 6px);z-index:3;box-shadow:0 2px 6px rgba(16,19,36,.25);}
+.ftdl-chipbtn{cursor:pointer;} .ftdl-chipbtn b{margin-left:4px;padding:1px 8px;border-radius:999px;font-weight:800;}
+.ftdl-chipbtn.locked b{background:#262B45;color:#fff;} .ftdl-chipbtn.open b{background:#fff;color:#8A2F2F;border:1px solid #E6C4C4;}
+.ftdl-chipbtn:hover{filter:brightness(.96);} .ftdl-chipbtn:focus-visible{outline:2px solid #DB8437;outline-offset:2px;}
 .ftdl-tpanel{display:flex;flex-direction:column;gap:6px;padding:0 0 8px;margin:0 0 4px;border-bottom:1px solid var(--line, #E3E6EE);}
 .ftdl-tsel{width:100%;padding:5px 6px;border:1px solid var(--line, #DDE1EC);border-radius:8px;background:#fff;font:600 12.5px 'Inter',sans-serif;color:#262B45;}
 .ftdl-tseg{margin:0;display:flex;flex-direction:column;gap:2px;font-size:12.5px;line-height:1.3;color:#262B45;}
