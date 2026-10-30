@@ -2277,7 +2277,8 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-vwrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;}
 /* …except a set of videos the trainee is to watch one after another (Day 3's five CRM/CMS videos, data-card): cards side
    by side, each with the video's preview, so the set reads as what to watch, and a click plays it bigger */
-.ftdd-vcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin:10px 0 14px;}
+/* (a row of one or two videos sits in the middle of the slide, not on the left with empty columns beside it) */
+.ftdd-vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,340px));justify-content:center;gap:14px;margin:10px 0 14px;width:100%;align-self:stretch;}
 .ftdd-vcard{display:flex;flex-direction:column;gap:6px;min-width:0;padding:8px 8px 10px;border:1px solid #E3E6EE;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(30,35,64,.08);transition:box-shadow .15s,transform .15s;}
 .ftdd-vcard:hover{box-shadow:0 6px 18px rgba(30,35,64,.16);transform:translateY(-2px);}
 .ft-body .ftdd-vcard a.ftdd-tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0;}
