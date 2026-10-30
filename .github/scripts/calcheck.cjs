@@ -193,6 +193,10 @@ async function workerChecks() {
   if (!deck.tile) fail('Day 5\'s Time Zone & Submit slide has no 📅 Calendar Activity Check tile');
   // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management Activity track)
   if (!deck.portal) fail('Day 5\'s activity slide doesn\'t link the Portal\'s Standard Training - Calendar Management Activity');
+  // the Instructions slide links the activity's simulator (the Main Portal's Calendaring Activity calendar), under the instructions
+  await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3'))); await page.waitForTimeout(1200);
+  const ins = await page.evaluate(() => ({ link: !!document.querySelector('.ftdd-calsim-ins button[onclick*="ftsCalsim(\'activity\')"]'), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
+  if (!ins.link || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should link the Portal's simulator (and carry no link pills): ${JSON.stringify(ins)}`);
   // (the slide is read in pages: the tile comes last)
   for (let k = 0; k < 8 && !(await page.isVisible('button.ftdd-tile[onclick*="calcheck"]')); k++) { await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(600); }
   await page.evaluate(() => { state.adminPreview = false; }); await page.click('button.ftdd-tile[onclick*="calcheck"]'); await page.waitForTimeout(1200);
