@@ -793,6 +793,7 @@ function renderDeck(){
   if(root.FTSlideEdit) FTSlideEdit.load();
   const info = dayInfo(DD.day), list = slidesOf(d), n = list.length;
   if(DD.i >= n) DD.i = n - 1;
+  setLastAt(DD.day, DD.i);
   const pair = DD.split && DD.i + 1 < n;   // the slide beside it, for reading the instructions and the sample together
   const tr = isAdminView(), nNotes = tr ? slotsOf(list[DD.i]) + (pair ? slotsOf(list[DD.i + 1]) : 0) : 0;
   const cards = slideCard(d, info, list, DD.i) + (pair ? slideCard(d, info, list, DD.i + 1) : "");
@@ -1496,6 +1497,10 @@ function toAssessNext(a){
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: s ? s.id : "", h: (/reference sheet/i.test(h) ? "📊 " : "") + h, l: Number(a.l), sheet: "pq", assess: a.doc, only: true})); }catch(err){}
   if(root.FTProcess) FTProcess.openLesson(a.l);
 }
+// 🗺 the deck slide last open, per trainee in this browser: the Map's "You are here" when it is opened off a deck
+const lastKey = () => `ftDeckAt:${state.traineeId || "-"}`;
+function setLastAt(day, i){ try{ localStorage.setItem(lastKey(), JSON.stringify({day: Number(day), i: Number(i) || 0})); }catch(e){} }
+function lastAt(){ try{ const v = JSON.parse(localStorage.getItem(lastKey()) || "null"); return v && v.day ? v : null; }catch(e){ return null; } }
 const readKey = () => `ftReadParts:${state.traineeId || "-"}:${DD.day}`;
 function readParts(){ try{ return JSON.parse(localStorage.getItem(readKey()) || "[]"); }catch(e){ return []; } }
 // the parts of the reading not read yet (none, for a trainer)
@@ -1852,8 +1857,10 @@ root.goToKnowledgeCheckWithInterstitial = async function(){
    you are on are marked, the days before it are ticked, and any open day or slide is a click away. Escape, ✕ or a
    click outside closes it. */
 function mapHtml(){
-  // opened from a lesson or orientation slide (not a deck), "here" is the day the trainee is on
-  const onDeck = state.view === "daydeck", all = decks() || {}, at = placeDay(), here = onDeck ? DD.day : at;
+  // opened from a lesson or orientation slide (not a deck), "here" is the deck slide last open (lastAt), else the day the
+  // trainee's lessons are on; placeDay alone stayed on Day 1 until Lesson 1's Process Questions were passed
+  const onDeck = state.view === "daydeck", all = decks() || {}, last = onDeck ? {day: DD.day, i: DD.i} : lastAt();
+  const here = last && all[last.day] ? Number(last.day) : placeDay(), hereI = last && Number(last.day) === here ? last.i : -1;
   const lessons = Object.keys(LESSON_CARDS).map(Number).sort((a, b) => a - b);
   const seen = new Set();
   const dayRow = n => {
@@ -1861,10 +1868,10 @@ function mapHtml(){
     // a day the trainer hasn't unlocked, and each step's slides until it is, show 🔒 and don't link
     const d = all[n], open = dayOpen(n) && !slideLocked(n, 0), info = dayInfo(n), list = d ? slidesOf(d) : [];
     const title = (d && deckTitle(n, info, d)) || `Day ${n}`;
-    const state_ = n === here ? "here" : n < at ? "done" : "";
+    const state_ = n === here ? "here" : n < here ? "done" : "";
     const slides = list.map((x, i) => {
       const name = x.agenda ? (lessonOfDay(n) != null && !x.plan ? "Activity card" : "Training Agenda") : String(x.h || `Slide ${i + 1}`).replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
-      const on = onDeck && n === here && i === DD.i, ok = open && !slideLocked(n, i);
+      const on = n === here && i === hereI, ok = open && !slideLocked(n, i);
       return `<li><button type="button" class="ftmap-slide${on ? " on" : ""}${x.placeholder ? " ph" : ""}" ${ok ? `onclick="FTDayDecks.mapGo(${n}, ${i})"` : "disabled"} title="${e(name)}${ok ? "" : " (opens when your trainer unlocks it)"}"><span class="ftmap-sn">${n}.${i + 1}</span><span class="ftmap-st">${e(name)}</span>${ok ? "" : `<span class="ftmap-lock">🔒</span>`}</button></li>`;
     }).join("");
     return `<li class="ftmap-day${state_ ? " " + state_ : ""}${open ? "" : " locked"}">
@@ -1885,8 +1892,8 @@ function mapHtml(){
   return `<div class="ftmap-box" role="document">
     <button type="button" class="ftmap-x" onclick="FTDayDecks.mapClose()" aria-label="Close the map">✕</button>
     <div class="ftmap-head"><p class="ftmap-kick">Standard Foundational Training · ${total} days · 8 lessons</p><h2>🗺 Training Roadmap</h2>
-      <p class="ftmap-sub">${onDeck ? `You are on <b>Day ${e(here)}</b>, slide ${DD.i + 1}.` : `You are on <b>${e(typeof ftName === "function" && state.dayId != null ? ftName(state.dayId) : "Day " + here)}</b>${state.view === "day" ? `, step ${(state.lessonSlide || 0) + 1}` : ""}.`} Tap any day or slide to go there.</p>
-      <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (at - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
+      <p class="ftmap-sub">${onDeck || hereI >= 0 ? `You are on <b>Day ${e(here)}</b>, slide ${hereI + 1}.` : `You are on <b>${e(typeof ftName === "function" && state.dayId != null ? ftName(state.dayId) : "Day " + here)}</b>${state.view === "day" ? `, step ${(state.lessonSlide || 0) + 1}` : ""}.`} Tap any day or slide to go there.</p>
+      <div class="ftmap-bar"><span style="width:${Math.round(Math.min(1, Math.max(0, (here - 1) / Math.max(1, total))) * 100)}%"></span></div></div>
     <div class="ftmap-body">${groups}${restHtml}</div></div>`;
 }
 function mapKey(ev){ if(ev.key === "Escape"){ ev.stopPropagation(); mapClose(); } }
