@@ -710,6 +710,9 @@ document.addEventListener("keydown", ev => {
 }, true);
 window.FTMetrics = {
   table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric, sheet: metricsSheet,
+  // a trainee's saved scoresheet for an activity (any of its rubrics), else null: what makes their mock call done (js/ft-buffer.js)
+  scored(act){ if(!state.traineeId || state.isAdmin) return null; if(MY.id !== state.traineeId){ MY.rec = null; MY.at = 0; } if(!MY.rec) loadMyReview();
+    const c = (((MY.rec || {}).acts) || {})[act]; return c && c.rubric && (c.rubric.scores || []).some(v => v != null) ? c : null; },
   open(key){ MS.open = key; drawSheet(); const f = document.querySelector("#ftmsModal select[aria-label=Trainee]"); if(f) f.focus(); },
   close(){ MS.open = null; drawSheet(); },
   batch(b){ MS.batch = b; redraw(); },

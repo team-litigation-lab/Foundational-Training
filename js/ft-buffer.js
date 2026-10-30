@@ -46,17 +46,19 @@ const ACTS = {
   "13:s1": {kind: "buffer"},
   // (simple: the trainee sees only "Mock Calls Ongoing", no Done: the trainer marks each trainee done; nextDay: the trainer's
   // Start Group Debrief also opens the next day's deck for the batch, its lesson and its first step: unlockNext)
-  "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true},
+  // (the mock calls have no tracker: the trainer scores each trainee on the 🧑‍🏫 Scoresheet, and a trainee whose scoresheet is saved
+  // is done; the next day opens as any day does, Admin → 📅 Open Lessons. noTracker; the demos keep theirs)
+  "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true, noTracker: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
   // (Day 6's as Day 4's: the mock calls on a slide of their own after the instructions, s1b, simple; no nextDay, the day's
   // Additional Activity follows)
   // (what: the trainee's name for it, on the panel and the confirmation: Day 6 is the Calendaring Activity, done on the
   // Calendar Simulator; the trainer's tracker and scorecard keep the mock call's)
-  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true, what: "Calendaring Activity"},
+  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true, noTracker: true, what: "Calendaring Activity"},
   // (Days 8–16 as Day 4: the instructions and metrics on the preparation slide before, build/day-decks.cjs PREP; here, simple;
   // nextDay, as Day 4's: mock calls and demos can run into the next day, so the debrief opens it for the batch)
-  "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true, nextDay: true},
+  "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true, nextDay: true, noTracker: true},
   "8:s3": {kind: "demo", name: "Saving the Intake Packet and Extracted Intake Documents", act: "intake-packet-demo", simple: true, nextDay: true},
   "12:s1d": {kind: "demo", name: "Uploading and Sending 1P & 3P LORs", act: "lor-demo", rec: true, key: "12:s1", simple: true, nextDay: true},
   "14:s1e": {kind: "demo", name: "Sending MedLOR and Requesting Medical Bills & Records", act: "medlor-demo", rec: true, key: "14:s1", simple: true, nextDay: true},
@@ -116,8 +118,12 @@ function traineePanel(h){
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
+  // (a mock call with no tracker: done once the trainer has saved the trainee's scoresheet, js/ft-sessions.js FTMetrics.scored)
+  const sc = a.noTracker && a.act && root.FTMetrics && FTMetrics.scored ? FTMetrics.scored(a.act) : null;
+  if(sc) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Your ${a.what ? e(a.what) : a.kind === "mock" ? "mock call" : "demo"} is done</p>
+    <p>Your trainer has scored it${sc.status ? ": " + e(sc.status) : ""}. Your scores and the trainer’s remarks are on the Metrics and 📬 My Feedback.</p></div>`;
   // (in the middle of the slide: its heading only. No Done for the trainee while the mock calls and demos run: the
-  // trainer marks each trainee done on the tracker, then starts the group debrief)
+  // trainer marks each trainee done on the tracker (a demo), or scores them (a mock call), then starts the group debrief)
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}</div>`;
   const live = !a.rec;
@@ -331,6 +337,9 @@ function paint(){
     box.innerHTML = isAdminView() ? `<p class="ftbf-pv-h">👁 What trainees see</p>${traineePanel(h)}` : traineePanel(h); sheet.appendChild(box);
     if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => { const n = here(); if(n && n.k === h.k && mine(h.k)) render(); });
     return; }
+  // (a mock call with no tracker: the trainer's slide is the trainee's, with the preview of what trainees see; no roster, no release)
+  if(h.a.noTracker && isAdminView()){ box.classList.add("ftbf-pv");
+    box.innerHTML = `<p class="ftbf-pv-h">👁 What trainees see</p>${traineePanel(h)}`; sheet.appendChild(box); return; }
   if(isAdminView()){
     if(T.k !== h.k){ T.k = h.k; }
     box.innerHTML = trackerHtml(h); sheet.insertBefore(box, sheet.firstChild);
