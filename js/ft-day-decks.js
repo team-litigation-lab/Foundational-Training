@@ -2794,6 +2794,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;}   /* (Days 6–15's bold-text colour had made the name dark on its navy bar) */
+/* a slide that is only its video, under its name bar: the video as large as the page allows (Day 7's Mock Intake recording) */
+.ft-body .ftdd-sheet > .ftdd-inline.is-video:only-child:not(.is-bare):not(.is-fit) .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 110px) * 16 / 9));}
 .ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
 /* a video with no name bar over it (data-bare): the page's full height */
 .ft-body .ftdd-inline.is-bare{margin:0;}
@@ -3017,6 +3020,33 @@ main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table th{background:#1E2340;c
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td{color:#0B0D1A;border-color:#C9CEE0;}
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td:first-child{font-weight:800;color:#141A3C;background:#F4F6FB;}
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table tr:nth-child(odd) td:not(:first-child){background:#FAFBFE;}
+/* Day 7's Accident or Injury Claim Documents and Evidence Checklist, on the slide as cards (build/days/day07.js): a card
+   for each kind of document, its name white on navy over the documents to ask for, each with an empty box to tick */
+main.main-ftdd .ftdd-sheet:has(.ftdd-evl){justify-content:flex-start !important;}
+main.main-ftdd .ftdd-sheet > .ftdd-keep:has(.ftdd-evl){align-self:stretch;width:100%;}
+.ftdd-sheet .ftdd-evl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;width:100%;margin:10px 0 6px;text-align:left;}
+@media(max-width:900px){ .ftdd-sheet .ftdd-evl{grid-template-columns:minmax(0,1fr);} }
+.ftdd-sheet .ftdd-evl-card{background:#fff;border:2px solid #343C66;border-radius:12px;overflow:hidden;box-shadow:0 3px 10px rgba(30,35,64,.10);}
+main.main-ftdd .ftdd-sheet .ftdd-evl-t{display:flex;align-items:center;gap:8px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;padding:8px 12px;font:800 17px/1.3 'Poppins','Inter',sans-serif;}
+.ftdd-sheet .ftdd-evl-ic{font-size:18px;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-i{position:relative;padding:5px 12px 5px 38px;font:700 16px/1.4 'Inter',system-ui,sans-serif;color:#0B0D1A;}
+.ftdd-sheet .ftdd-evl-i:first-of-type{margin-top:6px;}
+.ftdd-sheet .ftdd-evl-i:last-child{margin-bottom:8px;}
+.ftdd-sheet .ftdd-evl-i::before{content:"";position:absolute;left:12px;top:8px;width:15px;height:15px;border:2px solid #343C66;border-radius:3px;background:#fff;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub{padding-left:62px;font-size:15px;font-weight:600;color:#262B45;}
+.ftdd-sheet .ftdd-evl-i.ftdd-evl-sub::before{left:36px;width:13px;height:13px;}
+main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:600;color:#262B45;margin:6px 0 0;}
+/* the sample intake calls' cards on a deck slide (js/ft-intake.js .ftis-calls, Day 7): dark, larger type on the white card,
+   the name and firm on the left, the length on one line, the "Listen for" label a darker orange that reads on white */
+main.main-ftdd .ftdd-sheet .ftis-call header > div{text-align:left;}
+main.main-ftdd .ftdd-sheet .ftis-call header b{font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#141A3C !important;}
+main.main-ftdd .ftdd-sheet .ftis-call header small{display:block;font-size:15px !important;font-weight:600;color:#2E3450 !important;}
+main.main-ftdd .ftdd-sheet .ftis-call .ftis-n{width:34px;height:34px;font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftis-call .ftis-about{font-size:18px !important;color:#0B0D1A !important;}
+main.main-ftdd .ftdd-sheet .ftis-call .ftis-dur{flex:0 0 auto;white-space:nowrap;font-size:15px;font-weight:700;color:#141A3C;}
+main.main-ftdd .ftdd-sheet .ftis-call p.ftis-lf-h{font-size:15px !important;font-weight:800;color:#9A4A0C !important;letter-spacing:.06em;}
+main.main-ftdd .ftdd-sheet .ftis-call .ftis-lf li{font-size:17px !important;color:#0B0D1A !important;}
+main.main-ftdd .ftdd-sheet .ftis-call .ftis-tx summary{font-size:16px;font-weight:800;color:#1E2340;text-align:left;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
