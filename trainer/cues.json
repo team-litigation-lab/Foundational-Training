@@ -2106,7 +2106,7 @@
     "gc": [
      {
       "label": "Open the session",
-      "text": "Good day! We are starting Appointment Setting and Calendar Management.\n\nAs we go, write down the FIRM'S rules — they override the general tips in the deck and they are what your activity and mock calls are scored on:\n• The calendar is in EST, and the time zone must be VISIBLE in every screenshot.\n• Event title format: [Meeting Type] – [Client Name]\n• Collect on every call: Name, Callback Number, DOB, DOL.\n• 15-minute buffer before and after every meeting.\n• Email reminder one day prior.\n\nThank you."
+      "text": "Good day! We are starting Appointment Setting and Calendar Management.\n\nAs we go, write down the FIRM'S rules — they override the general tips in the deck and they are what your activity and mock calls are scored on:\n• The calendar is in EST, and the time zone is set on every appointment, before you save it.\n• Event title format: [Meeting Type] – [Client Name]\n• Collect on every call: Name, Callback Number, DOB, DOL.\n• 15-minute buffer before and after every meeting.\n• Email reminder one day prior.\n\nThank you."
      }
     ],
     "keys": [
@@ -2160,7 +2160,7 @@
      "An attorney's calendar is shared. Anything plotted is visible to the firm immediately, so a wrong entry is seen before it is fixed."
     ],
     "keys": [
-     "For the activity screenshots: untick the LSH calendar before capturing the full-calendar view, then re-enable it."
+     "For the activity: every event goes on the attorney's calendar as the item says, then into the 📅 Calendar Activity Check — no screenshots and no upload."
     ]
    },
    "v008": {
@@ -2168,15 +2168,15 @@
     "objective": "Time zones, event creation and colour coding — and the firm's EST rule.",
     "talk": [
      "Teach the time-zone setting properly: this is where most activity marks are lost.",
-     "Set the appropriate time zone for each item, and take the screenshot BEFORE saving so the time zone is captured."
+     "Set the appropriate time zone for each item, and check it BEFORE saving the appointment."
     ],
     "keys": [
-     "The calendar runs in EST. The time zone must be visible in the screenshot of every individual appointment.",
-     "No separate screenshot of the time zone is needed — it just has to be visible in each appointment's own capture."
+     "The calendar runs in EST. Every individual appointment carries its own time zone, set in the event editor.",
+     "The 📅 Calendar Activity Check asks for each event's time zone: a wrong one fails that field."
     ],
     "pitfalls": [
      "Plotting in local time and converting afterwards.",
-     "Saving the appointment first and then trying to screenshot the time zone."
+     "Saving the appointment first and then forgetting to set its time zone."
     ]
    },
    "v009": {
@@ -2484,8 +2484,8 @@
     "time": "1.5 hrs (activity) + Day 6 mock calls",
     "objective": "Close the deck and run the Attorney Calendar Management activity, then set up the Day 6 mock calls.",
     "talk": [
-     "Post the activity and the sample screenshots together — the samples are what the sequence and the time-zone capture are judged against.",
-     "Walk the screenshot rules before they start, or half the batch will re-do them: time zone visible, correct numbering, 19 screenshots, LSH calendar unticked for the full-calendar view.",
+     "Post the activity and the samples together — the samples show how each event and its time zone should look.",
+     "Walk the rules before they start, or half the batch will re-do them: the time zone set on every appointment, specific titles, and each event entered on the 📅 Calendar Activity Check, then 📤 Submit to my trainer.",
      "Check against the answer keys as they submit, then preview tomorrow's mock calls and the scheduling rules."
     ],
     "gc": [
@@ -2494,8 +2494,8 @@
       "text": "Please answer the Attorney Calendar Management Activity. Make sure to follow the instructions carefully, and signify \"done\" here as soon as you finish. Thanks.\n\nActivity: https://drive.google.com/file/d/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/view\nSamples: https://drive.google.com/drive/folders/1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW"
      },
      {
-      "label": "Screenshot rules — read before starting",
-      "text": "REMINDER! Set the appropriate time zone for each activity item. BEFORE saving each appointment, take a screenshot that captures the correct time zone, as shown in the sample.\n\nWhen taking a screenshot of the entire calendar, untick the LSH calendar first, take the screenshot, then re-enable it.\n\nYou should have a total of 19 screenshots uploaded to your subfolder, in the exact sequence shown in the sample. Be specific with your event titles — for example: Client Consultation Meeting – [Client Name]. Thank you."
+      "label": "Activity rules — read before starting",
+      "text": "REMINDER! Set the appropriate time zone for each activity item. Check it BEFORE saving each appointment, as shown in the sample.\n\nWhen you're done, enter each event on the 📅 Calendar Activity Check (on the activity's slides and in the Practice Lab) and hit 📤 Submit to my trainer. No screenshots or upload are needed. Be specific with your event titles — for example: Client Consultation Meeting – [Client Name]. Thank you."
      },
      {
       "label": "Day 6 — scheduling rules for the mock calls",
@@ -2503,30 +2503,29 @@
      }
     ],
     "keys": [
-     "Answer keys for the activity are in the trainer's Day 5 folder; check the sequence and the visible time zone first, then the titles, then the reminders.",
-     "19 screenshots, numbered in the sample's sequence, in the trainee's own subfolder."
+     "Answer keys for the activity are in the trainer's Day 5 folder (and the 📅 Calendar Activity Check marks each field against them); check the time zones first, then the titles, then the reminders.",
+     "Each trainee's submission is in Admin → 🛠 Practice Lab → 📅 Calendar Activity, field by field, with its score."
     ],
     "pitfalls": [
-     "Screenshots out of sequence or renamed — it makes the set unmarkable.",
-     "LSH calendar left ticked on the full-calendar view.",
+     "An event entered on the Check differently from the calendar — the Check scores what is typed there.",
+     "A time zone left on the calendar's default instead of the item's own.",
      "Event titles without the client name."
     ],
     "grade": {
-     "deliverable": "Attorney Calendar Management Activity (19 screenshots)",
-     "file": "19 numbered screenshots in the trainee's activity subfolder, in the sample's sequence",
+     "deliverable": "Attorney Calendar Management Activity (📅 Calendar Activity Check submission)",
+     "file": "The trainee's 📅 Calendar Activity Check, sent with 📤 Submit to my trainer",
      "ai": {
       "match": [
-       "19 screenshots present",
-       "Time zone visible in every individual appointment capture",
+       "All 18 events entered on the Calendar Activity Check",
+       "The right time zone on every individual appointment",
        "Every event title matches [Meeting Type] – [Client Name]",
        "Email reminder set one day prior on each event",
-       "15-minute buffer before and after each meeting",
-       "Full-calendar view captured with the LSH calendar unticked"
+       "15-minute buffer before and after each meeting"
       ],
       "nlp": [
-       "Read the title text from each screenshot and match it against the pattern, allowing an en dash or a hyphen as the separator.",
-       "Score file-naming and sequence separately from the calendar content, so a correct calendar with a scrambled set is still marked on its content.",
-       "A missing time zone is a failed item for that appointment, not a partial — it is the one thing the screenshot exists to prove."
+       "Read each event's title as entered on the Check and match it against the pattern, allowing an en dash or a hyphen as the separator.",
+       "Score each event on its own fields, so one wrong event doesn't sink the rest of the calendar.",
+       "A wrong or missing time zone is a failed item for that appointment, not a partial."
       ],
       "pass": 85
      },
@@ -2545,7 +2544,7 @@
         "weight": 25
        },
        {
-        "label": "Sequence and completeness",
+        "label": "Completeness",
         "weight": 15
        }
       ],
@@ -2553,7 +2552,7 @@
        "Followed the written instructions without asking twice",
        "Checked their own work against the sample before submitting"
       ],
-      "feedback": "Which rule they missed, and whether it was the rule or the screenshot…"
+      "feedback": "Which rule they missed, and whether it was the rule or how they entered it on the Check…"
      }
     }
    }
