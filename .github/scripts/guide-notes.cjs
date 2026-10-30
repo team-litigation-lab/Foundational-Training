@@ -1,6 +1,4 @@
-// 🎬 Video Notes (js/ft-video-notes.js) and 📘 Process Guide (js/ft-process-guide.js), as a trainee:
-//   Video Notes — a Day deck's video carries "📝 What I learned"; the notes (three takeaways, terms, a question, how
-//   it's used on the job) pass their checks, save in learn:<id>, mark the button ✓ and show on 🎬 Video Notes.
+// 📘 Process Guide (js/ft-process-guide.js), as a trainee (and no "📝 What I learned" on a Day deck's videos):
 //   Process Guide — the Day 14 guide opens with the tutorial beside it; 📐 the outline, a numbered list, a link and two
 //   pictures added as files make every check pass; it saves in guide:<id>:medlor; anything that could run code is cleaned
 //   out (a script, an onerror); ⬇ the Word file is an MHTML document carrying the pictures; 📤 submit makes it read-only;
@@ -25,49 +23,16 @@ const failures = []; const fail = m => failures.push(m);
   await signIn(page, 'Gina', 'Guide', 'B100926');
   const id = await page.evaluate(() => state.traineeId);
   const rec = await get('trainee:' + id); rec.approved = true; await put('trainee:' + id, rec);
-  await put('learn:' + id, null); await put(`guide:${id}:medlor`, null);
+  await put(`guide:${id}:medlor`, null);
   // (the trainee's Common Terms tasks submitted, so Day 2's deck goes on past them: its Personal Injury Readings wait for
   // that 📤 Submit, js/ft-buffer.js ACTS["2:s2b"].opens)
   await put('buffer:' + id, { acts: { '2:s2': { done: new Date().toISOString(), by: 'trainee' } }, released: {} });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2000);
 
-  /* ---------- 🎬 Video Notes ---------- */
-  // (Day 4's first slide: Julio's Reception Training video. Day 2's videos are its Common Terms ones, which carry no
-  // notes, and the Softphones one, behind the Common Terms 📤 Submit)
+  /* ---------- 🎬 no "📝 What I learned" (the feature is gone) ---------- */
   await page.evaluate(() => FTDayDecks.open(4)); await page.waitForTimeout(1500);
-  const slide = await page.evaluate(() => { for (let i = 1; i < 12; i++) { FTDayDecks.to(i); if (document.querySelector('.ftdd-learn')) return i; } return -1; });
-  if (slide < 0) fail('no video in the Day 4 deck carries "📝 What I learned"');
-  else {
-    // the slide's own button sits above the sheet, so paging never hides it: it turns to the video's page itself
-    const act = await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-acts .btn')].find(x => /What I learned/.test(x.innerText));
-      const sheet = document.querySelector('.ftdd-sheet');
-      return b ? { inSheet: !!(sheet && sheet.contains(b)), above: b.getBoundingClientRect().top < sheet.getBoundingClientRect().top, shown: !!b.offsetParent } : null; });
-    if (!act) fail('a slide with a video has no 📝 What I learned button of its own');
-    else if (act.inSheet || !act.above || !act.shown) fail(`the slide's 📝 What I learned button isn't above the sheet: ${JSON.stringify(act)}`);
-    await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-acts .btn')].find(x => /What I learned/.test(x.innerText)); if (b) b.click(); });
-    await page.waitForTimeout(700);
-    if (!(await page.$('#vnModal .vn-tk input'))) {
-      fail('the slide\'s 📝 What I learned button doesn\'t open the video\'s notes');
-      await page.evaluate(() => FTDayDecks.reveal('.ftdd-learn')); await page.waitForTimeout(300);
-      await page.click('.ftdd-learn'); await page.waitForTimeout(500);
-    }
-    const inputs = await page.$$('#vnModal .vn-tk input');
-    const tks = ['Every to-do must follow the daily template exactly.', 'I log my Hubstaff time against the right to-do every day.', 'Notes on each to-do help my trainer see my progress clearly.'];
-    for (let i = 0; i < 3; i++) await inputs[i].fill(tks[i]);
-    await page.fill('#vnModal input[placeholder^="e.g. DOL"]', 'Hubstaff, to-do');
-    await page.fill('#vnModal input[placeholder^="End it"]', 'Do I add a new to-do for each session?');
-    await page.fill('#vnModal textarea', 'When I start each training session I will set my to-do first and track my time against it.');
-    await page.waitForTimeout(900);
-    if (!/4 of 4/.test(await page.$eval('#vnModal .vn-pct', el => el.textContent))) fail('complete video notes don\'t pass their four checks');
-    await page.click('#vnModal >> text=✓ Done'); await page.waitForTimeout(1200);
-    const l = await get('learn:' + id), n = l && Object.values(l.notes || {})[0];
-    if (!n || (n.takeaways || []).filter(Boolean).length !== 3 || !/\?$/.test(n.question)) fail(`the video notes weren't saved: ${JSON.stringify(l)}`);
-    if (!(await page.$('.ftdd-learn.done'))) fail('the video\'s button doesn\'t show ✓ once its notes are written');
-    await page.evaluate(() => goto('learn')); await page.waitForTimeout(1500);
-    const lp = await page.evaluate(() => document.querySelector('main').innerText);
-    if (!/Video Notes/.test(lp) || !/Notes written/.test(lp)) fail('🎬 Video Notes doesn\'t list the video with its notes');
-    if (!/1 of \d+ videos with notes/.test(lp)) fail('🎬 Video Notes doesn\'t count the videos with notes');
-  }
+  const learnLeft = await page.evaluate(() => { for (let i = 0; i < 12; i++) { FTDayDecks.to(i); if (/What I learned/.test(document.querySelector('main').innerText)) return i; } return -1; });
+  if (learnLeft >= 0) fail(`Day 4's slide ${learnLeft + 1} still offers "📝 What I learned"`);
   // a video is watched, not glanced at: the pop-out viewer opens wide and centred for one, and keeps the side pane for a document
   const viewer = await page.evaluate(async () => {
     const box = () => { const p = document.getElementById('lecture-viewer-pane'), r = p.getBoundingClientRect();
@@ -143,5 +108,5 @@ const failures = []; const fail = m => failures.push(m);
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Video Notes / Process Guide test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Video Notes and Process Guide test passed (📝 What I learned on a deck video, its checks, saved, ✓ on the button and listed on 🎬 Video Notes; the Day 14 guide with the tutorial beside it, the outline, steps, a link and two pictures passing every check, saved, code cleaned out, the Word file carrying the pictures, read-only once submitted, read by the trainer).');
+  console.log('Process Guide test passed (no 📝 What I learned on a deck video; the Day 14 guide with the tutorial beside it, the outline, steps, a link and two pictures passing every check, saved, code cleaned out, the Word file carrying the pictures, read-only once submitted, read by the trainer).');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -170,8 +170,6 @@ function calActivity(){
   if(steps !== 9 || items !== 10) throw new Error(`Day 5's activity has ${steps} instructions and ${items} items, not 9 and 10`);
   return out;
 }
-// (a slide whose videos carry no "📝 What I learned": js/ft-day-decks.js visual)
-const NOLEARN = '<div class="ftdd-nolearn" hidden></div>\n';
 // 🌳 Day 3's call-handling decision trees, drawn on the slide (Frontline Management): the guide's two (its screenshots,
 // ft/day3/img/image12.png and image17.png: Authorization, Payment Calls) and the PI firm's other frontline calls. Each:
 // what starts it, its steps (a question with what to do on YES and on NO, or a step to take), and its protocol
@@ -496,8 +494,6 @@ s2: html => {
   const ctv = new RegExp(`<p><a class="viewer-link" data-embed data-bare data-kind="video"(?=[^>]*1eErVAp_HkPPCnpQNJ63S3icIWMCbHi_D)[^]*?</p>\\n`), m = out.match(ctv);
   if(!m) throw new Error("Day 2's Common Terms video is no longer where the build looks for it");
   out = out.replace(m[0], m[0] + "<!--cut:ref-->\n");
-  // (no "📝 What I learned" on the videos: js/ft-day-decks.js visual)
-  out = NOLEARN + out;
   const kindly = "kindly accomplish the following:", two = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>Please upload your completed assessments[^]*?<\/p>\n<p class="li" style="--lvl:0"><span class="lbl">3\.<\/span><span>Checking and feedback[^]*?<\/p>\n/;
   if(!out.includes(kindly) || !two.test(out) || !out.includes('<span class="lbl">4.</span>')) throw new Error("Day 2's assessment instructions are no longer where the build looks for them");
   out = out.replace(kindly, "kindly accomplish the <b>Common Terms Used – Assessment</b> and the <b>Auto Liability Insurance – Assessment</b>: each follows its video on the slide before, and both are on ✍️ Knowledge Check.")
@@ -522,8 +518,10 @@ s4: html => {
   html = html.replace(/<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/, '<a class="viewer-link" data-embed$1 data-title="Softphones: the instructional video"');
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
     .replace(/<p>2026 VERSION<\/p>\n<p><a [^>]*(1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r)[^>]*>[^<]*<\/a> ?<\/p>/, (m, id) =>
-      `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-big"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy"></iframe></div>`);
-  if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
+      `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-strip"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy" scrolling="no"></iframe></div>`)
+    // the topic, its Task 2 and the three decks as one block, on one page (the decks a row of large thumbnails, no scrolling)
+    .replace(/(<p><b>Topic: Documents &amp; Spreadsheets[^]*?<\/p>\n<p>Task 2 – [^]*?<\/p>\n<div class="ftdd-embed ftdd-embed-folder[^]*?<\/iframe><\/div>)/, '<div class="ftdd-keep ftdd-hw-ppts">\n$1\n</div>');
+  if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out) || !/ftdd-hw-ppts/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
   const mon = /<p>Task 3 - Update items #8-9 in your monitoring sheet\.<\/p>/;
   if(!mon.test(out)) throw new Error("Day 2's Homework monitoring sheet line is no longer where the build looks for it");
   // the Softphones task in three short lines around its video (Task, Action, Note), and no "outside training hours": it is a
@@ -767,7 +765,7 @@ const ROWS = {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
     s2: [{id: "s2", h: "Common Terms Used", parts: [[null, "<!--cut:ref-->"]]},
       {id: "s2r", h: "Common Terms Used: the reference sheet", parts: [["<!--cut:ref-->", "<!--cut:al-->"]], fix: [["<!--cut:ref-->\n", ""]]},
-      {id: "s2l", h: "Auto Liability Insurance", pre: NOLEARN, parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
+      {id: "s2l", h: "Auto Liability Insurance", parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
       // the Personal Injury readings, read once the Common Terms tasks' 📤 Submit, at their head, is in (js/ft-buffer.js ACTS["2:s2b"]):
       // the two readings read in the slide, a page each, under the guide's line about them; its 📌 and the assessments'
       // homework line go (each assessment follows its video's Next: js/ft-day-decks.js ASSESS_NEXT)

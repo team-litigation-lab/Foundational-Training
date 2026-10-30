@@ -2,7 +2,7 @@
    📝 THE TRAINER'S FEEDBACK, SENT ON THE PLATFORM — per activity, per trainee
    ------------------------------------------------------------
    Admin → 🏅 Scorecard → 📝 Send Feedback: every piece of work a trainee did on the platform's activities that had no
-   trainer review of its own — 🎧 the Transcription Activity (each recording), 🎬 Video Notes (each video), 📘 the
+   trainer review of its own — 🎧 the Transcription Activity (each recording), 📘 the
    Process Guides (each guide), 🧰 the LOR Drafting Activity (each letter) — listed by batch, with what is still to be
    reviewed first. The trainer opens one: the work itself (and the AI's evaluation where there is one), then
    a verdict (the facilitator's own labels), a score in %, the comment (✨ drafts it in the facilitator's feedback
@@ -35,9 +35,6 @@ const ACTS = {
     items: rec => [1, 2].filter(n => rec && rec.r && rec.r[n] && rec.r[n].startedAt).map(n => { const r = rec.r[n];
       return {item: String(n), title: `Interview Recording ${n}`, at: r.submittedAt || r.updatedAt || r.startedAt, done: !!r.submittedAt, auto: r.pct,
         ai: (r.ai || {}).summary || "", text: () => ((window.FTTranscribe && FTTranscribe.fields) || []).map(f => `${f[1]}: ${(r.f || {})[f[0]] || "(empty)"}`).concat([`File name: ${r.file || ""}`, `Drive link: ${r.link || ""}`, `Report to the attorney: ${r.report || ""}`]).join("\n")}; })},
-  learn: {icon: "🎬", label: "Video Notes", view: "learn",
-    items: rec => Object.entries((rec && rec.notes) || {}).filter(([k, n]) => n && (n.takeaways || []).some(has)).map(([k, n]) => ({item: k, title: n.title || "Video", at: n.updatedAt || n.at, done: (n.takeaways || []).filter(has).length >= 3,
-      text: () => [`Video: ${n.title || ""}${n.day ? ` (Day ${n.day})` : ""}`, "Takeaways:", ...(n.takeaways || []).filter(has).map((t, i) => `${i + 1}. ${t}`), `New terms: ${n.terms || ""}`, `Question for the trainer: ${n.question || ""}`, `How it is used on the job: ${n.apply || n.use || ""}`].join("\n")}))},
   guide: {icon: "📘", label: "Process Guide", view: "guide", lazy: true,
     items: rec => Object.entries(rec || {}).filter(([g, v]) => v && has(v.html)).map(([g, v]) => ({item: g, title: (guides().find(x => x.id === g) || {}).title || g, at: v.submittedAt || v.updatedAt, done: !!v.submittedAt, html: v.html,
       text: () => { const t = document.createElement("div"); t.innerHTML = window.FTGuide ? FTGuide.clean(v.html) : ""; return `${t.innerText.slice(0, 6000)}\n(${v.imgs || 0} picture(s))`; }}))},
@@ -155,14 +152,14 @@ async function loadAdmin(){
     A.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!A.batch){ const bs = batchesOf(); A.batch = bs[bs.length - 1] || ""; }
     const ppl = A.people.filter(p => bLabel(p.batch) === A.batch), keys = [];
-    ppl.forEach(p => keys.push("transcribe:" + p.id, "learn:" + p.id, "lor:" + p.id, "trainerfb:" + p.id));
+    ppl.forEach(p => keys.push("transcribe:" + p.id, "lor:" + p.id, "trainerfb:" + p.id));
     const vals = []; for(let i = 0; i < keys.length; i += 96) vals.push(...await sharedGetMany(keys.slice(i, i + 96)));
     const gk = await sharedList("guide:").catch(() => []);
     const rows = [];
     for(const [i, p] of ppl.entries()){
-      const [tr, ln, lr, fb] = vals.slice(i * 4, i * 4 + 4), sent = (fb && fb.items) || {};
+      const [tr, lr, fb] = vals.slice(i * 3, i * 3 + 3), sent = (fb && fb.items) || {};
       const add = (act, its) => its.forEach(it => rows.push(Object.assign({p, act, sent: sent[act + ":" + it.item] || null}, it)));
-      add("transcribe", ACTS.transcribe.items(tr)); add("learn", ACTS.learn.items(ln)); add("lor", ACTS.lor.items(lr));
+      add("transcribe", ACTS.transcribe.items(tr)); add("lor", ACTS.lor.items(lr));
       // the guides: listed from their keys; the guide itself (it carries pictures) is read when it is opened
       gk.filter(k => k.startsWith(`guide:${p.id}:`)).forEach(k => { const g = k.slice(`guide:${p.id}:`.length);
         rows.push({p, act: "guide", item: g, title: (guides().find(x => x.id === g) || {}).title || g, lazyKey: k, sent: sent["guide:" + g] || null}); });
