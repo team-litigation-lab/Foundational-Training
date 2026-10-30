@@ -31,6 +31,8 @@ jobs:
         run: node build/day-decks.cjs
       - name: JavaScript syntax, local files, JSON
         run: node .github/scripts/check-site.mjs
+      - name: No builder notes on the site (the Training Guide's instructions for building the platform aren't content)
+        run: node .github/scripts/builder-notes.cjs
       - name: Batch IDs are B + MMDDYY (the page and the Worker read them the same way; older codes keep working)
         run: node .github/scripts/batch-id.cjs
       - name: Single sign-on (the Portal is the only way a trainee gets in; a missing PORTAL_SSO_SECRET says so)
