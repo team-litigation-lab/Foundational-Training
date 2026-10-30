@@ -74,8 +74,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import builder_notes
 print("builder notes taken out:", builder_notes.strip_all(B, lambda b: is_boundary(b, False)))
 
-# ---------- corrections: the guide's typos the trainer confirmed (HICF is the HCFA bill form) ----------
-FIXES = [(re.compile(r"\bHICF\b"), "HCFA")]
+# ---------- corrections: the guide's typos the trainer confirmed ----------
+# HICF is the HCFA bill form; Day 8's GC reminder points at "Topic 3", but the guide numbers Intake Documents
+# (MVA Cases) as a second Topic 2 (and the trainee page, without Intake Calling, as Topic 2): name the topic instead
+FIXES = [(re.compile(r"\bHICF\b"), "HCFA"), (re.compile(r"\bTopic 3: (Task [12])\b"), r"Intake Documents (MVA Cases): \1")]
 def fix_runs(b):
     for r in b.get("runs", []):
         for rx, to in FIXES:
