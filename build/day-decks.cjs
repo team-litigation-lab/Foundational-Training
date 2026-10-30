@@ -304,12 +304,12 @@ s3: html => {
   // after the items: the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
   // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
-  // (the activity's Instructions on one slide, as two cards side by side: 1–4 and 5–9; its ten Activity Items on the next
+  // (the activity's Instructions on one slide, as two cards side by side, in bold: 1–5 and 6–9, so the two end level; its ten Activity Items on the next
   // four, sixteen cards: calItems. The "1. The activity" card is off: Done is at the end of the slides)
-  const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), five = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">5.</span>');
-  if(at < 0 || five < 0 || five > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
+  const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), six = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">6.</span>');
+  if(at < 0 || six < 0 || six > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
-    '<div class="ftdd-cards2">' + card("📋", "Instructions 1–4", text.slice(0, five).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 5–9", text.slice(five, at)) + "</div>\n" +
+    '<div class="ftdd-cards2 ftdd-cards2-b">' + card("📋", "Instructions 1–5", text.slice(0, six).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 6–9", text.slice(six, at)) + "</div>\n" +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
       .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")) + "\n" +

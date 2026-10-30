@@ -281,7 +281,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (calRec) fail(`the deck wrote the trainee's calendar record: ${JSON.stringify(calRec)}`);
   await page.evaluate(() => { state.isAdmin = true; render(); }); await page.waitForTimeout(800);
   const calA = await calAt();
-  if (!calA.want || calA.d1 !== calA.want || calA.note !== 1) fail(`a trainer doesn't see Day 5's activity at this week's batch's dates, with its line: ${JSON.stringify(calA)}`);
+  if (!calA.want || calA.d1 !== calA.want || calA.note) fail(`a trainer doesn't see Day 5's activity at this week's batch's dates (with no note line under it): ${JSON.stringify(calA)}`);
   await page.evaluate(b => { state.isAdmin = false; state.traineeBatch = b; }, batch0);
   // an admin opens any day too
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);

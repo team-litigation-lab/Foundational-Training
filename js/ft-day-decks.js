@@ -1218,9 +1218,6 @@ function calDates(){
   const A = root.FTCalCore && FTCalCore.act; if(!A) return;
   const a = calAnchor(), k = a ? A.weeksOf(a) : 0;
   spans.forEach(x => { x.classList.toggle("ftdd-cal-wait", !a); if(a) x.textContent = A.longDate(A.shiftIso(x.getAttribute("data-cal-date"), k)); });
-  // (the note in trainer view only: 👁 Trainee view shows the slide as a trainee reads it)
-  if(isAdminView()) document.querySelectorAll("main.main-ftdd .ftdd-calsim[data-calsim-activity]").forEach(b => {
-    if(!b.querySelector(".ftdd-cal-note")) b.insertAdjacentHTML("beforeend", '<span class="ftdd-cal-note">Dates shown for a batch starting this week.</span>'); });
 }
 const __render = root.render;
 root.render = function(){
@@ -2476,11 +2473,11 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ft-body .ftdd-calsim{margin:0 0 12px;}
 /* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */
 .ft-body .ftdd-cal-date.ftdd-cal-wait{visibility:hidden;}
-.ft-body .ftdd-calsim .ftdd-cal-note{display:inline-block;margin:0 0 0 12px;font-size:13px;color:#6B7280;font-style:italic;}
 @media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
+.ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
