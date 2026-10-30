@@ -45,6 +45,7 @@ for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15
   const all = D[n] ? D[n].slides.map(s => s.html).join('\n') : '';
   if ((all.match(new RegExp(`<a class="viewer-link" data-embed [^>]*href="[^"]*${id}`, 'g')) || []).length !== k || /usp=dri<|>ve_link<|usp=drive_link,/.test(all)) fail(`Day ${n}: the ${id} link isn't one whole embedded link`);
 }
+if (D[11] && D[11].slides.some(s => /Shadowing/i.test(s.h))) fail("Day 11 still has its Shadowing slide");
 // Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck (its help line names Sanders for Nitro Pro)
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
@@ -63,10 +64,17 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
   d.slides.filter(s => s.of && s.id !== s.of).forEach(s => { if (s.id.startsWith(s.of + '-')) fail(`Day ${n} ${s.id} reads as a continuation of ${s.of}`); });
   const slots = d.slides.flatMap(s => s.html.match(/data-slot="[^"]+"/g) || []);
   if (new Set(slots).size !== slots.length) fail(`Day ${n}: a trainer slot is on two slides`); }
-// Day 11's LOR Drafting guidelines are on its slides, read like Day 1's reading, in place of their Drive link
-const lor = D[11] && D[11].slides.filter(s => s.read);
-if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test(lor[0].html) || !/<h3>Activity 2: Letter of Representation/.test(lor[1].html) || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
-  fail(`Day 11's LOR Drafting guidelines aren't inlined over two read slides: ${JSON.stringify((lor || []).map(s => s.id))}`);
+// Day 11's LOR Drafting guidelines are on one slide, in place of their Drive link: Activities 1 & 2 as one set of cards
+// (eight steps, 1P / 3P marked), the first opening the LOR Drafting tool, which holds the templates and case notes (so no
+// links to them), the "F/E" reminders on a page of their own; and the evaluation's slide is one block, without the guide's
+// opening line and with no LOR screenshot
+const lor = D[11] && D[11].slides.filter(s => /LOR Drafting Activity/.test(s.h)), ev = D[11] && D[11].slides.find(s => s.id === 's1');
+if (!lor || lor.length !== 1 || (lor[0].html.match(/<div class="ftdd-card4"><p class="ftdd-card4-h">\d\. /g) || []).length !== 8 || !/goto\('lor'\)/.test(lor[0].html)
+  || !/ftdd-pgbreak[^]*Additional Reminders/.test(lor[0].html) || /Objective|1aRMbhtBTZ3wxDDo5Ww1sERL5frjdNNHw|Before saving your LOR|training GC/.test(lor[0].html)
+  || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
+  fail(`Day 11's LOR Drafting guidelines aren't one slide of cards with the LOR Drafting tool: ${JSON.stringify((lor || []).map(s => s.id))}`);
+if (!ev || !/^<div class="ftdd-keep">/.test(ev.html) || /Insurance Claim Specialist|image26/.test(ev.html) || !/goto\('lor'\)/.test(ev.html)) fail("Day 11's evaluation slide isn't one block ending on the LOR Drafting tool");
+if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.test(s.html))) fail("Day 11's shadowing slide still has the TAM update line");
 // Day 4: its mock call preparation on one slide (s2b), in pages, the tools as buttons under the run; Day 5 opens on the
 // Monitoring Sheet's items #10–11, its panel only (no mock call preparation); the Attorney Calendar Management Activity's
 // Instructions 1–9 (the seven colours, the guests) as two cards on one slide, no "1. The activity" card; its ten Activity
@@ -78,9 +86,9 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), mon5 = (D[5] || { slides: [] }).slides[0] || {};
   if (s2b.indexOf('<p>Step 1 - ') < 0 || at < 0 || !/ftdd-mockpage ftdd-steps7/.test(s2b) || !/class="ftdd-mock-btns"/.test(s2b.slice(at)) || sl(4, 's2b-2') || /ftdd-biglinks/.test(s2b) || sl(4, 's2c'))
     fail("Day 4's mock call preparation and metrics aren't on its slide");
-  // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4; Calendaring's Day 5 no longer opens on them)
-  if (mon5.id === 's1' || !(D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
-    fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 lost it: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
+  // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4, on the metrics page, not a slide of their own; Calendaring's Day 5 no longer opens on them)
+  if (mon5.id === 's1' || (D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
+    fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 still has it as a slide: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
   // (its Activity Items as ten cards, an item a card with its own on it (6's two travel blocks; 8's four parts of the trip,
   // side by side, 8 on a slide of its own); every activity date marked for moving to the trainee's weeks)
   const txt = sl(5, 's3'), its = ['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id));
@@ -88,23 +96,25 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   const cards = its.map(h => (h.match(/data-card="([^"]+)"/g) || []).map(x => x.slice(11, -1)).join(' ')).join(' | '), heads = (D[5].slides || []).filter(s => /^s3[ijkl]$/.test(s.id)).map(s => s.h);
   const dated = its.join('').match(/<span class="ftdd-cal-date" data-cal-date="2026-07-\d\d">July \d\d, 2026<\/span>/g) || [];
   if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item|data-cal-date/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
-    || items.join() !== '4,3,1,2' || cards !== '1 2 3 4 | 5 6 7 | 8 | 9 10' || its.some(h => (h.match(/data-calsim-activity/g) || []).length !== 1 || !h.includes('#/calsim/attorney-activity'))
+    || items.join() !== '4,3,1,2' || cards !== '1 2 3 4 | 5 6 7 | 8 | 9 10' || its.some(h => /data-calsim-activity|#\/calsim\/attorney-activity|ftsCalsim/.test(h))
     || heads.join() !== ['Items 1–4', 'Items 5–7', 'Item 8', 'Items 9–10'].map(r => 'Attorney Calendar Management Activity: Activity ' + r).join()
     || !/for travel to court\./.test(its[1]) || (its[2].match(/class="ftdd-cal-partbox"/g) || []).length !== 4 || !/➢ Return Travel to Seattle/.test(its[2])
     || dated.length !== 12 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
     fail(`Day 5's activity isn't its Instructions in two cards, then its ten cards (8 on a slide of its own) with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
-  if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || /sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/class="ftdd-ev ftdd-ev-dep"/.test(sl(5, 's3b')) || !/Recorded Statement Meeting/.test(sl(5, 's3b')) || /ftdd-gcal"/.test(sl(5, 's3b')) || !/Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder or the sample screenshot, or lost its drawn samples (Day 6\'s format) or Calendar Activity Check');
+  if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || /sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/class="ftdd-ev ftdd-ev-dep"/.test(sl(5, 's3b')) || !/Recorded Statement Meeting/.test(sl(5, 's3b')) || /ftdd-gcal"/.test(sl(5, 's3b')) || /Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder or the sample screenshot, lost its drawn samples (Day 6\'s format), or still has the Calendar Activity Check tile (the activity\'s one link is on its Instructions slide)');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
   // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
   // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
-  const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">(?:<span class="ftdd-tile-ic">📅<\/span><span class="ftdd-tile-t"><b>)?(?:📅 )?Standard Training - Calendar Management Activity</;
-  if ([...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => !portal.test(h))) fail('Day 5\'s activity slides don\'t all link the Portal\'s Standard Training - Calendar Management Activity');
+  // (now: the one link, on the Instructions slide, straight to the activity's calendar; none on the items, Time Zone & Submit)
+  const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">📅 Standard Training - Calendaring Activity</;
+  if (!portal.test(sl(5, 's3')) || [...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => /ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(h)))
+    fail('Day 5\'s activity should link its calendar once, on the Instructions slide, and nowhere after');
   // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
-  // Tool link names the Portal card (Standard Training - Mock Call)
+  // (the mock calls' calendar, Standard Training - Mock Call, has no link on the deck)
   const d6 = sl(6, 's1');
-  // (its three links are buttons, one row: ftdd-linkbtn)
-  if (/screenshot/i.test(d6) || !/Make sure to be specific with your event titles\./.test(d6) || !/<a class="ftdd-linkbtn" href="[^"]*calsim\.html\?program=FT&track=standard"[^>]*>📅 The Calendaring Tool[^<]*Standard Training - Mock Call/.test(d6) || (d6.match(/class="ftdd-linkbtn"/g) || []).length !== 3)
-    fail('Day 6\'s reminders still ask for screenshots, lost the event titles line, or its three links aren\'t buttons (the Calendaring Tool one naming Standard Training - Mock Call)');
+  // (its two links are buttons, one row: ftdd-linkbtn; no link to the mock calls' calendar: the trainer runs the mock calls)
+  if (/screenshot/i.test(d6) || !/Make sure to be specific with your event titles\./.test(d6) || /track=standard|Standard Training - Mock Call/.test(d6) || (d6.match(/class="ftdd-linkbtn"/g) || []).length !== 2)
+    fail('Day 6\'s reminders still ask for screenshots, lost the event titles line, still link the mock calls\' calendar, or its two links aren\'t buttons');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
 }
@@ -384,6 +394,16 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     // (Esc closes it; the slide is as it was)
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     if (await page.$('#ftmsModal')) fail('Esc doesn\'t close the scoresheet pop-up');
+    // the trainee sees their scored sheet, read only (their scores and the remarks), and is told once that it is scored
+    const mine = await page.evaluate(async id => { const was = { a: state.isAdmin, p: state.adminPreview, t: state.traineeId };
+      state.isAdmin = false; state.adminPreview = false; state.traineeId = id; try { localStorage.removeItem('ft-scored:' + id + ':reception-live'); localStorage.setItem('ft-scored-init:' + id, '1'); } catch (e) {}   // (not this device's first look: that one takes what is there as seen, silently)
+      FTMetrics.view('reception'); await new Promise(r => setTimeout(r, 1500));
+      const box = document.createElement('div'); box.innerHTML = FTMetrics.view('reception');
+      const out = { cells: [...box.querySelectorAll('tbody tr:not(.ftms-avg) td:nth-child(2)')].map(td => td.textContent), remark: (box.querySelector('tbody tr td:nth-child(3)') || {}).textContent,
+        inputs: box.querySelectorAll('input, select').length, mine: (box.querySelector('.ftms-mine') || {}).textContent || '', toast: document.body.innerText.includes('Your trainer scored your') };
+      state.isAdmin = was.a; state.adminPreview = was.p; state.traineeId = was.t; return out; }, me);
+    if (mine.cells.length !== 14 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
+      fail(`the trainee should see their scored sheet, read only, and be told it is scored: ${JSON.stringify(mine)}`);
   }
   await page.evaluate(() => { FTMetrics.close(); state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');

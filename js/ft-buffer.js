@@ -23,16 +23,17 @@ const ACTS = {
   // opens: a slide that stays shut for a trainee until this Done is in, the Softphones and PPTs)
   "2:s2b": {kind: "buffer", task: true, gate: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s4"},
-  // Day 4's Monitoring Sheet update after Julio's video: Day 2's panel and 📤 Submit, on a slide of its own (items #10–11)
-  "4:s2m": {kind: "buffer", task: true, gate: true, title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+  // Day 4's Monitoring Sheet update (items #10–11): no slide of its own any more. Its card and 📤 Submit sit at the lower right of
+  // the mock calls' metrics page, the preparation slide's last (s2b), under the key it was saved under (4:s2m). corner: a small
+  // card after the slide's content, nothing on the trainer's slide, and the slide stays readable
+  "4:s2b": {kind: "buffer", task: true, corner: true, key: "4:s2m", title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [10, 11], activity: "Reception Training with Julio"}},
   // Day 5 opens on the same update, in place of its Buffer Time for Reception Mock Calls: under Day 4's key, so a trainee
   // who submitted on Day 4 is done here too (the card's next stop is the lesson deck)
   "5:s1": {kind: "buffer", task: true, gate: true, key: "4:s2m", title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [10, 11], activity: "Reception Training with Julio"}},
-  // Day 5's Attorney Calendar Management Activity: "signify done" is its Done, at the end of its slides (s3, its text; s3b)
-  // (its panel as Day 2's: what to do, "Once done, hit Submit." and 📤 Submit, which counts as the Done; label: the button)
-  "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📅 Attorney Calendar Management Activity", lead: "Once done, hit Submit.", label: "📤 Submit"},
+  // (Day 5's Attorney Calendar Management Activity has no Submit panel here: it is submitted on the Main Portal's
+  // Calendaring Activity calendar, 📤 Submit for evaluation, and its scores come back to the Scorecard: simresults)
   // (Day 9's Buffer Time is off the deck: build/day-decks.cjs SKIP[9])
   "13:s1": {kind: "buffer"},
   // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done)
@@ -54,6 +55,9 @@ const callSim = line => SIM + new URLSearchParams({program: "FT", line});
 const e = v => esc(String(v == null ? "" : v));
 const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const trainee = () => !!state.traineeId && !state.isAdmin && !state.adminPreview;
+// (a mock call has no Done of its own: the trainer scores each trainee on the 🧑‍🏫 Scoresheet, and a trainee whose scoresheet
+// is saved is done, FTMetrics.scored. noTracker on every mock call; a demo keeps the trainee's Done)
+Object.values(ACTS).forEach(a => { if(a.kind === "mock") a.noTracker = true; });
 const what = a => a.kind === "mock" ? "mock call" : a.kind === "demo" ? "demo" : "buffer";
 const tm = iso => { const d = new Date(iso); return isFinite(d) ? d.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"}) : ""; };
 
@@ -85,8 +89,15 @@ function traineePanel(h){
   const a = h.a, d = mine(h.k);
   // (the day's last slide, as Day 4's mock calls are: there is no next slide to go to)
   const more = h.i < (FTDayDecks.list(h.day) || []).length - 1;
-  // (simple: no scorecard, the Done and the way on, in the middle of the slide)
-  if(d) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">✅ Done</p>
+  // (a mock call: done once the trainer has saved the trainee's scoresheet, js/ft-sessions.js FTMetrics.scored)
+  const sc = a.noTracker && a.act && root.FTMetrics && FTMetrics.scored ? FTMetrics.scored(a.act) : null;
+  if(sc) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Your ${a.what ? e(a.what) : "mock call"} is done</p>
+    <p>Your trainer has scored it${sc.status ? ": " + e(sc.status) : ""}. Your scores and the trainer’s remarks are on the Metrics and 📬 My Feedback.</p>
+    ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
+  // (corner: once submitted, what was checked, and nothing to wait for)
+  if(d && a.corner) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Submitted</p></div>`;
+  // (simple: no scorecard, the Done and the way on, in the middle of the slide; a mock call's own Done, saved before, no longer counts)
+  if(d && !a.noTracker) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">✅ Done</p>
     ${a.kind === "buffer" || a.simple ? "" : scorecard(a)}
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>`
       : `<p>That’s the day’s last activity.</p>`}</div>`;
@@ -94,6 +105,9 @@ function traineePanel(h){
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
   // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
+  // (a mock call: its heading only, no Done: the trainer's saved scoresheet makes it done, above)
+  if(a.simple && a.noTracker) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : "Mock Calls Ongoing"}</p>
+    ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}</div>`;
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
     ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}
@@ -173,9 +187,14 @@ function paint(){
   const sheet = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${h.i}"] .ftdd-sheet`) || document.querySelector("main.main-ftdd .ftdd-sheet");
   if(!sheet || sheet.querySelector(".ftbf")) return;
   sheet.querySelectorAll(".ftdd-wait").forEach(x => x.remove());
-  if(isAdminView()) return;
+  // (the trainer's slide has no panel; on Day 9's Intake mock calls it lists every case with its script, js/ft-intake.js .ftis-mockcall)
+  if(isAdminView()){ if(h.a.act === "intake-live"){ const c = document.createElement("div"); c.className = "ftis-mockcall"; sheet.appendChild(c); } return; }
   const box = document.createElement("div"); box.className = "ftbf-slot";
   // (a gate's panel heads the slide: its content, below, is read once the Done is in)
+  // (a corner card: small, at the lower right, after the slide's content)
+  if(h.a.corner){ box.classList.add("ftbf-corner"); box.innerHTML = traineePanel(h); sheet.appendChild(box);
+    if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => { const n = here(); if(n && n.k === h.k && mine(h.k)) render(); });
+    return; }
   box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
@@ -233,6 +252,13 @@ root.FTBuffer = {
 };
 
 const st = document.createElement("style"); st.id = "ft-buffer"; st.textContent = `
+/* a corner card (ACTS[…].corner): small, at the lower right of the slide's last page */
+.ftdd-sheet .ftbf-slot.ftbf-corner{margin:14px 0 0 auto !important;width:min(420px,100%);align-self:flex-end;}
+.ftbf-corner .ftbf{padding:12px 16px;}
+.ftbf-corner .ftbf .ftbf-h{font-size:15px !important;padding:6px 12px !important;margin-bottom:8px !important;}
+.ftbf-corner .ftbf p{font-size:15px;}
+.ftbf-corner .ftbf-foot{margin-top:8px;}
+.ftbf-corner .btn.ftbf-done{min-width:150px;padding:8px 20px;font-size:15px;}
 /* ✅ the buffer / mock call / demo panel, in Day 1's look: a navy heading bar with the orange edge, big bold text */
 .ftdd-sheet .ftbf-slot{margin:18px 0 0;}
 .ftdd-sheet .ftbf-slot:first-child{margin:0 0 18px;}

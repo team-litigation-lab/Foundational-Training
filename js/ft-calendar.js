@@ -374,6 +374,8 @@ function reviewHTML(g, notes){
 }
 // The activity's panel: the Calendar Activity Check's verdict on every field of each event (✓, or ✗ with the Check's fix), the
 // simulator's own checks (🎨 the colour; the whole calendar's overlaps and duplicates), and the ℹ lines that aren't scored.
+// ← Back: to the deck's slide the page was opened from, else the Simulators page
+const backBtn = () => S.from ? `<button class="btn btn-ghost btn-sm" onclick="FTCalSim.back()">← Back to the slides</button>` : `<button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button>`;
 const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="FTCalSim.toCheck()" title="Copies this calendar’s events into your Calendar Activity Check, then opens it: each field is checked there">✅ Check this calendar in the Calendar Activity Check</button>` : "";
 // ✅ the Calendar Activity Check (#/calcheck) verifies what is done here: this calendar's events, as the Check's entries (the review's
 // own mapping), go into the trainee's Check draft (asked first when the draft holds other entries), then the Check opens. Its
@@ -443,7 +445,7 @@ function renderPage(){
   // locked: the tabs stay, so a track that is open can still be picked
   if(!open()) return `<div class="cs-wrap"><h1>📅 Calendaring Simulators</h1><div class="cs-tabs">${tabs}</div><div class="card" style="padding:20px;">🔒 ${isAct(s) ? "The Attorney Calendar Management Activity opens on Day 5, when your trainer opens it." : `This simulator opens with Lesson ${LESSON}, Calendaring &amp; Appointment Setting.`}</div></div>`;
   if(isAct(s)) return `<div class="cs-wrap cs-act"><div class="cs-top"><h1>📅 Calendaring Simulators</h1><div class="cs-tabs">${tracks}</div>
-      <div class="ca-back"><button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button></div></div>
+      <div class="ca-back">${backBtn()}</div></div>
     ${weeks ? `<div class="cs-tabs cs-weeks">${weeks}</div>` : ""}<p class="cs-blurb">${e(tk.blurb)} ${CHECK_LINK()}</p>
     ${S.err ? `<div class="cs-err">${e(S.err)}</div>` : ""}
     <div class="cs-main">${actTrayHTML()}<div class="gc-shell">${actToolbarHTML()}<div class="cs-gridwrap">${gridHTML()}</div><p class="cs-hint cs-legend">${e(ACT_HINT)}</p></div></div>
@@ -457,7 +459,7 @@ function renderPage(){
     ${historyHTML()}</div>`;
   return `<div class="cs-wrap"><div class="cs-top"><div><h1>📅 Calendaring Simulators</h1>
       <p class="cs-lead">${tk.icon} <b>${e(tk.title)}</b> · ${e(tk.where)}. Build the week in a Google Calendar style, run the automated review, then submit it to your trainer.</p></div>
-      <div><button class="btn btn-ghost btn-sm" onclick="goto('simulators')">← Simulators</button></div></div>
+      <div>${backBtn()}</div></div>
     <div class="cs-tabs">${tabs}</div>
     <p class="cs-blurb">${e(tk.blurb)}</p>
     <div class="card cs-brief">${e(s.brief)} ${e(C.COLOR_RULE_TEXT)}</div>
@@ -965,6 +967,7 @@ function finalOf(scnId){
   return s && sub && released(r) ? {s, sub, r, name:state.certName || state.traineeName || ""} : null;
 }
 window.FTCalSim = {
+  back(){ const f = S.from; S.from = null; if(f && window.FTDayDecks) FTDayDecks.open(f.day, f.i); else goto('simulators'); },
   submit, toCheck,
   download(id){ const f = finalOf(id); if(!f){ toast("Your final feedback isn’t released yet."); return; }
     const blob = new Blob([feedbackDoc(f.s, f.sub, f.r, f.name)], {type:"text/html"}), a = document.createElement("a");
@@ -993,6 +996,9 @@ window.FTCalSim = {
 const __gotoCal = window.goto;
 window.goto = function(view, id){
   if(view === "calsim"){
+    // (opened from a deck's slide: ← Back takes the trainee to that slide, not the Simulators page)
+    if(state.view === "daydeck" && window.FTDayDecks){ const d = FTDayDecks.state(); S.from = {day: d.day, i: d.i}; }
+    else if(state.view !== "calsim") S.from = null;
     let want = id;
     const m = String(location.hash || "").match(/^#\/calsim\/([^/?#]+)/);
     if(m){ if(want == null) want = decodeURIComponent(m[1]); try{ history.replaceState(history.state, "", location.pathname + location.search + "#/calsim"); }catch(err){} }
@@ -1352,6 +1358,9 @@ body.cs-dragging,body.cs-dragging *{cursor:grabbing!important;user-select:none!i
 @media (max-width:820px){ .cs-main{grid-template-columns:1fr;} .cs-tray{position:static;max-height:none;} }
 /* ---- Google Calendar look ---- */
 .cs-wrap{font-family:"Google Sans",Roboto,"Segoe UI",Arial,sans-serif;}
+/* the page on a solid panel: on the photo background its heading, line and mini calendar were hard to read */
+.cs-wrap.cs-act{background:#fff;border-radius:16px;padding:16px 20px 20px;box-shadow:0 8px 28px rgba(15,23,42,.18);color:#1f2937;}
+.cs-act .cs-blurb{color:#1f2937;} .cs-act .ca-cklink{background:#fff;color:#0b1633;border-color:#94a3b8;}
 .cs-main{grid-template-columns:256px minmax(0,1fr);gap:16px;}
 .cs-tray{border:0;border-radius:0;background:transparent;padding:0 4px 0 0;}
 .gc-create{display:flex;align-items:center;gap:12px;border:0;background:#fff;border-radius:24px;padding:0 24px 0 16px;height:48px;font:500 14px "Google Sans",Roboto,Arial,sans-serif;color:#3c4043;cursor:pointer;box-shadow:0 1px 2px rgba(60,64,67,.3),0 1px 3px 1px rgba(60,64,67,.15);margin:0 0 14px;} .gc-create:hover{background:#f1f3f4;box-shadow:0 1px 3px rgba(60,64,67,.3),0 4px 8px 3px rgba(60,64,67,.15);}

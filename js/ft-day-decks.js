@@ -478,9 +478,9 @@ function listenSlide(day, time){
   const live = FTListen.setLive(set.id);
   // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
   if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
-  return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
+  return {id: "listen", h: `${time || "AM"}: ${LISTEN_H[day] || "Call Listening Session"}`, html:
     `${LISTEN_LEAD[day] ? `<p><b>${e(LISTEN_LEAD[day])}</b></p>` : `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>`}
-     ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+     ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>${listenLinks(day)}` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
    calls; Day 7: the four intake recordings, in the pop-up player; the five practice calls made for the PI Reception Activity are on their own deck, Reception Listening Activity).
@@ -495,8 +495,18 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   // Day 7: the four intake recordings, kept on the platform (ft/day7/audio), each a card that plays in the pop-up player
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
-    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Sample Intake Mock Call"}))};
+    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Sample Intake Mock Call"})),
+  // Day 13: the seven provider communication recordings, kept on the platform (ft/day13/audio), each a card that plays in the pop-up player
+  13: [["Insurance Call: Obtain PIP Log", "insurance-obtain-pip-log", "5:54"], ["Insurance Call: Obtain PD Estimate", "insurance-obtain-pd-estimate", "3:11"],
+    ["Inquiry: Hospital", "inquiry-hospital", "2:34"], ["Inquiry: Where to Send the Records Request", "inquiry-where-to-send-records-request", "5:21"],
+    ["Follow-Up on a Records Request", "follow-up-records-request", "4:43"], ["Recorded Call: Feb 23, 2023", "recorded-call-2023-02-23", "3:03"],
+    ["Recorded Call: Feb 27, 2023", "recorded-call-2023-02-27", "1:29"]].map(([t, f, len]) => ({t, src: `/ft/day13/audio/${f}.mp3`, len, pop: true, kind: "Provider call"}))};
 const LISTEN_BARE = [7];
+// a day's Call Listening slide under a name of its own (Day 13: the listening runs as the breakout)
+const LISTEN_H = {13: "Call Listening Session / Breakout Session"};
+// a day's reference folders under its recordings (Day 13: the Sample SOPs)
+const LISTEN_LINKS = {13: [["Sample SOPs", "https://drive.google.com/drive/folders/11c5SZrYEueJUzYjXYXhHqG_B-hxMzOrV"]]};
+const listenLinks = day => (LISTEN_LINKS[day] || []).map(([t, u]) => `<p><a class="ftdd-tile k-folder" href="${e(u)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📁</span><span class="ftdd-tile-t"><b>${e(t)}</b><small>Open the folder</small></span></a></p>`).join("");
 // a day's Call Listening slide headed by its name instead of the instructions (Day 3: its card row's name)
 const LISTEN_LEAD = {3: "Sample Call Recordings"};
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
@@ -650,9 +660,8 @@ function dividerSlide(n){
 }
 function agendaHtml(d, info){
   const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda && !s.divider).map(([s, i], j) => {
-    const k = kindOf(s, visual(slideSrc(d.day, s)));
     return `<li><button type="button" onclick="FTDayDecks.to(${i})"><span class="ftdd-ag-n">${String(j + 1).padStart(2, "0")}</span>
-      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${k.ic} ${k.label}</small></span></button></li>`;
+      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b></span></button></li>`;
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
@@ -708,8 +717,8 @@ function dayRubric(title){
 function scoreBox(s, info, body){
   const h = String(s.h || ""), admin = isAdminView();
   if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
-  // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
-  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video, a preparation slide or a demo's Buffer Time)
+  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial|buffer/i.test(h)) return "";
   if(!admin && !/mock call/i.test(h)) return "";
   // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
   if(/instructions|metrics|scenarios/i.test(h)) return "";
@@ -719,7 +728,8 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
+  // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 const WAIT_OFF = true;
 function waitBox(s, info){
@@ -831,10 +841,7 @@ function renderDeck(){
       ${root.FTDayLocks && FTDayLocks.panel ? FTDayLocks.panel(DD.day, DD.i) : ""}
       ${nNotes ? `<p class="ftdd-rail-h">🧑‍🏫 Facilitator notes</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl ftdd-notes-btn${DD.notes ? " on" : ""}" onclick="FTDayDecks.notes()">📝 ${DD.notes ? "Hide" : "Show"} the notes for this slide (${nNotes})</button>` : ""}
-      ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
-        <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
-        ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
-        <p class="ftdd-rail-note">${e(FTSlideEdit.note(DD.day, (list[DD.i] || {}).id))}</p>` : ""}` : ""}`}
+      `}
     </aside>
   </div>`;
 }
@@ -1373,19 +1380,18 @@ const LESSON_CARDS = {
       {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
-      // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
+      // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
-      {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
-    tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity: log each call's answers on its 📝 Answer Sheet, on the calls' slide, and 📝 Submit for Grading"],
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
+    tools: ["The sample SOP and the 10 sample calls: on the day’s slides",
+      "Reception Listening Activity: each call's 📝 Answer Sheet, then 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
       {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
@@ -1442,7 +1448,7 @@ const LESSON_CARDS = {
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
-      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
       {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
@@ -1456,10 +1462,9 @@ const LESSON_CARDS = {
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
-      {t: "Buffer Time for the LOR Drafting Demo", time: "AM", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
-      {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
-      {t: "Breakout Session", time: "PM", sub: "Sample recordings & documents · the communication upskill", k: "interactive", d: 13, s: "s3"},
-      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3b"},
+      {t: "Buffer Time for the LOR Drafting Demo", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
+      {t: "Call Listening / Breakout Session", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
+      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
@@ -1668,6 +1673,24 @@ const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring
 const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
+// 🎯 each day card's objective, under its focus: what the trainee can do by the end of that day
+const DAY_OBJECTIVE = {
+  1: "Understand the VA’s role in a US personal injury firm (jurisdiction, VA vs. in-house, the firm’s cultural values) and install the SA plug-ins you will use every day.",
+  2: "Speak for the firm with confidence: use the common PI and auto liability terms, know what each party may be told, and when and how to escalate.",
+  3: "Follow a PI case end to end, and triage a reception call.",
+  4: "Take a reception call from greeting to transfer on your own, scored on the Reception Mock Calls Metrics.",
+  5: "Manage an attorney’s calendar: book every event by the scheduling rules, in the right time zone, with the caller’s details complete.",
+  6: "Set appointments on a live mock call, every booking checked against the scheduling rules.",
+  7: "Know the intake process: the documents and evidence a claim needs, the common insurance providers, and how an intake call runs.",
+  8: "Build, name and save a complete intake packet to Smart Advocate, demonstrated live to your trainer.",
+  9: "Run a full intake call one-on-one, and turn a client-to-attorney consultation into accurate minutes.",
+  10: "Open 1P and 3P claims: check for existing claims, share only what the insurer may be told, and send the LOR.",
+  11: "Read the Dec Pages to evaluate coverage and liability, then draft the 1P and 3P letters of representation.",
+  12: "Upload the 1P and 3P LORs to Smart Advocate under the right names and send them to the insurers, in a recorded demonstration.",
+  13: "Step into the Medical Records Specialist role: how providers are spoken to, and your HIPAA training completed.",
+  14: "Send a HIPAA-compliant MedLOR and request bills and records, following your work guide step by step.",
+  15: "Demonstrate the MedLOR and records request end to end, within the ideal time.",
+  16: "Verify a lien balance with the provider, log it in the right report format, and demonstrate it one-on-one."};
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
    carries its Classroom Activity card (▶ Start Training opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
@@ -1711,7 +1734,7 @@ function dayCard(n, ex){
   const rows = standardRows(n, c, lid, first, title, cardRows(c, ex).filter(r => rowDay(c, r) === n));
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
+      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b></span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
   const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
@@ -1733,8 +1756,9 @@ function dayCard(n, ex){
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
+        ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
         ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
-        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul class="ftlc-tk">${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
         ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
         ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
@@ -1798,7 +1822,6 @@ const PRESETS = [
   {label: "☎ Reception calls", kind: "practice", title: "Practise reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
   {label: "☎ Intake calls", kind: "practice", title: "Practise intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
   {label: "☎ Calendar calls", kind: "practice", title: "Practise calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
-  {label: "📅 Calendar Simulator", kind: "practice", title: "Practise on the Google Calendar Simulator", text: "Practise setting appointments on the Google Calendar Simulator under the firm’s calendar rules.", sim: "calsim"},
   {label: "🛠 Practice Lab", kind: "practice", title: "Practise in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
 ];
 function loadExtras(force){
@@ -1812,7 +1835,9 @@ const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
 function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
-  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
+  // (an extra that linked the mock calls' calendar, sim "calsim": off the decks; a trainee doesn't see it, the trainer sees it to remove it)
+  if(x.sim === "calsim" && !isAdminView()) return "";
+  const tile = x.sim === "calsim" ? `<p class="ftdd-x-off">This linked the mock calls’ calendar, which is no longer on the decks. Remove it.</p>` : x.sim === "never" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -1825,7 +1850,8 @@ function itemHtml(x, n, i){
 function trainerSlide(n){
   if(!X.data){ loadExtras(); return `<p>Loading your trainer’s activities…</p>`; }
   const items = X.data.days[n] || [], f = X.form;
-  const list = items.length ? items.map((x, i) => itemHtml(x, n, i)).join("")
+  // (what is left to show: a trainee doesn't see an extra that linked the mock calls' calendar, so a day with only that one reads as empty)
+  const list = items.some(x => isAdminView() || x.sim !== "calsim") ? items.map((x, i) => itemHtml(x, n, i)).join("")
     : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : "More is on its way"}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
   return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to this slide <span>— every trainee sees it here</span></p>
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
@@ -2404,6 +2430,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static
 .ftlc-focus-t::before{content:"";flex:0 0 auto;width:10px;height:10px;background:#2E5A9A;border-radius:2px;}
 .ftlc-h2{margin:12px 0 4px !important;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#B5651F;}
 .ftlc-focus ul{margin:0;padding-left:18px;display:grid;gap:3px;}
+.ftlc-obj{font-weight:600;color:#1B1E2E;}
+/* (the key takeaways are a few words each: two to a row, so the objective above them doesn't shrink the card) */
+.ftlc-focus ul.ftlc-tk{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;}
 .ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
@@ -2454,6 +2483,11 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
 .ftdd-score{margin:6px 0 12px;}
+/* the metrics read as the guide's table everywhere: each criterion left-aligned (a centred short slide doesn't centre them) */
+.ft-body .ftdd-score .ftms-tbl td:first-child, .ft-body .ftdd-score .ftms-tbl th:first-child{text-align:left !important;}
+/* Day 8's Practice Intake Calls: the tools as buttons, white on navy (not the slide's blue link style) */
+.ft-body .ftdd-practice{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:10px 0 14px;}
+.ft-body .ftdd-practice a.btn{color:#fff !important;text-decoration:none !important;font-weight:800;}
 /* the metrics as the guide's table (green header, banded rows, the WEIGHTED AVERAGE last); the trainer's has Remarks */
 .ftdd-score-h{margin:0 0 6px;font-size:15px;color:#262B45;}
 .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
@@ -2507,6 +2541,15 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
+.ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 > p.ftdd-card4-h{font-size:20px !important;margin-bottom:8px !important;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 ul{margin:0;padding-left:20px;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 li{margin:0 0 4px;font-size:19px !important;line-height:1.32 !important;font-weight:700 !important;color:#1B1E2E;}
+@media(max-width:1100px){ .ft-body .ftdd-lor-cards{grid-template-columns:repeat(2,minmax(0,1fr));} }
+.ftdd-lor-tag{display:inline-block;margin-right:4px;padding:1px 8px;border-radius:999px;background:#E8590C;color:#fff;font:800 14px/1.5 'Poppins','Inter',sans-serif;vertical-align:2px;}
+.ftdd-sheet .ftdd-lor-rem{margin:0 0 16px;} .ftdd-sheet .ftdd-lor-rem p:not(.ftdd-card4-h){font-size:19px !important;font-weight:700 !important;}
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
@@ -2558,6 +2601,9 @@ main.main-ftdd .ftdd-sheet .ftdd-cix-two > div > b{font-weight:800 !important;co
    navy-bordered boxes */
 main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
+/* (a scorecard's rows at the text's own height, not the slide's line spacing: a long one, Day 9's 17 Intake criteria, then
+   fits at the size of a short one, Day 12's, rather than zoomed down to fit) */
+main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.2 !important;padding-top:3px;padding-bottom:3px;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 /* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
@@ -2707,8 +2753,8 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
   main.main-ftdd .ftdd-sheet, main.main-ftdd .ftdd-onnavy{flex:1 1 auto;min-height:0;}
 }
 /* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
-   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
-   ✏️ Edit this slide still gets its panel, and so does the 🔓 Segment lock or the Hide panel link: a panel holding only those
+   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. The trainer's
+   🔓 Segment lock or the Hide panel link still gets its panel (✏️ Edit this slide is gone): a panel holding only those
    (a day past its locks, with no buttons in it) was squeezed to no width, its words stacked a letter to a line. */
 @media(min-width:1001px){
   main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))){grid-template-columns:minmax(0,1fr);}

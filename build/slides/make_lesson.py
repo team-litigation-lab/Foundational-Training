@@ -484,7 +484,7 @@ def lfc_pages():
     return P
 
 LESSONS = {"claims": {"id": 7, "var": "DAY7", "title": "Claims Specialist Training", "file": "lesson07.js",
-                      "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
+                      "video": "https://drive.google.com/file/d/1mKuFbskHeSmN8BzYVzNXKseEltLgN_4q/view",
                       "canva": "https://www.canva.com/design/DAHWU-Wq2mQ/Nh3SycOXOAg7kl5EOQ-Z6Q/view",
                       "pages": claims_pages,
                       # pages that repeat the page before them in the deck (kept once)

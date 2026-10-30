@@ -54,11 +54,15 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     rec = await get('intakeassign:' + id);
     if (!rec || rec.packet !== 4 || rec.call !== 'ft_in_nicole') fail(`assigning a packet lost the mock call case: ${JSON.stringify(rec)}`);
 
-    // the trainer's Day 8 slide: every intake case, where to pick it on Ring Channel, its script; the trainee's name on theirs
-    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2500);
+    // Day 8's Practice Intake Calls has no cases box (and no Sample Intake Forms): the cases are on Day 9's preparation slide
+    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2000);
+    if (await page.evaluate(() => !!document.querySelector('.ftdd-sheet .ftis-mockcall, .ftdd-sheet .ftis-forms'))) fail('Day 8\'s Practice Intake Calls still has the cases box or the sample forms');
+    // the trainer's Day 9 Intake Mock Calls slide: every intake case, where to pick it on Ring Channel, its script; the trainee's
+    // name on theirs (the metrics slide before it, s2, is the metrics alone)
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(2500);
     const tv = await page.evaluate(() => { const el = document.querySelector('.ftis-mockcall'); return el ? { cases: el.querySelectorAll('.ftis-mc-t').length, html: el.innerHTML,
       tag: [...el.querySelectorAll('.ftis-mc-t')].map(d => (d.querySelector('.ftis-mc-n') || {}).textContent || '') } : null; });
-    if (!tv) fail('Day 8\'s Intake Mock Call slide has no mock call case section');
+    if (!tv) fail('Day 9\'s Intake Mock Calls slide has no mock call case section for the trainer');
     else {
       if (tv.cases !== 3) fail(`the trainer's slide lists ${tv.cases} cases, not the CMS's 3 intake calls`);
       if (!/Scenario Picker/.test(tv.html) || !/SCRIPT-ft_in_nicole/.test(tv.html) || !/CASEFILE-MC-13/.test(tv.html)) fail('the trainer\'s case doesn\'t say where to pick it on Ring Channel, or lacks the script or the CMS file');
@@ -97,11 +101,15 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     if (((await get('intakeassign:' + id)) || {}).packet !== 4) fail('unassigning the case lost the packet');
 
     // the trainee: their own case only, never the script; the CMS opened blank for a first call
+    // (their mock call not scored yet: a scored one shows ✅ done on its panel instead of the case)
+    await put('labreview:' + id, null);
     await put('intakeassign:' + id, { packet: 4, call: 'ft_in_nicole' });
     await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; }, id);
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2000);
-    let mine = await page.evaluate(() => { const el = document.querySelector('.ftis-mockcall'); return el ? { text: el.innerText, html: el.innerHTML,
+    // (on the Mock Calls Ongoing slide's panel: the trainer's list of every case, in the slide's content, isn't shown to a trainee)
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(2000);
+    if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-sheet > .ftis-mockcall')].some(el => el.offsetParent))) fail('a trainee sees the trainer\'s list of every case');
+    let mine = await page.evaluate(() => { const el = document.querySelector('.ftbf .ftis-mockcall'); return el ? { text: el.innerText, html: el.innerHTML,
       cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
     if (!mine || !/Your Intake Mock Call case/.test(mine.text) || !/New Intake With a Deadline Close/.test(mine.text)) fail(`the trainee doesn't see their case: ${JSON.stringify(mine)}`);
     else {
