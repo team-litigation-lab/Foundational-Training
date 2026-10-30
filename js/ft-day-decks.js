@@ -788,6 +788,9 @@ function renderDeck(){
   const cards = slideCard(d, info, list, DD.i) + (pair ? slideCard(d, info, list, DD.i + 1) : "");
   // a mock call / demo slide's scoring sheet (FTMetrics) puts 💾 Save, the scores and Remarks on the right: the notes open on the left there
   const notesL = /ftms-trainer/.test(cards);
+  // 🧑‍🏫 a mock call / demo slide with a scoresheet (FTMetrics): its button sits in the bar under the slide, full size
+  // whatever the slide's zoom, and opens the scoresheet pop-up (js/ft-sessions.js)
+  const sheetKey = tr && root.FTMetrics && FTMetrics.open ? ((/class="ftms-launch" data-ms="([^"]+)"/.exec(cards) || [])[1] || "") : "";
   return `<div class="ftdd-stage${DD.split ? " ftdd-stage-split" : ""}">
     <div class="ftdd-mid">${back}
       ${tr && DD.railOff ? `<div class="ftdd-rail-open-row"><button type="button" class="btn btn-sm ftdd-rail-open" onclick="FTDayDecks.rail()" title="Show the trainer panel: segment locks, notes, slide edits">🧑‍🏫 Trainer panel${nNotes ? ` · 📝 ${nNotes}` : ""}</button>
@@ -800,6 +803,7 @@ function renderDeck(){
       <div class="ftdd-nav">
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
+        ${sheetKey ? `<button type="button" class="btn ftdd-scoresheet" onclick="FTMetrics.open('${e(sheetKey)}')" title="Score a trainee: the scoresheet opens over the slide, on one screen">🧑‍🏫 Scoresheet</button>` : ""}
         <span class="ftdd-stepno">Step ${DD.i + 1} of ${n}</span>
         <div class="ftdd-dots">${list.map((x, i) => `<button type="button" class="ftdd-dot${i === DD.i || (pair && i === DD.i + 1) ? " on" : i < DD.i ? " done" : ""}${x.placeholder ? " ph" : ""}${segLocked(i) ? " lk" : ""}" title="${e(x.h)}${segLocked(i) ? " · 🔒 locked for trainees" : ""}" onclick="FTDayDecks.to(${i})"></button>`).join("")}</div>
         ${kcNext(list[DD.i]) || (DD.i < n - 1 ? `<button type="button" class="btn ftdd-next" onclick="FTDayDecks.go(1)">Next →</button>`
@@ -2412,6 +2416,9 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftms-pick label{font-size:14px;font-weight:700;}
 .ftms-pick select{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;}
 .ftms-pick .ftms-save{margin-left:auto;}
+/* (the scoresheet's button is in the bar under the slide: .ftdd-scoresheet; the slide's own copy would be drawn at the slide's zoom) */
+.ftdd-sheet .ftms-launch .ftms-open{display:none;} .ftdd-sheet .ftms-hint{font-size:15px;}
+.ftdd-nav .ftdd-scoresheet{background:#F28C28;color:#fff;border-color:#F28C28;font-weight:800;}
 .ftdd-score-l{margin:0;padding-left:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 16px;counter-reset:sc;}
 /* a slide in four cards (Day 5's Attorney Calendar Management Activity): two by two, each with its heading */
 .ftdd-cards4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0;}

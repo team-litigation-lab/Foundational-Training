@@ -319,6 +319,8 @@ s3: html => {
   if(at < 0 || six < 0 || six > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
     '<div class="ftdd-cards2 ftdd-cards2-b">' + card("📋", "Instructions 1–5", text.slice(0, six).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 6–9", text.slice(six, at)) + "</div>\n" +
+    // (under the Instructions, the link to the activity's simulator: the Main Portal's Calendaring Activity calendar, in its own tab)
+    `<div class="ftdd-calsim ftdd-calsim-ins" data-calsim-activity="5:s3-ins">${calsimPortal("btn btn-navy")}</div>\n` +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
       .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")) + "\n" +
