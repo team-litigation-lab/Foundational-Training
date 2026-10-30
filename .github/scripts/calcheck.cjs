@@ -70,7 +70,7 @@ async function workerChecks() {
     const entry = k => ({ title: `${k.n} ${k.name}`, sd: k.date, ed: k.overnight ? k.date : k.endDate || k.date, st: k.start || '', et: k.end || '', allday: !!k.overnight, tz: TZ[k.tz],
       loc: k.locShow || '', guests: (k.guests || []).join(', '), rtype: k.rem ? k.rem.type : '', ramt: k.rem ? String(k.rem.m % 1440 === 0 ? k.rem.m / 1440 : k.rem.m % 60 === 0 ? k.rem.m / 60 : k.rem.m) : '',
       runit: k.rem ? (k.rem.m % 1440 === 0 ? 'days' : k.rem.m % 60 === 0 ? 'hours' : 'minutes') : 'minutes', notes: (k.notesShow || '') + (k.link ? ' Zoom link for remote attendees: ' + k.link : '') });
-    const right = () => { const entries = {}; FTCalCheck.key.forEach(k => { entries[k.n] = entry(k); }); return { anchor: '2026-07-06', entries, final: { lsh: true, seq: true } }; };
+    const right = () => { const entries = {}; FTCalCheck.key.forEach(k => { entries[k.n] = entry(k); }); return { anchor: '2026-07-06', entries }; };
     const failed = rec => FTCalCheck.checkAll(rec).filter(c => c[2] === false).map(c => `${c[0]}:${c[1]}`);
     const expect = (label, rec, want) => { const got = failed(rec).join(' | '); if (got !== want.join(' | ')) out.push(`${label}: failed [${got}], expected [${want.join(' | ')}]`); };
     const change = (n, o) => { const r = right(); Object.assign(r.entries[n], o); return r; };
@@ -93,7 +93,9 @@ async function workerChecks() {
     expect('a title without the event', change('9', { title: 'Meeting' }), ['9:Title']);
     expect('notes without the key words', change('10', { notes: 'Dinner.' }), ['10:Description']);
     expect('a timed event marked all day', change('1', { allday: true }), ['1:Start time', '1:End time']);
-    expect('the LSH calendar left ticked', Object.assign(right(), { final: { lsh: false, seq: true } }), ['11:The LSH calendar unticked in the entire-calendar screenshot']);
+    // no screenshots are asked for any more: an older record's whole-calendar and upload ticks are neither scored nor needed
+    expect('an older record with its screenshot ticks unticked', Object.assign(right(), { final: { lsh: false, seq: false }, drive: { error: 'no-folder' } }), []);
+    if (FTCalCheck.checkAll(right()).some(c => c[0] === '11')) out.push('the 19th screenshot and the upload are still scored');
     // the accepted alternatives
     expect('Phoenix for MST', change('2', { tz: 'America/Phoenix' }), []);
     expect('Panama for EST', change('3', { tz: 'America/Panama' }), []);
@@ -136,19 +138,6 @@ async function workerChecks() {
     if (empty.total !== full.total) out.push(`an empty record counts ${empty.total} fields, the answer key ${full.total}`);
     // nothing asked, nothing marked down: the gym has no guests, the travel blocks no reminder, location or notes
     expect('empty guests and a reminder nobody asked for', change('6.2', { guests: '', loc: '', notes: '', rtype: 'Email', ramt: '5' }), []);
-    // the folder: the 19 screenshots by number and name, in the order they were uploaded
-    const files = FTCalCheck.seq.map(([n, name], i) => ({ name: `${n}. ${name.replace(/[()]/g, '')}.png`, created: `2026-07-16T10:${String(i).padStart(2, '0')}:00Z` }));
-    const m = FTCalCheck.matchFiles(files.concat([{ name: '1. Common Terms Used Assessment.docx', created: '2026-07-01T00:00:00Z' }]));
-    if (!m.found.every(Boolean) || !m.inOrder) out.push(`the folder lookup doesn't find the 19 screenshots: ${JSON.stringify(m)}`);
-    const swapped = files.slice(); [swapped[6].created, swapped[7].created] = [swapped[7].created, swapped[6].created];
-    if (FTCalCheck.matchFiles(swapped).inOrder) out.push('6.2 uploaded after 6.3 counts as in order');
-    if (FTCalCheck.matchFiles(files.filter((f, i) => i !== 18)).found[18]) out.push('a missing Entire Calendar screenshot was found');
-    // Drive's public listing gives only the day: files that tie can't show the order, whichever way they were uploaded
-    const sameDay = files.slice().reverse().map(f => Object.assign({}, f, { created: '2026-07-16T12:00:00Z' })), tied = FTCalCheck.matchFiles(sameDay);
-    if (tied.inOrder !== null) out.push(`screenshots with the same time count as ${tied.inOrder ? 'in order' : 'out of order'}`);
-    if (FTCalCheck.checkFinal({ lsh: true, seq: false }, Object.assign({ at: 'x' }, tied))[1][1] !== false) out.push('tied times overrode the trainee\'s unticked self-check');
-    const auto = FTCalCheck.checkFinal({ lsh: true, seq: false }, Object.assign({ at: 'x' }, m));
-    if (auto[1][1] !== true || !/found in your folder/.test(auto[1][0])) out.push('the folder lookup doesn\'t count for the upload');
     // ---------- the anchor: 2026-11-02, 17 weeks on (winter: standard time) ----------
     const NOV = '2026-11-02', KN = FTCalCheck.keyFor(NOV), wk = (iso, k) => new Date(Date.parse(iso + 'T00:00:00Z') + k * 7 * 864e5).toISOString().slice(0, 10);
     if (FTCalCheck.keyFor('2026-07-06') !== FTCalCheck.key) out.push('keyFor(July 6, 2026) isn\'t the key itself');
@@ -159,7 +148,7 @@ async function workerChecks() {
       if (n.n !== k.n || n.date !== wk(k.date, 17) || (k.endDate ? n.endDate !== wk(k.endDate, 17) : n.endDate) || n.start !== k.start || n.tz !== k.tz) out.push(`${k.n} at 2026-11-02: ${JSON.stringify([n.date, n.endDate, n.start])}`); });
     if (KN[0].date !== '2026-11-02' || KN.find(k => k.n === '10').date !== '2026-11-11') out.push(`the anchored key runs ${KN[0].date} to ${KN[KN.length - 1].date}`);
     if (FTCalCheck.anchorOf({ anchor: NOV }) !== NOV || FTCalCheck.anchorOf({ entries: {} }) !== '2026-07-06' || FTCalCheck.anchorOf({ anchor: '2026-11-04' }) !== '2026-07-06') out.push('anchorOf doesn\'t read a record\'s anchor, July without one');
-    const rightN = () => { const entries = {}; KN.forEach(k => { entries[k.n] = entry(k); }); return { anchor: NOV, entries, final: { lsh: true, seq: true } }; };
+    const rightN = () => { const entries = {}; KN.forEach(k => { entries[k.n] = entry(k); }); return { anchor: NOV, entries }; };
     const changeN = (n, o) => { const r = rightN(); Object.assign(r.entries[n], o); return r; };
     const fullN = FTCalCheck.score(FTCalCheck.checkAll(rightN()));
     if (fullN.pct !== 100 || fullN.total !== full.total) out.push(`the answer key at 2026-11-02 scores ${fullN.pct}% over ${fullN.total}: ${failed(rightN()).join('; ')}`);
@@ -236,11 +225,8 @@ async function workerChecks() {
   if (!kept || !kept.entries['1'] || kept.entries['1'].title !== 'Client Meeting – Alyssa Lynn Arehart') fail(`a failed read let the draft be overwritten: ${JSON.stringify(kept)}`);
   await page.click('text=↻ Try again'); await page.waitForTimeout(1500);
   if (await page.inputValue('#cc-title-1') !== 'Client Meeting – Alyssa Lynn Arehart' || await page.inputValue('#cc-tz-1') !== 'America/Los_Angeles') fail('the draft doesn\'t come back after a reload');
-  // the folder lookup on the local server (no folder saved): it says so, and the trainee's own tick counts
-  await page.click('.cc-final > summary'); await page.waitForTimeout(300);
-  await page.click('text=🔎 Look in my folder'); await page.waitForTimeout(1500);
-  if (!/folder link|can’t open|couldn’t be read|Sign in/.test(await page.evaluate(() => document.querySelector('.cc-final').innerText))) fail('the folder lookup doesn\'t say why it found nothing');
-  await page.check('#ccLsh'); await page.check('#ccSeq'); await page.waitForTimeout(300);
+  // no screenshots: no 19th-screenshot item, no folder lookup
+  if (await page.$('.cc-final') || /Look in my folder|19 screenshots/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the Check still asks for the screenshots');
 
   // the phone: no sideways scroll
   await page.setViewportSize({ width: 380, height: 800 }); await page.waitForTimeout(500);
@@ -251,9 +237,9 @@ async function workerChecks() {
   // 📤 sent to the trainer
   await page.click('text=📤 Submit to my trainer'); await page.waitForTimeout(1500);
   const rec = await get('calcheck:' + id), s = rec && rec.submits && rec.submits[rec.submits.length - 1];
-  // event 1 (12 fields), event 2's title and the two final ticks right, out of the answer key's fields
-  const want = Math.round(15 / pure.total * 100);
-  if (!s || s.met !== 15 || s.total !== pure.total || s.pct !== want || !s.at || !s.snap || !s.snap.entries['1']) fail(`the submission wasn't stamped and scored: ${JSON.stringify(s && { met: s.met, total: s.total, pct: s.pct, at: s.at })}, the key's total ${pure.total}`);
+  // event 1 (12 fields) and event 2's title right, out of the answer key's fields
+  const want = Math.round(13 / pure.total * 100);
+  if (!s || s.met !== 13 || s.total !== pure.total || s.pct !== want || !s.at || !s.snap || !s.snap.entries['1']) fail(`the submission wasn't stamped and scored: ${JSON.stringify(s && { met: s.met, total: s.total, pct: s.pct, at: s.at })}, the key's total ${pure.total}`);
   if (!/Last sent/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('the page doesn\'t show when it was sent');
   await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
   if (!new RegExp(`Calendar activity check[\\s\\S]*Attorney Calendar Management Activity[\\s\\S]*${want}%`).test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance doesn\'t show the calendar activity');
@@ -338,5 +324,5 @@ async function workerChecks() {
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Calendar Activity Check test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Calendar Activity Check test passed (the answer key at 100% over ${pure.total} fields; a wrong zone, time, guest and reminder each fail just that field; Phoenix, Panama, Regina, 24 hours, 60 minutes, the overnight stay and a travel reminder on either event accepted; flights the wrong way round fail; the folder lookup, tied times not counted as in order; a failed read keeps the draft; HTML and broken records kept out of the trainer's tab, which rescores the snapshot; the 👁 Trainee view; the draft saved and reloaded, sent, on My Performance and the trainer's tab; the Day 5 slide, its tile and the Practice Lab; a phone's width; the worker's rules; and at the anchor 2026-11-02: the key 17 weeks on at 100%, standard time (9:00 AM Pacific for the 11:00 AM EST deposition not accepted), the date's own offsets, a snapshot scored at its anchor, and a B102626 trainee's calendar given 2026-11-02).`);
+  console.log(`Calendar Activity Check test passed (the answer key at 100% over ${pure.total} fields; a wrong zone, time, guest and reminder each fail just that field; Phoenix, Panama, Regina, 24 hours, 60 minutes, the overnight stay and a travel reminder on either event accepted; flights the wrong way round fail; no screenshots or upload scored; a failed read keeps the draft; HTML and broken records kept out of the trainer's tab, which rescores the snapshot; the 👁 Trainee view; the draft saved and reloaded, sent, on My Performance and the trainer's tab; the Day 5 slide, its tile and the Practice Lab; a phone's width; the worker's rules; and at the anchor 2026-11-02: the key 17 weeks on at 100%, standard time (9:00 AM Pacific for the 11:00 AM EST deposition not accepted), the date's own offsets, a snapshot scored at its anchor, and a B102626 trainee's calendar given 2026-11-02).`);
 })().catch(e => { console.error(e); process.exit(1); });
