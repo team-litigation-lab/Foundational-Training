@@ -473,6 +473,8 @@ function listenSlide(day, time){
   // (the trainer's links for its recordings: read once, and the slide is drawn again with them)
   if(FTListen.ready && !FTListen.ready() && FTListen.loadSets && !listenLoading){ listenLoading = true; FTListen.loadSets().then(() => { if(state.view === "daydeck") render(); }); }
   const live = FTListen.setLive(set.id);
+  // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
+  if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
   return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
     `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
      <p>There is no right answer to find — the log is what your trainer reads, and it saves you writing the calls up anywhere else.</p>
@@ -492,6 +494,7 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
     ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Intake call"}))};
+const LISTEN_BARE = [7];
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
 const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
 function listenCards(cards, folder, recs){
@@ -1390,12 +1393,20 @@ const LESSON_CARDS = {
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
-      // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; the AI video is its own stop after it)
-      {t: "Breakout Session: Intake Specialist Best Practices", sub: "Group activity · the three digital handouts", k: "interactive", run: "ftVideoOrAsk(6)", day: 7},
-      {t: "Call Listening on the Intake Recordings", sub: "Log each call as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
-      {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
-      {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
-      {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
+      // Part 1 in the trainers' order: 💬 the discussion slide, the breakout's three digital handouts (HANDOUTS[7]), ✍️ the
+      // Knowledge Check, the insurance providers, the checklist, the blank forms, the mock intake, the sample intake calls
+      // made for the platform, the other intake documents, then 🎧 the Call Listening Activity (the four intake recordings,
+      // no instructions) ends it. (No AI discussion video stop on Day 7: noVideo; it stays ▶ Video on 📚 Dashboard. No
+      // shadowing: Day 7's Scheduled Shadowing is off the training)
+      {t: "Digital Handouts", sub: "Breakout Session (Group Activity) · Intake Specialist Best Practices: the three digital handouts", k: "watch", run: "ftVideoOrAsk(6)", day: 7},
+      {t: "Knowledge Check", sub: "Intake Specialist Training’s Process Questions in ✍️ Knowledge Check · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(6)", day: 7},
+      {t: "Common Insurance Providers", sub: "The eight carriers · what to collect on the call", k: "interactive", d: 7, s: "insurance"},
+      {t: "Checklist", sub: "Accident or Injury Claim Documents and Evidence Checklist", k: "read", d: 7, s: "forms", lead: false},
+      {t: "Blank Forms", sub: "Blank PI Intake Forms: Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA", k: "read", d: 7, s: "formsb", lead: false},
+      {t: "Recording: Mock Intake", sub: "The mock intake (non-VLF), played on the slide", k: "watch", d: 7, s: "formsc"},
+      {t: "Sample Intake Calls", sub: "Four practice calls, each with what to listen for and its transcript", k: "listen", d: 7, s: "formse"},
+      {t: "Other Intake-Related Documents", sub: "The folder · Knowledge Base", k: "read", d: 7, s: "formsd", lead: false},
+      {t: "Call Listening Activity", sub: "The sample intake audio recordings", k: "listen", d: 7, s: "listen", go: "listening"},
       {t: "Intake Process", time: "AM", sub: "Two videos · Monitoring Sheet #14", k: "watch", d: 8, s: "s1"},
       {t: "Intake Documents (MVA Cases)", sub: "📦 Your Intake Packet · #16", k: "interactive", d: 8, s: "s1b"},
       {t: "Naming & More Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
@@ -1412,7 +1423,7 @@ const LESSON_CARDS = {
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
       {t: "Intake Mock Call Instructions & Metrics", time: "PM", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
       {t: "Intake Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"}],
-    discuss: {7: "s1"},
+    discuss: {7: "s1"}, noVideo: [7],
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
@@ -1655,7 +1666,7 @@ function standardRows(n, c, lid, first, title, rows){
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
   // 🎬 the lesson's AI discussion video, on its first day: a slide of its own that plays it, no request (after the handouts)
-  const vid = first && !rows.some(r => r.play != null) && (typeof DAYS !== "undefined" ? DAYS : []).some(d => d.id === Number(lid) && d.video)
+  const vid = first && !rows.some(r => r.play != null) && !(c.noVideo || []).includes(n) && (typeof DAYS !== "undefined" ? DAYS : []).some(d => d.id === Number(lid) && d.video)
     ? [{t: "AI Discussion Video", sub: `${title} · watch it on the slide`, k: "watch", run: `ftPlayVideo(${Number(lid)})`, play: Number(lid)}] : [];
   // (a Digital Handouts stop only where the day has handouts)
   if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
