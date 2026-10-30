@@ -170,16 +170,7 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 /* ---------- executed like the original LSH decks (as the Case Management course's Case Flow): a navy slide with the
    LSH logo and the outlined title, the topic on a grey ribbon, the kind of slide on a light pill, and the content on a
    cream, orange-bordered sheet; orange corner shapes. A lesson day opens on its day card. ---------- */
-// what a slide is, at a glance: the time of day on the ribbon, the kind of work on the pill
-function timeOf(h){
-  const t = String(h || "");
-  if(/^homework/i.test(t)) return {ic: "🏠", label: "Homework"};
-  if(/buffer/i.test(t)) return {ic: "⏳", label: "Buffer time"};
-  if(/^entire day/i.test(t)) return {ic: "📅", label: "AM & PM"};   // (no "Day" on a slide)
-  if(/^pm\b/i.test(t)) return {ic: "🌇", label: "Afternoon"};
-  if(/^am\b/i.test(t)) return {ic: "🌅", label: "Morning"};
-  return null;
-}
+// what a slide is, at a glance: the kind of work on the pill
 function kindOf(s, html){
   const h = String(s.h || "");
   if(s.trainer) return {ic: "📌", label: "From your trainer"};
@@ -649,10 +640,9 @@ function dividerSlide(n){
 }
 function agendaHtml(d, info){
   const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda && !s.divider).map(([s, i], j) => {
-    const t = timeOf(s.h), k = kindOf(s, visual(slideSrc(d.day, s)));
-    const go = slideAgendaGo(s, info);
+    const k = kindOf(s, visual(slideSrc(d.day, s)));
     return `<li><button type="button" onclick="FTDayDecks.to(${i})"><span class="ftdd-ag-n">${String(j + 1).padStart(2, "0")}</span>
-      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${t ? t.ic + " " + t.label + " · " : ""}${k.ic} ${k.label}${go ? " · " + e(go.label) : ""}</small></span></button>${go ? `<a class="ftdd-ag-go" onclick="event.stopPropagation(); ${go.go}">${e(go.btn)}</a>` : ""}</li>`;
+      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${k.ic} ${k.label}</small></span></button></li>`;
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
@@ -678,25 +668,6 @@ function agendaHtml(d, info){
       })()}
     </div></div>`;
 }
-/* What a slide sends you to. The guide's day is a list of headings — "Classroom Discussion on Intake Specialist
-   Training and Call Listening", "Scheduled Shadowing", "Reception Mock Calls" — and each of those is a thing this
-   platform can open. The slide carries the buttons for the ones its own title names, so a trainee reads the
-   instruction and goes straight to the lesson, the log or the session rather than hunting for it. */
-// the one thing an agenda row opens, named on the row itself
-function slideAgendaGo(s, info){
-  const h = String(s.h || "");
-  if(/classroom discussion|discussion on/i.test(h)){
-    const l = (info.lessons || []).find(x => lessonOpen(x));
-    if(l != null) return {label: "opens the lesson", btn: "📘 Lesson", go: `goto('day', ${Number(l)})`};
-  }
-  if(/shadow/i.test(h) && !/shadow(?:ing)?\s+etiquette/i.test(h) && root.FTShadow) return {label: "logged on the platform", btn: "👥 Log", go: `FTShadow.open(${DD.day})`};
-  if(/call listening/i.test(h) && root.FTListen) return {label: "logged on the platform", btn: "🎧 Log", go: "FTListen.open()"};
-  if(/process question/i.test(h) && root.FTProcess){
-    const l = pqLessons(DD.day, info)[0];
-    if(l != null) return {label: "answered on ✍️ Knowledge Check", btn: "✍️ Answer", go: `FTDayDecks.toKC(${Number(l)})`};
-  }
-  return null;
-}
 // a lesson has Process Questions where its answer sheet exists (Calendaring, Lesson 5, has none)
 function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.ftKcQuestions(Number(l)).length > 0 : false; }catch(err){ return false; } }
 // a day has Process Questions when the guide runs them that day (its deck carries the ✍️ Process Questions note):
@@ -708,32 +679,6 @@ const pqLessons = (n, info) => (PQ_LESSONS[Number(n)] || (info || dayInfo(n)).le
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 // (d.pq: the build's word for a day whose Process Questions were on a slide that is off the deck, build/day-decks.cjs)
 function dayHasPQ(n){ const d = decks() && decks()[n]; return !!(d && (d.pq || (d.slides || []).some(x => PQ_NOTE_RE.test(x.html || "")))); }
-// ✍️ Answer and 🎮 Knowledge Games for a lesson's Process Questions (the games review the same lesson, as a game show)
-const pqButtons = (l, cls) => `<button type="button" class="${cls || "btn btn-ghost btn-sm"}" onclick="FTDayDecks.toKC(${Number(l)})">✍️ Knowledge Check: ${e(lessonTitle(l))}</button>` +
-  (root.FTKCGames ? `<button type="button" class="${cls || "btn btn-ghost btn-sm"} ftdd-games" onclick="FTKCGames.open(${Number(l)})">🎮 Knowledge Games</button>` : "");
-function slideActions(s, info, body, i){
-  if(s.agenda || s.trainer) return "";
-  const h = String(s.h || ""), out = [];
-  // (Day 1's Reading Task has its ✍️ Knowledge Check button on the slide itself, under the reading: FTDayDecks.toKC)
-  const has = re => re.test(h);
-  // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
-  // themselves stay on ✍️ Knowledge Check — the slide only points at them
-  if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) pqLessons(DD.day, info).forEach(l => out.push(pqButtons(l)));
-  if(has(/call listening/i) && root.FTListen) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTListen.open()">🎧 Call Listening Log</button>`);
-  if(has(/shadow/i) && !has(/shadow(?:ing)?\s+etiquette/i) && root.FTShadow) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTShadow.open(${DD.day})">👥 Shadowing log</button>`);
-  if(has(/mock call/i) && root.FTSessions){
-    const sid = /reception/i.test(h) ? "reception" : /calendar/i.test(h) ? "calendaring" : /intake/i.test(h) ? "intake" : "";
-    if(sid) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTSessions.open('${sid}')">☎ Open the Practice Session</button>`);
-  }
-  if(has(/attorney calendar management/i) && root.FTCalWeek) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTCalWeek.open()">📅 Standard Training - Calendaring Activity</button>`);
-  if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
-  if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
-  // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management
-  // Activity track, in its own tab: js/ft-simulators.js ftsCalsim)
-  if(/^Attorney Calendar Management Activity/i.test(h) && root.ftsCalsim) out.push(`<button type="button" class="btn btn-ghost btn-sm" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="ftsCalsim('activity')">📅 Standard Training - Calendar Management Activity</button>`);
-  if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
-  return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
-}
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
    trainer takes the others one by one — the day's lesson's Call Simulator line, its 🎮 Knowledge Games, the lesson itself
    and its ✍️ Knowledge Check. */
@@ -791,7 +736,7 @@ function slideCard(d, info, list, i){
   const body = s.agenda ? "" : s.divider ? dividerSlide(DD.day, s) : s.launch ? launchSlide(s) : s.trainer ? trainerSlide(DD.day) : s.id === "tools" ? toolsSlide() : (v => v + scoreBox(s, info, v))(visual(slideSrc(DD.day, s))) + waitBox(s, info);
   // the first slide is the lesson's Classroom Activity card, where the day has one; else the Training Agenda
   const lc = s.agenda && !s.plan ? lessonOfDay(DD.day) : null;
-  const t = s.agenda ? null : timeOf(s.h), k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
+  const k = lc != null ? ((LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? {ic: "💬", label: "Classroom Activity"} : {ic: "📋", label: "Activity card"}) : s.agenda ? {ic: "📋", label: "Training Agenda"} : kindOf(s, body);
   // (the handouts' slide is the Breakout Session: its ribbon says so, not the row's "Digital Handouts")
   const ribbon = s.launch && /ftVideoOrAsk/.test(s.launch.run || "") && HANDOUTS[DD.day] ? "Breakout Session / Group Activity" : lc != null ? (lessonOfDay(DD.day) != null && (LESSON_CARDS[lc] || {days: []}).days[0] === DD.day ? "Classroom Activity" : "Activity card") : s.agenda ? "Training Agenda" : s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
   // a slide with only a line or two of content centres on its sheet instead of leaving it empty below the text
@@ -801,8 +746,8 @@ function slideCard(d, info, list, i){
         <span class="ftdd-prog" title="Slide ${i + 1} of ${n}"><span style="width:${((i + 1) / n * 100).toFixed(1)}%"></span></span></div>
       <div class="ftdd-ribbon"><span>${e(ribbon)}</span></div>
       <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
-        <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
-        ${segChip(i)}${s.agenda ? "" : slideActions(s, info, body, i)}</div>
+        <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>
+        ${segChip(i)}</div>
       ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
     </div>`;
 }
@@ -906,7 +851,8 @@ function zoomUp(box, max){
 // a page shorter than its slide sits in the middle of it, not at the top with the white space all below (the reading's
 // short opening page): the spare height goes half above it, as padding, so nothing is moved out of the slide
 function centerPage(sheet){
-  if(sheet.matches(".ftdd-short, .ftdd-sheet-edit") || !sheet.clientHeight || sheet.scrollHeight > sheet.clientHeight + 2) return;
+  // (Day 3's CRM/CMS Training Videos starts at the top: its "Choose one video" band leads the slide)
+  if(sheet.matches(".ftdd-short, .ftdd-sheet-edit") || sheet.querySelector(":scope > .ftdd-pick-note") || !sheet.clientHeight || sheet.scrollHeight > sheet.clientHeight + 2) return;
   const shown = [...sheet.children].filter(k => k.style.display !== "none" && getComputedStyle(k).display !== "none");
   if(!shown.length) return;
   const st = getComputedStyle(sheet), pt = parseFloat(st.paddingTop) || 0, pb = parseFloat(st.paddingBottom) || 0;
@@ -2173,7 +2119,6 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 .ftdd-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;}
 .ftdd-pill{display:inline-flex;align-items:center;gap:8px;background:#ECEEF3;color:#262B45;border-radius:8px;padding:6px 16px;font:700 17px/1.2 'Poppins','Inter',sans-serif;letter-spacing:.06em;}
 .ftdd-n{font:700 12px 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#F4B77A;background:transparent;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:4px 10px;white-space:nowrap;}
-.ftdd-time{display:inline-flex;align-items:center;gap:6px;font:700 12px 'IBM Plex Mono',monospace;letter-spacing:.02em;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#F4B77A;white-space:nowrap;}
 /* the content: a white sheet */
 .ftdd-sheet{background:#fff;color:var(--ink);border:1px solid rgba(255,255,255,.6);border-radius:14px;padding:18px 24px;box-shadow:0 8px 22px rgba(0,0,0,.18);overflow:auto;min-height:0;}
 /* the type, as the Case Management course's Case Flow slides set it: body text in Inter 500 at 17px, bold at 700
@@ -2378,8 +2323,15 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftlc-pill{justify-self:end;border-radius:999px;padding:5px 11px;background:#5C626C;color:#fff;font:800 11px/1.1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
 .ftlc-pill.k-homework{background:#DB8437;}
 .ftdd-recs-note{margin:14px 0 0;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
-/* Day 3's CRM/CMS Training Videos: "Choose one video …" centred and big, on a soft orange band */
-main.main-ftdd .ftdd-sheet p.ftdd-pick-note{margin:0 auto 16px;max-width:900px;padding:14px 20px;text-align:center;font-size:20px;line-height:1.4;color:#1E2340;background:#FFF4E5;border:2px solid #F6C08F;border-radius:12px;}
+/* Day 3's CRM/CMS Training Videos: the slide starts at the top (not centred), "Choose one video …" big on a soft orange
+   band, the five video cards across the sheet's full width, and the closing Note bold and centred */
+main.main-ftdd .ftdd-sheet:has(> p.ftdd-pick-note){justify-content:flex-start;}
+main.main-ftdd .ftdd-sheet p.ftdd-pick-note{margin:0 auto 20px;max-width:1100px;padding:18px 30px;text-align:center;font-size:26px;line-height:1.35;color:#1E2340;background:#FFF4E5;border:2px solid #F6C08F;border-radius:14px;}
+main.main-ftdd .ftdd-sheet:has(> p.ftdd-pick-note) .ftdd-vcards{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin:4px 0 20px;}
+main.main-ftdd .ftdd-sheet:has(> p.ftdd-pick-note) .ftdd-vcard{padding:10px 10px 12px;}
+main.main-ftdd .ftdd-sheet:has(> p.ftdd-pick-note) .ftdd-vcard a.ftdd-tile{font-size:16px;}
+main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot{text-align:center !important;font-weight:700 !important;font-size:17px;padding-left:14px !important;}
+main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static;margin-right:6px;}
 .ftdd-recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:0 0 14px;}
 .ftdd-rec{border:1px solid #D9DEEA;border-radius:12px;padding:10px 12px;background:#fff;break-inside:avoid;}
 .ftdd-rec-h{margin:0 0 6px;font-weight:700;color:#262B45;} .ftdd-rec-play{height:220px;border-radius:8px;overflow:hidden;background:#F4F6FB;}
@@ -2420,7 +2372,6 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-step-n{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font:800 15px 'Poppins','Inter',sans-serif;}
 .ftdd-step-t{font-size:15.5px;line-height:1.5;padding-top:5px;}
 .ftdd-step-check{background:#EEF8F2 !important;} .ftdd-step-check .ftdd-step-n{background:#2E7D4F;}
-.ftdd-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 0 auto;justify-content:flex-end;}
 /* a short screen (a laptop at 1366 x 768): the slide's header takes less of the height, so its card has the room */
 @media (max-height:900px) and (min-width:1001px){
   .ftdd-deck{padding:12px 18px 10px;}
@@ -2430,15 +2381,8 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
   .ftdd-ribbon span{padding:5px 20px;}
   .ftdd-bar{margin:0 0 8px;gap:8px;}
   .ftdd-pill{font-size:14px;padding:4px 12px;}
-  .ftdd-acts .btn{padding:3px 10px;font-size:12px;}
   .ftdd-sheet{padding:12px 18px;}
 }
-.ftdd-acts .btn{white-space:normal;text-align:left;}
-.ftdd-acts .btn{border-radius:999px;padding:5px 12px;font-size:12.5px;min-height:0;}
-.ftdd-acts .btn-ghost{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35);color:#fff;}
-.ftdd-acts .btn-ghost:hover{background:rgba(255,255,255,.16);}
-.ftdd-ag-go{position:relative;z-index:2;margin-left:auto;align-self:center;flex:0 0 auto;padding:4px 10px;border:1px solid rgba(255,255,255,.3);border-radius:999px;color:#fff;font:700 12px 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
-.ftdd-ag-go:hover{background:rgba(255,255,255,.14);}
 .ftdd-secs{display:flex;flex-direction:column;gap:14px;margin:8px 0 12px;}
 .ftdd-sec h3{margin:0 0 6px !important;font:700 16px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;}
 /* a guideline is part of the slide's text, not a card on it: the rules read as a list, two to a row where
