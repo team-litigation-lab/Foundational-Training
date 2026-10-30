@@ -47,7 +47,9 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   3: {s1: "Frontline Management: Operations, Logistics, and Escalations Protocols", s2: "CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing", s3: "PM: Reception Mock Calls (One-on-One)"}, 5: {s1: "Update Your Monitoring Sheet"},
   7: {insurance: "AM: Common Insurance Providers"},
-  8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"}};
+  8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"},
+  // (Day 11's shadowing is off the training: its afternoon is the ✉️ Insurance Email Simulator, EDIT[11].s2)
+  11: {s2: "PM: Insurance Email Simulator"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
 const SA_FROM = "<h3>How to install the Smart Advocate";
@@ -801,6 +803,15 @@ const SAMPLE_DOCS_10 = "<p>Sample Insurance Communication-Related Documents and 
 const SLOT = (n, k) => `<div class="trainer-slot" data-slot="${n}:${k}"></div>`;
 const UPSKILL = "<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>";
 // a shadowing slide's own line on how the session runs on the platform
+// Day 11's afternoon, in place of its shadowing: the ✉️ Insurance Email Simulator (js/ft-claims-email.js), graded. Its
+// recorded shadowing session (Astred, 09/20/2023) moves to Day 12's deck, a slide of its own (EDIT[12].s1, ROWS[12].s1)
+const SHADOW_VID_11 = ["<p><b>SHADOWING ASTRED 09/20/2023", "<p><b><i>*** Free Communication Upskill"];
+const CLAIMS_EMAIL_11 = "<p>This afternoon you put the claims process into writing: the emails a claims specialist sends to the insurance companies to open a claim and get what the case needs.</p>\n" +
+  '<div class="ftdd-cards2">' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">✉️ For each of the 3 cases</p><ol><li><b>Send the LOR</b>, the right file attached, named by the convention</li><li><b>Request the Dec Pages</b> and the policy limits</li><li><b>Request the claim information</b>: claim number, adjuster, coverage, status</li></ol></div>' +
+  '<div class="ftdd-card4"><p class="ftdd-card4-h">☎ Additional activity: the adjuster</p><p>Once those three are sent, the adjuster replies. Answer them to <b>get the claim number</b>, without sharing what a carrier is never given (the client’s DOB, SSN, email or VIN) and without setting up direct contact with the client.</p></div>' +
+  "</div>\n<p>All 12 emails are graded: each out of 5 for the right recipient and attachment, a clear subject, the case’s identifiers, what you ask for, and a professional tone. 📝 Submit for Grading when you’re done; your score is on 🏅 My Performance.</p>\n" +
+  '<div class="ftdd-pq">✉️ <b>Write your emails</b> in the Insurance Email Simulator.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTClaimsMail.fromDeck()">✉️ Open the Email Simulator →</button></div></div>\n';
 const SHADOW_HOWTO = "<p>Join your shadow buddy at the time your trainer posts in the training GC, and log the session with 👥 Shadowing log on this slide.</p>\n";
 // an exact edit: `from` must occur `count` times (the build stops if the guide has changed under it)
 function rep(html, from, to, count = 1, where = ""){
@@ -873,7 +884,14 @@ const EDIT = {
   }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
+  12: {s1: h => h.replace(/\s*$/, "\n") + "<!--cut:shadow-->\n<p>A recorded shadowing session to watch in your idle time: a claims specialist at work, from intake support to opening and following up on PI claims.</p>\n" +
+    borrow(11, "s2", ...SHADOW_VID_11)},
   11: {
+    // the shadowing is off: the trainer's slot stays, the rest is the Email Simulator (the recording is Day 12's, above)
+    s2: h => {
+      if(!SHADOW_VID_11.every(x => h.includes(x))) throw new Error("Day 11 s2: its recorded shadowing session is no longer where the build looks for it");
+      return rep(h, h.slice(h.indexOf("</div>") + 7), "", 1, "Day 11 s2") + CLAIMS_EMAIL_11;
+    },
     s1: h => {
       // the guidelines' text in place of their link, and the templates' addresses without the guide's doubled-up query
       const out = rep(h, '<p>LOR Drafting Activity (Guidelines and Instructions):</p>\n<p><a class="viewer-link" data-kind="doc" data-title="LOR Drafting Activity (Guidelines and Instructions): https://drive.google.com/file/d/11N15" href="https://drive.google.com/file/d/11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/view?usp=sharing">https://drive.google.com/file/d/11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/view?usp=sharing</a> </p>\n', LOR_GUIDE(), 1, "Day 11 s1");
@@ -1063,7 +1081,9 @@ const ROWS = {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
       // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
       {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
-      {id: "s1d", parts: [[SLOT(12, "s1-1"), null]]}]
+      {id: "s1d", parts: [[SLOT(12, "s1-1"), "<!--cut:shadow-->"]]},
+      // (Day 11's recorded shadowing session, moved here: EDIT[12].s1)
+      {id: "s1v", h: "Recorded Shadowing: Intake Support & PI Claims Specialist Roles", parts: [["<!--cut:shadow-->", null]], fix: [["<!--cut:shadow-->\n", ""]]}]
   },
   13: {
     // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
