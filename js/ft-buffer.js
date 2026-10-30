@@ -40,7 +40,7 @@ const ACTS = {
     submit: {items: [10, 11], activity: "Reception Training with Julio"}},
   // Day 5's Attorney Calendar Management Activity: "signify done" is its Done, at the end of its slides (s3, its text; s3b)
   // (its panel as Day 2's: what to do, "Once done, hit Submit." and 📤 Submit, which counts as the Done; label: the button)
-  "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📸 Upload your 19 screenshots", lead: "Once done, hit Submit.", label: "📤 Submit"},
+  "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📅 Attorney Calendar Management Activity", lead: "Once done, hit Submit.", label: "📤 Submit"},
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
   // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done; nextDay: the trainer's

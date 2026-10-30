@@ -627,10 +627,9 @@ function handoutsSlide(h){
 function launchSlide(s){
   const c = cardOf(lessonOfDay(DD.day)), r = s.launch;
   if(/ftVideoOrAsk/.test(r.run || "") && HANDOUTS[DD.day]) return handoutsSlide(HANDOUTS[DD.day]);
-  // 🎬 the lesson's AI discussion video is not on the decks: it opens only from its lesson card's 🎬 Video on 📚 Dashboard,
-  // once the trainer unlocks it at the end of the day
+  // (no AI discussion video on the decks; a handouts stop with no handouts here: where they are)
   if(/ftVideoOrAsk/.test(r.run || "")) return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
-    <p class="ftdd-dv-sub">The AI discussion video opens from its lesson card’s 🎬 Video on 📚 Dashboard, once your trainer unlocks it at the end of the day.</p></div>`;
+    <p class="ftdd-dv-sub">The digital handouts are posted in the training GC.</p></div>`;
   const label = r.go === "lesson" ? "▶ Start Training" : /toKC/.test(r.run || "") ? "✍️ Knowledge Check →" : /ftVideoOrAsk/.test(r.run || "") ? "🎬 Open the video" : "Open →";
   return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
@@ -742,19 +741,28 @@ function dayRubric(title){
   return (byTitle && (cands.find(rb => rb.key === byTitle.key) || byTitle)) || cands[0] || null;
 }
 // 🧑‍🏫 during the mock calls and the demos the trainer scores on the slide itself: the activity's metrics as the scoring sheet
-// (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already
+// (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already. A trainee sees the mock calls' metrics
+// (Day 4's Reception, Day 9's Intake; Day 6's Calendar Management has its own Metrics slide) as the guide's table, read only (FTMetrics.view), so they
+// know what the call is scored on; the demos' sheet stays the trainer's.
 function scoreBox(s, info, body){
-  const h = String(s.h || "");
-  if(!isAdminView() || !root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
+  const h = String(s.h || ""), admin = isAdminView();
+  if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
   if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  if(!admin && !/mock call/i.test(h)) return "";
+  // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
+  if(/instructions|metrics|scenarios/i.test(h)) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${FTMetrics.table(rb.key)}</div>`;
+  const M = root.FTMetrics;
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key) +
+    `<p class="ftdd-score-f">Your trainer scores each line with you after the call. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`}</div>`;
 }
 function waitBox(s, info){
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
+  if(/mock call/i.test(h)) return "";
   // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
   // the tools itself, and its instructions and metrics)
   if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
@@ -1342,8 +1350,8 @@ const LESSON_CARDS = {
       {t: "Common Terms Used & Auto Liability Insurance", sub: "Watch both videos · take each one's assessment", k: "watch", d: 2, s: "s2", lead: true},
       // (the readings open once the Common Terms tasks' 📤 Submit, on their slide, is in: js/ft-buffer.js ACTS["2:s2b"])
       {t: "Personal Injury Readings", sub: "Update items #5–7 on your Monitoring Sheet and hit 📤 Submit · then read both while your batch finishes", k: "read", d: 2, s: "s2b", lead: true},
-      // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; the lesson's AI discussion video is
-      // its 📚 Dashboard lesson card's 🎬 Video, not on the deck. Then ✍️ Process Questions: the Classroom Activity slide
+      // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; no AI discussion video on the deck.
+      // Then ✍️ Process Questions: the Classroom Activity slide
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
       {t: "Digital Handouts", time: "PM", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
       // (a classroom activity, not homework: before the day's ✍️ Process Questions)
@@ -1358,7 +1366,7 @@ const LESSON_CARDS = {
       // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
       {t: "PI Workflow / Reception Training", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
       {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
-      // (no Digital Handouts stop: the day has no handouts, and the AI discussion video is its lesson card's 🎬 Video)
+      // (no Digital Handouts stop: the day has no handouts, and no AI discussion video on the deck)
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
@@ -1379,16 +1387,16 @@ const LESSON_CARDS = {
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendaring Activity", time: "AM & PM", sub: "Your graded activity on the Calendar Simulator, with the trainer", k: "interactive", d: 6, s: "s1b"},
-      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
+      {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
+      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1v"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
-    tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "The time zone visible in every screenshot",
+    tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
-      // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; the AI video is on 📚 Dashboard)
+      // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; no AI video on the deck)
       {t: "Breakout Session: Intake Specialist Best Practices", sub: "Group activity · the three digital handouts", k: "interactive", run: "ftVideoOrAsk(6)", day: 7},
       {t: "Call Listening on the Intake Recordings", sub: "Log each call as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
       {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
@@ -1416,8 +1424,8 @@ const LESSON_CARDS = {
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
     rows: [
-      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3, and the AI discussion video is its
-      // lesson card's 🎬 Video on 📚 Dashboard)
+      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3; and no AI discussion
+      // video on the deck)
       {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c", lead: false},
       {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
@@ -1603,7 +1611,7 @@ function openSlide(n, id, alt, at){
 }
 function rowGo(c, r){
   // (the lesson's video is not opened from a deck: its row opens its stop, the handouts or the note on where the video is)
-  if(/ftVideoOrAsk/.test(r.run || "")) return `FTDayDecks.stop(${Number(r.day || c.days[0])}, '${e(r.run)}')`;
+  if(/ftVideoOrAsk/.test(r.run || "") || r.play != null) return `FTDayDecks.stop(${Number(r.day || c.days[0])}, '${e(r.run)}')`;
   if(r.run) return r.run;   // a platform action of its own (its Process Questions)
   if(r.d != null && r.s) return `FTDayDecks.slide(${Number(r.d)}, '${e(r.s)}'${r.go ? `, '${e(r.go)}'` : ""})`;
   if(r.go === "lesson") return `goto('day', ${Number(c.lesson)})`;
@@ -1640,7 +1648,7 @@ const DAY_FOCUS = {6: "Calendaring Activity", 8: "The Intake Packet & Documents"
    focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
 /* 📋 Every day's card in Day 1's arrangement, each row opening its activity in the order the day runs: the opening task
    (a buffer, the checking of assignments, a reading), then on the lesson's first day 💬 Classroom Discussion (▶ the lesson)
-   and 🎬 Handouts / Video, then the day's activities, then ✍️ Process Questions: Submit on the days the guide sets them,
+   and its Digital Handouts, then the day's activities, then ✍️ Process Questions: Submit on the days the guide sets them,
    before the day's homework. A row the day's own list already has isn't added twice. */
 function standardRows(n, c, lid, first, title, rows){
   const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
@@ -1652,8 +1660,8 @@ function standardRows(n, c, lid, first, title, rows){
   const mid = [];
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
-  // (a Digital Handouts stop only where the day has handouts: the lesson's AI discussion video is its 📚 Dashboard card's)
-  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
+  // (a Digital Handouts stop only where the day has handouts)
+  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them" : "The digital handouts are posted in the training GC", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
@@ -2748,14 +2756,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B61
 .ft-body .ftdd-ev-av{width:24px;height:24px;border-radius:50%;background:#0B57D0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
 main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size:14px !important;font-weight:600 !important;}
 @media(max-width:900px){ .ft-body .ftdd-ev-body{grid-template-columns:minmax(0,1fr);} }
-/* 📤 the 19 screenshots, numbered in the order they are uploaded */
-.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the whole row) */
 .ft-body .ftdd-sheet > .ftdd-card4, main.main-ftdd .ftdd-sheet > .ftdd-card4{margin:0 0 14px;}   /* (the list takes the card's whole row, in two columns) */
-.ft-body ol.ftdd-seq{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-rows:repeat(10,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px 14px;}
-@media(max-width:900px){ .ft-body ol.ftdd-seq{grid-auto-flow:row;grid-template-rows:none;} }
-.ft-body ol.ftdd-seq li{display:flex;align-items:center;gap:8px;margin:0 !important;padding:5px 10px;border-radius:6px;background:#F4F6FB;font:600 16px/1.3 'Inter',system-ui,sans-serif !important;color:#1E2340 !important;}
-.ft-body ol.ftdd-seq li:nth-child(even){background:#EBEEF6;}
-.ft-body .ftdd-seq-n{flex:0 0 auto;min-width:28px;height:28px;border-radius:50%;background:#E8590C;color:#fff;font:800 13px/28px 'Inter',sans-serif;text-align:center;}
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
