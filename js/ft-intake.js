@@ -109,7 +109,9 @@ const folderBtn = () => K.folder ? btn(K.folder, "📁 My Assessments/Activities
 function packetHtml(){
   if(!K.set) return `<p class="ftis-wait">Loading your assigned packet…</p>`;
   const head = `<div class="ftis-pk-h"><b>📦 Your Assigned Packet</b></div>`;
-  if(!isTrainee()) return head + `<p class="ftis-pk-note">👁 Each trainee sees here the Intake Packet their trainer assigned them, with its download and their own Assessments/Activities folder. Packets are assigned in Admin → 📦 Intake Packets.</p>`;
+  if(!isTrainee()) return head + `<p class="ftis-pk-note">👁 Each trainee sees here the Intake Packet their trainer assigned them, with its download and their own Assessments/Activities folder. Packets are assigned in Admin → 📦 Intake Packets. Until one is assigned, a trainee reads:</p>
+    <p class="ftis-pk-note">Your trainer hasn’t assigned your Intake Packet yet. It shows here as soon as they do.</p>
+    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">INTAKE - Packet (VA’s Name)</code></p>`;
   const n = K.mine && Number(K.mine.packet);
   if(!n) return head + `<p class="ftis-pk-note">Your trainer hasn’t assigned your Intake Packet yet. It shows here as soon as they do.</p>`;
   const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`;
@@ -120,7 +122,9 @@ function packetHtml(){
 // 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
 function sheetHtml(el){
   const u = el.getAttribute("data-href") || "", copy = copyUrl(u);
-  return `<div class="ftis-sh-act">${copy ? btn(copy, "✏️ Make my editable copy", "btn-navy") : ""}${viewBtn(u, "Intake Documents Worksheet", "👁 View the worksheet")}${isTrainee() ? folderBtn() : ""}</div>
+  // (the trainer sees the trainee's folder button too, inactive: each trainee links their own folder)
+  const folder = isTrainee() ? folderBtn() : `<button type="button" class="btn btn-ghost btn-sm" disabled title="Each trainee links their own folder here">📁 Link my Assessments/Activities folder</button>`;
+  return `<div class="ftis-sh-act">${copy ? btn(copy, "✏️ Make my editable copy", "btn-navy") : ""}${viewBtn(u, "Intake Documents Worksheet", "👁 View the worksheet")}${folder}</div>
     <p class="ftis-pk-note">“Make my editable copy” saves your own copy of the worksheet in your Google Drive: answer it there, then move it into your Assessments/Activities folder.</p>`;
 }
 // 📄 the additional intake documents, each in the slide: a click shows it bigger in the viewer

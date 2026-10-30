@@ -350,8 +350,11 @@ function visual(html){
     if(!rb) return;
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
-    box.innerHTML = `<p class="ftdd-score-h"><b>${e(txt)}</b></p>${window.FTMetrics ? FTMetrics.table(rb.key) : ""}` +
-      (isAdminView() ? "" : `<p class="ftdd-score-f">Your trainer scores each line with you after the ${/call/i.test(rb.title) ? "call" : "activity"}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`);
+    // (the trainer's deck is the trainee's scorecard too, with the scoring sheet under it)
+    const M = window.FTMetrics;
+    box.innerHTML = `<p class="ftdd-score-h"><b>${e(txt)}</b></p>${M ? (M.view || M.table)(rb.key) : ""}` +
+      `<p class="ftdd-score-f">Your trainer scores each line with you after the ${/call/i.test(rb.title) ? "call" : "activity"}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>` +
+      (isAdminView() && M && M.view ? M.table(rb.key) : "");
     if(shots) shots.remove();
     p.replaceWith(box);
   });
