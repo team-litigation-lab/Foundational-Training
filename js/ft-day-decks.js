@@ -338,10 +338,11 @@ function visual(html){
   // 3. the mock-call and demo metrics: the guide puts the scorecard on the slide as a screenshot. It is drawn as the guide's
   //    table instead (js/ft-rubrics.js: criterion | Score, and the WEIGHTED AVERAGE); on the trainer's deck it is the
   //    scoring sheet itself, with a Remarks column, the batch's trainees to pick from and 💾 Save (js/ft-sessions.js FTMetrics)
-  root.querySelectorAll("p").forEach(p => {
+  //    (a <p>, or the <h3>/<h4> the demo slides use; a bare "Demo Metrics" is the day's own demo: dayRubric)
+  root.querySelectorAll("p, h3, h4").forEach(p => {
     const txt = p.textContent.trim();
     if(!/Metrics$/i.test(txt) || p.closest(".trainer-slot")) return;
-    const rb = window.FT_RUBRICS && FT_RUBRICS.forAct({title: txt});
+    const rb = dayRubric(txt);
     if(!rb) return;
     const shots = p.nextElementSibling && p.nextElementSibling.classList.contains("shots") ? p.nextElementSibling : null;
     const box = document.createElement("div"); box.className = "ftdd-score";
@@ -705,15 +706,22 @@ function slideActions(s, info, body, i){
    trainer takes the others one by one — the day's lesson's Call Simulator line, its 🎮 Knowledge Games, the lesson itself
    and its ✍️ Knowledge Check. */
 const SIM_OF = {4: ["reception", "reception calls"], 5: ["calendaring", "calendar management calls"], 6: ["intake", "intake calls"]};
+// the scorecard a slide's "… Metrics" (or a mock-call / demo slide's title) names, else the one of the day's trainer-led activity
+function dayRubric(title){
+  const R = root.FT_RUBRICS; if(!R) return null;
+  const cands = (root.FTSessions && FTSessions.forDay ? FTSessions.forDay(DD.day) : []).filter(x => x.kind === "trainer")
+    .map(x => R.forAct({id: x.id, title: x.title})).filter(Boolean);
+  const byTitle = R.forAct({title});
+  return (byTitle && (cands.find(rb => rb.key === byTitle.key) || byTitle)) || cands[0] || null;
+}
 // 🧑‍🏫 during the mock calls and the demos the trainer scores on the slide itself: the activity's metrics as the scoring sheet
 // (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already
 function scoreBox(s, info, body){
   const h = String(s.h || "");
   if(!isAdminView() || !root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
-  if(!/mock call|demo/i.test(h) || /recorded demonstration|preparation|instructions for|before your demo|video/i.test(h)) return "";
-  const cands = (root.FTSessions && FTSessions.forDay ? FTSessions.forDay(DD.day) : []).filter(x => x.kind === "trainer")
-    .map(x => ({x, rb: FT_RUBRICS.forAct({id: x.id, title: x.title})})).filter(c => c.rb);
-  const rb = (FT_RUBRICS.forAct({title: h}) && cands.find(c => c.rb.key === FT_RUBRICS.forAct({title: h}).key) || cands[0] || {}).rb;
+  // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
+  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  const rb = dayRubric(h);
   if(!rb) return "";
   return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${FTMetrics.table(rb.key)}</div>`;
 }
@@ -764,7 +772,9 @@ function paintNotes(){
   const box = document.getElementById("ftddNotes"); if(!box) return;
   const b = box.querySelector(".ftdd-notes-b"); if(!b) return;
   const got = [...document.querySelectorAll("main.main-ftdd .ftdd-slides .trainer-slot")].map(el => el.innerHTML.trim()).filter(Boolean);
-  const html = got.length ? got.map(h => `<div class="ftdd-note">${h}</div>`).join("") : `<p class="ftdd-rail-note">Loading the notes…</p>`;
+  const st = typeof root.ftNotesState === "function" ? root.ftNotesState() : "loading";
+  const html = got.length ? got.map(h => `<div class="ftdd-note">${h}</div>`).join("")
+    : `<p class="ftdd-rail-note">${st === "failed" ? "The notes couldn’t be read (sign in to Admin again, or check your connection), then reopen the deck." : "Loading the notes…"}</p>`;
   if(b.getAttribute("data-html") !== String(got.length) + html.length || b.innerHTML !== html){ b.innerHTML = html; b.setAttribute("data-html", String(got.length) + html.length); }
 }
 // 🔓 the trainer's deck: each segment's lock for the batch picked (js/ft-day-locks.js; nothing for a trainee)

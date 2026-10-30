@@ -317,6 +317,8 @@ function ftLoadNotes(){
     .catch(()=>{ FT.loading = null; return null; });
   return FT.loading;
 }
+// (the day deck's 🧑‍🏫 Facilitator notes drawer says which: still loading, or the notes couldn't be read)
+window.ftNotesState = () => FT.notes ? "ok" : FT.loading ? "loading" : FT.tried ? "failed" : "loading";
 // Trainer-only screenshots load as <img>, which can't send the token: keep it in a cookie scoped to /trainer.
 function ftSyncTrainerCookie(){
   const want = state.isAdmin && state.adminToken ? state.adminToken : "";

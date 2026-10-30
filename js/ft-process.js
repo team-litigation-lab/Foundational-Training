@@ -629,12 +629,14 @@ const KC = {grading:false, shown:{}};
    notes: {"<set id>|<question>": comment}, at, by}}}. Admins write it (Admin → ✍️ Process Questions); the trainee reads it.
    A trainer's score is the lesson's final Knowledge Check score: it replaces the graded best (higher or lower), and a
    passing one finishes the lesson. */
-const KR = {id:null, data:null, at:0, loading:null};
+const KR = {id:null, data:null, at:0, loading:null, read:false};
 function loadReview(force){
   if(!state.traineeId || state.isAdmin || KR.loading) return KR.loading;
   if(!force && KR.id === state.traineeId && Date.now() - KR.at < 120000) return null;
   const id = state.traineeId; KR.at = Date.now();
-  KR.loading = sharedGet("kcreview:" + id).then(v=>{ KR.id = id; KR.data = v && v.lessons ? v : {lessons:{}}; applyReviews(); })
+  // (KR.read: a record really came back. sharedGet answers null for a failed read as for no record, and a failed read must never
+  // be taken for the trainer clearing their scores)
+  KR.loading = sharedGet("kcreview:" + id).then(v=>{ KR.id = id; KR.data = v && v.lessons ? v : {lessons:{}}; KR.read = !!(v && v.lessons); applyReviews(); })
     .catch(()=>{}).then(()=>{ KR.loading = null; if(["kc","process"].includes(state.view)) render(); });
   return KR.loading;
 }
@@ -654,10 +656,12 @@ function applyReviews(){
     state.progress[id] = Object.assign({}, prev, {score:t, trainerScore:t, gradedScore:typeof graded === "number" ? graded : null}, t >= KC_PASS ? {done:true, date:prev.date || new Date().toISOString()} : {done:prev.done && t >= KC_PASS});
     changed = true;
   });
-  // a trainer's score cleared: the lesson's score is the graded best again (and a lesson only that score had finished isn't)
-  Object.keys(state.progress || {}).forEach(k=>{
+  // a trainer's score cleared: the lesson's score is the graded best again (and a lesson only that score had finished isn't).
+  // Only from a record that was read and lists the lesson with its score emptied: never on a failed read or a missing record
+  if(KR.read) Object.keys(state.progress || {}).forEach(k=>{
     const id = Number(k), prev = state.progress[k] || {};
-    if(prev.trainerScore == null || trainerScore(((KR.data && KR.data.lessons) || {})[k]) != null) return;
+    const rv = ((KR.data && KR.data.lessons) || {})[k];
+    if(prev.trainerScore == null || !rv || trainerScore(rv) != null) return;
     const r = kcRec(id), best = r && r.attempts ? r.best : (typeof prev.gradedScore === "number" ? prev.gradedScore : null);
     if(best == null && !FP.data) return;   // (the graded attempts not read yet: wait for them rather than drop the score)
     const next = Object.assign({}, prev, {score:best == null ? undefined : best});

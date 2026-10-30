@@ -163,7 +163,8 @@ window.ftListenSection = () => `<section class="fts-group"><h2>🎧 Call Listeni
 // whether or not 🎧 Call Listening has been opened first)
 window.ftListenItems = ctx => { const rec = ctx.rec["listening:"]; if(!rec || !rec.logs) return [];
   const sv = ctx.shared && ctx.shared["settings:listening"];
-  if(sv && typeof sv === "object" && sv.sets && !X.loading && (!X.data || !X.at)){ X.data = sv; X.at = Date.now(); }
+  // (X.at stays 0: the copy only stands in until the sets are read fresh, which this never holds back)
+  if(sv && typeof sv === "object" && sv.sets && !X.loading && (!X.data || !X.at)) X.data = sv;
   return SETS.map(s => { const l = setLive(s.id), c = countDone(rec, l); if(!c && !((rec.logs || {})[s.id])) return null;
     return {name: `${s.icon} ${s.title}`, pct: Math.round(c / l.n * 100), note: `${c} of ${l.n} recordings logged`}; }).filter(Boolean); };
 

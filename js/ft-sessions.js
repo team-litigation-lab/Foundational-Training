@@ -180,6 +180,13 @@ const runOf = (s, c) => (S.data && S.data.runs[keyOf(s, c)]) || null;
 const reviewOf = key => ((S.review || {}).sessions || {})[key] || null;
 const tScore = r => r && r.score != null && r.score !== "" && isFinite(Number(r.score)) ? Math.round(Number(r.score)) : null;
 function scoreOf(run, rv){ const t = tScore(rv); return t != null ? t : run && run.auto ? run.auto.pct : null; }
+// a trainer's review counts for the attempt it was given on: a session submitted again after it is a new attempt, to review
+// again (the review records the attempt it scored; an older review without one is compared by its time)
+function forRun(run, rv){
+  if(!rv || !run || !run.submittedAt) return rv || null;
+  if(rv.attempt != null) return Number(rv.attempt) === Number(run.attempts) ? rv : null;
+  return rv.at && Date.parse(run.submittedAt) > Date.parse(rv.at) ? null : rv;
+}
 
 window.FTSessions = {
   ack: () => S.data && S.data.ack,
@@ -262,7 +269,7 @@ FTSessions.cards = function(){
   // a trainee sees a session from the day its lesson opens (js/ft-simulators.js: the Practice Lab goes by the day)
   const shown = s => !isTrainee() || state.adminPreview || (window.dayUnlocked(s.lesson) && dayLocksOpen(s));
   return SESSIONS.filter(shown).map(s => {
-    const c = isTrainee() ? caseFor(s) : null, run = isTrainee() ? runOf(s, c) : null, rv = run ? reviewOf(keyOf(s, c)) : null, sc = scoreOf(run, rv);
+    const c = isTrainee() ? caseFor(s) : null, run = isTrainee() ? runOf(s, c) : null, rv = run ? forRun(run, reviewOf(keyOf(s, c))) : null, sc = scoreOf(run, rv);
     const open = state.isAdmin || state.adminPreview || window.dayUnlocked(s.lesson);
     const status = !run ? "" : run.submittedAt ? `<span class="fss-pill ${sc >= PASS ? "ok" : "mid"}">${tScore(rv) != null ? "🧑‍🏫 " : ""}${sc}%</span>` : run.startedAt ? `<span class="fss-pill live">🟢 In progress</span>` : "";
     const lessonT = (DAYS.find(d => d.id === s.lesson) || {}).title || "";
@@ -313,7 +320,7 @@ function renderSession(){
   const f = preview ? previewFirm() : FF().myFirm(), c = sessionCase(s);
   // Nobody assigns a firm any more (js/ft-firms.js): there is one only when no profile exists at all.
   if(!f) return `${back}<div class="card" style="padding:24px;">No firm profile is set up yet, so this session has no rules to check your work against.</div>`;
-  const run = preview ? null : runOf(s, c), rv = run ? reviewOf(keyOf(s, c)) : null;
+  const run = preview ? null : runOf(s, c), rv = run ? forRun(run, reviewOf(keyOf(s, c))) : null;
   const started = run && run.startedAt && !run.submittedAt, done = run && run.submittedAt;
   const ruleKey = {reception:"reception", calendaring:"calendar", intake:"intake", records:"records"}[s.id];
   return `${back}
@@ -414,8 +421,12 @@ async function loadAdmin(quiet){
     AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
       .sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
-    AD.at = Date.now();
+    // the trainer-led activities as the trainer listed them (Admin → Trainer Inputs → ✏️ Edit the activities), so the deck's
+    // metrics sheet saves to the same activity Trainer Inputs shows
+    try{ const v = await sharedGet("settings:trainer-acts"); if(v && Array.isArray(v.acts) && v.acts.length) T.acts = v.acts; }catch(err){}
   }catch(err){ if(!AD.rows) AD.rows = []; }
+  // (stamped on a failed read too: the deck's sheet retries a minute later, not in a loop)
+  AD.at = Date.now();
   AD.loading = false;
   // (a deck redraws for its metrics sheet unless the trainer is typing in it)
   const typing = document.activeElement && /TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName);
@@ -425,11 +436,11 @@ function liveRows(){
   return (AD.rows || []).filter(r => r.s && r.s.live && Date.now() - new Date(r.s.live.startedAt) < 4 * 3600000);
 }
 function sessionRow(r, key, run){
-  const [sid, mc] = key.split("|"), s = sessionById(sid), rv = ((r.rv || {}).sessions || {})[key] || {}, k = r.id + "§" + key, open = !!AD.open[k];
+  const [sid, mc] = key.split("|"), s = sessionById(sid), old = ((r.rv || {}).sessions || {})[key] || null, rv = forRun(run, old) || {}, k = r.id + "§" + key, open = !!AD.open[k];
   const firm = FF().firms()[0] || null;          // everyone works for the same firm now
   return `<div class="fss-arow"><div class="fss-arow-h" onclick="FTSessionsAdmin.open('${e(k)}')">${open ? "▾" : "▸"} ${s ? s.icon + " " + e(s.title) : e(sid)} ${mc !== "-" ? `<span class="ff-mc">${e(mc)}</span>` : ""}
       ${run.submittedAt ? `<span class="fss-pill ${run.auto && run.auto.pct >= PASS ? "ok" : "mid"}">auto ${run.auto ? run.auto.pct : "—"}%</span>` : `<span class="fss-pill live">🟢 in progress</span>`}
-      ${tScore(rv) != null ? `<span class="fss-pill ok">🧑‍🏫 ${tScore(rv)}%</span>` : run.submittedAt ? `<span class="fss-pill">to review</span>` : ""}
+      ${tScore(rv) != null ? `<span class="fss-pill ok">🧑‍🏫 ${tScore(rv)}%</span>` : run.submittedAt ? `<span class="fss-pill">${tScore(old) != null ? "new attempt · " : ""}to review</span>` : ""}
       <span class="fss-muted">${run.submittedAt ? `${e(new Date(run.submittedAt).toLocaleString())} · ${run.minutes} min · attempt ${run.attempts}` : `started ${e(new Date(run.startedAt).toLocaleTimeString())}`}</span></div>
     ${open ? `<div class="fss-abody">${firm ? `<p class="fss-muted">Firm: ${e(firm.name)}</p>` : ""}
       ${s ? `<div class="fss-form">${s.fields(firm || {}).map(x => field(x, run.answers || {}, true)).join("")}</div>` : ""}
@@ -449,7 +460,7 @@ function renderAdminSessions(){
     <div class="card fss-admin"><div class="ff-bar"><div><h3>🟢 Practice Sessions</h3><p class="fss-muted">Every session a trainee submitted: what they recorded, the automated checks against their case and firm, the AI’s evaluation in the facilitator’s voice, and your review.</p></div>
       <span><select onchange="FTSessionsAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
       ${rows.length ? rows.map(r => { const runs = Object.entries((r.s && r.s.runs) || {}).filter(([k, v]) => v && v.startedAt).sort((a, b) => String(b[1].submittedAt || b[1].startedAt).localeCompare(String(a[1].submittedAt || a[1].startedAt)));
-        const toReview = runs.filter(([k, v]) => v.submittedAt && tScore(((r.rv || {}).sessions || {})[k]) == null).length;
+        const toReview = runs.filter(([k, v]) => v.submittedAt && tScore(forRun(v, ((r.rv || {}).sessions || {})[k])) == null).length;
         return `<div class="fss-trainee"><b>${e(r.name)}</b> <span class="fss-muted">${e(r.batch)} · ${runs.length} session${runs.length === 1 ? "" : "s"}${toReview ? ` · <b>${toReview} to review</b>` : ""}${FF().firms()[0] ? " · " + e(FF().firms()[0].name) : ""}</span>
           ${runs.map(([k, v]) => sessionRow(r, k, v)).join("")}</div>`; }).join("") : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}</div>`;
 }
@@ -468,7 +479,7 @@ window.FTSessionsAdmin = {
     const box = btn.closest(".fss-rvform"), sv = String(box.querySelector("[data-score]").value || "").trim();
     if(sv !== "" && !(Number(sv) >= 0 && Number(sv) <= 100)){ toast("The score is a number from 0 to 100."); return; }
     btn.disabled = true;
-    try{ await writeReview(id, cur => { cur.sessions = cur.sessions || {}; cur.sessions[key] = {score:sv === "" ? null : Math.round(Number(sv)), comment:String(box.querySelector("[data-comment]").value || "").trim().slice(0, 4000), at:new Date().toISOString()}; });
+    try{ await writeReview(id, cur => { cur.sessions = cur.sessions || {}; cur.sessions[key] = {attempt:(((((AD.rows || []).find(r => r.id === id) || {}).s || {}).runs || {})[key] || {}).attempts ?? null, score:sv === "" ? null : Math.round(Number(sv)), comment:String(box.querySelector("[data-comment]").value || "").trim().slice(0, 4000), at:new Date().toISOString()}; });
       toast("✓ Review saved. The trainee sees it with the session."); }
     catch(err){ toast("Couldn’t save the review. Check your connection."); }
     btn.disabled = false; render();
@@ -601,8 +612,10 @@ ftAdminTab("trainerinputs", "🧑‍🏫 Trainer Inputs", renderTrainerInputs);
    the batch and a trainee from it, each criterion 0–5 with a Remarks column, the result, and 💾 Save, which writes the
    same record as Admin → 🧑‍🏫 Trainer Inputs (labreview:<id> acts[<activity>]: the scores, the remarks, the weighted
    average and the score in %), so it reaches the trainee's Scorecard, 📬 My Feedback and ⤓ the Weekly Ranking. */
-const MS = {batch:"", who:{}, draft:{}};   // (draft: what is typed and not saved yet, per sheet and trainee, kept across redraws)
-const actOfRubric = key => acts().find(a => { const rb = RUB().forAct(a); return rb && rb.key === key; }) || null;
+const MS = {batch:"", who:{}, draft:{}, act:{}};   // (draft: what is typed and not saved yet, per sheet and trainee, kept across redraws)
+// the activities a rubric scores (Transcription scores Recording 1 and Recording 2): the sheet saves to the one picked
+const actsOfRubric = key => acts().filter(a => { const rb = RUB().forAct(a); return rb && rb.key === key; });
+const actOfRubric = key => { const l = actsOfRubric(key); return l.find(a => a.id === MS.act[key]) || l[0] || null; };
 function metricsTable(key){
   const rb = RUB().list[key]; if(!rb) return "";
   const head = `<thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>`;
@@ -615,15 +628,17 @@ function metricsTable(key){
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort();
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = AD.batch && batches.includes(AD.batch) ? AD.batch : batches[batches.length - 1] || "";
   const people = AD.rows.filter(r => !MS.batch || r.batch === MS.batch);
-  const id = people.some(r => r.id === MS.who[key]) ? MS.who[key] : "", row = people.find(r => r.id === id);
-  const c = row ? ((((row.rv || {}).acts) || {})[a.id] || {}) : {}, got = MS.draft[key + "|" + id] || (c.rubric && c.rubric.key === key ? c.rubric : {scores:[], feedback:[]});
+  const id = people.some(r => r.id === MS.who[key]) ? MS.who[key] : "", row = people.find(r => r.id === id), several = actsOfRubric(key);
+  const c = row ? ((((row.rv || {}).acts) || {})[a.id] || {}) : {}, dr = MS.draft[key + "|" + a.id + "|" + id];
+  const got = dr || (c.rubric && c.rubric.key === key ? c.rubric : {scores:[], feedback:[]}), status = (dr && dr.status) || c.status || "Not yet";
   const avg = RUB().average(rb, got.scores);
   return `<div class="ftms ftms-trainer" data-ms="${e(key)}" data-act="${e(a.id)}">
     <div class="ftms-pick"><b>🧑‍🏫 Score a trainee</b>
       <select aria-label="Batch" onchange="FTMetrics.batch(this.value)">${batches.map(b => `<option ${b === MS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
+      ${several.length > 1 ? `<select aria-label="Activity" onchange="FTMetrics.act('${e(key)}', this.value)">${several.map(x => `<option value="${e(x.id)}" ${x.id === a.id ? "selected" : ""}>${e(x.title)}</option>`).join("")}</select>` : ""}
       <select aria-label="Trainee" onchange="FTMetrics.who('${e(key)}', this.value)"><option value="">Choose a trainee…</option>${people.map(r => `<option value="${e(r.id)}" ${r.id === id ? "selected" : ""}>${e(r.name)}</option>`).join("")}</select>
       ${row && c.status ? `<span class="fss-pill ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : ""}
-      <label>Result <select data-status ${row ? "" : "disabled"}>${STATUSES.map(x => `<option ${x === (c.status || "Not yet") ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+      <label>Result <select data-status ${row ? "" : "disabled"} onchange="FTMetrics.calc(this)">${STATUSES.map(x => `<option ${x === status ? "selected" : ""}>${x}</option>`).join("")}</select></label>
       <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
@@ -635,9 +650,12 @@ window.FTMetrics = {
   table: metricsTable, actOf: actOfRubric,
   batch(b){ MS.batch = b; render(); },
   who(key, id){ MS.who[key] = id; render(); },
+  act(key, id){ MS.act[key] = id; render(); },
   calc(inp){ const box = inp.closest(".ftms"), r = rubricRead(box); if(!r) return;
     box.querySelector("[data-avg]").textContent = r.avg == null ? "0" : (Math.round(r.avg * 100) / 100).toFixed(2);
-    const key = box.getAttribute("data-ms"); if(MS.who[key]) MS.draft[key + "|" + MS.who[key]] = {scores:r.scores, feedback:r.feedback}; },
+    // (what is typed, and the Result picked, kept for this sheet, activity and trainee until saved: a redraw doesn't lose them)
+    const key = box.getAttribute("data-ms"), act = box.getAttribute("data-act"), st = box.querySelector("[data-status]");
+    if(MS.who[key]) MS.draft[key + "|" + act + "|" + MS.who[key]] = {scores:r.scores, feedback:r.feedback, status:st ? st.value : ""}; },
   async save(btn){
     const box = btn.closest(".ftms"), key = box.getAttribute("data-ms"), act = box.getAttribute("data-act"), id = MS.who[key];
     const row = (AD.rows || []).find(r => r.id === id), rr = rubricRead(box); if(!row || !rr) return;
@@ -648,7 +666,7 @@ window.FTMetrics = {
         cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
           date:prev.date || new Date().toISOString().slice(0, 10), at:new Date().toISOString(),
           rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}}); });
-      delete MS.draft[key + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
+      delete MS.draft[key + "|" + act + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
     }catch(err){ toast("Couldn’t save. Check your connection."); }
     btn.disabled = false; render();
   }
@@ -663,9 +681,8 @@ window.ftSessionItems = ctx => {
   const runs = ((ctx.rec["sessions:"] || {}).runs) || {}, rv = ((ctx.rec["labreview:"] || {}).sessions) || {};
   // a review counts for the attempt it was given on: a session submitted again after it is the new attempt's automated checks
   // until the trainer reviews it; a session started again (not submitted yet) keeps the trainer's score of the last attempt
-  const newer = (v, r) => !!(v.submittedAt && r && r.at && Date.parse(v.submittedAt) > Date.parse(r.at));
   return Object.entries(runs).filter(([k, v]) => v && (v.submittedAt || tScore(rv[k]) != null)).map(([k, v]) => { const [sid, mc] = k.split("|"), s = sessionById(sid);
-    const t = newer(v, rv[k]) ? null : tScore(rv[k]), name = (s ? s.title : sid) + (mc !== "-" ? " · " + mc : "");
+    const t = tScore(forRun(v, rv[k])), name = (s ? s.title : sid) + (mc !== "-" ? " · " + mc : "");
     if(t != null) return {name, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet"};
     return {name, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer"}; });
 };
