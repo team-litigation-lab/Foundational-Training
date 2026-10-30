@@ -81,9 +81,9 @@ async function workerChecks() {
     await open(t, 4, 's2');   // (Day 4's Training Video Viewing: its one-line introduction joined it, build/day-decks.cjs SKIP)
     if (await t.evaluate(() => !!document.querySelector('.ftbf'))) fail('Day 4\'s Training Video Viewing slide got a buffer panel');
 
-    // 🌅 a buffer slide: the line and Done, no dialog
-    await open(t, 9, 's1');
-    if (!(await toPanel(t))) fail('Day 9\'s Buffer Time has no buffer panel');
+    // 🌅 a buffer slide: the line and Done, no dialog (Day 13's Buffer Time; Day 9's is off its deck)
+    await open(t, 13, 's1');
+    if (!(await toPanel(t))) fail('Day 13\'s Buffer Time has no buffer panel');
     else {
       if (!/Use this buffer to finish all your pending tasks\. Hit Done when you are\./.test(await panel(t))) fail(`the buffer panel's words: ${await panel(t)}`);
       if (await t.evaluate(() => !!document.querySelector('.ftdd-sheet .ftdd-wait'))) fail('the buffer slide still has its ⏳ While you wait box beside the panel');
@@ -91,10 +91,10 @@ async function workerChecks() {
       if (await t.evaluate(() => !!document.querySelector('.ftbf-modal'))) fail('Done on a buffer asked for a confirmation');
       if (!/✅ Done/.test(await panel(t))) fail(`a buffer's Done didn't turn the panel to Done: ${await panel(t)}`);
     }
-    // 📒 Day 5 opens on the Monitoring Sheet's items #10–11: Day 4's panel and 📤 Submit, under Day 4's record
-    await open(t, 5, 's1');
-    if (!(await toPanel(t))) fail('Day 5\'s Monitoring Sheet update has no panel');
-    else if (!/Update items #10–11 in your Monitoring Sheet[^]*Once done, hit Submit/.test(await panel(t))) fail(`Day 5's first slide reads: ${await panel(t)}`);
+    // 📒 the Monitoring Sheet's items #10–11 close Reception Part 2 (Day 4's last row): its panel and 📤 Submit
+    await open(t, 4, 's2m');
+    if (!(await toPanel(t))) fail('Day 4\'s Monitoring Sheet update has no panel');
+    else if (!/Update items #10–11 in your Monitoring Sheet[^]*Once done, hit Submit/.test(await panel(t))) fail(`Day 4's Monitoring Sheet slide reads: ${await panel(t)}`);
     // 📅 Day 5's Attorney Calendar Management Activity: its 📤 Submit, as Day 2's panel, is its Done, at the end of its slides
     await open(t, 5, 's3b');
     if (!(await toPanel(t))) fail('Day 5\'s Attorney Calendar Management Activity has no Done');

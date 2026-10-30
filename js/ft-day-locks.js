@@ -93,7 +93,8 @@ function slideSteps(n, list){
 function rowSteps(n, list){
   const rows = (FTDayDecks.dayRows && FTDayDecks.dayRows(n)) || [];
   if(!rows.length) return slideSteps(n, list);
-  const out = rows.map((r, k) => ({n: k + 1, label: FTDayDecks.rowLabel ? FTDayDecks.rowLabel(n, r) : r.t, slot: "", from: -1, to: -1, ids: [], go: r.go || r.run || ""}));
+  // (lesson: the lesson a row's deck is, where not the day's own: Day 3's Reception deck, Lesson 4)
+  const out = rows.map((r, k) => ({n: k + 1, label: FTDayDecks.rowLabel ? FTDayDecks.rowLabel(n, r) : r.t, slot: "", from: -1, to: -1, ids: [], go: r.go || r.run || "", lesson: r.lesson}));
   let cur = 0;
   list.forEach((s, i) => {
     const k = s.row != null && out[s.row] && !(s.trainer && !extrasOf(n).length) && !s.divider ? Math.max(cur, Number(s.row)) : cur;
@@ -281,14 +282,12 @@ const NOLOAD = "The training couldn’t load. Check your connection and try agai
    a one-part lesson's segment reads Start; a lesson in parts reads Part 1 · Part 2 … (no "Day" on the card). A part is
    one day, except where the Training Guide splits a lesson otherwise (PARTS). Which lesson a day belongs to (its locks,
    its progress) doesn't change: only the card's buttons are grouped. */
-// Personal Injury Process Flow and Receptionist Training are one card pair: Day 3's classroom session (the Guide's
-// "Classroom Discussion on PI Workflow, Reception Training and Call Listening") is Part 1, on the PI Process Flow card,
-// titled "Personal Injury Process Flow / Reception" (CARD_TITLES); Day 4 is Part 2, on Receptionist Training's (its Day 3
-// isn't a button of its own: it is that Part 1). Medical Records: Part 1 MedLOR (Days 13–15), Part 2 Lien Balance
-// Verification (Day 16)
-const PARTS = {4: [[4]], 8: [[13, 14, 15], [16]]};
+// Personal Injury Process Flow and Receptionist Training are one card, "Personal Injury Process Flow / Reception"
+// (CARD_TITLES): Part 1 is Day 3, Part 2 is Day 4 (js/ft-day-decks.js LESSON_CARDS[3]). Medical Records: Part 1 MedLOR
+// (Days 13–15), Part 2 Lien Balance Verification (Day 16)
+const PARTS = {8: [[13, 14, 15], [16]]};
 // (a card whose parts are numbered on from another card's, or a one-part card that is a Part: the labels it shows)
-const PART_LABELS = {3: ["Part 1"], 4: ["Part 2"]};
+const PART_LABELS = {};
 const CARD_TITLES = {3: "Personal Injury Process Flow / Reception"};
 const partsOf = (lid, days) => PARTS[lid] || days.map(d => [d]);
 function segState(d){
@@ -338,6 +337,8 @@ if(typeof __grid === "function") root.LSH_HOME_GRID_LAYOUT = function(ctx){
     const start = card.querySelector(".mc-grid > .module-start-btn"); if(!start) return;
     const lid = Number(String(card.id).replace(/^dayl-/, "")), days = card.dataset.days.split(",").map(Number).filter(Boolean);
     const head = card.querySelector(".mh-title"); if(head && CARD_TITLES[lid]) head.textContent = CARD_TITLES[lid];
+    // (the dashboard card names its role, not "… Training": Intake Specialist, Claims Specialist …)
+    if(head) head.textContent = head.textContent.replace(/\s+Training\s*$/i, "");
     const title = (head || {}).textContent || "";
     const w = document.createElement("template"); w.innerHTML = segments(lid, days, title.trim());
     start.replaceWith(w.content.firstElementChild);
@@ -349,7 +350,7 @@ if(typeof __grid === "function") root.LSH_HOME_GRID_LAYOUT = function(ctx){
 // a lesson's own stops: 💬 its deck (a "lesson" launch on a day of its own card), 🎬 its video and ✍️ its Process Questions
 // (each launch names its lesson). Day 3 discusses Lessons 3 and 4, so the day alone doesn't say whose stop it is.
 const STOPS = {
-  lesson: (s, n, l) => s.go === "lesson" && lessonOf(n) === l,
+  lesson: (s, n, l) => s.go === "lesson" && (s.lesson != null ? Number(s.lesson) : lessonOf(n)) === l,
   video: (s, n, l) => new RegExp(`ftVideoOrAsk\\(${l}\\)`).test(s.go || ""),
   kc: (s, n, l) => new RegExp(`toKC\\(${l}\\)`).test(s.go || "")
 };

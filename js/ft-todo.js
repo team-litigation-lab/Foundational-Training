@@ -1,13 +1,13 @@
 /* ============================================================
-   👥 SHADOWING LOG AND THE DAY'S HUBSTAFF TO-DO (Days 7, 11, 14–16, 18)
+   👥 SHADOWING LOG AND THE DAY'S HUBSTAFF TO-DO (Days 11, 14–16, 18)
    ------------------------------------------------------------
    Two things the Training Guide asks of every trainee every day, which the trainer used to chase in the GC and
    check by screenshot:
      • the Hubstaff To-Do, set daily from the guide's templates ("To-Do: Classroom Discussion: Intake Training
-       Day 1", and on a shadowing day "To-Do: Shadowing Intake Specialist Role (buddy's name)"). The platform now
+       Day 1", and on a shadowing day "To-Do: Shadowing Insurance Communication Role (buddy's name)"). The platform now
        shows each day's exact text with 📋 Copy, on this page (#/shadowing), so there
        is nothing to remember or retype.
-     • the recorded shadowing videos the guide provides for when no buddy is free: each one's title is the link.
+     • the recorded shadowing videos the trainer gives for when no buddy is free: each one's title is the link.
      • the shadowing session itself: instead of a screenshot of the TAM, the trainee writes a short log — who they
        shadowed, what that person actually did, what they learned, what they asked, and what they will use. Checked
        for completeness, never for a right answer; the trainer reads it.
@@ -24,7 +24,8 @@ const len = v => String(v == null ? "" : v).trim().length;
 const DAYS = () => (window.FTDays && FTDays.DAYS) || [];
 
 // the guide's shadowing sessions: the day, and the role as its To-Do names it
-const SHADOW = {7: "Intake Specialist", 11: "Insurance Communication", 14: "Provider Communication", 15: "Provider Communication", 16: "Provider Communication"};
+// (Day 7 has no shadowing session: its Scheduled Shadowing and Maria's intake shadowing videos are off the training)
+const SHADOW = {11: "Insurance Communication", 14: "Provider Communication", 15: "Provider Communication", 16: "Provider Communication"};
 // the guide's daily To-Do templates, as "[Session Type + Schedule Day]: [Program Name] — [Module Day]"
 const PROGRAM = {"VA Essentials": "Virtual Assistant Essentials"};
 function discussionLine(d){
@@ -33,12 +34,9 @@ function discussionLine(d){
   if(days.length < 2) return `Classroom Discussion: ${name}`;
   return `Classroom Discussion: ${name}${PROGRAM[d.role] ? " - Day " : " Day "}${n}`;
 }
-// The guide's recorded shadowing videos, for when no buddy is free: the title is the link (Drive).
-const DRIVE = id => `https://drive.google.com/file/d/${id}/view?usp=sharing`;
-const VIDEOS = {
-  7: [["Intake shadowing, part 1", DRIVE("1SC653puBU7dh4tYjQjXcr8KZ4yhYxsLV")], ["Intake shadowing, part 2", DRIVE("16DavSPhSUGF88UnltYxl932dsZsYkQtY")],
-      ["Intake shadowing, part 3", DRIVE("1_dsswdnznMTWJAykRJkJKMCOoGg-c8pw")]]
-};
+// Recorded shadowing videos shipped with a day, for when no buddy is free (none now: Day 7's intake shadowing videos are
+// off the training); the trainer can still give a day's own below
+const VIDEOS = {};
 // a day's videos: the guide's, plus the trainer's own ("Title | link" a line), which replace them when given
 function videosFor(day){
   const own = String((((X.data || {}).days || {})[day] || {}).videos || "").split("\n")
@@ -203,7 +201,7 @@ window.ftShadowItems = ctx => { const rec = ctx.rec["shadow:"]; if(!rec || !rec.
   return [{name: "👥 Shadowing sessions logged", pct: Math.round(k / n * 100), note: `${k} of ${n} sessions written up (Days ${days.join(", ")} started)`}]; };
 
 /* ---------- 🧑‍🏫 Admin → 🛠 Practice Lab → 👥 Shadowing & To-Do ---------- */
-const AD = {rows: null, loading: false, batch: "", open: {}, day: 7};
+const AD = {rows: null, loading: false, batch: "", open: {}, day: 11};
 async function loadAdmin(){
   AD.loading = true;
   try{

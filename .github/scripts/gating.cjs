@@ -57,17 +57,19 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
 
   // the trainer opens two of them for the batch: those two, and only those two, open
-  await put('settings:opendays', { all: [1, 4], batches: {} });
+  await put('settings:opendays', { all: [1, 3], batches: {} });
   await page.evaluate(() => { state.ftOpenDays = null; }); await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2600);
   // (the open lessons are read after the page loads: on a busy runner, give them up to ten seconds more)
   let openLes = [];
   for (let t = 0; t < 20; t++) {
     les = (await cards()).filter(c => /^dayl-/.test(c.id));
     openLes = les.filter(c => !c.locked && !c.off).map(c => c.id).sort();
-    if (openLes.join() === 'dayl-1,dayl-4') break;
+    if (openLes.join() === 'dayl-1,dayl-3') break;
     await page.waitForTimeout(500);
   }
-  if (openLes.join() !== 'dayl-1,dayl-4') fail(`📅 Open Lessons opened ${JSON.stringify(openLes)} (dayl-1 and dayl-4 expected)`);
+  if (openLes.join() !== 'dayl-1,dayl-3') fail(`📅 Open Lessons opened ${JSON.stringify(openLes)} (dayl-1 and dayl-3 expected)`);
+  // (Receptionist Training, on Personal Injury Process Flow's card, opens with it: its deck is Day 3's Reception row)
+  if (!(await page.evaluate(() => dayUnlocked(4))) || await page.evaluate(() => dayUnlocked(5))) fail('opening Lesson 3 should open Lesson 4 with it, and only it');
 
   // a trainer, and a trainer in Trainee view, reads everything
   for (const as of ['admin', 'preview']) {
