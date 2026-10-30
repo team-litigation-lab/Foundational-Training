@@ -75,9 +75,9 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), mon5 = (D[5] || { slides: [] }).slides[0] || {};
   if (s2b.indexOf('<p>Step 1 - ') < 0 || at < 0 || !/ftdd-mockpage ftdd-steps7/.test(s2b) || !/class="ftdd-mock-btns"/.test(s2b.slice(at)) || sl(4, 's2b-2') || /ftdd-biglinks/.test(s2b) || sl(4, 's2c'))
     fail("Day 4's mock call preparation and metrics aren't on its slide");
-  // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4; Calendaring's Day 5 no longer opens on them)
-  if (mon5.id === 's1' || !(D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
-    fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 lost it: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
+  // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4, on the metrics page, not a slide of their own; Calendaring's Day 5 no longer opens on them)
+  if (mon5.id === 's1' || (D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
+    fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 still has it as a slide: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
   // (its Activity Items as ten cards, an item a card with its own on it (6's two travel blocks; 8's four parts of the trip,
   // side by side, 8 on a slide of its own); every activity date marked for moving to the trainee's weeks)
   const txt = sl(5, 's3'), its = ['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id));

@@ -31,8 +31,10 @@ const ACTS = {
   // opens: a slide that stays shut for a trainee until this Done is in, the Softphones and PPTs)
   "2:s2b": {kind: "buffer", task: true, gate: true, key: "2:s2", title: "📒 Update items #5–7 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [5, 6, 7], activity: "Common Terms Used & Auto Liability Insurance"}, opens: "s4"},
-  // Day 4's Monitoring Sheet update after Julio's video: Day 2's panel and 📤 Submit, on a slide of its own (items #10–11)
-  "4:s2m": {kind: "buffer", task: true, gate: true, title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+  // Day 4's Monitoring Sheet update (items #10–11): no slide of its own any more. Its card and 📤 Submit sit at the lower right of
+  // the mock calls' metrics page, the preparation slide's last (s2b), under the key it was saved under (4:s2m). corner: a small
+  // card after the slide's content, no tracker for the trainer (only what the trainee sees), and the slide stays readable
+  "4:s2b": {kind: "buffer", task: true, corner: true, key: "4:s2m", title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [10, 11], activity: "Reception Training with Julio"}},
   // Day 5 opens on the same update, in place of its Buffer Time for Reception Mock Calls: under Day 4's key, so a trainee
   // who submitted on Day 4 is done here too (the card's next stop is the lesson deck)
@@ -103,6 +105,8 @@ function traineePanel(h){
   if((d || a.simple) && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
+  // (corner: once submitted, what was checked, and nothing to wait for)
+  if(d && a.corner) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Submitted</p></div>`;
   // (simple: no Debrief Prep screen, no scorecard: the Done and the wait for the debrief, in the middle of the slide)
   if(d && a.simple) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Done</p>
     <p class="ftbf-status"><span class="ftbf-dot"></span>Waiting for the group debrief to start…</p></div>`;
@@ -323,6 +327,11 @@ function paint(){
   if(!sheet || sheet.querySelector(".ftbf")) return;
   sheet.querySelectorAll(".ftdd-wait").forEach(x => x.remove());
   const box = document.createElement("div"); box.className = "ftbf-slot";
+  // (a corner card: at the lower right, after the slide's content; the trainer sees it as the trainee does, with no tracker)
+  if(h.a.corner){ box.classList.add("ftbf-corner");
+    box.innerHTML = isAdminView() ? `<p class="ftbf-pv-h">👁 What trainees see</p>${traineePanel(h)}` : traineePanel(h); sheet.appendChild(box);
+    if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => { const n = here(); if(n && n.k === h.k && mine(h.k)) render(); });
+    return; }
   if(isAdminView()){
     if(T.k !== h.k){ T.k = h.k; }
     box.innerHTML = trackerHtml(h); sheet.insertBefore(box, sheet.firstChild);
@@ -440,6 +449,13 @@ const st = document.createElement("style"); st.id = "ft-buffer"; st.textContent 
 .ftdd-sheet .ftbf-slot:first-child{margin:0 0 18px;}
 .ftbf-pv-h{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
 .ftbf{border:2px solid #1E2340;border-radius:14px;padding:18px 22px;background:#fff;}
+/* a corner card (ACTS[…].corner): small, at the lower right of the slide's last page */
+.ftdd-sheet .ftbf-slot.ftbf-corner{margin:14px 0 0 auto !important;width:min(420px,100%);align-self:flex-end;}
+.ftbf-corner .ftbf{padding:12px 16px;}
+.ftbf-corner .ftbf .ftbf-h{font-size:15px !important;padding:6px 12px !important;margin-bottom:8px !important;}
+.ftbf-corner .ftbf p{font-size:15px;}
+.ftbf-corner .ftbf-foot{margin-top:8px;}
+.ftbf-corner .btn.ftbf-done{min-width:150px;padding:8px 20px;font-size:15px;}
 /* a trainee's buffer slide: the panel alone, centred, gray with an orange frame */
 main.main-ftdd .ftdd-sheet.ftbf-only > :not(.ftbf-slot){display:none !important;}
 main.main-ftdd .ftdd-sheet.ftbf-only{justify-content:center;align-items:center;}

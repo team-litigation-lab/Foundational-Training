@@ -91,10 +91,15 @@ async function workerChecks() {
       if (await t.evaluate(() => !!document.querySelector('.ftbf-modal'))) fail('Done on a buffer asked for a confirmation');
       if (!/✅ Done/.test(await panel(t))) fail(`a buffer's Done didn't turn the panel to Done: ${await panel(t)}`);
     }
-    // 📒 the Monitoring Sheet's items #10–11 close Reception Part 2 (Day 4's last row): its panel and 📤 Submit
-    await open(t, 4, 's2m');
-    if (!(await toPanel(t))) fail('Day 4\'s Monitoring Sheet update has no panel');
-    else if (!/Update items #10–11 in your Monitoring Sheet[^]*Once done, hit Submit/.test(await panel(t))) fail(`Day 4's Monitoring Sheet slide reads: ${await panel(t)}`);
+    // 📒 the Monitoring Sheet's items #10–11 close Reception Part 2: their card and 📤 Submit at the lower right of the metrics page (s2b's last)
+    await open(t, 4, 's2b');
+    if (!(await toPanel(t))) fail('Day 4\'s metrics page has no Monitoring Sheet card');
+    else {
+      if (!/Update items #10–11 in your Monitoring Sheet[^]*Once done, hit Submit/.test(await panel(t))) fail(`Day 4's Monitoring Sheet card reads: ${await panel(t)}`);
+      const pos = await t.evaluate(() => { const c = document.querySelector('.ftbf-slot.ftbf-corner'), s = c && c.closest('.ftdd-sheet'); if (!c || !s) return null;
+        const a = c.getBoundingClientRect(), b = s.getBoundingClientRect(); return { right: b.right - a.right, last: !c.nextElementSibling, metrics: /WEIGHTED AVERAGE/.test(s.textContent), only: s.classList.contains('ftbf-only') }; });
+      if (!pos || pos.right > 60 || !pos.last || !pos.metrics || pos.only) fail(`the Monitoring Sheet card should be at the lower right of the metrics page, after it: ${JSON.stringify(pos)}`);
+    }
     // 📅 Day 5's Attorney Calendar Management Activity: its 📤 Submit, as Day 2's panel, is its Done, at the end of its slides
     await open(t, 5, 's3b');
     if (!(await toPanel(t))) fail('Day 5\'s Attorney Calendar Management Activity has no Done');
