@@ -50,7 +50,9 @@ if (!/trainerfb:\$\{id\}/.test(owned) || !/rankshare:\$\{id\}/.test(owned)) fail
   const tabs = await page.evaluate(() => (document.querySelector('.lp-admin-row') || {}).innerText || '');
   if (!/Send Feedback/.test(tabs)) fail(`📝 Send Feedback is not in the Scorecard section: ${tabs}`);
   const rows = await page.$$eval('.tfb-tbl tbody tr', t => t.map(r => r.innerText.replace(/\s+/g, ' ')));
-  for (const w of ['Transcription Activity Interview Recording 1', 'Video Notes Common Terms', 'LOR Drafting Activity', 'Process Guide Sending the MedLOR']) if (!rows.some(r => r.includes(w))) fail(`"To review" has no ${w}: ${JSON.stringify(rows)}`);
+  for (const w of ['Transcription Activity Interview Recording 1', 'LOR Drafting Activity', 'Process Guide Sending the MedLOR']) if (!rows.some(r => r.includes(w))) fail(`"To review" has no ${w}: ${JSON.stringify(rows)}`);
+  // (🎬 Video Notes is gone: a trainee's old notes don't come back as something to review)
+  if (rows.some(r => r.includes('Video Notes'))) fail('"To review" still lists Video Notes');
   // the transcription: the work, the AI's evaluation, then the feedback
   await page.click('.tfb-tbl tbody tr:has-text("Interview Recording 1")'); await page.waitForTimeout(600);
   const work = await page.evaluate(() => (document.querySelector('.tfb-panel') || {}).innerText || '');

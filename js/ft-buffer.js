@@ -351,8 +351,12 @@ root.FTBuffer = {
     const s = (FTDayDecks.list(n) || [])[i]; if(!s) return false;
     const by = Object.keys(ACTS).find(k => ACTS[k].opens === s.id && k.split(":")[0] === String(n)); if(!by) return false;
     const k = ACTS[by].key || by;
-    if(!M.rec){ loadMine().then(() => { if(mine(k)) render(); }); return true; }
-    return !mine(k);
+    if(!M.rec){ loadMine().then(() => { if(mine(k)) render(); }); toast("One moment: checking your Done…"); return true; }
+    if(mine(k)) return false;
+    // say why Next doesn't move, and where the Done is (the slide carrying the task, by its step number)
+    const list = FTDayDecks.list(n) || [], at = list.findIndex(x => x.id === by.split(":")[1]);
+    toast(`🔒 ${s.h || "The next slide"} opens once you ${ACTS[by].submit ? "📤 Submit" : "mark Done"} “${ACTS[by].title.replace(/^\W+\s*/, "")}”${at >= 0 ? ` (Step ${at + 1})` : ""}.`);
+    return true;
   },
   ask(){ const h = here(); if(h) confirmBox(h); },
   cancel(){ document.querySelectorAll(".ftbf-modal").forEach(x => x.remove()); },

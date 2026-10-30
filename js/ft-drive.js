@@ -109,7 +109,8 @@ function renderMonitorPage(){
       ${!m ? `<p class="fdr-muted">Not checked yet.</p>` : m.error ? `<p class="fdr-err">⚠ ${e(m.error)}</p>` : `
       <div class="fdr-res-h"><span class="fdr-pct ${m.pct >= 100 ? "ok" : m.pct >= 60 ? "mid" : "bad"}">${m.pct}%</span><span class="fdr-muted">${m.found} of ${m.total} discussions found · checked ${e(new Date(m.checkedAt).toLocaleString())}</span>${tScore(m) != null ? `<span class="fdr-pill">🧑‍🏫 Trainer’s score ${tScore(m)}%</span>` : ""}</div>
       <table class="fdr-tbl"><thead><tr><th>Discussion</th>${["Date", "5 takeaways", "Questions", "Understanding rated"].map(h => `<th>${h}</th>`).join("")}<th>%</th></tr></thead><tbody>
-        ${(m.entries || []).map(x => `<tr><td>${e(x.topic)}</td>${x.checks.map(c => `<td class="${c.ok ? "ok" : "miss"}">${c.ok ? "✓" : "✗"}${c.label === "5 takeaways" ? ` ${x.takeaways}` : ""}</td>`).join("")}<td><b>${x.pct}%</b></td></tr>`).join("")}</tbody></table>`}
+        ${(m.entries || []).map(x => `<tr><td>${e(x.topic)}</td>${x.checks.map(c => `<td class="${c.ok ? "ok" : "miss"}">${c.ok ? "✓" : "✗"}${c.label === "5 takeaways" ? ` ${x.takeaways}` : ""}</td>`).join("")}<td><b>${x.pct}%</b></td></tr>`).join("")}
+        ${(m.optional || []).map(t => `<tr class="fdr-opt" title="Days 17–18 run when the training hours permit; not counted until you write it"><td>${e(t)} <small>(Days 17–18 · when training hours permit)</small></td><td colspan="5">not counted</td></tr>`).join("")}</tbody></table>`}
       ${m && has(m.review) ? `<div class="fdr-review"><b>Review</b><p>${e(m.review).replace(/\n/g, "<br>")}</p></div>` : ""}
       ${m && has(m.comment) ? `<div class="fdr-review fdr-trainer"><b>🧑‍🏫 Your trainer</b><p>${e(m.comment).replace(/\n/g, "<br>")}</p></div>` : ""}</div>`;
 }
@@ -336,6 +337,7 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-review{border-left:4px solid var(--navy);background:#F7F8FB;border-radius:8px;padding:8px 12px;margin:8px 0;font-size:14px;} .fdr-review p{margin:4px 0 0;} .fdr-trainer{border-color:var(--orange);}
 .fdr-tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px;} .fdr-tbl th, .fdr-tbl td{padding:6px 8px;border-top:1px solid var(--line);text-align:left;}
 .fdr-tbl th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:#6B7088;background:#F7F8FB;} .fdr-tbl td.ok{color:var(--success);} .fdr-tbl td.miss{color:var(--danger);}
+.fdr-tbl tr.fdr-opt td{color:#9AA0B4;background:#F7F8FB;font-style:italic;} .fdr-tbl tr.fdr-opt small{font-style:normal;}
 .fdr-links a, .fdr-aday a{color:var(--orange-deep);font-weight:700;} .fdr-aday{border-top:1px dashed var(--line);padding:8px 0;}
 `; document.head.appendChild(s); })();
 })();
