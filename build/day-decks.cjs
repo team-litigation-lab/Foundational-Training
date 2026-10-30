@@ -565,7 +565,7 @@ s2: html => {
 // a line, not a numbered step, that opens 📒 Monitoring Sheet
 s4: html => {
   if(!/<a class="viewer-link"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/.test(html)) throw new Error("Day 2's Homework lost the Softphones video");
-  html = html.replace(/<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/, '<a class="viewer-link" data-embed$1 data-title="Softphones: the instructional video"');
+  html = html.replace(/<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*15aa9GSp3DtOFCG2nQD4CgDPsljA1usQ2)/, '<a class="viewer-link" data-embed data-bare$1 data-title="Softphones: the instructional video"');
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
     .replace(/<p>2026 VERSION<\/p>\n<p><a [^>]*(1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r)[^>]*>[^<]*<\/a> ?<\/p>/, (m, id) =>
       `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-strip"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy" scrolling="no"></iframe></div>`)
@@ -574,12 +574,13 @@ s4: html => {
   if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out) || !/ftdd-hw-ppts/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
   const mon = /<p>Task 3 - Update items #8-9 in your monitoring sheet\.<\/p>/;
   if(!mon.test(out)) throw new Error("Day 2's Homework monitoring sheet line is no longer where the build looks for it");
-  // the Softphones task in three short lines around its video (Task, Action, Note), and no "outside training hours": it is a
-  // classroom activity
+  // the Softphones video alone (no Task line over it, no name bar: data-bare), then its Action in bold with a 📒 Monitoring
+  // Sheet button, and its Note; no "outside training hours": it is a classroom activity
   const pin = /<p>📌To be accomplished outside training hours\. 📌<\/p>\n/, soft = /<p><b>Topic: Softphones<\/b><\/p>\n<p>Task 1 – Please follow this link to view the instructional video on Softphones\.[^<]*<\/p>\n(<p><a class="viewer-link"[^]*?<\/p>\n)/;
   if(!pin.test(out) || !soft.test(out)) throw new Error("Day 2's Softphones task is no longer where the build looks for it");
-  return out.replace(pin, "").replace(soft, (m, video) => "<p><b>Task:</b> Watch ONE softphone type in this video:</p>\n" + video +
-      "<p><b>Action:</b> Log your takeaways on your monitoring sheet.</p>\n<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
+  return out.replace(pin, "").replace(soft, (m, video) => video +
+      `<p><b>Action: Log your takeaways on your</b> <a class="btn btn-navy ftdd-mon-btn" href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a></p>\n` +
+      "<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
     .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
 // 🎧 Reception Listening Activity, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): five practice calls at the Practice Lab's
@@ -818,8 +819,9 @@ const ROWS = {
       {id: "s2r", h: "Common Terms Used: the reference sheet", parts: [["<!--cut:ref-->", "<!--cut:al-->"]], fix: [["<!--cut:ref-->\n", ""]]},
       {id: "s2l", h: "Auto Liability Insurance", parts: [["<!--cut:al-->", SLOT(2, "s2-1")]], fix: [["<!--cut:al-->\n", ""]]},
       // the Personal Injury readings, read once the Common Terms tasks' 📤 Submit, at their head, is in (js/ft-buffer.js ACTS["2:s2b"]):
-      // the two readings read in the slide, a page each, under the guide's line about them; its 📌 and the assessments'
-      // homework line go (each assessment follows its video's Next: js/ft-day-decks.js ASSESS_NEXT)
+      // the two readings read in the slide, a page each, with no name bar over them (data-bare); its 📌, the guide's "While
+      // waiting for your teammates…" line and the assessments' homework line go (each assessment follows its video's Next:
+      // js/ft-day-decks.js ASSESS_NEXT)
       {id: "s2b", h: "Personal Injury Readings", parts: [[SLOT(2, "s2-1"), null]], fix: [
         ['data-title="https://drive.google.com/file/d/1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4/view?usp=sharing"', 'data-title="Personal Injury reading 1"'],
         ['data-title="https://drive.google.com/file/d/1ni4Yg-dublrci2drQhlMVaqxo53xtfP1/view?usp=sharing"', 'data-title="Personal Injury reading 2"'],
@@ -827,11 +829,11 @@ const ROWS = {
           const pin = /<p>\s*📌<\/p>\n/, hw = /<p class="li" style="--lvl:0"><span class="lbl">1\.<\/span><span><b>AS YOUR HOMEWORK<\/b>[^]*?<\/p>\n/,
             wait = /<p class="li" style="--lvl:0"><span class="lbl">2\.<\/span><span>(While waiting for your teammates to complete their tasks, please read through the articles below on Personal Injury\. Thanks\.)\s*<\/span><\/p>/;
           if(!pin.test(x) || !hw.test(x) || !wait.test(x)) throw new Error("Day 2's Personal Injury readings slide is no longer what the build looks for");
-          x = x.replace(pin, "").replace(hw, "").replace(wait, "<p>$1</p>");
+          x = x.replace(pin, "").replace(hw, "").replace(wait, "");
           ["1ZOVrwOTPEz9WuwDRbBsBCNuHqf8wb8h4", "1ni4Yg-dublrci2drQhlMVaqxo53xtfP1"].forEach((id, k) => {
             const re = new RegExp(`<p><a class="viewer-link" data-kind="doc"(?=[^>]*${id})`);
             if(!re.test(x)) throw new Error(`Day 2's Personal Injury reading ${k + 1} is no longer where the build looks for it`);
-            x = x.replace(re, (k ? '<div class="ftdd-pgbreak"></div>\n' : "") + '<p><a class="viewer-link" data-embed data-full data-kind="doc"');
+            x = x.replace(re, (k ? '<div class="ftdd-pgbreak"></div>\n' : "") + '<p><a class="viewer-link" data-embed data-full data-bare data-kind="doc"');
           });
           return x;
         }]}],

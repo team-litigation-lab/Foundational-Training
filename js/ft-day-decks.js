@@ -1717,7 +1717,12 @@ function standardRows(n, c, lid, first, title, rows){
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
   const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
-  return [...lead, ...mid, ...body, ...pqRows, ...tail];
+  const out = [...lead, ...mid, ...body, ...pqRows, ...tail];
+  // ✍️ Process Questions come straight after the Classroom Discussion (the last ▶ lesson stop), ahead of the Digital Handouts
+  // and the day's other activities
+  const pq = out.findIndex(r => /toKC\(/.test(String(r.run || ""))), cd = out.map(r => r.go === "lesson").lastIndexOf(true);
+  if(pq > cd + 1 && cd >= 0) out.splice(cd + 1, 0, ...out.splice(pq, 1));
+  return out;
 }
 // Lesson 1's ▶ Start Training (on its Dashboard card and on Day 1's card) goes to the Reading Task first, the way Know
 // Your Tools' last tool used to: "📖 Next: the Reading Task →"; the lesson deck comes after it, in Day 1's order
