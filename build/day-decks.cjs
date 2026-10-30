@@ -27,7 +27,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // (Days 5 and 13: the classroom discussion's slide only said that the lesson deck opens from ▶ Start Training, which is the
   // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
   // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
-  5: ["s2"], 13: ["s2"]};
+  5: ["s2"], 13: ["s2"],
+  // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
+  8: ["s2"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
   // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
@@ -606,7 +608,8 @@ const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
   `<li>Every intake document is extracted from your assigned Intake Packet, and every file, the Intake Packet itself included, is renamed under the firm’s naming convention. These are the exact files you upload and report on SA, so this is done before the demo.</li>` +
   `<li>Your task is posted in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>, naming the Intake Packets to save.</li>` +
   `<li>SA lets only one user in at a time: your trainer gives you access for your turn, with 10–15 minutes first to explore it.</li></ul>\n` +
-  `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n`;
+  // (the Additional Reminder opens the next page: a heading never ends one)
+  `<div class="ftdd-pgbreak"></div>\n<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n`;
 const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer Facilitated Demo, Saving the Intake Packet and Extracted Intake Documents to SA</h4>\n` +
   `<ul><li>The demo runs at the same time as the shadowing when a shadow buddy confirms a session: pull the trainees from it one by one for their individual demonstration. Without live shadowing, provide a recorded shadowing session.</li>` +
   `<li>Provide the SA credentials, the <b>2nd</b> one listed. Change it back to the 1st one at the end of each shift, and to the 2nd again whenever trainees need the CMS: this keeps the active cases in the CMS safe from unsupervised exploring, and follows the firm’s policy, as directed by the Operations Manager, that VAs are not permitted to alter it.</li>` +
@@ -806,13 +809,17 @@ const ROWS = {
       {id: "formsf", h: "AM: More Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]}]
   },
   8: {
-    // the trainer's text (#323): Topic 1, Topic 2 with its packet picker, the naming convention and the additional
-    // documents, the Live Session Instructions, this afternoon's activities; the demo tutorial is its own section (s2)
+    // the trainer's text (#323): Topic 1, Topic 2 with the trainee's assigned packet (js/ft-intake.js), the naming
+    // convention and the additional documents, the Live Session Instructions, then this afternoon's activities over three
+    // slides: the SA demonstration with its video in the slide, the Intake Mock Call Activity with the sample intake forms,
+    // and the Prototype CMS and the Call Simulator. (The demo tutorial's own section, s2, is off the deck: SKIP[8])
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
       {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<h4>Additional Instruction:</h4>"]]},
-      {id: "s1c", h: "AM: Additional Instruction: Naming Convention & Additional Intake Documents", parts: [["<h4>Additional Instruction:</h4>", "<h4>Additional Instruction: Live Session Instructions</h4>"]]},
-      {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<h4>Additional Instruction: Live Session Instructions</h4>", "<h4>Additional Instruction: This Afternoon’s Activities</h4>"]]},
-      {id: "s1e", h: "AM: Additional Instruction: This Afternoon’s Activities", parts: [["<h4>Additional Instruction: This Afternoon’s Activities</h4>", null]]}],
+      {id: "s1c", h: "AM: Additional Instruction: Naming Convention & Additional Intake Documents", parts: [["<h4>Additional Instruction:</h4>", "<p><b>1. CMS Demonstration</b></p>"]]},
+      {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
+      {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
+      {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
+      {id: "s1g", h: "AM: Intake Mock Call: the Prototype CMS & the Call Simulator", parts: [["<p>You may also explore the Prototype CMS", null]]}],
     // the demo (TRIM[8].s3), then Atty. Sandy Van's MVC intake-call video, a slide of its own after it
     s3: [{id: "s3", parts: [[null, "<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>"]]},
       {id: "s3b", h: "PM: Atty. Sandy’s Video: Intake Calling (MVC)", parts: [["<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>", null]]}]
