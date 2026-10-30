@@ -50,7 +50,9 @@ const ACTS = {
   // its own slide; its records keep the key they were saved under)
   // (Day 6's as Day 4's: the mock calls on a slide of their own after the instructions, s1b, simple; no nextDay, the day's
   // Additional Activity follows)
-  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true},
+  // (what: the trainee's name for it, on the panel and the confirmation: Day 6 is the Calendaring Activity, done on the
+  // Calendar Simulator; the trainer's tracker and scorecard keep the mock call's)
+  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true, what: "Calendaring Activity"},
   // (Days 8–16 as Day 4: the instructions and metrics on the preparation slide before, build/day-decks.cjs PREP; here, simple;
   // nextDay, as Day 4's: mock calls and demos can run into the next day, so the debrief opens it for the batch)
   "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true, nextDay: true},
@@ -112,8 +114,8 @@ function traineePanel(h){
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
   // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
-  if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
-    <p class="ftbf-lead">Hit Done when you are done with your ${a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
+  if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
+    <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
@@ -159,7 +161,7 @@ async function loadReview(){
   try{ M.review = (await sharedGet("trackerreview:" + state.traineeId)) || {}; }catch(err){}
 }
 function confirmBox(h){
-  const a = h.a, q = a.kind === "mock" ? "Have you completed your 1-on-1 mock call with the trainer?"
+  const a = h.a, q = a.what ? `Have you completed your 1-on-1 ${a.what} with the trainer?` : a.kind === "mock" ? "Have you completed your 1-on-1 mock call with the trainer?"
     : a.rec ? "Have you finished and submitted your recorded demonstration?" : "Have you completed your 1-on-1 demo with the trainer?";
   const m = document.createElement("div"); m.className = "ftbf-modal"; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true");
   m.innerHTML = `<div class="ftbf-modal-box"><p>${e(q)}</p><div class="ftbf-modal-acts"><button type="button" class="btn btn-ghost" onclick="FTBuffer.cancel()">Cancel</button>

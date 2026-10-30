@@ -1333,7 +1333,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
+      {t: "Calendaring Activity", time: "AM & PM", sub: "Your graded activity on the Calendar Simulator, with the trainer", k: "interactive", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
     tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "The time zone visible in every screenshot",
@@ -1581,10 +1581,10 @@ const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.le
 // the day a row belongs to: its slide's day, else the day it names (the LOR activity is Day 11's), else the lesson's first
 const rowDay = (c, r) => Number(r.day != null ? r.day : r.d != null ? r.d : c.days[0]);
 // a day after the discussion is named for what it holds
-const DAY_TITLES = {6: "Calendar Management Mock Calls", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
+const DAY_TITLES = {6: "Calendaring Activity", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
   11: "Insurance Communication Activities", 12: "Uploading & Sending 1P and 3P LORs", 13: "Medical Records Specialist Role",
   14: "Sending MedLOR & Requesting Records", 15: "Recorded Demonstration: MedLOR", 16: "Lien Balance Verification Request"};
-const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
+const DAY_FOCUS = {6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson

@@ -118,14 +118,14 @@ async function workerChecks() {
     if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row - 1; })))
       fail("Day 9's mock calls have no preparation slide, a row of its own, before them");
 
-    // ☎ Day 6's mock calls, as Day 4's: Mock Calls Ongoing and Done → the dialog → ✅ Done, waiting for the debrief
+    // ☎ Day 6's Calendaring Activity, as Day 4's mock calls: Calendaring Activity Ongoing and Done → the dialog → ✅ Done, waiting for the debrief
     await open(t, 6, 's1b-2');
     if (!(await toPanel(t))) fail('Day 6\'s mock calls have no Done panel');
     const p6 = await panel(t);
-    if (!/Mock Calls Ongoing/.test(p6) || !/Hit Done when you are done with your Mock Call\./.test(p6) || /Practice Buffer/.test(p6)) fail(`Day 6's mock call panel reads: ${p6.slice(0, 200)}`);
+    if (!/Calendaring Activity Ongoing/.test(p6) || !/Hit Done when you are done with your Calendaring Activity\./.test(p6) || /Mock Call|Practice Buffer/.test(p6)) fail(`Day 6's Calendaring Activity panel reads: ${p6.slice(0, 200)}`);
     await t.click('.ftbf .ftbf-done'); await t.waitForTimeout(300);
     const q = await t.evaluate(() => (document.querySelector('.ftbf-modal') || {}).innerText || '');
-    if (!/Have you completed your 1-on-1 mock call with the trainer\?/.test(q) || !/Cancel/.test(q) || !/Yes, I’m Done/.test(q)) fail(`the confirmation reads: ${q}`);
+    if (!/Have you completed your 1-on-1 Calendaring Activity with the trainer\?/.test(q) || !/Cancel/.test(q) || !/Yes, I’m Done/.test(q)) fail(`the confirmation reads: ${q}`);
     await t.click('.ftbf-modal .btn-ghost'); await t.waitForTimeout(300);
     if (await t.evaluate(() => !!document.querySelector('.ftbf-modal'))) fail('Cancel didn\'t close the confirmation');
     if ((await get(t, 'buffer:' + tia) || { acts: {} }).acts['6:s1']) fail('Cancel marked the trainee done');
@@ -171,5 +171,5 @@ async function workerChecks() {
   try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Mock Calls Ongoing and its confirmation; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
+  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Calendaring Activity Ongoing and its confirmation; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
 })();
