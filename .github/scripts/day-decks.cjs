@@ -114,7 +114,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   // no next-step band on the dashboard any more: the scores sit beside the orientation card instead
   if (await page.$('main .ftn')) fail('📚 Dashboard still has the next-step band');
   if (!(await page.$('.dash-pair-now .dash-side'))) fail('the scores are not in the top row beside the orientation card');
-  // the days without a classroom discussion still end on 📌 From your trainer
+  // the days without a classroom discussion (their cards and decks have no 📌 From your trainer)
   const want = await page.evaluate(() => FTDayDecks.instructionOnlyDays());
   if (JSON.stringify(want) !== JSON.stringify([4, 6, 8, 9, 11, 12, 14, 15, 16])) fail(`the days with no classroom discussion are ${want.join(', ')}`);
   // 📚 Dashboard is the eight lessons on one screen: the portal's lesson card each, in lesson order, its buttons in
@@ -292,34 +292,16 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s first slide of its own is "' + s.h + '"');
   // (its tutorial video plays in the slide, as every video the platform can play does; no link to open it elsewhere)
   if (!s.player || s.vlinks) fail(`Day 16's tutorial video doesn't play in the slide: ${JSON.stringify({ player: s.player, links: s.vlinks })}`);
-  // 📌 a no-discussion day: the trainer adds the day's activities and instructions on its last slide
+  // 📌 no "From your trainer: activities & instructions" slide on any deck, nor its card row, even with additions saved
   const extrasBefore = await get('settings:dayextras');
-  await put('settings:dayextras', { days: {} });
-  await page.evaluate(() => FTDayDecks.trainer(4)); await page.waitForTimeout(1200);
-  if (!(await page.$('.ftdd-xform'))) fail('Day 4\'s last slide has no form for the trainer');
-  await page.evaluate(() => FTDayDecks.preset(4, 0)); await page.waitForTimeout(800);
-  await page.selectOption('#ftddXKind', 'instruction');
-  await page.fill('#ftddXTitle', 'Wait for your turn <b>quietly</b>');
-  await page.fill('#ftddXText', 'Keep your camera on.\nPractise until your name is called.');
-  await page.evaluate(() => FTDayDecks.addX(4)); await page.waitForTimeout(800);
-  const ex = await get('settings:dayextras'), d4 = (ex && ex.days && ex.days[4]) || [];
-  if (d4.length !== 2 || d4[0].kind !== 'practice' || !/call\.html\?program=FT&line=Reception/.test(d4[0].url) || d4[1].title !== 'Wait for your turn <b>quietly</b>')
-    fail(`the trainer's Day 4 additions weren't saved: ${JSON.stringify(d4)}`);
-  // a trainee on Day 4 sees them, read-only
+  await put('settings:dayextras', { days: { 4: [{ kind: 'instruction', title: 'Wait for your turn', text: 'Keep your camera on.' }] } });
   await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; for (let l = 1; l <= 4; l++) state.progress[l] = { done: true, studied: true }; }, [id]);
   await put('settings:opendays', { all: [1, 2, 3, 4, 5], batches: {} });
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-  // (Day 4 is Part 2 of the PI Workflow / Reception card)
-  if (await page.evaluate(() => { const b = document.querySelector('#dayl-3 .ftseg-b[data-day="4"]'); return !b || b.classList.contains('locked'); })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
-  // the trainer's additions are a row of their own on the lesson's Classroom Activity card, and it opens their slide
   await page.click('#dayl-3 .ftseg-b[data-day="4"]'); await page.waitForTimeout(1500);
-  await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer")'); await page.waitForTimeout(1500);
-  const tv = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', steps: document.querySelectorAll('.ftdd-x').length, form: !!document.querySelector('.ftdd-xform'),
-    sim: !!document.querySelector('.ftdd-x a[href*="call.html"]'), bold: !!document.querySelector('.ftdd-x b b'), text: (document.querySelector('.ftdd-body') || {}).innerText || '' }));
-  if (!/From your trainer/.test(tv.h)) fail(`📌 didn't open Day 4's "From your trainer" slide: ${tv.h}`);
-  if (tv.steps !== 2 || !tv.sim) fail('the trainee doesn\'t see the trainer\'s two Day 4 steps with the Call Simulator link');
-  if (tv.form) fail('a trainee sees the trainer\'s form');
-  if (tv.bold || !/<b>quietly<\/b>/.test(tv.text)) fail('a title from the trainer was drawn as HTML');
+  const noTrainer = await page.evaluate(() => ({ row: [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(r => /From your trainer/.test(r.innerText)),
+    slides: Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.list(n).some(s => s.trainer || s.placeholder || /From your trainer/i.test(s.h || ''))) }));
+  if (noTrainer.row || noTrainer.slides.length) fail(`a "From your trainer" row or slide is still on the decks: ${JSON.stringify(noTrainer)}`);
   // a slide too long even at half size is read in pages, and Next turns the page before the slide (Day 8's Topic 2, the
   // intake documents: its tasks, the packet picker and the worksheet)
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(8, FTDayDecks.at(8, 's1b')); }); await page.waitForTimeout(1600);
