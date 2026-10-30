@@ -1754,9 +1754,9 @@ function dayCard(n, ex){
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
-        ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
+        ${DAY_OBJECTIVE[n] ? `<p class="ftlc-obj"><b class="ftlc-h2">🎯 Objective</b> ${e(DAY_OBJECTIVE[n])}</p>` : ""}
         ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
-        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p>${c.takeaways.length > 4 ? `<p class="ftlc-tk">${c.takeaways.map(e).join(" · ")}</p>` : `<ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>`}` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
         ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
         ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
@@ -2428,7 +2428,12 @@ main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static
 .ftlc-focus-t::before{content:"";flex:0 0 auto;width:10px;height:10px;background:#2E5A9A;border-radius:2px;}
 .ftlc-h2{margin:12px 0 4px !important;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#B5651F;}
 .ftlc-focus ul{margin:0;padding-left:18px;display:grid;gap:3px;}
-.ftlc-obj{font-weight:600;color:#1B1E2E;}
+.ftlc-obj{font-weight:600;color:#1B1E2E;margin-top:10px !important;}
+.ftlc-obj > .ftlc-h2{margin:0 6px 0 0 !important;}
+/* a long takeaways list (Day 3's six) on one line, so the 🎯 Objective above it doesn't make the focus outgrow the rows */
+.ftlc-tk{font-weight:600;}
+/* a card of more than six rows gives its focus the narrower column: its text a little smaller, so the card keeps Day 1's size */
+main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide .ftlc-focus{font-size:14.5px;}
 .ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
