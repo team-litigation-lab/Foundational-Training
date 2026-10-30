@@ -2719,6 +2719,7 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
    half the box and scaled up to fill it) */
 .ft-body .ftdd-embed.ftdd-embed-folder-big{height:max(360px, calc(var(--ftdd-room, 70vh) - 170px));}
 .ft-body .ftdd-embed.ftdd-embed-folder-big iframe{width:50%;height:50%;transform:scale(2);transform-origin:0 0;}
+.ft-body .ftdd-embed.ftdd-embed-folder-center{max-width:1280px;margin-left:auto;margin-right:auto;}
 /* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
 /* 📅 Day 5's sample event editor, drawn (Google Calendar's dark editor): the time zone boxed in red, as the guide's picture */
 .ft-body .ftdd-gcal{background:#1F1F1F;border-radius:10px;padding:12px 14px;margin:8px 0;color:#E3E3E3;font:500 14px/1.3 'Inter',system-ui,sans-serif;}
