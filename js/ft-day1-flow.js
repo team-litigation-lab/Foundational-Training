@@ -35,6 +35,7 @@ function stepsFor(batch){ const o = state.ftDay1Steps || {}, sc = window.FTDayLo
 // has the trainer set this batch's Day 1 steps of its own (settings:day1steps batches)?
 const ownSteps = batch => ((state.ftDay1Steps || {}).batches || {})[key(batch)] != null;
 function active(){
+  return false;   // ✂ the segment locks are off: Day 1 opens as a whole with its lesson (js/ft-day-locks.js enforced)
   if(!state.traineeId || state.isAdmin || state.adminPreview || !state.ftOpenDays) return false;   // (nothing decided before the open lessons load)
   const p = (state.progress || {})[1]; if(p && p.done) return false;
   const o = state.ftOpenDays || {}, open = [].concat(o.all || [], (o.batches || {})[key(state.traineeBatch)] || []).map(Number);

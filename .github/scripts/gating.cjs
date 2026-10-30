@@ -1,6 +1,6 @@
 // 🔓 The trainer sets the pace: a lesson card (its segment per day, js/ft-day-locks.js) waits for the trainer to open that
 //   lesson for the batch (📅 Open Lessons, settings:opendays), and a day far ahead stays locked until then; the steps
-//   inside a day are day-locks.cjs's. A trainer (and a trainer in Trainee view) sees all of it.
+//   inside a day are open with it (next-lesson.cjs). A trainer (and a trainer in Trainee view) sees all of it.
 // Usage: NODE_PATH=…/node_modules node .github/scripts/gating.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const signIn = require('./sign-in.cjs');
