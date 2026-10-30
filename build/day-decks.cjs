@@ -827,6 +827,8 @@ const edges = x => { let y = x, was; const rule = /^\s*(?:<hr class="stars">|<p>
 // their Drive link on Day 11, as Day 1's reading is (its header and the "Name of VA / Date Taken" fields are the form's, not the text)
 const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
+// the platform's LOR Drafting tool, where Day 11's 1P and 3P letters are drafted
+const LOR_TOOL = `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`;
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
@@ -1016,11 +1018,17 @@ const ROWS = {
   11: {
     // the LOR Drafting Activity: its guidelines read over two slides (Activity 1: 1P, Activity 2: 3P), then the templates,
     // the case notes and the reminders, with the platform's LOR Drafting tool
-    s1: [{id: "s1", h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, '<hr class="stars">\n<p>As soon as you’re done with Activities 1 &amp; 2']]},
-      {id: "s1b", h: "AM: LOR Drafting Activity", read: true, parts: [['<hr class="stars">\n<p>As soon as you’re done with Activities 1 &amp; 2', "<h3>Activity 2: "]]},
+    // (the evaluation's introduction is one block, read on one page, without the guide's opening line; it ends on the
+    // LOR drafting that follows Activities 1 & 2, pointed at the platform's LOR Drafting tool, not the guide's screenshot
+    // of the Word files)
+    s1: [{id: "s1", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, SLOT(11, "s1-3")]],
+        fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""],
+          ['<hr class="stars">\n', ""],
+          ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
+      {id: "s1b", h: "AM: LOR Drafting Activity", read: true, parts: [[SLOT(11, "s1-3"), "<h3>Activity 2: "]]},
       {id: "s1b-2", h: "AM: LOR Drafting Activity", read: true, parts: [["<h3>Activity 2: ", "<p>1P LOR Template</p>"]]},
       {id: "s1b-3", h: "AM: LOR Drafting Activity: Templates, Case Notes & Reminders", parts: [["<p>1P LOR Template</p>", null]],
-        post: `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`}]
+        post: LOR_TOOL}]
   },
   12: {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
