@@ -630,6 +630,10 @@ function launchSlide(s){
   // (no AI discussion video on the decks; a handouts stop with no handouts here: where they are)
   if(/ftVideoOrAsk/.test(r.run || "")) return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     <p class="ftdd-dv-sub">The digital handouts are posted in the training GC.</p></div>`;
+  // 📝 Day 3's Reception Listening Activity answers: the answer sheet itself, on the slide (js/ft-listening.js)
+  const sheet = /FTListen\.open\('recact'\)/.test(r.run || "") && root.FTListen && FTListen.sheet ? FTListen.sheet("recact") : "";
+  if(sheet) return `<p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p>
+    <div class="ftdd-lnsheet">${sheet}</div>`;
   const label = r.go === "lesson" ? "▶ Start Training" : /toKC/.test(r.run || "") ? "✍️ Knowledge Check →" : /ftVideoOrAsk/.test(r.run || "") ? "🎬 Open the video" : "Open →";
   return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
@@ -2726,6 +2730,9 @@ main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
+/* 📝 an answer sheet on its slide: one block that scrolls in itself, so the slide stays one page */
+.ft-body .ftdd-lnsheet{max-height:max(360px, 58vh);overflow:auto;padding:2px 4px 8px;display:flex;flex-direction:column;gap:10px;text-align:left;}
+.ft-body .ftdd-lnsheet > *{flex-shrink:0;margin:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
 /* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}

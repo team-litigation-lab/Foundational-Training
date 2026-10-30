@@ -76,7 +76,7 @@ function loadSets(force){
   if(!force && X.data && Date.now() - X.at < 120000) return Promise.resolve(X.data);
   X.loading = sharedGet("settings:listening").then(v => { X.data = v && typeof v === "object" && v.sets ? v : {sets: {}}; X.at = Date.now(); })
     .catch(() => { if(!X.data) X.data = {sets: {}}; })
-    .then(() => { X.loading = null; if(state.view === "listening" || (state.view === "admin" && state.adminTab === "listening")) render(); return X.data; });
+    .then(() => { X.loading = null; if(state.view === "listening" || state.view === "daydeck" || (state.view === "admin" && state.adminTab === "listening")) render(); return X.data; });
   return X.loading;
 }
 // a set as the trainee sees it: the guide's, with the trainer's changes over it
@@ -95,7 +95,7 @@ function load(force){
   if(!force && R.recId === id && R.rec) return Promise.resolve();
   R.recId = id;
   return sharedGet("listening:" + id).then(v => { R.rec = v && typeof v === "object" && v.logs ? v : {logs: {}};
-    if(state.view === "listening") render(); }).catch(() => { R.rec = R.rec || {logs: {}}; });
+    if(state.view === "listening" || state.view === "daydeck") render(); }).catch(() => { R.rec = R.rec || {logs: {}}; });
 }
 const logOf = (sid, n) => ((R.rec || {logs: {}}).logs[sid] || {})[n] || {};
 const countDone = (rec, s) => { const l = ((rec || {logs: {}}).logs || {})[s.id] || {}; let k = 0; for(let i = 1; i <= s.n; i++) if(done(l[i], s)) k++; return k; };
@@ -132,6 +132,14 @@ function recHtml(s, r, next){
           : `<input id="ln_${e(s.id)}_${r.n}_${f[0]}" value="${e(log[f[0]] || "")}" placeholder="${e(f[3])}" autocomplete="off">`}</label>`).join("")}
       <div class="w ln-act"><button class="btn btn-navy btn-sm" ${R.saving[key] ? "disabled" : ""} onclick="FTListen.save('${e(s.id)}',${r.n})">${R.saving[key] ? "Saving…" : "💾 Save this log"}</button></div></div>` : ""}</div>`;
 }
+// 📝 an activity's answer sheet: its progress, then a card per call with its player and its form (the page, and the
+// Day 3 deck's Answers slide, js/ft-day-decks.js)
+function actSheet(cur){
+  const k = countDone(R.rec, cur), next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
+  return `<div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · ${cur.n} practice calls</b><p>Your trainer reads your answers.</p></div>
+      <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
+    ${cur.recs.map(r => recHtml(cur, r, next)).join("")}`;
+}
 function renderPage(){
   if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   // a set opens with its day: 🔓 once the trainer has opened the day (js/ft-day-locks.js); a trainee catches up on any set opened
@@ -142,10 +150,7 @@ function renderPage(){
   // 📝 the Reception Listening Activity's answers: a page of its own, its five calls only
   if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h1>📝 Reception Listening Activity: Answers</h1>
       <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p></div>
-    <div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · 5 practice calls</b><p>Your trainer reads your answers.</p></div>
-      <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
-    ${(() => { const next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
-      return cur.recs.map(r => recHtml(cur, r, next)).join(""); })()}
+    ${actSheet(cur)}
     ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 'end-day')">✅ End of training →</button></div>` : ""}`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
@@ -174,6 +179,10 @@ window.FTListen = {
   // the trainer's titles and links, for the Activity deck's Call Listening slide (js/ft-day-decks.js listenSlide)
   loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
+  // the answer sheet drawn on a deck's slide (Loading… until the log and the sets are read; they draw the deck again)
+  sheet(sid){ if(!state.traineeId && !state.isAdmin && !state.adminPreview) return "";
+    if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
+    return actSheet(setLive(sid)); },
   set(sid){ R.set = sid; render(); },
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },
   state: () => R, reload: () => { X.at = 0; return Promise.all([load(true), loadSets(true)]); }
