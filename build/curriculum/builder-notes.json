@@ -1,0 +1,18 @@
+{
+  "_": "Notes in the Training Guide that are instructions for building the platform, not training content. convert.py (builder_notes.py) takes them out of everything it writes; .github/scripts/builder-notes.cjs fails the checks if one is on the site. Each is a case-insensitive regular expression that works in both Python and JavaScript.",
+  "notes": [
+    "\\bembed (?:this|these|it|them|here)\\b",
+    "\\blink (?:it |them |this |these )?instead of embed(?:ding)?\\b",
+    "\\bdivide the [\"“']?(?:▶ )?start training[\"”']? button",
+    "\\bclaude (?:to|should|will|can|must) (?:come up|create|build|make|generate|write|design|draft)\\b",
+    "\\bfocus (?:in|on) automation\\b",
+    "\\bact as an? (?:senior )?LMS engineer\\b",
+    "\\b(?:this|it) (?:needs|has|is) (?:to be )?replicated\\b",
+    "\\b(?:split|divide|break)(?: it| this| the [\\w ]{1,30}?)? (?:into|in) part 1\\b",
+    "\\bpart 1\\s*/\\s*part 2\\b"
+  ],
+  "_blocks": "A note that opens a whole block of builder instructions (a prompt written for the AI that builds the platform): everything after it, to the next heading, row of stars, numbered part or facilitator's note, is taken out too.",
+  "blocks": [
+    "\\bact as an? (?:senior )?LMS engineer\\b"
+  ]
+}
