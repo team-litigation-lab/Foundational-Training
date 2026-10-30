@@ -1395,8 +1395,8 @@ const LESSON_CARDS = {
       {t: "Authorization Decision Tree", sub: "Who may be told what", k: "read", d: 3, s: "s1"},
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT; they replace
-      // Carlos's recordings)
+      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT; then the optional
+      // Listening Activity, the same calls (build/day-decks.cjs REF_RECS), on the same step; Carlos's recordings are off it)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · the 5 data points into the worksheet", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
