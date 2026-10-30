@@ -84,7 +84,7 @@ async function workerChecks() {
     expect('a wrong end time', change('6.1', { et: '11:00' }), ['6.1:End time']);
     expect('a wrong date', change('5', { sd: '2026-07-10', ed: '2026-07-10' }), ['5:Start date', '5:End date']);
     expect('an end before the start', change('4', { st: '07:30', et: '06:30' }), ['4:Start time', '4:End time', '4:Ends after it starts']);
-    expect('a missing guest', change('7', { guests: 'Martin Anthony, Michelle Velarde, John Michael Dela Cruz' }), ['7:Guests']);
+    expect('a missing guest', change('7', { guests: 'Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz' }), ['7:Guests']);
     expect('a wrong reminder time', change('9', { ramt: '15' }), ['9:Reminder time']);
     expect('a wrong reminder type', change('2', { rtype: 'Notification' }), ['2:Reminder type']);
     expect('no reminder', change('10', { rtype: '', ramt: '' }), ['10:Reminder type', '10:Reminder time']);
@@ -205,7 +205,7 @@ async function workerChecks() {
   await page.fill('#cc-title-1', 'Client Meeting – Alyssa Lynn Arehart');
   await page.fill('#cc-sd-1', '2026-07-06'); await page.fill('#cc-st-1', '10:00'); await page.fill('#cc-ed-1', '2026-07-06'); await page.fill('#cc-et-1', '11:00');
   await page.selectOption('#cc-tz-1', 'America/New_York');
-  await page.fill('#cc-loc-1', 'Conference Room B'); await page.fill('#cc-guests-1', 'Martin Anthony, Michelle Velarde');
+  await page.fill('#cc-loc-1', 'Conference Room B'); await page.fill('#cc-guests-1', 'Martin Anthony Gan, Michelle Velarde');
   await page.selectOption('#cc-rtype-1', 'Notification'); await page.fill('#cc-ramt-1', '15');
   await page.fill('#cc-notes-1', 'Client consultation for Alyssa Lynn Arehart regarding a car accident case. Ensure all case documents are accessible.');
   await page.waitForTimeout(400);

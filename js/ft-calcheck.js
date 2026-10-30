@@ -108,7 +108,7 @@ const UNITS = [["minutes", 1], ["hours", 60], ["days", 1440], ["weeks", 10080]];
    dir: the way a flight goes (its title mustn't name it the other way round); not: words that name the other travel block.
    alt: the activity gives the travel to San Francisco's "1-day reminder (email)" and its notes for the whole travel block
    (8.2 and 8.3), and the return travel's for 8.6 and 8.7, so they count once per block, on whichever event holds them. */
-const MA = "Martin Anthony", MV = "Michelle Velarde", TEAM = [MA, MV, "John Michael Dela Cruz", "Lei Lee Abut"];
+const MA = "Martin Anthony Gan", MV = "Michelle Velarde", TEAM = [MA, MV, "John Michael Dela Cruz", "Lei Lee Ann Abut"];
 const KEY = [
   {n: "1", name: "Client Meeting", title: [["client meeting"]], date: "2026-07-06", start: "10:00", end: "11:00", tz: "PST",
     loc: ["conference room b"], locShow: "Conference Room B", guests: [MA, MV], rem: {type: "Notification", m: 15, show: "15 minutes"},
