@@ -2,8 +2,8 @@
 //   - the worker: a trainee marks only their own Done (at the server's time), can't undo it or release the batch, and
 //     can't write another trainee's; the trainer writes the release, which the trainee reads;
 //   - every mock call and demo is Day 4's: a trainee sees only Mock Calls Ongoing (or Demos Ongoing), no Done, its
-//     instructions and metrics on the preparation slide before it (Days 8 and 9); on Day 6's Calendar Management mock
-//     calls (s1b-2) the trainer marks a trainee done, and their slide shows ✅ Done and the wait for the debrief; a
+//     instructions and metrics on the preparation slide before it (Days 8 and 9); on Day 9's Intake mock calls (s3b)
+//     the trainer marks a trainee done, and their slide shows ✅ Done and the wait for the debrief; a
 //     buffer slide (Day 9), Day 5's Monitoring Sheet update and a demo (Day 8) get their own screens; other slides get none;
 //   - the trainer, on the same slide: Completed X / N, Waiting / Done per trainee, Start Group Debrief locked until all
 //     are done, Mark done, the 🎉 banner, the release (the trainee's slide moves on by itself), 📋 Score into
@@ -57,18 +57,18 @@ async function workerChecks() {
     openWas = await get(t, 'settings:opendays');
     await put(t, 'settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8, 9], batches: {} });
     await t.evaluate(() => typeof ftLoadOpenDays === 'function' && ftLoadOpenDays());
-    // where Activity Locks run (js/ft-day-locks.js), Day 6 is held at its mock calls: the release must open the next step
+    // where Activity Locks run (js/ft-day-locks.js), Day 9 is held at its mock calls: the release must open the next step
+    // (Day 9's Intake mock calls: Day 6's One-on-One slide, which this checked before, is off the deck)
     locks = await t.evaluate(() => !!window.FTDayLocks);
     if (locks) {
       stepsWas = await get(t, 'settings:daysteps');
-      await t.evaluate(() => FTDayDecks.open(6, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 6's steps are known)
-      const s6 = await t.evaluate(() => { const i = FTDayDecks.at(6, 's1b-2'); const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
-      if (!s6) fail('Day 6\'s mock call step isn\'t among its Activity Locks steps');
-      // (Day 6's mock calls, the guide's s1 cut at its activities, are their own slide after the instructions: s1b-2, continuing
-      // the card's first row; its records keep 6:s1)
-      const all = Object.assign({}, (stepsWas || {}).all || {}, { 6: s6 });
+      await t.evaluate(() => FTDayDecks.open(9, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 9's steps are known)
+      const s9 = await t.evaluate(() => { const i = FTDayDecks.at(9, 's3b'); const x = FTDayLocks.steps(9).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+      if (!s9) fail('Day 9\'s mock call step isn\'t among its Activity Locks steps');
+      // (its records keep 9:s3)
+      const all = Object.assign({}, (stepsWas || {}).all || {}, { 9: s9 });
       // (a count in card-row steps, flagged so: js/ft-day-locks.js reads an unflagged one as a count of the old slide steps)
-      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 6: 1 }), batches: {} };
+      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 9: 1 }), batches: {} };
       await put(t, 'settings:daysteps', Object.assign({}, stepsWas || {}, { all, batches: {}, rows }));
       await t.evaluate(() => ftLoadOpenDays());
     }
@@ -118,21 +118,15 @@ async function workerChecks() {
     if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row - 1; })))
       fail("Day 9's mock calls have no preparation slide, a row of its own, before them");
 
-    // ☎ Day 6's Calendaring Activity, as Day 4's mock calls: Calendaring Activity Ongoing and no Done (the trainer marks it)
-    await open(t, 6, 's1b-2');
-    if (!(await toPanel(t))) fail('Day 6\'s mock calls have no panel');
-    const p6 = await panel(t);
-    if (!/Calendaring Activity Ongoing/.test(p6) || /Hit Done/.test(p6) || (await t.$('.ftbf .ftbf-done')) || /Mock Call|Practice Buffer/.test(p6)) fail(`Day 6's Calendaring Activity panel reads: ${p6.slice(0, 200)}`);
-
     // 🧑‍🏫 the trainer's tracker on the same slide: the trainer marks Tia done, and Tia's slide says so by itself
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });
-    await open(a, 6, 's1b-2'); await a.waitForTimeout(1500);
+    await open(a, 9, 's3b'); await a.waitForTimeout(1500);
     await a.evaluate(b => FTBuffer.batch(b), BATCH); await a.waitForTimeout(300);
     await a.evaluate(id => FTBuffer.mark(id, true), tia); await a.waitForTimeout(1200);
-    if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['6:s1']) fail('the trainer\'s Mark done wasn\'t saved');
+    if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['9:s3']) fail('the trainer\'s Mark done wasn\'t saved');
     await t.waitForTimeout(23000); await toPanel(t);
-    const w6 = await panel(t);
-    if (!/✅ Done/.test(w6) || !/Waiting for the group debrief/.test(w6) || /Debrief Prep/.test(w6)) fail(`Day 6's Done, marked by the trainer, reads on the trainee's slide: ${w6.slice(0, 200)}`);
+    const w9 = await panel(t);
+    if (!/✅ Done/.test(w9) || !/Waiting for the group debrief/.test(w9) || /Debrief Prep/.test(w9)) fail(`Day 9's Done, marked by the trainer, reads on the trainee's slide: ${w9.slice(0, 200)}`);
     const tr = () => a.evaluate(() => { const x = document.querySelector('.ftbf-tr'); return x ? { text: x.innerText, locked: x.querySelector('.ftbf-foot .ftbf-done').disabled, banner: (x.querySelector('.ftbf-banner') || {}).innerText || '' } : null; });
     let v = await tr();
     if (!v) fail('the trainer has no tracker on the mock call slide');
@@ -144,11 +138,11 @@ async function workerChecks() {
       v = await tr();
       if (!/Completed: 2 \/ 2 Trainees/.test(v.text) || v.locked || !/🎉 All trainees have completed their mock calls! You are ready to begin the debrief\./.test(v.banner)) fail(`all done, the tracker reads: ${JSON.stringify(v).slice(0, 300)}`);
       await a.click('.ftbf-tr .ftbf-foot .ftbf-done'); await a.waitForTimeout(2200);
-      for (const id of [ray, tia]) if (!(((await get(a, 'buffer:' + id)) || {}).released || {})['6:s1']) fail(`Start Group Debrief didn't release ${id}`);
+      for (const id of [ray, tia]) if (!(((await get(a, 'buffer:' + id)) || {}).released || {})['9:s3']) fail(`Start Group Debrief didn't release ${id}`);
       if (locks) {
-        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const i = FTDayDecks.at(6, 's1b-2') + 1; const x = FTDayLocks.steps(6).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
-        if (Number((((ds || {}).batches || {})[b] || {})[6]) !== want) fail(`the release didn't unlock Day 6's next step for the batch: ${JSON.stringify((ds || {}).batches)}`);
-        if (!((((ds || {}).rows || {}).batches || {})[b] || {})[6]) fail(`the release didn't flag Day 6's count as a card-row step: ${JSON.stringify((ds || {}).rows)}`);
+        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const i = FTDayDecks.at(9, 's3b') + 1; const x = FTDayLocks.steps(9).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+        if (Number((((ds || {}).batches || {})[b] || {})[9]) !== want) fail(`the release didn't unlock Day 9's next step for the batch: ${JSON.stringify((ds || {}).batches)}`);
+        if (!((((ds || {}).rows || {}).batches || {})[b] || {})[9]) fail(`the release didn't flag Day 9's count as a card-row step: ${JSON.stringify((ds || {}).rows)}`);
       }
       // the trainee's slide moves on by itself (it checks every 20 s)
       const was = await t.evaluate(() => FTDayDecks.state().i);
@@ -158,13 +152,13 @@ async function workerChecks() {
       // 📋 Score: the trainee's scorecard in Trainer Inputs, and back
       await a.evaluate(id => FTBuffer.score(id), ray); await a.waitForTimeout(2500);
       const sc = await a.evaluate(() => [state.view, state.adminTab, (document.querySelector('.fss-cellform b') || {}).innerText || '', !!document.querySelector('.ftbf-back')]);
-      if (sc[0] !== 'admin' || sc[1] !== 'trainerinputs' || !/Ray Buffer · Calendar Management Mock Call/.test(sc[2]) || !sc[3]) fail(`📋 Score didn't open the trainee's scorecard: ${JSON.stringify(sc)}`);
+      if (sc[0] !== 'admin' || sc[1] !== 'trainerinputs' || !/Ray Buffer · Intake Mock Call/.test(sc[2]) || !sc[3]) fail(`📋 Score didn't open the trainee's scorecard: ${JSON.stringify(sc)}`);
       await a.click('.ftbf-back'); await a.waitForTimeout(2000);
-      if (!(await a.evaluate(() => state.view === 'daydeck' && FTDayDecks.state().day === 6 && !!document.querySelector('.ftbf-tr')))) fail('↩︎ Back didn\'t return to the live session');
+      if (!(await a.evaluate(() => state.view === 'daydeck' && FTDayDecks.state().day === 9 && !!document.querySelector('.ftbf-tr')))) fail('↩︎ Back didn\'t return to the live session');
     }
   } catch (err) { fail('test crashed: ' + err.message); }
   try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Calendaring Activity Ongoing with no Done, marked by the trainer; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
+  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 9\'s Intake mock calls with no Done, marked by the trainer; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
 })();
