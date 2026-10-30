@@ -285,8 +285,8 @@ const NOLOAD = "The training couldn’t load. Check your connection and try agai
 // "Classroom Discussion on PI Workflow, Reception Training and Call Listening") is Part 1, on the PI Process Flow card,
 // titled "Personal Injury Process Flow / Reception" (CARD_TITLES); Day 4 is Part 2, on Receptionist Training's (its Day 3
 // isn't a button of its own: it is that Part 1). Medical Records: Part 1 MedLOR (Days 13–15), Part 2 Lien Balance
-// Verification (Day 16). Calendaring is its mock calls only (Day 6): one Start, no Day 5 part
-const PARTS = {4: [[4]], 5: [[6]], 8: [[13, 14, 15], [16]]};
+// Verification (Day 16)
+const PARTS = {4: [[4]], 8: [[13, 14, 15], [16]]};
 // (a card whose parts are numbered on from another card's, or a one-part card that is a Part: the labels it shows)
 const PART_LABELS = {3: ["Part 1"], 4: ["Part 2"]};
 const CARD_TITLES = {3: "Personal Injury Process Flow / Reception"};

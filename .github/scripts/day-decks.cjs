@@ -116,11 +116,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    // (Personal Injury Process Flow and Receptionist Training: Day 3's session is Part 1 on the first, Day 4 Part 2 on the
-    // second; Calendaring is its mock calls only, one Start opening Day 6)
-    const want = { 'dayl-3': ['Part 1'], 'dayl-4': ['Part 2'], 'dayl-5': ['Start'] }[c.id] || (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
+    // (Personal Injury Process Flow and Receptionist Training: Day 3's session is Part 1 on the first, Day 4 Part 2 on the second)
+    const want = { 'dayl-3': ['Part 1'], 'dayl-4': ['Part 2'] }[c.id] || (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
     if (c.segs.join() !== want.join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
-    if (c.first !== 'dayd-' + (c.id === 'dayl-5' ? 6 : c.days[0])) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
+    if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
   // the eight fit one screen
