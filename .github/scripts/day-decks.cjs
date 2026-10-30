@@ -323,14 +323,13 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(700);
   const after = await page.evaluate(() => ({ i: FTDayDecks.state().i, page: FTDayDecks.state().page, mark: (document.querySelector('.ftdd-n') || {}).innerText || '' }));
   if (after.i !== paged.i || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
-  // the slide says what it opens: the Call Listening log on its own slide (and no 📘 Open the lesson on Day 7's lesson stop:
-  // the lesson opens from the Dashboard)
-  await page.evaluate(() => FTDayDecks.open(7, FTDayDecks.list(7).findIndex(s => s.launch && s.launch.go === 'lesson'))); await page.waitForTimeout(1200);
-  const acts = await page.evaluate(() => [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()));
-  if (acts.some(x => /Open the lesson/.test(x))) fail(`a classroom discussion slide still has its lesson button: ${JSON.stringify(acts)}`);
-  const listen = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
-    for (let i = 0; i < n; i++) { FTDayDecks.to(i); if (/Call Listening/.test((document.querySelector('.ftdd-ribbon span') || {}).textContent || '')) return [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()); } return null; });
-  if (!listen || !listen.some(x => /Call Listening Log/.test(x))) fail(`the Call Listening slide has no log button: ${JSON.stringify(listen)}`);
+  // no deck carries link pills on a slide's bar (🎧 Call Listening Log, ✍️ Knowledge Check, ☎ Practice Session, 📅 …) nor the
+  // time-of-day chip (🌅 Morning, 🌇 Afternoon …), nor a link pill on a Training Agenda row: every slide of Day 7, the Call
+  // Listening one included
+  await page.evaluate(() => FTDayDecks.open(7, 0)); await page.waitForTimeout(1200);
+  const pills = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length, out = [];
+    for (let i = 0; i < n; i++) { FTDayDecks.to(i); const x = document.querySelectorAll('.ftdd-acts, .ftdd-time, .ftdd-ag-go').length; if (x) out.push(i); } return { n, out }; });
+  if (!pills.n || pills.out.length) fail(`Day 7 slides still carry link pills or the time-of-day chip: ${JSON.stringify(pills)}`);
   // 🗺 Map: the training roadmap, every lesson with its days and each day's slides; the slide you are on is marked,
   // and a slide in it opens that slide
   await page.evaluate(() => FTDayDecks.open(7, 2)); await page.waitForTimeout(1000);
@@ -417,5 +416,5 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await put('settings:opendays', openBefore || { all: [], batches: {} });
   await browser.close();
   if (failures.length) { console.error('Day decks test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Day decks test passed (16 decks from build/days, built the same every time; Days 2–16 in Day 1's shape: each card row its own slides in the card's order, ending on End of Module, nothing empty, the steps the card's rows, the card at about Day 1's size; Day 1's deck unchanged; Day 11's LOR guidelines inlined; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the icon opening the deck on the Classroom Activity card, every day on its own day card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; no 📘 Open the lesson on a slide, its Call Listening button; no side panel sections, To-Do or autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
+  console.log(`Day decks test passed (16 decks from build/days, built the same every time; Days 2–16 in Day 1's shape: each card row its own slides in the card's order, ending on End of Module, nothing empty, the steps the card's rows, the card at about Day 1's size; Day 1's deck unchanged; Day 11's LOR guidelines inlined; no facilitator content or Process Questions on a slide, a "To be added" slide each; the eight lesson intro cards on one screen with Days 1–16 once each, the icon opening the deck on the Classroom Activity card, every day on its own day card, its rows opening their slides; no band, the scores in its place; the trainer's Day 4 simulator preset and instruction saved and seen by a trainee, escaped; a trainee on their day and the days before, an admin on any; ← / →; one screen, a long slide read in pages with Next turning the page; no link pills or time-of-day chip on any slide or agenda row; no side panel sections, To-Do or autoplay; the metrics drawn as the scorecard and the facilitator's timing note gone).`);
 })().catch(e => { console.error(e); process.exit(1); });

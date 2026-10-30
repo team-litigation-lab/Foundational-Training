@@ -165,8 +165,9 @@ async function workerChecks({ perfect, practice }) {
   const day5 = await page.evaluate(() => (FTDays.of(5) || {}).items.map(i => i.id || ''));
   if (!day5.includes('calweek')) fail(`Day 5 doesn't list the Calendaring Activity: ${JSON.stringify(day5)}`);
   await page.evaluate(() => FTCalWeek.attorneyActivity()); await page.waitForTimeout(1500);
-  const slide = await page.evaluate(() => ({ view: state.view, acts: [...document.querySelectorAll('.ftdd-acts button')].map(b => b.textContent) }));
-  if (slide.view !== 'daydeck' || !slide.acts.some(t => /Standard Training - Calendaring Activity/.test(t))) fail(`the Attorney Calendar Management Activity slide doesn't link back: ${JSON.stringify(slide)}`);
+  // (the slide opens; it carries no link pills on its bar: they were taken off every deck)
+  const slide = await page.evaluate(() => ({ view: state.view, acts: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
+  if (slide.view !== 'daydeck' || slide.acts) fail(`the Attorney Calendar Management Activity slide: ${JSON.stringify(slide)}`);
 
   // 🧪 the practice page: Attorney Chen's week, no Submit, ↺ Start over, and the graded calendar untouched
   const graded = await page.evaluate(() => JSON.stringify(FTCalWeek.state().data.record.events));
