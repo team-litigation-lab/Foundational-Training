@@ -324,6 +324,10 @@ function paint(){
   if(isAdminView()){
     if(T.k !== h.k){ T.k = h.k; }
     box.innerHTML = trackerHtml(h); sheet.insertBefore(box, sheet.firstChild);
+    // (and, after the slide's content, the trainee's own panel as the trainee sees it: the trainer's deck is the trainee's plus the tracker)
+    const pv = document.createElement("div"); pv.className = "ftbf-slot ftbf-pv";
+    pv.innerHTML = `<p class="ftbf-pv-h">👁 What trainees see</p>${traineePanel(h)}`;
+    if(h.a.gate) box.after(pv); else sheet.appendChild(pv);
     if(!T.rows || Date.now() - T.at > 15000) loadRoster().then(() => { const n = here(); if(n && n.k === h.k) paintTracker(n); });
     watchRoster(); return;
   }
@@ -362,7 +366,7 @@ root.FTBuffer = {
   cancel(){ document.querySelectorAll(".ftbf-modal").forEach(x => x.remove()); },
   async done(){
     FTBuffer.cancel(); const h = here(); if(!h) return;
-    if(!trainee()){ toast("In 👁 Trainee view, Done isn’t saved."); return; }
+    if(!trainee()){ toast("Only a trainee’s Done is saved."); return; }
     try{
       const cur = (await sharedGet("buffer:" + state.traineeId)) || {acts: {}, released: {}};
       cur.acts = cur.acts || {}; cur.released = cur.released || {};
@@ -377,7 +381,7 @@ root.FTBuffer = {
   // 📤 Submit (ACTS[…].submit): the platform checks and grades the items first, then it counts as the task's Done
   async submit(){
     const h = here(); if(!h || !h.a.submit || M.sending) return;
-    if(!trainee()){ toast("In 👁 Trainee view, Submit isn’t sent."); return; }
+    if(!trainee()){ toast("Only a trainee’s Submit is sent."); return; }
     M.sending = true; const btn = document.querySelector(".ftbf-done"); if(btn){ btn.disabled = true; btn.textContent = "Checking your Monitoring Sheet…"; }
     let j = {};
     try{ const r = await authFetch("/api/monitor/items", {id: state.traineeId, items: h.a.submit.items, activity: h.a.submit.activity}); j = await r.json().catch(() => ({})); if(!r.ok) throw new Error(j.error || "send"); }
@@ -432,6 +436,7 @@ const st = document.createElement("style"); st.id = "ft-buffer"; st.textContent 
 /* ✅ the buffer / mock call / demo panel, in Day 1's look: a navy heading bar with the orange edge, big bold text */
 .ftdd-sheet .ftbf-slot{margin:18px 0 0;}
 .ftdd-sheet .ftbf-slot:first-child{margin:0 0 18px;}
+.ftbf-pv-h{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
 .ftbf{border:2px solid #1E2340;border-radius:14px;padding:18px 22px;background:#fff;}
 /* a trainee's buffer slide: the panel alone, centred, gray with an orange frame */
 main.main-ftdd .ftdd-sheet.ftbf-only > :not(.ftbf-slot){display:none !important;}

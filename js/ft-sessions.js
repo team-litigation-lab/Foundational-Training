@@ -616,10 +616,11 @@ const MS = {batch:"", who:{}, draft:{}, act:{}};   // (draft: what is typed and 
 // the activities a rubric scores (Transcription scores Recording 1 and Recording 2): the sheet saves to the one picked
 const actsOfRubric = key => acts().filter(a => { const rb = RUB().forAct(a); return rb && rb.key === key; });
 const actOfRubric = key => { const l = actsOfRubric(key); return l.find(a => a.id === MS.act[key]) || l[0] || null; };
-function metricsTable(key){
+function metricsTable(key, view){
   const rb = RUB().list[key]; if(!rb) return "";
   const head = `<thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>`;
-  const trainer = !!state.isAdmin && !state.adminPreview, a = actOfRubric(key);
+  // (view: the trainee's read-only scorecard, whoever is looking)
+  const trainer = !view && !!state.isAdmin && !state.adminPreview, a = actOfRubric(key);
   if(!trainer || !a) return `<table class="ftms-tbl">${head}</tr></thead><tbody>
     ${rb.criteria.map(k => `<tr><td>${e(k.n)}</td><td>0</td></tr>`).join("")}
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>0</td></tr></tbody></table>`;
@@ -647,7 +648,7 @@ function metricsTable(key){
       <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avg == null ? "0" : (Math.round(avg * 100) / 100).toFixed(2)}</td><td></td></tr></tbody></table></div>`;
 }
 window.FTMetrics = {
-  table: metricsTable, actOf: actOfRubric,
+  table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric,
   batch(b){ MS.batch = b; render(); },
   who(key, id){ MS.who[key] = id; render(); },
   act(key, id){ MS.act[key] = id; render(); },
