@@ -2835,6 +2835,24 @@ main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B61
 .ft-body .ftdd-ev-av{width:24px;height:24px;border-radius:50%;background:#0B57D0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
 main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size:14px !important;font-weight:600 !important;}
 @media(max-width:900px){ .ft-body .ftdd-ev-body{grid-template-columns:minmax(0,1fr);} }
+/* 📅 Day 5's Sample Calendar Event (Deposition Meeting), drawn the same way, larger: every field reads from across the room */
+.ft-body .ftdd-ev.ftdd-ev-lg{font-size:17px;padding:12px 20px;max-width:1100px;margin:4px auto;}
+.ft-body .ftdd-ev-lg .ftdd-ev-title{font-size:25px;flex:1;}
+.ft-body .ftdd-ev-lg .ftdd-ev-when{margin:8px 0 4px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-sub{margin:0 0 6px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-tabs{margin:0 0 4px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-f{padding:5px 11px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-when{outline:0;padding:0;}
+.ft-body .ftdd-ev-lg .ftdd-ev-line{margin:5px 0;}
+.ft-body .ftdd-ev-lg .ftdd-ev-side > div{margin:4px 0;}
+.ft-body .ftdd-ev-lg .ftdd-ev-desc{margin-top:6px;padding:8px 12px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-dot{width:14px;height:14px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-av{width:30px;height:30px;font-size:14px;}
+.ft-body .ftdd-ev-lg .ftdd-ev-guest small{font-size:13.5px;}
+main.main-ftdd .ftdd-sheet .ftdd-ev-lg .ftdd-ev-desc p{font-size:17px !important;margin:2px 0 !important;font-weight:500 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-ev-lg p.ftdd-ev-perm{font-size:16px !important;margin:6px 0 2px !important;}
+/* (a short screen: the editor's tabs and Add guests box go, so the whole event fits on its page) */
+@media(max-height:740px){ .ft-body .ftdd-ev-lg .ftdd-ev-tabs, .ft-body .ftdd-ev-lg .ftdd-ev-side > .ftdd-ev-f.wide{display:none;} }
 .ft-body .ftdd-sheet > .ftdd-card4, main.main-ftdd .ftdd-sheet > .ftdd-card4{margin:0 0 14px;}   /* (the list takes the card's whole row, in two columns) */
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
@@ -2917,9 +2935,6 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
-.ftdd-sheet .shots.ftdd-shot-wide{grid-template-columns:minmax(0,1fr) !important;}   /* (one sample, large, across the slide: Day 5's Deposition Meeting) */
-.ftdd-sheet .shots.ftdd-shot-wide figure{max-width:1000px;width:100%;margin:0 auto !important;}
-.ftdd-sheet .shots.ftdd-shot-wide a{height:min(58vh,560px) !important;}
 /* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
    viewer below; then one big link to the document and its ⬇ Download */
 .ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),300px));justify-content:center;gap:18px;margin:10px auto 14px;}

@@ -123,6 +123,26 @@ const CALSIM_ACTIVITY = {label: "📅 Open the Calendar Simulator: the Attorney�
 // Calendar Management Activity track (calsim.html?program=FT&track=activity, js/ft-simulators.js ftsCalsim), in its own tab;
 // where ftsCalsim isn't loaded, the Practice Lab
 const CALSIM_PORTAL = {label: "📅 Standard Training - Calendar Management Activity", track: "activity"};
+// Day 5's Sample Calendar Event (Time Zone & Submit, s3b): the guide's finished Deposition Meeting
+// (ft/day5/img/sample-deposition.png), drawn as Day 6's sample event is (.ftdd-ev), larger (.ftdd-ev-lg), so every field reads
+const DEPOSITION = (() => {
+  const chk = on => `<span class="ftdd-ev-box${on ? " on" : ""}">${on ? "✓" : ""}</span>`;
+  const av = (c, n, sub) => `<div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:${c}">M</span><span><b>${n}</b>${sub ? `<small>${sub}</small>` : ""}</span></div>`;
+  return '<div class="ftdd-ev ftdd-ev-lg ftdd-keep" role="img" aria-label="Sample event: Deposition Meeting, Feb 4, 2025, 11:00am to 1:00pm, (GMT-05:00) Eastern Standard Time - Panama; Attorney’s Office or Zoom for Remote Attendees; email reminder 1 day before; Michelle Bernardino’s calendar in red; guests Michelle Bernardino (organizer), Martin Anthony Gan and Michelle Velarde; the Zoom link and the details in the description">' +
+    '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title">Deposition Meeting</span><span class="ftdd-ev-save">Save</span></div>' +
+    '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Feb 4, 2025</span><span class="ftdd-ev-f">11:00am</span><span>to</span><span class="ftdd-ev-f">1:00pm</span><span class="ftdd-ev-f">Feb 4, 2025</span><span>(GMT-05:00) <span class="ftdd-ev-hl">Eastern Standard Time - Panama</span></span><span class="ftdd-ev-link">Time zone</span></div>' +
+    `<div class="ftdd-ev-sub">${chk(false)} All day <span class="ftdd-ev-f">Does not repeat ▾</span></div>` +
+    '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
+    '<div class="ftdd-ev-line">📍 <span class="ftdd-ev-f wide">Attorney’s Office or Zoom for Remote Attendees</span></div>' +
+    '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-f">Email ▾</span><span class="ftdd-ev-f">1</span><span class="ftdd-ev-f">days ▾</span></div>' +
+    '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-f">Michelle Bernardino</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot" style="background:#D50000"></span> ▾</span></div>' +
+    '<div class="ftdd-ev-line">💼 <span class="ftdd-ev-f">Busy ▾</span><span class="ftdd-ev-f">Default visibility ▾</span></div>' +
+    '<div class="ftdd-ev-desc"><p><span class="ftdd-ev-link">Zoom Link</span> for remote attendees: <span class="ftdd-ev-link">zoom.us/deposition-meeting-02-04-25</span></p><p>Deposition preparation with another attorney.</p></div></div>' +
+    '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b></div><div class="ftdd-ev-f wide">Add guests</div>' +
+    '<p class="ftdd-ev-perm">3 guests <small>· 1 yes, 2 awaiting</small></p>' +
+    av("#0D652D", "Michelle Bernardino", "Organizer") + av("#129EAF", "Martin Anthony Gan") + av("#5B3FB8", "Michelle Velarde") +
+    `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
+})();
 const calsimPortal = cls => `<button type="button" class="${cls}" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')">${hx(CALSIM_PORTAL.label)}</button>`;
 const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a>${calsimPortal("btn btn-ghost")}</div>\n`;
 // 6's travel blocks: the guide's own lines under "Travel Blocks:" (each on 6's card, under it)
@@ -291,8 +311,9 @@ s3: html => {
     // (the activity's own file is not on the slide: its items are the cards before it, s3i–s3l)
     .replace(/<p><a class="viewer-link" data-embed[^>]*1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP[^\n]*?<\/p>\n?/, "")
     // (the Samples: a finished event, Deposition Meeting, on the slide itself (the time zone's own sample, Recorded Statement Meeting, is drawn on the next page), not the Drive folder, which asks a trainee for access)
-    // (headed Sample Calendar Event, in place of the guide's "Samples" line)
-    .replace(/(?:<p>Samples<\/p>\n)?<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<h3>Sample Calendar Event</h3>\n<div class="shots ftdd-shot-wide"><figure><a href="/ft/day5/img/sample-deposition.png" target="_blank"><img src="/ft/day5/img/sample-deposition.png" alt="Sample: a finished event, Deposition Meeting, with its time zone, location, reminder, colour, guests and notes" loading="lazy"></a></figure></div>`);
+    // (headed Sample Calendar Event, in place of the guide's "Samples" line; drawn as Day 6's sample event is, .ftdd-ev, larger:
+    // ft/day5/img/sample-deposition.png's own fields, sharp and readable at any size)
+    .replace(/(?:<p>Samples<\/p>\n)?<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, () => `<h3>Sample Calendar Event</h3>\n${DEPOSITION}`);
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone
