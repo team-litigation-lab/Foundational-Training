@@ -32,6 +32,8 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
   // (Day 5's Monitoring Sheet slide too: items #10–11 close Reception Part 2, Day 4's s2m, js/ft-day-decks.js LESSON_CARDS[3])
   5: ["s1", "s2"], 13: ["s2"],
+  // (Day 11's Shadowing is off the deck, and its card row with it)
+  11: ["s2"],
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
   8: ["s2", "s3b"],
@@ -919,10 +921,7 @@ const EDIT = {
       const re = /(https:\/\/docs\.google\.com\/document\/d\/[\w-]+\/edit\?usp=sharing)&amp;amp;amp;[^"]*/g;
       if((out.match(re) || []).length !== 3) throw new Error("Day 11's LOR templates and case notes are no longer where the build looks for them");
       return out.replace(re, "$1");
-    },
-    // the shadowing slide opens on the recorded shadowing given in lieu of a buddy: not the guide's first note (the same
-    // thing, said again) or its "@everyone … update your TAM" line and screenshot
-    s2: h => rep(h, '<p><b>Note: </b>If no shadowing buddy is available, recorded shadowing video/s will be provided to trainees instead.</p>\n<hr class="stars">\n<p><b>@everyone</b> Kindly update this section of your TAM after the session. Thanks.</p>\n<div class="shots"><figure><a href="/ft/day11/img/image32.png" target="_blank"><img src="/ft/day11/img/image32.png" alt="" loading="lazy"></a></figure></div>\n<hr class="stars">\n', "", 1, "Day 11 s2")},
+    }},
   14: {s2: h => rep(h, SLOT(14, "s2-1") + "\n", SLOT(14, "s2-1") + "\n" + SHADOW_HOWTO, 1, "Day 14 s2")},
   15: {
     // the demonstration day opens on what Day 14 set for it: the tutorial video, the gentle reminders and the rules
