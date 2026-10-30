@@ -712,8 +712,6 @@ function slideActions(s, info, body, i){
   const h = String(s.h || ""), out = [];
   // (Day 1's Reading Task has its ✍️ Knowledge Check button on the slide itself, under the reading: FTDayDecks.toKC)
   const has = re => re.test(h);
-  // (and the lesson's own stop, whatever it is called: Day 3's reads PI Workflow / Reception Training)
-  if(has(/classroom discussion|discussion on/i) || (s.launch && s.launch.go === "lesson")) (info.lessons || []).forEach(l => { if(lessonOpen(l)) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('day', ${Number(l)})">📘 Open the lesson: ${e(lessonTitle(l))}</button>`); });
   // the day's Process Questions: the sheet belongs to the lesson the day discusses, and the questions
   // themselves stay on ✍️ Knowledge Check — the slide only points at them
   if((has(/process question/i) || PQ_NOTE_RE.test(String(body || ""))) && root.FTProcess) pqLessons(DD.day, info).forEach(l => out.push(pqButtons(l)));
