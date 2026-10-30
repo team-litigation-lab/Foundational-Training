@@ -1,6 +1,6 @@
 {
   "firm": "Harbor & Pine Injury Law",
-  "note": "Fictional people, firm and cases, written for training. build/audio/make_audio.py renders each one to ft/day7/audio/<id>.mp3 (Piper voices) and writes js/ft-intake-samples.js.",
+  "note": "Fictional people, firm and cases, written for training. build/audio/make_audio.py renders each one to ft/day7/audio/<id>.mp3 (Kokoro voices; the consultation is still the Piper recording) and writes js/ft-intake-samples.js.",
   "calls": [
     {
       "id": "intake-work-premises",
@@ -8,8 +8,8 @@
       "kind": "Premises / work injury",
       "about": "A warehouse worker hurt on a loading dock at work. Listen for how the VA separates the workers' compensation side from a possible third-party claim, and gets the incident report and the employer's details.",
       "voices": {
-        "VA": "amy",
-        "Caller": "ryan"
+        "VA": "af_heart",
+        "Caller": "am_michael"
       },
       "listen_for": [
         "Workers' compensation vs. a third-party claim (the contractor)",
@@ -20,7 +20,7 @@
       "lines": [
         [
           "VA",
-          "Thank you for calling Harbor and Pine Injury Law. This is Amy, intake specialist. How may I help you today?"
+          "Thanks for calling Harbor and Pine Injury Law, this is Amy. How can I help you today?"
         ],
         [
           "Caller",
@@ -28,7 +28,7 @@
         ],
         [
           "VA",
-          "I'm sorry to hear that, Marcus. I'd like to ask you a few questions so the attorney can review what happened. This will take about ten minutes. Is now a good time?"
+          "Oh, I'm so sorry to hear that, Marcus. Okay, so I'm just going to ask you a few questions so the attorney can look at what happened. It usually takes about ten minutes. Is now an okay time?"
         ],
         [
           "Caller",
@@ -36,7 +36,7 @@
         ],
         [
           "VA",
-          "Thank you. May I have your full name spelled out, and the best number to reach you?"
+          "Great, thank you. So, can I get your full name, spelled out for me, and the best number to reach you?"
         ],
         [
           "Caller",
@@ -44,7 +44,7 @@
         ],
         [
           "VA",
-          "Seven zero two, five five five, zero one four eight. And your date of birth?"
+          "Okay, seven oh two, five five five, oh one four eight. Got it. And your date of birth?"
         ],
         [
           "Caller",
@@ -52,7 +52,7 @@
         ],
         [
           "VA",
-          "Thank you. What date did the accident happen, and where?"
+          "Thank you. And when did the accident happen, and where were you?"
         ],
         [
           "Caller",
@@ -60,7 +60,7 @@
         ],
         [
           "VA",
-          "Can you walk me through what happened?"
+          "Okay. Can you walk me through what happened?"
         ],
         [
           "Caller",
@@ -68,7 +68,7 @@
         ],
         [
           "VA",
-          "Is the cleaning company part of your employer, or a separate business?"
+          "Mm, okay. And the cleaning company, are they part of your employer, or is that a separate business?"
         ],
         [
           "Caller",
@@ -76,7 +76,7 @@
         ],
         [
           "VA",
-          "That's helpful, thank you. Did you report the accident to your supervisor?"
+          "Okay, that's really helpful, thank you. Did you report it to your supervisor?"
         ],
         [
           "Caller",
@@ -84,7 +84,7 @@
         ],
         [
           "VA",
-          "That's fine. We can request it. Were there any witnesses, or cameras on the dock?"
+          "That's okay, we can request it for you. Were there any witnesses? Or cameras on the dock?"
         ],
         [
           "Caller",
@@ -92,7 +92,7 @@
         ],
         [
           "VA",
-          "Good. Now, your injuries. Did you get medical treatment?"
+          "Good, that's good. Okay, so, your injuries. Did you get any medical treatment?"
         ],
         [
           "Caller",
@@ -100,7 +100,7 @@
         ],
         [
           "VA",
-          "Has a workers' compensation claim been opened for you?"
+          "Ouch, I'm sorry. And has a workers' comp claim been opened for you, do you know?"
         ],
         [
           "Caller",
@@ -108,7 +108,7 @@
         ],
         [
           "VA",
-          "It's a separate process. I can't give legal advice, but the attorney will explain how a workers' compensation claim and a claim against another company, like the cleaning contractor, can work together. Please keep that letter and bring the claim number to your consultation."
+          "So, it's actually a separate process. I can't give you legal advice myself, but the attorney will explain how a workers' comp claim and a claim against another company, like the cleaning contractor, can work together. Just hang on to that letter, and bring the claim number to your consultation, okay?"
         ],
         [
           "Caller",
@@ -116,7 +116,7 @@
         ],
         [
           "VA",
-          "Our attorneys handle injury cases on a contingency fee basis. That means there's no fee up front, and the attorney is only paid if there's a recovery. The attorney will go over the exact terms with you."
+          "That's a really fair question. Our attorneys handle injury cases on a contingency fee, so there's nothing to pay up front, and the attorney only gets paid if there's a recovery. They'll go over the exact terms with you."
         ],
         [
           "Caller",
@@ -124,7 +124,7 @@
         ],
         [
           "VA",
-          "Have you spoken to anyone from the cleaning company or their insurance?"
+          "Okay. Have you talked to anyone from the cleaning company, or their insurance?"
         ],
         [
           "Caller",
@@ -132,7 +132,7 @@
         ],
         [
           "VA",
-          "If anyone does, you can politely take their name and number and let us know before you give a statement. Have you signed anything about the accident, other than the work forms?"
+          "Okay. If anyone does call, you can just politely take their name and number, and let us know before you give any kind of statement. And have you signed anything about the accident, other than your work forms?"
         ],
         [
           "Caller",
@@ -140,7 +140,7 @@
         ],
         [
           "VA",
-          "Thank you, Marcus. Let me recap. You were injured on October twenty first on the loading dock at work, when you slipped on a floor mopped by Bright Shine Commercial Cleaning with no warning signs. You fractured your right wrist and hurt your lower back, you were treated at the company urgent care, and your supervisor Dana made an incident report. Is that correct?"
+          "Okay, thank you, Marcus. Let me just recap real quick. On October twenty first you slipped on the loading dock at work, on a floor Bright Shine Commercial Cleaning had mopped, with no warning signs. You fractured your right wrist and hurt your lower back, you were seen at the company urgent care, and your supervisor, Dana, made an incident report. Did I get that right?"
         ],
         [
           "Caller",
@@ -148,7 +148,7 @@
         ],
         [
           "VA",
-          "Our attorney will review your case today. Can we schedule your consultation for tomorrow at ten in the morning, by phone at this number?"
+          "Perfect. So the attorney's going to review your case today. Can we set up your consultation for tomorrow at ten in the morning, by phone, at this number?"
         ],
         [
           "Caller",
@@ -156,7 +156,7 @@
         ],
         [
           "VA",
-          "Perfect. You'll receive a text confirming the appointment and a link to our intake packet. Please have your workers' compensation letter, your urgent care paperwork, and the names of the two witnesses ready. Is there anything else I can help you with?"
+          "Perfect. You'll get a text confirming that, with a link to our intake packet. If you can, have your workers' comp letter, your urgent care paperwork, and the names of those two coworkers ready. Anything else I can help you with?"
         ],
         [
           "Caller",
@@ -164,9 +164,13 @@
         ],
         [
           "VA",
-          "Thank you for calling Harbor and Pine, Marcus. Rest that wrist, and we'll talk tomorrow at ten."
+          "You're welcome, Marcus. Take it easy on that wrist, okay? We'll talk tomorrow at ten."
         ]
-      ]
+      ],
+      "speed": {
+        "VA": 1.0,
+        "Caller": 1.0
+      }
     },
     {
       "id": "intake-demanding-slip-fall",
@@ -174,8 +178,8 @@
       "kind": "Slip and fall",
       "about": "A grocery-store slip and fall, with a caller who wants the attorney right now and a promise of money. Listen for how the VA stays calm, sets proper expectations, and still gets every detail.",
       "voices": {
-        "VA": "amy",
-        "Caller": "kristin"
+        "VA": "af_heart",
+        "Caller": "af_sarah"
       },
       "listen_for": [
         "Staying calm with a demanding caller",
@@ -186,7 +190,7 @@
       "lines": [
         [
           "VA",
-          "Thank you for calling Harbor and Pine Injury Law. This is Amy, intake specialist. How may I help you?"
+          "Thanks for calling Harbor and Pine Injury Law, this is Amy. How can I help you?"
         ],
         [
           "Caller",
@@ -194,7 +198,7 @@
         ],
         [
           "VA",
-          "I understand you'd like to speak with the attorney. I'm the person who gathers your information first, so that when the attorney calls you, they already know your case and don't waste your time. May I have your name?"
+          "Okay, I totally understand you want to talk to the attorney. So, I'm the one who gets your information first, that way when the attorney calls you, they already know your case and you're not repeating yourself. Can I get your name?"
         ],
         [
           "Caller",
@@ -202,7 +206,7 @@
         ],
         [
           "VA",
-          "I'm sorry, Ms. Ramos. I'll make sure you only have to tell it once here. What's the best number to reach you?"
+          "Oh, I'm sorry, Ms. Ramos. I'll make sure you only have to tell it once here, okay? What's the best number to reach you?"
         ],
         [
           "Caller",
@@ -210,7 +214,7 @@
         ],
         [
           "VA",
-          "Seven two five, five five five, zero three six two. And your date of birth?"
+          "Seven two five, five five five, oh three six two. And your date of birth?"
         ],
         [
           "Caller",
@@ -218,7 +222,7 @@
         ],
         [
           "VA",
-          "Thank you. When and where did you fall?"
+          "Thank you. So when and where did you fall?"
         ],
         [
           "Caller",
@@ -226,7 +230,7 @@
         ],
         [
           "VA",
-          "I hear you, and I know the bills are stressful. I can't promise an amount, and no honest firm can on the first call. What I can do is get the attorney everything they need to evaluate your case quickly. Did you see what the liquid was?"
+          "I hear you. And I know the bills are really stressful. I honestly can't promise an amount, and, you know, no honest firm can on the first call. But what I can do is get the attorney everything they need to look at your case quickly. Did you see what the liquid was?"
         ],
         [
           "Caller",
@@ -234,7 +238,7 @@
         ],
         [
           "VA",
-          "Do you remember that employee's name, or what they looked like?"
+          "Okay. Do you remember that employee's name, or what he looked like?"
         ],
         [
           "Caller",
@@ -242,7 +246,7 @@
         ],
         [
           "VA",
-          "Thank you, that's important. Did the store make an incident report?"
+          "Okay, thank you, that's really important. Did the store do an incident report?"
         ],
         [
           "Caller",
@@ -250,7 +254,7 @@
         ],
         [
           "VA",
-          "Did you accept the gift card or sign anything?"
+          "Mm. Did you accept the gift card, or sign anything?"
         ],
         [
           "Caller",
@@ -258,7 +262,7 @@
         ],
         [
           "VA",
-          "That's good. I can't give legal advice, but the attorney will want to speak with you before you sign anything from the store or their insurance. Did you take any photos?"
+          "Good, that's good. I can't give legal advice, but the attorney will definitely want to talk with you before you sign anything from the store or their insurance. Did you get any photos?"
         ],
         [
           "Caller",
@@ -266,7 +270,7 @@
         ],
         [
           "VA",
-          "Please keep those photos exactly as they are. Did you get medical treatment?"
+          "Oh, perfect. Please keep those exactly as they are. And did you get any medical treatment?"
         ],
         [
           "Caller",
@@ -274,7 +278,7 @@
         ],
         [
           "VA",
-          "Please keep that appointment and follow your doctor's advice. Do you have health insurance?"
+          "Okay, definitely keep that appointment, and follow what your doctor says. Do you have health insurance?"
         ],
         [
           "Caller",
@@ -282,7 +286,7 @@
         ],
         [
           "VA",
-          "You're almost done, I promise. Here's exactly what happens next. I'm sending your information to the attorney as soon as we hang up. The attorney reviews new cases the same day, and you'll get a call back by four o'clock this afternoon. Is this number the best one for that call?"
+          "You're almost done, I promise. So here's exactly what happens next. As soon as we hang up, I'm sending your information to the attorney. They review new cases the same day, so you'll get a call back by four o'clock this afternoon. Is this the best number for that?"
         ],
         [
           "Caller",
@@ -290,7 +294,7 @@
         ],
         [
           "VA",
-          "Thank you. And so you know, there's no cost to you to have the attorney review your case. We work on a contingency fee, so there's no fee unless there's a recovery."
+          "Thank you. And just so you know, there's no cost to have the attorney look at your case. We work on a contingency fee, so there's no fee unless there's a recovery."
         ],
         [
           "Caller",
@@ -298,7 +302,7 @@
         ],
         [
           "VA",
-          "No apology needed, Ms. Ramos. Let me read it back. You slipped on a clear liquid leaking from a freezer case at Valley Fresh Market on Rainbow Boulevard on November first, an employee named Kevin said it had been leaking all morning, the manager made a report, your daughter took photos, and you were treated at the emergency room for a hip contusion and a possible wrist sprain. Did I miss anything?"
+          "Oh, no apology needed, Ms. Ramos, really. Okay, let me read it back to you. On November first you slipped on clear liquid leaking from a freezer case at Valley Fresh Market on Rainbow Boulevard. An employee named Kevin said it'd been leaking all morning, the manager made a report, your daughter took photos, and you were treated at the E R for a bruised hip and a possible wrist sprain. Did I miss anything?"
         ],
         [
           "Caller",
@@ -306,9 +310,13 @@
         ],
         [
           "VA",
-          "Then you'll hear from the attorney by four today. Please have the emergency room paperwork and your daughter's photos ready. Thank you for calling Harbor and Pine."
+          "Okay. So you'll hear from the attorney by four today. Just have your E R paperwork and your daughter's photos handy. Thanks so much for calling Harbor and Pine, and take care of yourself."
         ]
-      ]
+      ],
+      "speed": {
+        "VA": 1.0,
+        "Caller": 1.06
+      }
     },
     {
       "id": "intake-agitated-dog-bite-1p",
@@ -316,8 +324,8 @@
       "kind": "Dog bite",
       "about": "A first-party caller, the person who was bitten, angry after the dog owner's insurance company called him. Listen for de-escalation, the animal control report, the dog owner's insurance, and the advice not to give a recorded statement.",
       "voices": {
-        "VA": "amy",
-        "Caller": "hfcm"
+        "VA": "af_heart",
+        "Caller": "am_fenrir"
       },
       "listen_for": [
         "Letting an angry caller finish, then acknowledging",
@@ -328,7 +336,7 @@
       "lines": [
         [
           "VA",
-          "Thank you for calling Harbor and Pine Injury Law. This is Amy, intake specialist. How can I help you?"
+          "Thanks for calling Harbor and Pine Injury Law, this is Amy. How can I help you?"
         ],
         [
           "Caller",
@@ -336,7 +344,7 @@
         ],
         [
           "VA",
-          "That sounds really upsetting, and I'm glad you called before giving any statement. I'm going to help you get this to an attorney. May I have your name?"
+          "Oh, that sounds really upsetting. And honestly, I'm glad you called before giving any statement. Let's get this over to an attorney for you. Can I get your name?"
         ],
         [
           "Caller",
@@ -344,7 +352,7 @@
         ],
         [
           "VA",
-          "Thank you, Mr. Holloway. And the best number to reach you?"
+          "Thank you, Mr. Holloway. And what's the best number to reach you?"
         ],
         [
           "Caller",
@@ -352,7 +360,7 @@
         ],
         [
           "VA",
-          "Seven zero two, five five five, zero nine one seven. And your date of birth?"
+          "Seven oh two, five five five, oh nine one seven. And your date of birth?"
         ],
         [
           "Caller",
@@ -360,7 +368,7 @@
         ],
         [
           "VA",
-          "Thank you. Can you tell me when and where the bite happened?"
+          "Thank you. Okay, can you tell me when and where it happened?"
         ],
         [
           "Caller",
@@ -368,7 +376,7 @@
         ],
         [
           "VA",
-          "I understand. Do you know the owner's name and address?"
+          "Okay, I understand. Do you know the owner's name and address?"
         ],
         [
           "Caller",
@@ -376,7 +384,7 @@
         ],
         [
           "VA",
-          "Has the dog bitten anyone before, that you know of?"
+          "And has the dog bitten anyone before, that you know of?"
         ],
         [
           "Caller",
@@ -384,7 +392,7 @@
         ],
         [
           "VA",
-          "Thank you. Did anyone report the bite to animal control or the police?"
+          "Okay. Did anyone report the bite to animal control, or the police?"
         ],
         [
           "Caller",
@@ -392,7 +400,7 @@
         ],
         [
           "VA",
-          "A C two four, dash, one one eight three. Thank you. What treatment did you receive?"
+          "A C, two four, dash, one one eight three. Got it, thank you. And what treatment did you get?"
         ],
         [
           "Caller",
@@ -400,7 +408,7 @@
         ],
         [
           "VA",
-          "I'm sorry. Did you take photos of the wounds?"
+          "Oh, I'm so sorry. Did you take any photos of the wounds?"
         ],
         [
           "Caller",
@@ -408,7 +416,7 @@
         ],
         [
           "VA",
-          "That's very helpful, please keep taking them. Now, the insurance call. Do you know which company it was, and do you have a claim number?"
+          "That's really helpful, please keep doing that. Okay, so, the insurance call. Do you know which company it was, and did they give you a claim number?"
         ],
         [
           "Caller",
@@ -416,7 +424,7 @@
         ],
         [
           "VA",
-          "Thank you. I can't give legal advice, but the attorney will want to speak with you before you give any statement. If they call again, you can politely tell them you're speaking with an attorney and take their contact information."
+          "Okay, thank you. So, I can't give legal advice, but the attorney will want to talk with you before you give any statement. If they call again, you can just politely tell them you're speaking with an attorney, and take down their contact info."
         ],
         [
           "Caller",
@@ -424,7 +432,7 @@
         ],
         [
           "VA",
-          "I completely understand, and it's best to let the attorney handle that conversation. Do you have your own health insurance, Mr. Holloway?"
+          "I completely understand. It's really best to let the attorney handle that conversation. Do you have your own health insurance, Mr. Holloway?"
         ],
         [
           "Caller",
@@ -432,7 +440,7 @@
         ],
         [
           "VA",
-          "Thank you. Let me confirm what I have. On October twenty eighth, Gary Whitman's German shepherd ran out of an open gate at forty two eighteen Palomino Lane and bit your right forearm while you were on the sidewalk. Animal control report A C two four, dash, one one eight three. You had eleven stitches at the emergency room, and Northfield Mutual, the owner's homeowner's insurer, has asked you for a recorded statement under claim H O five five two seven zero. Is that all correct?"
+          "Okay, thank you. Let me just confirm what I have. On October twenty eighth, Gary Whitman's German shepherd ran out of an open gate at forty two eighteen Palomino Lane and bit your right forearm while you were on the sidewalk. The animal control report is A C two four, dash, one one eight three. You got eleven stitches at the E R, and Northfield Mutual, his homeowner's insurance, wants a recorded statement under claim H O five five two seven zero. Is all that correct?"
         ],
         [
           "Caller",
@@ -440,7 +448,7 @@
         ],
         [
           "VA",
-          "The attorney will call you today, before end of day, to talk about the statement and next steps. Is this number good for a call this afternoon?"
+          "Okay. The attorney will call you today, before end of day, to talk about the statement and what's next. Is this number good for a call this afternoon?"
         ],
         [
           "Caller",
@@ -448,9 +456,13 @@
         ],
         [
           "VA",
-          "You weren't yelling at me, Mr. Holloway. You've been through a lot. Please keep the animal control card, your hospital papers, and the photos together. Thank you for calling Harbor and Pine."
+          "Oh, you weren't yelling at me, Mr. Holloway. You've been through a lot. Just keep the animal control card, your hospital papers, and the photos all together. Thanks for calling Harbor and Pine, and I hope that arm heals up soon."
         ]
-      ]
+      ],
+      "speed": {
+        "VA": 1.0,
+        "Caller": 1.07
+      }
     },
     {
       "id": "intake-med-mal-fees",
@@ -458,8 +470,8 @@
       "kind": "Medical malpractice",
       "about": "A caller whose husband's cancer was missed, who is afraid she can't afford a lawyer. Listen for how the VA explains the contingency fee without quoting a percentage, collects the medical timeline, and sets expectations about the expert review a malpractice case needs.",
       "voices": {
-        "VA": "amy",
-        "Caller": "hfcf"
+        "VA": "af_heart",
+        "Caller": "af_bella"
       },
       "listen_for": [
         "Explaining a contingency fee in plain words, with no percentage promised",
@@ -470,7 +482,7 @@
       "lines": [
         [
           "VA",
-          "Thank you for calling Harbor and Pine Injury Law. This is Amy, intake specialist. How may I help you today?"
+          "Thanks for calling Harbor and Pine Injury Law, this is Amy. How can I help you today?"
         ],
         [
           "Caller",
@@ -478,7 +490,7 @@
         ],
         [
           "VA",
-          "I'm glad you called, and you're not committing to anything by talking with me. May I have your name?"
+          "Well, I'm really glad you called. And you're not committing to anything just by talking with me, okay? Can I get your name?"
         ],
         [
           "Caller",
@@ -486,7 +498,7 @@
         ],
         [
           "VA",
-          "Thank you, Mrs. Delgado. What's the best number to reach you?"
+          "Thank you, Mrs. Delgado. And what's the best number to reach you?"
         ],
         [
           "Caller",
@@ -494,7 +506,7 @@
         ],
         [
           "VA",
-          "Seven two five, five five five, zero two zero four. Before we go further, let me answer your worry about cost, because I can hear it's on your mind. Our attorneys handle cases like this on a contingency fee. That means you pay no fee up front and no hourly bills. The attorney is paid a percentage of the recovery, only if there is one. If there's no recovery, you don't owe an attorney's fee."
+          "Seven two five, five five five, oh two oh four. Okay. And before we go any further, I want to answer your worry about cost, because I can hear it's on your mind. Our attorneys handle cases like this on a contingency fee. So, there's no fee up front, and no hourly bills. The attorney gets a percentage of the recovery, only if there is one. And if there's no recovery, you don't owe an attorney's fee."
         ],
         [
           "Caller",
@@ -502,7 +514,7 @@
         ],
         [
           "VA",
-          "The attorney explains the exact fee and the costs in writing at the consultation, before you sign anything, so I don't want to give you a number that isn't right for your case. And the consultation itself is free."
+          "So, the attorney explains the exact fee and costs in writing at the consultation, before you sign anything. I just don't want to give you a number that isn't right for your case. And the consultation itself is free."
         ],
         [
           "Caller",
@@ -510,7 +522,7 @@
         ],
         [
           "VA",
-          "Can you tell me what happened to Tomas?"
+          "Of course. Can you tell me what happened to Tomas?"
         ],
         [
           "Caller",
@@ -518,7 +530,7 @@
         ],
         [
           "VA",
-          "I'm so sorry. What happened after that?"
+          "Oh, I'm so sorry. What happened after that?"
         ],
         [
           "Caller",
@@ -526,7 +538,7 @@
         ],
         [
           "VA",
-          "Thank you for sharing that. May I have Tomas's date of birth?"
+          "Thank you for sharing that with me. Can I get Tomas's date of birth?"
         ],
         [
           "Caller",
@@ -534,7 +546,7 @@
         ],
         [
           "VA",
-          "Which hospital was he taken to in August, and what was the date?"
+          "And which hospital was he taken to in August, and what was the date?"
         ],
         [
           "Caller",
@@ -542,7 +554,7 @@
         ],
         [
           "VA",
-          "Is Tomas receiving treatment now?"
+          "Okay. Is Tomas getting treatment now?"
         ],
         [
           "Caller",
@@ -550,7 +562,7 @@
         ],
         [
           "VA",
-          "I understand. Is Tomas aware you're calling, and would he be able to join the consultation? Because he's the patient, the attorney will need to speak with him and get his authorization to request his records."
+          "I understand. Does Tomas know you're calling, and would he be able to join the consultation? Since he's the patient, the attorney will need to talk with him, and get his authorization to request his records."
         ],
         [
           "Caller",
@@ -558,7 +570,7 @@
         ],
         [
           "VA",
-          "Thank you. One more thing I want you to know, so there are no surprises. Medical malpractice cases are reviewed differently from other injury cases. Before the firm can take one, the attorney usually has the medical records reviewed by a medical expert. So the attorney may not be able to tell you on the first call whether the firm can take the case. That's normal, and it isn't a no."
+          "Okay, thank you. One more thing I want you to know, just so there are no surprises. Medical malpractice cases are reviewed a little differently from other injury cases. Before the firm can take one, the attorney usually has the records looked at by a medical expert. So the attorney might not be able to tell you on the first call whether the firm can take it. That's totally normal, and it isn't a no."
         ],
         [
           "Caller",
@@ -566,7 +578,7 @@
         ],
         [
           "VA",
-          "The attorney will explain the timeline at the consultation. These cases also have strict deadlines, so it's good that you're calling now. Do you have any paperwork from the clinic visits or the hospital?"
+          "The attorney will walk you through the timeline at the consultation. These cases do have strict deadlines, though, so I'm really glad you're calling now. Do you have any paperwork from the clinic visits, or the hospital?"
         ],
         [
           "Caller",
@@ -574,7 +586,7 @@
         ],
         [
           "VA",
-          "That's fine. The firm can request the clinic records with Tomas's authorization. Let me read back what I have. Tomas Delgado, born February eleventh, nineteen sixty eight, saw Dr. Harlan at Summit Family Clinic in January and April for rectal bleeding and was treated for hemorrhoids with no testing. On August nineteenth he collapsed and was diagnosed at Desert Springs Medical Center with stage three colon cancer, had surgery in September, and is in chemotherapy. Is that correct?"
+          "That's okay. The firm can request the clinic records with Tomas's authorization. Okay, let me read back what I have. Tomas Delgado, born February eleventh, nineteen sixty eight, saw Dr. Harlan at Summit Family Clinic in January and April for rectal bleeding, and was treated for hemorrhoids, with no testing. On August nineteenth he collapsed, and was diagnosed at Desert Springs Medical Center with stage three colon cancer. He had surgery in September, and he's in chemotherapy now. Is that right?"
         ],
         [
           "Caller",
@@ -582,7 +594,7 @@
         ],
         [
           "VA",
-          "Can I schedule a free consultation with the attorney for you and Tomas this Thursday at two in the afternoon, by phone?"
+          "Okay. Can I set up a free consultation with the attorney for you and Tomas this Thursday, at two in the afternoon, by phone?"
         ],
         [
           "Caller",
@@ -590,7 +602,7 @@
         ],
         [
           "VA",
-          "You'll get a confirmation text and an email with the intake packet, including the medical authorization for Tomas to sign. Please have the hospital and surgery paperwork nearby. Do you have any other questions for me?"
+          "Perfect. You'll get a confirmation text, and an email with the intake packet, including the medical authorization for Tomas to sign. Just keep the hospital and surgery paperwork nearby. Do you have any other questions for me?"
         ],
         [
           "Caller",
@@ -598,9 +610,13 @@
         ],
         [
           "VA",
-          "You're very welcome, Mrs. Delgado. Please give Tomas our best. We'll talk Thursday at two."
+          "Oh, you're so welcome, Mrs. Delgado. Please give Tomas our best, okay? We'll talk Thursday at two."
         ]
-      ]
+      ],
+      "speed": {
+        "VA": 1.0,
+        "Caller": 0.97
+      }
     }
   ],
   "consult": {

@@ -103,7 +103,6 @@ const DAYS = [
   {day:7, role:"Intake Training", lessons:[6], items:[
     {t:"Digital Handouts for Breakout Session (Group Activity): Intake Specialist Best Practices", kind:"Breakout", at:"gc"},
     {t:"🎧 Call Listening on the intake recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
-    {t:"Scheduled Shadowing: Intake Specialist Role (PM, logged on the platform)", kind:"Shadowing", at:"tool", id:"shadowing"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Intake Scenario Exercise", kind:"Exercise", at:"gc"},
     {t:"Fillable Intake Forms (Dog Bite, Medical Malpractice, Premise Liability, Slip & Fall, MVC/MVA)", kind:"Activity", at:"gc"}
