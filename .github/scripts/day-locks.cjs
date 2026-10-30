@@ -164,6 +164,12 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
         if (open && (v.locked || !v.links)) fail(`Day ${day}'s Digital Handouts stayed locked with their segment unlocked: ${JSON.stringify(v)}`);
         if (!open && (!v.locked || v.links)) fail(`Day ${day}'s Digital Handouts opened before their segment: ${JSON.stringify(v)}`);
       }
+      // … and open for a batch already under way when the locks began (its trainer's slide reads 🔓 Open to trainees), the
+      // lesson's video not unlocked
+      await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: { b102826: [day === 2 ? 2 : 6] } } });
+      await page.evaluate(([d, i]) => FTDayDecks.open(d, i), [day, idx]); await page.waitForTimeout(700);
+      v = await page.evaluate(() => ({ locked: !!document.querySelector('.ftdd-ho-locked'), links: document.querySelectorAll('a.ftdd-ho[href]').length }));
+      if (v.locked || !v.links) fail(`Day ${day}'s Digital Handouts stayed locked for a batch already under way: ${JSON.stringify(v)}`);
     }
     // 🧑‍🏫 the trainer's deck: the trainee's deck, never held, with each segment's lock for the batch picked, set right there
     await put(page, 'settings:daysteps', { all: { 7: 2 }, batches: {}, rows: { all: { 7: 1 } }, legacy: { all: [], batches: {} } });
