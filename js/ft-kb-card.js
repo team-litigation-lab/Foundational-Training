@@ -55,14 +55,22 @@ const st = document.createElement("style"); st.id = "ft-kb-card"; st.textContent
 main.main-dash .module-grid > .ftkb{min-height:0;height:100%;overflow:hidden;display:flex;flex-direction:column;}
 main.main-dash .module-grid > .ftkb .module-body{flex:1 1 auto;min-height:0;display:flex;align-items:center;}
 main.main-dash .module-grid > .ftkb .mh-day{font-family:'Inter',sans-serif !important;}
-.ftkb-roles{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:4px;padding:4px 8px;width:100%;max-height:100%;overflow:auto;}
-.ftkb-role{border:1px solid #DDE1EC;border-radius:999px;background:rgba(255,255,255,.75);color:var(--navy,#1E2340);padding:3px 8px;
-  font:700 11.5px/1.2 'Inter',sans-serif;cursor:pointer;white-space:nowrap;}
-.ftkb-role:hover,.ftkb-role:focus-visible{background:#353B57;border-color:#353B57;color:#fff;outline:none;}
-.ftkb-role.ftkb-open{background:#1E2340;border-color:#1E2340;color:#fff;}
-/* (a short screen: the cards are shorter, so the roles are smaller, three rows) */
+.ftkb-roles{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:6px;padding:4px 6px;width:100%;max-height:100%;overflow:auto;}
+/* each role its own colour: a tinted fill, a matching border and dark text (AA contrast) */
+.ftkb-role{--c:#1E2340;--bg:#E6E9F5;border:1.5px solid var(--c);border-radius:999px;background:var(--bg);color:var(--c);padding:5px 12px;
+  font:800 13px/1.2 'Inter',sans-serif;cursor:pointer;white-space:nowrap;box-shadow:0 1px 2px rgba(15,20,40,.12);}
+.ftkb-role:nth-child(6n+1){--c:#1E4FA8;--bg:#E3ECFB;}
+.ftkb-role:nth-child(6n+2){--c:#0F6E5C;--bg:#DDF3EC;}
+.ftkb-role:nth-child(6n+3){--c:#8A3A00;--bg:#FDEBDC;}
+.ftkb-role:nth-child(6n+4){--c:#6B2A9E;--bg:#F0E5FA;}
+.ftkb-role:nth-child(6n+5){--c:#A1173F;--bg:#FCE4EB;}
+.ftkb-role:nth-child(6n+6){--c:#5C4A00;--bg:#FAF0C8;}
+.ftkb-role:hover,.ftkb-role:focus-visible{background:var(--c);border-color:var(--c);color:#fff;outline:none;}
+.ftkb-role.ftkb-open{--c:#1E2340;background:#1E2340;border-color:#1E2340;color:#fff;}
+.ftkb-role.ftkb-open:hover,.ftkb-role.ftkb-open:focus-visible{background:#353B57;border-color:#353B57;}
+/* (a short screen: the cards are shorter, so the roles are a little smaller) */
 @media(max-height:820px){ main.main-dash .module-grid > .ftkb .module-body{padding:2px 4px !important;}
-  .ftkb-roles{gap:3px;padding:0 4px;} .ftkb-role{font-size:10.5px;padding:2px 6px;} .ftkb-ot{display:none;} }
+  .ftkb-roles{gap:4px;padding:0 4px;} .ftkb-role{font-size:12px;padding:3px 9px;} .ftkb-ot{display:none;} }
 .ftkb-modal{position:fixed;inset:0;z-index:1000;background:rgba(15,20,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;}
 .ftkb-box{position:relative;width:min(760px,100%);max-height:90vh;overflow:auto;background:#F6F7FB;border-radius:18px;padding:20px 22px;box-shadow:0 24px 60px -20px rgba(15,20,40,.6);}
 .ftkb-x{position:absolute;top:10px;right:12px;border:0;background:transparent;font-size:18px;cursor:pointer;color:#5b6178;padding:4px 8px;border-radius:8px;}
