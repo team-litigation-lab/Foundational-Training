@@ -3,13 +3,22 @@
 # cells' own links and the pictures placed in its cells. Run: python3 build/ref-terms.py   (from the repo root; needs
 # openpyxl: pip install openpyxl). Rerun it whenever the sheet is edited. The slide draws the table (js/ft-day-decks.js
 # refTerms) with its own column widths: TERM, PAGE SOURCE, LEARN MORE and REMARKS narrow, DEFINITION and EXAMPLE wide.
-import io, json, os, sys, urllib.request
+import io, json, os, re, sys, urllib.request
 import openpyxl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ID = "1tmV26rq_1z1mpq1C5hUweLytfyJUtkai"
 HEAD = ["TERM", "DEFINITION / DESCRIPTION", "EXAMPLE / SAMPLE URL", "PAGE SOURCE", "LEARN MORE...", "REMARKS"]
 IMG = os.path.join(ROOT, "img", "ref-terms")
+# the sheet's broken source links, corrected in every cell (a typo'd address, a page that moved): keep them when re-run
+URL_FIXES = [
+    (re.compile(r"https://writingexplained\.org/defendant-vs-plaintiff-differencee"), "https://writingexplained.org/defendant-vs-plaintiff-difference"),
+    (re.compile(r"https://www\.docmosis\.com/solutions/document-generation\.htmll"), "https://www.docmosis.com/solutions/document-generation.html"),
+    (re.compile(r"https://soarworks\.prainc\.com/article/soar-critical-component-medical-summary-report\S*"), "https://soarworks.samhsa.gov/node/1985"),
+]
+def fix_urls(t):
+    for rx, to in URL_FIXES: t = rx.sub(to, t)
+    return t
 
 wb = openpyxl.load_workbook(io.BytesIO(urllib.request.urlopen(f"https://docs.google.com/spreadsheets/d/{ID}/export?format=xlsx").read()))
 os.makedirs(IMG, exist_ok=True)
@@ -30,10 +39,10 @@ for k, ws in enumerate(wb.worksheets):
     for r in range(2, ws.max_row + 1):
         row = []
         for c in range(1, len(HEAD) + 1):
-            cell = ws.cell(r, c); t = "" if cell.value is None else str(cell.value).strip()
+            cell = ws.cell(r, c); t = fix_urls("" if cell.value is None else str(cell.value).strip())
             x = {"t": t}
             # (a cell's own link, where it goes somewhere its text doesn't say)
-            if cell.hyperlink and cell.hyperlink.target and cell.hyperlink.target.strip() != t: x["a"] = cell.hyperlink.target.strip()
+            if cell.hyperlink and cell.hyperlink.target and fix_urls(cell.hyperlink.target.strip()) != t: x["a"] = fix_urls(cell.hyperlink.target.strip())
             if (r, c) in pics: x["img"] = pics[(r, c)]
             row.append(x if len(x) > 1 else t)
         if any(x if isinstance(x, str) else True for x in row): rows.append(row)

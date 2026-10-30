@@ -43,11 +43,14 @@ function loadRefTerms(){
   document.head.appendChild(s);
 }
 // a cell: its text (a web address in it a link), else {t, a: the cell's own link, img: the pictures placed in it}
-const refLink = (u, t) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`;
+const refLink = (u, t) => `<a href="${e(u)}" target="_blank" rel="noopener noreferrer" title="${e(u)}">${t}</a>`;
+// (a web address written out in a cell reads as its site's name, "investopedia.com ↗", the full address on hover)
+const refUnesc = h => h.replace(/&(amp|lt|gt|quot|#39|#x27);/g, (m, k) => ({amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", "#x27": "'"})[k]);
+const refSite = u => { try { return new URL(u).hostname.replace(/^www\./, "") + " ↗"; } catch(err){ return u; } };
 const refText = c => String(typeof c === "string" ? c : c.t || "");
 function refCell(c){
   const t = refText(c), x = typeof c === "string" ? {} : c;
-  let h = x.a ? refLink(x.a, e(t)) : e(t).replace(/https?:\/\/[^\s<]+/g, u => refLink(u, u));
+  let h = x.a ? refLink(x.a, e(/^https?:\/\/\S+$/.test(t) ? refSite(x.a) : t)) : e(t).replace(/https?:\/\/[^\s<]+/g, m => { const u = refUnesc(m); return refLink(u, e(refSite(u))); });
   h = h.replace(/\n/g, "<br>");
   (x.img || []).forEach(src => { h += `<a class="ftdd-terms-img" href="${e(src)}" target="_blank" rel="noopener noreferrer"><img src="${e(src)}" alt="${e(t || "Picture")}" loading="lazy"></a>`; });
   return h;
