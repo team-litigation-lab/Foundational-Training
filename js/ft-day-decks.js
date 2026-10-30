@@ -1448,7 +1448,6 @@ const LESSON_CARDS = {
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then shadowing and Day 12
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
-      {t: "Shadowing", time: "PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
@@ -2599,6 +2598,9 @@ main.main-ftdd .ftdd-sheet .ftdd-cix-two > div > b{font-weight:800 !important;co
    navy-bordered boxes */
 main.main-ftdd .ftdd-sheet{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-size:21px;line-height:1.5;color:#11131F;}
+/* (a scorecard's rows at the text's own height, not the slide's line spacing: a long one, Day 9's 17 Intake criteria, then
+   fits at the size of a short one, Day 12's, rather than zoomed down to fit) */
+main.main-ftdd .ftdd-sheet .ftms-tbl :is(td,th){line-height:1.2 !important;padding-top:3px;padding-bottom:3px;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 /* a page's content sits in the middle of the sheet, not bunched at the top (safe: a page that runs long still scrolls from its top) */
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
