@@ -101,6 +101,22 @@ function piParts(){
 const CAL_TEXT = path.join(R, "build/days/attorney-calendar-activity.txt");
 // (Google Calendar's own colours for the legend's names)
 const CAL_COLORS = {Green: "#0B8043", Blue: "#039BE5", Red: "#D50000", Purple: "#8E24AA", Yellow: "#F6BF26", Orange: "#F4511E", Pink: "#E67C73"};
+// Day 5's ten Activity Items, a card each, five to a slide (ROWS[5].s3 cuts them at each group's head: CAL_HEAD), each
+// slide opening on the link to the Calendar Simulator's Attorney's Calendar, where the activity is done (the link and the
+// cards one block, ftdd-cal-set, so they share a page)
+const CAL_GROUPS = [[1, 5], [6, 10]];
+const CALSIM_ACTIVITY = {label: "📅 Open the Calendar Simulator: the Attorney’s Calendar", href: "#/calsim/attorney-activity"};
+const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${a}-${b}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a></div>\n`;
+
+function calItems(html){
+  const items = html.split('<div class="ftdd-cal-item">').slice(1).map(x => '<div class="ftdd-cal-item">' + x);
+  if(items.length !== 10 || html.indexOf('<div class="ftdd-cal-item">') !== 0) throw new Error(`Day 5's Activity Items are no longer the ten cards the build expects: ${items.length}`);
+  // (an item with a travel schedule, more than twice the usual lines, takes two columns of the row: ftdd-cal-wide)
+  const wide = x => (x.match(/<p class="li"/g) || []).length > 12;
+  return CAL_GROUPS.map(([a, b]) => { const its = items.slice(a - 1, b);
+    return CAL_HEAD([a, b]) + `<div class="ftdd-cal-grid" style="--n:${its.length + its.filter(wide).length}">\n` +
+      its.map(x => wide(x) ? x.replace('<div class="ftdd-cal-item">', '<div class="ftdd-cal-item ftdd-cal-wide">') : x).join("") + "</div></div>\n"; }).join("");
+}
 function calActivity(){
   const lines = fs.readFileSync(CAL_TEXT, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
   const li = (lvl, lbl, html) => `<p class="li" style="--lvl:${lvl}"><span class="lbl">${lbl}</span><span>${html}</span></p>\n`;
@@ -132,11 +148,6 @@ function calActivity(){
   if(steps !== 9 || items !== 10) throw new Error(`Day 5's activity has ${steps} instructions and ${items} items, not 9 and 10`);
   return out;
 }
-/* 📅 The Calendar Simulator for this activity (the Calendaring Simulators' Attorney Calendar Management Activity track,
-   graded through the Calendar Activity Check): its button sits under the Activity Items on Day 5's activity slide. A
-   platform address (#/…) opens in the same tab; an outside one in a new tab. */
-const CALSIM_ACTIVITY = {label: "📅 Do this activity on the Calendar Simulator", href: "#/calsim/attorney-activity"};
-const calsimHook = () => `<div class="ftdd-calsim" data-calsim-activity="5:s3">${CALSIM_ACTIVITY ? `<a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}"${/^#/.test(CALSIM_ACTIVITY.href) ? "" : ' target="_blank" rel="noopener noreferrer"'}>${hx(CALSIM_ACTIVITY.label)}</a>` : ""}</div>\n`;
 // (a slide whose videos carry no "📝 What I learned": js/ft-day-decks.js visual)
 const NOLEARN = '<div class="ftdd-nolearn" hidden></div>\n';
 // 🌳 Day 3's call-handling decision trees, drawn on the slide (Frontline Management): the guide's two (its screenshots,
@@ -263,13 +274,16 @@ s3: html => {
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
   const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
     '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you upload →</small></span></button></div>\n';
-  // the activity's instruction in its card, then its Instructions and Activity Items; the activity and the samples
-  // themselves, full size; the cards stand one under the other (not a grid), so a long one turns the page cleanly
-  const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0], signify = "don’t forget to signify done here as soon as you finish. Thanks.";
-  if(!lead.includes(signify)) throw new Error("Day 5's activity no longer asks to signify done where the build looks for it");
+  // its Instructions and Activity Items; the activity and the samples themselves, full size; the cards stand one under the other (not a grid), so a long one turns the page cleanly
+  const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
+  // (the activity's Instructions on one slide, as two cards side by side: 1–4 and 5–9; its ten Activity Items on the next
+  // two, a card each: calItems. The "1. The activity" card is off: Done is at the end of the slides)
+  const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), five = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">5.</span>');
+  if(at < 0 || five < 0 || five > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
+  const ins = text.slice(0, at).replace("<h3>Instructions</h3>\n", "");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
-    card("📝", "1. The activity", lead.replace(signify, "don’t forget to signify done (✅ Done, at the end of the activity’s slides) as soon as you finish. Thanks.")) + "\n" +
-    calActivity() + calsimHook() +
+    '<div class="ftdd-cards2">' + card("📋", "Instructions 1–4", text.slice(0, five).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 5–9", text.slice(five, at)) + "</div>\n" +
+    calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
     card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq + check)) + "\n" + cut("<p><b><i>*** Free Communication");
 }},
@@ -728,7 +742,11 @@ const ROWS = {
   },
   5: {
     // the activity's own words, read like Day 1's reading; then its files, the time zone, the screenshots and ✅ Done
-    s3: [{id: "s3", read: true, parts: [[null, SLOT(5, "s3-2")]]},
+    // (the Instructions as two cards, then the ten Activity Items a card each, five to a slide, each slide with the link to
+    // the Calendar Simulator's Attorney's Calendar: CAL_HEAD)
+    s3: [{id: "s3", h: "Attorney Calendar Management Activity: Instructions", parts: [[null, CAL_HEAD(CAL_GROUPS[0])]]},
+      {id: "s3i", h: "Attorney Calendar Management Activity: Activity Items 1–5", parts: [[CAL_HEAD(CAL_GROUPS[0]), CAL_HEAD(CAL_GROUPS[1])]]},
+      {id: "s3j", h: "Attorney Calendar Management Activity: Activity Items 6–10", parts: [[CAL_HEAD(CAL_GROUPS[1]), SLOT(5, "s3-2")]]},
       {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone, Screenshots & Upload", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
