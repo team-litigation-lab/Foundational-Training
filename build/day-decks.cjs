@@ -237,7 +237,8 @@ const TRIM = {1: {reading: html => {
   const win = url("71237633"), mac = url("876020096");
   const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
     // (?v: the screenshots were redrawn 3× sharper, the address changes so browsers fetch them anew)
-    const u = `/ft/day1/img/${f}${/^sa-/.test(f) ? "?v=3x" : ""}`;
+    // (sa-08, sa-15 and sa-16 redrawn sharp: the KB page's link list and the two installer dialogs; ?v=4x fetches them anew)
+    const u = `/ft/day1/img/${f}${/^sa-(08|15|16)\./.test(f) ? "?v=4x" : /^sa-/.test(f) ? "?v=3x" : ""}`;
     return `  <figure><a href="${u}" target="_blank"><img src="${u}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
   const sa = n => `sa-${String(n).padStart(2, "0")}.png`;
   // a row of a step's screenshots, numbered from `first` under each (no number: `first` null)
