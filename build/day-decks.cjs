@@ -262,8 +262,9 @@ const TRIM = {1: {reading: html => {
   return "";
 },
 // Day 5's Attorney Calendar Management Activity: the activity's own text, its Instructions as two cards and its ten
-// Activity Items as sixteen cards (calItems), four under each Calendar Simulator's link (CAL_HEAD); then the activity file and samples, and three
-// cards (the time zone, the whole calendar, the upload), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b").
+// Activity Items as sixteen cards (calItems), four under each Calendar Simulator's link (CAL_HEAD); then the activity file and samples, the
+// time zone card and the 📅 Calendar Activity Check (no screenshots are taken or uploaded: the guide's whole-calendar screenshot and
+// 19-screenshot upload are off the slide), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b").
 // ROWS[5].s3 cuts it into s3 (the Instructions), s3i–s3l (the cards 1–4, 5–6b, 7–8b, 8c–10) and s3b (from the second trainer slot).
 s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
@@ -275,29 +276,21 @@ s3: html => {
     // its three files)
     .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-big ftdd-embed-folder-center"><iframe src="https://drive.google.com/embeddedfolderview?id=1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW#grid" title="Samples" loading="lazy"></iframe></div>`);
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
-  const whole = cut("<p>When taking a screenshot of the entire calendar", "<p>You should have a total of 19");
-  const up = cut("<p>You should have a total of 19", "<p><b><i>*** Free Communication");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone
   // boxed (image28) and the 19 screenshots in their order (image40)
   const shot = f => new RegExp(`<div class="shots"><figure><a href="/ft/day5/img/${f}"[\\s\\S]*?</figure></div>\\n?`);
-  if(!shot("image28.png").test(tz) || !shot("image40.png").test(up)) throw new Error("Day 5's sample pictures are no longer where the build looks for them");
+  if(!shot("image28.png").test(tz)) throw new Error("Day 5's sample pictures are no longer where the build looks for them");
   const editor = '<div class="ftdd-gcal" role="img" aria-label="Sample: the event editor, Recorded Statement Meeting, Feb 6, 2025, 2:00pm to 3:00pm, time zone (GMT-05:00) Central Time - Chicago">' +
     '<div class="ftdd-gcal-top"><span class="ftdd-gcal-x">✕</span><span class="ftdd-gcal-title">Recorded Statement Meeting</span><span class="ftdd-gcal-save">Save</span><span class="ftdd-gcal-more">More actions ▾</span></div>' +
     '<div class="ftdd-gcal-row"><span class="ftdd-gcal-f">Feb 6, 2025</span><span class="ftdd-gcal-f">2:00pm</span><span class="ftdd-gcal-to">to</span><span class="ftdd-gcal-f">3:00pm</span><span class="ftdd-gcal-f">Feb 6, 2025</span>' +
     '<span class="ftdd-gcal-f ftdd-gcal-tz">(GMT-05:00) Central Time - Chicago</span><span class="ftdd-gcal-link">Time zone</span></div></div>\n' +
-    '<p class="ftdd-gcal-cap">The time zone, boxed in red, shows in every screenshot: set it before you save.</p>\n';
-  const SEQ = ["1. Client Meeting", "2. Team Meeting", "3. Deposition Meeting", "4. Gym Session", "5. Doctor’s Appointment", "6.1 Court Appearance",
-    "6.2 Court Appearance: Travel Block for travel to court", "6.3 Court Appearance: Travel Block for return travel", "7. Recorded Statement Meeting",
-    "8.1 Networking Dinner Event", "8.2 Transportation to Seattle Airport (SEA)", "8.3 Flight from Seattle (SEA) to San Francisco (SFO)",
-    "8.4 Event Proper Arrival Block time", "8.5 Overnight Stay", "8.6 Return Travel to Seattle: Check out of the hotel and travel to the airport",
-    "8.7 Return Travel to Seattle: Flight from San Francisco (SFO) to Seattle (SEA)", "9. Document Review Session", "10. Family Dinner", "11. Entire Calendar"];
-  const seq = '<ol class="ftdd-seq">' + SEQ.map((t, i) => `<li><span class="ftdd-seq-n">${i + 1}</span><span>${t}</span></li>`).join("") + "</ol>\n";
-  // 📅 the Calendar Activity Check (js/ft-calcheck.js): before uploading, the trainee enters what each event holds and
+    '<p class="ftdd-gcal-cap">The time zone, boxed in red: set it before you save.</p>\n';
+  // 📅 the Calendar Activity Check (js/ft-calcheck.js): the trainee enters what each event holds and
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
   const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
-    '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you upload →</small></span></button></div>\n';
-  // after the items: the activity and the samples themselves, full size, then the three cards one under the other (not a
+    '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you submit →</small></span></button></div>\n';
+  // after the items: the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
   // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
   // (the activity's Instructions on one slide, as two cards side by side: 1–4 and 5–9; its ten Activity Items on the next
@@ -307,8 +300,9 @@ s3: html => {
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
     '<div class="ftdd-cards2">' + card("📋", "Instructions 1–4", text.slice(0, five).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 5–9", text.slice(five, at)) + "</div>\n" +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
-    '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)) + "\n" + card("📸", "3. The whole calendar", whole) + "\n" +
-    card("📤", "4. Upload your 19 screenshots", up.replace(shot("image40.png"), seq + check)) + "\n" + cut("<p><b><i>*** Free Communication");
+    '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
+      .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")) + "\n" +
+    check + cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the Call Listening Sessions, the sample recordings and SOP as links (a new tab,
 // not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
@@ -813,7 +807,7 @@ const ROWS = {
     s3: [{id: "s3", h: "Attorney Calendar Management Activity: Instructions", parts: [[null, CAL_HEAD(CAL_GROUPS[0])]]},
       ...["s3i", "s3j", "s3k", "s3l"].map((id, i) => ({id, h: "Attorney Calendar Management Activity: Activity Items " + calRange(CAL_GROUPS[i]),
         parts: [[CAL_HEAD(CAL_GROUPS[i]), i + 1 < CAL_GROUPS.length ? CAL_HEAD(CAL_GROUPS[i + 1]) : SLOT(5, "s3-2")]]})),
-      {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone, Screenshots & Upload", parts: [[SLOT(5, "s3-2"), null]]}]
+      {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone & Submit", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
     // the card lists the mock calls first, then the videos to watch while waiting for a turn

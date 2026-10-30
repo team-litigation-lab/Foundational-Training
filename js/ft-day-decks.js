@@ -2755,14 +2755,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B61
 .ft-body .ftdd-ev-av{width:24px;height:24px;border-radius:50%;background:#0B57D0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
 main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size:14px !important;font-weight:600 !important;}
 @media(max-width:900px){ .ft-body .ftdd-ev-body{grid-template-columns:minmax(0,1fr);} }
-/* 📤 the 19 screenshots, numbered in the order they are uploaded */
-.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the whole row) */
 .ft-body .ftdd-sheet > .ftdd-card4, main.main-ftdd .ftdd-sheet > .ftdd-card4{margin:0 0 14px;}   /* (the list takes the card's whole row, in two columns) */
-.ft-body ol.ftdd-seq{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-rows:repeat(10,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px 14px;}
-@media(max-width:900px){ .ft-body ol.ftdd-seq{grid-auto-flow:row;grid-template-rows:none;} }
-.ft-body ol.ftdd-seq li{display:flex;align-items:center;gap:8px;margin:0 !important;padding:5px 10px;border-radius:6px;background:#F4F6FB;font:600 16px/1.3 'Inter',system-ui,sans-serif !important;color:#1E2340 !important;}
-.ft-body ol.ftdd-seq li:nth-child(even){background:#EBEEF6;}
-.ft-body .ftdd-seq-n{flex:0 0 auto;min-width:28px;height:28px;border-radius:50%;background:#E8590C;color:#fff;font:800 13px/28px 'Inter',sans-serif;text-align:center;}
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
