@@ -533,15 +533,16 @@ s4: html => {
     .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
 // 🎧 Call Intake & Data Extraction, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
-// Harbor & Pine Injury Law, each with a challenge (background noise, a line that breaks up, a Spanish-speaking caller, a
-// speakerphone echo, a fast-talking adjuster, an upset family member not on the file), played on the slide. The calls,
+// Harbor & Pine Injury Law, each with a challenge (calls 1-5, VA Oscar's recordings redone for the firm: a wrong birth year,
+// a frustrated repeat caller, an unclear fax request, a short confirmation, a reschedule with a warm transfer; call 6, an
+// upset family member not on the file), played on the slide. The calls,
 // their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
 // build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
 const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
 const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // a "link coming" or placeholder box
 const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
-const CH_ICON = [[/connection/i, "📶"], [/language/i, "🌐"], [/audio quality|echo/i, "🎚️"], [/fast/i, "⏩"], [/not on the file|unauthori/i, "🔒"], [/upset/i, "😟"], [/noise/i, "🔊"]];
+const CH_ICON = [[/mixed-up|wrong birth/i, "🔁"], [/frustrat|repeat/i, "😤"], [/unclear/i, "❓"], [/short call/i, "⏱️"], [/schedul|transfer/i, "📅"], [/connection/i, "📶"], [/language/i, "🌐"], [/audio quality|echo/i, "🎚️"], [/fast/i, "⏩"], [/not on the file|unauthori/i, "🔒"], [/upset/i, "😟"], [/noise/i, "🔊"]];
 const chIcon = t => (CH_ICON.find(([re]) => re.test(t)) || [0, "👤"])[1];
 const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 // the calls, three cards to a row (each row is one block, so a page never splits a card)
