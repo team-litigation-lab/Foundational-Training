@@ -76,7 +76,7 @@ const DAYS = [
     {t:"🎧 Call Listening on 10 Sample Recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
-    {t:"Call Intake & Data Extraction: 6 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
+    {t:"Call Intake & Data Extraction: 5 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
   ]},
   {day:4, role:"Reception Training", lessons:[4], items:[
     {t:"Training Video Viewing", kind:"Activity", at:"room"},

@@ -3,7 +3,7 @@
 const DAY3 = {
   id: 3,
   title: "Personal Injury Process Flow",
-  video: "https://drive.google.com/file/d/1hRbuwwsTpccy0DCy7Rn90HZy_h8t4tbo/view",
+  video: "https://drive.google.com/file/d/1x5sQybRLS_PDN_58ttVNN1MkAd2EviXG/view",
   deck: "Personal_Injury_Workflow.pdf (sent in chat)",
   heading: "Personal Injury Process Flow",
   sections: [
