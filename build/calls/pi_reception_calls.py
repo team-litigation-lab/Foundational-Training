@@ -476,9 +476,12 @@ def render(call):
             mix[s:e] += b
     return norm(mix, 0.89)
 
+# the calls play a little faster than the voices speak (pitch kept): 15% quicker, so a trainee isn't waiting on the line
+TEMPO = 1.15
+
 def save(a, path):
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", "-",
-                    "-af", "loudnorm=I=-18:TP=-2:LRA=11", "-ar", "22050", "-c:a", "libmp3lame", "-b:a", "56k", path],
+                    "-af", f"atempo={TEMPO},loudnorm=I=-18:TP=-2:LRA=11", "-ar", "22050", "-c:a", "libmp3lame", "-b:a", "56k", path],
                    input=a.astype(np.float32).tobytes(), check=True)
 
 def transcript(call):

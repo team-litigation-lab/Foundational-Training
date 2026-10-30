@@ -1337,7 +1337,7 @@ const LESSON_CARDS = {
       {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
       // (no Digital Handouts stop: the day has no handouts, and the AI discussion video is its lesson card's 🎬 Video)
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
-      {t: "Call Listening on the Sample Recordings", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
+      {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
       {t: "Listening Activity", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
       // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
