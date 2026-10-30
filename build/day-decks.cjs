@@ -535,7 +535,7 @@ s2: html => {
   const lead = /<p>After completing your spelling &amp; typing tests, kindly proceed right away to work on these sets of tasks for today’s training session\.\s*Thank you\.<\/p>\n/;
   const task1 = /<p>Task 1 - Please watch these two videos:<\/p>\n<p>A\. Intake Process Overview<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>B\. Saving intake documents and updating fields in the Intake Tab<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>Task 2 - Update item #15 in your monitoring sheet\.<\/p>\n/;
   const kb = /<h4>📚 In the Knowledge Base<\/h4>\n([^]*?)(?=<p><b>Topic 2:|$)/;
-  // (the naming-convention line and its reference, under step 2 in the day file, go between steps 3 and 4)
+  // (the naming-convention reference, under step 2 in the day file, goes between steps 3 and 4; the line over it is dropped)
   const naming = /(<p>Please don’t forget to rename each extracted document[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-fit data-kind="doc" data-title="Naming convention reference \(PDF\)"[^\n]*<\/p>)\n(<div class="ftdd-step"><span class="ftdd-step-n">3<\/span>[^\n]*\n<p>Note: For your completed Intake Worksheet[^\n]*<\/p>)\n(<div class="ftdd-step ftdd-step-check"><span class="ftdd-step-n">4<\/span>)/;
   if(!lead.test(html) || !task1.test(html) || !kb.test(html) || !naming.test(html)) throw new Error("Day 8's Topic 1 and 2 are no longer where the build looks for them");
   const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
@@ -545,7 +545,10 @@ s2: html => {
       `${cardOf(a)}\n${cardOf(b)}\n` +
       `<p>Update item #15 in your ${mon}.</p>\n`)
     .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`)
-    .replace(naming, (m, line, link, step3, step4) => `${step3}\n${line}\n${link}\n${step4}`);
+    // (without the "Please don’t forget to rename…" line: the reference itself is what the trainee needs there)
+    // (under step 3's note, the box the trainee submits their completed worksheet's link in: js/ft-intake.js .ftis-wsub)
+    // (and the naming convention reference read on the slide, page by page, in place of its PDF embed: pdocHtml)
+    .replace(naming, (m, line, link, step3, step4) => `${step3}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC)}${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
@@ -874,6 +877,21 @@ const EDIT = {
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
+// 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms or dir, made from the PDFs:
+// read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
+// (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
+const PDOC_DIR = "/ft/day7/forms";
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
+  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
+  `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
+  `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
+// Day 8's naming convention reference (Topic 2, between steps 3 and 4)
+const NAMING_DOC = ["naming-convention", "Document Naming Convention (reference)", 6, "/ft/day8/docs"];
+// Day 7's blank PI intake forms, a page of the slide each, and the other intake documents
+const INTAKE_FORMS = [["personal-injury-sheet", "Blank Personal Injury Intake Sheet (MVC / MVA)", 6], ["dog-bite", "Blank Intake Form: Dog Bite", 4],
+  ["medical-malpractice", "Blank Intake Form: Medical Malpractice", 9], ["premises-liability", "Blank Intake Form: Premises Liability", 4],
+  ["slip-and-fall", "Blank Intake Form: Slip and Fall", 5]];
+const INTAKE_DOCS = [["affidavit-additional-insurance", "3P Insurance Affidavit (additional insurance): blank", 2]];
 const ROWS = {
   2: {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
@@ -950,7 +968,12 @@ const ROWS = {
     // its four recordings are the 🎧 Call Listening Activity, the day's last AM stop (js/ft-day-decks.js LISTEN_CARDS[7])
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
-      {id: "formsb", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]]},
+      {id: "formsb", h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]], fix: [x => {
+        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each)
+        const shot = /<a class="ftdd-shot"[^\n]*1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF[^\n]*<\/a>\n/;
+        if(!shot.test(x)) throw new Error("Day 7's Blank PI Intake Forms are no longer where the build looks for them");
+        return x.replace(shot, () => '<p>Read each form here: the fillable forms are in the CMS.</p>\n' + INTAKE_FORMS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n'));
+      }]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
         fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
@@ -958,7 +981,9 @@ const ROWS = {
       {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
-        return x.replace(two, "$1\n");
+        // (the Other Intake-Related Documents folder: its documents read on the slide, the folder linked under them)
+        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n') +
+          '<p class="ftdd-pdoc-more">The rest of the folder: <a href="https://drive.google.com/drive/folders/1UrLBiX0ntxzvyxvRkHBhdTevtoP2jLzX?usp=sharing" target="_blank" rel="noopener noreferrer">Other Intake-Related Documents ↗</a></p>\n');
       }]}]
   },
   8: {
@@ -969,8 +994,16 @@ const ROWS = {
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
       // (the naming convention and its reference are on Topic 2's slide, between its steps 3 and 4: TRIM[8].s1; the additional
       // intake documents are a slide of their own)
-      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]]},
-      {id: "s1c", h: "AM: Other Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
+      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]], fix: [
+        // (no 🏷 topic label: the slide's ribbon names the topic) the video named for its cases, played on the left and large,
+        // with its instruction beside it (ftdd-vside)
+        ["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>\n", ""],
+        x => { const re = /(<p>Watch this video presentation about the Intake Packet and the Intake Documents\.<\/p>)\n(<p><a class="viewer-link" data-kind="video" data-title=")The Intake Packet and the Intake Documents("[^\n]*<\/p>)\n/;
+          if(!re.test(x)) throw new Error("Day 8's Intake Packet video is no longer where the build looks for it");
+          return x.replace(re, '<div class="ftdd-vside">\n$2The Intake Packet and the Intake Documents (MVA Cases)$3\n$1\n</div>\n'); }]},
+      {id: "s1c", h: "AM: Other Intake Documents", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]],
+        // (the day file's page break before the documents was Topic 2's: here they open the slide)
+        fix: [['<div class="ftdd-pgbreak"></div>\n<div class="ftis-docs"', '<div class="ftis-docs"']]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
       {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},

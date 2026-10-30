@@ -492,7 +492,7 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   // Day 7: the four intake recordings, kept on the platform (ft/day7/audio), each a card that plays in the pop-up player
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
-    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Intake call"}))};
+    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Sample Intake Mock Call"}))};
 const LISTEN_BARE = [7];
 // a day's Call Listening slide headed by its name instead of the instructions (Day 3: its card row's name)
 const LISTEN_LEAD = {3: "Sample Call Recordings"};
@@ -503,7 +503,7 @@ function listenCards(cards, folder, recs){
   cards = cards.map((c, i) => { const u = ((recs || [])[i] || {}).url || "";
     return c.id || c.src || !u ? c : Object.assign({}, c, {id: driveId(u), src: driveId(u) ? "" : audioUrl(u)}); });
   // 🎧 recordings on the platform play in the pop-up player, a card each
-  if(cards.every(c => c.pop && c.src)) return `<div class="ftdd-acards">${cards.map((c, i) => `<button type="button" class="ftdd-acard" data-audio="${e(c.src)}" data-title="${e(c.t)}">` +
+  if(cards.every(c => c.pop && c.src)) return `<div class="ftdd-acards${cards.length === 4 ? " ftdd-acards-2x2" : ""}">${cards.map((c, i) => `<button type="button" class="ftdd-acard" data-audio="${e(c.src)}" data-title="${e(c.t)}">` +
     `<span class="ftdd-acard-ic">🎧</span><b>${e(c.t)}</b><span class="ftdd-acard-tag">${e(c.kind)} ${i + 1}</span><small>${e(c.len || "")} · ▶ Play</small></button>`).join("")}</div>`;
   // (numbered within their kind: Sample call 1–10)
   return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card${c.id || c.src ? " is-live" : ""}"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
@@ -1240,17 +1240,20 @@ root.render = function(){
     ev.preventDefault(); ev.stopImmediatePropagation();
   }, true);
 })();
-// 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
+// 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) or a document's page (Day 7's intake forms, .ftdd-pdoc: build/day-decks.cjs
+// pdocHtml) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
 (() => {
-  let box = null, list = [], at = 0;
-  const show = () => { const a = list[at]; box.querySelector("img").src = a.getAttribute("href"); box.querySelector(".ftdd-zoom-cap").textContent = `Sample SOP · page ${at + 1} of ${list.length}`; };
+  let box = null, list = [], at = 0, name = "";
+  const show = () => { const a = list[at]; box.querySelector("img").src = a.getAttribute("href"); box.querySelector(".ftdd-zoom-cap").textContent = `${name} · page ${at + 1} of ${list.length}`; };
   const close = () => { if(box){ box.remove(); box = null; } };
   const turn = d => { at = (at + d + list.length) % list.length; show(); };
   document.addEventListener("click", ev => {
-    const a = ev.target.closest && ev.target.closest(".ftdd-sop-shots a");
+    const a = ev.target.closest && ev.target.closest(".ftdd-sop-shots a, a.ftdd-pdoc-pg");
     if(!a || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
     ev.preventDefault();
-    list = [...a.closest(".ftdd-sop-shots").querySelectorAll("a")]; at = list.indexOf(a);
+    const doc = a.closest(".ftdd-pdoc");
+    list = [...(doc || a.closest(".ftdd-sop-shots")).querySelectorAll(doc ? "a.ftdd-pdoc-pg" : "a")]; at = list.indexOf(a);
+    name = doc ? doc.querySelector(".ftdd-pdoc-h b").textContent.replace(/^📄\s*/, "") : "Sample SOP";
     close();
     box = document.createElement("div"); box.className = "ftdd-zoom";
     box.innerHTML = '<div class="ftdd-zoom-cap"></div><img alt=""><button type="button" class="ftdd-zoom-prev" title="Previous page">‹</button>' +
@@ -2980,6 +2983,13 @@ main.main-ftdd .ftdd-sheet a.ftdd-sop-dl, main.main-ftdd .ftdd-sheet a.ftdd-sop-
 .ftdd-acard-ic{font-size:22px;line-height:1;} .ft-body .ftdd-acard b{font:700 16px/1.3 'Inter',sans-serif;}
 .ft-body .ftdd-acard small{font:700 13px/1.2 'Inter',sans-serif;color:#C2410C;}
 .ft-body .ftdd-acard-tag{font:600 13px/1.3 'Inter',sans-serif;color:#5B6178;}
+/* four recordings (Day 7's intake calls): two by two, larger, the sublabel dark enough to read on white */
+.ftdd-acards.ftdd-acards-2x2{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 button.ftdd-acard{padding:16px 18px;gap:8px;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard b{font-size:20px;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard-tag{font-size:16px;font-weight:700;color:#2E3450;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard small{font-size:16px;color:#9A3412;}
+
 /* (the Call Listening slide's recordings: bigger cards, white on navy, five to a row) */
 .ftdd-listen .ftdd-acards{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:14px 0 6px;}
 .ft-body .ftdd-listen button.ftdd-acard{background:#1E2340;border:2px solid #1E2340;border-left:6px solid #E8590C;padding:18px 18px 16px;gap:10px;min-height:150px;color:#fff;box-shadow:0 6px 16px rgba(30,35,64,.28);}
@@ -3107,6 +3117,50 @@ main.main-ftdd .ftdd-sheet .ftdd-evl-i{position:relative;padding:5px 12px 5px 38
 main.main-ftdd .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub{padding-left:62px;font-size:15px;font-weight:600;color:#262B45;}
 .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub::before{left:36px;width:13px;height:13px;}
 main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:600;color:#262B45;margin:6px 0 0;}
+/* 📄 a document read on the slide, page by page (Day 7's intake forms and documents: build/day-decks.cjs pdocHtml): its
+   name white on navy, then its pages side by side, as large as the page allows (two rows for a long form); a page opens
+   bigger on a click (the Sample SOP's zoom, below) */
+.ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h span{font:600 14px/1.3 'Inter',sans-serif;color:#E6E9F5;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:700 14px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;text-decoration:underline;}
+.ftdd-sheet .ftdd-pdoc-pages{--rows:1;--cols:var(--n);display:grid;grid-template-columns:repeat(var(--cols),auto);justify-content:center;gap:12px 18px;margin-top:10px;}
+.ftdd-sheet .ftdd-pdoc[data-pages="6"] .ftdd-pdoc-pages{--rows:2;--cols:3;}
+.ftdd-sheet .ftdd-pdoc[data-pages="9"] .ftdd-pdoc-pages{--rows:2;--cols:5;}
+.ftdd-sheet a.ftdd-pdoc-pg{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none !important;cursor:zoom-in;}
+.ftdd-sheet a.ftdd-pdoc-pg img{display:block;max-width:100%;height:calc((var(--ftdd-room, 70vh) - 120px) / var(--rows) - 30px);min-height:150px;object-fit:contain;background:#fff;border:1.5px solid #9AA0AB;border-radius:6px;box-shadow:0 3px 10px rgba(30,35,64,.14);}
+.ftdd-sheet a.ftdd-pdoc-pg:hover img{border-color:#E8590C;box-shadow:0 4px 14px rgba(232,89,12,.30);}
+main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-serif;color:#262B45 !important;}
+main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
+/* a set of video cards (data-card): the card is the button, so no "▶ Watch" under the name; two videos (Day 8's Topic 1)
+   share the slide's width, so their previews are large */
+.ft-body .ftdd-vcard .ftdd-tile-t small{display:none;}
+.ftdd-vcards:has(> .ftdd-vcard:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;}
+main.main-ftdd .ftdd-sheet .ftdd-vcards:has(> .ftdd-vcard:nth-child(2):last-child) .ftdd-tile-t b{font-size:18px;color:#0B0D1A;}
+/* a video and its instruction side by side (build/day-decks.cjs: Day 8's Topic 2): the video on the left, as large as it fits */
+.ftdd-sheet .ftdd-vside{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:22px;align-items:center;width:100%;align-self:stretch;}
+.ftdd-sheet .ftdd-vside > :first-child{order:0;} .ftdd-sheet .ftdd-vside > p{order:1;margin:0;}
+.ft-body .ftdd-sheet .ftdd-vside .ftdd-inline{margin:0;}
+.ft-body .ftdd-sheet .ftdd-vside .ftdd-embed.ftdd-embed-player{width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-vside > p{font-size:22px !important;font-weight:700;color:#0B0D1A;}
+@media(max-width:900px){ .ftdd-sheet .ftdd-vside{grid-template-columns:minmax(0,1fr);} }
+/* a slide's numbered steps: the slide's width, their text from the left edge (Day 8's Topic 2) */
+main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(.ftdd-step, .ftis-wsub){align-self:stretch;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{text-align:left;}
+/* a link drawn as a button keeps the button's look: Days 6–15's link colour and underline are for links in the text
+   (Day 8's ✏️ Make my editable copy had blue underlined type on its navy) */
+main.main-ftdd .ftdd-sheet a.btn{text-decoration:none !important;}
+main.main-ftdd .ftdd-sheet a.btn.btn-navy{color:#fff !important;}
+/* Day 8's additional intake documents (js/ft-intake.js .ftis-docs): a card is a link, but reads as a card, its name dark,
+   bold and larger, not the text's blue underline */
+main.main-ftdd .ftdd-sheet a.ftis-doc{text-decoration:none !important;color:#0B0D1A !important;}
+main.main-ftdd .ftdd-sheet a.ftis-doc .ftis-doc-t{font-size:16px;font-weight:800;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet a.ftis-doc:hover{border-color:#E8590C;}
+main.main-ftdd .ftdd-sheet p.ftis-docs-lead{font-size:22px !important;font-weight:800;color:#0B0D1A;margin-bottom:10px;}
+/* the trainee's packet and mock call placeholders (js/ft-intake.js) in darker type */
+main.main-ftdd .ftdd-sheet .ftis-pk-ph b{font-size:18px;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet .ftis-pk-ph small{font-size:15.5px;font-weight:600;color:#2E3450;}
 /* the sample intake calls' cards on a deck slide (js/ft-intake.js .ftis-calls, Day 7): dark, larger type on the white card,
    the name and firm on the left, the length on one line, the "Listen for" label a darker orange that reads on white */
 main.main-ftdd .ftdd-sheet .ftis-call header > div{text-align:left;}
