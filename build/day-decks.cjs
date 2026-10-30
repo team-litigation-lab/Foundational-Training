@@ -798,10 +798,10 @@ const ROWS = {
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
     // (the mock calls' slide opens on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
     s1: [{id: "s1", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]},
-      {id: "s1b", h: "Entire Day: Calendar Management Mock Calls", parts: [["<p><b>☎ Mock Calls: how to access", null]]},
+      {id: "s1b", h: "Entire Day: Calendaring Activity", parts: [["<p><b>☎ Mock Calls: how to access", null]]},
       // the mock calls themselves, as Day 4's: a trainee's screen is only Mock Calls Ongoing and Done (js/ft-buffer.js "6:s1b-2"
       // simple); the line is the trainer's, over the tracker ("s1b-2": it continues s1b's card row)
-      {id: "s1b-2", h: "Entire Day: Calendar Management Mock Calls (One-on-One)", pre: MOCK_ONE_CAL, parts: []}]
+      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []}]
   },
   7: {
     s1: [{id: "s1", parts: [[null, "<p><b>Intake Scenario Exercise</b></p>"]]},
