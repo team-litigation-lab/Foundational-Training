@@ -213,7 +213,7 @@ function candidateIds(name, batch) {
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
 // own HTML, every trainee reads it in place of the built slide.
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo|intake)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
@@ -222,10 +222,11 @@ const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemp
 //   labreview:<id>    the trainer's review of each Practice Session, and the trainer-led activities' results (js/ft-sessions.js)
 //   simresults:<id>   the trainee's results on the Training Portal's simulators opened from this program (the Portal writes it)
 //   lorassign:<id>    the case the trainer assigned for the LOR Drafting Activity (js/ft-lor.js)
+//   intakeassign:<id> the Intake Packet the trainer assigned for Day 8's Intake Documents (js/ft-intake.js)
 //   trainerfb:<id>    the trainer's feedback on each activity's work, sent from Admin → 📝 Send Feedback (js/ft-trainer-feedback.js)
 //   rankshare:<id>    the trainee's own row of each Weekly Ranking Report the trainer shared (js/ft-ranking.js)
 //   videoaccess:<id>  the lessons' AI discussion videos the trainer approved for this trainee (js/ft-updates.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `intakeassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
@@ -1064,18 +1065,29 @@ export default {
 
       /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
          A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
-         ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. Trainees only:
-         an admin's ticket never signs anyone in. Good for 5 minutes. */
+         ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. A trainee's ticket signs that
+         trainee in; a trainer gets one only for the Knowledge Base (below). Good for 5 minutes. */
       if (path === "/api/auth/tool-ticket") {
-        if (tok.role !== "t" || !portalSecret(env)) return json({ error: "not-available" }, tok.role !== "t" ? 403 : 501);
+        if (!portalSecret(env)) return json({ error: "not-available" }, 501);
+        const signTicket = async (body) => {
+          const p = btoa(String.fromCharCode(...enc.encode(JSON.stringify(body)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+          return `${p}.${await hmac("portal-sso:" + portalSecret(env), p)}`;
+        };
+        // A trainer (an admin, or the 👁 Trainee view, which sends the admin token) opening the Knowledge Base: the same
+        // admin ticket { r: "a" } the Portal's /api/launch gives an administrator. The KB accepts each one once and signs
+        // the trainer in as an admin there (no password). Knowledge Base only, and never in open mode (no admin password).
+        if (tok.role === "a") {
+          const b = await request.json().catch(() => ({}));
+          if (!secure || tok.id === "open-mode" || b.tool !== "kb") return json({ error: "not-available" }, 403);
+          return json({ ticket: await signTicket({ r: "a", exp: Date.now() + 5 * 60 * 1000 }) });
+        }
+        if (tok.role !== "t") return json({ error: "not-available" }, 403);
         const rec = JSON.parse((await kv.get(`trainee:${tok.id}`)) || "null");
         if (!rec || rec.approved !== true || rec.archived) return json({ error: "not-approved" }, 403);
         const words = String(rec.name || "").trim().split(/\s+/).filter(Boolean);
         const first = String(rec.firstName || words[0] || "").trim(), last = String(rec.lastName || words.slice(1).join(" ") || "").trim();
         if (!first || !last) return json({ error: "no-name" }, 400);
-        const payload = btoa(String.fromCharCode(...enc.encode(JSON.stringify({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }))))
-          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-        return json({ ticket: `${payload}.${await hmac("portal-sso:" + portalSecret(env), payload)}` });
+        return json({ ticket: await signTicket({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }) });
       }
 
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
