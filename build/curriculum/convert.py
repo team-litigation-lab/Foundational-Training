@@ -74,6 +74,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import builder_notes
 print("builder notes taken out:", builder_notes.strip_all(B, lambda b: is_boundary(b, False)))
 
+# ---------- corrections: the guide's typos the trainer confirmed (HICF is the HCFA bill form) ----------
+FIXES = [(re.compile(r"\bHICF\b"), "HCFA")]
+def fix_runs(b):
+    for r in b.get("runs", []):
+        for rx, to in FIXES:
+            if "t" in r: r["t"] = rx.sub(to, r["t"])
+for b in B:
+    if b["k"] == "tbl":
+        for row in b["rows"]:
+            for cell in row:
+                for p in cell: fix_runs(p)
+    else: fix_runs(b)
+
 def roles(lo, hi):
     """Mark each block trainee/trainer. Returns list of 'trainer'|'trainee'."""
     role = ["trainee"] * (hi - lo)
