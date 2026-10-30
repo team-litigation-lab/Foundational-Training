@@ -203,6 +203,9 @@ const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
 const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
 function linkKind(href, label, dk){
   const u = String(href || "");
+  // (a link the build marks data-kind="web" is a page to open, whatever the lines around it say: Day 8's Prototype CMS)
+  // (and so is a Knowledge Base article, even beside a video: it opens signed in, js/lsh-tool-links.js)
+  if(dk === "web" || /^https:\/\/lsh-knowledge-base\./.test(u)) return {k: "web", ic: "🔗", act: "Open in a new tab ↗"};
   if(/drive\.google\.com\/drive\/folders\//.test(u)) return {k: "folder", ic: "📁", act: "Open the folder"};
   if(/docs\.google\.com\/spreadsheets\//.test(u)) return {k: "sheet", ic: "📊", act: "Open the sheet"};
   if(/docs\.google\.com\/presentation\//.test(u)) return {k: "slides", ic: "📽", act: "Open the slides"};
@@ -264,8 +267,9 @@ function visual(html){
       tiles[j] = btn;
     });
     // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
-    const wrapped = tiles.map(x => {
-      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn) return x;
+    // (except a link the build marks data-nolearn: Day 8's SA tutorial, played on the demonstration's slide)
+    const wrapped = tiles.map((x, j) => {
+      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn || (as[j] && as[j].hasAttribute("data-nolearn"))) return x;
       const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
       const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
       b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
@@ -311,6 +315,9 @@ function visual(html){
       const crop = parseInt(as[0].getAttribute("data-crop"), 10);
       // a document to work in (Day 2's assessments, data-full): the page's full height
       if(as[0].hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
+      // (data-fit: sized to the page, so the lines around it stay on the same page: Day 8's SA tutorial and naming reference)
+      if(as[0].hasAttribute("data-fit")) box.classList.add("is-fit");
+      if(as[0].hasAttribute("data-nolearn")) box.setAttribute("data-nolearn", "");
       // 📊 Day 2's Common Terms Used reference sheet: the platform's own table in place of the embed (refTerms below),
       // the embed while its data loads
       if(REF_SHEET.test(href)) box.setAttribute("data-sheet", REF_SHEET.source);
@@ -693,7 +700,7 @@ function slideActions(s, info, body, i){
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   // (a video that plays in the slide counts too: ftdd-inline)
   const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
-  if(vids && root.FTVideoNotes && !/ftdd-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
+  if(vids && root.FTVideoNotes && !/ftdd-nolearn|data-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
@@ -706,6 +713,9 @@ function waitBox(s, info){
   // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
   // the tools itself, and its instructions and metrics)
   if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
+  // (nor on a slide the build marks data-nowait: Day 8's SA demonstration and Intake Mock Call Activity, whose next slide
+  // has the Call Simulator)
+  if(/data-nowait/.test(String(s.html || ""))) return "";
   const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
   const sim = SIM_OF[l], acts = [];
   if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
@@ -852,7 +862,7 @@ function sheetPages(sheet){
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
     // (and an embedded video or sheet stays with its name: ftdd-inline)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4")) units.push(...inner); else units.push(k);
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4") && !k.classList.contains("ftdd-step")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -1253,11 +1263,12 @@ const LESSON_CARDS = {
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
       {t: "Intake Process", time: "AM", sub: "Two videos · update item #14 on your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents (MVA Cases)", sub: "The video, 📦 your Intake Packet, the Intake Worksheet · #16", k: "interactive", d: 8, s: "s1b"},
-      {t: "Naming Convention & Additional Documents", sub: "The Knowledge Base article · the documents not in the video", k: "read", d: 8, s: "s1c"},
-      {t: "Live Session Instructions", sub: "The mock call, the CMS demo and CMS access", k: "read", d: 8, s: "s1d"},
-      {t: "This Afternoon’s Activities", sub: "The SA demo, then the Intake Mock Call on the Prototype CMS", k: "read", d: 8, s: "s1e"},
-      {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet in SA", k: "watch", d: 8, s: "s2"},
+      {t: "Intake Documents (MVA Cases)", sub: "The video, 📦 your assigned Intake Packet, the Intake Worksheet · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Naming Convention & Additional Documents", sub: "The naming convention reference · the 14 documents not in the video", k: "read", d: 8, s: "s1c"},
+      {t: "Live Session Instructions", sub: "The CMS demonstration, then the mock call", k: "read", d: 8, s: "s1d"},
+      {t: "Smart Advocate (SA) Demonstration", sub: "Saving the Intake Packet and extracted documents · the tutorial video", k: "watch", d: 8, s: "s1e"},
+      // (its second slide, s1g: the Prototype CMS and the Call Simulator)
+      {t: "Intake Mock Call Activity", sub: "The sample intake forms · the Prototype CMS and the Call Simulator’s Intake line", k: "read", d: 8, s: "s1f"},
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "Trainer facilitated, one at a time · the Demo Metrics", k: "demo", d: 8, s: "s3"},
       {t: "Atty. Sandy Van: Intake Calling (MVC)", time: "PM", sub: "Handling intake calls for MVC cases", k: "watch", d: 8, s: "s3b"},
       {t: "Buffer Time", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
@@ -2554,6 +2565,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 /* a video with no name bar over it (data-bare): the page's full height */
 .ft-body .ftdd-inline.is-bare{margin:0;}
 .ft-body .ftdd-inline.is-bare .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));margin-top:0;}
+/* sized to the page (data-fit): the slide's lines and the embed on one page */
+.ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 210px) * 16 / 9));}
+.ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-doc{height:max(220px, calc(var(--ftdd-room, 70vh) - 200px));}
 .ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
