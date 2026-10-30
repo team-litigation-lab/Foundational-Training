@@ -700,8 +700,8 @@ function hasPQ(l){ try{ return typeof root.ftKcQuestions === "function" ? root.f
 // a day has Process Questions when the guide runs them that day (its deck carries the ✍️ Process Questions note):
 // Days 1, 2, 3, 7, 10 and 13. Only those days link to them and to the 🎮 Knowledge Games.
 // the lessons whose Process Questions a day links to, where not all of its lessons: Day 3 discusses Personal Injury
-// Process Flow and Receptionist Training, and links only the first's Knowledge Check (Receptionist Training's is its own)
-const PQ_LESSONS = {3: [3]};
+// Process Flow and Receptionist Training, and links their one Knowledge Check, Receptionist Training's (js/ft-process.js kc)
+const PQ_LESSONS = {3: [4]};
 const pqLessons = (n, info) => (PQ_LESSONS[Number(n)] || (info || dayInfo(n)).lessons || []).filter(hasPQ);
 const PQ_NOTE_RE = /ftdd-pq[^>]*>[^<]*<b>Today’s Process Questions/;
 // (d.pq: the build's word for a day whose Process Questions were on a slide that is off the deck, build/day-decks.cjs)
@@ -1355,12 +1355,13 @@ const LESSON_CARDS = {
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
   3: {days: [3], focus: "The PI Workflow & Reception Calls",
     rows: [
-      // Part 1: 💬 Classroom Discussion (▶ Start Training: the lesson deck, as on Days 1 and 2), whose Next is ✍️ Personal
-      // Injury Process Flow's Knowledge Check (kc: Receptionist Training's is its own, not Day 3's), the handouts, then the
-      // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
-      {t: "PI Workflow / Reception Training", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
-      {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
-      // (no Digital Handouts stop: the day has no handouts; 🎬 the AI discussion video is its own stop, standardRows)
+      // Part 1: 💬 the PI Workflow deck, then 💬 the Reception deck (▶ Start Training: each lesson's deck, as on Days 1 and 2),
+      // then their one ✍️ Knowledge Check (Receptionist Training's, with Personal Injury Process Flow's questions first:
+      // js/ft-process.js kc), then the 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
+      {t: "PI Workflow Discussion Deck", sub: "▶ Start Training: the Personal Injury Process Flow deck, with your trainer · Next: the Reception deck", k: "classroom", go: "lesson"},
+      {t: "Reception Discussion Deck", sub: "▶ Start Training: the Receptionist Training deck, with your trainer · Next: ✍️ the Knowledge Check", k: "classroom", go: "lesson", lesson: 4, kc: 4},
+      {t: "Process Questions: Submit", sub: "PI Workflow & Receptionist Training in ✍️ Knowledge Check, ten questions · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(4)"},
+      // (no Digital Handouts stop: the day has no handouts)
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
@@ -1469,7 +1470,7 @@ const LESSON_CARDS = {
 // 🎧 Day 3's Call Intake & Data Extraction: the five calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
 // nothing to read first, and the way back is the slide after it)
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}},
-  3: {"s1d": {l: 3, label: "Next: ✍️ Knowledge Check →"}}};
+  3: {"s1d": {l: 4, label: "Next: ✍️ Knowledge Check →"}}};
 const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
 const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? {l: Number(s.launch.kc), label: `Next: ✍️ Knowledge Check: ${lessonTitle(s.launch.kc)} →`} : null));
@@ -1608,7 +1609,8 @@ function rowGo(c, r){
   if(/ftVideoOrAsk/.test(r.run || "") || r.play != null) return `FTDayDecks.stop(${Number(r.day || c.days[0])}, '${e(r.run)}')`;
   if(r.run) return r.run;   // a platform action of its own (its Process Questions)
   if(r.d != null && r.s) return `FTDayDecks.slide(${Number(r.d)}, '${e(r.s)}'${r.go ? `, '${e(r.go)}'` : ""})`;
-  if(r.go === "lesson") return `goto('day', ${Number(c.lesson)})`;
+  // (r.lesson: another lesson's deck discussed the same day, Day 3's Reception deck)
+  if(r.go === "lesson") return `goto('day', ${Number(r.lesson != null ? r.lesson : c.lesson)})`;
   if(r.go) return `goto('${e(r.go)}')`;
   return `FTDayDecks.open(${Number(c.days[0])})`;
 }
@@ -1654,9 +1656,8 @@ function standardRows(n, c, lid, first, title, rows){
   const mid = [];
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
-  // 🎬 the lesson's AI discussion video, on its first day: a slide of its own that plays it, no request (after the handouts)
-  const vid = first && !rows.some(r => r.play != null) && (typeof DAYS !== "undefined" ? DAYS : []).some(d => d.id === Number(lid) && d.video)
-    ? [{t: "AI Discussion Video", sub: `${title} · watch it on the slide`, k: "watch", run: `ftPlayVideo(${Number(lid)})`, play: Number(lid)}] : [];
+  // (🎬 the lesson's AI discussion video is not a stop of the deck: the lesson card's 🎬 Video on 📚 Dashboard plays it)
+  const vid = [];
   // (a Digital Handouts stop only where the day has handouts)
   if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)

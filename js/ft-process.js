@@ -55,10 +55,12 @@ const PROCESS_SETS = [
     "Assess how remote work increases both the risk and need for maintaining privileged communication boundaries.",
     "Analyze the type of information that can be shared with each party (e.g., client, insurance adjuster, court staff). What factors determine what can and cannot be disclosed?",
     "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff."]},
-  // two lessons discussed on Day 3, each its own Knowledge Check: Personal Injury Process Flow's three questions (Day 3's,
-  // after its Classroom Discussion), Receptionist Training's seven (its own); one file for both, the guide's
+  // two lessons discussed on Day 3, one Knowledge Check: the PI Workflow deck, then the Reception deck, then ✍️ Receptionist
+  // Training's Knowledge Check, which asks Personal Injury Process Flow's three questions (kc: they are Lesson 4's, first)
+  // and its own seven, ten in all; Personal Injury Process Flow has none of its own and finishes as Calendaring does. Each
+  // sheet keeps its own answers (process:<id> sets), and one file holds both, the guide's
   // PI_Workflow_and_Reception_Training_Process_Question_Answers (VA's first name): 💾 Save PDF writes both sheets into it
-  {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Question_Answers", questions:[
+  {id:"pi-workflow", lesson:3, kc:{4:[0, 1, 2]}, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Question_Answers", questions:[
     "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
     "Examine how missing documentation (e.g., police reports, medical records) at the intake or treatment stage could affect the value and outcome of a case.",
     "Evaluate how efficient case intake impacts the strength and pace of a personal injury claim. What are the potential legal and financial consequences of a disorganized intake?"]},
