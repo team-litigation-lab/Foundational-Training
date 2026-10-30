@@ -337,6 +337,8 @@ if(typeof __grid === "function") root.LSH_HOME_GRID_LAYOUT = function(ctx){
     const start = card.querySelector(".mc-grid > .module-start-btn"); if(!start) return;
     const lid = Number(String(card.id).replace(/^dayl-/, "")), days = card.dataset.days.split(",").map(Number).filter(Boolean);
     const head = card.querySelector(".mh-title"); if(head && CARD_TITLES[lid]) head.textContent = CARD_TITLES[lid];
+    // (the dashboard card names its role, not "… Training": Intake Specialist, Claims Specialist …)
+    if(head) head.textContent = head.textContent.replace(/\s+Training\s*$/i, "");
     const title = (head || {}).textContent || "";
     const w = document.createElement("template"); w.innerHTML = segments(lid, days, title.trim());
     start.replaceWith(w.content.firstElementChild);
