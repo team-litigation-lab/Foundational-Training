@@ -285,8 +285,8 @@ const NOLOAD = "The training couldn’t load. Check your connection and try agai
 // "Classroom Discussion on PI Workflow, Reception Training and Call Listening") is Part 1, on the PI Process Flow card,
 // titled "Personal Injury Process Flow / Reception" (CARD_TITLES); Day 4 is Part 2, on Receptionist Training's (its Day 3
 // isn't a button of its own: it is that Part 1). Medical Records: Part 1 MedLOR (Days 13–15), Part 2 Lien Balance
-// Verification (Day 16). Calendaring is its mock calls only (Day 6): one Start, no Day 5 part
-const PARTS = {4: [[4]], 5: [[6]], 8: [[13, 14, 15], [16]]};
+// Verification (Day 16)
+const PARTS = {4: [[4]], 8: [[13, 14, 15], [16]]};
 // (a card whose parts are numbered on from another card's, or a one-part card that is a Part: the labels it shows)
 const PART_LABELS = {3: ["Part 1"], 4: ["Part 2"]};
 const CARD_TITLES = {3: "Personal Injury Process Flow / Reception"};
@@ -367,12 +367,16 @@ function held(l, kind){
   const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || stepOpen(x.n, x.k)) return false;
   toast(lockMsg(x.n, x.k)); return true;
 }
-// is a lesson's stop open to this trainee by its step (no toast: a slide asks while it draws)? null where the steps don't
-// hold them (not a trainee, the locks not in force, the day not held, or no such stop), so the caller keeps its own rule
+// is a lesson's stop open to this trainee, as the trainer's slide shows it (🔓 Open to trainees / 🔒 Locked for trainees)? No
+// toast: a slide asks while it draws. Locked only while its segment is: the lesson not open for the batch, or the day held
+// step by step and the segment not unlocked yet; open on a day the steps don't hold (a batch already under way when the
+// locks began, the locks not in force yet, a day the trainee has finished). null where nothing is known yet (not a trainee,
+// the decks or the open lessons not loaded, no such stop), so the caller keeps its own rule
 function stopOpen(l, kind){
-  if(!isTrainee() || !enforced() || !decksIn()) return null;
-  l = Number(l); const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || !active(x.n)) return null;
-  return stepOpen(x.n, x.k);
+  if(!isTrainee() || !decksIn() || !state.ftOpenDays) return null;
+  l = Number(l); const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x) return null;
+  if(!dayStarted(x.n)) return false;
+  return !active(x.n) || stepOpen(x.n, x.k);
 }
 // retry fn once the decks are in (or say they couldn't load)
 const later = fn => { loadDecks().then(x => x ? fn() : toast(NOLOAD)); };

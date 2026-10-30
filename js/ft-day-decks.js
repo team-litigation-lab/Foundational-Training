@@ -605,7 +605,8 @@ const HANDOUTS = {1: {items: [
 function handoutsSlide(h){
   // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
   // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
-  // segment, where the day is held step by step (the trainer's 🔓 Unlock on the slide, or 🔓 Activity Locks), else its video
+  // segment, as the trainer's slide shows it (🔓 Unlock on the slide, or 🔓 Activity Locks; open on a day the steps don't
+  // hold); only while that isn't known yet, its video
   const lid = lessonOfDay(DD.day);
   const bySeg = root.FTDayLocks && FTDayLocks.stopOpen ? FTDayLocks.stopOpen(lid, "video") : null;
   const locked = forTrainee() && !state.adminPreview && (bySeg != null ? !bySeg : typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid));
@@ -1295,7 +1296,7 @@ const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do
   watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
-// (a mock call or demo row opens its preparation slide, "<id>p", and its Day 4 Done slide follows it: build/day-decks.cjs PREP)
+// (a mock call or demo has two rows, as Day 4's: its preparation slide, "<id>p", then its Done slide: build/day-decks.cjs PREP)
 const LESSON_CARDS = {
   1: {days: [1], focus: "VA Essentials",
     rows: [
@@ -1348,9 +1349,10 @@ const LESSON_CARDS = {
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
-  // (the card is the mock calls only: the Calendaring & Appointment Setting Training is off it, so no day buttons)
-  5: {days: [5, 6], focus: "Calendar Management Mock Calls", oneDay: true,
+  5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
+      {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
@@ -1365,20 +1367,22 @@ const LESSON_CARDS = {
       {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
-      {t: "Intake Process", time: "AM", sub: "Two videos · update item #14 on your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents (MVA Cases)", sub: "The video, 📦 your assigned Intake Packet, the Intake Worksheet · #16", k: "interactive", d: 8, s: "s1b"},
-      {t: "Naming Convention & Additional Documents", sub: "The naming convention reference · the 14 documents not in the video", k: "read", d: 8, s: "s1c"},
-      {t: "Live Session Instructions", sub: "The CMS demonstration, then the mock call", k: "read", d: 8, s: "s1d"},
-      {t: "Smart Advocate (SA) Demonstration", sub: "Saving the Intake Packet and extracted documents · the tutorial video", k: "watch", d: 8, s: "s1e"},
+      {t: "Intake Process", time: "AM", sub: "Two videos · Monitoring Sheet #14", k: "watch", d: 8, s: "s1"},
+      {t: "Intake Documents (MVA Cases)", sub: "📦 Your Intake Packet · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Naming & More Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
+      {t: "Live Session Instructions", sub: "CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
+      {t: "SA Demonstration", sub: "The tutorial video", k: "watch", d: 8, s: "s1e"},
       // (its second slide, s1g: the Prototype CMS and the Call Simulator)
-      {t: "Intake Mock Call Activity", sub: "The sample intake forms · the Prototype CMS and the Call Simulator’s Intake line", k: "read", d: 8, s: "s1f"},
-      {t: "Saving the Intake Packet to SA", time: "PM", sub: "Trainer facilitated, one at a time · the Demo Metrics", k: "demo", d: 8, s: "s3p"},
-      {t: "Atty. Sandy Van: Intake Calling (MVC)", time: "PM", sub: "Handling intake calls for MVC cases", k: "watch", d: 8, s: "s3b"},
+      {t: "Intake Mock Call Activity", sub: "Prototype CMS & Intake line", k: "read", d: 8, s: "s1f"},
+      {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
+      {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
+      {t: "Atty. Sandy: Intake Calling", time: "PM", sub: "MVC cases", k: "watch", d: 8, s: "s3b"},
       {t: "Buffer Time", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
       {t: "PI Equivalent Transcription: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
-      {t: "Intake Mock Calls", time: "PM", sub: "Your graded call, with the trainer · scored on the Intake Mock Calls Metrics", k: "mock", d: 9, s: "s3bp"}],
+      {t: "Intake Mock Call Instructions & Metrics", time: "PM", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
+      {t: "Intake Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"}],
     discuss: {7: "s1"},
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
@@ -1395,7 +1399,8 @@ const LESSON_CARDS = {
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information", sub: "The updated SA steps for your process guide", k: "read", d: 12, s: "s1b"},
       {t: "Tools & Naming Convention", sub: "Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1c"},
-      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1dp"}],
+      {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
+      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 12, s: "s1d"}],
     // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
     // Questions, which are the card's own stops, build/day-decks.cjs)
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
@@ -1407,19 +1412,22 @@ const LESSON_CARDS = {
       {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
       {t: "Breakout Session", time: "PM", sub: "Sample recordings & documents · the communication upskill", k: "interactive", d: 13, s: "s3"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3b"},
-      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · build your own work guide", k: "watch", d: 14, s: "s1"},
-      {t: "Notes for Your Work Guide", sub: "Tools, naming conventions, the HIPAA & MedLOR boxes, the NPIM doctors, the e-mail subject line", k: "read", d: 14, s: "s1b"},
-      {t: "Sample Process Guide: the First 5 Steps", sub: "Verify the matter, the task, the client’s details and the DOL", k: "read", d: 14, s: "s1c"},
-      {t: "Gentle Reminders & SA Updates", sub: "The ideal time, Word & a PDF editor, the MEDS tab and John Test Doe", k: "read", d: 14, s: "s1d"},
-      {t: "Recorded Demonstration: MedLOR & Records Request", time: "PM", sub: "The demo metrics · record and submit your demo", k: "demo", d: 14, s: "s1ep"},
-      {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 14, s: "s2"},
+      {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
+      {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
+      {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
+      {t: "Gentle Reminders & SA Updates", sub: "Ideal time, tools, the MEDS tab", k: "read", d: 14, s: "s1d"},
+      {t: "Demo Preparation", time: "PM", sub: "The rules and the demo metrics", k: "interactive", d: 14, s: "s1ep"},
+      {t: "Recorded Demo: MedLOR & Records Request", time: "PM", sub: "Record & submit · then Done", k: "demo", d: 14, s: "s1e"},
+      {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded videos", k: "shadow", d: 14, s: "s2"},
       {t: "Before Your Demo: Reminders & the Tutorial Video", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1"},
-      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · how it is scored", k: "demo", d: 15, s: "s1bp"},
+      {t: "Demo Preparation", time: "AM & PM", sub: "How the demo is scored", k: "interactive", d: 15, s: "s1bp"},
+      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 15, s: "s1b"},
       {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 15, s: "s2"},
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},
-      {t: "Demo and Shadowing", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "demo", d: 16, s: "s2p"}],
+      {t: "Demo Preparation", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "interactive", d: 16, s: "s2p"},
+      {t: "Demo and Shadowing", time: "PM", sub: "Your one-on-one demo · hit Done when it is over", k: "demo", d: 16, s: "s2"}],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
       "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
     takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
@@ -1642,11 +1650,11 @@ function dayCard(n, ex){
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
-  const of = c.days.length > 1 && !c.oneDay ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
+  const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
   const head = first ? title : (DAY_TITLES[n] || title);
-  const sub = first ? `Trainer-led discussion · opens the session${of}` : c.oneDay ? "Your graded call, with the trainer" : `${title}${of}`;
+  const sub = first ? `Trainer-led discussion · opens the session${of}` : `${title}${of}`;
   return `<article class="ftlc${open_ ? "" : " locked"}${rows.length > 6 ? " ftlc-wide" : ""}" data-day="${n}" data-first="${first ? 1 : 0}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
@@ -1657,7 +1665,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
-        ${c.days.length > 1 && !c.oneDay ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
+        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -1676,7 +1684,7 @@ function dayCard(n, ex){
    ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
-  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.oneDay ? c.days[c.days.length - 1] : c.days[0];
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.days[0];
   const t = document.createElement("template"); t.innerHTML = String(moduleCard(l)).trim();
   const card = t.content.firstElementChild; if(!card) return "";
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
