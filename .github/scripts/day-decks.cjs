@@ -60,10 +60,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
 // slide that only says the lesson deck opens from ▶ Start Training
 {
   const sl = (n, id) => ((D[n] || { slides: [] }).slides.find(s => s.id === id) || {}).html || '';
-  // (Day 4: the tools' links on a slide of their own, s2b, in big type; the steps, the run and the metrics on s2b-2)
-  const s2b = sl(4, 's2b-2'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), buf5 = sl(5, 's1');
+  // (Day 4: one slide, s2b, in pages: the warm-up, the seven steps in one block, the run with the tools' buttons, the metrics)
+  const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), buf5 = sl(5, 's1');
   const prep4 = s2b.slice(s2b.indexOf('<p>Step 1 - '), at).trim(), run4 = at < 0 ? '' : s2b.slice(at).trim();
-  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/class="ftdd-biglinks"/.test(sl(4, 's2b')) || !/class="ftdd-biglinks"/.test(buf5) || /Link coming: AI Mock Calls Listening|☎️ Front Desk Drill/.test(buf5) || sl(4, 's2c'))
+  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/ftdd-mockpage ftdd-steps7/.test(s2b) || !/ftdd-mockpage ftdd-steps7/.test(buf5) || !/class="ftdd-mock-btns"/.test(run4) || sl(4, 's2b-2') || /ftdd-biglinks/.test(s2b) || /Link coming: AI Mock Calls Listening|☎️ Front Desk Drill/.test(buf5) || sl(4, 's2c'))
     fail(`Day 5's buffer doesn't carry Day 4's mock call preparation and metrics: ${buf5.length} chars`);
   const act5 = D[5] && D[5].slides.find(s => s.id === 's3'), txt = (act5 || {}).html || '';
   const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = (txt.match(/class="ftdd-cal-item"/g) || []).length;
