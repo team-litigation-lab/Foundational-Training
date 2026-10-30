@@ -567,18 +567,20 @@ s4: html => {
   const out = html.replace(/<p>OLD VERSION<\/p>\n<p><a [^>]*1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y[^>]*>[^<]*<\/a> ?<\/p>\n?/, "")
     .replace(/<p>2026 VERSION<\/p>\n<p><a [^>]*(1-uB07Lu7nPeRpdDwOzvAKFMjZbXKQW-r)[^>]*>[^<]*<\/a> ?<\/p>/, (m, id) =>
       `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-strip"><iframe src="https://drive.google.com/embeddedfolderview?id=${id}#grid" title="The handouts (2026 version)" loading="lazy" scrolling="no"></iframe></div>`)
-    // the topic, its Task 2 and the three decks as one block, on one page (the decks a row of large thumbnails, no scrolling)
-    .replace(/(<p><b>Topic: Documents &amp; Spreadsheets[^]*?<\/p>\n<p>Task 2 – [^]*?<\/p>\n<div class="ftdd-embed ftdd-embed-folder[^]*?<\/iframe><\/div>)/, '<div class="ftdd-keep ftdd-hw-ppts">\n$1\n</div>');
+    // Task 2 and the three decks as one block, on one page (the decks a row of large thumbnails, no scrolling); the topic's
+    // own line (Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette) goes: the slide's ribbon names them
+    .replace(/<p><b>Topic: Documents &amp; Spreadsheets[^]*?<\/p>\n(<p>Task 2 – [^]*?<\/p>\n<div class="ftdd-embed ftdd-embed-folder[^]*?<\/iframe><\/div>)/, '<div class="ftdd-keep ftdd-hw-ppts">\n$1\n</div>');
   if(/OLD VERSION|1sR8tjpMXPGWJo9cldpNWFdPhtMgq4n-y/.test(out) || !/embeddedfolderview/.test(out) || !/ftdd-hw-ppts/.test(out)) throw new Error("Day 2's Homework handouts are no longer where the build looks for them");
   const mon = /<p>Task 3 - Update items #8-9 in your monitoring sheet\.<\/p>/;
   if(!mon.test(out)) throw new Error("Day 2's Homework monitoring sheet line is no longer where the build looks for it");
-  // the Softphones video alone (no Task line over it, no name bar: data-bare), then its Action in bold with a 📒 Monitoring
-  // Sheet button, and its Note; no "outside training hours": it is a classroom activity
+  // the Softphones video alone (no Task line over it, no name bar: data-bare), its Action in bold with a 📒 Monitoring Sheet
+  // button and its Note at the video's lower right; no "outside training hours": it is a classroom activity
   const pin = /<p>📌To be accomplished outside training hours\. 📌<\/p>\n/, soft = /<p><b>Topic: Softphones<\/b><\/p>\n<p>Task 1 – Please follow this link to view the instructional video on Softphones\.[^<]*<\/p>\n(<p><a class="viewer-link"[^]*?<\/p>\n)/;
   if(!pin.test(out) || !soft.test(out)) throw new Error("Day 2's Softphones task is no longer where the build looks for it");
-  return out.replace(pin, "").replace(soft, (m, video) => video +
+  // (the video on the left, the Action and its Note at its lower right: ftdd-soft, one block on one page)
+  return out.replace(pin, "").replace(soft, (m, video) => `<div class="ftdd-soft ftdd-keep">\n` + video + `<div class="ftdd-soft-side">\n` +
       `<p><b>Action: Log your takeaways on your</b> <a class="btn btn-navy ftdd-mon-btn" href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a></p>\n` +
-      "<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
+      "<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n</div>\n</div>\n")
     .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
 // 🎧 Reception Listening Activity, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): five practice calls at the Practice Lab's
