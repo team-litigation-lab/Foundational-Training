@@ -2514,6 +2514,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-pic > p.ftdd-pic-about{font-size:15px !important;line-height:1.45 !important;color:#30364F;flex:1;}
 .ftdd-pic-audio{width:100%;height:40px;margin:4px 0 2px;}
 /* 📝 Day 3's Answer Sheet: the last card of the calls' row, opening its pop-up (js/ft-listening.js FTListen.pop) */
+.ftdd-pic-row:has(.ftdd-pic-sheet){align-items:start;}   /* (the calls keep their own height beside it) */
 .ftdd-pic.ftdd-pic-sheet{padding:16px 18px;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;font:inherit;border-color:#E8590C;border-style:dashed;background:#FFF7ED;color:#1E2340;}
 .ftdd-pic.ftdd-pic-sheet:hover{background:#FDEBDD;box-shadow:0 6px 16px rgba(232,89,12,.2);}
 .ftdd-pic-sheet-ic{font-size:30px;line-height:1;} .ftdd-pic-sheet b{font:800 19px/1.3 'Poppins','Inter',sans-serif;}

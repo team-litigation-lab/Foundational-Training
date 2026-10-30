@@ -603,8 +603,9 @@ const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 // the calls, three cards to a row (each row is one block, so a page never splits a card)
 function piCallRows(compact, extra){
   const card = c => `<div class="ftdd-pic${compact ? " ftdd-pic-sm" : ""}"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
-    `<p class="ftdd-pic-tags">${(compact ? [c.challenge] : c.tags).map(t => `<span class="ftdd-pic-tag${/client|provider|adjuster/i.test(t) && !/not on/i.test(t) ? " ftdd-pic-who" : ""}">${chIcon(t)} ${hx(t)}</span>`).join("")}</p>` +
-    (compact ? "" : `<p class="ftdd-pic-about">${hx(c.about)}</p>`) +
+    // (Day 3's activity: no tags and no summary, as who called and the call's challenge are what the trainee works out
+    // and the answer sheet grades; Day 4's warm-up, after it, names the challenge)
+    (compact ? `<p class="ftdd-pic-tags">${[c.challenge].map(t => `<span class="ftdd-pic-tag">${chIcon(t)} ${hx(t)}</span>`).join("")}</p>` : "") +
     `<audio class="ftdd-pic-audio" controls preload="none" src="${c.file}" title="Call ${c.id}: ${hx(c.title)}"></audio></div>`;
   const rows = [];
   // (extra: a last card after the calls, in the last row's free place: Day 3's 📝 Answer Sheet)
