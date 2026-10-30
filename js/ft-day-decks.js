@@ -1388,10 +1388,10 @@ const LESSON_CARDS = {
       // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
       // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, its 📝 answers
       // (js/ft-listening.js "recact") and the day's end: no ✍️ Knowledge Check between them)
-      {t: "Listening Activity: Harbor & Pine Calls (optional)", sub: "Five calls with a challenge on the line · in your own time", k: "listen", d: 3, s: "s1b"},
+      {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "Reception Listening Activity: Answers", sub: "Log each call's 5 data points and its challenge · 💾 Save", k: "assessment", d: 3, run: "FTListen.open('recact')"},
+      {t: "Reception Listening Activity: Answers", sub: "Log each call’s answers", k: "assessment", d: 3, run: "FTListen.open('recact')"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
@@ -1689,7 +1689,7 @@ const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: 
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
    carries its Classroom Activity card (▶ Start Training opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
-   focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
+   focus. Every row opens its slide (no buttons to the lesson's other days' cards). */
 /* 📋 Every day's card in Day 1's arrangement, each row opening its activity in the order the day runs: the opening task
    (a buffer, the checking of assignments, a reading), then on the lesson's first day 💬 Classroom Discussion (▶ the lesson)
    and its Digital Handouts, then the day's activities, then ✍️ Process Questions: Submit on the days the guide sets them,
@@ -1749,7 +1749,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
-        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
+        </section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -2384,10 +2384,6 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftdd-rec-play iframe{width:100%;height:100%;border:0;} .ftdd-rec-go{margin:6px 0 0;font-size:13px;}
 .ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo,.ftlc-pill.k-listendo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
-.ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
-.ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
-.ftlc-days button.on{border-color:#DB8437;background:#DB8437;}
-.ftlc-days button:hover{border-color:#DB8437;background:rgba(219,132,55,.18);}
 .ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:15.5px;line-height:1.45;}
 .ftlc-focus p{margin:0;}
 .ftlc-fh{font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#262B45;}
