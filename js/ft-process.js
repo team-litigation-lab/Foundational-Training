@@ -198,7 +198,7 @@ const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs =
   return [...new Set(qs.map(x => x.set))].filter(set => !seen.has(set.file) && seen.add(set.file)); };
 /* 📝 A day's worksheet, done in Word, embedded with the answer sheet it goes with (by the sheet's file): its download and
    its naming convention live here, beside 📄 Save PDF to my Folder, not on the deck (the deck's slide links here,
-   FTDayDecks.toKC). Day 3's Call Intake & Data Extraction (PI Reception Activity): the six practice calls' data points (build/calls/pi_reception_calls.py). */
+   FTDayDecks.toKC). Day 3's Call Intake & Data Extraction (PI Reception Activity): the five practice calls' data points (build/calls/pi_reception_calls.py). */
 const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Questions": {t: "Call Intake & Data Extraction worksheet",
   href: "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx", file: "PI_Reception_Activity"}};
 function worksheetBox(set){

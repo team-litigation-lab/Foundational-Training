@@ -473,7 +473,7 @@ function listenSlide(day, time){
      ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder, live.recs) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
-   calls; Day 7: the four intake recordings, in the pop-up player; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
+   calls; Day 7: the four intake recordings, in the pop-up player; the five practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
    A recording plays in the slide once it has a file: its own here (src: on the platform; id: a Drive file), or the link a
    trainer gives it in Admin → 🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a
    Drive file plays in Drive's player, an audio file in the browser's); until then its card opens the folder. */
@@ -1343,8 +1343,8 @@ const LESSON_CARDS = {
       {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
       {t: "Listening Activity", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
-      // (its task in cards, then the six calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
-      {t: "Call Intake & Data Extraction: 6 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
+      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
+      {t: "Call Intake & Data Extraction: 5 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "watch", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
       "The Call Intake & Data Extraction worksheet and its naming convention: on ✍️ Knowledge Check"],
@@ -1444,7 +1444,7 @@ const LESSON_CARDS = {
 // 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
-// 🎧 Day 3's Call Intake & Data Extraction: the six calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
+// 🎧 Day 3's Call Intake & Data Extraction: the five calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
 // nothing to read first, and the way back is the slide after it)
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}},
   3: {"s1d": {l: 3, label: "Next: ✍️ Knowledge Check →"}}};
@@ -1550,7 +1550,7 @@ function toKC(l, here){
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
   const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => isPart(k, list[DD.i].id));
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
-  // (from a slide whose Next is the Knowledge Check, Day 3's six calls: back to the slide after it)
+  // (from a slide whose Next is the Knowledge Check, Day 3's five calls: back to the slide after it)
   else if(list[DD.i] && (KC_NEXT[DD.day] || {})[list[DD.i].id]) from = DD.i;
   const s = list[from + 1] || null;
   const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");

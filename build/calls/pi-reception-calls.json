@@ -3,375 +3,531 @@
  "calls": [
   {
    "id": 1,
-   "title": "The Tow Yard",
-   "challenge": "Background noise",
+   "title": "The Missing Email",
+   "challenge": "Mixed-up details",
    "tags": [
-    "Background noise",
+    "Mixed-up details: a wrong birth year",
     "Existing client"
    ],
-   "about": "An existing client calls from the side of a busy road, with trucks and horns behind him.",
-   "va": "Rina",
+   "about": "An older client never got the email about the doctor's appointment her case manager set up, and gives the wrong birth year at first.",
+   "va": "Oscar",
    "file": "/ft/day3/audio/pi-call-1.mp3",
-   "secs": 172,
+   "secs": 149,
    "key": [
     {
      "k": "Caller",
-     "v": "Marcus Bell, existing client"
+     "v": "Gloria Benton, existing client"
     },
     {
      "k": "Callback number",
-     "v": "(555) 013-4471, before 5:00 PM Eastern today"
+     "v": "(555) 019-2047 (home)"
     },
     {
      "k": "Verified",
-     "v": "Yes: full name, DOB 04/17/1988, DOL 08/02/2026"
+     "v": "Yes: full name, DOB 07/05/1960 (she said 1950 first; the VA asked again), DOL 09/03/2026"
     },
     {
      "k": "Reason for the call",
-     "v": "The tow yard wants about $600 in storage fees; the property damage adjuster called him; new treatment: Bayshore Physical Therapy, twice a week, from 10/26/2026"
+     "v": "Never got the confirmation email for her appointment with Dr. Herrera, Bayview Orthopedics, Thu 11/12/2026 at 1:00 PM; the email on file was missing a dot"
     },
     {
      "k": "Action taken",
-     "v": "Noted on the file; message to Mara Quintero (Case Manager) for a callback today about the storage fees, the adjuster and the new treatment"
+     "v": "Gave her the clinic's address and phone; corrected email (g.benton60@mail.com) noted on the file; message to Mara Quintero (Case Manager) to resend the confirmation today"
     }
    ],
-   "handled": "Asked him to step away from the road, read the callback number back slowly when a truck covered it, and repeated every detail back.",
+   "handled": "Didn't accept a birth year that didn't match: asked again instead of guessing, then found why the email never arrived and gave her the address on the call.",
    "transcript": [
     {
-     "who": "Rina (VA)",
-     "text": "Harbor & Pine Injury Law, this is Rina. How may I help you today?"
+     "who": "Oscar (VA)",
+     "text": "Harbor & Pine Injury Law, this is Oscar. How may I help you today?"
     },
     {
-     "who": "Marcus Bell",
-     "text": "Yeah, hi, this is Marcus Bell, I'm a client there. Sorry, I'm, uh, I'm at the tow yard on Hillsborough, it's loud out here."
+     "who": "Gloria Benton",
+     "text": "Hi, yes, my name is Gloria Benton. I have an appointment with a doctor, with, oh, I don't know if I can say it. It's a long name. Doctor Her... Herrera?"
     },
     {
-     "who": "Rina (VA)",
-     "text": "That's all right, Mr. Bell. I'm having a little trouble hearing you over the traffic. If you can, could you step away from the road for a moment, or cup the phone?"
+     "who": "Oscar (VA)",
+     "text": "That's all right, Ms. Benton, I'll look that up for you. First I just need to verify your file. Can you give me your date of birth?"
     },
     {
-     "who": "Marcus Bell",
-     "text": "Hang on. Hang on."
+     "who": "Gloria Benton",
+     "text": "July fifth, nineteen fifty."
     },
     {
-     "who": "Marcus Bell",
-     "text": "Okay. Is that better?"
+     "who": "Oscar (VA)",
+     "text": "Thank you. Hmm, I'm not finding a match with nineteen fifty. Could you give me the year once more?"
     },
     {
-     "who": "Rina (VA)",
-     "text": "Much better, thank you. Before we go on, I just need to verify your file. Can you give me your full name, your date of birth, and the date of the accident?"
+     "who": "Gloria Benton",
+     "text": "Oh! Sixty. Nineteen sixty. I'm sorry, I said fifty. Nineteen six-zero."
     },
     {
-     "who": "Marcus Bell",
-     "text": "Marcus Bell. B, E, L, L. Birthday is April seventeenth, nineteen eighty-eight. And the accident was August second. This year."
+     "who": "Oscar (VA)",
+     "text": "No problem at all. July fifth, nineteen sixty. And the date of your accident?"
     },
     {
-     "who": "Rina (VA)",
-     "text": "Thank you. That's Marcus Bell, date of birth April seventeen, nineteen eighty-eight, and the accident on August second, twenty twenty-six. You're verified. What can I help you with today?"
+     "who": "Gloria Benton",
+     "text": "September third. This year."
     },
     {
-     "who": "Marcus Bell",
-     "text": "So two things. They finally released my car, but the tow place is saying I owe like six hundred dollars in storage fees. And the property damage adjuster called me yesterday, I didn't pick up. I don't know if I'm supposed to talk to him."
+     "who": "Oscar (VA)",
+     "text": "Thank you. Gloria Benton, date of birth July fifth, nineteen sixty, accident September third, twenty twenty-six. You're verified. Now, one moment while I pull up your appointment."
     },
     {
-     "who": "Rina (VA)",
-     "text": "I understand. So the tow yard is asking for about six hundred dollars in storage fees, and the property damage adjuster left you a message. Is that right?"
+     "who": "Oscar (VA)",
+     "text": "Okay. I see your appointment with Doctor Herrera at Bayview Orthopedics on Thursday, November twelfth, at one PM. Your case manager, Mara, set that up."
     },
     {
-     "who": "Marcus Bell",
-     "text": "Yeah. Oh, and the other thing, I started physical therapy. Bayshore Physical Therapy, twice a week. Mara said to tell you guys when I start anything new."
+     "who": "Gloria Benton",
+     "text": "Yes. That's the one. She said they would send me an email with all the particulars, the address and all that, but I never got it."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Thank you for letting us know. Bayshore Physical Therapy, twice a week. And when was your first visit there?"
+     "who": "Oscar (VA)",
+     "text": "I'm sorry about that. Let me check the email we have for you. I have g benton six zero at mail dot com. Is that right?"
     },
     {
-     "who": "Marcus Bell",
-     "text": "Monday. This Monday. The twenty-sixth."
+     "who": "Gloria Benton",
+     "text": "No, no. It's g dot benton, with a dot. G, dot, B, E, N, T, O, N, six zero, at mail dot com."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Got it, Monday, October twenty-sixth. Mr. Bell, I'll send all of this to your case manager, Mara Quintero, so she can get back to you about the storage fees and the adjuster. If the adjuster calls again before then, you can take his name and number and let us know. What's the best number for Mara to reach you?"
+     "who": "Oscar (VA)",
+     "text": "Thank you. So that's g, dot, benton, six zero, at mail dot com. That explains the missing email. I'll note the correct address on your file. In the meantime, would you like the clinic's address now?"
     },
     {
-     "who": "Marcus Bell",
-     "text": "This one. Five five five, oh one three, four four seven one."
+     "who": "Gloria Benton",
+     "text": "Yes, please. Let me get a pen. Okay."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Let me read that back. Five five five, zero one three, four four seven one."
+     "who": "Oscar (VA)",
+     "text": "Bayview Orthopedics, twenty-one fifty Bayshore Boulevard, suite three hundred, in Tampa. Their phone is five five five, zero one six, seven seven zero zero."
     },
     {
-     "who": "Marcus Bell",
-     "text": "Sorry, what? A truck just went by."
+     "who": "Gloria Benton",
+     "text": "Twenty-one fifty Bayshore, suite three hundred. Okay, I have it."
     },
     {
-     "who": "Rina (VA)",
-     "text": "No problem. Five, five, five. Zero, one, three. Four, four, seven, one."
+     "who": "Oscar (VA)",
+     "text": "Perfect. I'll also ask Mara to resend the confirmation to your correct email today. Is this the best number to reach you?"
     },
     {
-     "who": "Marcus Bell",
-     "text": "Yep, that's it."
+     "who": "Gloria Benton",
+     "text": "Yes, this is my home phone. Five five five, oh one nine, two oh four seven."
     },
     {
-     "who": "Rina (VA)",
-     "text": "And is there a good time for her to call?"
+     "who": "Oscar (VA)",
+     "text": "Five five five, zero one nine, two zero four seven. Is there anything else I can help you with, Ms. Benton?"
     },
     {
-     "who": "Marcus Bell",
-     "text": "Anytime before five. I'm off today."
+     "who": "Gloria Benton",
+     "text": "No, that's all, dear. Thank you so much."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Perfect. I've noted it on your file, and Mara will call you back today, before five PM Eastern. Is there anything else I can help you with?"
-    },
-    {
-     "who": "Marcus Bell",
-     "text": "No, that's it. Thanks."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "You're welcome, Mr. Bell. Stay safe out there. Goodbye."
+     "who": "Oscar (VA)",
+     "text": "You're welcome, Ms. Benton. Take care. Goodbye."
     }
    ]
   },
   {
    "id": 2,
-   "title": "Breaking Up on the Highway",
-   "challenge": "Connection issues",
+   "title": "Third Time Calling",
+   "challenge": "A frustrated repeat caller",
    "tags": [
-    "Connection issues",
-    "Potential new client"
+    "Frustrated repeat caller",
+    "Existing client"
    ],
-   "about": "A potential new client calls from her car on the interstate; the line breaks up, then drops.",
-   "va": "Paolo",
+   "about": "A client in pain calls again about the letter his pain clinic needs before it will book his injection.",
+   "va": "Oscar",
    "file": "/ft/day3/audio/pi-call-2.mp3",
-   "secs": 151,
+   "secs": 123,
    "key": [
     {
      "k": "Caller",
-     "v": "Tanya Brooks, potential new client (not yet a client)"
+     "v": "Andre Wallace, existing client"
     },
     {
      "k": "Callback number",
-     "v": "(555) 014-2290, taken first in case the call dropped"
+     "v": "(555) 012-5583, any time"
     },
     {
      "k": "Verified",
-     "v": "New caller: no file to verify; name spelled, DOL 10/27/2026"
+     "v": "Yes: full name, DOB 02/15/1985 (read back, as he said it fast), DOL 07/22/2026"
     },
     {
      "k": "Reason for the call",
-     "v": "New auto case: hit on the driver's side by a red-light runner at Brandon Blvd & Kings Ave; neck and left wrist injuries; ER on 10/27, now going to urgent care"
+     "v": "His third call about the Letter of Protection for Gulf Coast Pain Center, which won't book his injection without it; the request is with Devin Shaw, due tomorrow"
     },
     {
      "k": "Action taken",
-     "v": "Called her back after the drop; priority callback from the Intake Team (ext. 600) within the hour"
+     "v": "Tried a warm transfer to Devin Shaw (Records Coordinator, on another call); urgent message for a callback today; the repeat calls noted on the file"
     }
    ],
-   "handled": "Took the name and callback number first, asked for only the digits it missed, and called back at once when the call dropped.",
+   "handled": "Apologized once and acted: checked the file at once, tried to reach the person handling it, and passed on an urgent message with the whole story.",
    "transcript": [
     {
-     "who": "Paolo (VA)",
-     "text": "Harbor & Pine Injury Law, this is Paolo. How may I help you today?"
+     "who": "Oscar (VA)",
+     "text": "Harbor & Pine Injury Law, this is Oscar. How may I help you today?"
     },
     {
-     "who": "Tanya Brooks",
-     "text": "Hi, um, I was in an accident yesterday and somebody told me I should call a lawyer, so I'm, I'm calling you guys."
+     "who": "Andre Wallace",
+     "text": "Yeah, I'm calling to get an update on the letter for my pain doctor. I called last night. I called yesterday morning too. This is the third time."
     },
     {
-     "who": "Paolo (VA)",
-     "text": "I'm sorry to hear about your accident. I'm here to help. Your line is breaking up a little, so in case we get disconnected, can I get your name and a callback number first?"
+     "who": "Oscar (VA)",
+     "text": "I'm sorry you've had to call more than once. Let me check on that for you right now. Can I have your full name and date of birth?"
     },
     {
-     "who": "Tanya Brooks",
-     "text": "Yeah, it's Tanya Brooks, and my number is five five five, oh one four..."
+     "who": "Andre Wallace",
+     "text": "Andre Wallace. Two fifteen eighty-five."
     },
     {
-     "who": "Tanya Brooks",
-     "text": "...two nine oh."
+     "who": "Oscar (VA)",
+     "text": "Thank you, Mr. Wallace. That's February fifteenth, nineteen eighty-five?"
     },
     {
-     "who": "Paolo (VA)",
-     "text": "I'm sorry, Ms. Brooks, I missed the middle of that. I have five five five, zero one four, and then two nine zero. Could you give me the last four digits again?"
+     "who": "Andre Wallace",
+     "text": "Yes."
     },
     {
-     "who": "Tanya Brooks",
-     "text": "Two two nine zero. Two, two, nine, zero."
+     "who": "Oscar (VA)",
+     "text": "And the date of the accident?"
     },
     {
-     "who": "Paolo (VA)",
-     "text": "Thank you. Five five five, zero one four, two two nine zero. And that's Tanya Brooks. Could you spell your last name for me?"
+     "who": "Andre Wallace",
+     "text": "July twenty-second."
     },
     {
-     "who": "Tanya Brooks",
-     "text": "B, R, O, O, K, S. I'm driving to urgent care right now, my neck is... my neck is really..."
+     "who": "Oscar (VA)",
+     "text": "July twenty-second, twenty twenty-six. You're verified. One moment while I look at your file."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Okay. I see the request for a letter of protection to Gulf Coast Pain Center. It's been assigned to our records coordinator, Devin Shaw, and it's due tomorrow."
+    },
+    {
+     "who": "Andre Wallace",
+     "text": "Tomorrow? They won't book my injection until they get that letter. I'm in pain every day. I can't keep waiting on this."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "I understand, Mr. Wallace, and I'm sorry you're in pain. Would you like me to try to connect you with Devin now?"
+    },
+    {
+     "who": "Andre Wallace",
+     "text": "Yes. Please."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Please hold for one moment."
     },
     {
      "who": "",
-     "text": "[the call drops]"
+     "text": "[on hold]"
     },
     {
-     "who": "Paolo (VA)",
-     "text": "Hello? Ms. Brooks? ... Hello?"
+     "who": "Oscar (VA)",
+     "text": "Thank you for holding, Mr. Wallace. Devin is on another call right now. I've sent him an urgent message: that this is your third call, that the clinic won't book your injection without the letter, and that you need it sooner than tomorrow. I've asked him to call you back today. What's the best number for him?"
     },
     {
-     "who": "Paolo (VA)",
-     "text": "I lost her. I'll call her back on the number she gave."
+     "who": "Andre Wallace",
+     "text": "This one. Five five five, oh one two, five five eight three."
     },
     {
-     "who": "",
-     "text": "[the VA calls back]"
+     "who": "Oscar (VA)",
+     "text": "Five five five, zero one two, five five eight three. And is there a time that's better for you?"
     },
     {
-     "who": "Tanya Brooks",
-     "text": "Hello?"
+     "who": "Andre Wallace",
+     "text": "Anytime. I'm home."
     },
     {
-     "who": "Paolo (VA)",
-     "text": "Hi, Ms. Brooks, this is Paolo from Harbor and Pine Injury Law. We got disconnected. Is now still a good time, or would you like us to call you once you've parked?"
+     "who": "Oscar (VA)",
+     "text": "Got it. I've noted all of this on your file, so whoever you speak with next will know the whole story. Is there anything else I can help you with?"
     },
     {
-     "who": "Tanya Brooks",
-     "text": "Oh, thank you. I'm, I'm almost there. You can go ahead."
+     "who": "Andre Wallace",
+     "text": "No. Just, please, get it done."
     },
     {
-     "who": "Paolo (VA)",
-     "text": "Thank you. Just a few quick details. What date was the accident, and where did it happen?"
-    },
-    {
-     "who": "Tanya Brooks",
-     "text": "Yesterday. October twenty-seventh. At Brandon Boulevard and Kings Avenue. Somebody ran the red light and hit my driver's side."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "October twenty-seventh, twenty twenty-six, at Brandon Boulevard and Kings. And were you hurt?"
-    },
-    {
-     "who": "Tanya Brooks",
-     "text": "My neck and my left wrist. I went to the ER last night and they said follow up, so that's where I'm going."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "I'm sorry, Ms. Brooks. Thank you for telling me. Since the line keeps cutting out, I'll have our Intake Team call you back today, within the hour, at five five five, zero one four, two two nine zero, once you're at urgent care. They'll go over everything with you. Does that work?"
-    },
-    {
-     "who": "Tanya Brooks",
-     "text": "Yes. That works. Thank you so much."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "You're welcome. Please focus on the road, and we'll talk soon. Is there anything else I can help you with right now?"
-    },
-    {
-     "who": "Tanya Brooks",
-     "text": "No. No, that's it. Bye."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Take care, Ms. Brooks. Goodbye."
+     "who": "Oscar (VA)",
+     "text": "I understand. Devin will call you today. Thank you for your patience, Mr. Wallace. Goodbye."
     }
    ]
   },
   {
    "id": 3,
-   "title": "Hablo Poquito Inglés",
-   "challenge": "Language barrier",
+   "title": "Which Office?",
+   "challenge": "An unclear request",
    "tags": [
-    "Language barrier",
-    "Existing client"
+    "Unclear request",
+    "Medical provider"
    ],
-   "about": "A Spanish-speaking client with very little English calls about a letter she received.",
-   "va": "Rina",
+   "about": "An imaging centre's front desk wants a fax number for the firm's other office and doesn't say who the records are for.",
+   "va": "Oscar",
    "file": "/ft/day3/audio/pi-call-3.mp3",
-   "secs": 167,
+   "secs": 97,
    "key": [
     {
      "k": "Caller",
-     "v": "Rosa Delgado, existing client; prefers Spanish"
+     "v": "Kayla Jensen, front desk, Sun City Imaging (a medical provider)"
     },
     {
      "k": "Callback number",
-     "v": "(555) 015-8834"
+     "v": "(555) 011-6630; the firm's fax confirmed: (555) 010-4410"
     },
     {
      "k": "Verified",
-     "v": "Yes: full name, DOB 03/09/1979, DOL 06/14/2026, before the transfer"
+     "v": "A provider, not the client: the patient named as Tomas Reyes; nothing about a file confirmed"
     },
     {
      "k": "Reason for the call",
-     "v": "Received a hospital bill (about $1,200 in the Spanish part of the call) and is worried she has to pay it"
+     "v": "Faxing an MRI report; asked for the Brandon office's number (all offices' calls come to reception and all faxes go to the records department)"
     },
     {
      "k": "Action taken",
-     "v": "Offered Spanish under the firm's rule; warm transfer to Mara Quintero (bilingual Case Manager, ext. 610), with the caller, her verification, the reason and the callback number passed on"
+     "v": "Confirmed the fax number; told her to fax it attention Devin Shaw (Records Coordinator) with the patient's name and DOB on the cover sheet; Devin told to watch for it"
     }
    ],
-   "handled": "Spoke slowly in short words, offered Spanish straight away, took only what was needed, and briefed Mara before putting the client through.",
+   "handled": "Asked who was calling and what the fax was about before routing it, confirmed the number she had, and confirmed nothing about the patient.",
    "transcript": [
     {
-     "who": "Rina (VA)",
-     "text": "Harbor & Pine Injury Law, this is Rina. How may I help you today?"
+     "who": "Oscar (VA)",
+     "text": "Harbor & Pine Injury Law, this is Oscar. How may I help you today?"
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Hello, eh... sorry, my English is... poquito. Little. Is, eh, Harbor and Pine?"
+     "who": "Kayla Jensen",
+     "text": "Hi, I need the phone number for your Brandon office. I'm faxing something over and I want to make sure they get it."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Yes, ma'am. This is Harbor and Pine Injury Law. Would you like to speak in Spanish? ¿Español?"
+     "who": "Oscar (VA)",
+     "text": "I can help with that. All of our offices' calls come here, and the faxes for every office go to our records department. What fax number are you sending it to?"
     },
     {
-     "who": "Rosa Delgado",
-     "text": "¡Sí, sí! Español, por favor. Gracias."
+     "who": "Kayla Jensen",
+     "text": "It looks like I have five five five, oh one oh, four four one oh."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Okay. We have a Spanish-speaking team member. Before I connect you, I need your name, please. Your name?"
+     "who": "Oscar (VA)",
+     "text": "Yes, five five five, zero one zero, four four one zero. That's the correct fax number."
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Rosa Delgado. Ro-sa. Del-ga-do."
+     "who": "Kayla Jensen",
+     "text": "Okay, great. Can I put it to the attention of someone at the Brandon office?"
     },
     {
-     "who": "Rina (VA)",
-     "text": "Thank you, Ms. Delgado. And your date of birth? Birthday?"
+     "who": "Oscar (VA)",
+     "text": "Sure. May I ask who's calling, and what the fax is about?"
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Eh... March. Nine. Nineteen... seventy-nine."
+     "who": "Kayla Jensen",
+     "text": "Oh, sorry, I didn't say. This is Kayla, from the front desk at Sun City Imaging. It's an MRI report for one of our patients. Tomas Reyes."
     },
     {
-     "who": "Rina (VA)",
-     "text": "March ninth, nineteen seventy-nine. And the date of the accident? Accident?"
+     "who": "Oscar (VA)",
+     "text": "Thank you, Kayla. I'm not able to confirm anything about a file on this call, but you can send it to the attention of Devin Shaw, our records coordinator. Please put the patient's full name and date of birth on the cover sheet, so it gets to the right place."
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Accidente... June. Fourteen. This year."
+     "who": "Kayla Jensen",
+     "text": "Devin Shaw. S, H, A, W?"
     },
     {
-     "who": "Rina (VA)",
-     "text": "June fourteenth, twenty twenty-six. Thank you. And a phone number, in case we get disconnected?"
+     "who": "Oscar (VA)",
+     "text": "That's right. And may I have your last name and a callback number, in case Devin has a question about the report?"
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Five five five... cero uno cinco... eight, eight, three, four."
+     "who": "Kayla Jensen",
+     "text": "Jensen. J, E, N, S, E, N. And our number is five five five, oh one one, six six three zero."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Five five five, zero one five, eight eight three four?"
+     "who": "Oscar (VA)",
+     "text": "Kayla Jensen, Sun City Imaging, five five five, zero one one, six six three zero. I'll let Devin know the report is on its way. Is there anything else I can help you with?"
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Sí. Yes. Is a letter... a bill. From hospital. They say I pay. I am... worry."
+     "who": "Kayla Jensen",
+     "text": "No, that's it. Thank you!"
     },
     {
-     "who": "Rina (VA)",
-     "text": "I understand. A bill from the hospital. Please wait one moment, Ms. Delgado. One moment. I will get Mara, she speaks Spanish."
+     "who": "Oscar (VA)",
+     "text": "Thank you for calling, Kayla. Have a good day."
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "title": "Just Confirming",
+   "challenge": "A short call",
+   "tags": [
+    "Short call: every step still counts",
+    "Existing client"
+   ],
+   "about": "A client calls to confirm tomorrow's meeting with her attorney: a quick call where it's easy to skip a step.",
+   "va": "Oscar",
+   "file": "/ft/day3/audio/pi-call-4.mp3",
+   "secs": 61,
+   "key": [
+    {
+     "k": "Caller",
+     "v": "Nicole Avery, existing client"
     },
     {
-     "who": "Rosa Delgado",
-     "text": "Okay. Gracias."
+     "k": "Callback number",
+     "v": "(555) 013-9126 (confirmed as still current)"
+    },
+    {
+     "k": "Verified",
+     "v": "Yes: full name, DOB 05/28/1983, DOL 04/09/2026"
+    },
+    {
+     "k": "Reason for the call",
+     "v": "To confirm her meeting with Atty. Celeste Harbor tomorrow, Thu 10/29/2026 at 4:00 PM, at the office"
+    },
+    {
+     "k": "Action taken",
+     "v": "Confirmed the meeting from the calendar; the call noted on the file"
+    }
+   ],
+   "handled": "Kept it quick without cutting corners: verified her before reading out the appointment, and checked the callback number on file.",
+   "transcript": [
+    {
+     "who": "Oscar (VA)",
+     "text": "Harbor & Pine Injury Law, this is Oscar. How may I help you today?"
+    },
+    {
+     "who": "Nicole Avery",
+     "text": "Hi, I'm just calling to confirm my appointment for tomorrow."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Sure, I can check that for you. Can I have your full name and date of birth?"
+    },
+    {
+     "who": "Nicole Avery",
+     "text": "Nicole Avery. May twenty-eighth, nineteen eighty-three."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Thank you. And the date of the accident?"
+    },
+    {
+     "who": "Nicole Avery",
+     "text": "April ninth."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Nicole Avery, May twenty-eighth, nineteen eighty-three, accident April ninth, twenty twenty-six. You're verified. One moment."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "I show your meeting with Attorney Celeste Harbor tomorrow, Thursday, October twenty-ninth, at four PM, here at the office."
+    },
+    {
+     "who": "Nicole Avery",
+     "text": "Yep, that's it."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Perfect. And is five five five, zero one three, nine one two six still the best number for you?"
+    },
+    {
+     "who": "Nicole Avery",
+     "text": "Yes, it is."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Great. I've noted your call on the file. Is there anything else I can help you with?"
+    },
+    {
+     "who": "Nicole Avery",
+     "text": "No, that's all. Thank you."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "You're welcome, Ms. Avery. See you tomorrow. Goodbye."
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "title": "No Ride Tomorrow",
+   "challenge": "Rescheduling and a warm transfer",
+   "tags": [
+    "Schedule change and warm transfer",
+    "Existing client"
+   ],
+   "about": "A client whose usual ride fell through can't get to tomorrow's doctor's appointment and asks to reschedule.",
+   "va": "Oscar",
+   "file": "/ft/day3/audio/pi-call-5.mp3",
+   "secs": 123,
+   "key": [
+    {
+     "k": "Caller",
+     "v": "Darnell Pryce, existing client"
+    },
+    {
+     "k": "Callback number",
+     "v": "(555) 014-7751, taken before the transfer"
+    },
+    {
+     "k": "Verified",
+     "v": "Yes: full name, DOB 03/13/1994, DOL 05/30/2026"
+    },
+    {
+     "k": "Reason for the call",
+     "v": "His veterans' shuttle can't take him to tomorrow's follow-up with Dr. Herrera, Bayview Orthopedics (10/29/2026, 10:30 AM), and he has no car; wants to reschedule"
+    },
+    {
+     "k": "Action taken",
+     "v": "Warm transfer to Mara Quintero (Case Manager, ext. 610), briefed on the internal line: the verification, the appointment, the reason and the callback number"
+    }
+   ],
+   "handled": "Took the callback number before the hold, and briefed Mara fully so the client didn't have to tell his story twice.",
+   "transcript": [
+    {
+     "who": "Oscar (VA)",
+     "text": "Harbor & Pine Injury Law, this is Oscar. How may I help you today?"
+    },
+    {
+     "who": "Darnell Pryce",
+     "text": "Hi, uh, good afternoon. My name is Darnell Pryce. I'm a client. I'm calling about my, um, my doctor's appointment tomorrow."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Good afternoon, Mr. Pryce. I can help with that. First, can I have your date of birth?"
+    },
+    {
+     "who": "Darnell Pryce",
+     "text": "March thirteenth, nineteen ninety-four."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Thank you. And the date of the accident?"
+    },
+    {
+     "who": "Darnell Pryce",
+     "text": "May thirtieth. This year."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Darnell Pryce, March thirteenth, nineteen ninety-four, accident May thirtieth, twenty twenty-six. You're verified. What's going on with tomorrow's appointment?"
+    },
+    {
+     "who": "Darnell Pryce",
+     "text": "So usually the veterans' shuttle takes me, but, uh, they just called and nobody's available to drive me tomorrow. And I don't have a car right now, since the accident. Is there any way I can reschedule?"
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "I'm sorry about that. I see your follow-up with Doctor Herrera at Bayview Orthopedics tomorrow, October twenty-ninth, at ten thirty AM. Your case manager, Mara Quintero, coordinates your appointments, so let me connect you with her. Before I do, what's the best number in case we get disconnected?"
+    },
+    {
+     "who": "Darnell Pryce",
+     "text": "Five five five, oh one four, seven seven five one."
+    },
+    {
+     "who": "Oscar (VA)",
+     "text": "Five five five, zero one four, seven seven five one. Please hold for a moment while I get Mara."
+    },
+    {
+     "who": "Darnell Pryce",
+     "text": "Okay. Thanks."
     },
     {
      "who": "",
@@ -379,371 +535,27 @@
     },
     {
      "who": "Mara Quintero · internal line",
-     "text": "Hi Rina, it's Mara."
+     "text": "Hi Oscar, it's Mara."
     },
     {
-     "who": "Rina (VA) · internal line",
-     "text": "Hi Mara. I have Rosa Delgado on line one. She's verified: date of birth March ninth, nineteen seventy-nine, accident June fourteenth, twenty twenty-six. She prefers Spanish. She received a bill from the hospital and she's worried she has to pay it. Her callback is five five five, zero one five, eight eight three four."
+     "who": "Oscar (VA) · internal line",
+     "text": "Hi Mara. I have Darnell Pryce on line one. He's verified: date of birth March thirteenth, nineteen ninety-four, accident May thirtieth, twenty twenty-six. His ride to tomorrow's ten thirty with Doctor Herrera fell through, and he has no car, so he'd like to reschedule. His callback is five five five, zero one four, seven seven five one."
     },
     {
      "who": "Mara Quintero · internal line",
-     "text": "Perfect, thank you. Put her through."
+     "text": "Thanks. I'll take him, and I'll see if we can set up transportation too."
     },
     {
-     "who": "Rina (VA)",
-     "text": "Ms. Delgado? Thank you for waiting. Here is Mara."
-    },
-    {
-     "who": "Mara Quintero",
-     "text": "Hola, señora Delgado, habla Mara Quintero, su administradora de caso. ¿Cómo está? Cuénteme sobre la carta del hospital."
-    },
-    {
-     "who": "Rosa Delgado",
-     "text": "Ay, gracias a Dios. Me llegó una factura del hospital que dice que tengo que pagar mil doscientos dólares, y no sé qué hacer."
+     "who": "Oscar (VA)",
+     "text": "Mr. Pryce? Thank you for waiting. I have Mara on the line for you."
     },
     {
      "who": "Mara Quintero",
-     "text": "No se preocupe. No pague nada todavía. Mándeme una foto de la carta por correo electrónico y yo me encargo de llamar al hospital hoy mismo."
-    }
-   ]
-  },
-  {
-   "id": 4,
-   "title": "The Speakerphone Echo",
-   "challenge": "Poor audio quality",
-   "tags": [
-    "Audio quality: echo and muffled voice",
-    "Medical provider"
-   ],
-   "about": "A provider's billing office calls on a speakerphone in a big room: an echo, a faint voice, a lot of numbers.",
-   "va": "Paolo",
-   "file": "/ft/day3/audio/pi-call-4.mp3",
-   "secs": 130,
-   "key": [
-    {
-     "k": "Caller",
-     "v": "Janelle Ortiz, Bayview Orthopedics billing (a medical provider)"
-    },
-    {
-     "k": "Callback number",
-     "v": "(555) 016-7700 ext. 212; fax (555) 016-7720"
-    },
-    {
-     "k": "Verified",
-     "v": "A provider, not the client: the patient identified as Kevin Tran, DOB 11/30/1992; no file details discussed"
-    },
-    {
-     "k": "Reason for the call",
-     "v": "Needs a signed copy of the Letter of Protection re-sent (theirs is unsigned); balance now $4,850"
-    },
-    {
-     "k": "Action taken",
-     "v": "Noted on the file; message to Devin Shaw (Records Coordinator, ext. 640) to send the signed LOP by fax and call back within one business day"
-    }
-   ],
-   "handled": "Asked her to take the call off speakerphone, then checked the one digit the line swallowed instead of guessing.",
-   "transcript": [
-    {
-     "who": "Paolo (VA)",
-     "text": "Harbor & Pine Injury Law, this is Paolo. How may I help you today?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "Hi, good afternoon, this is Janelle with Bayview Orthopedics billing, I'm calling about a patient of ours who's one of your clients."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Good afternoon, Janelle. I'm sorry, there's quite an echo on the line and your voice is a bit faint. Are you on speakerphone? Could you pick up the handset?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "Oh, sorry, yes. Hold on."
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "Is that any better?"
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "That's a lot better, thank you. Which patient are you calling about?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "The patient is Kevin Tran. T, R, A, N. Date of birth November thirtieth, nineteen ninety-two."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Kevin Tran, T, R, A, N, date of birth November thirtieth, nineteen ninety-two. And what can I help you with?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "We need a copy of the letter of protection re-sent. The one we have on file is unsigned. And we wanted to let the case manager know his balance with us is four thousand eight hundred and fifty dollars."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Understood. A signed copy of the letter of protection, and the current balance is four thousand, eight hundred fifty dollars. I'm not able to discuss the details of a file on this call, but I'll pass this to our records coordinator, Devin Shaw, who handles letters of protection and balances. Where should the letter be sent?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "You can fax it to five five five, oh one six, seven seven two zero."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "I'm sorry, the line cut in and out there. Was that seven seven two zero, or seven seven two two?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "Zero. Seven, seven, two, zero."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Thank you. Fax five five five, zero one six, seven seven two zero. And the best callback number for you?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "Five five five, oh one six, seven seven hundred, extension two one two."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Five five five, zero one six, seven seven zero zero, extension two one two. And your last name, Janelle?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "Ortiz. O, R, T, I, Z."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Janelle Ortiz, Bayview Orthopedics billing. I've noted this on the file, and Devin will get back to you within one business day. Is there anything else I can help you with?"
-    },
-    {
-     "who": "Janelle Ortiz",
-     "text": "No, that's everything. Thank you, Paolo."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Thank you, Janelle. Have a good afternoon."
-    }
-   ]
-  },
-  {
-   "id": 5,
-   "title": "The Fast-Talking Adjuster",
-   "challenge": "Background noise and a fast talker",
-   "tags": [
-    "Background noise: call centre",
-    "Fast speech",
-    "Insurance adjuster"
-   ],
-   "about": "A third-party adjuster calls from a loud call centre, talks fast, and pushes for details about the client.",
-   "va": "Rina",
-   "file": "/ft/day3/audio/pi-call-5.mp3",
-   "secs": 113,
-   "key": [
-    {
-     "k": "Caller",
-     "v": "Greg Hollis, adjuster, Coastline Mutual (third-party carrier)"
-    },
-    {
-     "k": "Callback number",
-     "v": "(555) 017-3305 ext. 4417"
-    },
-    {
-     "k": "Verified",
-     "v": "Not a client and not authorized: nothing confirmed (treatment status and the client's DOB refused); claim no. CM-2291-447-08"
-    },
-    {
-     "k": "Reason for the call",
-     "v": "Wants to confirm Danielle Ruiz is still treating and her DOB; asks for a recorded statement and the treatment records and bills"
-    },
-    {
-     "k": "Action taken",
-     "v": "Message for Atty. Celeste Harbor (the attorney on the file), noted on the file; no facts confirmed or shared"
-    }
-   ],
-   "handled": "Asked him to slow down for the claim number, read everything back, and held the line politely when pushed for a yes or no.",
-   "transcript": [
-    {
-     "who": "Rina (VA)",
-     "text": "Harbor & Pine Injury Law, this is Rina. How may I help you today?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "Hi, Greg Hollis, Coastline Mutual, calling on claim C M dash two two nine one, four four seven, oh eight, your client Danielle Ruiz, just need to confirm she's still treating and get her date of birth to match my file, real quick."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "Good morning, Mr. Hollis. I'm sorry, there's a lot of noise on your end and I didn't catch all of that. Could you give me the claim number again, a little slower?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "Sure. C, M, two two nine one, four four seven, oh eight."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "C M, two two nine one, four four seven, zero eight. And you're with Coastline Mutual, for the other driver?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "Correct, third party. So is she done treating? I've got this file up for review and I'm trying to close out the bodily injury side."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "I understand. I'm not able to confirm any information about a client or her treatment, but I'll make sure your message reaches the attorney on the file."
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "Look, I just need a yes or no. And her date of birth, it's for my records, it's not a big deal."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "I'm sorry, Mr. Hollis, I'm not able to share that. The attorney will be the one to follow up with you. Can I have your direct number?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "Fine. Five five five, oh one seven, three three oh five, extension four four one seven."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "Five five five, zero one seven, three three zero five, extension four four one seven. And could you spell your last name?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "H, O, L, L, I, S."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "Thank you. Is there anything else you'd like me to include in the message?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "Yeah, tell them I'd like a recorded statement from the client, and I need the treatment records and bills if they want this moving."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "So, a request for a recorded statement from the client, and for her treatment records and bills. I'll send this to Attorney Celeste Harbor, and she or her team will contact you. Is there anything else I can help you with?"
-    },
-    {
-     "who": "Greg Hollis",
-     "text": "No, that's it."
-    },
-    {
-     "who": "Rina (VA)",
-     "text": "Thank you for calling, Mr. Hollis. Have a good day."
-    }
-   ]
-  },
-  {
-   "id": 6,
-   "title": "Mom on the Line",
-   "challenge": "Background noise and an unauthorized caller",
-   "tags": [
-    "Background noise: TV and children",
-    "Upset caller",
-    "Family member not on the file"
-   ],
-   "about": "A client's mother calls from a busy house, upset: her son is back in hospital and she wants to know about his case.",
-   "va": "Paolo",
-   "file": "/ft/day3/audio/pi-call-6.mp3",
-   "secs": 128,
-   "key": [
-    {
-     "k": "Caller",
-     "v": "Linda Carter, mother of the client Jordan Carter"
-    },
-    {
-     "k": "Callback number",
-     "v": "(555) 018-6612"
-    },
-    {
-     "k": "Verified",
-     "v": "Not the client and not authorized in writing: nothing shared or confirmed, not even whether there is a case"
-    },
-    {
-     "k": "Reason for the call",
-     "v": "Jordan was admitted to Tampa General on 10/27/2026 after a fall (his knee); she asked when the settlement is coming"
-    },
-    {
-     "k": "Action taken",
-     "v": "Urgent message passed on internally (to Jordan's case manager, Mara Quintero) for someone to call Jordan directly today; told Jordan can call himself to authorize her; noted on the file"
-    }
-   ],
-   "handled": "Stayed calm and kind through the noise and the frustration, confirmed nothing about a case, said why nothing could be shared, and still took the urgent message.",
-   "transcript": [
-    {
-     "who": "Paolo (VA)",
-     "text": "Harbor & Pine Injury Law, this is Paolo. How may I help you today?"
-    },
-    {
-     "who": "Linda Carter",
-     "text": "Yes, hi, my name is Linda Carter, my son Jordan is your client, and I need to know what is going on with his case, because nobody is telling us anything."
-    },
-    {
-     "who": "child",
-     "text": "Grandma! He took my tablet!"
-    },
-    {
-     "who": "Linda Carter",
-     "text": "Not now, baby! Sorry. Sorry."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "That's all right, Ms. Carter. I can hear this is a stressful time. I'll do my best to help you. May I ask, are you calling on someone's behalf today?"
-    },
-    {
-     "who": "Linda Carter",
-     "text": "Yes, for my son, Jordan Carter. He fell again, because of his knee, and he's back in the hospital since last night. Tampa General. And I want to know when the settlement is coming, because the bills are piling up."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "I'm so sorry to hear Jordan is in the hospital. Please give me one moment."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Thank you for waiting, Ms. Carter. For privacy, we can only discuss a case with the client, or with someone the client has authorized in writing, so I'm not able to share or confirm any information. I know that's frustrating to hear."
-    },
-    {
-     "who": "Linda Carter",
-     "text": "I'm his mother! I'm the one driving him to all his appointments."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "I completely understand, and I can hear how much you're doing for him. It's to protect Jordan's privacy. What I can do is take a message and pass it on right away, so the right person can reach Jordan directly. If Jordan would like you to be able to speak with us, he's welcome to call us himself, and we'll explain how."
-    },
-    {
-     "who": "Linda Carter",
-     "text": "Okay. Okay. Yes, please do that."
-    },
-    {
-     "who": "child",
-     "text": "Grandma, the dog is out!"
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Thank you. What's the best number to reach you, in case she needs to?"
-    },
-    {
-     "who": "Linda Carter",
-     "text": "Five five five, oh one eight, six six one two."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Five five five, zero one eight, six six one two. And so I have it right: Jordan was admitted to Tampa General last night, October twenty-seventh, after a fall, because of his knee. Is that correct?"
-    },
-    {
-     "who": "Linda Carter",
-     "text": "Yes. That's right."
-    },
-    {
-     "who": "Paolo (VA)",
-     "text": "Thank you, Ms. Carter. I've passed your message on as urgent, and someone will reach out to Jordan today. Is there anything else I can help you with?"
-    },
-    {
-     "who": "Linda Carter",
-     "text": "No. Thank you. I'm sorry I yelled."
+     "text": "Hi Darnell, it's Mara. Oscar filled me in. Let's get you a new date, and let's talk about getting you a ride."
     },
     {
-     "who": "Paolo (VA)",
-     "text": "Please don't apologize. I hope Jordan feels better soon. Take care, Ms. Carter."
+     "who": "Darnell Pryce",
+     "text": "Thank you. I really appreciate it."
     }
    ]
   }
