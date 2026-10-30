@@ -824,6 +824,29 @@ const edges = x => { let y = x, was; const rule = /^\s*(?:<hr class="stars">|<p>
 // their Drive link on Day 11, as Day 1's reading is (its header and the "Name of VA / Date Taken" fields are the form's, not the text)
 const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
+// Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
+// wording, each heading a card; the build stops if the guide's text changes under it
+function D12_CARDS(x){
+  for(const t of ["For BOTH 1P and 3P insurance entries", "Plaintiff Insurance Owner Field", "Defendant Insurance Owner field", "OWNER, FAKE",
+    "Driver’s name, if different from the owner", "Nitro Pro (pdf editing tool)", "LOR with Affidavit mm.dd.yy", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])
+    if(!x.includes(t)) throw new Error(`Day 12's insurance steps or naming convention changed: "${t}" is missing`);
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
+  const noAdj = "If no adjuster has been assigned yet, indicate: <b><i>“No adjuster assigned yet.”</i></b>";
+  // (one block, ftdd-one: one page, scaled to fit)
+  return '<div class="ftdd-one">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
+    '<div class="ftdd-cards3">' +
+    card("🔢", "Both 1P and 3P entries", "<p>Make sure to complete the following fields:</p>" + ul(["Policy Number", "Claim Number"])) +
+    card("🟦", "Adding the 1P insurance information", "<p>In the <b>Plaintiff Insurance Owner Field</b>, select: <b>Plaintiff&#x27;s Training Acct</b></p><p><b>In the Comments section, include:</b></p>" +
+      ul(["Actual insurance name of the owner", "Assigned adjuster details", noAdj, "Still add all other available insurance information even if no adjuster has been assigned."])) +
+    card("🟥", "Adding the 3P insurance information", "<p>In the <b>Defendant Insurance Owner field</b>, select: <b>OWNER, FAKE</b></p><p><b>In the Comments section, include:</b></p>" +
+      ul(["Actual insurance name of the owner", "Driver’s name, if different from the owner", "Assigned adjuster details", noAdj, "Still add all other available 3P insurance information even if no adjuster has been assigned."])) +
+    "</div>\n" + '<div class="ftdd-cards2">' +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
+      "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
+    "</div></div>\n";
+}
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
@@ -1005,8 +1028,8 @@ const ROWS = {
   },
   12: {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
-      {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information", parts: [['<hr class="stars">\n<p>@everyone </p>', "<p><b>Tools:</b></p>"]], fix: [["<p>@everyone </p>\n", ""]]},
-      {id: "s1c", h: "AM: Tools & Naming Convention", parts: [["<p><b>Tools:</b></p>", SLOT(12, "s1-1")]]},
+      // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
+      {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
       {id: "s1d", parts: [[SLOT(12, "s1-1"), null]]}]
   },
   13: {

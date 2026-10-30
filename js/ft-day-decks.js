@@ -712,14 +712,18 @@ function scoreBox(s, info, body){
   if(!admin && !/mock call/i.test(h)) return "";
   // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
   if(/instructions|metrics|scenarios/i.test(h)) return "";
-  // (nor on Day 9's Intake Mock Calls: the Intake Mock Calls Metrics slide comes just before)
-  if(Number(DD.day) === 9) return "";
+  // (nor on Day 9's Intake Mock Calls, nor on an activity whose preparation slide, PREP's "<id>p", comes just before: the
+  // metrics are there)
+  if(Number(DD.day) === 9 || slidesOf((decks() || {})[DD.day] || {slides: []}).some(x => x.id === s.id + "p")) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
   return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
 }
+const WAIT_OFF = true;
 function waitBox(s, info){
+  // (off every slide for now: the mock calls' and demos' slides carry their own instructions)
+  if(WAIT_OFF) return "";
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
   // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
@@ -933,7 +937,7 @@ function sheetPages(sheet){
     // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Instructions and Activity Items stay one row of
     // cards; and what the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls
     // two to a slide)
-    if(!mid && hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-keep, .ftdd-two, .ftdd-three, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
+    if(!mid && hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-cards3, .ftdd-keep, .ftdd-two, .ftdd-three, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -1426,8 +1430,7 @@ const LESSON_CARDS = {
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
       {t: "Shadowing", time: "PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
-      {t: "Adding 1P and 3P Insurance Information", sub: "The updated SA steps for your process guide", k: "read", d: 12, s: "s1b"},
-      {t: "Tools & Naming Convention", sub: "Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1c"},
+      {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
       {t: "Demo Preparation", time: "AM & PM", sub: "The demo metrics · record your demonstration", k: "interactive", d: 12, s: "s1dp"},
       {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration · hit Done once it is submitted", k: "demo", d: 12, s: "s1d"}],
     // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
@@ -2466,6 +2469,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 /* (Day 5's Instructions as two cards side by side, and its ten Activity Items a card each, five to a slide under the
    Calendar Simulator's link) */
 .ft-body .ftdd-cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
+.ft-body .ftdd-cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
 .ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
 /* the activity items read bold, as the rest of the deck does (their heading bars stay heavier) */
@@ -2483,7 +2487,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ft-body .ftdd-calsim > .btn + .btn{margin-left:8px;}
 /* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */
 .ft-body .ftdd-cal-date.ftdd-cal-wait{visibility:hidden;}
-@media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} }
+@media(max-width:900px){ .ft-body .ftdd-cards2, .ft-body .ftdd-cards3{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
