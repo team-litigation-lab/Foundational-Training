@@ -688,6 +688,8 @@ const EDIT = {
   16: {s2: h => rep(rep(h, "<p>Sending Lien Balance Verification request using Filevine: <a ", "<p>Sending Lien Balance Verification request using Filevine:</p>\n<p><a ", 1, "Day 16 s2"),
     'data-kind="doc"', 'data-kind="video"', 6, "Day 16 s2")}
 };
+// what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
+const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
 const ROWS = {
   2: {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
@@ -747,7 +749,17 @@ const ROWS = {
   },
   7: {
     s1: [{id: "s1", parts: [[null, "<p><b>Intake Scenario Exercise</b></p>"]]},
-      {id: "s1b", h: "AM: Intake Scenario Exercise", parts: [["<p><b>Intake Scenario Exercise</b></p>", null]]}]
+      {id: "s1b", h: "AM: Intake Scenario Exercise", parts: [["<p><b>Intake Scenario Exercise</b></p>", null]]}],
+    // the reference set, one thing to a slide: the checklist and the blank forms (a picture of each that opens it in a new
+    // tab), the mock intake (played on the slide), the two folders side by side with the Knowledge Base, then the four
+    // sample calls two to a slide (js/ft-intake.js data-calls)
+    // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
+    forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
+      {id: "formsb", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]]},
+      {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
+      {id: "formsd", h: "AM: Reference: Sample Intake Recordings, Intake Documents & Knowledge Base", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]]},
+      {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: More Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']]},
+      {id: "formsf", h: "AM: More Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]}]
   },
   8: {
     // the trainer's text (#323): Topic 1, Topic 2 with its packet picker, the naming convention and the additional
@@ -853,7 +865,10 @@ const load = n => { const c = {}; vm.createContext(c); vm.runInContext(fs.readFi
 const PQ_NOTE = `<div class="ftdd-pq">✍️ <b>Today’s Process Questions</b> are answered in the day’s Knowledge Check, after the day’s activities.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.toKC(FTDayDecks.dayLesson())">✍️ Knowledge Check →</button></div></div>\n`;
 // a Process Questions list: from the element that says PROCESS QUESTIONS to the naming convention's value
 // (the element after "Naming Convention:"), plus the divider after it
-function stripPQ(html){
+// (Day 7 has no pointer boxes on its slides: its ✍️ Knowledge Check is the card's Process Questions stop after the
+// shadowing, and its lesson the slide's 📘 button, as on the days before)
+const NO_POINTER = [7];
+function stripPQ(html, note = PQ_NOTE){
   let out = html, n = 0;
   for(;;){
     const i = out.indexOf("PROCESS QUESTIONS"); if(i < 0) break;
@@ -863,7 +878,7 @@ function stripPQ(html){
     let b = out.indexOf("\n", nm) + 1;                     // the "Naming Convention:" line
     b = out.indexOf("\n", b) + 1 || out.length;            // its value
     const hr = out.slice(b).match(/^<hr class="stars">\n?/); if(hr) b += hr[0].length;
-    out = out.slice(0, a) + PQ_NOTE + out.slice(b); n++;
+    out = out.slice(0, a) + note + out.slice(b); n++;
   }
   return {html: out, n};
 }
@@ -893,9 +908,9 @@ function stripQuestions(html){
 // Canva frame and its ⛶ Full screen / Open in Canva row. An exercise's deck on the same slide stays.
 const LESSON_DECK = /<div class="canva-frame" id="([^"]+)">\s*<iframe[^>]*title="(?![^"]*Exercise)[^"]*\(Canva\)"[\s\S]*?<\/iframe>\s*<\/div>\s*<div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div>\s*<\/div>\s*/;
 const LESSON_NOTE = `<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>\n`;
-function stripLessonDeck(h, html){
+function stripLessonDeck(h, html, note = LESSON_NOTE){
   if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
-  return {html: html.replace(LESSON_DECK, LESSON_NOTE), n: 1};
+  return {html: html.replace(LESSON_DECK, note), n: 1};
 }
 // an exercise's deck on a slide: "<p><b>… Exercise</b></p>", its Canva frame and that frame's actions row
 const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
@@ -910,9 +925,9 @@ for(let n = 1; n <= 16; n++){
   const pqDay = d.sections.some(s => !s.trainerOnly && s.html.includes("PROCESS QUESTIONS"));
   for(const s of d.sections){
     if(s.trainerOnly || (SKIP[n] || []).includes(s.id)) continue;
-    const r = stripPQ(s.html); pqs += r.n;
+    const bare = NO_POINTER.includes(n), r = stripPQ(s.html, bare ? "" : PQ_NOTE); pqs += r.n;
     const q = stripQuestions(r.html); qs += q.n;
-    const ld = stripLessonDeck(s.h, q.html); decksOff += ld.n;
+    const ld = stripLessonDeck(s.h, q.html, bare ? "" : LESSON_NOTE); decksOff += ld.n;
     let html = (TRIM[n] && TRIM[n][s.id]) ? TRIM[n][s.id](ld.html) : ld.html;
     if(EDIT[n] && EDIT[n][s.id]) html = EDIT[n][s.id](html);
     // a fragment of an earlier section that is read with this one (ROWS: to)
