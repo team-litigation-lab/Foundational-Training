@@ -207,7 +207,14 @@ function bySchedule(n, batch){
   let k = 0; steps(n).forEach(s => { if(RANK[s.slot] <= r) k = s.n; });
   return k;
 }
-function unlockedFor(n, batch){ return Math.max(manual(n, batch), bySchedule(n, batch)); }
+/* ▶ a lesson's first day starts with its first segment open (Day 3: the lesson, 3.2), the rest 🔒 until the trainer
+   unlocks each next segment; until the trainer sets the day (for the batch or all batches; 🔒 Lock the day locks it
+   all). Its later days (Intake's Days 8 and 9) wait for the trainer to start them. */
+const firstDay = n => { const l = lessonOf(n); return l != null && lessonOf(n - 1) !== l; };
+function unlockedFor(n, batch){
+  const o = S(), set = own(o.batches, key(batch), n) || Object.prototype.hasOwnProperty.call(o.all || {}, n);
+  return Math.max(set ? manual(n, batch) : firstDay(n) ? 1 : 0, bySchedule(n, batch));
+}
 const at = n => unlockedFor(n, state.traineeBatch);
 // a trainee is held on a day of Days 2–16 until they have been through it (and once the trainer's settings have loaded:
 // nothing is decided before, as on Day 1)
