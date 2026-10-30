@@ -476,7 +476,7 @@ function listenSlide(day, time){
   // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
   if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
   return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
-    `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
+    `${LISTEN_LEAD[day] ? `<p><b>${e(LISTEN_LEAD[day])}</b></p>` : `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>`}
      ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
@@ -494,6 +494,8 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
     ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Intake call"}))};
 const LISTEN_BARE = [7];
+// a day's Call Listening slide headed by its name instead of the instructions (Day 3: its card row's name)
+const LISTEN_LEAD = {3: "Sample Call Recordings"};
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
 const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
 function listenCards(cards, folder, recs){
@@ -1386,18 +1388,17 @@ const LESSON_CARDS = {
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
-      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, its 📝 answers
-      // (js/ft-listening.js "recact") and the day's end: no ✍️ Knowledge Check between them)
+      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, whose 📝 Answer Sheet
+      // opens in a pop-up on the calls' slide (js/ft-listening.js "recact"), and the day's end: no ✍️ Knowledge Check between them)
       {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "Reception Listening Activity: Answers", sub: "Log each call’s answers", k: "assessment", d: 3, run: "FTListen.open('recact')"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
       {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity: log each call's answers on its 📝 Answers page"],
+      "The Reception Listening Activity: log each call's answers on its 📝 Answer Sheet, on the calls' slide, and 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
@@ -2516,6 +2517,13 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-pic-tag.ftdd-pic-who{background:#E8EBF5;color:#343C66;}
 .ftdd-sheet .ftdd-pic > p.ftdd-pic-about{font-size:15px !important;line-height:1.45 !important;color:#30364F;flex:1;}
 .ftdd-pic-audio{width:100%;height:40px;margin:4px 0 2px;}
+/* 📝 Day 3's Answer Sheet: the last card of the calls' row, opening its pop-up (js/ft-listening.js FTListen.pop) */
+.ftdd-pic-row:has(.ftdd-pic-sheet){align-items:start;}   /* (the calls keep their own height beside it) */
+.ftdd-pic.ftdd-pic-sheet{padding:16px 18px;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;font:inherit;border-color:#E8590C;border-style:dashed;background:#FFF7ED;color:#1E2340;}
+.ftdd-pic.ftdd-pic-sheet:hover{background:#FDEBDD;box-shadow:0 6px 16px rgba(232,89,12,.2);}
+.ftdd-pic-sheet-ic{font-size:30px;line-height:1;} .ftdd-pic-sheet b{font:800 19px/1.3 'Poppins','Inter',sans-serif;}
+.ftdd-pic-sheet small{font-size:14px;line-height:1.4;color:#30364F;}
+.ftdd-pic-sheet-go{margin-top:6px;padding:8px 16px;border-radius:10px;background:linear-gradient(180deg,#E8943A,#C8642A);color:#fff;font:700 15px/1.2 'Inter',sans-serif;}
 .ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
 .ftdd-sheet .ftdd-pic-sm > p.ftdd-pic-h{font-size:15px !important;}
 /* Day 3's Reception Listening Activity: its task in cards (Listen, Analyze, Extract), and the challenge's two halves */
