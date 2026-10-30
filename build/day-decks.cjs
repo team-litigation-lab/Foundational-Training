@@ -413,7 +413,23 @@ s2: html => {
 // accounts, the sample task, the files checked first, the 10–15 minutes in SA) came through as slide text; they go to the
 // trainer's own slot (8:dd-demo, DEMO_NOTE), and the slide says, in the trainee's words, how the demo runs, what to have
 // ready and the guide's Additional Reminder for Trainees, before its Facilitator's Guide (8:s3-1) and the Demo Metrics
-8: {s3: html => {
+// Day 8's Topic 1 (Intake Process): the guide's lines as three numbered steps; its two videos as cards side by side (their
+// preview, a click playing it bigger in the pop-up viewer: data-card, js/ft-day-decks.js visual); the item #14 update
+// opening the trainee's own Monitoring Sheet; then the Knowledge Base articles in a card of their own
+8: {s1: html => {
+  const lead = /<p>After completing your spelling &amp; typing tests, kindly proceed right away to work on these sets of tasks for today’s training session\.\s*Thank you\.<\/p>\n/;
+  const task1 = /<p>Task 1 - Please watch these two videos:<\/p>\n<p>A\. Intake Process Overview<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>B\. Saving intake documents and updating fields in the Intake Tab<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>Task 2 - Update item #14 in your monitoring sheet\.<\/p>\n/;
+  const kb = /<h4>📚 In the Knowledge Base<\/h4>\n([^]*?)(?=<p><b>Topic 2:|$)/;
+  if(!lead.test(html) || !task1.test(html) || !kb.test(html)) throw new Error("Day 8's Topic 1 is no longer where the build looks for it");
+  const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
+  const mon = `<a href="#/monitoring" class="ftdd-monlink" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
+  return html.replace(lead, "").replace(task1, (m, a, b) =>
+      `<p class="li" style="--lvl:0"><span class="lbl">1.</span><span>Complete your Typing and Spelling Tests.</span></p>\n` +
+      `<p class="li" style="--lvl:0"><span class="lbl">2.</span><span>Watch the videos.</span></p>\n${cardOf(a)}\n${cardOf(b)}\n` +
+      `<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Update item #14 in your ${mon}.</span></p>\n`)
+    .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`);
+},
+s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
   const to = html.indexOf('<div class="trainer-slot" data-slot="8:s3-1"></div>');
   if(from !== 0 || to < 0 || !/Give each trainee 10-15 minutes/.test(html.slice(from, to)) || !html.includes("Demo Metrics</b></p>")) throw new Error("Day 8's demo slide is no longer where the build looks for it");
