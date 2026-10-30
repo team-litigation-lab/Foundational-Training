@@ -402,7 +402,7 @@ function renderPage(){
   if(!R.rec){ load(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   const last = R.rec.submits[R.rec.submits.length - 1], lastSc = last ? scored(last) : null;
   return `${preview() ? `<div class="card cc-preview">👁 <b>Trainee view</b> — this is the page as a trainee sees it. Nothing you type here is saved or sent; each trainee checks their own calendar.</div>` : ""}<div class="cc-hero"><p class="cc-eyebrow">Day 5 · Attorney Calendar Management Activity</p><h1>📅 Calendar Activity Check</h1>
-      <p>For each event, enter exactly what you put in Google Calendar (as your screenshot shows it). Every field is checked as you type against the activity, with what to fix. When you’re done, send it to your trainer.</p>
+      <p>For each event, enter exactly what you put in Google Calendar (as the event itself shows it). Every field is checked as you type against the activity, with what to fix. When you’re done, send it to your trainer.</p>
       <p class="cc-dates">🗓 ${preview() ? "A batch starting this week has the activity on" : "Your activity’s dates"}: <b>${e(spanOf(anchorOf(R.rec)))}</b></p>
       ${window.FTCalSim ? `<p class="cc-sim"><button class="btn btn-ghost btn-sm" type="button" onclick="goto('calsim','attorney-activity')">🗓 Do the activity on the Calendaring Simulator</button> <span class="cc-mono">the same check, on a practice Google Calendar</span></p>` : ""}</div>
     <div class="cc-sticky" id="ccSummary">${summaryHtml()}</div><div id="ccFix">${fixHtml()}</div>

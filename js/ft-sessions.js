@@ -76,7 +76,8 @@ const SESSIONS = [
       ["Initials on the note", has(a.initials), ""]]},
   {id:"calendaring", icon:"📅", title:"Standard Training - Appointment Setting Mock Calls", lesson:5,
     about:"A caller phones in about one of the firm’s cases (the Call Simulator’s Calendar Management line, on ☎ LSH Ring Channel): get their name, verify them and find the file. Then book the appointment on the Google Calendar Simulator under your firm’s calendar rules, and record it here.",
-    tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Simulator", "calsim:standard"]],
+    // (the simulator is the Main Portal's Calendaring Simulators card for the mock calls, Standard Training - Mock Call: track=standard)
+    tools: () => [["🎯 Take the graded call", calls("Calendar Management Mock Calls", true)], ["📞 Practice a caller", calls("Calendar Management Mock Calls")], ["📅 Google Calendar Simulator: Standard Training - Mock Call", "calsim:standard"]],
     fields: f => [["caller", "Who called", "text"], ["caseRef", "Which case (client name or case number)", "text"], ["kind", "Appointment", "text"], ["attorney", "With (attorney)", "select", (f.attorneys || []).map(x => x.name)],
       ["date", "Date", "date"], ["start", "Start time (" + f.tz + ")", "time"], ["length", "Length (minutes)", "number"], ["color", "Event color", "select", FF().GCAL],
       ["meet", "Google Meet link added", "check"], ["reminder", "Email reminder 1 day before", "check"], ["desc", "Description (who, why, the case)", "textarea"]],

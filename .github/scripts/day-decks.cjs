@@ -90,6 +90,15 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     fail(`Day 5's activity isn't its Instructions in two cards, then its sixteen cards four to a slide with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
   if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples, drawn picture and Calendar Activity Check are no longer on its second slide');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
+  // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
+  // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
+  const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">(?:<span class="ftdd-tile-ic">📅<\/span><span class="ftdd-tile-t"><b>)?(?:📅 )?Standard Training - Calendar Management Activity</;
+  if ([...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => !portal.test(h))) fail('Day 5\'s activity slides don\'t all link the Portal\'s Standard Training - Calendar Management Activity');
+  // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
+  // Tool link names the Portal card (Standard Training - Mock Call)
+  const d6 = sl(6, 's1');
+  if (/screenshot/i.test(d6) || !/Make sure to be specific with your event titles\./.test(d6) || !/Standard Training - Mock Call<\/p>\n<p><a href="[^"]*calsim\.html\?program=FT&track=standard"/.test(d6))
+    fail('Day 6\'s reminders still ask for screenshots, lost the event titles line, or its Calendaring Tool link doesn\'t name Standard Training - Mock Call');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
 }

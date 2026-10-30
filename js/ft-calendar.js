@@ -376,8 +376,8 @@ function reviewHTML(g, notes){
 // simulator's own checks (🎨 the colour; the whole calendar's overlaps and duplicates), and the ℹ lines that aren't scored.
 const CHECK_LINK = () => window.FTCalCheck ? `<button type="button" class="btn btn-ghost btn-sm ca-cklink" onclick="FTCalSim.toCheck()" title="Copies this calendar’s events into your Calendar Activity Check, then opens it: each field is checked there">✅ Check this calendar in the Calendar Activity Check</button>` : "";
 // ✅ the Calendar Activity Check (#/calcheck) verifies what is done here: this calendar's events, as the Check's entries (the review's
-// own mapping), go into the trainee's Check draft (asked first when the draft holds other entries), then the Check opens. Its 19th
-// screenshot answers and submissions stay. A trainer's preview, or an empty calendar, only opens it.
+// own mapping), go into the trainee's Check draft (asked first when the draft holds other entries), then the Check opens. Its
+// submissions stay. A trainer's preview, or an empty calendar, only opens it.
 async function toCheck(){
   const K = window.FTCalCheck, s = scn();
   if(!K || !isAct(s) || !isTrainee() || !S.events.length){ goto("calcheck"); return; }
@@ -387,7 +387,7 @@ async function toCheck(){
   const R = K.state();
   if(!R || !R.rec || R.failed){ toast("Couldn’t read your Calendar Activity Check, so nothing was copied. Check your connection."); goto("calcheck"); return; }
   const typed = Object.values(R.rec.entries || {}).some(v => Object.entries(v || {}).some(([f, x]) => f !== "runit" && x !== "" && x !== false && x != null));
-  if(typed && JSON.stringify(R.rec.entries) !== JSON.stringify(g.entries) && !confirm("Copy this calendar into your Calendar Activity Check?\n\nIts events replace the ones typed there now. Your answers on the 19th screenshot and your submissions stay.")){ goto("calcheck"); return; }
+  if(typed && JSON.stringify(R.rec.entries) !== JSON.stringify(g.entries) && !confirm("Copy this calendar into your Calendar Activity Check?\n\nIts events replace the ones typed there now. Your submissions stay.")){ goto("calcheck"); return; }
   R.rec.entries = JSON.parse(JSON.stringify(g.entries)); R.rec.anchor = X.anchor();      // the dates they were copied at
   const ok = await K.save();
   toast(ok === false ? "Couldn’t save to the Calendar Activity Check. Check your connection." : `📋 ${Object.keys(g.entries).length} events copied into your Calendar Activity Check: each field is checked there.`);
@@ -1049,7 +1049,7 @@ function renderAdminScores(){
   startPoll();
   return `<div class="card cs-admin"><h3>📅 Calendar Scores</h3>
     <p class="cs-hint"><b>🗓 The Attorney Calendar Management Activity (Day 5) is done and graded here.</b> Its submissions are listed below with the automated review and the AI feedback: open one (🖥 Live review or 👁 View) to add your feedback and finalize the report. The rules box below has a place for the activity’s own guidelines.</p>
-    <p class="cs-hint"><b>The Standard Training weeks now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsEvaluations()">📋 Open Trainee Evaluations on the Portal ↗</button> <button class="btn btn-ghost btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training scores on the Portal ↗</button> Trainee Evaluations has each trainee's submitted calendar with its AI review, your own feedback and the report you send to them; grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older Standard calendars saved here are listed below too.</p>
+    <p class="cs-hint"><b>The Standard Training weeks now run on the Main Portal.</b> <button class="btn btn-navy btn-sm" onclick="ftsEvaluations()">📋 Open Trainee Evaluations on the Portal ↗</button> <button class="btn btn-ghost btn-sm" onclick="ftsCalsim('standard', true)">Open Standard Training - Mock Call scores on the Portal ↗</button> <button class="btn btn-ghost btn-sm" onclick="ftsCalsim('activity', true)">Open Standard Training - Calendar Management Activity scores on the Portal ↗</button> Trainee Evaluations has each trainee's submitted calendar with its AI review, your own feedback and the report you send to them; grade and give feedback there; the scores also show on the Portal’s Progress page under this program. The older Standard calendars saved here are listed below too.</p>
     ${feedHTML()}${guideHTML()}
     <p class="cs-hint">Each trainee’s calendars, with scores per trainee. Open a submission to see exactly what they built, the automated review against the attorney’s rules, and add your own feedback: a score out of 100, an overall comment and a comment on each task. They see your feedback on their Calendar Scheduler page. Scores from the Portal’s Calendaring Simulator are saved on the Portal under program FT; any result it posts back shows here too.</p>
     ${A.rows.length ? keys.map(b => `<section class="fp-batch"><div class="fp-batch-hd" onclick="FTCalAdmin.batch(${e(JSON.stringify(b))})">${A.closed[b] ? "▸" : "▾"} <b>📁 ${e(b ? "Batch " + b : "No batch set")}</b> <span class="fp-muted">${groups[b].length} trainee${groups[b].length === 1 ? "" : "s"}</span></div>
