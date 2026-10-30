@@ -55,10 +55,12 @@ const PROCESS_SETS = [
     "Assess how remote work increases both the risk and need for maintaining privileged communication boundaries.",
     "Analyze the type of information that can be shared with each party (e.g., client, insurance adjuster, court staff). What factors determine what can and cannot be disclosed?",
     "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff."]},
-  // two lessons discussed on Day 3, each its own Knowledge Check: Personal Injury Process Flow's three questions (Day 3's,
-  // after its Classroom Discussion), Receptionist Training's seven (its own); one file for both, the guide's
+  // two lessons discussed on Day 3, one Knowledge Check: the PI Workflow deck, then the Reception deck, then ✍️ Receptionist
+  // Training's Knowledge Check, which asks Personal Injury Process Flow's three questions (kc: they are Lesson 4's, first)
+  // and its own seven, ten in all; Personal Injury Process Flow has none of its own and finishes as Calendaring does. Each
+  // sheet keeps its own answers (process:<id> sets), and one file holds both, the guide's
   // PI_Workflow_and_Reception_Training_Process_Question_Answers (VA's first name): 💾 Save PDF writes both sheets into it
-  {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Question_Answers", questions:[
+  {id:"pi-workflow", lesson:3, kc:{4:[0, 1, 2]}, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Question_Answers", questions:[
     "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
     "Examine how missing documentation (e.g., police reports, medical records) at the intake or treatment stage could affect the value and outcome of a case.",
     "Evaluate how efficient case intake impacts the strength and pace of a personal injury claim. What are the potential legal and financial consequences of a disorganized intake?"]},
@@ -198,8 +200,8 @@ const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs =
   return [...new Set(qs.map(x => x.set))].filter(set => !seen.has(set.file) && seen.add(set.file)); };
 /* 📝 A day's worksheet, done in Word, embedded with the answer sheet it goes with (by the sheet's file): its download and
    its naming convention live here, beside 📄 Save PDF to my Folder, not on the deck (the deck's slide links here,
-   FTDayDecks.toKC). Day 3's Call Intake & Data Extraction (PI Reception Activity): the five practice calls' data points (build/calls/pi_reception_calls.py). */
-const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Question_Answers": {t: "Call Intake & Data Extraction worksheet",
+   FTDayDecks.toKC). Day 3's Reception Listening Activity (PI Reception Activity): the five practice calls' data points (build/calls/pi_reception_calls.py). */
+const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Question_Answers": {t: "Reception Listening Activity worksheet",
   href: "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx", file: "PI_Reception_Activity"}};
 function worksheetBox(set){
   const w = WORKSHEETS[set.file]; if(!w) return "";

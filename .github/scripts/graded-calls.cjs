@@ -32,7 +32,7 @@ const failures = []; const fail = (m) => failures.push(m);
     await put('callsim:' + id, { traineeId: id, calls: [], best: { lesson4: { score: 90, calls: 1 }, lesson5: { score: 82, calls: 2 } } });
     await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(2500);
     const dash = await page.evaluate(() => ({ view: state.view, stat: (document.querySelector('.fts-calls-stat') || {}).innerText || '',
-        l4: (document.querySelector('#dayl-4') || {}).innerText || '', l5: (document.querySelector('#dayl-5') || {}).innerText || '', l6: (document.querySelector('#dayl-6') || {}).innerText || '' }));
+        l4: (document.querySelector('#dayl-3') || {}).innerText || '', l5: (document.querySelector('#dayl-5') || {}).innerText || '', l6: (document.querySelector('#dayl-6') || {}).innerText || '' }));
     if (dash.view !== 'modules') fail(`signing in should land on the Modules page: "${dash.view}"`);
     if (!/86%/.test(dash.stat) || !/2 \/ 3 lessons/i.test(dash.stat)) fail(`the Modules stat row's graded calls: "${dash.stat}" (expected 86%, 2 / 3 lessons)`);
     if (!/📞 90%/.test(dash.l4) || !/📞 82%/.test(dash.l5) || /📞/.test(dash.l6)) fail(`the lesson cards' graded calls: ${JSON.stringify(dash)}`);

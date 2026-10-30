@@ -109,11 +109,12 @@ const folderBtn = () => K.folder ? btn(K.folder, "📁 My Assessments/Activities
 function packetHtml(){
   if(!K.set) return `<p class="ftis-wait">Loading your assigned packet…</p>`;
   const head = `<div class="ftis-pk-h"><b>📦 Your Assigned Packet</b></div>`;
-  if(!isTrainee()) return head + `<p class="ftis-pk-note">👁 Each trainee sees here the Intake Packet their trainer assigned them, with its download and their own Assessments/Activities folder. Packets are assigned in Admin → 📦 Intake Packets. Until one is assigned, a trainee reads:</p>
-    <p class="ftis-pk-note">Your trainer hasn’t assigned your Intake Packet yet. It shows here as soon as they do.</p>
-    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">INTAKE - Packet (VA’s Name)</code></p>`;
+  // (until the trainer assigns one, a placeholder where the packet will be; a trainer sees the same, with where to assign it)
+  const ph = `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📦</span><div><b>Your assigned Intake Packet appears here</b><small>Your trainer assigns it during the session.</small></div>${isTrainee() ? ""
+    : `<button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📦 Assign packets</button>`}</div>`;
+  if(!isTrainee()) return head + ph;
   const n = K.mine && Number(K.mine.packet);
-  if(!n) return head + `<p class="ftis-pk-note">Your trainer hasn’t assigned your Intake Packet yet. It shows here as soon as they do.</p>`;
+  if(!n) return head + ph;
   const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`;
   return head + `<div class="ftis-pk-card"><div class="ftis-pk-n">${n}</div><div><b>Intake Packet ${n}</b>${pk.client ? `<small>Client: <b>${e(pk.client)}</b> · name your subfolder after them</small>` : ""}</div></div>
     <div class="ftis-pk-act">${pk.url ? btn(downloadUrl(pk.url), "⬇ Download my packet", "btn-navy") + viewBtn(pk.url, `Intake Packet ${n}`, "👁 View it") : `<span class="ftis-pk-note">Your trainer is adding this packet’s link.</span>`}${folderBtn()}</div>
@@ -273,6 +274,10 @@ window.FTIntake = {
 .ftis-pk-steps{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.55;} .ftis-pk-steps li{margin-bottom:4px;}
 .ftis-name{background:#262B45;color:#fff;border-radius:6px;padding:2px 8px;font-size:13px;}
 .ftis-pk-note{margin:0;font-size:12.5px;color:#5B6178;}
+.ftis-pk-ph{display:flex;align-items:center;gap:14px;margin:6px 0 2px;padding:14px 16px;border:2px dashed #C9CFE6;border-radius:12px;background:#F6F7FB;}
+.ftis-pk-ph-ic{font-size:30px;line-height:1;opacity:.75;}
+.ftis-pk-ph > div{flex:1;display:flex;flex-direction:column;gap:2px;}
+.ftis-pk-ph b{color:#1E2340;font-size:16px;} .ftis-pk-ph small{color:#5B6178;font-size:13.5px;}
 .ftdd-step-t .ftis-packet{padding:8px 12px;margin:8px 0 2px;border-style:solid;border-width:1px;border-left-width:5px;}
 .ftis-pk-card{display:flex;align-items:center;gap:12px;margin:4px 0;} .ftis-pk-card > div > b{display:block;color:#262B45;font-size:15px;} .ftis-pk-card small{display:block;color:#5B6178;font-size:13px;} .ftis-pk-card small b{color:#262B45;}
 .ftis-pk-n{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#262B45;color:#fff;font-weight:800;font-size:17px;}
