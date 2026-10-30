@@ -475,8 +475,7 @@ function listenSlide(day, time){
   const live = FTListen.setLive(set.id);
   return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
     `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
-     <p>There is no right answer to find — the log is what your trainer reads, and it saves you writing the calls up anywhere else.</p>
-     ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder, live.recs) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+     ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
    calls; Day 7: the four intake recordings, in the pop-up player; the five practice calls made for the PI Reception Activity are on their own deck, Reception Listening Activity).
@@ -1628,6 +1627,16 @@ function cardRows(c, ex){
   return rows;
 }
 const cardOf = lid => LESSON_CARDS[lid] ? Object.assign({lesson: Number(lid)}, LESSON_CARDS[lid]) : null;
+// a lesson with no card of its own, on another lesson's card (Receptionist Training on Personal Injury Process Flow's): its
+// 📞 graded-call tag shows there, and the card reads ✓ Finished once both lessons are
+const CARD_OF_LESSON = {4: 3};
+const cardLessons = lid => [Number(lid)].concat(Object.keys(CARD_OF_LESSON).filter(k => CARD_OF_LESSON[k] === Number(lid)).map(Number));
+// (and it opens with its card's lesson: 📅 Open Lessons opening Personal Injury Process Flow opens the Reception deck too)
+const __dayUnlocked = root.dayUnlocked;
+if(typeof __dayUnlocked === "function") root.dayUnlocked = function(id){
+  const c = CARD_OF_LESSON[Number(id)];
+  return __dayUnlocked.apply(this, arguments) || (c != null && __dayUnlocked.call(this, c));
+};
 // 🏠 Classroom: the lesson's offline activity — its homework, else the last thing its days set
 const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.length - 1];
 // the day a row belongs to: its slide's day, else the day it names (the LOR activity is Day 11's), else the lesson's first
@@ -1726,7 +1735,7 @@ function introCard(l, cur, ex, tags){
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
   card.classList.add("ftli"); if(cur != null && c.days.includes(cur)) card.classList.add("now");
   const kick = card.querySelector(".mh-day");
-  const done = lessonDone(l.id);
+  const done = cardLessons(l.id).every(lessonDone);
   // no "Classroom Activity · Day N" kicker: the card says Finished once it is, and its tags (Today …) otherwise
   if(kick) kick.innerHTML = done ? `✓ Finished${tags || ""}` : (tags ? String(tags).replace(/^\s*·\s*/, "") : "&nbsp;");
   if(done) card.classList.add("ftli-done");
@@ -1753,7 +1762,7 @@ root.LSH_HOME_GRID_LAYOUT = function(ctx){
   if(!X.data) loadExtras();
   const cur = forTrainee() ? placeDay() : null, ex = X.data && X.data.days || {};
   return (ctx.lessons || []).slice().sort((a, b) => Number(a.id) - Number(b.id))
-    .map(l => introCard(l, cur, ex, typeof ctx.tags === "function" ? ctx.tags(l) : "")).join("");
+    .map(l => introCard(l, cur, ex, typeof ctx.tags === "function" ? cardLessons(l.id).map(id => ctx.tags((ctx.lessons || []).find(x => Number(x.id) === id) || l)).join("") : "")).join("");
 };
 
 /* ---------- 📌 the no-discussion days: activities and instructions the trainer adds ----------
@@ -2882,6 +2891,15 @@ main.main-ftdd .ftdd-sheet a.ftdd-sop-dl, main.main-ftdd .ftdd-sheet a.ftdd-sop-
 .ftdd-acard-ic{font-size:22px;line-height:1;} .ft-body .ftdd-acard b{font:700 16px/1.3 'Inter',sans-serif;}
 .ft-body .ftdd-acard small{font:700 13px/1.2 'Inter',sans-serif;color:#C2410C;}
 .ft-body .ftdd-acard-tag{font:600 13px/1.3 'Inter',sans-serif;color:#5B6178;}
+/* (the Call Listening slide's recordings: bigger cards, white on navy, five to a row) */
+.ftdd-listen .ftdd-acards{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:14px 0 6px;}
+.ft-body .ftdd-listen button.ftdd-acard{background:#1E2340;border:2px solid #1E2340;border-left:6px solid #E8590C;padding:18px 18px 16px;gap:10px;min-height:150px;color:#fff;box-shadow:0 6px 16px rgba(30,35,64,.28);}
+.ft-body .ftdd-listen button.ftdd-acard:hover{background:#2A3160;border-color:#E8590C;}
+.ftdd-listen .ftdd-acard-ic{font-size:30px;}
+.ft-body .ftdd-listen .ftdd-acard b{font:800 20px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+.ft-body .ftdd-listen .ftdd-acard-tag{font:600 15px/1.3 'Inter',sans-serif;color:#C9CFE6;}
+.ft-body .ftdd-listen .ftdd-acard small{font:800 16px/1.2 'Inter',sans-serif;color:#FDBA74;}
+@media(max-width:1000px){ .ftdd-listen .ftdd-acards{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .ftdd-apop{cursor:default;} .ftdd-apop-box{background:#fff;border-radius:14px;border-top:5px solid #E8590C;padding:22px 26px;width:min(560px,92vw);display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 50px rgba(0,0,0,.4);}
 .ftdd-apop-k{margin:0;font:800 12px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#C2410C;}
 .ftdd-apop-box b{font:800 20px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;} .ftdd-apop-box audio{width:100%;}

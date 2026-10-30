@@ -308,9 +308,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; for (let l = 1; l <= 4; l++) state.progress[l] = { done: true, studied: true }; }, [id]);
   await put('settings:opendays', { all: [1, 2, 3, 4, 5], batches: {} });
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-  if (await page.evaluate(() => { const b = document.querySelector('#dayd-4'); return !b || b.disabled; })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
+  // (Day 4 is Part 2 of the PI Workflow / Reception card)
+  if (await page.evaluate(() => { const b = document.querySelector('#dayl-3 .ftseg-b[data-day="4"]'); return !b || b.classList.contains('locked'); })) fail('a trainee on Day 5 can\'t open the Day 4 instructions');
   // the trainer's additions are a row of their own on the lesson's Classroom Activity card, and it opens their slide
-  await page.click('#dayd-4'); await page.waitForTimeout(1500);
+  await page.click('#dayl-3 .ftseg-b[data-day="4"]'); await page.waitForTimeout(1500);
   await page.click('.ftdd-lcslide .ftlc-row:has-text("From your trainer")'); await page.waitForTimeout(1500);
   const tv = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', steps: document.querySelectorAll('.ftdd-x').length, form: !!document.querySelector('.ftdd-xform'),
     sim: !!document.querySelector('.ftdd-x a[href*="call.html"]'), bold: !!document.querySelector('.ftdd-x b b'), text: (document.querySelector('.ftdd-body') || {}).innerText || '' }));
