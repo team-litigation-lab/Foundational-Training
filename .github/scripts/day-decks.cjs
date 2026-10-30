@@ -43,7 +43,11 @@ if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
-if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no pointer to ✍️ Knowledge Check where its Process Questions were');
+// Days 7–16 like Days 1–5: no Process Questions or lesson deck pointer on a slide (the card's ✍️ Process Questions: Submit and
+// 💬 Classroom Discussion stops are those), and no slide left with only that: Day 10's classroom discussion slide is off
+for (let n = 1; n <= 16; n++) (D[n] ? D[n].slides : []).forEach(s => { if (/Today’s Process Questions|Today’s lesson deck/.test(s.html)) fail(`Day ${n} ${s.id}: a Process Questions or lesson deck pointer on the slide`); });
+if (D[10] && D[10].slides.some(s => s.id === 's1')) fail("Day 10's classroom discussion slide, only pointers, is still on the deck");
+if (D[13] && !D[13].pq) fail('Day 13 no longer has its Process Questions (its card loses the Process Questions: Submit stop)');
 // a section cut into one slide per card row (build/day-decks.cjs ROWS): a new slide's id never reads as a continuation of
 // the one it was cut from, and every trainer slot is on exactly one slide
 for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
@@ -226,7 +230,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(1500);
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', n: (document.querySelector('.ftdd-stepno') || {}).innerText || '',
-    deck: !document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle') && !!document.querySelector('.ftdd-dhead .ftdd-prog > span') && !!document.querySelector('.ftdd-nav .ftdd-stepno'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
+    deck: !document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle') && !!document.querySelector('.ftdd-dhead .ftdd-prog > span') && !!document.querySelector('.ftdd-nav .ftdd-stepno'), player: !!document.querySelector('.ftdd-deck .ftdd-inline.is-video iframe[src*="/preview"]'), vlinks: document.querySelectorAll('.ftdd-deck a.ftdd-tile.k-video').length, tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
     open: Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)).map(String), scroll: document.documentElement.scrollHeight - innerHeight,
     trainerNotes: [...document.querySelectorAll('.ftdd-body .trainer-slot')].some(x => x.innerHTML.trim()) }));
   let s = await at();
@@ -253,7 +257,8 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => FTDayDecks.to(FTDayDecks.at(16, FT_DAY_DECKS[16].slides[0].id))); await page.waitForTimeout(400);
   s = await at();
   if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s first slide of its own is "' + s.h + '"');
-  if (!s.tiles) fail('Day 16\'s links are not shown as tiles');
+  // (its tutorial video plays in the slide, as every video the platform can play does; no link to open it elsewhere)
+  if (!s.player || s.vlinks) fail(`Day 16's tutorial video doesn't play in the slide: ${JSON.stringify({ player: s.player, links: s.vlinks })}`);
   // 📌 a no-discussion day: the trainer adds the day's activities and instructions on its last slide
   const extrasBefore = await get('settings:dayextras');
   await put('settings:dayextras', { days: {} });

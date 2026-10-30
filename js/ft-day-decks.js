@@ -189,7 +189,7 @@ function kindOf(s, html){
   // (Day 3's Frontline Management: its decision trees and SOP are to listen and do by, not a discussion)
   if(/^Frontline Management/i.test(h)) return {ic: "🎧", label: "Listen & Do"};
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
-  if(/k-video/.test(html)) return {ic: "🎬", label: "Watch & Do"};
+  if(/k-video|ftdd-inline is-video/.test(html)) return {ic: "🎬", label: "Watch & Do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
   if(/^(Common Terms Used|Auto Liability Insurance)$/.test(h)) return {ic: "🎬", label: "Watch & Do"};
   // (recordings to play in the slide: Day 3's supplementary reception recordings)
@@ -203,6 +203,9 @@ const RAW_URL = /^\s*https?:\/\/\S+\s*$/;
 const VIDEO_WORDS = /video|watch|recording|tutorial|demo|module|shadowing|lecture|presentation|discussion|training with|part \d/i;
 function linkKind(href, label, dk){
   const u = String(href || "");
+  // (a link the build marks data-kind="web" is a page to open, whatever the lines around it say: Day 8's Prototype CMS)
+  // (and so is a Knowledge Base article, even beside a video: it opens signed in, js/lsh-tool-links.js)
+  if(dk === "web" || /^https:\/\/lsh-knowledge-base\./.test(u)) return {k: "web", ic: "🔗", act: "Open in a new tab ↗"};
   if(/drive\.google\.com\/drive\/folders\//.test(u)) return {k: "folder", ic: "📁", act: "Open the folder"};
   if(/docs\.google\.com\/spreadsheets\//.test(u)) return {k: "sheet", ic: "📊", act: "Open the sheet"};
   if(/docs\.google\.com\/presentation\//.test(u)) return {k: "slides", ic: "📽", act: "Open the slides"};
@@ -228,7 +231,12 @@ function visual(html){
   // (a slide the build marks ftdd-nolearn, Day 2's Common Terms, has no "📝 What I learned" beside its videos)
   const learnOn = !root.querySelector(".ftdd-nolearn");
   // 1. a line that is only a link (or links) becomes tiles; the short line before it names the tile
-  root.querySelectorAll("p").forEach(p => {
+  // (the lines just before each, read before any is replaced: a video played in the slide no longer carries the "watch
+  // these videos" line that told what the links after it are)
+  const ps = [...root.querySelectorAll("p")], before = new Map(ps.map(p => {
+    let c = "", q = p.previousElementSibling; for(let k = 0; q && k < 3; k++, q = q.previousElementSibling) c += " " + q.textContent;
+    return [p, c]; }));
+  ps.forEach(p => {
     const as = [...p.querySelectorAll("a[href]")];
     // (Day 1's Installation of SA writes its links out, as the curriculum's pages do)
     if(!as.length || p.closest(".trainer-slot, .ftdd-tiles, .ftdd-sa-step")) return;
@@ -239,7 +247,7 @@ function visual(html){
     const absorb = prevText && prevText.length <= 140 && !/^\s*(task|step|topic)\b/i.test(prevText) && !/[.!?]\s*$/.test(prevText.replace(/\s*\(.*\)\s*$/, ""));
     if(absorb) label = cleanTitle(prevText) || prevText.replace(/[:\s]+$/, "");
     // the lines just before say what the links are ("Please watch these two videos:")
-    let context = "", q = p.previousElementSibling;
+    let context = before.get(p) || "", q = p.previousElementSibling;
     for(let k = 0; q && k < 3; k++, q = q.previousElementSibling) context += " " + q.textContent;
     const tiles = as.map((a, j) => {
       const href = a.getAttribute("href"), name = (as.length > 1 && label ? label + " · " + (j + 1) : label) || cleanTitle(a.getAttribute("data-title")) || cleanTitle(a.textContent) || "Open";
@@ -264,8 +272,9 @@ function visual(html){
       tiles[j] = btn;
     });
     // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
-    const wrapped = tiles.map(x => {
-      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn) return x;
+    // (except a link the build marks data-nolearn: Day 8's SA tutorial, played on the demonstration's slide)
+    const wrapped = tiles.map((x, j) => {
+      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn || (as[j] && as[j].hasAttribute("data-nolearn"))) return x;
       const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
       const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
       b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
@@ -295,22 +304,32 @@ function visual(html){
       return;
     }
     // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
-    // "📝 What I learned"
-    const src = as.length === 1 && as[0].hasAttribute("data-embed") && typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(as[0].getAttribute("href")) : null;
-    if(src){
-      const x = tiles[0], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
+    // "📝 What I learned". So does every video the platform can play (Drive, Loom, YouTube): it is watched on the slide, not
+    // through a link (a line of several videos, a player each); an interview recording keeps its 🎧 Transcribe tile
+    const embedOf = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
+    const isVid = x => !!(x && x.matches && (x.matches(".ftdd-tile.k-video") || (x.matches(".ftdd-vwrap") && x.querySelector(".ftdd-tile.k-video"))));
+    const embeds = as.length === 1 && as[0].hasAttribute("data-embed") && embedOf(as[0]) ? [0]
+      : as.every((a, j) => isVid(tiles[j]) && embedOf(a)) ? as.map((a, j) => j) : [];
+    if(embeds.length){
+      const boxes = embeds.map(j => {
+      const a = as[j], src = embedOf(a);
+      const x = tiles[j], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
       const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
-      // (its name: the one the build gave it, else the tile's)
-      const nm = (as[0].getAttribute("data-title") || "").trim() || tile.querySelector("b").textContent;
-      const href = as[0].getAttribute("href") || "";
+      // (its name: the one the build gave it, else the tile's; a name that is only the guide's address reads as the tile's)
+      const given = (a.getAttribute("data-title") || "").trim();
+      const nm = (a.hasAttribute("data-embed") && given) || tile.querySelector("b").textContent;
+      const href = a.getAttribute("href") || "";
       box.querySelector("b").textContent = (vid ? "🎬 " : /\/folders\//.test(href) ? "📁 " : /spreadsheets/.test(href) ? "📊 " : "📄 ") + nm;
       const f = box.querySelector("iframe"); f.setAttribute("src", src); f.setAttribute("title", nm);
       // a sheet cut to its first columns (data-crop: their width in the sheet's own pixels), drawn the slide's full width
       // and the page's full height (fitCrops)
-      const crop = parseInt(as[0].getAttribute("data-crop"), 10);
+      const crop = parseInt(a.getAttribute("data-crop"), 10);
       // a document to work in (Day 2's assessments, data-full): the page's full height
-      if(as[0].hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
+      if(a.hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
+      // (data-fit: sized to the page, so the lines around it stay on the same page: Day 8's SA tutorial and naming reference)
+      if(a.hasAttribute("data-fit")) box.classList.add("is-fit");
+      if(a.hasAttribute("data-nolearn")) box.setAttribute("data-nolearn", "");
       // 📊 Day 2's Common Terms Used reference sheet: the platform's own table in place of the embed (refTerms below),
       // the embed while its data loads
       if(REF_SHEET.test(href)) box.setAttribute("data-sheet", REF_SHEET.source);
@@ -320,8 +339,10 @@ function visual(html){
       const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
-      if(as[0].hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
-      if(absorb){ prev.replaceWith(box); p.remove(); } else p.replaceWith(box);
+      if(a.hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
+      return box;
+      });
+      if(absorb){ prev.replaceWith(...boxes); p.remove(); } else p.replaceWith(...boxes);
       return;
     }
     const last = p.previousElementSibling && p.previousElementSibling.classList && p.previousElementSibling.classList.contains("ftdd-tiles") ? p.previousElementSibling : null;
@@ -576,10 +597,12 @@ const HANDOUTS = {1: {items: [
   ["Intake Packet", "https://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view"],
   ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]}};
 function handoutsSlide(h){
-  // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
-  // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
+  // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
+  // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
+  // segment, where the day is held step by step (the trainer's 🔓 Unlock on the slide, or 🔓 Activity Locks), else its video
   const lid = lessonOfDay(DD.day);
-  const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
+  const bySeg = root.FTDayLocks && FTDayLocks.stopOpen ? FTDayLocks.stopOpen(lid, "video") : null;
+  const locked = forTrainee() && !state.adminPreview && (bySeg != null ? !bySeg : typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid));
   const cards = h.items.map(([t, u], i) => locked
     ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
     : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
@@ -700,7 +723,7 @@ function slideActions(s, info, body, i){
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   // (a video that plays in the slide counts too: ftdd-inline)
   const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
-  if(vids && root.FTVideoNotes && !/ftdd-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
+  if(vids && root.FTVideoNotes && !/ftdd-nolearn|data-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
@@ -713,6 +736,9 @@ function waitBox(s, info){
   // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
   // the tools itself, and its instructions and metrics)
   if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
+  // (nor on a slide the build marks data-nowait: Day 8's SA demonstration and Intake Mock Call Activity, whose next slide
+  // has the Call Simulator)
+  if(/data-nowait/.test(String(s.html || ""))) return "";
   const l = (info.lessons || []).map(Number).find(x => x > 0); if(l == null) return "";
   const sim = SIM_OF[l], acts = [];
   if(sim) acts.push(`<button type="button" class="btn btn-navy btn-sm" onclick="window.FTSessions ? FTSessions.open('${sim[0]}') : goto('simulators')">☎ Practise ${sim[1]} on the Call Simulator</button>`);
@@ -860,7 +886,7 @@ function sheetPages(sheet){
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
     // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Activity Items stay one grid of cards; and what
     // the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls two to a slide)
-    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-keep, .ftdd-two, .ftis-calls")) units.push(...inner); else units.push(k);
+    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-keep, .ftdd-two, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -1217,6 +1243,7 @@ const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do
   watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
 const SUBMIT = "Assessments › Activities subfolder";
+// (a mock call or demo row opens its preparation slide, "<id>p", and its Day 4 Done slide follows it: build/day-decks.cjs PREP)
 const LESSON_CARDS = {
   1: {days: [1], focus: "VA Essentials",
     rows: [
@@ -1287,26 +1314,28 @@ const LESSON_CARDS = {
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
       {t: "Intake Process", time: "AM", sub: "Two videos · update item #14 on your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents (MVA Cases)", sub: "The video, 📦 your Intake Packet, the Intake Worksheet · #16", k: "interactive", d: 8, s: "s1b"},
-      {t: "Naming Convention & Additional Documents", sub: "The Knowledge Base article · the documents not in the video", k: "read", d: 8, s: "s1c"},
-      {t: "Live Session Instructions", sub: "The mock call, the CMS demo and CMS access", k: "read", d: 8, s: "s1d"},
-      {t: "This Afternoon’s Activities", sub: "The SA demo, then the Intake Mock Call on the Prototype CMS", k: "read", d: 8, s: "s1e"},
-      {t: "Demo Tutorial Viewing & Preparation", sub: "Saving the Intake Packet in SA", k: "watch", d: 8, s: "s2"},
-      {t: "Saving the Intake Packet to SA", time: "PM", sub: "Trainer facilitated, one at a time · the Demo Metrics", k: "demo", d: 8, s: "s3"},
+      {t: "Intake Documents (MVA Cases)", sub: "The video, 📦 your assigned Intake Packet, the Intake Worksheet · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Naming Convention & Additional Documents", sub: "The naming convention reference · the 14 documents not in the video", k: "read", d: 8, s: "s1c"},
+      {t: "Live Session Instructions", sub: "The CMS demonstration, then the mock call", k: "read", d: 8, s: "s1d"},
+      {t: "Smart Advocate (SA) Demonstration", sub: "Saving the Intake Packet and extracted documents · the tutorial video", k: "watch", d: 8, s: "s1e"},
+      // (its second slide, s1g: the Prototype CMS and the Call Simulator)
+      {t: "Intake Mock Call Activity", sub: "The sample intake forms · the Prototype CMS and the Call Simulator’s Intake line", k: "read", d: 8, s: "s1f"},
+      {t: "Saving the Intake Packet to SA", time: "PM", sub: "Trainer facilitated, one at a time · the Demo Metrics", k: "demo", d: 8, s: "s3p"},
       {t: "Atty. Sandy Van: Intake Calling (MVC)", time: "PM", sub: "Handling intake calls for MVC cases", k: "watch", d: 8, s: "s3b"},
       {t: "Buffer Time", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
       {t: "PI Equivalent Transcription: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
-      {t: "Intake Mock Calls", time: "PM", sub: "Your graded call, with the trainer · scored on the Intake Mock Calls Metrics", k: "mock", d: 9, s: "s3b"}],
+      {t: "Intake Mock Calls", time: "PM", sub: "Your graded call, with the trainer · scored on the Intake Mock Calls Metrics", k: "mock", d: 9, s: "s3bp"}],
     discuss: {7: "s1"},
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
     rows: [
-      {t: "Breakout Session: Claims Specialist Best Practices", sub: "Digital handouts · individual activity", k: "interactive", run: "ftVideoOrAsk(7)", day: 10},
-      {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c"},
+      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3, and the AI discussion video is its
+      // lesson card's 🎬 Video on 📚 Dashboard)
+      {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c", lead: false},
       {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
@@ -1314,8 +1343,9 @@ const LESSON_CARDS = {
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information", sub: "The updated SA steps for your process guide", k: "read", d: 12, s: "s1b"},
       {t: "Tools & Naming Convention", sub: "Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1c"},
-      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1d"}],
-    discuss: {10: "s1"},
+      {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1dp"}],
+    // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
+    // Questions, which are the card's own stops, build/day-decks.cjs)
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
       "Never share the client’s DOB, email, SSN or VIN with the 3P insurer"],
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
@@ -1329,15 +1359,15 @@ const LESSON_CARDS = {
       {t: "Notes for Your Work Guide", sub: "Tools, naming conventions, the HIPAA & MedLOR boxes, the NPIM doctors, the e-mail subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Verify the matter, the task, the client’s details and the DOL", k: "read", d: 14, s: "s1c"},
       {t: "Gentle Reminders & SA Updates", sub: "The ideal time, Word & a PDF editor, the MEDS tab and John Test Doe", k: "read", d: 14, s: "s1d"},
-      {t: "Recorded Demonstration: MedLOR & Records Request", time: "PM", sub: "The demo metrics · record and submit your demo", k: "demo", d: 14, s: "s1e"},
+      {t: "Recorded Demonstration: MedLOR & Records Request", time: "PM", sub: "The demo metrics · record and submit your demo", k: "demo", d: 14, s: "s1ep"},
       {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 14, s: "s2"},
       {t: "Before Your Demo: Reminders & the Tutorial Video", time: "AM", sub: "The ideal time, your tools ready · missed demos are not rescheduled", k: "read", d: 15, s: "s1"},
-      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · how it is scored", k: "demo", d: 15, s: "s1b"},
+      {t: "MedLOR & Records Request", time: "AM & PM", sub: "Recorded demonstration · how it is scored", k: "demo", d: 15, s: "s1bp"},
       {t: "Shadowing Session", time: "PM", sub: "Your shadow buddy, or the recorded shadowing videos if none is available", k: "shadow", d: 15, s: "s2"},
       {t: "Lien Balance Verification Request", time: "AM", sub: "Tutorial video · take notes for your guide", k: "watch", d: 16, s: "s1"},
       {t: "Notes for Your Guide: Naming, Reports & Subject Line", sub: "The LV naming convention, the Notes and Tasks report formats, the e-mail subject line", k: "read", d: 16, s: "s1b"},
       {t: "Before Your Demo: Rules, Metrics & Time Limit", time: "PM", sub: "45 minutes ideal time · missed demos are not rescheduled", k: "demo", d: 16, s: "s2b"},
-      {t: "Demo and Shadowing", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "demo", d: 16, s: "s2"}],
+      {t: "Demo and Shadowing", time: "PM", sub: "Type ‘done’, then watch the recorded demos while you wait for your turn", k: "demo", d: 16, s: "s2p"}],
     tools: [["Tools:", "Smart Advocate, Microsoft Word, Nitro Pro"], "MedLOR: <i>MED - Lien Holder(Medical Provider) - MedLOR with Unsworn COR and HIPAA mm.dd.yy (VA’s first name)</i>",
       "HIPAA certificate: <i>HIPAA Certificate_[Your Name]</i>"],
     takeaways: ["HIPAA-compliant releases", "Liens vs. letters of protection", "Bills vs. records"], file: "Medical_Records_Specialist_Training_Process_Question_Answers (VA First Name)"}
@@ -1528,7 +1558,8 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
 function standardRows(n, c, lid, first, title, rows){
   const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
   const lead = []; let i = 0;
-  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
+  // (lead: false keeps a Read & Do row after the classroom discussion, Day 10's Opening Claims)
+  while(i < rows.length && rows[i].lead !== false && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
   const body = rows.slice(i), tail = [];
   while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
   const mid = [];
@@ -1659,10 +1690,12 @@ function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
   const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Open ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
+    // (a video the platform can play is embedded on the slide, like the guide's own videos)
+    : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
     : url ? (/^https:\/\/(drive|docs)\.google\.com\//.test(url) ? `<a class="viewer-link ftdd-tile k-${x.kind === "video" ? "video" : "doc"}" data-kind="${x.kind === "video" ? "video" : "doc"}" data-title="${e(x.title)}" href="${e(url)}"><span class="ftdd-tile-ic">${k[1]}</span><span class="ftdd-tile-t"><b>${e(x.title)}</b><small>${x.kind === "video" ? "▶ Watch" : "Open"}</small></span></a>`
       : `<a class="ftdd-tile k-web" href="${e(url)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">${k[1]}</span><span class="ftdd-tile-t"><b>${e(x.title)}</b><small>${x.kind === "practice" ? "☎ Open the simulator ↗" : "Open in a new tab ↗"}</small></span></a>`) : "";
   return `<div class="ftdd-step ftdd-x ftdd-x-${e(x.kind)}"><span class="ftdd-step-n">${k[1]}</span><div class="ftdd-step-t"><span class="ftdd-x-k">${e(k[2])}</span><b>${e(x.title)}</b>
-    ${x.text ? `<p>${e(x.text).replace(/\n/g, "<br>")}</p>` : ""}${tile ? `<div class="ftdd-tiles">${tile}</div>` : ""}</div>
+    ${x.text ? `<p>${e(x.text).replace(/\n/g, "<br>")}</p>` : ""}${tile ? (/^<div class="ftdd-inline/.test(tile) ? tile : `<div class="ftdd-tiles">${tile}</div>`) : ""}</div>
     ${isAdminView() ? `<div class="ftdd-x-ad"><button type="button" class="btn btn-ghost btn-sm" title="Move up" ${i ? "" : "disabled"} onclick="FTDayDecks.moveX(${n}, ${i}, -1)">↑</button><button type="button" class="btn btn-ghost btn-sm" title="Remove" onclick="FTDayDecks.delX(${n}, ${i})">🗑</button></div>` : ""}</div>`;
 }
 function trainerSlide(n){
@@ -2609,6 +2642,9 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 /* a video with no name bar over it (data-bare): the page's full height */
 .ft-body .ftdd-inline.is-bare{margin:0;}
 .ft-body .ftdd-inline.is-bare .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));margin-top:0;}
+/* sized to the page (data-fit): the slide's lines and the embed on one page */
+.ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 210px) * 16 / 9));}
+.ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-doc{height:max(220px, calc(var(--ftdd-room, 70vh) - 200px));}
 .ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}

@@ -106,7 +106,7 @@ function renderAdminSOPs(){
 const DB = {scan:null, scanning:false, clearing:false, done:"", err:""};
 // a trainee's own records, by key prefix — the engine's OWN/TRAINER_OWNED list in worker.js
 const OWNED = ["trainee", "progress", "feedback", "focus", "tracker", "trackerreview", "actsub", "monitor",
-  "process", "calsim", "sessions", "drive", "lor", "callsim", "kcreview", "labreview", "simresults", "assign", "lorassign"];
+  "process", "calsim", "sessions", "drive", "lor", "callsim", "kcreview", "labreview", "simresults", "assign", "lorassign", "intakeassign"];
 
 async function dbScan(){
   if(DB.scanning) return;
