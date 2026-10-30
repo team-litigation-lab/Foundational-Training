@@ -3075,7 +3075,7 @@ main.main-ftdd .ftdd-sheet .ftdd-vcards:has(> .ftdd-vcard:nth-child(2):last-chil
 main.main-ftdd .ftdd-sheet .ftdd-vside > p{font-size:22px !important;font-weight:700;color:#0B0D1A;}
 @media(max-width:900px){ .ftdd-sheet .ftdd-vside{grid-template-columns:minmax(0,1fr);} }
 /* a slide's numbered steps: the slide's width, their text from the left edge (Day 8's Topic 2) */
-main.main-ftdd .ftdd-sheet.ftdd-d615 > .ftdd-step{align-self:stretch;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(.ftdd-step, .ftis-wsub){align-self:stretch;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{text-align:left;}
 /* a link drawn as a button keeps the button's look: Days 6–15's link colour and underline are for links in the text
    (Day 8's ✏️ Make my editable copy had blue underlined type on its navy) */

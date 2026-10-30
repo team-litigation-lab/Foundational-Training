@@ -501,7 +501,9 @@ s2: html => {
       `<p>Update item #15 in your ${mon}.</p>\n`)
     .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`)
     // (without the "Please don’t forget to rename…" line: the reference itself is what the trainee needs there)
-    .replace(naming, (m, line, link, step3, step4) => `${step3}\n${link}\n${step4}`);
+    // (under step 3's note, the box the trainee submits their completed worksheet's link in: js/ft-intake.js .ftis-wsub)
+    // (and the naming convention reference read on the slide, page by page, in place of its PDF embed: pdocHtml)
+    .replace(naming, (m, line, link, step3, step4) => `${step3}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC)}${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
@@ -819,14 +821,16 @@ const EDIT = {
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
-// 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms, made from the PDFs:
+// 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms or dir, made from the PDFs:
 // read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
 // (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
 const PDOC_DIR = "/ft/day7/forms";
-const pdocHtml = ([slug, title, n]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
-  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${PDOC_DIR}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
-  `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${PDOC_DIR}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
-  `<img src="${PDOC_DIR}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
+  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
+  `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
+  `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
+// Day 8's naming convention reference (Topic 2, between steps 3 and 4)
+const NAMING_DOC = ["naming-convention", "Document Naming Convention (reference)", 6, "/ft/day8/docs"];
 // Day 7's blank PI intake forms, a page of the slide each, and the other intake documents
 const INTAKE_FORMS = [["personal-injury-sheet", "Blank Personal Injury Intake Sheet (MVC / MVA)", 6], ["dog-bite", "Blank Intake Form: Dog Bite", 4],
   ["medical-malpractice", "Blank Intake Form: Medical Malpractice", 9], ["premises-liability", "Blank Intake Form: Premises Liability", 4],
