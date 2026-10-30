@@ -1228,17 +1228,20 @@ root.render = function(){
     ev.preventDefault(); ev.stopImmediatePropagation();
   }, true);
 })();
-// 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
+// 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) or a document's page (Day 7's intake forms, .ftdd-pdoc: build/day-decks.cjs
+// pdocHtml) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
 (() => {
-  let box = null, list = [], at = 0;
-  const show = () => { const a = list[at]; box.querySelector("img").src = a.getAttribute("href"); box.querySelector(".ftdd-zoom-cap").textContent = `Sample SOP · page ${at + 1} of ${list.length}`; };
+  let box = null, list = [], at = 0, name = "";
+  const show = () => { const a = list[at]; box.querySelector("img").src = a.getAttribute("href"); box.querySelector(".ftdd-zoom-cap").textContent = `${name} · page ${at + 1} of ${list.length}`; };
   const close = () => { if(box){ box.remove(); box = null; } };
   const turn = d => { at = (at + d + list.length) % list.length; show(); };
   document.addEventListener("click", ev => {
-    const a = ev.target.closest && ev.target.closest(".ftdd-sop-shots a");
+    const a = ev.target.closest && ev.target.closest(".ftdd-sop-shots a, a.ftdd-pdoc-pg");
     if(!a || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
     ev.preventDefault();
-    list = [...a.closest(".ftdd-sop-shots").querySelectorAll("a")]; at = list.indexOf(a);
+    const doc = a.closest(".ftdd-pdoc");
+    list = [...(doc || a.closest(".ftdd-sop-shots")).querySelectorAll(doc ? "a.ftdd-pdoc-pg" : "a")]; at = list.indexOf(a);
+    name = doc ? doc.querySelector(".ftdd-pdoc-h b").textContent.replace(/^📄\s*/, "") : "Sample SOP";
     close();
     box = document.createElement("div"); box.className = "ftdd-zoom";
     box.innerHTML = '<div class="ftdd-zoom-cap"></div><img alt=""><button type="button" class="ftdd-zoom-prev" title="Previous page">‹</button>' +
@@ -3043,6 +3046,22 @@ main.main-ftdd .ftdd-sheet .ftdd-evl-i{position:relative;padding:5px 12px 5px 38
 main.main-ftdd .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub{padding-left:62px;font-size:15px;font-weight:600;color:#262B45;}
 .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub::before{left:36px;width:13px;height:13px;}
 main.main-ftdd .ftdd-sheet p.ftdd-evl-src{font-size:15px !important;font-weight:600;color:#262B45;margin:6px 0 0;}
+/* 📄 a document read on the slide, page by page (Day 7's intake forms and documents: build/day-decks.cjs pdocHtml): its
+   name white on navy, then its pages side by side, as large as the page allows (two rows for a long form); a page opens
+   bigger on a click (the Sample SOP's zoom, below) */
+.ftdd-sheet .ftdd-pdoc{width:100%;align-self:stretch;margin:6px 0 4px;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;text-align:left;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h span{font:600 14px/1.3 'Inter',sans-serif;color:#E6E9F5;}
+main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:700 14px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;text-decoration:underline;}
+.ftdd-sheet .ftdd-pdoc-pages{--rows:1;--cols:var(--n);display:grid;grid-template-columns:repeat(var(--cols),auto);justify-content:center;gap:12px 18px;margin-top:10px;}
+.ftdd-sheet .ftdd-pdoc[data-pages="6"] .ftdd-pdoc-pages{--rows:2;--cols:3;}
+.ftdd-sheet .ftdd-pdoc[data-pages="9"] .ftdd-pdoc-pages{--rows:2;--cols:5;}
+.ftdd-sheet a.ftdd-pdoc-pg{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none !important;cursor:zoom-in;}
+.ftdd-sheet a.ftdd-pdoc-pg img{display:block;max-width:100%;height:calc((var(--ftdd-room, 70vh) - 120px) / var(--rows) - 30px);min-height:150px;object-fit:contain;background:#fff;border:1.5px solid #9AA0AB;border-radius:6px;box-shadow:0 3px 10px rgba(30,35,64,.14);}
+.ftdd-sheet a.ftdd-pdoc-pg:hover img{border-color:#E8590C;box-shadow:0 4px 14px rgba(232,89,12,.30);}
+main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-serif;color:#262B45 !important;}
+main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
 /* the sample intake calls' cards on a deck slide (js/ft-intake.js .ftis-calls, Day 7): dark, larger type on the white card,
    the name and firm on the left, the length on one line, the "Listen for" label a darker orange that reads on white */
 main.main-ftdd .ftdd-sheet .ftis-call header > div{text-align:left;}

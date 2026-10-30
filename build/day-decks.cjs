@@ -818,6 +818,19 @@ const EDIT = {
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
+// 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms, made from the PDFs:
+// read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
+// (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
+const PDOC_DIR = "/ft/day7/forms";
+const pdocHtml = ([slug, title, n]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
+  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${PDOC_DIR}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
+  `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${PDOC_DIR}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
+  `<img src="${PDOC_DIR}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
+// Day 7's blank PI intake forms, a page of the slide each, and the other intake documents
+const INTAKE_FORMS = [["personal-injury-sheet", "Blank Personal Injury Intake Sheet (MVC / MVA)", 6], ["dog-bite", "Blank Intake Form: Dog Bite", 4],
+  ["medical-malpractice", "Blank Intake Form: Medical Malpractice", 9], ["premises-liability", "Blank Intake Form: Premises Liability", 4],
+  ["slip-and-fall", "Blank Intake Form: Slip and Fall", 5]];
+const INTAKE_DOCS = [["affidavit-additional-insurance", "3P Insurance Affidavit (additional insurance): blank", 2]];
 const ROWS = {
   2: {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
@@ -897,7 +910,12 @@ const ROWS = {
     // its four recordings are the 🎧 Call Listening Activity, the day's last AM stop (js/ft-day-decks.js LISTEN_CARDS[7])
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
-      {id: "formsb", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]]},
+      {id: "formsb", h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]], fix: [x => {
+        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each)
+        const shot = /<a class="ftdd-shot"[^\n]*1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF[^\n]*<\/a>\n/;
+        if(!shot.test(x)) throw new Error("Day 7's Blank PI Intake Forms are no longer where the build looks for them");
+        return x.replace(shot, () => '<p>Read each form here: the fillable forms are in the CMS.</p>\n' + INTAKE_FORMS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n'));
+      }]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
         fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
@@ -905,7 +923,9 @@ const ROWS = {
       {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
-        return x.replace(two, "$1\n");
+        // (the Other Intake-Related Documents folder: its documents read on the slide, the folder linked under them)
+        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n') +
+          '<p class="ftdd-pdoc-more">The rest of the folder: <a href="https://drive.google.com/drive/folders/1UrLBiX0ntxzvyxvRkHBhdTevtoP2jLzX?usp=sharing" target="_blank" rel="noopener noreferrer">Other Intake-Related Documents ↗</a></p>\n');
       }]}]
   },
   8: {
