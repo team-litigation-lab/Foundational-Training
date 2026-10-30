@@ -1383,8 +1383,8 @@ const LESSON_CARDS = {
       // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
-    tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity: log each call's answers on its 📝 Answer Sheet, on the calls' slide, and 📝 Submit for Grading"],
+    tools: ["The sample SOP and the 10 sample calls: on the day’s slides",
+      "Reception Listening Activity: each call's 📝 Answer Sheet, then 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
@@ -2431,7 +2431,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static
 .ftlc-obj{font-weight:600;color:#1B1E2E;}
 /* (the key takeaways are a few words each: two to a row, so the objective above them doesn't shrink the card) */
 .ftlc-focus ul.ftlc-tk{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;}
-.ftlc-file{margin-top:8px;background:#F4F1EA;border-radius:8px;padding:6px 10px;font-size:12px;line-height:1.35;overflow-wrap:anywhere;}
+.ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
 .ftlc-pqbox{margin-top:10px;} .ftlc-pqacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
