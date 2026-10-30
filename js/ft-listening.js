@@ -90,7 +90,8 @@ function setLive(id){
 /* ---------- the trainee's record ---------- */
 const R = {rec: null, recId: null, set: null, open: {}, saving: {}};
 function load(force){
-  const id = state.traineeId; if(!id) return Promise.resolve();
+  // (a trainer, with no trainee of their own, sees the page as a trainee would: an empty log, not saved)
+  const id = state.traineeId; if(!id){ if(R.recId){ R.rec = null; R.recId = null; } R.rec = R.rec || {logs: {}}; return Promise.resolve(); }
   if(!force && R.recId === id && R.rec) return Promise.resolve();
   R.recId = id;
   return sharedGet("listening:" + id).then(v => { R.rec = v && typeof v === "object" && v.logs ? v : {logs: {}};
@@ -104,7 +105,7 @@ function readRec(sid, n){
   return out;
 }
 async function saveRec(sid, n){
-  const id = state.traineeId; if(!id) return;
+  const id = state.traineeId; if(!id){ toast("👁 Trainee view: the log isn’t saved."); return; }
   await load();
   const log = Object.assign(readRec(sid, n), {at: new Date().toISOString()});
   (R.rec.logs[sid] = R.rec.logs[sid] || {})[n] = log;
@@ -161,7 +162,8 @@ window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {
 const __render = window.render;
 window.render = function(){
   if(state.view !== "listening") return __render.apply(this, arguments);
-  if(!state.traineeId){ state.view = "dashboard"; return __render.apply(this, arguments); }
+  // (a trainer, with no trainee of their own, sees the 👁 Trainee view; someone not signed in goes to the dashboard)
+  if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   load(); loadSets();
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ln">${R.set === "recact" && window.FTDayDecks ? `<a class="back-link" onclick="FTDayDecks.slide(3, 's1d')">&larr; Back to the 5 practice calls</a>` : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`}${renderPage()}</main>` + renderFooter();
