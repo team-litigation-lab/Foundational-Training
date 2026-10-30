@@ -200,9 +200,9 @@ const treeHtml = t => `<div class="ftdt"><div class="ftdt-h"><b>🌳 ${esc_(t.h)
 const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
-  // the group-chat answer note, its naming convention and the trainer-only Tettra credentials go: the answers are on ✍️ Knowledge Check
-  html = html.replace(/<p><b>Note: Please send you answers[\s\S]*?<p>Thank you\.<\/p>\n?/, "").replace(/<hr class="stars">\n?<div class="trainer-slot" data-slot="1:tettra"><\/div>\n?/, "");
-  if(/group chat|1:tettra/.test(html)) throw new Error("Day 1's Reading Task still has the group-chat note or the Tettra credentials");
+  // the group-chat answer note and its naming convention go: the answers are on ✍️ Knowledge Check
+  html = html.replace(/<p><b>Note: Please send you answers[\s\S]*?<p>Thank you\.<\/p>\n?/, "");
+  if(/group chat|Tettra/i.test(html)) throw new Error("Day 1's Reading Task still has the group-chat note or a Tettra reference (the Knowledge Base replaced Tettra)");
   // the link line goes (the file is on the slide itself), and so does "go to this link"
   const from = html.lastIndexOf("<p", at); if(from < 0) throw new Error("Day 1's Reading Task link line isn't a paragraph");
   const lead = html.slice(0, from).replace("Go to this link and read on to get a good grasp", "Read the material below to get a good grasp");
@@ -339,15 +339,16 @@ s3: html => {
     `<div class="ftdd-tiles ftdd-sop-links"><a class="viewer-link ftdd-sop-open" data-kind="doc" data-title="Sample SOP" href="${SOP}"><span>📄</span><b>Sample SOP</b></a>` +
     `<a class="ftdd-sop-dl" href="https://docs.google.com/document/d/${SOP_ID}/export?format=docx" target="_blank" rel="noopener noreferrer" download>⬇ Download</a></div></div>\n`;
 },
-// Day 3's homework: the five CRM/CMS videos, each named for its CMS, as cards with the video's preview (data-card: js/ft-day-decks.js
-// visual), a click playing it bigger in the pop-up viewer; and when they may be finished
+// Day 3's homework: the five CRM/CMS videos, each named for its CMS and played in the slide (data-embed: js/ft-day-decks.js
+// visual), a player each; and when they may be finished
 s2: html => {
   // (in the curriculum's order: the first video is Captora's, as its preview shows)
   const NAMES = ["Captora", "Clio Grow", "Clio", "Filevine", "Smart Advocate"];
   let k = 0;
-  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-card data-kind="video" data-title="${NAMES[k++] || "CRM/CMS Training Video " + k}"`)
-    .replace(/<\/a>\s*,\s*<\/p>/g, "</a></p>");
+  const out = html.replace(/<p><a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-embed data-kind="video" data-title="${NAMES[k++] || "CRM/CMS Training Video " + k}"`);
   if(k !== 5) throw new Error(`Day 3's homework has ${k} CRM/CMS videos, not 5`);
+  // (a comma after a link reads as part of its address when copied: build/days/day03.js has none)
+  if(/<\/a>\s*,/.test(out)) throw new Error("Day 3's CRM/CMS video links are followed by a comma again");
   // (its opening line, watch the videos and update item #12, goes: the slide's pill says Watch & Do)
   const mon = /<p>Please watch the CRM\/CMS training videos and then update item #12 in your Monitoring Sheet\. Thank you\.<\/p>\n?/;
   if(!mon.test(out)) throw new Error("Day 3's homework monitoring sheet line is no longer where the build looks for it");
@@ -639,7 +640,7 @@ const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer F
   `<li>Provide the SA credentials, the <b>2nd</b> one listed. Change it back to the 1st one at the end of each shift, and to the 2nd again whenever trainees need the CMS: this keeps the active cases in the CMS safe from unsupervised exploring, and follows the firm’s policy, as directed by the Operations Manager, that VAs are not permitted to alter it.</li>` +
   `<li>There are 2 training accounts in SA (Jane Doe &amp; John Doe / DOCGEN Dummy Account): post the tasks in the SA Tasks tab for BOTH accounts.</li></ul>\n` +
   `<div class="shots"><figure><a href="/ft/day8/img/image21.png" target="_blank"><img src="/ft/day8/img/image21.png" alt="" loading="lazy"></a></figure></div>\n` +
-  `<p><b>Sample task in the DESCRIPTION box:</b></p>\n<p>***** Intake Packet and Intake Documents Saving Tasks: Batch <span class="ft-live-batch">B022026</span> ***<br><span class="ft-live-date">03/06/2025</span> Please save the client’s Intake Packet and extract intake documents in the client’s project.<br>Documents to save:<br>1. INTAKE PACKET - 1 (Martin)<br>2. INTAKE PACKET - 2 (Michelle)<br>3. INTAKE PACKET - 3 (Mikee)<br>Thank you!</p>\n` +
+  `<p><b>Sample task in the DESCRIPTION box:</b></p>\n<p>***** Intake Packet and Intake Documents Saving Tasks: Batch <span class="ft-live-batch">B022026</span> ***<br><span class="ft-live-date">03/06/2025</span> Please save the client’s Intake Packet and extract intake documents in the client’s project.<br>Documents to save:<br>1. INTAKE - Packet (Martin)<br>2. INTAKE - Packet (Michelle)<br>3. INTAKE - Packet (Mikee)<br>Thank you!</p>\n` +
   `<ul><li>Check before the demo that every intake document has been extracted from the assigned Intake Packet, and that every file, the Intake Packet included, is renamed under the firm’s naming convention: these are the exact files uploaded and reported on SA.</li>` +
   `<li>Give each trainee 10–15 minutes to explore SA first: it doesn’t allow more than one user at the same time.</li></ul></div>`;
 // the slots this build writes into the trainer-only notes (kept there by build/curriculum/convert.py)
@@ -742,9 +743,7 @@ const EDIT = {
       const re = /(https:\/\/docs\.google\.com\/document\/d\/[\w-]+\/edit\?usp=sharing)&amp;amp;amp;[^"]*/g;
       if((out.match(re) || []).length !== 3) throw new Error("Day 11's LOR templates and case notes are no longer where the build looks for them");
       return out.replace(re, "$1");
-    },
-    // (the same document, a second time, under a name the guide's export gave it)
-    s2: h => rep(h, '<p><a class="viewer-link" data-kind="doc" data-title="ve_link" href="https://drive.google.com/file/d/1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=drive_link">ve_link</a></p>\n', "", 1, "Day 11 s2")},
+    }},
   14: {s2: h => rep(h, SLOT(14, "s2-1") + "\n", SLOT(14, "s2-1") + "\n" + SHADOW_HOWTO, 1, "Day 14 s2")},
   15: {
     // the demonstration day opens on what Day 14 set for it: the tutorial video, the gentle reminders and the rules
