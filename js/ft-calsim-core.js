@@ -317,10 +317,10 @@ const deepDates = (v, k) => Array.isArray(v) ? v.map(x => deepDates(x, k)) : typ
 const itemsFor = items => { const k = weeksOf(FROM); return items.map(it => Object.assign({}, it, {date:shiftIso(it.date, k), lines:deepDates(it.lines, k)})); };
 
 const PEOPLE = [
-  {name:"Martin Anthony", email:"martin@legalsupporthelp.com"},
+  {name:"Martin Anthony Gan", email:"martin@legalsupporthelp.com"},
   {name:"Michelle Velarde", email:"michelle.velarde@legalsupporthelp.com"},
   {name:"John Michael Dela Cruz", email:"john.delacruz@legalsupporthelp.com"},
-  {name:"Lei Lee Abut", email:"team-litigation@legalsupporthelp.com"}
+  {name:"Lei Lee Ann Abut", email:"team-litigation@legalsupporthelp.com"}
 ];
 const [MA, MV, JD, LL] = PEOPLE.map(p => p.email), ALL4 = [MA, MV, JD, LL];
 const who = em => (PEOPLE.find(p => p.email === em) || {name:em}).name;
@@ -624,16 +624,16 @@ SCENARIOS.push({id:"attorney-activity", track:"activity", kind:"activity", short
     {t:"For travel blocks reminders, set a practical or reasonable reminder time for your attorney that ensures they have sufficient notice to prepare and depart without rushing, allowing enough buffer to account for traffic, last-minute preparations, and the required early arrival time at the airport or point of departure. (Need to ask Mitch’s preferences)"},
     {t:"Review the calendar to ensure there are no conflicts, such as overlapping appointments or insufficient time buffers between events."},
     {t:"For the location, if it does not provide the exact address, just manually input the location indicated in the activity item. For Travel Blocks, ensure the location is specific, including both the departure point and the destination.", sub:["e.g., John F. Kennedy International Airport → LAX"]},
-    {t:"Add Guests’ email addresses (if applicable):", sub:["Martin Anthony - martin@legalsupporthelp.com", "Michelle Velarde - michelle.velarde@legalsupporthelp.com", "John Michael Dela Cruz - john.delacruz@legalsupporthelp.com", "Lei Lee Abut - team-litigation@legalsupporthelp.com"]}
+    {t:"Add Guests’ email addresses (if applicable):", sub:["Martin Anthony Gan - martin@legalsupporthelp.com", "Michelle Velarde - michelle.velarde@legalsupporthelp.com", "John Michael Dela Cruz - john.delacruz@legalsupporthelp.com", "Lei Lee Ann Abut - team-litigation@legalsupporthelp.com"]}
   ],
   cats:CATS, people:PEOPLE,
   items:[
     {n:1, title:"Client Meeting", date:"2026-07-06", lines:[["Date", "July 06, 2026"], ["Time", "10:00 AM – 11:00 AM PST"], ["Location", "Conference Room B"],
-      ["Details", "Client consultation for Alyssa Lynn Arehart regarding a car accident case. Set a reminder for 15 minutes before the meeting (notification). Ensure all case documents are accessible during the meeting."], ["Guests", "Martin Anthony & Michelle Velarde"]]},
+      ["Details", "Client consultation for Alyssa Lynn Arehart regarding a car accident case. Set a reminder for 15 minutes before the meeting (notification). Ensure all case documents are accessible during the meeting."], ["Guests", "Martin Anthony Gan & Michelle Velarde"]]},
     {n:2, title:"Team Meeting", date:"2026-07-07", lines:[["Date", "July 07, 2026"], ["Time", "3:00 PM – 4:00 PM MST"], ["Location", "Google Meet"],
-      ["Details", "Weekly team check-in. Set a reminder for 30 minutes before the meeting (email)."], ["Guests", "Martin Anthony, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Abut"]]},
+      ["Details", "Weekly team check-in. Set a reminder for 30 minutes before the meeting (email)."], ["Guests", "Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Ann Abut"]]},
     {n:3, title:"Deposition Meeting", date:"2026-07-08", lines:[["Date", "July 08, 2026"], ["Time", "11:00 AM – 1:00 PM EST"], ["Location", "Attorney’s Office (or Zoom for remote attendees: zoom.us/deposition-meeting-02-04-25)"],
-      ["Details", "Deposition preparation with another attorney. Set a reminder 1 day before (email)."], ["Guests", "Martin Anthony & Michelle Velarde"]]},
+      ["Details", "Deposition preparation with another attorney. Set a reminder 1 day before (email)."], ["Guests", "Martin Anthony Gan & Michelle Velarde"]]},
     {n:4, title:"Gym Session", date:"2026-07-08", lines:[["Date", "July 08, 2026"], ["Time", "6:30 AM – 7:30 AM EST"], ["Location", "Downtown Seattle Fitness Center"],
       ["Details", "Morning workout. Set a 10-minute reminder before (notification)."]]},
     {n:5, title:"Doctor’s Appointment", date:"2026-07-09", lines:[["Date", "July 09, 2026"], ["Time", "9:00 AM – 10:00 AM PST"], ["Location", "Central Medical Clinic"],
@@ -641,7 +641,7 @@ SCENARIOS.push({id:"attorney-activity", track:"activity", kind:"activity", short
     {n:6, title:"Court Appearance", date:"2026-07-10", lines:[["Date", "July 10, 2026"], ["Time", "9:00 AM – 12:00 PM PST"], ["Location", "Washington County Court"],
       ["Details", "Attorney has a scheduled court hearing. Set a reminder for 30 minutes before the hearing (notification)."], ["Travel Blocks", ["- 8:00 AM – 9:00 AM for travel to court.", "- 12:00 PM – 1:00 PM for return travel."]]]},
     {n:7, title:"Recorded Statement Meeting", date:"2026-07-10", lines:[["Date", "July 10, 2026"], ["Time", "4:00 PM – 5:00 PM CST"], ["Location", "Google Meet"],
-      ["Details", "Recorded statement meeting with an insurance adjuster regarding a premises liability case. Set a reminder 15 minutes before (notification)."], ["Guests", "Martin Anthony, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Abut"]]},
+      ["Details", "Recorded statement meeting with an insurance adjuster regarding a premises liability case. Set a reminder 15 minutes before (notification)."], ["Guests", "Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Ann Abut"]]},
     {n:8, title:"Networking Dinner Event", date:"2026-07-13", lines:[["Date", "July 13, 2026"], ["Time", "6:00 PM – 8:00 PM PST"], ["Location", "The Ritz-Carlton, San Francisco (600 Stockton St, San Francisco, CA 94108)"],
       ["Details", "Attorney attending a networking dinner with potential clients."],
       ["Travel Schedule for the Out-of-State Event", ["➢ Travel to San Francisco:", "▪ Date: July 13, 2026", "▪ Time:", "- 8:30 AM – 9:00 AM: Transportation to Seattle Airport (SEA).", "- 9:00 AM – 12:00 PM: Flight from Seattle (SEA) to San Francisco (SFO).",
