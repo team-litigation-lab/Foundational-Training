@@ -66,8 +66,10 @@ function linksCard(auto = true){
     ${row("folder", "📁 Assessment and Activities Folder (your daily outputs)", "https://drive.google.com/drive/folders/…", "")}
     ${row("tracker", "📋 LSH Daily Task Tracker (Google Sheet)", "https://docs.google.com/spreadsheets/d/…", "Link the Daily Task Tracker tab.")}
     ${row("monitor", "📒 Training Progress Monitoring Sheet (Google Doc or Sheet)", "https://docs.google.com/document/d/…", "")}
+    ${row("tam", "📘 LSH Task Assessment Manual (TAM)", "https://docs.google.com/document/d/…", TAM_WHERE)}
     <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveLinks()">💾 Save my links</button></div></div>`;
 }
+const TAM_WHERE = "Google Drive → Shared with me → your batch folder (e.g. B073126) → LSH Trainee folder → LSH Task Assessment Manual (TAM) | [Batch]_ [Your Full Name].";
 function rulesHtml(res){
   if(!res) return `<p class="fdr-muted">Not checked yet.</p>`;
   return `<div class="fdr-res"><div class="fdr-res-h"><span class="fdr-pct ${res.pct >= 100 ? "ok" : res.pct >= 60 ? "mid" : "bad"}">${res.pct}%</span>
@@ -123,7 +125,7 @@ function paintLinkModal(){
   // the window: the links form, then one box that says how the monitoring works and what is linked so far
   o.querySelector(".fdr-modal-body").innerHTML = linksCard(false) + `<div class="card fdr-card fdr-modal-status">
       <div class="fdr-auto">🤖 Your tracker and Monitoring Sheet are checked at the end of every shift. You and your trainer see the results.
-        <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} Assessment and Activities Folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet</p></div>
+        <p class="fdr-linked"><b>Linked:</b> ${ok("folder")} Assessment and Activities Folder · ${ok("tracker")} Daily Task Tracker · ${ok("monitor")} Monitoring Sheet · ${ok("tam")} TAM</p></div>
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.closeLinks(); goto('tracker')">📋 Open my Task Tracker page</button></div></div>`;
 }
 
@@ -152,14 +154,24 @@ window.FTDrive = {
     toast("📒 Paste your Monitoring Sheet’s link first: it opens from here after that.");
     FTDrive.linkMine();
   },
+  // 📘 the trainee's own TAM, from a slide that says to update it (Day 7's shadowing): a new tab on the link they saved; no
+  // link yet, the 📁 My Drive links window to paste it in once (it says where the TAM is)
+  async openTAM(){
+    if(!isTrainee()){ toast("📘 Each trainee opens their own TAM from here, once they have linked it in 📁 My Drive links."); return; }
+    if(!ready()) await (D.loading || load(true));
+    const u = ready() && D.drive.tam;
+    if(u){ window.open(u, "_blank", "noopener"); return; }
+    toast("📘 Paste your TAM’s link first: it opens from here after that.");
+    FTDrive.linkMine();
+  },
   day(d){ D.day = d; render(); },
   async saveLinks(){
     if(previewOnly()) return;
     const v = k => String((document.getElementById("fdr-" + k) || {}).value || "").trim();
-    const bad = ["folder", "tracker", "monitor"].filter(k => v(k) && !isGoogle(v(k)));
+    const bad = ["folder", "tracker", "monitor", "tam"].filter(k => v(k) && !isGoogle(v(k)));
     if(bad.length){ toast("Paste Google Drive links (they start with https://drive.google.com/ or https://docs.google.com/)."); return; }
     if(v("tracker") && TR.googleFile(v("tracker")).kind !== "sheet"){ toast("The Task Tracker link must be a Google Sheets link."); return; }
-    ["folder", "tracker", "monitor"].forEach(k => { D.drive[k] = v(k); });
+    ["folder", "tracker", "monitor", "tam"].forEach(k => { D.drive[k] = v(k); });
     if(!D.drive.startDate) D.drive.startDate = today();
     toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ Links saved. They’re checked automatically at the end of every shift from now on."); render(); paintLinkModal();
   },

@@ -65,8 +65,9 @@ var KB_URL = "https://lsh-knowledge-base.legalsupporthelp.workers.dev/";
 
 var main = document.getElementById("main");
 if (/^https:\/\//.test(KB_URL)) {
-  main.innerHTML = '<div class="bar"><a href="' + KB_URL + '" target="_blank" rel="noopener">Open in a new tab ↗</a></div>'
-    + '<iframe src="' + KB_URL + '" title="LSH Knowledge Base" allow="fullscreen"></iframe>';
+  // Not in a frame: the KB's session cookie is SameSite=Lax, so inside this page (another site) it is never set or sent and
+  // the frame only ever shows the KB's sign-in screen. Opened from the Portal's launcher, it arrives signed in.
+  location.replace("https://cm-training-activity.pages.dev/api/launch?tool=kb");
 } else {
   main.innerHTML = '<div class="note"><h1>The Knowledge Base isn\'t connected yet</h1>'
     + '<p>This page will show the LSH Knowledge Base, the community library of SOPs, guides and training videos. '

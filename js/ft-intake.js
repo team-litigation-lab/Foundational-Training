@@ -7,8 +7,11 @@
      • .ftis-consult  Day 9 (Part 3) and 🎧 the Transcription Activity: the PI equivalent sample guide, Atty.
                       Magdalena's consultation with a new client, as a recording, its A / C transcript (A for
                       Attorney, C for Client) and the sample minutes made from it.
-     • .ftis-packet   Day 8 (Part 2), Topic 3: choose your Intake Packet, and the exact names to download, rename and
-                      file it under. The choice is remembered in this browser only; the work itself goes to Drive.
+     • .ftis-packet   Day 8 (Part 2), Topic 2: Your Assigned Packet, the one the trainer assigned in Admin → 📦 Intake
+                      Packets, with its download, its client, the name to rename it to and the trainee's own folder;
+       .ftis-sheet    the Intake Documents Worksheet as the trainee's own editable copy in their Google Drive;
+       .ftis-docs     the 14 additional intake documents, each shown in the slide and bigger on a click;
+       .ftis-forms    the sample intake forms, the same way (for reference: the Prototype CMS holds the form).
    The recordings and transcripts are js/ft-intake-samples.js (build/audio/make_audio.py, from
    build/audio/intake_samples.json): fictional people and cases, written for training. It loads the first time a
    slide asks for it, not with the page.
@@ -38,8 +41,10 @@ function transcript(item, who){
 function player(item){
   return `<audio class="ftis-audio" controls preload="none" src="${e(item.src)}"></audio><small class="ftis-dur">${mmss(item.dur)}</small>`;
 }
-function callsHtml(d){
-  return d.calls.map((c, i) => `<article class="ftis-call">
+// (data-calls="1,2": only those calls, numbered as in the full set: Day 7 shows them two to a slide)
+function callsHtml(d, el){
+  const only = String((el && el.getAttribute("data-calls")) || "").split(",").map(Number).filter(Boolean);
+  return d.calls.map((c, i) => only.length && !only.includes(i + 1) ? "" : `<article class="ftis-call">
     <header><span class="ftis-n">${i + 1}</span><div><b>${e(c.title)}</b><small>${e(c.kind)} · ${e(d.firm)} (fictional)</small></div></header>
     <p class="ftis-about">${e(c.about)}</p>
     <div class="ftis-play">${player(c)}</div>
@@ -63,35 +68,155 @@ function consultHtml(d){
   </article>`;
 }
 
-/* ---------- Day 8: choose your Intake Packet ---------- */
-const PKEY = "ftis-packet";
+/* ---------- Day 8: the trainee's assigned Intake Packet, the worksheet, the additional documents, the sample forms ----------
+   The trainer keeps the packets and the additional documents' links, and assigns each trainee a packet, in Admin →
+   📦 Intake Packets: settings:intake {packets: {<n>: {client, url}}, docs: [<url>, …], folder} (everyone reads it) and
+   intakeassign:<traineeId> {packet, at} (the trainee reads it, only admins write it). The slide shows the trainee
+   their own packet as soon as it is assigned, with its download and their own Assessments/Activities folder
+   (📁 My Drive links, drive:<id>.folder) to save it in. */
 const PFOLDER = "https://drive.google.com/drive/folders/1JbAieyhJ6XVsRvNXMUUtVfRwY_0KNymT?usp=sharing";   // the Redacted Intake Packets
-const getP = () => { try{ return Number(localStorage.getItem(PKEY)) || 0; }catch(err){ return 0; } };
-const setP = n => { try{ n ? localStorage.setItem(PKEY, String(n)) : localStorage.removeItem(PKEY); }catch(err){} };
-function packetHtml(el){
-  const n = getP(), who = firstName() || "VA’s Name", folder = el.getAttribute("data-folder") || PFOLDER;
-  const name = `INTAKE - Packet (${who})`;   // the trainer's naming convention (Day 8's NOTE)
-  return `<div class="ftis-pk-h"><b>📦 Your Intake Packet</b>
-      <label>Packet <select onchange="FTIntake.packet(this.value)"><option value="">Choose…</option>${Array.from({length: 10}, (_, i) => `<option value="${i + 1}"${n === i + 1 ? " selected" : ""}>Packet ${i + 1}</option>`).join("")}</select></label></div>
-    <ol class="ftis-pk-steps">
-      <li>Open the <a class="viewer-link" data-kind="doc" data-title="Redacted Intake Packets" href="${e(folder)}">Redacted Intake Packets folder</a> and find ${n ? `<b>Intake Packet ${n}</b>` : "the packet you chose (or the one your trainer assigned)"}.</li>
-      <li>Download it: open the file, then <b>⋮ → Download</b> (or right-click it in the folder → <b>Download</b>).</li>
-      <li>Rename the downloaded packet: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</li>
-      <li>In your <b>Assessments/Activities</b> folder, create a subfolder named after the packet’s client. Upload the renamed packet and every document you extract from it there. The completed Intake Worksheet goes directly in Assessments/Activities, not in the subfolder.</li>
-    </ol>
-    <p class="ftis-pk-note">${n ? `✓ Packet ${n} chosen (remembered in this browser). If your trainer assigns a different packet, choose that one.` : "Your choice is remembered in this browser. If your trainer assigned a packet, choose that one."}</p>`;
+const DFOLDER = "https://drive.google.com/drive/folders/1fC8iixgMEVV3cDrtU0sFa0N325uVB4mb?usp=drive_link"; // the Additional Intake Documents
+const NPACK = 10;
+const DOCS = ["Client Communication Disclosure", "Signature Certificate", "CM Notes", "Police Report", "TAR/Traffic Accident Report",
+  "TAR/Traffic Accident Report with Labels", "Traffic Ticket (accomplished)", "Traffic Ticket with Labels.1", "Traffic Ticket with Labels.2",
+  "DMV", "ISO Claim Search", "Insurance vs Lien Disclaimer (newly added)", "Affidavit of Communication (newly added)",
+  "Notice and Waiver of Potential Conflict of Interest (latest version of Conflict of Interest Waiver)"];
+const driveId = u => (/\/(?:file|document|spreadsheets|presentation)\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
+const isDocs = u => /docs\.google\.com\/document\//.test(String(u || ""));
+// a Drive file's download, a Google Doc's own copy in the trainee's Drive
+const downloadUrl = u => { const id = driveId(u); return !id ? String(u || "") : isDocs(u) ? `https://docs.google.com/document/d/${id}/export?format=docx` : `https://drive.google.com/uc?export=download&id=${id}`; };
+const copyUrl = u => { const id = driveId(u); return id && isDocs(u) ? `https://docs.google.com/document/d/${id}/copy` : ""; };
+const embed = u => (typeof window.lvEmbedUrl === "function" && window.lvEmbedUrl(u)) || "";
+const isTrainee = () => typeof state === "object" && !!state.traineeId && !state.isAdmin && !state.adminPreview;
+const K = {set: null, mine: null, folder: "", id: null, at: 0, loading: null};
+function loadK(force){
+  if(K.loading) return K.loading;
+  const id = isTrainee() ? state.traineeId : null;
+  if(!force && K.set && K.id === id && Date.now() - K.at < 120000) return Promise.resolve();
+  K.loading = Promise.all([sharedGet("settings:intake"), id ? sharedGet("intakeassign:" + id) : null, id ? sharedGet("drive:" + id) : null])
+    .then(([v, a, d]) => { K.set = v && typeof v === "object" ? v : {}; K.mine = a && typeof a === "object" ? a : null;
+      K.folder = d && typeof d === "object" && /^https:\/\//.test(String(d.folder || "")) ? String(d.folder) : ""; K.id = id; K.at = Date.now(); })
+    .catch(() => { if(!K.set) K.set = {}; })
+    .then(() => { K.loading = null; paint(); });
+  return K.loading;
 }
+const packets = () => (K.set && K.set.packets) || {};
+const btn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+// (a button, not a viewer link: the deck draws a link in a slide as a tile)
+const viewBtn = (u, t, label) => `<button type="button" class="btn btn-ghost btn-sm" data-url="${e(u)}" data-title="${e(t)}" onclick="FTIntake.view(this)">${label}</button>`;
+const folderBtn = () => K.folder ? btn(K.folder, "📁 My Assessments/Activities folder ↗")
+  : window.FTDrive ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDrive.linkMine()">📁 Link my Assessments/Activities folder</button>` : "";
+function packetHtml(){
+  if(!K.set) return `<p class="ftis-wait">Loading your assigned packet…</p>`;
+  const head = `<div class="ftis-pk-h"><b>📦 Your Assigned Packet</b></div>`;
+  if(!isTrainee()) return head + `<p class="ftis-pk-note">👁 Each trainee sees here the Intake Packet their trainer assigned them, with its download and their own Assessments/Activities folder. Packets are assigned in Admin → 📦 Intake Packets.</p>`;
+  const n = K.mine && Number(K.mine.packet);
+  if(!n) return head + `<p class="ftis-pk-note">Your trainer hasn’t assigned your Intake Packet yet. It shows here as soon as they do.</p>`;
+  const pk = packets()[n] || {}, who = firstName() || "VA’s Name", name = `INTAKE - Packet (${who})`;
+  return head + `<div class="ftis-pk-card"><div class="ftis-pk-n">${n}</div><div><b>Intake Packet ${n}</b>${pk.client ? `<small>Client: <b>${e(pk.client)}</b> · name your subfolder after them</small>` : ""}</div></div>
+    <div class="ftis-pk-act">${pk.url ? btn(downloadUrl(pk.url), "⬇ Download my packet", "btn-navy") + viewBtn(pk.url, `Intake Packet ${n}`, "👁 View it") : `<span class="ftis-pk-note">Your trainer is adding this packet’s link.</span>`}${folderBtn()}</div>
+    <p class="ftis-pk-rn">Rename it: <code class="ftis-name">${e(name)}</code> ${firstName() ? `<button type="button" class="btn btn-ghost btn-sm" onclick="FTIntake.copy(this)" data-copy="${e(name)}">📋 Copy</button>` : ""}</p>`;
+}
+// 📝 the worksheet: the trainee's own editable copy, made in their Google Drive
+function sheetHtml(el){
+  const u = el.getAttribute("data-href") || "", copy = copyUrl(u);
+  return `<div class="ftis-sh-act">${copy ? btn(copy, "✏️ Make my editable copy", "btn-navy") : ""}${viewBtn(u, "Intake Documents Worksheet", "👁 View the worksheet")}${isTrainee() ? folderBtn() : ""}</div>
+    <p class="ftis-pk-note">“Make my editable copy” saves your own copy of the worksheet in your Google Drive: answer it there, then move it into your Assessments/Activities folder.</p>`;
+}
+// 📄 the additional intake documents, each in the slide: a click shows it bigger in the viewer
+function docsHtml(el){
+  if(!K.set) return `<p class="ftis-wait">Loading the documents…</p>`;
+  const links = (K.set.docs || []), folder = el.getAttribute("data-folder") || DFOLDER;
+  // (the slide's line about them is drawn with them, so it never stands on a page of its own)
+  return `<p class="ftis-docs-lead">Here are additional intake documents for your future reference. Kindly check these ADDITIONAL intake documents which are NOT INCLUDED in the training video. Click a document to see it bigger.</p>
+    <div class="ftis-docs-g">${DOCS.map((t, i) => { const u = String(links[i] || "").trim(), src = u && embed(u);
+    return `<a class="viewer-link ftis-doc" data-kind="doc" data-title="${e(i + 1 + ". " + t)}" href="${e(u || folder)}">
+      <span class="ftis-doc-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-doc-ic">📄</span>`}<span class="ftis-doc-zoom">🔍 View bigger</span></span>
+      <span class="ftis-doc-t"><span class="ftis-doc-n">${i + 1}</span>${e(t)}</span></a>`; }).join("")}</div>`;
+}
+// 📋 the sample intake forms: shown in the slide for reference, bigger on a click
+function formsHtml(el){
+  const u = el.getAttribute("data-href") || "", t = el.getAttribute("data-title") || "Sample Intake Forms", src = embed(u);
+  return `<a class="viewer-link ftis-form" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span class="ftis-form-h"><b>📋 ${e(t)}</b><small>🔍 Click to view bigger</small></span>
+    <span class="ftis-form-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : ""}</span></a>`;
+}
+const PAINT = {".ftis-packet": packetHtml, ".ftis-sheet": sheetHtml, ".ftis-docs": docsHtml, ".ftis-forms": formsHtml};
+function paint(){
+  let any = false;
+  Object.keys(PAINT).forEach(sel => document.querySelectorAll(sel).forEach(el => { if(el.closest("#ftseBody")) return; el.setAttribute("data-on", "1"); el.innerHTML = PAINT[sel](el); any = true; }));
+  if(any) refit();
+}
+
+/* ---------- 🧑‍🏫 Admin → 📦 Intake Packets ---------- */
+const AD = {rows: null, assign: {}, loading: false, batch: ""};
+async function loadAdmin(){
+  AD.loading = true;
+  try{
+    let people = state.adminData;
+    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    const keys = people.map(r => "intakeassign:" + r.id), vals = [];
+    for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
+    AD.rows = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
+    AD.assign = {}; people.forEach((r, i) => { if(vals[i] && vals[i].packet) AD.assign[r.id] = Number(vals[i].packet); });
+    if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
+  }catch(err){ AD.rows = AD.rows || []; }
+  AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render();
+}
+function adminHtml(){
+  if(!AD.rows || !K.set){ if(!AD.loading) loadAdmin(); loadK(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
+  const pk = packets(), docs = K.set.docs || [];
+  const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
+  const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
+  return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download. Download the packets from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>, rename each with its trainee’s name if you share them that way, and paste each packet’s link below.</p></div>
+      <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
+    <h4>Assign the packets</h4>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th></tr></thead><tbody>
+      ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
+        <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td></tr>`).join("")}
+    </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
+    <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
+    <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
+    <h4>The additional intake documents</h4><p class="fss-muted">Each document’s own Drive link from the <a href="${e(DFOLDER)}" target="_blank" rel="noopener">Additional Intake Documents folder ↗</a>: the slide shows it in place and bigger on a click. A document with no link opens the folder.</p>
+    <div class="ftis-aedit ftis-aedit-d">${DOCS.map((t, i) => `<b>${i + 1}. ${e(t)}</b><input id="ftisD${i}" placeholder="https://drive.google.com/file/d/…" value="${e(docs[i] || "")}">`).join("")}</div>
+    <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets and documents</button></div></div>`;
+}
+window.FTIntakeAdmin = {
+  batch(b){ AD.batch = b; render(); },
+  async assign(id, v){
+    const n = Number(v) || 0;
+    const ok = await sharedSet("intakeassign:" + id, n ? {packet: n, at: new Date().toISOString()} : {packet: 0, at: new Date().toISOString()});
+    if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
+    if(n) AD.assign[id] = n; else delete AD.assign[id];
+    toast(n ? `✓ Packet ${n} assigned — the trainee sees it within two minutes.` : "✓ Unassigned.");
+  },
+  async save(){
+    // read the form first: loading the saved settings re-renders the page and the form with it
+    const v = id => String((document.getElementById(id) || {}).value || "").trim();
+    const pk = {}; for(let n = 1; n <= NPACK; n++){ const c = v("ftisC" + n), u = v("ftisU" + n); if(c || u) pk[n] = {client: c, url: u}; }
+    const docs = DOCS.map((_, i) => v("ftisD" + i));
+    const bad = [...Object.values(pk).map(x => x.url), ...docs].filter(u => u && !/^https:\/\//.test(u));
+    if(bad.length){ toast("A link must start with https://"); return; }
+    await loadK(true);
+    const next = Object.assign({}, K.set, {packets: pk, docs, updatedAt: new Date().toISOString()});
+    const ok = await sharedSet("settings:intake", next);
+    if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
+    K.set = next; K.at = Date.now(); toast("✓ Saved — trainees see it within two minutes."); render();
+  }
+};
+if(typeof window.ftAdminTab === "function") ftAdminTab("intake", "📦 Intake Packets", adminHtml);
 
 /* ---------- filling the slides ---------- */
 // the deck re-measures its pages without going back to page 1; any other page gets a resize
 function refit(){ try{ if(window.FTDayDecks && FTDayDecks.refit) FTDayDecks.refit(); else window.dispatchEvent(new Event("resize")); }catch(err){} }
 function fill(){
-  [...document.querySelectorAll(".ftis-packet:not([data-on])")].filter(el => !el.closest("#ftseBody")).forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = packetHtml(el); refit(); });
+  // (Day 8: the assigned packet, the worksheet, the additional documents and the sample forms, drawn again once the trainer's settings load)
+  if([...document.querySelectorAll(Object.keys(PAINT).map(x => x + ":not([data-on])").join(", "))].some(el => !el.closest("#ftseBody"))){ paint(); loadK(); }
   const want = [...document.querySelectorAll(".ftis-calls:not([data-on]), .ftis-consult:not([data-on])")].filter(el => !el.closest("#ftseBody"));
   if(!want.length) return;
   want.forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = `<p class="ftis-wait">Loading the recordings…</p>`; });
   data().then(d => {
-    want.forEach(el => { el.innerHTML = el.classList.contains("ftis-calls") ? callsHtml(d) : consultHtml(d); });
+    want.forEach(el => { el.innerHTML = el.classList.contains("ftis-calls") ? callsHtml(d, el) : consultHtml(d); });
     refit();
   }).catch(() => want.forEach(el => { el.innerHTML = `<p class="ftis-wait">The recordings didn’t load. Check your connection and open this slide again.</p>`; }));
 }
@@ -110,7 +235,8 @@ document.addEventListener("play", ev => { if(!ev.target.classList || !ev.target.
 
 window.FTIntake = {
   data,
-  packet(v){ setP(Number(v) || 0); document.querySelectorAll(".ftis-packet").forEach(el => { el.innerHTML = packetHtml(el); }); },
+  reload: () => loadK(true),
+  view(b){ if(typeof lvOpen === "function") lvOpen({kind: "doc", title: b.getAttribute("data-title"), url: b.getAttribute("data-url")}); },
   copy(b){ const t = b.getAttribute("data-copy"); try{ navigator.clipboard.writeText(t); b.textContent = "✓ Copied"; setTimeout(() => { b.textContent = "📋 Copy"; }, 1500); }catch(err){} }
 };
 
@@ -143,6 +269,28 @@ window.FTIntake = {
 .ftis-pk-steps{margin:8px 0 4px;padding-left:20px;font-size:14px;line-height:1.55;} .ftis-pk-steps li{margin-bottom:4px;}
 .ftis-name{background:#262B45;color:#fff;border-radius:6px;padding:2px 8px;font-size:13px;}
 .ftis-pk-note{margin:0;font-size:12.5px;color:#5B6178;}
+.ftdd-step-t .ftis-packet{padding:8px 12px;margin:8px 0 2px;border-style:solid;border-width:1px;border-left-width:5px;}
+.ftis-pk-card{display:flex;align-items:center;gap:12px;margin:4px 0;} .ftis-pk-card > div > b{display:block;color:#262B45;font-size:15px;} .ftis-pk-card small{display:block;color:#5B6178;font-size:13px;} .ftis-pk-card small b{color:#262B45;}
+.ftis-pk-n{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#262B45;color:#fff;font-weight:800;font-size:17px;}
+.ftis-pk-act,.ftis-sh-act{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;} .ftis-pk-rn{margin:6px 0;font-size:14px;}
+.ftis-sheet{margin:8px 0 2px;}
+.ftis-docs-lead{margin:0 0 6px;} .ftis-docs-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:8px 0;}
+.ftis-doc{display:flex;flex-direction:column;background:#fff;border:1px solid #DCE0EA;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;transition:box-shadow .15s,transform .15s;}
+.ftis-doc:hover{box-shadow:0 8px 22px -10px rgba(38,43,69,.45);transform:translateY(-2px);}
+.ftis-doc-pic{position:relative;display:block;height:120px;background:#F6F7FB;overflow:hidden;}
+.ftis-doc-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
+.ftis-doc-ic{display:grid;place-items:center;height:100%;font-size:42px;}
+.ftis-doc-zoom{position:absolute;right:6px;bottom:6px;background:rgba(38,43,69,.88);color:#fff;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;}
+.ftis-doc-t{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;font-size:13px;font-weight:600;line-height:1.35;}
+.ftis-doc-n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font-size:11.5px;font-weight:800;}
+.ftis-form{display:block;background:#fff;border:1px solid #DCE0EA;border-left:5px solid #DB8437;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;margin:8px 0;}
+.ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
+.ftis-form-pic{display:block;height:max(200px, calc(var(--ftdd-room, 70vh) - 260px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
+.ftis-admin h4{margin:16px 0 6px;color:#262B45;}
+.ftis-aedit{display:grid;grid-template-columns:auto 1fr 2fr;gap:6px 10px;align-items:center;} .ftis-aedit-d{grid-template-columns:minmax(0,1.2fr) 2fr;}
+.ftis-aedit input{box-sizing:border-box;width:100%;font:inherit;padding:6px 9px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
+.ftis-aedit b{font-size:13px;color:var(--ink-soft,#5B6178);} .ftis-asave{margin-top:12px;}
+@media(max-width:800px){.ftis-aedit,.ftis-aedit-d{grid-template-columns:1fr;}}
 @media(max-width:800px){.ftis-calls{grid-template-columns:minmax(0,1fr);}}
 `; document.head.appendChild(s); })();
 })();

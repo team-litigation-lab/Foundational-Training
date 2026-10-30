@@ -125,7 +125,7 @@ async function fillFromPortal(){
     let n = 0;
     ppl.forEach((p, i) => {
       const rec = {}; S.forEach((s, j) => { rec[s.key] = vals[i * S.length + j] || null; });
-      const sc = lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh});
+      const sc = lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since});
       const row = rowOf(p.id);
       cols.forEach(c => {
         const cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;          // never over what the trainer typed
@@ -147,13 +147,13 @@ async function fillFromPortal(){
     });
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
     if(notesCols.length && window.FTSkills){
-      const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id));
+      const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id)), rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id));
       notesCols.forEach(c => {
         const range = parseRange(c.sub);
         if(!range){ toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
         ppl.forEach((p, i) => { const row = rowOf(p.id), cur = row.cells[c.id];
           if(cur && String(cur.note || "").trim()) return;                                  // never over what the trainer typed
-          const rec = Object.assign({typing: [], spelling: []}, recs[i] || {});
+          const rec = FTSkills.withShots(recs[i], (rvs[i] || {}).shots);   // 📷 the screenshots in Drive count too
           row.cells[c.id] = Object.assign({}, cur || {}, {note: FTSkills.complianceText(rec, range[0], range[1], p.since), auto: true}); n++; });
       });
     }
