@@ -213,6 +213,23 @@ const treeHtml = t => `<div class="ftdt"><div class="ftdt-h"><b>🌳 ${esc_(t.h)
     : `<div class="ftdt-arrow">↓</div><div class="ftdt-q">${esc_(s.q)}</div><div class="ftdt-br"><div class="ftdt-yes"><span>YES</span>${s.yes.map(x => `<i>${esc_(x)}</i>`).join("")}</div><div class="ftdt-no"><span>NO</span>${s.no.map(x => `<i>${esc_(x)}</i>`).join("")}</div></div>`).join("") +
   `<p class="ftdt-tag">🛡 ${esc_(t.tag)}</p></div></div>`;
 const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid ftdd-keep">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
+// 📅 Day 5's sample, a finished event (the guide's Deposition Meeting screenshot), drawn as Day 6's sample event: the title and
+// the date, time and time zone boxed in red, the time zone highlighted; then its location, email reminder, calendar, guests and notes
+const DEPOSITION_EV = '<div class="ftdd-ev ftdd-ev-dep" role="img" aria-label="Sample: a finished event, Deposition Meeting, Feb 4, 2025, 11:00am to 1:00pm, (GMT-05:00) Eastern Standard Time - Panama; location Attorney’s Office or Zoom for Remote Attendees; email reminder 1 day before; Michelle Bernardino’s calendar, red; guests Michelle Bernardino (organizer), Martin Anthony Gan and Michelle Velarde; the Zoom link and the notes in the description">' +
+  '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title"><span class="ftdd-ev-mark">Deposition Meeting</span></span><span class="ftdd-ev-note">◀ Specific title</span><span class="ftdd-ev-save">Save</span></div>' +
+  '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Feb 4, 2025</span><span class="ftdd-ev-f">11:00am</span><span>to</span><span class="ftdd-ev-f">1:00pm</span><span class="ftdd-ev-f">Feb 4, 2025</span><span>(GMT-05:00) <span class="ftdd-ev-hl">Eastern Standard Time - Panama</span></span><span class="ftdd-ev-link">Time zone</span></div>' +
+  '<div class="ftdd-ev-sub"><span><span class="ftdd-ev-box"></span> All day</span> <span class="ftdd-ev-f">Does not repeat ▾</span></div>' +
+  '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
+  '<div class="ftdd-ev-line">🎥 <span class="ftdd-ev-link">Add Google Meet video conferencing</span></div>' +
+  '<div class="ftdd-ev-line">📍 <span class="ftdd-ev-f wide">Attorney’s Office or Zoom for Remote Attendees</span></div>' +
+  '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-f">Email ▾</span><span class="ftdd-ev-f">1</span><span class="ftdd-ev-f">days ▾</span></div>' +
+  '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-f">Michelle Bernardino ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot" style="background:#D50000"></span> ▾</span></div>' +
+  '<div class="ftdd-ev-line">💼 <span class="ftdd-ev-f">Busy ▾</span><span class="ftdd-ev-f">Default visibility ▾</span></div>' +
+  '<div class="ftdd-ev-desc"><p><span class="ftdd-ev-link">Zoom Link</span> for remote attendees: <span class="ftdd-ev-link">zoom.us/deposition-meeting-02-04-25</span></p><p>Deposition preparation with another attorney.</p></div></div>' +
+  '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
+  '<p class="ftdd-ev-perm">3 guests <small>· 1 yes, 2 awaiting</small></p>' +
+  '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Bernardino</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#12A4AF">M</span><span><b>Martin Anthony Gan</b></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#5B3CC4">M</span><span><b>Michelle Velarde</b></span></div>' +
+  '<p class="ftdd-ev-perm">Guest permissions</p><div><span class="ftdd-ev-box"></span> Modify event</div><div><span class="ftdd-ev-box on">✓</span> Invite others</div><div><span class="ftdd-ev-box on">✓</span> See guest list</div></div></div></div>\n';
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note and its naming convention go: the answers are on ✍️ Knowledge Check
@@ -291,18 +308,23 @@ s3: html => {
       return h.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); }, cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">'))
     // (the activity's own file is not on the slide: its items are the cards before it, s3i–s3l)
     .replace(/<p><a class="viewer-link" data-embed[^>]*1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP[^\n]*?<\/p>\n?/, "")
-    // (the Samples: a finished event, Deposition Meeting, on the slide itself (the time zone's own sample, Recorded Statement Meeting, is drawn on the next page), not the Drive folder, which asks a trainee for access)
-    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="shots ftdd-shot-wide"><figure><a href="/ft/day5/img/sample-deposition.png" target="_blank"><img src="/ft/day5/img/sample-deposition.png" alt="Sample: a finished event, Deposition Meeting, with its time zone, location, reminder, colour, guests and notes" loading="lazy"></a></figure></div>`);
+    // (the Samples: a finished event, Deposition Meeting, drawn on the slide itself as Day 6's sample event is (DEPOSITION_EV),
+    // under its heading; not the Drive folder, which asks a trainee for access)
+    // (the heading and the drawn event are one block, ftdd-keep: one page, scaled to fit a short screen)
+    .replace(/<p>Samples<\/p>\n?/, "")
+    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, '<div class="ftdd-keep"><p><b>Sample: a finished event should follow this structure:</b></p>\n' + DEPOSITION_EV + "</div>");
+  if(!act.includes("ftdd-ev-dep") || !act.includes("Sample: a finished event")) throw new Error("Day 5's Samples are no longer where the build looks for them");
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone
   // boxed (image28) and the 19 screenshots in their order (image40)
   const shot = f => new RegExp(`<div class="shots"><figure><a href="/ft/day5/img/${f}"[\\s\\S]*?</figure></div>\\n?`);
   if(!shot("image28.png").test(tz)) throw new Error("Day 5's sample pictures are no longer where the build looks for them");
-  const editor = '<div class="ftdd-gcal" role="img" aria-label="Sample: the event editor, Recorded Statement Meeting, Feb 6, 2025, 2:00pm to 3:00pm, time zone (GMT-05:00) Central Time - Chicago">' +
-    '<div class="ftdd-gcal-top"><span class="ftdd-gcal-x">✕</span><span class="ftdd-gcal-title">Recorded Statement Meeting</span><span class="ftdd-gcal-save">Save</span><span class="ftdd-gcal-more">More actions ▾</span></div>' +
-    '<div class="ftdd-gcal-row"><span class="ftdd-gcal-f">Feb 6, 2025</span><span class="ftdd-gcal-f">2:00pm</span><span class="ftdd-gcal-to">to</span><span class="ftdd-gcal-f">3:00pm</span><span class="ftdd-gcal-f">Feb 6, 2025</span>' +
-    '<span class="ftdd-gcal-f ftdd-gcal-tz">(GMT-05:00) Central Time - Chicago</span><span class="ftdd-gcal-link">Time zone</span></div></div>\n' +
+  // (drawn as Day 6's sample event: the date, time and time zone boxed in red, the time zone highlighted)
+  const editor = '<div class="ftdd-ev" role="img" aria-label="Sample: the event editor, Recorded Statement Meeting, Feb 6, 2025, 2:00pm to 3:00pm, time zone (GMT-05:00) Central Time - Chicago">' +
+    '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title">Recorded Statement Meeting</span><span class="ftdd-ev-save">Save</span></div>' +
+    '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Feb 6, 2025</span><span class="ftdd-ev-f">2:00pm</span><span>to</span><span class="ftdd-ev-f">3:00pm</span><span class="ftdd-ev-f">Feb 6, 2025</span>' +
+    '<span>(GMT-05:00) <span class="ftdd-ev-hl">Central Time - Chicago</span></span><span class="ftdd-ev-link">Time zone</span></div></div>\n' +
     '<p class="ftdd-gcal-cap">The time zone, boxed in red: set it before you save.</p>\n';
   // 📅 the Calendar Activity Check (js/ft-calcheck.js): the trainee enters what each event holds and
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
@@ -402,6 +424,21 @@ s3: html => {
     if(!re.test(out)) throw new Error(`Day 6 lost the video ${label}`);
     out = out.replace(re, `<p><a class="viewer-link" data-embed data-kind="video" data-title="${t}"`);
   });
+  // (the first video beside the line that introduces it: the line on the left, the video bigger on the right, ftdd-lead2)
+  const lead2 = /(<p>While waiting for your turn to perform, watch the following training videos\.<\/p>)\n(<p><a class="viewer-link" data-embed data-kind="video" data-title="Calendar Management Training: Part 1"[^\n]*<\/p>)\n/;
+  if(!lead2.test(out)) throw new Error("Day 6's videos no longer open on the line the build looks for");
+  out = out.replace(lead2, '<div class="ftdd-lead2">$1\n$2\n</div>\n');
+  // (Part 2 and Calendaring 101 side by side, as big as the page lets them be: ftdd-vid2)
+  const two = /(<p><a class="viewer-link" data-embed data-kind="video" data-title="Calendar Management Training: Part 2"[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-kind="video" data-title="Calendaring 101"[^\n]*<\/p>)\n/;
+  if(!two.test(out)) throw new Error("Day 6's Part 2 and Calendaring 101 are no longer where the build looks for them");
+  out = out.replace(two, '<div class="ftdd-vid2">$1\n$2\n</div>\n');
+  // (the Loom references: no row of stars or "Refer to these video links" line; each is "📚 Additional Video Reference" on the
+  // left and the video, bigger, on the right, as Part 1 is)
+  const refs = /<hr class="stars">\n<p>Refer to these video links as well for your additional reference\. <\/p>\n<p><b>Scheduling Appointment and Calendar Management <\/b><\/p>\n(<p><a class="viewer-link" data-kind="video" data-title="Scheduling Appointment and Calendar Management"[^\n]*<\/p>)\n<p><b>Resource for Scheduling Appointment and Calendar Management <\/b><\/p>\n(<p><a class="viewer-link" data-kind="video" data-title="Resource for Scheduling Appointment and Calendar Management"[^\n]*<\/p>)\n/;
+  if(!refs.test(out)) throw new Error("Day 6's Loom references are no longer where the build looks for them");
+  // (the label is a div, not a line: a short line just before a link would name the video, js/ft-day-decks.js visual)
+  const ref = v => `<div class="ftdd-lead2"><div class="ftdd-lead2-l">📚 Additional Video Reference</div>\n${v}\n</div>\n`;
+  out = out.replace(refs, (m, a, b) => ref(a) + ref(b));
   const sample = /<p><b>For example: Client Consultation Meeting – \[Client Name\]<\/b><\/p>\n<p>Please see the sample below for your reference\. Please be guided\. Thank you\.<\/p>\n<div class="shots"><figure><a href="\/ft\/day6\/img\/image33\.png"[\s\S]*?<\/figure><\/div>\n?/;
   if(!sample.test(out)) throw new Error("Day 6's sample event is no longer where the build looks for it");
   const chk = on => `<span class="ftdd-ev-box${on ? " on" : ""}">${on ? "✓" : ""}</span>`;
@@ -420,17 +457,22 @@ s3: html => {
     '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
   // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
-  const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
-  const mock = "<p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n" +
-    lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
+  // (the three links are buttons in one row, ftdd-linkbtns: a new tab each; the six steps two to a row, ftdd-steps2, so the
+  // links, the steps and the reminders are one page; the sample event is the next: ftdd-pgbreak)
+  const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<a class="ftdd-linkbtn" href="${url}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>`;
+  // (the heading, the buttons, the steps and the reminders are one block, ftdd-one: one page, scaled to fit a short screen)
+  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n' +
+    '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
     lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
     // (no link to the mock calls' calendar on the deck: the trainer runs the mock calls)
+    "</div>\n" +
+    '<div class="ftdd-steps2">\n' +
     "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
     "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
     "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules (the Mock Call Scenarios slide) before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
     "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Simulator), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
     "<p>Step 5 - Run the Calendaring Tool’s automated review and fix what it flags.</p>\n" +
-    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n";
+    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n</div>\n";
   out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
   if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
   // (the reminders' two screenshot bullets are off: the mock calls are booked on the Google Calendar Simulator, so there is
@@ -438,21 +480,16 @@ s3: html => {
   const shotsRe = /<p class="li" style="--lvl:0"><span class="lbl">•<\/span><span>No need to submit a separate screenshot for your time zone\.[^<]*<\/span><\/p>\n<p class="li" style="--lvl:0"><span class="lbl">•<\/span><span>Please follow the proper screenshot numbering[^<]*<\/span><\/p>\n/;
   if(!shotsRe.test(out)) throw new Error("Day 6's screenshot reminders are no longer where the build looks for them");
   out = out.replace(shotsRe, "");
-  return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
+  return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-one ftdd-one-ev"><p><b>An optimized calendar schedule should follow this structure:</b></p>\n' + ev + "</div>\n");
 },
 s2: html => {
   if(!/data-slot="6:s2-1"/.test(html) || !/data-slot="6:s2-2"/.test(html) || !/Free Communication Upskill/.test(html)) throw new Error("Day 6's Mock Call Scenarios are no longer where the build looks for them");
   const ul = xs => "<ul>" + xs.map(x => `<li>${x}</li>`).join("") + "</ul>\n";
-  return '<div class="trainer-slot" data-slot="6:s2-1"></div>\n' +
-    "<p>This activity reinforces proper calendar management through mock calls based on common scheduling scenarios handled by the firm. Trainees will respond to simulated inbound calls involving consultations, follow-ups, case meetings, document signings, and urgent attorney requests.</p>\n" +
-    "<p><b>Trainee should:</b></p>\n" + ul(["Accurately schedule appointments by confirming availability, meeting type, duration, and format (phone, video, or in-office).",
-      "Create complete and accurate calendar entries, including appropriate titles and detailed notes reflecting case context and caller demeanor.",
-      "Follow proper call flow and maintain professionalism, adapting to different caller tones (easy, anxious, irritated, impatient, or emotional).",
-      "Set reminders accordingly for the attorney to be reminded."]) +
-    "<p><b>Please take note of the following guidelines:</b></p>\n<p><b>Minimum Information to Collect from Caller</b> · VA must obtain:</p>\n" +
-    ul(["Name", "Callback Number", "Date of Birth (DOB)", "Date of Loss (DOL)"]) +
-    // (the guide's Possible Scenarios / Nature of Request, in its words: each title and its notes)
-    "<p><b>📌 Possible Scenarios / Nature of Request (to be calendared)</b></p>\n" + ul([
+  // (the slide in cards: Trainee should and the Minimum Information side by side, then the Scheduling Rules and the Additional
+  // Notes. The guide's Possible Scenarios / Nature of Request are the trainer's guide for the mock calls: off the slide, in a
+  // sheet the trainer opens over it (template.ftdd-tsheet: js/ft-day-decks.js shows its button on the trainer's deck only))
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const scenarios = [
       ["Client Consultation: New PI Case", "New PI case; (instructions provided by client)"],
       ["Document Review Follow-Up", "Review contract documents; Zoom meeting; (observations and instructions)"],
       ["Case Strategy Meeting", "Litigation planning; (observations and instructions)"],
@@ -468,14 +505,23 @@ s2: html => {
       ["Missed Call Consultation", "Contract dispute"],
       ["Case Status Update", "Insurance update ready for review"],
       ["Urgent Meeting Request", "Urgent litigation update"],
-      ["Mediation Preparation Call", "Review mediation materials"]].map(([t, n]) => `<b>${t} – (Client Name)</b><br>Notes: ${n}`)) +
-    "<p><b>✅ Scheduling Rules</b></p>\n" + ul(["Identify available slots only", "Avoid lunch, buffer time, and blocked events", "Offer 2–3 alternative times when a requested slot is unavailable",
-      "Clarify meeting type (phone, video, or in-person)", "Plot the appointment in the attorney’s calendar.", "Calendar should be in EST time zone.", "Set an email reminder a day before the event."]) +
-    "<p><b>📌 Additional Notes</b></p>\n" + ul(["The attorney does not take new client consults after 5:00 PM.", "New client consults are only scheduled on Tuesdays and Thursdays.",
+      ["Mediation Preparation Call", "Review mediation materials"]];
+  return '<div class="trainer-slot" data-slot="6:s2-1"></div>\n' +
+    "<p>This activity reinforces proper calendar management through mock calls based on common scheduling scenarios handled by the firm. Trainees will respond to simulated inbound calls involving consultations, follow-ups, case meetings, document signings, and urgent attorney requests.</p>\n" +
+    '<div class="ftdd-cards2">' + card("🎯", "Trainee should:", ul(["Accurately schedule appointments by confirming availability, meeting type, duration, and format (phone, video, or in-office).",
+      "Create complete and accurate calendar entries, including appropriate titles and detailed notes reflecting case context and caller demeanor.",
+      "Follow proper call flow and maintain professionalism, adapting to different caller tones (easy, anxious, irritated, impatient, or emotional).",
+      "Set reminders accordingly for the attorney to be reminded."])) +
+    card("📋", "Minimum Information to Collect from Caller", "<p>Please take note of the following guidelines. VA must obtain:</p>\n" + ul(["Name", "Callback Number", "Date of Birth (DOB)", "Date of Loss (DOL)"])) + "</div>\n" +
+    '<template class="ftdd-tsheet" data-title="📌 Possible Scenarios / Nature of Request (to be calendared)">' +
+      scenarios.map(([t, n]) => `<div class="ftdd-tsheet-card"><b>${t} – (Client Name)</b><span>Notes: ${n}</span></div>`).join("") + "</template>\n" +
+    '<div class="ftdd-cards2">' + card("✅", "Scheduling Rules", ul(["Identify available slots only", "Avoid lunch, buffer time, and blocked events", "Offer 2–3 alternative times when a requested slot is unavailable",
+      "Clarify meeting type (phone, video, or in-person)", "Plot the appointment in the attorney’s calendar.", "Calendar should be in EST time zone.", "Set an email reminder a day before the event."])) +
+    card("📌", "Additional Notes", ul(["The attorney does not take new client consults after 5:00 PM.", "New client consults are only scheduled on Tuesdays and Thursdays.",
       "The attorney accepts max 3 new client consults per day.", "Phone consults, status updates, follow up calls, review, regular and urgent meetings, and signing meetings are max 30 minutes.",
       "Follow-ups are not scheduled during mornings.", "All consultation meetings are phone consults only.",
       "Phone consults only between 9:30 AM – 3:00 PM; Attorney will call the client - VA must confirm callback number.", "Preparation, strategy, and settlement meetings are max 45 minutes.",
-      "Conference meetings are max 1 hour.", "Attorney requires 15-minute buffer before and after every meeting.", "Same-day bookings require attorney approval."]) +
+      "Conference meetings are max 1 hour.", "Attorney requires 15-minute buffer before and after every meeting.", "Same-day bookings require attorney approval."])) + "</div>\n" +
     '<div class="trainer-slot" data-slot="6:s2-2"></div>\n<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>\n';
 }},
 // Day 8's PM is a 🧑‍🏫 Trainer Facilitated Demo: the guide's Facilitator's Notes (the tasks posted for both SA training
@@ -490,7 +536,7 @@ s2: html => {
   const lead = /<p>After completing your spelling &amp; typing tests, kindly proceed right away to work on these sets of tasks for today’s training session\.\s*Thank you\.<\/p>\n/;
   const task1 = /<p>Task 1 - Please watch these two videos:<\/p>\n<p>A\. Intake Process Overview<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>B\. Saving intake documents and updating fields in the Intake Tab<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>Task 2 - Update item #15 in your monitoring sheet\.<\/p>\n/;
   const kb = /<h4>📚 In the Knowledge Base<\/h4>\n([^]*?)(?=<p><b>Topic 2:|$)/;
-  // (the naming-convention line and its reference, under step 2 in the day file, go between steps 3 and 4)
+  // (the naming-convention reference, under step 2 in the day file, goes between steps 3 and 4; the line over it is dropped)
   const naming = /(<p>Please don’t forget to rename each extracted document[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-fit data-kind="doc" data-title="Naming convention reference \(PDF\)"[^\n]*<\/p>)\n(<div class="ftdd-step"><span class="ftdd-step-n">3<\/span>[^\n]*\n<p>Note: For your completed Intake Worksheet[^\n]*<\/p>)\n(<div class="ftdd-step ftdd-step-check"><span class="ftdd-step-n">4<\/span>)/;
   if(!lead.test(html) || !task1.test(html) || !kb.test(html) || !naming.test(html)) throw new Error("Day 8's Topic 1 and 2 are no longer where the build looks for them");
   const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
@@ -500,7 +546,10 @@ s2: html => {
       `${cardOf(a)}\n${cardOf(b)}\n` +
       `<p>Update item #15 in your ${mon}.</p>\n`)
     .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`)
-    .replace(naming, (m, line, link, step3, step4) => `${step3}\n${line}\n${link}\n${step4}`);
+    // (without the "Please don’t forget to rename…" line: the reference itself is what the trainee needs there)
+    // (under step 3's note, the box the trainee submits their completed worksheet's link in: js/ft-intake.js .ftis-wsub)
+    // (and the naming convention reference read on the slide, page by page, in place of its PDF embed: pdocHtml)
+    .replace(naming, (m, line, link, step3, step4) => `${step3}\n<div class="ftis-wsub"></div>\n${pdocHtml(NAMING_DOC)}${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
@@ -599,15 +648,11 @@ const ACT_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-recept
 const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // a "link coming" or placeholder box
 const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
-const CH_ICON = [[/mixed-up|wrong birth/i, "🔁"], [/frustrat|repeat/i, "😤"], [/unclear/i, "❓"], [/short call/i, "⏱️"], [/schedul|transfer/i, "📅"], [/connection/i, "📶"], [/language/i, "🌐"], [/audio quality|echo/i, "🎚️"], [/fast/i, "⏩"], [/not on the file|unauthori/i, "🔒"], [/upset/i, "😟"], [/noise/i, "🔊"]];
-const chIcon = t => (CH_ICON.find(([re]) => re.test(t)) || [0, "👤"])[1];
 const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 // the calls, three cards to a row (each row is one block, so a page never splits a card)
-function piCallRows(compact, extra){
-  const card = c => `<div class="ftdd-pic${compact ? " ftdd-pic-sm" : ""}"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
-    // (Day 3's activity: no tags and no summary, as who called and the call's challenge are what the trainee works out
-    // and the answer sheet grades; Day 4's warm-up, after it, names the challenge)
-    (compact ? `<p class="ftdd-pic-tags">${[c.challenge].map(t => `<span class="ftdd-pic-tag">${chIcon(t)} ${hx(t)}</span>`).join("")}</p>` : "") +
+function piCallRows(extra){
+  const card = c => `<div class="ftdd-pic"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
+    // (no tags and no summary, as who called and the call's challenge are what the trainee works out and the answer sheet grades)
     `<audio class="ftdd-pic-audio" controls preload="none" src="${c.file}" title="Call ${c.id}: ${hx(c.title)}"></audio></div>`;
   const rows = [];
   // (extra: a last card after the calls, in the last row's free place: Day 3's 📝 Answer Sheet)
@@ -672,7 +717,7 @@ const PI_SHEET_CARD = `<button type="button" class="ftdd-pic ftdd-pic-sheet" onc
   `<b>Answer Sheet</b><small>Log each call’s 5 data points and its challenge, then 📝 Submit for Grading</small><span class="ftdd-pic-sheet-go">Open the answer sheet →</span></button>`;
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your 📝 Answer Sheet.</p>\n` +
-  piCallRows(false, PI_SHEET_CARD) +
+  piCallRows(PI_SHEET_CARD) +
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +
@@ -711,8 +756,6 @@ const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer F
   `<li>Give each trainee 10–15 minutes to explore SA first: it doesn’t allow more than one user at the same time.</li></ul></div>`;
 // the slots this build writes into the trainer-only notes (kept there by build/curriculum/convert.py)
 const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
-// Day 4: the same calls, small, to replay while waiting for the mock call
-const PI_WARMUP = `<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p class="ftdd-warm-lead">Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
    Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2). mockPrep: the PI practice calls'
    warm-up, then the seven steps; MOCK_RUN: how the one-on-one mock calls run, the buttons to the Call Simulator's
@@ -728,6 +771,9 @@ const MOCK_WARM_AT = '<div class="ftdd-mockpage ftdd-mock-warm">';
 const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
 const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}` +
   `${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n`;
+// Day 4: before the mock call, the Ring Channel and the CMS's case files (not Day 3's practice calls again)
+const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Simulator, the Ring Channel and the CMS</b></p>\n<p class="ftdd-warm-lead">Practise on the Call Simulator, log in to the Ring Channel, where your mock call rings, and open the CMS with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
+  MOCK_BTNS;
 // lead: the line that opens the warm-up's page (each day's own)
 const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + PGBREAK +
   mockPage("ftdd-steps7", "<p><b>Instructions on Your Mock Call</b></p>\n" +
@@ -740,7 +786,6 @@ const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + P
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
   "") + PGBREAK;
 // Day 6's mock calls slide: the trainer's line over the tracker (a trainee sees Mock Calls Ongoing and Done: ROWS[6].s1)
-const MOCK_ONE_CAL = "<p>Your one-on-one Calendar Management mock call with the trainer, scored on the Calendar Management Mock Calls Metrics.</p>\n";
 // where Day 6's metrics start: the Instructions end there and the Metrics slide begins (ROWS[6].s1)
 const MOCK_METRICS_CAL = '<hr class="stars">\n<p><b>Calendar Management Mock Calls Metrics</b></p>';
 const MOCK_RUN = mockPage("ftdd-mock-run",
@@ -748,7 +793,7 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
   "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
   "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
-  "<p>Step 4 - Only hit ✅ Done on the mock call slide after you have completely finished your one-on-one with the trainer.</p>\n" +
+  "<p>Step 4 - Once your one-on-one is over, your trainer marks your mock call done; stay on the mock call slide until the group debrief.</p>\n" +
   MOCK_BTNS) + PGBREAK + mockPage("ftdd-mock-metrics",
   "<p><b>Reception Mock Calls Metrics</b></p>\n" +
   '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
@@ -797,12 +842,50 @@ const edges = x => { let y = x, was; const rule = /^\s*(?:<hr class="stars">|<p>
 // their Drive link on Day 11, as Day 1's reading is (its header and the "Name of VA / Date Taken" fields are the form's, not the text)
 const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
+// Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
+// wording, each heading a card; the build stops if the guide's text changes under it
+function D12_CARDS(x){
+  for(const t of ["For BOTH 1P and 3P insurance entries", "Plaintiff Insurance Owner Field", "Defendant Insurance Owner field", "OWNER, FAKE",
+    "Driver’s name, if different from the owner", "Nitro Pro (pdf editing tool)", "LOR with Affidavit mm.dd.yy", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])
+    if(!x.includes(t)) throw new Error(`Day 12's insurance steps or naming convention changed: "${t}" is missing`);
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
+  const noAdj = "If no adjuster has been assigned yet, indicate: <b><i>“No adjuster assigned yet.”</i></b>";
+  // (one block, ftdd-one: one page, scaled to fit)
+  return '<div class="ftdd-one">' + "<p>When creating your process guide for your Saving LORs to SA and Sending to 3P &amp; 1P Ins Companies Demo, please incorporate these additional and updated steps, as they are already available in SA, particularly when entering insurance information for both 1P and 3P.</p>\n" +
+    '<div class="ftdd-cards3">' +
+    card("🔢", "Both 1P and 3P entries", "<p>Make sure to complete the following fields:</p>" + ul(["Policy Number", "Claim Number"])) +
+    card("🟦", "Adding the 1P insurance information", "<p>In the <b>Plaintiff Insurance Owner Field</b>, select: <b>Plaintiff&#x27;s Training Acct</b></p><p><b>In the Comments section, include:</b></p>" +
+      ul(["Actual insurance name of the owner", "Assigned adjuster details", noAdj, "Still add all other available insurance information even if no adjuster has been assigned."])) +
+    card("🟥", "Adding the 3P insurance information", "<p>In the <b>Defendant Insurance Owner field</b>, select: <b>OWNER, FAKE</b></p><p><b>In the Comments section, include:</b></p>" +
+      ul(["Actual insurance name of the owner", "Driver’s name, if different from the owner", "Assigned adjuster details", noAdj, "Still add all other available 3P insurance information even if no adjuster has been assigned."])) +
+    "</div>\n" + '<div class="ftdd-cards2">' +
+    card("🧰", "Tools", ul(["CMS: Smart Advocate", "Notepad", "Nitro Pro (pdf editing tool)"])) +
+    card("🏷", "Complete Naming Convention", ul(["INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA&#x27;s name)", "3P LOR with an affidavit: INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA&#x27;s name)"]) +
+      "<p><b>Samples:</b></p>" + ul(["INS – 1P State Farm – LOR 02.17.26 (Michelle)", "INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)"])) +
+    "</div></div>\n";
+}
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
   // slide; the 3P Zurich sample and the VLF SOP stay documents
-  10: {s2: h => ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
-    .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h)},
+  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample and VLF's SOP embedded down the
+  // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
+  // divider go
+  10: {s2: h => {
+    const x = ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
+      .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h);
+    const block = re => { const m = x.match(re); if(!m) throw new Error(`Day 10 s2: ${re} is no longer where the build looks for it`); return m[0]; };
+    const intro = block(/<p>For your tasks this afternoon[^\n]*<\/p>\n/), oc = block(/<p><b>OPENING CLAIMS &amp; SENDING LOR<\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      zu = block(/<p><b>SAMPLE OPENING A CLAIM W\/ 3P ZURICH<\/b><\/p>\n<p><a [^\n]*<\/p>\n/), to = block(/<p><b>TOOLS OVERVIEW BY CYREL ALEGADO <\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      fa = block(/<p><b>FAMILIARIZING INTAKE DOCUMENTS <\/b><\/p>\n<p><a [^\n]*<\/p>\n/), co = block(/<p><b>OBTAINING COVERAGE INFORMATION<\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      aid = block(/<hr class="stars">\n<p>Kindly go over this job aid[^\n]*<\/p>\n/), sop = block(/<p><b>HOW TO OPEN A 3P AUTO INSURANCE CLAIM[^\n]*<\/p>\n<p><a [^\n]*<\/p>\n/);
+    // (embedded, the card's title is the title alone: the guide's data-title carries the start of the link after it)
+    const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
+    const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
+    return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
+      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + col(embed(sop), "ftdd-three-side") + "</div>\n");
+  }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
   11: {
@@ -832,6 +915,21 @@ const EDIT = {
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
+// 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms or dir, made from the PDFs:
+// read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
+// (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
+const PDOC_DIR = "/ft/day7/forms";
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
+  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
+  `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
+  `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
+// Day 8's naming convention reference (Topic 2, between steps 3 and 4)
+const NAMING_DOC = ["naming-convention", "Document Naming Convention (reference)", 6, "/ft/day8/docs"];
+// Day 7's blank PI intake forms, a page of the slide each, and the other intake documents
+const INTAKE_FORMS = [["personal-injury-sheet", "Blank Personal Injury Intake Sheet (MVC / MVA)", 6], ["dog-bite", "Blank Intake Form: Dog Bite", 4],
+  ["medical-malpractice", "Blank Intake Form: Medical Malpractice", 9], ["premises-liability", "Blank Intake Form: Premises Liability", 4],
+  ["slip-and-fall", "Blank Intake Form: Slip and Fall", 5]];
+const INTAKE_DOCS = [["affidavit-additional-insurance", "3P Insurance Affidavit (additional insurance): blank", 2]];
 const ROWS = {
   2: {
     // the Common Terms tasks, three slides (TRIM[2].s2): the video, the reference sheet, the Auto Liability video
@@ -890,16 +988,13 @@ const ROWS = {
       {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone & Submit", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
-    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, the mock calls, then the videos
+    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, then the videos (the One-on-One slide is off the deck)
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
     // (the instructions open on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
-    s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [["<p><b>☎ Mock Calls: how to access", MOCK_METRICS_CAL]]},
+    s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [['<div class="ftdd-one">', MOCK_METRICS_CAL]]},
       {id: "s1m", h: "Entire Day: Calendar Management Mock Calls Metrics", parts: [[MOCK_METRICS_CAL, null]]},
-      // the mock calls themselves, as Day 4's: a trainee's screen is only Mock Calls Ongoing and Done (js/ft-buffer.js "6:s1b-2"
-      // simple); the line is the trainer's, over the tracker ("s1b-2": it continues s1b's card row)
-      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []},
       // the Calendar Management Training Videos after the mock calls (the card puts them last, after the Mock Call Scenarios)
-      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]}]
+      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, '<div class="ftdd-one">']]}]
   },
   7: {
     // (the classroom discussion's own slide is off, TRIM[7]: what is left of s1 is the Intake Scenario Exercise, off the decks)
@@ -911,7 +1006,12 @@ const ROWS = {
     // its four recordings are the 🎧 Call Listening Activity, the day's last AM stop (js/ft-day-decks.js LISTEN_CARDS[7])
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
-      {id: "formsb", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]]},
+      {id: "formsb", h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]], fix: [x => {
+        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each)
+        const shot = /<a class="ftdd-shot"[^\n]*1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF[^\n]*<\/a>\n/;
+        if(!shot.test(x)) throw new Error("Day 7's Blank PI Intake Forms are no longer where the build looks for them");
+        return x.replace(shot, () => '<p>Read each form here: the fillable forms are in the CMS.</p>\n' + INTAKE_FORMS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n'));
+      }]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
         fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
@@ -919,7 +1019,9 @@ const ROWS = {
       {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
-        return x.replace(two, "$1\n");
+        // (the Other Intake-Related Documents folder: its documents read on the slide, the folder linked under them)
+        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n') +
+          '<p class="ftdd-pdoc-more">The rest of the folder: <a href="https://drive.google.com/drive/folders/1UrLBiX0ntxzvyxvRkHBhdTevtoP2jLzX?usp=sharing" target="_blank" rel="noopener noreferrer">Other Intake-Related Documents ↗</a></p>\n');
       }]}]
   },
   8: {
@@ -930,8 +1032,16 @@ const ROWS = {
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
       // (the naming convention and its reference are on Topic 2's slide, between its steps 3 and 4: TRIM[8].s1; the additional
       // intake documents are a slide of their own)
-      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]]},
-      {id: "s1c", h: "AM: Other Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
+      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]], fix: [
+        // (no 🏷 topic label: the slide's ribbon names the topic) the video named for its cases, played on the left and large,
+        // with its instruction beside it (ftdd-vside)
+        ["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>\n", ""],
+        x => { const re = /(<p>Watch this video presentation about the Intake Packet and the Intake Documents\.<\/p>)\n(<p><a class="viewer-link" data-kind="video" data-title=")The Intake Packet and the Intake Documents("[^\n]*<\/p>)\n/;
+          if(!re.test(x)) throw new Error("Day 8's Intake Packet video is no longer where the build looks for it");
+          return x.replace(re, '<div class="ftdd-vside">\n$2The Intake Packet and the Intake Documents (MVA Cases)$3\n$1\n</div>\n'); }]},
+      {id: "s1c", h: "AM: Other Intake Documents", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]],
+        // (the day file's page break before the documents was Topic 2's: here they open the slide)
+        fix: [['<div class="ftdd-pgbreak"></div>\n<div class="ftis-docs"', '<div class="ftis-docs"']]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       // (the afternoon's instructions on one slide, the SA video on a slide of its own, then Practice Intake Calls with its tools;
       // no Sample Intake Forms here, they are on the slides before, and no mock-call cases box)
@@ -949,12 +1059,11 @@ const ROWS = {
   10: {
     s1: [{id: "s1", parts: [[null, "<p> Claims Terminology Exercise</p>"]]},
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
-      // (the opening-claims slide in three, each a card row of its own: what to share, the sample documents, the VA call
-      // recordings; the card runs the recordings before the documents, js/ft-day-decks.js LESSON_CARDS[7])
+      // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
+      // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]]},
-      {id: "s1d", h: "AM: Sample Insurance Communication Documents", parts: [[SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
-        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]},
-      {id: "s1e", h: "AM: Sample Recordings: Opening Claims", parts: [["<p><b>VA Call Recordings", null]]}]
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]}]
   },
   11: {
     // the LOR Drafting Activity: its guidelines read over two slides (Activity 1: 1P, Activity 2: 3P), then the templates,
@@ -967,8 +1076,8 @@ const ROWS = {
   },
   12: {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
-      {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information", parts: [['<hr class="stars">\n<p>@everyone </p>', "<p><b>Tools:</b></p>"]], fix: [["<p>@everyone </p>\n", ""]]},
-      {id: "s1c", h: "AM: Tools & Naming Convention", parts: [["<p><b>Tools:</b></p>", SLOT(12, "s1-1")]]},
+      // (the updated SA steps and the tools and naming convention, one slide in cards: D12_CARDS)
+      {id: "s1b", h: "AM: Adding 1P and 3P Insurance Information, Tools & Naming Convention", parts: [['<hr class="stars">\n<p>@everyone </p>', SLOT(12, "s1-1")]], fix: [D12_CARDS]},
       {id: "s1d", parts: [[SLOT(12, "s1-1"), null]]}]
   },
   13: {
@@ -1098,7 +1207,8 @@ const EX_RENAME = {
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
-  9: {s3b: "PM: Intake Mock Calls: Instructions & Metrics"},
+  // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
+  9: {s3b: null},
   12: {s1d: "Entire Day: Demo Preparation: Uploading and Sending 1P & 3P LORs"},
   14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
@@ -1171,7 +1281,7 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, Object.assign({}, x, {id: id + "p", h}), {id, h: x.h, of: x.of, html: ""});
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: ""});
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];

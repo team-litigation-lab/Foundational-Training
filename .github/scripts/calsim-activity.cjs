@@ -91,7 +91,7 @@ if (Object.keys(C.flags(S, perfect())).length) fail('a perfect calendar has warn
 if (/Mitch/.test(JSON.stringify(p0))) fail('the review calls Mitch the attorney');
 // the mapping, for one event: what the trainee would type on the Check
 expect('an event as the Check\'s entry', A.entryOf(perfect()[1], '2'), { title: 'Team Meeting', allday: false, sd: '2026-07-07', tz: 'America/Denver', loc: 'Google Meet',
-  guests: 'Martin Anthony, Michelle Velarde, John Michael Dela Cruz, Lei Lee Abut', rtype: 'Email', ramt: '30', runit: 'minutes', notes: 'Weekly team check-in', st: '15:00', ed: '2026-07-07', et: '16:00' });
+  guests: 'Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz, Lei Lee Ann Abut', rtype: 'Email', ramt: '30', runit: 'minutes', notes: 'Weekly team check-in', st: '15:00', ed: '2026-07-07', et: '16:00' });
 expect('the overnight stay as the Check\'s entry', (({ allday, sd, ed, st, et, tz }) => ({ allday, sd, ed, st, et, tz }))(A.entryOf(perfect().find(x => x.id === 'e_8.5'), '8.5')),
   { allday: true, sd: '2026-07-13', ed: '2026-07-13', st: '', et: '', tz: '' });
 
@@ -138,7 +138,7 @@ const bad = [
   ['the outbound flight named the other way round', (ev, g) => { g('8.3').title = 'Flight from SFO to Seattle'; }, '8.3', 'Title', /Name it “8\.3 Flight from Seattle \(SEA\) to San Francisco \(SFO\)”/],
   ['the dinner without the Ritz-Carlton', (ev, g) => { g('8.1').loc = '600 Stockton St'; }, '8.1', 'Location', /The Ritz-Carlton, San Francisco/],
   ['the deposition without the Zoom link', (ev, g) => { g('3').loc = 'Attorney’s Office'; }, '3', 'Zoom link for remote attendees', /zoom\.us\/deposition-meeting-02-04-25/],
-  ['the team meeting without Lei Lee', (ev, g) => { g('2').guests = g('2').guests.slice(0, 3); }, '2', 'Guests', /Invite Lei Lee Abut/],
+  ['the team meeting without Lei Lee', (ev, g) => { g('2').guests = g('2').guests.slice(0, 3); }, '2', 'Guests', /Invite Lei Lee Ann Abut/],
   ['the client meeting’s reminder by email', (ev, g) => { g('1').reminders = [{ type: 'email', n: 15, unit: 'minutes' }]; }, '1', 'Reminder type', /Notification \(yours: Email 15 minutes before\)/],
   ['the deposition’s reminder 1 hour before', (ev, g) => { g('3').reminders = [{ type: 'email', n: 1, unit: 'hours' }]; }, '3', 'Reminder time', /1 day before \(yours: Email 1 hour before\)/],
   ['the flight’s 1-day email on neither event of the trip', (ev, g) => { g('8.3').reminders = [{ type: 'notification', n: 1, unit: 'hours' }]; }, '8.3', 'Reminder type', /Email \(on 8\.2 or 8\.3: either event of the travel block\)/],
@@ -149,8 +149,8 @@ const bad = [
   ['the client meeting in Tomato (🎨)', (ev, g) => { g('1').color = 'tomato'; }, '1', 'color', /Tomato: this one is Green \(Client Meetings: Basil or Sage\)/],
   ['the client meeting with no color (🎨)', (ev, g) => { g('1').color = ''; }, '1', 'color', /No color \(the calendar’s default\)/],
   ['the recorded statement in Lavender (🎨)', (ev, g) => { g('7').color = 'lavender'; }, '7', 'color', /Lavender isn’t one of the legend’s colors/],
-  ['Lei Lee at an address that isn’t hers (🎨)', (ev, g) => { g('2').guests[3] = 'lei.lee.abut@legalsupporthelp.com'; }, '2', 'emails', /Invite Lei Lee Abut \(team-litigation@legalsupporthelp\.com\)\. Not a directory address: lei\.lee\.abut@legalsupporthelp\.com/],
-  ['all four guests at the client meeting (🎨)', (ev, g) => { g('1').guests = g('2').guests.slice(); }, '1', 'emails', /Not invited to this item: John Michael Dela Cruz, Lei Lee Abut\. Invite only Martin Anthony, Michelle Velarde/],
+  ['Lei Lee at an address that isn’t hers (🎨)', (ev, g) => { g('2').guests[3] = 'lei.lee.abut@legalsupporthelp.com'; }, '2', 'emails', /Invite Lei Lee Ann Abut \(team-litigation@legalsupporthelp\.com\)\. Not a directory address: lei\.lee\.abut@legalsupporthelp\.com/],
+  ['all four guests at the client meeting (🎨)', (ev, g) => { g('1').guests = g('2').guests.slice(); }, '1', 'emails', /Not invited to this item: John Michael Dela Cruz, Lei Lee Ann Abut\. Invite only Martin Anthony Gan, Michelle Velarde/],
   ['the return travel naming one place (🎨)', (ev, g) => { g('6.3').loc = 'Washington County Court'; }, '6.3', 'route', /e\.g\. “Washington County Court → Office” \(instruction 8\)\. Yours: “Washington County Court”/],
   ['the ride to SEA naming only the airport (🎨)', (ev, g) => { g('8.2').loc = 'Seattle-Tacoma International Airport (SEA)'; }, '8.2', 'route', /Home → Seattle-Tacoma International Airport \(SEA\)/],
   ['the return travel with no reminder (🎨)', (ev, g) => { g('6.3').reminders = []; }, '6.3', 'trem', /30 minutes to 1 day before.*\(instruction 6\)\. Yours: none/],

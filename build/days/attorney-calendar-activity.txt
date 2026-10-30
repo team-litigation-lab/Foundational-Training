@@ -19,10 +19,10 @@ o Pink – Personal Events
 8. For the location, if it does not provide the exact address, just manually input the location indicated in the activity item. For Travel Blocks, ensure the location is specific, including both the departure point and the destination.
 e.g., John F. Kennedy International Airport → LAX
 9. Add Guests’ email addresses (if applicable):
-Martin Anthony - martin@legalsupporthelp.com
+Martin Anthony Gan - martin@legalsupporthelp.com
 Michelle Velarde - michelle.velarde@legalsupporthelp.com
 John Michael Dela Cruz - john.delacruz@legalsupporthelp.com
-Lei Lee Abut - team-litigation@legalsupporthelp.com
+Lei Lee Ann Abut - team-litigation@legalsupporthelp.com
 
 Activity Items:
 1. Client Meeting
@@ -30,19 +30,19 @@ Activity Items:
 • Time: 10:00 AM – 11:00 AM PST
 • Location: Conference Room B
 • Details: Client consultation for Alyssa Lynn Arehart regarding a car accident case. Set a reminder for 15 minutes before the meeting (notification). Ensure all case documents are accessible during the meeting.
-• Guests: Martin Anthony & Michelle Velarde
+• Guests: Martin Anthony Gan & Michelle Velarde
 2. Team Meeting
 • Date: July 07, 2026
 • Time: 3:00 PM – 4:00 PM MST
 • Location: Google Meet
 • Details: Weekly team check-in. Set a reminder for 30 minutes before the meeting (email).
-• Guests: Martin Anthony, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Abut
+• Guests: Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Ann Abut
 3. Deposition Meeting
 • Date: July 08, 2026
 • Time: 11:00 AM – 1:00 PM EST
 • Location: Attorney’s Office (or Zoom for remote attendees: zoom.us/deposition-meeting-02-04-25)
 • Details: Deposition preparation with another attorney. Set a reminder 1 day before (email).
-• Guests: Martin Anthony & Michelle Velarde
+• Guests: Martin Anthony Gan & Michelle Velarde
 4. Gym Session
 • Date: July 08, 2026
 • Time: 6:30 AM – 7:30 AM EST
@@ -66,7 +66,7 @@ Activity Items:
 • Time: 4:00 PM – 5:00 PM CST
 • Location: Google Meet
 • Details: Recorded statement meeting with an insurance adjuster regarding a premises liability case. Set a reminder 15 minutes before (notification).
-• Guests: Martin Anthony, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Abut
+• Guests: Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz, and Lei Lee Ann Abut
 8. Networking Dinner Event
 • Date: July 13, 2026
 • Time: 6:00 PM – 8:00 PM PST
