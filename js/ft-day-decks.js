@@ -1399,8 +1399,8 @@ const LESSON_CARDS = {
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
       {t: "Intake Process", time: "AM", sub: "Two videos · Monitoring Sheet #14", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents (MVA Cases)", sub: "📦 Your Intake Packet · #16", k: "interactive", d: 8, s: "s1b"},
-      {t: "Naming & More Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
+      {t: "Intake Documents (MVA Cases)", sub: "📦 Your Intake Packet · naming · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Additional Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
       {t: "Live Session Instructions", sub: "CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
       {t: "SA Demonstration", sub: "The tutorial video", k: "watch", d: 8, s: "s1e"},
       // (its second slide, s1g: the Prototype CMS and the Call Simulator)

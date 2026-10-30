@@ -854,8 +854,10 @@ const ROWS = {
     // slides: the SA demonstration with its video in the slide, the Intake Mock Call Activity with the sample intake forms,
     // and the Prototype CMS and the Call Simulator. (The demo tutorial's own section, s2, is off the deck: SKIP[8])
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
-      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<h4>Additional Instruction:</h4>"]]},
-      {id: "s1c", h: "AM: Additional Instruction: Naming Convention & Additional Intake Documents", parts: [["<h4>Additional Instruction:</h4>", "<p><b>1. CMS Demonstration</b></p>"]]},
+      // (the naming convention and its reference are on Topic 2's slide, under its step 2: the day file; the additional
+      // intake documents are a slide of their own)
+      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]]},
+      {id: "s1c", h: "AM: Additional Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
       {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
