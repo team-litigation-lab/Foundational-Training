@@ -3008,7 +3008,7 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:30vh !impo
   main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit > .shots:only-child a{height:40vh !important;}
   main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:26vh !important;min-height:150px;}
 }
-main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:center !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:left !important;}
 /* the help line in a rounded navy-edged box at the left; the black banner and the two profiles at the right */
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-help{grid-template-columns:minmax(0,0.8fr) minmax(0,1.35fr);}
 main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-help{font:800 22px/1.4 'Poppins','Inter',sans-serif !important;border:10px solid #1E2340;border-radius:40px;padding:26px 30px !important;background:#fff;margin:0 !important;}
@@ -3024,12 +3024,18 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !imp
 }
 /* a Note's 💡 sits in its own space at the left of the bar, never over the word */
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
-/* every slide's content centred on its sheet: headings, heading bars, lines, notes and the name to copy; a run of bullet
-   points (ftdd-li-run, visual) is one block centred as a whole, its bullets lined up on the left */
-main.main-ftdd .ftdd-sheet > :is(p, h1, h2, h3, h4, h5){text-align:center;}
-main.main-ftdd .ftdd-sheet > p.ftdd-name{margin-left:auto;margin-right:auto;width:fit-content;max-width:100%;}
-main.main-ftdd .ftdd-sheet > .ftdd-li-run{width:fit-content;max-width:100%;margin:6px auto;text-align:left;}
-main.main-ftdd .ftdd-sheet > .ftdd-li-run > p.li{text-align:left;}
+/* every deck's body text aligned on the left, so its lines, bullets, notes and the name to copy start on one edge; the
+   headings, heading bars, videos, screenshots, tiles and embeds stay centred. The standard across the Activity decks: it
+   overrides the homework (ftdd-hw), Days 6–15 (ftdd-d615) and Day 1's SA (ftdd-sa) sheets, which had centred their text */
+main.main-ftdd .ftdd-sheet > :is(h1, h2, h3, h4, h5), main.main-ftdd .ftdd-sheet > p.ftdd-hbar:not(.ftdd-callout){text-align:center;}
+main.main-ftdd .ftdd-sheet :is(p, li, dd, dt):not(.ftdd-hbar), main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{text-align:left !important;}
+main.main-ftdd .ftdd-sheet > p.ftdd-name{margin-left:0;margin-right:auto;width:fit-content;max-width:100%;}
+main.main-ftdd .ftdd-sheet > .ftdd-li-run{width:auto;max-width:100%;margin:6px 0;text-align:left;}
+/* (centred blocks: a line of text takes the sheet's full width, so it starts at the left edge) */
+main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(p:not(.ftdd-hbar), p.ftdd-callout, ul, ol, dl, .ftdd-li-run){align-self:stretch;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 > p.ftdd-name{align-self:flex-start;}
+main.main-ftdd .ftdd-sheet:is(.ftdd-d615, .ftdd-hw) :is(ul, ol){display:block;margin-left:0;margin-right:0;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 p.li{align-self:stretch;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
 /* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
 main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}
