@@ -2,7 +2,7 @@
 //   activity's answer key entered in full scores 100%; a wrong time zone, a wrong time, a missing guest and a wrong
 //   reminder each fail exactly that field of that event; the accepted alternatives pass (Phoenix for MST, Panama for EST,
 //   the same moment typed in Pacific, 1 day = 24 hours, 1 hour = 60 minutes, an all-day or overnight stay, titles in any case or dashes); events with no
-//   guests or reminder aren't marked down; the folder lookup matches screenshots by number and name; a trainee's draft
+//   guests or reminder aren't marked down; no screenshots or folder lookup are asked for; a trainee's draft
 //   saves as they type and comes back after a reload, is sent to the trainer, shows on My Performance and the trainer's
 //   📅 Calendar Activity tab; the Day 5 slide and the Practice Lab point to it; the page fits a phone; the worker keeps
 //   calcheck:<id> the trainee's own and in shape. Also: a travel block's reminder counts on either of its events, a
@@ -180,17 +180,20 @@ async function workerChecks() {
   });
   pure.out.forEach(fail);
 
-  // the Practice Lab card and Day 5 (the upload card is on the activity's second slide, s3b: its card rows' slides)
+  // the Practice Lab card and Day 5 (the Check's tile is on the activity's Time Zone & Submit slide, s3b: its card rows' slides)
   await page.evaluate(() => { state.ftOpenDays = { all: [1], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
   if (await page.$('text=Check my calendar')) fail('the Calendar Activity Check shows on the Practice Lab before its day');
   await page.evaluate(() => { state.ftOpenDays = { all: [1, 2, 3, 4, 5], batches: {} }; goto('simulators'); }); await page.waitForTimeout(800);
   if (!(await page.$('text=Check my calendar'))) fail('the Practice Lab has no 📅 Calendar Activity Check card');
+  if (!(await page.$('.fts-card button[onclick*="ftsCalsim(\'activity\')"]'))) fail('the Practice Lab\'s Attorney Calendar Management Activity card has no link to the Portal\'s Standard Training - Calendar Management Activity track');
   if (!(await page.evaluate(() => (FTDays.of(5).items || []).some(x => x.at === 'tool' && x.id === 'calcheck')))) fail('Day 5 doesn\'t point to the Calendar Activity Check');
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
-  const deck = await page.evaluate(() => ({ bar: [...document.querySelectorAll('.ftdd-acts button')].map(b => b.innerText).join(' | '), tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
+  const deck = await page.evaluate(() => ({ bar: [...document.querySelectorAll('.ftdd-acts button')].map(b => b.innerText).join(' | '), tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
   if (!/Calendar Activity Check/.test(deck.bar)) fail(`Day 5's Attorney Calendar Management Activity slide has no 📅 Calendar Activity Check button: ${deck.bar}`);
-  if (!deck.tile) fail('Day 5\'s upload card has no 📅 Calendar Activity Check tile');
-  // (the slide is read in pages: the upload card, with the tile, comes last)
+  if (!deck.tile) fail('Day 5\'s Time Zone & Submit slide has no 📅 Calendar Activity Check tile');
+  // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management Activity track)
+  if (!/📅 Standard Training - Calendar Management Activity/.test(deck.bar) || !deck.portal) fail(`Day 5's activity slide doesn't link the Portal's Standard Training - Calendar Management Activity: ${deck.bar}`);
+  // (the slide is read in pages: the tile comes last)
   for (let k = 0; k < 8 && !(await page.isVisible('button.ftdd-tile[onclick*="calcheck"]')); k++) { await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(600); }
   await page.evaluate(() => { state.adminPreview = false; }); await page.click('button.ftdd-tile[onclick*="calcheck"]'); await page.waitForTimeout(1200);
   if (await page.evaluate(() => state.view) !== 'calcheck') fail('the Day 5 tile doesn\'t open #/calcheck');

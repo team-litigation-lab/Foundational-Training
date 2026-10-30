@@ -119,7 +119,12 @@ const CAL_CARDS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const CAL_GROUPS = [[0, 4], [4, 7], [7, 8], [8, 10]];
 const calRange = ([a, b]) => b - a === 1 ? CAL_CARDS[a] : `${CAL_CARDS[a]}–${CAL_CARDS[b - 1]}`;
 const CALSIM_ACTIVITY = {label: "📅 Open the Calendar Simulator: the Attorney’s Calendar", href: "#/calsim/attorney-activity"};
-const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a></div>\n`;
+// beside it, the same activity on the Main Portal's Google Calendar Simulator: its Calendaring Simulators' Standard Training -
+// Calendar Management Activity track (calsim.html?program=FT&track=activity, js/ft-simulators.js ftsCalsim), in its own tab;
+// where ftsCalsim isn't loaded, the Practice Lab
+const CALSIM_PORTAL = {label: "📅 Standard Training - Calendar Management Activity", track: "activity"};
+const calsimPortal = cls => `<button type="button" class="${cls}" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')">${hx(CALSIM_PORTAL.label)}</button>`;
+const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a>${calsimPortal("btn btn-ghost")}</div>\n`;
 // 6's travel blocks: the guide's own lines under "Travel Blocks:" (each on 6's card, under it)
 const CAL_BLOCKS = [[/for travel to court\.$/, "Travel Block: to court"], [/for return travel\.$/, "Travel Block: return"]];
 // "July 06, 2026": the activity's date, marked with its day so the slide shows it moved to the trainee's own weeks
@@ -299,8 +304,11 @@ s3: html => {
     '<p class="ftdd-gcal-cap">The time zone, boxed in red: set it before you save.</p>\n';
   // 📅 the Calendar Activity Check (js/ft-calcheck.js): the trainee enters what each event holds and
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
+  // (and beside it, the activity on the Main Portal's Google Calendar Simulator: CALSIM_PORTAL)
   const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
-    '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you submit →</small></span></button></div>\n';
+    '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you submit →</small></span></button>' +
+    `<button type="button" class="ftdd-tile ftdd-simbtn k-video" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')"><span class="ftdd-tile-ic">📅</span>` +
+    `<span class="ftdd-tile-t"><b>${hx(CALSIM_PORTAL.label.replace(/^📅 /, ""))}</b><small>The activity on the Main Portal’s Google Calendar Simulator ↗</small></span></button></div>\n`;
   // after the items: the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
   // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
@@ -414,7 +422,8 @@ s3: html => {
   const mock = "<p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n" +
     lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
     lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
-    lnk("📅 The Calendaring Tool: the Google Calendar Simulator", sim + "calsim.html?program=FT&track=standard") +
+    // (the Portal's Calendaring Simulators card for the mock calls: Standard Training - Mock Call, track=standard)
+    lnk("📅 The Calendaring Tool: the Google Calendar Simulator’s Standard Training - Mock Call", sim + "calsim.html?program=FT&track=standard") +
     "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
     "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
     "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules (the Mock Call Scenarios slide) before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
@@ -423,6 +432,11 @@ s3: html => {
     "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n";
   out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
   if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
+  // (the reminders' two screenshot bullets are off: the mock calls are booked on the Google Calendar Simulator, so there is
+  // no screenshot to take, number or upload. "Make sure to be specific with your event titles." stays)
+  const shotsRe = /<p class="li" style="--lvl:0"><span class="lbl">•<\/span><span>No need to submit a separate screenshot for your time zone\.[^<]*<\/span><\/p>\n<p class="li" style="--lvl:0"><span class="lbl">•<\/span><span>Please follow the proper screenshot numbering[^<]*<\/span><\/p>\n/;
+  if(!shotsRe.test(out)) throw new Error("Day 6's screenshot reminders are no longer where the build looks for them");
+  out = out.replace(shotsRe, "");
   return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
 },
 s2: html => {
@@ -844,7 +858,7 @@ const ROWS = {
       {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [[MOCK_WARM_AT, null]]}]
   },
   5: {
-    // the activity's own words; then its files, the time zone, the screenshots and ✅ Done
+    // the activity's own words; then its files, the time zone, the 📅 Calendar Activity Check and ✅ Done
     // (the Instructions as two cards, then the Activity Items as sixteen cards, four to a slide, each slide with the link to
     // the Calendar Simulator's Attorney's Calendar: CAL_HEAD)
     s3: [{id: "s3", h: "Attorney Calendar Management Activity: Instructions", parts: [[null, CAL_HEAD(CAL_GROUPS[0])]]},

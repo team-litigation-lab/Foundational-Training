@@ -738,6 +738,9 @@ function slideActions(s, info, body, i){
   if(has(/attorney calendar management/i) && root.FTCalWeek) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTCalWeek.open()">📅 Standard Training - Calendaring Activity</button>`);
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
+  // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management
+  // Activity track, in its own tab: js/ft-simulators.js ftsCalsim)
+  if(/^Attorney Calendar Management Activity/i.test(h) && root.ftsCalsim) out.push(`<button type="button" class="btn btn-ghost btn-sm" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="ftsCalsim('activity')">📅 Standard Training - Calendar Management Activity</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
@@ -1349,6 +1352,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
 const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
+// (where a lesson's file goes; a lesson handed in on the platform names its own: its card's submit)
 const SUBMIT = "Assessments › Activities subfolder";
 // (a mock call or demo has two rows, as Day 4's: its preparation slide, "<id>p", then its Done slide: build/day-decks.cjs PREP)
 const LESSON_CARDS = {
@@ -1416,7 +1420,8 @@ const LESSON_CARDS = {
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
     tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
-    takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
+    // (no screenshots or upload: the activity is handed in as its 📅 Calendar Activity Check, sent to the trainer from there)
+    takeaways: [], file: "Attorney Calendar Management Activity: every event entered on the 📅 Calendar Activity Check", submit: "📅 Calendar Activity Check › 📤 Submit to my trainer"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
       // Part 1 in the trainers' order: 💬 the classroom discussion (▶ Start Training), the breakout's three digital handouts (HANDOUTS[7]), ✍️ the
@@ -1752,7 +1757,7 @@ function dayCard(n, ex){
         ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
-        ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
+        ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
         ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
       </aside>
     </div>
@@ -1828,7 +1833,7 @@ const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
 function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
-  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Open ↗</small></span></button>`
+  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -2487,6 +2492,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !
 @media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
+/* (its two links side by side: the Calendar Simulator here, then the activity on the Main Portal) */
+.ft-body .ftdd-calsim > .btn + .btn{margin-left:8px;}
 /* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */
 .ft-body .ftdd-cal-date.ftdd-cal-wait{visibility:hidden;}
 @media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} }
