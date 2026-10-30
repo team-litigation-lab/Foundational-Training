@@ -2447,7 +2447,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
-/* 🎧 Reception Listening Activity's practice calls (Day 3; small on Day 4): three cards to a row, each with its player */
+/* 🎧 Reception Listening Activity's practice calls (Day 3): three cards to a row, each with its player */
 .ftdd-pic-points{border:2px solid #343C66;border-radius:12px;background:#F6F7FB;padding:0 16px 10px;margin:10px 0 14px;overflow:hidden;}
 .ftdd-sheet .ftdd-pic-points > p.ftdd-pic-points-h{margin:0 -16px 8px !important;padding:8px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 17px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-pic-points ol{margin:0 0 6px;padding-left:22px;columns:2;column-gap:36px;}
@@ -2471,7 +2471,6 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-pic-sheet small{font-size:14px;line-height:1.4;color:#30364F;}
 .ftdd-pic-sheet-go{margin-top:6px;padding:8px 16px;border-radius:10px;background:linear-gradient(180deg,#E8943A,#C8642A);color:#fff;font:700 15px/1.2 'Inter',sans-serif;}
 .ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
-.ftdd-sheet .ftdd-pic-sm > p.ftdd-pic-h{font-size:15px !important;}
 /* Day 3's Reception Listening Activity: its task in cards (Listen, Analyze, Extract), and the challenge's two halves */
 .ftdd-sheet p.ftdd-cix-lead{font-size:17px !important;line-height:1.5 !important;}
 .ftdd-cix-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:10px 0 14px;}
