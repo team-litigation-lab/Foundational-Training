@@ -215,7 +215,55 @@ function candidateIds(name, batch) {
 // own HTML, every trainee reads it in place of the built slide.
 const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
-const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
+const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "archivedAt", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt", "offboarded", "purgedAt", "scorecard", "backup"];
+
+/* ---------- 🚫 trainees whose access is closed (js/ft-batch-admin.js) ----------
+   access:blocked = {ids: {"<trainee id>": {why: "offboarded" | "archived", name, batch, at}}}, admins only.
+   "offboarded": a VA the trainer offboarded (Admin → Trainee Audit / Batch Folders → 🚫 Offboard); "archived": a
+   batch saved to Google Drive and cleared from the platform. A blocked trainee isn't signed in again from a Portal
+   ticket, and a session they already hold reads nothing but their own trainee record, shown not approved, so the
+   page's own revoke check signs them out. The list is read at most once a minute per Worker instance. */
+const BLOCK_KEY = "access:blocked";
+let BLOCKED = { at: 0, ids: {} };
+async function blockedIds(env, fresh) {
+  const kv = kvOf(env);
+  if (!kv) return {};
+  if (fresh || Date.now() - BLOCKED.at > 60000) {
+    let v = null; try { v = JSON.parse((await kv.get(BLOCK_KEY)) || "null"); } catch (e) { v = null; }
+    BLOCKED = { at: Date.now(), ids: (v && v.ids) || {} };
+  }
+  return BLOCKED.ids;
+}
+async function setBlocked(env, changes) {
+  const kv = kvOf(env), ids = Object.assign({}, await blockedIds(env, true));
+  for (const [id, v] of Object.entries(changes)) { if (v) ids[id] = v; else delete ids[id]; }
+  await kv.put(BLOCK_KEY, JSON.stringify({ ids, updatedAt: new Date().toISOString() }));
+  BLOCKED = { at: Date.now(), ids };
+}
+const BLOCK_MSG = {
+  offboarded: "Your access to this program has been revoked. Contact your trainer if you believe this is a mistake.",
+  archived: "Your batch's training has ended and its records were archived. Contact your trainer if you need anything from it."
+};
+// Clearing a batch from the platform (POST /api/batch/purge): the trainee's working records go (they are in the Drive
+// backup first). Kept for the Main Portal's 📊 Progress & Feedback and its scorecard, which read this program's records
+// from the shared KV: the trainee record (slimmed, with the scorecard snapshot), the trainer's daily feedback, the
+// Knowledge Check and mock call / demo reviews, and the Portal's own simulator and graded call results.
+const PURGE_KEYS = (id) => [`progress:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`,
+  `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`,
+  `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`, `buffer:${id}`, `trainerfb:${id}`, `lorassign:${id}`, `videoaccess:${id}`, `rankshare:${id}`];
+const PURGE_PREFIXES = (id) => [`actup:${id}:`, `guide:${id}:`];
+// every record of a trainee, for the Drive backup
+const BACKUP_KEYS = (id) => [...new Set([`trainee:${id}`, `feedback:${id}`, `callsim:${id}`, ...OWN(id), ...TRAINER_OWNED(id), ...PURGE_KEYS(id)])];
+function slimTrainee(rec) {
+  const keep = ["id", "name", "firstName", "lastName", "batch", "approved", "rejected", "archived", "archivedAt", "registeredAt", "lastActive", "offboarded"];
+  const out = {};
+  keep.forEach((k) => { if (rec[k] !== undefined) out[k] = rec[k]; });
+  const num = (v) => typeof v === "number" && isFinite(v) ? v : undefined;
+  out.dayProgress = {}; Object.entries(rec.dayProgress || {}).forEach(([d, v]) => { if (v) out.dayProgress[d] = { done: !!v.done, score: num(v.score), surpriseTaskScore: num(v.surpriseTaskScore) }; });
+  out.practiceProgress = {}; Object.entries(rec.practiceProgress || {}).forEach(([t, v]) => { if (v) out.practiceProgress[t] = { runs: v.runs || 0, bestScore: num(v.bestScore) }; });
+  out.roleplayHistory = (rec.roleplayHistory || []).filter((h) => h && num(h.score) !== undefined).slice(-50).map((h) => ({ score: h.score, at: h.at }));
+  return out;
+}
 
 // The trainer's records about a trainee: the trainee reads them, only admins write them (traineeWrite refuses their keys).
 //   kcreview:<id>     the trainer's review of each Knowledge Check (js/ft-process.js)
@@ -733,6 +781,53 @@ async function saveToFolder(env, folderUrl, name, bytes, mime) {
   if (!res.ok) return { error: /storageQuota/i.test(JSON.stringify(j)) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive" };
   return { ok: true, updated: !!old, file: { name: j.name || name, link: j.webViewLink || `https://drive.google.com/file/d/${j.id}/view`, created: j.createdTime || "", modified: j.modifiedTime || "" } };
 }
+/* 📦 A batch's archive in the Google Drive folder the trainer gives (js/ft-batch-admin.js): a folder of its own in it, and
+   files of any size (a resumable upload, so a trainee's full records with their Process Guide screenshots fit). A file of the
+   same name in that folder is replaced, so saving a batch again never leaves two copies. Needs the service account with
+   Editor access to the folder (Content manager on a Shared Drive); a personal My Drive also needs GDRIVE_SA_SUBJECT. */
+const driveErr = (res, j) => /storageQuota/i.test(JSON.stringify(j || {})) ? "quota" : res.status === 404 || res.status === 403 ? "no-access" : "drive";
+async function driveFolder(env, parentId, name) {
+  const auth = { Authorization: "Bearer " + await driveToken(env, true) }, FOLDER = "application/vnd.google-apps.folder";
+  const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = '${FOLDER}' and trashed = false`);
+  const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,webViewLink)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
+  const fj = await found.json().catch(() => ({}));
+  if (!found.ok) throw new Error(driveErr(found, fj));
+  const old = (fj.files || [])[0];
+  if (old) return { id: old.id, link: old.webViewLink || `https://drive.google.com/drive/folders/${old.id}` };
+  const res = await fetch("https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id,webViewLink", { method: "POST",
+    headers: Object.assign({ "Content-Type": "application/json" }, auth), body: JSON.stringify({ name, mimeType: FOLDER, parents: [parentId] }) });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok || !j.id) throw new Error(driveErr(res, j));
+  return { id: j.id, link: j.webViewLink || `https://drive.google.com/drive/folders/${j.id}` };
+}
+async function driveUpload(env, parentId, name, mime, bytes) {
+  const auth = { Authorization: "Bearer " + await driveToken(env, true) };
+  const q = encodeURIComponent(`'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and trashed = false`);
+  const found = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true`, { headers: auth });
+  const fj = await found.json().catch(() => ({}));
+  if (!found.ok) throw new Error(driveErr(found, fj));
+  const old = (fj.files || [])[0];
+  const init = await fetch(`https://www.googleapis.com/upload/drive/v3/files${old ? "/" + old.id : ""}?uploadType=resumable&supportsAllDrives=true&fields=id,name,webViewLink`, {
+    method: old ? "PATCH" : "POST",
+    headers: Object.assign({ "Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": mime, "X-Upload-Content-Length": String(bytes.length) }, auth),
+    body: JSON.stringify(old ? { name } : { name, mimeType: mime, parents: [parentId] }) });
+  const loc = init.headers.get("Location");
+  if (!init.ok || !loc) throw new Error(driveErr(init, await init.json().catch(() => ({}))));
+  const put = await fetch(loc, { method: "PUT", headers: { "Content-Type": mime }, body: bytes });
+  const j = await put.json().catch(() => ({}));
+  if (!put.ok || !j.id) throw new Error(driveErr(put, j));
+  return { name: j.name || name, link: j.webViewLink || `https://drive.google.com/file/d/${j.id}/view` };
+}
+const DRIVE_ERRORS = (env) => ({
+  "no-sa": "Google Drive isn't connected on this program yet: GDRIVE_SA_EMAIL and GDRIVE_SA_KEY need to be set on its Worker.",
+  "no-folder": "That isn't a Google Drive folder link. Open the folder in Drive and copy its address (…/drive/folders/…).",
+  "no-access": `The folder couldn't be written. Share it with ${env.GDRIVE_SA_EMAIL || "the program's service account"} as Editor (Content manager on a Shared Drive).`,
+  "quota": "Drive refused the file: a service account has no storage of its own. Use a folder on a Shared Drive (or set GDRIVE_SA_SUBJECT for a My Drive folder).",
+  "drive-auth": "The program's Google service account couldn't sign in. Check GDRIVE_SA_EMAIL and GDRIVE_SA_KEY.",
+  "drive": "Google Drive didn't answer. Try again in a moment."
+});
+const driveFail = (env, e) => { const code = String((e && e.message) || "drive"); const msgs = DRIVE_ERRORS(env); return json({ error: msgs[code] || msgs.drive, code: msgs[code] ? code : "drive" }, 400); };
+
 /* Without the service account: the folder the trainee linked, read through Google's own folder view (as its link opens it
    for anyone it is shared with), with each file's name, its link and the day it was last changed, and the folders in it
    one level down. */
@@ -1002,6 +1097,8 @@ export default {
         }
         if (id && id !== chosen && id !== newId && id !== rawId && id !== legacyId) return json({ error: "Name/batch don't match this session" }, 403);
         if (id && (id === newId || id === rawId || id === legacyId)) chosen = id;
+        const blocked = (await blockedIds(env))[chosen];
+        if (blocked) return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
         return json({ id: chosen, token: await makeToken(env, "t", chosen, 24 * 30), existing: existing ? JSON.parse(existing) : null, batch: canonicalBatch(batch) || String(batch || "").trim() });
       };
       if (path === "/api/auth/trainee") {
@@ -1044,6 +1141,7 @@ export default {
           return json({ admin: true, name: who.name, token: await makeToken(env, "a", "admin", 12) });
         }
         const res = await traineeSession(who.name, who.batch, "");
+        if (!res.ok) return res;   // (offboarded, or their batch archived and cleared)
         const out = await res.json();
         // The Portal's approval is the only trainee approval: a trainee it signs in is approved here too
         // (unless an admin here rejected them), so this program never shows "Registration Pending Approval".
@@ -1058,6 +1156,100 @@ export default {
 
       const tok = secure ? await readToken(env, request) : { role: "a", id: "open-mode" };
       if (!tok) return json({ error: "Sign-in required" }, 401);
+
+      /* ---------- 🚫 a trainee whose access is closed (offboarded, or their batch cleared): their own record only, shown not
+         approved, so the page signs them out as revoked; nothing else ---------- */
+      if (tok.role === "t") {
+        const blocked = (await blockedIds(env))[tok.id];
+        if (blocked) {
+          const b = await request.clone().json().catch(() => ({}));
+          if (path === "/api/storage/get" && b.key === `trainee:${tok.id}`) {
+            const rec = JSON.parse((await kv.get(b.key)) || "null");
+            return json({ value: rec ? JSON.stringify(Object.assign({}, rec, { approved: false })) : null });
+          }
+          return json({ error: BLOCK_MSG[blocked.why] || BLOCK_MSG.offboarded, code: "access-" + (blocked.why || "offboarded") }, 403);
+        }
+      }
+
+      /* ---------- 🗂 Batch Folders (admins): 🚫 offboard a VA, and 📦 archive a batch to Google Drive, then clear it (js/ft-batch-admin.js) ---------- */
+      if (path.startsWith("/api/batch/")) {
+        if (tok.role !== "a") return json({ error: "Not allowed" }, 403);
+        const b = await request.json().catch(() => ({}));
+        const id = String(b.id || "").slice(0, 120), now = new Date().toISOString();
+        // 🚫 offboard (or ↩ restore) a VA: their access closes now and they leave Batch Folders, Rankings and the trainer's
+        // tabs; their records stay, so restoring brings them back as they were
+        if (path === "/api/batch/offboard") {
+          const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+          if (!rec) return json({ error: "No such trainee" }, 404);
+          if (b.restore) {
+            delete rec.offboarded; rec.approved = true; rec.rejected = false;
+            await kv.put(`trainee:${id}`, JSON.stringify(rec));
+            await setBlocked(env, { [id]: null });
+            return json({ ok: true, trainee: rec });
+          }
+          rec.offboarded = { at: now, reason: String(b.reason || "").trim().slice(0, 400) };
+          rec.approved = false; rec.rejected = true;
+          await kv.put(`trainee:${id}`, JSON.stringify(rec));
+          await setBlocked(env, { [id]: { why: "offboarded", name: String(rec.name || "").slice(0, 120), batch: String(rec.batch || "").slice(0, 40), at: now } });
+          return json({ ok: true, trainee: rec });
+        }
+        if (path === "/api/batch/blocked") return json({ ids: await blockedIds(env, true) });
+        // 📦 the batch's folder in the trainer's Drive folder: "Batch <id> — Archive <date>", and "Full records" in it
+        if (path === "/api/batch/drive-folder") {
+          if (!driveSA(env)) return driveFail(env, new Error("no-sa"));
+          const fid = folderId(b.folder);
+          if (!fid) return driveFail(env, new Error("no-folder"));
+          try {
+            const root = await driveFolder(env, fid, `Batch ${String(b.batch || "").replace(/[\/]/g, "-").slice(0, 40)} — Archive ${now.slice(0, 10)}`);
+            const records = await driveFolder(env, root.id, "Full records");
+            return json({ ok: true, folder: root, records });
+          } catch (e) { return driveFail(env, e); }
+        }
+        // the summaries the page made (the scorecards, the progress matrix): CSV or JSON text, a few at a time
+        if (path === "/api/batch/backup-files") {
+          const files = (Array.isArray(b.files) ? b.files : []).slice(0, 8), out = [];
+          if (!b.parent || !files.length) return json({ error: "Nothing to save" }, 400);
+          try {
+            for (const f of files) {
+              const name = String(f.name || "").replace(/[\u0000-\u001f\\/]/g, " ").trim().slice(0, 180), text = String(f.text || "");
+              if (!name || text.length > 8000000) continue;
+              out.push(await driveUpload(env, String(b.parent), name, /\.json$/i.test(name) ? "application/json" : "text/csv", enc.encode((/\.csv$/i.test(name) ? "\ufeff" : "") + text)));
+            }
+          } catch (e) { return driveFail(env, e); }
+          return json({ ok: true, files: out });
+        }
+        // one trainee's every record, as one JSON file in "Full records" (one trainee a request: KV allows 1,000 operations a request)
+        if (path === "/api/batch/backup-trainee") {
+          const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+          if (!rec || !b.parent) return json({ error: "No such trainee" }, 404);
+          const keys = BACKUP_KEYS(id);
+          for (const p of PURGE_PREFIXES(id)) keys.push(...await listAll(env, p));
+          const records = {};
+          await Promise.all(keys.map(async (k) => { const v = await kv.get(k); if (v != null) { try { records[k] = JSON.parse(v); } catch (e) { records[k] = v; } } }));
+          const name = `${String(rec.name || id).replace(/[\u0000-\u001f\\/]/g, " ").trim().slice(0, 80)} (${id}).json`;
+          try {
+            const file = await driveUpload(env, String(b.parent), name, "application/json",
+              enc.encode(JSON.stringify({ exportedAt: now, program: "LSH Standard Foundational Training", batch: rec.batch || "", trainee: rec, records }, null, 1)));
+            return json({ ok: true, file, keys: Object.keys(records).length });
+          } catch (e) { return driveFail(env, e); }
+        }
+        // after the backup: the trainee archived, their working records cleared, the record slimmed with the scorecard
+        // snapshot (the Main Portal still reads it), and their access closed
+        if (path === "/api/batch/purge") {
+          const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
+          if (!rec) return json({ error: "No such trainee" }, 404);
+          const keys = PURGE_KEYS(id);
+          for (const p of PURGE_PREFIXES(id)) keys.push(...await listAll(env, p));
+          await Promise.all(keys.map((k) => kv.delete(k)));
+          const slim = Object.assign(slimTrainee(rec), { archived: true, archivedAt: rec.archivedAt || now, purgedAt: now,
+            scorecard: b.scorecard && typeof b.scorecard === "object" ? JSON.parse(JSON.stringify(b.scorecard).slice(0, 60000)) : rec.scorecard || null,
+            backup: b.backup && typeof b.backup === "object" ? { folder: String(b.backup.folder || "").slice(0, 300), file: String(b.backup.file || "").slice(0, 300), at: now } : rec.backup || null });
+          await kv.put(`trainee:${id}`, JSON.stringify(slim));
+          if (!b.keepAccess) await setBlocked(env, { [id]: { why: "archived", name: String(rec.name || "").slice(0, 120), batch: String(rec.batch || "").slice(0, 40), at: now } });
+          return json({ ok: true, cleared: keys.length });
+        }
+        return json({ error: "Unknown endpoint" }, 404);
+      }
 
       /* ---------- 📅 Standard Training - Calendaring Activity and 🧪 its VA Practice Only clone: isolated controller (calweek-api.js) ---------- */
       if (path.startsWith("/api/calweek/") || path.startsWith("/api/calpractice/")) return await handleCalWeek(path, request, env, ctx, tok, kv);

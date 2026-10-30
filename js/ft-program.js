@@ -61,7 +61,7 @@ window.LSH_PROGRAM = {
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
-    lab: ["calscores", "sessions", "trainerinputs", "calcheck", "calrules", "calweek", "listening"],
+    lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
   sources: [
