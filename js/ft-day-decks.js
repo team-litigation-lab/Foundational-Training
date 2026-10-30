@@ -1395,7 +1395,7 @@ const LESSON_CARDS = {
       {t: "Authorization Decision Tree", sub: "Who may be told what", k: "read", d: 3, s: "s1"},
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT; then the optional
+      // (its task in cards, then the five calls on one slide, then the optional
       // reference recordings, build/day-decks.cjs REF_RECS, on the same step)
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · the 5 data points into the worksheet", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
@@ -1512,10 +1512,8 @@ const LESSON_CARDS = {
 // 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
-// 🎧 Day 3's Reception Listening Activity: the five calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
-// nothing to read first, and the way back is the slide after it)
-const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}},
-  3: {"s1d": {l: 4, label: "Next: ✍️ Knowledge Check →"}}};
+// (Day 3's Reception Listening Activity: the five calls' slide, s1d, goes on to the slide after it, not ✍️ Knowledge Check)
+const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
 const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
 const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? {l: Number(s.launch.kc), label: `Next: ✍️ Knowledge Check: ${lessonTitle(s.launch.kc)} →`} : null));
@@ -1618,7 +1616,7 @@ function toKC(l, here){
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
   const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => isPart(k, list[DD.i].id));
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
-  // (from a slide whose Next is the Knowledge Check, Day 3's five calls: back to the slide after it)
+  // (from a slide whose Next is the Knowledge Check: back to the slide after it)
   else if(list[DD.i] && (KC_NEXT[DD.day] || {})[list[DD.i].id]) from = DD.i;
   const s = list[from + 1] || null;
   const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");

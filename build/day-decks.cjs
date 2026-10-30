@@ -639,7 +639,7 @@ function REF_RECS_HTML(){
 }
 // the activity: Day 3's Reception Listening Activity row (ROWS[3].s1), on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
-// the five calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
+// the five calls together, whose Next is the slide after them
 const PI_H = "AM: Reception Listening Activity";
 const PI_CALLS_H = "AM: Reception Listening Activity: the 5 Practice Calls";
 const piStep = (n, ic, t, body) => `<div class="ftdd-cix"><p class="ftdd-cix-h"><span class="ftdd-pic-n">${n}</span><span>${ic} ${t}</span></p><p>${body}</p></div>`;
@@ -662,7 +662,7 @@ const PI_HTML =
   // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
   // (js/ft-process.js WORKSHEETS): the slide only links there, and the way back is the calls' slide
   `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(4, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
-// the five calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
+// the five calls on one slide (the trainer's key with them)
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
   piCallRows(false) +
