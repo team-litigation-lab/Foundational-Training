@@ -415,9 +415,11 @@ const AD = {rows:null, loading:false, batch:"", open:{}, live:true, timer:null, 
 async function loadAdmin(quiet){
   AD.loading = true;
   try{
+    const ok = r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt;
     let people = state.adminData;
-    if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt);   // (an offboarded VA leaves the trainer's tabs and the deck's metrics sheet: js/ft-batch-admin.js)
+    // (a cached list with no approved trainee, say one loaded before the approvals, is read again from storage)
+    if(!people || !people.some(ok)){ const keys = await sharedList("trainee:"), got = []; for(let i = 0; i < keys.length; i += 99) got.push(...(await sharedGetMany(keys.slice(i, i + 99))).filter(Boolean)); people = got; }
+    people = people.filter(ok);   // (an offboarded VA leaves the trainer's tabs and the deck's metrics sheet: js/ft-batch-admin.js)
     const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id]), vals = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
@@ -625,12 +627,45 @@ function metricsTable(key, view){
   const head = `<thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>`;
   // (view: the trainee's read-only scorecard, whoever is looking)
   const trainer = !view && !!state.isAdmin && !state.adminPreview, a = actOfRubric(key);
-  if(!trainer || !a) return `<table class="ftms-tbl">${head}</tr></thead><tbody>
-    ${rb.criteria.map(k => `<tr><td>${e(k.n)}</td><td>0</td></tr>`).join("")}
-    <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>0</td></tr></tbody></table>`;
+  // (a trainee: their own scores and the trainer's remarks once the trainer has saved them, read only; until then, 0s)
+  const mine = !trainer && a ? myScored(a.id, key) : null;
+  if(!trainer || !a) return `<table class="ftms-tbl">${head}${mine ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
+    ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td>${mine && mine.rubric.scores[i] != null ? e(mine.rubric.scores[i]) : "0"}</td>${mine ? `<td>${e((mine.rubric.feedback || [])[i] || "")}</td>` : ""}</tr>`).join("")}
+    <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>${mine && mine.rubric.avg != null ? e(Number(mine.rubric.avg).toFixed(2)) : "0"}</td>${mine ? "<td></td>" : ""}</tr></tbody></table>
+    ${mine ? `<p class="ftms-mine">✅ Scored by your trainer${mine.status ? ": " + e(mine.status) : ""}${tScore(mine) != null ? " · " + tScore(mine) + "%" : ""}</p>` : ""}`;
   // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
-  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button></div>`;
+  // (on a deck, only a hidden marker: the 🧑‍🏫 Scoresheet button in the bar under the slide opens the sheet; no hint line)
+  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"${state.view === "daydeck" ? " hidden" : ""}><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button></div>`;
 }
+/* 🔔 A trainee's scored mock calls and demos: their labreview:<id> (the trainer's scoresheet saves there), read when a
+   metrics table is drawn and about once a minute while they use the platform. A scoresheet the trainer saved since they last
+   looked is announced once (a toast), and the read-only table on the slide shows their scores and remarks. */
+const MY = {rec: null, id: null, at: 0, loading: false, told: new Set()};   // told: the results announced this session
+// a trainer's saved result on an activity: its scoresheet, or a score or result entered in Admin → 🧑‍🏫 Trainer Inputs
+const isScored = c => !!c && ((c.rubric && (c.rubric.scores || []).some(v => v != null)) || (c.score != null && c.score !== "") || (!!c.status && c.status !== "Not yet"));   // (id: whose record it is)
+const myScored = (act, key) => { if(MY.id !== state.traineeId){ MY.rec = null; MY.at = 0; } const c = (((MY.rec || {}).acts) || {})[act]; if(!MY.rec) loadMyReview(); return c && c.rubric && c.rubric.key === key && (c.rubric.scores || []).some(v => v != null) ? c : null; };
+function loadMyReview(){
+  if(!state.traineeId || state.isAdmin || MY.loading || Date.now() - MY.at < 60000) return;
+  MY.loading = true; MY.at = Date.now(); const id = state.traineeId;
+  sharedGet("labreview:" + id).then(v => {
+    if(id !== state.traineeId) return;
+    const was = JSON.stringify(MY.rec); MY.id = id; MY.rec = v && typeof v === "object" ? v : {acts: {}};
+    // (the first look on this device takes the results already there as seen, silently: only a new one is announced)
+    const init = "ft-scored-init:" + id; let first = false; try{ first = !localStorage.getItem(init); localStorage.setItem(init, "1"); }catch(err){ first = true; }
+    Object.entries(MY.rec.acts || {}).forEach(([act, c]) => {
+      if(!isScored(c) || !c.at) return;
+      const seen = "ft-scored:" + id + ":" + act, mark = act + "|" + c.at; let last = ""; try{ last = localStorage.getItem(seen) || ""; }catch(err){}
+      if(last === c.at || MY.told.has(mark)) return;
+      MY.told.add(mark); try{ localStorage.setItem(seen, c.at); }catch(err){}
+      if(first) return;
+      const id2 = act;
+      const a = acts().find(x => x.id === id2), rb = a && RUB().forAct(a);
+      toast(`📋 Your trainer scored your ${a ? a.title : "mock call"}${c.rubric && c.rubric.avg != null ? `: ${Number(c.rubric.avg).toFixed(2)}/5` : ""}${tScore(c) != null ? ` (${tScore(c)}%)` : ""}. See it on the ${rb ? rb.title : ""} Metrics and 📬 My Feedback.`);
+    });
+    if(JSON.stringify(MY.rec) !== was && state.view === "daydeck") render();
+  }).catch(() => {}).then(() => { MY.loading = false; });
+}
+setInterval(() => { if(!document.hidden) loadMyReview(); }, 60000);
 // 📋 the scoresheet in the pop-up (FTMetrics.open): the batch and trainee to pick, each criterion's score and Remarks, the
 // Result and 💾 Save, all on one screen
 function metricsSheet(key){
@@ -641,6 +676,7 @@ function metricsSheet(key){
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort();
   if(!MS.batch || !batches.includes(MS.batch)) MS.batch = AD.batch && batches.includes(AD.batch) ? AD.batch : batches[batches.length - 1] || "";
   const people = AD.rows.filter(r => !MS.batch || r.batch === MS.batch);
+  if(!AD.rows.length) return `<div class="ftms ftms-trainer"><p class="ftms-none">No approved trainees to score yet. Approve your trainees in Admin → 👥 Trainees: they show here, by batch, as soon as they are approved.</p></div>`;
   const id = people.some(r => r.id === MS.who[key]) ? MS.who[key] : "", row = people.find(r => r.id === id), several = actsOfRubric(key);
   const c = row ? ((((row.rv || {}).acts) || {})[a.id] || {}) : {}, dr = MS.draft[key + "|" + a.id + "|" + id];
   const got = dr || (c.rubric && c.rubric.key === key ? c.rubric : {scores:[], feedback:[]}), status = (dr && dr.status) || c.status || "Not yet";
@@ -680,6 +716,9 @@ document.addEventListener("keydown", ev => {
 }, true);
 window.FTMetrics = {
   table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric, sheet: metricsSheet,
+  // a trainee's saved scoresheet for an activity (any of its rubrics), else null: what makes their mock call done (js/ft-buffer.js)
+  scored(act){ if(!state.traineeId || state.isAdmin) return null; if(MY.id !== state.traineeId){ MY.rec = null; MY.at = 0; } if(!MY.rec) loadMyReview();
+    const c = (((MY.rec || {}).acts) || {})[act]; return isScored(c) ? c : null; },
   open(key){ MS.open = key; drawSheet(); const f = document.querySelector("#ftmsModal select[aria-label=Trainee]"); if(f) f.focus(); },
   close(){ MS.open = null; drawSheet(); },
   batch(b){ MS.batch = b; redraw(); },
@@ -744,6 +783,7 @@ window.ftTrainerItems = ctx => {
 .ftms-modal .ftms-pick select{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;}
 .ftms-modal .ftms-pick .ftms-save{margin-left:auto;}
 .ftms-modal .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.ftms-mine{margin:6px 0 0;font-weight:700;color:#166534;} .ftms-none{margin:6px 0;font-weight:600;color:#1E2340;}
 .ftms-modal .ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;position:sticky;top:-10px;}
 .ftms-modal .ftms-tbl th:nth-child(2){text-align:center;width:80px;}
 .ftms-modal .ftms-tbl td{padding:2px 10px;border-bottom:1px solid #DDE7D5;color:#4E6B2E;font-weight:700;}

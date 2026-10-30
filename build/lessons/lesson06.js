@@ -3,7 +3,7 @@
 const DAY6 = {
   id: 6,
   title: "Intake Specialist Training",
-  video: "https://drive.google.com/file/d/1FPA2qhvFOe56b6A2Mcp-OFExqiaO-ZDH/view",
+  video: "https://drive.google.com/file/d/1L3uU3QSWYvBly4mNGHh6RwR6Ifo72p8B/view",
   deck: "THE_INTAKE_SPECIALIST_ROLE_Part1.pdf and _Part2.pdf (sent in chat)",
   heading: "Intake Specialist Training",
   sections: [
