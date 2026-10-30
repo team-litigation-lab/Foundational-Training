@@ -3062,6 +3062,28 @@ main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:70
 .ftdd-sheet a.ftdd-pdoc-pg:hover img{border-color:#E8590C;box-shadow:0 4px 14px rgba(232,89,12,.30);}
 main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-serif;color:#262B45 !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
+/* a set of video cards (data-card): the card is the button, so no "▶ Watch" under the name; two videos (Day 8's Topic 1)
+   share the slide's width, so their previews are large */
+.ft-body .ftdd-vcard .ftdd-tile-t small{display:none;}
+.ftdd-vcards:has(> .ftdd-vcard:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;}
+main.main-ftdd .ftdd-sheet .ftdd-vcards:has(> .ftdd-vcard:nth-child(2):last-child) .ftdd-tile-t b{font-size:18px;color:#0B0D1A;}
+/* a video and its instruction side by side (build/day-decks.cjs: Day 8's Topic 2): the video on the left, as large as it fits */
+.ftdd-sheet .ftdd-vside{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:22px;align-items:center;width:100%;align-self:stretch;}
+.ftdd-sheet .ftdd-vside > :first-child{order:0;} .ftdd-sheet .ftdd-vside > p{order:1;margin:0;}
+.ft-body .ftdd-sheet .ftdd-vside .ftdd-inline{margin:0;}
+.ft-body .ftdd-sheet .ftdd-vside .ftdd-embed.ftdd-embed-player{width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-vside > p{font-size:22px !important;font-weight:700;color:#0B0D1A;}
+@media(max-width:900px){ .ftdd-sheet .ftdd-vside{grid-template-columns:minmax(0,1fr);} }
+/* a slide's numbered steps: the slide's width, their text from the left edge (Day 8's Topic 2) */
+main.main-ftdd .ftdd-sheet.ftdd-d615 > .ftdd-step{align-self:stretch;}
+main.main-ftdd .ftdd-sheet .ftdd-step-t{text-align:left;}
+/* a link drawn as a button keeps the button's look: Days 6–15's link colour and underline are for links in the text
+   (Day 8's ✏️ Make my editable copy had blue underlined type on its navy) */
+main.main-ftdd .ftdd-sheet a.btn{text-decoration:none !important;}
+main.main-ftdd .ftdd-sheet a.btn.btn-navy{color:#fff !important;}
+/* the trainee's packet and mock call placeholders (js/ft-intake.js) in darker type */
+main.main-ftdd .ftdd-sheet .ftis-pk-ph b{font-size:18px;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet .ftis-pk-ph small{font-size:15.5px;font-weight:600;color:#2E3450;}
 /* the sample intake calls' cards on a deck slide (js/ft-intake.js .ftis-calls, Day 7): dark, larger type on the white card,
    the name and firm on the left, the length on one line, the "Listen for" label a darker orange that reads on white */
 main.main-ftdd .ftdd-sheet .ftis-call header > div{text-align:left;}

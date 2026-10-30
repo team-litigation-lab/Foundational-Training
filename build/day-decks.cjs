@@ -936,7 +936,13 @@ const ROWS = {
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
       // (the naming convention and its reference are on Topic 2's slide, between its steps 3 and 4: TRIM[8].s1; the additional
       // intake documents are a slide of their own)
-      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]]},
+      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]], fix: [
+        // (no 🏷 topic label: the slide's ribbon names the topic) the video named for its cases, played on the left and large,
+        // with its instruction beside it (ftdd-vside)
+        ["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>\n", ""],
+        x => { const re = /(<p>Watch this video presentation about the Intake Packet and the Intake Documents\.<\/p>)\n(<p><a class="viewer-link" data-kind="video" data-title=")The Intake Packet and the Intake Documents("[^\n]*<\/p>)\n/;
+          if(!re.test(x)) throw new Error("Day 8's Intake Packet video is no longer where the build looks for it");
+          return x.replace(re, '<div class="ftdd-vside">\n$2The Intake Packet and the Intake Documents (MVA Cases)$3\n$1\n</div>\n'); }]},
       {id: "s1c", h: "AM: Other Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
