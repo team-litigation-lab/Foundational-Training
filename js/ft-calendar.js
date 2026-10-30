@@ -132,10 +132,11 @@ async function load(){
   S.who = state.traineeId;
   S.loading = true; S.err = ""; S.id = state.traineeId;
   let d = null, made = false;
-  try{ d = norm(await sharedGet("calsim:" + S.id)); }catch(err){}
+  // (strict: a failed read throws rather than looking like no record, so a blank is never saved over the trainee's work)
+  try{ d = norm(await (typeof sharedGetStrict === "function" ? sharedGetStrict : sharedGet)("calsim:" + S.id)); }catch(err){}
   // the record's anchor FIRST (one without gets its own, saved below), and only then is its draft cleaned by date
   if(d){ let a = X.anchorOfRecord(d); if(!a){ a = X.ensureAnchor(d, state.traineeBatch).anchor; made = true; } S.anchor = a; S.noSave = false; }
-  else{ d = blank(); S.anchor = X.anchorNow(); S.noSave = true; S.err = "Couldn’t load your saved work. You can still practice, but nothing is saved: check your connection and reload the page."; }
+  else{ d = blank(); S.anchor = X.anchorForBatch(state.traineeBatch) || X.anchorNow(); S.noSave = true; S.err = "Couldn’t load your saved work. You can still practice, but nothing is saved: check your connection and reload the page."; }
   S.data = d; X.setAnchor(S.anchor);
   S.loading = false;
   S.events = C.cleanFor(scn(), S.data.drafts[scn().id]);

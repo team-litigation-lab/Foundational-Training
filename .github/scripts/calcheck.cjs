@@ -311,6 +311,20 @@ async function workerChecks() {
   // a reload keeps it (read from the calendar record, not worked out again)
   await page2.reload({ waitUntil: 'load' }); await page2.waitForTimeout(1500); await page2.evaluate(() => goto('calcheck')); await page2.waitForTimeout(1500);
   if (await page2.evaluate(() => FTCalCheck.state().rec && FTCalCheck.state().rec.anchor) !== '2026-11-02') fail('the anchor didn\'t come back after a reload');
+  // a Check record from before anchors, once its July anchor is kept, stays at July even when the calendar record has the
+  // batch's anchor (its entries were typed against July)
+  await put('calcheck:' + id2, { entries: { 1: { sd: '2026-07-06', st: '10:00' } }, submits: [], anchor: '2026-07-06' });
+  await put('calsim:' + id2, { v: 2, anchors: { 'attorney-activity': '2026-11-02' }, drafts: {}, autos: [], submissions: [], reviews: {}, external: [] });
+  await page2.reload({ waitUntil: 'load' }); await page2.waitForTimeout(1500); await page2.evaluate(() => goto('calcheck')); await page2.waitForTimeout(2000);
+  if (await page2.evaluate(() => FTCalCheck.state().rec && FTCalCheck.state().rec.anchor) !== '2026-07-06') fail('a July Check record moved to the calendar record\'s anchor');
+  // the Calendaring Simulator never saves over a calendar record it couldn't read (a failed read isn't an empty record)
+  const keep = { v: 2, anchors: {}, drafts: { 'attorney-activity': [{ id: 'k1', title: 'Client Meeting', date: '2026-07-06', allDay: false, span: 1, start: 600, dur: 60, tz: 'America/Los_Angeles' }] }, autos: [], submissions: [], reviews: {}, external: [] };
+  await put('calsim:' + id2, keep);
+  await page2.route('**/api/storage/get', async route => { const b = route.request().postData() || ''; if (/calsim:/.test(b)) return route.fulfill({ status: 503, body: 'down' }); return route.continue(); });
+  await page2.evaluate(() => goto('calsim', 'attorney-activity')); await page2.waitForTimeout(3000);
+  await page2.unroute('**/api/storage/get');
+  const keptRec = await get("calsim:" + id2);
+  if (!keptRec || !keptRec.drafts || !(keptRec.drafts["attorney-activity"] || []).length || (keptRec.anchors && keptRec.anchors["attorney-activity"])) fail(`a failed read of the calendar record was saved over it: ${JSON.stringify(keptRec)}`);
   await page2.close();
   await put('calcheck:' + id2, null); await put('calsim:' + id2, null);
   const w2 = await get('trainee:' + id2); w2.archived = true; await put('trainee:' + id2, w2);

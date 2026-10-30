@@ -309,15 +309,16 @@ function load(force){
     .catch(() => { R.failed = !R.rec; })
     .then(() => { R.loading = null; if(state.view === "calcheck") render(); });
 }
-// the trainee's anchor: a Check record from before anchors (entries or submissions, no anchor) keeps July 2026, the dates
-// it was typed against; otherwise the calendar record's (FTCalCore.act.anchorOfRecord: its own, or July for a calendar from
-// before anchors); a calendar with none: this record's copy if it has one, else the Batch ID's, the same one js/ft-calendar.js
-// will keep in the calendar record (its one writer: this page never writes that record, so a draft saved meanwhile is safe)
+// the trainee's anchor: this record's own once kept; a Check record from before anchors (entries or submissions, no anchor)
+// keeps July 2026, the dates it was typed against; otherwise the calendar record's (FTCalCore.act.anchorOfRecord: its own, or
+// July for a calendar from before anchors), else the Batch ID's, the same one js/ft-calendar.js will keep in the calendar
+// record (its one writer: this page never writes that record, so a draft saved meanwhile is safe)
 async function anchorFor(id, rec, cal){
-  const A = CORE(); if(!A) return okAnchor(rec.anchor) ? rec.anchor : JULY;
-  if(!okAnchor(rec.anchor) && (Object.keys(rec.entries).some(n => touched(rec.entries[n])) || rec.submits.length)) return JULY;
-  const had = A.anchorOfRecord(cal); if(had) return had;
-  return okAnchor(rec.anchor) ? rec.anchor : A.anchorForBatch(state.traineeBatch) || A.anchorNow();
+  // (this record's own anchor first: once kept, its entries were typed against it, July 2026 for a record from before anchors)
+  if(okAnchor(rec.anchor)) return rec.anchor;
+  const A = CORE(); if(!A) return JULY;
+  if(Object.keys(rec.entries).some(n => touched(rec.entries[n])) || rec.submits.length) return JULY;
+  return A.anchorOfRecord(cal) || A.anchorForBatch(state.traineeBatch) || A.anchorNow();
 }
 function save(){
   clearTimeout(R.timer); R.timer = null;
