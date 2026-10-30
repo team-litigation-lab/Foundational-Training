@@ -1424,7 +1424,7 @@ const LESSON_CARDS = {
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then shadowing and Day 12
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
-      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
       {t: "Shadowing", time: "PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information", sub: "The updated SA steps for your process guide", k: "read", d: 12, s: "s1b"},
@@ -2478,6 +2478,15 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
+.ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 > p.ftdd-card4-h{font-size:20px !important;margin-bottom:8px !important;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 ul{margin:0;padding-left:20px;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 li{margin:0 0 4px;font-size:19px !important;line-height:1.32 !important;font-weight:700 !important;color:#1B1E2E;}
+@media(max-width:1100px){ .ft-body .ftdd-lor-cards{grid-template-columns:repeat(2,minmax(0,1fr));} }
+.ftdd-lor-tag{display:inline-block;margin-right:4px;padding:1px 8px;border-radius:999px;background:#E8590C;color:#fff;font:800 14px/1.5 'Poppins','Inter',sans-serif;vertical-align:2px;}
+.ftdd-sheet .ftdd-lor-rem{margin:0 0 16px;} .ftdd-sheet .ftdd-lor-rem p:not(.ftdd-card4-h){font-size:19px !important;font-weight:700 !important;}
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }

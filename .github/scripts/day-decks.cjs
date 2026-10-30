@@ -60,10 +60,17 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
   d.slides.filter(s => s.of && s.id !== s.of).forEach(s => { if (s.id.startsWith(s.of + '-')) fail(`Day ${n} ${s.id} reads as a continuation of ${s.of}`); });
   const slots = d.slides.flatMap(s => s.html.match(/data-slot="[^"]+"/g) || []);
   if (new Set(slots).size !== slots.length) fail(`Day ${n}: a trainer slot is on two slides`); }
-// Day 11's LOR Drafting guidelines are on its slides, read like Day 1's reading, in place of their Drive link
-const lor = D[11] && D[11].slides.filter(s => s.read);
-if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test(lor[0].html) || !/<h3>Activity 2: Letter of Representation/.test(lor[1].html) || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
-  fail(`Day 11's LOR Drafting guidelines aren't inlined over two read slides: ${JSON.stringify((lor || []).map(s => s.id))}`);
+// Day 11's LOR Drafting guidelines are on one slide, in place of their Drive link: Activities 1 & 2 as one set of cards
+// (eight steps, 1P / 3P marked), the first opening the LOR Drafting tool, which holds the templates and case notes (so no
+// links to them), the "F/E" reminders on a page of their own; and the evaluation's slide is one block, without the guide's
+// opening line and with no LOR screenshot
+const lor = D[11] && D[11].slides.filter(s => /LOR Drafting Activity/.test(s.h)), ev = D[11] && D[11].slides.find(s => s.id === 's1');
+if (!lor || lor.length !== 1 || (lor[0].html.match(/<div class="ftdd-card4"><p class="ftdd-card4-h">\d\. /g) || []).length !== 8 || !/goto\('lor'\)/.test(lor[0].html)
+  || !/ftdd-pgbreak[^]*Additional Reminders/.test(lor[0].html) || /Objective|1aRMbhtBTZ3wxDDo5Ww1sERL5frjdNNHw|Before saving your LOR|training GC/.test(lor[0].html)
+  || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
+  fail(`Day 11's LOR Drafting guidelines aren't one slide of cards with the LOR Drafting tool: ${JSON.stringify((lor || []).map(s => s.id))}`);
+if (!ev || !/^<div class="ftdd-keep">/.test(ev.html) || /Insurance Claim Specialist|image26/.test(ev.html) || !/goto\('lor'\)/.test(ev.html)) fail("Day 11's evaluation slide isn't one block ending on the LOR Drafting tool");
+if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.test(s.html))) fail("Day 11's shadowing slide still has the TAM update line");
 // Day 4: its mock call preparation on one slide (s2b), in pages, the tools as buttons under the run; Day 5 opens on the
 // Monitoring Sheet's items #10–11, its panel only (no mock call preparation); the Attorney Calendar Management Activity's
 // Instructions 1–9 (the seven colours, the guests) as two cards on one slide, no "1. The activity" card; its ten Activity

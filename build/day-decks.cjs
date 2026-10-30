@@ -826,7 +826,28 @@ const edges = x => { let y = x, was; const rule = /^\s*(?:<hr class="stars">|<p>
 // the LOR Drafting Activity's guidelines (build/lor/source/LOR_DRAFTING_ACTIVITIES - version 2.18.2026.pdf), in place of
 // their Drive link on Day 11, as Day 1's reading is (its header and the "Name of VA / Date Taken" fields are the form's, not the text)
 const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
-const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
+// (without its Objective, which only restates the slide's title, and with Activities 1 (1P) and 2 (3P) as one set of
+// instructions, a card each, four to a row (ftdd-lor-cards): the two lists are the same but for 1P's Claims to be Opened
+// and the file names, which the cards mark 1P / 3P)
+const LOR_GUIDE = () => {
+  const src = fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8");
+  const lists = [...src.matchAll(/<ol>\n([^]*?)<\/ol>/g)].map(m => [...m[1].matchAll(/<li><b>([^<]+?):?<\/b><ul>([^]*?)<\/ul><\/li>/g)].map(x => ({h: x[1], lis: x[2].match(/<li>[^]*?<\/li>/g)})));
+  if(lists.length !== 2 || lists.some(l => l.length < 6)) throw new Error("The LOR guidelines are no longer two lists of instructions the build can lay out as cards");
+  const [p1, p3] = lists, tag = (t, li) => li.replace("<li>", `<li><span class="ftdd-lor-tag">${t}</span> `);
+  const cards = p1.map(a => {
+    const b = p3.find(x => x.h === a.h);
+    const lis = !b ? a.lis.map(li => tag("1P only", li)) : a.lis.flatMap((li, k) => li === b.lis[k] ? [li] : [tag("1P", li), tag("3P", b.lis[k])]);
+    return {h: a.h, lis};
+  });
+  if(p3.some(b => !p1.find(a => a.h === b.h))) throw new Error("Activity 2's LOR instructions have a step Activity 1's don't: lay them out anew");
+  // (the templates are in the platform's LOR Drafting tool, not the training GC: the first card opens it)
+  const use = cards.find(c => c.h === "Use the Template");
+  if(!use || use.lis.join("") !== "<li>Open the LOR template provided in the training GC.</li>") throw new Error("The LOR guidelines' Use the Template step has changed: point it at the LOR Drafting tool anew");
+  use.lis = ["<li>Open the 1P or 3P LOR template in the platform’s LOR Drafting tool.</li>"];
+  use.post = `<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div>`;
+  return '<h3>Activities 1 &amp; 2: Drafting the 1P and 3P LORs</h3>\n<div class="ftdd-lor-cards">\n' +
+    cards.map((c, k) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${k + 1}. ${c.h}</p><ul>${c.lis.join("")}</ul>${c.post || ""}</div>\n`).join("") + "</div>\n";
+};
 // the platform's LOR Drafting tool, where Day 11's 1P and 3P letters are drafted
 const LOR_TOOL = `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`;
 // edits to a section before it is cut into its rows' slides
@@ -845,7 +866,10 @@ const EDIT = {
       const re = /(https:\/\/docs\.google\.com\/document\/d\/[\w-]+\/edit\?usp=sharing)&amp;amp;amp;[^"]*/g;
       if((out.match(re) || []).length !== 3) throw new Error("Day 11's LOR templates and case notes are no longer where the build looks for them");
       return out.replace(re, "$1");
-    }},
+    },
+    // the shadowing slide opens on the recorded shadowing given in lieu of a buddy: not the guide's first note (the same
+    // thing, said again) or its "@everyone … update your TAM" line and screenshot
+    s2: h => rep(h, '<p><b>Note: </b>If no shadowing buddy is available, recorded shadowing video/s will be provided to trainees instead.</p>\n<hr class="stars">\n<p><b>@everyone</b> Kindly update this section of your TAM after the session. Thanks.</p>\n<div class="shots"><figure><a href="/ft/day11/img/image32.png" target="_blank"><img src="/ft/day11/img/image32.png" alt="" loading="lazy"></a></figure></div>\n<hr class="stars">\n', "", 1, "Day 11 s2")},
   14: {s2: h => rep(h, SLOT(14, "s2-1") + "\n", SLOT(14, "s2-1") + "\n" + SHADOW_HOWTO, 1, "Day 14 s2")},
   15: {
     // the demonstration day opens on what Day 14 set for it: the tutorial video, the gentle reminders and the rules
@@ -1016,8 +1040,7 @@ const ROWS = {
       {id: "s1e", h: "AM: Sample Recordings: Opening Claims", parts: [["<p><b>VA Call Recordings", null]]}]
   },
   11: {
-    // the LOR Drafting Activity: its guidelines read over two slides (Activity 1: 1P, Activity 2: 3P), then the templates,
-    // the case notes and the reminders, with the platform's LOR Drafting tool
+    // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
     // (the evaluation's introduction is one block, read on one page, without the guide's opening line; it ends on the
     // LOR drafting that follows Activities 1 & 2, pointed at the platform's LOR Drafting tool, not the guide's screenshot
     // of the Word files)
@@ -1025,10 +1048,17 @@ const ROWS = {
         fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""],
           ['<hr class="stars">\n', ""],
           ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
-      {id: "s1b", h: "AM: LOR Drafting Activity", read: true, parts: [[SLOT(11, "s1-3"), "<h3>Activity 2: "]]},
-      {id: "s1b-2", h: "AM: LOR Drafting Activity", read: true, parts: [["<h3>Activity 2: ", "<p>1P LOR Template</p>"]]},
-      {id: "s1b-3", h: "AM: LOR Drafting Activity: Templates, Case Notes & Reminders", parts: [["<p>1P LOR Template</p>", null]],
-        post: LOR_TOOL}]
+      // (one slide: the instructions on its first page, its first card opening the LOR Drafting tool, which holds the
+      // templates and the case notes, so the guide's links to them are not on it; the reminders on "F/E" on the second)
+      {id: "s1b", h: "AM: LOR Drafting Activity", parts: [[SLOT(11, "s1-3"), null]], fix: [h => {
+        // (and only the reminders on "F/E": not the before-saving checklist or the final-draft list)
+        const i = h.indexOf("<p>1P LOR Template</p>"), j = h.indexOf("<p><b>Additional Reminders for Drafting Your LOR:</b></p>\n"),
+          k = h.indexOf("<p> <b>Before saving your LOR in your Assessments folder:</b></p>"), end = h.indexOf(SLOT(11, "s1-5"));
+        if(i < 0 || j < i || k < j || end < k) throw new Error("Day 11's LOR templates and reminders are no longer where the build looks for them");
+        // (the instructions, with the trainer's slot before them, are one block: the slot never makes a page of its own)
+        return '<div class="ftdd-lor-set">\n' + h.slice(0, i) + '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-card4 ftdd-lor-rem"><p class="ftdd-card4-h">📝 Additional Reminders for Drafting Your LOR</p>\n' +
+          h.slice(j, k).replace("<p><b>Additional Reminders for Drafting Your LOR:</b></p>\n", "") + "</div>\n" + h.slice(end);
+      }]}]
   },
   12: {
     s1: [{id: "s1", h: "AM: Tutorial Video: Saving LORs to SA and Sending to 1P & 3P Insurance Companies", parts: [[null, '<hr class="stars">\n<p>@everyone </p>']]},
