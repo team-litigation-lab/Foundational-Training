@@ -1243,6 +1243,10 @@ const EX_RENAME = {
   // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
   13: {s3: {h: "PM: Breakout Session"}}};
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
+// what an activity slide emptied by PREP still carries: Day 9's Intake Mock Calls, every intake case for the trainer
+// (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
+// Day 8's slides or Day 9's metrics slide
+const PREP_KEEP = {9: {s3b: '<div class="ftis-mockcall"></div>\n'}};
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
   // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
@@ -1319,7 +1323,7 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: ""});
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: (PREP_KEEP[n] || {})[id] || ""});
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
