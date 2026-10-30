@@ -43,7 +43,7 @@ const ACTS = {
   "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📅 Attorney Calendar Management Activity", lead: "Once done, hit Submit.", label: "📤 Submit"},
   // (Day 9's Buffer Time is off the deck: build/day-decks.cjs SKIP[9])
   "13:s1": {kind: "buffer"},
-  // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done; nextDay: the trainer's
+  // (simple: the trainee sees only "Mock Calls Ongoing", no Done: the trainer marks each trainee done; nextDay: the trainer's
   // Start Group Debrief also opens the next day's deck for the batch, its lesson and its first step: unlockNext)
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
@@ -100,7 +100,7 @@ function traineePanel(h){
   const a = h.a, d = mine(h.k), rel = released(h.k), w = what(a);
   // (the day's last slide, as Day 4's mock calls are: there is no next slide to go to, the debrief is the trainer's)
   const more = h.i < (FTDayDecks.list(h.day) || []).length - 1;
-  if(d && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
+  if((d || a.simple) && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
   // (simple: no Debrief Prep screen, no scorecard: the Done and the wait for the debrief, in the middle of the slide)
@@ -113,11 +113,10 @@ function traineePanel(h){
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
-  // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
+  // (in the middle of the slide: its heading only. No Done for the trainee while the mock calls and demos run: the
+  // trainer marks each trainee done on the tracker, then starts the group debrief)
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
-    <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
-    ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}
-    <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
+    ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}</div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
       `While waiting for your turn, practice using the <a href="${e(callSim(a.line))}" target="_blank" rel="noopener">${e(a.name)} Call Simulator</a>.`,
@@ -170,14 +169,16 @@ function confirmBox(h){
   m.addEventListener("click", ev => { if(ev.target === m) FTBuffer.cancel(); });
   document.body.appendChild(m); const b = m.querySelector(".btn-primary"); if(b) b.focus();
 }
-// a trainee who is done checks for the release while the slide is on screen, and moves on once it comes
+// a trainee who is done checks for the release while the slide is on screen, and moves on once it comes (on a mock call
+// or demo, simple, every trainee checks: the trainer marks them done, as they have no Done of their own)
 function watchRelease(){
   clearTimeout(M.timer);
-  const h = here(); if(!h || !trainee() || !mine(h.k) || released(h.k)) return;
+  const h = here(); if(!h || !trainee() || (!mine(h.k) && !h.a.simple) || released(h.k)) return;
   M.timer = setTimeout(async () => {
     const h2 = here(); if(!h2 || h2.k !== h.k || document.hidden){ if(h2 && h2.k === h.k) watchRelease(); return; }
+    const was = !!mine(h.k);
     await loadMine();
-    if(released(h.k)) await advance(h); else watchRelease();
+    if(released(h.k)) await advance(h); else if(!!mine(h.k) !== was) render(); else watchRelease();
   }, 20000);
 }
 async function advance(h){
@@ -342,7 +343,7 @@ function paint(){
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
   if(trainee() && (!M.rec || Date.now() - M.at > 20000)) loadMine().then(() => {
     const n = here(); if(!n || n.k !== h.k) return;
-    if(mine(h.k) && released(h.k)) return advance(h);
+    if((mine(h.k) || h.a.simple) && released(h.k)) return advance(h);
     if(sig() !== was) render(); else watchRelease();
   });
   else watchRelease();

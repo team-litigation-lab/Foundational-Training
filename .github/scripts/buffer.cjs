@@ -1,9 +1,9 @@
 // ✅ Buffer time, mock calls and demos (js/ft-buffer.js):
 //   - the worker: a trainee marks only their own Done (at the server's time), can't undo it or release the batch, and
 //     can't write another trainee's; the trainer writes the release, which the trainee reads;
-//   - every mock call and demo is Day 4's: a trainee sees only Mock Calls Ongoing (or Demos Ongoing) and Done, its
+//   - every mock call and demo is Day 4's: a trainee sees only Mock Calls Ongoing (or Demos Ongoing), no Done, its
 //     instructions and metrics on the preparation slide before it (Days 8 and 9); on Day 6's Calendar Management mock
-//     calls (s1b-2) Done is confirmed in a dialog (Cancel keeps them there), then ✅ Done and the wait for the debrief; a
+//     calls (s1b-2) the trainer marks a trainee done, and their slide shows ✅ Done and the wait for the debrief; a
 //     buffer slide (Day 9), Day 5's Monitoring Sheet update and a demo (Day 8) get their own screens; other slides get none;
 //   - the trainer, on the same slide: Completed X / N, Waiting / Done per trainee, Start Group Debrief locked until all
 //     are done, Mark done, the 🎉 banner, the release (the trainee's slide moves on by itself), 📋 Score into
@@ -104,7 +104,7 @@ async function workerChecks() {
     // the preparation slide before it (build/day-decks.cjs PREP), a card row and step of its own as on Day 4
     await open(t, 8, 's3'); await toPanel(t);
     const d8 = await panel(t);
-    if (!/Demos Ongoing/.test(d8) || !/Hit Done when you are done with your Demo\./.test(d8) || /Practice Buffer/.test(d8)) fail(`Day 8's intake packet demo isn't Day 4's Done panel: ${d8.slice(0, 120)}`);
+    if (!/Demos Ongoing/.test(d8) || /Hit Done/.test(d8) || (await t.$('.ftbf .ftbf-done')) || /Practice Buffer/.test(d8)) fail(`Day 8's intake packet demo isn't Day 4's Done panel: ${d8.slice(0, 120)}`);
     if (!(await t.evaluate(() => { const l = FTDayDecks.list(8), i = l.findIndex(s => s.id === 's3'); return i > 0 && l[i - 1].id === 's3p' && l[i - 1].row === l[i].row - 1; })))
       fail("Day 8's demo has no preparation slide, a row of its own, before it");
     // (and, as Day 4's, its debrief opens the next day: nextDay)
@@ -114,30 +114,25 @@ async function workerChecks() {
     // the preparation slide before it (build/day-decks.cjs PREP), a card row and step of its own as on Day 4
     await open(t, 9, 's3b'); await toPanel(t);
     const m9 = await panel(t);
-    if (!/Mock Calls Ongoing/.test(m9) || !/Hit Done when you are done with your Mock Call\./.test(m9) || /Practice Buffer/.test(m9)) fail(`Day 9's mock calls aren't Day 4's Done panel: ${m9.slice(0, 120)}`);
+    if (!/Mock Calls Ongoing/.test(m9) || /Hit Done/.test(m9) || (await t.$('.ftbf .ftbf-done')) || /Practice Buffer/.test(m9)) fail(`Day 9's mock calls aren't Day 4's Done panel: ${m9.slice(0, 120)}`);
     if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row - 1; })))
       fail("Day 9's mock calls have no preparation slide, a row of its own, before them");
 
-    // ☎ Day 6's Calendaring Activity, as Day 4's mock calls: Calendaring Activity Ongoing and Done → the dialog → ✅ Done, waiting for the debrief
+    // ☎ Day 6's Calendaring Activity, as Day 4's mock calls: Calendaring Activity Ongoing and no Done (the trainer marks it)
     await open(t, 6, 's1b-2');
-    if (!(await toPanel(t))) fail('Day 6\'s mock calls have no Done panel');
+    if (!(await toPanel(t))) fail('Day 6\'s mock calls have no panel');
     const p6 = await panel(t);
-    if (!/Calendaring Activity Ongoing/.test(p6) || !/Hit Done when you are done with your Calendaring Activity\./.test(p6) || /Mock Call|Practice Buffer/.test(p6)) fail(`Day 6's Calendaring Activity panel reads: ${p6.slice(0, 200)}`);
-    await t.click('.ftbf .ftbf-done'); await t.waitForTimeout(300);
-    const q = await t.evaluate(() => (document.querySelector('.ftbf-modal') || {}).innerText || '');
-    if (!/Have you completed your 1-on-1 Calendaring Activity with the trainer\?/.test(q) || !/Cancel/.test(q) || !/Yes, I’m Done/.test(q)) fail(`the confirmation reads: ${q}`);
-    await t.click('.ftbf-modal .btn-ghost'); await t.waitForTimeout(300);
-    if (await t.evaluate(() => !!document.querySelector('.ftbf-modal'))) fail('Cancel didn\'t close the confirmation');
-    if ((await get(t, 'buffer:' + tia) || { acts: {} }).acts['6:s1']) fail('Cancel marked the trainee done');
-    await t.click('.ftbf .ftbf-done'); await t.waitForTimeout(300); await t.click('.ftbf-modal .btn-primary'); await t.waitForTimeout(2200); await toPanel(t);
-    const w6 = await panel(t);
-    if (!/✅ Done/.test(w6) || !/Waiting for the group debrief/.test(w6) || /Debrief Prep/.test(w6)) fail(`Day 6's Done reads: ${w6.slice(0, 200)}`);
-    if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['6:s1']) fail('the trainee\'s Done wasn\'t saved');
+    if (!/Calendaring Activity Ongoing/.test(p6) || /Hit Done/.test(p6) || (await t.$('.ftbf .ftbf-done')) || /Mock Call|Practice Buffer/.test(p6)) fail(`Day 6's Calendaring Activity panel reads: ${p6.slice(0, 200)}`);
 
-    // 🧑‍🏫 the trainer's tracker on the same slide
+    // 🧑‍🏫 the trainer's tracker on the same slide: the trainer marks Tia done, and Tia's slide says so by itself
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });
     await open(a, 6, 's1b-2'); await a.waitForTimeout(1500);
     await a.evaluate(b => FTBuffer.batch(b), BATCH); await a.waitForTimeout(300);
+    await a.evaluate(id => FTBuffer.mark(id, true), tia); await a.waitForTimeout(1200);
+    if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['6:s1']) fail('the trainer\'s Mark done wasn\'t saved');
+    await t.waitForTimeout(23000); await toPanel(t);
+    const w6 = await panel(t);
+    if (!/✅ Done/.test(w6) || !/Waiting for the group debrief/.test(w6) || /Debrief Prep/.test(w6)) fail(`Day 6's Done, marked by the trainer, reads on the trainee's slide: ${w6.slice(0, 200)}`);
     const tr = () => a.evaluate(() => { const x = document.querySelector('.ftbf-tr'); return x ? { text: x.innerText, locked: x.querySelector('.ftbf-foot .ftbf-done').disabled, banner: (x.querySelector('.ftbf-banner') || {}).innerText || '' } : null; });
     let v = await tr();
     if (!v) fail('the trainer has no tracker on the mock call slide');
@@ -171,5 +166,5 @@ async function workerChecks() {
   try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Calendaring Activity Ongoing and its confirmation; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
+  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Calendaring Activity Ongoing with no Done, marked by the trainer; the trainer\'s tracker, its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
 })();
