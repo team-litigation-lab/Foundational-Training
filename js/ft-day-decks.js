@@ -533,8 +533,9 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   // every day's deck ends with ✅ End of Module (back to 📚 Dashboard): it never runs on into the next day's deck, even
   // where the lesson goes on tomorrow; the trainee opens that day from the Dashboard
   const deck = inCardOrder(Number(d.day), out);
-  // every day closes on its own end slide (✅ End of Module → 📚 Dashboard); no slide names the day
-  deck.push({id: "end-day", h: "End of today’s training", divider: true, end: true, html: ""});
+  // every day closes on its own end slide (✅ End of Module → 📚 Dashboard); no slide names the day (a day that closes a
+  // part of its lesson's card says so: PART_END)
+  deck.push({id: "end-day", h: PART_END[d.day] ? `End of Part ${PART_END[d.day]}` : "End of today’s training", divider: true, end: true, html: ""});
   return deck;
 };
 /* 📋 The deck runs in the day's own order, the order of its card: each of the card's rows is a stop, in turn. A row that is
@@ -601,7 +602,13 @@ const HANDOUTS = {1: {items: [
   7: {items: [
   ["Intake Documents to Support the Claim", "https://drive.google.com/file/d/1DenG0yNjuWZe9Kc3e5zAnZJOjP4yQB6X/view"],
   ["Intake Packet", "https://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view"],
-  ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]}};
+  ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]},
+  // Day 10: the Claims Specialist breakout, an individual activity (Training Guide: "Digital Handouts for Breakout Session
+  // (Individual Activity)")
+  10: {solo: true, items: [
+  ["Ridesharing Companies", "https://drive.google.com/file/d/1T10rZY_PL8krUK7Djzm-oMaKxI4kE-Q9/view"],
+  ["Dropped Cases", "https://drive.google.com/file/d/1N57yPn1zaPnGU0t-wY5cT01IB-ovZmOa/view"],
+  ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]}};
 function handoutsSlide(h){
   // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
   // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
@@ -615,10 +622,12 @@ function handoutsSlide(h){
     : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
   // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
   return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
-    <div class="ftdd-ho-head"><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : "🔓 Unlocked: open your group’s handout"}</p></div>
+    <div class="ftdd-ho-head"><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : h.solo ? "🔓 Unlocked: open each handout" : "🔓 Unlocked: open your group’s handout"}</p></div>
     <div class="ftdd-ho-body">
-      <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps"><li>Join your breakout group.</li><li>Open your group's handout.</li>
-        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li></ol>
+      <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
+        ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Update your Training Progress Monitoring Sheet.</li>"
+        : `<li>Join your breakout group.</li><li>Open your group's handout.</li>
+        <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li>`}</ol>
         </div>
       ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert style="grid-template-rows:repeat(${h.items.length},minmax(0,1fr))">${cards}</div>
         <div class="ftd1-lock ftlk-over" role="alert"><b>🔒 Handouts locked</b><span>Your trainer unlocks them when the breakout session starts.</span></div></div>`
@@ -637,9 +646,12 @@ function launchSlide(s){
     <button type="button" class="btn ftdd-next ftdd-dv-go" onclick="${c ? rowGo(c, r) : ""}">${label}</button></div>`;
 }
 // 🔀 the end of a day's deck: today's training is done, ✅ End of Module back to 📚 Dashboard (never on into the next day)
-function dividerSlide(){
-  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ End of today’s training</p>
-    <h2 class="ftdd-dv-h">Today’s training is complete</h2>
+// (Day 10 closes Part 1 of the Opening Claims card: LESSON_CARDS[7])
+const PART_END = {10: 1};
+function dividerSlide(n){
+  const part = PART_END[Number(n)];
+  return `<div class="ftdd-divider"><p class="ftdd-dv-done">✅ ${part ? `End of Part ${part}` : "End of today’s training"}</p>
+    <h2 class="ftdd-dv-h">${part ? `Part ${part} is complete` : "Today’s training is complete"}</h2>
     <p class="ftdd-dv-sub">Update your Training Progress Monitoring Sheet before the end of your shift.</p>
     <button type="button" class="btn ftdd-next ftdd-dv-go ft-endmod" onclick="goto('modules')" title="Back to the 📚 Dashboard">✅ End of Module</button></div>`;
 }
@@ -724,6 +736,9 @@ function slideActions(s, info, body, i){
   if(has(/attorney calendar management/i) && root.FTCalWeek) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="FTCalWeek.open()">📅 Standard Training - Calendaring Activity</button>`);
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
+  // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management
+  // Activity track, in its own tab: js/ft-simulators.js ftsCalsim)
+  if(/^Attorney Calendar Management Activity/i.test(h) && root.ftsCalsim) out.push(`<button type="button" class="btn btn-ghost btn-sm" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="ftsCalsim('activity')">📅 Standard Training - Calendar Management Activity</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
@@ -1216,9 +1231,6 @@ function calDates(){
   const A = root.FTCalCore && FTCalCore.act; if(!A) return;
   const a = calAnchor(), k = a ? A.weeksOf(a) : 0;
   spans.forEach(x => { x.classList.toggle("ftdd-cal-wait", !a); if(a) x.textContent = A.longDate(A.shiftIso(x.getAttribute("data-cal-date"), k)); });
-  // (the note in trainer view only: 👁 Trainee view shows the slide as a trainee reads it)
-  if(isAdminView()) document.querySelectorAll("main.main-ftdd .ftdd-calsim[data-calsim-activity]").forEach(b => {
-    if(!b.querySelector(".ftdd-cal-note")) b.insertAdjacentHTML("beforeend", '<span class="ftdd-cal-note">Dates shown for a batch starting this week.</span>'); });
 }
 const __render = root.render;
 root.render = function(){
@@ -1338,6 +1350,7 @@ const instructionOnlyDays = () => { const s = discussionDays(); return ((root.FT
 const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do", interactive: "Interactive activity", homework: "Homework",
   watch: "Watch & Do", assessment: "Assessment", mock: "Mock calls", demo: "Demo", shadow: "Shadowing", buffer: "Buffer",
   listen: "Call listening", trainer: "From your trainer"};
+// (where a lesson's file goes; a lesson handed in on the platform names its own: its card's submit)
 const SUBMIT = "Assessments › Activities subfolder";
 // (a mock call or demo has two rows, as Day 4's: its preparation slide, "<id>p", then its Done slide: build/day-decks.cjs PREP)
 const LESSON_CARDS = {
@@ -1405,7 +1418,8 @@ const LESSON_CARDS = {
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
     tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
-    takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
+    // (no screenshots or upload: the activity is handed in as its 📅 Calendar Activity Check, sent to the trainer from there)
+    takeaways: [], file: "Attorney Calendar Management Activity: every event entered on the 📅 Calendar Activity Check", submit: "📅 Calendar Activity Check › 📤 Submit to my trainer"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
       // Part 1 in the trainers' order: 💬 the classroom discussion (▶ Start Training), the breakout's three digital handouts (HANDOUTS[7]), ✍️ the
@@ -1443,10 +1457,17 @@ const LESSON_CARDS = {
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
     rows: [
-      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3; and no AI discussion
-      // video on the deck)
-      {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c", lead: false},
-      {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
+      // Part 1 (Day 10): 💬 the discussion deck, its 🎬 Digital Handouts (HANDOUTS[10]) and ✍️ Knowledge Check, then the
+      // opening-claims slide in three (what to share, the sample recordings, the sample documents: build/day-decks.cjs
+      // ROWS[10]) and the afternoon's videos; the day's deck closes on ✅ End of Part 1 (PART_END)
+      {t: "Claims Specialist Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
+      {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", run: "ftVideoOrAsk(7)"},
+      {t: "Knowledge Check: Process Questions", sub: "Claims Specialist · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(7)"},
+      {t: "Additional Information: What to Share", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer", k: "read", d: 10, s: "s1c"},
+      {t: "Sample Recordings: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims", k: "listen", d: 10, s: "s1e"},
+      {t: "Sample Documents", sub: "Insurance communication-related documents", k: "read", d: 10, s: "s1d"},
+      {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
+      // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then shadowing and Day 12
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
       {t: "Shadowing", time: "PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
@@ -1680,7 +1701,7 @@ const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: 
 function standardRows(n, c, lid, first, title, rows){
   const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
   const lead = []; let i = 0;
-  // (lead: false keeps a Read & Do row after the classroom discussion, Day 10's Opening Claims)
+  // (lead: false keeps a Read & Do row after the classroom discussion)
   while(i < rows.length && rows[i].lead !== false && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
   const body = rows.slice(i), tail = [];
   while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
@@ -1734,7 +1755,7 @@ function dayCard(n, ex){
         ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
-        ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}
+        ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
         ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
       </aside>
     </div>
@@ -1810,7 +1831,7 @@ const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
 function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
-  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Open ↗</small></span></button>`
+  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -2469,13 +2490,15 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !
 @media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
+/* (its two links side by side: the Calendar Simulator here, then the activity on the Main Portal) */
+.ft-body .ftdd-calsim > .btn + .btn{margin-left:8px;}
 /* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */
 .ft-body .ftdd-cal-date.ftdd-cal-wait{visibility:hidden;}
-.ft-body .ftdd-calsim .ftdd-cal-note{display:inline-block;margin:0 0 0 12px;font-size:13px;color:#6B7280;font-style:italic;}
 @media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
+.ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
@@ -2887,6 +2910,9 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
+.ftdd-sheet .shots.ftdd-shot-wide{grid-template-columns:minmax(0,1fr) !important;}   /* (one sample, large, across the slide: Day 5's Deposition Meeting) */
+.ftdd-sheet .shots.ftdd-shot-wide figure{max-width:1000px;width:100%;margin:0 auto !important;}
+.ftdd-sheet .shots.ftdd-shot-wide a{height:min(58vh,560px) !important;}
 /* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
    viewer below; then one big link to the document and its ⬇ Download */
 .ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),300px));justify-content:center;gap:18px;margin:10px auto 14px;}
@@ -2989,7 +3015,7 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:30vh !impo
   main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit > .shots:only-child a{height:40vh !important;}
   main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-wide .shots a{height:26vh !important;min-height:150px;}
 }
-main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:center !important;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-note{text-align:left !important;}
 /* the help line in a rounded navy-edged box at the left; the black banner and the two profiles at the right */
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-pair-help{grid-template-columns:minmax(0,0.8fr) minmax(0,1.35fr);}
 main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-help{font:800 22px/1.4 'Poppins','Inter',sans-serif !important;border:10px solid #1E2340;border-radius:40px;padding:26px 30px !important;background:#fff;margin:0 !important;}
@@ -3005,12 +3031,18 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !imp
 }
 /* a Note's 💡 sits in its own space at the left of the bar, never over the word */
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
-/* every slide's content centred on its sheet: headings, heading bars, lines, notes and the name to copy; a run of bullet
-   points (ftdd-li-run, visual) is one block centred as a whole, its bullets lined up on the left */
-main.main-ftdd .ftdd-sheet > :is(p, h1, h2, h3, h4, h5){text-align:center;}
-main.main-ftdd .ftdd-sheet > p.ftdd-name{margin-left:auto;margin-right:auto;width:fit-content;max-width:100%;}
-main.main-ftdd .ftdd-sheet > .ftdd-li-run{width:fit-content;max-width:100%;margin:6px auto;text-align:left;}
-main.main-ftdd .ftdd-sheet > .ftdd-li-run > p.li{text-align:left;}
+/* every deck's body text aligned on the left, so its lines, bullets, notes and the name to copy start on one edge; the
+   headings, heading bars, videos, screenshots, tiles and embeds stay centred. The standard across the Activity decks: it
+   overrides the homework (ftdd-hw), Days 6–15 (ftdd-d615) and Day 1's SA (ftdd-sa) sheets, which had centred their text */
+main.main-ftdd .ftdd-sheet > :is(h1, h2, h3, h4, h5), main.main-ftdd .ftdd-sheet > p.ftdd-hbar:not(.ftdd-callout){text-align:center;}
+main.main-ftdd .ftdd-sheet :is(p, li, dd, dt):not(.ftdd-hbar), main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{text-align:left !important;}
+main.main-ftdd .ftdd-sheet > p.ftdd-name{margin-left:0;margin-right:auto;width:fit-content;max-width:100%;}
+main.main-ftdd .ftdd-sheet > .ftdd-li-run{width:auto;max-width:100%;margin:6px 0;text-align:left;}
+/* (centred blocks: a line of text takes the sheet's full width, so it starts at the left edge) */
+main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(p:not(.ftdd-hbar), p.ftdd-callout, ul, ol, dl, .ftdd-li-run){align-self:stretch;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 > p.ftdd-name{align-self:flex-start;}
+main.main-ftdd .ftdd-sheet:is(.ftdd-d615, .ftdd-hw) :is(ul, ol){display:block;margin-left:0;margin-right:0;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 p.li{align-self:stretch;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
 /* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
 main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}

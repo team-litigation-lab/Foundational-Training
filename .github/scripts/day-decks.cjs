@@ -90,8 +90,17 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     || !/for travel to court\./.test(its[1]) || (its[2].match(/class="ftdd-cal-partbox"/g) || []).length !== 4 || !/➢ Return Travel to Seattle/.test(its[2])
     || dated.length !== 12 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
     fail(`Day 5's activity isn't its Instructions in two cards, then its ten cards (8 on a slide of its own) with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
-  if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || !/ft\/day5\/img\/image45\.png/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder, or lost its sample picture, drawn picture or Calendar Activity Check');
+  if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || !/ft\/day5\/img\/sample-deposition\.png/.test(sl(5, 's3b')) || /image45\.png/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder, or lost its sample picture, drawn picture or Calendar Activity Check');
   if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
+  // 📅 the same activity on the Main Portal's Google Calendar Simulator (its Standard Training - Calendar Management Activity
+  // track, ftsCalsim('activity')): beside the Calendar Simulator's link on every slide of the items, and a tile beside the Check's
+  const portal = /onclick="window\.ftsCalsim \? ftsCalsim\('activity'\) : goto\('simulators'\)">(?:<span class="ftdd-tile-ic">📅<\/span><span class="ftdd-tile-t"><b>)?(?:📅 )?Standard Training - Calendar Management Activity</;
+  if ([...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => !portal.test(h))) fail('Day 5\'s activity slides don\'t all link the Portal\'s Standard Training - Calendar Management Activity');
+  // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
+  // Tool link names the Portal card (Standard Training - Mock Call)
+  const d6 = sl(6, 's1');
+  if (/screenshot/i.test(d6) || !/Make sure to be specific with your event titles\./.test(d6) || !/Standard Training - Mock Call<\/p>\n<p><a href="[^"]*calsim\.html\?program=FT&track=standard"/.test(d6))
+    fail('Day 6\'s reminders still ask for screenshots, lost the event titles line, or its Calendaring Tool link doesn\'t name Standard Training - Mock Call');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
 }
@@ -268,7 +277,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || { dataset: {} }).dataset.day) !== '5') fail('a trainee can\'t open Day 5\'s instructions');
   // 📅 its activity's cards show the dates of the trainee's own weeks: a batch that started Mon Oct 26, 2026 (B102626) has its
   // Day 5 that week, so its dates start on Mon Nov 2 (the anchor, saved once in their calsim record); a Zoom link's numbers
-  // are not a date. A trainer sees the dates of a batch starting this week, and a line saying so (a trainee never sees it)
+  // are not a date. A trainer sees the dates of a batch starting this week, with no line under them saying so
   const batch0 = await page.evaluate(() => state.traineeBatch);
   await put('calsim:' + id, null);
   const calAt = () => page.evaluate(() => { const ds = [...document.querySelectorAll('.ftdd-sheet [data-cal-date]')];
@@ -281,7 +290,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (calRec) fail(`the deck wrote the trainee's calendar record: ${JSON.stringify(calRec)}`);
   await page.evaluate(() => { state.isAdmin = true; render(); }); await page.waitForTimeout(800);
   const calA = await calAt();
-  if (!calA.want || calA.d1 !== calA.want || calA.note !== 1) fail(`a trainer doesn't see Day 5's activity at this week's batch's dates, with its line: ${JSON.stringify(calA)}`);
+  if (!calA.want || calA.d1 !== calA.want || calA.note) fail(`a trainer doesn't see Day 5's activity at this week's batch's dates (with no note line under it): ${JSON.stringify(calA)}`);
   await page.evaluate(b => { state.isAdmin = false; state.traineeBatch = b; }, batch0);
   // an admin opens any day too
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);

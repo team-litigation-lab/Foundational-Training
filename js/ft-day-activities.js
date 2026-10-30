@@ -89,7 +89,7 @@ const DAYS = [
     {t:"Buffer Time for Reception Mock Calls", kind:"Buffer", at:"session", id:"reception"},
     {t:"Classroom Discussion on Appointment Setting and Calendar Management", kind:"Discussion", at:"room"},
     {t:"Attorney Calendar Management Activity on the 📅 Calendaring Simulators (done there, graded through the 📅 Calendar Activity Check)", kind:"Activity", at:"tool", id:"calactivity"},
-    {t:"Attorney Calendar Management Activity (each event checked on the 📅 Calendar Activity Check before the upload)", kind:"Activity", at:"tool", id:"calcheck"},
+    {t:"Attorney Calendar Management Activity (each event entered on the 📅 Calendar Activity Check and submitted there)", kind:"Activity", at:"tool", id:"calcheck"},
     {t:"Standard Training - Calendaring Activity (the Attorney Calendar Management Activity booked on next week’s calendar)", kind:"Activity", at:"tool", id:"calweek"}
   ]},
   {day:6, role:"Calendar Management Training", lessons:[5], items:[
