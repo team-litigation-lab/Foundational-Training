@@ -1675,7 +1675,7 @@ const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: 
 const DAY_OBJECTIVE = {
   1: "Understand the VA’s role in a US personal injury firm (jurisdiction, VA vs. in-house, the firm’s cultural values) and install the SA plug-ins you will use every day.",
   2: "Speak for the firm with confidence: use the common PI and auto liability terms, know what each party may be told, and when and how to escalate.",
-  3: "Follow a PI case from intake to settlement, and handle a reception call: triage the caller, check who may be told what, and capture the call’s key details.",
+  3: "Follow a PI case from intake to settlement, and triage a reception call, capturing its key details.",
   4: "Take a reception call from greeting to transfer on your own, scored on the Reception Mock Calls Metrics.",
   5: "Manage an attorney’s calendar: book every event by the scheduling rules, in the right time zone, with the caller’s details complete.",
   6: "Set appointments on a live mock call, every booking checked against the scheduling rules.",
@@ -1756,7 +1756,7 @@ function dayCard(n, ex){
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
         ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
         ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
-        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
+        ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul class="ftlc-tk">${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
         ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
         ${""/* no ✍️ Knowledge Check button on the card: the day goes in the deck's order, and its Process Questions are their own stop */}
@@ -2429,6 +2429,8 @@ main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static
 .ftlc-h2{margin:12px 0 4px !important;font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#B5651F;}
 .ftlc-focus ul{margin:0;padding-left:18px;display:grid;gap:3px;}
 .ftlc-obj{font-weight:600;color:#1B1E2E;}
+/* (the key takeaways are a few words each: two to a row, so the objective above them doesn't shrink the card) */
+.ftlc-focus ul.ftlc-tk{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;}
 .ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
