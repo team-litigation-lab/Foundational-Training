@@ -30,10 +30,13 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // (Day 5's Monitoring Sheet slide too: items #10–11 close Reception Part 2, Day 4's s2m, js/ft-day-decks.js LESSON_CARDS[3])
   5: ["s1", "s2"], 13: ["s2"],
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
-  8: ["s2"]};
+  // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
+  8: ["s2", "s3b"],
+  // (Day 9's Buffer Time for the Intake demo is off the deck: Part 3 opens on the Intake Mock Calls)
+  9: ["s1"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
-  // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
+  // (Day 8's afternoon is the demo; Atty. Sandy's video is off the deck: ROWS[8].s3)
   // (Day 2's Softphones and PPTs are a classroom activity, not homework: js/ft-day-decks.js LESSON_CARDS[2])
   2: {s2: "Common Terms Used & Auto Liability Insurance", s4: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"},
   // (Day 3's first slide: the sample recordings and SOP, its card's 🎧 Call Listening Sessions row; "Call Listening" in its
@@ -220,7 +223,8 @@ const TRIM = {1: {reading: html => {
   const tag = re => { const m = src.match(re); if(!m) throw new Error("Day 1's Installation of SA lost a link: " + re); return m[0]; };
   // the link with its own words: "Link: SA Document Handler/Launcher", and the knowledge base pages written out
   const handler = `<p class="ftdd-sa-link">Link: ${tag(/<a [^>]*19eFGdoQNXJo2iE46M2G8s2bMJNEIeO8k[^>]*>/)}SA Document Handler/Launcher</a></p>\n`;
-  const url = re => `<p class="url-list">${tag(new RegExp(`<a [^>]*${re}[^>]*>[^<]*<\\/a>`))}</p>\n`;
+  // (the Knowledge Base links under their screenshots, big and blue: .ftdd-sa-kb)
+  const url = re => `<p class="url-list ftdd-sa-kb">${tag(new RegExp(`<a [^>]*${re}[^>]*>[^<]*<\\/a>`))}</p>\n`;
   const win = url("71237633"), mac = url("876020096");
   const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
     // (?v: the screenshots were redrawn 3× sharper, the address changes so browsers fetch them anew)
@@ -240,8 +244,8 @@ const TRIM = {1: {reading: html => {
       `<div class="ftdd-sa-file">\n${img(sa(0), "SADocumentHandler_2023")}${img(sa(1), "SADocumentHandler_2023.rar")}${handler}</div>\n`, strip(2, 1), " ftdd-sa-pair-first")),
       // (its screenshots 2–5 follow two to a page, so every screenshot is drawn big)
       unit(strip(3, 2, 2)), unit(strip(5, 2, 4))) +
-    step(unit(`<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n${win}` + strip(7, 2, null)),
-      unit(`<p>For Mac Users, access the link and download plugin on your desktop. Follow the steps indicated below the link on this page:</p>\n${mac}` + strip(9, 2, null))) +
+    step(unit(`<p>2. For Windows Users, access the link and download the 2nd hyperlink to install Microsoft Word, Excel, and Outlook plugins on your desktop. Follow steps 2-7 as indicated below the list of hyperlinks on this page:</p>\n` + strip(7, 2, null) + win),
+      unit(`<p>For Mac Users, access the link and download plugin on your desktop. Follow the steps indicated below the link on this page:</p>\n` + strip(9, 2, null) + mac)) +
     step(unit(pair(`<p>3. Once you have downloaded the Microsoft Word, Excel, and Outlook plugins, double-click the "Set Up" application to install.</p>\n` + strip(11, 1, null),
         `<p class="ftdd-sa-note"><b>Note: This process may take a little longer to complete the download and installation.</b></p>\n`, " ftdd-sa-pair-wide")),
       // (its screenshots 3–7: three, then two, to a page)
@@ -461,19 +465,23 @@ s2: html => {
 // ready and the guide's Additional Reminder for Trainees, before its Facilitator's Guide (8:s3-1) and the Demo Metrics
 // Day 8's Topic 1 (Intake Process): the guide's lines as three numbered steps; its two videos as cards side by side (their
 // preview, a click playing it bigger in the pop-up viewer: data-card, js/ft-day-decks.js visual); the item #15 update
-// opening the trainee's own Monitoring Sheet; then the Knowledge Base articles in a card of their own
+// opening the trainee's own Monitoring Sheet; then the Knowledge Base articles in a card of their own (off the decks for now,
+// as every Knowledge Base box is). Topic 2's naming-convention reference sits between its steps 3 and 4
 8: {s1: html => {
   const lead = /<p>After completing your spelling &amp; typing tests, kindly proceed right away to work on these sets of tasks for today’s training session\.\s*Thank you\.<\/p>\n/;
   const task1 = /<p>Task 1 - Please watch these two videos:<\/p>\n<p>A\. Intake Process Overview<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>B\. Saving intake documents and updating fields in the Intake Tab<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>Task 2 - Update item #15 in your monitoring sheet\.<\/p>\n/;
   const kb = /<h4>📚 In the Knowledge Base<\/h4>\n([^]*?)(?=<p><b>Topic 2:|$)/;
-  if(!lead.test(html) || !task1.test(html) || !kb.test(html)) throw new Error("Day 8's Topic 1 is no longer where the build looks for it");
+  // (the naming-convention line and its reference, under step 2 in the day file, go between steps 3 and 4)
+  const naming = /(<p>Please don’t forget to rename each extracted document[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-fit data-kind="doc" data-title="Naming convention reference \(PDF\)"[^\n]*<\/p>)\n(<div class="ftdd-step"><span class="ftdd-step-n">3<\/span>[^\n]*\n<p>Note: For your completed Intake Worksheet[^\n]*<\/p>)\n(<div class="ftdd-step ftdd-step-check"><span class="ftdd-step-n">4<\/span>)/;
+  if(!lead.test(html) || !task1.test(html) || !kb.test(html) || !naming.test(html)) throw new Error("Day 8's Topic 1 and 2 are no longer where the build looks for them");
   const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
   const mon = `<a href="#/monitoring" class="ftdd-monlink" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
   return html.replace(lead, "").replace(task1, (m, a, b) =>
       // (no numbered instructions over the videos: the two videos, then the Monitoring Sheet's item)
       `${cardOf(a)}\n${cardOf(b)}\n` +
       `<p>Update item #15 in your ${mon}.</p>\n`)
-    .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`);
+    .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`)
+    .replace(naming, (m, line, link, step3, step4) => `${step3}\n${line}\n${link}\n${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
@@ -839,15 +847,16 @@ const ROWS = {
       {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone & Submit", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
-    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, then the videos to watch while waiting for a turn
+    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, the mock calls, then the videos
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
     // (the instructions open on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
     s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [["<p><b>☎ Mock Calls: how to access", MOCK_METRICS_CAL]]},
       {id: "s1m", h: "Entire Day: Calendar Management Mock Calls Metrics", parts: [[MOCK_METRICS_CAL, null]]},
-      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]},
       // the mock calls themselves, as Day 4's: a trainee's screen is only Mock Calls Ongoing and Done (js/ft-buffer.js "6:s1b-2"
       // simple); the line is the trainer's, over the tracker ("s1b-2": it continues s1b's card row)
-      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []}]
+      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []},
+      // the Calendar Management Training Videos after the mock calls (the card puts them last, after the Mock Call Scenarios)
+      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]}]
   },
   7: {
     // (the classroom discussion's own slide is off, TRIM[7]: what is left of s1 is the Intake Scenario Exercise, off the decks)
@@ -869,15 +878,15 @@ const ROWS = {
     // slides: the SA demonstration with its video in the slide, the Intake Mock Call Activity with the sample intake forms,
     // and the Prototype CMS and the Call Simulator. (The demo tutorial's own section, s2, is off the deck: SKIP[8])
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
-      // (the naming convention and its reference are on Topic 2's slide, under its step 2: the day file; the additional
+      // (the naming convention and its reference are on Topic 2's slide, between its steps 3 and 4: TRIM[8].s1; the additional
       // intake documents are a slide of their own)
       {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]]},
-      {id: "s1c", h: "AM: Additional Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
+      {id: "s1c", h: "AM: Other Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
       {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
       {id: "s1g", h: "AM: Intake Mock Call: the Prototype CMS & the Call Simulator", parts: [["<p>You may also explore the Prototype CMS", null]]}],
-    // the demo (TRIM[8].s3), then Atty. Sandy Van's MVC intake-call video, a slide of its own after it
+    // the demo (TRIM[8].s3); Atty. Sandy Van's MVC intake-call video after it, s3b, is off the deck (SKIP[8])
     s3: [{id: "s3", parts: [[null, "<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>"]]},
       {id: "s3b", h: "PM: Atty. Sandy’s Video: Intake Calling (MVC)", parts: [["<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>", null]]}]
   },
@@ -1074,7 +1083,7 @@ for(let n = 1; n <= 16; n++){
     }
     // one slide per card row (ROWS above)
     const rows = (ROWS[n] || {})[s.id];
-    if(rows){ cut.add(s.id); slides.push(...cutRows(n, s.id, h, html, rows, carry)); continue; }
+    if(rows){ cut.add(s.id); slides.push(...cutRows(n, s.id, h, html, rows, carry).filter(x => !(SKIP[n] || []).includes(x.id))); continue; }
     slides.push({id: s.id, h, html});
   }
   if(Object.keys(carry).length) throw new Error(`Day ${n}: a fragment was meant for ${Object.keys(carry).join(", ")}, which the day doesn't have after it`);
