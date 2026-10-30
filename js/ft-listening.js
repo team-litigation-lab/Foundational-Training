@@ -141,6 +141,8 @@ window.render = function(){
 };
 window.FTListen = {
   save: saveRec, sets: SETS, setLive, done,
+  // the trainer's titles and links, for the Activity deck's Call Listening slide (js/ft-day-decks.js listenSlide)
+  loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
   set(sid){ R.set = sid; render(); },
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },
