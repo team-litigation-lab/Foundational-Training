@@ -155,7 +155,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
       await page.evaluate(() => FTDayDecks.open(1, FTDayDecks.list(1).findIndex(s => s.launch && /ftVideoOrAsk/.test(s.launch.run || '')))); await page.waitForTimeout(800);
       v = await page.evaluate(() => ({ locked: !!document.querySelector('.ftdd-ho-locked .ftdd-ho-list.ftlk > .ftd1-lock'), links: document.querySelectorAll('a.ftdd-ho[href]').length, badge: (document.querySelector('.ftdd-ho-when') || {}).textContent || '' }));
       if (want && (!v.locked || v.links)) fail(`Day 1's handouts aren't locked and blurred before Handouts and Videos: ${JSON.stringify(v)}`);
-      if (!want && (v.locked || v.links !== 5 || !/Unlocked/.test(v.badge))) fail(`Day 1's handouts didn't open with Handouts and Videos unlocked: ${JSON.stringify(v)}`);
+      if (!want && (v.locked || v.links !== 5 || v.badge)) fail(`Day 1's handouts didn't open (with no badge over them) with Handouts and Videos unlocked: ${JSON.stringify(v)}`);
     }
     await put(page, 'settings:day1steps', d1Was || { all: 8, batches: {} });
     // … and a later lesson's Digital Handouts open with their own segment (the trainer's 🔓 Unlock), not only with its video
