@@ -446,23 +446,33 @@ function visual(html){
 /* The guide hangs two activities off one heading — "Classroom Discussion on Intake Specialist Training and Call
    Listening" — and they are two different things to do. The deck separates them: the discussion keeps the slide
    (and its lesson button), and the Call Listening gets a slide of its own, with the day's recordings and the log. */
+let listenLoading = false;
 function listenSlide(day, time){
   const sets = (root.FTListen && FTListen.sets) || [];
   const set = sets.find(x => Number(x.day) === Number(day)); if(!set) return null;
+  // (the trainer's links for its recordings: read once, and the slide is drawn again with them)
+  if(FTListen.ready && !FTListen.ready() && FTListen.loadSets && !listenLoading){ listenLoading = true; FTListen.loadSets().then(() => { if(state.view === "daydeck") render(); }); }
   const live = FTListen.setLive(set.id);
   return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
     `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
      <p>There is no right answer to find — the log is what your trainer reads, and it saves you writing the calls up anywhere else.</p>
-     ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+     ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder, live.recs) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
    calls; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
-   A Drive recording plays in the slide once its file's id is in (id); until then its card opens the folder. */
+   A recording plays in the slide once it has a link: its file's id here (id), or the link a trainer gives it in Admin →
+   🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a Drive file plays in Drive's
+   player, an audio file in the browser's); until then its card opens the folder. */
 const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
   "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"}))};
-function listenCards(cards, folder){
+const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
+const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
+function listenCards(cards, folder, recs){
+  // the trainer's link for each recording, where the card has none of its own
+  cards = cards.map((c, i) => { const u = ((recs || [])[i] || {}).url || "";
+    return c.id || c.src || !u ? c : Object.assign({}, c, {id: driveId(u), src: driveId(u) ? "" : audioUrl(u)}); });
   // (numbered within their kind: Sample call 1–10)
-  return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
+  return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card${c.id || c.src ? " is-live" : ""}"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
     ${c.src ? `<audio controls preload="none" src="${e(c.src)}"></audio>`
       : c.id ? `<div class="ftln-aud"><iframe src="https://drive.google.com/file/d/${e(c.id)}/preview" title="${e(c.t)}" loading="lazy" allow="autoplay"></iframe></div>`
       : folder ? `<a class="btn btn-ghost btn-sm" href="${e(folder)}" target="_blank" rel="noopener noreferrer">▶ Play it from the folder</a>` : ""}</div>`).join("")}</div>`;
@@ -2585,15 +2595,19 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdt-yes i,.ft-body .ftdt-no i{font-style:normal;background:#fff;border-radius:7px;padding:4px 7px;font-size:13px;}
 .ft-body .ftdt-tag{margin:6px 0 0;text-align:right;font:700 12px/1.2 'Inter',sans-serif;color:#5B6178;}
 /* 🎧 the recordings on a Call Listening slide, a card each (LISTEN_CARDS) */
-main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;color:#C2410C !important;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;background:#1E2340;border-color:#1E2340;font-size:14px;font-weight:700;text-decoration:none;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn:hover{background:#E8590C;border-color:#E8590C;}
+main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{color:#F4B77A !important;} main.main-ftdd .ftdd-sheet .ftln-card b{color:#fff !important;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;font-size:14px;text-decoration:none;}
 main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:12px;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-h b{font-size:16px;}
 .ft-body .ftln-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
-.ft-body .ftln-card{border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;padding:10px 12px;background:#fff;box-shadow:0 2px 6px rgba(30,35,64,.10);display:flex;flex-direction:column;gap:6px;}
-.ft-body .ftln-card b{font-size:15px;color:#1E2340;} .ft-body .ftln-card audio{width:100%;}
-.ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#E8590C;}
-.ft-body .ftln-tag{color:#7A5A2E;text-transform:none;letter-spacing:0;} .ft-body .ftln-aud{height:60px;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
+/* (navy cards on the white sheet, the title white and the kind orange, so each recording stands out) */
+.ft-body .ftln-card{border:1px solid #1E2340;border-left:5px solid #DB8437;border-radius:12px;padding:10px 12px;background:#262B45;display:flex;flex-direction:column;gap:6px;
+  box-shadow:0 4px 12px rgba(30,35,64,.22);}
+.ft-body .ftln-card b{font-size:15px;color:#fff;} .ft-body .ftln-card audio{width:100%;}
+.ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;}
+.ft-body .ftln-tag{color:#FFE2C2;text-transform:none;letter-spacing:0;}
+.ft-body .ftln-aud{height:60px;border-radius:8px;overflow:hidden;background:#fff;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
+.ft-body .ftln-card .btn{background:#DB8437;border-color:#DB8437;font-weight:700;} .ft-body .ftln-card .btn:hover{background:#C9742B;border-color:#C9742B;}
 /* (its cells 1pt smaller than the slide's text, main.main-ftdd .ftdd-sheet td) */
 main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt);}
 .ft-body table.ftdd-terms .ftdd-terms-img{display:block;margin-top:8px;}
