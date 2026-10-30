@@ -490,7 +490,7 @@ s2: html => {
   const lead = /<p>After completing your spelling &amp; typing tests, kindly proceed right away to work on these sets of tasks for today’s training session\.\s*Thank you\.<\/p>\n/;
   const task1 = /<p>Task 1 - Please watch these two videos:<\/p>\n<p>A\. Intake Process Overview<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>B\. Saving intake documents and updating fields in the Intake Tab<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>Task 2 - Update item #15 in your monitoring sheet\.<\/p>\n/;
   const kb = /<h4>📚 In the Knowledge Base<\/h4>\n([^]*?)(?=<p><b>Topic 2:|$)/;
-  // (the naming-convention line and its reference, under step 2 in the day file, go between steps 3 and 4)
+  // (the naming-convention reference, under step 2 in the day file, goes between steps 3 and 4; the line over it is dropped)
   const naming = /(<p>Please don’t forget to rename each extracted document[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-fit data-kind="doc" data-title="Naming convention reference \(PDF\)"[^\n]*<\/p>)\n(<div class="ftdd-step"><span class="ftdd-step-n">3<\/span>[^\n]*\n<p>Note: For your completed Intake Worksheet[^\n]*<\/p>)\n(<div class="ftdd-step ftdd-step-check"><span class="ftdd-step-n">4<\/span>)/;
   if(!lead.test(html) || !task1.test(html) || !kb.test(html) || !naming.test(html)) throw new Error("Day 8's Topic 1 and 2 are no longer where the build looks for them");
   const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
@@ -500,7 +500,8 @@ s2: html => {
       `${cardOf(a)}\n${cardOf(b)}\n` +
       `<p>Update item #15 in your ${mon}.</p>\n`)
     .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`)
-    .replace(naming, (m, line, link, step3, step4) => `${step3}\n${line}\n${link}\n${step4}`);
+    // (without the "Please don’t forget to rename…" line: the reference itself is what the trainee needs there)
+    .replace(naming, (m, line, link, step3, step4) => `${step3}\n${link}\n${step4}`);
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
