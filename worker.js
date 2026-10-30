@@ -31,6 +31,8 @@
  * The check runs on the cron in wrangler.json (5 22 * * *: 5:05 PM EST, just after the 8 AM – 5 PM EST shift ends;
  * 6:05 PM in Eastern daylight time), and on demand
  * from Admin → 📋 Task Trackers. The rules are shared with the page: js/ft-tracker-rules.js.
+ * The same run looks in each trainee's Drive folder for their daily Typing and Spelling Test screenshots
+ * (checkShots → trackerreview:<id>.shots), which js/ft-skilltests.js counts toward their daily compliance.
  *
  * Without MASTER_ADMIN_PASSWORD the Worker runs in the old open mode so nothing breaks
  * before you've configured it (the Admin screen shows a warning).
@@ -822,6 +824,26 @@ async function checkDrive(env, id, D, o = {}) {
   return out;
 }
 
+/* 🧪 The daily Typing and Spelling Test screenshots the trainee saves in their Drive folder (drive:<id>.folder, and the
+   folders in it): each file named for a test (TR.parseTestShot: "Typing Test [date][AM/PM]") is one test taken, for the
+   day and slot its name gives. The whole list is rewritten on each check, so the folder stays the record: a screenshot
+   deleted from it stops counting. Into trackerreview:<id>.shots = {files: [{kind, date, slot, up, named, name, link,
+   created}], checkedAt, error}; js/ft-skilltests.js counts them with the tests taken on the platform. */
+async function checkShots(env, id) {
+  const kv = kvOf(env);
+  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+  if (!drive || !drive.folder) return null;
+  const res = await folderFiles(env, drive.folder);
+  const files = (res.files || []).map((f) => { const p = TR.parseTestShot(f.name, f.created || f.modified); return p && Object.assign(p, { name: String(f.name).slice(0, 160), link: f.link || "", created: f.created || f.modified || "" }); })
+    .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
+  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  const prev = cur.shots || {};
+  // a folder that can't be read this time keeps the screenshots already found
+  cur.shots = res.error ? Object.assign({}, prev, { error: res.error, checkedAt: new Date().toISOString() }) : { files, checkedAt: new Date().toISOString(), error: "" };
+  await kv.put(rk, JSON.stringify(cur));
+  return { id, shots: res.error ? null : files.length, error: res.error || "" };
+}
+
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -858,6 +880,7 @@ async function runTrackerChecks(env, opts) {
     const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
+    try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
   }
   return { date: D, checked: done.length, results: done };
 }
@@ -1212,6 +1235,22 @@ export default {
         cur.assess[doc] = { at: now.toISOString(), when, title: K.title, score, max, pct: Math.round(100 * score / max), pending: Object.values(items).some((r) => r.pending), ai, items };
         await kv.put(rk, JSON.stringify(cur));
         return json({ ok: true, score, max, pending: cur.assess[doc].pending });
+      }
+
+      /* ---------- 🧪 the Typing and Spelling Test screenshots in the trainee's folder: look now (the trainee's own, at most once a
+         minute; an admin's for one trainee or a list of them, e.g. a batch). The nightly check does the same for everyone. ---------- */
+      if (path === "/api/drive/shots") {
+        const b = await request.json().catch(() => ({}));
+        const ids = tok.role === "a" ? (Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 80) : [tok.id];
+        if (!ids.length) return json({ error: "Missing trainee" }, 400);
+        if (tok.role !== "a") {
+          const last = (JSON.parse((await kv.get(`trackerreview:${tok.id}`)) || "null") || {}).shots;
+          if (last && last.checkedAt && Date.now() - Date.parse(last.checkedAt) < 60 * 1000) return json({ error: "Checked a moment ago. Try again in a minute.", code: "wait" }, 429);
+        }
+        const results = [];
+        for (const id of ids) { try { results.push((await checkShots(env, id)) || { id, error: "no-folder" }); } catch (e) { results.push({ id, error: "drive" }); } }
+        const shots = tok.role === "a" ? null : (JSON.parse((await kv.get(`trackerreview:${tok.id}`)) || "null") || {}).shots || null;
+        return json({ ok: true, results, shots });
       }
 
       /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */
