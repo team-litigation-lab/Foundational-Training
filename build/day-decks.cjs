@@ -328,14 +328,12 @@ s3: html => {
 // not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
 // Training, as on Days 1 and 2), whose Next is ✍️ the Process Questions (named by the convention beside 📄 Save PDF to my
 // Folder), so neither the Process Questions note nor its naming convention is on the slide. The Confidentiality exercise
-// is off the deck; Carlos's recordings are a slide of their own (s1b, REF_RECS), then the Reception
-// Listening Activity (the PI practice calls) on two slides of its own (s1c, s1d). (ROWS[3].s1 places them as their card rows' slides)
+// is off the deck, and so are Carlos's recordings (the Harbor & Pine practice calls replace them): the Reception
+// Listening Activity (the PI practice calls) is on two slides of its own (s1c, s1d). (ROWS[3].s1 places them as their card rows' slides)
 3: {s1: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i + 1) : html.length; if(i < 0 || j < 0) throw new Error(`Day 3's slide no longer has "${from}"`); return html.slice(i, j); };
   const shots = cut('<div class="shots"><figure><a href="/ft/day3/img/image12.png"', '<p class="li" style="--lvl:0"><span class="lbl">3.</span>');
-  // (the Confidentiality exercise is off the deck; Carlos's recordings are a slide of their own, REF_RECS: the
-  // build stops if the guide no longer has their folders)
-  REF_RECS.flatMap(g => g.folders).forEach(id => { if(!html.includes(id)) throw new Error(`Day 3's supplementary recordings lost the folder ${id}`); });
+  // (the Confidentiality exercise and Carlos's recordings are off the deck)
   // (Frontline Management: the call-handling decision trees drawn on the slide, two to a row, in place of the guide's two
   // screenshots (the Authorization and Payment Calls trees), with the PI firm's other frontline calls beside them (TREES);
   // then the Sample SOP's four pages as screenshots (ft/day3/img/sample-sop-N.png, each opening bigger in the slide's
@@ -605,39 +603,6 @@ function piCallRows(compact){
   for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
-/* 🎧 Day 3's supplementary reception recordings (Carlos's), optional: one card per recording, played in the
-   slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
-   Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
-const REF_RECS = [
-  // (audio: recordings kept on the platform, ft/day3/audio, each a card that plays in a pop-up player: js/ft-day-decks.js
-  // ftdd-acard; [title, file, length]: Carlos's Calls 1–5 only, his other recordings not shown)
-  {h: "Carlos’ Reception Recordings", folders: ["1bP8yBy9WhPgUOnfh-IAvWI4V6UVeYyeI", "1S3L8ecBadvrN_AmGpeQD98mY1148Rvof"], recs: [], audio: [
-    ["Call 1", "carlos-1.mp3", "1:20"],
-    ["Call 2", "carlos-2.mp3", "1:15"],
-    ["Call 3", "carlos-3.mp3", "6:22"],
-    ["Call 4", "carlos-4.mp3", "0:41"],
-    ["Call 5", "carlos-5.mp3", "2:01"]]},
-  // the PI Reception Activity's five calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
-  // each with its challenge (piAudio: read from build/calls/pi-reception-calls.json once it is loaded, below)
-  {h: "PI Reception Calls: Harbor & Pine Injury Law", folders: [], recs: [], pi: true},
-  // (no recordings of VA Oscar's on the deck)
-  ];
-function REF_RECS_HTML(){
-  const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
-    `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
-  // (a recording whose file id is in, recs: [title, id], is a card that plays it in the pop-up viewer when clicked, as Day 3's
-  // CRM/CMS videos are, data-card: js/ft-day-decks.js visual; until then its folder plays in the slide)
-  const rec = ([t, id]) => `<p><a class="viewer-link" data-card data-kind="video" data-title="${hx(t)}" href="https://drive.google.com/file/d/${id}/view">https://drive.google.com/file/d/${id}/view</a></p>\n`;
-  const note = '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n';
-  const acard = ([t, f, len, tag]) => `<button type="button" class="ftdd-acard" data-audio="${f.startsWith("/") ? f : "/ft/day3/audio/" + f}" data-title="${hx(t)}">` +
-    `<span class="ftdd-acard-ic">🎧</span><b>${hx(t)}</b>${tag ? `<span class="ftdd-acard-tag">${hx(tag)}</span>` : ""}<small>${len} · ▶ Play</small></button>`;
-  const mmss = n => `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
-  REF_RECS.filter(g => g.pi).forEach(g => { g.audio = PI_CALLS.calls.map(c => [c.title, c.file, mmss(c.secs), `${c.challenge} · VA ${c.va}`]); });
-  // (a group's heading and its cards are one block, which the deck never splits over two pages)
-  return REF_RECS.filter(g => !g.hide).map(g => (g.audio || []).length ? `<div class="ftdd-recgroup">\n<p><b>${hx(g.h)}</b></p>\n<div class="ftdd-acards">${g.audio.map(acard).join("")}</div>\n</div>\n` : `<p><b>${hx(g.h)}</b></p>\n` + (g.recs.length ? g.recs.map(rec).join("")
-      : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
-    note;
-}
 // the activity: Day 3's Reception Listening Activity row (ROWS[3].s1), on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
 // the five calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
@@ -840,17 +805,13 @@ const ROWS = {
   },
   3: {
     // Part 1 (TRIM[3].s1): the Call Listening Sessions, the
-    // sample recordings and SOP; Part 2: the supplementary recordings (Carlos's, and the PI practice calls: REF_RECS);
-    // then Reception Listening Activity (the PI practice calls)
+    // sample recordings and SOP; then Reception Listening Activity (the PI practice calls, in place of Carlos's recordings)
     // (the decision trees, then the sample SOP on a slide of its own)
     s1: [{id: "s1", h: "Authorization Decision Tree", parts: [[null, '<div class="ftdd-sop">']]},
       {id: "sop", h: "Sample SOP", parts: [['<div class="ftdd-sop">', null]]},
       // (none of the guide's section: the five practice calls are the activity now, its task in cards, then the calls)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
-      {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []},
-      // (Carlos's supplementary recordings and the PI practice calls, optional: one card per recording, after the activity,
-      // on its step; the Confidentiality exercise is off the deck)
-      {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []}]
+      {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []}]
   },
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)
