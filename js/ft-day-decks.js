@@ -317,6 +317,9 @@ function visual(html){
       if(REF_SHEET.test(href)) box.setAttribute("data-sheet", REF_SHEET.source);
       const terms = REF_SHEET.test(href) && refTermsInto(box);
       if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
+      // 📁 a Drive folder (Day 10's VA call recordings): the slide's full width, Drive's grid laid out wide enough for a row
+      // of seven files and scaled down to the box (fitCrops)
+      if(/\/folders\//.test(href) && !(crop > 0)){ box.querySelector(".ftdd-embed").classList.add("ftdd-embed-row"); box.classList.add("is-row"); }
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
       if(a.hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
@@ -716,7 +719,9 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
+  // (the trainer's slide carries only the Scoresheet's marker, hidden: the 🧑‍🏫 Scoresheet button is in the bar under the slide)
+  if(admin) return M.table(rb.key);
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 const WAIT_OFF = true;
 function waitBox(s, info){
@@ -828,10 +833,7 @@ function renderDeck(){
       ${root.FTDayLocks && FTDayLocks.panel ? FTDayLocks.panel(DD.day, DD.i) : ""}
       ${nNotes ? `<p class="ftdd-rail-h">🧑‍🏫 Facilitator notes</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl ftdd-notes-btn${DD.notes ? " on" : ""}" onclick="FTDayDecks.notes()">📝 ${DD.notes ? "Hide" : "Show"} the notes for this slide (${nNotes})</button>` : ""}
-      ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
-        <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
-        ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
-        <p class="ftdd-rail-note">${e(FTSlideEdit.note(DD.day, (list[DD.i] || {}).id))}</p>` : ""}` : ""}`}
+      `}
     </aside>
   </div>`;
 }
@@ -1014,12 +1016,22 @@ function cardScale(box){
 }
 // a cropped sheet (ftdd-embed-crop): its frame is as wide as the columns kept, scaled up to the box's width, so the
 // columns past them (and the blank space beside them) fall outside the box
+const FOLDER_ROW = [1700, 300];   // (Drive's folder grid: a file every 231px after a 65px margin, a row 300px tall with the band above it)
 function fitCrops(sheet){
   sheet.querySelectorAll(".ftdd-embed-crop[data-crop]").forEach(em => {
     const f = em.querySelector("iframe"), w = em.clientWidth, h = em.clientHeight, cw = Number(em.getAttribute("data-crop"));
     if(!f || !w || !h || !cw) return;
     const k = w / cw;
     Object.assign(f.style, {width: cw + "px", height: Math.round(h / k) + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
+  });
+  // a Drive folder's row (ftdd-embed-row): Drive lays its grid out FOLDER_ROW[0] wide (seven files to a row), scaled down to
+  // the box, and the box is one row of files tall
+  sheet.querySelectorAll(".ftdd-embed-row").forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth, [fw, fh] = FOLDER_ROW;
+    if(!f || !w) return;
+    const k = Math.min(1, w / fw);
+    em.style.height = Math.round(fh * k) + "px";
+    Object.assign(f.style, {width: Math.round(w / k) + "px", height: fh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
 }
 function fitSheets(){
@@ -1360,10 +1372,9 @@ const LESSON_CARDS = {
       {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
-      // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
+      // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
-      {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
       "The Reception Listening Activity: log each call's answers on its 📝 Answer Sheet, on the calls' slide, and 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
@@ -1372,7 +1383,7 @@ const LESSON_CARDS = {
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
       {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
@@ -1428,7 +1439,7 @@ const LESSON_CARDS = {
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then shadowing and Day 12
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
-      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
       {t: "Shadowing", time: "PM", sub: "Insurance communication role · logged on the platform", k: "shadow", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
@@ -1783,7 +1794,6 @@ const PRESETS = [
   {label: "☎ Reception calls", kind: "practice", title: "Practise reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
   {label: "☎ Intake calls", kind: "practice", title: "Practise intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
   {label: "☎ Calendar calls", kind: "practice", title: "Practise calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
-  {label: "📅 Calendar Simulator", kind: "practice", title: "Practise on the Google Calendar Simulator", text: "Practise setting appointments on the Google Calendar Simulator under the firm’s calendar rules.", sim: "calsim"},
   {label: "🛠 Practice Lab", kind: "practice", title: "Practise in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
 ];
 function loadExtras(force){
@@ -1797,7 +1807,9 @@ const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
 function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
-  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
+  // (an extra that linked the mock calls' calendar, sim "calsim": off the decks; a trainee doesn't see it, the trainer sees it to remove it)
+  if(x.sim === "calsim" && !isAdminView()) return "";
+  const tile = x.sim === "calsim" ? `<p class="ftdd-x-off">This linked the mock calls’ calendar, which is no longer on the decks. Remove it.</p>` : x.sim === "never" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -1810,7 +1822,8 @@ function itemHtml(x, n, i){
 function trainerSlide(n){
   if(!X.data){ loadExtras(); return `<p>Loading your trainer’s activities…</p>`; }
   const items = X.data.days[n] || [], f = X.form;
-  const list = items.length ? items.map((x, i) => itemHtml(x, n, i)).join("")
+  // (what is left to show: a trainee doesn't see an extra that linked the mock calls' calendar, so a day with only that one reads as empty)
+  const list = items.some(x => isAdminView() || x.sim !== "calsim") ? items.map((x, i) => itemHtml(x, n, i)).join("")
     : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : "More is on its way"}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
   return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to this slide <span>— every trainee sees it here</span></p>
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
@@ -2277,7 +2290,8 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 /* two things side by side on one slide (Day 7's two folders) */
 .ftdd-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0 12px;}
 @media(max-width:800px){.ftdd-two{grid-template-columns:minmax(0,1fr);}}
-.ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:start;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it) */
+.ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:end;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it; a row's cards line up along the bottom, so a name over two lines
+   reaches up instead of pushing its card down: Day 10's VLF SOP) */
 .ftdd-three > *{margin:0;}
 .ftdd-three .ftdd-three-h{grid-column:1 / -1;}
 .ftdd-three .ftdd-three-side{grid-column:3;}
@@ -2438,6 +2452,11 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
 .ftdd-score{margin:6px 0 12px;}
+/* the metrics read as the guide's table everywhere: each criterion left-aligned (a centred short slide doesn't centre them) */
+.ft-body .ftdd-score .ftms-tbl td:first-child, .ft-body .ftdd-score .ftms-tbl th:first-child{text-align:left !important;}
+/* Day 8's Practice Intake Calls: the tools as buttons, white on navy (not the slide's blue link style) */
+.ft-body .ftdd-practice{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:10px 0 14px;}
+.ft-body .ftdd-practice a.btn{color:#fff !important;text-decoration:none !important;font-weight:800;}
 /* the metrics as the guide's table (green header, banded rows, the WEIGHTED AVERAGE last); the trainer's has Remarks */
 .ftdd-score-h{margin:0 0 6px;font-size:15px;color:#262B45;}
 .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
@@ -2491,6 +2510,15 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
+.ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 > p.ftdd-card4-h{font-size:20px !important;margin-bottom:8px !important;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 ul{margin:0;padding-left:20px;}
+.ftdd-sheet .ftdd-lor-cards .ftdd-card4 li{margin:0 0 4px;font-size:19px !important;line-height:1.32 !important;font-weight:700 !important;color:#1B1E2E;}
+@media(max-width:1100px){ .ft-body .ftdd-lor-cards{grid-template-columns:repeat(2,minmax(0,1fr));} }
+.ftdd-lor-tag{display:inline-block;margin-right:4px;padding:1px 8px;border-radius:999px;background:#E8590C;color:#fff;font:800 14px/1.5 'Poppins','Inter',sans-serif;vertical-align:2px;}
+.ftdd-sheet .ftdd-lor-rem{margin:0 0 16px;} .ftdd-sheet .ftdd-lor-rem p:not(.ftdd-card4-h){font-size:19px !important;font-weight:700 !important;}
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
@@ -2694,8 +2722,8 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
   main.main-ftdd .ftdd-sheet, main.main-ftdd .ftdd-onnavy{flex:1 1 auto;min-height:0;}
 }
 /* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
-   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
-   ✏️ Edit this slide still gets its panel, and so does the 🔓 Segment lock or the Hide panel link: a panel holding only those
+   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. The trainer's
+   🔓 Segment lock or the Hide panel link still gets its panel (✏️ Edit this slide is gone): a panel holding only those
    (a day past its locks, with no buttons in it) was squeezed to no width, its words stacked a letter to a line. */
 @media(min-width:1001px){
   main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))){grid-template-columns:minmax(0,1fr);}
@@ -2881,6 +2909,8 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* a sheet cut to its first columns (fitCrops scales its frame to the box): the page's full height, under its name */
+/* 📁 a Drive folder's row (fitCrops sizes it): the slide's full width */
+.ftdd-sheet.ftdd-d615 > .ftdd-inline.is-row{align-self:stretch;}
 .ft-body .ftdd-embed.ftdd-embed-crop, .ft-body .ftdd-embed.ftdd-embed-full{height:max(320px, calc(var(--ftdd-room, 70vh) - 96px));}
 .ft-body .ftdd-inline.is-crop{margin:0;}
 /* 📊 the reference sheet as a table (refTerms): the page's full height, its tabs above, the rows scrolling under the header */
