@@ -121,6 +121,7 @@ let packsLoading = null;
 function packs(){
   if(window.CALL_PACKS && window.CALL_PACKS.CALLS) return Promise.resolve(window.CALL_PACKS);
   if(packsLoading) return packsLoading;
+  PK.failed = false;
   packsLoading = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = CMS + "call-packs.js";
     sc.onload = () => window.CALL_PACKS && window.CALL_PACKS.CALLS ? ok(window.CALL_PACKS) : no(new Error("packs"));
     sc.onerror = () => { packsLoading = null; sc.remove(); no(new Error("load")); }; document.head.appendChild(sc); })
@@ -135,6 +136,8 @@ const onFile = c => !!c.doc && /calling back|callback|retainer|\(MC-/i.test(c.yo
 const cmsUrl = c => CMS + "?" + new URLSearchParams(Object.assign({program: "intake", from: "standard"}, c && onFile(c) ? {mock: c.doc} : {}));
 const caseDoc = c => c && c.doc && window.CALL_PACKS.DOCS && window.CALL_PACKS.DOCS[c.doc] ? window.CALL_PACKS.DOCS[c.doc] : null;
 const isTrainerView = () => typeof state === "object" && !!state.isAdmin && !state.adminPreview;
+// (the trainer's views read the assignments again once they are a minute old: another trainer or tab may have changed one)
+const freshAdmin = () => { if(!AD.loading && (!AD.rows || Date.now() - (AD.at || 0) > 60000)) loadAdmin(); return !!AD.rows; };
 const linkBtn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 // the trainee's case: who calls, what they know going in, and where to work it (never the caller's script or the goals)
 function caseCard(c){
@@ -156,18 +159,24 @@ function trainerCase(c, who){
     ${doc ? `<p><b>The CMS case file (${e(c.doc)}):</b> ${e(doc.text)}</p>` : ""}
     <div class="ftis-mc-act">${linkBtn(cmsUrl(c), "🗂 The trainee’s CMS view ↗")}</div></details>`;
 }
-function mockcallHtml(){
+function mockcallHtml(el){
   const calls = mockCalls();
-  const head = `<div class="ftis-pk-h"><b>📞 ${isTrainerView() ? "Intake Mock Call cases: the CMS’s Intake line, the same calls on Ring Channel" : "Your Intake Mock Call case"}</b></div>`;
+  // (the trainer's "👁 What trainees see" preview, js/ft-buffer.js .ftbf-pv, shows the trainee's side, never the scripts)
+  const trainer = isTrainerView() && !(el && el.closest && el.closest(".ftbf-pv"));
+  const head = `<div class="ftis-pk-h"><b>📞 ${trainer ? "Intake Mock Call cases: the CMS’s Intake line, the same calls on Ring Channel" : "Your Intake Mock Call case"}</b></div>`;
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return head + `<p class="ftis-wait">${PK.failed ? "The cases didn’t load from the CMS. Check your connection and open this slide again." : "Loading the cases from the CMS…"}</p>`; }
-  if(isTrainerView()){
-    if(!AD.rows && !AD.loading) loadAdmin();
-    const by = {}; Object.entries(AD.recs || {}).forEach(([id, r]) => { if(r && r.call){ const row = (AD.rows || []).find(x => x.id === id); if(row && (!AD.batch || row.batch === AD.batch)) (by[r.call] = by[r.call] || []).push(row.name.split(/\s+/)[0]); } });
+  if(trainer){
+    freshAdmin();
+    // every batch's trainees on their case (a batch's name beside each when more than one batch has cases assigned)
+    const by = {}, rows = AD.rows || [], tagged = rows.filter(r => ((AD.recs || {})[r.id] || {}).call);
+    const several = new Set(tagged.map(r => r.batch)).size > 1;
+    tagged.forEach(r => { const c = AD.recs[r.id].call; (by[c] = by[c] || []).push(r.name.split(/\s+/)[0] + (several && r.batch ? ` (${r.batch})` : "")); });
     return head + `<p class="ftis-pk-note">Play the trainee’s assigned case from Ring Channel while they work it in the Prototype CMS. Each trainee sees their case on this slide once it is assigned.</p>
       ${calls.map(c => trainerCase(c, (by[c.id] || []).join(", "))).join("")}
       <div class="ftis-mc-act"><button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📞 Assign the cases</button></div>`;
   }
   const c = isTrainee() && K.mine && K.mine.call ? callById(K.mine.call) : null;
+  if(isTrainerView() && !trainer) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>The trainee’s mock call case appears here</b><small>Each trainee sees only their own case: who calls, what they know going in and the Prototype CMS. Never the caller’s script.</small></div></div>`;
   if(!c) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>Your mock call case appears here</b><small>Your trainer assigns it before your turn. Until then, practise on the Intake line.</small></div>${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div>`;
   return head + caseCard(c);
 }
@@ -175,7 +184,7 @@ function mockcallHtml(){
 function mcaseHtml(el){
   const id = el.getAttribute("data-trainee") || "", calls = mockCalls();
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return ""; }
-  if(!AD.rows){ if(!AD.loading) loadAdmin(); return ""; }
+  if(!freshAdmin()) return "";
   const c = callById(((AD.recs || {})[id] || {}).call);
   return c ? trainerCase(c, "") : `<p class="ftis-pk-note">📞 No mock call case assigned to this trainee yet: <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
 }
@@ -247,7 +256,8 @@ async function loadAdmin(){
     AD.rows = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
     AD.assign = {}; AD.recs = {}; people.forEach((r, i) => { const v = vals[i] && typeof vals[i] === "object" ? vals[i] : null; if(v) AD.recs[r.id] = v; if(v && v.packet) AD.assign[r.id] = Number(v.packet); });
     if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
-  }catch(err){ AD.rows = AD.rows || []; }
+    AD.at = Date.now();
+  }catch(err){ AD.rows = AD.rows || []; AD.at = Date.now(); }
   AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
 }
 function adminHtml(){
@@ -272,23 +282,32 @@ function adminHtml(){
     <div class="ftis-aedit ftis-aedit-d">${DOCS.map((t, i) => `<b>${i + 1}. ${e(t)}</b><input id="ftisD${i}" placeholder="https://drive.google.com/file/d/…" value="${e(docs[i] || "")}">`).join("")}</div>
     <div class="ftis-asave"><button class="btn btn-navy btn-sm" onclick="FTIntakeAdmin.save()">💾 Save the packets and documents</button></div></div>`;
 }
+// a write to a trainee's intakeassign record: one at a time per trainee, each on the record as saved now (read again first),
+// so the packet and the mock call case never overwrite each other, whoever changed the other one and however quickly
+const chain = {};
+function writeAssign(id, patch){
+  const run = (chain[id] || Promise.resolve()).catch(() => {}).then(async () => {
+    const saved = await sharedGet("intakeassign:" + id).catch(() => null);
+    const next = Object.assign({}, saved && typeof saved === "object" ? saved : (AD.recs[id] || {}), patch);
+    if(await sharedSet("intakeassign:" + id, next) === false) throw new Error("save");
+    AD.recs[id] = next; AD.assign[id] = Number(next.packet) || 0; if(!AD.assign[id]) delete AD.assign[id];
+    return next;
+  });
+  chain[id] = run;
+  return run;
+}
 window.FTIntakeAdmin = {
   batch(b){ AD.batch = b; render(); },
   async assign(id, v){
     const n = Number(v) || 0;
     // (the record also holds the trainee's mock call case: the packet's write keeps it)
-    const next = Object.assign({}, AD.recs[id] || {}, {packet: n, at: new Date().toISOString()});
-    const ok = await sharedSet("intakeassign:" + id, next);
-    if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
-    AD.recs[id] = next; if(n) AD.assign[id] = n; else delete AD.assign[id];
+    try{ await writeAssign(id, {packet: n, at: new Date().toISOString()}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
     toast(n ? `✓ Packet ${n} assigned — the trainee sees it within two minutes.` : "✓ Unassigned.");
   },
   async assignCall(id, v){
     const c = callById(v);
-    const next = Object.assign({}, AD.recs[id] || {packet: 0}, {call: c ? c.id : "", callAt: new Date().toISOString()});
-    const ok = await sharedSet("intakeassign:" + id, next);
-    if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
-    AD.recs[id] = next; paint();
+    try{ await writeAssign(id, {call: c ? c.id : "", callAt: new Date().toISOString()}); }catch(err){ toast("Couldn’t save. Check your connection."); return; }
+    paint();
     toast(c ? `✓ ${c.title} assigned — play it from Ring Channel’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Mock call case unassigned.");
   },
   async save(){
@@ -312,7 +331,12 @@ if(typeof window.ftAdminTab === "function") ftAdminTab("intake", "📦 Intake Pa
 function refit(){ try{ if(window.FTDayDecks && FTDayDecks.refit) FTDayDecks.refit(); else window.dispatchEvent(new Event("resize")); }catch(err){} }
 function fill(){
   // (Day 8: the assigned packet, the worksheet, the additional documents and the sample forms, drawn again once the trainer's settings load)
-  if([...document.querySelectorAll(Object.keys(PAINT).map(x => x + ":not([data-on])").join(", "))].some(el => !el.closest("#ftseBody"))){ paint(); loadK(); }
+  const fresh = [...document.querySelectorAll(Object.keys(PAINT).map(x => x + ":not([data-on])").join(", "))].filter(el => !el.closest("#ftseBody"));
+  if(fresh.length){
+    // (a mock call slot opened again after the CMS's cases failed to load tries once more)
+    if(PK.failed && fresh.some(el => el.matches(".ftis-mockcall, .ftis-mcase"))) PK.failed = false;
+    paint(); loadK();
+  }
   const want = [...document.querySelectorAll(".ftis-calls:not([data-on]), .ftis-consult:not([data-on])")].filter(el => !el.closest("#ftseBody"));
   if(!want.length) return;
   want.forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = `<p class="ftis-wait">Loading the recordings…</p>`; });
@@ -337,7 +361,13 @@ document.addEventListener("play", ev => { if(!ev.target.classList || !ev.target.
 window.FTIntake = {
   data,
   // the trainee's assigned mock call (its CMS call id), for the trainer's scoring sheet to keep with the score
-  callOf: id => { const c = callById(((AD.recs || {})[id] || {}).call); return c ? {id: c.id, title: c.title} : null; },
+  // (read fresh from the saved record; undefined when it can't be known: the cases didn't load, or the read failed)
+  async callOf(id){
+    if(!mockCalls()) await packs().catch(() => {});
+    if(!mockCalls()) return undefined;
+    let rec; try{ rec = await sharedGet("intakeassign:" + id); }catch(err){ return undefined; }
+    const c = callById((rec || {}).call); return c ? {id: c.id, title: c.title} : null;
+  },
   reload: () => loadK(true),
   view(b){ if(typeof lvOpen === "function") lvOpen({kind: "doc", title: b.getAttribute("data-title"), url: b.getAttribute("data-url")}); },
   copy(b){ const t = b.getAttribute("data-copy"); try{ navigator.clipboard.writeText(t); b.textContent = "✓ Copied"; setTimeout(() => { b.textContent = "📋 Copy"; }, 1500); }catch(err){} }

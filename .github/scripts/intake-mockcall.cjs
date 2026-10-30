@@ -81,7 +81,23 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
       if (!a.case || a.case.id !== 'ft_in_nicole' || !a.rubric) fail(`the score wasn't saved with the case it was played on: ${JSON.stringify(a)}`);
     }
 
+    // the trainer's "👁 What trainees see" preview on the graded call's slide shows the trainee's side, never the scripts
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(2000);
+    const pv = await page.evaluate(() => [...document.querySelectorAll('.ftis-mockcall')].map(el => ({ pv: !!el.closest('.ftbf-pv'), html: el.innerHTML })));
+    if (pv.some(x => x.pv && /SCRIPT-|Scenario Picker/.test(x.html))) fail('the trainer\'s "What trainees see" preview shows the callers\' scripts');
+    // a score saved after the case is unassigned doesn't keep the old case
+    await page.evaluate(id => FTIntakeAdmin.assignCall(id, ''), id); await page.waitForTimeout(800);
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3bp'))); await page.waitForTimeout(1500);
+    await page.evaluate(([b, k, id]) => { FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1200);
+    await page.evaluate(() => { const i = document.querySelector('.ftms-trainer input[data-crit="0"]'); i.value = '3'; i.dispatchEvent(new Event('input', { bubbles: true }));
+      FTMetrics.save(document.querySelector('.ftms-trainer .ftms-save')); });
+    await page.waitForTimeout(1500);
+    const lr2 = ((((await get('labreview:' + id)) || {}).acts) || {})['intake-live'] || {};
+    if (lr2.case !== null) fail(`a score saved with no case assigned kept the earlier case: ${JSON.stringify(lr2.case)}`);
+    if (((await get('intakeassign:' + id)) || {}).packet !== 4) fail('unassigning the case lost the packet');
+
     // the trainee: their own case only, never the script; the CMS opened blank for a first call
+    await put('intakeassign:' + id, { packet: 4, call: 'ft_in_nicole' });
     await page.evaluate(id => { state.isAdmin = false; state.adminPreview = false; state.traineeId = id; }, id);
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
     await page.evaluate(() => FTDayDecks.open(8, FTDayDecks.at(8, 's1g'))); await page.waitForTimeout(2000);

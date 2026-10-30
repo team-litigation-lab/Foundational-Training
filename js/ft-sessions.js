@@ -664,13 +664,15 @@ window.FTMetrics = {
     const row = (AD.rows || []).find(r => r.id === id), rr = rubricRead(box); if(!row || !rr) return;
     if(!rr.scores.some(v => v != null)){ toast("Score at least one criterion first."); return; }
     btn.disabled = true;
+    // (the Intake Mock Call: the case it was played on, read fresh; undefined keeps the saved one when it can't be known)
+    const played = act === "intake-live" && window.FTIntake && FTIntake.callOf ? await FTIntake.callOf(id) : undefined;
     try{
       await writeReview(id, cur => { cur.acts = cur.acts || {}; const prev = cur.acts[act] || {};
         cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
           date:prev.date || new Date().toISOString().slice(0, 10), at:new Date().toISOString(),
           rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}},
-          // (the Intake Mock Call: the case it was played on, the CMS call the trainee was assigned, js/ft-intake.js)
-          act === "intake-live" && window.FTIntake && FTIntake.callOf && FTIntake.callOf(id) ? {case:FTIntake.callOf(id)} : {}); });
+          // (the CMS call the trainee was assigned, js/ft-intake.js; null when none, so an earlier case isn't carried over)
+          played !== undefined ? {case:played} : {}); });
       delete MS.draft[key + "|" + act + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
     }catch(err){ toast("Couldn’t save. Check your connection."); }
     btn.disabled = false; render();
