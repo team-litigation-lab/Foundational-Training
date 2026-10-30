@@ -1674,10 +1674,13 @@ const cardOf = lid => LESSON_CARDS[lid] ? Object.assign({lesson: Number(lid)}, L
 const CARD_OF_LESSON = {4: 3};
 const cardLessons = lid => [Number(lid)].concat(Object.keys(CARD_OF_LESSON).filter(k => CARD_OF_LESSON[k] === Number(lid)).map(Number));
 // (and it opens with its card's lesson: 📅 Open Lessons opening Personal Injury Process Flow opens the Reception deck too)
+// ⏭ and a trainee who has finished the lesson before (its last day read to its ✅ End of Module) goes straight on:
+// VA Essentials finished opens Law Firm Communication for them, without waiting for the trainer's 📅 Open Lessons
+const openedByPrev = l => { const c = LESSON_CARDS[Number(l)]; return !!c && forTrainee() && doneDays().includes(c.days[0] - 1); };
 const __dayUnlocked = root.dayUnlocked;
 if(typeof __dayUnlocked === "function") root.dayUnlocked = function(id){
   const c = CARD_OF_LESSON[Number(id)];
-  return __dayUnlocked.apply(this, arguments) || (c != null && __dayUnlocked.call(this, c));
+  return __dayUnlocked.apply(this, arguments) || (c != null && __dayUnlocked.call(this, c)) || openedByPrev(c != null ? c : id);
 };
 // 🏠 Classroom: the lesson's offline activity — its homework, else the last thing its days set
 const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.length - 1];
