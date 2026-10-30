@@ -72,7 +72,7 @@ window.LSH_PROGRAM = {
         ((C && C.SCENARIOS) || []).forEach(s => {
           const last = subs.filter(x => x.scn === s.id).pop(), r = last && reviews[s.id + "|" + last.at];
           const best = autos.filter(a => a.scn === s.id).reduce((m, a) => Math.max(m, Number(a.pct) || 0), -1);
-          if(r && r.released !== false && r.score != null && r.score !== "") out.push({name:s.short, pct:Number(r.score), note:"Trainer’s score"});
+          if(r && r.released !== false && r.score != null && r.score !== "") out.push({name:s.short, pct:Number(r.score), note:"Trainer’s score", at:last.at || ""});
           else if(best >= 0 || last) out.push({name:s.short, pct:best >= 0 ? best : Number(last.auto && last.auto.pct) || 0, note:r && r.released !== false ? "Automated review · your trainer’s review has no score" : last ? "Automated review · waiting for your trainer" : "Best automated review"});
         });
         const ext = {};   // connected simulators (the Portal's Calendaring Simulator, the CMS): the best result per simulator
