@@ -55,6 +55,9 @@ const setSteps = (page, v) => page.evaluate(async (v) => { await fetch('/api/sto
     if (await page.evaluate(() => FTDayDecks.state().i) !== v.from && (await page.evaluate(() => FTDayDecks.state().pages)) < 2) fail('Next didn\'t go on one slide');
     await page.evaluate(() => goto('day', 1)); await page.waitForTimeout(600);
     if (await page.evaluate(() => state.view === 'day' && Number(state.dayId) === 1)) fail('Lesson 1 opened with only the reading unlocked');
+    // a trainee who has finished Day 1 has its video, whatever the batch's steps
+    const fin = await page.evaluate(() => { const was = state.progress; state.progress = Object.assign({}, was, { 1: { done: true } }); const open = ftVideoUnlocked(1) && !FTDay1.videoByStep(1); state.progress = was; return open; });
+    if (!fin) fail('Day 1\'s video stayed locked for a trainee who finished Day 1');
     // Handouts and Videos unlocked: the video opens, no request
     await setSteps(page, { all: 0, batches: { b101026: 5 } });
     if (!(await page.evaluate(() => ftVideoUnlocked(1) && !FTDay1.videoByStep(1)))) fail('Day 1\'s video didn\'t open with Handouts and Videos unlocked');
