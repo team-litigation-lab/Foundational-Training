@@ -187,7 +187,8 @@ function paint(){
   const sheet = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${h.i}"] .ftdd-sheet`) || document.querySelector("main.main-ftdd .ftdd-sheet");
   if(!sheet || sheet.querySelector(".ftbf")) return;
   sheet.querySelectorAll(".ftdd-wait").forEach(x => x.remove());
-  if(isAdminView()) return;
+  // (the trainer's slide has no panel; on Day 9's Intake mock calls it lists every case with its script, js/ft-intake.js .ftis-mockcall)
+  if(isAdminView()){ if(h.a.act === "intake-live"){ const c = document.createElement("div"); c.className = "ftis-mockcall"; sheet.appendChild(c); } return; }
   const box = document.createElement("div"); box.className = "ftbf-slot";
   // (a gate's panel heads the slide: its content, below, is read once the Done is in)
   // (a corner card: small, at the lower right, after the slide's content)
