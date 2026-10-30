@@ -325,7 +325,7 @@ function paint(){
   box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
-  if((h.a.kind === "buffer" && ((!h.a.task && !h.a.show) || (h.a.gate && !mine(h.k)))) || h.a.simple){ sheet.classList.add("ftbf-only");
+  if((h.a.kind === "buffer" && (!h.a.task || (h.a.gate && !mine(h.k)))) || h.a.simple){ sheet.classList.add("ftbf-only");
     // (one page: the hidden content's page breaks go)
     if(h.a.gate) sheet.querySelectorAll(":scope > .ftdd-pgbreak").forEach(x => x.remove()); }
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();

@@ -111,10 +111,10 @@ const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${a}-${b}"><
 function calItems(html){
   const items = html.split('<div class="ftdd-cal-item">').slice(1).map(x => '<div class="ftdd-cal-item">' + x);
   if(items.length !== 10 || html.indexOf('<div class="ftdd-cal-item">') !== 0) throw new Error(`Day 5's Activity Items are no longer the ten cards the build expects: ${items.length}`);
-  // (an item with a travel schedule, more than twice the usual lines, takes two columns of the row: ftdd-cal-wide)
+  // (an item with a travel schedule, several times the usual lines, takes three columns of the row: ftdd-cal-wide)
   const wide = x => (x.match(/<p class="li"/g) || []).length > 12;
   return CAL_GROUPS.map(([a, b]) => { const its = items.slice(a - 1, b);
-    return CAL_HEAD([a, b]) + `<div class="ftdd-cal-grid" style="--n:${its.length + its.filter(wide).length}">\n` +
+    return CAL_HEAD([a, b]) + `<div class="ftdd-cal-grid" style="--n:${its.length + 2 * its.filter(wide).length}">\n` +
       its.map(x => wide(x) ? x.replace('<div class="ftdd-cal-item">', '<div class="ftdd-cal-item ftdd-cal-wide">') : x).join("") + "</div></div>\n"; }).join("");
 }
 function calActivity(){
@@ -241,10 +241,10 @@ const TRIM = {1: {reading: html => {
   if(html.trim() !== line) throw new Error("Day 5's Buffer Time is no longer the one line the build expects");
   return "";
 },
-// Day 5's Attorney Calendar Management Activity: the activity's own text (its Instructions and its ten Activity Items) read
-// on the slide, with the hook for the Calendar Simulator; then the activity file and samples, and three cards (the time
-// zone, the whole calendar, the upload), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b"). ROWS[5].s3 cuts it
-// at the second trainer slot: s3 (read like Day 1's reading), s3b.
+// Day 5's Attorney Calendar Management Activity: the activity's own text, its Instructions as two cards and its ten
+// Activity Items a card each under the Calendar Simulator's link (CAL_HEAD); then the activity file and samples, and three
+// cards (the time zone, the whole calendar, the upload), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b").
+// ROWS[5].s3 cuts it into s3 (the Instructions), s3i and s3j (items 1–5, 6–10) and s3b (from the second trainer slot).
 s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
   // the activity itself and its samples folder show in the slide (data-embed, js/ft-day-decks.js visual), under the instruction
@@ -274,13 +274,13 @@ s3: html => {
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
   const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
     '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you upload →</small></span></button></div>\n';
-  // its Instructions and Activity Items; the activity and the samples themselves, full size; the cards stand one under the other (not a grid), so a long one turns the page cleanly
+  // after the items: the activity and the samples themselves, full size, then the three cards one under the other (not a
+  // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
   // (the activity's Instructions on one slide, as two cards side by side: 1–4 and 5–9; its ten Activity Items on the next
   // two, a card each: calItems. The "1. The activity" card is off: Done is at the end of the slides)
   const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), five = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">5.</span>');
   if(at < 0 || five < 0 || five > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
-  const ins = text.slice(0, at).replace("<h3>Instructions</h3>\n", "");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
     '<div class="ftdd-cards2">' + card("📋", "Instructions 1–4", text.slice(0, five).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 5–9", text.slice(five, at)) + "</div>\n" +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
@@ -776,7 +776,7 @@ const ROWS = {
       {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [[MOCK_WARM_AT, null]]}]
   },
   5: {
-    // the activity's own words, read like Day 1's reading; then its files, the time zone, the screenshots and ✅ Done
+    // the activity's own words; then its files, the time zone, the screenshots and ✅ Done
     // (the Instructions as two cards, then the ten Activity Items a card each, five to a slide, each slide with the link to
     // the Calendar Simulator's Attorney's Calendar: CAL_HEAD)
     s3: [{id: "s3", h: "Attorney Calendar Management Activity: Instructions", parts: [[null, CAL_HEAD(CAL_GROUPS[0])]]},
