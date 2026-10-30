@@ -2441,6 +2441,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 .ft-body .ftdd-cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
 .ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
+/* the activity items read bold, as the rest of the deck does (their heading bars stay heavier) */
+main.main-ftdd .ftdd-sheet .ftdd-cal-item p:not(.ftdd-cal-h):not(.ftdd-cal-part), main.main-ftdd .ftdd-sheet .ftdd-cal-item li{font-weight:700 !important;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
 /* (Day 5's item 8: its four parts of the trip side by side on its card, each a box under its ➢ heading) */
 .ftdd-cal-parts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:6px 0 2px;}
@@ -2457,6 +2459,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-card4 p:not(.ftdd-card4-h), main.main-ftdd .ftdd-sheet .ftdd-card4 li{font-weight:700 !important;}   /* (bold, as the deck reads) */
 .ftdd-sheet .ftdd-card4 .shots{grid-template-columns:minmax(0,1fr) !important;margin:6px 0 0;}
 .ftdd-sheet .ftdd-card4 .shots a{height:180px !important;}
 @media(max-width:900px){ .ftdd-cards4{grid-template-columns:minmax(0,1fr);} }
