@@ -2680,10 +2680,11 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
 }
 /* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
    keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
-   ✏️ Edit this slide still gets its panel. */
+   ✏️ Edit this slide still gets its panel, and so does the 🔓 Segment lock or the Hide panel link: a panel holding only those
+   (a day past its locks, with no buttons in it) was squeezed to no width, its words stacked a letter to a line. */
 @media(min-width:1001px){
-  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)){grid-template-columns:minmax(0,1fr);}
-  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))){grid-template-columns:minmax(0,1fr);}
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
   main.main-ftdd{padding-right:18px;}
   main.main-ftdd .ftdd-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 10px);}
 }
