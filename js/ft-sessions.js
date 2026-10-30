@@ -634,8 +634,8 @@ function metricsTable(key, view){
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>${mine && mine.rubric.avg != null ? e(Number(mine.rubric.avg).toFixed(2)) : "0"}</td>${mine ? "<td></td>" : ""}</tr></tbody></table>
     ${mine ? `<p class="ftms-mine">✅ Scored by your trainer${mine.status ? ": " + e(mine.status) : ""}${tScore(mine) != null ? " · " + tScore(mine) + "%" : ""}</p>` : ""}`;
   // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
-  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button>
-    <span class="fss-muted ftms-hint">🧑‍🏫 <b>Scoresheet</b>${state.view === "daydeck" ? " (in the bar under the slide)" : ""}: pick the trainee, score each line 0–5, add remarks, 💾 Save.</span></div>`;
+  // (on a deck, only a hidden marker: the 🧑‍🏫 Scoresheet button in the bar under the slide opens the sheet; no hint line)
+  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"${state.view === "daydeck" ? " hidden" : ""}><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button></div>`;
 }
 /* 🔔 A trainee's scored mock calls and demos: their labreview:<id> (the trainer's scoresheet saves there), read when a
    metrics table is drawn and about once a minute while they use the platform. A scoresheet the trainer saved since they last

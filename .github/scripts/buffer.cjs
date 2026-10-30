@@ -57,16 +57,16 @@ async function workerChecks() {
     openWas = await get(t, 'settings:opendays');
     await put(t, 'settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8, 9], batches: {} });
     await t.evaluate(() => typeof ftLoadOpenDays === 'function' && ftLoadOpenDays());
-    // where Activity Locks run (js/ft-day-locks.js), Day 8 is held at its demo: the release must open the next step
+    // where Activity Locks run (js/ft-day-locks.js), Day 13 is held at its Buffer Time: the release must open the next step
     locks = await t.evaluate(() => !!window.FTDayLocks);
     if (locks) {
       stepsWas = await get(t, 'settings:daysteps');
-      await t.evaluate(() => FTDayDecks.open(8, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 8's steps are known)
-      const s8 = await t.evaluate(() => { const i = FTDayDecks.at(8, 's3'); const x = FTDayLocks.steps(8).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
-      if (!s8) fail('Day 8\'s demo step isn\'t among its Activity Locks steps');
-      const all = Object.assign({}, (stepsWas || {}).all || {}, { 8: s8 });
+      await t.evaluate(() => FTDayDecks.open(13, 0)); await t.waitForTimeout(1500);   // (the decks loaded, so Day 13's steps are known)
+      const s13 = await t.evaluate(() => { const i = FTDayDecks.at(13, 's1'); const x = FTDayLocks.steps(13).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; });
+      if (!s13) fail('Day 13\'s Buffer Time step isn\'t among its Activity Locks steps');
+      const all = Object.assign({}, (stepsWas || {}).all || {}, { 13: s13 });
       // (a count in card-row steps, flagged so: js/ft-day-locks.js reads an unflagged one as a count of the old slide steps)
-      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 8: 1 }), batches: {} };
+      const rows = { all: Object.assign({}, ((stepsWas || {}).rows || {}).all || {}, { 13: 1 }), batches: {} };
       await put(t, 'settings:daysteps', Object.assign({}, stepsWas || {}, { all, batches: {}, rows }));
       await t.evaluate(() => ftLoadOpenDays());
     }
@@ -140,48 +140,43 @@ async function workerChecks() {
     const s6 = await panel(t);
     if (!/✅ Your Calendaring Activity is done/.test(s6) || !/scored it: Passed/.test(s6)) fail(`a scored trainee's mock call panel reads: ${s6.slice(0, 200)}`);
 
-    // 🧑‍🏫 the trainer's tracker, on a demo (Day 8's): the trainer marks Tia done, and Tia's slide says so by itself
-    await open(t, 8, 's3'); await toPanel(t);
+    // ☎ the demos have no tracker either: Day 8's demo slide shows the trainer only what trainees see
     await open(a, 8, 's3'); await a.waitForTimeout(1500);
+    if (await a.evaluate(() => !!document.querySelector('.ftbf-tr'))) fail('the demo still has the Live Session tracker');
+
+    // 🧑‍🏫 the trainer's tracker, on a Buffer Time (Day 13's): the trainer marks Ray done (Tia hit Done herself above)
+    await open(t, 13, 's1'); await toPanel(t);
+    await open(a, 13, 's1'); await a.waitForTimeout(1500);
     await a.evaluate(b => FTBuffer.batch(b), BATCH); await a.waitForTimeout(300);
     await a.evaluate(id => FTBuffer.mark(id, true), tia); await a.waitForTimeout(1200);
-    if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['8:s3']) fail('the trainer\'s Mark done wasn\'t saved');
-    await t.waitForTimeout(23000); await toPanel(t);
-    const w8 = await panel(t);
-    if (!/✅ Done/.test(w8) || !/Waiting for the group debrief/.test(w8) || /Debrief Prep/.test(w8)) fail(`Day 8's Done, marked by the trainer, reads on the trainee's slide: ${w8.slice(0, 200)}`);
+    if (!((await get(t, 'buffer:' + tia)) || { acts: {} }).acts['13:s1']) fail('the trainee\'s Done wasn\'t saved');
     const tr = () => a.evaluate(() => { const x = document.querySelector('.ftbf-tr'); return x ? { text: x.innerText, locked: x.querySelector('.ftbf-foot .ftbf-done').disabled, banner: (x.querySelector('.ftbf-banner') || {}).innerText || '' } : null; });
     let v = await tr();
-    if (!v) fail('the trainer has no tracker on the demo slide');
+    if (!v) fail('the trainer has no tracker on the Buffer Time slide');
     else {
-      if (!/Live Session: Demo Progress Tracker/.test(v.text) || !/Completed: 1 \/ 2 Trainees/.test(v.text)) fail(`the tracker reads: ${v.text.slice(0, 200)}`);
+      if (!/Live Session: Buffer Progress Tracker/.test(v.text) || !/Completed: 1 \/ 2 Trainees/.test(v.text)) fail(`the tracker reads: ${v.text.slice(0, 200)}`);
       if (!/Ray Buffer\s+Waiting/.test(v.text) || !/Tia Buffer\s+✓ Done/.test(v.text)) fail(`the tracker's roster: ${v.text}`);
-      if (!v.locked || !/Waiting for all trainees to complete their demos\.\.\./.test(v.text)) fail('Start Group Debrief isn\'t locked while a trainee is still waiting');
+      if (!v.locked || !/Waiting for all trainees to finish their pending tasks\.\.\./.test(v.text)) fail('Unlock the next activity isn\'t locked while a trainee is still waiting');
       await a.evaluate(id => FTBuffer.mark(id, true), ray); await a.waitForTimeout(1200);
       v = await tr();
-      if (!/Completed: 2 \/ 2 Trainees/.test(v.text) || v.locked || !/🎉 All trainees have completed their demos! You are ready to begin the debrief\./.test(v.banner)) fail(`all done, the tracker reads: ${JSON.stringify(v).slice(0, 300)}`);
+      if (!/Completed: 2 \/ 2 Trainees/.test(v.text) || v.locked || !/🎉 All trainees are done! You can unlock the next activity\./.test(v.banner)) fail(`all done, the tracker reads: ${JSON.stringify(v).slice(0, 300)}`);
       await a.click('.ftbf-tr .ftbf-foot .ftbf-done'); await a.waitForTimeout(2200);
-      for (const id of [ray, tia]) if (!(((await get(a, 'buffer:' + id)) || {}).released || {})['8:s3']) fail(`Start Group Debrief didn't release ${id}`);
+      for (const id of [ray, tia]) if (!(((await get(a, 'buffer:' + id)) || {}).released || {})['13:s1']) fail(`Unlock the next activity didn't release ${id}`);
       if (locks) {
-        // (only where the slide after the demo is a step of its own: then the release opens it)
-        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const at = i => { const x = FTDayLocks.steps(8).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; }, i = FTDayDecks.at(8, 's3'); return at(i + 1) > at(i) ? at(i + 1) : 0; });
-        if (want && Number((((ds || {}).batches || {})[b] || {})[8]) !== want) fail(`the release didn't unlock Day 8's next step for the batch: ${JSON.stringify((ds || {}).batches)}`);
-        if (want && !((((ds || {}).rows || {}).batches || {})[b] || {})[8]) fail(`the release didn't flag Day 8's count as a card-row step: ${JSON.stringify((ds || {}).rows)}`);
+        // (only where the slide after the buffer is a step of its own: then the release opens it)
+        const ds = await get(a, 'settings:daysteps'), b = BATCH.toLowerCase(), want = await a.evaluate(() => { const at = i => { const x = FTDayLocks.steps(13).find(s => i >= s.from && i <= s.to); return x ? x.n : 0; }, i = FTDayDecks.at(13, 's1'); return at(i + 1) > at(i) ? at(i + 1) : 0; });
+        if (want && Number((((ds || {}).batches || {})[b] || {})[13]) !== want) fail(`the release didn't unlock Day 13's next step for the batch: ${JSON.stringify((ds || {}).batches)}`);
+        if (want && !((((ds || {}).rows || {}).batches || {})[b] || {})[13]) fail(`the release didn't flag Day 13's count as a card-row step: ${JSON.stringify((ds || {}).rows)}`);
       }
       // the trainee's slide moves on by itself (it checks every 20 s)
       const was = await t.evaluate(() => FTDayDecks.state().i);
       await t.waitForTimeout(23000);
       const now = await t.evaluate(() => FTDayDecks.state().i);
       if (now !== was + 1) fail(`after the release the trainee's slide didn't move on: ${was} → ${now}`);
-      // 📋 Score: the trainee's scorecard in Trainer Inputs, and back
-      await a.evaluate(id => FTBuffer.score(id), ray); await a.waitForTimeout(2500);
-      const sc = await a.evaluate(() => [state.view, state.adminTab, (document.querySelector('.fss-cellform b') || {}).innerText || '', !!document.querySelector('.ftbf-back')]);
-      if (sc[0] !== 'admin' || sc[1] !== 'trainerinputs' || !/Ray Buffer · Saving Intake Packet/.test(sc[2]) || !sc[3]) fail(`📋 Score didn't open the trainee's scorecard: ${JSON.stringify(sc)}`);
-      await a.click('.ftbf-back'); await a.waitForTimeout(2000);
-      if (!(await a.evaluate(() => state.view === 'daydeck' && FTDayDecks.state().day === 8 && !!document.querySelector('.ftbf-tr')))) fail('↩︎ Back didn\'t return to the live session');
     }
   } catch (err) { fail('test crashed: ' + err.message); }
   try { await put(t, 'settings:opendays', openWas || { all: [], batches: {} }); if (locks && stepsWas) await put(t, 'settings:daysteps', stepsWas); } catch (err) {}
   await browser.close();
   if (failures.length) { console.error('Buffer / mock call test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Calendaring Activity Ongoing with no Done and no tracker, done once scored; the trainer\'s tracker (a demo), its gate and banner, the release moving the trainee on, and 📋 Score into Trainer Inputs and back).');
+  console.log('Buffer / mock call test passed (the worker keeps a Done the trainee\'s own and the release the trainer\'s; the buffer, demo and mock call screens, Day 6\'s Calendaring Activity Ongoing with no Done and no tracker, done once scored; no tracker on the mock calls or the demos; the trainer\'s tracker on a Buffer Time, its gate and banner, the release moving the trainee on).');
 })();

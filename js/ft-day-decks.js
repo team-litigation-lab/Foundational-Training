@@ -706,10 +706,14 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key) +
+  // (the trainer's slide carries only the Scoresheet's marker, hidden: the 🧑‍🏫 Scoresheet button is in the bar under the slide)
+  if(admin) return M.table(rb.key);
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : M.view(rb.key) +
     `<p class="ftdd-score-f">Your trainer scores each line with you after the call. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`}</div>`;
 }
 function waitBox(s, info){
+  // (the ⏳ While you wait for your turn box is off the decks: the trainer's call)
+  return "";
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
   // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
@@ -2396,6 +2400,11 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
 .ftdd-score{margin:6px 0 12px;}
+/* the metrics read as the guide's table everywhere: each criterion left-aligned (a centred short slide doesn't centre them) */
+.ft-body .ftdd-score .ftms-tbl td:first-child, .ft-body .ftdd-score .ftms-tbl th:first-child{text-align:left !important;}
+/* Day 8's Practice Intake Calls: the tools as buttons, white on navy (not the slide's blue link style) */
+.ft-body .ftdd-practice{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:10px 0 14px;}
+.ft-body .ftdd-practice a.btn{color:#fff !important;text-decoration:none !important;font-weight:800;}
 /* the metrics as the guide's table (green header, banded rows, the WEIGHTED AVERAGE last); the trainer's has Remarks */
 .ftdd-score-h{margin:0 0 6px;font-size:15px;color:#262B45;}
 .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}

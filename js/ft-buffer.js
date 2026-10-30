@@ -74,6 +74,9 @@ const trainee = () => !!state.traineeId && !state.isAdmin && !state.adminPreview
 const what = a => a.kind === "mock" ? "mock call" : a.kind === "demo" ? "demo" : "buffer";
 const tm = iso => { const d = new Date(iso); return isFinite(d) ? d.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"}) : ""; };
 
+// (no mock call or demo has a Live Session tracker any more: the trainer scores each trainee on the 🧑‍🏫 Scoresheet, and a
+// trainee whose scoresheet is saved is done. noTracker on every one; the buffers and tasks keep theirs)
+Object.values(ACTS).forEach(a => { if(a.kind === "mock" || a.kind === "demo") a.noTracker = true; });
 // the activity on screen: {day, id, k, a, i} or null
 function here(){
   if(state.view !== "daydeck" || !root.FTDayDecks) return null;

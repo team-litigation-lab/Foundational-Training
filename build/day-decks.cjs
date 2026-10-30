@@ -678,6 +678,20 @@ const PI_CALLS_HTML =
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +
   ACT_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
+// Day 8's afternoon: the SA demonstration's and the Intake Mock Call Activity's instructions on one slide (DAY8_INS: the video, the
+// sample forms and the tools' links are taken out of it), the video on a slide of its own, then Practice Intake Calls
+const DAY8_VIDEO = '<p><a class="viewer-link" data-embed data-fit data-nowait data-kind="video" data-title="How to Save the Intake Packet and Extracted Intake Documents in SA" href="https://drive.google.com/file/d/19nLaPeT0PLq2fBSqtC6S2dVYfUYek3pK/view?usp=sharing">https://drive.google.com/file/d/19nLaPeT0PLq2fBSqtC6S2dVYfUYek3pK/view?usp=sharing</a></p>\n';
+function DAY8_INS(x){
+  const out = [DAY8_VIDEO.trim(), /<div class="ftis-forms"[^\n]*<\/div>\n?/, /<p>Prototype CMS: Intake \(a blank intake to fill in as you ask\)<\/p>\n<p><a [^\n]*<\/a><\/p>\n?/,
+    /<p>Intake Call Simulator \(the Intake Line on LSH Ring Channel\)<\/p>\n<p><a [^\n]*<\/a><\/p>\n?/];
+  for(const m of out){ const y = typeof m === "string" ? x.replace(m, "") : x.replace(m, ""); if(y === x) throw new Error(`Day 8's instructions no longer hold ${String(m).slice(0, 60)}`); x = y; }
+  return x.replace("please use your idle time to practice handling intake calls through the Call Simulator.", "please use your idle time to practice handling intake calls: see <b>Practice Intake Calls</b>, after the video.");
+}
+const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
+  '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practise intake calls with these tools. Each opens in a new tab.</p>\n' +
+  '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 Prototype CMS: Intake</a>' +
+  '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ Ring Channel: Intake Calls</a></div>\n' +
+  '<p>On Ring Channel, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in the Prototype CMS, as in the mock call.</p>\n';
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
 const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
   `<p>Your demonstration of saving your assigned Intake Packet and its extracted intake documents in SA (Smart Advocate) is run by your trainer, one trainee at a time. If your shadow buddy confirms a shadowing session, the demo runs at the same time: your trainer pulls you from the session for your turn. Without live shadowing, you watch a recorded shadowing session while you wait.</p>\n` +
@@ -685,8 +699,8 @@ const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
   `<li>Every intake document is extracted from your assigned Intake Packet, and every file, the Intake Packet itself included, is renamed under the firm’s naming convention. These are the exact files you upload and report on SA, so this is done before the demo.</li>` +
   `<li>Your task is posted in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>, naming the Intake Packets to save.</li>` +
   `<li>SA lets only one user in at a time: your trainer gives you access for your turn, with 10–15 minutes first to explore it.</li></ul>\n` +
-  // (the Additional Reminder opens the next page: a heading never ends one)
-  `<div class="ftdd-pgbreak"></div>\n<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n`;
+  // (the Additional Reminder on the first page, with Before your turn; the metrics open the next page on their own)
+  `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n<div class="ftdd-pgbreak"></div>\n`;
 const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer Facilitated Demo, Saving the Intake Packet and Extracted Intake Documents to SA</h4>\n` +
   `<ul><li>The demo runs at the same time as the shadowing when a shadow buddy confirms a session: pull the trainees from it one by one for their individual demonstration. Without live shadowing, provide a recorded shadowing session.</li>` +
   `<li>Provide the SA credentials, the <b>2nd</b> one listed. Change it back to the 1st one at the end of each shift, and to the 2nd again whenever trainees need the CMS: this keeps the active cases in the CMS safe from unsupervised exploring, and follows the firm’s policy, as directed by the Operations Manager, that VAs are not permitted to alter it.</li>` +
@@ -919,11 +933,11 @@ const ROWS = {
       {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", SLOT(8, "s1-2")]]},
       {id: "s1c", h: "AM: Other Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
-      {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
-      {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
-      {id: "s1g", h: "AM: Intake Mock Call: the Prototype CMS & the Call Simulator", parts: [["<p>You may also explore the Prototype CMS", null]],
-        // (the trainee's assigned case, the same call on Ring Channel and in the CMS: js/ft-intake.js .ftis-mockcall)
-        post: '\n<div class="ftis-mockcall"></div>\n'}],
+      // (the afternoon's instructions on one slide, the SA video on a slide of its own, then Practice Intake Calls with its tools;
+      // no Sample Intake Forms here, they are on the slides before, and no mock-call cases box)
+      {id: "s1e", h: "AM: Smart Advocate (SA) Demonstration & Intake Mock Call: Instructions", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", null]], fix: [DAY8_INS]},
+      {id: "s1v", h: "AM: Video: How to Save the Intake Packet and Extracted Intake Documents in SA", parts: [], pre: DAY8_VIDEO},
+      {id: "s1g", h: "AM: Practice Intake Calls", parts: [], pre: DAY8_PRACTICE}],
     // the demo (TRIM[8].s3); Atty. Sandy Van's MVC intake-call video after it, s3b, is off the deck (SKIP[8])
     s3: [{id: "s3", parts: [[null, "<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>"]]},
       {id: "s3b", h: "PM: Atty. Sandy’s Video: Intake Calling (MVC)", parts: [["<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>", null]]}]
