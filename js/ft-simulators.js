@@ -126,8 +126,16 @@ function ftsPanel(){
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsShowTool = (url, name)=>ftsShow(url, name);
 // (the Calendaring Activity opens straight on its own calendar, gcal.html?track=activity, not the Calendaring Simulators' list)
-window.ftsCalsim = function(track, scores){ window.open(track === "activity" && !scores ? portalHref("gcal.html") + "&track=activity"
-  : portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
+// (a trainer, or the 👁 Trainee view: the Portal never takes a trainer's sign-in from a course, so the page opens on the Portal's
+// admin sign-in, which comes back to it; a trainee's link carries their ticket, js/lsh-tool-links.js, and opens signed in)
+window.ftsCalsim = function(track, scores){
+  const url = track === "activity" && !scores ? portalHref("gcal.html") + "&track=activity"
+    : portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : "");
+  const trainer = typeof state === "object" && (state.isAdmin || state.adminPreview);
+  if(!trainer){ window.open(url, "_blank", "noopener"); return; }
+  const u = new URL(url);
+  window.open(u.origin + "/admin-login.html?next=" + encodeURIComponent(u.pathname + u.search), "_blank", "noopener");
+};
 // Trainee Evaluations (trainers: the submissions with their AI review and feedback, and the trainees' calendars) and My Evaluations (a trainee's own calendars and the reports their trainer sent) are on the Portal.
 window.ftsEvaluations = function(track, mine){ window.open(portalHref(mine ? "my-evaluations.html" : "gcal-review.html") + (track && !mine ? "&track=" + encodeURIComponent(track) : ""), "_blank", "noopener"); };
 function ftsShow(url, name){
