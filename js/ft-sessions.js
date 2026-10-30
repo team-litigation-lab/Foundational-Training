@@ -629,8 +629,7 @@ function metricsTable(key, view){
     ${rb.criteria.map(k => `<tr><td>${e(k.n)}</td><td>0</td></tr>`).join("")}
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>0</td></tr></tbody></table>`;
   // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
-  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button>
-    <span class="fss-muted ftms-hint">🧑‍🏫 <b>Scoresheet</b>${state.view === "daydeck" ? " (in the bar under the slide)" : ""}: pick the trainee, score each line 0–5, add remarks, 💾 Save.</span></div>`;
+  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button></div>`;
 }
 // 📋 the scoresheet in the pop-up (FTMetrics.open): the batch and trainee to pick, each criterion's score and Remarks, the
 // Result and 💾 Save, all on one screen
