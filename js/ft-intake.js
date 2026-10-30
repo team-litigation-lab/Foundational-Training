@@ -137,7 +137,7 @@ function docsHtml(el){
 // 📋 the sample intake forms: shown in the slide for reference, bigger on a click
 function formsHtml(el){
   const u = el.getAttribute("data-href") || "", t = el.getAttribute("data-title") || "Sample Intake Forms", src = embed(u);
-  return `<a class="viewer-link ftis-form" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span class="ftis-form-h"><b>📋 ${e(t)}</b><small>🔍 Click to view bigger</small></span>
+  return `<a class="viewer-link ftis-form" data-noopen data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span class="ftis-form-h"><b>📋 ${e(t)}</b><small>🔍 Click to view bigger</small></span>
     <span class="ftis-form-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : ""}</span></a>`;
 }
 const PAINT = {".ftis-packet": packetHtml, ".ftis-sheet": sheetHtml, ".ftis-docs": docsHtml, ".ftis-forms": formsHtml};
@@ -285,7 +285,7 @@ window.FTIntake = {
 .ftis-doc-n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font-size:11.5px;font-weight:800;}
 .ftis-form{display:block;background:#fff;border:1px solid #DCE0EA;border-left:5px solid #DB8437;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;margin:8px 0;}
 .ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
-.ftis-form-pic{display:block;height:max(200px, calc(var(--ftdd-room, 70vh) - 260px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
+.ftis-form-pic{display:block;height:max(150px, calc(var(--ftdd-room, 70vh) - 280px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
 .ftis-admin h4{margin:16px 0 6px;color:#262B45;}
 .ftis-aedit{display:grid;grid-template-columns:auto 1fr 2fr;gap:6px 10px;align-items:center;} .ftis-aedit-d{grid-template-columns:minmax(0,1.2fr) 2fr;}
 .ftis-aedit input{box-sizing:border-box;width:100%;font:inherit;padding:6px 9px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
