@@ -594,7 +594,8 @@ const HANDOUTS = {1: {items: [
 function handoutsSlide(h){
   // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
   // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
-  // segment, where the day is held step by step (the trainer's 🔓 Unlock on the slide, or 🔓 Activity Locks), else its video
+  // segment, as the trainer's slide shows it (🔓 Unlock on the slide, or 🔓 Activity Locks; open on a day the steps don't
+  // hold); only while that isn't known yet, its video
   const lid = lessonOfDay(DD.day);
   const bySeg = root.FTDayLocks && FTDayLocks.stopOpen ? FTDayLocks.stopOpen(lid, "video") : null;
   const locked = forTrainee() && !state.adminPreview && (bySeg != null ? !bySeg : typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid));
