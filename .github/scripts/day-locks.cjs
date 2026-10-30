@@ -44,7 +44,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
       [...c.querySelectorAll('.mc-grid .ftseg .ftseg-b')].map(x => ({ t: x.innerText.replace(/^[^A-Za-z]+/, '').trim(), locked: x.classList.contains('locked') }))])));
     if ((segs['dayl-6'] || []).map(s => s.t).join() !== 'Part 1,Part 2,Part 3') fail(`Intake's card doesn't have Part 1 · Part 2 · Part 3: ${JSON.stringify(segs['dayl-6'])}`);
     if ((segs['dayl-1'] || []).map(s => s.t).join() !== 'Start') fail(`Lesson 1's card doesn't have one Start button: ${JSON.stringify(segs['dayl-1'])}`);
-    if ((segs['dayl-8'] || []).length !== 2 || (segs['dayl-4'] || []).map(s => s.t).join() !== 'Part 2' || (segs['dayl-3'] || []).map(s => s.t).join() !== 'Part 1' || (segs['dayl-1'] || []).length !== 1) fail(`the cards' segments don't match their days: ${JSON.stringify(segs)}`);
+    if ((segs['dayl-8'] || []).length !== 2 || segs['dayl-4'] || (segs['dayl-3'] || []).map(s => s.t).join() !== 'Part 1,Part 2' || (segs['dayl-1'] || []).length !== 1) fail(`the cards' segments don't match their days: ${JSON.stringify(segs)}`);
     if (!(segs['dayl-6'] || []).every(s => s.locked)) fail('Intake\'s days were open before the trainer opened them');
     if ((segs['dayl-1'] || [{}])[0].locked) fail('Lesson 1\'s Day 1 is locked with the lesson open');
     if (await page.$('.ftli .mc-grid > .module-start-btn')) fail('a lesson card still has its single ▶ Start Training button');
@@ -111,10 +111,14 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     v = await page.evaluate(() => { const st = FTDayLocks.steps(8), am = st.filter(s => s.slot === 'am').length, pm = st.find(s => s.slot === 'pm');
       return { at: FTDayLocks.at(8), am, pmOpen: pm ? FTDayLocks.stepOpen(8, pm.n) : null, pmN: pm && pm.n }; });
     if (v.at !== v.am || v.pmOpen !== false) fail(`Day 8's schedule didn't open just its AM session: ${JSON.stringify(v)}`);
-    // Day 3 discusses Lessons 3 and 4: Lesson 4's deck, video and Knowledge Check wait for Day 4's steps (locked), not Day 3's
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 999, 4: 0 } }, legacy: { all: [], batches: {} } });
+    // Day 3 discusses Lessons 3 and 4: its first step is the PI Workflow deck, its second the Reception deck (Lesson 4, the
+    // row's lesson), so Lesson 4's deck and video wait for Day 3's second step, and open with it
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 1, 4: 0 } }, rows: { all: {}, batches: { b102826: { 3: 1, 4: 1 } } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ l3: FTDayLocks.held(3, 'lesson'), l4: FTDayLocks.held(4, 'lesson'), v4: FTDayLocks.held(4, 'video') }));
-    if (v.l3 || v.l4 !== true || v.v4 !== true) fail(`Lesson 4 went by Day 3's steps: ${JSON.stringify(v)}`);
+    if (v.l3 || v.l4 !== true || v.v4 !== true) fail(`Lesson 4's deck didn't wait for Day 3's Reception step: ${JSON.stringify(v)}`);
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 2, 4: 0 } }, rows: { all: {}, batches: { b102826: { 3: 1, 4: 1 } } }, legacy: { all: [], batches: {} } });
+    v = await page.evaluate(() => ({ l4: FTDayLocks.held(4, 'lesson') }));
+    if (v.l4 !== false) fail(`Lesson 4's deck didn't open with Day 3's Reception step: ${JSON.stringify(v)}`);
     // a batch's own setting stands in for all batches': a batch can be locked behind the rest, and taken off their schedule
     await put(page, 'settings:daysteps', { all: { 7: 999 }, batches: { b102826: { 7: 0 } }, sched: { all: { 8: { am: past, pm: past, out: past } }, batches: { b102826: { 8: null } } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ d7: FTDayLocks.dayStarted(7), d8: FTDayLocks.at(8) }));

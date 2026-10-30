@@ -76,7 +76,7 @@ const DAYS = [
     {t:"🎧 Call Listening on 10 Sample Recordings (logged on the platform)", kind:"Activity", at:"tool", id:"listening"},
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Confidentiality & Call Response Exercise", kind:"Exercise", at:"gc"},
-    {t:"Call Intake & Data Extraction: 5 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
+    {t:"Reception Listening Activity: 5 practice calls with challenges (worksheet to your Assessments/Activities folder)", kind:"Activity", at:"gc"}
   ]},
   {day:4, role:"Reception Training", lessons:[4], items:[
     {t:"Training Video Viewing", kind:"Activity", at:"room"},
@@ -95,7 +95,7 @@ const DAYS = [
   {day:6, role:"Calendar Management Training", lessons:[5], items:[
     {t:"Calendar Management Mock Calls", kind:"Session", at:"session", id:"calendaring"},
     {t:"Calendar Management Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"calendar-live"},
-    {t:"Appointments booked on the Google Calendar Simulator (time zone visible in every screenshot)", kind:"Activity", at:"tool", id:"calsim"},
+    {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
     {t:"Training Video Viewing", kind:"Activity", at:"room"},
     {t:"Additional Activity: Calendar Management — Mock Call Scenarios (each booking checked against the scheduling rules)", kind:"Activity", at:"tool", id:"calrules"},
     {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}
@@ -184,7 +184,7 @@ const OFFLINE = {
       "The PPTs on Documents & Spreadsheets, Keyboard Shortcuts and Shadowing Etiquette",
       "The VLF articles on Personal Injury, while you wait for your teammates"],
   3: ["The CRM/CMS training videos, then update item #12 on your Monitoring Sheet",
-      "Carlos’ and Oscar’s remaining reception recordings, in your own time (supplementary, not training hours)"],
+      "Carlos’ remaining reception recordings, in your own time (supplementary, not training hours)"],
   4: ["Reception Training with Julio (1:49:49): watch it and update items #10 and #11 on your Monitoring Sheet"],
   6: ["Calendaring 101 and the Calendar Management videos (Parts 1–2), while you wait for your turn"],
   7: ["The intake modules and the fillable intake forms, as additional reference in your idle time"],
