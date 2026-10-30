@@ -2872,6 +2872,10 @@ main.main-ftdd .ftdd-sheet a.ftdd-sop-dl, main.main-ftdd .ftdd-sheet a.ftdd-sop-
    bold, then its screenshots side by side in one row under it, each numbered under its middle (1, 2, 3 …) */
 main.main-ftdd .ftdd-sheet.ftdd-sa p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa li{font:700 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;text-align:left;margin:0 0 8px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa p.url-list{font-size:16px !important;font-weight:700 !important;word-break:break-all;text-decoration:underline;}
+/* the Smart Advocate Knowledge Base links, under their screenshots: big and blue */
+main.main-ftdd .ftdd-sheet.ftdd-sa p.url-list.ftdd-sa-kb{font-size:22px !important;margin:14px 0 0 !important;word-break:normal;text-decoration:none;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-kb a{color:#1F5FD6 !important;text-decoration:underline;text-underline-offset:3px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-kb a:hover{color:#0B3FA8 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step{margin:0 0 34px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit + .ftdd-sa-unit{margin-top:14px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step h3{display:inline-block;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:10px 18px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 14px !important;text-align:left;}
