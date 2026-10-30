@@ -1226,7 +1226,7 @@ const LESSON_CARDS = {
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
-      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for pending tasks · the mock call prep: Call Simulator, Ring Channel, CMS, AI listening, the metrics", k: "buffer", d: 5, s: "s1"},
+      {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},

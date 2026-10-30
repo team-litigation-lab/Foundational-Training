@@ -54,17 +54,18 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
 const lor = D[11] && D[11].slides.filter(s => s.read);
 if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test(lor[0].html) || !/<h3>Activity 2: Letter of Representation/.test(lor[1].html) || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
   fail(`Day 11's LOR Drafting guidelines aren't inlined over two read slides: ${JSON.stringify((lor || []).map(s => s.id))}`);
-// Day 5: its buffer carries Day 4's Reception mock call preparation and its instructions & metrics, word for word (built
-// once); the Attorney Calendar Management Activity's own text (Instructions 1–9, the seven colours, the guests, the ten
+// Day 4: its mock call preparation's links in big type (s2b) and the steps, run and metrics (s2b-2); Day 5 opens on the
+// Monitoring Sheet's items #10–11, its panel only (no mock call preparation); the Attorney Calendar Management Activity's own text (Instructions 1–9, the seven colours, the guests, the ten
 // Activity Items) on a read slide with the Calendar Simulator's hook, then its files and cards; Days 5 and 13 have no
 // slide that only says the lesson deck opens from ▶ Start Training
 {
   const sl = (n, id) => ((D[n] || { slides: [] }).slides.find(s => s.id === id) || {}).html || '';
   // (Day 4: the tools' links on a slide of their own, s2b, in big type; the steps, the run and the metrics on s2b-2)
-  const s2b = sl(4, 's2b-2'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), buf5 = sl(5, 's1');
-  const prep4 = s2b.slice(s2b.indexOf('<p>Step 1 - '), at).trim(), run4 = at < 0 ? '' : s2b.slice(at).trim();
-  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/class="ftdd-biglinks"/.test(sl(4, 's2b')) || !/class="ftdd-biglinks"/.test(buf5) || /Link coming: AI Mock Calls Listening|☎️ Front Desk Drill/.test(buf5) || sl(4, 's2c'))
-    fail(`Day 5's buffer doesn't carry Day 4's mock call preparation and metrics: ${buf5.length} chars`);
+  const s2b = sl(4, 's2b-2'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), mon5 = (D[5] || { slides: [] }).slides[0] || {};
+  if (s2b.indexOf('<p>Step 1 - ') < 0 || at < 0 || !/class="ftdd-biglinks"/.test(sl(4, 's2b')) || sl(4, 's2c'))
+    fail("Day 4's mock call preparation and metrics aren't on its slides");
+  if (mon5.id !== 's1' || mon5.h !== 'Update Your Monitoring Sheet' || mon5.html.trim())
+    fail(`Day 5 doesn't open on its Monitoring Sheet update alone: ${JSON.stringify({ id: mon5.id, h: mon5.h, len: (mon5.html || '').length })}`);
   const act5 = D[5] && D[5].slides.find(s => s.id === 's3'), txt = (act5 || {}).html || '';
   const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = (txt.match(/class="ftdd-cal-item"/g) || []).length;
   if (!act5 || !act5.read || ins !== 9 || items !== 10 || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt) || !/data-calsim-activity/.test(txt))

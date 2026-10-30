@@ -36,7 +36,7 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   // (Day 3's first slide: the sample recordings and SOP, its card's 🎧 Call Listening Sessions row; "Call Listening" in its
   // name brings the 🎧 Call Listening log button, js/ft-day-decks.js slideActions)
   3: {s1: "Frontline Management: Operations, Logistics, and Escalations Protocols", s2: "CRM/CMS Training Videos"},
-  4: {s2: "Training Video Viewing", s3: "PM: Reception Mock Calls (One-on-One)"},
+  4: {s2: "Training Video Viewing", s3: "PM: Reception Mock Calls (One-on-One)"}, 5: {s1: "Update Your Monitoring Sheet"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
@@ -223,20 +223,12 @@ const TRIM = {1: {reading: html => {
       `  <div><div class="shots">\n${img("discord-sanders.png", "Sanders on Discord")}</div><p><b>Sanders: sndrrsss9920</b></p></div>\n` +
       `  <div><div class="shots">\n${img("discord-ivan.png", "Ivan on Discord")}</div><p><b>Ivan: kuchiq</b></p></div>\n</div>\n`, " ftdd-sa-pair-help"));
 }},
-// Day 5's Buffer Time for Reception Mock Calls: the carryover, and the Reception mock calls' preparation for whoever still
-// has their one-on-one to do (the same text as Day 4's: MOCK_PREP, MOCK_RUN); a trainee reads it above the buffer's Done
-// (js/ft-buffer.js "5:s1", show)
+// Day 5 opens on the Monitoring Sheet's items #10–11, the same panel and 📤 Submit as Day 4's (js/ft-buffer.js "5:s1"), in
+// place of the Buffer Time for Reception Mock Calls and its mock call preparation; the card's next stop is the lesson deck
 5: {s1: html => {
   const line = "<p>Carryover period for completing any pending tasks from the last session. </p>";
   if(html.trim() !== line) throw new Error("Day 5's Buffer Time is no longer the one line the build expects");
-  return line + "\n" + '<hr class="stars">\n' + "<p><b>☎ Reception Mock Calls (One-on-One)</b></p>\n" + MOCK_ONE("below") +
-    "<p>If yours is still to do, use this buffer to get ready: practise on the Call Simulator, then take the call on the Ring Channel with the case files in the CMS.</p>\n" +
-    "<p><b>Mock Call Preparation</b></p>\n" + MOCK_LINKS +
-    // (the warm-up, then its seven steps under the Instructions heading, one block on a page of its own, shrunk to fit:
-    // a block between page breaks is never split, js/ft-day-decks.js sheetPages; how the mock calls run follows on the next)
-    rep(rep(MOCK_STEPS, MOCK_INSTR, "", 1, "Day 5's Buffer Time"), "<p>Step 1 - Open the Call Simulator",
-      '<div class="ftdd-pgbreak"></div>\n<div class="ftdd-onepage">\n<p><b>Instructions for Mock Calls &amp; Metrics</b></p>\n<p>Step 1 - Open the Call Simulator', 1, "Day 5's Buffer Time") +
-    '</div>\n<div class="ftdd-pgbreak"></div>\n' + MOCK_RUN;
+  return "";
 },
 // Day 5's Attorney Calendar Management Activity: the activity's own text (its Instructions and its ten Activity Items) read
 // on the slide, with the hook for the Calendar Simulator; then the activity file and samples, and three cards (the time
@@ -583,10 +575,8 @@ const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
 // Day 4: the same calls, small, to replay while waiting for the mock call
 const PI_WARMUP = `<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p class="ftdd-warm-lead">Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
-   Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2) and Day 5's Buffer Time for
-   Reception Mock Calls (TRIM[5].s1). MOCK_PREP: direct links to the Call Simulator's Reception line, the Ring Channel,
-   the CMS (MOCK_LINKS); then the PI practice calls' warm-up and the step-by-step use of them (MOCK_STEPS); MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics;
-   MOCK_ONE: the one-on-one mock call's own line (where the metrics are, on that day's slides). */
+   Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2). MOCK_PREP: direct links to the Call Simulator's Reception line, the Ring Channel,
+   the CMS (MOCK_LINKS); then the PI practice calls' warm-up and the step-by-step use of them (MOCK_STEPS); MOCK_RUN: how the one-on-one mock calls run, and the Reception metrics. */
 const CALL_SIM = "https://cm-training-activity.pages.dev/simulators/call.html?program=FT", CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
 const tabLink = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
 // (MOCK_LINKS and MOCK_STEPS: Day 4 puts each on a slide of its own, the links in big type: ROWS[4].s2)
@@ -616,7 +606,6 @@ const MOCK_RUN =
   "<p><b>Reception Mock Calls Metrics</b></p>\n" +
   '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
   "<p>Each criterion is scored 0–5; your result is the WEIGHTED AVERAGE of the fourteen, which reaches your Scorecard.</p>\n";
-const MOCK_ONE = where => `<p>Your one-on-one Reception mock call with the trainer, scored on the Reception Mock Calls Metrics (${where}).</p>\n`;
 /* 📋 EVERY DAY IN DAY 1'S SHAPE (Days 2–16): each row of a day's card (js/ft-day-decks.js LESSON_CARDS) leads to a slide
    of its own, in the card's order, the way Day 1's Reading Task, its stops and its Installation of SA do. Where the guide
    writes several of a card's activities under one heading, that section is cut here into one slide per activity.
