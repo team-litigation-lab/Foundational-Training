@@ -12,6 +12,12 @@
        .ftis-sheet    the Intake Documents Worksheet as the trainee's own editable copy in their Google Drive;
        .ftis-docs     the 14 additional intake documents, each shown in the slide and bigger on a click;
        .ftis-forms    the sample intake forms, the same way (for reference: the Prototype CMS holds the form).
+     • .ftis-mockcall Days 8–9, the Intake Mock Call: the case the trainer assigned the trainee (Admin → 📦 Intake Packets),
+                      one of the CMS's Intake Mock Calls, which Ring Channel plays too, so the trainer's call and the
+                      trainee's CMS are on the same case; a trainer sees every case with where to pick it on Ring Channel
+                      and the caller's script.
+       .ftis-mcase    on the trainer's Intake Mock Calls scoring sheet (js/ft-sessions.js FTMetrics): the picked
+                      trainee's case, which 💾 Save keeps with the score.
    The recordings and transcripts are js/ft-intake-samples.js (build/audio/make_audio.py, from
    build/audio/intake_samples.json): fictional people and cases, written for training. It loads the first time a
    slide asks for it, not with the page.
@@ -101,6 +107,78 @@ function loadK(force){
   return K.loading;
 }
 const packets = () => (K.set && K.set.packets) || {};
+
+/* ---------- Days 8–9: the Intake Mock Call's case, shared by the CMS and Ring Channel ----------
+   The calls are the CMS's own (its call-packs.js, the Call Simulator's 📋 Intake Mock Calls line), read from the CMS
+   itself so they are never a copy that drifts: Ring Channel mirrors the same file (lshringchannel src/cms/call-packs.js),
+   so the call a trainer plays from Ring Channel's Scenario Picker is the call, the caller and the case the trainee works
+   in the CMS. The trainer assigns each trainee a call in Admin → 📦 Intake Packets: intakeassign:<id>.call, kept beside
+   the packet in the same trainer-owned record (both writes keep the other's field). */
+const CMS = "https://lshcasemanagementtraining-trainingcrm.pages.dev/";
+const LINE = "Intake Mock Calls";
+const SIM = "https://cm-training-activity.pages.dev/simulators/call.html?" + new URLSearchParams({program: "FT", line: LINE});
+let packsLoading = null;
+function packs(){
+  if(window.CALL_PACKS && window.CALL_PACKS.CALLS) return Promise.resolve(window.CALL_PACKS);
+  if(packsLoading) return packsLoading;
+  packsLoading = new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = CMS + "call-packs.js";
+    sc.onload = () => window.CALL_PACKS && window.CALL_PACKS.CALLS ? ok(window.CALL_PACKS) : no(new Error("packs"));
+    sc.onerror = () => { packsLoading = null; sc.remove(); no(new Error("load")); }; document.head.appendChild(sc); })
+    .then(P => { paint(); return P; }, err => { packsLoading = null; PK.failed = true; paint(); throw err; });
+  return packsLoading;
+}
+const PK = {failed: false};
+const mockCalls = () => window.CALL_PACKS && window.CALL_PACKS.CALLS ? window.CALL_PACKS.CALLS.filter(c => c.program === "FT" && c.line === LINE && c.dir !== "out") : null;
+const callById = id => (mockCalls() || []).find(c => c.id === id) || null;
+// a call back about a file already in the CMS (the case is open in front of the trainee); a first call starts a blank intake
+const onFile = c => !!c.doc && /calling back|callback|retainer|\(MC-/i.test(c.you + " " + c.role);
+const cmsUrl = c => CMS + "?" + new URLSearchParams(Object.assign({program: "intake", from: "standard"}, c && onFile(c) ? {mock: c.doc} : {}));
+const caseDoc = c => c && c.doc && window.CALL_PACKS.DOCS && window.CALL_PACKS.DOCS[c.doc] ? window.CALL_PACKS.DOCS[c.doc] : null;
+const isTrainerView = () => typeof state === "object" && !!state.isAdmin && !state.adminPreview;
+const linkBtn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+// the trainee's case: who calls, what they know going in, and where to work it (never the caller's script or the goals)
+function caseCard(c){
+  return `<div class="ftis-mc-card"><div class="ftis-mc-top"><b>${e(c.title)}</b><span class="ftis-mc-lv">${e(c.level || "")}</span></div>
+    <p class="ftis-mc-who">📞 ${e(c.name)} · ${e(c.role)}</p>
+    <p class="ftis-mc-facts">${e(c.facts || "")}</p>
+    <p class="ftis-mc-do">${onFile(c) ? `The caller’s case is on file: <b>${e((caseDoc(c) || {}).title || c.doc)}</b> opens in the Prototype CMS. Verify the caller first, then work the call from the file.`
+      : "Nothing is on file yet: open a blank intake in the Prototype CMS and enter what you gather straight into its fields as the caller talks."}</p>
+    <div class="ftis-mc-act">${linkBtn(cmsUrl(c), "🗂 Open the Prototype CMS ↗", "btn-navy")}${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div></div>`;
+}
+// the trainer's view of a case: where to pick it on Ring Channel, the caller's opening, script and goals, the CMS file
+function trainerCase(c, who){
+  const doc = caseDoc(c);
+  return `<details class="ftis-mc-t"><summary><b>${e(c.title)}</b> · ${e(c.name)} <span class="ftis-mc-lv">${e(c.level || "")}</span>${who ? ` <span class="ftis-mc-n">${e(who)}</span>` : ""}</summary>
+    <p class="ftis-mc-ring">☎ <b>On Ring Channel:</b> 🎭 Call to play (Scenario Picker) → Standard Training → Intake → <b>${e(c.title)}</b> → ☎ Play on the Console.</p>
+    <p><b>Opening line:</b> “${e(c.opening || "")}”</p>
+    <p><b>The caller’s script:</b> ${e(c.hidden || "")}</p>
+    ${(c.goals || []).length ? `<p><b>What the call is graded on:</b></p><ul>${c.goals.map(g => `<li>${e(g)}</li>`).join("")}</ul>` : ""}
+    ${doc ? `<p><b>The CMS case file (${e(c.doc)}):</b> ${e(doc.text)}</p>` : ""}
+    <div class="ftis-mc-act">${linkBtn(cmsUrl(c), "🗂 The trainee’s CMS view ↗")}</div></details>`;
+}
+function mockcallHtml(){
+  const calls = mockCalls();
+  const head = `<div class="ftis-pk-h"><b>📞 ${isTrainerView() ? "Intake Mock Call cases: the CMS’s Intake line, the same calls on Ring Channel" : "Your Intake Mock Call case"}</b></div>`;
+  if(!calls){ if(!PK.failed) packs().catch(() => {}); return head + `<p class="ftis-wait">${PK.failed ? "The cases didn’t load from the CMS. Check your connection and open this slide again." : "Loading the cases from the CMS…"}</p>`; }
+  if(isTrainerView()){
+    if(!AD.rows && !AD.loading) loadAdmin();
+    const by = {}; Object.entries(AD.recs || {}).forEach(([id, r]) => { if(r && r.call){ const row = (AD.rows || []).find(x => x.id === id); if(row && (!AD.batch || row.batch === AD.batch)) (by[r.call] = by[r.call] || []).push(row.name.split(/\s+/)[0]); } });
+    return head + `<p class="ftis-pk-note">Play the trainee’s assigned case from Ring Channel while they work it in the Prototype CMS. Each trainee sees their case on this slide once it is assigned.</p>
+      ${calls.map(c => trainerCase(c, (by[c.id] || []).join(", "))).join("")}
+      <div class="ftis-mc-act"><button type="button" class="btn btn-ghost btn-sm" onclick="state.adminTab = 'intake'; goto('admin')">📞 Assign the cases</button></div>`;
+  }
+  const c = isTrainee() && K.mine && K.mine.call ? callById(K.mine.call) : null;
+  if(!c) return head + `<div class="ftis-pk-ph"><span class="ftis-pk-ph-ic">📞</span><div><b>Your mock call case appears here</b><small>Your trainer assigns it before your turn. Until then, practise on the Intake line.</small></div>${linkBtn(SIM, "☎ Practise the Intake line ↗")}</div>`;
+  return head + caseCard(c);
+}
+// the trainer's scoring sheet: the picked trainee's case
+function mcaseHtml(el){
+  const id = el.getAttribute("data-trainee") || "", calls = mockCalls();
+  if(!calls){ if(!PK.failed) packs().catch(() => {}); return ""; }
+  if(!AD.rows){ if(!AD.loading) loadAdmin(); return ""; }
+  const c = callById(((AD.recs || {})[id] || {}).call);
+  return c ? trainerCase(c, "") : `<p class="ftis-pk-note">📞 No mock call case assigned to this trainee yet: <a href="#" onclick="state.adminTab = 'intake'; goto('admin'); return false;">assign one in 📦 Intake Packets</a>.</p>`;
+}
 const btn = (href, label, cls = "btn-ghost") => `<a class="btn ${cls} btn-sm" href="${e(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 // (a button, not a viewer link: the deck draws a link in a slide as a tile)
 const viewBtn = (u, t, label) => `<button type="button" class="btn btn-ghost btn-sm" data-url="${e(u)}" data-title="${e(t)}" onclick="FTIntake.view(this)">${label}</button>`;
@@ -145,15 +223,19 @@ function formsHtml(el){
   return `<a class="viewer-link ftis-form" data-noopen data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span class="ftis-form-h"><b>📋 ${e(t)}</b><small>🔍 Click to view bigger</small></span>
     <span class="ftis-form-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : ""}</span></a>`;
 }
-const PAINT = {".ftis-packet": packetHtml, ".ftis-sheet": sheetHtml, ".ftis-docs": docsHtml, ".ftis-forms": formsHtml};
+const PAINT = {".ftis-packet": packetHtml, ".ftis-sheet": sheetHtml, ".ftis-docs": docsHtml, ".ftis-forms": formsHtml, ".ftis-mockcall": mockcallHtml, ".ftis-mcase": mcaseHtml};
 function paint(){
   let any = false;
-  Object.keys(PAINT).forEach(sel => document.querySelectorAll(sel).forEach(el => { if(el.closest("#ftseBody")) return; el.setAttribute("data-on", "1"); el.innerHTML = PAINT[sel](el); any = true; }));
+  Object.keys(PAINT).forEach(sel => document.querySelectorAll(sel).forEach(el => { if(el.closest("#ftseBody")) return;
+    // (an open case stays open when it is drawn again)
+    const open = [...el.querySelectorAll("details[open] > summary b")].map(b => b.textContent);
+    el.setAttribute("data-on", "1"); el.innerHTML = PAINT[sel](el); any = true;
+    el.querySelectorAll("details > summary b").forEach(b => { if(open.includes(b.textContent)) b.closest("details").open = true; }); }));
   if(any) refit();
 }
 
 /* ---------- 🧑‍🏫 Admin → 📦 Intake Packets ---------- */
-const AD = {rows: null, assign: {}, loading: false, batch: ""};
+const AD = {rows: null, assign: {}, recs: {}, loading: false, batch: ""};
 async function loadAdmin(){
   AD.loading = true;
   try{
@@ -163,22 +245,26 @@ async function loadAdmin(){
     const keys = people.map(r => "intakeassign:" + r.id), vals = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || ""})).sort((a, b) => a.batch.localeCompare(b.batch) || a.name.localeCompare(b.name));
-    AD.assign = {}; people.forEach((r, i) => { if(vals[i] && vals[i].packet) AD.assign[r.id] = Number(vals[i].packet); });
+    AD.assign = {}; AD.recs = {}; people.forEach((r, i) => { const v = vals[i] && typeof vals[i] === "object" ? vals[i] : null; if(v) AD.recs[r.id] = v; if(v && v.packet) AD.assign[r.id] = Number(v.packet); });
     if(!AD.batch){ const bs = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
   }catch(err){ AD.rows = AD.rows || []; }
-  AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render();
+  AD.loading = false; if(state.view === "admin" && state.adminTab === "intake") render(); else paint();
 }
 function adminHtml(){
   if(!AD.rows || !K.set){ if(!AD.loading) loadAdmin(); loadK(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-  const pk = packets(), docs = K.set.docs || [];
+  const pk = packets(), docs = K.set.docs || [], calls = mockCalls();
+  if(!calls && !PK.failed) packs().then(() => { if(state.view === "admin" && state.adminTab === "intake") render(); }, () => { if(state.view === "admin" && state.adminTab === "intake") render(); });
+  const callOpt = id => `<option value="">Not assigned</option>${(calls || []).map(c => `<option value="${e(c.id)}" ${c.id === (((AD.recs[id] || {}).call) || "") ? "selected" : ""}>${e(c.title)} · ${e(c.name)}</option>`).join("")}`;
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort(), rows = AD.rows.filter(r => !AD.batch || r.batch === AD.batch);
   const opt = (n, cur) => `<option value="${n}" ${n === cur ? "selected" : ""}>${n ? `Packet ${n}${pk[n] && pk[n].client ? " · " + e(pk[n].client) : ""}` : "Not assigned"}</option>`;
   return `<div class="card ftis-admin"><div class="ff-bar"><div><h3>📦 Intake Packets</h3><p class="fss-muted">Day 8’s Topic 2: assign each trainee a packet and they see it on their slide as <b>Your Assigned Packet</b>, with its download. Download the packets from the <a href="${e(K.set.folder || PFOLDER)}" target="_blank" rel="noopener">Redacted Intake Packets folder ↗</a>, rename each with its trainee’s name if you share them that way, and paste each packet’s link below.</p></div>
       <span><select onchange="FTIntakeAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select></span></div>
-    <h4>Assign the packets</h4>
-    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th></tr></thead><tbody>
+    <h4>Assign the packets and the mock call cases</h4>
+    <p class="fss-muted">📞 <b>Mock call case</b>: the trainee’s Intake Mock Call (Days 8–9), one of the CMS’s Intake Mock Calls, which Ring Channel plays too. The trainee sees their case on the mock call slides and works it in the Prototype CMS; you play the same call from Ring Channel’s Scenario Picker.${calls ? "" : PK.failed ? " <b>The cases didn’t load from the CMS: reload to try again.</b>" : " Loading the cases from the CMS…"}</p>
+    ${rows.length ? `<div class="ff-scroll"><table class="ff-tbl"><thead><tr><th>Trainee</th><th>Packet</th><th>Mock call case</th></tr></thead><tbody>
       ${rows.map(r => `<tr><td><b>${e(r.name)}</b><span class="fss-muted"> ${e(r.batch)}</span></td>
-        <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td></tr>`).join("")}
+        <td><select onchange="FTIntakeAdmin.assign('${e(r.id)}', this.value)">${[0, ...Array.from({length: NPACK}, (_, i) => i + 1)].map(n => opt(n, AD.assign[r.id] || 0)).join("")}</select></td>
+        <td><select ${calls ? "" : "disabled"} onchange="FTIntakeAdmin.assignCall('${e(r.id)}', this.value)">${callOpt(r.id)}</select></td></tr>`).join("")}
     </tbody></table></div>` : `<p class="fss-muted">No approved trainees${AD.batch ? " in this batch" : ""}.</p>`}
     <h4>The packets</h4><p class="fss-muted">Each packet’s client (the trainee names their subfolder after them) and its Drive link. Share each file “Anyone with the link can view” so trainees can download it.</p>
     <div class="ftis-aedit">${Array.from({length: NPACK}, (_, i) => i + 1).map(n => `<b>Packet ${n}</b><input id="ftisC${n}" placeholder="Client’s name" value="${e((pk[n] || {}).client || "")}"><input id="ftisU${n}" placeholder="https://drive.google.com/file/d/…" value="${e((pk[n] || {}).url || "")}">`).join("")}</div>
@@ -190,10 +276,20 @@ window.FTIntakeAdmin = {
   batch(b){ AD.batch = b; render(); },
   async assign(id, v){
     const n = Number(v) || 0;
-    const ok = await sharedSet("intakeassign:" + id, n ? {packet: n, at: new Date().toISOString()} : {packet: 0, at: new Date().toISOString()});
+    // (the record also holds the trainee's mock call case: the packet's write keeps it)
+    const next = Object.assign({}, AD.recs[id] || {}, {packet: n, at: new Date().toISOString()});
+    const ok = await sharedSet("intakeassign:" + id, next);
     if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
-    if(n) AD.assign[id] = n; else delete AD.assign[id];
+    AD.recs[id] = next; if(n) AD.assign[id] = n; else delete AD.assign[id];
     toast(n ? `✓ Packet ${n} assigned — the trainee sees it within two minutes.` : "✓ Unassigned.");
+  },
+  async assignCall(id, v){
+    const c = callById(v);
+    const next = Object.assign({}, AD.recs[id] || {packet: 0}, {call: c ? c.id : "", callAt: new Date().toISOString()});
+    const ok = await sharedSet("intakeassign:" + id, next);
+    if(ok === false){ toast("Couldn’t save. Check your connection."); return; }
+    AD.recs[id] = next; paint();
+    toast(c ? `✓ ${c.title} assigned — play it from Ring Channel’s Scenario Picker; the trainee sees it within two minutes.` : "✓ Mock call case unassigned.");
   },
   async save(){
     // read the form first: loading the saved settings re-renders the page and the form with it
@@ -240,6 +336,8 @@ document.addEventListener("play", ev => { if(!ev.target.classList || !ev.target.
 
 window.FTIntake = {
   data,
+  // the trainee's assigned mock call (its CMS call id), for the trainer's scoring sheet to keep with the score
+  callOf: id => { const c = callById(((AD.recs || {})[id] || {}).call); return c ? {id: c.id, title: c.title} : null; },
   reload: () => loadK(true),
   view(b){ if(typeof lvOpen === "function") lvOpen({kind: "doc", title: b.getAttribute("data-title"), url: b.getAttribute("data-url")}); },
   copy(b){ const t = b.getAttribute("data-copy"); try{ navigator.clipboard.writeText(t); b.textContent = "✓ Copied"; setTimeout(() => { b.textContent = "📋 Copy"; }, 1500); }catch(err){} }
@@ -296,6 +394,18 @@ window.FTIntake = {
 .ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
 .ftis-form-pic{display:block;height:max(150px, calc(var(--ftdd-room, 70vh) - 280px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
 .ftis-admin h4{margin:16px 0 6px;color:#262B45;}
+.ftis-mockcall{background:#FFF8EF;border:2px dashed #DB8437;border-radius:12px;padding:12px 16px;margin:8px 0 10px;color:#1B1E2E;text-align:left;}
+.ftbf .ftis-mockcall{margin:12px auto;max-width:720px;}
+.ftis-mc-card{background:#fff;border:1px solid #DCE0EA;border-left:5px solid #262B45;border-radius:12px;padding:10px 14px;margin:6px 0 2px;}
+.ftis-mc-top{display:flex;justify-content:space-between;align-items:center;gap:10px;} .ftis-mc-top b{color:#262B45;font-size:16px;}
+.ftis-mc-lv{display:inline-block;background:#EAF1FF;color:#262B45;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:700;}
+.ftis-mc-n{display:inline-block;background:#DB8437;color:#fff;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:700;}
+.ftis-mc-who{margin:4px 0;font-weight:700;color:#262B45;font-size:14px;} .ftis-mc-facts,.ftis-mc-do{margin:4px 0;font-size:14px;line-height:1.5;}
+.ftis-mc-act{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px;}
+.ftis-mc-t{background:#fff;border:1px solid #DCE0EA;border-left:5px solid #262B45;border-radius:10px;padding:6px 12px;margin:6px 0;font-size:13.5px;line-height:1.5;}
+.ftis-mc-t summary{cursor:pointer;color:#262B45;font-size:14.5px;padding:2px 0;} .ftis-mc-t p{margin:6px 0;} .ftis-mc-t ul{margin:2px 0 6px;padding-left:20px;}
+.ftis-mc-ring{background:#F6F7FB;border-radius:8px;padding:6px 10px;}
+.ftms .ftis-mcase{margin:6px 0;}
 .ftis-aedit{display:grid;grid-template-columns:auto 1fr 2fr;gap:6px 10px;align-items:center;} .ftis-aedit-d{grid-template-columns:minmax(0,1.2fr) 2fr;}
 .ftis-aedit input{box-sizing:border-box;width:100%;font:inherit;padding:6px 9px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}
 .ftis-aedit b{font-size:13px;color:var(--ink-soft,#5B6178);} .ftis-asave{margin-top:12px;}
