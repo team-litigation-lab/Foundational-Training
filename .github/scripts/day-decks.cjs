@@ -144,7 +144,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   const card = await page.evaluate(() => { const c = document.querySelector('.ftdd-deck .ftdd-lcslide .ftlc');
     return c && { h: (c.querySelector('.ftlc-ht h3') || {}).innerText || '', rows: c.querySelectorAll('.ftlc-row').length, pills: c.querySelectorAll('.ftlc-pill').length,
       focus: !!c.querySelector('.ftlc-focus-t'), file: /File name:/.test((c.querySelector('.ftlc-file') || {}).innerText || '') }; });
-  if (!card || !/^Virtual Assistant Essentials/.test(card.h) || card.rows !== 5 || card.pills !== 5 || !card.focus || card.file)
+  if (!card || !/^Virtual Assistant Essentials/.test(card.h) || card.rows !== 6 || card.pills !== 6 || !card.focus || card.file)
     fail(`Day 1's deck doesn't open on the full Classroom Activity card: ${JSON.stringify(card)}`);
   // every day opens on its own day card: the discussion day on its Classroom Activity card, a day after it on a
   // card of that day's own rows
@@ -178,7 +178,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
         title: (document.querySelector('.ftdd-dtitle') || {}).textContent || '' };
     }, n);
     if (n === 1) {
-      if (r.ids.join() !== 'agenda,reading,reading-2,reading-3,reading-4,reading-5,reading-6,reading-7,reading-8,go-1,go-2,go-3,pm,end-day') fail(`Day 1's deck changed: ${r.ids.join()}`);
+      if (r.ids.join() !== 'agenda,reading,reading-2,reading-3,reading-4,reading-5,reading-6,reading-7,reading-8,go-1,go-2,go-3,go-4,pm,end-day') fail(`Day 1's deck changed: ${r.ids.join()}`);
       d1zoom = r.z; continue;
     }
     if (JSON.stringify(r.card) !== JSON.stringify(r.rows)) fail(`Day ${n}'s card doesn't show its rows: ${JSON.stringify(r.card)}`);
@@ -206,10 +206,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (ho2.cards !== 4 || ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
   await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
-  // Day 1's card runs the trainers' order: Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA
+  // Day 1's card runs the trainers' order: Reading Task → Discussion → Digital Handouts → AI Discussion Video → Process Questions → Installation of SA
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
-  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Digital Handouts/, /^Process Questions/, /^Installation of SA/];
-  if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
+  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Digital Handouts/, /^AI Discussion Video/, /^Process Questions/, /^Installation of SA/];
+  if (d1rows.length !== 6 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Digital Handouts → AI Discussion Video → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Reading Task")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
   if (row.view !== 'daydeck' || !/Reading Task/.test(row.h)) fail(`the Reading Task row opened ${JSON.stringify(row)}`);

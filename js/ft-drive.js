@@ -300,19 +300,21 @@ ftAdminTab("drivetrackers", "📁 Drive Trackers", renderAdminDrive);
 // the Scorecard (js/ft-program.js): the tracker days and the Monitoring Sheet, the trainer's score else the check
 window.ftDriveItems = ctx => {
   const rv = ctx.rec["trackerreview:"] || {}, out = [];
-  const days = Object.entries(rv.days || {}).filter(([d, x]) => x && x.source === "drive");
+  // (ctx.range: a week's dates, from ⤓ Fill in the Weekly Ranking: the tracker's days in it only; at: each item's date)
+  const inRange = d => !ctx.range || (String(d).slice(0, 10) >= ctx.range[0] && String(d).slice(0, 10) <= ctx.range[1]);
+  const days = Object.entries(rv.days || {}).filter(([d, x]) => x && x.source === "drive" && inRange(d));
   if(days.length){ const vals = days.map(([d, x]) => tScore(x) != null ? tScore(x) : x.pct).filter(v => typeof v === "number");
-    out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)"}); }
+    out.push({name:`Daily Task Tracker · ${days.length} day${days.length === 1 ? "" : "s"}`, pct:vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null, note:"The average of the days (the trainer’s score where given)", at:days.map(([d]) => d).sort().pop()}); }
   const m = rv.monitor;
   // (the trainer's score stands even when the last automated check couldn't open the file)
-  if(m && (tScore(m) != null || !m.error)) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`});
+  if(m && (tScore(m) != null || !m.error)) out.push({name:"Training Progress Monitoring Sheet", pct:tScore(m) != null ? tScore(m) : m.pct, note:tScore(m) != null ? "Trainer’s score" : `${m.found} of ${m.total} discussions found`, at:m.checkedAt || ""});
   // 📒 the Monitoring Sheet items a slide's 📤 Submit had graded (Day 2's #5–7: /api/monitor/items, js/ft-buffer.js): the
   // score is here, not on the slide (the slide keeps the feedback)
   // 📄 the on-platform assessments graded by their Submit for Grading (js/ft-assess.js, /api/assess/grade)
   Object.values(rv.assess || {}).forEach(x => { if(!x || x.score == null) return;
-    out.push({name:`📄 ${x.title || "Assessment"}`, pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim()}); });
+    out.push({name:`📄 ${x.title || "Assessment"}`, pct:Number(x.pct) || 0, note:`${x.score} of ${x.max} points${x.pending ? " · the essays wait for your trainer" : ""} · graded ${x.when || ""}`.trim(), at:x.at || ""}); });
   Object.entries(rv.items || {}).forEach(([k, x]) => { if(!x || !x.result) return;
-    out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim()}); });
+    out.push({name:`Monitoring Sheet items #${k.split("-").join(", #")}${x.activity ? " · " + x.activity : ""}`, pct:Number(x.result.score) || 0, note:`${x.onTime ? "On time" : "Late"} · submitted ${x.when || ""}`.trim(), at:x.at || ""}); });
   return out;
 };
 

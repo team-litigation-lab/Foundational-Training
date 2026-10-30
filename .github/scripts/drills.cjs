@@ -43,8 +43,8 @@ const leaks = (fb, ans) => { const t = String(fb).replace(/📘[^\n]*/g, '');
     } }));
     // the guide's own samples, against the conventions
     const samples = [
-      [{ answer: 'INS – 1P State Farm – LOR 02.17.26 (Michelle)', yearEither: true }, 'INS – 1P State Farm – LOR 02.17.2026 (Michelle)'],
-      [{ answer: 'INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)', yearEither: true }, 'INS – 3P Geico – LOR with Affidavit 02.17.2026 (Michelle)'],
+      [{ answer: 'INS – 1P State Farm – LOR 02.17.26 (Michelle)', yearEither: true }, 'INS – 1P State Farm – LOR 02.17.26 (Michelle)'],
+      [{ answer: 'INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)', yearEither: true }, 'INS – 3P Geico – LOR with Affidavit 02.17.26 (Michelle)'],
       [{ answer: 'MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)' }, 'MED - JML(Lyons Physical Therapy) - MedLOR with Unsworn COR and HIPAA 08.11.22 (John)'],
       [{ answer: 'MED – RDG(NPIM Dr. Fabito) – Lien Balance Verification 08.17.2022 (jane)' }, 'MED - RDG(NPIM Dr. Fabito) - Lien Balance Verification 08.17.2022 (jane)'],
       [{ answer: 'Billing Reduction Request | DOE, JOHN' }, 'Billing Reduction Request | DOE, JOHN'],
