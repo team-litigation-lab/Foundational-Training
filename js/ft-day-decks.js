@@ -480,20 +480,25 @@ function listenSlide(day, time){
      ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder, live.recs) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
-   calls; Day 7: the five intake recordings; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
+   calls; Day 7: the four intake recordings, in the pop-up player; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
    A recording plays in the slide once it has a link: its file's id here (id), or the link a trainer gives it in Admin →
    🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a Drive file plays in Drive's
    player, an audio file in the browser's); until then its card opens the folder. */
 const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
   "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
-  // Day 7: the five sample intake recordings (the set's folder), each a card of its own
-  7: [1, 2, 3, 4, 5].map(n => ({t: `Intake Call ${n}`, id: "", kind: "Sample intake call"}))};
+  // Day 7: the four intake recordings, kept on the platform (ft/day7/audio), each a card that plays in the pop-up player
+  // (pop: .ftdd-acard, as Day 3's Listening Activity)
+  7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
+    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Intake call"}))};
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
 const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
 function listenCards(cards, folder, recs){
   // the trainer's link for each recording, where the card has none of its own
   cards = cards.map((c, i) => { const u = ((recs || [])[i] || {}).url || "";
     return c.id || c.src || !u ? c : Object.assign({}, c, {id: driveId(u), src: driveId(u) ? "" : audioUrl(u)}); });
+  // 🎧 recordings on the platform play in the pop-up player, a card each
+  if(cards.every(c => c.pop && c.src)) return `<div class="ftdd-acards">${cards.map((c, i) => `<button type="button" class="ftdd-acard" data-audio="${e(c.src)}" data-title="${e(c.t)}">` +
+    `<span class="ftdd-acard-ic">🎧</span><b>${e(c.t)}</b><span class="ftdd-acard-tag">${e(c.kind)} ${i + 1}</span><small>${e(c.len || "")} · ▶ Play</small></button>`).join("")}</div>`;
   // (numbered within their kind: Sample call 1–10)
   return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card${c.id || c.src ? " is-live" : ""}"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
     ${c.src ? `<audio controls preload="none" src="${e(c.src)}"></audio>`
@@ -592,10 +597,12 @@ const HANDOUTS = {1: {items: [
   ["Intake Packet", "https://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view"],
   ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]}};
 function handoutsSlide(h){
-  // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
-  // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
+  // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
+  // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
+  // segment, where the day is held step by step (the trainer's 🔓 Unlock on the slide, or 🔓 Activity Locks), else its video
   const lid = lessonOfDay(DD.day);
-  const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
+  const bySeg = root.FTDayLocks && FTDayLocks.stopOpen ? FTDayLocks.stopOpen(lid, "video") : null;
+  const locked = forTrainee() && !state.adminPreview && (bySeg != null ? !bySeg : typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid));
   const cards = h.items.map(([t, u], i) => locked
     ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
     : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
@@ -1289,9 +1296,10 @@ const LESSON_CARDS = {
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
-  // (the card is the mock calls only: the Calendaring & Appointment Setting Training is off it, so no day buttons)
-  5: {days: [5, 6], focus: "Calendar Management Mock Calls", oneDay: true,
+  5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
+      {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
@@ -1589,11 +1597,11 @@ function dayCard(n, ex){
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
-  const of = c.days.length > 1 && !c.oneDay ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
+  const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
   const head = first ? title : (DAY_TITLES[n] || title);
-  const sub = first ? `Trainer-led discussion · opens the session${of}` : c.oneDay ? "Your graded call, with the trainer" : `${title}${of}`;
+  const sub = first ? `Trainer-led discussion · opens the session${of}` : `${title}${of}`;
   return `<article class="ftlc${open_ ? "" : " locked"}${rows.length > 6 ? " ftlc-wide" : ""}" data-day="${n}" data-first="${first ? 1 : 0}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
@@ -1604,7 +1612,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
-        ${c.days.length > 1 && !c.oneDay ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
+        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -1623,7 +1631,7 @@ function dayCard(n, ex){
    ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
-  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.oneDay ? c.days[c.days.length - 1] : c.days[0];
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.days[0];
   const t = document.createElement("template"); t.innerHTML = String(moduleCard(l)).trim();
   const card = t.content.firstElementChild; if(!card) return "";
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
