@@ -325,10 +325,6 @@ function paint(){
   if(isAdminView()){
     if(T.k !== h.k){ T.k = h.k; }
     box.innerHTML = trackerHtml(h); sheet.insertBefore(box, sheet.firstChild);
-    // (and, after the slide's content, the trainee's own panel as the trainee sees it: the trainer's deck is the trainee's plus the tracker)
-    const pv = document.createElement("div"); pv.className = "ftbf-slot ftbf-pv";
-    pv.innerHTML = `<p class="ftbf-pv-h">👁 What trainees see</p>${traineePanel(h)}`;
-    if(h.a.gate) box.after(pv); else sheet.appendChild(pv);
     if(!T.rows || Date.now() - T.at > 15000) loadRoster().then(() => { const n = here(); if(n && n.k === h.k) paintTracker(n); });
     watchRoster(); return;
   }
@@ -437,7 +433,6 @@ const st = document.createElement("style"); st.id = "ft-buffer"; st.textContent 
 /* ✅ the buffer / mock call / demo panel, in Day 1's look: a navy heading bar with the orange edge, big bold text */
 .ftdd-sheet .ftbf-slot{margin:18px 0 0;}
 .ftdd-sheet .ftbf-slot:first-child{margin:0 0 18px;}
-.ftbf-pv-h{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
 .ftbf{border:2px solid #1E2340;border-radius:14px;padding:18px 22px;background:#fff;}
 /* a trainee's buffer slide: the panel alone, centred, gray with an orange frame */
 main.main-ftdd .ftdd-sheet.ftbf-only > :not(.ftbf-slot){display:none !important;}
