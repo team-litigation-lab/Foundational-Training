@@ -84,7 +84,7 @@ async function workerChecks() {
     expect('a wrong end time', change('6.1', { et: '11:00' }), ['6.1:End time']);
     expect('a wrong date', change('5', { sd: '2026-07-10', ed: '2026-07-10' }), ['5:Start date', '5:End date']);
     expect('an end before the start', change('4', { st: '07:30', et: '06:30' }), ['4:Start time', '4:End time', '4:Ends after it starts']);
-    expect('a missing guest', change('7', { guests: 'Martin Anthony, Michelle Velarde, John Michael Dela Cruz' }), ['7:Guests']);
+    expect('a missing guest', change('7', { guests: 'Martin Anthony Gan, Michelle Velarde, John Michael Dela Cruz' }), ['7:Guests']);
     expect('a wrong reminder time', change('9', { ramt: '15' }), ['9:Reminder time']);
     expect('a wrong reminder type', change('2', { rtype: 'Notification' }), ['2:Reminder type']);
     expect('no reminder', change('10', { rtype: '', ramt: '' }), ['10:Reminder type', '10:Reminder time']);
@@ -188,11 +188,15 @@ async function workerChecks() {
   if (!(await page.$('.fts-card button[onclick*="ftsCalsim(\'activity\')"]'))) fail('the Practice Lab\'s Attorney Calendar Management Activity card has no link to the Portal\'s Standard Training - Calendar Management Activity track');
   if (!(await page.evaluate(() => (FTDays.of(5).items || []).some(x => x.at === 'tool' && x.id === 'calcheck')))) fail('Day 5 doesn\'t point to the Calendar Activity Check');
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
-  const deck = await page.evaluate(() => ({ bar: [...document.querySelectorAll('.ftdd-acts button')].map(b => b.innerText).join(' | '), tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
-  if (!/Calendar Activity Check/.test(deck.bar)) fail(`Day 5's Attorney Calendar Management Activity slide has no 📅 Calendar Activity Check button: ${deck.bar}`);
+  const deck = await page.evaluate(() => ({ bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length, tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
+  if (deck.bar) fail('Day 5\'s Attorney Calendar Management Activity slide still has link pills on its bar');
   if (!deck.tile) fail('Day 5\'s Time Zone & Submit slide has no 📅 Calendar Activity Check tile');
   // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management Activity track)
-  if (!/📅 Standard Training - Calendar Management Activity/.test(deck.bar) || !deck.portal) fail(`Day 5's activity slide doesn't link the Portal's Standard Training - Calendar Management Activity: ${deck.bar}`);
+  if (!deck.portal) fail('Day 5\'s activity slide doesn\'t link the Portal\'s Standard Training - Calendar Management Activity');
+  // the Instructions slide links the activity's simulator (the Main Portal's Calendaring Activity calendar), under the instructions
+  await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3'))); await page.waitForTimeout(1200);
+  const ins = await page.evaluate(() => ({ link: !!document.querySelector('.ftdd-calsim-ins button[onclick*="ftsCalsim(\'activity\')"]'), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
+  if (!ins.link || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should link the Portal's simulator (and carry no link pills): ${JSON.stringify(ins)}`);
   // (the slide is read in pages: the tile comes last)
   for (let k = 0; k < 8 && !(await page.isVisible('button.ftdd-tile[onclick*="calcheck"]')); k++) { await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(600); }
   await page.evaluate(() => { state.adminPreview = false; }); await page.click('button.ftdd-tile[onclick*="calcheck"]'); await page.waitForTimeout(1200);
@@ -205,7 +209,7 @@ async function workerChecks() {
   await page.fill('#cc-title-1', 'Client Meeting – Alyssa Lynn Arehart');
   await page.fill('#cc-sd-1', '2026-07-06'); await page.fill('#cc-st-1', '10:00'); await page.fill('#cc-ed-1', '2026-07-06'); await page.fill('#cc-et-1', '11:00');
   await page.selectOption('#cc-tz-1', 'America/New_York');
-  await page.fill('#cc-loc-1', 'Conference Room B'); await page.fill('#cc-guests-1', 'Martin Anthony, Michelle Velarde');
+  await page.fill('#cc-loc-1', 'Conference Room B'); await page.fill('#cc-guests-1', 'Martin Anthony Gan, Michelle Velarde');
   await page.selectOption('#cc-rtype-1', 'Notification'); await page.fill('#cc-ramt-1', '15');
   await page.fill('#cc-notes-1', 'Client consultation for Alyssa Lynn Arehart regarding a car accident case. Ensure all case documents are accessible.');
   await page.waitForTimeout(400);

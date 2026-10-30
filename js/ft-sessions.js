@@ -432,6 +432,8 @@ async function loadAdmin(quiet){
   AD.loading = false;
   // (a deck redraws for its metrics sheet unless the trainer is typing in it)
   const typing = document.activeElement && /TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName);
+  // (the scoresheet pop-up redraws on its own, unless the trainer is typing in it)
+  if(MS.open){ if(!(typing && document.activeElement.closest("#ftmsModal"))) drawSheet(); return; }
   if(state.view === "daydeck" ? !(typing && document.activeElement.closest(".ftms")) : state.view === "admin" && ["sessions", "trainerinputs"].includes(state.adminTab) && !(quiet && typing)) render();
 }
 function liveRows(){
@@ -614,7 +616,7 @@ ftAdminTab("trainerinputs", "🧑‍🏫 Trainer Inputs", renderTrainerInputs);
    the batch and a trainee from it, each criterion 0–5 with a Remarks column, the result, and 💾 Save, which writes the
    same record as Admin → 🧑‍🏫 Trainer Inputs (labreview:<id> acts[<activity>]: the scores, the remarks, the weighted
    average and the score in %), so it reaches the trainee's Scorecard, 📬 My Feedback and ⤓ the Weekly Ranking. */
-const MS = {batch:"", who:{}, draft:{}, act:{}};   // (draft: what is typed and not saved yet, per sheet and trainee, kept across redraws)
+const MS = {batch:"", who:{}, draft:{}, act:{}, open:null};   // (open: the rubric whose scoresheet pop-up is open)   // (draft: what is typed and not saved yet, per sheet and trainee, kept across redraws)
 // the activities a rubric scores (Transcription scores Recording 1 and Recording 2): the sheet saves to the one picked
 const actsOfRubric = key => acts().filter(a => { const rb = RUB().forAct(a); return rb && rb.key === key; });
 const actOfRubric = key => { const l = actsOfRubric(key); return l.find(a => a.id === MS.act[key]) || l[0] || null; };
@@ -626,6 +628,14 @@ function metricsTable(key, view){
   if(!trainer || !a) return `<table class="ftms-tbl">${head}</tr></thead><tbody>
     ${rb.criteria.map(k => `<tr><td>${e(k.n)}</td><td>0</td></tr>`).join("")}
     <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>0</td></tr></tbody></table>`;
+  // (on the slide: the read-only table above and one button; the sheet itself opens over the slide, sized to one screen)
+  return `<div class="ftms-launch" data-ms="${e(key)}" data-act="${e(a.id)}"><button type="button" class="btn btn-orange ftms-open" onclick="FTMetrics.open('${e(key)}')">🧑‍🏫 Score a trainee: open the ${e(rb.title)} scoresheet</button></div>`;
+}
+// 📋 the scoresheet in the pop-up (FTMetrics.open): the batch and trainee to pick, each criterion's score and Remarks, the
+// Result and 💾 Save, all on one screen
+function metricsSheet(key){
+  const rb = RUB().list[key], a = actOfRubric(key); if(!rb || !a) return "";
+  const head = `<thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>`;
   if(!AD.rows){ if(!AD.loading) loadAdmin(true); return `<div class="ftms ftms-trainer"><p class="fss-muted">Loading the trainees…</p></div>`; }
   if(!AD.loading && Date.now() - (AD.at || 0) > 60000) loadAdmin(true);   // (the batch's trainees and their saved scores, kept fresh)
   const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort();
@@ -650,11 +660,31 @@ function metricsTable(key, view){
         <td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td></tr>`).join("")}
       <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avg == null ? "0" : (Math.round(avg * 100) / 100).toFixed(2)}</td><td></td></tr></tbody></table></div>`;
 }
+// the pop-up: drawn over the page (outside #app, so the deck's redraws leave it alone), redrawn on a pick or a save
+function drawSheet(){
+  let box = document.getElementById("ftmsModal");
+  if(!MS.open){ if(box) box.remove(); return; }
+  const rb = RUB().list[MS.open]; if(!rb){ MS.open = null; if(box) box.remove(); return; }
+  if(!box){ box = document.createElement("div"); box.id = "ftmsModal"; box.className = "ftms-modal"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); document.body.appendChild(box); }
+  box.setAttribute("aria-label", rb.title + " scoresheet");
+  box.innerHTML = `<div class="ftms-modal-box"><div class="ftms-modal-h"><b>📋 ${e(rb.title)} scoresheet</b>
+      <button type="button" class="ftms-x" onclick="FTMetrics.close()" title="Close (Esc). What you typed is kept until you save.">✕</button></div>
+    <div class="ftms-modal-b">${metricsSheet(MS.open)}</div></div>`;
+}
+const redraw = () => MS.open ? drawSheet() : render();
+document.addEventListener("keydown", ev => {
+  if(!MS.open) return;
+  if(ev.key === "Escape"){ ev.preventDefault(); ev.stopImmediatePropagation(); FTMetrics.close(); return; }
+  // (the slides don't turn behind the pop-up)
+  if(/^Arrow|^Page/.test(ev.key) && !/INPUT|TEXTAREA|SELECT/.test((ev.target || {}).tagName || "")) ev.stopImmediatePropagation();
+}, true);
 window.FTMetrics = {
-  table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric,
-  batch(b){ MS.batch = b; render(); },
-  who(key, id){ MS.who[key] = id; render(); },
-  act(key, id){ MS.act[key] = id; render(); },
+  table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric, sheet: metricsSheet,
+  open(key){ MS.open = key; drawSheet(); const f = document.querySelector("#ftmsModal select[aria-label=Trainee]"); if(f) f.focus(); },
+  close(){ MS.open = null; drawSheet(); },
+  batch(b){ MS.batch = b; redraw(); },
+  who(key, id){ MS.who[key] = id; redraw(); },
+  act(key, id){ MS.act[key] = id; redraw(); },
   calc(inp){ const box = inp.closest(".ftms"), r = rubricRead(box); if(!r) return;
     box.querySelector("[data-avg]").textContent = r.avg == null ? "0" : (Math.round(r.avg * 100) / 100).toFixed(2);
     // (what is typed, and the Result picked, kept for this sheet, activity and trainee until saved: a redraw doesn't lose them)
@@ -676,7 +706,7 @@ window.FTMetrics = {
           played !== undefined ? {case:played} : {}); });
       delete MS.draft[key + "|" + act + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
     }catch(err){ toast("Couldn’t save. Check your connection."); }
-    btn.disabled = false; render();
+    btn.disabled = false; redraw();
   }
 };
 
@@ -704,6 +734,24 @@ window.ftTrainerItems = ctx => {
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `
+.ftms-launch{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px 0 4px;}
+.ftms-modal{position:fixed;inset:0;z-index:10050;background:rgba(15,18,40,.55);display:flex;align-items:center;justify-content:center;padding:12px;}
+.ftms-modal-box{background:#fff;border-radius:14px;width:min(1100px,100%);max-height:calc(100vh - 24px);display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.35);overflow:hidden;}
+.ftms-modal-h{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--navy,#262B45);color:#fff;font-size:16px;}
+.ftms-modal-h .ftms-x{margin-left:auto;background:none;border:0;color:#fff;font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;}
+.ftms-modal-b{padding:10px 16px 12px;overflow:auto;}
+.ftms-modal .ftms-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-size:14px;}
+.ftms-modal .ftms-pick select{font:inherit;font-size:14px;padding:4px 8px;border:1px solid #C9D6BE;border-radius:8px;background:#fff;}
+.ftms-modal .ftms-pick .ftms-save{margin-left:auto;}
+.ftms-modal .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.ftms-modal .ftms-tbl th{background:#6AA84F;color:#fff;text-align:left;padding:5px 10px;font-weight:800;position:sticky;top:-10px;}
+.ftms-modal .ftms-tbl th:nth-child(2){text-align:center;width:80px;}
+.ftms-modal .ftms-tbl td{padding:2px 10px;border-bottom:1px solid #DDE7D5;color:#4E6B2E;font-weight:700;}
+.ftms-modal .ftms-tbl tbody tr:nth-child(odd) td{background:#EEF4E8;}
+.ftms-modal .ftms-tbl td:nth-child(2){text-align:center;}
+.ftms-modal .ftms-tbl input{font:inherit;font-weight:600;width:100%;box-sizing:border-box;padding:3px 6px;border:1px solid #C9D6BE;border-radius:6px;background:#fff;color:#262B45;}
+.ftms-modal .ftms-tbl input[type=number]{width:64px;text-align:center;}
+.ftms-modal .ftms-tbl .ftms-avg td{font-weight:900;color:#3B5A1E;border-top:2px solid #6AA84F;}
 main.main-fss{max-width:1180px;margin:0 auto;padding:24px 16px 40px;}
 .fss-hero h1{margin:0 0 6px;color:var(--navy);font-size:27px;} .fss-hero > p{margin:0 0 8px;color:var(--ink-soft);font-size:15px;max-width:820px;}
 .fss-case{margin:0;font-size:14px;color:var(--navy);} .fss-muted{color:var(--ink-soft);font-size:13px;}
