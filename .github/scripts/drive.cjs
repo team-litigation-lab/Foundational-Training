@@ -5,6 +5,8 @@
 //   - keeps the trainer's score and comment when it checks again, and lets a trainee check at most every 3 minutes;
 //   - lists the answer sheets in the trainee's Assessment and Activities Folder through the service account (/api/drive/answers);
 //   - 📄 Save PDF to my Folder: writes an answer sheet into that folder as a PDF, and replaces it when saved again (/api/drive/save);
+//   - 🧪 finds the Typing and Spelling Test screenshots in the folder (/api/drive/shots and the nightly check), keeping what was found
+//     when the folder can't be read;
 //   - says the file can't be opened when Google answers with its sign-in page.
 // Usage: node .github/scripts/drive.cjs   (no browser, no network)
 const path = require('path'); const { pathToFileURL } = require('url');
@@ -19,7 +21,7 @@ const failures = []; const fail = (m) => failures.push(m);
         LSH_KV: { get: async (k) => store.has(k) ? store.get(k) : null, put: async (k, v) => store.set(k, v), delete: async (k) => store.delete(k), list: async ({ prefix = '' } = {}) => ({ keys: [...store.keys()].filter(k => k.startsWith(prefix)).map(name => ({ name })), list_complete: true }) } };
     store.set('ft:trainee:' + id, JSON.stringify({ id, name: 'Dee Drive', batch: 'B9', approved: true }));
     const SHEET = 'https://docs.google.com/spreadsheets/d/1TrackerSheetIdForTheCiTest0001/edit#gid=7', DOC = 'https://docs.google.com/document/d/1MonitorDocIdForTheCiTest000001/edit';
-    let shared = true;
+    let shared = true, folderGone = false;
     const uploads = [];   // 💾 Save to Drive: what the Worker sent to Google's upload endpoint
     let saveError = null;
     globalThis.fetch = async (url, init = {}) => {
@@ -33,6 +35,7 @@ const failures = []; const fail = (m) => failures.push(m);
         if (u.startsWith('https://www.googleapis.com/drive/v3/files?') && decodeURIComponent(u).includes(' and name = ')) {
             return new Response(JSON.stringify({ files: uploads.length ? [{ id: 'saved1' }] : [] }));
         }
+        if (folderGone && u.startsWith('https://drive.google.com/embeddedfolderview')) return new Response('', { status: 404 });
         if (!shared) return new Response('<!doctype html><html>Sign in</html>', { status: 200 });
         if (u.includes('1TrackerSheetIdForTheCiTest0001/export?format=csv&gid=7')) return new Response(
             `LSH DAILY TASK TRACKER\nDate Received,Type of Task,Task Details,Accountable VA,${us},VA Notes,Deadline,Status,Actual Completion Date\n` +
@@ -113,6 +116,24 @@ const failures = []; const fail = (m) => failures.push(m);
     delete env.GDRIVE_SA_EMAIL; delete env.GDRIVE_SA_KEY;
     const s4 = await call('/api/drive/save', doc, trainee);
     if (!s4.body || s4.body.error !== 'no-sa') fail(`without the service account, saving should say it isn't set up: ${JSON.stringify(s4.body)}`);
+    // 🧪 the Typing and Spelling Test screenshots in the folder (/api/drive/shots, and the nightly check): "Typing Test 10.26.26AM" in
+    // the sub-folder is the 10/26 AM typing test; the rest of the folder isn't a test; the tracker's checks stay as they were
+    const sh1 = await call('/api/drive/shots', {}, trainee);
+    const f1 = ((sh1.body || {}).shots || {}).files || [];
+    if (!sh1.body || !sh1.body.ok || f1.length !== 1 || f1[0].kind !== 'typing' || f1[0].date !== '2026-10-26' || f1[0].slot !== 'AM' || !f1[0].named || !/file\/d\/f2/.test(f1[0].link)) fail(`the test screenshot in the folder wasn't found as the 10/26 AM typing test: ${JSON.stringify(sh1.body)}`);
+    const kept = JSON.parse(store.get('ft:trackerreview:' + id));
+    if (!kept.days[D] || kept.days[D].trainerScore !== 90 || !kept.monitor) fail('looking for the test screenshots lost the tracker\'s checks');
+    if ((await call('/api/drive/shots', {}, trainee)).status !== 429) fail('a trainee looking for their screenshots twice in a minute should wait');
+    const shA = await call('/api/drive/shots', { ids: [id, 'nobody--b9'] }, admin);
+    const rs = (shA.body || {}).results || [];
+    if (rs.length !== 2 || rs[0].shots !== 1 || rs[1].error !== 'no-folder') fail(`the trainer's check of a batch: ${JSON.stringify(shA.body)}`);
+    const nightly = await call('/api/tracker/check', { id }, admin);
+    if (!((nightly.body || {}).results || []).some(r => r.tests && r.shots === 1)) fail(`the nightly check didn't look for the test screenshots: ${JSON.stringify(nightly.body)}`);
+    // a folder that can't be read keeps the screenshots already found, and says so
+    folderGone = true;
+    const shB = await call('/api/drive/shots', { id }, admin), kept2 = JSON.parse(store.get('ft:trackerreview:' + id)).shots;
+    if (!shB.body || (shB.body.results[0] || {}).error !== 'no-access' || kept2.error !== 'no-access' || (kept2.files || []).length !== 1) fail(`an unreadable folder should keep what was found and say so: ${JSON.stringify(kept2)}`);
+    folderGone = false;
     // a file that isn't shared: Google answers with its sign-in page
     shared = false;
     const r3 = await call('/api/drive/check', { id }, admin);
@@ -121,5 +142,5 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!/can't open this file.*file's own link/.test(r3.body.review.monitor.error || '')) fail('an unreadable Monitoring Sheet should say to check its link');
 
     if (failures.length) { console.log(`${failures.length} failure(s):`); failures.forEach((f, i) => console.log(`${i + 1}. ${f}`)); process.exit(1); }
-    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, an unreadable file explained).');
+    console.log('Drive trackers test passed (the tracker sheet and the Monitoring Sheet checked from Drive, the trainer\'s input kept, a trainee waits 3 minutes between checks, the answer sheets found in the folder, 📄 Save PDF to my Folder creating then replacing the sheet, the Typing and Spelling Test screenshots found in the folder by the trainee, the trainer and the nightly check, an unreadable file explained).');
 })().catch(e => { console.error(e); process.exit(1); });
