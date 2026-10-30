@@ -1505,10 +1505,8 @@ const LESSON_CARDS = {
 // 📖 Day 1's Reading Task is read over 8 slides ("reading", "reading-2" … "reading-8"): the last one's Next is ✍️ the
 // Reading Task questions in Knowledge Check. For a trainee it stays locked until they have read every part (each part
 // counts once its last page has been shown); that is remembered (this browser). Trainers and admins are never locked.
-// 🎧 Day 3's Reception Listening Activity: the five calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
-// nothing to read first, and the way back is the slide after it)
-const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}},
-};
+// (Day 3's Reception Listening Activity: the five calls' slide, s1d, goes on to the slide after it, not ✍️ Knowledge Check)
+const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}}};
 const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
 const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? {l: Number(s.launch.kc), label: `Next: ✍️ Knowledge Check: ${lessonTitle(s.launch.kc)} →`} : null));
@@ -1611,7 +1609,7 @@ function toKC(l, here){
   // from the reading (Day 1's Reading Task): back to what follows the reading, the Classroom Discussion
   const rk = list[DD.i] && Object.values(KC_NEXT[DD.day] || {}).find(k => isPart(k, list[DD.i].id));
   if(rk){ from = DD.i; while(list[from + 1] && rk.parts.test(list[from + 1].id)) from++; }
-  // (from a slide whose Next is the Knowledge Check, Day 3's five calls: back to the slide after it)
+  // (from a slide whose Next is the Knowledge Check: back to the slide after it)
   else if(list[DD.i] && (KC_NEXT[DD.day] || {})[list[DD.i].id]) from = DD.i;
   const s = list[from + 1] || null;
   const h = !s ? "" : s.end ? s.h : String(s.h || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "").replace(/\bClassroom Discussion\b/gi, "Classroom Activity");
@@ -2278,7 +2276,8 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-vwrap{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;}
 /* …except a set of videos the trainee is to watch one after another (Day 3's five CRM/CMS videos, data-card): cards side
    by side, each with the video's preview, so the set reads as what to watch, and a click plays it bigger */
-.ftdd-vcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin:10px 0 14px;}
+/* (a row of one or two videos sits in the middle of the slide, not on the left with empty columns beside it) */
+.ftdd-vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,340px));justify-content:center;gap:14px;margin:10px 0 14px;width:100%;align-self:stretch;}
 .ftdd-vcard{display:flex;flex-direction:column;gap:6px;min-width:0;padding:8px 8px 10px;border:1px solid #E3E6EE;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(30,35,64,.08);transition:box-shadow .15s,transform .15s;}
 .ftdd-vcard:hover{box-shadow:0 6px 18px rgba(30,35,64,.16);transform:translateY(-2px);}
 .ft-body .ftdd-vcard a.ftdd-tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0;}
@@ -2692,12 +2691,13 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
 }
 /* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
    keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
-   ✏️ Edit this slide still gets its panel. */
+   ✏️ Edit this slide still gets its panel, and so does the 🔓 Segment lock or the Hide panel link: a panel holding only those
+   (a day past its locks, with no buttons in it) was squeezed to no width, its words stacked a letter to a line. */
 @media(min-width:1001px){
-  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)){grid-template-columns:minmax(0,1fr);}
-  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
-  /* (only the presenter is drawn from it: the rest of a panel with no buttons, Hide panel ⇥ and the segment lock's name, would wrap a letter a line down the side) */
-  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail .ftdd-ctl)) > .ftdd-rail > :not(.ftdd-presenter){display:none;}
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))){grid-template-columns:minmax(0,1fr);}
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))) > .ftdd-rail{position:absolute;width:0;height:0;overflow:visible;}
+  /* (a panel with nothing to show is drawn only for the presenter: the rest would wrap a letter a line down the side) */
+  main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))) > .ftdd-rail > :not(.ftdd-presenter){display:none;}
   main.main-ftdd{padding-right:18px;}
   main.main-ftdd .ftdd-nav{margin-right:calc(clamp(170px, 13vw, 250px) - 10px);}
 }

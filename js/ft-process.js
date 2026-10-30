@@ -334,6 +334,13 @@ function bySheet(qs, each){
   const one = set => locked(set) ? `<p class="fp-muted fp-sheet-lock">🔒 This answer sheet opens with ${e(FTDay1.label(6))}, when your trainer unlocks it.</p>`
     : `<ol class="fp-qs">${qs.filter(x => x.set === set).map(each).join("")}</ol>`;
   if(sets.length < 2) return sets.map(one).join("");
+  // sheets that share one file are one Knowledge Check (Day 3: Personal Injury Process Flow's three and Receptionist
+  // Training's seven): all of them on one page, numbered on through, 1–10
+  if(new Set(sets.map(st => st.file)).size === 1){
+    let n = 0;
+    return `<h3 class="fp-sheet-h">✍️ ${e(sets.map(st => st.title).join(" & "))} <span>${qs.length} questions</span></h3>
+      <ol class="fp-qs">${sets.map(st => qs.filter(x => x.set === st).map(x => each(x).replace(/^\s*<li value="\d+"/, `<li value="${++n}"`)).join("")).join("")}</ol>`;
+  }
   // one sheet at a time, and no tabs or buttons to switch: the route decides which. Opened from the deck's reading
   // (Day 1's Reading Task) it is the reading's sheet; from the Process Questions stop, the lesson's own; otherwise the
   // newest one open (the lesson's own, unless it is still locked)
