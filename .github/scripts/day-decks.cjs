@@ -328,8 +328,8 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(700);
   const after = await page.evaluate(() => ({ i: FTDayDecks.state().i, page: FTDayDecks.state().page, mark: (document.querySelector('.ftdd-n') || {}).innerText || '' }));
   if (after.i !== paged.i || after.page !== 1 || !/page 2 of/i.test(after.mark)) fail(`Next didn't turn the page: ${JSON.stringify(after)}`);
-  // the slide says what it opens: Day 7's discussion slide its lesson, and the Call Listening log on its own slide
-  await page.evaluate(() => FTDayDecks.open(7, FTDayDecks.at(7, 's1'))); await page.waitForTimeout(1200);
+  // the slide says what it opens: Day 7's lesson stop its lesson, and the Call Listening log on its own slide
+  await page.evaluate(() => FTDayDecks.open(7, FTDayDecks.list(7).findIndex(s => s.launch && s.launch.go === 'lesson'))); await page.waitForTimeout(1200);
   const acts = await page.evaluate(() => [...document.querySelectorAll('.ftdd-acts .btn')].map(b => b.innerText.trim()));
   if (!acts.some(x => /Open the lesson/.test(x))) fail(`a classroom discussion slide has no lesson button: ${JSON.stringify(acts)}`);
   const listen = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;

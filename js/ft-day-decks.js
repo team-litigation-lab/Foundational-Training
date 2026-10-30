@@ -1395,7 +1395,7 @@ const LESSON_CARDS = {
       // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; the AI video is its own stop after it)
       {t: "Breakout Session: Intake Specialist Best Practices", sub: "Group activity · the three digital handouts", k: "interactive", run: "ftVideoOrAsk(6)", day: 7},
       {t: "Call Listening on the Intake Recordings", sub: "Log each call as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
-      {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
+      {t: "Insurance Providers", sub: "The eight carriers", k: "interactive", d: 7, s: "insurance"},
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
       {t: "Intake Process", time: "AM", sub: "Two videos · Monitoring Sheet #14", k: "watch", d: 8, s: "s1"},
@@ -1414,7 +1414,6 @@ const LESSON_CARDS = {
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
       {t: "Intake Mock Call Instructions & Metrics", time: "PM", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
       {t: "Intake Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"}],
-    discuss: {7: "s1"},
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},

@@ -363,6 +363,9 @@ s2: html => {
 // preparation with direct links to the Call Simulator, the Ring Channel and the CMS, and how to use them; how the
 // one-on-one mock calls run and are scored (the metrics); then the mock calls themselves (s3, with Done: js/ft-buffer.js)
 // (ROWS[4].s2 cuts it into its card rows' slides: s2 and the Monitoring Sheet's s2m, then s2b, read in pages)
+// Day 7: its classroom discussion's slide is off (it held only the trainer's notes and the Knowledge Base list, noKB): the
+// section starts at the Intake Scenario Exercise, which goes too (no exercises on the decks), so Day 7 has no s1
+7: {s1: html => { const i = html.indexOf("<p><b>Intake Scenario Exercise</b></p>"); if(i < 0) throw new Error("Day 7's Intake Scenario Exercise is no longer where the build looks for it"); return html.slice(i); }},
 4: {s2: html => {
   if(!/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/.test(html)) throw new Error("Day 4 lost Julio's video");
   return '<p><a class="viewer-link" data-embed data-kind="video" data-title="Reception Training with Julio [1:49:49]" href="https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing">https://drive.google.com/file/d/1G5o0O1fTWjUzxrxIBH1ikbbmh4ywFt5C/view?usp=sharing</a></p>\n' +
@@ -832,16 +835,16 @@ const ROWS = {
       {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []}]
   },
   7: {
-    s1: [{id: "s1", parts: [[null, "<p><b>Intake Scenario Exercise</b></p>"]]},
-      {id: "s1b", h: "AM: Intake Scenario Exercise", parts: [["<p><b>Intake Scenario Exercise</b></p>", null]]}],
+    // (the classroom discussion's own slide is off, TRIM[7]: what is left of s1 is the Intake Scenario Exercise, off the decks)
+    s1: [{id: "s1", h: "AM: Intake Scenario Exercise", parts: [[null, null]]}],
     // the reference set, one thing to a slide: the checklist and the blank forms (a picture of each that opens it in a new
-    // tab), the mock intake (played on the slide), the two folders side by side with the Knowledge Base, then the four
+    // tab), the mock intake (played on the slide), the two folders side by side, then the four
     // sample calls two to a slide (js/ft-intake.js data-calls)
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
       {id: "formsb", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
-      {id: "formsd", h: "AM: Reference: Sample Intake Recordings, Intake Documents & Knowledge Base", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]]},
+      {id: "formsd", h: "AM: Reference: Sample Intake Recordings & Intake Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: More Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']]},
       {id: "formsf", h: "AM: More Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]}]
   },
@@ -1092,13 +1095,27 @@ for(let n = 1; n <= 16; n++){
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));
   else slides.push({id: "to-be-added", h: "To be added", placeholder: true,
     html: ph("ftdd-ph-blank", "📌", "More is on its way", "Your trainer will add the rest of today’s material here. Until then, follow the slides before this one and the training GC.")});
+  // 📚 no Knowledge Base links on the decks for now: each box (its heading and its links), each "Knowledge Base: …" label and
+  // its link, and any other line that links the Knowledge Base, are taken off every slide (the day files keep them, so they
+  // come back by deleting this)
+  for(const s of slides) s.html = noKB(s.html);
   for(const s of slides){
+    if(/lsh-knowledge-base|In the Knowledge Base/.test(s.html)) throw new Error(`a Knowledge Base link is still on Day ${n} ${s.id}`);
     if(/class=\\?"facilitator|Answer Key|Correct Answer|Ideal Answer|Facilitator[’']s (Note|Guide)/i.test(s.html)) throw new Error(`facilitator content in Day ${n} ${s.id}`);
     if(/PROCESS QUESTIONS/.test(s.html)) throw new Error(`Process Questions left in Day ${n} ${s.id}`);
     if(/Password|Username/.test(s.html)) throw new Error(`log-in details in Day ${n} ${s.id}`);
     if(/classroom discussion|discussion on/i.test(s.h) && LESSON_DECK.test(s.html)) throw new Error(`the lesson deck is still embedded on Day ${n} ${s.id}`);
   }
   decks[n] = Object.assign({day: n, title: d.title, heading: d.heading}, pqDay ? {pq: true} : {}, {slides});
+}
+function noKB(html){
+  return String(html || "")
+    .replace(/<p>Knowledge Base:[^<]*<\/p>\n?<p><a [^>]*lsh-knowledge-base[^>]*>[^<]*<\/a><\/p>\n?/g, "")
+    .replace(/<p>[^\n]*?lsh-knowledge-base[^\n]*?<\/p>\n?/g, "")
+    .replace(/<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base<\/p>\s*<\/div>\n?/g, "")
+    .replace(/<h4>📚 In the Knowledge Base<\/h4>\n?/g, "")
+    // (a page break left with nothing after it)
+    .replace(/(?:<div class="ftdd-pgbreak"><\/div>\s*)+$/, "");
 }
 const out = "// Generated by build/day-decks.cjs from build/days/*.js — edit the day files or that script, not this file.\n"
   + "window.FT_DAY_DECKS = " + JSON.stringify(decks) + ";\n";
