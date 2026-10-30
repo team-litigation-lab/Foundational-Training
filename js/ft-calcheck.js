@@ -3,30 +3,23 @@
    ------------------------------------------------------------
    Day 5's Attorney Calendar Management Activity: the trainee puts ten of the attorney's appointments (with the court
    appearance's two travel blocks and the networking dinner's travel, arrival and overnight stay: 18 events) in Google
-   Calendar, screenshots each one and uploads the 19 screenshots (the 19th is the entire calendar) in the sample's order.
-   The trainer used to open every screenshot and compare it with the activity by eye. Now the trainee also records what
-   each event holds here (#/calcheck), and every field is checked as they type against the activity's answer key:
+   Calendar. (It used to end with 19 screenshots uploaded to the trainee's which the trainer compared with the
+   activity by eye: no screenshots are asked for or scored any more.) The trainee records what each event holds here (#/calcheck), and every field is checked as they type against the activity's answer key:
      • the title (it must name the event; case, spacing and dashes don't matter);
      • the start and end dates and times, exactly (or the same moment in Pacific Time, the attorney's: see TZ_RULE), and
        the end after the start;
      • the time zone, in the event's region (see TZ_RULE below);
      • the location, the guests (each by first and last name) and the reminder (its type, and its time: 1 day = 24 hours);
      • the key details in the description (a few words per event);
-     • and for the 19th screenshot: the LSH calendar unticked, and the screenshots uploaded in the sequence.
    An event with no guests, location or reminder in the activity is never marked down for leaving them empty.
    What is typed is kept as a draft; 📤 Submit to my trainer stamps the time and keeps that submission's results.
-   The 19 screenshots: 🔎 Look in my folder reads the trainee's Assessment and Activities folder through the existing
-   /api/drive/answers route and matches the files by their number and name. Where all 19 are found in order, that
-   counts; otherwise (no folder link, a folder the platform can't read, or screenshots named another way) the trainee's
-   own tick counts, and the page says which one did.
    The activity's dates: July 6–15, 2026 in its words and in KEY, moved by whole weeks to the trainee's anchor Monday (the
    first on or after their batch's Day 5: FTCalCore.act, js/ft-calsim-core.js). The anchor is kept ONCE, in the trainee's
    calendar record (calsim:<id>.anchors["attorney-activity"]); load() reads it from there (or gives it one, from the Batch ID)
    and the record below keeps a copy (anchor), as each snapshot does, so a submission is always scored at its own dates
    (keyFor). A record from before anchors (entries or submissions, no anchor) keeps July 2026.
    Records: calcheck:<id> (the trainee's own; worker.js lets a trainee write only theirs, admins read everyone's)
-     {anchor:"YYYY-MM-DD", entries:{"<n>":{title, sd, st, ed, et, tz, allday, loc, guests, rtype, ramt, runit, notes}}, final:{lsh, seq},
-      drive:{at, n, found:[19 × bool], inOrder, error}, saved, submits:[{at, met, total, pct, checks:[[n, field, met, fix]], snap:{anchor, entries, final, drive}}]}
+     {anchor:"YYYY-MM-DD", entries:{"<n>":{title, sd, st, ed, et, tz, allday, loc, guests, rtype, ramt, runit, notes}}, saved, submits:[{at, met, total, pct, checks:[[n, field, met, fix]], snap:{anchor, entries}}]}
    🏅 My Performance shows the latest submission (📅 Calendar activity check); Admin → 🛠 Practice Lab → 📅 Calendar
    Activity lists each trainee's latest submission with every field's result.
    ============================================================ */
@@ -198,8 +191,6 @@ function tzOpts(date){
     return [id, `${label} (${g || "GMT" + TZ_JULY[i]})`]; });
   TZO.set(date, out); return out;
 }
-// the upload order: the 18 events, then the whole calendar
-const SEQ = KEY.map(k => [k.n, k.name, k.title]).concat([["11", "Entire Calendar", [["entire calendar", "whole calendar", "full calendar", "calendar"]]]]);
 const keyOf = (n, K) => (K || KEY).find(k => k.n === n);
 
 /* ---------- the check ---------- */
@@ -262,31 +253,23 @@ function check(k, v, ents){
   if(k.alt && ents){ const other = remRows(k, obj(ents[k.alt])), met = rs => rs.filter(c => c[1]).length; if(met(other) > met(rows)) rows = other; }
   return out.concat(rows);
 }
-// the 19th screenshot: the whole calendar, and the upload itself
-function checkFinal(f, drive){
-  f = obj(f);
-  const auto = !!drive && !drive.error && Array.isArray(drive.found) && drive.found.length === SEQ.length && drive.found.every(Boolean) && drive.inOrder === true;
-  return [["The LSH calendar unticked in the entire-calendar screenshot", !!f.lsh, "Untick the LSH calendar before the 11. Entire Calendar screenshot"],
-    [auto ? "The 19 screenshots in the sequence (found in your folder)" : "The 19 screenshots uploaded in the sequence (your own tick)", auto || !!f.seq, "Upload all 19 in the sample’s order, 1. Client Meeting to 11. Entire Calendar"]];
-}
 // a record's every row, at an anchor: the one given, else the record's own, else the core's current one (the simulator's review
 // passes {entries} alone, at the trainee's anchor; with no core, July)
 function checkAll(rec, anchor){
   rec = obj(rec); const rows = [], ents = obj(rec.entries);
   keyFor(okAnchor(anchor) ? anchor : okAnchor(rec.anchor) ? rec.anchor : anchorNowSet()).forEach(k => check(k, ents[k.n], ents).forEach(c => rows.push([k.n, c[0], c[1], c[2]])));
-  checkFinal(rec.final, rec.drive && typeof rec.drive === "object" ? rec.drive : null).forEach(c => rows.push(["11", c[0], c[1], c[2]]));
   return rows;
 }
 const score = rows => { const on = rows.filter(c => c[c.length === 4 ? 2 : 1] !== null), met = on.filter(c => c[c.length === 4 ? 2 : 1]).length; return {met, total: on.length, pct: on.length ? Math.round(met / on.length * 100) : 0}; };
 
 /* ---------- the trainee's record ---------- */
 const R = {rec: null, recId: null, open: {"1": true}, timer: null, status: "", busy: false, failed: false, loading: null};
-const blank = () => ({entries: {}, final: {}, drive: null, saved: "", submits: []});
+const blank = () => ({entries: {}, saved: "", submits: []});
 // the key at the page's record's anchor
 const curKey = () => keyFor(anchorOf(R.rec));
 // a stored record made safe to read: every entry an object, and only the submissions that hold a snapshot
 const clean = v => { v = obj(v); const r = Object.assign(blank(), v); r.entries = {}; Object.keys(obj(v.entries)).forEach(n => { r.entries[n] = obj(v.entries[n]); });
-  if(!okAnchor(r.anchor)) delete r.anchor; r.final = obj(r.final); r.drive = r.drive && typeof r.drive === "object" && !Array.isArray(r.drive) ? r.drive : null;
+  if(!okAnchor(r.anchor)) delete r.anchor; delete r.final; delete r.drive;   // (the screenshots' self-check and folder lookup, no longer asked)
   r.submits = (Array.isArray(r.submits) ? r.submits : []).filter(s => s && typeof s === "object" && s.snap && typeof s.snap === "object"); return r; };
 // 👁 Trainee view: a trainer has no trainee of their own, so the page shows empty and saves nothing
 const PREVIEW = "__preview";
@@ -336,11 +319,10 @@ function readItem(box){
 function edit(ev){
   const t = ev && ev.target; if(!t || !R.rec) return;
   if(t.type === "checkbox" && ev.type !== "change") return;   // (a checkbox sends both events: one is enough)
-  const box = t.closest(".cc-item[data-n]"), fin = t.closest(".cc-final");
+  const box = t.closest(".cc-item[data-n]");
   if(box){ const n = box.getAttribute("data-n"); R.rec.entries[n] = readItem(box);
     if(t.getAttribute("data-f") === "allday"){ render(); queue(); return; }
     paintItem(n); KEY.filter(k => k.alt === n).forEach(k => paintItem(k.n)); }
-  if(fin){ R.rec.final = {lsh: !!(fin.querySelector("#ccLsh") || {}).checked, seq: !!(fin.querySelector("#ccSeq") || {}).checked}; paintFinal(); }
   paintTotal(); queue();
 }
 // what the trainee typed in an event (the unit's default and an unticked all day aren't typing)
@@ -348,7 +330,7 @@ const touched = v => { v = obj(v); return v.allday === true || FIELDS.some(f => 
 // a submission keeps a snapshot of what was entered, and the trainer's tab and My Performance score that snapshot again,
 // so they never rely on a score the page stored
 // (with its anchor: a snapshot is scored at the dates it was typed against; one from before anchors, July)
-const snapOf = rec => JSON.parse(JSON.stringify({anchor: anchorOf(rec), entries: rec.entries, final: rec.final, drive: rec.drive}));
+const snapOf = rec => JSON.parse(JSON.stringify({anchor: anchorOf(rec), entries: rec.entries}));
 const scored = s => { const rows = checkAll(s.snap, anchorOf(s.snap)); return Object.assign({rows}, score(rows)); };
 async function submit(){
   if(previewOnly()) return;
@@ -362,32 +344,6 @@ async function submit(){
   const ok = await save();
   toast(ok === false ? "Couldn’t send it. Check your connection." : `📤 Sent to your trainer: ${sc.met} of ${sc.total} fields right (${sc.pct}%).`);
 }
-// 🔎 the trainee's Assessment and Activities folder (the existing /api/drive/answers route): the 19 screenshots by number and name
-function matchFiles(files){
-  const list = (files || []).slice().sort((a, b) => String(a.created || a.modified).localeCompare(String(b.created || b.modified)));
-  const used = new Set();
-  const found = SEQ.map(([n, , groups]) => {
-    const num = new RegExp("^\\s*0*" + n.split(".").join("\\s*[._-]\\s*0*") + "(?![0-9])(?!\\s*[._-]\\s*[0-9])");
-    const i = list.findIndex((f, j) => !used.has(j) && num.test(String(f.name || "")) && groups.every(g => g.some(p => words(String(f.name).replace(/\.[a-z0-9]{2,4}$/i, "")).includes(" " + norm(p) + " "))));
-    if(i < 0) return -1; used.add(i); return i;
-  });
-  // In order only when the files' times tell them apart, every one later than the one before. Two at the same time
-  // (Drive's public listing gives only the day) can't show the order, so inOrder is null and the trainee's tick counts.
-  const idx = found.filter(i => i >= 0), t = i => String(list[i].created || list[i].modified || "");
-  const tie = idx.some((x, j) => j > 0 && t(x) === t(idx[j - 1]));
-  const inOrder = tie ? null : idx.every((x, j) => j === 0 || x > idx[j - 1]);
-  return {n: list.length, found: found.map(i => i >= 0), inOrder};
-}
-async function folder(){
-  if(previewOnly() || R.busy || !R.rec) return; R.busy = true; render();
-  let d;
-  try{ const r = await authFetch("/api/drive/answers", {id: state.traineeId}); const j = await r.json().catch(() => ({}));
-    d = j.files ? Object.assign({at: new Date().toISOString()}, matchFiles(j.files)) : {at: new Date().toISOString(), error: j.error || "drive"}; }
-  catch(err){ d = {at: new Date().toISOString(), error: "offline"}; }
-  R.rec.drive = d; R.busy = false; render(); save();
-}
-const DRIVE_ERR = {"no-folder": "Save your Assessment and Activities folder link on 📂 My Drive first.", "no-access": "The platform can’t open your folder: share it with the trainer’s Drive (or by link).",
-  "Missing trainee": "Sign in as a trainee to look in your folder.", offline: "You’re offline.", drive: "Google Drive couldn’t be read just now."};
 
 /* ---------- the page ---------- */
 const chip = v => v === null ? `<span class="cc-na">—</span>` : v ? `<span class="cc-ok">✓</span>` : `<span class="cc-no">✗</span>`;
@@ -421,19 +377,6 @@ function itemHtml(k){
       ${L("notes", "Description / notes", `<textarea id="${id("notes")}" data-f="notes" rows="3" maxlength="1500">${e(v.notes || "")}</textarea>`, "w")}
     </div><div class="cc-out" data-res="${e(k.n)}">${resHtml(check(k, v, R.rec.entries), !go)}</div></div></details>`;
 }
-function finalHtml(){
-  const f = R.rec.final || {}, d = R.rec.drive, rows = checkFinal(f, d);
-  if(d && !Array.isArray(d.found)) d.found = [];
-  const folderNote = !d ? "" : d.error ? `<p class="cc-drive bad">🔎 ${e(DRIVE_ERR[d.error] || DRIVE_ERR.drive)} Your own tick counts instead.</p>`
-    : `<p class="cc-drive ${d.found.every(Boolean) && d.inOrder ? "good" : "bad"}">🔎 ${d.n} file${d.n === 1 ? "" : "s"} in your folder: ${d.found.filter(Boolean).length} of the 19 screenshots found by number and name${d.found.every(Boolean) ? (d.inOrder ? ", uploaded in order ✓" : d.inOrder === null ? ", but your folder doesn’t show when each was uploaded, so the order can’t be checked" : ", but not uploaded in order") : ` (not found: ${SEQ.filter((s, i) => !d.found[i]).map(s => s[0]).join(", ")})`}.${d.found.every(Boolean) && d.inOrder ? "" : " Name each one as in the sample (for example “6.2 Court Appearance Travel Block…”), or your own tick counts."}</p>`;
-  return `<details class="cc-item cc-final" ${R.open["11"] ? "open" : ""} ontoggle="FTCalCheck.toggle('11', this.open)"><summary><span class="cc-n">11</span><span class="cc-name">Entire Calendar &amp; the upload</span><span class="cc-sc ${pctCls(score(rows).pct)}" data-sc="11">${score(rows).met}/${score(rows).total}</span></summary>
-    <div class="cc-body"><div class="cc-grid">
-      <label class="ck w"><input type="checkbox" id="ccLsh" ${f.lsh ? "checked" : ""}> I unticked the LSH calendar before the entire-calendar screenshot</label>
-      <label class="ck w"><input type="checkbox" id="ccSeq" ${f.seq ? "checked" : ""}> Self-check: I uploaded all 19 screenshots in the sample’s order</label>
-      <div class="w cc-drivebar"><button type="button" class="btn btn-ghost btn-sm" onclick="FTCalCheck.folder()" ${R.busy ? "disabled" : ""}>${R.busy ? "Looking…" : "🔎 Look in my folder"}</button><span class="cc-mono">Optional · matches your files to the 19 by number and name</span></div>
-      ${folderNote ? `<div class="w">${folderNote}</div>` : ""}
-    </div><div class="cc-out" data-res="11">${resHtml(rows)}</div></div></details>`;
-}
 const started = () => KEY.some(k => touched(R.rec.entries[k.n]));
 function summaryHtml(){
   const sc = score(checkAll(R.rec, anchorOf(R.rec))), go = started();
@@ -453,10 +396,6 @@ function paintItem(n){
   const out = document.querySelector(`[data-res="${n}"]`); if(out) out.innerHTML = resHtml(check(k, v, R.rec.entries), !go);
   const s = document.querySelector(`[data-sc="${n}"]`); if(s){ s.textContent = go ? `${sc.met}/${sc.total}` : "—"; s.className = `cc-sc ${go ? pctCls(sc.pct) : "none"}`; }
 }
-function paintFinal(){
-  const rows = checkFinal(R.rec.final, R.rec.drive), out = document.querySelector(`[data-res="11"]`); if(out) out.innerHTML = resHtml(rows);
-  const s = document.querySelector(`[data-sc="11"]`); if(s){ const sc = score(rows); s.textContent = `${sc.met}/${sc.total}`; s.className = `cc-sc ${pctCls(sc.pct)}`; }
-}
 const paintTotal = () => { const el = document.getElementById("ccSummary"); if(el) el.innerHTML = summaryHtml(); const fx = document.getElementById("ccFix"); if(fx) fx.innerHTML = fixHtml(); };
 function renderPage(){
   if(!R.rec && R.failed) return `<div class="card cc-loadfail"><b>Couldn’t load your draft.</b> Nothing has been changed: check your connection, then <button class="btn btn-ghost btn-sm" type="button" onclick="FTCalCheck.reload()">↻ Try again</button></div>`;
@@ -467,7 +406,7 @@ function renderPage(){
       <p class="cc-dates">🗓 ${preview() ? "A batch starting this week has the activity on" : "Your activity’s dates"}: <b>${e(spanOf(anchorOf(R.rec)))}</b></p>
       ${window.FTCalSim ? `<p class="cc-sim"><button class="btn btn-ghost btn-sm" type="button" onclick="goto('calsim','attorney-activity')">🗓 Do the activity on the Calendaring Simulator</button> <span class="cc-mono">the same check, on a practice Google Calendar</span></p>` : ""}</div>
     <div class="cc-sticky" id="ccSummary">${summaryHtml()}</div><div id="ccFix">${fixHtml()}</div>
-    <div class="cc-list" oninput="FTCalCheck.edit(event)" onchange="FTCalCheck.edit(event)">${curKey().map(itemHtml).join("")}${finalHtml()}</div>
+    <div class="cc-list" oninput="FTCalCheck.edit(event)" onchange="FTCalCheck.edit(event)">${curKey().map(itemHtml).join("")}</div>
     <div class="cc-send"><button class="btn btn-navy" type="button" onclick="FTCalCheck.submit()">📤 Submit to my trainer</button>
       <span class="cc-mono">${last ? `Last sent ${e(new Date(last.at).toLocaleString())} · ${lastSc.pct}%` : "Not sent yet"}</span></div>`;
 }
@@ -485,7 +424,7 @@ window.render = function(){
   try{ afterRender(); }catch(err){}
 };
 window.FTCalCheck = {
-  key: KEY, keyFor, anchorOf, tzOpts, seq: SEQ, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkFinal, checkAll, score, matchFiles, edit, submit, folder,
+  key: KEY, keyFor, anchorOf, tzOpts, zones: TZ, pacificOf: PAC_OF, pacificTimes: PACS_OF, check, checkAll, score, edit, submit,
   toggle(n, open){ R.open[n] = !!open; },
   save: () => save(), reload: () => load(true), state: () => R
 };
@@ -576,8 +515,6 @@ main.main-cc{max-width:980px;margin:0 auto;padding:18px 16px 48px;display:flex;f
 .cc-res li{display:grid;grid-template-columns:22px 1fr;gap:6px;padding:5px 0;border-top:1px solid var(--line,#eceef2);line-height:1.4;}
 .cc-res li small{display:block;color:var(--ink-soft);font-size:14px;} .cc-res li.miss b{color:#C2410C;}
 .cc-ok{color:#2E7D4F;font-weight:800;} .cc-no{color:#C2410C;font-weight:800;} .cc-na{color:var(--ink-soft);}
-.cc-drivebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-.cc-drive{margin:0;padding:8px 12px;border-radius:8px;font-size:15px;line-height:1.45;} .cc-drive.good{background:#E3F4EA;color:#1E5A3A;} .cc-drive.bad{background:#FDEBE3;color:#8A2E0A;}
 .cc-send{display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
 .cc-preview{padding:10px 14px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:14px;} .cc-loadfail{padding:18px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:16px;}
 .cc-admin .ff-bar h3{font:700 22px/1.2 'Poppins','Inter',sans-serif;color:#1E2340;}

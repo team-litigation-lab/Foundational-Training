@@ -88,7 +88,8 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     || !/<b>6\. Court Appearance · Travel Block: to court<\/b>/.test(its[1]) || !/<b>8\. Networking Dinner Event · Return Travel to Seattle<\/b>/.test(its[3])
     || dated.length !== 16 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
     fail(`Day 5's activity isn't its Instructions in two cards, then its sixteen cards four to a slide with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
-  if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/ftdd-seq/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples and drawn pictures are no longer on its second slide');
+  if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/Calendar Activity Check/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples, drawn picture and Calendar Activity Check are no longer on its second slide');
+  if (/screenshot|ftdd-seq|LSH calendar/i.test(sl(5, 's3b').replace(/<p class="ftdd-gcal-cap">[^<]*<\/p>/, ''))) fail('Day 5\'s activity still asks for screenshots or their upload');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
 }
@@ -372,6 +373,15 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => { state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
+  const flow6 = await page.evaluate(() => FT_DAY_DECKS[6].slides.slice(0, 3).map(s => s.h).join(' | '));
+  if (!/Calendaring Mock Calls Instructions \| .*Mock Calls Metrics \| .*Training Videos/.test(flow6)) fail(`Day 6 (Part 2) doesn't run Instructions, Metrics, Videos: ${flow6}`);
+  // the Reception mock calls and Day 6's Metrics slide (Part 2: Instructions, Metrics, Videos): a trainee sees the metrics (read only), not the ⏳ While you wait box
+  for (const [d, id, what] of [[4, 's3', 'Reception'], [6, 's1m', 'Calendar Management']]) {
+    await page.evaluate(([d, id]) => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(d, FTDayDecks.at(d, id)); }, [d, id]); await page.waitForTimeout(1500);
+    const mm = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body, b = sh.querySelector('.ftdd-score');
+      return { rows: b ? b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length : 0, pick: !!(b && b.querySelector('.ftms-pick select')), wait: !!sh.querySelector('.ftdd-wait') }; });
+    if (mm.rows < 5 || mm.pick || mm.wait) fail(`Day ${d}'s ${what} mock calls don't show the trainee the metrics, read only, without the While you wait box: ${JSON.stringify(mm)}`);
+  }
   // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)
   await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(6, FTDayDecks.at(6, 's2')); }); await page.waitForTimeout(1600);
   const mc = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body;

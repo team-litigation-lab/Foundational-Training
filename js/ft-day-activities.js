@@ -95,7 +95,7 @@ const DAYS = [
   {day:6, role:"Calendar Management Training", lessons:[5], items:[
     {t:"Calendar Management Mock Calls", kind:"Session", at:"session", id:"calendaring"},
     {t:"Calendar Management Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"calendar-live"},
-    {t:"Appointments booked on the Google Calendar Simulator (time zone visible in every screenshot)", kind:"Activity", at:"tool", id:"calsim"},
+    {t:"Appointments booked on the Google Calendar Simulator (the time zone set on every appointment)", kind:"Activity", at:"tool", id:"calsim"},
     {t:"Training Video Viewing", kind:"Activity", at:"room"},
     {t:"Additional Activity: Calendar Management — Mock Call Scenarios (each booking checked against the scheduling rules)", kind:"Activity", at:"tool", id:"calrules"},
     {t:"Calendar Management Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}

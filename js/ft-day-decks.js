@@ -741,19 +741,28 @@ function dayRubric(title){
   return (byTitle && (cands.find(rb => rb.key === byTitle.key) || byTitle)) || cands[0] || null;
 }
 // 🧑‍🏫 during the mock calls and the demos the trainer scores on the slide itself: the activity's metrics as the scoring sheet
-// (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already
+// (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already. A trainee sees the mock calls' metrics
+// (Day 4's Reception, Day 9's Intake; Day 6's Calendar Management has its own Metrics slide) as the guide's table, read only (FTMetrics.view), so they
+// know what the call is scored on; the demos' sheet stays the trainer's.
 function scoreBox(s, info, body){
-  const h = String(s.h || "");
-  if(!isAdminView() || !root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
+  const h = String(s.h || ""), admin = isAdminView();
+  if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
   if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  if(!admin && !/mock call/i.test(h)) return "";
+  // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
+  if(/instructions|metrics|scenarios/i.test(h)) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${FTMetrics.table(rb.key)}</div>`;
+  const M = root.FTMetrics;
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key) +
+    `<p class="ftdd-score-f">Your trainer scores each line with you after the call. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`}</div>`;
 }
 function waitBox(s, info){
   const h = String(s.h || "");
   if(s.agenda || s.trainer || s.placeholder || !/mock call|demo/i.test(h) || /recorded demonstration/i.test(h)) return "";
+  // (nor on the mock calls' slides: their metrics are there instead, scoreBox)
+  if(/mock call/i.test(h)) return "";
   // (not on the slides that prepare for the mock calls or explain them: Day 4's video, its preparation slide, which links
   // the tools itself, and its instructions and metrics)
   if(/training video viewing|^mock call preparation:|^instructions for mock calls/i.test(h)) return "";
@@ -1378,11 +1387,11 @@ const LESSON_CARDS = {
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
-      {t: "Calendaring Activity", time: "AM & PM", sub: "Your graded activity on the Calendar Simulator, with the trainer", k: "interactive", d: 6, s: "s1b"},
-      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
+      {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
+      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1v"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
-    tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "The time zone visible in every screenshot",
+    tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
@@ -2747,14 +2756,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B61
 .ft-body .ftdd-ev-av{width:24px;height:24px;border-radius:50%;background:#0B57D0;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;}
 main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size:14px !important;font-weight:600 !important;}
 @media(max-width:900px){ .ft-body .ftdd-ev-body{grid-template-columns:minmax(0,1fr);} }
-/* 📤 the 19 screenshots, numbered in the order they are uploaded */
-.ft-body .ftdd-card4:has(.ftdd-seq){grid-column:1 / -1;}   /* (the list takes the whole row) */
 .ft-body .ftdd-sheet > .ftdd-card4, main.main-ftdd .ftdd-sheet > .ftdd-card4{margin:0 0 14px;}   /* (the list takes the card's whole row, in two columns) */
-.ft-body ol.ftdd-seq{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-rows:repeat(10,auto);grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px 14px;}
-@media(max-width:900px){ .ft-body ol.ftdd-seq{grid-auto-flow:row;grid-template-rows:none;} }
-.ft-body ol.ftdd-seq li{display:flex;align-items:center;gap:8px;margin:0 !important;padding:5px 10px;border-radius:6px;background:#F4F6FB;font:600 16px/1.3 'Inter',system-ui,sans-serif !important;color:#1E2340 !important;}
-.ft-body ol.ftdd-seq li:nth-child(even){background:#EBEEF6;}
-.ft-body .ftdd-seq-n{flex:0 0 auto;min-width:28px;height:28px;border-radius:50%;background:#E8590C;color:#fff;font:800 13px/28px 'Inter',sans-serif;text-align:center;}
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
