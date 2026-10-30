@@ -304,7 +304,7 @@ s3: html => {
   // (Frontline Management: the call-handling decision trees drawn on the slide, two to a row, in place of the guide's two
   // screenshots (the Authorization and Payment Calls trees), with the PI firm's other frontline calls beside them (TREES);
   // then the Sample SOP's four pages as screenshots (ft/day3/img/sample-sop-N.png, each opening bigger in the slide's
-  // picture viewer: js/ft-day-decks.js ftdd-sop), with one big link to the document and a ⬇ Download of it. The sample
+  // picture viewer: js/ft-day-decks.js ftdd-sop), with one big link to the document and a ⬇ Download of it (as Word). The sample
   // call recordings are the 🎧 Call Listening slide's, a card each: js/ft-day-decks.js LISTEN_CARDS)
   if(!/image12\.png/.test(shots) || !/image17\.png/.test(shots)) throw new Error("Day 3's decision tree screenshots are no longer where the build looks for them");
   const SOP_ID = "1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm", SOP = `https://docs.google.com/document/d/${SOP_ID}/edit?usp=drive_link`;
@@ -315,7 +315,7 @@ s3: html => {
     '<div class="ftdd-pgbreak"></div>\n' +
     `<div class="ftdd-sop"><div class="ftdd-sop-shots">${sopShots}</div>\n` +
     `<div class="ftdd-tiles ftdd-sop-links"><a class="viewer-link ftdd-sop-open" data-kind="doc" data-title="Sample SOP" href="${SOP}"><span>📄</span><b>Sample SOP</b></a>` +
-    `<a class="ftdd-sop-dl" href="https://drive.google.com/uc?export=download&amp;id=${SOP_ID}" target="_blank" rel="noopener noreferrer" download>⬇ Download</a></div></div>\n`;
+    `<a class="ftdd-sop-dl" href="https://docs.google.com/document/d/${SOP_ID}/export?format=docx" target="_blank" rel="noopener noreferrer" download>⬇ Download</a></div></div>\n`;
 },
 // Day 3's homework: the five CRM/CMS videos, each named, as cards with the video's preview (data-card: js/ft-day-decks.js
 // visual), a click playing it bigger in the pop-up viewer; and when they may be finished
