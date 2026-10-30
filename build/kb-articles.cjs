@@ -17,16 +17,14 @@ const ROLES = [
   ["intake", "Intake", "Intake Specialist", "intake"],
   ["claims", "Claims", "Claims Specialist & Insurance", "insurance"],
   ["records", "Med Records", "Medical Records Specialist", "provider"],
-  ["cm", "Case Mgmt", "Case Management", "case-management"],
   ["liens", "Liens", "Liens & Subrogation", "lien"],
   ["demands", "Demands", "Demands & Medical Summaries", "demands"],
-  ["litigation", "Litigation", "Litigation & Discovery", "litigation"],
   ["practice", "Practice Areas", "Practice Areas", ""]
 ];
 // a Foundational Training lesson's topics go to its role
 const LESSON = {1: "va", 2: "va", 3: "va", 4: "reception", 5: "calendar", 6: "intake", 7: "claims", 8: "records"};
-// a bundled document's collection → its role
-const COLLECTION = {intake: "intake", insurance: "claims", provider: "records", "case-management": "cm", lien: "liens", demands: "demands", litigation: "litigation"};
+// a bundled document's collection → its role (Case Management's and Litigation's aren't on the card: "" leaves them out)
+const COLLECTION = {intake: "intake", insurance: "claims", provider: "records", "case-management": "", lien: "liens", demands: "demands", litigation: ""};
 // the Tettra pages, one by one (their categories don't follow the roles: "Administrative" holds intake, records and calendar pages)
 const TETTRA = {
   829734: "intake", 829735: "intake", 829736: "intake", 829738: "intake", 918345: "intake",
@@ -34,7 +32,7 @@ const TETTRA = {
   972751: "records", 1024476: "records", 1024491: "records", 1031449: "records", 1031468: "records", 829767: "records",
   829739: "liens", 829740: "liens", 829741: "liens", 829754: "liens", 829756: "liens", 829759: "liens", 829770: "liens",
   848156: "demands", 848185: "demands",
-  919505: "litigation", 1083562: "litigation", 1083564: "litigation", 1085903: "litigation",
+  919505: "", 1083562: "", 1083564: "", 1085903: "",   // Litigation: not on the card
   918335: "calendar",
   958866: "reception", 972748: "reception",
   972753: "va", 1086475: "va"
@@ -58,18 +56,19 @@ const lost = [];
 for(const p of seed("training.json").pages) add(LESSON[p.lesson], `Foundational Training · Lesson ${p.lesson}: ${p.lessonTitle.replace(/ Training$/, "")}`, p.title, `#/topic/${p.id}`);
 for(const r of Object.keys(EXTRA)) for(const [sec, list] of EXTRA[r]) for(const [id, t] of list) add(r, sec, t, `#/e/${id}`);
 for(const d of seed("docs.json")){
-  const role = COLLECTION[d.collection]; if(!role){ lost.push(`doc ${d.file} (${d.collection})`); continue; }
+  const role = COLLECTION[d.collection]; if(role === "") continue;
+  if(!role){ lost.push(`doc ${d.file} (${d.collection})`); continue; }
   add(role, d.section || "Procedures & guides", d.title, `#/doc/${d.file}`);
 }
 for(const p of seed("tettra.json").pages){
-  const role = /^IV\. Practice/.test(p.category) ? "practice" : TETTRA[p.id];
+  const role = /^IV\. Practice/.test(p.category) ? "practice" : TETTRA[p.id]; if(role === "") continue;
   if(!role){ lost.push(`Tettra ${p.id} ${p.title}`); continue; }
   add(role, role === "practice" ? "Practice areas" : "Guides & SOPs", p.title, `#/go/${p.id}`);
 }
 if(lost.length){ console.error("No role for:\n  " + lost.join("\n  ")); process.exit(1); }
 
 const roles = ROLES.map(([key, label, title, collection]) => {
-  // the lesson's topics first, then the sections in order (CM Training · Day 1 … Day 5)
+  // the lesson's topics first, then the sections in order
   const rank = h => /^Foundational Training/.test(h) ? 0 : 1;
   const groups = [...by[key]].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0], "en", {numeric: true}));
   return {key, label, title, collection, count: groups.reduce((n, g) => n + g[1].length, 0), groups};
