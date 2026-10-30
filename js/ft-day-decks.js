@@ -347,7 +347,6 @@ function visual(html){
     // (the trainer's deck is the trainee's scorecard too, with the scoring sheet under it)
     const M = window.FTMetrics;
     box.innerHTML = `<p class="ftdd-score-h"><b>${e(txt)}</b></p>${M ? (M.view || M.table)(rb.key) : ""}` +
-      `<p class="ftdd-score-f">Your trainer scores each line with you after the ${/call/i.test(rb.title) ? "call" : "activity"}. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>` +
       (isAdminView() && M && M.view ? M.table(rb.key) : "");
     if(shots) shots.remove();
     p.replaceWith(box);
@@ -416,6 +415,15 @@ function visual(html){
   // tiles that ended up next to each other share one grid
   root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
   root.querySelectorAll(".ftdd-tiles + .ftdd-tiles").forEach(g => { const a = g.previousElementSibling; [...g.children].forEach(c => a.appendChild(c)); g.remove(); });
+  // 📌 a trainer's guide the build keeps off the slide (template.ftdd-tsheet: Day 6's Possible Scenarios): on the trainer's
+  // deck, a button that opens it as a sheet over the slide (FTDayDecks.tsheet); on a trainee's, nothing
+  root.querySelectorAll("template.ftdd-tsheet").forEach(t => {
+    if(!isAdminView()){ t.remove(); return; }
+    const w = document.createElement("div"); w.className = "ftdd-tsheet-go";
+    w.innerHTML = `<button type="button" class="btn btn-navy" onclick="FTDayDecks.tsheet(this)"></button>`;
+    w.querySelector("button").textContent = (t.getAttribute("data-title") || "📌 Trainer’s guide") + " · 🧑‍🏫 Trainer’s guide";
+    t.replaceWith(w); w.appendChild(t);
+  });
   // 2. tasks → numbered step cards; topics → a topic chip; dashed lines → a divider
   root.querySelectorAll("p").forEach(p => {
     if(p.closest(".trainer-slot")) return;
@@ -706,8 +714,7 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key) +
-    `<p class="ftdd-score-f">Your trainer scores each line with you after the call. ${rb.time ? "⏱ " + e(rb.time) + ". " : ""}The average becomes the activity's score on 🏅 My Performance and the week's ranking.</p>`}</div>`;
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 function waitBox(s, info){
   const h = String(s.h || "");
@@ -1972,6 +1979,20 @@ function toolsSlide(){
 }
 
 root.FTDayDecks = {open, go, next: nextKC,
+  // 📌 the trainer's guide sheet over the slide (Day 6's Possible Scenarios): ✕, a click outside it, or Esc closes it
+  tsheet(btn){
+    const t = btn && btn.parentElement && btn.parentElement.querySelector("template.ftdd-tsheet"); if(!t) return;
+    const old = document.getElementById("ftddTsheet"); if(old) old.remove();
+    const m = document.createElement("div"); m.id = "ftddTsheet"; m.className = "ftdd-tsm";
+    m.innerHTML = `<div class="ftdd-tsm-box" role="dialog" aria-modal="true"><div class="ftdd-tsm-h"><b></b><span>🧑‍🏫 Trainer’s guide · not shown to trainees</span><button type="button" class="ftdd-tsm-x" aria-label="Close">✕</button></div><div class="ftdd-tsm-body"></div></div>`;
+    m.querySelector(".ftdd-tsm-h b").textContent = t.getAttribute("data-title") || "Trainer’s guide";
+    m.querySelector(".ftdd-tsm-body").appendChild(t.content.cloneNode(true));
+    const close = () => { m.remove(); document.removeEventListener("keydown", esc, true); };
+    const esc = ev => { if(ev.key === "Escape"){ ev.stopPropagation(); close(); } };
+    m.addEventListener("click", ev => { if(ev.target === m || ev.target.closest(".ftdd-tsm-x")) close(); });
+    document.addEventListener("keydown", esc, true);
+    document.body.appendChild(m);
+  },
   // re-measure the slide after content is drawn into it (js/ft-intake.js), keeping the page the trainee is on
   refit(){ if(state.view === "daydeck") fitSheets(); },
   // ⛶ a decision tree bigger: it fills the screen, and again (or Esc) brings it back
@@ -2546,7 +2567,6 @@ main.main-ftdd .ftdd-sheet:not(.ftdd-hw) li::marker{color:#E8590C;font-weight:80
 .ftdd-score-l{align-items:stretch;grid-auto-rows:1fr;gap:8px 12px !important;}
 .ftdd-score-l li{display:flex;align-items:center;gap:10px;min-height:52px;padding:8px 12px;border:1.5px solid #E6D6C2;border-radius:10px;background:#FFFBF6;font-size:13.5px;line-height:1.35;counter-increment:sc;}
 .ftdd-score-l li::before{content:counter(sc);flex:0 0 26px;width:26px;height:26px;border-radius:7px;background:#E8590C;color:#fff;font:800 12.5px/26px 'Inter',sans-serif;text-align:center;}
-.ftdd-score-f{margin:8px 0 0;font-size:12.5px;color:var(--ink-soft);}
 /* the picture of the trainer's own sheet says nothing the criteria above it don't: on a slide it is only clutter */
 .ftdd-sheet .ftdd-score .ftdd-score-shot{display:none !important;}
 .ftdd-topic{display:inline-block;margin:16px 0 4px;padding:5px 14px;border-radius:8px;background:#262B45;color:#fff;font:700 14.5px/1.3 'Poppins','Inter',sans-serif;letter-spacing:.02em;}
@@ -2761,6 +2781,38 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 .ft-body .ftdd-gcal-tz{outline:3px solid #E5262B;outline-offset:2px;font-weight:700;}
 .ft-body .ftdd-gcal-link{color:#A8C7FA;font-weight:600;}
 main.main-ftdd .ftdd-sheet p.ftdd-gcal-cap{font-size:14px !important;color:#5B6178 !important;margin:4px 0 0 !important;}
+/* ☎ Day 6's Instructions: the three links as buttons in a row, the six steps two to a row (one page with the reminders) */
+.ftdd-linkbtns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:10px 0 14px;}
+main.main-ftdd .ftdd-sheet a.ftdd-linkbtn{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px 16px;border-radius:12px;background:#1E2340;border:2px solid #1E2340;border-bottom:4px solid #E8590C;color:#fff !important;font:700 15.5px/1.3 'Inter',system-ui,sans-serif;text-decoration:none !important;box-shadow:0 4px 12px rgba(30,35,64,.18);transition:transform .15s,box-shadow .15s;}
+main.main-ftdd .ftdd-sheet a.ftdd-linkbtn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(30,35,64,.25);background:#262D55;}
+main.main-ftdd .ftdd-sheet a.ftdd-linkbtn span{color:#F4B77A;}
+.ftdd-steps2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;align-items:stretch;}
+main.main-ftdd .ftdd-sheet .ftdd-steps2 .ftdd-step{margin:4px 0;}
+main.main-ftdd .ftdd-sheet .ftdd-steps2 .ftdd-step-t{font-size:16px;text-align:left;}
+@media(max-width:900px){ .ftdd-linkbtns, .ftdd-steps2{grid-template-columns:minmax(0,1fr);} }
+/* 🎬 Day 6's videos: the line on the left and Part 1 big on the right (ftdd-lead2); Part 2 and Calendaring 101 side by side
+   (ftdd-vid2), each as big as the page lets it be; the video's name in white on its bar */
+.ftdd-lead2{display:grid;grid-template-columns:minmax(200px,1fr) minmax(0,2.6fr);gap:24px;align-items:center;}
+main.main-ftdd .ftdd-sheet .ftdd-lead2 > p{text-align:left !important;font-size:20px !important;margin:0 !important;}
+.ftdd-lead2-l{justify-self:start;font:800 22px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;text-align:left;border-left:5px solid #E8590C;padding:6px 0 6px 14px;}
+.ftdd-vid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start;}
+.ft-body :is(.ftdd-lead2, .ftdd-vid2) .ftdd-inline{margin:0;}
+.ft-body .ftdd-lead2 .ftdd-inline{width:min(100%, calc((var(--ftdd-room, 70vh) - 70px) * 16 / 9));justify-self:center;}
+.ft-body .ftdd-lead2 .ftdd-embed.ftdd-embed-player{width:100%;margin:8px 0 0;}
+.ft-body .ftdd-vid2 .ftdd-embed.ftdd-embed-player{width:100%;max-height:calc(var(--ftdd-room, 70vh) - 70px);margin:8px 0 0;}
+main.main-ftdd .ftdd-sheet .ftdd-inline-h b{color:#fff !important;}
+@media(max-width:900px){ .ftdd-lead2, .ftdd-vid2{grid-template-columns:minmax(0,1fr);} }
+/* 📌 the trainer's guide sheet (Day 6's Possible Scenarios): its button on the trainer's deck, and the sheet over the slide */
+.ftdd-tsheet-go{display:flex;justify-content:center;margin:4px 0 14px;}
+.ftdd-tsm{position:fixed;inset:0;z-index:9000;background:rgba(14,17,34,.6);display:flex;align-items:center;justify-content:center;padding:24px;}
+.ftdd-tsm-box{background:#fff;border-radius:16px;width:min(1200px,100%);max-height:calc(100vh - 48px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.ftdd-tsm-h{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#1E2340;border-bottom:4px solid #E8590C;color:#fff;}
+.ftdd-tsm-h b{font:800 19px/1.3 'Poppins','Inter',sans-serif;} .ftdd-tsm-h span{font-size:13px;color:#C9CFDD;margin-left:auto;}
+.ftdd-tsm-x{background:none;border:0;color:#fff;font-size:20px;cursor:pointer;padding:2px 6px;}
+.ftdd-tsm-body{overflow:auto;padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
+.ftdd-tsheet-card{border:1.5px solid #D9DEEA;border-left:4px solid #E8590C;border-radius:10px;padding:10px 12px;background:#FBFBFE;display:flex;flex-direction:column;gap:4px;font:14px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
+.ftdd-tsheet-card b{font-weight:700;} .ftdd-tsheet-card span{color:#4A5170;}
+.ft-body .ftdd-ev-desc p{margin:2px 0 !important;font-size:14px !important;}
 /* 📅 Day 6's sample event, drawn (Google Calendar's event editor): the client's name and the date, time and time zone boxed in red */
 .ft-body .ftdd-ev{background:#fff;border:1.5px solid #DADCE0;border-radius:12px;padding:14px 16px;margin:8px 0;font:500 14px/1.35 'Inter',system-ui,sans-serif;color:#1F1F1F;}
 .ft-body .ftdd-ev-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}

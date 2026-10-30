@@ -212,6 +212,23 @@ const treeHtml = t => `<div class="ftdt"><div class="ftdt-h"><b>🌳 ${esc_(t.h)
     : `<div class="ftdt-arrow">↓</div><div class="ftdt-q">${esc_(s.q)}</div><div class="ftdt-br"><div class="ftdt-yes"><span>YES</span>${s.yes.map(x => `<i>${esc_(x)}</i>`).join("")}</div><div class="ftdt-no"><span>NO</span>${s.no.map(x => `<i>${esc_(x)}</i>`).join("")}</div></div>`).join("") +
   `<p class="ftdt-tag">🛡 ${esc_(t.tag)}</p></div></div>`;
 const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid ftdd-keep">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
+// 📅 Day 5's sample, a finished event (the guide's Deposition Meeting screenshot), drawn as Day 6's sample event: the title and
+// the date, time and time zone boxed in red, the time zone highlighted; then its location, email reminder, calendar, guests and notes
+const DEPOSITION_EV = '<div class="ftdd-ev ftdd-ev-dep" role="img" aria-label="Sample: a finished event, Deposition Meeting, Feb 4, 2025, 11:00am to 1:00pm, (GMT-05:00) Eastern Standard Time - Panama; location Attorney’s Office or Zoom for Remote Attendees; email reminder 1 day before; Michelle Bernardino’s calendar, red; guests Michelle Bernardino (organizer), Martin Anthony Gan and Michelle Velarde; the Zoom link and the notes in the description">' +
+  '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title"><span class="ftdd-ev-mark">Deposition Meeting</span></span><span class="ftdd-ev-note">◀ Specific title</span><span class="ftdd-ev-save">Save</span></div>' +
+  '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Feb 4, 2025</span><span class="ftdd-ev-f">11:00am</span><span>to</span><span class="ftdd-ev-f">1:00pm</span><span class="ftdd-ev-f">Feb 4, 2025</span><span>(GMT-05:00) <span class="ftdd-ev-hl">Eastern Standard Time - Panama</span></span><span class="ftdd-ev-link">Time zone</span></div>' +
+  '<div class="ftdd-ev-sub"><span><span class="ftdd-ev-box"></span> All day</span> <span class="ftdd-ev-f">Does not repeat ▾</span></div>' +
+  '<div class="ftdd-ev-body"><div class="ftdd-ev-main"><div class="ftdd-ev-tabs"><b>Event details</b><span>Find a time</span></div>' +
+  '<div class="ftdd-ev-line">🎥 <span class="ftdd-ev-link">Add Google Meet video conferencing</span></div>' +
+  '<div class="ftdd-ev-line">📍 <span class="ftdd-ev-f wide">Attorney’s Office or Zoom for Remote Attendees</span></div>' +
+  '<div class="ftdd-ev-line">🔔 <span class="ftdd-ev-f">Email ▾</span><span class="ftdd-ev-f">1</span><span class="ftdd-ev-f">days ▾</span></div>' +
+  '<div class="ftdd-ev-line">📅 <span class="ftdd-ev-f">Michelle Bernardino ▾</span><span class="ftdd-ev-f"><span class="ftdd-ev-dot" style="background:#D50000"></span> ▾</span></div>' +
+  '<div class="ftdd-ev-line">💼 <span class="ftdd-ev-f">Busy ▾</span><span class="ftdd-ev-f">Default visibility ▾</span></div>' +
+  '<div class="ftdd-ev-desc"><p><span class="ftdd-ev-link">Zoom Link</span> for remote attendees: <span class="ftdd-ev-link">zoom.us/deposition-meeting-02-04-25</span></p><p>Deposition preparation with another attorney.</p></div></div>' +
+  '<div class="ftdd-ev-side"><div class="ftdd-ev-tabs"><b>Guests</b><span>Suggested times</span></div><div class="ftdd-ev-f wide">Add guests</div>' +
+  '<p class="ftdd-ev-perm">3 guests <small>· 1 yes, 2 awaiting</small></p>' +
+  '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Bernardino</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#12A4AF">M</span><span><b>Martin Anthony Gan</b></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av" style="background:#5B3CC4">M</span><span><b>Michelle Velarde</b></span></div>' +
+  '<p class="ftdd-ev-perm">Guest permissions</p><div><span class="ftdd-ev-box"></span> Modify event</div><div><span class="ftdd-ev-box on">✓</span> Invite others</div><div><span class="ftdd-ev-box on">✓</span> See guest list</div></div></div></div>\n';
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note and its naming convention go: the answers are on ✍️ Knowledge Check
@@ -290,18 +307,23 @@ s3: html => {
       return h.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); }, cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">'))
     // (the activity's own file is not on the slide: its items are the cards before it, s3i–s3l)
     .replace(/<p><a class="viewer-link" data-embed[^>]*1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP[^\n]*?<\/p>\n?/, "")
-    // (the Samples: a finished event, Deposition Meeting, on the slide itself (the time zone's own sample, Recorded Statement Meeting, is drawn on the next page), not the Drive folder, which asks a trainee for access)
-    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="shots ftdd-shot-wide"><figure><a href="/ft/day5/img/sample-deposition.png" target="_blank"><img src="/ft/day5/img/sample-deposition.png" alt="Sample: a finished event, Deposition Meeting, with its time zone, location, reminder, colour, guests and notes" loading="lazy"></a></figure></div>`);
+    // (the Samples: a finished event, Deposition Meeting, drawn on the slide itself as Day 6's sample event is (DEPOSITION_EV),
+    // under its heading; not the Drive folder, which asks a trainee for access)
+    // (the heading and the drawn event are one block, ftdd-keep: one page, scaled to fit a short screen)
+    .replace(/<p>Samples<\/p>\n?/, "")
+    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, '<div class="ftdd-keep"><p><b>Sample: a finished event should follow this structure:</b></p>\n' + DEPOSITION_EV + "</div>");
+  if(!act.includes("ftdd-ev-dep") || !act.includes("Sample: a finished event")) throw new Error("Day 5's Samples are no longer where the build looks for them");
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone
   // boxed (image28) and the 19 screenshots in their order (image40)
   const shot = f => new RegExp(`<div class="shots"><figure><a href="/ft/day5/img/${f}"[\\s\\S]*?</figure></div>\\n?`);
   if(!shot("image28.png").test(tz)) throw new Error("Day 5's sample pictures are no longer where the build looks for them");
-  const editor = '<div class="ftdd-gcal" role="img" aria-label="Sample: the event editor, Recorded Statement Meeting, Feb 6, 2025, 2:00pm to 3:00pm, time zone (GMT-05:00) Central Time - Chicago">' +
-    '<div class="ftdd-gcal-top"><span class="ftdd-gcal-x">✕</span><span class="ftdd-gcal-title">Recorded Statement Meeting</span><span class="ftdd-gcal-save">Save</span><span class="ftdd-gcal-more">More actions ▾</span></div>' +
-    '<div class="ftdd-gcal-row"><span class="ftdd-gcal-f">Feb 6, 2025</span><span class="ftdd-gcal-f">2:00pm</span><span class="ftdd-gcal-to">to</span><span class="ftdd-gcal-f">3:00pm</span><span class="ftdd-gcal-f">Feb 6, 2025</span>' +
-    '<span class="ftdd-gcal-f ftdd-gcal-tz">(GMT-05:00) Central Time - Chicago</span><span class="ftdd-gcal-link">Time zone</span></div></div>\n' +
+  // (drawn as Day 6's sample event: the date, time and time zone boxed in red, the time zone highlighted)
+  const editor = '<div class="ftdd-ev" role="img" aria-label="Sample: the event editor, Recorded Statement Meeting, Feb 6, 2025, 2:00pm to 3:00pm, time zone (GMT-05:00) Central Time - Chicago">' +
+    '<div class="ftdd-ev-top"><span class="ftdd-ev-x">✕</span><span class="ftdd-ev-title">Recorded Statement Meeting</span><span class="ftdd-ev-save">Save</span></div>' +
+    '<div class="ftdd-ev-when"><span class="ftdd-ev-f">Feb 6, 2025</span><span class="ftdd-ev-f">2:00pm</span><span>to</span><span class="ftdd-ev-f">3:00pm</span><span class="ftdd-ev-f">Feb 6, 2025</span>' +
+    '<span>(GMT-05:00) <span class="ftdd-ev-hl">Central Time - Chicago</span></span><span class="ftdd-ev-link">Time zone</span></div></div>\n' +
     '<p class="ftdd-gcal-cap">The time zone, boxed in red: set it before you save.</p>\n';
   // 📅 the Calendar Activity Check (js/ft-calcheck.js): the trainee enters what each event holds and
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
@@ -401,6 +423,21 @@ s3: html => {
     if(!re.test(out)) throw new Error(`Day 6 lost the video ${label}`);
     out = out.replace(re, `<p><a class="viewer-link" data-embed data-kind="video" data-title="${t}"`);
   });
+  // (the first video beside the line that introduces it: the line on the left, the video bigger on the right, ftdd-lead2)
+  const lead2 = /(<p>While waiting for your turn to perform, watch the following training videos\.<\/p>)\n(<p><a class="viewer-link" data-embed data-kind="video" data-title="Calendar Management Training: Part 1"[^\n]*<\/p>)\n/;
+  if(!lead2.test(out)) throw new Error("Day 6's videos no longer open on the line the build looks for");
+  out = out.replace(lead2, '<div class="ftdd-lead2">$1\n$2\n</div>\n');
+  // (Part 2 and Calendaring 101 side by side, as big as the page lets them be: ftdd-vid2)
+  const two = /(<p><a class="viewer-link" data-embed data-kind="video" data-title="Calendar Management Training: Part 2"[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-kind="video" data-title="Calendaring 101"[^\n]*<\/p>)\n/;
+  if(!two.test(out)) throw new Error("Day 6's Part 2 and Calendaring 101 are no longer where the build looks for them");
+  out = out.replace(two, '<div class="ftdd-vid2">$1\n$2\n</div>\n');
+  // (the Loom references: no row of stars or "Refer to these video links" line; each is "📚 Additional Video Reference" on the
+  // left and the video, bigger, on the right, as Part 1 is)
+  const refs = /<hr class="stars">\n<p>Refer to these video links as well for your additional reference\. <\/p>\n<p><b>Scheduling Appointment and Calendar Management <\/b><\/p>\n(<p><a class="viewer-link" data-kind="video" data-title="Scheduling Appointment and Calendar Management"[^\n]*<\/p>)\n<p><b>Resource for Scheduling Appointment and Calendar Management <\/b><\/p>\n(<p><a class="viewer-link" data-kind="video" data-title="Resource for Scheduling Appointment and Calendar Management"[^\n]*<\/p>)\n/;
+  if(!refs.test(out)) throw new Error("Day 6's Loom references are no longer where the build looks for them");
+  // (the label is a div, not a line: a short line just before a link would name the video, js/ft-day-decks.js visual)
+  const ref = v => `<div class="ftdd-lead2"><div class="ftdd-lead2-l">📚 Additional Video Reference</div>\n${v}\n</div>\n`;
+  out = out.replace(refs, (m, a, b) => ref(a) + ref(b));
   const sample = /<p><b>For example: Client Consultation Meeting – \[Client Name\]<\/b><\/p>\n<p>Please see the sample below for your reference\. Please be guided\. Thank you\.<\/p>\n<div class="shots"><figure><a href="\/ft\/day6\/img\/image33\.png"[\s\S]*?<\/figure><\/div>\n?/;
   if(!sample.test(out)) throw new Error("Day 6's sample event is no longer where the build looks for it");
   const chk = on => `<span class="ftdd-ev-box${on ? " on" : ""}">${on ? "✓" : ""}</span>`;
@@ -419,18 +456,22 @@ s3: html => {
     '<div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Michelle Velarde</b><small>Organizer</small></span></div><div class="ftdd-ev-guest"><span class="ftdd-ev-av">M</span><span><b>Martin Anthony Gan</b></span></div>' +
     `<p class="ftdd-ev-perm">Guest permissions</p><div>${chk(false)} Modify event</div><div>${chk(true)} Invite others</div><div>${chk(true)} See guest list</div></div></div></div>\n`;
   // ☎ the mock calls: how to reach the Call Simulator (the Ring Channel) and practise on the Calendaring Tool, before the reminders
-  const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<p>${label}</p>\n<p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>\n`;
-  const mock = "<p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n" +
-    lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
+  // (the three links are buttons in one row, ftdd-linkbtns: a new tab each; the six steps two to a row, ftdd-steps2, so the
+  // links, the steps and the reminders are one page; the sample event is the next: ftdd-pgbreak)
+  const sim = "https://cm-training-activity.pages.dev/simulators/", lnk = (label, url) => `<a class="ftdd-linkbtn" href="${url}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>`;
+  // (the heading, the buttons, the steps and the reminders are one block, ftdd-one: one page, scaled to fit a short screen)
+  const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n' +
+    '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
     lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
     // (the Portal's Calendaring Simulators card for the mock calls: Standard Training - Mock Call, track=standard)
-    lnk("📅 The Calendaring Tool: the Google Calendar Simulator’s Standard Training - Mock Call", sim + "calsim.html?program=FT&track=standard") +
+    lnk("📅 The Calendaring Tool: the Google Calendar Simulator’s Standard Training - Mock Call", sim + "calsim.html?program=FT&track=standard") + "</div>\n" +
+    '<div class="ftdd-steps2">\n' +
     "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
     "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
     "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules (the Mock Call Scenarios slide) before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +
     "<p>Step 4 - Book the appointment on the Calendaring Tool (the Google Calendar Simulator), in the EST time zone, with a specific title (e.g. Client Consultation Meeting – [Client Name]), the notes, and an email reminder a day before.</p>\n" +
     "<p>Step 5 - Run the Calendaring Tool’s automated review and fix what it flags.</p>\n" +
-    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n";
+    "<p>Step 6 - When it’s your turn, log in to the Ring Channel and stay on standby: your trainer calls you for your one-on-one mock call, scored on the metrics on the next slide.</p>\n</div>\n";
   out = out.replace(/(<p>Reminders:<\/p>)/, mock + "$1");
   if(!out.includes("☎ Mock Calls: how to access")) throw new Error("Day 6's reminders are no longer where the build looks for them");
   // (the reminders' two screenshot bullets are off: the mock calls are booked on the Google Calendar Simulator, so there is
@@ -438,21 +479,16 @@ s3: html => {
   const shotsRe = /<p class="li" style="--lvl:0"><span class="lbl">•<\/span><span>No need to submit a separate screenshot for your time zone\.[^<]*<\/span><\/p>\n<p class="li" style="--lvl:0"><span class="lbl">•<\/span><span>Please follow the proper screenshot numbering[^<]*<\/span><\/p>\n/;
   if(!shotsRe.test(out)) throw new Error("Day 6's screenshot reminders are no longer where the build looks for them");
   out = out.replace(shotsRe, "");
-  return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, "<p><b>An optimized calendar schedule should follow this structure:</b></p>\n" + ev);
+  return out.replace(/<p>@everyone\s*<\/p>\n?/, "").replace(sample, '</div>\n<div class="ftdd-pgbreak"></div>\n<div class="ftdd-one ftdd-one-ev"><p><b>An optimized calendar schedule should follow this structure:</b></p>\n' + ev + "</div>\n");
 },
 s2: html => {
   if(!/data-slot="6:s2-1"/.test(html) || !/data-slot="6:s2-2"/.test(html) || !/Free Communication Upskill/.test(html)) throw new Error("Day 6's Mock Call Scenarios are no longer where the build looks for them");
   const ul = xs => "<ul>" + xs.map(x => `<li>${x}</li>`).join("") + "</ul>\n";
-  return '<div class="trainer-slot" data-slot="6:s2-1"></div>\n' +
-    "<p>This activity reinforces proper calendar management through mock calls based on common scheduling scenarios handled by the firm. Trainees will respond to simulated inbound calls involving consultations, follow-ups, case meetings, document signings, and urgent attorney requests.</p>\n" +
-    "<p><b>Trainee should:</b></p>\n" + ul(["Accurately schedule appointments by confirming availability, meeting type, duration, and format (phone, video, or in-office).",
-      "Create complete and accurate calendar entries, including appropriate titles and detailed notes reflecting case context and caller demeanor.",
-      "Follow proper call flow and maintain professionalism, adapting to different caller tones (easy, anxious, irritated, impatient, or emotional).",
-      "Set reminders accordingly for the attorney to be reminded."]) +
-    "<p><b>Please take note of the following guidelines:</b></p>\n<p><b>Minimum Information to Collect from Caller</b> · VA must obtain:</p>\n" +
-    ul(["Name", "Callback Number", "Date of Birth (DOB)", "Date of Loss (DOL)"]) +
-    // (the guide's Possible Scenarios / Nature of Request, in its words: each title and its notes)
-    "<p><b>📌 Possible Scenarios / Nature of Request (to be calendared)</b></p>\n" + ul([
+  // (the slide in cards: Trainee should and the Minimum Information side by side, then the Scheduling Rules and the Additional
+  // Notes. The guide's Possible Scenarios / Nature of Request are the trainer's guide for the mock calls: off the slide, in a
+  // sheet the trainer opens over it (template.ftdd-tsheet: js/ft-day-decks.js shows its button on the trainer's deck only))
+  const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const scenarios = [
       ["Client Consultation: New PI Case", "New PI case; (instructions provided by client)"],
       ["Document Review Follow-Up", "Review contract documents; Zoom meeting; (observations and instructions)"],
       ["Case Strategy Meeting", "Litigation planning; (observations and instructions)"],
@@ -468,14 +504,23 @@ s2: html => {
       ["Missed Call Consultation", "Contract dispute"],
       ["Case Status Update", "Insurance update ready for review"],
       ["Urgent Meeting Request", "Urgent litigation update"],
-      ["Mediation Preparation Call", "Review mediation materials"]].map(([t, n]) => `<b>${t} – (Client Name)</b><br>Notes: ${n}`)) +
-    "<p><b>✅ Scheduling Rules</b></p>\n" + ul(["Identify available slots only", "Avoid lunch, buffer time, and blocked events", "Offer 2–3 alternative times when a requested slot is unavailable",
-      "Clarify meeting type (phone, video, or in-person)", "Plot the appointment in the attorney’s calendar.", "Calendar should be in EST time zone.", "Set an email reminder a day before the event."]) +
-    "<p><b>📌 Additional Notes</b></p>\n" + ul(["The attorney does not take new client consults after 5:00 PM.", "New client consults are only scheduled on Tuesdays and Thursdays.",
+      ["Mediation Preparation Call", "Review mediation materials"]];
+  return '<div class="trainer-slot" data-slot="6:s2-1"></div>\n' +
+    "<p>This activity reinforces proper calendar management through mock calls based on common scheduling scenarios handled by the firm. Trainees will respond to simulated inbound calls involving consultations, follow-ups, case meetings, document signings, and urgent attorney requests.</p>\n" +
+    '<div class="ftdd-cards2">' + card("🎯", "Trainee should:", ul(["Accurately schedule appointments by confirming availability, meeting type, duration, and format (phone, video, or in-office).",
+      "Create complete and accurate calendar entries, including appropriate titles and detailed notes reflecting case context and caller demeanor.",
+      "Follow proper call flow and maintain professionalism, adapting to different caller tones (easy, anxious, irritated, impatient, or emotional).",
+      "Set reminders accordingly for the attorney to be reminded."])) +
+    card("📋", "Minimum Information to Collect from Caller", "<p>Please take note of the following guidelines. VA must obtain:</p>\n" + ul(["Name", "Callback Number", "Date of Birth (DOB)", "Date of Loss (DOL)"])) + "</div>\n" +
+    '<template class="ftdd-tsheet" data-title="📌 Possible Scenarios / Nature of Request (to be calendared)">' +
+      scenarios.map(([t, n]) => `<div class="ftdd-tsheet-card"><b>${t} – (Client Name)</b><span>Notes: ${n}</span></div>`).join("") + "</template>\n" +
+    '<div class="ftdd-cards2">' + card("✅", "Scheduling Rules", ul(["Identify available slots only", "Avoid lunch, buffer time, and blocked events", "Offer 2–3 alternative times when a requested slot is unavailable",
+      "Clarify meeting type (phone, video, or in-person)", "Plot the appointment in the attorney’s calendar.", "Calendar should be in EST time zone.", "Set an email reminder a day before the event."])) +
+    card("📌", "Additional Notes", ul(["The attorney does not take new client consults after 5:00 PM.", "New client consults are only scheduled on Tuesdays and Thursdays.",
       "The attorney accepts max 3 new client consults per day.", "Phone consults, status updates, follow up calls, review, regular and urgent meetings, and signing meetings are max 30 minutes.",
       "Follow-ups are not scheduled during mornings.", "All consultation meetings are phone consults only.",
       "Phone consults only between 9:30 AM – 3:00 PM; Attorney will call the client - VA must confirm callback number.", "Preparation, strategy, and settlement meetings are max 45 minutes.",
-      "Conference meetings are max 1 hour.", "Attorney requires 15-minute buffer before and after every meeting.", "Same-day bookings require attorney approval."]) +
+      "Conference meetings are max 1 hour.", "Attorney requires 15-minute buffer before and after every meeting.", "Same-day bookings require attorney approval."])) + "</div>\n" +
     '<div class="trainer-slot" data-slot="6:s2-2"></div>\n<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>\n';
 }},
 // Day 8's PM is a 🧑‍🏫 Trainer Facilitated Demo: the guide's Facilitator's Notes (the tasks posted for both SA training
@@ -726,7 +771,6 @@ const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + P
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
   "") + PGBREAK;
 // Day 6's mock calls slide: the trainer's line over the tracker (a trainee sees Mock Calls Ongoing and Done: ROWS[6].s1)
-const MOCK_ONE_CAL = "<p>Your one-on-one Calendar Management mock call with the trainer, scored on the Calendar Management Mock Calls Metrics.</p>\n";
 // where Day 6's metrics start: the Instructions end there and the Metrics slide begins (ROWS[6].s1)
 const MOCK_METRICS_CAL = '<hr class="stars">\n<p><b>Calendar Management Mock Calls Metrics</b></p>';
 const MOCK_RUN = mockPage("ftdd-mock-run",
@@ -876,16 +920,13 @@ const ROWS = {
       {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone & Submit", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
-    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, the mock calls, then the videos
+    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, then the videos (the One-on-One slide is off the deck)
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
     // (the instructions open on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
-    s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [["<p><b>☎ Mock Calls: how to access", MOCK_METRICS_CAL]]},
+    s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [['<div class="ftdd-one">', MOCK_METRICS_CAL]]},
       {id: "s1m", h: "Entire Day: Calendar Management Mock Calls Metrics", parts: [[MOCK_METRICS_CAL, null]]},
-      // the mock calls themselves, as Day 4's: a trainee's screen is only Mock Calls Ongoing and Done (js/ft-buffer.js "6:s1b-2"
-      // simple); the line is the trainer's, over the tracker ("s1b-2": it continues s1b's card row)
-      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []},
       // the Calendar Management Training Videos after the mock calls (the card puts them last, after the Mock Call Scenarios)
-      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]}]
+      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, '<div class="ftdd-one">']]}]
   },
   7: {
     // (the classroom discussion's own slide is off, TRIM[7]: what is left of s1 is the Intake Scenario Exercise, off the decks)
