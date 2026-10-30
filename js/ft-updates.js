@@ -307,13 +307,26 @@ window.renderDay = function(id){
 /* ---------- 2. facilitator's notes (trainer only) ---------- */
 const FT = {notes:null, loading:null, tried:false, cookie:null};
 function ftTrainerView(){ return !!state.isAdmin && !state.adminPreview && !FT_IS_AUDIENCE; }
+// A sample task in the notes kept current (Day 8's SA demo task): <span class="ft-live-date"> becomes today's date
+// (mm/dd/yyyy, Pacific) and <span class="ft-live-batch"> the Batch ID of a batch on its Day 8 today (B + the MMDDYY
+// of the Monday a week before this one)
+function ftLiveNotes(slots){
+  const p = n=>String(n).padStart(2, "0"), parts = {};
+  try{ new Intl.DateTimeFormat("en-US", {timeZone:"America/Los_Angeles", year:"numeric", month:"2-digit", day:"2-digit"}).formatToParts(new Date()).forEach(x=>{ parts[x.type] = x.value; }); }catch(err){}
+  const now = parts.year ? new Date(Date.UTC(+parts.year, +parts.month - 1, +parts.day)) : new Date();
+  const mon = new Date(now.getTime() - (((now.getUTCDay() + 6) % 7) + 7) * 864e5);
+  const date = `${p(now.getUTCMonth() + 1)}/${p(now.getUTCDate())}/${now.getUTCFullYear()}`, batch = `B${p(mon.getUTCMonth() + 1)}${p(mon.getUTCDate())}${p(mon.getUTCFullYear() % 100)}`;
+  Object.keys(slots).forEach(k=>{ if(typeof slots[k] === "string") slots[k] = slots[k]
+    .replace(/(<span class="ft-live-date">)[^<]*(<\/span>)/g, `$1${date}$2`).replace(/(<span class="ft-live-batch">)[^<]*(<\/span>)/g, `$1${batch}$2`); });
+  return slots;
+}
 function ftLoadNotes(){
   if(FT.notes) return Promise.resolve(FT.notes);
   if(FT.loading) return FT.loading;
   FT.tried = true;
   FT.loading = fetch("/trainer/notes.json", {cache:"no-store", headers: state.adminToken ? {Authorization: "Bearer " + state.adminToken} : {}})
     .then(r=>r.ok ? r.json() : null)
-    .then(j=>{ FT.notes = j ? (j.slots || {}) : null; FT.loading = null; return FT.notes; })
+    .then(j=>{ FT.notes = j ? ftLiveNotes(j.slots || {}) : null; FT.loading = null; return FT.notes; })
     .catch(()=>{ FT.loading = null; return null; });
   return FT.loading;
 }
