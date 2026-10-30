@@ -2177,7 +2177,9 @@ main.main-ftdd .ftdd-sheet.ftdd-d615{font:600 20px/1.5 'Inter',system-ui,sans-se
 main.main-ftdd .ftdd-sheet.ftdd-d615 :is(p,li,td,th,dd,dt,.ftdd-step-t,.ftdd-pq){font-size:20px;font-weight:600;line-height:1.5;color:#0B0D1A;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 :is(b,strong){font-weight:800;color:#000;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 > p:first-child:not([class]){font:800 24px/1.35 'Inter',system-ui,sans-serif;color:#141A3C;}
-main.main-ftdd .ftdd-sheet.ftdd-d615 :is(h2,h3,h4,h5){font:800 21px/1.3 'Poppins','Inter',sans-serif !important;color:#141A3C !important;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 :is(h2,h3,h4,h5){font:800 21px/1.3 'Poppins','Inter',sans-serif !important;}
+/* (an h2 is text on the sheet; an h3–h5 is drawn as a navy bar, so its text stays white: Day 7's "What to collect about insurance") */
+main.main-ftdd .ftdd-sheet.ftdd-d615 h2{color:#141A3C !important;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 a{color:#0B3FA8;font-weight:700;text-decoration:underline;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;color:#0B0D1A;}
 .ftdd-sheet.ftdd-d615 :is(ul,ol){display:inline-block;text-align:left;margin-left:auto;margin-right:auto;}
