@@ -31,6 +31,8 @@
  * The check runs on the cron in wrangler.json (5 22 * * *: 5:05 PM EST, just after the 8 AM – 5 PM EST shift ends;
  * 6:05 PM in Eastern daylight time), and on demand
  * from Admin → 📋 Task Trackers. The rules are shared with the page: js/ft-tracker-rules.js.
+ * The same run looks in each trainee's Drive folder for their daily Typing and Spelling Test screenshots
+ * (checkShots → trackerreview:<id>.shots), which js/ft-skilltests.js counts toward their daily compliance.
  *
  * Without MASTER_ADMIN_PASSWORD the Worker runs in the old open mode so nothing breaks
  * before you've configured it (the Admin screen shows a warning).
@@ -213,7 +215,7 @@ function candidateIds(name, batch) {
 // settings:firms is the law firm profiles and settings:trainer-acts the trainer-led activities (js/ft-firms.js, js/ft-sessions.js).
 // settings:dayslides is the day decks as trainers have edited them (js/ft-slide-editor.js): trainers write a slide's
 // own HTML, every trainee reads it in place of the built slide.
-const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
+const PUBLIC_READ = [/^blueprint:meta$/, /^settings:(feedback|certificate|opendays|openvideos|day1steps|daysteps|feedback-style|monitor|calsim-guidelines|firms|trainer-acts|dayextras|dayslides|kcgames|calrules|listening|todo|intake)$/, /^activities:day\d+$/, /^actfile:[a-z0-9]{1,40}$/, /^surprise-task-day\d+$/, /^extralessons:day\d+$/, /^lessonx:day\d+$/, /^extraquiz:day\d+$/, /^handouts:links$/];
 const OWN = (id) => [`trainee:${id}`, `progress:${id}`, `feedback:${id}`, `focus:${id}`, `tracker:${id}`, `trackerreview:${id}`, `actsub:${id}`, `monitor:${id}`, `process:${id}`, `calsim:${id}`, `sessions:${id}`, `drive:${id}`, `lor:${id}`, `transcribe:${id}`, `learn:${id}`, `skills:${id}`, `drills:${id}`, `kcgames:${id}`, `calrules:${id}`, `calcheck:${id}`, `listening:${id}`, `shadow:${id}`, `videoreq:${id}`, `assess:${id}`];
 const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemptsResetAt", "certTrainer", "aiReview", "flaggedInvalidInput", "assignedRoleplay", "registeredAt"];
 
@@ -222,10 +224,11 @@ const PROTECTED_TRAINEE_FIELDS = ["approved", "rejected", "archived", "labAttemp
 //   labreview:<id>    the trainer's review of each Practice Session, and the trainer-led activities' results (js/ft-sessions.js)
 //   simresults:<id>   the trainee's results on the Training Portal's simulators opened from this program (the Portal writes it)
 //   lorassign:<id>    the case the trainer assigned for the LOR Drafting Activity (js/ft-lor.js)
+//   intakeassign:<id> the Intake Packet the trainer assigned for Day 8's Intake Documents (js/ft-intake.js)
 //   trainerfb:<id>    the trainer's feedback on each activity's work, sent from Admin → 📝 Send Feedback (js/ft-trainer-feedback.js)
 //   rankshare:<id>    the trainee's own row of each Weekly Ranking Report the trainer shared (js/ft-ranking.js)
 //   videoaccess:<id>  the lessons' AI discussion videos the trainer approved for this trainee (js/ft-updates.js)
-const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
+const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:${id}`, `lorassign:${id}`, `intakeassign:${id}`, `trainerfb:${id}`, `rankshare:${id}`, `videoaccess:${id}`];
 // callsim:<id>: the trainee's graded calls from the CMS Call Simulator, kept by the Training Portal (its /api/call-results).
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
@@ -822,6 +825,26 @@ async function checkDrive(env, id, D, o = {}) {
   return out;
 }
 
+/* 🧪 The daily Typing and Spelling Test screenshots the trainee saves in their Drive folder (drive:<id>.folder, and the
+   folders in it): each file named for a test (TR.parseTestShot: "Typing Test [date][AM/PM]") is one test taken, for the
+   day and slot its name gives. The whole list is rewritten on each check, so the folder stays the record: a screenshot
+   deleted from it stops counting. Into trackerreview:<id>.shots = {files: [{kind, date, slot, up, named, name, link,
+   created}], checkedAt, error}; js/ft-skilltests.js counts them with the tests taken on the platform. */
+async function checkShots(env, id) {
+  const kv = kvOf(env);
+  const drive = JSON.parse((await kv.get(`drive:${id}`)) || "null");
+  if (!drive || !drive.folder) return null;
+  const res = await folderFiles(env, drive.folder);
+  const files = (res.files || []).map((f) => { const p = TR.parseTestShot(f.name, f.created || f.modified); return p && Object.assign(p, { name: String(f.name).slice(0, 160), link: f.link || "", created: f.created || f.modified || "" }); })
+    .filter(Boolean).sort((a, b) => a.date.localeCompare(b.date) || String(a.created).localeCompare(String(b.created))).slice(-400);
+  const rk = `trackerreview:${id}`, cur = JSON.parse((await kv.get(rk)) || "null") || { days: {} };
+  const prev = cur.shots || {};
+  // a folder that can't be read this time keeps the screenshots already found
+  cur.shots = res.error ? Object.assign({}, prev, { error: res.error, checkedAt: new Date().toISOString() }) : { files, checkedAt: new Date().toISOString(), error: "" };
+  await kv.put(rk, JSON.stringify(cur));
+  return { id, shots: res.error ? null : files.length, error: res.error || "" };
+}
+
 async function runTrackerChecks(env, opts) {
   const kv = kvOf(env);
   const o = opts || {};
@@ -858,6 +881,7 @@ async function runTrackerChecks(env, opts) {
     const rec = JSON.parse((await kv.get(`trainee:${id}`)) || "null");
     if (!o.id && (!rec || rec.approved !== true || rec.archived)) continue;
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
+    try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
   }
   return { date: D, checked: done.length, results: done };
 }
@@ -1064,18 +1088,29 @@ export default {
 
       /* ---------- training tools open signed in (js/lsh-tool-links.js) ----------
          A fresh Portal-style ticket for the trainee signed in here, so the CMS (which takes the Portal's
-         ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. Trainees only:
-         an admin's ticket never signs anyone in. Good for 5 minutes. */
+         ticket, signed with the same PORTAL_SSO_SECRET) opens without its log-in page. A trainee's ticket signs that
+         trainee in; a trainer gets one only for the Knowledge Base (below). Good for 5 minutes. */
       if (path === "/api/auth/tool-ticket") {
-        if (tok.role !== "t" || !portalSecret(env)) return json({ error: "not-available" }, tok.role !== "t" ? 403 : 501);
+        if (!portalSecret(env)) return json({ error: "not-available" }, 501);
+        const signTicket = async (body) => {
+          const p = btoa(String.fromCharCode(...enc.encode(JSON.stringify(body)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+          return `${p}.${await hmac("portal-sso:" + portalSecret(env), p)}`;
+        };
+        // A trainer (an admin, or the 👁 Trainee view, which sends the admin token) opening the Knowledge Base: the same
+        // admin ticket { r: "a" } the Portal's /api/launch gives an administrator. The KB accepts each one once and signs
+        // the trainer in as an admin there (no password). Knowledge Base only, and never in open mode (no admin password).
+        if (tok.role === "a") {
+          const b = await request.json().catch(() => ({}));
+          if (!secure || tok.id === "open-mode" || b.tool !== "kb") return json({ error: "not-available" }, 403);
+          return json({ ticket: await signTicket({ r: "a", exp: Date.now() + 5 * 60 * 1000 }) });
+        }
+        if (tok.role !== "t") return json({ error: "not-available" }, 403);
         const rec = JSON.parse((await kv.get(`trainee:${tok.id}`)) || "null");
         if (!rec || rec.approved !== true || rec.archived) return json({ error: "not-approved" }, 403);
         const words = String(rec.name || "").trim().split(/\s+/).filter(Boolean);
         const first = String(rec.firstName || words[0] || "").trim(), last = String(rec.lastName || words.slice(1).join(" ") || "").trim();
         if (!first || !last) return json({ error: "no-name" }, 400);
-        const payload = btoa(String.fromCharCode(...enc.encode(JSON.stringify({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }))))
-          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-        return json({ ticket: `${payload}.${await hmac("portal-sso:" + portalSecret(env), payload)}` });
+        return json({ ticket: await signTicket({ first, last, b: String(rec.batch || ""), exp: Date.now() + 5 * 60 * 1000 }) });
       }
 
       /* ---------- 🕘 automatic Time In: a trainee's first visit today (see checkIn) ---------- */
@@ -1212,6 +1247,22 @@ export default {
         cur.assess[doc] = { at: now.toISOString(), when, title: K.title, score, max, pct: Math.round(100 * score / max), pending: Object.values(items).some((r) => r.pending), ai, items };
         await kv.put(rk, JSON.stringify(cur));
         return json({ ok: true, score, max, pending: cur.assess[doc].pending });
+      }
+
+      /* ---------- 🧪 the Typing and Spelling Test screenshots in the trainee's folder: look now (the trainee's own, at most once a
+         minute; an admin's for one trainee or a list of them, e.g. a batch). The nightly check does the same for everyone. ---------- */
+      if (path === "/api/drive/shots") {
+        const b = await request.json().catch(() => ({}));
+        const ids = tok.role === "a" ? (Array.isArray(b.ids) ? b.ids : [b.id]).map((x) => String(x || "").slice(0, 100)).filter(Boolean).slice(0, 80) : [tok.id];
+        if (!ids.length) return json({ error: "Missing trainee" }, 400);
+        if (tok.role !== "a") {
+          const last = (JSON.parse((await kv.get(`trackerreview:${tok.id}`)) || "null") || {}).shots;
+          if (last && last.checkedAt && Date.now() - Date.parse(last.checkedAt) < 60 * 1000) return json({ error: "Checked a moment ago. Try again in a minute.", code: "wait" }, 429);
+        }
+        const results = [];
+        for (const id of ids) { try { results.push((await checkShots(env, id)) || { id, error: "no-folder" }); } catch (e) { results.push({ id, error: "drive" }); } }
+        const shots = tok.role === "a" ? null : (JSON.parse((await kv.get(`trackerreview:${tok.id}`)) || "null") || {}).shots || null;
+        return json({ ok: true, results, shots });
       }
 
       /* ---------- the answer sheets in the trainee's Assessment and Activities Folder (the trainee's own; an admin's for anyone) ---------- */
