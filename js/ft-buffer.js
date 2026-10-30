@@ -42,7 +42,7 @@ const ACTS = {
   "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📸 Upload your 19 screenshots", lead: "Once done, hit Submit.", label: "📤 Submit"},
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
-  // (simple: the trainee sees only "Hit Done when you are done with your Mock Call" and Done; nextDay: the trainer's
+  // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done; nextDay: the trainer's
   // Start Group Debrief also opens the next day's deck for the batch, its lesson and its first step: unlockNext)
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
@@ -97,7 +97,7 @@ function traineePanel(h){
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
   // (simple: no Debrief Prep screen, no scorecard: the Done and the wait for the debrief, in the middle of the slide)
-  if(d && a.simple) return `<div class="ftbf ftbf-wait ftbf-simple"><p class="ftbf-h">✅ Done</p>
+  if(d && a.simple) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Done</p>
     <p class="ftbf-status"><span class="ftbf-dot"></span>Waiting for the group debrief to start…</p></div>`;
   if(d) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
@@ -106,7 +106,9 @@ function traineePanel(h){
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
-  if(a.simple) return `<div class="ftbf ftbf-simple"><p class="ftbf-h">✅ Hit Done when you are done with your ${a.kind === "mock" ? "Mock Call" : "Demo"}</p>
+  // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
+  if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
+    <p class="ftbf-lead">Hit Done when you are done with your ${a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
@@ -464,10 +466,6 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf-acts{white-space:nowrap;text-align:right;}
 .ftbf-badge{display:inline-block;padding:3px 10px;border-radius:999px;background:#ECEDF2;color:#5B6178;font:700 13px 'Inter',sans-serif;}
 .ftbf-badge.ok{background:#E3F4EA;color:#1C7A47;}
-/* a mock call's Done on its own (ACTS[…].simple): the line and the button, big, in the middle of the slide */
-.ftbf-simple{text-align:center;padding:28px 24px;}
-.ftbf-only .ftbf.ftbf-simple .ftbf-h{font-size:26px !important;margin-bottom:18px;}
-.ftbf-simple .ftbf-done{font-size:20px;padding:12px 44px;}
 /* the confirmation */
 .ftbf-modal{position:fixed;inset:0;z-index:300;background:rgba(17,20,40,.55);display:flex;align-items:center;justify-content:center;padding:16px;}
 .ftbf-modal-box{background:#fff;border-radius:14px;border-top:5px solid #E8590C;max-width:440px;width:100%;padding:22px 24px;box-shadow:0 20px 50px rgba(0,0,0,.3);}
