@@ -18,6 +18,13 @@
 
    Storage: skills:<id> = {typing: [...], spelling: [...]} — the trainee's own, append-only: worker.js keeps the
    entries already there, takes only new ones (stamping the server's time on each) and caps the list.
+
+   📷 Screenshots in Drive count too. Trainees who take the tests on TypingClub / SpellQuiz and save the screenshot in
+   their Drive folder (the one linked in 📁 My Drive links) are monitored every day: the Worker's end-of-shift check
+   (and 🔄 Check my Drive, and the trainer's 📷 Check Drive now) finds each "Typing Test [date][AM/PM]" / "Spelling Test
+   [date]" file and writes the list into trackerreview:<id>.shots (worker.js checkShots, TR.parseTestShot). A screenshot
+   fills its day's slot the way a test taken here does; one uploaded after its day counts as made up. The 📚 Dashboard's
+   two tiles (today's tests, the compliance so far) and 🏅 My Performance's Daily compliance read both.
    ============================================================ */
 (function(){
 "use strict";
@@ -87,7 +94,7 @@ const WORDS = [
 ];
 
 /* ---------- the record ---------- */
-const S = {id: null, rec: null, loading: null, run: null, tick: null, admin: null, voice: null};
+const S = {id: null, rec: null, shots: null, loading: null, run: null, tick: null, admin: null, voice: null, busy: false};
 const blank = () => ({typing: [], spelling: []});
 const pad = n => String(n).padStart(2, "0");
 const dayKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -98,8 +105,9 @@ function load(force){
   const id = state.traineeId; if(!id) return Promise.resolve(null);
   if(S.loading) return S.loading;
   if(!force && S.id === id && S.rec) return Promise.resolve(S.rec);
-  S.loading = sharedGet("skills:" + id).then(v => { S.id = id; S.rec = v && typeof v === "object" ? Object.assign(blank(), v) : blank(); })
-    .catch(() => { if(!S.rec) S.rec = blank(); }).then(() => { S.loading = null; if(state.view === "skills") render(); return S.rec; });
+  S.loading = Promise.all([sharedGet("skills:" + id), sharedGet("trackerreview:" + id).catch(() => null)])
+    .then(([v, rv]) => { S.id = id; S.rec = v && typeof v === "object" ? Object.assign(blank(), v) : blank(); S.shots = (rv && rv.shots) || null; })
+    .catch(() => { if(!S.rec) S.rec = blank(); }).then(() => { S.loading = null; if(state.view === "skills" || state.view === "modules") render(); return S.rec; });
   return S.loading;
 }
 async function addEntry(kind, entry){
@@ -114,6 +122,10 @@ async function addEntry(kind, entry){
   return true;
 }
 
+// the test log with the Drive screenshots found (trackerreview:<id>.shots), as the compliance counts it; addEntry saves S.rec alone
+const withShots = (rec, shots) => Object.assign(blank(), rec || {}, {shots: (shots && Array.isArray(shots.files) ? shots.files : [])});
+const full = () => withShots(S.rec, S.shots);
+
 /* ---------- compliance: which slots a day needs, and which ones are done ---------- */
 // A training day is a weekday from the trainee's first test (or the day they registered) to today.
 function trainingDays(rec, from, to){
@@ -127,6 +139,8 @@ function ledger(rec){
   const put = (k, slot, x) => { (L[k] = L[k] || {})[slot] = L[k][slot] || x; };
   (rec.typing || []).forEach(t => { if(t.makeup) put(t.makeup.split(" ")[0], t.makeup.split(" ")[1], Object.assign({made: t.date}, t)); else put(t.date, t.slot, t); });
   (rec.spelling || []).forEach(s => { if(s.makeup) put(s.makeup.split(" ")[0], "SP", Object.assign({made: s.date}, s)); else put(s.date, "SP", s); });
+  // 📷 a screenshot in Drive fills a slot nothing taken here filled; uploaded on a later day, it was made up
+  (rec.shots || []).forEach(f => { if(!f || !f.date) return; put(f.date, f.kind === "spelling" ? "SP" : f.slot === "PM" ? "PM" : "AM", Object.assign({shot: true}, f, f.up && f.up > f.date ? {made: f.up} : {})); });
   return L;
 }
 // today isn't over: its slots only count as missing from tomorrow on
@@ -150,7 +164,7 @@ function complianceText(rec, from, to, since){
     return `${name} – Complied; however, lacking ${list.length} entr${list.length === 1 ? "y" : "ies"} (${items.join(", ")})`;
   };
   const sp = miss.filter(m => m.kind === "spelling"), ty = miss.filter(m => m.kind === "typing");
-  if(!(rec.typing || []).length && !(rec.spelling || []).length) return "NO SUBMISSION";
+  if(!(rec.typing || []).length && !(rec.spelling || []).length && !(rec.shots || []).length) return "NO SUBMISSION";
   return [line("Spelling Test", sp, made.filter(x => x.s === "SP")), line("Typing Test", ty, made.filter(x => x.s !== "SP"))].join("\n");
 }
 function averages(rec, n){
@@ -158,7 +172,16 @@ function averages(rec, n){
   const avg = (a, f) => a.length ? Math.round(a.reduce((x, y) => x + (Number(f(y)) || 0), 0) / a.length) : null;
   return {net: avg(t, x => x.net), acc: avg(t, x => x.acc), spell: avg(s, x => x.total ? x.score / x.total * 100 : 0), nt: t.length, ns: s.length};
 }
-const firstDay = rec => { const ds = (rec.typing || []).concat(rec.spelling || []).map(x => x.date).filter(Boolean).sort(); return ds[0] || dayKey(new Date()); };
+const firstDay = rec => { const ds = (rec.typing || []).concat(rec.spelling || [], rec.shots || []).map(x => x.date).filter(Boolean).sort(); return ds[0] || dayKey(new Date()); };
+// the share of the slots due (3 a weekday: Typing AM and PM, Spelling) that were done, made up or not, from the trainee's
+// first day to yesterday (today isn't over), plus today's own three
+function compliance(rec, since){
+  const today = dayKey(new Date()), from = startOf(rec, "", since), L = ledger(rec);
+  const due = trainingDays(rec, from, today).filter(k => k < today);
+  let done = 0, made = 0; due.forEach(k => ["AM", "PM", "SP"].forEach(s => { const x = (L[k] || {})[s]; if(x){ done++; if(x.made) made++; } }));
+  const need = due.length * 3, t = L[today] || {};
+  return {need, done, made, lacking: need - done, pct: need ? Math.round(done / need * 100) : null, today: {AM: t.AM || null, PM: t.PM || null, SP: t.SP || null}, from};
+}
 
 /* ---------- ⌨ the typing test ---------- */
 function startTyping(makeup){
@@ -228,7 +251,7 @@ async function nextWord(){
 /* ---------- the trainee's page ---------- */
 function todayCard(rec){
   const k = dayKey(new Date()), L = ledger(rec)[k] || {};
-  const cell = (label, x, fmt) => `<div class="st-slot ${x ? "done" : ""}"><b>${label}</b><span>${x ? fmt(x) : "Not yet"}</span></div>`;
+  const cell = (label, x, fmt) => `<div class="st-slot ${x ? "done" : ""}"><b>${label}</b><span>${!x ? "Not yet" : x.shot ? `<a href="${e(x.link)}" target="_blank" rel="noopener noreferrer" title="${e(x.name)}">📷 Screenshot in Drive</a>` : fmt(x)}</span></div>`;
   return `<div class="st-today">${cell("⌨ Typing · AM", L.AM, x => `${x.net} WPM · ${x.acc}%`)}${cell("⌨ Typing · PM", L.PM, x => `${x.net} WPM · ${x.acc}%`)}${cell("🔤 Spelling", L.SP, x => `${x.score} / ${x.total}`)}</div>`;
 }
 function runHtml(){
@@ -261,11 +284,12 @@ function renderTrainee(){
   if(!state.traineeId) return `<div class="card" style="padding:24px;">Sign in to take your tests.</div>`;
   if(!S.rec || S.id !== state.traineeId){ load(); return `<div class="card" style="padding:24px;text-align:center;color:var(--ink-soft);">Opening your test log…</div>`; }
   if(S.run) return runHtml();
-  const rec = S.rec, today = dayKey(new Date()), from = firstDay(rec), miss = missing(rec, from, today).filter(m => m.date < today).slice(-12), av = averages(rec);
+  const rec = full(), today = dayKey(new Date()), from = firstDay(rec), miss = missing(rec, from, today).filter(m => m.date < today).slice(-12), av = averages(rec);
   const hist = (rec.typing || []).map(x => Object.assign({k: "t"}, x)).concat((rec.spelling || []).map(x => Object.assign({k: "s"}, x))).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 14);
   return `<div class="st-hero"><p class="lp-eyebrow">🛠 Practice Lab · Skill Building</p><h1>🧪 Typing &amp; Spelling Tests</h1>
-      <p>Twice a day for typing (morning, and before the end of your shift), once a day for spelling. Take them here: each result is saved with its date and time, so there is no screenshot to take, name or upload.</p></div>
+      <p>Twice a day for typing (morning, and before the end of your shift), once a day for spelling. They are a daily deliverable, and your compliance is on your scorecard. Take them here (each result is saved with its date and time), or on the training’s sites with the screenshot saved in your Drive folder.</p></div>
     ${todayCard(rec)}
+    ${shotsCard(rec)}
     <div class="st-start">
       <div class="card st-card"><h3>⌨ Typing Test</h3><p>${SECS} seconds on a passage about the work. Clients look for <b>${TARGET} WPM</b>.</p><button class="btn btn-navy" onclick="FTSkills.typing()">Start the typing test</button></div>
       <div class="card st-card"><h3>🔤 Spelling Test</h3><p>${WORDS_PER_TEST} words read aloud in a sentence: legal, medical and business words from the course.</p><button class="btn btn-navy" onclick="FTSkills.spelling()">Start the spelling test</button></div>
@@ -278,8 +302,21 @@ function renderTrainee(){
         : `<p class="st-note">Your results show here as you take the tests.</p>`}</div>`;
 }
 
+// 📷 the screenshots found in the trainee's Drive folder: how to name them, the last check, and 🔄 Check my Drive
+function shotsCard(rec){
+  const sh = S.shots, files = (rec.shots || []).slice().reverse().slice(0, 8), c = compliance(rec, String(state.traineeRegisteredAt || "").slice(0, 10));
+  const err = sh && sh.error ? (sh.error === "no-folder" ? "Link your Drive folder first: 📁 My Drive links, on your Task Tracker page." : "The system couldn’t open your Drive folder. Share it as “Anyone with the link” → Viewer.") : "";
+  const when = sh && sh.checkedAt ? new Date(sh.checkedAt).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}) : "";
+  return `<div class="card st-shots"><div class="st-histh"><h3>📷 Screenshots in your Drive</h3>
+      <span>${c.pct != null ? `Compliance so far: <b>${c.pct}%</b>${c.lacking ? ` · ${c.lacking} lacking` : ""}` : "Your compliance starts with your first training day."}</span></div>
+    <p class="st-note">Took a test on TypingClub, TypingTest.com, SpellQuiz or Spelling-Test.com? Save the screenshot in your Drive folder (the one in 📁 My Drive links) named <b>Typing Test ${e(md(dayKey(new Date())))} AM</b>, <b>Typing Test ${e(md(dayKey(new Date())))} PM</b> or <b>Spelling Test ${e(md(dayKey(new Date())))}</b>. It is checked at the end of every shift, and counts as the test for that day and slot.</p>
+    ${err ? `<p class="st-note st-err">${e(err)}</p>` : ""}
+    ${files.length ? `<ul class="st-files">${files.map(f => `<li><a href="${e(f.link)}" target="_blank" rel="noopener noreferrer">${e(f.name)}</a><span>${f.kind === "typing" ? "⌨ Typing" : "🔤 Spelling"} · ${e(md(f.date))}${f.kind === "typing" ? " " + e(f.slot) : ""}${f.up && f.up > f.date ? ` · <span class="st-tag">uploaded ${e(md(f.up))}</span>` : ""}${f.named ? "" : ` · <span class="st-tag">date from the upload</span>`}</span></li>`).join("")}</ul>` : ""}
+    <div class="st-acts"><button class="btn btn-ghost btn-sm" ${S.busy ? "disabled" : ""} onclick="FTSkills.checkDrive()">${S.busy ? "Checking…" : "🔄 Check my Drive"}</button>${when ? `<span class="st-live">Last checked ${e(when)}${sh && !sh.error ? ` · ${(sh.files || []).length} screenshot${(sh.files || []).length === 1 ? "" : "s"} found` : ""}</span>` : ""}</div></div>`;
+}
+
 /* ---------- the trainer: a batch, day by day ---------- */
-const AD = {people: null, recs: {}, loading: false, batch: "", from: "", to: ""};
+const AD = {people: null, recs: {}, shots: {}, loading: false, batch: "", from: "", to: "", busy: false};
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 async function loadAdmin(){
   AD.loading = true;
@@ -289,10 +326,12 @@ async function loadAdmin(){
     AD.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", since: String(r.registeredAt || "").slice(0, 10)})).sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!AD.batch){ const bs = [...new Set(AD.people.map(p => bLabel(p.batch)).filter(Boolean))].sort(); AD.batch = bs[bs.length - 1] || ""; }
     const ppl = AD.people, vals = [];
-    for(let i = 0; i < ppl.length; i += 96) vals.push(...await sharedGetMany(ppl.slice(i, i + 96).map(p => "skills:" + p.id)));
-    AD.recs = {}; ppl.forEach((p, i) => { AD.recs[p.id] = vals[i] && typeof vals[i] === "object" ? Object.assign(blank(), vals[i]) : blank(); });
+    const keys = ppl.flatMap(p => ["skills:" + p.id, "trackerreview:" + p.id]);
+    for(let i = 0; i < keys.length; i += 96) vals.push(...await sharedGetMany(keys.slice(i, i + 96)));
+    AD.recs = {}; AD.shots = {};
+    ppl.forEach((p, i) => { const v = vals[i * 2], rv = vals[i * 2 + 1]; AD.shots[p.id] = (rv && rv.shots) || null; AD.recs[p.id] = withShots(v && typeof v === "object" ? v : blank(), AD.shots[p.id]); });
   }catch(err){ AD.people = []; }
-  AD.loading = false; if(state.view === "admin" && state.adminTab === "skilltests") render();
+  AD.loading = false; if((state.view === "admin" && state.adminTab === "skilltests") || state.view === "modules") render();
 }
 function renderAdmin(){
   if(!AD.people){ if(!AD.loading) loadAdmin(); return `<div class="card" style="padding:24px;text-align:center;color:var(--ink-soft);">Collecting the test logs…</div>`; }
@@ -301,18 +340,28 @@ function renderAdmin(){
   const today = dayKey(new Date());
   const to = AD.to || today, from = AD.from || (() => { const d = new Date(); d.setDate(d.getDate() - 9); return dayKey(d); })();
   const days = trainingDays(null, from, to);
-  return `<div class="card st-admin"><div class="ff-bar"><div><h3>🧪 Typing &amp; Spelling</h3><p class="fss-muted">Every trainee’s daily tests, taken on the platform: ✓ done, ↺ made up later, ✗ missing. The compliance line is the facilitator’s wording for the dates shown; the 📊 Weekly Ranking fills its Spelling &amp; Typing column from it.</p></div>
+  // today at a glance: who has all three, who has some, who has none yet
+  const tday = ppl.map(p => { const x = ledger(AD.recs[p.id] || blank())[today] || {}; return ["AM", "PM", "SP"].filter(s => x[s]).length; });
+  const last = ppl.map(p => AD.shots[p.id] && AD.shots[p.id].checkedAt).filter(Boolean).sort().pop();
+  const noFolder = ppl.filter(p => !AD.shots[p.id] || AD.shots[p.id].error).length;
+  return `<div class="card st-admin"><div class="ff-bar"><div><h3>🧪 Typing &amp; Spelling</h3><p class="fss-muted">Every trainee’s daily tests, taken on the platform or saved as a screenshot in their Drive folder (📷, checked at the end of every shift): ✓ done, ↺ made up later, ✗ missing. The compliance line is the facilitator’s wording for the dates shown; the 📊 Weekly Ranking fills its Spelling &amp; Typing column from it.</p></div>
       <span class="st-filters"><select onchange="FTSkills.batch(this.value)">${bs.map(b => `<option ${b === AD.batch ? "selected" : ""}>${e(b)}</option>`).join("") || "<option>No batches</option>"}</select>
         <label>From <input type="date" value="${e(from)}" onchange="FTSkills.range('from', this.value)"></label><label>To <input type="date" value="${e(to)}" onchange="FTSkills.range('to', this.value)"></label>
-        <button class="btn btn-ghost btn-sm" onclick="FTSkills.reload()">↻</button></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="FTSkills.reload()">↻</button>
+        <button class="btn btn-navy btn-sm" ${AD.busy || !ppl.length ? "disabled" : ""} onclick="FTSkills.checkBatch()">${AD.busy ? "Checking…" : "📷 Check Drive now"}</button></span></div>
+    ${ppl.length ? `<div class="st-glance"><span><b>Today ${e(md(today))}</b></span><span class="ok">✓ All 3 done: <b>${tday.filter(n => n === 3).length}</b></span><span class="mk">Partly: <b>${tday.filter(n => n && n < 3).length}</b></span><span class="no">None yet: <b>${tday.filter(n => !n).length}</b></span>
+      <span class="fss-muted">${last ? `Drive last checked ${e(new Date(last).toLocaleString([], {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"}))}` : "Drive not checked yet"}${noFolder ? ` · ${noFolder} without a readable Drive folder` : ""}</span></div>` : ""}
     ${ppl.length ? `<div class="ff-scroll"><table class="ff-tbl st-grid"><thead><tr><th>Trainee</th><th>Typing (last 10)</th><th>Spelling</th>${days.map(k => `<th>${e(md(k))}</th>`).join("")}<th>Compliance (${e(md(from))} to ${e(md(to))})</th></tr></thead><tbody>
       ${ppl.map(p => { const rec = AD.recs[p.id] || blank(), L = ledger(rec), av = averages(rec);
         const start = startOf(rec, from, p.since);
-        const mark = (x, k) => x ? (x.made ? `<i class="mk" title="made up ${e(md(x.made))}">↺</i>` : `<i class="ok">✓</i>`) : k < start || k >= today ? `<i class="na">·</i>` : `<i class="no">✗</i>`;
-        return `<tr><td><b>${e(p.name)}</b></td><td>${av.net != null ? `${av.net} WPM · ${av.acc}%` : "—"}</td><td>${av.spell != null ? av.spell + "%" : "—"}</td>
+        const mark = (x, k) => { if(!x) return k < start || k >= today ? `<i class="na">·</i>` : `<i class="no">✗</i>`;
+          const m = x.made ? `<i class="mk" title="made up ${e(md(x.made))}${x.shot ? " · 📷 " + e(x.name) : ""}">↺</i>` : `<i class="ok" title="${x.shot ? "📷 " + e(x.name) : "Taken on the platform"}">✓</i>`;
+          return x.shot && x.link ? `<a class="st-shot" href="${e(x.link)}" target="_blank" rel="noopener noreferrer">${m}</a>` : m; };
+        const sh = AD.shots[p.id];
+        return `<tr><td><b>${e(p.name)}</b>${sh && sh.error ? `<br><span class="st-tag" title="${sh.error === "no-folder" ? "No Drive folder linked" : "The Drive folder can't be opened: not shared"}">📷 ${sh.error === "no-folder" ? "no folder linked" : "folder not shared"}</span>` : ""}</td><td>${av.net != null ? `${av.net} WPM · ${av.acc}%` : "—"}</td><td>${av.spell != null ? av.spell + "%" : "—"}</td>
           ${days.map(k => { const x = L[k] || {}; return `<td class="st-day"><span title="Typing AM">${mark(x.AM, k)}</span><span title="Typing PM">${mark(x.PM, k)}</span><span title="Spelling">${mark(x.SP, k)}</span></td>`; }).join("")}
           <td class="st-comp">${e(complianceText(rec, from, to, p.since)).replace(/\n/g, "<br>")}</td></tr>`; }).join("")}
-    </tbody></table></div><p class="fss-muted">Each day shows three marks: Typing AM · Typing PM · Spelling. · means the day doesn’t count yet: before the trainee started, or today. Weekends are left out.</p>` : `<p class="fss-muted">No approved trainees in ${e(AD.batch || "this batch")}.</p>`}</div>`;
+    </tbody></table></div><p class="fss-muted">Each day shows three marks: Typing AM · Typing PM · Spelling. An underlined mark is a 📷 screenshot in the trainee’s Drive: click it to open the file. · means the day doesn’t count yet: before the trainee started, or today. Weekends are left out.</p>` : `<p class="fss-muted">No approved trainees in ${e(AD.batch || "this batch")}.</p>`}</div>`;
 }
 
 /* ---------- the page and the API ---------- */
@@ -330,8 +379,28 @@ window.FTSkills = {
   say(slow){ sayCurrent(!!slow); }, next: nextWord,
   close(){ clearInterval(S.tick); S.tick = null; S.run = null; try{ if(canSpeak()) speechSynthesis.cancel(); }catch(err){} render(); },
   batch(b){ AD.batch = b; render(); }, range(k, v){ AD[k] = v; render(); }, reload(){ AD.people = null; render(); },
+  // 🔄 the trainee's own Drive folder, looked at now
+  async checkDrive(){
+    if(S.busy || !state.traineeId) return; S.busy = true; render();
+    try{ const r = await authFetch("/api/drive/shots", {id: state.traineeId}), j = await r.json().catch(() => ({}));
+      if(!r.ok) toast(j.error || "Couldn’t check right now.");
+      else { if(j.shots) S.shots = j.shots; const x = (j.results || [])[0] || {};
+        toast(x.error === "no-folder" ? "Link your Drive folder first (📁 My Drive links)." : x.error ? "Couldn’t open your Drive folder: share it as “Anyone with the link” → Viewer." : `✓ Checked: ${x.shots || 0} test screenshot${x.shots === 1 ? "" : "s"} found.`); }
+    }catch(err){ toast("Couldn’t check right now. Check your connection."); }
+    S.busy = false; render();
+  },
+  // 📷 the trainer: every trainee of the batch shown, looked at now
+  async checkBatch(){
+    const ids = (AD.people || []).filter(p => bLabel(p.batch) === AD.batch).map(p => p.id);
+    if(AD.busy || !ids.length) return; AD.busy = true; render();
+    try{ const r = await authFetch("/api/drive/shots", {ids}), j = await r.json().catch(() => ({}));
+      if(!r.ok) toast(j.error || "Couldn’t check right now.");
+      else { const res = j.results || []; toast(`📷 Checked ${res.length} trainee${res.length === 1 ? "" : "s"}: ${res.reduce((a, x) => a + (x.shots || 0), 0)} screenshots found${res.filter(x => x.error).length ? `, ${res.filter(x => x.error).length} without a readable folder` : ""}.`); }
+    }catch(err){ toast("Couldn’t check right now. Check your connection."); }
+    AD.busy = false; await loadAdmin(); render();
+  },
   // for the 📊 Weekly Ranking (⤓ its Spelling & Typing column) and the checks
-  complianceText, missing, ledger, averages, passages: PASSAGES, words: WORDS, record: () => S.rec, run: () => S.run
+  complianceText, missing, ledger, averages, compliance, withShots, passages: PASSAGES, words: WORDS, record: () => S.rec ? full() : null, run: () => S.run
 };
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["skills"]);
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {skills: "Typing & Spelling Tests"});
@@ -350,12 +419,41 @@ ftAdminTab("skilltests", "🧪 Typing & Spelling", renderAdmin);
 window.ftsGotoSkills = function(){ goto("skills"); };
 // 🏅 My Performance (js/ft-program.js lists this source)
 window.ftSkillItems = ctx => {
-  const rec = ctx.rec["skills:"] || null; if(!rec) return [];
-  const av = averages(Object.assign(blank(), rec)), out = [];
+  const rec = withShots(ctx.rec["skills:"], (ctx.rec["trackerreview:"] || {}).shots), out = [];
+  if(!rec.typing.length && !rec.spelling.length && !rec.shots.length) return [];
+  const av = averages(rec), c = compliance(rec, ctx.since);
+  // 📅 the daily deliverable: every slot due so far, taken here or saved as a screenshot in Drive
+  if(c.pct != null) out.push({name: "📅 Daily test compliance", pct: c.pct, note: `${c.done} of ${c.need} tests done since ${md(c.from)}${c.made ? ` (${c.made} made up)` : ""}${c.lacking ? ` · ${c.lacking} lacking` : ""}`});
   if(av.net != null) out.push({name: "⌨ Typing Test", pct: Math.min(100, Math.round(av.net / TARGET * 100)), note: `${av.net} net WPM · ${av.acc}% accuracy · last ${av.nt} · target ${TARGET} WPM`});
   if(av.spell != null) out.push({name: "🔤 Spelling Test", pct: av.spell, note: `average of the last ${av.ns}`});
   return out;
 };
+// 📚 Dashboard: the daily deliverable beside the Task Tracker and Monitoring Sheet tiles: today's three tests (taken here
+// or a 📷 screenshot in Drive) and the compliance so far, the share of the tests due that were done. Both open the tests.
+(window.LSH_HOME_STATS = window.LSH_HOME_STATS || []).push(function(){
+  if(state.isAdmin && !state.adminPreview && !state.traineeId) return adminTile();
+  if(!state.traineeId || state.isAdmin) return "";
+  if(!S.rec || S.id !== state.traineeId){ load(); return ""; }
+  const c = compliance(full(), String(state.traineeRegisteredAt || "").slice(0, 10)), t = c.today, n = ["AM", "PM", "SP"].filter(s => t[s]).length;
+  const tone = p => p == null ? "" : p >= 100 ? "ok" : p >= 80 ? "mid" : "bad";
+  const mk = (s, label) => `${label} ${t[s] ? "✓" : "·"}`;
+  const card = (num, cls, lbl, title) => `<div class="card stat st-dash" onclick="goto('skills')" style="cursor:pointer;" title="${e(title)}"><div class="num ${cls}">${num}</div><div class="lbl">${lbl}</div></div>`;
+  return card(`${n} / 3`, n === 3 ? "ok" : n ? "mid" : "", `🧪 Tests today · ${mk("AM", "AM")} ${mk("PM", "PM")} ${mk("SP", "Spell")}`, "Today’s Typing (AM and PM) and Spelling Tests, taken in the Practice Lab or saved as a screenshot in your Drive")
+    + card(c.pct == null ? "—" : c.pct + "%", tone(c.pct), c.pct == null ? "📅 Test compliance · starts tomorrow" : `📅 Test compliance · ${c.lacking ? c.lacking + " lacking" : "all done"}`, "Your daily tests so far: the share of the tests due that were done (it is on your scorecard)");
+});
+// the trainer's 📚 Dashboard: today's tests across the newest batch (the grid's batch), opening Admin → 🧪 Typing & Spelling
+function adminTile(){
+  if(!AD.people){ if(!AD.loading) loadAdmin(); return ""; }
+  const ppl = AD.people.filter(p => bLabel(p.batch) === AD.batch); if(!ppl.length) return "";
+  const today = dayKey(new Date()), n = ppl.filter(p => { const x = ledger(AD.recs[p.id] || blank())[today] || {}; return x.AM && x.PM && x.SP; }).length;
+  return `<div class="card stat st-dash st-dash-a" onclick="state.adminTab='skilltests';goto('admin')" style="cursor:pointer;" title="Today’s Typing and Spelling Tests in ${e(AD.batch)}: taken on the platform or saved as a screenshot in Drive"><div class="num ${n === ppl.length ? "ok" : n ? "mid" : ""}">${n} / ${ppl.length}</div><div class="lbl">🧪 Tests today · ${e(AD.batch)} all 3 done</div></div>`;
+}
+// the tiles take a fifth column on this program's dashboard, so the two rows stay two rows (js/lsh-program.js lays out four)
+(function(){ const st = document.createElement("style"); st.textContent = `@media (min-width:1001px) and (min-height:640px){
+  main.main-dash .dash-pair-now .dash-side-inner:has(> .st-dash){grid-template-columns:repeat(5,minmax(0,1fr)) !important;}
+  /* the trainer's one row: the feedback tile's button keeps its words */
+  main.main-dash .dash-pair-now .dash-side-inner:has(> .st-dash-a){grid-template-columns:minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) !important;} }
+.dash-side .stat.st-dash .num.ok{color:#6EE7A0 !important;} .dash-side .stat.st-dash .num.mid{color:#FDBA74 !important;} .dash-side .stat.st-dash .num.bad{color:#FCA5A5 !important;}`; document.head.appendChild(st); })();
 if(canSpeak()){ try{ speechSynthesis.onvoiceschanged = () => { S.voice = pickVoice(); }; }catch(err){} }
 
 (function(){ const st = document.createElement("style"); st.id = "ft-skilltests"; st.textContent = `
@@ -394,5 +492,13 @@ main.main-st{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;f
 .st-grid td,.st-grid th{white-space:nowrap;} .st-day span{display:inline-block;width:14px;text-align:center;}
 .st-day i{font-style:normal;font-weight:800;} .st-day i.na{color:#B8BDCB;} .st-day i.ok{color:#1E7F4F;} .st-day i.no{color:#B42318;} .st-day i.mk{color:#B5651F;}
 .st-comp{white-space:normal !important;min-width:280px;font-size:12.5px;}
+.st-shots{padding:14px 18px;display:flex;flex-direction:column;gap:8px;} .st-shots h3{margin:0;}
+.st-err{color:#B42318;font-weight:600;}
+.st-files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px;}
+.st-files li{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid #F1F2F6;padding:3px 0;} .st-files li > span{color:var(--ink-soft);font-size:12.5px;}
+.st-slot a{color:#1E7F4F;font-weight:700;}
+.st-glance{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:4px 0 10px;padding:8px 12px;background:#F6F7FB;border-radius:10px;font-size:13px;}
+.st-glance .ok b{color:#1E7F4F;} .st-glance .mk b{color:#B5651F;} .st-glance .no b{color:#B42318;}
+.st-day a.st-shot{text-decoration:none;border-bottom:1.5px solid currentColor;} .st-day a.st-shot i{cursor:pointer;}
 `; document.head.appendChild(st); })();
 })();
