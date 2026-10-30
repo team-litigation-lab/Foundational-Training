@@ -3005,20 +3005,18 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !imp
 }
 /* a Note's 💡 sits in its own space at the left of the bar, never over the word */
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
-/* every deck's body text aligned on the left, so lines, bullets, notes and the name to copy start on one edge; the
-   headings and heading bars stay centred. This is the standard across the Activity decks: it overrides the homework
-   (ftdd-hw), Days 6–15 (ftdd-d615) and Day 1's SA (ftdd-sa) sheets, which had centred their text */
+/* every deck's body text aligned on the left, so its lines, bullets, notes and the name to copy start on one edge; the
+   headings, heading bars, videos, screenshots, tiles and embeds stay centred. The standard across the Activity decks: it
+   overrides the homework (ftdd-hw), Days 6–15 (ftdd-d615) and Day 1's SA (ftdd-sa) sheets, which had centred their text */
 main.main-ftdd .ftdd-sheet > :is(h1, h2, h3, h4, h5), main.main-ftdd .ftdd-sheet > p.ftdd-hbar:not(.ftdd-callout){text-align:center;}
-main.main-ftdd .ftdd-sheet{text-align:left;}
 main.main-ftdd .ftdd-sheet :is(p, li, dd, dt):not(.ftdd-hbar), main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{text-align:left !important;}
 main.main-ftdd .ftdd-sheet > p.ftdd-name{margin-left:0;margin-right:auto;width:fit-content;max-width:100%;}
 main.main-ftdd .ftdd-sheet > .ftdd-li-run{width:auto;max-width:100%;margin:6px 0;text-align:left;}
-main.main-ftdd .ftdd-sheet.ftdd-d615{align-items:flex-start;}
-main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(h1, h2, h3, h4, h5, p.ftdd-hbar){align-self:stretch;}
+/* (centred blocks: a line of text takes the sheet's full width, so it starts at the left edge) */
+main.main-ftdd .ftdd-sheet.ftdd-d615 > :is(p:not(.ftdd-hbar), p.ftdd-callout, ul, ol, dl, .ftdd-li-run){align-self:stretch;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 > p.ftdd-name{align-self:flex-start;}
 main.main-ftdd .ftdd-sheet:is(.ftdd-d615, .ftdd-hw) :is(ul, ol){display:block;margin-left:0;margin-right:0;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 p.li{align-self:stretch;}
-main.main-ftdd .ftdd-sheet.ftdd-d615 table{margin-left:0;margin-right:auto;}
-main.main-ftdd .ftdd-sheet:is(.ftdd-d615, .ftdd-hw) :is(.ftdd-tiles, .url-list, .ftdd-vwrap, .shots){justify-content:flex-start;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
 /* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
 main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}
