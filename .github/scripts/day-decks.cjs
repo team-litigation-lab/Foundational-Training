@@ -35,10 +35,15 @@ for (let n = 1; n <= 16; n++) {
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }
 if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'monitoring'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro homework, the Monitoring Sheet set-up or Setting of Expectations');
-// Day 3's CRM/CMS Training Videos: the five videos as cards (data-card: a preview each, played bigger in the pop-up viewer),
-// without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
+// Day 3's CRM/CMS Training Videos: the five videos played in the slide (data-embed: a player each), no comma after a link
+// (it reads as part of the address when copied), without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
 const crm = D[3] && D[3].slides.find(s => s.id === 's2');
-if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards, or the slide still has its 'Please watch' line");
+if (!crm || (crm.html.match(/<a class="viewer-link" data-embed data-kind="video"/g) || []).length !== 5 || /<\/a>\s*,/.test(crm.html) || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five embedded players, a link is followed by a comma, or the slide still has its 'Please watch' line");
+// Day 10's two VA-recording folders and Day 11's Astred 09/20 shadowing recording: one link each, whole, played in the slide
+for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15OCezerotGu4tql8gOOxleQYN4uVSWJJ', 1], [11, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 1]]) {
+  const all = D[n] ? D[n].slides.map(s => s.html).join('\n') : '';
+  if ((all.match(new RegExp(`<a class="viewer-link" data-embed [^>]*href="[^"]*${id}`, 'g')) || []).length !== k || /usp=dri<|>ve_link<|usp=drive_link,/.test(all)) fail(`Day ${n}: the ${id} link isn't one whole embedded link`);
+}
 // Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck (its help line names Sanders for Nitro Pro)
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
