@@ -796,7 +796,7 @@ function slideCard(d, info, list, i){
       <div class="ftdd-bar">${lc != null || s.divider || s.launch ? "" : `<span class="ftdd-pill">${k.ic} ${e(k.label)}</span>`}
         <span class="ftdd-n ftdd-n-page" data-base="page" hidden></span>${t ? `<span class="ftdd-time">${t.ic} ${e(t.label)}</span>` : ""}
         ${segChip(i)}${s.agenda ? "" : slideActions(s, info, body, i)}</div>
-      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}">${body}</div>`}
+      ${lc != null ? `<div class="ftdd-onnavy ftdd-lcslide">${dayCard(DD.day, (X.data && X.data.days) || {})}</div>` : s.agenda ? `<div class="ftdd-onnavy">${agendaHtml(d, info)}</div>` : `<div class="ftdd-sheet ftdd-body ft-body${short ? " ftdd-short" : ""}${/homework/i.test(String(s.h || "")) ? " ftdd-hw" : ""}${s.trainer ? " ftdd-sheet-edit" : ""}${isReadPart(s) ? " ftdd-read" : ""}${Number(DD.day) === 1 && s.id === "pm" ? " ftdd-sa" : ""}${isMid(DD.day) && !s.trainer ? " ftdd-d615" : ""}">${body}</div>`}
     </div>`;
 }
 // 🧑‍🏫 the facilitator's notes on a slide: its trainer-slot boxes (js/ft-updates.js fills them for a trainer). On the deck they
@@ -875,6 +875,12 @@ let fitT = null;
    says which page it is. Nothing scrolls.
    Split screen keeps the whole slide in its column instead: there the point is reading two slides side by side. */
 const FIT_MIN = 0.8;
+// Days 6–15: bigger, bolder, higher-contrast type, centred on the sheet (ftdd-d615); a slide stays one page where it fits at
+// 75% or more, and a longer one turns pages only between its blocks: no block (a list, a table, a card) is split over pages
+const isMid = d => Number(d) >= 6 && Number(d) <= 15;
+const MID_FIT = 0.75;
+// a heading, or a line drawn as a section bar (contrastMarks: ftdd-hbar), never ends a page: it moves on with what it heads
+const isHead = x => /^H[1-6]$/.test(x.tagName) || x.classList.contains("ftdd-hbar");
 // a reading (Day 1's Personal Injury parts) is never scaled down: it is dealt into pages at full size, read with Next
 // (and a slide the build marks read: Day 11's LOR Drafting guidelines)
 const isReadPart = s => !!s && (!!s.read || Object.values(KC_NEXT[DD.day] || {}).some(k => isPart(k, s.id)));
@@ -922,6 +928,8 @@ function sheetPages(sheet){
   // the trainer's own slide is an editor, not a page to turn: paging it would hide half the form
   if(DD.split || kids.length < 2 || sheet.classList.contains("ftdd-sheet-edit")) return [kids];
   const room = sheet.clientHeight, read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
+  const mid = sheet.classList.contains("ftdd-d615");
+  if(mid && room && zoomToFit(sheet, MID_FIT)) return [kids];
   // (a cropped sheet takes the page's full height: ftdd-embed-crop)
   sheet.style.setProperty("--ftdd-room", room + "px");
   // a slide with page breaks (ftdd-pgbreak, from the build) is read in pages even where it would fit on one: each part
@@ -934,7 +942,7 @@ function sheetPages(sheet){
       if(k.classList.contains("ftdd-pgbreak")){ if(page.length) pages.push(page); page = [k]; used = 0; return; }
       const h = hOf(k);
       if(page.some(x => !x.classList.contains("ftdd-pgbreak")) && used + h > room / PAGE_ZOOM){
-        const carry = []; while(page.length > 1 && /^H[1-6]$/.test(page[page.length - 1].tagName)) carry.unshift(page.pop());
+        const carry = []; while(page.length > 1 && isHead(page[page.length - 1])) carry.unshift(page.pop());
         pages.push(page); page = carry; used = carry.reduce((a, x) => a + hOf(x), 0);
       }
       page.push(k); used += h;
@@ -945,7 +953,7 @@ function sheetPages(sheet){
   // a reading's text-and-chart row is never taller than the page, even drawn up to 1.15: its chart gives way, so its text
   // isn't shrunk to fit a tall chart
   if(read && room) sheet.style.setProperty("--ftdd-pi-h", Math.floor(room / 1.15 - 8) + "px");
-  if(!room || (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN))) return [kids];
+  if(!room || (!mid && (read ? sheet.scrollHeight - room <= 2 : zoomToFit(sheet, FIT_MIN)))) return [kids];
   kids.forEach(k => { k.style.zoom = ""; });   // too long even at half size: dealt into pages at full size
   const hOf = x => { const st = getComputedStyle(x); return x.offsetHeight + (parseFloat(st.marginTop) || 0) + (parseFloat(st.marginBottom) || 0); };
   // a block taller than the screen on its own (a long list, a table) is dealt out by its own rows
@@ -956,7 +964,7 @@ function sheetPages(sheet){
     // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Instructions and Activity Items stay one row of
     // cards; and what the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls
     // two to a slide)
-    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-keep, .ftdd-two, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
+    if(!mid && hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-keep, .ftdd-two, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -989,7 +997,7 @@ function sheetPages(sheet){
     if(shown(page) && used + h > room / (read ? 1 : PAGE_ZOOM)){
       // a heading never ends a page: it moves to the next one with the text it heads
       const carry = [];
-      while(page.length > 1 && /^H[1-6]$/.test(page[page.length - 1].tagName)) carry.unshift(page.pop());
+      while(page.length > 1 && isHead(page[page.length - 1])) carry.unshift(page.pop());
       pages.push(page); page = carry; used = carry.reduce((a, x) => a + hOf(x), 0);
     }
     page.push(k); used += h;
@@ -1001,7 +1009,7 @@ function sheetPages(sheet){
     const total = units.reduce((a, x) => a + hOf(x), 0), cap = room / (read ? 1 : PAGE_ZOOM), tallest = Math.max(...units.map(hOf));
     const deal = limit => { const out = []; let pg = [], u = 0;
       units.forEach(k => { const h = hOf(k);
-        if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && /^H[1-6]$/.test(pg[pg.length - 1].tagName)) carry.unshift(pg.pop());
+        if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && isHead(pg[pg.length - 1])) carry.unshift(pg.pop());
           out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
         pg.push(k); u += h; });
       if(pg.length) out.push(pg); return out; };
@@ -1066,11 +1074,12 @@ function fitSheets(){
     // whatever a page still runs over by, close by scaling its content rather than with a scrollbar
     // (a page holds a little more than the screen, and a block taller than a page, a long table, is a page of its own)
     const read = sheet.matches(".ftdd-read, .ftdd-sa");   // (Day 1's Installation of SA reads like the reading: one size, page by page)
-    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
+    const mid = sheet.classList.contains("ftdd-d615");
+    if(!sheet.classList.contains("ftdd-sheet-edit") && sheet.clientHeight && sheet.scrollHeight - sheet.clientHeight > 2) zoomToFit(sheet, mid ? 0.5 : read ? (sheet.querySelector(".ftdd-pi-row:not([style*='display: none'])") ? 0.6 : 0.72) : 0.6);   // a text-and-chart row is never split, so it may shrink a little more
     // a page with room to spare has its text drawn bigger to fill it (a whole slide up to 1.4, a page of a longer one, or of
     // the reading, up to 1.15 so its pages still read alike)
     else if(!sheet.classList.contains("ftdd-sheet-edit") && !DD.split) zoomUp(sheet, !read && pages.length < 2 ? 1.4 : 1.15);
-    centerPage(sheet);
+    if(!mid) centerPage(sheet);   // (Days 6–15 are centred by their flex box: ftdd-d615)
     sheet.querySelectorAll("img:not([data-ftdd-fit])").forEach(img => { img.setAttribute("data-ftdd-fit", "1");
       if(!img.complete) img.addEventListener("load", () => { clearTimeout(fitT); fitT = setTimeout(() => { fitSheets(); paintPageMark(); }, 60); }, {once: true}); });
   });
@@ -2164,6 +2173,21 @@ main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
 .ftdd-sheet.ftdd-hw .url-list > span{display:block;}
 .ftdd-sheet.ftdd-hw .ftdd-vwrap{justify-content:center;}
 .ftdd-sheet.ftdd-hw .ftdd-tile b{font-size:18px;}
+/* Days 6–15: bigger, bolder, higher-contrast type; the content centred on the sheet, across and down; nothing split */
+.ftdd-sheet.ftdd-d615{display:flex;flex-direction:column;justify-content:safe center;align-items:center;text-align:center;gap:6px;}
+.ftdd-sheet.ftdd-d615 > *{max-width:100%;break-inside:avoid;page-break-inside:avoid;}
+main.main-ftdd .ftdd-sheet.ftdd-d615{font:600 20px/1.5 'Inter',system-ui,sans-serif;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 :is(p,li,td,th,dd,dt,.ftdd-step-t,.ftdd-pq){font-size:20px;font-weight:600;line-height:1.5;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 :is(b,strong){font-weight:800;color:#000;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 > p:first-child:not([class]){font:800 24px/1.35 'Inter',system-ui,sans-serif;color:#141A3C;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 :is(h2,h3,h4,h5){font:800 21px/1.3 'Poppins','Inter',sans-serif !important;color:#141A3C !important;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 a{color:#0B3FA8;font-weight:700;text-decoration:underline;}
+main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;color:#0B0D1A;}
+.ftdd-sheet.ftdd-d615 :is(ul,ol){display:inline-block;text-align:left;margin-left:auto;margin-right:auto;}
+.ftdd-sheet.ftdd-d615 p.li{text-align:left;align-self:center;}
+.ftdd-sheet.ftdd-d615 table{margin-left:auto;margin-right:auto;}
+.ftdd-sheet.ftdd-d615 :is(tr,li,figure,img,table,.ftdd-step,.ftdd-inline){break-inside:avoid;page-break-inside:avoid;}
+.ftdd-sheet.ftdd-d615 :is(.ftdd-tiles,.url-list,.ftdd-vwrap,.shots){justify-content:center;}
 /* a screenshot or sample fits the slide: it shrinks to the sheet instead of making it scroll */
 .ftdd-sheet img{max-width:100%;height:auto;max-height:min(58vh,560px);object-fit:contain;}
 /* an embedded deck keeps its 16:9 but never grows past the slide (js/ft-updates.js gives it a padding-top box) */
