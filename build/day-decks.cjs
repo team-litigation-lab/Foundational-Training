@@ -730,6 +730,8 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
      • to: a fragment that belongs to a later section of the same day is added to the end of it instead;
      • read: the fragment is read like Day 1's reading (one size, page by page);
      • each fragment drops a divider left at its edges (the stars rule, a "-----" line). */
+// (Day 10's sample-documents line, where its opening-claims slide is cut: ROWS[10].s1)
+const SAMPLE_DOCS_10 = "<p>Sample Insurance Communication-Related Documents and VA Recordings</p>";
 const SLOT = (n, k) => `<div class="trainer-slot" data-slot="${n}:${k}"></div>`;
 const UPSKILL = "<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>";
 // a shadowing slide's own line on how the session runs on the platform
@@ -908,7 +910,12 @@ const ROWS = {
   10: {
     s1: [{id: "s1", parts: [[null, "<p> Claims Terminology Exercise</p>"]]},
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
-      {id: "s1c", h: "AM: Opening Claims: What to Share & VA Call Recordings", parts: [[SLOT(10, "s1-3"), null]]}]
+      // (the opening-claims slide in three, each a card row of its own: what to share, the sample documents, the VA call
+      // recordings; the card runs the recordings before the documents, js/ft-day-decks.js LESSON_CARDS[7])
+      {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]]},
+      {id: "s1d", h: "AM: Sample Insurance Communication Documents", parts: [[SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]},
+      {id: "s1e", h: "AM: Sample Recordings: Opening Claims", parts: [["<p><b>VA Call Recordings", null]]}]
   },
   11: {
     // the LOR Drafting Activity: its guidelines read over two slides (Activity 1: 1P, Activity 2: 3P), then the templates,
