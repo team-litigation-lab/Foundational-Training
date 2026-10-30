@@ -691,8 +691,8 @@ root.FTDayLocks = {
 };
 
 const st = document.createElement("style"); st.id = "ft-day-locks"; st.textContent = `
-.ftseg{display:flex;align-items:stretch;gap:0;margin:0 14px 8px;border:1px solid #DDE1EC;border-radius:10px;overflow:hidden;background:rgba(236,238,245,.62);}
-.ftseg-b{flex:1 1 0;min-width:0;padding:10px 4px;border:0;border-left:1px solid #DDE1EC;background:transparent;color:var(--navy,#1E2340);
+.ftseg{display:flex;align-items:stretch;gap:0;margin:0 14px 8px;border:1px solid #9CA3B8;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(38,43,69,.10);}
+.ftseg-b{flex:1 1 0;min-width:0;padding:10px 4px;border:0;border-left:1px solid #9CA3B8;background:transparent;color:var(--navy,#1E2340);
   font:700 14.5px/1.1 'Inter',sans-serif;letter-spacing:.01em;cursor:pointer;white-space:nowrap;}
 .ftseg-b:first-child{border-left:0;}
 .ftseg-b:hover, .ftseg-b:focus-visible{background:#353B57;color:#fff;outline:none;}
@@ -701,7 +701,7 @@ const st = document.createElement("style"); st.id = "ft-day-locks"; st.textConte
 .ftseg-b.done{background:#DDF2E4;color:#1F6B3F;box-shadow:inset 0 -3px 0 #2E9E5B;} .ftseg-b.done:hover{background:#2E7D4F;color:#fff;}
 /* the part the trainee is on and has finished: a deep green (the navy of .now with .done's fill would be lost) */
 .ftseg-b.now.done{background:#1F6B3F;color:#fff;box-shadow:inset 0 -3px 0 #9BE3B5;} .ftseg-b.now.done:hover{background:#2E7D4F;color:#fff;}
-.ftseg-b.locked{color:#8A90A6;cursor:not-allowed;background:rgba(220,223,232,.55);} .ftseg-b.locked:hover{background:rgba(205,209,222,.8);color:#5b6178;}
+.ftseg-b.locked{color:#5B6178;cursor:not-allowed;background:#E4E7EF;} .ftseg-b.locked:hover{background:rgba(205,209,222,.8);color:#5b6178;}
 .ftseg-n4 .ftseg-b{font-size:13px;padding:10px 2px;}
 .dash-main .module-card.ftr-card > .ftseg, .module-card .mc-grid > .ftseg{grid-column:1 / -1;}
 .dash-main .module-card.ftr-card > .ftseg{margin:auto 0 0 !important;border-width:1px 0 0;border-radius:0;}
@@ -718,7 +718,7 @@ const st = document.createElement("style"); st.id = "ft-day-locks"; st.textConte
 .ftdl-steps li.on{background:#EAF6EE;border-color:#B9E0C6;} .ftdl-steps li i{font-size:12.5px;color:var(--ink-soft);}
 .ftdl-legacy{margin:0 0 10px;padding:8px 12px;border-radius:10px;background:#FFF7EA;border:1px solid #F0D9B5;font-size:13.5px;}
 .ftdl-steps li.ftdl-slot{background:#F4F5FA;border-style:dashed;font-weight:700;}
-.ftseg-b.tlocked{color:#8A90A6;background:rgba(220,223,232,.55);} .ftseg-b.tlocked:hover{background:#353B57;color:#fff;}
+.ftseg-b.tlocked{color:#5B6178;background:#E4E7EF;} .ftseg-b.tlocked:hover{background:#353B57;color:#fff;}
 .ftdl-chip{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;padding:3px 10px;border-radius:999px;font:700 12px/1.3 'Inter',sans-serif;white-space:nowrap;
   background:#EAF6EE;color:#2E7D4F;border:1px solid #B9E0C6;}
 .ftdl-chip.locked, .ftdl-chip.lesson{background:#F3E3E3;color:#8A2F2F;border-color:#E6C4C4;}
