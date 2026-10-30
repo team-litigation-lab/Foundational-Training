@@ -474,7 +474,7 @@ function listenSlide(day, time){
   const live = FTListen.setLive(set.id);
   // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
   if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
-  return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
+  return {id: "listen", h: `${time || "AM"}: ${LISTEN_H[day] || "Call Listening Session"}`, html:
     `${LISTEN_LEAD[day] ? `<p><b>${e(LISTEN_LEAD[day])}</b></p>` : `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>`}
      ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>${listenLinks(day)}` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
@@ -498,6 +498,8 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
     ["Follow-Up on a Records Request", "follow-up-records-request", "4:43"], ["Recorded Call: Feb 23, 2023", "recorded-call-2023-02-23", "3:03"],
     ["Recorded Call: Feb 27, 2023", "recorded-call-2023-02-27", "1:29"]].map(([t, f, len]) => ({t, src: `/ft/day13/audio/${f}.mp3`, len, pop: true, kind: "Provider call"}))};
 const LISTEN_BARE = [7];
+// a day's Call Listening slide under a name of its own (Day 13: the listening runs as the breakout)
+const LISTEN_H = {13: "Call Listening Session / Breakout Session"};
 // a day's reference folders under its recordings (Day 13: the Sample SOPs)
 const LISTEN_LINKS = {13: [["Sample SOPs", "https://drive.google.com/drive/folders/11c5SZrYEueJUzYjXYXhHqG_B-hxMzOrV"]]};
 const listenLinks = day => (LISTEN_LINKS[day] || []).map(([t, u]) => `<p><a class="ftdd-tile k-folder" href="${e(u)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📁</span><span class="ftdd-tile-t"><b>${e(t)}</b><small>Open the folder</small></span></a></p>`).join("");
