@@ -22,7 +22,7 @@
        Answers save as the trainee types.
      • ⬇ Download gives the edited letter as a PDF (or a Word file), ready to upload into the SA demo.
        The file name is the trainers' own convention for that template (tpl.naming), with its tokens filled
-       in — mm.dd.yyyy is today, (VA's name) is the trainee, "1P/3P Insurance Provider" is the carrier on the
+       in — mm.dd.yy is today, (VA's name) is the trainee, "1P/3P Insurance Provider" is the carrier on the
        assigned case — and it sits in a box the trainee can edit. What is in the box is what the file is
        called; ↺ Reset puts the convention back. Their own name saves with the draft (letters.<id>.file).
      • The tool is template-driven: it draws whatever is in js/ft-lor-data.js. A records-request letter or a
@@ -110,11 +110,11 @@ function noteRows(c, side){
 
 /* ---------- the letter's date: auto-generated, always today ---------- */
 const letterDate = () => new Date().toLocaleDateString("en-US", {year:"numeric", month:"long", day:"numeric"});
-const fileDate = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${p(d.getMonth() + 1)}.${p(d.getDate())}.${d.getFullYear()}`; };
+const fileDate = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${p(d.getMonth() + 1)}.${p(d.getDate())}.${p(d.getFullYear() % 100)}`; };
 // What a file name may not carry.
 const BAD_CHARS = /[\\/:*?"<>|]/g;
 // The trainers' naming convention for this template, straight off the activity sheet (tpl.naming), with its
-// tokens filled in: mm.dd.yyyy is today, (VA's name) is the trainee, and "1P/3P Insurance Provider" is the
+// tokens filled in: mm.dd.yy is today, (VA's name) is the trainee, and "1P/3P Insurance Provider" is the
 // carrier on the assigned case. A template added later — a records request, a HIPAA authorisation — is named
 // from its own convention the same way, with nothing here to change.
 function conventionName(tpl, no){
@@ -122,7 +122,7 @@ function conventionName(tpl, no){
   const who = String(state.certName || state.traineeName || "VA’s name").replace(BAD_CHARS, "").trim() || "VA’s name";
   const carrier = n => { const set = c[n === "1" ? "p1" : "p3"] || {}; return set["Insurance Company Name"] || set["Defendant Insurance Company Name"] || ""; };
   return String(tpl.naming || tpl.title || "Letter")
-    .replace(/mm\.dd\.yyyy/gi, fileDate())
+    .replace(/mm\.dd\.yy(?:yy)?/gi, fileDate())
     .replace(/\(\s*VA[’']s name\s*\)/gi, "(" + who + ")")
     .replace(/([13])P Insurance Provider/g, (m, n) => carrier(n) || m)
     .trim();

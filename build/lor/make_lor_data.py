@@ -276,9 +276,9 @@ def cases(path):
 def main(notes, p1, p3, dest="js/ft-lor-data.js"):
     cs = cases(notes)
     ts = [template(p1, "lor1p", "Activity 1: Letter of Representation / LOR Drafting for 1P",
-                   "INS – 1P Insurance Provider - LOR mm.dd.yyyy (VA's name)"),
+                   "INS – 1P Insurance Provider - LOR mm.dd.yy (VA's name)"),
           template(p3, "lor3p", "Activity 2: Letter of Representation (LOR) Drafting for 3P",
-                   "INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yyyy (VA's name)")]
+                   "INS – 3P Insurance Provider - LOR with Affidavit mm.dd.yy (VA's name)")]
     if not cs: sys.exit("No cases found in " + notes)
     for t in ts:
         if not any(r.get("f") for b in t["blocks"] if b["t"] == "p" for r in b["runs"]):
