@@ -304,7 +304,7 @@ s3: html => {
   // (Frontline Management: the call-handling decision trees drawn on the slide, two to a row, in place of the guide's two
   // screenshots (the Authorization and Payment Calls trees), with the PI firm's other frontline calls beside them (TREES);
   // then the Sample SOP's four pages as screenshots (ft/day3/img/sample-sop-N.png, each opening bigger in the slide's
-  // picture viewer: js/ft-day-decks.js ftdd-sop), with one big link to the document and a ⬇ Download of it. The sample
+  // picture viewer: js/ft-day-decks.js ftdd-sop), with one big link to the document and a ⬇ Download of it (as Word). The sample
   // call recordings are the 🎧 Call Listening slide's, a card each: js/ft-day-decks.js LISTEN_CARDS)
   if(!/image12\.png/.test(shots) || !/image17\.png/.test(shots)) throw new Error("Day 3's decision tree screenshots are no longer where the build looks for them");
   const SOP_ID = "1zgK-4uKhdJkUvfOkb9A1Jp73C2wu_UOm", SOP = `https://docs.google.com/document/d/${SOP_ID}/edit?usp=drive_link`;
@@ -315,7 +315,7 @@ s3: html => {
     '<div class="ftdd-pgbreak"></div>\n' +
     `<div class="ftdd-sop"><div class="ftdd-sop-shots">${sopShots}</div>\n` +
     `<div class="ftdd-tiles ftdd-sop-links"><a class="viewer-link ftdd-sop-open" data-kind="doc" data-title="Sample SOP" href="${SOP}"><span>📄</span><b>Sample SOP</b></a>` +
-    `<a class="ftdd-sop-dl" href="https://drive.google.com/uc?export=download&amp;id=${SOP_ID}" target="_blank" rel="noopener noreferrer" download>⬇ Download</a></div></div>\n`;
+    `<a class="ftdd-sop-dl" href="https://docs.google.com/document/d/${SOP_ID}/export?format=docx" target="_blank" rel="noopener noreferrer" download>⬇ Download</a></div></div>\n`;
 },
 // Day 3's homework: the five CRM/CMS videos, each named, as cards with the video's preview (data-card: js/ft-day-decks.js
 // visual), a click playing it bigger in the pop-up viewer; and when they may be finished
@@ -648,6 +648,8 @@ const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + P
   "<p>Step 6 - Fill in the 📝 message slip or case note during the call: who called, their role, the callback number and best time, the case and what they need.</p>\n" +
   "<p>Step 7 - Close with the closing spiel. Then run the Front Desk Drill in the CMS to practise the same flow on the case files.</p>\n" +
   "") + PGBREAK;
+// Day 6's mock calls slide: the trainer's line over the tracker (a trainee sees Mock Calls Ongoing and Done: ROWS[6].s1)
+const MOCK_ONE_CAL = "<p>Your one-on-one Calendar Management mock call with the trainer, scored on the Calendar Management Mock Calls Metrics (the slide before).</p>\n";
 const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p><b>How the mock calls run (one-on-one)</b></p>\n" +
   "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
@@ -702,6 +704,10 @@ const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
+  // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
+  // slide; the 3P Zurich sample and the VLF SOP stay documents
+  10: {s2: h => ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
+    .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h)},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
   11: {
@@ -792,7 +798,10 @@ const ROWS = {
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
     // (the mock calls' slide opens on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
     s1: [{id: "s1", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]},
-      {id: "s1b", h: "Entire Day: Calendar Management Mock Calls", parts: [["<p><b>☎ Mock Calls: how to access", null]]}]
+      {id: "s1b", h: "Entire Day: Calendar Management Mock Calls", parts: [["<p><b>☎ Mock Calls: how to access", null]]},
+      // the mock calls themselves, as Day 4's: a trainee's screen is only Mock Calls Ongoing and Done (js/ft-buffer.js "6:s1b-2"
+      // simple); the line is the trainer's, over the tracker ("s1b-2": it continues s1b's card row)
+      {id: "s1b-2", h: "Entire Day: Calendar Management Mock Calls (One-on-One)", pre: MOCK_ONE_CAL, parts: []}]
   },
   7: {
     s1: [{id: "s1", parts: [[null, "<p><b>Intake Scenario Exercise</b></p>"]]},
@@ -913,7 +922,9 @@ const EXTRA = {};
 const load = n => { const c = {}; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(R, "build/days", `day${String(n).padStart(2, "0")}.js`), "utf8") + `;this.d=DAY${n};`, c); return c.d; };
 // (its button opens the day's lesson's own Knowledge Check sheet, where the questions are answered, and comes back to
 // the classroom's next activity: FTDayDecks.toKC; never the trainers' all-trainees page)
-const PQ_NOTE = `<div class="ftdd-pq">✍️ <b>Today’s Process Questions</b> are answered in the day’s Knowledge Check, after the day’s activities.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.toKC(FTDayDecks.dayLesson())">✍️ Knowledge Check →</button></div></div>\n`;
+// (nothing on the slide, as on Days 1–5: the day's card has its own ✍️ Process Questions: Submit stop, js/ft-day-decks.js
+// standardRows, which opens the lesson's sheet; the day keeps its pq flag, so the stop is still there)
+const PQ_NOTE = "";
 // a Process Questions list: from the element that says PROCESS QUESTIONS to the naming convention's value
 // (the element after "Naming Convention:"), plus the divider after it
 // (Day 7 has no pointer boxes on its slides: its ✍️ Knowledge Check is the card's Process Questions stop after the
@@ -958,7 +969,8 @@ function stripQuestions(html){
 // on 📚 Dashboard, 📘 Open the lesson on the slide), so a discussion slide drops its embedded lesson deck — the
 // Canva frame and its ⛶ Full screen / Open in Canva row. An exercise's deck on the same slide stays.
 const LESSON_DECK = /<div class="canva-frame" id="([^"]+)">\s*<iframe[^>]*title="(?![^"]*Exercise)[^"]*\(Canva\)"[\s\S]*?<\/iframe>\s*<\/div>\s*<div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div>\s*<\/div>\s*/;
-const LESSON_NOTE = `<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>\n`;
+// (nothing on the slide, as on Days 1–5: the card's 💬 Classroom Discussion stop is ▶ Start Training)
+const LESSON_NOTE = "";
 function stripLessonDeck(h, html, note = LESSON_NOTE){
   if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
   return {html: html.replace(LESSON_DECK, note), n: 1};
@@ -969,9 +981,17 @@ const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="can
 const EX_RENAME = {
   // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
   13: {s3: {h: "PM: Breakout Session"}}};
+// the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
+const PREP = {
+  8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
+  9: {s3b: "PM: Intake Mock Calls: Instructions & Metrics"},
+  12: {s1d: "Entire Day: Demo Preparation: Uploading and Sending 1P & 3P LORs"},
+  14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
+  15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
+  16: {s2: "PM: Demo Preparation: Lien Balance Verification Request"}};
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
-  const d = load(n), slides = [], carry = {}, cut = new Set();
+  const d = load(n), slides = [], carry = {}, cut = new Set(), noted = new Set();
   // (a day whose Process Questions were on a slide that is off the deck, Day 2's Classroom Activity, still has them: pq)
   const pqDay = d.sections.some(s => !s.trainerOnly && s.html.includes("PROCESS QUESTIONS"));
   for(const s of d.sections){
@@ -979,6 +999,7 @@ for(let n = 1; n <= 16; n++){
     const bare = NO_POINTER.includes(n), r = stripPQ(s.html, bare ? "" : PQ_NOTE); pqs += r.n;
     const q = stripQuestions(r.html); qs += q.n;
     const ld = stripLessonDeck(s.h, q.html, bare ? "" : LESSON_NOTE); decksOff += ld.n;
+    if(r.n || ld.n) noted.add(s.id);
     let html = (TRIM[n] && TRIM[n][s.id]) ? TRIM[n][s.id](ld.html) : ld.html;
     if(EDIT[n] && EDIT[n][s.id]) html = EDIT[n][s.id](html);
     // a fragment of an earlier section that is read with this one (ROWS: to)
@@ -1021,6 +1042,23 @@ for(let n = 1; n <= 16; n++){
     if(!nm) throw new Error(`Day ${n} ${x.id}: its exercise is off the slide, and the slide needs a new name (EX_RENAME)`);
     x.h = nm.h; if(nm.fix) x.html = nm.fix(x.html);
   }
+  // 📋 a slide that only pointed to the lesson deck or the Process Questions (Days 7 and 10's classroom discussion) goes, as
+  // Days 5 and 13's did (SKIP): the card's 💬 Classroom Discussion and ✍️ Process Questions: Submit stops are those
+  for(let i = slides.length - 1; i >= 0; i--){
+    const x = slides[i];
+    if(!noted.has(x.of || x.id)) continue;
+    if(!x.html.replace(/<div class="trainer-slot"[^>]*><\/div>|<hr class="stars">/g, "").trim()){ slides.splice(i, 1); continue; }
+    // (and the ✱✱✱ divider that followed the pointer no longer opens the slide: Day 13's Breakout Session)
+    x.html = x.html.replace(/^((?:\s*<div class="trainer-slot"[^>]*><\/div>)*\s*)<hr class="stars">\n?/, "$1");
+  }
+  // ☎ / 🧑‍🏫 a mock call or demo in Day 4's format (PREP): its instructions, rules and metrics on a preparation slide of their
+  // own, then the activity's slide, where a trainee sees only "Mock Calls Ongoing" / "Demos Ongoing" and Done
+  // (js/ft-buffer.js ACTS, simple); the activity slide keeps its id, so the records saved under it stand
+  for(const [id, h] of Object.entries(PREP[n] || {})){
+    const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
+    const x = slides[i];
+    slides.splice(i, 1, Object.assign({}, x, {id: id + "p", h}), {id, h: x.h, of: x.of, html: ""});
+  }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));
@@ -1045,5 +1083,5 @@ const NOTES = path.join(R, "trainer/notes.json"), notes = JSON.parse(fs.readFile
 let notesChanged = false;
 for(const [k, f] of Object.entries(DECK_NOTES)){ const v = f(); if(notes.slots[k] !== v){ notes.slots[k] = v; notesChanged = true; } }
 if(notesChanged) fs.writeFileSync(NOTES, JSON.stringify(notes, null, 1));
-console.log(`js/ft-day-decks-data.js: ${Object.keys(decks).length} day decks, ${Object.values(decks).reduce((a, d) => a + d.slides.length, 0)} slides, ${pqs} Process Questions lists replaced by the Knowledge Check pointer, ${qs} task question lists replaced by the assessment note, ${(out.length / 1024).toFixed(0)} KB`);
+console.log(`js/ft-day-decks-data.js: ${Object.keys(decks).length} day decks, ${Object.values(decks).reduce((a, d) => a + d.slides.length, 0)} slides, ${pqs} Process Questions lists taken off (the card's ✍️ Process Questions: Submit stop), ${qs} task question lists replaced by the assessment note, ${(out.length / 1024).toFixed(0)} KB`);
 for(const d of Object.values(decks)) console.log(`  Day ${d.day} · ${d.title}: ${d.slides.map(s => s.h.slice(0, 40)).join(" | ")}`);
