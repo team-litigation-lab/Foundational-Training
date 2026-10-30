@@ -1645,12 +1645,9 @@ const pill = r => `<span class="ftlc-pill k-${e(r.k)}">${e(PILLS[r.k] || r.k)}</
 const tip = x => Array.isArray(x) ? `<b>${e(x[0])}</b> ${x[1]}` : x;   // the tools are written here, so their <i> stands
 // the lesson whose card holds a day (Day 8 → Intake, Lesson 6)
 const lessonOfDay = n => { const k = Object.keys(LESSON_CARDS).find(l => LESSON_CARDS[l].days.includes(Number(n))); return k == null ? null : Number(k); };
-// the card's rows, with 📌 From your trainer for a no-discussion day once the trainer has added something
+// the card's rows (no 📌 From your trainer row: the decks have no From your trainer slide)
 function cardRows(c, ex){
-  const rows = c.rows.slice();
-  c.days.filter(n => instructionOnlyDays().includes(n) && ((ex || {})[n] || []).length).forEach(n =>
-    rows.push({t: "From your trainer", sub: `${ex[n].length} ${ex[n].length === 1 ? "activity" : "activities"} and instructions`, k: "trainer", d: n, s: "trainer"}));
-  return rows;
+  return c.rows.slice();
 }
 const cardOf = lid => LESSON_CARDS[lid] ? Object.assign({lesson: Number(lid)}, LESSON_CARDS[lid]) : null;
 // a lesson with no card of its own, on another lesson's card (Receptionist Training on Personal Injury Process Flow's): its
