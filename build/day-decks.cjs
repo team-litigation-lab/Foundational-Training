@@ -601,13 +601,15 @@ const CH_ICON = [[/mixed-up|wrong birth/i, "🔁"], [/frustrat|repeat/i, "😤"]
 const chIcon = t => (CH_ICON.find(([re]) => re.test(t)) || [0, "👤"])[1];
 const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 // the calls, three cards to a row (each row is one block, so a page never splits a card)
-function piCallRows(compact){
+function piCallRows(compact, extra){
   const card = c => `<div class="ftdd-pic${compact ? " ftdd-pic-sm" : ""}"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
     `<p class="ftdd-pic-tags">${(compact ? [c.challenge] : c.tags).map(t => `<span class="ftdd-pic-tag${/client|provider|adjuster/i.test(t) && !/not on/i.test(t) ? " ftdd-pic-who" : ""}">${chIcon(t)} ${hx(t)}</span>`).join("")}</p>` +
     (compact ? "" : `<p class="ftdd-pic-about">${hx(c.about)}</p>`) +
     `<audio class="ftdd-pic-audio" controls preload="none" src="${c.file}" title="Call ${c.id}: ${hx(c.title)}"></audio></div>`;
   const rows = [];
-  for(let i = 0; i < ACT_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${ACT_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
+  // (extra: a last card after the calls, in the last row's free place: Day 3's 📝 Answer Sheet)
+  const cards = ACT_CALLS.calls.map(card).concat(extra ? [extra] : []);
+  for(let i = 0; i < cards.length; i += 3) rows.push(`<div class="ftdd-pic-row">${cards.slice(i, i + 3).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
 /* 🎧 Day 3's supplementary reception recordings, optional (Carlos's are off it: the Harbor & Pine calls replace them): one card per recording, played in the
@@ -659,12 +661,15 @@ const PI_HTML =
   `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">💭 Analyze the call’s challenge</p><p class="ftdd-cix-note">In the reflection section for each call, document:</p>` +
   `<div class="ftdd-cix-two"><div><b>🚧 The Obstacle</b>What made the call difficult? (e.g., emotional distress, missing details, language barriers, aggressive demeanor, or emergency legal deadlines)</div>` +
   `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
-  // the answers are logged on the activity's own 📝 Answers page (js/ft-listening.js "recact"), after the calls
-  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTListen.open('recact')"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity: Answers</b><small>Log each call’s 5 data points and its challenge →</small></span></button></div>\n`;
-// the five calls on one slide (the trainer's key with them), then the 📝 Answers page
+  // the answers are logged on the activity's 📝 Answer Sheet, a pop-up over the deck (js/ft-listening.js "recact")
+  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTListen.pop('recact')"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity: Answer Sheet</b><small>Log each call’s 5 data points and its challenge →</small></span></button></div>\n`;
+// the five calls on one slide (the trainer's key with them), and in the last row's free place the 📝 Answer Sheet, a pop-up
+// over the deck to log each call and 📝 Submit for Grading (js/ft-listening.js FTListen.pop)
+const PI_SHEET_CARD = `<button type="button" class="ftdd-pic ftdd-pic-sheet" onclick="FTListen.pop('recact')"><span class="ftdd-pic-sheet-ic">📝</span>` +
+  `<b>Answer Sheet</b><small>Log each call’s 5 data points and its challenge, then 📝 Submit for Grading</small><span class="ftdd-pic-sheet-go">Open the answer sheet →</span></button>`;
 const PI_CALLS_HTML =
-  `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
-  piCallRows(false) +
+  `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your 📝 Answer Sheet.</p>\n` +
+  piCallRows(false, PI_SHEET_CARD) +
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +

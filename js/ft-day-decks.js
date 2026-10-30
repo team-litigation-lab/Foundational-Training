@@ -630,10 +630,6 @@ function launchSlide(s){
   // (no AI discussion video on the decks; a handouts stop with no handouts here: where they are)
   if(/ftVideoOrAsk/.test(r.run || "")) return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     <p class="ftdd-dv-sub">The digital handouts are posted in the training GC.</p></div>`;
-  // 📝 Day 3's Reception Listening Activity answers: the answer sheet itself, on the slide (js/ft-listening.js)
-  const sheet = /FTListen\.open\('recact'\)/.test(r.run || "") && root.FTListen && FTListen.sheet ? FTListen.sheet("recact") : "";
-  if(sheet) return `<p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p>
-    <div class="ftdd-lnsheet">${sheet}</div>`;
   const label = r.go === "lesson" ? "▶ Start Training" : /toKC/.test(r.run || "") ? "✍️ Knowledge Check →" : /ftVideoOrAsk/.test(r.run || "") ? "🎬 Open the video" : "Open →";
   return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     ${r.sub ? `<p class="ftdd-dv-sub">${e(r.sub)}</p>` : ""}
@@ -1390,18 +1386,17 @@ const LESSON_CARDS = {
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
-      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, its 📝 answers
-      // (js/ft-listening.js "recact") and the day's end: no ✍️ Knowledge Check between them)
+      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, whose 📝 Answer Sheet
+      // opens in a pop-up on the calls' slide (js/ft-listening.js "recact"), and the day's end: no ✍️ Knowledge Check between them)
       {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
-      {t: "Reception Listening Activity: Answers", sub: "Log each call’s answers", k: "assessment", d: 3, run: "FTListen.open('recact')"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
       {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity: log each call's answers on its 📝 Answers page"],
+      "The Reception Listening Activity: log each call's answers on its 📝 Answer Sheet, on the calls' slide, and 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
@@ -2518,6 +2513,12 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-pic-tag.ftdd-pic-who{background:#E8EBF5;color:#343C66;}
 .ftdd-sheet .ftdd-pic > p.ftdd-pic-about{font-size:15px !important;line-height:1.45 !important;color:#30364F;flex:1;}
 .ftdd-pic-audio{width:100%;height:40px;margin:4px 0 2px;}
+/* 📝 Day 3's Answer Sheet: the last card of the calls' row, opening its pop-up (js/ft-listening.js FTListen.pop) */
+.ftdd-pic.ftdd-pic-sheet{padding:16px 18px;align-items:center;justify-content:center;gap:6px;text-align:center;cursor:pointer;font:inherit;border-color:#E8590C;border-style:dashed;background:#FFF7ED;color:#1E2340;}
+.ftdd-pic.ftdd-pic-sheet:hover{background:#FDEBDD;box-shadow:0 6px 16px rgba(232,89,12,.2);}
+.ftdd-pic-sheet-ic{font-size:30px;line-height:1;} .ftdd-pic-sheet b{font:800 19px/1.3 'Poppins','Inter',sans-serif;}
+.ftdd-pic-sheet small{font-size:14px;line-height:1.4;color:#30364F;}
+.ftdd-pic-sheet-go{margin-top:6px;padding:8px 16px;border-radius:10px;background:linear-gradient(180deg,#E8943A,#C8642A);color:#fff;font:700 15px/1.2 'Inter',sans-serif;}
 .ftdd-pic-len{margin-left:auto;flex:none;font:600 13px/1.3 'Inter',sans-serif;color:#C9CFE6;}
 .ftdd-sheet .ftdd-pic-sm > p.ftdd-pic-h{font-size:15px !important;}
 /* Day 3's Reception Listening Activity: its task in cards (Listen, Analyze, Extract), and the challenge's two halves */
@@ -2730,9 +2731,6 @@ main.main-dash .dash-pair-pin .module-card .module-body{display:none;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{margin-top:auto;}
 main.main-dash .dash-pair-pin .module-card .mc-grid{grid-template-rows:auto !important;}
 /* a Drive file read in the slide (Day 1's Personal Injury overview): its preview, tall enough to read */
-/* 📝 an answer sheet on its slide: one block that scrolls in itself, so the slide stays one page */
-.ft-body .ftdd-lnsheet{max-height:max(360px, 58vh);overflow:auto;padding:2px 4px 8px;display:flex;flex-direction:column;gap:10px;text-align:left;}
-.ft-body .ftdd-lnsheet > *{flex-shrink:0;margin:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
 .ft-body .ftdd-embed{position:relative;width:100%;height:max(320px, 46vh);margin:10px 0;border:1.5px solid #9AA0AB;border-radius:10px;overflow:hidden;background:#F6F7FB;}
 /* the reading's section titles are the same navy bar with an orange edge as its steps (h3) */
 main.main-ftdd .ftdd-sheet h2.ftdd-pi-h{font:800 18px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 6px;letter-spacing:.01em;}

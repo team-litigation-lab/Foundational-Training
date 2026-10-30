@@ -49,5 +49,56 @@ export const ASSESS_KEYS = {
       e5: { pts: 5, essay: true, answer: "Treatment ($27,000) is over the 3P's $25,000 per-person limit, so the 3P's coverage won't pay it all: the CM would have the VA confirm the 3P's policy limits, open or notify the claim on the 1P's own UIM (and MedPay/PIP where there is any), and track the bills against the limits, so that the client's losses beyond the 3P's limit can be recovered from the 1P's own coverage." },
       e6: { pts: 5, essay: true, answer: "Compare each person's bills with the 3P's per-person bodily injury limit and the three together ($111,000) with the per-accident limit on the Dec Page: whatever is over a person's limit, or over the per-accident total, isn't covered by the 3P, so the coverage doesn't fully suit these expenses and the excess must come from other coverage (the 1P's UIM, MedPay) or the client." }
     }
+  },
+  // 📝 Day 3's Reception Listening Activity: the five Harbor & Pine practice calls (build/calls/pi-reception-activity.json),
+  // each logged on the platform (js/ft-listening.js "recact"): its 5 data points (1 point each), the obstacle (1 point) and
+  // the VA's response (an essay, 2 points); 40 points. source: the answers are the trainee's Call Listening log
+  // (listening:<id>.logs.recact[n][field]), item c<n>_<field>
+  "recact": {
+    title: "Reception Listening Activity: Harbor & Pine Calls",
+    source: "listening",
+    context: "a reception listening activity: the trainee listened to five practice calls to a personal injury law firm's front desk and logged each call's data points and its challenge",
+    items: {
+      // Call 1: The Missing Email
+      c1_caller: { pts: 1, answer: "Gloria Benton, existing client" },
+      c1_callback: { pts: 1, answer: "(555) 019-2047 (home)" },
+      c1_verified: { pts: 1, answer: "Yes: full name, DOB 07/05/1960 (she said 1950 first; the VA asked again), DOL 09/03/2026" },
+      c1_reason: { pts: 1, answer: "Never got the confirmation email for her appointment with Dr. Herrera, Bayview Orthopedics, Thu 11/12/2026 at 1:00 PM; the email on file was missing a dot" },
+      c1_action: { pts: 1, answer: "Gave her the clinic's address and phone; corrected email (g.benton60@mail.com) noted on the file; message to Mara Quintero (Case Manager) to resend the confirmation today" },
+      c1_obstacle: { pts: 1, answer: "Mixed-up details: An older client never got the email about the doctor's appointment her case manager set up, and gives the wrong birth year at first." },
+      c1_response: { pts: 2, essay: true, answer: "Didn't accept a birth year that didn't match: asked again instead of guessing, then found why the email never arrived and gave her the address on the call." },
+      // Call 2: Third Time Calling
+      c2_caller: { pts: 1, answer: "Andre Wallace, existing client" },
+      c2_callback: { pts: 1, answer: "(555) 012-5583, any time" },
+      c2_verified: { pts: 1, answer: "Yes: full name, DOB 02/15/1985 (read back, as he said it fast), DOL 07/22/2026" },
+      c2_reason: { pts: 1, answer: "His third call about the Letter of Protection for Gulf Coast Pain Center, which won't book his injection without it; the request is with Devin Shaw, due tomorrow" },
+      c2_action: { pts: 1, answer: "Tried a warm transfer to Devin Shaw (Records Coordinator, on another call); urgent message for a callback today; the repeat calls noted on the file" },
+      c2_obstacle: { pts: 1, answer: "A frustrated repeat caller: A client in pain calls again about the letter his pain clinic needs before it will book his injection." },
+      c2_response: { pts: 2, essay: true, answer: "Apologized once and acted: checked the file at once, tried to reach the person handling it, and passed on an urgent message with the whole story." },
+      // Call 3: Which Office?
+      c3_caller: { pts: 1, answer: "Kayla Jensen, front desk, Sun City Imaging (a medical provider)" },
+      c3_callback: { pts: 1, answer: "(555) 011-6630; the firm's fax confirmed: (555) 010-4410" },
+      c3_verified: { pts: 1, answer: "A provider, not the client: the patient named as Tomas Reyes; nothing about a file confirmed" },
+      c3_reason: { pts: 1, answer: "Faxing an MRI report; asked for the Brandon office's number (all offices' calls come to reception and all faxes go to the records department)" },
+      c3_action: { pts: 1, answer: "Confirmed the fax number; told her to fax it attention Devin Shaw (Records Coordinator) with the patient's name and DOB on the cover sheet; Devin told to watch for it" },
+      c3_obstacle: { pts: 1, answer: "An unclear request: An imaging centre's front desk wants a fax number for the firm's other office and doesn't say who the records are for." },
+      c3_response: { pts: 2, essay: true, answer: "Asked who was calling and what the fax was about before routing it, confirmed the number she had, and confirmed nothing about the patient." },
+      // Call 4: Just Confirming
+      c4_caller: { pts: 1, answer: "Nicole Avery, existing client" },
+      c4_callback: { pts: 1, answer: "(555) 013-9126 (confirmed as still current)" },
+      c4_verified: { pts: 1, answer: "Yes: full name, DOB 05/28/1983, DOL 04/09/2026" },
+      c4_reason: { pts: 1, answer: "To confirm her meeting with Atty. Celeste Harbor tomorrow, Thu 10/29/2026 at 4:00 PM, at the office" },
+      c4_action: { pts: 1, answer: "Confirmed the meeting from the calendar; the call noted on the file" },
+      c4_obstacle: { pts: 1, answer: "A short call: A client calls to confirm tomorrow's meeting with her attorney: a quick call where it's easy to skip a step." },
+      c4_response: { pts: 2, essay: true, answer: "Kept it quick without cutting corners: verified her before reading out the appointment, and checked the callback number on file." },
+      // Call 5: No Ride Tomorrow
+      c5_caller: { pts: 1, answer: "Darnell Pryce, existing client" },
+      c5_callback: { pts: 1, answer: "(555) 014-7751, taken before the transfer" },
+      c5_verified: { pts: 1, answer: "Yes: full name, DOB 03/13/1994, DOL 05/30/2026" },
+      c5_reason: { pts: 1, answer: "His veterans' shuttle can't take him to tomorrow's follow-up with Dr. Herrera, Bayview Orthopedics (10/29/2026, 10:30 AM), and he has no car; wants to reschedule" },
+      c5_action: { pts: 1, answer: "Warm transfer to Mara Quintero (Case Manager, ext. 610), briefed on the internal line: the verification, the appointment, the reason and the callback number" },
+      c5_obstacle: { pts: 1, answer: "Rescheduling and a warm transfer: A client whose usual ride fell through can't get to tomorrow's doctor's appointment and asks to reschedule." },
+      c5_response: { pts: 2, essay: true, answer: "Took the callback number before the hold, and briefed Mara fully so the client didn't have to tell his story twice." }
+    }
   }
 };

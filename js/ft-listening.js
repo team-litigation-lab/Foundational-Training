@@ -88,7 +88,7 @@ function setLive(id){
 }
 
 /* ---------- the trainee's record ---------- */
-const R = {rec: null, recId: null, set: null, open: {}, saving: {}};
+const R = {rec: null, recId: null, set: null, open: {}, saving: {}, draft: {}};
 function load(force){
   // (a trainer, with no trainee of their own, sees the page as a trainee would: an empty log, not saved)
   const id = state.traineeId; if(!id){ if(R.recId){ R.rec = null; R.recId = null; } R.rec = R.rec || {logs: {}}; return Promise.resolve(); }
@@ -109,6 +109,7 @@ async function saveRec(sid, n){
   await load();
   const log = Object.assign(readRec(sid, n), {at: new Date().toISOString()});
   (R.rec.logs[sid] = R.rec.logs[sid] || {})[n] = log;
+  fieldsOf(setOf(sid)).forEach(f => { delete R.draft[`ln_${sid}_${n}_${f[0]}`]; });
   R.saving[`${sid}|${n}`] = true; render();
   const ok = await sharedSet("listening:" + id, R.rec);
   R.saving[`${sid}|${n}`] = false;
@@ -118,18 +119,28 @@ async function saveRec(sid, n){
 }
 
 /* ---------- the page ---------- */
-function recHtml(s, r, next){
-  const key = `${s.id}|${r.n}`, log = logOf(s.id, r.n), ok = done(log, s), open = R.open[key] !== undefined ? R.open[key] : r.n === next;
+// (what was typed and not saved yet: kept when the pop-up is drawn again, js/ft-listening.js paintPop)
+const draftOf = (sid, n, f) => R.draft[`ln_${sid}_${n}_${f}`];
+// a field's grade, from 📝 Submit for Grading (trackerreview:<id>.assess.<set>.items.c<n>_<field>, worker.js /api/assess/grade)
+function markHtml(g){
+  if(!g) return "";
+  const cls = g.pending ? "" : g.ok ? "ok" : g.pts > 0 ? "part" : "no";
+  return `<span class="ln-mark-g ${cls}">${g.pending ? "⏳" : g.ok ? "✓" : g.pts > 0 ? "½" : "✗"}</span>${g.note ? `<span class="ln-gnote">${e(g.note)}</span>` : ""}`;
+}
+function recHtml(s, r, next, opt){
+  opt = opt || {};
+  const key = `${s.id}|${r.n}`, log = logOf(s.id, r.n), ok = done(log, s), open = opt.all || (R.open[key] !== undefined ? R.open[key] : r.n === next);
+  const val = f => { const d = draftOf(s.id, r.n, f[0]); return d !== undefined ? d : log[f[0]] || ""; }, gi = f => ((opt.graded || {}).items || {})[`c${r.n}_${f[0]}`];
   const FL = fieldsOf(s), missing = FL.filter(f => !filled(log, f)).map(f => f[1].replace(/^\d\.\s*|^\S+\s/, ""));
-  return `<div class="card ln-rec ${ok ? "ok" : ""}"><button class="ln-head" onclick="FTListen.toggle('${e(key)}')">
+  return `<div class="card ln-rec ${ok ? "ok" : ""}"><button class="ln-head" ${opt.all ? `type="button" tabindex="-1"` : `onclick="FTListen.toggle('${e(key)}')"`}>
       <span class="ln-mark">${ok ? "✓" : r.n}</span>
       <span><b>${e(r.title)}</b>${log.at ? `<small>Logged ${e(new Date(log.at).toLocaleDateString())}${ok ? "" : ` · still to fill in: ${e(missing.join(", "))}`}</small>` : `<small>Not logged yet</small>`}</span>
       ${r.url ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
       <span>${open ? "▾" : "▸"}</span></button>
-    ${open ? `<div class="ln-form">${r.audio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}">${e(f[1])}
-        ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === log[f[0]] ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
-          : f[2] === "area" ? `<textarea id="ln_${e(s.id)}_${r.n}_${f[0]}" rows="3" placeholder="${e(f[3])}">${e(log[f[0]] || "")}</textarea>`
-          : `<input id="ln_${e(s.id)}_${r.n}_${f[0]}" value="${e(log[f[0]] || "")}" placeholder="${e(f[3])}" autocomplete="off">`}</label>`).join("")}
+    ${open ? `<div class="ln-form">${r.audio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}"><span>${e(f[1])}${markHtml(gi(f))}</span>
+        ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === val(f) ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
+          : f[2] === "area" ? `<textarea id="ln_${e(s.id)}_${r.n}_${f[0]}" rows="3" placeholder="${e(f[3])}">${e(val(f))}</textarea>`
+          : `<input id="ln_${e(s.id)}_${r.n}_${f[0]}" value="${e(val(f))}" placeholder="${e(f[3])}" autocomplete="off">`}</label>`).join("")}
       <div class="w ln-act"><button class="btn btn-navy btn-sm" ${R.saving[key] ? "disabled" : ""} onclick="FTListen.save('${e(s.id)}',${r.n})">${R.saving[key] ? "Saving…" : "💾 Save this log"}</button></div></div>` : ""}</div>`;
 }
 // 📝 an activity's answer sheet: its progress, then a card per call with its player and its form (the page, and the
@@ -166,6 +177,9 @@ window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["listening"]
 window.EXTRA_ROUTE_LABELS = Object.assign({}, window.EXTRA_ROUTE_LABELS || {}, {listening: "Call Listening Log"});
 const __render = window.render;
 window.render = function(){
+  const out = renderLn.apply(this, arguments); paintPop(); return out;
+};
+function renderLn(){
   if(state.view !== "listening") return __render.apply(this, arguments);
   // (a trainer, with no trainee of their own, sees the 👁 Trainee view; someone not signed in goes to the dashboard)
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
@@ -173,16 +187,78 @@ window.render = function(){
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ln">${R.set === "recact" && window.FTDayDecks ? `<a class="back-link" onclick="FTDayDecks.slide(3, 's1d')">&larr; Back to the 5 practice calls</a>` : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`}${renderPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
-};
+}
+/* ---------- 📝 the activity's answer sheet in a pop-up, over the deck (Day 3's calls slide: build/day-decks.cjs PI_CALLS_HTML) ----------
+   Every call open to edit; 💾 each call saves to the log as on the page, and 📝 Submit for Grading saves them all, then has
+   worker.js grade them against the key (/api/assess/grade, "recact" in assess-keys.js: the data points and the obstacle
+   by the AI against the key, the VA's response out of 2). The grade goes to trackerreview:<id>.assess.recact and 🏅 My
+   Performance; the pop-up marks each field with it. */
+const POP = {sid: null, sending: false, review: null};
+const gradedOf = sid => ((POP.review || {}).assess || {})[sid] || null;
+function popHtml(){
+  if(!R.rec || !X.data) return `<div class="ln-pop-b"><div class="card" style="padding:24px;">Loading…</div></div>`;
+  const cur = setLive(POP.sid), g = gradedOf(POP.sid), k = countDone(R.rec, cur);
+  return `<div class="ln-pop-h"><div><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h2>📝 Answer Sheet</h2></div>
+      <button type="button" class="ln-pop-x" onclick="FTListen.close()" title="Close (Esc)">✕</button></div>
+    <div class="ln-pop-b">
+      <p class="ln-pop-lead">For each call: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). 💾 Save each call as you go, then 📝 Submit for Grading.</p>
+      ${g ? `<p class="ln-pop-score">✓ Graded ${e(g.when || "")}: <b>${g.score} of ${g.max}</b> (${g.pct}%)${g.pending ? " · your trainer grades the rest" : ""}. Correct your answers and submit again any time; your score is on 🏅 My Performance.</p>` : ""}
+      ${cur.recs.map(r => recHtml(cur, r, null, {all: true, graded: g})).join("")}</div>
+    <div class="ln-pop-f"><span>${k} of ${cur.n} calls logged</span>
+      <button type="button" class="btn btn-ghost" onclick="FTListen.close()">Close</button>
+      <button type="button" class="btn btn-primary" onclick="FTListen.submit()"${POP.sending ? " disabled" : ""}>${POP.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>`;
+}
+function paintPop(){
+  let box = document.getElementById("lnPop");
+  if(!POP.sid || state.view !== "daydeck"){ if(box) box.remove(); POP.sid = null; return; }
+  // (what was typed and not saved is kept, and so is where the sheet was scrolled to)
+  let top = 0;
+  if(box){ box.querySelectorAll("input[id^=ln_], select[id^=ln_], textarea[id^=ln_]").forEach(el => { R.draft[el.id] = el.value; });
+    const b = box.querySelector(".ln-pop-b"); top = b ? b.scrollTop : 0; }
+  else { box = document.createElement("div"); box.id = "lnPop"; box.className = "ln-pop";
+    box.addEventListener("click", ev => { if(ev.target === box) FTListen.close(); }); document.body.appendChild(box); }
+  box.innerHTML = `<div class="ln-pop-in" role="dialog" aria-modal="true" aria-label="Reception Listening Activity: Answer Sheet">${popHtml()}</div>`;
+  const b = box.querySelector(".ln-pop-b"); if(b) b.scrollTop = top;
+}
+// (while it is open, ← / → don't turn the slide behind it, and Esc closes it)
+document.addEventListener("keydown", ev => {
+  if(!POP.sid) return;
+  if(ev.key === "Escape"){ ev.preventDefault(); FTListen.close(); }
+  else if(ev.key === "ArrowLeft" || ev.key === "ArrowRight") ev.stopImmediatePropagation();
+}, true);
+async function saveAll(sid){
+  const s = setLive(sid); R.rec.logs[sid] = R.rec.logs[sid] || {};
+  s.recs.forEach(r => { const log = readRec(sid, r.n);
+    if(Object.values(log).some(Boolean) || R.rec.logs[sid][r.n]) R.rec.logs[sid][r.n] = Object.assign(log, {at: new Date().toISOString()});
+    fieldsOf(s).forEach(f => { delete R.draft[`ln_${sid}_${r.n}_${f[0]}`]; }); });
+  return sharedSet("listening:" + state.traineeId, R.rec);
+}
+async function submitPop(){
+  const sid = POP.sid; if(!sid || POP.sending) return;
+  if(!state.traineeId || state.isAdmin || state.adminPreview){ toast("👁 Trainee view: trainees submit their own answers for grading."); return; }
+  await load();
+  const s = setLive(sid), want = s.n * fieldsOf(s).length;
+  const left = want - s.recs.reduce((t, r) => t + fieldsOf(s).filter(f => String((document.getElementById(`ln_${sid}_${r.n}_${f[0]}`) || {}).value || "").trim()).length, 0);
+  if(left > 0 && !confirm(`${left} of ${want} answers are still blank. Submit for grading anyway?`)) return;
+  POP.sending = true; paintPop();
+  try{
+    if(await saveAll(sid) === false) throw new Error("save");
+    const r = await authFetch("/api/assess/grade", {id: state.traineeId, doc: sid}), j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.error || "send");
+    POP.review = (await sharedGet("trackerreview:" + state.traineeId)) || POP.review;
+    const g = gradedOf(sid); toast(g ? `✓ Graded: ${g.score} of ${g.max} (${g.pct}%). Your score is on 🏅 My Performance.` : "✓ Submitted for grading.");
+  }catch(err){ toast(err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
+  POP.sending = false; render();
+}
 window.FTListen = {
   save: saveRec, sets: SETS, setLive, done,
   // the trainer's titles and links, for the Activity deck's Call Listening slide (js/ft-day-decks.js listenSlide)
   loadSets, ready: () => !!X.data,
   open(sid){ if(sid) R.set = sid; goto("listening"); },
-  // the answer sheet drawn on a deck's slide (Loading… until the log and the sets are read; they draw the deck again)
-  sheet(sid){ if(!state.traineeId && !state.isAdmin && !state.adminPreview) return "";
-    if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
-    return actSheet(setLive(sid)); },
+  // 📝 the activity's answer sheet in a pop-up over the deck
+  pop(sid){ POP.sid = sid || "recact"; load(); loadSets(); paintPop();
+    if(state.traineeId) sharedGet("trackerreview:" + state.traineeId).then(v => { POP.review = v || {}; paintPop(); }).catch(() => {}); },
+  close(){ POP.sid = null; paintPop(); }, submit: submitPop,
   set(sid){ R.set = sid; render(); },
   toggle(key){ const el = document.querySelector(`.ln-rec [id^="ln_${key.replace("|", "_")}_"]`); R.open[key] = !el; render(); },
   state: () => R, reload: () => { X.at = 0; return Promise.all([load(true), loadSets(true)]); }
@@ -293,6 +369,20 @@ main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk on
 .ln-atbl td.ok{color:#1E6B40;font-weight:700;} .ln-atbl td.mid{color:#8A5A00;font-weight:700;}
 .ln-alog{padding:8px 0;border-top:1px solid var(--line,#eceef2);} .ln-alog p{margin:3px 0;} .ln-alog em{color:var(--ink-soft);font-style:normal;}
 .ln-ok{color:#1E6B40;font-weight:700;margin-left:8px;} .ln-part{color:#8A5A00;font-weight:700;margin-left:8px;}
+.ln-pop{position:fixed;inset:0;z-index:9000;background:rgba(14,18,38,.62);display:flex;align-items:center;justify-content:center;padding:20px;}
+.ln-pop-in{width:min(980px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--bg,#F4F6FB);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);}
+.ln-pop-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;}
+.ln-pop-h h2{margin:2px 0 0;color:#fff;font:800 21px/1.3 'Poppins','Inter',sans-serif;} .ln-pop-h .lp-eyebrow{margin:0;color:#F6B98A;}
+.ln-pop-x{border:0;background:rgba(255,255,255,.12);color:#fff;width:36px;height:36px;border-radius:50%;font-size:17px;cursor:pointer;} .ln-pop-x:hover{background:rgba(255,255,255,.24);}
+.ln-pop-b{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;} .ln-pop-b > *{flex-shrink:0;margin:0;}
+.ln-pop-lead{color:var(--ink);font-size:15px;line-height:1.5;} .ln-pop-score{padding:10px 12px;border-radius:10px;background:#E3F4EA;color:#1E6B40;font-size:14.5px;}
+.ln-pop-f{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 20px;border-top:1px solid var(--line,#d6d9e0);background:var(--card,#fff);}
+.ln-pop-f > span{margin-right:auto;color:var(--ink-soft);font-size:14px;}
+.ln-pop .ln-head{cursor:default;} .ln-pop .ln-head > span:last-child{display:none;}
+.ln-form label > span{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;}
+.ln-mark-g{font-weight:800;} .ln-mark-g.ok{color:var(--success,#1E6B40);} .ln-mark-g.no{color:var(--danger,#C0392B);} .ln-mark-g.part{color:#B7791F;}
+.ln-gnote{font-weight:400;color:var(--ink-soft);font-size:12.5px;}
+@media (max-width:720px){ .ln-pop{padding:0;} .ln-pop-in{max-height:100vh;height:100%;border-radius:0;} }
 @media (max-width:720px){ .ln-form{grid-template-columns:1fr;} .ln-head{grid-template-columns:30px 1fr 18px;} .ln-head .btn{grid-column:1/-1;justify-self:start;} .ln-aedit{grid-template-columns:1fr;} }
 `; document.head.appendChild(st); })();
 })();
