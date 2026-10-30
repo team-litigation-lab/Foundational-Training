@@ -1352,14 +1352,14 @@ const LESSON_CARDS = {
       {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "watch", d: 3, s: "s2"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
       "The Call Intake & Data Extraction worksheet and its naming convention: on ✍️ Knowledge Check"],
-    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
+    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   4: {days: [4], focus: "Handling Reception Calls",
     rows: [
       {t: "Training Video Viewing", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet and hit 📤 Submit", k: "watch", d: 4, s: "s2"},
       {t: "Mock Call Preparation", sub: "The Call Simulator, the Ring Channel and the CMS · how the one-on-one runs and its fourteen metrics", k: "interactive", d: 4, s: "s2b"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
-    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
+    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
