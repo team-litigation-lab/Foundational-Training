@@ -32,7 +32,7 @@ from make_lesson import title
 
 DECKS = {
     "vae": {"id": 1, "var": "DAY1", "file": "lesson01.js", "title": "Virtual Assistant Essentials",
-            "video": "https://drive.google.com/file/d/1aMGZdIwGh3uY4TdsHFomNzkgK4kRdiNr/view",
+            "video": "https://drive.google.com/file/d/152wPYUNKfDbtAb7bFGDF64e6ETvBfB5p/view",
             "pdf": "https://drive.google.com/file/d/1Gq1eF0nA0wRreiMOS9VGphw721JHH3rz/view",
             "about": 'the "I. Virtual Assistant Essentials" deck (Canva design DAGtQfkdZeg)',
             # a heading the largest-text rule gets wrong (the page's section label sits at the same size)

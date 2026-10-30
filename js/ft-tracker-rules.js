@@ -168,6 +168,44 @@
     if((m = t.match(/^(?:[A-Za-z]+,?\s+)?([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,?\s+(\d{4}))?$/)) && MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) >= 0) return out(m[3] || year, MONTHS.indexOf(m[1].slice(0, 3).toLowerCase()) + 1, +m[2]);
     return "";
   }
+  /* 🧪 A daily Typing or Spelling Test screenshot in the trainee's Drive folder, by its file name: the guide's
+     "Typing Test [date taken][AM/PM]" (e.g. "Typing Test 10/30/2026 AM.png", "Spelling Test [Oct 30][AM]",
+     "typing_test_2026-10-30_pm.jpg"). Returns {kind: "typing"|"spelling", date, slot: "AM"|"PM", up, named} or null:
+     a part the name leaves out comes from when the file was uploaded (Eastern time, the shift's), and up is the
+     upload's own day, so a screenshot uploaded after the day it is for counts as made up. */
+  const SHOT_TZ = "America/New_York";
+  function etParts(iso){
+    const d = new Date(iso); if(isNaN(d)) return null;
+    const p = new Intl.DateTimeFormat("en-CA", {timeZone: SHOT_TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23"}).formatToParts(d);
+    const g = (t) => (p.find((x) => x.type === t) || {}).value;
+    return {date: `${g("year")}-${g("month")}-${g("day")}`, hour: +g("hour")};
+  }
+  function parseTestShot(name, created){
+    const raw = String(name || ""), low = raw.toLowerCase();
+    const typing = /typing|wpm/.test(low), spelling = /spell/.test(low);
+    if(typing === spelling) return null;
+    if(/\bsample\b|\btemplate\b/.test(low)) return null;
+    const up = etParts(created), year = (up ? up.date : ptDate()).slice(0, 4);
+    // the name without its extension and the test's own words, so their letters and digits aren't read as a date
+    const rest = low.replace(/\.(png|jpe?g|gif|webp|heic|bmp|tiff?|pdf)$/, "").replace(/typing|spelling|spell|test|wpm|screenshot|screen shot/g, " ");
+    const ok = (y, m, d) => m >= 1 && m <= 12 && d >= 1 && d <= 31 ? `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` : "";
+    const yr = y => !y ? year : y.length === 2 ? "20" + y : y;
+    let m, date = "";
+    if((m = rest.match(/(\d{4})[-_.\/ ](\d{1,2})[-_.\/ ](\d{1,2})(?!\d)/))) date = ok(m[1], +m[2], +m[3]);
+    // month/day with a / - . or _ between, else with spaces ("Typing Test 10 30 AM"); the guide's dates are month/day, and a
+    // first number over 12 can only be a day
+    for(const sep of ["[-_.\\/]", "[-_.\\/ ]"]){
+      if(date || !(m = rest.match(new RegExp(`(?:^|\\D)(\\d{1,2})${sep}(\\d{1,2})(?:${sep}(\\d{4}|\\d{2}))?(?!\\d)`)))) continue;
+      date = +m[1] > 12 && +m[2] <= 12 ? ok(yr(m[3]), +m[2], +m[1]) : ok(yr(m[3]), +m[1], +m[2]);
+    }
+    if(!date && (m = rest.match(/(?:^|\D)(\d{2})(\d{2})(\d{4}|\d{2})(?!\d)/))) date = ok(yr(m[3]), +m[1], +m[2]);
+    if(!date && (m = rest.match(/([a-z]{3,9})\.?[\s_-]*(\d{1,2})(?:st|nd|rd|th)?(?:,?[\s_-]*(\d{4}))?(?!\d)/)) && MONTHS.indexOf(m[1].slice(0, 3)) >= 0) date = ok(yr(m[3]), MONTHS.indexOf(m[1].slice(0, 3)) + 1, +m[2]);
+    if(!date && (m = rest.match(/(?:^|\D)(\d{1,2})(?:st|nd|rd|th)?[\s_-]*([a-z]{3,9})\.?(?:,?[\s_-]*(\d{4}))?/)) && MONTHS.indexOf(m[2].slice(0, 3)) >= 0) date = ok(yr(m[3]), MONTHS.indexOf(m[2].slice(0, 3)) + 1, +m[1]);
+    const s = rest.match(/(?:^|[^a-z])(am|pm)(?![a-z])/) || rest.match(/(morning)|(afternoon|end of shift|eod)/);
+    const slot = s ? (/^(am|morning)$/.test(s[1] || "") ? "AM" : "PM") : up ? (up.hour < 12 ? "AM" : "PM") : "";
+    if(!date && !up) return null;
+    return {kind: typing ? "typing" : "spelling", date: date || up.date, slot: slot || "AM", up: up ? up.date : "", named: !!date};
+  }
   // The trainee's Daily Task Tracker sheet (the LSH sample's layout) → the workbook the rules check.
   // The header row is the one with "Task Details"; the Daily Notes columns are the dated headers between
   // "Accountable VA" and "VA Notes"; "⬇ FOR COMPLETION ⬇" / "RECURRING" / "COMPLETED" rows start the sections.
@@ -228,6 +266,6 @@
     return {pct, found: entries.length, total: (topics || []).length, entries};
   }
 
-  root.FTTrackerRules = {MONITOR_TOPICS, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
+  root.FTTrackerRules = {MONITOR_TOPICS, googleFile, parseCsv, isoDate, fromSheetCsv, gradeMonitorText, parseTestShot, TZ, STATUSES, TASK_TYPES, PERIODS, NATURES, DEADLINES, SECTIONS, DEFAULT_CRITERIA,
     ptDate, isWeekday, fmtDate, rid, taskRow, template, isTask, openOn, RULES, startDate, checkDay, reviewPrompt};
 })(typeof globalThis !== "undefined" ? globalThis : this);
