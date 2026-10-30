@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    Day 5's Attorney Calendar Management Activity: the trainee puts ten of the attorney's appointments (with the court
    appearance's two travel blocks and the networking dinner's travel, arrival and overnight stay: 18 events) in Google
-   Calendar. (It used to end with 19 screenshots uploaded to the trainee's which the trainer compared with the
+   Calendar. (It used to end with 19 screenshots uploaded to the trainee's folder, which the trainer compared with the
    activity by eye: no screenshots are asked for or scored any more.) The trainee records what each event holds here (#/calcheck), and every field is checked as they type against the activity's answer key:
      • the title (it must name the event; case, spacing and dashes don't matter);
      • the start and end dates and times, exactly (or the same moment in Pacific Time, the attorney's: see TZ_RULE), and

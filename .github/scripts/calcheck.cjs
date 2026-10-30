@@ -2,7 +2,7 @@
 //   activity's answer key entered in full scores 100%; a wrong time zone, a wrong time, a missing guest and a wrong
 //   reminder each fail exactly that field of that event; the accepted alternatives pass (Phoenix for MST, Panama for EST,
 //   the same moment typed in Pacific, 1 day = 24 hours, 1 hour = 60 minutes, an all-day or overnight stay, titles in any case or dashes); events with no
-//   guests or reminder aren't marked down; the folder lookup matches screenshots by number and name; a trainee's draft
+//   guests or reminder aren't marked down; no screenshots or folder lookup are asked for; a trainee's draft
 //   saves as they type and comes back after a reload, is sent to the trainer, shows on My Performance and the trainer's
 //   📅 Calendar Activity tab; the Day 5 slide and the Practice Lab point to it; the page fits a phone; the worker keeps
 //   calcheck:<id> the trainee's own and in shape. Also: a travel block's reminder counts on either of its events, a
