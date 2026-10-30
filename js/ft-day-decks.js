@@ -483,7 +483,7 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   // Day 7: the four intake recordings, kept on the platform (ft/day7/audio), each a card that plays in the pop-up player
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
-    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Intake call"}))};
+    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Sample Intake Mock Call"}))};
 const LISTEN_BARE = [7];
 // a day's Call Listening slide headed by its name instead of the instructions (Day 3: its card row's name)
 const LISTEN_LEAD = {3: "Sample Call Recordings"};
@@ -494,7 +494,7 @@ function listenCards(cards, folder, recs){
   cards = cards.map((c, i) => { const u = ((recs || [])[i] || {}).url || "";
     return c.id || c.src || !u ? c : Object.assign({}, c, {id: driveId(u), src: driveId(u) ? "" : audioUrl(u)}); });
   // 🎧 recordings on the platform play in the pop-up player, a card each
-  if(cards.every(c => c.pop && c.src)) return `<div class="ftdd-acards">${cards.map((c, i) => `<button type="button" class="ftdd-acard" data-audio="${e(c.src)}" data-title="${e(c.t)}">` +
+  if(cards.every(c => c.pop && c.src)) return `<div class="ftdd-acards${cards.length === 4 ? " ftdd-acards-2x2" : ""}">${cards.map((c, i) => `<button type="button" class="ftdd-acard" data-audio="${e(c.src)}" data-title="${e(c.t)}">` +
     `<span class="ftdd-acard-ic">🎧</span><b>${e(c.t)}</b><span class="ftdd-acard-tag">${e(c.kind)} ${i + 1}</span><small>${e(c.len || "")} · ▶ Play</small></button>`).join("")}</div>`;
   // (numbered within their kind: Sample call 1–10)
   return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card${c.id || c.src ? " is-live" : ""}"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
@@ -2909,6 +2909,13 @@ main.main-ftdd .ftdd-sheet a.ftdd-sop-dl, main.main-ftdd .ftdd-sheet a.ftdd-sop-
 .ftdd-acard-ic{font-size:22px;line-height:1;} .ft-body .ftdd-acard b{font:700 16px/1.3 'Inter',sans-serif;}
 .ft-body .ftdd-acard small{font:700 13px/1.2 'Inter',sans-serif;color:#C2410C;}
 .ft-body .ftdd-acard-tag{font:600 13px/1.3 'Inter',sans-serif;color:#5B6178;}
+/* four recordings (Day 7's intake calls): two by two, larger, the sublabel dark enough to read on white */
+.ftdd-acards.ftdd-acards-2x2{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:100%;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 button.ftdd-acard{padding:16px 18px;gap:8px;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard b{font-size:20px;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard-tag{font-size:16px;font-weight:700;color:#2E3450;}
+main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard small{font-size:16px;color:#9A3412;}
+
 /* (the Call Listening slide's recordings: bigger cards, white on navy, five to a row) */
 .ftdd-listen .ftdd-acards{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin:14px 0 6px;}
 .ft-body .ftdd-listen button.ftdd-acard{background:#1E2340;border:2px solid #1E2340;border-left:6px solid #E8590C;padding:18px 18px 16px;gap:10px;min-height:150px;color:#fff;box-shadow:0 6px 16px rgba(30,35,64,.28);}
