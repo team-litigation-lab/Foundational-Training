@@ -382,6 +382,16 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     // (Esc closes it; the slide is as it was)
     await page.keyboard.press('Escape'); await page.waitForTimeout(300);
     if (await page.$('#ftmsModal')) fail('Esc doesn\'t close the scoresheet pop-up');
+    // the trainee sees their scored sheet, read only (their scores and the remarks), and is told once that it is scored
+    const mine = await page.evaluate(async id => { const was = { a: state.isAdmin, p: state.adminPreview, t: state.traineeId };
+      state.isAdmin = false; state.adminPreview = false; state.traineeId = id; try { localStorage.removeItem('ft-scored:' + id + ':reception-live'); } catch (e) {}
+      FTMetrics.view('reception'); await new Promise(r => setTimeout(r, 1500));
+      const box = document.createElement('div'); box.innerHTML = FTMetrics.view('reception');
+      const out = { cells: [...box.querySelectorAll('tbody tr:not(.ftms-avg) td:nth-child(2)')].map(td => td.textContent), remark: (box.querySelector('tbody tr td:nth-child(3)') || {}).textContent,
+        inputs: box.querySelectorAll('input, select').length, mine: (box.querySelector('.ftms-mine') || {}).textContent || '', toast: document.body.innerText.includes('Your trainer scored your') };
+      state.isAdmin = was.a; state.adminPreview = was.p; state.traineeId = was.t; return out; }, me);
+    if (mine.cells.length !== 14 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
+      fail(`the trainee should see their scored sheet, read only, and be told it is scored: ${JSON.stringify(mine)}`);
   }
   await page.evaluate(() => { FTMetrics.close(); state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
