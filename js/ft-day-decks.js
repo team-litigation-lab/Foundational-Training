@@ -650,9 +650,8 @@ function dividerSlide(n){
 }
 function agendaHtml(d, info){
   const rows = slidesOf(d).map((s, i) => [s, i]).filter(([s]) => !s.agenda && !s.divider).map(([s, i], j) => {
-    const k = kindOf(s, visual(slideSrc(d.day, s)));
     return `<li><button type="button" onclick="FTDayDecks.to(${i})"><span class="ftdd-ag-n">${String(j + 1).padStart(2, "0")}</span>
-      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b><small>${k.ic} ${k.label}</small></span></button></li>`;
+      <span class="ftdd-ag-t"><b>${e(s.h.replace(/^(AM|PM|Entire Day)\s*:\s*/i, ""))}</b></span></button></li>`;
   }).join("");
   const all = d.slides.map(s => slideSrc(d.day, s)).join(" ");
   const count = re => (all.match(re) || []).length;
@@ -1707,7 +1706,7 @@ function dayCard(n, ex){
   const rows = standardRows(n, c, lid, first, title, cardRows(c, ex).filter(r => rowDay(c, r) === n));
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
+      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b></span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
   const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
