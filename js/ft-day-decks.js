@@ -3081,6 +3081,12 @@ main.main-ftdd .ftdd-sheet .ftdd-step-t{text-align:left;}
    (Day 8's ✏️ Make my editable copy had blue underlined type on its navy) */
 main.main-ftdd .ftdd-sheet a.btn{text-decoration:none !important;}
 main.main-ftdd .ftdd-sheet a.btn.btn-navy{color:#fff !important;}
+/* Day 8's additional intake documents (js/ft-intake.js .ftis-docs): a card is a link, but reads as a card, its name dark,
+   bold and larger, not the text's blue underline */
+main.main-ftdd .ftdd-sheet a.ftis-doc{text-decoration:none !important;color:#0B0D1A !important;}
+main.main-ftdd .ftdd-sheet a.ftis-doc .ftis-doc-t{font-size:16px;font-weight:800;color:#0B0D1A;}
+main.main-ftdd .ftdd-sheet a.ftis-doc:hover{border-color:#E8590C;}
+main.main-ftdd .ftdd-sheet p.ftis-docs-lead{font-size:22px !important;font-weight:800;color:#0B0D1A;margin-bottom:10px;}
 /* the trainee's packet and mock call placeholders (js/ft-intake.js) in darker type */
 main.main-ftdd .ftdd-sheet .ftis-pk-ph b{font-size:18px;color:#0B0D1A;}
 main.main-ftdd .ftdd-sheet .ftis-pk-ph small{font-size:15.5px;font-weight:600;color:#2E3450;}

@@ -234,12 +234,13 @@ function wsubHtml(){
 function docsHtml(el){
   if(!K.set) return `<p class="ftis-wait">Loading the documents…</p>`;
   const links = (K.set.docs || []), folder = el.getAttribute("data-folder") || DFOLDER;
-  // (the slide's line about them is drawn with them, so it never stands on a page of its own)
-  return `<p class="ftis-docs-lead">Here are additional intake documents for your future reference. Kindly check these ADDITIONAL intake documents which are NOT INCLUDED in the training video. Click a document to see it bigger.</p>
+  // (the slide's line about them is drawn with them, so it never stands on a page of its own; each card is the document's
+  // preview over its name, bigger on a click)
+  return `<p class="ftis-docs-lead">Additional Intake Documents for your reference.</p>
     <div class="ftis-docs-g">${DOCS.map((t, i) => { const u = String(links[i] || "").trim(), src = u && embed(u);
-    return `<a class="viewer-link ftis-doc" data-kind="doc" data-title="${e(i + 1 + ". " + t)}" href="${e(u || folder)}">
-      <span class="ftis-doc-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-doc-ic">📄</span>`}<span class="ftis-doc-zoom">🔍 View bigger</span></span>
-      <span class="ftis-doc-t"><span class="ftis-doc-n">${i + 1}</span>${e(t)}</span></a>`; }).join("")}</div>`;
+    return `<a class="viewer-link ftis-doc" data-kind="doc" data-title="${e(t)}" href="${e(u || folder)}">
+      <span class="ftis-doc-pic">${src ? `<iframe loading="lazy" tabindex="-1" aria-hidden="true" src="${e(src)}"></iframe>` : `<span class="ftis-doc-ic">📄</span>`}</span>
+      <span class="ftis-doc-t">${e(t)}</span></a>`; }).join("")}</div>`;
 }
 // 📋 the sample intake forms: shown in the slide for reference, bigger on a click
 function formsHtml(el){
@@ -447,15 +448,16 @@ window.FTIntake = {
 .ftis-pk-n{flex:0 0 auto;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#262B45;color:#fff;font-weight:800;font-size:17px;}
 .ftis-pk-act,.ftis-sh-act{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;} .ftis-pk-rn{margin:6px 0;font-size:14px;}
 .ftis-sheet{margin:8px 0 2px;}
-.ftis-docs-lead{margin:0 0 6px;} .ftis-docs-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:8px 0;}
-.ftis-doc{display:flex;flex-direction:column;background:#fff;border:1px solid #DCE0EA;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;transition:box-shadow .15s,transform .15s;}
+/* (seven to a row: Day 8's fourteen documents in two rows) */
+.ftis-docs-lead{margin:0 0 6px;}
+.ftis-docs-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px;margin:8px 0;}
+@media(max-width:900px){.ftis-docs-g{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.ftis-doc{display:flex;flex-direction:column;background:#fff;border:1.5px solid #9AA0AB;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;transition:box-shadow .15s,transform .15s;}
 .ftis-doc:hover{box-shadow:0 8px 22px -10px rgba(38,43,69,.45);transform:translateY(-2px);}
-.ftis-doc-pic{position:relative;display:block;height:120px;background:#F6F7FB;overflow:hidden;}
+.ftis-doc-pic{position:relative;display:block;aspect-ratio:1/1;background:#F6F7FB;overflow:hidden;}
 .ftis-doc-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}
 .ftis-doc-ic{display:grid;place-items:center;height:100%;font-size:42px;}
-.ftis-doc-zoom{position:absolute;right:6px;bottom:6px;background:rgba(38,43,69,.88);color:#fff;font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;}
-.ftis-doc-t{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;font-size:13px;font-weight:600;line-height:1.35;}
-.ftis-doc-n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#DB8437;color:#fff;font-size:11.5px;font-weight:800;}
+.ftis-doc-t{display:block;padding:8px 8px 10px;font:800 15px/1.3 'Inter',sans-serif;color:#0B0D1A;text-align:center;border-top:1px solid #DCE0EA;}
 .ftis-form{display:block;background:#fff;border:1px solid #DCE0EA;border-left:5px solid #DB8437;border-radius:12px;overflow:hidden;text-decoration:none;color:#1B1E2E;margin:8px 0;}
 .ftis-form-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;} .ftis-form-h b{color:#262B45;font-size:15px;} .ftis-form-h small{color:#B5651F;font-weight:700;}
 .ftis-form-pic{display:block;height:max(150px, calc(var(--ftdd-room, 70vh) - 280px));background:#F6F7FB;} .ftis-form-pic iframe{width:100%;height:100%;border:0;pointer-events:none;}

@@ -948,7 +948,9 @@ const ROWS = {
         x => { const re = /(<p>Watch this video presentation about the Intake Packet and the Intake Documents\.<\/p>)\n(<p><a class="viewer-link" data-kind="video" data-title=")The Intake Packet and the Intake Documents("[^\n]*<\/p>)\n/;
           if(!re.test(x)) throw new Error("Day 8's Intake Packet video is no longer where the build looks for it");
           return x.replace(re, '<div class="ftdd-vside">\n$2The Intake Packet and the Intake Documents (MVA Cases)$3\n$1\n</div>\n'); }]},
-      {id: "s1c", h: "AM: Other Intake Documents", pre: "<p>Here are additional intake documents for your reference. They are not in the training video.</p>\n", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]]},
+      {id: "s1c", h: "AM: Other Intake Documents", parts: [[SLOT(8, "s1-2"), "<p><b>1. CMS Demonstration</b></p>"]],
+        // (the day file's page break before the documents was Topic 2's: here they open the slide)
+        fix: [['<div class="ftdd-pgbreak"></div>\n<div class="ftis-docs"', '<div class="ftis-docs"']]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
       {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
