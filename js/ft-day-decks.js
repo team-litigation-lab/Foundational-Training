@@ -624,10 +624,11 @@ function handoutsSlide(h){
 function launchSlide(s){
   const c = cardOf(lessonOfDay(DD.day)), r = s.launch;
   if(/ftVideoOrAsk/.test(r.run || "") && HANDOUTS[DD.day]) return handoutsSlide(HANDOUTS[DD.day]);
-  // 🎬 a stop with play: its lesson's AI discussion video, played on the slide itself (every lesson's first day)
+  // 🎬 a stop with play: its lesson's AI discussion video, played on the slide itself (Day 3)
   if(r.play != null){ const d = (typeof DAYS !== "undefined" ? DAYS : []).find(x => x.id === Number(r.play)), src = d && d.video && typeof root.lvEmbedUrl === "function" ? root.lvEmbedUrl(d.video) : "";
     if(src) return `<div class="ftdd-inline is-video is-bare"><div class="ftdd-embed ftdd-embed-player"><iframe src="${e(src)}" title="${e(r.t)}" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>`; }
-  // (a lesson with no video to play: where its video is)
+  // 🎬 otherwise the lesson's AI discussion video is not on the decks: it opens only from its lesson card's 🎬 Video on 📚 Dashboard,
+  // once the trainer unlocks it at the end of the day
   if(/ftVideoOrAsk/.test(r.run || "")) return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     <p class="ftdd-dv-sub">The AI discussion video opens from its lesson card’s 🎬 Video on 📚 Dashboard, once your trainer unlocks it at the end of the day.</p></div>`;
   const label = r.go === "lesson" ? "▶ Start Training" : /toKC/.test(r.run || "") ? "✍️ Knowledge Check →" : /ftVideoOrAsk/.test(r.run || "") ? "🎬 Open the video" : "Open →";
@@ -1342,7 +1343,7 @@ const LESSON_CARDS = {
       // (the readings open once the Common Terms tasks' 📤 Submit, on their slide, is in: js/ft-buffer.js ACTS["2:s2b"])
       {t: "Personal Injury Readings", sub: "Update items #5–7 on your Monitoring Sheet and hit 📤 Submit · then read both while your batch finishes", k: "read", d: 2, s: "s2b", lead: true},
       // (the day's Handouts / Video stop: the breakout's four handouts, HANDOUTS below; the lesson's AI discussion video is
-      // its own stop after them, standardRows. Then ✍️ Process Questions: the Classroom Activity slide
+      // its 📚 Dashboard lesson card's 🎬 Video, not on the deck. Then ✍️ Process Questions: the Classroom Activity slide
       // and the Escalation Handling Exercise are off the deck, build/day-decks.cjs SKIP)
       {t: "Digital Handouts", time: "PM", sub: "Breakout Session (Group Activity) · the four digital handouts open here", k: "watch", run: "ftVideoOrAsk(2)"},
       // (a classroom activity, not homework: before the day's ✍️ Process Questions)
@@ -1357,7 +1358,8 @@ const LESSON_CARDS = {
       // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
       {t: "PI Workflow / Reception Training", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
       {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
-      // (no Digital Handouts stop: the day has no handouts; 🎬 the AI discussion video is its own stop, standardRows)
+      // (no Digital Handouts stop: the day has no handouts; 🎬 the lesson's AI discussion video plays on its own slide, no request)
+      {t: "AI Discussion Video", sub: "Personal Injury Process Flow · watch it on the slide", k: "watch", run: "ftOpenVideo(3)", play: 3},
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
@@ -1387,7 +1389,7 @@ const LESSON_CARDS = {
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
-      // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; the AI video is its own stop after it)
+      // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; the AI video is on 📚 Dashboard)
       {t: "Breakout Session: Intake Specialist Best Practices", sub: "Group activity · the three digital handouts", k: "interactive", run: "ftVideoOrAsk(6)", day: 7},
       {t: "Call Listening on the Intake Recordings", sub: "Log each call as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
       {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
@@ -1415,8 +1417,8 @@ const LESSON_CARDS = {
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
     rows: [
-      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3; the AI discussion video is its
-      // own stop, standardRows)
+      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3, and the AI discussion video is its
+      // lesson card's 🎬 Video on 📚 Dashboard)
       {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c", lead: false},
       {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
@@ -1602,7 +1604,7 @@ function openSlide(n, id, alt, at){
 }
 function rowGo(c, r){
   // (the lesson's video is not opened from a deck: its row opens its stop, the handouts or the note on where the video is)
-  if(/ftVideoOrAsk/.test(r.run || "") || r.play != null) return `FTDayDecks.stop(${Number(r.day || c.days[0])}, '${e(r.run)}')`;
+  if(/ftVideoOrAsk/.test(r.run || "")) return `FTDayDecks.stop(${Number(r.day || c.days[0])}, '${e(r.run)}')`;
   if(r.run) return r.run;   // a platform action of its own (its Process Questions)
   if(r.d != null && r.s) return `FTDayDecks.slide(${Number(r.d)}, '${e(r.s)}'${r.go ? `, '${e(r.go)}'` : ""})`;
   if(r.go === "lesson") return `goto('day', ${Number(c.lesson)})`;
@@ -1651,18 +1653,13 @@ function standardRows(n, c, lid, first, title, rows){
   const mid = [];
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
-  // 🎬 the lesson's AI discussion video, on its first day: a slide of its own that plays it, no request (after the handouts)
-  const vid = first && !rows.some(r => r.play != null) && (typeof DAYS !== "undefined" ? DAYS : []).some(d => d.id === Number(lid) && d.video)
-    ? [{t: "AI Discussion Video", sub: `${title} · watch it on the slide`, k: "watch", run: `ftPlayVideo(${Number(lid)})`, play: Number(lid)}] : [];
-  // (a Digital Handouts stop only where the day has handouts)
+  // (a Digital Handouts stop only where the day has handouts: the lesson's AI discussion video is its 📚 Dashboard card's)
   if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them · the AI discussion video is 🎬 Video on 📚 Dashboard" : "The digital handouts are posted in the training GC · the AI discussion video is 🎬 Video on 📚 Dashboard", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
   const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
-  // (straight after the classroom discussion and its handouts, else after the ▶ lesson row the card names)
-  const at = body.findLastIndex(r => r.go === "lesson" || /ftVideoOrAsk/.test(r.run || "")), after = body.slice(0, at + 1).concat(vid, body.slice(at + 1));
-  return [...lead, ...mid, ...(at < 0 ? vid : []), ...(at < 0 ? body : after), ...pqRows, ...tail];
+  return [...lead, ...mid, ...body, ...pqRows, ...tail];
 }
 // Lesson 1's ▶ Start Training (on its Dashboard card and on Day 1's card) goes to the Reading Task first, the way Know
 // Your Tools' last tool used to: "📖 Next: the Reading Task →"; the lesson deck comes after it, in Day 1's order
