@@ -599,15 +599,11 @@ const ACT_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-recept
 const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // a "link coming" or placeholder box
 const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
-const CH_ICON = [[/mixed-up|wrong birth/i, "🔁"], [/frustrat|repeat/i, "😤"], [/unclear/i, "❓"], [/short call/i, "⏱️"], [/schedul|transfer/i, "📅"], [/connection/i, "📶"], [/language/i, "🌐"], [/audio quality|echo/i, "🎚️"], [/fast/i, "⏩"], [/not on the file|unauthori/i, "🔒"], [/upset/i, "😟"], [/noise/i, "🔊"]];
-const chIcon = t => (CH_ICON.find(([re]) => re.test(t)) || [0, "👤"])[1];
 const mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
 // the calls, three cards to a row (each row is one block, so a page never splits a card)
-function piCallRows(compact, extra){
-  const card = c => `<div class="ftdd-pic${compact ? " ftdd-pic-sm" : ""}"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
-    // (Day 3's activity: no tags and no summary, as who called and the call's challenge are what the trainee works out
-    // and the answer sheet grades; Day 4's warm-up, after it, names the challenge)
-    (compact ? `<p class="ftdd-pic-tags">${[c.challenge].map(t => `<span class="ftdd-pic-tag">${chIcon(t)} ${hx(t)}</span>`).join("")}</p>` : "") +
+function piCallRows(extra){
+  const card = c => `<div class="ftdd-pic"><p class="ftdd-pic-h"><span class="ftdd-pic-n">${c.id}</span><span>${hx(c.title)}</span><span class="ftdd-pic-len">${mmss(c.secs)} · VA ${hx(c.va)}</span></p>` +
+    // (no tags and no summary, as who called and the call's challenge are what the trainee works out and the answer sheet grades)
     `<audio class="ftdd-pic-audio" controls preload="none" src="${c.file}" title="Call ${c.id}: ${hx(c.title)}"></audio></div>`;
   const rows = [];
   // (extra: a last card after the calls, in the last row's free place: Day 3's 📝 Answer Sheet)
@@ -672,7 +668,7 @@ const PI_SHEET_CARD = `<button type="button" class="ftdd-pic ftdd-pic-sheet" onc
   `<b>Answer Sheet</b><small>Log each call’s 5 data points and its challenge, then 📝 Submit for Grading</small><span class="ftdd-pic-sheet-go">Open the answer sheet →</span></button>`;
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your 📝 Answer Sheet.</p>\n` +
-  piCallRows(false, PI_SHEET_CARD) +
+  piCallRows(PI_SHEET_CARD) +
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +
@@ -697,8 +693,6 @@ const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer F
   `<li>Give each trainee 10–15 minutes to explore SA first: it doesn’t allow more than one user at the same time.</li></ul></div>`;
 // the slots this build writes into the trainer-only notes (kept there by build/curriculum/convert.py)
 const DECK_NOTES = {"3:pi-calls": () => PI_KEY, "8:dd-demo": () => DEMO_NOTE};
-// Day 4: the same calls, small, to replay while waiting for the mock call
-const PI_WARMUP = `<p><b>🎧 Warm-up before your mock call: the PI practice calls</b></p>\n<p class="ftdd-warm-lead">Replay one or two of Day 3’s practice calls. Listen for how the VA verifies the caller, reads numbers back, and handles the noise, the dropped line or the language barrier: you’ll need the same on your own call.</p>\n` + piCallRows(true);
 /* ☎ THE RECEPTION MOCK CALLS' PREPARATION, built once and read on two days, so they can't drift: Day 4's Mock Call
    Preparation and Instructions for Mock Calls & Metrics (TRIM[4].s2, cut by ROWS[4].s2). mockPrep: the PI practice calls'
    warm-up, then the seven steps; MOCK_RUN: how the one-on-one mock calls run, the buttons to the Call Simulator's
@@ -714,6 +708,9 @@ const MOCK_WARM_AT = '<div class="ftdd-mockpage ftdd-mock-warm">';
 const tabBtn = (label, url) => `<a class="ftdd-mock-btn" href="${url}" target="_blank" rel="noopener noreferrer">${label} ↗</a>`;
 const MOCK_BTNS = `<div class="ftdd-mock-btns">${tabBtn("📞 Call Simulator in CMS", CALL_SIM + "&line=Reception+Mock+Calls")}` +
   `${tabBtn("☎ The Ring Channel", CALL_SIM)}${tabBtn("🗂 CMS Case Files", CMS)}</div>\n`;
+// Day 4: before the mock call, the Ring Channel and the CMS's case files (not Day 3's practice calls again)
+const PI_WARMUP = `<p><b>☎ Before your mock call: the Call Simulator, the Ring Channel and the CMS</b></p>\n<p class="ftdd-warm-lead">Practise on the Call Simulator, log in to the Ring Channel, where your mock call rings, and open the CMS with its case files: look up a client, open their file and find the case details you’ll verify and update on your own call.</p>\n` +
+  MOCK_BTNS;
 // lead: the line that opens the warm-up's page (each day's own)
 const mockPrep = lead => mockPage("ftdd-mock-warm", lead + PI_WARMUP + "\n") + PGBREAK +
   mockPage("ftdd-steps7", "<p><b>Instructions on Your Mock Call</b></p>\n" +
@@ -734,7 +731,7 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
   "<p>Step 1 - While waiting for your turn, keep practising on the Call Simulator’s Reception line.</p>\n" +
   "<p>Step 2 - Log in to the Ring Channel and stay on standby: your trainer calls each trainee individually.</p>\n" +
   "<p>Step 3 - Take the call live with your headset on, from the greeting to the closing spiel; your trainer sees your message slip as you fill it in.</p>\n" +
-  "<p>Step 4 - Only hit ✅ Done on the mock call slide after you have completely finished your one-on-one with the trainer.</p>\n" +
+  "<p>Step 4 - Once your one-on-one is over, your trainer marks your mock call done; stay on the mock call slide until the group debrief.</p>\n" +
   MOCK_BTNS) + PGBREAK + mockPage("ftdd-mock-metrics",
   "<p><b>Reception Mock Calls Metrics</b></p>\n" +
   '<div class="shots"><figure><a href="/ft/day4/img/image7.png" target="_blank"><img src="/ft/day4/img/image7.png" alt="Reception Mock Calls Metrics" loading="lazy"></a></figure></div>\n' +
