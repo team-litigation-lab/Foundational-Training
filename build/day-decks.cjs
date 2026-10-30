@@ -937,7 +937,17 @@ const EDIT = {
     // (its only line, the facilitator's timing note, is not shown: the shadowing slide had nothing on it)
     s2: h => borrow(14, "s2", "<p><b>Note: </b>If no shadowing buddy is available, recorded shadowing video/s will be provided to trainees instead.</p>", null).split("\n")[0] + "\n" + SHADOW_HOWTO + h},
   // (the recorded demos are SmartAdvocate's only: the Training Guide's Filevine demos are not on the platform)
-  16: {s2: h => rep(h, 'data-kind="doc"', 'data-kind="video"', 1, "Day 16 s2")}
+  // (the topic and the video's label as one heading, as Day 12's tutorial; no note-taking reminder)
+  16: {s1: h => rep(rep(rep(h, "<p><b>Topic: Lien Balance Verification Request</b></p>\n<p>Tutorial Video: </p>", "<p><b><i>Tutorial Video: Lien Balance Verification Request</i></b></p>", 1, "Day 16 s1"),
+      'data-title="Tutorial Video: https://drive.google.com/file/d/1wRXRh8TySsosyxurXzhtCYwbXDJyN9A9/view?usp"', 'data-title="Tutorial Video: Lien Balance Verification Request"', 1, "Day 16 s1"),
+      "<p>NOTE: Please don&#x27;t forget to take down notes for your guide later.</p>\n", "", 1, "Day 16 s1"),
+    // (the demo's preparation: the recorded demo only, none of the chat reminders around it, and no ⏳ While you wait box: data-nowait)
+    s2: h => ["<p>Please be reminded to type &#x27;done&#x27; here as soon as you are done watching the video and have finalized your process guide. Thank you.</p>\n",
+      "<p>While waiting for your turn to perform, you may watch the following recorded demos below. Thank you.</p>\n",
+      "<p>Sending Lien Balance Verification request using SA.     </p>\n",
+      // (and the 45-minute notice to @everyone after the Demo Metrics)
+      "<p>@everyone</p>\n<p>Please be informed that for the last metric of your LV Demo, Time Management &amp; Efficiency, the ideal completion time is 45 minutes. Going beyond the allotted time will result in a significant deduction under this metric. Please be guided and manage your time accordingly.</p>\n"]
+      .reduce((x, from) => rep(x, from, "", 1, "Day 16 s2"), rep(h, 'class="viewer-link" data-kind="doc"', 'class="viewer-link" data-nowait data-kind="video"', 1, "Day 16 s2"))}
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
@@ -1120,8 +1130,9 @@ const ROWS = {
   },
   13: {
     // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
-    s3: [{id: "s3", h: "PM: Breakout Session & Document Detectives Exercise", parts: [[null, "<p><b>HIPAA Certificate Task</b></p>"]], post: UPSKILL + "\n"},
-      {id: "s3b", h: "HOMEWORK: HIPAA Training 101", parts: [["<p><b>HIPAA Certificate Task</b></p>", null]], fix: [[UPSKILL, ""],
+    // (the breakout itself is the Call Listening slide's, "Call Listening Session / Breakout Session": its own slide held only the
+    // reference files, now off it, so the section is the homework's slide, with the facilitators' notes)
+    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""],
         ['<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n',
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },
@@ -1142,10 +1153,14 @@ const ROWS = {
   },
   16: {
     s1: [{id: "s1", parts: [[null, "<h4>Please add these in your notes. </h4>"]]},
-      {id: "s1b", h: "AM: Notes for Your Guide", parts: [["<h4>Please add these in your notes. </h4>", null]]}],
+      {id: "s1b", h: "AM: Notes for Your Guide", parts: [["<h4>Please add these in your notes. </h4>", null]],
+        // (the templates kept together on one page; no Sending request section)
+        fix: [["<h4>Please add these in your notes. </h4>\n", ""], ["<p><b>Templates </b></p>\n", KEEP[0] + "<p><b>Templates </b></p>\n"],
+          ["<p><b>-----------------</b></p>\n<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>", KEEP[1].trimStart()]]}],
     s2: [{id: "s2", parts: [[null, SLOT(16, "s2-3")]]},
       {id: "s2b", h: "PM: Before Your Demo: Rules, Metrics & Time Limit", parts: [[SLOT(16, "s2-3"), null]],
-        fix: [["<h3>5. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"], ["<h4>6. Demo Metrics</h4>", "<h4>Demo Metrics</h4>"]]}]
+        // (the e-mail's subject line from the Notes for Your Guide, ahead of the rules; no ⏳ While you wait box: data-nowait)
+        fix: [["<h3>5. All trainees must be fully prepared", KEEP[0].replace('"ftdd-keep"', '"ftdd-keep" data-nowait') + "<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>" + KEEP[1] + "\n<h3>All trainees must be fully prepared"], ["<h4>6. Demo Metrics</h4>", "<h4>Demo Metrics</h4>"]]}]
   }
 };
 // a section cut into its rows' slides (ROWS above); carry holds the fragments that go to a later section
@@ -1240,8 +1255,8 @@ function stripLessonDeck(h, html, note = LESSON_NOTE){
 const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
 // a slide that keeps more than its exercise: its new name (and a fix to what it keeps)
 const EX_RENAME = {
-  // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
-  13: {s3: {h: "PM: Breakout Session"}}};
+  // (Day 13: the breakout's section keeps only the HIPAA homework: the breakout is the Call Listening slide's)
+  13: {s3: {h: "HOMEWORK: HIPAA Training 101"}}};
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 // what an activity slide emptied by PREP still carries: Day 9's Intake Mock Calls, every intake case for the trainer
 // (js/ft-intake.js .ftis-mockcall; a trainee sees their own in the slide's mock-call panel, js/ft-buffer.js), no longer on
