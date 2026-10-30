@@ -421,11 +421,14 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   await page.evaluate(() => FTDayDecks.open(2, 1)); await page.waitForTimeout(1300);
   if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
-  // Day 9's mock call preparation is no longer a blank slide
+  // Day 9's Intake Mock Calls Metrics: the metrics alone, with no heading over the table, and no metrics bar on the mock calls' slide
   await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
-  if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's preparation slide is "${d9.h}"`);
-  if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+  if (!/Intake Mock Calls Metrics/.test(d9.h)) fail(`Day 9's metrics slide is "${d9.h}"`);
+  if (d9.score < 10 || /Call Simulator|debrief/i.test(d9.text) || await page.$('.ftdd-sheet .ftdd-score-h')) fail(`it isn't the metrics alone: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
+  await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(1500);
+  if (await page.$('.ftdd-sheet .ftdd-score')) fail("Day 9's Intake Mock Calls slide still has a metrics bar");
+  if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
 
   // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are off for now
   // (js/ft-kcgames.js GAMES_ON): no 🎮 button anywhere, and #/kcgames goes to ✍️ Knowledge Check

@@ -235,8 +235,17 @@ function renderAdmin(){
 
 window.FTTranscribe = {
   tab(n){ T.n = Number(n) === 2 ? 2 : 1; render(); },
-  // from Day 9's deck: straight to that recording's assignment
-  openRec(n){ T.n = Number(n) === 2 ? 2 : 1; goto("transcribe"); },
+  // from Day 9's deck: straight to that recording's assignment (and back to the deck's next slide)
+  openRec(n){ T.n = Number(n) === 2 ? 2 : 1; FTTranscribe.fromDeck(); },
+  // opened from a deck slide (Day 9's Sample Transcription Guide, a recording's tile): the activity, then ← back to the
+  // deck on the slide after that one
+  fromDeck(){
+    const d = window.FTDayDecks && FTDayDecks.state && FTDayDecks.state();
+    const i = (Number(d && d.i) || 0) + 1, nx = d && d.day != null && FTDayDecks.list ? (FTDayDecks.list(d.day) || [])[i] : null;
+    T.ret = d && d.day != null && state.view === "daydeck" ? {day: d.day, i, h: nx ? String(nx.h || "").replace(/^(AM|PM|Entire Day):\s*/, "") : ""} : null;
+    goto("transcribe");
+  },
+  toDeck(){ const r = T.ret; T.ret = null; if(r && window.FTDayDecks) FTDayDecks.open(r.day, r.i); else goto("simulators"); },
   start(){ const r = run(T.n); if(!r.startedAt){ r.startedAt = new Date().toISOString(); save(); } render(); },
   set(k, v){ const r = run(T.n); if(r.submittedAt) return; r.f[k] = v; r.updatedAt = new Date().toISOString(); save();
     if(k === "discussion"){ const c = document.querySelector("#tr-discussion + .tr-count"); if(c) c.textContent = `${words(v)} words · ${stamps(v)} timestamps`; }
@@ -306,7 +315,9 @@ const __render = window.render;
 window.render = function(){
   if(state.view !== "transcribe") return __render.apply(this, arguments);
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
-  const back = `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
+  // (opened from a deck, FTTranscribe.fromDeck: back to that deck, on the slide after the one it was opened from)
+  const back = T.ret ? `<a class="back-link" onclick="FTTranscribe.toDeck()">&larr; Back to the deck${T.ret.h ? ": " + e(T.ret.h) : ""}</a>`
+    : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`;
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-tr">${back}${adminOn() ? renderAdmin() : ""}${renderTrainee()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}

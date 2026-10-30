@@ -70,7 +70,7 @@ function consultHtml(d){
       <table>${row("Date", m.date)}${row("Time", m.time)}${row("Attendees", m.attendees)}${row("Purpose", m.purpose)}</table>
       <h5>Discussion</h5><p>${nl(m.discussion)}</p><h5>The client’s concerns and questions</h5><p>${nl(m.concerns)}</p>
       <h5>The attorney’s advice and answers</h5><p>${nl(m.advice)}</p><h5>Action items and next steps</h5><p>${nl(m.actions)}</p></div></details>
-    ${typeof goto === "function" && window.FTTranscribe && !document.querySelector("main.main-tr") ? `<div class="ftis-go"><button type="button" class="btn btn-navy btn-sm" onclick="goto('transcribe')">🎧 Open the Transcription Activity →</button></div>` : ""}
+    ${typeof goto === "function" && window.FTTranscribe && !document.querySelector("main.main-tr") ? `<div class="ftis-go"><button type="button" class="btn btn-navy btn-sm" onclick="FTTranscribe.fromDeck()">🎧 Open the Transcription Activity →</button></div>` : ""}
   </article>`;
 }
 
@@ -163,8 +163,7 @@ function trainerCase(c, who){
 }
 function mockcallHtml(el){
   const calls = mockCalls();
-  // (the trainer's "👁 What trainees see" preview, js/ft-buffer.js .ftbf-pv, shows the trainee's side, never the scripts)
-  const trainer = isTrainerView() && !(el && el.closest && el.closest(".ftbf-pv"));
+  const trainer = isTrainerView();
   const head = `<div class="ftis-pk-h"><b>📞 ${trainer ? "Intake Mock Call cases: the CMS’s Intake line, the same calls on Ring Channel" : "Your Intake Mock Call case"}</b></div>`;
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return head + `<p class="ftis-wait">${PK.failed ? "The cases didn’t load from the CMS. Check your connection and open this slide again." : "Loading the cases from the CMS…"}</p>`; }
   if(trainer){
