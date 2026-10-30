@@ -98,13 +98,14 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     // Handling Exercise row that the slide's text was cut into are off the deck)
     await put(page, 'settings:daysteps', { all: { 9: 999 }, batches: { b102826: { 2: 6, 3: 2, 7: 2, 8: 2, 11: 2, 13: 3 } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => [2, 3, 7, 8, 9, 11, 13].map(n => FTDayLocks.at(n)));
-    if (v.join() !== '4,1,1,6,999,1,1') fail(`the old slide-step counts didn't read as the card-row steps they had opened: ${v.join()} (want 4,1,1,6,999,1,1)`);
+    // (Day 8: the five card rows its first section's slides make, Intake Video to CMS Demo and Mock Call)
+    if (v.join() !== '4,1,1,5,999,1,1') fail(`the old slide-step counts didn't read as the card-row steps they had opened: ${v.join()} (want 4,1,1,5,999,1,1)`);
     // … and the trainer's next save writes every count as card-row steps, flagged so
     await page.evaluate(async () => { state.isAdmin = true; state.ftOdBatch = 'b102826'; await FTDayLocks.set(11, 2); state.isAdmin = false; state.ftOdBatch = null; });
     const saved = await get(page, 'settings:daysteps'), sb = ((saved || {}).batches || {}).b102826 || {}, fb = (((saved || {}).rows || {}).batches || {}).b102826 || {};
-    if (sb[11] !== 2 || sb[8] !== 6 || sb[2] !== 4 || sb[3] !== 1 || !fb[11] || !fb[8] || !fb[2] || !(((saved || {}).rows || {}).all || {})[9] || saved.all[9] !== 999) fail(`the trainer's save didn't rewrite the old counts as card-row steps: ${JSON.stringify({ batches: saved && saved.batches, rows: saved && saved.rows, all: saved && saved.all })}`);
+    if (sb[11] !== 2 || sb[8] !== 5 || sb[2] !== 4 || sb[3] !== 1 || !fb[11] || !fb[8] || !fb[2] || !(((saved || {}).rows || {}).all || {})[9] || saved.all[9] !== 999) fail(`the trainer's save didn't rewrite the old counts as card-row steps: ${JSON.stringify({ batches: saved && saved.batches, rows: saved && saved.rows, all: saved && saved.all })}`);
     v = await page.evaluate(() => [2, 8, 11].map(n => FTDayLocks.at(n)));
-    if (v.join() !== '4,6,2') fail(`after the save Days 2, 8 and 11 read ${v.join()}, not 4,6,2`);
+    if (v.join() !== '4,5,2') fail(`after the save Days 2, 8 and 11 read ${v.join()}, not 4,5,2`);
     // ⏰ Day 8 on a schedule: the AM session has started, the PM breakout hasn't
     const past = new Date(Date.now() - 3600e3).toISOString(), later = new Date(Date.now() + 3600e3).toISOString(), last = new Date(Date.now() + 7200e3).toISOString();
     await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 999 } }, sched: { all: {}, batches: { b102826: { 8: { am: past, pm: later, out: last } } } }, legacy: { all: [], batches: {} } });
