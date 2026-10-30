@@ -578,10 +578,8 @@ function dayRows(n){
   const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return [];
   return standardRows(n, c, lid, n === c.days[0], lessonTitle(lid), cardRows(c, (X.data && X.data.days) || {}).filter(r => rowDay(c, r) === n));
 }
-// a row's time on its day's card: "Day 8 PM" reads "PM"
-const rowWhen = (n, r) => String(r.time || "").replace(new RegExp("^Day " + Number(n) + "\\b\\s*(·\\s*)?", "i"), "").replace(/^./, x => x.toUpperCase());
-// a row's title as its card shows it (the row's step in Activity Locks is named the same)
-const rowLabel = (n, r) => r.t + (rowWhen(n, r) ? ` · ${rowWhen(n, r)}` : "");
+// a row's title as its card shows it (the row's step in Activity Locks is named the same): no "· AM" / "· PM" after it
+const rowLabel = (n, r) => r.t;
 // a stop that opens something other than a slide: the lesson, the video, the day's Knowledge Check
 /* 🎬 Day 1's Handouts / Video: the Breakout Session's digital handouts, one per group (the lesson card's 🎬 Video opens
    this slide too: js/ft-day1-flow.js) */
@@ -1404,7 +1402,7 @@ const LESSON_CARDS = {
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
       {t: "Intake Mock Call Instructions & Metrics", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
       {t: "Intake Mock Calls (One-on-One)", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"},
-      {t: "Transcription Activity: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
+      {t: "Sample Transcription Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
@@ -1687,11 +1685,9 @@ function dayCard(n, ex){
   const lid = lessonOfDay(n), c = cardOf(lid); if(!c) return "";
   const first = n === c.days[0], open_ = lessonOpen(lid), title = lessonTitle(lid), off = offlineRow(c);
   const rows = standardRows(n, c, lid, first, title, cardRows(c, ex).filter(r => rowDay(c, r) === n));
-  // the card is one day's, so a row's time drops its "Day N": "Day 8 PM" reads "PM"
-  const when = r => rowWhen(n, r);
   const seq = rows.map((r, i) => `<li><button type="button" class="ftlc-row" onclick="${rowGo(c, r)}">
       <span class="ftlc-n">${String(i + 1).padStart(2, "0")}</span>
-      <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
+      <span class="ftlc-t"><b>${e(rowLabel(n, r))}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
   const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)

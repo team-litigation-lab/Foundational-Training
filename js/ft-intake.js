@@ -70,7 +70,7 @@ function consultHtml(d){
       <table>${row("Date", m.date)}${row("Time", m.time)}${row("Attendees", m.attendees)}${row("Purpose", m.purpose)}</table>
       <h5>Discussion</h5><p>${nl(m.discussion)}</p><h5>The client’s concerns and questions</h5><p>${nl(m.concerns)}</p>
       <h5>The attorney’s advice and answers</h5><p>${nl(m.advice)}</p><h5>Action items and next steps</h5><p>${nl(m.actions)}</p></div></details>
-    ${typeof goto === "function" && window.FTTranscribe && !document.querySelector("main.main-tr") ? `<div class="ftis-go"><button type="button" class="btn btn-navy btn-sm" onclick="goto('transcribe')">🎧 Open the Transcription Activity →</button></div>` : ""}
+    ${typeof goto === "function" && window.FTTranscribe && !document.querySelector("main.main-tr") ? `<div class="ftis-go"><button type="button" class="btn btn-navy btn-sm" onclick="FTTranscribe.fromDeck()">🎧 Open the Transcription Activity →</button></div>` : ""}
   </article>`;
 }
 
