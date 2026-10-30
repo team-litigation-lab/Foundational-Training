@@ -3,7 +3,7 @@
 //     can't write another trainee's; the trainer writes the release, which the trainee reads;
 //   - a trainee on Day 6's Calendar Management mock calls sees Practice Buffer: Mock Call Preparation (the Call
 //     Simulator and Ring Channel links, the warning, Done at the foot), confirms Done in a dialog (Cancel keeps them
-//     there), and gets Screen 2, Debrief Prep, with the activity's scorecard; a buffer slide (Day 5) and a demo (Day 8)
+//     there), and gets Screen 2, Debrief Prep, with the activity's scorecard; a buffer slide (Day 9), Day 5's Monitoring Sheet update and a demo (Day 8)
 //     get their own screens; other slides get none;
 //   - the trainer, on the same slide: Completed X / N, Waiting / Done per trainee, Start Group Debrief locked until all
 //     are done, Mark done, the 🎉 banner, the release (the trainee's slide moves on by itself), 📋 Score into

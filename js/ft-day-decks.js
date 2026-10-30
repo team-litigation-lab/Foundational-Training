@@ -841,8 +841,8 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Activity Items stay one grid of cards)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4") && !k.classList.contains("ftdd-cal-set")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Instructions and Activity Items stay one row of cards)
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4") && !k.classList.contains("ftdd-cal-set") && !k.classList.contains("ftdd-cards2")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -868,9 +868,11 @@ function sheetPages(sheet){
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
   // the next page, and fitSheets scales the page down to fit
+  // (an empty trainer slot, nothing to see, never makes a page of its own: the block after it shares its page)
+  const shown = pg => pg.some(x => hOf(x) > 0);
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room / (read ? 1 : PAGE_ZOOM)){
+    if(shown(page) && used + h > room / (read ? 1 : PAGE_ZOOM)){
       // a heading never ends a page: it moves to the next one with the text it heads
       const carry = [];
       while(page.length > 1 && /^H[1-6]$/.test(page[page.length - 1].tagName)) carry.unshift(page.pop());
@@ -885,7 +887,7 @@ function sheetPages(sheet){
     const total = units.reduce((a, x) => a + hOf(x), 0), cap = room / (read ? 1 : PAGE_ZOOM), tallest = Math.max(...units.map(hOf));
     const deal = limit => { const out = []; let pg = [], u = 0;
       units.forEach(k => { const h = hOf(k);
-        if(pg.length && u + h > limit){ const carry = []; while(pg.length > 1 && /^H[1-6]$/.test(pg[pg.length - 1].tagName)) carry.unshift(pg.pop());
+        if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && /^H[1-6]$/.test(pg[pg.length - 1].tagName)) carry.unshift(pg.pop());
           out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
         pg.push(k); u += h; });
       if(pg.length) out.push(pg); return out; };
@@ -2208,7 +2210,7 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
-.ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:span 2;columns:2;column-gap:18px;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:span 3;columns:3;column-gap:18px;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-wide > p{break-inside:avoid;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-wide > p.ftdd-cal-h{column-span:all;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
