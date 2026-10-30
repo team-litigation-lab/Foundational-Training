@@ -373,8 +373,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => { state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
-  // the Reception and Calendar Management mock calls: a trainee sees the metrics (read only), not the ⏳ While you wait box
-  for (const [d, id, what] of [[4, 's3', 'Reception'], [6, 's2', 'Calendar Management']]) {
+  const flow6 = await page.evaluate(() => FT_DAY_DECKS[6].slides.slice(0, 3).map(s => s.h).join(' | '));
+  if (!/Calendaring Mock Calls Instructions \| .*Mock Calls Metrics \| .*Training Videos/.test(flow6)) fail(`Day 6 (Part 2) doesn't run Instructions, Metrics, Videos: ${flow6}`);
+  // the Reception mock calls and Day 6's Metrics slide (Part 2: Instructions, Metrics, Videos): a trainee sees the metrics (read only), not the ⏳ While you wait box
+  for (const [d, id, what] of [[4, 's3', 'Reception'], [6, 's1m', 'Calendar Management']]) {
     await page.evaluate(([d, id]) => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(d, FTDayDecks.at(d, id)); }, [d, id]); await page.waitForTimeout(1500);
     const mm = await page.evaluate(() => { const sh = document.querySelector('.ftdd-sheet') || document.body, b = sh.querySelector('.ftdd-score');
       return { rows: b ? b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length : 0, pick: !!(b && b.querySelector('.ftms-pick select')), wait: !!sh.querySelector('.ftdd-wait') }; });

@@ -745,7 +745,7 @@ function dayRubric(title){
 }
 // 🧑‍🏫 during the mock calls and the demos the trainer scores on the slide itself: the activity's metrics as the scoring sheet
 // (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already. A trainee sees the mock calls' metrics
-// (Day 4's Reception, Day 6's Calendar Management, Day 9's Intake) as the guide's table, read only (FTMetrics.view), so they
+// (Day 4's Reception, Day 9's Intake; Day 6's Calendar Management has its own Metrics slide) as the guide's table, read only (FTMetrics.view), so they
 // know what the call is scored on; the demos' sheet stays the trainer's.
 function scoreBox(s, info, body){
   const h = String(s.h || ""), admin = isAdminView();
@@ -753,6 +753,8 @@ function scoreBox(s, info, body){
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
   if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
   if(!admin && !/mock call/i.test(h)) return "";
+  // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
+  if(/instructions|metrics|scenarios/i.test(h)) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
