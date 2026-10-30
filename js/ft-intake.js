@@ -38,8 +38,10 @@ function transcript(item, who){
 function player(item){
   return `<audio class="ftis-audio" controls preload="none" src="${e(item.src)}"></audio><small class="ftis-dur">${mmss(item.dur)}</small>`;
 }
-function callsHtml(d){
-  return d.calls.map((c, i) => `<article class="ftis-call">
+// (data-calls="1,2": only those calls, numbered as in the full set: Day 7 shows them two to a slide)
+function callsHtml(d, el){
+  const only = String((el && el.getAttribute("data-calls")) || "").split(",").map(Number).filter(Boolean);
+  return d.calls.map((c, i) => only.length && !only.includes(i + 1) ? "" : `<article class="ftis-call">
     <header><span class="ftis-n">${i + 1}</span><div><b>${e(c.title)}</b><small>${e(c.kind)} · ${e(d.firm)} (fictional)</small></div></header>
     <p class="ftis-about">${e(c.about)}</p>
     <div class="ftis-play">${player(c)}</div>
@@ -91,7 +93,7 @@ function fill(){
   if(!want.length) return;
   want.forEach(el => { el.setAttribute("data-on", "1"); el.innerHTML = `<p class="ftis-wait">Loading the recordings…</p>`; });
   data().then(d => {
-    want.forEach(el => { el.innerHTML = el.classList.contains("ftis-calls") ? callsHtml(d) : consultHtml(d); });
+    want.forEach(el => { el.innerHTML = el.classList.contains("ftis-calls") ? callsHtml(d, el) : consultHtml(d); });
     refit();
   }).catch(() => want.forEach(el => { el.innerHTML = `<p class="ftis-wait">The recordings didn’t load. Check your connection and open this slide again.</p>`; }));
 }

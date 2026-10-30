@@ -81,18 +81,19 @@ async function workerChecks() {
     if (await t.evaluate(() => !!document.querySelector('.ftbf'))) fail('Day 4\'s Training Video Viewing slide got a buffer panel');
 
     // 🌅 a buffer slide: the line and Done, no dialog
-    await open(t, 5, 's1');
-    if (!(await toPanel(t))) fail('Day 5\'s Buffer Time has no buffer panel');
+    await open(t, 9, 's1');
+    if (!(await toPanel(t))) fail('Day 9\'s Buffer Time has no buffer panel');
     else {
       if (!/Use this buffer to finish all your pending tasks\. Hit Done when you are\./.test(await panel(t))) fail(`the buffer panel's words: ${await panel(t)}`);
       if (await t.evaluate(() => !!document.querySelector('.ftdd-sheet .ftdd-wait'))) fail('the buffer slide still has its ⏳ While you wait box beside the panel');
       await t.click('.ftbf .ftbf-done'); await t.waitForTimeout(1800); await toPanel(t);
       if (await t.evaluate(() => !!document.querySelector('.ftbf-modal'))) fail('Done on a buffer asked for a confirmation');
       if (!/✅ Done/.test(await panel(t))) fail(`a buffer's Done didn't turn the panel to Done: ${await panel(t)}`);
-      // (Day 5's buffer shows the trainee its Reception mock call preparation above the panel, not the panel alone)
-      const prep = await t.evaluate(() => { const sh = document.querySelector('main.main-ftdd .ftdd-sheet'); return { only: !!(sh && sh.classList.contains('ftbf-only')), text: (sh || {}).textContent || '' }; });
-      if (prep.only || !/Call Simulator’s Reception line/.test(prep.text) || !/Reception Mock Calls Metrics/.test(prep.text)) fail(`Day 5's buffer doesn't show the trainee its mock call preparation: ${JSON.stringify({ only: prep.only, len: prep.text.length })}`);
     }
+    // 📒 Day 5 opens on the Monitoring Sheet's items #10–11: Day 4's panel and 📤 Submit, under Day 4's record
+    await open(t, 5, 's1');
+    if (!(await toPanel(t))) fail('Day 5\'s Monitoring Sheet update has no panel');
+    else if (!/Update items #10–11 in your Monitoring Sheet[^]*Once done, hit Submit/.test(await panel(t))) fail(`Day 5's first slide reads: ${await panel(t)}`);
     // 📅 Day 5's Attorney Calendar Management Activity: its 📤 Submit, as Day 2's panel, is its Done, at the end of its slides
     await open(t, 5, 's3b');
     if (!(await toPanel(t))) fail('Day 5\'s Attorney Calendar Management Activity has no Done');

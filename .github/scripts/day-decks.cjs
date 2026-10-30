@@ -58,21 +58,24 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
 const lor = D[11] && D[11].slides.filter(s => s.read);
 if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test(lor[0].html) || !/<h3>Activity 2: Letter of Representation/.test(lor[1].html) || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
   fail(`Day 11's LOR Drafting guidelines aren't inlined over two read slides: ${JSON.stringify((lor || []).map(s => s.id))}`);
-// Day 5: its buffer carries Day 4's Reception mock call preparation and its instructions & metrics, word for word (built
-// once); the Attorney Calendar Management Activity's own text (Instructions 1–9, the seven colours, the guests, the ten
-// Activity Items) on a read slide with the Calendar Simulator's hook, then its files and cards; Days 5 and 13 have no
+// Day 4: its mock call preparation on one slide (s2b), in pages, the tools as buttons under the run; Day 5 opens on the
+// Monitoring Sheet's items #10–11, its panel only (no mock call preparation); the Attorney Calendar Management Activity's
+// Instructions 1–9 (the seven colours, the guests) as two cards on one slide, no "1. The activity" card; its ten Activity
+// Items a card each, five to a slide, each slide with the Calendar Simulator's link; then its files and cards; Days 5 and 13 have no
 // slide that only says the lesson deck opens from ▶ Start Training
 {
   const sl = (n, id) => ((D[n] || { slides: [] }).slides.find(s => s.id === id) || {}).html || '';
   // (Day 4: one slide, s2b, in pages: the warm-up, the seven steps in one block, the run with the tools' buttons, the metrics)
-  const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), buf5 = sl(5, 's1');
-  const prep4 = s2b.slice(s2b.indexOf('<p>Step 1 - '), at).trim(), run4 = at < 0 ? '' : s2b.slice(at).trim();
-  if (prep4.length < 500 || !run4 || !buf5.includes(prep4) || !buf5.includes(run4) || !/ftdd-mockpage ftdd-steps7/.test(s2b) || !/ftdd-mockpage ftdd-steps7/.test(buf5) || !/class="ftdd-mock-btns"/.test(run4) || sl(4, 's2b-2') || /ftdd-biglinks/.test(s2b) || /Link coming: AI Mock Calls Listening|☎️ Front Desk Drill/.test(buf5) || sl(4, 's2c'))
-    fail(`Day 5's buffer doesn't carry Day 4's mock call preparation and metrics: ${buf5.length} chars`);
-  const act5 = D[5] && D[5].slides.find(s => s.id === 's3'), txt = (act5 || {}).html || '';
-  const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = (txt.match(/class="ftdd-cal-item"/g) || []).length;
-  if (!act5 || !act5.read || ins !== 9 || items !== 10 || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt) || !/data-calsim-activity/.test(txt))
-    fail(`Day 5's activity text isn't on its slide: ${JSON.stringify({ read: act5 && act5.read, ins, items })}`);
+  const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), mon5 = (D[5] || { slides: [] }).slides[0] || {};
+  if (s2b.indexOf('<p>Step 1 - ') < 0 || at < 0 || !/ftdd-mockpage ftdd-steps7/.test(s2b) || !/class="ftdd-mock-btns"/.test(s2b.slice(at)) || sl(4, 's2b-2') || /ftdd-biglinks/.test(s2b) || sl(4, 's2c'))
+    fail("Day 4's mock call preparation and metrics aren't on its slide");
+  if (mon5.id !== 's1' || mon5.h !== 'Update Your Monitoring Sheet' || mon5.html.trim())
+    fail(`Day 5 doesn't open on its Monitoring Sheet update alone: ${JSON.stringify({ id: mon5.id, h: mon5.h, len: (mon5.html || '').length })}`);
+  const txt = sl(5, 's3'), its = ['s3i', 's3j'].map(id => sl(5, id));
+  const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = its.map(h => (h.match(/class="ftdd-cal-item[ "]/g) || []).length);
+  if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
+    || items.join() !== '5,5' || its.some(h => (h.match(/data-calsim-activity/g) || []).length !== 1 || !h.includes('#/calsim/attorney-activity')))
+    fail(`Day 5's activity isn't its Instructions in two cards, then its items five to a slide with the Calendar Simulator's link: ${JSON.stringify({ ins, items })}`);
   if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/ftdd-seq/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples and drawn pictures are no longer on its second slide');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
@@ -113,10 +116,11 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    // (Personal Injury Process Flow and Receptionist Training: Day 3's session is Part 1 on the first, Day 4 Part 2 on the second)
-    const want = { 'dayl-3': ['Part 1'], 'dayl-4': ['Part 2'] }[c.id] || (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
+    // (Personal Injury Process Flow and Receptionist Training: Day 3's session is Part 1 on the first, Day 4 Part 2 on the
+    // second; Calendaring is its mock calls only, one Start opening Day 6)
+    const want = { 'dayl-3': ['Part 1'], 'dayl-4': ['Part 2'], 'dayl-5': ['Start'] }[c.id] || (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
     if (c.segs.join() !== want.join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
-    if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
+    if (c.first !== 'dayd-' + (c.id === 'dayl-5' ? 6 : c.days[0])) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
   if (!/Virtual Assistant Essentials/.test(grid[0] && grid[0].h)) fail(`Lesson 1's card reads "${grid[0] && grid[0].h}"`);
   // the eight fit one screen

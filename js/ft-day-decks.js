@@ -473,12 +473,14 @@ function listenSlide(day, time){
      ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder, live.recs) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
-   calls; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
+   calls; Day 7: the five intake recordings; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
    A recording plays in the slide once it has a link: its file's id here (id), or the link a trainer gives it in Admin →
    🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a Drive file plays in Drive's
    player, an audio file in the browser's); until then its card opens the folder. */
 const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
-  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"}))};
+  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
+  // Day 7: the five sample intake recordings (the set's folder), each a card of its own
+  7: [1, 2, 3, 4, 5].map(n => ({t: `Intake Call ${n}`, id: "", kind: "Sample intake call"}))};
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
 const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
 function listenCards(cards, folder, recs){
@@ -865,8 +867,9 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    // (and an embedded video or sheet stays with its name: ftdd-inline)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Activity Items stay one grid of cards; and what
+    // the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls two to a slide)
+    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-keep, .ftdd-two, .ftis-calls")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -1225,7 +1228,7 @@ const PILLS = {classroom: "Classroom", read: "Read & Do", listendo: "Listen & Do
 const SUBMIT = "Assessments › Activities subfolder";
 // (a mock call or demo row opens its preparation slide, "<id>p", and its Day 4 Done slide follows it: build/day-decks.cjs PREP)
 const LESSON_CARDS = {
-  1: {days: [1], focus: "VA Essentials & Software Setup",
+  1: {days: [1], focus: "VA Essentials",
     rows: [
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
@@ -1233,8 +1236,8 @@ const LESSON_CARDS = {
       {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
-    tools: [["Tools:", "WinRAR, Nitro Pro 12, iLovePDF"], "Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
-      "Set your Hubstaff To-Dos daily from the template before the session starts", "Time limit: 45 mins max · Evaluation: Monitoring sheet entry checked at the end of the session"],
+    tools: ["Test file names: <i>Spelling Test [date taken][AM/PM] · Typing Test [date taken][AM/PM]</i>",
+      "Set your Hubstaff To-Dos daily from the template before the session starts"],
     takeaways: ["Jurisdiction", "VA vs. in-house", "Cultural values"], file: "VA_Essentials_Process_Question_Answers (VA First Name)"},
   2: {days: [2], focus: "Law Firm Communication & Escalations",
     rows: [
@@ -1276,10 +1279,9 @@ const LESSON_CARDS = {
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
-  5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
+  // (the card is the mock calls only: the Calendaring & Appointment Setting Training is off it, so no day buttons)
+  5: {days: [5, 6], focus: "Calendar Management Mock Calls", oneDay: true,
     rows: [
-      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for pending tasks · the mock call prep: Call Simulator, Ring Channel, CMS, AI listening, the metrics", k: "buffer", d: 5, s: "s1"},
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
@@ -1570,11 +1572,11 @@ function dayCard(n, ex){
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
-  const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
+  const of = c.days.length > 1 && !c.oneDay ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
   const head = first ? title : (DAY_TITLES[n] || title);
-  const sub = first ? `Trainer-led discussion · opens the session${of}` : `${title}${of}`;
+  const sub = first ? `Trainer-led discussion · opens the session${of}` : c.oneDay ? "Your graded call, with the trainer" : `${title}${of}`;
   return `<article class="ftlc${open_ ? "" : " locked"}${rows.length > 6 ? " ftlc-wide" : ""}" data-day="${n}" data-first="${first ? 1 : 0}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
@@ -1585,7 +1587,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
-        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
+        ${c.days.length > 1 && !c.oneDay ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -1604,7 +1606,7 @@ function dayCard(n, ex){
    ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
-  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.days[0];
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.oneDay ? c.days[c.days.length - 1] : c.days[0];
   const t = document.createElement("template"); t.innerHTML = String(moduleCard(l)).trim();
   const card = t.content.firstElementChild; if(!card) return "";
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
@@ -2086,6 +2088,16 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ft-body .ftdd-vcard a.ftdd-tile{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:0;}
 .ftdd-vcard-pic{position:relative;display:block;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#1E2340;}
 .ftdd-vcard-pic iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;}
+/* 📄 a document shown as a picture of its first page (Day 7's checklist and blank forms): a click opens it in a new tab,
+   so the trainee's place in the deck stays where it is */
+.ftdd-shot{display:block;max-width:760px;margin:8px auto 4px;border:1px solid var(--line,#DCE0EA);border-radius:12px;overflow:hidden;background:#fff;text-decoration:none;box-shadow:0 6px 18px -10px rgba(30,35,64,.45);}
+.ftdd-shot-pic{position:relative;display:block;height:min(46vh,460px);background:#F1F3F8;}
+.ftdd-shot-pic iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none;}
+.ftdd-shot-cap{display:block;padding:9px 14px;font-weight:700;color:#1E2340;border-top:1px solid var(--line,#DCE0EA);}
+.ftdd-shot:hover .ftdd-shot-cap{color:#C9742B;}
+/* two things side by side on one slide (Day 7's two folders) */
+.ftdd-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0 12px;}
+@media(max-width:800px){.ftdd-two{grid-template-columns:minmax(0,1fr);}}
 .ftdd-vcard-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(201,116,43,.92);color:#fff;font-size:20px;line-height:48px;text-align:center;padding-left:3px;box-sizing:border-box;box-shadow:0 2px 8px rgba(0,0,0,.35);transition:transform .15s;}
 .ftdd-vcard:hover .ftdd-vcard-play{transform:translate(-50%,-50%) scale(1.12);}
 .ftdd-vcard .ftdd-tile-t{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;}
@@ -2258,7 +2270,18 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ft-body p.li .lbl .ftdd-sw{display:inline-block;width:18px;height:18px;border-radius:5px;vertical-align:-3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
 .ft-body .ftdd-cal-item{border-left:5px solid #E8590C;background:#F6F7FB;border-radius:0 10px 10px 0;padding:8px 14px 8px 14px;margin:0 0 12px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !important;color:#fff !important;}   /* (drawn as a heading bar, white on navy, in the reading too) */
-.ft-body .ftdd-calsim{margin:12px 0;} .ft-body .ftdd-calsim:empty{display:none;}
+/* (Day 5's Instructions as two cards side by side, and its ten Activity Items a card each, five to a slide under the
+   Calendar Simulator's link) */
+.ft-body .ftdd-cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
+.ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:span 2;columns:2;column-gap:18px;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p{break-inside:avoid;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p.ftdd-cal-h{column-span:all;}
+.ft-body .ftdd-calsim{margin:0 0 12px;}
+@media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:auto;columns:1;} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
