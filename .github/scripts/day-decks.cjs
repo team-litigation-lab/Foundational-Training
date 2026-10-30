@@ -341,7 +341,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.click('.ftdd-nav .ftdd-map'); await page.waitForTimeout(500);
   const roadmap = await page.evaluate(() => ({ open: !!document.getElementById('ftMap'), lessons: document.querySelectorAll('.ftmap-lesson').length, days: document.querySelectorAll('.ftmap-day').length,
     here: (document.querySelector('.ftmap-day.here .ftmap-dt') || {}).textContent || '', on: (document.querySelector('.ftmap-slide.on .ftmap-sn') || {}).textContent || '' }));
-  if (!roadmap.open || roadmap.lessons !== 8 || roadmap.days !== 16 || !/Day 7/.test(roadmap.here) || roadmap.on !== '7.3') fail(`🗺 Map doesn't show the roadmap with Day 7, slide 3 marked: ${JSON.stringify(roadmap)}`);
+  if (!roadmap.open || roadmap.lessons !== 7 || roadmap.days !== 16 || !/Day 7/.test(roadmap.here) || roadmap.on !== '7.3') fail(`🗺 Map doesn't show the roadmap with Day 7, slide 3 marked: ${JSON.stringify(roadmap)}`);
   await page.click('.ftmap-slide:has(.ftmap-sn:text-is("9.2"))'); await page.waitForTimeout(800);
   const went = await page.evaluate(() => ({ day: FTDayDecks.state().day, i: FTDayDecks.state().i, open: !!document.getElementById('ftMap') }));
   if (went.day !== 9 || went.i !== 1 || went.open) fail(`a slide on the map didn't open it: ${JSON.stringify(went)}`);

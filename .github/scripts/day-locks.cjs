@@ -111,10 +111,14 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     v = await page.evaluate(() => { const st = FTDayLocks.steps(8), am = st.filter(s => s.slot === 'am').length, pm = st.find(s => s.slot === 'pm');
       return { at: FTDayLocks.at(8), am, pmOpen: pm ? FTDayLocks.stepOpen(8, pm.n) : null, pmN: pm && pm.n }; });
     if (v.at !== v.am || v.pmOpen !== false) fail(`Day 8's schedule didn't open just its AM session: ${JSON.stringify(v)}`);
-    // Day 3 discusses Lessons 3 and 4: Lesson 4's deck, video and Knowledge Check wait for Day 4's steps (locked), not Day 3's
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 999, 4: 0 } }, legacy: { all: [], batches: {} } });
+    // Day 3 discusses Lessons 3 and 4: its first step is the PI Workflow deck, its second the Reception deck (Lesson 4, the
+    // row's lesson), so Lesson 4's deck and video wait for Day 3's second step, and open with it
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 1, 4: 0 } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ l3: FTDayLocks.held(3, 'lesson'), l4: FTDayLocks.held(4, 'lesson'), v4: FTDayLocks.held(4, 'video') }));
-    if (v.l3 || v.l4 !== true || v.v4 !== true) fail(`Lesson 4 went by Day 3's steps: ${JSON.stringify(v)}`);
+    if (v.l3 || v.l4 !== true || v.v4 !== true) fail(`Lesson 4's deck didn't wait for Day 3's Reception step: ${JSON.stringify(v)}`);
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 2, 4: 0 } }, legacy: { all: [], batches: {} } });
+    v = await page.evaluate(() => ({ l4: FTDayLocks.held(4, 'lesson') }));
+    if (v.l4 !== false) fail(`Lesson 4's deck didn't open with Day 3's Reception step: ${JSON.stringify(v)}`);
     // a batch's own setting stands in for all batches': a batch can be locked behind the rest, and taken off their schedule
     await put(page, 'settings:daysteps', { all: { 7: 999 }, batches: { b102826: { 7: 0 } }, sched: { all: { 8: { am: past, pm: past, out: past } }, batches: { b102826: { 8: null } } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ d7: FTDayLocks.dayStarted(7), d8: FTDayLocks.at(8) }));
@@ -177,7 +181,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     v = await page.evaluate(() => ({ lock: !!document.querySelector('main.main-ftdd .ftd1-lock'), chip: (document.querySelector('.ftdd-bar .ftdl-chip') || {}).textContent || '',
       panel: (document.querySelector('.ftdd-rail .ftdl-tpanel') || {}).innerText || '', dots: document.querySelectorAll('.ftdd-dot.lk').length, want: FTDayDecks.list(7).length - FTDayLocks.steps(7)[1].to - 1 }));
     if (v.lock) fail('the trainer\'s deck is held by the locks');
-    if (!/Locked for trainees/.test(v.chip) || !/Segment 5 of 8/.test(v.panel) || !/2 of 8 open/.test(v.panel)) fail(`the trainer's deck doesn't show the segment locked for the trainees: ${JSON.stringify(v)}`);
+    if (!/Locked for trainees/.test(v.chip) || !/Segment 5 of 7/.test(v.panel) || !/2 of 7 open/.test(v.panel)) fail(`the trainer's deck doesn't show the segment locked for the trainees: ${JSON.stringify(v)}`);
     if (v.dots !== v.want) fail(`the trainer's deck marks ${v.dots} dots locked, not the ${v.want} slides of the locked segments`);
     await page.click('.ftdl-tpanel button:has-text("Unlock this segment")'); await page.waitForTimeout(1200);
     if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 5) fail('🔓 Unlock this segment on the trainer\'s deck didn\'t unlock Day 7 up to it');

@@ -93,7 +93,8 @@ function slideSteps(n, list){
 function rowSteps(n, list){
   const rows = (FTDayDecks.dayRows && FTDayDecks.dayRows(n)) || [];
   if(!rows.length) return slideSteps(n, list);
-  const out = rows.map((r, k) => ({n: k + 1, label: FTDayDecks.rowLabel ? FTDayDecks.rowLabel(n, r) : r.t, slot: "", from: -1, to: -1, ids: [], go: r.go || r.run || ""}));
+  // (lesson: the lesson a row's deck is, where not the day's own: Day 3's Reception deck, Lesson 4)
+  const out = rows.map((r, k) => ({n: k + 1, label: FTDayDecks.rowLabel ? FTDayDecks.rowLabel(n, r) : r.t, slot: "", from: -1, to: -1, ids: [], go: r.go || r.run || "", lesson: r.lesson}));
   let cur = 0;
   list.forEach((s, i) => {
     const k = s.row != null && out[s.row] && !(s.trainer && !extrasOf(n).length) && !s.divider ? Math.max(cur, Number(s.row)) : cur;
@@ -347,7 +348,7 @@ if(typeof __grid === "function") root.LSH_HOME_GRID_LAYOUT = function(ctx){
 // a lesson's own stops: 💬 its deck (a "lesson" launch on a day of its own card), 🎬 its video and ✍️ its Process Questions
 // (each launch names its lesson). Day 3 discusses Lessons 3 and 4, so the day alone doesn't say whose stop it is.
 const STOPS = {
-  lesson: (s, n, l) => s.go === "lesson" && lessonOf(n) === l,
+  lesson: (s, n, l) => s.go === "lesson" && (s.lesson != null ? Number(s.lesson) : lessonOf(n)) === l,
   video: (s, n, l) => new RegExp(`ftVideoOrAsk\\(${l}\\)`).test(s.go || ""),
   kc: (s, n, l) => new RegExp(`toKC\\(${l}\\)`).test(s.go || "")
 };

@@ -1360,17 +1360,17 @@ const LESSON_CARDS = {
       // then their one ✍️ Knowledge Check (Receptionist Training's, ten questions, Personal Injury Process Flow's first:
       // js/ft-process.js kc), the decision trees, the sample SOP, the sample call recordings, the Reception Listening
       // Activity (the Harbor & Pine calls, then the optional reference recordings) and the CRM/CMS videos
-      {t: "PI Workflow Discussion Deck", sub: "▶ Start Training: the Personal Injury Process Flow deck, with your trainer · Next: the Reception deck", k: "classroom", go: "lesson"},
-      {t: "Reception Discussion Deck", sub: "▶ Start Training: the Receptionist Training deck, with your trainer · Next: ✍️ the Knowledge Check", k: "classroom", go: "lesson", lesson: 4, kc: 4},
-      {t: "Knowledge Check: 10 Process Questions", sub: "PI Workflow & Receptionist Training in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(4)"},
+      {t: "PI Workflow Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson"},
+      {t: "Reception Discussion Deck", sub: "▶ Start Training, with your trainer", k: "classroom", go: "lesson", lesson: 4, kc: 4},
+      {t: "Knowledge Check: 10 Process Questions", sub: "PI Workflow & Reception · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(4)"},
       // (no Digital Handouts stop: the day has no handouts)
-      {t: "Authorization Decision Tree", sub: "The call-handling decision trees: who may be told what", k: "read", d: 3, s: "s1"},
-      {t: "Sample SOP", sub: "The sample SOP's pages · open it or ⬇ download it", k: "read", d: 3, s: "sop"},
-      {t: "Sample Call Recordings", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
+      {t: "Authorization Decision Tree", sub: "Who may be told what", k: "read", d: 3, s: "s1"},
+      {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
+      {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT; then the optional
       // reference recordings, build/day-decks.cjs REF_RECS, on the same step)
-      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Listen to the five calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check)", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Choose one video and watch it now · watch the rest during your idle time · then update item #12 on your Monitoring Sheet", k: "watch", d: 3, s: "s2"},
+      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · the 5 data points into the worksheet", k: "listendo", d: 3, s: "s1c"},
+      {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
