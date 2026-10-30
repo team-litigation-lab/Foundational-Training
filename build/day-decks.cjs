@@ -973,12 +973,11 @@ const ROWS = {
   10: {
     s1: [{id: "s1", parts: [[null, "<p> Claims Terminology Exercise</p>"]]},
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
-      // (the opening-claims slide in three, each a card row of its own: what to share, the sample documents, the VA call
-      // recordings; the card runs the recordings before the documents, js/ft-day-decks.js LESSON_CARDS[7])
+      // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
+      // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]]},
-      {id: "s1d", h: "AM: Sample Insurance Communication Documents", parts: [[SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
-        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]},
-      {id: "s1e", h: "AM: Sample Recordings: Opening Claims", parts: [["<p><b>VA Call Recordings", null]]}]
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]}]
   },
   11: {
     // the LOR Drafting Activity: its guidelines read over two slides (Activity 1: 1P, Activity 2: 3P), then the templates,

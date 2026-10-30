@@ -1419,8 +1419,7 @@ const LESSON_CARDS = {
       {t: "Digital Handouts", sub: "Breakout Session (Individual Activity) · the three digital handouts", k: "watch", run: "ftVideoOrAsk(7)"},
       {t: "Knowledge Check: Process Questions", sub: "Claims Specialist · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(7)"},
       {t: "Additional Information: What to Share", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer", k: "read", d: 10, s: "s1c"},
-      {t: "Sample Recordings: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims", k: "listen", d: 10, s: "s1e"},
-      {t: "Sample Documents", sub: "Insurance communication-related documents", k: "read", d: 10, s: "s1d"},
+      {t: "Sample Recordings & Documents: Opening Claims", sub: "VA call recordings: opening claims and checking for existing claims · the sample documents", k: "listen", d: 10, s: "s1e"},
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then shadowing and Day 12
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
