@@ -986,7 +986,8 @@ function lvOpen(item){
   const p = document.getElementById("lecture-viewer-pane"), holder = document.getElementById("lecture-viewer-frame-holder"), link = document.getElementById("lecture-viewer-open-link");
   document.getElementById("lecture-viewer-title").textContent = item.title || "Recorded Lecture";
   const clean = lvSrc(item.url).trim();
-  if(clean){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
+  // (item.noOpen: a reference to look at, not a file to take away: no link out to it, Day 8's sample intake forms)
+  if(clean && !item.noOpen){ link.href = clean; link.style.display = "inline-block"; } else link.style.display = "none";
   const src = lvEmbedUrl(item.url);
   holder.innerHTML = src
     ? `<iframe src="${esc(src)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>`
@@ -1029,7 +1030,7 @@ document.addEventListener("click", function(e){
   const a = e.target.closest && e.target.closest("a.viewer-link");
   if(a && !(e.ctrlKey || e.metaKey || e.shiftKey)){
     e.preventDefault();
-    lvOpen({kind: a.getAttribute("data-kind"), title: a.getAttribute("data-title"), url: a.getAttribute("href")});
+    lvOpen({kind: a.getAttribute("data-kind"), title: a.getAttribute("data-title"), url: a.getAttribute("href"), noOpen: a.hasAttribute("data-noopen")});
     return;
   }
   const card = e.target.closest && e.target.closest(".res-card[data-url]");
