@@ -142,6 +142,25 @@ const failures = []; const fail = m => failures.push(m);
   if (h2.length !== want.length || !h2.includes('W2 Final Average')) fail(`Week 2 didn't start from Week 1's columns: ${JSON.stringify(h2)}`);
   if (await page.$$eval('.xl .xl-num', t => t.filter(x => x.value).length)) fail('Week 2 came with Week 1\'s scores');
 
+  // ⤓ Fill, this week only: Tom's tracker has a day in Week 1 (100%) and one in Week 2 (40%); Week 2's Tracker column set to
+  // "This week only" takes the Week 2 day alone (2/5), the whole training's would be 70% (3.5/5)
+  const m = /^B(\d\d)(\d\d)(\d\d)$/.exec(BATCH), start = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00Z`), day = k => new Date(start + k * 864e5).toISOString().slice(0, 10);
+  await put('trackerreview:' + ids.Tom, { days: { [day(1)]: { source: 'drive', pct: 100 }, [day(8)]: { source: 'drive', pct: 40 } } });
+  const ti = await page.evaluate(() => [...document.querySelectorAll('.xl-head th')].findIndex(x => /^Tracker/.test(x.innerText.trim())));
+  await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
+  const ci = await page.evaluate(() => [...document.querySelectorAll('.rk-col input:not(.rk-sub):not([type=number])')].findIndex(x => x.value === 'Tracker'));
+  if (ci < 0) fail('the Tracker column isn\'t in ✎ Columns');
+  else {
+    const per = await page.evaluate(i => { const sel = document.querySelectorAll('.rk-col')[i].querySelectorAll('.rk-src select')[1]; return sel ? [...sel.options].map(o => o.text) : null; }, ci);
+    if (!per || !per.includes('This week only') || !per.includes('Whole training')) fail(`a source column has no This week / Whole training choice: ${JSON.stringify(per)}`);
+    await page.evaluate(i => FTRanking.col(i, 'period', 'week'), ci); await page.waitForTimeout(300);
+  }
+  await page.evaluate(() => FTRanking.toggleEdit()); await page.waitForTimeout(300);
+  await page.evaluate(() => FTRanking.fill()); await page.waitForTimeout(2500);
+  const tomTr = await page.evaluate(ti => { const r = [...document.querySelectorAll('.xl tr.xl-row')].find(x => /Tom Unscored/.test(x.innerText)); const c = r && r.children[ti]; const inp = c && c.querySelector('input, textarea'); return inp ? inp.value : (c ? c.innerText.trim() : ''); }, ti);
+  if (tomTr !== '2') fail(`⤓ Fill for this week took Tom's Tracker as ${JSON.stringify(tomTr)}, not Week 2's day alone (2)`);
+  await put('trackerreview:' + ids.Tom, null);
+
   for (const w of [1, 2]) await put(`ranking:${BATCH}:w${w}`, null);
   for (const id of Object.values(ids)) await put('rankshare:' + id, null);
   for (const id of Object.values(ids)) { const r = await get('trainee:' + id); if (r) { r.archived = true; await put('trainee:' + id, r); } }

@@ -177,7 +177,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     v = await page.evaluate(() => ({ lock: !!document.querySelector('main.main-ftdd .ftd1-lock'), chip: (document.querySelector('.ftdd-bar .ftdl-chip') || {}).textContent || '',
       panel: (document.querySelector('.ftdd-rail .ftdl-tpanel') || {}).innerText || '', dots: document.querySelectorAll('.ftdd-dot.lk').length, want: FTDayDecks.list(7).length - FTDayLocks.steps(7)[1].to - 1 }));
     if (v.lock) fail('the trainer\'s deck is held by the locks');
-    if (!/Locked for trainees/.test(v.chip) || !/Segment 5 of 7/.test(v.panel) || !/2 of 7 open/.test(v.panel)) fail(`the trainer's deck doesn't show the segment locked for the trainees: ${JSON.stringify(v)}`);
+    if (!/Locked for trainees/.test(v.chip) || !/Segment 5 of 8/.test(v.panel) || !/2 of 8 open/.test(v.panel)) fail(`the trainer's deck doesn't show the segment locked for the trainees: ${JSON.stringify(v)}`);
     if (v.dots !== v.want) fail(`the trainer's deck marks ${v.dots} dots locked, not the ${v.want} slides of the locked segments`);
     await page.click('.ftdl-tpanel button:has-text("Unlock this segment")'); await page.waitForTimeout(1200);
     if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 5) fail('🔓 Unlock this segment on the trainer\'s deck didn\'t unlock Day 7 up to it');
