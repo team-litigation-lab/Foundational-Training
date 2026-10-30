@@ -98,9 +98,13 @@ async function workerChecks() {
     if (!(await toPanel(t))) fail('Day 5\'s Attorney Calendar Management Activity has no Done');
     else if (!/Upload your 19 screenshots[^]*Once done, hit Submit[^]*Submit/.test(await panel(t)) || !(await t.$('.ftbf .ftbf-done'))) fail(`the activity's Done panel reads: ${await panel(t)}`);
 
-    // 🧪 a demo slide: Demo Preparation
+    // 🧪 a demo slide, as Day 4's mock calls: only "Demos Ongoing", its line and Done; its instructions and metrics are on
+    // the preparation slide before it (build/day-decks.cjs PREP), the same card row
     await open(t, 8, 's3'); await toPanel(t);
-    if (!/Practice Buffer: Demo Preparation/.test(await panel(t))) fail(`Day 8's intake packet demo has no Demo Preparation panel: ${(await panel(t)).slice(0, 120)}`);
+    const d8 = await panel(t);
+    if (!/Demos Ongoing/.test(d8) || !/Hit Done when you are done with your Demo\./.test(d8) || /Practice Buffer/.test(d8)) fail(`Day 8's intake packet demo isn't Day 4's Done panel: ${d8.slice(0, 120)}`);
+    if (!(await t.evaluate(() => { const l = FTDayDecks.list(8), i = l.findIndex(s => s.id === 's3'); return i > 0 && l[i - 1].id === 's3p' && l[i - 1].row === l[i].row; })))
+      fail("Day 8's demo has no preparation slide before it, in its row");
 
     // ☎ a mock call: Practice Buffer, the links, the warning, Done → the dialog → Screen 2
     await open(t, 6, 's1b');

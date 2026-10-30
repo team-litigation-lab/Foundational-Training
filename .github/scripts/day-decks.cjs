@@ -226,7 +226,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => goto('modules')); await page.waitForTimeout(800);
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(1500);
   const at = () => page.evaluate(() => ({ view: state.view, hash: location.hash, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', n: (document.querySelector('.ftdd-stepno') || {}).innerText || '',
-    deck: !document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle') && !!document.querySelector('.ftdd-dhead .ftdd-prog > span') && !!document.querySelector('.ftdd-nav .ftdd-stepno'), tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
+    deck: !document.querySelector('.ftdd-deck .ftdd-logo') && !!document.querySelector('.ftdd-dtitle') && !!document.querySelector('.ftdd-dhead .ftdd-prog > span') && !!document.querySelector('.ftdd-nav .ftdd-stepno'), player: !!document.querySelector('.ftdd-deck .ftdd-inline.is-video iframe[src*="/preview"]'), vlinks: document.querySelectorAll('.ftdd-deck a.ftdd-tile.k-video').length, tiles: document.querySelectorAll('.ftdd-sheet a.ftdd-tile').length,
     open: Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.dayOpen(n)).map(String), scroll: document.documentElement.scrollHeight - innerHeight,
     trainerNotes: [...document.querySelectorAll('.ftdd-body .trainer-slot')].some(x => x.innerHTML.trim()) }));
   let s = await at();
@@ -253,7 +253,8 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(() => FTDayDecks.to(FTDayDecks.at(16, FT_DAY_DECKS[16].slides[0].id))); await page.waitForTimeout(400);
   s = await at();
   if (!/Lien Balance Verification/.test(s.h)) fail('Day 16\'s first slide of its own is "' + s.h + '"');
-  if (!s.tiles) fail('Day 16\'s links are not shown as tiles');
+  // (its tutorial video plays in the slide, as every video the platform can play does; no link to open it elsewhere)
+  if (!s.player || s.vlinks) fail(`Day 16's tutorial video doesn't play in the slide: ${JSON.stringify({ player: s.player, links: s.vlinks })}`);
   // 📌 a no-discussion day: the trainer adds the day's activities and instructions on its last slide
   const extrasBefore = await get('settings:dayextras');
   await put('settings:dayextras', { days: {} });

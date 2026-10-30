@@ -675,6 +675,10 @@ const LOR_FILE = "11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu";
 const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.html"), "utf8").trim() + "\n";
 // edits to a section before it is cut into its rows' slides
 const EDIT = {
+  // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
+  // slide; the 3P Zurich sample and the VLF SOP stay documents
+  10: {s2: h => ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
+    .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h)},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
   11: {
@@ -922,6 +926,14 @@ const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="can
 const EX_RENAME = {
   // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
   13: {s3: {h: "PM: Breakout Session"}}};
+// the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
+const PREP = {
+  8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
+  9: {s3b: "PM: Intake Mock Calls: Instructions & Metrics"},
+  12: {s1d: "Entire Day: Demo Preparation: Uploading and Sending 1P & 3P LORs"},
+  14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
+  15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
+  16: {s2: "PM: Demo Preparation: Lien Balance Verification Request"}};
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
   const d = load(n), slides = [], carry = {}, cut = new Set(), noted = new Set();
@@ -983,6 +995,14 @@ for(let n = 1; n <= 16; n++){
     if(!x.html.replace(/<div class="trainer-slot"[^>]*><\/div>|<hr class="stars">/g, "").trim()){ slides.splice(i, 1); continue; }
     // (and the ✱✱✱ divider that followed the pointer no longer opens the slide: Day 13's Breakout Session)
     x.html = x.html.replace(/^((?:\s*<div class="trainer-slot"[^>]*><\/div>)*\s*)<hr class="stars">\n?/, "$1");
+  }
+  // ☎ / 🧑‍🏫 a mock call or demo in Day 4's format (PREP): its instructions, rules and metrics on a preparation slide of their
+  // own, then the activity's slide, where a trainee sees only "Mock Calls Ongoing" / "Demos Ongoing" and Done
+  // (js/ft-buffer.js ACTS, simple); the activity slide keeps its id, so the records saved under it stand
+  for(const [id, h] of Object.entries(PREP[n] || {})){
+    const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
+    const x = slides[i];
+    slides.splice(i, 1, Object.assign({}, x, {id: id + "p", h}), {id, h: x.h, of: x.of, html: ""});
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
