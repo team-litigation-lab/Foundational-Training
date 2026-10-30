@@ -494,7 +494,7 @@ const met = (rows, f) => (rows.find(r => r[0] === f) || [])[1] === true;
 function matchAct(events){
   const C = CK(); if(!C) return {};
   const pairs = [];
-  C.key.forEach(k => events.forEach(x => {
+  keyNow(C).forEach(k => events.forEach(x => {
     const rows = rowsFor(C, k, x), title = met(rows, "Title"), when = met(rows, "Start date") && (k.overnight ? !!x.allDay : met(rows, "Start time"));
     if(title || when) pairs.push({k, x, sc:(title ? 100 : 0) + (when ? 50 : 0) + rows.filter(r => r[1] === true).length});
   }));

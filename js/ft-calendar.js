@@ -4,8 +4,9 @@
      • Two tracks (FTCalCore.TRACKS): 🎓 Standard Training (opens with Lesson 5) and 🗓 Attorney Calendar Management Activity
        (Day 5; opens with Day 5, like its 🛠 Practice Lab card). Open one directly: goto('calsim','attorney-activity') (a scenario
        or track id), FTCalSim.open('attorney-activity'), or the address #/calsim/attorney-activity. The last one opened is remembered.
-     • The activity (FTCalCore.act) is the attorney's own Google Calendar in Pacific Time, July 6–19, 2026 (the activity is
-       July 6–15; the days after are greyed): week view, midnight to midnight, 15-minute steps, ‹ › for the two weeks and an
+     • The activity (FTCalCore.act) is the attorney's own Google Calendar in Pacific Time, two weeks from its anchor Monday
+       (the activity is days 0–9, written for July 6–15, 2026; the days after are greyed): week view, midnight to midnight,
+       15-minute steps, ‹ › for the two weeks and an
        All-day row. The trainee creates every event (drag, ＋ Create or ＋ Add event); the editor has Google Calendar's fields:
        date, start/end, All day, the event's own time zone (the Calendar Activity Check's list), location, guests (the four
        in the directory or any email), Google Meet, reminders (Notification or Email, minutes to weeks before), color and
@@ -31,7 +32,13 @@
        **releases the final feedback**. The trainee then sees it on this page and can download or print a copy.
      • The Standard weeks run on the Main Portal now (this page keeps the calendars saved before the move); the activity is done
        and graded here, from its 🛠 Practice Lab card (window.ftCalActivityCard, js/ft-simulators.js) and the Day 5 step.
-     • Saved in the trainee's `calsim:<id>` record: {v:2, drafts:{scenario:[events]}, autos:[{scn, at, pct, score, max}], submissions:[{scn, at, events, auto}],
+     • The activity's dates: its anchor (FTCalCore.act, THE ANCHOR), the first Monday on or after the trainee's batch's Day 5, kept
+       ONCE in the record as anchors["attorney-activity"] (load() gives a record without one its own and saves it; a record from
+       before, an activity draft or submission and no anchor, keeps July 6, 2026). It is set before anything filters events by
+       date (a July draft cleaned under a November anchor would be emptied, then autosaved). A trainer's preview shows the dates a
+       batch starting this week would get (anchorNow) and saves nothing. Each submission keeps the anchor it was made at
+       (sub.anchor); everything that shows or grades a stored submission runs at it (atSub: X.withAnchor), puts the page's back.
+     • Saved in the trainee's `calsim:<id>` record: {v:2, anchors:{scenario:"YYYY-MM-DD"}, drafts:{scenario:[events]}, autos:[{scn, at, pct, score, max}], submissions:[{scn, at, anchor, events, auto}],
        reviews:{"<scn>|<at>": {score, comment (written insights), extra:[points the AI missed], tasks:{taskId: comment}, released, releasedAt, by, at}};
        a submission also has ai:{at, summary, items:[{id, status, feedback}], strengths, improve} or ai:{error}, external:[...]}. The Worker keeps `reviews` from being changed
        by the trainee.
@@ -76,10 +83,16 @@ const rangeLabel = () => { const a = dayDate(0), b = dayDate(4); return a.getMon
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["calsim"]);
 
 const S = {guide:null, aiBusy:{}, id:null, data:null, loading:false, err:"", scn:0, events:[], result:null, timer:null, saved:null, drag:null, sel:null,
-  week:0, caTop:null, picked:false, want:null};      // the activity: the week shown (0 or 1), the grid's scroll; picked: chosen on purpose
+  week:0, caTop:null, picked:false, want:null,       // the activity: the week shown (0 or 1), the grid's scroll; picked: chosen on purpose
+  anchor:null, noSave:false};                        // anchor: the trainee's record's (load()); noSave: the record couldn't be read
+// The page's anchor: the trainee's record's once load() has read it (until then a guess for the display, from their Batch ID);
+// a trainer's preview, the dates a batch starting this week would get. anchored(): the draft may be cleaned and saved.
+const pageAnchor = () => isTrainee() ? (S.anchor || X.anchorForBatch(state.traineeBatch) || X.anchorNow()) : X.anchorNow();
+const anchored = () => !isTrainee() || !!S.anchor;
 const scn = () => C.SCENARIOS[S.scn];
 const SCN_KEY = "ft-calsim-scn";                      // the scenario opened last (this browser)
-function setScn(i, soft){ S.scn = i; S.sel = null; S.result = null; S.week = 0; S.caTop = null; S.events = C.cleanFor(scn(), (S.data && S.data.drafts[scn().id]) || []);
+// (the activity's draft is cleaned at the page's anchor, so only once the record's is known: before that, nothing is shown)
+function setScn(i, soft){ S.scn = i; S.sel = null; S.result = null; S.week = 0; S.caTop = null; X.setAnchor(pageAnchor()); S.events = anchored() ? C.cleanFor(scn(), (S.data && S.data.drafts[scn().id]) || []) : [];
   if(!soft) try{ localStorage.setItem(SCN_KEY, scn().id); }catch(err){} }
 try{ const i = C.SCENARIOS.findIndex(x => x.id === localStorage.getItem(SCN_KEY)); if(i >= 0) S.scn = i; }catch(err){}
 // The remembered track is locked (and wasn't picked on purpose): show the first one that is open, and go back once it opens.
@@ -93,7 +106,11 @@ const scnIndex = id => { const i = C.SCENARIOS.findIndex(x => x.id === id); retu
 const uid = () => "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 /* ---------- the trainee's saved record ---------- */
-const blank = () => ({v:2, drafts:{}, autos:[], submissions:[], reviews:{}, external:[]});
+const blank = () => ({v:2, anchors:{}, drafts:{}, autos:[], submissions:[], reviews:{}, external:[]});
+// a stored submission's anchor: its own, else its record's (anchorOfRecord: July 2026 for one from before), kept per object by norm()
+const SA = new WeakMap();
+const subAnchor = z => z && X.okAnchor(z.anchor) ? z.anchor : SA.get(z) || X.BASE_FROM;
+const atSub = (z, fn) => X.withAnchor(subAnchor(z), fn);
 function norm(d){
   d = d || blank();
   d.drafts = d.drafts || {}; d.autos = d.autos || []; d.submissions = d.submissions || []; d.reviews = d.reviews || {}; d.external = d.external || [];
@@ -102,15 +119,27 @@ function norm(d){
   // a submission's time stamp and scenario id are the trainee's own writing: only real ones (they key reviews and the trainer's buttons)
   d.submissions = d.submissions.filter(x => typeof x.at === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,3})?Z$/.test(x.at) && typeof x.scn === "string" && /^[a-z0-9-]{1,40}$/.test(x.scn));
   Object.keys(d.drafts).forEach(k => { if(!Array.isArray(d.drafts[k])) delete d.drafts[k]; });
+  // anchors: only Mondays the activity can take
+  d.anchors = Object.fromEntries(Object.entries(d.anchors && typeof d.anchors === "object" && !Array.isArray(d.anchors) ? d.anchors : {}).filter(([k, v]) => X.okAnchor(v)));
+  const ra = X.anchorOfRecord(d) || X.BASE_FROM; d.submissions.forEach(z => SA.set(z, ra));
   return d;
 }
 async function load(){
-  if(!isTrainee()){ S.data = blank(); return; }
+  // (whose page it is: a trainer after a trainee in the same tab starts empty, at this week's dates)
+  if(!isTrainee()){ const was = S.who; S.who = ""; S.data = blank(); S.anchor = null; S.noSave = false; X.setAnchor(X.anchorNow());
+    if(was !== ""){ S.events = []; S.result = null; S.sel = null; if(was != null && state.view === "calsim") render(); } return; }
+  if(S.id !== state.traineeId) S.anchor = null;
+  S.who = state.traineeId;
   S.loading = true; S.err = ""; S.id = state.traineeId;
-  try{ S.data = norm(await sharedGet("calsim:" + S.id)); }
-  catch(err){ S.data = blank(); S.err = "Couldn’t load your saved work. You can still practice; check your connection to save."; }
+  let d = null, made = false;
+  try{ d = norm(await sharedGet("calsim:" + S.id)); }catch(err){}
+  // the record's anchor FIRST (one without gets its own, saved below), and only then is its draft cleaned by date
+  if(d){ let a = X.anchorOfRecord(d); if(!a){ a = X.ensureAnchor(d, state.traineeBatch).anchor; made = true; } S.anchor = a; S.noSave = false; }
+  else{ d = blank(); S.anchor = X.anchorNow(); S.noSave = true; S.err = "Couldn’t load your saved work. You can still practice, but nothing is saved: check your connection and reload the page."; }
+  S.data = d; X.setAnchor(S.anchor);
   S.loading = false;
   S.events = C.cleanFor(scn(), S.data.drafts[scn().id]);
+  if(made) queueSave();
   S.caTop = null;     // the grid opens at the week's earliest saved event (a render while loading had none)
   if(state.view === "calsim" || state.view === "simulators") render();
 }
@@ -123,7 +152,8 @@ function queueSave(){
 // The Worker refuses a record over 450 KB: say so plainly instead of failing as "not saved".
 const LIMIT = 440000, ACT_SUBS = 8;
 const fits = () => { try{ return JSON.stringify(S.data).length <= LIMIT; }catch(err){ return true; } };
-async function saveRec(){ if(!fits()) return "big"; return sharedSet("calsim:" + S.id, S.data); }
+// (never over a record that couldn't be read: it would be replaced by an empty one)
+async function saveRec(){ if(S.noSave) return false; if(!fits()) return "big"; return sharedSet("calsim:" + S.id, S.data); }
 const BIG = "⚠ Not saved: your calendar record is full. Delete events you don’t need, or ask your trainer to clear old submissions.";
 function paintSave(){
   const el = document.getElementById("csSave"); if(!el) return;
@@ -138,12 +168,14 @@ async function saveNow(){
 }
 function changed(){
   S.result = null;
-  if(S.data){ S.data.drafts[scn().id] = JSON.parse(JSON.stringify(S.events)); queueSave(); }
+  if(S.data && anchored()){ S.data.drafts[scn().id] = JSON.parse(JSON.stringify(S.events)); queueSave(); }
 }
 const released = r => !!r && r.released !== false;
 // A submission's automated review, worked out once per saved calendar (the trainer's list reviews every trainee's on each render).
+// It is worked out at the submission's anchor (and cached with it).
 const RV = new WeakMap();
-function subReview(s, sub){ const c = RV.get(sub); if(c && c.s === s && c.ev === sub.events) return c.g; const g = C.review(s, sub.events); RV.set(sub, {s, ev:sub.events, g}); return g; }      // reviews saved before release existed count as released
+function subReview(s, sub){ const at = subAnchor(sub), c = RV.get(sub); if(c && c.s === s && c.ev === sub.events && c.at === at) return c.g;
+  const g = X.withAnchor(at, () => C.review(s, sub.events)); RV.set(sub, {s, ev:sub.events, at, g}); return g; }      // reviews saved before release existed count as released
 const subs = id => S.data ? S.data.submissions.filter(x => x.scn === id) : [];
 const subKey = x => x.scn + "|" + x.at;
 
@@ -198,25 +230,30 @@ function tasksHTML(){
 /* ---------- 🗓 the Attorney Calendar Management Activity: the attorney's Google Calendar, two weeks in Pacific Time ---------- */
 const CREATE_SVG = `<svg width="24" height="24" viewBox="0 0 36 36" aria-hidden="true"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V6h-4v14z"/></svg>`;
 const gmt = abs => { const o = X.offAt(X.CAL_TZ, abs), a = Math.abs(o); return `GMT${o < 0 ? "-" : "+"}${String(Math.floor(a / 60)).padStart(2, "0")}${a % 60 ? ":" + String(a % 60).padStart(2, "0") : ""}`; };
-const dayParts = d => X.dLabel(d).split(" ");          // ["Mon", "Jul", "6"]
+const dayParts = d => X.dLabel(d).split(" ");          // ["Mon", "Jul", "6"], at the page's anchor
 const weekOf = day => day >= 7 ? 1 : 0;
-const rangeText = (a, b) => { const p = dayParts(a), q = dayParts(b); return p[1] === q[1] ? `${MONTHS[MONTHS.findIndex(m => m.startsWith(p[1]))]} ${p[2]} – ${q[2]}, 2026` : `${p[1]} ${p[2]} – ${q[1]} ${q[2]}, 2026`; };
+// "November 2 – 8, 2026", "Nov 30 – Dec 6, 2026", "Dec 28, 2026 – Jan 3, 2027"
+const rangeText = (a, b) => { const p = dayParts(a), q = dayParts(b), ya = X.dYear(a), yb = X.dYear(b);
+  return ya !== yb ? `${p[1]} ${p[2]}, ${ya} – ${q[1]} ${q[2]}, ${yb}` : p[1] === q[1] ? `${MONTHS[MONTHS.findIndex(m => m.startsWith(p[1]))]} ${p[2]} – ${q[2]}, ${yb}` : `${p[1]} ${p[2]} – ${q[1]} ${q[2]}, ${yb}`; };
 // The trainee's color, or the calendar's default (no color chosen: a pale blue, so it never passes for Peacock).
 const paintOf = x => { const c = C.colorOf(x.color); return c ? `background:${c.hex};border-left-color:${c.edge};${c.id === "banana" ? "color:#202124;" : ""}` : ""; };
 const ACT_HINT = "Pacific Time: the attorney is in Seattle. Drag on an empty spot to add an event · drag to move · drag the bottom edge to resize · double-click (or Enter) to edit its details: date and time, time zone, location, guests, reminders, color, notes · ✕ deletes. Use All day for the overnight stay. ⚠ with a red ring: it overlaps another event.";
 function actToolbarHTML(){
   const a = S.week * 7, b = Math.min(a + 6, X.NDAYS - 1);
-  return `<div class="gc-bar ca-bar"><span class="gc-logo">📅</span><span class="gc-brand">Calendar</span><button type="button" class="ca-tbtn" onclick="FTCalSim.week(0, true)" title="Back to the first week">Jul 6</button>
+  return `<div class="gc-bar ca-bar"><span class="gc-logo">📅</span><span class="gc-brand">Calendar</span><button type="button" class="ca-tbtn" onclick="FTCalSim.week(0, true)" title="Back to the first week">${e(dayParts(0).slice(1).join(" "))}</button>
     <button type="button" class="ca-nav" onclick="FTCalSim.week(-1)" ${S.week ? "" : "disabled"} aria-label="Previous week" title="Previous week">‹</button><button type="button" class="ca-nav" onclick="FTCalSim.week(1)" ${S.week ? "disabled" : ""} aria-label="Next week" title="Next week">›</button>
     <span class="gc-range">${e(rangeText(a, b))}</span><span class="gc-view">Week</span><span class="gc-tz">${e(gmt(X.absAt(X.dIso(a), 720, X.CAL_TZ)))} Pacific Time – Los Angeles</span></div>`;
 }
+// the month of the shown week (its Monday's), Monday first, as the Standard track's miniMonthHTML; the calendar's days are buttons
 function actMiniMonthHTML(){
-  const head = ["M","T","W","T","F","S","S"].map(x => `<i>${x}</i>`).join(""); let cells = "";
-  for(let r = 0; r < 5; r++){ const row = []; for(let c = 0; c < 7; c++){ const i = -7 + r * 7 + c, p = dayParts(i), inGrid = i >= 0 && i < X.NDAYS;
-    const cls = [p[1] !== "Jul" ? "out" : "", i >= 0 && i <= X.LAST ? "ca-in" : "", inGrid && weekOf(i) === S.week ? "wk" : ""].join(" ");
-    row.push(inGrid ? `<button type="button" class="${cls}" onclick="FTCalSim.week(${weekOf(i)}, true)" title="${e(X.dLabel(i))}">${p[2]}</button>` : `<span class="${cls}">${p[2]}</span>`); }
+  const head = ["M","T","W","T","F","S","S"].map(x => `<i>${x}</i>`).join(""), w0 = X.dIso(S.week * 7), y = +w0.slice(0, 4), mo = +w0.slice(5, 7) - 1;
+  const first = Date.UTC(y, mo, 1), start = first - ((new Date(first).getUTCDay() + 6) % 7) * 864e5; let cells = "";
+  for(let r = 0; r < 6; r++){ if(r && new Date(start + r * 7 * 864e5).getUTCMonth() !== mo) break;
+    const row = []; for(let c = 0; c < 7; c++){ const t = new Date(start + (r * 7 + c) * 864e5), i = X.dIdx(t.toISOString().slice(0, 10)), inGrid = i >= 0 && i < X.NDAYS;
+    const cls = [t.getUTCMonth() !== mo ? "out" : "", i >= 0 && i <= X.LAST ? "ca-in" : "", inGrid && weekOf(i) === S.week ? "wk" : ""].join(" ");
+    row.push(inGrid ? `<button type="button" class="${cls}" onclick="FTCalSim.week(${weekOf(i)}, true)" title="${e(X.dLabel(i))}">${t.getUTCDate()}</button>` : `<span class="${cls}">${t.getUTCDate()}</span>`); }
     cells += `<div class="gc-mrow">${row.join("")}</div>`; }
-  return `<div class="gc-mini ca-mini"><div class="gc-mini-hd">July 2026</div><div class="gc-mrow gc-mdow">${head}</div>${cells}</div>`;
+  return `<div class="gc-mini ca-mini"><div class="gc-mini-hd">${MONTHS[mo]} ${y}</div><div class="gc-mrow gc-mdow">${head}</div>${cells}</div>`;
 }
 function actTrayHTML(){
   const s = scn();
@@ -225,7 +262,7 @@ function actTrayHTML(){
     return `<div class="ca-lg"><i style="background:${c0.hex}"></i><span><b>${e(c.legend)}</b> – ${e(c.what)}</span><em>${e(c.colors.map(id => C.colorOf(id).name).join(" / "))}</em></div>`; }).join("");
   const people = s.people.map(p => `<div class="ca-pp"><b>${e(p.name)}</b><span>${e(p.email)}</span></div>`).join("");
   const line = l => `<span class="ca-l${/^➢/.test(l) ? 1 : /^▪/.test(l) ? 2 : 3}">${e(l)}</span>`;
-  const items = s.items.map(it => `<div class="cs-task ca-item" role="button" tabindex="0" onclick="FTCalSim.week(${weekOf(X.dIdx(it.date))}, true)" onkeydown="if(event.key==='Enter')this.click()" title="Show its week"><b><span class="ca-n">${it.n}</span>${e(it.title)}</b>
+  const items = s.itemsNow.map(it => `<div class="cs-task ca-item" role="button" tabindex="0" onclick="FTCalSim.week(${weekOf(X.dIdx(it.date))}, true)" onkeydown="if(event.key==='Enter')this.click()" title="Show its week"><b><span class="ca-n">${it.n}</span>${e(it.title)}</b>
     ${it.lines.map(([k, v]) => `<p><em>${e(k)}:</em> ${Array.isArray(v) ? `<span class="ca-sub">${v.map(line).join("")}</span>` : e(v)}</p>`).join("")}</div>`).join("");
   return `<div class="cs-tray ca-tray" id="csTray"><button class="gc-create" onclick="FTCalSim.add()">${CREATE_SVG}Create</button>${actMiniMonthHTML()}
     <details class="ca-box" open><summary>📋 Instructions</summary><p class="ca-intro">${e(s.intro)}</p><p class="ca-stand">${e(s.standIn)}</p><ol class="ca-ol">${ins}</ol></details>
@@ -255,7 +292,7 @@ function actBlockHTML(x, p, why, ln){
 function actGridHTML(s, events){
   const fl = C.flags(s, events), w0 = S.week * 7, days = [0, 1, 2, 3, 4, 5, 6].map(i => w0 + i), off = d => d > X.LAST;
   const pacs = events.map(x => ({x, p:X.pacOf(x)}));
-  const hd = d => { const p = dayParts(d); return `<div class="ca-dh ${off(d) ? "ca-off" : ""}" ${off(d) ? 'title="After the activity (July 6 to 15)"' : ""}><span>${p[0].toUpperCase()}</span><b>${p[2]}</b></div>`; };
+  const hd = d => { const p = dayParts(d); return `<div class="ca-dh ${off(d) ? "ca-off" : ""}" ${off(d) ? `title="After the activity (${e(X.spanText(X.LAST))})"` : ""}><span>${p[0].toUpperCase()}</span><b>${p[2]}</b></div>`; };
   const chip = x => { const col = C.colorOf(x.color), why = fl[x.id];
     return `<div class="ca-adev ${col ? "" : "ca-nocol"} ${why ? "ca-bad" : ""} ${S.sel === x.id ? "cs-sel" : ""}" data-adev="${e(x.id)}" tabindex="0" role="button" title="${e(why ? why.join("; ") : (col ? col.name : "No color yet") + ". Click to edit")}" style="${paintOf(x)}">${why ? "⚠ " : ""}${e(x.title || "(no title)")}</div>`; };
   const ad = d => pacs.filter(o => o.p.allDay && d >= o.p.day && d < o.p.day + o.p.span).map(o => chip(o.x)).join("");
@@ -350,7 +387,7 @@ async function toCheck(){
   if(!R || !R.rec || R.failed){ toast("Couldn’t read your Calendar Activity Check, so nothing was copied. Check your connection."); goto("calcheck"); return; }
   const typed = Object.values(R.rec.entries || {}).some(v => Object.entries(v || {}).some(([f, x]) => f !== "runit" && x !== "" && x !== false && x != null));
   if(typed && JSON.stringify(R.rec.entries) !== JSON.stringify(g.entries) && !confirm("Copy this calendar into your Calendar Activity Check?\n\nIts events replace the ones typed there now. Your answers on the 19th screenshot and your submissions stay.")){ goto("calcheck"); return; }
-  R.rec.entries = JSON.parse(JSON.stringify(g.entries));
+  R.rec.entries = JSON.parse(JSON.stringify(g.entries)); R.rec.anchor = X.anchor();      // the dates they were copied at
   const ok = await K.save();
   toast(ok === false ? "Couldn’t save to the Calendar Activity Check. Check your connection." : `📋 ${Object.keys(g.entries).length} events copied into your Calendar Activity Check: each field is checked there.`);
   goto("calcheck");
@@ -376,7 +413,7 @@ function historyHTML(){
     const ba = bestAuto(s.id), autoPill = ba >= 0 ? `<span class="cs-pill ${ba >= C.PASS ? "ok" : ""}">🤖 ${e(s.short)} automated review: best ${ba}%</span>` : "";
     if(!last) return `<div class="cs-hist-row"><span class="cs-pill">${e(s.short)}: not submitted</span>${autoPill}</div>`;
     const r = S.data.reviews[subKey(last)], au = subReview(s, last);
-    return `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.short)} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${released(r) ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${feedbackPanel(s, last, r)}</div>`;
+    return atSub(last, () => `<div class="cs-hist-row"><span class="cs-pill ok">📤 ${e(s.short)} submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span>${autoPill}${released(r) ? "" : `<span class="cs-pill">Waiting for your trainer’s feedback</span>`}${feedbackPanel(s, last, r)}</div>`);
   }).join("");
   const ext = S.data.external.slice(-3).reverse().map(x => `<span class="cs-pill">${e(x.title || "Simulator")}: ${Math.round(x.score)}/${Math.round(x.max)}</span>`).join("");
   return `<div class="cs-hist">${evalHTML()}${pv}${rows}${ext}</div>`;
@@ -386,13 +423,14 @@ function evalHTML(){
   const s = scn(), list = subs(s.id), last = list[list.length - 1];
   const head = `<div class="cs-eval-hd"><h2>📋 My submitted evaluation · ${e(s.short)}</h2></div>`;
   if(!last) return `<div class="card cs-eval">${head}<p class="cs-hint">Nothing submitted for ${e(s.short)} yet. Build the week, then press <b>📤 Submit to my trainer</b>: your submitted calendar and the AI review appear here.</p></div>`;
-  const au = subReview(s, last), key = subKey(last), busy = !!S.aiBusy[key] && !last.ai, r = S.data.reviews[key];
+  // (at the submission's anchor: its dates, and the events its dates keep)
+  return atSub(last, () => { const au = subReview(s, last), key = subKey(last), busy = !!S.aiBusy[key] && !last.ai, r = S.data.reviews[key];
   const evs = C.cleanFor(s, last.events);
   return `<div class="card cs-eval">${head}
     <div class="cs-hist-row"><span class="cs-pill ok">📤 Submitted ${e(new Date(last.at).toLocaleString())}</span><span class="cs-pill ${au.passed ? "ok" : ""}">🤖 Automated: ${au.pct}%</span><span class="cs-pill">${isAct(s) ? `${evs.length} event${evs.length === 1 ? "" : "s"} · ${s.key.length} expected` : `${evs.length} of ${s.tasks.length} tasks scheduled`}</span>${list.length > 1 ? `<span class="cs-pill">Submission ${list.length} of ${list.length}</span>` : ""}${released(r) ? `<span class="cs-pill ok">👤 Trainer ${e(r.score)}/100</span>` : ""}</div>
     <div class="cs-eval-cols"><div><h3>Calendar as submitted</h3><div class="gc-shell"><div class="cs-gridwrap">${gridHTML(s, evs, true)}</div></div></div>
       <div><h3>🤖 AI review</h3>${aiBlock(last.ai, busy) || `<p class="cs-hint">No AI review for this submission.</p>`}${last.ai && !last.ai.error ? taskFeedback(s, last.ai, null) : ""}
-        <h3>Rule-by-rule review</h3>${reviewHTML(au)}</div></div></div>`;
+        <h3>Rule-by-rule review</h3>${reviewHTML(au)}</div></div></div>`; });
 }
 function renderPage(){
   autoPick();
@@ -449,6 +487,7 @@ function restoreTop(){
 }
 function repaint(){
   const gw = document.querySelector(".cs-gridwrap"); if(!gw){ render(); return; }
+  X.setAnchor(pageAnchor());
   gw.innerHTML = gridHTML(); restoreTop();
   const h = document.querySelector(".cs-hist"); if(h) h.outerHTML = historyHTML();
   const box = document.getElementById("csResultBox"); if(box) box.innerHTML = resultHTML();
@@ -578,7 +617,7 @@ function actEditor(x, isNew, done){
   closeModal();
   const STEPM = C.STEP, G = x.guests.slice(), R = x.reminders.map(r => Object.assign({}, r));
   const dateOpts = sel => { const ids = []; for(let i = 0; i <= X.LAST; i++) ids.push(i); const si = X.dIdx(sel); if(!isNaN(si) && !ids.includes(si)) ids.push(si);
-    return ids.sort((a, b) => a - b).map(i => `<option value="${X.dIso(i)}" ${X.dIso(i) === sel ? "selected" : ""}>${e(X.dLabel(i))}, 2026</option>`).join(""); };
+    return ids.sort((a, b) => a - b).map(i => `<option value="${X.dIso(i)}" ${X.dIso(i) === sel ? "selected" : ""}>${e(X.dLabel(i))}, ${X.dYear(i)}</option>`).join(""); };
   const startOpts = sel => { let o = ""; for(let m = 0; m < 1440; m += STEPM) o += `<option value="${m}" ${m === sel ? "selected" : ""}>${hh(m)}</option>`; return o; };
   const endOpts = (st, sel) => { let o = ""; for(let m = st + STEPM; m <= 1440; m += STEPM) o += `<option value="${m}" ${m === sel ? "selected" : ""}>${X.fmtE(m)} (${durText(m - st)})</option>`; return o; };
   const untilOpts = (date, span) => { const d0 = X.dIdx(date); let o = ""; for(let k = 1; k <= 7 && d0 + k - 1 <= X.NDAYS - 1; k++) o += `<option value="${k}" ${k === span ? "selected" : ""}>${e(X.dLabel(d0 + k - 1))}</option>`; return o; };
@@ -704,7 +743,7 @@ function onCancel(){ endDrag(); repaint(); }
 const evOf = id => S.events.find(x => x.id === id);
 function rename(id){ const x = evOf(id); if(!x) return; openEditor(x, false, (v, del) => { if(del){ remove(id); return; } if(!v) return; Object.assign(x, v); if(isAct(scn())){ actShow(x); return; } changed(); repaint(); }); }
 function remove(id){ S.events = S.events.filter(x => x.id !== id); if(S.sel === id) S.sel = null; changed(); repaint(); }
-// The activity's keyboard: ↑ ↓ move the start 15 minutes (in the event's own zone), Shift resizes, ← → move it a day (July 6 to 15).
+// The activity's keyboard: ↑ ↓ move the start 15 minutes (in the event's own zone), Shift resizes, ← → move it a day (within the activity's days, 0 to X.LAST).
 function actKey(x, ev){
   const k = ev.key, y = Object.assign({}, x);
   if(ev.shiftKey && k === "ArrowDown") y.dur = x.dur + C.STEP;
@@ -792,8 +831,10 @@ Return ONLY a JSON object, no other text:
 function actAiPrompt(s, events, g, guide){
   const ins = s.instructions.map((x, i) => `${i + 1}. ${x.t}${x.sub ? "\n" + x.sub.map(y => "   - " + y).join("\n") : ""}`).join("\n");
   const legend = Object.keys(s.cats).map(k => { const c = s.cats[k]; return `- ${c.legend} – ${c.what}: ${c.colors.map(id => C.colorOf(id).name).join(" (") + (c.colors.length > 1 ? " accepted)" : "")}`; }).join("\n");
-  const items = s.items.map(it => `${it.n}. ${it.title}\n` + it.lines.map(([k, v]) => `   • ${k}: ${Array.isArray(v) ? "\n" + v.map(l => "      " + l).join("\n") : v}`).join("\n")).join("\n");
+  const items = s.itemsNow.map(it => `${it.n}. ${it.title}\n` + it.lines.map(([k, v]) => `   • ${k}: ${Array.isArray(v) ? "\n" + v.map(l => "      " + l).join("\n") : v}`).join("\n")).join("\n");
   const exp = s.tasks.map(t => `- [${t.id}] ${t.title}: ${t.note}`).join("\n");
+  // the overnight stay's dates, at the page's anchor (the key's all-day event; else the activity's days 7 and 8)
+  const stay = s.key.find(k => k.allDay), sd = stay ? X.dIdx(stay.date) : 7, se = stay ? X.dIdx(stay.endDate) : 8;
   const alts = s.key.filter(k => k.altWhy).map(k => `   - ${k.title}: ${k.altWhy}`).join("\n");
   const cal = events.length ? events.slice().sort((a, b) => X.evAbs(a).s - X.evAbs(b).s).map(x => `- "${x.title}": ${X.whenOf(x)} Pacific${X.zoneText(x) ? ` (entered in its own zone: ${X.zoneText(x)})` : ""}; color: ${(C.colorOf(x.color) || {}).name || "none chosen (the calendar's default)"}; location: ${x.loc || "(none)"}${x.meet ? "; Google Meet added" : ""}; guests: ${x.guests.join(", ") || "none"}; reminders: ${x.reminders.map(X.remText).join(", ") || "none"}; description: ${x.desc ? `"${x.desc}"` : "NONE"}`).join("\n") : "(no events)";
   const facts = g.items.map(i => `- [${i.id}] ${i.title}: ${i.id === "calendar" ? "" : i.found ? (i.via ? `covered by a note on the event "${i.event.title}"; ` : `matched the event "${i.event.title}"; `) : "NOT FOUND on the calendar; "}${i.perfect ? "every check passes" : "problems: " + i.checks.filter(c => !c.ok).map(c => c.why).join(" ")}${(i.info || []).length ? ` (notes: ${i.info.join(" ")})` : ""}`).join("\n");
@@ -809,12 +850,12 @@ THE ACTIVITY ITEMS:
 ${items}
 
 RULES OF THIS SIMULATOR:
-- The attorney is in Seattle: the calendar shows Pacific Time. PST, MST, CST and EST in the items are US Pacific, Mountain, Central and Eastern Time (July is daylight time). As on the Calendar Activity Check, each event is entered either in the item's own time zone with the item's clock time (e.g. 3:00 PM with the event's time zone set to Mountain Time - Denver, or Mountain Standard Time - Phoenix), or in Pacific Time at the same moment (2:00 PM Pacific): both are right. The item's clock time typed in Pacific (3:00 PM Pacific) is the wrong zone: the meeting would be an hour off.
+- The attorney is in Seattle: the calendar shows Pacific Time. PST, MST, CST and EST in the items name the US region (Pacific, Mountain, Central and Eastern Time), not the season: an item's time is that region's wall-clock time on the event's own date, standard or daylight time as that date has it. As on the Calendar Activity Check, each event is entered either in the item's own time zone with the item's clock time (e.g. 3:00 PM with the event's time zone set to Mountain Time - Denver), or in Pacific Time at the same moment (2:00 PM Pacific): both are right. The item's clock time typed in Pacific (3:00 PM Pacific) is the wrong zone: the meeting would be an hour off.
 - Hours far from the office are expected: the gym session (6:30 AM EST) is 3:30 AM on the attorney's Pacific calendar. That is not a mistake.
 - Travel blocks and sub-blocks are their own events. The activity asks for "departure → destination" as their location (the automated check grades it), and a practical reminder (${X.leadText(X.TRAVEL_MIN)} to ${X.leadText(X.TRAVEL_MAX)} before: graded on the court travel blocks, which the activity gives no reminder; the flights' blocks have the trip's 1-day email, and a reminder of their own beside it is only a suggestion). The trainer confirms the attorney's preferred lead time: don't call a lead time in that range wrong.
 - Guests are invited by their directory email addresses (instruction 9), and only the item's guests. The trip's 1-day email and notes may sit on either event of its travel block.
 - The activity gives 8:30–9:00 AM for the ride to SEA, right before the 9:00 AM flight: the given times are expected. You may suggest talking through a more realistic airport buffer with the trainer, but don't mark the times wrong.
-- The overnight stay in San Francisco is an all-day event on July 13 (it may end on July 13 or 14).
+- The overnight stay in San Francisco is an all-day event on ${X.dLabel(sd)}, ${X.dYear(sd)} (it may end on ${X.dLabel(sd)} or ${X.dLabel(se)}).
 - Accepted color alternatives:
 ${alts}
 
@@ -832,10 +873,12 @@ For each id write one or two sentences of feedback in a growth voice ("not yet",
 Return ONLY a JSON object, no other text:
 {"summary":"two or three sentences on the calendar overall","items":[{"id":"<id>","status":"met|partial|missed","feedback":"..."} ... one per id, in order],"strengths":["..."],"improve":["..."]}`;
 }
-async function generateAI(s, events, feature){
-  const g = C.review(s, events), at = new Date().toISOString(), guide = await loadGuide();
+// `anchor`: the submission's (the review, the items' dates and the prompt are worked out at it, before the AI is awaited)
+async function generateAI(s, events, feature, anchor){
+  const at = new Date().toISOString(), guide = await loadGuide();
+  const {g, prompt} = X.withAnchor(anchor || X.anchor(), () => { const g = C.review(s, events); return {g, prompt:(isAct(s) ? actAiPrompt : aiPrompt)(s, events, g, guide)}; });
   try{
-    const raw = await callAIJson((isAct(s) ? actAiPrompt : aiPrompt)(s, events, g, guide), isAct(s) ? 3600 : 2400, 120000, feature || "grading");
+    const raw = await callAIJson(prompt, isAct(s) ? 3600 : 2400, 120000, feature || "grading");
     const got = Array.isArray(raw && raw.items) ? raw.items : [];
     if(!got.length) throw new Error("it returned no feedback");
     const items = s.tasks.map((t, k) => { const it = got.find(z => z && z.id === t.id) || got[k] || {}, gi = g.items.find(z => z.id === t.id);
@@ -858,10 +901,10 @@ async function submit(){
   if(!(S.data && isTrainee())){
     // A trainer's preview: show what the AI says, save nothing.
     S.aiBusy.preview = true; toast("Trainer preview: nothing is submitted. Running the AI check…"); repaint();
-    const ai = await generateAI(s, S.events); S.aiBusy.preview = false; S.previewAI = {scn:s.id, ai}; repaint();
+    const ai = await generateAI(s, S.events, null, X.anchor()); S.aiBusy.preview = false; S.previewAI = {scn:s.id, ai}; repaint();
     return;
   }
-  const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), events:JSON.parse(JSON.stringify(S.events)), auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true};
+  const au = C.review(s, S.events), sub = {scn:s.id, at:new Date().toISOString(), anchor:X.anchor(), events:JSON.parse(JSON.stringify(S.events)), auto:{pct:au.pct, score:au.score, max:au.max}, aiPending:true};
   const before = S.data.submissions.slice();
   S.data.submissions.push(sub);
   if(S.data.submissions.length > 20) S.data.submissions = S.data.submissions.slice(-20);
@@ -873,7 +916,7 @@ async function submit(){
   const key = subKey(sub); S.aiBusy[key] = true;
   clearTimeout(S.timer); repaint(); toast("Calendar submitted. The AI is checking it against the rules…");
   await saveRec();                                                  // the submission is safe before the AI answers
-  const ai = await generateAI(s, sub.events);
+  const ai = await generateAI(s, sub.events, null, sub.anchor);
   sub.ai = ai; delete sub.aiPending; delete S.aiBusy[key];
   S.saved = "saving"; paintSave(); repaint();
   const ok = await saveRec(); S.saved = ok === "big" ? "big" : ok === false ? "fail" : "ok"; paintSave();
@@ -896,7 +939,9 @@ function runReview(){
 const actRows = events => events.map(x => { const col = C.colorOf(x.color), zt = X.zoneText(x);
   return `<tr><td>${e(X.whenOf(x))}${zt ? `<br><small>event zone: ${e(zt)}</small>` : ""}</td><td><b>${e(x.title)}</b></td><td>${col ? "🎨 " + e(col.name) + "<br>" : "🎨 No color<br>"}${x.loc ? "📍 " + e(x.loc) + "<br>" : ""}${x.meet ? "📹 Google Meet<br>" : ""}${x.guests.length ? "👥 " + e(x.guests.join(", ")) + "<br>" : ""}${x.reminders.length ? "🔔 " + e(x.reminders.map(X.remText).join(", ")) + "<br>" : ""}${e(x.desc)}</td></tr>`; }).join("") || "<tr><td colspan=3>No events.</td></tr>";
 // The final feedback as a page of its own: it is what the trainee downloads or prints.
-function feedbackDoc(s, sub, r, name){
+// (at the submission's anchor)
+const feedbackDoc = (s, sub, r, name) => atSub(sub, () => feedbackDocAt(s, sub, r, name));
+function feedbackDocAt(s, sub, r, name){
   const ai = sub.ai && !sub.ai.error ? sub.ai : null, by = Object.fromEntries(((ai && ai.items) || []).map(x => [x.id, x]));
   const act = isAct(s), g = subReview(s, sub), events = C.cleanFor(s, sub.events).sort(act ? (a, b) => X.evAbs(a).s - X.evAbs(b).s : (a, b) => a.day - b.day || a.start - b.start);
   const li = a => (a || []).filter(Boolean).map(x => `<li>${e(x)}</li>`).join("");
@@ -1055,6 +1100,7 @@ async function pollAdmin(){
 function detailHTML(x){
   const list = x.d.submissions.slice().reverse().map((z, i) => {
     const s = C.SCENARIOS.find(q => q.id === z.scn); if(!s) return "";
+    return atSub(z, () => {      // this trainee's submission, at its own anchor
     const events = C.cleanFor(s, z.events), k = subKey(z), key = x.id + "|" + k, shown = !!A.view[key], r = x.d.reviews[k], g = subReview(s, z), rel = released(r);
     const tk = s.tasks.map(t => `<label class="cs-rv-t">${e(t.title)} <input type="text" maxlength="400" id="csrt_${e(key)}_${e(t.id)}" value="${r && r.tasks ? e(r.tasks[t.id] || "") : ""}" placeholder="Your comment on this task (optional)"></label>`).join("");
     return `<div class="cs-sub"><div class="cs-sub-hd">📤 <b>${e(s.title)}</b> · submitted ${e(new Date(z.at).toLocaleString())} · ${events.length} event${events.length === 1 ? "" : "s"} for ${isAct(s) ? s.key.length + " expected events" : s.tasks.length + " tasks"} · <span class="cs-pill ${g.passed ? "ok" : ""}">🤖 Automated: ${g.pct}%</span>
@@ -1072,7 +1118,7 @@ function detailHTML(x){
         <div class="cs-rv-ts">${tk}</div>
         <div class="cs-m-btns"><button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.review(${js(x.id)},${js(k)},${js(key)},false)">💾 Save draft</button>
           <button class="btn btn-navy btn-sm" onclick="FTCalAdmin.review(${js(x.id)},${js(k)},${js(key)},true)">${rel ? "📄 Update the final report" : "📄 Finalize and generate the report"}</button>${rel ? `<button class="btn btn-ghost btn-sm" onclick="FTCalAdmin.withdraw(${js(x.id)},${js(k)})">↩ Withdraw (back to draft)</button>` : ""}</div>
-        <p class="cs-hint">The trainee sees the AI feedback as soon as they submit. When you finalize, they get the finalized report (done correctly, needs improvement, missed requirements, your additions and insights) to review and download.</p>` : ""}</div>`;
+        <p class="cs-hint">The trainee sees the AI feedback as soon as they submit. When you finalize, they get the finalized report (done correctly, needs improvement, missed requirements, your additions and insights) to review and download.</p>` : ""}</div>`; });
   }).join("");
   const ext = x.d.external.slice().reverse().map(z => `<div class="cs-att-ext">🔗 ${e(new Date(z.at).toLocaleString())} · ${e(z.title)} · <b>${Math.round(z.score)}/${Math.round(z.max)}</b></div>`).join("");
   const runs = x.d.autos.length ? `<div class="cs-att-ext">🤖 ${x.d.autos.length} automated review run${x.d.autos.length === 1 ? "" : "s"} while practicing: ${C.SCENARIOS.map(q => { const b = x.d.autos.filter(a => a.scn === q.id).reduce((m, a) => Math.max(m, a.pct), -1); return b < 0 ? "" : `${e(q.short)} best ${b}%`; }).filter(Boolean).join(", ")}</div>` : "";
@@ -1120,7 +1166,7 @@ window.FTCalAdmin = {
   async withdraw(id, k){ try{ await persist(id, d => { if(d.reviews[k]) d.reviews[k].released = false; }); toast("Back to draft: the trainee no longer sees your feedback."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); } },
   async regen(id, k){
     const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return;
-    toast("Asking the AI…"); const ai = await generateAI(s, C.cleanFor(s, z.events), "trainer");
+    toast("Asking the AI…"); const ai = await generateAI(s, atSub(z, () => C.cleanFor(s, z.events)), "trainer", subAnchor(z));
     try{ await persist(id, d => { const t = d.submissions.find(q => subKey(q) === k); if(t) t.ai = ai; }); toast(ai.error ? "The AI check wasn’t available." : "AI feedback updated."); render(); }catch(err){ toast("Couldn’t save. Check your connection."); }
   },
 
@@ -1128,7 +1174,7 @@ window.FTCalAdmin = {
   live(id, k){
     const row = A.rows.find(r => r.id === id), z = row && row.d.submissions.find(q => subKey(q) === k), s = z && C.SCENARIOS.find(q => q.id === z.scn); if(!z) return;
     const r = row.d.reviews[k] || {};
-    L = {id, k, step:0, name:row.name, s, z, events:C.cleanFor(s, z.events), g:subReview(s, z), tasks:Object.assign({}, r.tasks || {}), extra:(r.extra || []).join("\n"), comment:r.comment || "", score:r.score != null ? r.score : "", released:released(r)};
+    L = {id, k, step:0, name:row.name, s, z, anchor:subAnchor(z), events:atSub(z, () => C.cleanFor(s, z.events)), g:subReview(s, z), tasks:Object.assign({}, r.tasks || {}), extra:(r.extra || []).join("\n"), comment:r.comment || "", score:r.score != null ? r.score : "", released:released(r)};
     paintLive(); document.body.classList.add("cs-live-open"); startLivePoll();
   },
   liveGo(n){ liveSync(); L.step = Math.max(0, Math.min(L.s.tasks.length + 1, n)); paintLive(); },
@@ -1162,7 +1208,9 @@ function liveSync(){
   if(t && q("cslNote")){ const v = q("cslNote").value.trim(); if(v) L.tasks[t.id] = v; else delete L.tasks[t.id]; }
   if(L.step === L.s.tasks.length + 1 && q("cslExtra")){ L.extra = q("cslExtra").value; L.comment = q("cslComment").value; L.score = q("cslScore").value; }
 }
-function paintLive(){
+// (at the submission's anchor, L.anchor: its dates, the tasks' notes, whenText)
+const paintLive = () => X.withAnchor(L.anchor, paintLiveAt);
+function paintLiveAt(){
   let m = document.getElementById("csLive"); if(!m){ m = document.createElement("div"); m.id = "csLive"; m.className = "cs-liveov"; document.body.appendChild(m); }
   const s = L.s, n = s.tasks.length, st = L.step, ai = L.z.ai && !L.z.ai.error ? L.z.ai : null, by = Object.fromEntries(((ai && ai.items) || []).map(x => [x.id, x]));
   const t = s.tasks[st - 1], gi = t && L.g.items.find(x => x.id === t.id), a = t && by[t.id];
@@ -1206,11 +1254,12 @@ window.render = function(){
   if(state.view !== "calsim"){ S.entered = false; return __render.apply(this, arguments); }
   if(!state.traineeId && !state.isAdmin && !state.adminPreview){ state.view = "dashboard"; return __render.apply(this, arguments); }
   const app = document.getElementById("app");
+  X.setAnchor(pageAnchor());      // the page's anchor (another page, e.g. a trainer's slides, may have set its own)
   const page = renderPage();
   app.innerHTML = renderTopbar() + `<main class="main-calsim${isAct(scn()) && open() ? " ca-wide" : ""}">${page}</main>` + renderFooter();
   wire(); paintSave(); restoreTop();
   try{ afterRender(); }catch(err){}
-  if(!S.loading && (!S.data || !S.entered)){ S.entered = true; load(); }   // read the record afresh each time the page opens (a trainer may have reviewed since)
+  if(!S.loading && (!S.data || !S.entered || S.who !== (isTrainee() ? state.traineeId : ""))){ S.entered = true; load(); }   // read the record afresh each time the page opens (a trainer may have reviewed since)
   if(isTrainee() && !state.ftOpenDays && typeof ftLoadOpenDays === "function") ftLoadOpenDays().then(() => { if(state.view === "calsim") render(); }).catch(() => {});
 };
 const __admin = window.renderAdmin;

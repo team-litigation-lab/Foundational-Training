@@ -232,6 +232,10 @@ function canRead(tok, key) {
   if (tok.role === "a") return true;
   return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key === `buffer:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
+// Day 5's Attorney Calendar Management Activity: an anchor Monday (js/ft-calsim-core.js okAnchor) is a real YYYY-MM-DD date,
+// a Monday, on or after the activity's own July 6, 2026; anchorsOk keeps only those of a record's anchors.
+const okAnchor = (iso) => typeof iso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= "2026-07-06" && (() => { const d = new Date(iso + "T00:00:00Z"); return !isNaN(d) && d.toISOString().slice(0, 10) === iso && d.getUTCDay() === 1; })();
+const anchorsOk = (a) => Object.fromEntries(Object.entries(a && typeof a === "object" && !Array.isArray(a) ? a : {}).filter(([k, v]) => /^[a-z0-9-]{1,40}$/.test(k) && okAnchor(v)));
 async function traineeWrite(env, tok, key, value) {
   const kv = kvOf(env);
   const id = tok.id;
@@ -268,6 +272,15 @@ async function traineeWrite(env, tok, key, value) {
     if (value.length > 450000) return "The calendar record is too large to save";
     if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return "Invalid record";
     incoming.reviews = (existing && existing.reviews) || {};
+    // The Attorney Calendar Management Activity's anchor Monday (js/ft-calsim-core.js, THE ANCHOR): kept once, first write
+    // wins, so a trainee can't move their activity's dates; only real Mondays on or after July 6, 2026 are taken. Each
+    // submission's anchor (the dates it was made at) is frozen too: a submission already saved keeps its own, matched by scn + at.
+    incoming.anchors = Object.assign({}, anchorsOk(incoming.anchors), existing && existing.anchors);
+    if (Array.isArray(incoming.submissions)) {
+      const was = new Map(((existing && Array.isArray(existing.submissions)) ? existing.submissions : []).filter((z) => z && typeof z === "object").map((z) => [`${z.scn}|${z.at}`, z]));
+      incoming.submissions.forEach((z) => { if (!z || typeof z !== "object") return; const o = was.get(`${z.scn}|${z.at}`);
+        if (o) { if ("anchor" in o) z.anchor = o.anchor; else delete z.anchor; } else if ("anchor" in z && !okAnchor(z.anchor)) delete z.anchor; });
+    }
     await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `drive:${id}`) {
@@ -376,7 +389,15 @@ async function traineeWrite(env, tok, key, value) {
     if (incoming.submits !== undefined && (!Array.isArray(incoming.submits) || incoming.submits.length > 8 || !incoming.submits.every((x) => isObj(x) && typeof x.at === "string" &&
       fin(x.met) && fin(x.total) && fin(x.pct) && Array.isArray(x.checks) && x.checks.every((c) => Array.isArray(c) && c.length === 4) &&
       isObj(x.snap) && isObj(x.snap.entries) && Object.values(x.snap.entries).every(isObj)))) return "Invalid record";
-    await kv.put(key, value); return null;
+    // The anchor (the dates the entries were made at): a real Monday on or after July 6, 2026, kept once set; a snapshot
+    // already saved keeps its own (matched by at), a new one's is dropped if it isn't one.
+    if (existing && okAnchor(existing.anchor)) incoming.anchor = existing.anchor; else if ("anchor" in incoming && !okAnchor(incoming.anchor)) delete incoming.anchor;
+    if (Array.isArray(incoming.submits)) {
+      const was = new Map(((existing && Array.isArray(existing.submits)) ? existing.submits : []).filter(isObj).map((x) => [x.at, x]));
+      incoming.submits.forEach((x) => { const o = was.get(x.at);
+        if (o && isObj(o.snap)) { if ("anchor" in o.snap) x.snap.anchor = o.snap.anchor; else delete x.snap.anchor; } else if ("anchor" in x.snap && !okAnchor(x.snap.anchor)) delete x.snap.anchor; });
+    }
+    await kv.put(key, JSON.stringify(incoming)); return null;
   }
   if (key === `kcgames:${id}`) {
     // Knowledge Games (js/ft-kcgames.js): the trainee's plays, {lesson, game, score, correct, total, at}. Practice only, never the graded Knowledge Check.

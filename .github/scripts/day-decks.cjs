@@ -67,11 +67,18 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     fail("Day 4's mock call preparation and metrics aren't on its slide");
   if (mon5.id !== 's1' || mon5.h !== 'Update Your Monitoring Sheet' || mon5.html.trim())
     fail(`Day 5 doesn't open on its Monitoring Sheet update alone: ${JSON.stringify({ id: mon5.id, h: mon5.h, len: (mon5.html || '').length })}`);
-  const txt = sl(5, 's3'), its = ['s3i', 's3j'].map(id => sl(5, id));
+  // (its Activity Items as sixteen cards, four to a slide: an item a card, 6's two travel blocks and 8's four parts of the
+  // trip cards of their own, each named after its item; every activity date marked for moving to the trainee's weeks)
+  const txt = sl(5, 's3'), its = ['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id));
   const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = its.map(h => (h.match(/class="ftdd-cal-item[ "]/g) || []).length);
-  if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
-    || items.join() !== '5,5' || its.some(h => (h.match(/data-calsim-activity/g) || []).length !== 1 || !h.includes('#/calsim/attorney-activity')))
-    fail(`Day 5's activity isn't its Instructions in two cards, then its items five to a slide with the Calendar Simulator's link: ${JSON.stringify({ ins, items })}`);
+  const cards = its.map(h => (h.match(/data-card="([^"]+)"/g) || []).map(x => x.slice(11, -1)).join(' ')).join(' | '), heads = (D[5].slides || []).filter(s => /^s3[ijkl]$/.test(s.id)).map(s => s.h);
+  const dated = its.join('').match(/<span class="ftdd-cal-date" data-cal-date="2026-07-\d\d">July \d\d, 2026<\/span>/g) || [];
+  if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item|data-cal-date/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
+    || items.join() !== '4,4,4,4' || cards !== '1 2 3 4 | 5 6 6a 6b | 7 8 8a 8b | 8c 8d 9 10' || its.some(h => (h.match(/data-calsim-activity/g) || []).length !== 1 || !h.includes('#/calsim/attorney-activity'))
+    || heads.join() !== ['1–4', '5–6b', '7–8b', '8c–10'].map(r => 'Attorney Calendar Management Activity: Activity Items ' + r).join()
+    || !/<b>6\. Court Appearance · Travel Block: to court<\/b>/.test(its[1]) || !/<b>8\. Networking Dinner Event · Return Travel to Seattle<\/b>/.test(its[3])
+    || dated.length !== 16 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
+    fail(`Day 5's activity isn't its Instructions in two cards, then its sixteen cards four to a slide with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
   if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/ftdd-seq/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples and drawn pictures are no longer on its second slide');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
@@ -246,6 +253,23 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (s2.trainerNotes) fail('a trainee sees the facilitator notes in a deck');
   await page.evaluate(() => FTDayDecks.open(5)); await page.waitForTimeout(400);
   if (await page.evaluate(() => (document.querySelector('.ftdd-dtitle') || { dataset: {} }).dataset.day) !== '5') fail('a trainee can\'t open Day 5\'s instructions');
+  // 📅 its activity's cards show the dates of the trainee's own weeks: a batch that started Mon Oct 26, 2026 (B102626) has its
+  // Day 5 that week, so its dates start on Mon Nov 2 (the anchor, saved once in their calsim record); a Zoom link's numbers
+  // are not a date. A trainer sees the dates of a batch starting this week, and a line saying so (a trainee never sees it)
+  const batch0 = await page.evaluate(() => state.traineeBatch);
+  await put('calsim:' + id, null);
+  const calAt = () => page.evaluate(() => { const ds = [...document.querySelectorAll('.ftdd-sheet [data-cal-date]')];
+    return { d1: (ds[0] || {}).textContent || '', hidden: ds.filter(x => getComputedStyle(x).visibility === 'hidden').length, n: ds.length, note: document.querySelectorAll('.ftdd-cal-note').length,
+      zoom: /zoom\.us\/deposition-meeting-02-04-25/.test((document.querySelector('.ftdd-sheet') || {}).innerText || ''), want: window.FTCalCore ? FTCalCore.act.longDate(FTCalCore.act.anchorNow()) : '' }; });
+  await page.evaluate(() => { state.traineeBatch = 'B102626'; FTDayDecks.open(5, FTDayDecks.at(5, 's3i')); }); await page.waitForTimeout(1500);
+  const calT = await calAt(), calRec = await get('calsim:' + id);
+  if (calT.d1 !== 'November 02, 2026' || calT.hidden || calT.n !== 4 || !calT.zoom || calT.note) fail(`a trainee in batch B102626 doesn't see Day 5's activity at their own dates: ${JSON.stringify(calT)}`);
+  // (the deck reads the calendar record, never writes it: js/ft-calendar.js keeps the anchor there)
+  if (calRec) fail(`the deck wrote the trainee's calendar record: ${JSON.stringify(calRec)}`);
+  await page.evaluate(() => { state.isAdmin = true; render(); }); await page.waitForTimeout(800);
+  const calA = await calAt();
+  if (!calA.want || calA.d1 !== calA.want || calA.note !== 1) fail(`a trainer doesn't see Day 5's activity at this week's batch's dates, with its line: ${JSON.stringify(calA)}`);
+  await page.evaluate(b => { state.isAdmin = false; state.traineeBatch = b; }, batch0);
   // an admin opens any day too
   await page.evaluate(() => { state.isAdmin = true; state.traineeId = null; FTDayDecks.open(16); }); await page.waitForTimeout(800);
   s = await at();
