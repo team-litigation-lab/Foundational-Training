@@ -178,6 +178,19 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
     v = await page.evaluate(() => [...document.querySelectorAll('#dayl-6 .ftseg-b')].map(x => x.classList.contains('tlocked') && !x.classList.contains('locked')));
     if (v.join() !== 'true,true,true') fail(`the trainer's 📚 Dashboard doesn't show Intake's locked days (still openable): ${JSON.stringify(v)}`);
+    // 👁 Trainee view: the slide's own 🔓 Unlock / 🔒 Lock button on every day's slides, and nothing else of the trainer's
+    v = await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; const miss = [];
+      for (let d = 1; d <= 16; d++) FTDayDecks.list(d).forEach((s, i) => { if (!FTDayLocks.chip(d, i)) miss.push(`${d}.${i}`); }); return miss; });
+    if (v.length) fail(`the slide's lock button is missing in Trainee view on ${v.slice(0, 10).join(', ')}`);
+    await page.evaluate(() => goto('modules')); await page.waitForTimeout(400);
+    await put(page, 'settings:daysteps', { all: { 7: 2 }, batches: {}, rows: { all: { 7: 1 } }, legacy: { all: [], batches: {} } });
+    await page.evaluate(() => { const st = FTDayLocks.steps(7); FTDayDecks.open(7, st[4].from); }); await page.waitForTimeout(1000);
+    if (await page.$('.ftdl-tpanel, .ftlk-over')) fail('Trainee view shows the trainer\'s side panel or a lock over the slide');
+    await page.click('.ftdd-bar .ftdl-chipbtn'); await page.waitForTimeout(1200);
+    if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 5) fail('the slide\'s 🔓 Unlock in Trainee view didn\'t unlock Day 7 up to the segment');
+    await page.click('.ftdd-bar .ftdl-chipbtn'); await page.waitForTimeout(1200);
+    if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 4) fail('the slide\'s 🔒 Lock in Trainee view didn\'t lock Day 7 from the segment');
+    await page.evaluate(() => { state.adminPreview = false; });
     // a trainee's deck has none of it
     await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(2, 0); }); await page.waitForTimeout(800);
     if (await page.$('.ftdl-tpanel, .ftdl-chip, .ftdd-dot.lk')) fail('a trainee\'s deck shows the trainer\'s segment locks');
