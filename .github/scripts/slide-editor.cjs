@@ -59,10 +59,10 @@ async function workerChecks() {
   await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; render(); }); await page.waitForTimeout(700);
   if (await page.$('text=✏️ Edit this slide')) fail('the day card, which the platform draws, is offered for editing');
   await page.evaluate(() => FTDayDecks.to(FTDayDecks.at(FTDayDecks.state().day, FT_DAY_DECKS[FTDayDecks.state().day].slides[0].id))); await page.waitForTimeout(900);
-  const sid = await page.evaluate(() => { const b = [...document.querySelectorAll('.ftdd-rail button')].find(x => /Edit this slide/.test(x.textContent));
-    const m = b && /FTSlideEdit\.open\(\d+,\s*'([^']+)'/.exec(b.getAttribute('onclick') || ''); return m ? m[1] : ''; });
-  if (!sid) fail('the trainer has no ✏️ Edit this slide on the deck');
-  await page.click('text=✏️ Edit this slide'); await page.waitForTimeout(1200);
+  // (✏️ Edit this slide is off the decks: no trainer is offered it; the editor itself, and edits already saved, stay)
+  if (await page.$('text=✏️ Edit this slide')) fail('the deck still offers ✏️ Edit this slide');
+  const sid = await page.evaluate(() => FT_DAY_DECKS[FTDayDecks.state().day].slides[0].id);
+  await page.evaluate(sid => FTSlideEdit.open(FTDayDecks.state().day, sid), sid); await page.waitForTimeout(1200);
   const opened = await page.evaluate(() => ({ open: document.body.classList.contains('ftse-open'), body: !!document.getElementById('ftseBody') }));
   if (!opened.open || !opened.body) fail(`the editor didn't open for the trainer: ${JSON.stringify(opened)}`);
   const built = await page.evaluate(sid => (window.FT_DAY_DECKS[3].slides.find(s => s.id === sid) || {}).html, sid);
