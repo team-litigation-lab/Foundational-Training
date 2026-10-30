@@ -532,10 +532,9 @@ s4: html => {
       "<p><b>Action:</b> Log your takeaways on your monitoring sheet.</p>\n<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
     .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
-// 🎧 Call Intake & Data Extraction, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): six practice calls at the Practice Lab's
-// Harbor & Pine Injury Law, each with a challenge (calls 1-5, VA Oscar's recordings redone for the firm: a wrong birth year,
-// a frustrated repeat caller, an unclear fax request, a short confirmation, a reschedule with a warm transfer; call 6, an
-// upset family member not on the file), played on the slide. The calls,
+// 🎧 Call Intake & Data Extraction, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): five practice calls at the Practice Lab's
+// Harbor & Pine Injury Law, each with a challenge (VA Oscar's recordings redone for the firm: a wrong birth year, a frustrated
+// repeat caller, an unclear fax request, a short confirmation, a reschedule with a warm transfer), played on the slide. The calls,
 // their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
 // build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
 const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
@@ -567,7 +566,7 @@ const REF_RECS = [
     ["Call 3", "carlos-3.mp3", "6:22"],
     ["Call 4", "carlos-4.mp3", "0:41"],
     ["Call 5", "carlos-5.mp3", "2:01"]]},
-  // the PI Reception Activity's six calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
+  // the PI Reception Activity's five calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
   // each with its challenge (piAudio: read from build/calls/pi-reception-calls.json once it is loaded, below)
   {h: "PI Reception Calls: Harbor & Pine Injury Law", folders: [], recs: [], pi: true},
   // (hide: kept for the build's check that the guide still has its folders, not shown on the slide)
@@ -591,12 +590,12 @@ function REF_RECS_HTML(){
 }
 // the activity: Day 3's Call Intake & Data Extraction row (ROWS[3].s1), in place of VA Oscar's activity, on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
-// the six calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
+// the five calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
 const PI_H = "AM: Call Intake & Data Extraction";
-const PI_CALLS_H = "AM: Call Intake & Data Extraction: the 6 Practice Calls";
+const PI_CALLS_H = "AM: Call Intake & Data Extraction: the 5 Practice Calls";
 const piStep = (n, ic, t, body) => `<div class="ftdd-cix"><p class="ftdd-cix-h"><span class="ftdd-pic-n">${n}</span><span>${ic} ${t}</span></p><p>${body}</p></div>`;
 const PI_HTML =
-  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to six fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete intake information.</p>\n` +
+  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to five fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete intake information.</p>\n` +
   `<div class="ftdd-cix-row">` +
   piStep(1, "🎧", "Listen", "Play each audio track carefully. You may pause, rewind, and replay each recording as many times as necessary.") +
   piStep(2, "🔍", "Analyze", "Identify the specific intake challenge and caller scenario presented in each recording.") +
@@ -614,7 +613,7 @@ const PI_HTML =
   // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
   // (js/ft-process.js WORKSHEETS): the slide only links there, and the way back is the calls' slide
   `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(3, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
-// the six calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
+// the five calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
   piCallRows(false) +
@@ -794,7 +793,7 @@ const ROWS = {
       // (Carlos's and Oscar's supplementary recordings, optional: one card per recording, played in the slide; the
       // Confidentiality exercise is off the deck)
       {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []},
-      // (none of the guide's section: the six practice calls are the activity now, its task in cards, then the calls)
+      // (none of the guide's section: the five practice calls are the activity now, its task in cards, then the calls)
       {id: "s1c", h: PI_H, pre: PI_HTML, parts: []},
       {id: "s1d", h: PI_CALLS_H, pre: PI_CALLS_HTML, parts: []}]
   },

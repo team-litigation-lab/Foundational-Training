@@ -1,14 +1,13 @@
 """PI Reception Activity: the practice calls (Day 3's Reception Activity, replayed on Day 4 before the mock calls).
 
-Six reception calls at a personal injury firm, Harbor & Pine Injury Law (the fictional Florida firm of the Practice
-Lab, js/ft-firms.js), each with a challenge a receptionist meets on the line. Calls 1-5 are VA Oscar's five reception
+Five reception calls at a personal injury firm, Harbor & Pine Injury Law (the fictional Florida firm of the Practice
+Lab, js/ft-firms.js), each with a challenge a receptionist meets on the line. They are VA Oscar's five reception
 recordings redone for the firm (fictional names and numbers): a client who gives the wrong birth year and never got an
 appointment email, a frustrated repeat caller, a provider asking for a fax number without saying who it's for, a short
-confirmation call, and a client whose ride fell through (a warm transfer); call 6 is a noisy house with an upset family
-member who isn't on the file. Trainees listen and extract the five data points of each call.
+confirmation call, and a client whose ride fell through (a warm transfer). Trainees listen and extract the five data points of each call.
 
 Run:  pip install edge-tts numpy python-docx   then   python3 build/calls/pi_reception_calls.py      (from the repo root)
-Writes ft/day3/audio/pi-call-1.mp3 … pi-call-6.mp3, build/calls/pi-reception-calls.json (what the Day 3 and Day 4
+Writes ft/day3/audio/pi-call-1.mp3 … pi-call-5.mp3, build/calls/pi-reception-calls.json (what the Day 3 and Day 4
 deck slides and the trainer's key are built from: build/day-decks.cjs; run it after this) and the trainee's worksheet,
 handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx (needs python-docx). Needs ffmpeg. The voices are Microsoft's
 neural text-to-speech (edge-tts); each line is cached in build/calls/.cache (not committed), so a re-run after a
@@ -225,45 +224,6 @@ CALLS = [
     ("Action taken", "Warm transfer to Mara Quintero (Case Manager, ext. 610), briefed on the internal line: the verification, the appointment, the reason and the callback number"),
   ],
   "handled": "Took the callback number before the hold, and briefed Mara fully so the client didn't have to tell his story twice."
-},
-{
-  "id": 6, "title": "Mom on the Line", "challenge": "Background noise and an unauthorized caller",
-  "tags": ["Background noise: TV and children", "Upset caller", "Family member not on the file"],
-  "about": "A client's mother calls from a busy house, upset: her son is back in hospital and she wants to know about his case.",
-  "voices": {"va": ("en-PH-JamesNeural", "Paolo"), "c": ("en-US-JennyNeural", "Linda Carter"), "kid": ("en-US-AnaNeural", "child")},
-  "line": "house",
-  "script": [
-    ("ring",), ("pickup",), ("bed", "house"),
-    ("va", GREET),
-    ("c", "Yes, hi, my name is Linda Carter, my son Jordan is your client, and I need to know what is going on with his case, because nobody is telling us anything.", {"rate": "+8%"}),
-    ("kid", "Grandma! He took my tablet!", {"gap": -0.6, "fx": "far", "vol": 0.55}),
-    ("c", "Not now, baby! Sorry. Sorry.", {"rate": "+10%"}),
-    ("va", "That's all right, Ms. Carter. I can hear this is a stressful time. I'll do my best to help you. May I ask, are you calling on someone's behalf today?"),
-    ("c", "Yes, for my son, Jordan Carter. He fell again, because of his knee, and he's back in the hospital since last night. Tampa General. And I want to know when the settlement is coming, because the bills are piling up.", {"rate": "+6%"}),
-    ("va", "I'm so sorry to hear Jordan is in the hospital. Please give me one moment.", {"rate": "-4%"}),
-    ("pause", 2.0),
-    ("va", "Thank you for waiting, Ms. Carter. For privacy, we can only discuss a case with the client, or with someone the client has authorized in writing, so I'm not able to share or confirm any information. I know that's frustrating to hear."),
-    ("c", "I'm his mother! I'm the one driving him to all his appointments.", {"rate": "+10%"}),
-    ("va", "I completely understand, and I can hear how much you're doing for him. It's to protect Jordan's privacy. What I can do is take a message and pass it on right away, so the right person can reach Jordan directly. If Jordan would like you to be able to speak with us, he's welcome to call us himself, and we'll explain how."),
-    ("c", "Okay. Okay. Yes, please do that.", {"rate": "-2%"}),
-    ("kid", "Grandma, the dog is out!", {"gap": -0.3, "fx": "far", "vol": 0.5}),
-    ("va", "Thank you. What's the best number to reach you, in case she needs to?"),
-    ("c", "Five five five, oh one eight, six six one two."),
-    ("va", "Five five five, zero one eight, six six one two. And so I have it right: Jordan was admitted to Tampa General last night, October twenty-seventh, after a fall, because of his knee. Is that correct?"),
-    ("c", "Yes. That's right."),
-    ("va", "Thank you, Ms. Carter. I've passed your message on as urgent, and someone will reach out to Jordan today. Is there anything else I can help you with?"),
-    ("c", "No. Thank you. I'm sorry I yelled.", {"rate": "-6%"}),
-    ("va", "Please don't apologize. I hope Jordan feels better soon. Take care, Ms. Carter."),
-    ("bed", None), ("hangup",)
-  ],
-  "key": [
-    ("Caller", "Linda Carter, mother of the client Jordan Carter"),
-    ("Callback number", "(555) 018-6612"),
-    ("Verified", "Not the client and not authorized in writing: nothing shared or confirmed, not even whether there is a case"),
-    ("Reason for the call", "Jordan was admitted to Tampa General on 10/27/2026 after a fall (his knee); she asked when the settlement is coming"),
-    ("Action taken", "Urgent message passed on internally (to Jordan's case manager, Mara Quintero) for someone to call Jordan directly today; told Jordan can call himself to authorize her; noted on the file"),
-  ],
-  "handled": "Stayed calm and kind through the noise and the frustration, confirmed nothing about a case, said why nothing could be shared, and still took the urgent message."
 },
 ]
 
@@ -491,7 +451,7 @@ def worksheet(meta):
     from docx.oxml import OxmlElement
     d = Document()
     st = d.styles["Normal"]; st.font.name = "Calibri"; st.font.size = Pt(11)
-    d.add_heading("Call Intake & Data Extraction: 6 Practice Calls", 0)
+    d.add_heading("Call Intake & Data Extraction: 5 Practice Calls", 0)
     d.add_paragraph(f"{FIRM} (fictional) · Day 3, Reception Training")
     d.add_paragraph("Listen to each call on the Day 3 slide and fill in its 5 data points, then reflect on the call's challenge: the obstacle (what made the call difficult) and the VA's response (how the receptionist handled it).")
     d.add_paragraph("Name: ____________________________        Batch: ______________        Date: ______________")
