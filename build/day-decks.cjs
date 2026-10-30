@@ -23,6 +23,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // (Day 2's Buffer Time is off the deck: the day starts on its Common Terms tasks. Its Classroom Activity slide and its
   // Escalation Handling Exercise are off too: after the 🎬 Handouts / Video stop comes ✍️ Process Questions)
   2: ["s1", "s3"],   // (Day 1's discussion slide and Client Identification Exercise: the lesson deck opens from its ▶ Start Training stop, the recorded lecture with the trainer's Handouts and Videos unlock)
+  // (Day 7's Scheduled Shadowing, its TAM questions and the intake shadowing videos are off the training: Part 1 ends
+  // on the 🎧 Call Listening Activity)
+  7: ["s2"],
   4: ["s1"],   // (Day 4's one-line introduction joins the slide it introduces: TRIM[4].s2)
   // (Days 5 and 13: the classroom discussion's slide only said that the lesson deck opens from ▶ Start Training, which is the
   // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
@@ -43,6 +46,7 @@ const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading:
   // name brings the 🎧 Call Listening log button, js/ft-day-decks.js slideActions)
   3: {s1: "Frontline Management: Operations, Logistics, and Escalations Protocols", s2: "CRM/CMS Training Videos"},
   4: {s2: "Training Video Viewing", s3: "PM: Reception Mock Calls (One-on-One)"}, 5: {s1: "Update Your Monitoring Sheet"},
+  7: {insurance: "AM: Common Insurance Providers"},
   8: {s3: "PM: Saving the Intake Packet and Extracted Intake Documents to SA"}};
 // a slide kept in part: Day 1's PM installs both Nitro Pro and the Smart Advocate plug-ins; the deck keeps only the
 // Smart Advocate steps (the Nitro Pro installation and its Mac note are off the deck)
@@ -861,16 +865,23 @@ const ROWS = {
   7: {
     // (the classroom discussion's own slide is off, TRIM[7]: what is left of s1 is the Intake Scenario Exercise, off the decks)
     s1: [{id: "s1", h: "AM: Intake Scenario Exercise", parts: [[null, null]]}],
-    // the reference set, one thing to a slide: the checklist and the blank forms (a picture of each that opens it in a new
-    // tab), the mock intake (played on the slide), the two folders side by side, then the four
-    // sample calls two to a slide (js/ft-intake.js data-calls)
+    // the reference set, one thing to a slide, in the trainers' order for Part 1: the checklist and the blank forms (a
+    // picture of each that opens it in a new tab), the mock intake (played on the slide), the four sample calls made for
+    // the platform two to a slide (js/ft-intake.js data-calls; "formse-2" continues "formse"), then the Other
+    // Intake-Related Documents folder. The Sample Intake Audio Recordings folder is not on a slide:
+    // its four recordings are the 🎧 Call Listening Activity, the day's last AM stop (js/ft-day-decks.js LISTEN_CARDS[7])
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
       {id: "formsb", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
-      {id: "formsd", h: "AM: Reference: Sample Intake Recordings & Intake Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]]},
-      {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: More Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']]},
-      {id: "formsf", h: "AM: More Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]}]
+      {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
+        fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
+      {id: "formse-2", h: "AM: Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]},
+      {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
+        const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
+        if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
+        return x.replace(two, "$1\n");
+      }]}]
   },
   8: {
     // the trainer's text (#323): Topic 1, Topic 2 with the trainee's assigned packet (js/ft-intake.js), the naming
