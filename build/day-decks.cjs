@@ -1056,7 +1056,8 @@ const ROWS = {
   },
   16: {
     s1: [{id: "s1", parts: [[null, "<h4>Please add these in your notes. </h4>"]]},
-      {id: "s1b", h: "AM: Notes for Your Guide", parts: [["<h4>Please add these in your notes. </h4>", null]]}],
+      {id: "s1b", h: "AM: Notes for Your Guide", parts: [["<h4>Please add these in your notes. </h4>", null]],
+        fix: [["<h4>Please add these in your notes. </h4>\n", ""], ["<p><b>Templates </b></p>\n", ""], ["<p>Report Format on Notes tab:</p>\n", ""]]}],
     s2: [{id: "s2", parts: [[null, SLOT(16, "s2-3")]]},
       {id: "s2b", h: "PM: Before Your Demo: Rules, Metrics & Time Limit", parts: [[SLOT(16, "s2-3"), null]],
         fix: [["<h3>5. All trainees must be fully prepared", "<h3>All trainees must be fully prepared"], ["<h4>6. Demo Metrics</h4>", "<h4>Demo Metrics</h4>"]]}]
