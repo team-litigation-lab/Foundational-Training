@@ -750,7 +750,7 @@ function scoreBox(s, info, body){
   const h = String(s.h || "");
   if(!isAdminView() || !root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
   // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
-  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your\b|video|tutorial/i.test(h)) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
   return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${FTMetrics.table(rb.key)}</div>`;

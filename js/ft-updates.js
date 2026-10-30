@@ -330,7 +330,8 @@ function ftSyncTrainerCookie(){
 function ftFillSlots(){
   ftSyncTrainerCookie();
   const on = ftTrainerView();
-  if(on && !FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n) ftFillSlots(); }); }
+  // (a read that fails still repaints the deck's notes drawer, which then says so rather than "Loading…")
+  if(on && !FT.notes && !FT.tried){ ftLoadNotes().then(n=>{ if(n) ftFillSlots(); else if(window.FTDayDecks && FTDayDecks.notesPaint) FTDayDecks.notesPaint(); }); }
   document.querySelectorAll(".trainer-slot").forEach(el=>{
     const html = on && FT.notes ? (FT.notes[el.getAttribute("data-slot")] || "") : "";
     if(el.innerHTML !== html) el.innerHTML = html;

@@ -636,7 +636,9 @@ function loadReview(force){
   const id = state.traineeId; KR.at = Date.now();
   // (KR.read: a record really came back. sharedGet answers null for a failed read as for no record, and a failed read must never
   // be taken for the trainer clearing their scores)
-  KR.loading = sharedGet("kcreview:" + id).then(v=>{ KR.id = id; KR.data = v && v.lessons ? v : {lessons:{}}; KR.read = !!(v && v.lessons); applyReviews(); })
+  // (a read that comes back empty keeps what was read before for this trainee, so the trainer's review doesn't vanish from the
+  // Knowledge Check page on a failed request)
+  KR.loading = sharedGet("kcreview:" + id).then(v=>{ const keep = !(v && v.lessons) && KR.id === id && KR.data; KR.id = id; if(!keep) KR.data = v && v.lessons ? v : {lessons:{}}; KR.read = !!(v && v.lessons); applyReviews(); })
     .catch(()=>{}).then(()=>{ KR.loading = null; if(["kc","process"].includes(state.view)) render(); });
   return KR.loading;
 }
@@ -667,6 +669,7 @@ function applyReviews(){
     const next = Object.assign({}, prev, {score:best == null ? undefined : best});
     delete next.trainerScore; delete next.gradedScore; if(next.score === undefined) delete next.score;
     if(prev.trainerScore >= KC_PASS && !(best >= KC_PASS)) next.done = false;
+    else if(best >= KC_PASS && !prev.done){ next.done = true; next.date = prev.date || new Date().toISOString(); }   // (a failing trainer score had held back a passing graded best)
     state.progress[id] = next; changed = true;
   });
   if(changed){ storeSet("day-progress", state.progress); try{ syncToLedger(); }catch(err){} }
