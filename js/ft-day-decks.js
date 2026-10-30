@@ -2179,15 +2179,15 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 /* the type, as the Case Management course's Case Flow slides set it: body text in Inter 500 at 17px, bold at 700
    (not the engine's 700 / 900 everywhere), the slide's opening line as a lead in the same Inter, bigger and bold (one
    type family on the sheet: a serif lead read as a different font), section headings in Poppins */
-main.main-ftdd .ftdd-sheet{font:500 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
-main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:500;line-height:1.45;color:#1B1E2E;}
+main.main-ftdd .ftdd-sheet{font:700 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}   /* (the deck reads bold, every slide) */
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:700;line-height:1.45;color:#1B1E2E;}
 main.main-ftdd .ftdd-sheet :is(b,strong){font-weight:700;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:700 20px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 15.5px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;letter-spacing:.01em;margin:14px 0 6px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:600;line-height:1.45;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t b{font-weight:700;}
 main.main-ftdd .ftdd-sheet .ftdd-name{font:600 14.5px/1.4 'IBM Plex Mono',ui-monospace,monospace;}
-main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:700;}
 .ftdd-sheet > :first-child{margin-top:0 !important;}
 /* a slide with a line or two: its content sits in the middle of the sheet rather than alone at the top */
 .ftdd-sheet.ftdd-short{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;}
@@ -2480,6 +2480,8 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 .ft-body .ftdd-cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
 .ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
+/* the activity items read bold, as the rest of the deck does (their heading bars stay heavier) */
+main.main-ftdd .ftdd-sheet .ftdd-cal-item p:not(.ftdd-cal-h):not(.ftdd-cal-part), main.main-ftdd .ftdd-sheet .ftdd-cal-item li{font-weight:700 !important;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
 /* (Day 5's item 8: its four parts of the trip side by side on its card, each a box under its ➢ heading) */
 .ftdd-cal-parts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:6px 0 2px;}
