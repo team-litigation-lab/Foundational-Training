@@ -515,11 +515,10 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Activity card", agenda: true}] : [];   // (no Training Agenda slide)
   let listened = false;
   d.slides.forEach(s => {
-    // a lesson day's "To be added" slide has no slide of its own (no 🎲 Today's Task: the unannounced task lands in 🎲 Tasks)
-    if(s.placeholder && !only) return;
-    // a no-discussion day's 📌 From your trainer slide shows once the trainer has added something (a trainer always sees it, to add)
-    if(s.placeholder && only && !isAdminView() && !(X.data && (X.data.days[d.day] || []).length)){ if(!X.data) loadExtras(); return; }
-    const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
+    // the "To be added" placeholder has no slide of its own on any day: no 📌 From your trainer: activities & instructions
+    // slide at the end of a deck (no 🎲 Today's Task either: the unannounced task lands in 🎲 Tasks)
+    if(s.placeholder) return;
+    const slide = s;
     if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
       out.push(Object.assign({}, slide, {h: splitHeading(slide.h)}));
@@ -1394,8 +1393,9 @@ const LESSON_CARDS = {
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
-      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1v"},
-      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
+      // (Day 6: the mock calls first, then the Calendar Management Training Videos)
+      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
+      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
     tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
@@ -1414,22 +1414,23 @@ const LESSON_CARDS = {
       {t: "Sample Intake Calls", sub: "Four practice calls · transcripts", k: "listen", d: 7, s: "formse"},
       {t: "Other Intake-Related Documents", sub: "The folder", k: "read", d: 7, s: "formsd", lead: false},
       {t: "Call Listening Activity", sub: "The intake audio recordings", k: "listen", d: 7, s: "listen", go: "listening"},
-      {t: "Intake Process", time: "AM", sub: "Two videos · Monitoring Sheet #14", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents (MVA Cases)", sub: "📦 Your Intake Packet · naming · #16", k: "interactive", d: 8, s: "s1b"},
-      {t: "Additional Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
-      {t: "Live Session Instructions", sub: "CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
-      {t: "SA Demonstration", sub: "The tutorial video", k: "watch", d: 8, s: "s1e"},
-      // (its second slide, s1g: the Prototype CMS and the Call Simulator)
-      {t: "Intake Mock Call Activity", sub: "Prototype CMS & Intake line", k: "read", d: 8, s: "s1f"},
+      // (Part 2: Intake Video, Intake Documents Video with the naming convention in its steps, Other Intake Documents,
+      // Instructions, CMS Demo and Mock Call, then the PM demo's preparation and the demo)
+      {t: "Intake Video", time: "AM", sub: "Two videos · update your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
+      {t: "Intake Documents Video", sub: "📦 Your Intake Packet · the naming convention · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
+      {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
+      // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
+      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · Prototype CMS & Intake line", k: "watch", d: 8, s: "s1e"},
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
-      {t: "Atty. Sandy: Intake Calling", time: "PM", sub: "MVC cases", k: "watch", d: 8, s: "s3b"},
-      {t: "Buffer Time", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
+      // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
-      {t: "PI Equivalent Transcription: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
-      {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
-      {t: "Intake Mock Call Instructions & Metrics", time: "PM", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
-      {t: "Intake Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"}],
+      {t: "Intake Mock Call Instructions & Metrics", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
+      {t: "Intake Mock Calls (One-on-One)", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"},
+      {t: "Transcription Activity: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
+      {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
+    discuss: {7: "s1"},
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
@@ -2918,6 +2919,10 @@ main.main-ftdd .ftdd-sheet a.ftdd-sop-dl, main.main-ftdd .ftdd-sheet a.ftdd-sop-
    bold, then its screenshots side by side in one row under it, each numbered under its middle (1, 2, 3 …) */
 main.main-ftdd .ftdd-sheet.ftdd-sa p:not(.ftdd-hbar), main.main-ftdd .ftdd-sheet.ftdd-sa li{font:700 20px/1.45 'Inter',sans-serif !important;color:#1E2340 !important;text-align:left;margin:0 0 8px !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa p.url-list{font-size:16px !important;font-weight:700 !important;word-break:break-all;text-decoration:underline;}
+/* the Smart Advocate Knowledge Base links, under their screenshots: big and blue */
+main.main-ftdd .ftdd-sheet.ftdd-sa p.url-list.ftdd-sa-kb{font-size:22px !important;margin:14px 0 0 !important;word-break:normal;text-decoration:none;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-kb a{color:#1F5FD6 !important;text-decoration:underline;text-underline-offset:3px;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-kb a:hover{color:#0B3FA8 !important;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step{margin:0 0 34px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-unit + .ftdd-sa-unit{margin-top:14px;}
 main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-step h3{display:inline-block;font:800 20px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:10px 18px;border-left:5px solid #E8590C;border-radius:8px;margin:0 0 14px !important;text-align:left;}

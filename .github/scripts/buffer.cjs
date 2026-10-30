@@ -81,9 +81,9 @@ async function workerChecks() {
     await open(t, 4, 's2');   // (Day 4's Training Video Viewing: its one-line introduction joined it, build/day-decks.cjs SKIP)
     if (await t.evaluate(() => !!document.querySelector('.ftbf'))) fail('Day 4\'s Training Video Viewing slide got a buffer panel');
 
-    // 🌅 a buffer slide: the line and Done, no dialog
-    await open(t, 9, 's1');
-    if (!(await toPanel(t))) fail('Day 9\'s Buffer Time has no buffer panel');
+    // 🌅 a buffer slide: the line and Done, no dialog (Day 13's Buffer Time; Day 9's is off its deck)
+    await open(t, 13, 's1');
+    if (!(await toPanel(t))) fail('Day 13\'s Buffer Time has no buffer panel');
     else {
       if (!/Use this buffer to finish all your pending tasks\. Hit Done when you are\./.test(await panel(t))) fail(`the buffer panel's words: ${await panel(t)}`);
       if (await t.evaluate(() => !!document.querySelector('.ftdd-sheet .ftdd-wait'))) fail('the buffer slide still has its ⏳ While you wait box beside the panel');
