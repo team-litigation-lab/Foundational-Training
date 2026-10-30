@@ -446,23 +446,35 @@ function visual(html){
 /* The guide hangs two activities off one heading — "Classroom Discussion on Intake Specialist Training and Call
    Listening" — and they are two different things to do. The deck separates them: the discussion keeps the slide
    (and its lesson button), and the Call Listening gets a slide of its own, with the day's recordings and the log. */
+let listenLoading = false;
 function listenSlide(day, time){
   const sets = (root.FTListen && FTListen.sets) || [];
   const set = sets.find(x => Number(x.day) === Number(day)); if(!set) return null;
+  // (the trainer's links for its recordings: read once, and the slide is drawn again with them)
+  if(FTListen.ready && !FTListen.ready() && FTListen.loadSets && !listenLoading){ listenLoading = true; FTListen.loadSets().then(() => { if(state.view === "daydeck") render(); }); }
   const live = FTListen.setLive(set.id);
   return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
     `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
      <p>There is no right answer to find — the log is what your trainer reads, and it saves you writing the calls up anywhere else.</p>
-     ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+     ${LISTEN_CARDS[day] ? listenCards(LISTEN_CARDS[day], live.folder, live.recs) : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
-   calls; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
-   A Drive recording plays in the slide once its file's id is in (id); until then its card opens the folder. */
+   calls; Day 7: the five intake recordings; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
+   A recording plays in the slide once it has a link: its file's id here (id), or the link a trainer gives it in Admin →
+   🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a Drive file plays in Drive's
+   player, an audio file in the browser's); until then its card opens the folder. */
 const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
-  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"}))};
-function listenCards(cards, folder){
+  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
+  // Day 7: the five sample intake recordings (the set's folder), each a card of its own
+  7: [1, 2, 3, 4, 5].map(n => ({t: `Intake Call ${n}`, id: "", kind: "Sample intake call"}))};
+const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
+const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
+function listenCards(cards, folder, recs){
+  // the trainer's link for each recording, where the card has none of its own
+  cards = cards.map((c, i) => { const u = ((recs || [])[i] || {}).url || "";
+    return c.id || c.src || !u ? c : Object.assign({}, c, {id: driveId(u), src: driveId(u) ? "" : audioUrl(u)}); });
   // (numbered within their kind: Sample call 1–10)
-  return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
+  return `<div class="ftln-cards">${cards.map((c, i) => `<div class="ftln-card${c.id || c.src ? " is-live" : ""}"><p class="ftln-k">${e(c.kind)} ${cards.slice(0, i + 1).filter(x => x.kind === c.kind).length}${c.tag ? ` · <span class="ftln-tag">${e(c.tag)}</span>` : ""}</p><b>🎧 ${e(c.t)}</b>
     ${c.src ? `<audio controls preload="none" src="${e(c.src)}"></audio>`
       : c.id ? `<div class="ftln-aud"><iframe src="https://drive.google.com/file/d/${e(c.id)}/preview" title="${e(c.t)}" loading="lazy" allow="autoplay"></iframe></div>`
       : folder ? `<a class="btn btn-ghost btn-sm" href="${e(folder)}" target="_blank" rel="noopener noreferrer">▶ Play it from the folder</a>` : ""}</div>`).join("")}</div>`;
@@ -841,9 +853,9 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    // (and an embedded video or sheet stays with its name: ftdd-inline)
-    // (and what the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls two to a slide)
-    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-keep, .ftdd-two, .ftis-calls")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Activity Items stay one grid of cards; and what
+    // the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls two to a slide)
+    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-keep, .ftdd-two, .ftis-calls")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -1092,6 +1104,33 @@ root.render = function(){
   const mid = document.querySelector("main.main-ftdd"); if(mid) mid.classList.add("ftdd-settling");
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); requestAnimationFrame(() => { const m = document.querySelector("main.main-ftdd"); if(m) m.classList.remove("ftdd-settling"); }); });
 };
+// 🎧 a recording card (Day 3's Listening Activity, .ftdd-acard: build/day-decks.cjs REF_RECS audio) plays in a pop-up
+// player over the slide; Esc, ✕ or a click outside closes it (and stops it)
+(() => {
+  let box = null;
+  const close = () => { if(box){ const au = box.querySelector("audio"); if(au) au.pause(); box.remove(); box = null; } };
+  document.addEventListener("click", ev => {
+    const c = ev.target.closest && ev.target.closest(".ftdd-acard");
+    if(!c) return;
+    ev.preventDefault(); close();
+    box = document.createElement("div"); box.className = "ftdd-zoom ftdd-apop";
+    box.innerHTML = '<div class="ftdd-apop-box" role="dialog" aria-modal="true"><p class="ftdd-apop-k">🎧 Listening Activity</p><b></b>' +
+      '<audio controls autoplay preload="auto"></audio></div><button type="button" class="ftdd-zoom-x" title="Close">✕</button>';
+    box.querySelector("b").textContent = c.getAttribute("data-title") || "";
+    box.querySelector("audio").src = c.getAttribute("data-audio");
+    box.addEventListener("click", e => { if(!e.target.closest(".ftdd-apop-box")) close(); });
+    // (the player's own controls keep Esc for themselves once clicked: the focus goes back to the pop-up, so Esc closes it)
+    const pop = box.querySelector(".ftdd-apop-box"); pop.tabIndex = -1;
+    box.querySelector("audio").addEventListener("focus", () => setTimeout(() => { if(box) pop.focus({preventScroll: true}); }, 0));
+    document.body.appendChild(box); pop.focus({preventScroll: true});
+  });
+  // (before the deck's own ← / →: the slide behind doesn't turn while the player is open)
+  document.addEventListener("keydown", ev => {
+    if(!box) return;
+    if(ev.key === "Escape") close(); else if(ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+  }, true);
+})();
 // 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
 (() => {
   let box = null, list = [], at = 0;
@@ -1227,7 +1266,7 @@ const LESSON_CARDS = {
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
-      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for pending tasks · the mock call prep: Call Simulator, Ring Channel, CMS, AI listening, the metrics", k: "buffer", d: 5, s: "s1"},
+      {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
@@ -2212,7 +2251,18 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ft-body p.li .lbl .ftdd-sw{display:inline-block;width:18px;height:18px;border-radius:5px;vertical-align:-3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
 .ft-body .ftdd-cal-item{border-left:5px solid #E8590C;background:#F6F7FB;border-radius:0 10px 10px 0;padding:8px 14px 8px 14px;margin:0 0 12px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !important;color:#fff !important;}   /* (drawn as a heading bar, white on navy, in the reading too) */
-.ft-body .ftdd-calsim{margin:12px 0;} .ft-body .ftdd-calsim:empty{display:none;}
+/* (Day 5's Instructions as two cards side by side, and its ten Activity Items a card each, five to a slide under the
+   Calendar Simulator's link) */
+.ft-body .ftdd-cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
+.ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:span 2;columns:2;column-gap:18px;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p{break-inside:avoid;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p.ftdd-cal-h{column-span:all;}
+.ft-body .ftdd-calsim{margin:0 0 12px;}
+@media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:auto;columns:1;} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
@@ -2596,15 +2646,19 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdt-yes i,.ft-body .ftdt-no i{font-style:normal;background:#fff;border-radius:7px;padding:4px 7px;font-size:13px;}
 .ft-body .ftdt-tag{margin:6px 0 0;text-align:right;font:700 12px/1.2 'Inter',sans-serif;color:#5B6178;}
 /* 🎧 the recordings on a Call Listening slide, a card each (LISTEN_CARDS) */
-main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;color:#C2410C !important;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;background:#1E2340;border-color:#1E2340;font-size:14px;font-weight:700;text-decoration:none;}
-main.main-ftdd .ftdd-sheet .ftln-card .btn:hover{background:#E8590C;border-color:#E8590C;}
+main.main-ftdd .ftdd-sheet .ftln-card :is(p,b){line-height:1.3;} main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{font-size:12px;} main.main-ftdd .ftdd-sheet .ftln-card b{font-size:16px;}
+main.main-ftdd .ftdd-sheet .ftln-card .ftln-k{color:#F4B77A !important;} main.main-ftdd .ftdd-sheet .ftln-card b{color:#fff !important;}
+main.main-ftdd .ftdd-sheet .ftln-card .btn{color:#fff !important;font-size:14px;text-decoration:none;}
 main.main-ftdd .ftdd-sheet .ftdt :is(p,i,div){font-size:14px;line-height:1.35;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:12px;} main.main-ftdd .ftdd-sheet .ftdt .ftdt-h b{font-size:16px;}
 .ft-body .ftln-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin:10px 0;}
-.ft-body .ftln-card{border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;padding:10px 12px;background:#fff;box-shadow:0 2px 6px rgba(30,35,64,.10);display:flex;flex-direction:column;gap:6px;}
-.ft-body .ftln-card b{font-size:15px;color:#1E2340;} .ft-body .ftln-card audio{width:100%;}
-.ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#E8590C;}
-.ft-body .ftln-tag{color:#7A5A2E;text-transform:none;letter-spacing:0;} .ft-body .ftln-aud{height:60px;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
+/* (navy cards on the white sheet, the title white and the kind orange, so each recording stands out) */
+.ft-body .ftln-card{border:1px solid #1E2340;border-left:5px solid #DB8437;border-radius:12px;padding:10px 12px;background:#262B45;display:flex;flex-direction:column;gap:6px;
+  box-shadow:0 4px 12px rgba(30,35,64,.22);}
+.ft-body .ftln-card b{font-size:15px;color:#fff;} .ft-body .ftln-card audio{width:100%;}
+.ft-body .ftln-k{margin:0;font:700 11.5px/1.2 'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#F4B77A;}
+.ft-body .ftln-tag{color:#FFE2C2;text-transform:none;letter-spacing:0;}
+.ft-body .ftln-aud{height:60px;border-radius:8px;overflow:hidden;background:#fff;} .ft-body .ftln-aud iframe{width:100%;height:100%;border:0;}
+.ft-body .ftln-card .btn{background:#DB8437;border-color:#DB8437;font-weight:700;} .ft-body .ftln-card .btn:hover{background:#C9742B;border-color:#C9742B;}
 /* (its cells 1pt smaller than the slide's text, main.main-ftdd .ftdd-sheet td) */
 main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt);}
 .ft-body table.ftdd-terms .ftdd-terms-img{display:block;margin-top:8px;}
@@ -2638,6 +2692,16 @@ main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0
 main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
+/* 🎧 Day 3's Listening Activity: a card per recording, three to a row, each opening the pop-up player */
+.ftdd-acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin:8px 0 10px;}
+.ft-body button.ftdd-acard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:12px 14px;background:#fff;border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;box-shadow:0 2px 6px rgba(30,35,64,.10);cursor:pointer;font:inherit;color:#1E2340;}
+.ft-body button.ftdd-acard:hover{border-color:#E8590C;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+.ftdd-acard-ic{font-size:22px;line-height:1;} .ft-body .ftdd-acard b{font:700 16px/1.3 'Inter',sans-serif;}
+.ft-body .ftdd-acard small{font:700 13px/1.2 'Inter',sans-serif;color:#C2410C;}
+.ft-body .ftdd-acard-tag{font:600 13px/1.3 'Inter',sans-serif;color:#5B6178;}
+.ftdd-apop{cursor:default;} .ftdd-apop-box{background:#fff;border-radius:14px;border-top:5px solid #E8590C;padding:22px 26px;width:min(560px,92vw);display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.ftdd-apop-k{margin:0;font:800 12px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#C2410C;}
+.ftdd-apop-box b{font:800 20px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;} .ftdd-apop-box audio{width:100%;}
 .ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}
 .ftdd-zoom img{max-width:94vw;max-height:88vh;background:#fff;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
 .ftdd-zoom-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:14px;}
