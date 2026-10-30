@@ -830,15 +830,18 @@ function renderDeck(){
   if(DD.i >= n) DD.i = n - 1;
   const pair = DD.split && DD.i + 1 < n;   // the slide beside it, for reading the instructions and the sample together
   const tr = isAdminView(), nNotes = tr ? slotsOf(list[DD.i]) + (pair ? slotsOf(list[DD.i + 1]) : 0) : 0;
+  const cards = slideCard(d, info, list, DD.i) + (pair ? slideCard(d, info, list, DD.i + 1) : "");
+  // a mock call / demo slide's scoring sheet (FTMetrics) puts 💾 Save, the scores and Remarks on the right: the notes open on the left there
+  const notesL = /ftms-trainer/.test(cards);
   return `<div class="ftdd-stage${DD.split ? " ftdd-stage-split" : ""}">
     <div class="ftdd-mid">${back}
       ${tr && DD.railOff ? `<div class="ftdd-rail-open-row"><button type="button" class="btn btn-sm ftdd-rail-open" onclick="FTDayDecks.rail()" title="Show the trainer panel: segment locks, notes, slide edits">🧑‍🏫 Trainer panel${nNotes ? ` · 📝 ${nNotes}` : ""}</button>
         ${nNotes ? `<button type="button" class="btn btn-sm ftdd-rail-open ftdd-rail-notes${DD.notes ? " on" : ""}" onclick="FTDayDecks.notes()">📝 Notes</button>` : ""}</div>` : ""}
-      ${nNotes ? `<div class="ftdd-notes" id="ftddNotes" role="complementary" aria-label="Facilitator notes" ${DD.notes ? "" : "hidden"}>
+      ${nNotes ? `<div class="ftdd-notes${notesL ? " ftdd-notes-l" : ""}" id="ftddNotes" role="complementary" aria-label="Facilitator notes" ${DD.notes ? "" : "hidden"}>
         <div class="ftdd-notes-h"><b>🧑‍🏫 Facilitator notes</b><span>Only you see these. They aren’t on the trainees’ slide.</span>
           <button type="button" class="ftdd-notes-x" title="Close the notes (Esc)" onclick="FTDayDecks.notes()">✕</button></div>
         <div class="ftdd-notes-b ft-body"></div></div>` : ""}
-      <div class="ftdd-slides">${slideCard(d, info, list, DD.i)}${pair ? slideCard(d, info, list, DD.i + 1) : ""}</div>
+      <div class="ftdd-slides">${cards}</div>
       <div class="ftdd-nav">
         <button type="button" class="btn ftdd-prev" ${DD.i ? "" : "disabled"} onclick="FTDayDecks.go(-1)">← Previous</button>
         <button type="button" class="btn ftdd-map" onclick="FTDayDecks.map()" title="The training roadmap: every day and its slides, and where you are">🗺 Map</button>
@@ -2080,6 +2083,7 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 .ftdd-notes{position:absolute;top:26px;right:10px;bottom:76px;width:min(460px,46%);z-index:40;display:flex;flex-direction:column;
   background:#fff;border:1px solid #D9DEEA;border-left:5px solid #DB8437;border-radius:12px;box-shadow:0 18px 44px rgba(15,23,42,.28);overflow:hidden;}
 .ftdd-notes[hidden]{display:none;}
+.ftdd-notes.ftdd-notes-l{right:auto;left:10px;border-left:1px solid #D9DEEA;border-right:5px solid #DB8437;}
 .ftdd-notes-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;padding:10px 40px 8px 14px;background:#262B45;color:#fff;position:relative;}
 .ftdd-notes-h b{font:800 14px 'Inter',sans-serif;}
 .ftdd-notes-h span{font-size:11.5px;opacity:.8;}
