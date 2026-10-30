@@ -163,8 +163,7 @@ function trainerCase(c, who){
 }
 function mockcallHtml(el){
   const calls = mockCalls();
-  // (the trainer's "👁 What trainees see" preview, js/ft-buffer.js .ftbf-pv, shows the trainee's side, never the scripts)
-  const trainer = isTrainerView() && !(el && el.closest && el.closest(".ftbf-pv"));
+  const trainer = isTrainerView();
   const head = `<div class="ftis-pk-h"><b>📞 ${trainer ? "Intake Mock Call cases: the CMS’s Intake line, the same calls on Ring Channel" : "Your Intake Mock Call case"}</b></div>`;
   if(!calls){ if(!PK.failed) packs().catch(() => {}); return head + `<p class="ftis-wait">${PK.failed ? "The cases didn’t load from the CMS. Check your connection and open this slide again." : "Loading the cases from the CMS…"}</p>`; }
   if(trainer){

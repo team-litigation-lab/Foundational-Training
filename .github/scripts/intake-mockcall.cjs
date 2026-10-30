@@ -82,10 +82,9 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
       if (!a.case || a.case.id !== 'ft_in_nicole' || !a.rubric) fail(`the score wasn't saved with the case it was played on: ${JSON.stringify(a)}`);
     }
 
-    // the trainer's "👁 What trainees see" preview on the graded call's slide shows the trainee's side, never the scripts
+    // the trainer's slide has no "👁 What trainees see" preview of the trainee's panel
     await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(2000);
-    const pv = await page.evaluate(() => [...document.querySelectorAll('.ftis-mockcall')].map(el => ({ pv: !!el.closest('.ftbf-pv'), html: el.innerHTML })));
-    if (pv.some(x => x.pv && /SCRIPT-|Scenario Picker/.test(x.html))) fail('the trainer\'s "What trainees see" preview shows the callers\' scripts');
+    if (await page.evaluate(() => !!document.querySelector('.ftbf-pv'))) fail('the trainer\'s slide still shows the "What trainees see" preview');
     // a score saved after the case is unassigned doesn't keep the old case
     await page.evaluate(id => FTIntakeAdmin.assignCall(id, ''), id); await page.waitForTimeout(800);
     await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3bp'))); await page.waitForTimeout(1500);
