@@ -735,6 +735,7 @@ Where the token lives:
 | `js/ft-tracker.js`, `js/ft-tracker-rules.js` | The Daily Task Tracker (the on-platform sheet, Admin → 📋 Task Trackers) and its rules, which the Worker's daily check uses too, with the Drive sheet's reader (`fromSheetCsv`) and the Monitoring Sheet's check (`gradeMonitorText`). |
 | `worker.js` | Cloudflare Worker: the EA/PA/CM Worker with an `ft:` storage prefix, plus the `/trainer/` gate. |
 | `.github/workflows/checks.yml`, `.github/scripts/` | The checks on every pull request (see *Checks*): `check-site.mjs` (syntax, files, JSON), `server.mjs` (the site through `worker.js` with an in-memory KV, for local runs) and `requests.cjs` (how often a page asks the server). |
+| `.github/workflows/pr-agent.yml`, `.github/scripts/pr-agent.mjs` | The PR agent: every 30 minutes (and after every Checks run and branch push) it opens a pull request for each recent branch that has none, merges every pull request whose checks are green, and has Claude fix red checks and merge conflicts. Out of Claude credits, it labels the pull request `agent:waiting-credits` and carries on by itself once they are back. Setup (secrets `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`, and `PR_AGENT_TOKEN`) and settings are at the top of the workflow; label a pull request `agent:skip` to keep it out, or set the variable `PR_AGENT_ENABLED=false` to stop it. |
 
 ## Build
 
