@@ -511,10 +511,10 @@ const REF_RECS = [
   // (audio: recordings kept on the platform, ft/day3/audio, each a card that plays in a pop-up player: js/ft-day-decks.js
   // ftdd-acard; [title, file, length]: Carlos's Calls 1–5 only, his other recordings not shown)
   {h: "Carlos’ Reception Recordings", folders: ["1bP8yBy9WhPgUOnfh-IAvWI4V6UVeYyeI", "1S3L8ecBadvrN_AmGpeQD98mY1148Rvof"], recs: [], audio: [
-    ["Call 1", "carlos-1.mp3", "1:21"],
+    ["Call 1", "carlos-1.mp3", "1:20"],
     ["Call 2", "carlos-2.mp3", "1:15"],
     ["Call 3", "carlos-3.mp3", "6:22"],
-    ["Call 4", "carlos-4.mp3", "0:42"],
+    ["Call 4", "carlos-4.mp3", "0:41"],
     ["Call 5", "carlos-5.mp3", "2:01"]]},
   // the PI Reception Activity's six calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
   // each with its challenge (piAudio: read from build/calls/pi-reception-calls.json once it is loaded, below)
@@ -531,10 +531,10 @@ function REF_RECS_HTML(){
   const note = '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n';
   const acard = ([t, f, len, tag]) => `<button type="button" class="ftdd-acard" data-audio="${f.startsWith("/") ? f : "/ft/day3/audio/" + f}" data-title="${hx(t)}">` +
     `<span class="ftdd-acard-ic">🎧</span><b>${hx(t)}</b>${tag ? `<span class="ftdd-acard-tag">${hx(tag)}</span>` : ""}<small>${len} · ▶ Play</small></button>`;
-  const mmss = n => `${Math.floor(n / 60)}:${String(Math.round(n % 60)).padStart(2, "0")}`;
+  const mmss = n => `${Math.floor(n / 60)}:${String(Math.floor(n % 60)).padStart(2, "0")}`;
   REF_RECS.filter(g => g.pi).forEach(g => { g.audio = PI_CALLS.calls.map(c => [c.title, c.file, mmss(c.secs), `${c.challenge} · VA ${c.va}`]); });
-  return REF_RECS.filter(g => !g.hide).map(g => `<p><b>${hx(g.h)}</b></p>\n` + ((g.audio || []).length ? `<div class="ftdd-acards">${g.audio.map(acard).join("")}</div>\n`
-      : g.recs.length ? g.recs.map(rec).join("")
+  // (a group's heading and its cards are one block, which the deck never splits over two pages)
+  return REF_RECS.filter(g => !g.hide).map(g => (g.audio || []).length ? `<div class="ftdd-recgroup">\n<p><b>${hx(g.h)}</b></p>\n<div class="ftdd-acards">${g.audio.map(acard).join("")}</div>\n</div>\n` : `<p><b>${hx(g.h)}</b></p>\n` + (g.recs.length ? g.recs.map(rec).join("")
       : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
     note;
 }

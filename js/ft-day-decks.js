@@ -1106,9 +1106,17 @@ root.render = function(){
     box.querySelector("b").textContent = c.getAttribute("data-title") || "";
     box.querySelector("audio").src = c.getAttribute("data-audio");
     box.addEventListener("click", e => { if(!e.target.closest(".ftdd-apop-box")) close(); });
-    document.body.appendChild(box);
+    // (the player's own controls keep Esc for themselves once clicked: the focus goes back to the pop-up, so Esc closes it)
+    const pop = box.querySelector(".ftdd-apop-box"); pop.tabIndex = -1;
+    box.querySelector("audio").addEventListener("focus", () => setTimeout(() => { if(box) pop.focus({preventScroll: true}); }, 0));
+    document.body.appendChild(box); pop.focus({preventScroll: true});
   });
-  document.addEventListener("keydown", ev => { if(box && ev.key === "Escape"){ close(); ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);
+  // (before the deck's own ← / →: the slide behind doesn't turn while the player is open)
+  document.addEventListener("keydown", ev => {
+    if(!box) return;
+    if(ev.key === "Escape") close(); else if(ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+  }, true);
 })();
 // 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
 (() => {
