@@ -205,13 +205,13 @@ const TREES = [
     {q: "Is anyone in immediate danger or in a medical emergency?", yes: ["Tell them to call 911 now", "Note the call", "Escalate to the attorney right away"], no: ["Stay calm, listen and empathize", "Take a detailed message", "Escalate the same day to the attorney/case manager"]}]}
 ];
 const esc_ = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-// (a row of two to a grid: a long slide is dealt into pages by its blocks, so each row can share a page)
+// (a row of two to a grid, kept on one page (ftdd-keep): New Caller beside Medical Provider Call, never split over two pages)
 const treeHtml = t => `<div class="ftdt"><div class="ftdt-h"><b>🌳 ${esc_(t.h)}</b><button type="button" class="ftdt-big" onclick="FTDayDecks.treeFull(this)" title="Show this tree bigger">⛶ Bigger</button></div>` +
   `<div class="ftdt-body"><div class="ftdt-start">${esc_(t.start)}</div>` +
   t.steps.map(s => s.do ? `<div class="ftdt-arrow">↓</div><div class="ftdt-do">${esc_(s.do)}</div>`
     : `<div class="ftdt-arrow">↓</div><div class="ftdt-q">${esc_(s.q)}</div><div class="ftdt-br"><div class="ftdt-yes"><span>YES</span>${s.yes.map(x => `<i>${esc_(x)}</i>`).join("")}</div><div class="ftdt-no"><span>NO</span>${s.no.map(x => `<i>${esc_(x)}</i>`).join("")}</div></div>`).join("") +
   `<p class="ftdt-tag">🛡 ${esc_(t.tag)}</p></div></div>`;
-const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
+const TREES_HTML = [0, 2, 4].map(i => `<div class="ftdt-grid ftdd-keep">${TREES.slice(i, i + 2).map(treeHtml).join("\n")}</div>\n`).join("");
 const TRIM = {1: {reading: html => {
   const at = html.indexOf("</p>", html.indexOf(PI_FILE)); if(at < 0) throw new Error("Day 1's Reading Task no longer links the Personal Injury overview");
   // the group-chat answer note and its naming convention go: the answers are on ✍️ Knowledge Check
