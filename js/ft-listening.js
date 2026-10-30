@@ -36,7 +36,14 @@ const SETS = [
     about:"The VA recordings from Day 11’s Insurance Communication discussion."},
   {id:"records", icon:"🩺", title:"Provider communication calls", day:13, lesson:8, n:5,
     folder:"https://drive.google.com/drive/folders/17_v7RMsD93ebLoq9mu7srIqkcxEL-Egk?usp=drive_link",
-    about:"The sample recordings from Day 13’s Medical Records Specialist discussion."}
+    about:"The sample recordings from Day 13’s Medical Records Specialist discussion."},
+  // 📝 Day 3's Reception Listening Activity answers: the five Harbor & Pine practice calls (build/calls/pi-reception-activity.json,
+  // played here: audio), each logged with its 5 data points and its challenge (fields: ACT_FIELDS); the deck's stop after the
+  // calls opens it, and its ✅ End of training goes on to the day's end. Not in the Practice Lab's Call Listening list (activity)
+  {id:"recact", icon:"📝", title:"Reception Listening Activity: answers", day:3, lesson:4, n:5, activity:true,
+    titles:["Call 1: The Missing Email", "Call 2: Third Time Calling", "Call 3: Which Office?", "Call 4: Just Confirming", "Call 5: No Ride Tomorrow"],
+    audio:[1, 2, 3, 4, 5].map(n => `/ft/day3/audio/pi-activity-${n}.mp3`),
+    about:"Play each of the five Harbor & Pine practice calls, then log its 5 data points and its challenge: the obstacle, and how the VA handled it."}
 ];
 const setOf = id => SETS.find(s => s.id === id);
 const WHO = ["Existing client", "Potential client", "Authorized person on the file", "Medical provider", "Insurance adjuster", "Opposing counsel", "Court staff", "Other"];
@@ -48,8 +55,19 @@ const FIELDS = [
   ["phrase", "One phrase worth reusing, in the VA’s words", "text", "“…”", 12, true],
   ["better", "What you would do differently", "area", "One thing you would change, and why", 25, true]
 ];
+// the Reception Listening Activity's answers: the 5 data points of the call, then its challenge
+const ACT_FIELDS = [
+  ["caller", "1. Caller: their name, and who they are", "text", "e.g. Jane Doe, existing client", 5, false],
+  ["callback", "2. Callback number", "text", "With the extension or best time, if given", 7, false],
+  ["verified", "3. Verified? How, or why nothing could be shared", "text", "Name, DOB, date of the accident …", 5, true],
+  ["reason", "4. Reason for the call", "text", "The case and what they need", 10, true],
+  ["action", "5. Action taken", "text", "Who it went to, and how (message, transfer, callback)", 10, true],
+  ["obstacle", "🚧 The obstacle: what made the call difficult", "area", "Emotional distress, missing details, a language barrier …", 20, true],
+  ["response", "🤝 The VA’s response: how they handled it", "area", "Active listening, de-escalation, boundary setting, clarifying questions …", 20, true]
+];
+const fieldsOf = s => (s && s.id === "recact") ? ACT_FIELDS : FIELDS;
 const filled = (log, f) => f[2] === "select" ? WHO.includes(log[f[0]]) : len(log[f[0]]) >= f[4];
-const done = log => !!log && FIELDS.every(f => filled(log, f));
+const done = (log, s) => !!log && fieldsOf(s).every(f => filled(log, f));
 
 /* ---------- the trainer's version of the sets ---------- */
 const X = {data: null, at: 0, loading: null};
@@ -65,7 +83,7 @@ function loadSets(force){
 function setLive(id){
   const s = setOf(id), own = ((X.data || {}).sets || {})[id] || {};
   const n = Math.max(1, Math.min(30, Number(own.n) || s.n)), folder = has(own.folder) ? own.folder : s.folder;
-  const recs = []; for(let i = 1; i <= n; i++){ const r = (own.recs || [])[i - 1] || {}; recs.push({n: i, title: has(r.title) ? r.title : (s.titles || [])[i - 1] || `Recording ${i}`, url: has(r.url) ? r.url : ""}); }
+  const recs = []; for(let i = 1; i <= n; i++){ const r = (own.recs || [])[i - 1] || {}; recs.push({n: i, title: has(r.title) ? r.title : (s.titles || [])[i - 1] || `Recording ${i}`, url: has(r.url) ? r.url : "", audio: (s.audio || [])[i - 1] || ""}); }
   return Object.assign({}, s, {n, folder, recs});
 }
 
@@ -79,10 +97,10 @@ function load(force){
     if(state.view === "listening") render(); }).catch(() => { R.rec = R.rec || {logs: {}}; });
 }
 const logOf = (sid, n) => ((R.rec || {logs: {}}).logs[sid] || {})[n] || {};
-const countDone = (rec, s) => { const l = ((rec || {logs: {}}).logs || {})[s.id] || {}; let k = 0; for(let i = 1; i <= s.n; i++) if(done(l[i])) k++; return k; };
+const countDone = (rec, s) => { const l = ((rec || {logs: {}}).logs || {})[s.id] || {}; let k = 0; for(let i = 1; i <= s.n; i++) if(done(l[i], s)) k++; return k; };
 function readRec(sid, n){
   const out = {};
-  FIELDS.forEach(f => { const el = document.getElementById(`ln_${sid}_${n}_${f[0]}`); out[f[0]] = el ? String(el.value || "").trim().slice(0, 1500) : ""; });
+  fieldsOf(setOf(sid)).forEach(f => { const el = document.getElementById(`ln_${sid}_${n}_${f[0]}`); out[f[0]] = el ? String(el.value || "").trim().slice(0, 1500) : ""; });
   return out;
 }
 async function saveRec(sid, n){
@@ -94,20 +112,20 @@ async function saveRec(sid, n){
   const ok = await sharedSet("listening:" + id, R.rec);
   R.saving[`${sid}|${n}`] = false;
   if(ok === false) toast("Couldn’t save the log. Check your connection.");
-  else { R.open[`${sid}|${n}`] = !done(log); toast(done(log) ? `✓ ${setOf(sid).title}: recording ${n} logged.` : "Saved. It counts once every line is filled in."); }
+  else { const ok_ = done(log, setOf(sid)); R.open[`${sid}|${n}`] = !ok_; toast(ok_ ? `✓ ${setOf(sid).title}: call ${n} logged.` : "Saved. It counts once every line is filled in."); }
   render();
 }
 
 /* ---------- the page ---------- */
 function recHtml(s, r, next){
-  const key = `${s.id}|${r.n}`, log = logOf(s.id, r.n), ok = done(log), open = R.open[key] !== undefined ? R.open[key] : r.n === next;
-  const missing = FIELDS.filter(f => !filled(log, f)).map(f => f[1]);
+  const key = `${s.id}|${r.n}`, log = logOf(s.id, r.n), ok = done(log, s), open = R.open[key] !== undefined ? R.open[key] : r.n === next;
+  const FL = fieldsOf(s), missing = FL.filter(f => !filled(log, f)).map(f => f[1].replace(/^\d\.\s*|^\S+\s/, ""));
   return `<div class="card ln-rec ${ok ? "ok" : ""}"><button class="ln-head" onclick="FTListen.toggle('${e(key)}')">
       <span class="ln-mark">${ok ? "✓" : r.n}</span>
       <span><b>${e(r.title)}</b>${log.at ? `<small>Logged ${e(new Date(log.at).toLocaleDateString())}${ok ? "" : ` · still to fill in: ${e(missing.join(", "))}`}</small>` : `<small>Not logged yet</small>`}</span>
       ${r.url ? `<a class="btn btn-ghost btn-sm" href="${e(r.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">🎧 Listen ↗</a>` : ""}
       <span>${open ? "▾" : "▸"}</span></button>
-    ${open ? `<div class="ln-form">${FIELDS.map(f => `<label class="${f[5] ? "w" : ""}">${e(f[1])}
+    ${open ? `<div class="ln-form">${r.audio ? `<audio class="w ln-audio" controls preload="none" src="${e(r.audio)}" title="${e(r.title)}"></audio>` : ""}${FL.map(f => `<label class="${f[5] ? "w" : ""}">${e(f[1])}
         ${f[2] === "select" ? `<select id="ln_${e(s.id)}_${r.n}_${f[0]}">${["<option value=\"\">Pick…</option>"].concat(WHO.map(w => `<option ${w === log[f[0]] ? "selected" : ""}>${e(w)}</option>`)).join("")}</select>`
           : f[2] === "area" ? `<textarea id="ln_${e(s.id)}_${r.n}_${f[0]}" rows="3" placeholder="${e(f[3])}">${e(log[f[0]] || "")}</textarea>`
           : `<input id="ln_${e(s.id)}_${r.n}_${f[0]}" value="${e(log[f[0]] || "")}" placeholder="${e(f[3])}" autocomplete="off">`}</label>`).join("")}
@@ -116,10 +134,18 @@ function recHtml(s, r, next){
 function renderPage(){
   if(!R.rec || !X.data){ load(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
   // a set opens with its day: 🔓 once the trainer has opened the day (js/ft-day-locks.js); a trainee catches up on any set opened
-  const open = SETS.filter(setOpen);
+  const open = R.set === "recact" ? SETS.filter(s => s.id === "recact") : SETS.filter(s => setOpen(s) && !s.activity);
   if(!open.length) return `<div class="card" style="padding:24px;"><h2 style="margin:0 0 6px;">🔒 Call Listening</h2><p style="margin:0;">The recordings open when your trainer unlocks the Call Listening step of the day.</p></div>`;
   const cur = setLive(R.set && open.some(s => s.id === R.set) ? R.set : open[0].id); R.set = cur.id;
   const k = countDone(R.rec, cur);
+  // 📝 the Reception Listening Activity's answers: a page of its own, its five calls only
+  if(cur.activity) return `<div class="ln-hero"><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h1>📝 Reception Listening Activity: Answers</h1>
+      <p>For each of the five Harbor &amp; Pine practice calls: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). Save each call as you go.</p></div>
+    <div class="card ln-about"><div><b>Harbor &amp; Pine Injury Law · 5 practice calls</b><p>Your trainer reads your answers.</p></div>
+      <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div></div></div>
+    ${(() => { const next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;
+      return cur.recs.map(r => recHtml(cur, r, next)).join(""); })()}
+    ${window.FTDayDecks ? `<div class="ln-end"><button class="btn btn-navy" onclick="FTDayDecks.slide(3, 'end-day')">✅ End of training →</button></div>` : ""}`;
   return `<div class="ln-hero"><p class="lp-eyebrow">Call Listening · Days ${open.map(s => s.day).join(", ")}</p><h1>🎧 Call Listening Log</h1>
       <p>Listen to each recording, then write down what happened on the call. There’s no right answer to find: the log is what your trainer reads, and it saves you writing it up anywhere else.</p>
       <div class="ln-pills">${open.map(s => { const l = setLive(s.id), c = countDone(R.rec, l);
@@ -127,7 +153,7 @@ function renderPage(){
     <div class="card ln-about"><div><b>${cur.icon} ${e(cur.title)}</b><p>${e(cur.about)}</p></div>
       <div><span class="ln-count">${k} of ${cur.n} logged</span><div class="ln-bar"><span style="width:${Math.round(k / cur.n * 100)}%"></span></div>
       ${cur.folder ? `<a class="btn btn-ghost btn-sm" href="${e(cur.folder)}" target="_blank" rel="noopener noreferrer">📂 The recordings ↗</a>` : ""}</div></div>
-    ${(() => { const next = (cur.recs.find(r => !done(logOf(cur.id, r.n))) || {}).n;   // only the next one to log is open
+    ${(() => { const next = (cur.recs.find(r => !done(logOf(cur.id, r.n), cur)) || {}).n;   // only the next one to log is open
       return cur.recs.map(r => recHtml(cur, r, next)).join(""); })()}`;
 }
 window.EXTRA_ROUTE_VIEWS = (window.EXTRA_ROUTE_VIEWS || []).concat(["listening"]);
@@ -138,7 +164,7 @@ window.render = function(){
   if(!state.traineeId){ state.view = "dashboard"; return __render.apply(this, arguments); }
   load(); loadSets();
   const app = document.getElementById("app");
-  app.innerHTML = renderTopbar() + `<main class="main-ln"><a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>${renderPage()}</main>` + renderFooter();
+  app.innerHTML = renderTopbar() + `<main class="main-ln">${R.set === "recact" && window.FTDayDecks ? `<a class="back-link" onclick="FTDayDecks.slide(3, 's1d')">&larr; Back to the 5 practice calls</a>` : `<a class="back-link" onclick="goto('simulators')">&larr; Back to the Practice Lab</a>`}${renderPage()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
 };
 window.FTListen = {
@@ -155,7 +181,7 @@ const setOpen = s => !window.FTDayLocks || FTDayLocks.toolOpen("listening", s.da
 // 🛠 the Practice Lab's section
 window.ftListenSection = () => `<section class="fts-group"><h2>🎧 Call Listening</h2>
     <p class="fts-sub">The sample recordings from the Call Listening sessions. Log each call as you listen — who called, what they wanted, how the VA handled it, a phrase worth reusing — and your trainer can see what you heard without a write-up anywhere else.</p>
-    <div class="fts-grid">${SETS.filter(setOpen).map(s => { const l = setLive(s.id);
+    <div class="fts-grid">${SETS.filter(s => setOpen(s) && !s.activity).map(s => { const l = setLive(s.id);
       return `<div class="card fts-card"><div class="fts-kicker">Day ${s.day} · ${l.n} recordings</div><h3>${s.icon} ${e(s.title)}</h3>
         <p class="fts-note">${e(s.about)}</p>
         <div class="fts-tool-act"><button class="btn btn-navy btn-sm" type="button" onclick="FTListen.open('${e(s.id)}')">Open the log</button></div></div>`; }).join("")}</div></section>`;
@@ -189,8 +215,8 @@ async function loadAdmin(){
 function adminLogs(r, s){
   const l = (r.rec.logs || {})[s.id] || {};
   return `<div class="ln-alogs">${s.recs.map(x => { const g = l[x.n]; if(!g || !Object.keys(g).length) return "";
-    return `<div class="ln-alog"><b>${e(x.title)}</b>${done(g) ? `<span class="ln-ok">✓ complete</span>` : `<span class="ln-part">partly filled in</span>`}
-      ${FIELDS.map(f => has(g[f[0]]) ? `<p><em>${e(f[1])}:</em> ${e(g[f[0]])}</p>` : "").join("")}</div>`; }).join("") || `<p class="fss-muted">Nothing logged in this set yet.</p>`}</div>`;
+    return `<div class="ln-alog"><b>${e(x.title)}</b>${done(g, s) ? `<span class="ln-ok">✓ complete</span>` : `<span class="ln-part">partly filled in</span>`}
+      ${fieldsOf(s).map(f => has(g[f[0]]) ? `<p><em>${e(f[1])}:</em> ${e(g[f[0]])}</p>` : "").join("")}</div>`; }).join("") || `<p class="fss-muted">Nothing logged in this set yet.</p>`}</div>`;
 }
 function adminHtml(){
   if(!AD.rows || !X.data){ if(!AD.loading) loadAdmin(); loadSets(); return `<div class="card" style="padding:24px;">Loading…</div>`; }
@@ -233,6 +259,7 @@ ftAdminTab("listening", "🎧 Call Listening", adminHtml);
 
 (function(){ const st = document.createElement("style"); st.id = "ft-listening"; st.textContent = `
 main.main-ln{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:12px;}
+main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk one lost its contents) */
 .ln-hero h1{margin:0 0 4px;} .ln-hero p{margin:0;color:var(--ink-soft);max-width:76ch;}
 .ln-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
 .ln-pill{border:1px solid var(--line,#d6d9e0);background:var(--card,#fff);color:var(--ink);border-radius:999px;padding:7px 14px;font:600 13px inherit;cursor:pointer;}
@@ -248,6 +275,7 @@ main.main-ln{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;f
 .ln-form label{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:13px;font-weight:600;color:var(--ink-soft);} .ln-form label.w,.ln-form .w{grid-column:1/-1;}
 .ln-form input,.ln-form select,.ln-form textarea{box-sizing:border-box;width:100%;min-width:0;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;background:var(--card,#fff);color:var(--ink);}
 .ln-act{display:flex;gap:8px;}
+.ln-audio{width:100%;margin:2px 0 4px;} .ln-end{display:flex;justify-content:flex-end;}
 .ln-admin .ff-bar span{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
 .ln-aedit{display:grid;grid-template-columns:2fr 1fr;gap:10px 12px;padding:12px 0;} .ln-aedit label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;color:var(--ink-soft);}
 .ln-aedit .w{grid-column:1/-1;} .ln-aedit input,.ln-aedit textarea{box-sizing:border-box;width:100%;font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line,#d6d9e0);border-radius:8px;}

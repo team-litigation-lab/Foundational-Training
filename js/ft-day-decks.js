@@ -469,7 +469,7 @@ function visual(html){
 let listenLoading = false;
 function listenSlide(day, time){
   const sets = (root.FTListen && FTListen.sets) || [];
-  const set = sets.find(x => Number(x.day) === Number(day)); if(!set) return null;
+  const set = sets.find(x => Number(x.day) === Number(day) && !x.activity); if(!set) return null;
   // (the trainer's links for its recordings: read once, and the slide is drawn again with them)
   if(FTListen.ready && !FTListen.ready() && FTListen.loadSets && !listenLoading){ listenLoading = true; FTListen.loadSets().then(() => { if(state.view === "daydeck") render(); }); }
   const live = FTListen.setLive(set.id);
@@ -610,28 +610,18 @@ const HANDOUTS = {1: {items: [
   ["Dropped Cases", "https://drive.google.com/file/d/1N57yPn1zaPnGU0t-wY5cT01IB-ovZmOa/view"],
   ["Claims Specialist Best Practices", "https://drive.google.com/file/d/1k1s14bdivdUzGDB4a4yzBRw50M3YlESv/view"]]}};
 function handoutsSlide(h){
-  // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
-  // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
-  // segment, as the trainer's slide shows it (🔓 Unlock on the slide, or 🔓 Activity Locks; open on a day the steps don't
-  // hold); only while that isn't known yet, its video
-  const lid = lessonOfDay(DD.day);
-  const bySeg = root.FTDayLocks && FTDayLocks.stopOpen ? FTDayLocks.stopOpen(lid, "video") : null;
-  const locked = forTrainee() && !state.adminPreview && (bySeg != null ? !bySeg : typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid));
-  const cards = h.items.map(([t, u], i) => locked
-    ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
-    : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
-  // the session and its steps on navy at the left, the five handouts as cards at the right, one under the other
-  return `<div class="ftdd-handouts${locked ? " ftdd-ho-locked" : ""}">
-    <div class="ftdd-ho-head"><h2>Digital Handouts</h2><p class="ftdd-ho-when">${locked ? "🔒 Locked until your trainer unlocks it" : h.solo ? "🔓 Unlocked: open each handout" : "🔓 Unlocked: open your group’s handout"}</p></div>
+  // the handouts are open to everyone, always: no lock, no 🔓 / 🔒 badge (the trainer doesn't unlock them)
+  const cards = h.items.map(([t, u], i) => `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
+  // the session and its steps on navy at the left, the handouts as cards at the right, one under the other
+  return `<div class="ftdd-handouts">
+    <div class="ftdd-ho-head"><h2>Digital Handouts</h2></div>
     <div class="ftdd-ho-body">
       <div class="ftdd-ho-howto"><p class="ftdd-ho-howto-h">What to do</p><ol class="ftdd-ho-steps">${h.solo
         ? "<li>Open each handout.</li><li>Read it on your own and note its key points.</li><li>Share your key points with the class.</li><li>Update your Training Progress Monitoring Sheet.</li>"
         : `<li>Join your breakout group.</li><li>Open your group's handout.</li>
         <li>Read it and discuss it together.</li><li>Present your group's key points to the class.</li><li>Update your Training Progress Monitoring Sheet.</li>`}</ol>
         </div>
-      ${locked ? `<div class="ftdd-ho-list ftlk"><div class="ftlk-under" aria-hidden="true" inert style="grid-template-rows:repeat(${h.items.length},minmax(0,1fr))">${cards}</div>
-        <div class="ftd1-lock ftlk-over" role="alert"><b>🔒 Handouts locked</b><span>Your trainer unlocks them when the breakout session starts.</span></div></div>`
-        : `<div class="ftdd-ho-list">${cards}</div>`}
+      <div class="ftdd-ho-list">${cards}</div>
     </div></div>`;
 }
 function launchSlide(s){
@@ -1358,7 +1348,7 @@ const LESSON_CARDS = {
     rows: [
       {t: "Reading Task: Personal Injury", sub: "Read the overview in the slide · answer its questions in ✍️ Knowledge Check (the Reading Task sheet)", k: "read", d: 1, s: "reading"},
       {t: "Classroom Discussion: Virtual Assistant Essentials", sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"},
-      {t: "Digital Handouts", sub: "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them", k: "watch", run: "ftVideoOrAsk(1)"},
+      {t: "Digital Handouts", sub: "Breakout Session (Group Activity) · the digital handouts open here", k: "watch", run: "ftVideoOrAsk(1)"},
       {t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(1)"},
       {t: "Installation of SA (Smart Advocate) Plug-ins", sub: "The curriculum’s steps and screenshots", k: "read", d: 1, s: "pm"}],
     outside: [],
@@ -1395,16 +1385,19 @@ const LESSON_CARDS = {
       {t: "Authorization Decision Tree", sub: "Who may be told what", k: "read", d: 3, s: "s1"},
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (its task in cards, then the five calls on one slide, then the optional
-      // reference recordings, build/day-decks.cjs REF_RECS, on the same step)
-      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · the 5 data points into the worksheet", k: "listendo", d: 3, s: "s1c"},
+      // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
+      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, its 📝 answers
+      // (js/ft-listening.js "recact") and the day's end: no ✍️ Knowledge Check between them)
+      {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
+      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
+      {t: "Reception Listening Activity: Answers", sub: "Log each call’s answers", k: "assessment", d: 3, run: "FTListen.open('recact')"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
       {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity worksheet and its naming convention: on ✍️ Knowledge Check"],
+      "The Reception Listening Activity: log each call's answers on its 📝 Answers page"],
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
@@ -1672,10 +1665,13 @@ const cardOf = lid => LESSON_CARDS[lid] ? Object.assign({lesson: Number(lid)}, L
 const CARD_OF_LESSON = {4: 3};
 const cardLessons = lid => [Number(lid)].concat(Object.keys(CARD_OF_LESSON).filter(k => CARD_OF_LESSON[k] === Number(lid)).map(Number));
 // (and it opens with its card's lesson: 📅 Open Lessons opening Personal Injury Process Flow opens the Reception deck too)
+// ⏭ and a trainee who has finished the lesson before (its last day read to its ✅ End of Module) goes straight on:
+// VA Essentials finished opens Law Firm Communication for them, without waiting for the trainer's 📅 Open Lessons
+const openedByPrev = l => { const c = LESSON_CARDS[Number(l)]; return !!c && forTrainee() && doneDays().includes(c.days[0] - 1); };
 const __dayUnlocked = root.dayUnlocked;
 if(typeof __dayUnlocked === "function") root.dayUnlocked = function(id){
   const c = CARD_OF_LESSON[Number(id)];
-  return __dayUnlocked.apply(this, arguments) || (c != null && __dayUnlocked.call(this, c));
+  return __dayUnlocked.apply(this, arguments) || (c != null && __dayUnlocked.call(this, c)) || openedByPrev(c != null ? c : id);
 };
 // 🏠 Classroom: the lesson's offline activity — its homework, else the last thing its days set
 const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.length - 1];
@@ -1691,7 +1687,7 @@ const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: 
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
    carries its Classroom Activity card (▶ Start Training opens the lesson, Classroom the offline activity, and the
    key takeaways and file name of its Process Questions); a day after it, its own card with that day's rows and
-   focus. Every row opens its slide; a lesson of several days has a button to each of its days' cards. */
+   focus. Every row opens its slide (no buttons to the lesson's other days' cards). */
 /* 📋 Every day's card in Day 1's arrangement, each row opening its activity in the order the day runs: the opening task
    (a buffer, the checking of assignments, a reading), then on the lesson's first day 💬 Classroom Discussion (▶ the lesson)
    and its Digital Handouts, then the day's activities, then ✍️ Process Questions: Submit on the days the guide sets them,
@@ -1707,12 +1703,17 @@ function standardRows(n, c, lid, first, title, rows){
   // (the guide's own classroom-discussion slide, where it has one, is read right after the ▶ lesson stop: c.discuss)
   if(first && !has(/\blesson\b|Classroom Discussion/)) mid.push(Object.assign({t: `Classroom Discussion: ${title}`, sub: "▶ Start Training: the lesson deck, with your trainer", k: "classroom", go: "lesson"}, (c.discuss || {})[n] ? {then: c.discuss[n]} : {}));
   // (a Digital Handouts stop only where the day has handouts)
-  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here once your trainer unlocks them" : "The digital handouts are posted in the training GC", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
+  if(first && HANDOUTS[n] && !has(/ftVideoOrAsk|Handouts \/ Video|Digital Handouts/)) mid.push({t: "Digital Handouts", sub: HANDOUTS[n] ? "Breakout Session (Group Activity) · the digital handouts open here" : "The digital handouts are posted in the training GC", k: "watch", run: `ftVideoOrAsk(${Number(lid)})`});
   // one row, the day's own lesson's sheet (a day that also discusses an earlier lesson has both in its focus box)
   const ls = dayHasPQ(n) && !has(/toKC|Process Questions/) ? pqLessons(n) : [];
   const pl = ls.includes(Number(lid)) ? Number(lid) : ls[ls.length - 1];
   const pqRows = pl != null ? [{t: "Process Questions: Submit", sub: "Answer them in ✍️ Knowledge Check and 📝 Submit for Grading", k: "assessment", run: `FTDayDecks.toKC(${Number(pl)})`}] : [];
-  return [...lead, ...mid, ...body, ...pqRows, ...tail];
+  const out = [...lead, ...mid, ...body, ...pqRows, ...tail];
+  // ✍️ Process Questions come straight after the Classroom Discussion (the last ▶ lesson stop), ahead of the Digital Handouts
+  // and the day's other activities
+  const pq = out.findIndex(r => /toKC\(/.test(String(r.run || ""))), cd = out.map(r => r.go === "lesson").lastIndexOf(true);
+  if(pq > cd + 1 && cd >= 0) out.splice(cd + 1, 0, ...out.splice(pq, 1));
+  return out;
 }
 // Lesson 1's ▶ Start Training (on its Dashboard card and on Day 1's card) goes to the Reading Task first, the way Know
 // Your Tools' last tool used to: "📖 Next: the Reading Task →"; the lesson deck comes after it, in Day 1's order
@@ -1746,7 +1747,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
-        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
+        </section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -2382,10 +2383,6 @@ main.main-ftdd .ftdd-lcslide > .ftlc.ftlc-wide > .ftlc-body{grid-template-column
 .ftdd-rec-play iframe{width:100%;height:100%;border:0;} .ftdd-rec-go{margin:6px 0 0;font-size:13px;}
 .ftlc-pill.k-assessment,.ftlc-pill.k-mock,.ftlc-pill.k-demo,.ftlc-pill.k-listendo{background:#7A5A2E;}
 .ftlc-pill.k-trainer{background:#3C4268;}
-.ftlc-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
-.ftlc-days button{border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:4px 10px;font:700 11.5px 'Inter',sans-serif;cursor:pointer;}
-.ftlc-days button.on{border-color:#DB8437;background:#DB8437;}
-.ftlc-days button:hover{border-color:#DB8437;background:rgba(219,132,55,.18);}
 .ftlc-focus{background:#fff;color:#1B1E2E;border-radius:10px;padding:14px 16px;font-size:15.5px;line-height:1.45;}
 .ftlc-focus p{margin:0;}
 .ftlc-fh{font:800 11px/1.2 'Inter',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#262B45;}
@@ -2556,12 +2553,6 @@ main.main-ftdd .ftdd-sheet a:not(.btn){color:#1E2340;font-weight:700;}
 main.main-ftdd .ftdd-handouts{display:flex;flex-direction:column;gap:14px;padding:6px 10px;width:100%;max-width:1180px;margin:0 auto;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head{text-align:center;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-head h2{margin:4px 0 8px;font:800 36px/1.15 'Poppins','Inter',sans-serif !important;color:#1E2340 !important;}
-main.main-ftdd .ftdd-handouts .ftdd-ho-when{display:inline-block;margin:0;padding:6px 16px;border-radius:999px;background:#E8590C;color:#fff !important;font:800 17px/1.2 'Inter',sans-serif !important;}
-main.main-ftdd .ftdd-handouts:not(.ftdd-ho-locked) .ftdd-ho-when{background:#2E7D4F;}   /* unlocked: green */
-main.main-ftdd .ftdd-handouts .ftdd-ho-list.ftlk{display:block;}   /* locked: the five cards keep their grid, under the blur */
-main.main-ftdd .ftdd-handouts .ftdd-ho-list.ftlk > .ftlk-under{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));gap:10px;height:100%;}
-main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over{border-radius:12px;gap:6px;padding:16px;min-height:0;}
-main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over b{font-size:20px;} main.main-ftdd .ftdd-handouts .ftlk > .ftlk-over span{font-size:14.5px;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:stretch;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto{display:flex;flex-direction:column;justify-content:center;background:#1E2340;border-radius:16px;padding:18px 22px;color:#fff !important;text-align:left;}
 main.main-ftdd .ftdd-handouts .ftdd-ho-howto-h{margin:0 0 8px;font:800 15px/1.2 'Inter',sans-serif !important;letter-spacing:.1em !important;text-transform:uppercase;color:#F4B77A !important;}
@@ -2791,8 +2782,8 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 .ft-body .ftdd-embed.ftdd-embed-folder-center{max-width:1280px;margin-left:auto;margin-right:auto;}
 /* Day 2's three PPT decks (ftdd-hw-ppts, build/day-decks.cjs s4): the folder's grid as one row of large thumbnails under
    its Task 2, cropped to the row (Drive's empty band above the files is cut off) and never scrolled */
-.ft-body .ftdd-embed.ftdd-embed-folder-strip{height:300px;max-width:1100px;margin:6px auto 0;overflow:hidden;position:relative;border:0;background:transparent;}
-.ft-body .ftdd-embed.ftdd-embed-folder-strip iframe{position:absolute;left:0;top:-160px;width:62.5%;height:287px;transform:scale(1.6);transform-origin:0 0;border:0;overflow:hidden;pointer-events:auto;}
+.ft-body .ftdd-embed.ftdd-embed-folder-strip{height:375px;max-width:1375px;margin:6px auto 0;overflow:hidden;position:relative;border:0;background:transparent;}
+.ft-body .ftdd-embed.ftdd-embed-folder-strip iframe{position:absolute;left:0;top:-200px;width:50%;height:287px;transform:scale(2);transform-origin:0 0;border:0;overflow:hidden;pointer-events:auto;}
 /* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
 /* 📅 Day 5's sample event editor, drawn (Google Calendar's dark editor): the time zone boxed in red, as the guide's picture */
 .ft-body .ftdd-gcal{background:#1F1F1F;border-radius:10px;padding:12px 14px;margin:8px 0;color:#E3E3E3;font:500 14px/1.3 'Inter',system-ui,sans-serif;}
@@ -2868,6 +2859,12 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body table.ftdd-terms tr.ftdd-terms-sec td{background:#EEF0F7;font:800 15px/1.2 'Poppins','Inter',sans-serif;padding:6px 10px;}
 .ft-body table.ftdd-terms a{color:#1A56C4;}
 /* 🌳 the decision trees (Day 3's Frontline Management, build/day-decks.cjs TREES): two to a row */
+/* Day 2's Softphones video, its Action (📒 Monitoring Sheet) and Note at its lower right (build/day-decks.cjs TRIM[2].s4) */
+.ft-body .ftdd-soft{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,30%);gap:16px;align-items:end;margin:4px 0 12px;}
+.ft-body .ftdd-soft-side{display:flex;flex-direction:column;gap:10px;}
+.ft-body .ftdd-soft-side > p{margin:0;}
+.ft-body .ftdd-soft .ftdd-mon-btn{margin-top:6px;}
+@media(max-width:900px){ .ft-body .ftdd-soft{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:6px 0 12px;}
 @media(max-width:900px){ .ft-body .ftdt-grid{grid-template-columns:minmax(0,1fr);} }
 .ft-body .ftdt{border:2px solid #343C66;border-radius:12px;background:#fff;overflow:hidden;display:flex;flex-direction:column;}

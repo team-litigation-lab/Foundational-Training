@@ -223,7 +223,9 @@ const at = n => unlockedFor(n, state.traineeBatch);
    open at that moment are kept (settings:daysteps.legacy = {all: [lesson ids], batches: {"<batch key>": [lesson ids]}}),
    and the days of those lessons are never held for that batch. Only a lesson opened after that is locked step by step.
    Until the record is written nothing is held, so the locks never land on a trainee before it is. */
-const enforced = () => !!(state.ftDaySteps && state.ftDaySteps.legacy);
+// ✂ The segment locks are off: a lesson the trainer opens (📅 Open Lessons) is open as a whole, every day and step of it,
+// and nothing below holds a trainee inside a day (no 🔒 slide, tool, video or Knowledge Check waiting for a step)
+const enforced = () => false;
 // the day a batch started, from its code (B + MMDDYY: B102826 → 2026-10-28), else null
 function batchStart(batch){ const m = /^b(\d{2})(\d{2})(\d{2})$/.exec(key(batch)); return m ? Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00`) : null; }
 function legacyOpen(n, batch){
@@ -243,9 +245,9 @@ function active(n){
 // is day n open to this trainee at all (its lesson opened, and its first step unlocked)?
 function dayStarted(n){
   n = Number(n);
-  if(!isTrainee() || !enforced()) return true;
+  if(!isTrainee()) return true;
   const l = lessonOf(n); if(l != null && !lessonOpen(l)) return false;
-  return !active(n) || at(n) >= 1;
+  return !enforced() || !active(n) || at(n) >= 1;
 }
 function stepOpen(n, k){ return !active(n) || (dayStarted(n) && at(n) >= k); }
 const label = (n, k) => { const x = steps(n)[k - 1]; return x ? x.label : "This activity"; };
@@ -299,7 +301,7 @@ function segState(d){
 function segments(lid, days, title){
   const cur = isTrainee() && root.FTNextStep && FTNextStep.place ? (p => p && p.day ? Number(p.day.day) : null)(FTNextStep.place()) : null;
   // (the trainer: a part every day of which is still locked for the batch picked shows its 🔒, and still opens, to unlock it)
-  const tl = p => isTrainer() && p.every(d => !segOpenFor(d, 1));
+  const tl = p => enforced() && isTrainer() && p.every(d => !segOpenFor(d, 1));
   const titles = root.FTDayDecks && FTDayDecks.dayTitle ? FTDayDecks.dayTitle : () => "";
   const parts = partsOf(lid, days), one = parts.length === 1;
   const b = parts.map((p, k) => {
@@ -428,7 +430,13 @@ root.render = function(){
   wrapKC();
   const r = __render.apply(this, arguments);
   const d = root.FTDayDecks && FTDayDecks.state ? FTDayDecks.state() : null;
-  if(state.view === "daydeck" && d && active(d.day) && decksIn() && steps(d.day).length){
+  // (a day whose lesson the trainer hasn't opened is 🔒 as a whole, with the segment locks off too)
+  if(state.view === "daydeck" && d && isTrainee() && !enforced() && !dayStarted(d.day)){
+    const box = document.querySelector("main.main-ftdd .ftdd-slides");
+    if(box) ftLockSlides(box, `<b>🔒 Not open yet</b><span>This part of the training opens when your trainer opens it, or when you finish the lesson before it.</span>
+      <button type="button" class="btn btn-navy" onclick="goto('modules')">← Back to 📚 Dashboard</button>`);
+  }
+  else if(state.view === "daydeck" && d && active(d.day) && decksIn() && steps(d.day).length){
     const n = Number(d.day), k = stepAt(n, d.i), box = document.querySelector("main.main-ftdd .ftdd-slides");
     if(dayStarted(n) && k <= at(n)) keepPos(n, d.i);
     if(box && (!dayStarted(n) || k > at(n))){
@@ -600,7 +608,8 @@ function renderPanel(){
     ${days.map(dayPanel).join("")}</div>`;
 }
 const __panel = root.renderFtDay1Steps;
-root.renderFtDay1Steps = function(){ return (__panel ? __panel.apply(this, arguments) : "") + renderPanel(); };
+// (no 🔓 Day 1 Steps or 🔓 Activity Locks in Admin: the segment locks are off)
+root.renderFtDay1Steps = function(){ return enforced() ? (__panel ? __panel.apply(this, arguments) : "") + renderPanel() : ""; };
 // the lessons open for every batch, as just read from the server: what the batches already under way keep open
 const legacyOf = o => ({all: ((o || {}).all || []).map(Number), batches: JSON.parse(JSON.stringify((o || {}).batches || {})), except: [], at: new Date().toISOString()});
 // read a record strictly: a server that doesn't answer throws, so it is never taken for "nothing saved yet"
@@ -636,7 +645,8 @@ async function save(change, msg){
 root.FTDayLocks = {
   steps, at, active, stepOpen, dayStarted, mayGo, launch, segments, held, unlockedFor, stopOpen,
   // 🧑‍🏫 the trainer's deck (js/ft-day-decks.js): the slide's chip, the locked dots, 🔓 Segment lock, and its buttons
-  chip, dotLocked, panel, segSet, segStatus,
+  // (none of it while the segment locks are off: no chip, no locked dots, no 🔓 Segment lock panel)
+  chip: (n, i) => enforced() ? chip(n, i) : "", dotLocked: (n, i) => enforced() && dotLocked(n, i), panel: (n, i) => enforced() ? panel(n, i) : "", segSet, segStatus,
   // a settings:daysteps record's counts as card-row steps (js/ft-buffer.js, before it writes one); one count of it
   migrate, stepNum: (o, batch, n) => stepNum(o, batch == null ? null : key(batch), n),
   // 🛠 the Practice Lab: may a trainee see a session, tool, trainer activity or recording set used on these days?
