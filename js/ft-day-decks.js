@@ -478,9 +478,9 @@ function listenSlide(day, time){
   const live = FTListen.setLive(set.id);
   // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
   if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
-  return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
+  return {id: "listen", h: `${time || "AM"}: ${LISTEN_H[day] || "Call Listening Session"}`, html:
     `${LISTEN_LEAD[day] ? `<p><b>${e(LISTEN_LEAD[day])}</b></p>` : `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>`}
-     ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
+     ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>${listenLinks(day)}` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
    calls; Day 7: the four intake recordings, in the pop-up player; the five practice calls made for the PI Reception Activity are on their own deck, Reception Listening Activity).
@@ -495,8 +495,18 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   // Day 7: the four intake recordings, kept on the platform (ft/day7/audio), each a card that plays in the pop-up player
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
-    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Sample Intake Mock Call"}))};
+    ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Sample Intake Mock Call"})),
+  // Day 13: the seven provider communication recordings, kept on the platform (ft/day13/audio), each a card that plays in the pop-up player
+  13: [["Insurance Call: Obtain PIP Log", "insurance-obtain-pip-log", "5:54"], ["Insurance Call: Obtain PD Estimate", "insurance-obtain-pd-estimate", "3:11"],
+    ["Inquiry: Hospital", "inquiry-hospital", "2:34"], ["Inquiry: Where to Send the Records Request", "inquiry-where-to-send-records-request", "5:21"],
+    ["Follow-Up on a Records Request", "follow-up-records-request", "4:43"], ["Recorded Call: Feb 23, 2023", "recorded-call-2023-02-23", "3:03"],
+    ["Recorded Call: Feb 27, 2023", "recorded-call-2023-02-27", "1:29"]].map(([t, f, len]) => ({t, src: `/ft/day13/audio/${f}.mp3`, len, pop: true, kind: "Provider call"}))};
 const LISTEN_BARE = [7];
+// a day's Call Listening slide under a name of its own (Day 13: the listening runs as the breakout)
+const LISTEN_H = {13: "Call Listening Session / Breakout Session"};
+// a day's reference folders under its recordings (Day 13: the Sample SOPs)
+const LISTEN_LINKS = {13: [["Sample SOPs", "https://drive.google.com/drive/folders/11c5SZrYEueJUzYjXYXhHqG_B-hxMzOrV"]]};
+const listenLinks = day => (LISTEN_LINKS[day] || []).map(([t, u]) => `<p><a class="ftdd-tile k-folder" href="${e(u)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📁</span><span class="ftdd-tile-t"><b>${e(t)}</b><small>Open the folder</small></span></a></p>`).join("");
 // a day's Call Listening slide headed by its name instead of the instructions (Day 3: its card row's name)
 const LISTEN_LEAD = {3: "Sample Call Recordings"};
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
@@ -708,8 +718,8 @@ function dayRubric(title){
 function scoreBox(s, info, body){
   const h = String(s.h || ""), admin = isAdminView();
   if(!root.FTMetrics || !root.FT_RUBRICS || /ftdd-score/.test(body) || s.agenda || s.trainer || s.placeholder) return "";
-  // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video or a preparation slide)
-  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial/i.test(h)) return "";
+  // (the Recorded Demonstration days are the trainee's own demo: Days 12, 14 and 15; not a tutorial video, a preparation slide or a demo's Buffer Time)
+  if(!/mock call|demo/i.test(h) || /preparation|instructions for|before your demo|video|tutorial|buffer/i.test(h)) return "";
   if(!admin && !/mock call/i.test(h)) return "";
   // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
   if(/instructions|metrics|scenarios/i.test(h)) return "";
@@ -719,9 +729,8 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  // (the trainer's slide carries only the Scoresheet's marker, hidden: the 🧑‍🏫 Scoresheet button is in the bar under the slide)
-  if(admin) return M.table(rb.key);
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
+  // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 const WAIT_OFF = true;
 function waitBox(s, info){
@@ -1452,10 +1461,9 @@ const LESSON_CARDS = {
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
-      {t: "Buffer Time for the LOR Drafting Demo", time: "AM", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
-      {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
-      {t: "Breakout Session", time: "PM", sub: "Sample recordings & documents · the communication upskill", k: "interactive", d: 13, s: "s3"},
-      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3b"},
+      {t: "Buffer Time for the LOR Drafting Demo", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
+      {t: "Call Listening / Breakout Session", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
+      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
