@@ -66,7 +66,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     }
 
     // the trainer's scoring sheet: the picked trainee's case, kept with the score
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3bp'))); await page.waitForTimeout(2000);
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
     // (the slide has the 🧑‍🏫 button; the scoresheet opens over it, a pop-up on one screen)
     const key = await page.evaluate(() => (document.querySelector('.ftms-launch[data-act="intake-live"]') || {}).getAttribute?.('data-ms') || '');
     if (!key) fail('Day 9\'s Intake Mock Calls metrics have no button to open the trainer\'s scoresheet');
@@ -88,7 +88,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     if (pv.some(x => x.pv && /SCRIPT-|Scenario Picker/.test(x.html))) fail('the trainer\'s "What trainees see" preview shows the callers\' scripts');
     // a score saved after the case is unassigned doesn't keep the old case
     await page.evaluate(id => FTIntakeAdmin.assignCall(id, ''), id); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3bp'))); await page.waitForTimeout(1500);
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
     await page.evaluate(([b, k, id]) => { FTMetrics.open(k); FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1200);
     await page.evaluate(() => { const i = document.querySelector('.ftms-trainer input[data-crit="0"]'); i.value = '3'; i.dispatchEvent(new Event('input', { bubbles: true }));
       FTMetrics.save(document.querySelector('.ftms-trainer .ftms-save')); });
@@ -112,18 +112,15 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     // a call back opens the case file in the CMS
     await put('intakeassign:' + id, { packet: 4, call: 'ft_in_retainer' });
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(2000);
-    mine = await page.evaluate(() => { const el = document.querySelector('.ftis-mockcall'); return el ? { text: el.innerText, cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
-    if (!mine || !/Did You Take My Case\?/.test(mine.text) || !/mock=MC-02/.test(mine.cms)) fail(`Day 9's preparation slide doesn't show the call back on its case file: ${JSON.stringify(mine)}`);
-    // the graded call's slide (Mock Calls Ongoing) shows it too
+    // (Day 9's graded call's slide, Mock Calls Ongoing, shows it: its Metrics slide before carries the metrics alone)
     await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(2000);
-    const on = await page.evaluate(() => (document.querySelector('.ftbf .ftis-mockcall') || {}).innerText || '');
-    if (!/Did You Take My Case\?/.test(on)) fail(`the Mock Calls Ongoing panel doesn't show the trainee's case: ${on.slice(0, 200)}`);
+    mine = await page.evaluate(() => { const el = document.querySelector('.ftbf .ftis-mockcall'); return el ? { text: el.innerText, cms: (el.querySelector('a.btn-navy') || {}).href || '' } : null; });
+    if (!mine || !/Did You Take My Case\?/.test(mine.text) || !/mock=MC-02/.test(mine.cms)) fail(`the Mock Calls Ongoing panel doesn't show the call back on its case file: ${JSON.stringify(mine)}`);
     // unassigned: the placeholder and the Intake line to practise on
     await put('intakeassign:' + id, { packet: 4 });
     await page.evaluate(() => FTIntake.reload()); await page.waitForTimeout(800);
-    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
-    const ph = await page.evaluate(() => (document.querySelector('.ftis-mockcall') || {}).innerText || '');
+    await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3b'))); await page.waitForTimeout(1500);
+    const ph = await page.evaluate(() => (document.querySelector('.ftbf .ftis-mockcall') || {}).innerText || '');
     if (!/Your mock call case appears here/.test(ph)) fail(`an unassigned trainee doesn't see the placeholder: ${ph.slice(0, 200)}`);
 
     await put('intakeassign:' + id, null); await put('labreview:' + id, null);

@@ -115,8 +115,8 @@ async function workerChecks() {
     await open(t, 9, 's3b'); await toPanel(t);
     const m9 = await panel(t);
     if (!/Mock Calls Ongoing/.test(m9) || /Hit Done/.test(m9) || (await t.$('.ftbf .ftbf-done')) || /Practice Buffer/.test(m9)) fail(`Day 9's mock calls aren't Day 4's Done panel: ${m9.slice(0, 120)}`);
-    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's3bp' && l[i - 1].row === l[i].row - 1; })))
-      fail("Day 9's mock calls have no preparation slide, a row of its own, before them");
+    if (!(await t.evaluate(() => { const l = FTDayDecks.list(9), i = l.findIndex(s => s.id === 's3b'); return i > 0 && l[i - 1].id === 's2' && l[i - 1].row === l[i].row - 1; })))
+      fail("Day 9's mock calls have no Intake Mock Calls Metrics slide, a row of its own, before them");
 
     // 🧑‍🏫 the trainer's tracker on the same slide: the trainer marks Tia done, and Tia's slide says so by itself
     await a.goto(BASE); await a.evaluate(() => { state.isAdmin = true; state.adminPreview = false; });

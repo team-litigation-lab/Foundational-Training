@@ -346,7 +346,8 @@ function visual(html){
     const box = document.createElement("div"); box.className = "ftdd-score";
     // (the trainer's deck is the trainee's scorecard too, with the scoring sheet under it)
     const M = window.FTMetrics;
-    box.innerHTML = `<p class="ftdd-score-h"><b>${e(txt)}</b></p>${M ? (M.view || M.table)(rb.key) : ""}` +
+    // (data-nohead: the slide is the metrics alone and its title names them, Day 9's Intake Mock Calls Metrics)
+    box.innerHTML = `${p.hasAttribute("data-nohead") ? "" : `<p class="ftdd-score-h"><b>${e(txt)}</b></p>`}${M ? (M.view || M.table)(rb.key) : ""}` +
       (isAdminView() && M && M.view ? M.table(rb.key) : "");
     if(shots) shots.remove();
     p.replaceWith(box);
@@ -701,7 +702,7 @@ function dayRubric(title){
 }
 // 🧑‍🏫 during the mock calls and the demos the trainer scores on the slide itself: the activity's metrics as the scoring sheet
 // (js/ft-sessions.js FTMetrics), where the slide doesn't carry its metrics already. A trainee sees the mock calls' metrics
-// (Day 4's Reception, Day 9's Intake; Day 6's Calendar Management has its own Metrics slide) as the guide's table, read only (FTMetrics.view), so they
+// (Day 4's Reception; Day 6's Calendar Management and Day 9's Intake have their own Metrics slide) as the guide's table, read only (FTMetrics.view), so they
 // know what the call is scored on; the demos' sheet stays the trainer's.
 function scoreBox(s, info, body){
   const h = String(s.h || ""), admin = isAdminView();
@@ -711,6 +712,8 @@ function scoreBox(s, info, body){
   if(!admin && !/mock call/i.test(h)) return "";
   // (nor on a mock call's own Instructions, Metrics or Scenarios slide: Day 6's flow has a Metrics slide of its own)
   if(/instructions|metrics|scenarios/i.test(h)) return "";
+  // (nor on Day 9's Intake Mock Calls: the Intake Mock Calls Metrics slide comes just before)
+  if(Number(DD.day) === 9) return "";
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
@@ -1398,8 +1401,7 @@ const LESSON_CARDS = {
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
       // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
-      {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
-      {t: "Intake Mock Call Instructions & Metrics", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
+      {t: "Intake Mock Calls Metrics", sub: "What your graded intake call is scored on", k: "interactive", d: 9, s: "s2"},
       {t: "Intake Mock Calls (One-on-One)", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"},
       {t: "Transcription Activity: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
       {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],

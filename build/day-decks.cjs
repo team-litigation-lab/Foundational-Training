@@ -1122,7 +1122,8 @@ const EX_RENAME = {
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},
-  9: {s3b: "PM: Intake Mock Calls: Instructions & Metrics"},
+  // (Day 9: no preparation slide of its own; its metrics are the Intake Mock Calls Metrics slide before, s2)
+  9: {s3b: null},
   12: {s1d: "Entire Day: Demo Preparation: Uploading and Sending 1P & 3P LORs"},
   14: {s1e: "PM: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
   15: {s1b: "Entire Day: Demo Preparation: Sending MedLOR and Requesting Medical Bills & Records"},
@@ -1195,7 +1196,7 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, Object.assign({}, x, {id: id + "p", h}), {id, h: x.h, of: x.of, html: ""});
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: ""});
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
