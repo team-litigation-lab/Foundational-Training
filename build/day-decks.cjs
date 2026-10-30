@@ -587,6 +587,11 @@ s4: html => {
 // their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
 // build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
 const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
+// the activity's own calls (s1d, the trainer's key, the Word worksheet): the newer Harbor & Pine set, VA Oscar's five
+// reception recordings redone as personal injury calls (a wrong birth year, a frustrated repeat caller, an unclear request,
+// a short call, a ride that fell through), kept as made in build/calls/pi_reception_calls.py at d499bf1, audio
+// ft/day3/audio/pi-activity-N.mp3. The calls with a challenge on the line (PI_CALLS) are the optional Listening Activity.
+const ACT_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-activity.json"), "utf8"));
 const hx = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // a "link coming" or placeholder box
 const ph = (cls, icon, title, body) => `<div class="ftdd-ph ${cls}"><span class="ftdd-ph-ic">${icon}</span><div><b>${title}</b><p>${body}</p></div></div>`;
@@ -600,7 +605,7 @@ function piCallRows(compact){
     (compact ? "" : `<p class="ftdd-pic-about">${hx(c.about)}</p>`) +
     `<audio class="ftdd-pic-audio" controls preload="none" src="${c.file}" title="Call ${c.id}: ${hx(c.title)}"></audio></div>`;
   const rows = [];
-  for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
+  for(let i = 0; i < ACT_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${ACT_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
 /* 🎧 Day 3's supplementary reception recordings, optional (Carlos's are off it: the Harbor & Pine calls replace them): one card per recording, played in the
@@ -637,7 +642,7 @@ const PI_H = "AM: Reception Listening Activity";
 const PI_CALLS_H = "AM: Reception Listening Activity: the 5 Practice Calls";
 const piStep = (n, ic, t, body) => `<div class="ftdd-cix"><p class="ftdd-cix-h"><span class="ftdd-pic-n">${n}</span><span>${ic} ${t}</span></p><p>${body}</p></div>`;
 const PI_HTML =
-  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to five fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete caller information.</p>\n` +
+  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to five fictional inbound phone calls to <b>${hx(ACT_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete caller information.</p>\n` +
   `<div class="ftdd-cix-row">` +
   piStep(1, "🎧", "Listen", "Play each audio track carefully. You may pause, rewind, and replay each recording as many times as necessary.") +
   piStep(2, "🔍", "Analyze", "Identify the specific reception challenge and caller scenario presented in each recording.") +
@@ -662,7 +667,7 @@ const PI_CALLS_HTML =
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +
-  PI_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
+  ACT_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
 const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
