@@ -372,6 +372,39 @@ for n, h, secs in summary:
     for s in secs: print("   ", s)
 print("notes:", len(notes), "images copied:", copied)
 
+# ---------- corrections to the guide's wording (applied to every output, so a re-import keeps them) ----------
+TEXT_FIXES = [
+    ("Oscar’s’ Reception Recordings", "Oscar’s Reception Recordings"),
+    ("all extracted files. including", "all extracted files, including"),
+    ("Give this material after the following day activities or after the classroom discussion on Insurance Claims Specialist  training,  it depends on the flow or progress of the training.",
+     "Give this material after the activities that follow, or after the classroom discussion on Insurance Claims Specialist training, depending on the flow and progress of the training."),
+    # the shadowing videos' dates, all written MM/DD/YYYY like 09/29/2023
+    ("SHADOWING ASTRED 06/26:", "SHADOWING ASTRED 06/26/2023:"),
+    ("SHADOWING ASTRED 06/27:", "SHADOWING ASTRED 06/27/2023:"),
+    ("SHADOWING ASTRED 09/20:", "SHADOWING ASTRED 09/20/2023:"),
+    ("SHADOWING ASTRED 10/27:", "SHADOWING ASTRED 10/27/2023:"),
+    # an instruction line with nothing to act on: dropped, with its trainer slot
+    ('<h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4>\\n', ""),
+    ('<h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4>\n', ""),
+    ('<div class=\\"trainer-slot\\" data-slot=\\"11:s1-4\\"></div>\\n', ""),
+    ('  "11:s1-4": "<div class=\\"facilitator\\"><h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4></div>",\n', ""),
+    # GEICO in capitals; LOR samples in the convention's mm.dd.yy; Day 13's buffer is for Day 12's LOR demo (there is no
+    # LOR drafting demo); the Filevine demo recordings kept as reference only; a link's text cut short in the guide
+    ("<p>Geico</p>", "<p>GEICO</p>"),
+    ("LOR 02.17.2026 (Michelle)", "LOR 02.17.26 (Michelle)"),
+    ("LOR with Affidavit 02.17.2026 (Michelle)", "LOR with Affidavit 02.17.26 (Michelle)"),
+    ("Buffer Time (1–2 hrs) for LOR Drafting Demo", "Buffer Time (1–2 hrs) for the Saving and Sending 1P &amp; 3P LORs Demo"),
+    (" using Filevine:", " (Filevine, for reference only; use SmartAdvocate):"),
+    ("1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=dri</a>", "1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=drive_link</a>"),
+]
+def apply_fixes(path):
+    body = open(path, encoding="utf8").read()
+    new = body
+    for old, rep in TEXT_FIXES: new = new.replace(old, rep)
+    if new != body: open(path, "w", encoding="utf8").write(new)
+for f in [os.path.join(REPO, "build", "days", f"day{n:02d}.js") for n in days] + [os.path.join(REPO, "trainer", x) for x in ("notes.json", "curriculum.json")]:
+    apply_fixes(f)
+
 # ---------- safety: no credential may reach the output ----------
 leaks = []
 for root, _, files in os.walk(REPO):

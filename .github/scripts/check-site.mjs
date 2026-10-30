@@ -2,7 +2,9 @@
 // Fails (exit 1) with a readable list when:
 //   1. any .js / .mjs / .cjs file, or any inline <script> in an .html page, has a syntax error;
 //   2. an .html page loads a local file (script src, link href, img src) that isn't in the repo;
-//   3. a JSON file doesn't parse.
+//   3. a JSON file doesn't parse;
+//   4. a log-in credential (a "Username: …" / "Password: …" line with a value) is written into any
+//      .js / .json / .html / .md file. No credential may be on the platform: link the credentials document.
 // Run from the repository root. No dependencies.
 import fs from 'fs';
 import path from 'path';
@@ -69,7 +71,23 @@ function checkHtml(file) {
     }
 }
 
+// 4. credentials: the same rule build/curriculum/convert.py applies on import, here on every push,
+// so a hand edit can't publish one either. Allowed: a blank to fill in ("Password: ____"), a ${…}
+// placeholder, and prose about the admin password, which is a Worker secret and never in the repo.
+const CRED = /(?:User ?name|Password)\s*:\s*([^<\n\\"'`]{3,})/gi;
+function credentials(file) {
+    const body = fs.readFileSync(file, 'utf8');
+    let m;
+    while ((m = CRED.exec(body))) {
+        if (/^\s*_+\s*$/.test(m[1]) || /^\s*\$\{/.test(m[1])) continue;
+        if (/admin[ _]$/i.test(body.slice(Math.max(0, m.index - 6), m.index))) continue;
+        const line = body.slice(0, m.index).split('\n').length;
+        problems.push(`${rel(file)} line ${line} looks like a log-in credential ("${m[0].slice(0, 14)}…"). Credentials must never be on the platform: link the credentials document instead.`);
+    }
+}
+
 for (const file of walk(ROOT)) {
+    if (/\.(m?js|cjs|json|html?|md)$/.test(file)) credentials(file);
     if (/\.(m?js|cjs)$/.test(file)) syntax(file, rel(file));
     else if (/\.html?$/.test(file)) checkHtml(file);
     else if (/\.json$/.test(file)) {
