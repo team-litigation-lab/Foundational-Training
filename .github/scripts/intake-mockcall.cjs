@@ -67,10 +67,11 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
 
     // the trainer's scoring sheet: the picked trainee's case, kept with the score
     await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3bp'))); await page.waitForTimeout(2000);
-    const key = await page.evaluate(() => (document.querySelector('.ftms-trainer[data-act="intake-live"]') || {}).getAttribute?.('data-ms') || '');
-    if (!key) fail('Day 9\'s Intake Mock Calls metrics have no trainer\'s sheet');
+    // (the slide has the 🧑‍🏫 button; the scoresheet opens over it, a pop-up on one screen)
+    const key = await page.evaluate(() => (document.querySelector('.ftms-launch[data-act="intake-live"]') || {}).getAttribute?.('data-ms') || '');
+    if (!key) fail('Day 9\'s Intake Mock Calls metrics have no button to open the trainer\'s scoresheet');
     else {
-      await page.evaluate(([b, k, id]) => { FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1500);
+      await page.evaluate(([b, k, id]) => { FTMetrics.open(k); FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1500);
       const sheet = await page.evaluate(() => (document.querySelector('.ftms-trainer .ftis-mcase') || {}).innerHTML || '');
       if (!/New Intake With a Deadline Close/.test(sheet) || !/SCRIPT-ft_in_nicole/.test(sheet)) fail(`the scoring sheet doesn't show the trainee's case: ${sheet.slice(0, 200)}`);
       // (the sheet can sit on a later page of the slide: typed into and saved through the page)
@@ -88,7 +89,7 @@ const PACKS = `(function(){ const CALLS = ${JSON.stringify([
     // a score saved after the case is unassigned doesn't keep the old case
     await page.evaluate(id => FTIntakeAdmin.assignCall(id, ''), id); await page.waitForTimeout(800);
     await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's3bp'))); await page.waitForTimeout(1500);
-    await page.evaluate(([b, k, id]) => { FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1200);
+    await page.evaluate(([b, k, id]) => { FTMetrics.open(k); FTMetrics.batch(b); FTMetrics.who(k, id); }, [BATCH, key, id]); await page.waitForTimeout(1200);
     await page.evaluate(() => { const i = document.querySelector('.ftms-trainer input[data-crit="0"]'); i.value = '3'; i.dispatchEvent(new Event('input', { bubbles: true }));
       FTMetrics.save(document.querySelector('.ftms-trainer .ftms-save')); });
     await page.waitForTimeout(1500);

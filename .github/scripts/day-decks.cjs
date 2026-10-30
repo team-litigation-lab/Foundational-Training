@@ -358,18 +358,30 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await page.evaluate(id => fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id }) }).then(r => r.json()).then(j => { const rec = JSON.parse(j.value); rec.approved = true; return fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id, value: JSON.stringify(rec) }) }); }), me);
   await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.adminData = null; window.__tid = state.traineeId; state.traineeId = null; });
   await page.evaluate(i => FTDayDecks.open(4, i || 0), score && score.i);
-  await page.waitForFunction(() => document.querySelector('.ftdd-sheet .ftms-pick'), null, { timeout: 15000 }).catch(() => {});
-  const tsc = await findScore();
-  if (!tsc || !tsc.remarks || !tsc.pick) fail(`the trainer's metrics sheet has no trainee pick or Remarks column: ${JSON.stringify(tsc)}`);
+  await page.waitForFunction(() => document.querySelector('.ftdd-sheet .ftms-launch'), null, { timeout: 15000 }).catch(() => {});
+  // (the slide keeps the metrics table and a 🧑‍🏫 button; the scoresheet is a pop-up on one screen: the trainee to pick, a
+  // score and Remarks for each line, the Result and 💾 Save)
+  const tsc = await page.evaluate(() => { const b = document.querySelector('.ftdd-sheet .ftdd-score'), nb = document.querySelector('.ftdd-nav .ftdd-scoresheet');
+    return { launch: !!(b && b.querySelector('.ftms-launch')) && !!nb && nb.getBoundingClientRect().height >= 28, inline: !!(b && b.querySelector('.ftms-pick, [data-crit]')) }; });
+  await page.click('.ftdd-nav .ftdd-scoresheet').catch(() => {}); await page.waitForTimeout(800);
+  const pop = await page.evaluate(() => { const m = document.getElementById('ftmsModal'), bx = m && m.querySelector('.ftms-modal-box');
+    return m ? { pick: !!m.querySelector('.ftms-pick select[aria-label=Trainee]'), remarks: m.querySelectorAll('[data-fb]').length, crit: m.querySelectorAll('[data-crit]').length,
+      fits: bx.getBoundingClientRect().bottom <= innerHeight && bx.scrollHeight <= innerHeight, zoom: getComputedStyle(m.querySelector('.ftms-pick select')).fontSize } : null; });
+  if (!tsc.launch || tsc.inline) fail(`the trainer's deck has no 🧑‍🏫 Scoresheet button in the bar under the slide (or still draws the sheet inline): ${JSON.stringify(tsc)}`);
+  if (!pop || !pop.pick || pop.crit !== 14 || pop.remarks !== 14 || !pop.fits) fail(`the scoresheet pop-up isn't one screen with the trainee pick, 14 scores and Remarks: ${JSON.stringify(pop)}`);
   else {
     await page.evaluate(id => FTMetrics.who('reception', id), me); await page.waitForTimeout(600);
-    await page.evaluate(() => { const b = document.querySelector('.ftdd-sheet .ftms'); b.querySelectorAll('[data-crit]').forEach(x => { x.value = '4'; FTMetrics.calc(x); }); const r = b.querySelector('[data-fb="0"]'); r.value = 'Clear greeting'; FTMetrics.calc(r); b.querySelector('[data-status]').value = 'Passed'; FTMetrics.save(b.querySelector('.ftms-save')); });
+    if (!(await page.evaluate(() => !!document.querySelector('#ftmsModal [data-crit]:not([disabled])')))) fail('picking a trainee in the pop-up doesn\'t open the scores for editing');
+    await page.evaluate(() => { const b = document.querySelector('#ftmsModal .ftms'); b.querySelectorAll('[data-crit]').forEach(x => { x.value = '4'; FTMetrics.calc(x); }); const r = b.querySelector('[data-fb="0"]'); r.value = 'Clear greeting'; FTMetrics.calc(r); b.querySelector('[data-status]').value = 'Passed'; FTMetrics.save(b.querySelector('.ftms-save')); });
     await page.waitForTimeout(1500);
     const lr = await page.evaluate(async id => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'labreview:' + id }) }).then(r => r.json())).value || 'null'), me);
     const a = lr && lr.acts && lr.acts['reception-live'];
     if (!a || a.status !== 'Passed' || a.score !== 80 || !a.rubric || a.rubric.avg !== 4 || a.rubric.feedback[0] !== 'Clear greeting') fail(`the trainer's metrics sheet didn't save to the trainee's scores: ${JSON.stringify(a)}`);
+    // (Esc closes it; the slide is as it was)
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    if (await page.$('#ftmsModal')) fail('Esc doesn\'t close the scoresheet pop-up');
   }
-  await page.evaluate(() => { state.traineeId = window.__tid; });
+  await page.evaluate(() => { FTMetrics.close(); state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   const flow6 = await page.evaluate(() => FT_DAY_DECKS[6].slides.slice(0, 3).map(s => s.h).join(' | '));
