@@ -48,7 +48,9 @@ const ACTS = {
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
-  "6:s1b": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1"},
+  // (Day 6's as Day 4's: the mock calls on a slide of their own after the instructions, s1b, simple; no nextDay, the day's
+  // Additional Activity follows)
+  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true},
   // (Days 8–16 as Day 4: the instructions and metrics on the preparation slide before, build/day-decks.cjs PREP; here, simple)
   "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true},
   "8:s3": {kind: "demo", name: "Saving the Intake Packet and Extracted Intake Documents", act: "intake-packet-demo", simple: true},

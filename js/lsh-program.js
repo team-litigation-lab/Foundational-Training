@@ -38,7 +38,7 @@
        pinned?(): [lessons shown first], shared: ["public key", …],
        sources: [{id, icon, label, about, key?, items(ctx)}] }
    A scorecard source with a key (e.g. "callsim:") has the trainee's record key + id read for it; items(ctx) gets
-   ctx = {id, progress, rec: {<key>: that record}, shared: {<public key>: record}} and returns
+   ctx = {id, progress, rec: {<key>: that record}, shared: {<public key>: record}, since: the day they registered} and returns
    [{name, pct: 0–100 (null when not graded yet), note}]. A source's score is the average of its graded items;
    the overall score is the average of the sources that have a score, so each grading system counts the same.
    A trainee's records come in one get-many when the Scorecard opens (again after a minute, or coming back to the
@@ -314,7 +314,7 @@ function loadMine(force){
   }).catch(() => {}).then(() => { SC.loading = null; if(state.view === "scorecard") render(); });
   return SC.loading;
 }
-const mineCtx = () => ({id:state.traineeId, progress:state.progress || {}, rec:SC.id === state.traineeId ? SC.rec : {}, shared:SC.shared});
+const mineCtx = () => ({id:state.traineeId, progress:state.progress || {}, rec:SC.id === state.traineeId ? SC.rec : {}, shared:SC.shared, since:String(state.traineeRegisteredAt || "").slice(0, 10)});
 window.addEventListener("focus", () => { if(isTrainee() && SC.id && state.view === "scorecard") loadMine(); });
 function detail(sc){
   return `<div class="sc-grid">${sc.rows.map(r => `<div class="card sc-src">
@@ -377,7 +377,7 @@ async function loadAdmin(){
     CFG.shared.forEach((k, i) => { shared[k] = vals[want.length + i] || null; });
     AS.rows = people.map((r, i) => {
       const rec = {}; ks.forEach((s, j) => { rec[s.key] = vals[i * ks.length + j] || null; });
-      return {id:r.id, name:r.name || r.id, batch:r.batch || "", sc:compute({id:r.id, progress:r.dayProgress || {}, rec, shared})};
+      return {id:r.id, name:r.name || r.id, batch:r.batch || "", sc:compute({id:r.id, progress:r.dayProgress || {}, rec, shared, since:String(r.registeredAt || "").slice(0, 10)})};
     }).sort((a, b) => (a.batch || "").localeCompare(b.batch || "") || (a.name || "").localeCompare(b.name || ""));
   }catch(err){ AS.rows = []; }
   AS.loading = false;
