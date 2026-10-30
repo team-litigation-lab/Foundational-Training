@@ -285,7 +285,8 @@ s3: html => {
     // (the activity's own file is not on the slide: its items are the cards before it, s3i–s3l)
     .replace(/<p><a class="viewer-link" data-embed[^>]*1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP[^\n]*?<\/p>\n?/, "")
     // (the Samples: a finished event, Deposition Meeting, on the slide itself (the time zone's own sample, Recorded Statement Meeting, is drawn on the next page), not the Drive folder, which asks a trainee for access)
-    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="shots ftdd-shot-wide"><figure><a href="/ft/day5/img/sample-deposition.png" target="_blank"><img src="/ft/day5/img/sample-deposition.png" alt="Sample: a finished event, Deposition Meeting, with its time zone, location, reminder, colour, guests and notes" loading="lazy"></a></figure></div>`);
+    // under the heading Sample Calendaring (the guide's "Samples"), in the body font, the picture as large and sharp as the slide allows
+    .replace(/<p>Samples<\/p>\n<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="ftdd-keep ftdd-sample"><p class="ftdd-sample-h">Sample Calendaring</p><div class="shots ftdd-shot-wide"><figure><a href="/ft/day5/img/sample-deposition.png" target="_blank"><img src="/ft/day5/img/sample-deposition.png" alt="Sample: a finished event, Deposition Meeting, with its time zone, location, reminder, colour, guests and notes"></a></figure></div></div>`);
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone

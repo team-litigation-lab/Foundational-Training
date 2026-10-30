@@ -2887,9 +2887,11 @@ main.main-ftdd .ftdd-sheet table.ftdd-terms :is(td,th){font-size:calc(21px - 1pt
 .ftdd-sheet .shots{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr)) !important;gap:16px !important;}
 .ftdd-sheet .shots a{height:360px !important;padding:8px !important;background:#fff !important;border:1.5px solid #9AA0AB !important;}
 .ftdd-sheet .shots img{width:100% !important;height:100% !important;max-width:none !important;max-height:none !important;object-fit:contain;}
-.ftdd-sheet .shots.ftdd-shot-wide{grid-template-columns:minmax(0,1fr) !important;}   /* (one sample, large, across the slide: Day 5's Deposition Meeting) */
-.ftdd-sheet .shots.ftdd-shot-wide figure{max-width:1000px;width:100%;margin:0 auto !important;}
-.ftdd-sheet .shots.ftdd-shot-wide a{height:min(58vh,560px) !important;}
+.ftdd-sheet .shots.ftdd-shot-wide{grid-template-columns:minmax(0,1fr) !important;margin:0 !important;}   /* (one sample, large and sharp, across the slide: Day 5's Sample Calendaring) */
+.ftdd-sheet .shots.ftdd-shot-wide figure{display:flex;justify-content:center;margin:0 !important;}
+.ftdd-sheet .shots.ftdd-shot-wide a{height:auto !important;padding:0 !important;display:block;line-height:0;}
+.ftdd-sheet .shots.ftdd-shot-wide img{width:auto !important;height:auto !important;max-width:100% !important;max-height:max(360px,calc(100vh - 420px)) !important;}
+main.main-ftdd .ftdd-sheet p.ftdd-sample-h{font:700 20px/1.3 'Inter',system-ui,sans-serif !important;color:#1B1E2E;text-align:left;margin:0 0 10px !important;}
 /* Day 3's Sample SOP (build/day-decks.cjs TRIM[3].s1): its four pages side by side, each opening bigger in the picture
    viewer below; then one big link to the document and its ⬇ Download */
 .ftdd-sop-shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),300px));justify-content:center;gap:18px;margin:10px auto 14px;}
