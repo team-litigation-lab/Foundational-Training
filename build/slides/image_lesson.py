@@ -64,7 +64,7 @@ DECKS = {
             "about": 'the "Calendar Management Training" deck (Canva design DAGnaz2Or2U), all 44 pages',
             "headings": {10: 'Step-by-Step Guide', 33: 'Time Management Strategies: The Two-Minute Rule', 35: 'Troubleshooting Common Calendar Management Challenges', 44: 'Thank You'}},
     "isr": {"id": 6, "var": "DAY6", "file": "lesson06.js", "title": "Intake Specialist Training",
-            "video": "https://drive.google.com/file/d/1FPA2qhvFOe56b6A2Mcp-OFExqiaO-ZDH/view",
+            "video": "https://drive.google.com/file/d/1L3uU3QSWYvBly4mNGHh6RwR6Ifo72p8B/view",
             "pdf": "THE_INTAKE_SPECIALIST_ROLE_Part1.pdf and _Part2.pdf (sent in chat)",
             "about": 'the "The Intake Specialist Role" deck (Canva design DAGnZhT1ZE0), Parts 1 and 2, all 105 pages',
             # Part 1 is pages 1-53, Part 2 pages 54-105
@@ -74,7 +74,7 @@ DECKS = {
                          84: 'Joint Acceptance of Common Legal Representation & Waiver of Conflict of Interest',
                          94: 'ISO Claim Search Disclosure Request', 96: '3rd Party Insurance Affidavit', 105: 'Thank You'}},
     "csr": {"id": 7, "var": "DAY7", "file": "lesson07.js", "title": "Claims Specialist Training",
-            "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
+            "video": "https://drive.google.com/file/d/1mKuFbskHeSmN8BzYVzNXKseEltLgN_4q/view",
             "pdf": "V_Claims_Specialist_compressed.pdf (sent in chat)",
             "about": 'the "V. Claims Specialist" deck (Canva design DAHWU-Wq2mQ), all 77 pages',
             "headings": {24: 'LOR Recipients', 25: 'Case Specifics', 26: 'Case Specifics',
