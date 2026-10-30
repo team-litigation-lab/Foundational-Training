@@ -193,12 +193,12 @@ function renderLn(){
    worker.js grade them against the key (/api/assess/grade, "recact" in assess-keys.js: the data points and the obstacle
    by the AI against the key, the VA's response out of 2). The grade goes to trackerreview:<id>.assess.recact and 🏅 My
    Performance; the pop-up marks each field with it. */
-const POP = {sid: null, sending: false, review: null};
+const POP = {sid: null, sending: false, review: null, x: 0, y: 0, w: "", h: ""};
 const gradedOf = sid => ((POP.review || {}).assess || {})[sid] || null;
 function popHtml(){
   if(!R.rec || !X.data) return `<div class="ln-pop-b"><div class="card" style="padding:24px;">Loading…</div></div>`;
   const cur = setLive(POP.sid), g = gradedOf(POP.sid), k = countDone(R.rec, cur);
-  return `<div class="ln-pop-h"><div><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h2>📝 Answer Sheet</h2></div>
+  return `<div class="ln-pop-h"><div><p class="lp-eyebrow">Day ${cur.day} · Reception Listening Activity</p><h2>📝 Answer Sheet</h2></div><span class="ln-pop-grip" title="Drag the bar to move it; drag the lower-right corner to resize it">✥ Drag to move · ↘ resize</span>
       <button type="button" class="ln-pop-x" onclick="FTListen.close()" title="Close (Esc)">✕</button></div>
     <div class="ln-pop-b">
       <p class="ln-pop-lead">For each call: play it, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle, and how the VA handled it). 💾 Save each call as you go, then 📝 Submit for Grading.</p>
@@ -214,12 +214,33 @@ function paintPop(){
   // (what was typed and not saved is kept, and so is where the sheet was scrolled to)
   let top = 0;
   if(box){ box.querySelectorAll("input[id^=ln_], select[id^=ln_], textarea[id^=ln_]").forEach(el => { R.draft[el.id] = el.value; });
-    const b = box.querySelector(".ln-pop-b"); top = b ? b.scrollTop : 0; }
+    const b = box.querySelector(".ln-pop-b"); top = b ? b.scrollTop : 0;
+    const was = box.querySelector(".ln-pop-in"); if(was){ POP.w = was.style.width; POP.h = was.style.height; } }
   else { box = document.createElement("div"); box.id = "lnPop"; box.className = "ln-pop";
     box.addEventListener("click", ev => { if(ev.target === box) FTListen.close(); }); document.body.appendChild(box); }
   box.innerHTML = `<div class="ln-pop-in" role="dialog" aria-modal="true" aria-label="Reception Listening Activity: Answer Sheet">${popHtml()}</div>`;
   const b = box.querySelector(".ln-pop-b"); if(b) b.scrollTop = top;
+  const pin = box.querySelector(".ln-pop-in"); pin.style.width = POP.w; pin.style.height = POP.h;
+  movePop(pin, POP.x, POP.y);
 }
+// ✥ the pop-up moves by its header (and ↘ resizes by its corner), stays where it was put, and stays on the screen: its
+// 📝 Submit for Grading with it
+function movePop(el, x, y){
+  if(!el) return;
+  const r = el.getBoundingClientRect(), bx = r.left - POP.x, by = r.top - POP.y;
+  POP.x = Math.max(-bx, Math.min(Math.max(-bx, innerWidth - bx - r.width), x));
+  POP.y = Math.max(-by, Math.min(Math.max(-by, innerHeight - by - r.height), y));
+  el.style.transform = POP.x || POP.y ? `translate(${POP.x}px, ${POP.y}px)` : "";
+}
+document.addEventListener("pointerdown", ev => {
+  const h = ev.target.closest && ev.target.closest("#lnPop .ln-pop-h");
+  if(!h || ev.button !== 0 || ev.target.closest("button")) return;
+  const el = h.closest(".ln-pop-in"), sx = ev.clientX - POP.x, sy = ev.clientY - POP.y;
+  ev.preventDefault(); h.setPointerCapture(ev.pointerId); h.classList.add("is-drag");
+  const mv = e2 => movePop(el, e2.clientX - sx, e2.clientY - sy);
+  const up = () => { h.removeEventListener("pointermove", mv); h.removeEventListener("pointerup", up); h.removeEventListener("pointercancel", up); h.classList.remove("is-drag"); };
+  h.addEventListener("pointermove", mv); h.addEventListener("pointerup", up); h.addEventListener("pointercancel", up);
+});
 // (while it is open, ← / → don't turn the slide behind it, and Esc closes it)
 document.addEventListener("keydown", ev => {
   if(!POP.sid) return;
@@ -370,9 +391,11 @@ main.main-ln > *{flex-shrink:0;}   /* (a card hides its overflow, so a shrunk on
 .ln-alog{padding:8px 0;border-top:1px solid var(--line,#eceef2);} .ln-alog p{margin:3px 0;} .ln-alog em{color:var(--ink-soft);font-style:normal;}
 .ln-ok{color:#1E6B40;font-weight:700;margin-left:8px;} .ln-part{color:#8A5A00;font-weight:700;margin-left:8px;}
 .ln-pop{position:fixed;inset:0;z-index:9000;background:rgba(14,18,38,.62);display:flex;align-items:center;justify-content:center;padding:20px;}
-.ln-pop-in{width:min(980px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--bg,#F4F6FB);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);}
-.ln-pop-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;}
+.ln-pop-in{width:min(980px,100%);max-width:100%;max-height:calc(100vh - 40px);resize:both;min-width:min(420px,100%);min-height:300px;display:flex;flex-direction:column;background:var(--bg,#F4F6FB);border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);}
+.ln-pop-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;background:#1E2340;color:#fff;border-bottom:3px solid #E8590C;cursor:grab;user-select:none;touch-action:none;}
+.ln-pop-h.is-drag{cursor:grabbing;} .ln-pop-h .ln-pop-x{cursor:pointer;}
 .ln-pop-h h2{margin:2px 0 0;color:#fff;font:800 21px/1.3 'Poppins','Inter',sans-serif;} .ln-pop-h .lp-eyebrow{margin:0;color:#F6B98A;}
+.ln-pop-grip{margin-left:auto;font-size:12.5px;color:#C9CFE6;white-space:nowrap;}
 .ln-pop-x{border:0;background:rgba(255,255,255,.12);color:#fff;width:36px;height:36px;border-radius:50%;font-size:17px;cursor:pointer;} .ln-pop-x:hover{background:rgba(255,255,255,.24);}
 .ln-pop-b{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px;} .ln-pop-b > *{flex-shrink:0;margin:0;}
 .ln-pop-lead{color:var(--ink);font-size:15px;line-height:1.5;} .ln-pop-score{padding:10px 12px;border-radius:10px;background:#E3F4EA;color:#1E6B40;font-size:14.5px;}
