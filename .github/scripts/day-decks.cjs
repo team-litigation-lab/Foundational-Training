@@ -43,7 +43,11 @@ if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
 if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
-if (D[13] && !D[13].slides.some(s => /ftdd-pq/.test(s.html))) fail('Day 13: no pointer to ✍️ Knowledge Check where its Process Questions were');
+// Days 7–16 like Days 1–5: no Process Questions or lesson deck pointer on a slide (the card's ✍️ Process Questions: Submit and
+// 💬 Classroom Discussion stops are those), and no slide left with only that: Day 10's classroom discussion slide is off
+for (let n = 1; n <= 16; n++) (D[n] ? D[n].slides : []).forEach(s => { if (/Today’s Process Questions|Today’s lesson deck/.test(s.html)) fail(`Day ${n} ${s.id}: a Process Questions or lesson deck pointer on the slide`); });
+if (D[10] && D[10].slides.some(s => s.id === 's1')) fail("Day 10's classroom discussion slide, only pointers, is still on the deck");
+if (D[13] && !D[13].pq) fail('Day 13 no longer has its Process Questions (its card loses the Process Questions: Submit stop)');
 // a section cut into one slide per card row (build/day-decks.cjs ROWS): a new slide's id never reads as a continuation of
 // the one it was cut from, and every trainer slot is on exactly one slide
 for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;

@@ -866,7 +866,9 @@ const EXTRA = {};
 const load = n => { const c = {}; vm.createContext(c); vm.runInContext(fs.readFileSync(path.join(R, "build/days", `day${String(n).padStart(2, "0")}.js`), "utf8") + `;this.d=DAY${n};`, c); return c.d; };
 // (its button opens the day's lesson's own Knowledge Check sheet, where the questions are answered, and comes back to
 // the classroom's next activity: FTDayDecks.toKC; never the trainers' all-trainees page)
-const PQ_NOTE = `<div class="ftdd-pq">✍️ <b>Today’s Process Questions</b> are answered in the day’s Knowledge Check, after the day’s activities.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.toKC(FTDayDecks.dayLesson())">✍️ Knowledge Check →</button></div></div>\n`;
+// (nothing on the slide, as on Days 1–5: the day's card has its own ✍️ Process Questions: Submit stop, js/ft-day-decks.js
+// standardRows, which opens the lesson's sheet; the day keeps its pq flag, so the stop is still there)
+const PQ_NOTE = "";
 // a Process Questions list: from the element that says PROCESS QUESTIONS to the naming convention's value
 // (the element after "Naming Convention:"), plus the divider after it
 function stripPQ(html){
@@ -908,7 +910,8 @@ function stripQuestions(html){
 // on 📚 Dashboard, 📘 Open the lesson on the slide), so a discussion slide drops its embedded lesson deck — the
 // Canva frame and its ⛶ Full screen / Open in Canva row. An exercise's deck on the same slide stays.
 const LESSON_DECK = /<div class="canva-frame" id="([^"]+)">\s*<iframe[^>]*title="(?![^"]*Exercise)[^"]*\(Canva\)"[\s\S]*?<\/iframe>\s*<\/div>\s*<div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div>\s*<\/div>\s*/;
-const LESSON_NOTE = `<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>\n`;
+// (nothing on the slide, as on Days 1–5: the card's 💬 Classroom Discussion stop is ▶ Start Training)
+const LESSON_NOTE = "";
 function stripLessonDeck(h, html){
   if(!/classroom discussion|discussion on/i.test(h) || !LESSON_DECK.test(html)) return {html, n: 0};
   return {html: html.replace(LESSON_DECK, LESSON_NOTE), n: 1};
@@ -921,7 +924,7 @@ const EX_RENAME = {
   13: {s3: {h: "PM: Breakout Session"}}};
 const decks = {}; let pqs = 0, qs = 0, decksOff = 0, exOff = 0;
 for(let n = 1; n <= 16; n++){
-  const d = load(n), slides = [], carry = {}, cut = new Set();
+  const d = load(n), slides = [], carry = {}, cut = new Set(), noted = new Set();
   // (a day whose Process Questions were on a slide that is off the deck, Day 2's Classroom Activity, still has them: pq)
   const pqDay = d.sections.some(s => !s.trainerOnly && s.html.includes("PROCESS QUESTIONS"));
   for(const s of d.sections){
@@ -929,6 +932,7 @@ for(let n = 1; n <= 16; n++){
     const r = stripPQ(s.html); pqs += r.n;
     const q = stripQuestions(r.html); qs += q.n;
     const ld = stripLessonDeck(s.h, q.html); decksOff += ld.n;
+    if(r.n || ld.n) noted.add(s.id);
     let html = (TRIM[n] && TRIM[n][s.id]) ? TRIM[n][s.id](ld.html) : ld.html;
     if(EDIT[n] && EDIT[n][s.id]) html = EDIT[n][s.id](html);
     // a fragment of an earlier section that is read with this one (ROWS: to)
@@ -971,6 +975,15 @@ for(let n = 1; n <= 16; n++){
     if(!nm) throw new Error(`Day ${n} ${x.id}: its exercise is off the slide, and the slide needs a new name (EX_RENAME)`);
     x.h = nm.h; if(nm.fix) x.html = nm.fix(x.html);
   }
+  // 📋 a slide that only pointed to the lesson deck or the Process Questions (Days 7 and 10's classroom discussion) goes, as
+  // Days 5 and 13's did (SKIP): the card's 💬 Classroom Discussion and ✍️ Process Questions: Submit stops are those
+  for(let i = slides.length - 1; i >= 0; i--){
+    const x = slides[i];
+    if(!noted.has(x.of || x.id)) continue;
+    if(!x.html.replace(/<div class="trainer-slot"[^>]*><\/div>|<hr class="stars">/g, "").trim()){ slides.splice(i, 1); continue; }
+    // (and the ✱✱✱ divider that followed the pointer no longer opens the slide: Day 13's Breakout Session)
+    x.html = x.html.replace(/^((?:\s*<div class="trainer-slot"[^>]*><\/div>)*\s*)<hr class="stars">\n?/, "$1");
+  }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
   if(extra.length) extra.forEach((x, i) => slides.push({id: "extra-" + (i + 1), h: x.h, html: x.html}));
@@ -995,5 +1008,5 @@ const NOTES = path.join(R, "trainer/notes.json"), notes = JSON.parse(fs.readFile
 let notesChanged = false;
 for(const [k, f] of Object.entries(DECK_NOTES)){ const v = f(); if(notes.slots[k] !== v){ notes.slots[k] = v; notesChanged = true; } }
 if(notesChanged) fs.writeFileSync(NOTES, JSON.stringify(notes, null, 1));
-console.log(`js/ft-day-decks-data.js: ${Object.keys(decks).length} day decks, ${Object.values(decks).reduce((a, d) => a + d.slides.length, 0)} slides, ${pqs} Process Questions lists replaced by the Knowledge Check pointer, ${qs} task question lists replaced by the assessment note, ${(out.length / 1024).toFixed(0)} KB`);
+console.log(`js/ft-day-decks-data.js: ${Object.keys(decks).length} day decks, ${Object.values(decks).reduce((a, d) => a + d.slides.length, 0)} slides, ${pqs} Process Questions lists taken off (the card's ✍️ Process Questions: Submit stop), ${qs} task question lists replaced by the assessment note, ${(out.length / 1024).toFixed(0)} KB`);
 for(const d of Object.values(decks)) console.log(`  Day ${d.day} · ${d.title}: ${d.slides.map(s => s.h.slice(0, 40)).join(" | ")}`);

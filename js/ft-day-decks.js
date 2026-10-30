@@ -1298,8 +1298,9 @@ const LESSON_CARDS = {
     takeaways: ["Supporting documents", "The intake packet", "Retainer vs. contingency"], file: "Intake_Specialist_Training_Process_Question_Answers (VA First Name)"},
   7: {days: [10, 11, 12], focus: "Opening Claims, Coverage & LORs",
     rows: [
-      {t: "Breakout Session: Claims Specialist Best Practices", sub: "Digital handouts · individual activity", k: "interactive", run: "ftVideoOrAsk(7)", day: 10},
-      {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c"},
+      // (no Breakout Session stop: the day has no digital handouts to open, as on Day 3, and the AI discussion video is its
+      // lesson card's 🎬 Video on 📚 Dashboard)
+      {t: "Opening Claims: What to Share & VA Call Recordings", sub: "Never share the client’s DOB, email, SSN or VIN with the 3P insurer · sample documents and recordings", k: "read", d: 10, s: "s1c", lead: false},
       {t: "Insurance Communication Videos & Articles", time: "PM", sub: "Opening claims, sending LORs and the job aid", k: "watch", d: 10, s: "s2"},
       {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
       {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · guidelines, templates & case notes", k: "interactive", d: 11, s: "s1b", go: "lor"},
@@ -1308,7 +1309,8 @@ const LESSON_CARDS = {
       {t: "Adding 1P and 3P Insurance Information", sub: "The updated SA steps for your process guide", k: "read", d: 12, s: "s1b"},
       {t: "Tools & Naming Convention", sub: "Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1c"},
       {t: "Uploading & Sending 1P and 3P LORs", time: "AM & PM", sub: "Recorded demonstration", k: "demo", d: 12, s: "s1d"}],
-    discuss: {10: "s1"},
+    // (no discussion slide of the guide's after ▶ Start Training: it only pointed to the lesson deck and the Process
+    // Questions, which are the card's own stops, build/day-decks.cjs)
     tools: [["Tools:", "Smart Advocate, Notepad, Nitro Pro"], "LOR file name: <i>INS – 1P/3P Insurance Provider - LOR mm.dd.yy (VA’s name)</i>",
       "Never share the client’s DOB, email, SSN or VIN with the 3P insurer"],
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
@@ -1521,7 +1523,8 @@ const DAY_FOCUS = {6: "Calendar Management Mock Calls", 8: "The Intake Packet & 
 function standardRows(n, c, lid, first, title, rows){
   const has = re => rows.some(r => re.test(String(r.run || "") + " " + String(r.go || "") + " " + r.t));
   const lead = []; let i = 0;
-  while(i < rows.length && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
+  // (lead: false keeps a Read & Do row after the classroom discussion, Day 10's Opening Claims)
+  while(i < rows.length && rows[i].lead !== false && (/^(buffer|read)$/.test(rows[i].k) || /^Checking of/i.test(rows[i].t) || rows[i].lead)) lead.push(rows[i++]);
   const body = rows.slice(i), tail = [];
   while(body.length && body[body.length - 1].k === "homework") tail.unshift(body.pop());
   const mid = [];
