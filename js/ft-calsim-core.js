@@ -184,9 +184,10 @@ function review(scn, events){
 }
 
 /* ============================================================
-   🗓 Attorney Calendar Management Activity (Day 5): the attorney's own Google Calendar, July 6–15, 2026.
+   🗓 Attorney Calendar Management Activity (Day 5): the attorney's own Google Calendar, ten weekdays from a Monday (the
+   anchor): the activity's own dates, July 6–15, 2026, moved by whole weeks to the batch's Day 5 week (see THE ANCHOR below).
    The attorney is in Seattle: the calendar shows Pacific Time (America/Los_Angeles). The trainee creates every event.
-   An event: {id, title, date:"2026-07-DD", allDay, span (all-day: how many days), start, dur (minutes, in the EVENT'S OWN
+   An event: {id, title, date:"YYYY-MM-DD", allDay, span (all-day: how many days), start, dur (minutes, in the EVENT'S OWN
               time zone), tz (a TZS id), loc, guests:[emails], desc, meet, color, reminders:[{type:"notification"|"email", n, unit}]}
    ============================================================ */
 const isAct = scn => !!scn && scn.kind === "activity";
@@ -194,7 +195,8 @@ const act = (() => {
 // The event's own time zone: the 📅 Calendar Activity Check's list (FTCalCheck.zones, js/ft-calcheck.js), in the same order, so a
 // zone the Check accepts can be picked here and the two agree (calsim-activity.cjs checks the ids match). PST / MST / CST / EST are
 // US Pacific / Mountain / Central / Eastern Time; the Check also accepts Phoenix (MST all year), Regina and Panama. Offsets come
-// from the time-zone data for each date (July 2026 is daylight time); `off` (the July offset) is used only without it.
+// from the time-zone data for each date: PST, MST, CST and EST name the US region, standard or daylight on the event's own date;
+// `off` is the zone's summer offset (abbr() reads it to tell daylight from standard), used for the offset only without Intl.
 const TZS = [
   {id:"America/Los_Angeles", short:"PST", dst:"PDT", name:"Pacific Time - Los Angeles", word:"Pacific", off:-420},
   {id:"America/Denver",      short:"MST", dst:"MDT", name:"Mountain Time - Denver",     word:"Mountain", off:-360},
@@ -211,18 +213,33 @@ const TZS = [
 ];
 const CAL_TZ = "America/Los_Angeles";
 const tzOf = id => TZS.find(z => z.id === id || z.short === id) || null;
-// The calendar's days: index 0 = Mon Jul 6, 2026. Two Monday-to-Sunday weeks are shown (to Sun Jul 19); the activity is days 0–9.
-const FROM = "2026-07-06", BASE = Date.UTC(+FROM.slice(0, 4), +FROM.slice(5, 7) - 1, +FROM.slice(8, 10)), NDAYS = 14, LAST = 9, MAXEV = 40;
+/* THE ANCHOR: the calendar's day 0, a Monday. Two Monday-to-Sunday weeks are shown; the activity is days 0–9. The activity was
+   written for Mon July 6, 2026 (BASE_FROM, the dates in its words and in the Check's key); a trainee's activity is moved by whole
+   weeks (k) to the first Monday on or after their batch's Day 5 (anchorForBatch: the Batch ID is B + the start date, MMDDYY), so
+   its weekdays and wall-clock times stay the activity's own. The anchor is kept in the trainee's calendar record
+   (calsim:<id>.anchors["attorney-activity"], js/ft-calendar.js); a record from before (events or submissions, no anchor) keeps
+   July 2026. Everything below reads FROM / BASE: setAnchor switches them (withAnchor for one trainee's record on a trainer's
+   page, put back after). Without an anchor set, July 2026. */
+const BASE_FROM = "2026-07-06", NDAYS = 14, LAST = 9, MAXEV = 40;
+const isoMs = iso => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+const isIso = iso => /^\d{4}-\d{2}-\d{2}$/.test(String(iso)) && new Date(isoMs(iso)).toISOString().slice(0, 10) === iso;
+const isMonday = iso => isIso(iso) && new Date(isoMs(iso)).getUTCDay() === 1;
+// an anchor the activity can take: a Monday, on or after the activity's own
+const okAnchor = iso => isMonday(iso) && iso >= BASE_FROM;
+const shiftIso = (iso, k) => new Date(isoMs(iso) + k * 7 * 864e5).toISOString().slice(0, 10);
+let FROM = BASE_FROM, BASE = isoMs(FROM);
+const weeksOf = iso => Math.round((isoMs(iso) - isoMs(BASE_FROM)) / (7 * 864e5));
 const dIdx = iso => /^\d{4}-\d{2}-\d{2}$/.test(String(iso)) ? Math.round((Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - BASE) / 864e5) : NaN;
 const dIso = i => new Date(BASE + i * 864e5).toISOString().slice(0, 10);
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const dLabel = i => { const d = new Date(BASE + i * 864e5); return `${WD[d.getUTCDay()]} ${MON[d.getUTCMonth()]} ${d.getUTCDate()}`; };
 const fmtE = m => m >= 1440 ? "12 AM" : fmt(m);
 const range = (a, b) => `${fmtE(a)} – ${fmtE(b)}`;
-// A zone's offset from UTC (minutes) at an instant (minutes from FROM 00:00 UTC), cached by the hour.
+// A zone's offset from UTC (minutes) at an instant (minutes from FROM 00:00 UTC), cached by the hour (the absolute hour, so the
+// cache holds across anchors).
 const FMTS = {}, OFFS = new Map();
 function offAt(tz, abs){
-  const z = tzOf(tz) || TZS[0], h = Math.floor(abs / 60), k = z.id + "|" + h;
+  const z = tzOf(tz) || TZS[0], h = Math.floor(abs / 60), k = z.id + "|" + (BASE / 3600000 + h);
   let o = OFFS.get(k); if(o !== undefined) return o;
   o = z.off;
   try{
@@ -242,6 +259,62 @@ const evAbs = x => x.allDay ? {s:absAt(x.date, 0, CAL_TZ), e:absAt(dIso(dIdx(x.d
 function pacOf(x){ if(x.allDay) return {day:dIdx(x.date), start:0, end:1440, allDay:true, span:x.span || 1}; const a = evAbs(x), p = fromAbs(a.s, CAL_TZ); return {day:p.day, start:p.start, end:p.start + a.e - a.s}; }
 // A spot on the Pacific calendar (a drag), in an event's own zone.
 const fromPac = (day, start, tz) => fromAbs(absAt(dIso(day), start, CAL_TZ), tz);
+
+// "July 6 to 19" / "Oct 26 to Nov 8": the calendar's days 0 to `last`, at the current anchor
+const spanText = last => { const a = new Date(BASE), b = new Date(BASE + last * 864e5), M = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return a.getUTCMonth() === b.getUTCMonth() ? `${M[a.getUTCMonth()]} ${a.getUTCDate()} to ${b.getUTCDate()}` : `${M[a.getUTCMonth()].slice(0, 3)} ${a.getUTCDate()} to ${M[b.getUTCMonth()].slice(0, 3)} ${b.getUTCDate()}`; };
+const dYear = i => new Date(BASE + i * 864e5).getUTCFullYear();
+function setAnchor(iso){
+  iso = okAnchor(iso) ? iso : BASE_FROM;
+  if(iso !== FROM){ FROM = iso; BASE = isoMs(iso); KL = null; TL = null; }
+  return FROM;
+}
+// run fn at a record's anchor (a trainer's page shows many trainees), then put the anchor back, even if fn throws
+function withAnchor(iso, fn){ const was = FROM; setAnchor(iso); try{ return fn(); } finally{ setAnchor(was); } }
+// Pacific's calendar date of an instant (ms), as YYYY-MM-DD
+const pacDate = ms => { try{ return new Intl.DateTimeFormat("en-CA", {timeZone:CAL_TZ, year:"numeric", month:"2-digit", day:"2-digit"}).format(new Date(ms)); }catch(err){ return new Date(ms - 8 * 3600000).toISOString().slice(0, 10); } };
+// the first Monday on or after a date
+const mondayOnOrAfter = iso => { const d = new Date(isoMs(iso)).getUTCDay(); return new Date(isoMs(iso) + ((8 - d) % 7) * 864e5).toISOString().slice(0, 10); };
+// a batch's start date, from its ID (B + MMDDYY: B102826 → 2026-10-28), else null
+const batchStart = batch => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(batch || "").trim()); const iso = m ? `20${m[3]}-${m[1]}-${m[2]}` : ""; return isIso(iso) ? iso : null; };
+// the activity's anchor for a batch that starts on `start`: its Day 5 is the fifth weekday from the start (a weekend start
+// counts from the Monday after), and the activity's Monday is the first on or after Day 5, so no item is in the past
+function anchorForStart(start){
+  let t = isoMs(start), n = 0;
+  for(;;){ const d = new Date(t).getUTCDay(); if(d !== 0 && d !== 6 && ++n === 5) break; t += 864e5; }
+  const a = mondayOnOrAfter(new Date(t).toISOString().slice(0, 10));
+  return okAnchor(a) ? a : BASE_FROM;
+}
+const anchorForBatch = batch => { const s = batchStart(batch); return s ? anchorForStart(s) : null; };
+// the dates a batch starting this week would get (a trainer's slides, a trainee with no Batch ID): from this week's Monday, Pacific
+const anchorNow = nowMs => { const t = pacDate(nowMs == null ? Date.now() : nowMs), d = new Date(isoMs(t)).getUTCDay(); return anchorForStart(new Date(isoMs(t) - ((d + 6) % 7) * 864e5).toISOString().slice(0, 10)); };
+// a calendar record's anchor: its own, else July 2026 for a record from before anchors (an activity draft or a submission),
+// else null (none yet: ensureAnchor gives it one)
+const SCN_ID = "attorney-activity";
+function anchorOfRecord(rec){
+  if(!rec || typeof rec !== "object") return null;
+  const a = rec.anchors && rec.anchors[SCN_ID]; if(okAnchor(a)) return a;
+  const draft = rec.drafts && rec.drafts[SCN_ID], subs = (rec.submissions || []).filter(x => x && x.scn === SCN_ID);
+  return (Array.isArray(draft) ? draft.length : draft && (draft.events || []).length) || subs.length ? BASE_FROM : null;
+}
+// give a record its anchor if it has none (the caller saves it): {anchor, created}
+function ensureAnchor(rec, batch, nowMs){
+  const had = anchorOfRecord(rec); if(had) return {anchor:had, created:false};
+  const a = anchorForBatch(batch) || anchorNow(nowMs);
+  rec.anchors = Object.assign({}, rec.anchors, {[SCN_ID]:a});
+  return {anchor:a, created:true};
+}
+// "July 06, 2026" in a text, moved by k weeks ("Month DD, YYYY", the activity's own form; nothing else is touched)
+const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const longDate = iso => `${MONTHS_LONG[+iso.slice(5, 7) - 1]} ${iso.slice(8, 10)}, ${iso.slice(0, 4)}`;
+function rewriteDates(text, k){
+  if(!k) return String(text);
+  return String(text).replace(/\b(January|February|March|April|May|June|July|August|September|October|November|December) (\d{2}), (\d{4})\b/g, (all, mo, d, y) => {
+    const iso = `${y}-${String(MONTHS_LONG.indexOf(mo) + 1).padStart(2, "0")}-${d}`; return isIso(iso) ? longDate(shiftIso(iso, k)) : all; });
+}
+// the activity's items at the current anchor (their dates and the dates in their words moved by k weeks)
+const deepDates = (v, k) => Array.isArray(v) ? v.map(x => deepDates(x, k)) : typeof v === "string" ? rewriteDates(v, k) : v;
+const itemsFor = items => { const k = weeksOf(FROM); return items.map(it => Object.assign({}, it, {date:shiftIso(it.date, k), lines:deepDates(it.lines, k)})); };
 
 const PEOPLE = [
   {name:"Martin Anthony", email:"martin@legalsupporthelp.com"},
@@ -310,12 +383,14 @@ const STAY = "8.5";                                  // the overnight stay: it o
 const mm = v => { const m = String(v || "").match(/^(\d{1,2}):(\d\d)/); return m ? +m[1] * 60 + +m[2] : 0; };
 const hm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 // The expected events, in the Check's order, with what the page needs (the Pacific window, the colour): derived from FTCalCheck.key.
-let KL = null, KL_SRC = null;
+let KL = null, KL_SRC = null, KL_AT = null;
+// the Check's key at the current anchor (its dates moved by k weeks: FTCalCheck.keyFor), else its own (July 2026)
+const keyNow = C => C.keyFor ? C.keyFor(FROM) : C.key;
 function keyList(){
   const C = CK(); if(!C) return [];
-  if(KL && KL_SRC === C.key) return KL;
-  KL_SRC = C.key;
-  return KL = C.key.map(k => {
+  if(KL && KL_SRC === C.key && KL_AT === FROM) return KL;
+  KL_SRC = C.key; KL_AT = FROM;
+  return KL = keyNow(C).map(k => {
     const s = SIM[k.n] || {cat:"external"}, z = tzOf(k.tz) || TZS[0];
     const o = {id:k.n, n:k.n, item:parseInt(k.n, 10), name:k.name, title:`${k.n} ${k.name}`, date:k.date, endDate:k.endDate || k.date, tz:k.tz, tzId:z.id, allDay:!!k.overnight,
       cat:s.cat, alt:s.alt, altWhy:s.altWhy, travel:!!s.travel, eg:s.eg, info:s.info, ck:k};
@@ -325,12 +400,12 @@ function keyList(){
   });
 }
 // The Check event whose reminder and notes may sit on this one instead (the travel blocks 8.2/8.3 and 8.6/8.7).
-const pairOf = (C, n) => { const k = C.key.find(x => x.n === n); return k && k.alt ? k.alt : (C.key.find(x => x.alt === n) || {}).n; };
-const remOf = (C, n) => { const k = C.key.find(x => x.n === n); return (k && k.rem) || (C.key.find(x => x.alt === n) || {}).rem || null; };
+const pairOf = (C, n) => { const K = keyNow(C), k = K.find(x => x.n === n); return k && k.alt ? k.alt : (K.find(x => x.alt === n) || {}).n; };
+const remOf = (C, n) => { const K = keyNow(C), k = K.find(x => x.n === n); return (k && k.rem) || (K.find(x => x.alt === n) || {}).rem || null; };
 // What an expected event is, in one line (the review's "not found", the trainer's live review and the AI prompt).
 function noteOf(o){
   const C = CK(), k = o.ck, z = tzOf(o.tz) || TZS[0], pair = C && pairOf(C, o.n), rem = C && remOf(C, o.n);
-  const nk = k.notes ? k : pair && C ? C.key.find(x => x.n === pair && x.notes) : null;
+  const nk = k.notes ? k : pair && C ? keyNow(C).find(x => x.n === pair && x.notes) : null;
   const when = o.allDay ? `${dLabel(dIdx(o.date))}: an All day event (it may end on ${dLabel(dIdx(o.date))} or ${dLabel(dIdx(o.endDate))})`
     : `${dLabel(dIdx(o.date))}, ${range(o.start, o.end)} ${o.tz} in its own time zone (${z.word} Time${z.id === CAL_TZ ? "" : `; ${range(o.pt.start, o.pt.end)} on the attorney’s Pacific calendar`})`;
   return [when, k.loc ? `location: ${k.locShow}${k.link ? ` (with ${k.link})` : ""}` : o.travel ? `location: departure → destination, e.g. ${o.eg}` : "",
@@ -362,17 +437,17 @@ function cleanAct(events){
         start:x.allDay ? 0 : x.start, dur:x.allDay ? 1440 : x.dur, tz:tzOf(x.tz) ? tzOf(x.tz).id : CAL_TZ, loc:str(x.loc, 200), guests, desc:str(x.desc, 600),
         meet:!!x.meet, color:colorOf(x.color) ? x.color : "", reminders};
     })
-    // only what the calendar shows (Pacific July 6 to 19): nothing is kept that couldn't be seen, edited or deleted
+    // only what the calendar shows (its two Pacific weeks): nothing is kept that couldn't be seen, edited or deleted
     .filter(x => { const d = pacOf(x).day; return d >= 0 && d <= NDAYS - 1; })
     .slice(0, MAXEV);
 }
 // Whether an event can go on the calendar as entered (the editor, a drag, the keyboard): "" or what is wrong.
 function valid(x){
-  if(x.allDay){ const d = dIdx(x.date); return d >= 0 && d <= NDAYS - 1 ? "" : "Pick a date on the calendar (July 6 to 19)."; }
+  if(x.allDay){ const d = dIdx(x.date); return d >= 0 && d <= NDAYS - 1 ? "" : `Pick a date on the calendar (${spanText(NDAYS - 1)}).`; }
   const z = tzOf(x.tz) || TZS[0];
   if(x.start < 0 || x.start + x.dur > 1440) return `It has to end by midnight in its own time zone (${z.word} Time). For an overnight stay, use All day.`;
   const p = pacOf(x);
-  if(p.day < 0 || p.day > NDAYS - 1) return `On the attorney’s Pacific calendar that is ${dLabel(p.day)}, ${fmt(p.start)}: outside the calendar’s dates (July 6 to 19). Check the date and the time zone.`;
+  if(p.day < 0 || p.day > NDAYS - 1) return `On the attorney’s Pacific calendar that is ${dLabel(p.day)}, ${fmt(p.start)}: outside the calendar’s dates (${spanText(NDAYS - 1)}). Check the date and the time zone.`;
   if(p.end > 1440) return `On the attorney’s Pacific calendar it runs past midnight (${dLabel(p.day)}, from ${fmt(p.start)}). End it by midnight Pacific; for an overnight stay, use All day.`;
   return "";
 }
@@ -385,7 +460,7 @@ const zoneText = x => { if(x.allDay || x.tz === CAL_TZ) return ""; const z = tzO
 function flagsAct(scn, events){
   events = cleanAct(events); const stay = (matchAct(events)[STAY] || {}).id, out = {};
   events.forEach(x => { const why = [], hit = x.id !== stay && events.find(o => o.id !== stay && clash(x, o)); if(hit) why.push(`Overlaps “${hit.title || "(no title)"}”`);
-    const p = pacOf(x); if(p.day < 0 || p.day > LAST) why.push("Outside the activity’s dates (July 6 to 15)");
+    const p = pacOf(x); if(p.day < 0 || p.day > LAST) why.push(`Outside the activity’s dates (${spanText(LAST)})`);
     if(!p.allDay && p.end > 1440) why.push("Runs past midnight on the attorney’s calendar");
     if(why.length) out[x.id] = why; });
   return out;
@@ -419,7 +494,7 @@ const met = (rows, f) => (rows.find(r => r[0] === f) || [])[1] === true;
 function matchAct(events){
   const C = CK(); if(!C) return {};
   const pairs = [];
-  C.key.forEach(k => events.forEach(x => {
+  keyNow(C).forEach(k => events.forEach(x => {
     const rows = rowsFor(C, k, x), title = met(rows, "Title"), when = met(rows, "Start date") && (k.overnight ? !!x.allDay : met(rows, "Start time"));
     if(title || when) pairs.push({k, x, sc:(title ? 100 : 0) + (when ? 50 : 0) + rows.filter(r => r[1] === true).length});
   }));
@@ -535,7 +610,7 @@ function reviewAct(scn, events){
 
 /* ---------- the scenario: the activity's own words (verbatim), its legend, the guest directory and the ten items ---------- */
 TRACKS.push({id:"activity", icon:"🗓", title:"Attorney Calendar Management Activity", where:"Day 5 · Calendar Management",
-  blurb:"The attorney’s own Google Calendar (Seattle, Pacific Time), July 6–15, 2026: put every item and travel block on it with its time zone, color, location, guests, reminders and notes."});
+  get blurb(){ return `The attorney’s own Google Calendar (Seattle, Pacific Time), ${spanText(LAST)}, ${dYear(LAST)}: put every item and travel block on it with its time zone, color, location, guests, reminders and notes.`; }});
 SCENARIOS.push({id:"attorney-activity", track:"activity", kind:"activity", short:"Attorney Calendar Activity", title:"Attorney Calendar Management Activity", level:"Day 5", gap:0, fixed:[],
   brief:"Plot the ten activity items, and each item’s travel blocks, on the attorney’s Google Calendar (Pacific Time), with every detail the item gives. Run the automated review, fix what it marks, then submit to your trainer.",
   intro:"Please answer the Attorney Calendar Management Activity. Make sure to follow the instructions carefully, and don’t forget to signify done here as soon as you finish. Thanks.",
@@ -583,10 +658,13 @@ SCENARIOS.push({id:"attorney-activity", track:"activity", kind:"activity", short
   // the expected events, and one "task" each (and the whole calendar) so the per-task feedback, comments and live review work as
   // for a week: both read the Check's key (js/ft-calcheck.js loads after this file, so they are getters)
   get key(){ return keyList(); },
+  // the items at the current anchor (items: the activity's own words and dates, July 2026)
+  get itemsNow(){ return itemsFor(this.items); },
   get tasks(){ return taskList(); }
 });
 
-return {TZS, CAL_TZ, FROM, PEOPLE, CATS, SIM, STAY, REM_UNITS, TRAVEL_MIN, TRAVEL_MAX, NDAYS, LAST, MAXEV, tzOf, tzLabel, abbr, offAt, dIdx, dIso, dLabel, fmtE, range,
+return {TZS, CAL_TZ, get FROM(){ return FROM; }, BASE_FROM, setAnchor, anchor:() => FROM, withAnchor, weeks:() => weeksOf(FROM), weeksOf, shiftIso, isMonday,
+  okAnchor, batchStart, anchorForStart, anchorForBatch, anchorNow, anchorOfRecord, ensureAnchor, rewriteDates, longDate, spanText, dYear, SCN_ID, PEOPLE, CATS, SIM, STAY, REM_UNITS, TRAVEL_MIN, TRAVEL_MAX, NDAYS, LAST, MAXEV, tzOf, tzLabel, abbr, offAt, dIdx, dIso, dLabel, fmtE, range,
   absAt, fromAbs, evAbs, pacOf, fromPac, who, remMin, remText, leadText, catText, noteOf, splitTravel, whenOf, zoneText, valid, keyList, entryOf, check:CK,
   clean:cleanAct, flags:flagsAct, match:(scn, events) => matchAct(cleanAct(events)), review:reviewAct};
 })();

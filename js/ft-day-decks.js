@@ -885,9 +885,10 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Activity Items stay one grid of cards; and what
-    // the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls two to a slide)
-    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-keep, .ftdd-two, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Instructions and Activity Items stay one row of
+    // cards; and what the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls
+    // two to a slide)
+    if(hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-keep, .ftdd-two, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -913,9 +914,11 @@ function sheetPages(sheet){
   const pages = []; let page = [], used = 0;
   // a page holds what fits on the screen at three quarters size: a block that would hang off the foot of that starts
   // the next page, and fitSheets scales the page down to fit
+  // (an empty trainer slot, nothing to see, never makes a page of its own: the block after it shares its page)
+  const shown = pg => pg.some(x => hOf(x) > 0);
   units.forEach(k => {
     const h = hOf(k);
-    if(page.length && used + h > room / (read ? 1 : PAGE_ZOOM)){
+    if(shown(page) && used + h > room / (read ? 1 : PAGE_ZOOM)){
       // a heading never ends a page: it moves to the next one with the text it heads
       const carry = [];
       while(page.length > 1 && /^H[1-6]$/.test(page[page.length - 1].tagName)) carry.unshift(page.pop());
@@ -930,7 +933,7 @@ function sheetPages(sheet){
     const total = units.reduce((a, x) => a + hOf(x), 0), cap = room / (read ? 1 : PAGE_ZOOM), tallest = Math.max(...units.map(hOf));
     const deal = limit => { const out = []; let pg = [], u = 0;
       units.forEach(k => { const h = hOf(k);
-        if(pg.length && u + h > limit){ const carry = []; while(pg.length > 1 && /^H[1-6]$/.test(pg[pg.length - 1].tagName)) carry.unshift(pg.pop());
+        if(shown(pg) && u + h > limit){ const carry = []; while(pg.length > 1 && /^H[1-6]$/.test(pg[pg.length - 1].tagName)) carry.unshift(pg.pop());
           out.push(pg); pg = carry; u = carry.reduce((a, x) => a + hOf(x), 0); }
         pg.push(k); u += h; });
       if(pg.length) out.push(pg); return out; };
@@ -1110,6 +1113,34 @@ function toolsHintShow(){
 }
 document.addEventListener("mousemove", toolsHintShow, {passive: true});
 document.addEventListener("touchstart", toolsHintShow, {passive: true});
+/* 📅 Day 5's Attorney Calendar Management Activity: its cards' dates ([data-cal-date], build/day-decks.cjs calDate: the dates
+   as written, for Mon July 6, 2026) moved by whole weeks to the trainee's own anchor (FTCalCore.act: the first Monday on or
+   after their batch's Day 5, kept once in their calsim:<id> record by js/ft-calendar.js, the record's one writer: one without
+   gets the same anchor here from the Batch ID, unsaved, so a draft saved meanwhile is never written over). A trainer sees the dates a batch starting this week would get (anchorNow), and the slide
+   says so; nothing is saved for them. Until a trainee's anchor is read their dates are hidden; without FTCalCore they stay July. */
+const CA = {id: null, anchor: null, loading: null};
+function calAnchor(){
+  const A = root.FTCalCore && FTCalCore.act; if(!A) return null;
+  if(!forTrainee()) return A.anchorNow();
+  // (kept per trainee and Batch ID: read once a page load)
+  const id = state.traineeId, batch = state.traineeBatch, who = id + "|" + (batch || "");
+  if(CA.id === who && (CA.anchor || CA.loading)) return CA.anchor;
+  CA.id = who; CA.anchor = null;
+  // (a record that couldn't be read is never written over: its dates are the batch's, unsaved)
+  const get = typeof sharedGetStrict === "function" ? sharedGetStrict : sharedGet;
+  CA.loading = get("calsim:" + id).then(rec => A.anchorOfRecord(rec) || A.anchorForBatch(batch) || A.anchorNow(), () => A.anchorForBatch(batch) || A.anchorNow())
+    .then(a => { if(CA.id !== who) return; CA.anchor = a; CA.loading = null; if(state.view === "daydeck" && document.querySelector("main.main-ftdd [data-cal-date]")){ calDates(); fitSheets(); } });
+  return null;
+}
+function calDates(){
+  const spans = document.querySelectorAll("main.main-ftdd [data-cal-date]"); if(!spans.length) return;
+  const A = root.FTCalCore && FTCalCore.act; if(!A) return;
+  const a = calAnchor(), k = a ? A.weeksOf(a) : 0;
+  spans.forEach(x => { x.classList.toggle("ftdd-cal-wait", !a); if(a) x.textContent = A.longDate(A.shiftIso(x.getAttribute("data-cal-date"), k)); });
+  // (the note in trainer view only: 👁 Trainee view shows the slide as a trainee reads it)
+  if(isAdminView()) document.querySelectorAll("main.main-ftdd .ftdd-calsim[data-calsim-activity]").forEach(b => {
+    if(!b.querySelector(".ftdd-cal-note")) b.insertAdjacentHTML("beforeend", '<span class="ftdd-cal-note">Dates shown for a batch starting this week.</span>'); });
+}
 const __render = root.render;
 root.render = function(){
   if(state.view !== "knowtools") toolsHintClose();
@@ -1128,6 +1159,7 @@ root.render = function(){
   const app = document.getElementById("app");
   app.innerHTML = renderTopbar() + `<main class="main-ftdd">${renderDeck()}</main>` + renderFooter();
   try{ afterRender(); }catch(err){}
+  try{ calDates(); }catch(err){}
   document.querySelectorAll(".ftdd-sheet, .ftdd-onnavy").forEach(x => { x.scrollTop = 0; });
   fitSheets(); wireReaders(); deckNextUp(); deckPresenter();
   // the card settles a frame later (its own head, ribbon and buttons), and a page dealt against a sheet that
@@ -2303,11 +2335,11 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
-.ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:span 2;columns:2;column-gap:18px;}
-.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p{break-inside:avoid;}
-.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p.ftdd-cal-h{column-span:all;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
-@media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:auto;columns:1;} }
+/* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */
+.ft-body .ftdd-cal-date.ftdd-cal-wait{visibility:hidden;}
+.ft-body .ftdd-calsim .ftdd-cal-note{display:inline-block;margin:0 0 0 12px;font-size:13px;color:#6B7280;font-style:italic;}
+@media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}

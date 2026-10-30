@@ -9,6 +9,11 @@
 //   flight named the wrong way round fails its title, Drive times that tie don't vouch for the order, a failed read
 //   never wipes the draft, a trainee's HTML or a broken record never reaches or breaks the trainer's tab (which scores
 //   each submission's snapshot again, not the score the page stored), and a trainer sees the 👁 Trainee view.
+//   The anchor: the key moved by whole weeks to a trainee's anchor Monday (keyFor, the same objects each time, July's is the
+//   key itself); at 2026-11-02 (winter, 17 weeks on) the answer key at its dates scores 100%, standard time counts (9:00 AM
+//   Pacific, Panama's summer moment for the 11:00 AM EST deposition, is wrong in November), the zones' offsets are the date's,
+//   a snapshot is scored at its own anchor; a trainee of batch B102626 with no records gets 2026-11-02 written to calsim:<id>
+//   and sees November's dates; the checks above run at July's (the trainee's calendar record anchored at 2026-07-06).
 // Usage: NODE_PATH=…/node_modules node .github/scripts/calcheck.cjs http://localhost:8787/
 const { chromium } = require('playwright');
 const path = require('path');
@@ -55,6 +60,8 @@ async function workerChecks() {
   const id = await page.evaluate(() => state.traineeId);
   const r0 = await get('trainee:' + id); r0.approved = true; r0.archived = false; await put('trainee:' + id, r0);
   await put('calcheck:' + id, null);
+  // (the July checks: the trainee's calendar record holds the activity's own dates)
+  await put('calsim:' + id, { v: 2, drafts: {}, autos: [], submissions: [], reviews: {}, external: [], anchors: { 'attorney-activity': '2026-07-06' } });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
 
   // the answer key, entered as a trainee would, and what each change does
@@ -63,7 +70,7 @@ async function workerChecks() {
     const entry = k => ({ title: `${k.n} ${k.name}`, sd: k.date, ed: k.overnight ? k.date : k.endDate || k.date, st: k.start || '', et: k.end || '', allday: !!k.overnight, tz: TZ[k.tz],
       loc: k.locShow || '', guests: (k.guests || []).join(', '), rtype: k.rem ? k.rem.type : '', ramt: k.rem ? String(k.rem.m % 1440 === 0 ? k.rem.m / 1440 : k.rem.m % 60 === 0 ? k.rem.m / 60 : k.rem.m) : '',
       runit: k.rem ? (k.rem.m % 1440 === 0 ? 'days' : k.rem.m % 60 === 0 ? 'hours' : 'minutes') : 'minutes', notes: (k.notesShow || '') + (k.link ? ' Zoom link for remote attendees: ' + k.link : '') });
-    const right = () => { const entries = {}; FTCalCheck.key.forEach(k => { entries[k.n] = entry(k); }); return { entries, final: { lsh: true, seq: true } }; };
+    const right = () => { const entries = {}; FTCalCheck.key.forEach(k => { entries[k.n] = entry(k); }); return { anchor: '2026-07-06', entries, final: { lsh: true, seq: true } }; };
     const failed = rec => FTCalCheck.checkAll(rec).filter(c => c[2] === false).map(c => `${c[0]}:${c[1]}`);
     const expect = (label, rec, want) => { const got = failed(rec).join(' | '); if (got !== want.join(' | ')) out.push(`${label}: failed [${got}], expected [${want.join(' | ')}]`); };
     const change = (n, o) => { const r = right(); Object.assign(r.entries[n], o); return r; };
@@ -142,6 +149,44 @@ async function workerChecks() {
     if (FTCalCheck.checkFinal({ lsh: true, seq: false }, Object.assign({ at: 'x' }, tied))[1][1] !== false) out.push('tied times overrode the trainee\'s unticked self-check');
     const auto = FTCalCheck.checkFinal({ lsh: true, seq: false }, Object.assign({ at: 'x' }, m));
     if (auto[1][1] !== true || !/found in your folder/.test(auto[1][0])) out.push('the folder lookup doesn\'t count for the upload');
+    // ---------- the anchor: 2026-11-02, 17 weeks on (winter: standard time) ----------
+    const NOV = '2026-11-02', KN = FTCalCheck.keyFor(NOV), wk = (iso, k) => new Date(Date.parse(iso + 'T00:00:00Z') + k * 7 * 864e5).toISOString().slice(0, 10);
+    if (FTCalCheck.keyFor('2026-07-06') !== FTCalCheck.key) out.push('keyFor(July 6, 2026) isn\'t the key itself');
+    if (FTCalCheck.keyFor(NOV) !== KN || KN[0] !== FTCalCheck.keyFor(NOV)[0]) out.push('keyFor gives new objects for the same anchor');
+    if (FTCalCheck.keyFor('2026-11-03') !== FTCalCheck.key || FTCalCheck.keyFor('2026-06-29') !== FTCalCheck.key) out.push('an anchor that isn\'t one doesn\'t fall back to July');
+    if (FTCalCore.act.weeksOf(NOV) !== 17) out.push(`2026-11-02 is ${FTCalCore.act.weeksOf(NOV)} weeks on, not 17`);
+    FTCalCheck.key.forEach((k, i) => { const n = KN[i];
+      if (n.n !== k.n || n.date !== wk(k.date, 17) || (k.endDate ? n.endDate !== wk(k.endDate, 17) : n.endDate) || n.start !== k.start || n.tz !== k.tz) out.push(`${k.n} at 2026-11-02: ${JSON.stringify([n.date, n.endDate, n.start])}`); });
+    if (KN[0].date !== '2026-11-02' || KN.find(k => k.n === '10').date !== '2026-11-11') out.push(`the anchored key runs ${KN[0].date} to ${KN[KN.length - 1].date}`);
+    if (FTCalCheck.anchorOf({ anchor: NOV }) !== NOV || FTCalCheck.anchorOf({ entries: {} }) !== '2026-07-06' || FTCalCheck.anchorOf({ anchor: '2026-11-04' }) !== '2026-07-06') out.push('anchorOf doesn\'t read a record\'s anchor, July without one');
+    const rightN = () => { const entries = {}; KN.forEach(k => { entries[k.n] = entry(k); }); return { anchor: NOV, entries, final: { lsh: true, seq: true } }; };
+    const changeN = (n, o) => { const r = rightN(); Object.assign(r.entries[n], o); return r; };
+    const fullN = FTCalCheck.score(FTCalCheck.checkAll(rightN()));
+    if (fullN.pct !== 100 || fullN.total !== full.total) out.push(`the answer key at 2026-11-02 scores ${fullN.pct}% over ${fullN.total}: ${failed(rightN()).join('; ')}`);
+    expect('the answer key at 2026-11-02', rightN(), []);
+    if (FTCalCheck.score(FTCalCheck.checkAll(Object.assign(rightN(), { anchor: undefined }), NOV)).pct !== 100) out.push('checkAll(rec, anchor) doesn\'t check at the anchor given');
+    if (!failed(Object.assign(right(), { anchor: NOV })).some(f => /Start date/.test(f))) out.push('July\'s dates pass at 2026-11-02');
+    expect('a wrong date at 2026-11-02', changeN('5', { sd: '2026-07-09', ed: '2026-07-09' }), ['5:Start date', '5:End date']);
+    // standard time: 11:00 AM EST is 8:00 AM Pacific in New York and in Panama alike; Panama's summer 9:00 AM is wrong in November
+    expect('the deposition in Pacific at New York\'s moment (November)', changeN('3', { tz: 'America/Los_Angeles', st: '08:00', et: '10:00' }), []);
+    expect('the deposition in Pacific at 9:00 AM (Panama\'s summer moment) in November', changeN('3', { tz: 'America/Los_Angeles', st: '09:00', et: '11:00' }), ['3:Start time', '3:End time']);
+    expect('Panama for EST in November', changeN('3', { tz: 'America/Panama' }), []);
+    expect('the team meeting in Pacific at the same moment (November)', changeN('2', { tz: 'America/Los_Angeles', st: '14:00', et: '15:00' }), []);
+    expect('the gym in Pacific at the same moment (November)', changeN('4', { tz: 'America/Los_Angeles', st: '03:30', et: '04:30' }), []);
+    expect('the team meeting at its MST clock time in Pacific (November)', changeN('2', { tz: 'America/Los_Angeles' }), ['2:Time zone']);
+    const pw = FTCalCheck.pacificTimes(KN.find(k => k.n === '3')).map(w => w.st).join(',');
+    if (pw !== '08:00') out.push(`the deposition's Pacific times in November: ${pw}, expected 08:00 alone`);
+    const fixN = FTCalCheck.check(KN.find(k => k.n === '3'), {}).find(c => c[0] === 'Start date')[2];
+    if (fixN !== 'November 4, 2026') out.push(`the deposition's date at 2026-11-02 reads ${fixN}`);
+    // the zones' offsets are the event's date's
+    const lab = (d, id) => FTCalCheck.tzOpts(d).find(z => z[0] === id)[1];
+    if (!/GMT-05:00/.test(lab('2026-11-04', 'America/New_York')) || !/GMT-04:00/.test(lab('2026-07-08', 'America/New_York')) || !/GMT-08:00/.test(lab('2026-11-02', 'America/Los_Angeles')) || !/GMT-07:00/.test(lab('2026-11-02', 'America/Phoenix')))
+      out.push(`the zones' offsets: ${lab('2026-11-04', 'America/New_York')} / ${lab('2026-07-08', 'America/New_York')} / ${lab('2026-11-02', 'America/Los_Angeles')}`);
+    if (FTCalCheck.tzOpts('2026-11-04').map(z => z[0]).join() !== FTCalCheck.zones.map(z => z[0]).join()) out.push('the zones\' options aren\'t the zones in order');
+    // a submission is scored at its snapshot's anchor (one without, July)
+    const perf = snap => (window.ftCalCheckItems({ rec: { 'calcheck:': { entries: {}, submits: [{ at: '2026-11-12T10:00:00Z', met: 0, total: 1, pct: 0, checks: [], snap }] } } })[0] || {}).pct;
+    const sN = rightN(), sJ = right(); delete sJ.anchor;
+    if (perf(sN) !== 100 || perf(sJ) !== 100 || perf(Object.assign(rightN(), { anchor: undefined })) === 100) out.push(`snapshots scored: November's ${perf(sN)}%, July's (no anchor) ${perf(sJ)}%`);
     return { out, total: full.total };
   });
   pure.out.forEach(fail);
@@ -240,10 +285,58 @@ async function workerChecks() {
   await page.fill('#cc-title-1', 'Trainer typing'); await page.waitForTimeout(1500);
   if (await get('calcheck:__preview') || await get('calcheck:null') || await get('calcheck:undefined')) fail('the 👁 Trainee view saved something');
 
+  // ---------- a trainee of batch B102626 with no records: their calendar gets the anchor 2026-11-02, and the page shows its dates ----------
+  const page2 = await browser.newPage({ viewport: { width: 1366, height: 900 } });
+  page2.on('pageerror', e => fail(`page error (B102626): ${e.message}`));
+  await page2.goto(BASE, { waitUntil: 'load' }); await page2.waitForTimeout(800);
+  await signIn(page2, 'Wynn', 'Terra', 'B102626');
+  const id2 = await page2.evaluate(() => state.traineeId);
+  const w0 = await get('trainee:' + id2); w0.approved = true; w0.archived = false; await put('trainee:' + id2, w0);
+  await put('calcheck:' + id2, null); await put('calsim:' + id2, null);
+  await page2.reload({ waitUntil: 'load' }); await page2.waitForTimeout(1500);
+  await page2.evaluate(() => goto('calcheck')); await page2.waitForTimeout(2000);
+  const cal2 = await get('calsim:' + id2);
+  // (the Check reads the calendar record, never writes it: js/ft-calendar.js is its one writer, so a draft saved meanwhile is safe)
+  if (cal2) fail(`the Check wrote the B102626 trainee's calendar record: ${JSON.stringify(cal2)}`);
+  const nov = await page2.evaluate(() => ({ dates: (document.querySelector('.cc-dates') || {}).innerText || '', res: (document.querySelector('[data-res="1"]') || {}).innerText || '',
+    ny: ([...document.querySelectorAll('#cc-tz-3 option')].find(o => o.value === 'America/New_York') || {}).textContent || '', anchor: FTCalCheck.state().rec && FTCalCheck.state().rec.anchor }));
+  if (nov.anchor !== '2026-11-02' || !/November 2 to 11, 2026/.test(nov.dates) || !/November 2, 2026/.test(nov.res) || /July/.test(nov.res) || !/GMT-05:00/.test(nov.ny)) fail(`the B102626 trainee's page: ${JSON.stringify(nov)}`);
+  // typed at November's dates, the event checks right; the draft and its submission keep the anchor
+  await page2.fill('#cc-title-1', 'Client Meeting'); await page2.fill('#cc-sd-1', '2026-11-02'); await page2.fill('#cc-st-1', '10:00'); await page2.fill('#cc-ed-1', '2026-11-02'); await page2.fill('#cc-et-1', '11:00');
+  await page2.selectOption('#cc-tz-1', 'America/Los_Angeles'); await page2.waitForTimeout(300);
+  if (!/^[5-9]\/12$/.test(await page2.evaluate(() => document.querySelector('[data-sc="1"]').innerText)) || /✗\s*(Start|End) (date|time)/.test(await page2.evaluate(() => document.querySelector('[data-res="1"]').innerText))) fail('November\'s dates typed in aren\'t right on the B102626 trainee\'s page');
+  await page2.click('text=📤 Submit to my trainer'); await page2.waitForTimeout(1500);
+  const rec2 = await get('calcheck:' + id2), s2 = rec2 && (rec2.submits || [])[0];
+  if (!rec2 || rec2.anchor !== '2026-11-02' || !s2 || !s2.snap || s2.snap.anchor !== '2026-11-02' || !s2.checks.some(c => c[0] === '1' && c[1] === 'Start date' && c[2] === true)) fail(`the B102626 trainee's record or submission lost the anchor: ${JSON.stringify(rec2 && { anchor: rec2.anchor, snap: s2 && s2.snap && s2.snap.anchor })}`);
+  // a reload keeps it (read from the calendar record, not worked out again)
+  await page2.reload({ waitUntil: 'load' }); await page2.waitForTimeout(1500); await page2.evaluate(() => goto('calcheck')); await page2.waitForTimeout(1500);
+  if (await page2.evaluate(() => FTCalCheck.state().rec && FTCalCheck.state().rec.anchor) !== '2026-11-02') fail('the anchor didn\'t come back after a reload');
+  // a Check record from before anchors, once its July anchor is kept, stays at July even when the calendar record has the
+  // batch's anchor (its entries were typed against July)
+  await put('calcheck:' + id2, { entries: { 1: { sd: '2026-07-06', st: '10:00' } }, submits: [], anchor: '2026-07-06' });
+  await put('calsim:' + id2, { v: 2, anchors: { 'attorney-activity': '2026-11-02' }, drafts: {}, autos: [], submissions: [], reviews: {}, external: [] });
+  await page2.reload({ waitUntil: 'load' }); await page2.waitForTimeout(1500); await page2.evaluate(() => goto('calcheck')); await page2.waitForTimeout(2000);
+  if (await page2.evaluate(() => FTCalCheck.state().rec && FTCalCheck.state().rec.anchor) !== '2026-07-06') fail('a July Check record moved to the calendar record\'s anchor');
+  // the Calendaring Simulator never saves over a calendar record it couldn't read (a failed read isn't an empty record)
+  const keep = { v: 2, anchors: {}, drafts: { 'attorney-activity': [{ id: 'k1', title: 'Client Meeting', date: '2026-07-06', allDay: false, span: 1, start: 600, dur: 60, tz: 'America/Los_Angeles' }] }, autos: [], submissions: [], reviews: {}, external: [] };
+  await put('calsim:' + id2, keep);
+  await page2.route('**/api/storage/get', async route => { const b = route.request().postData() || ''; if (/calsim:/.test(b)) return route.fulfill({ status: 503, body: 'down' }); return route.continue(); });
+  await page2.evaluate(() => goto('calsim', 'attorney-activity')); await page2.waitForTimeout(3000);
+  await page2.unroute('**/api/storage/get');
+  const keptRec = await get("calsim:" + id2);
+  if (!keptRec || !keptRec.drafts || !(keptRec.drafts["attorney-activity"] || []).length || (keptRec.anchors && keptRec.anchors["attorney-activity"])) fail(`a failed read of the calendar record was saved over it: ${JSON.stringify(keptRec)}`);
+  await page2.close();
+  await put('calcheck:' + id2, null); await put('calsim:' + id2, null);
+  const w2 = await get('trainee:' + id2); w2.archived = true; await put('trainee:' + id2, w2);
+
+  // 👁 the trainer's preview shows the dates a batch starting this week would get, and saves none
+  const pvDates = await page.evaluate(() => ({ a: FTCalCheck.state().rec && FTCalCheck.state().rec.anchor, now: FTCalCore.act.anchorNow(), txt: (document.querySelector('.cc-dates') || {}).innerText || '' }));
+  if (pvDates.a !== pvDates.now || !/batch starting this week/.test(pvDates.txt)) fail(`the 👁 Trainee view's dates: ${JSON.stringify(pvDates)}`);
+
   for (const x of [forged, broken]) { await put('calcheck:' + x.id, null); await put('trainee:' + x.id, Object.assign(x, { archived: true })); }
-  await put('calcheck:' + id, null);
+  await put('calcheck:' + id, null); await put('calsim:' + id, null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Calendar Activity Check test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log(`Calendar Activity Check test passed (the answer key at 100% over ${pure.total} fields; a wrong zone, time, guest and reminder each fail just that field; Phoenix, Panama, Regina, 24 hours, 60 minutes, the overnight stay and a travel reminder on either event accepted; flights the wrong way round fail; the folder lookup, tied times not counted as in order; a failed read keeps the draft; HTML and broken records kept out of the trainer's tab, which rescores the snapshot; the 👁 Trainee view; the draft saved and reloaded, sent, on My Performance and the trainer's tab; the Day 5 slide, its tile and the Practice Lab; a phone's width; the worker's rules).`);
+  console.log(`Calendar Activity Check test passed (the answer key at 100% over ${pure.total} fields; a wrong zone, time, guest and reminder each fail just that field; Phoenix, Panama, Regina, 24 hours, 60 minutes, the overnight stay and a travel reminder on either event accepted; flights the wrong way round fail; the folder lookup, tied times not counted as in order; a failed read keeps the draft; HTML and broken records kept out of the trainer's tab, which rescores the snapshot; the 👁 Trainee view; the draft saved and reloaded, sent, on My Performance and the trainer's tab; the Day 5 slide, its tile and the Practice Lab; a phone's width; the worker's rules; and at the anchor 2026-11-02: the key 17 weeks on at 100%, standard time (9:00 AM Pacific for the 11:00 AM EST deposition not accepted), the date's own offsets, a snapshot scored at its anchor, and a B102626 trainee's calendar given 2026-11-02).`);
 })().catch(e => { console.error(e); process.exit(1); });

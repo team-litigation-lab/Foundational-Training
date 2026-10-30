@@ -4,7 +4,7 @@
 //   - every mock call and demo is Day 4's: a trainee sees only Mock Calls Ongoing (or Demos Ongoing) and Done, its
 //     instructions and metrics on the preparation slide before it (Days 8 and 9); on Day 6's Calendar Management mock
 //     calls (s1b-2) Done is confirmed in a dialog (Cancel keeps them there), then ✅ Done and the wait for the debrief; a
-//     buffer slide (Day 5) and a demo (Day 8) get their own screens; other slides get none;
+//     buffer slide (Day 9), Day 5's Monitoring Sheet update and a demo (Day 8) get their own screens; other slides get none;
 //   - the trainer, on the same slide: Completed X / N, Waiting / Done per trainee, Start Group Debrief locked until all
 //     are done, Mark done, the 🎉 banner, the release (the trainee's slide moves on by itself), 📋 Score into
 //     Trainer Inputs and back.

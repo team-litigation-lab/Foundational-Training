@@ -99,33 +99,43 @@ function piParts(){
 }
 /* 📅 Day 5's Attorney Calendar Management Activity, its own words on the slide: its Instructions (1–9, the colour legend,
    the guests' e-mails) and its ten Activity Items, from build/days/attorney-calendar-activity.txt (word for word as the
-   trainer gave them). Each item is one block, so a page turns between items, never inside a short one. */
+   trainer gave them), as sixteen cards (calItems). Each card is one block, so a page turns between cards, never inside one. */
 const CAL_TEXT = path.join(R, "build/days/attorney-calendar-activity.txt");
 // (Google Calendar's own colours for the legend's names)
 const CAL_COLORS = {Green: "#0B8043", Blue: "#039BE5", Red: "#D50000", Purple: "#8E24AA", Yellow: "#F6BF26", Orange: "#F4511E", Pink: "#E67C73"};
-// Day 5's ten Activity Items, a card each, five to a slide (ROWS[5].s3 cuts them at each group's head: CAL_HEAD), each
-// slide opening on the link to the Calendar Simulator's Attorney's Calendar, where the activity is done (the link and the
-// cards one block, ftdd-cal-set, so they share a page)
-const CAL_GROUPS = [[1, 5], [6, 10]];
+// Day 5's Activity Items as sixteen cards, four to a slide (ROWS[5].s3 cuts them at each group's head: CAL_HEAD): an item a
+// card, and its own blocks cards of their own beside it (6's two travel blocks; 8's four parts of the trip, each ➢), so no
+// card runs long. Each slide opens on the link to the Calendar Simulator's Attorney's Calendar, where the activity is done
+// (the link and the cards one block, ftdd-cal-set, so they share a page). CAL_CARDS: the cards' labels, in the items' order
+const CAL_CARDS = ["1", "2", "3", "4", "5", "6", "6a", "6b", "7", "8", "8a", "8b", "8c", "8d", "9", "10"];
+const CAL_GROUPS = [[0, 4], [4, 8], [8, 12], [12, 16]];
+const calRange = ([a, b]) => `${CAL_CARDS[a]}–${CAL_CARDS[b - 1]}`;
 const CALSIM_ACTIVITY = {label: "📅 Open the Calendar Simulator: the Attorney’s Calendar", href: "#/calsim/attorney-activity"};
-const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${a}-${b}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a></div>\n`;
+const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a></div>\n`;
+// 6's travel blocks: their cards' names (the guide's own lines under "Travel Blocks:")
+const CAL_BLOCKS = [[/for travel to court\.$/, "Travel Block: to court"], [/for return travel\.$/, "Travel Block: return"]];
+// "July 06, 2026": the activity's date, marked with its day so the slide shows it moved to the trainee's own weeks
+// (js/ft-day-decks.js calDates; FTCalCore.act: its dates are the ones written for Mon July 6, 2026)
+const CAL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const calDate = t => t.replace(/\b([A-Z][a-z]+) (\d{2}), (\d{4})\b/g, (all, mo, d, y) => { const i = CAL_MONTHS.indexOf(mo); if(i < 0) return all;
+  return `<span class="ftdd-cal-date" data-cal-date="${y}-${String(i + 1).padStart(2, "0")}-${d}">${all}</span>`; });
 
 function calItems(html){
-  const items = html.split('<div class="ftdd-cal-item">').slice(1).map(x => '<div class="ftdd-cal-item">' + x);
-  if(items.length !== 10 || html.indexOf('<div class="ftdd-cal-item">') !== 0) throw new Error(`Day 5's Activity Items are no longer the ten cards the build expects: ${items.length}`);
-  // (an item with a travel schedule, more than twice the usual lines, takes two columns of the row: ftdd-cal-wide)
-  const wide = x => (x.match(/<p class="li"/g) || []).length > 12;
-  return CAL_GROUPS.map(([a, b]) => { const its = items.slice(a - 1, b);
-    return CAL_HEAD([a, b]) + `<div class="ftdd-cal-grid" style="--n:${its.length + its.filter(wide).length}">\n` +
-      its.map(x => wide(x) ? x.replace('<div class="ftdd-cal-item">', '<div class="ftdd-cal-item ftdd-cal-wide">') : x).join("") + "</div></div>\n"; }).join("");
+  const items = html.split('<div class="ftdd-cal-item"').slice(1).map(x => '<div class="ftdd-cal-item"' + x), lbls = items.map(x => (x.match(/^<div class="ftdd-cal-item" data-card="([^"]+)">/) || [])[1]);
+  if(lbls.join() !== CAL_CARDS.join() || html.indexOf('<div class="ftdd-cal-item"') !== 0) throw new Error(`Day 5's Activity Items are no longer the sixteen cards the build expects: ${lbls.join()}`);
+  return CAL_GROUPS.map(([a, b]) => CAL_HEAD([a, b]) + `<div class="ftdd-cal-grid" style="--n:${b - a}">\n` + items.slice(a, b).join("") + "</div></div>\n").join("");
 }
 function calActivity(){
   const lines = fs.readFileSync(CAL_TEXT, "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
   const li = (lvl, lbl, html) => `<p class="li" style="--lvl:${lvl}"><span class="lbl">${lbl}</span><span>${html}</span></p>\n`;
-  // "Date: July 06, 2026": its label in bold
-  const lab = t => { const m = t.match(/^([A-Z][A-Za-z’' -]{0,50}):\s*(.*)$/); return m ? `<b>${hx(m[1])}:</b>${m[2] ? " " + hx(m[2]) : ""}` : hx(t); };
-  let part = "", out = "", item = null, lvl = 0, steps = 0, items = 0, m;
-  const close = () => { if(item != null) out += item + "</div>\n"; item = null; };
+  // "Date: July 06, 2026": its label in bold (and its date marked: calDate)
+  const lab = t => { const m = t.match(/^([A-Z][A-Za-z’' -]{0,50}):\s*(.*)$/); return m ? `<b>${hx(m[1])}:</b>${m[2] ? " " + (m[1] === "Date" ? calDate(hx(m[2])) : hx(m[2])) : ""}` : hx(t); };
+  // a card: an item, or one of its blocks (sub: named after its item, and showing the item's Date line when it has none)
+  let part = "", out = "", card = null, it = null, lvl = 0, steps = 0, items = 0, subs = 0, blocks = false, m;
+  const close = () => { if(card == null) return;
+    const ctx = card.sub && !card.dated && it.date ? `<p class="li ftdd-cal-ctx" style="--lvl:0"><span class="lbl">•</span><span><b>Date:</b> ${calDate(hx(it.date))}${it.tz ? " · " + hx(it.tz) : ""}</span></p>\n` : "";
+    out += `<div class="ftdd-cal-item" data-card="${card.lbl}">\n<p class="ftdd-cal-h"><b>${hx(card.h)}</b></p>\n` + ctx + card.body + "</div>\n"; card = null; };
+  const sub = h => { close(); card = {lbl: it.n + "abcd"[subs++], h: `${it.n}. ${it.title} · ${h}`, sub: true, dated: false, body: ""}; };
   for(const l of lines){
     if(l === "Instructions:"){ part = "ins"; out += "<h3>Instructions</h3>\n"; continue; }
     if(l === "Activity Items:"){ part = "items"; out += "<h3>Activity Items</h3>\n"; continue; }
@@ -139,11 +149,21 @@ function calActivity(){
       out += li(1, "", hx(l)); continue;   // (the example under 8)
     }
     if(part !== "items") throw new Error(`Day 5's activity text has a line before its Instructions: ${l}`);
-    if((m = l.match(/^(\d+)\.\s+(.*)$/))){ close(); items++; lvl = 0; item = `<div class="ftdd-cal-item">\n<p class="ftdd-cal-h"><b>${m[1]}. ${hx(m[2])}</b></p>\n`; continue; }
-    if(item == null) throw new Error(`Day 5's activity has a line before its first item: ${l}`);
-    // • a detail; ➢ a part of the trip; ▪ its date, time or note; - a time under the line before
-    if((m = l.match(/^([•➢▪])\s*(.*)$/))){ lvl = {"•": 0, "➢": 1, "▪": 2}[m[1]]; item += li(lvl, m[1], lab(m[2])); continue; }
-    if((m = l.match(/^-\s*(.*)$/))){ item += li(lvl + 1, "-", hx(m[1])); continue; }
+    if((m = l.match(/^(\d+)\.\s+(.*)$/))){ close(); items++; lvl = 0; subs = 0; blocks = false; it = {n: m[1], title: m[2], date: "", tz: ""};
+      card = {lbl: m[1], h: `${m[1]}. ${m[2]}`, sub: false, body: ""}; continue; }
+    if(card == null) throw new Error(`Day 5's activity has a line before its first item: ${l}`);
+    // • a detail; ➢ a part of the trip (a card of its own); ▪ its date, time or note; - a time under the line before
+    // (under 6's "Travel Blocks:", each - is a travel block: a card of its own)
+    if((m = l.match(/^•\s*(.*)$/)) && !card.sub){ lvl = 0; blocks = m[1] === "Travel Blocks:";
+      if((m = m[1].match(/^Date:\s*(.*)$/))) it.date = m[1];
+      const tm = l.match(/^•\s*Time:.*\s(PST|MST|CST|EST)$/); if(tm) it.tz = tm[1];
+      card.body += li(0, "•", lab(l.replace(/^•\s*/, ""))); continue; }
+    if((m = l.match(/^➢\s*(.*?):?$/))){ blocks = false; sub(m[1]); lvl = 0; continue; }
+    if((m = l.match(/^▪\s*(.*)$/)) && card.sub){ lvl = 0; if(/^Date:/.test(m[1])) card.dated = true; card.body += li(0, "▪", lab(m[1])); continue; }
+    if((m = l.match(/^-\s*(.*)$/))){
+      if(blocks){ const b = CAL_BLOCKS.find(([re]) => re.test(m[1])); if(!b) throw new Error(`Day 5's activity has a travel block the build doesn't name: ${l}`);
+        sub(b[1]); card.body += li(0, "-", hx(m[1])); continue; }
+      card.body += li(lvl + 1, "-", hx(m[1])); continue; }
     throw new Error(`Day 5's activity has a line the build doesn't read: ${l}`);
   }
   close();
@@ -243,10 +263,10 @@ const TRIM = {1: {reading: html => {
   if(html.trim() !== line) throw new Error("Day 5's Buffer Time is no longer the one line the build expects");
   return "";
 },
-// Day 5's Attorney Calendar Management Activity: the activity's own text (its Instructions and its ten Activity Items) read
-// on the slide, with the hook for the Calendar Simulator; then the activity file and samples, and three cards (the time
-// zone, the whole calendar, the upload), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b"). ROWS[5].s3 cuts it
-// at the second trainer slot: s3 (read like Day 1's reading), s3b.
+// Day 5's Attorney Calendar Management Activity: the activity's own text, its Instructions as two cards and its ten
+// Activity Items as sixteen cards (calItems), four under each Calendar Simulator's link (CAL_HEAD); then the activity file and samples, and three
+// cards (the time zone, the whole calendar, the upload), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b").
+// ROWS[5].s3 cuts it into s3 (the Instructions), s3i–s3l (the cards 1–4, 5–6b, 7–8b, 8c–10) and s3b (from the second trainer slot).
 s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
   // the activity itself and its samples folder show in the slide (data-embed, js/ft-day-decks.js visual), under the instruction
@@ -276,13 +296,13 @@ s3: html => {
   // it is checked against the activity's answer key; the tile does nothing where that module isn't loaded
   const check = '<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-interactive" onclick="window.FTCalCheck ? goto(\'calcheck\') : 0"><span class="ftdd-tile-ic">📅</span>' +
     '<span class="ftdd-tile-t"><b>Calendar Activity Check</b><small>Check each event against the activity before you upload →</small></span></button></div>\n';
-  // its Instructions and Activity Items; the activity and the samples themselves, full size; the cards stand one under the other (not a grid), so a long one turns the page cleanly
+  // after the items: the activity and the samples themselves, full size, then the three cards one under the other (not a
+  // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
   // (the activity's Instructions on one slide, as two cards side by side: 1–4 and 5–9; its ten Activity Items on the next
-  // two, a card each: calItems. The "1. The activity" card is off: Done is at the end of the slides)
+  // four, sixteen cards: calItems. The "1. The activity" card is off: Done is at the end of the slides)
   const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), five = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">5.</span>');
   if(at < 0 || five < 0 || five > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
-  const ins = text.slice(0, at).replace("<h3>Instructions</h3>\n", "");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
     '<div class="ftdd-cards2">' + card("📋", "Instructions 1–4", text.slice(0, five).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 5–9", text.slice(five, at)) + "</div>\n" +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
@@ -785,12 +805,12 @@ const ROWS = {
       {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [[MOCK_WARM_AT, null]]}]
   },
   5: {
-    // the activity's own words, read like Day 1's reading; then its files, the time zone, the screenshots and ✅ Done
-    // (the Instructions as two cards, then the ten Activity Items a card each, five to a slide, each slide with the link to
+    // the activity's own words; then its files, the time zone, the screenshots and ✅ Done
+    // (the Instructions as two cards, then the Activity Items as sixteen cards, four to a slide, each slide with the link to
     // the Calendar Simulator's Attorney's Calendar: CAL_HEAD)
     s3: [{id: "s3", h: "Attorney Calendar Management Activity: Instructions", parts: [[null, CAL_HEAD(CAL_GROUPS[0])]]},
-      {id: "s3i", h: "Attorney Calendar Management Activity: Activity Items 1–5", parts: [[CAL_HEAD(CAL_GROUPS[0]), CAL_HEAD(CAL_GROUPS[1])]]},
-      {id: "s3j", h: "Attorney Calendar Management Activity: Activity Items 6–10", parts: [[CAL_HEAD(CAL_GROUPS[1]), SLOT(5, "s3-2")]]},
+      ...["s3i", "s3j", "s3k", "s3l"].map((id, i) => ({id, h: "Attorney Calendar Management Activity: Activity Items " + calRange(CAL_GROUPS[i]),
+        parts: [[CAL_HEAD(CAL_GROUPS[i]), i + 1 < CAL_GROUPS.length ? CAL_HEAD(CAL_GROUPS[i + 1]) : SLOT(5, "s3-2")]]})),
       {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone, Screenshots & Upload", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
