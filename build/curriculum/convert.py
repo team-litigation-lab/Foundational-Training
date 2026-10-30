@@ -409,6 +409,14 @@ TEXT_FIXES = [
     ('<h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4>\n', ""),
     ('<div class=\\"trainer-slot\\" data-slot=\\"11:s1-4\\"></div>\\n', ""),
     ('  "11:s1-4": "<div class=\\"facilitator\\"><h4>Facilitator’s Note 4: Send these additional reminders to the training GC.</h4></div>",\n', ""),
+    # GEICO in capitals; LOR samples in the convention's mm.dd.yy; Day 13's buffer is for Day 12's LOR demo (there is no
+    # LOR drafting demo); the Filevine demo recordings kept as reference only; a link's text cut short in the guide
+    ("<p>Geico</p>", "<p>GEICO</p>"),
+    ("LOR 02.17.2026 (Michelle)", "LOR 02.17.26 (Michelle)"),
+    ("LOR with Affidavit 02.17.2026 (Michelle)", "LOR with Affidavit 02.17.26 (Michelle)"),
+    ("Buffer Time (1–2 hrs) for LOR Drafting Demo", "Buffer Time (1–2 hrs) for the Saving and Sending 1P &amp; 3P LORs Demo"),
+    (" using Filevine:", " (Filevine, for reference only; use SmartAdvocate):"),
+    ("1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=dri</a>", "1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=drive_link</a>"),
 ]
 def apply_fixes(path):
     body = open(path, encoding="utf8").read()

@@ -101,6 +101,16 @@ function parseRange(s){
   let y1 = yr(m[3]) || y, y2 = yr(m[6]) || y1; if(!m[3] && Number(m[1]) > Number(m[4])) y1 = y2 - 1;
   return [`${y1}-${p(m[1])}-${p(m[2])}`, `${y2}-${p(m[4])}-${p(m[5])}`];
 }
+// ⤓ Fill's week: the dates a column of the report names (the Spelling & Typing column's "9/28 to 10/06"), else the batch's
+// own week N: a Batch ID is the day it started (B + MMDDYY), and week N is the seven days from start + 7 × (N − 1)
+function weekRange(){
+  const named = R.data.cols.map(c => parseRange(c.sub)).find(Boolean); if(named) return named;
+  const startOf = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); return m ? `20${m[3]}-${m[1]}-${m[2]}` : null; };
+  const start = [R.batch].concat(people().map(p => p.batch)).map(startOf).find(Boolean); if(!start) return null;
+  const t = Date.parse(start + "T00:00:00Z") + (R.week - 1) * 7 * 864e5, iso = ms => new Date(ms).toISOString().slice(0, 10);
+  return [iso(t), iso(t + 6 * 864e5)];
+}
+const PERIODS = [["all", "Whole training"], ["week", "This week only"]];
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
@@ -122,27 +132,36 @@ async function fillFromPortal(){
     ppl.forEach(p => S.forEach(s => want.push(s.key + p.id)));
     const vals = await sharedGetMany(want.concat(shared)), sh = {};
     shared.forEach((k, i) => { sh[k] = vals[want.length + i] || null; });
-    let n = 0;
+    // (a column set to "This week only": the grades dated in the week, weekRange; the daily tracker counts that week's days)
+    const range = cols.some(c => c.period === "week") ? weekRange() : null;
+    if(cols.some(c => c.period === "week") && !range) toast("The week’s dates aren’t known: put them in the Spelling & Typing column (✎ Columns), e.g. 9/28 to 10/06. The weekly columns weren’t filled.");
+    const inWeek = x => !!(range && x.at && String(x.at).slice(0, 10) >= range[0] && String(x.at).slice(0, 10) <= range[1]);
+    let n = 0, undated = 0;
     ppl.forEach((p, i) => {
       const rec = {}; S.forEach((s, j) => { rec[s.key] = vals[i * S.length + j] || null; });
       const sc = lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since});
+      const scW = range ? lshProgram.compute({id: p.id, progress: p.progress, rec, shared: sh, since: p.since, range}) : null;
       const row = rowOf(p.id);
       cols.forEach(c => {
         const cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;          // never over what the trainer typed
+        const week = c.period === "week"; if(week && !scW) return;
         const [sid, words] = [c.src.split(":")[0], c.src.split(":").slice(1).join(":").trim()];
-        const src = sc.rows.find(r => r.s.id === sid); if(!src) return;
+        const src = (week ? scW : sc).rows.find(r => r.s.id === sid); if(!src) return;
+        // this week's: only the grades dated in it (a source that keeps no dates can't say which week a grade was)
+        const items = week ? src.items.filter(inWeek) : src.items;
+        if(week && src.items.some(x => typeof x.pct === "number" && !x.at)) undated++;
         let pct = null, mark5 = null;
-        if(!words) pct = src.avg;
+        if(!words){ const g = items.filter(x => typeof x.pct === "number" && isFinite(x.pct)); pct = week ? (g.length ? Math.round(g.reduce((a, x) => a + x.pct, 0) / g.length) : null) : src.avg; }
         else {
           // the item named so first (the Monitoring Sheet itself, not "Monitoring Sheet items #5, #7"), else the first that
           // names the words
-          const w = words.toLowerCase(), graded = src.items.filter(x => typeof x.pct === "number"), nm = x => String(x.name).toLowerCase();
+          const w = words.toLowerCase(), graded = items.filter(x => typeof x.pct === "number"), nm = x => String(x.name).toLowerCase();
           const it = graded.find(x => nm(x) === w || nm(x).endsWith(" " + w) || nm(x).startsWith(w + " ·")) || graded.find(x => nm(x).includes(w));
           pct = it ? it.pct : null; mark5 = it && typeof it.mark5 === "number" ? it.mark5 : null;
         }
         if(pct == null) return;
         const max = num(c.max) || 5;
-        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), auto: true}); n++;
+        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), auto: true, period: week ? "week" : "all"}); n++;
       });
     });
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
@@ -158,7 +177,8 @@ async function fillFromPortal(){
       });
     }
     if(n) save();
-    toast(n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.");
+    toast((n ? `⤓ Filled ${n} empty score${n === 1 ? "" : "s"} from the platform${range ? ` (this week: ${range[0]} to ${range[1]})` : ""}. Check them before you send the report.` : "Nothing new to fill: the platform has no grade yet for the empty cells.")
+      + (undated ? " Some weekly columns’ sources keep no dates (Knowledge Checks, graded calls, games), so only their dated grades were counted." : ""));
   }catch(err){ toast("Couldn’t read the trainees’ grades. Try again."); }
   R.fill = false; rerender();
 }
@@ -230,7 +250,8 @@ function columnsEditor(){
       <input value="${e(c.label)}" placeholder="Column name" onchange="FTRanking.col(${i}, 'label', this.value)">
       <input class="rk-sub" value="${e(c.sub)}" placeholder="Dates or items (e.g. 9/28 to 10/06)" onchange="FTRanking.col(${i}, 'sub', this.value)">
       ${c.type === "score" ? `<label class="rk-max">out of <input type="number" min="1" step="any" value="${e(c.max)}" onchange="FTRanking.col(${i}, 'max', this.value)"></label>
-      <select title="Where ⤓ Fill takes this column's score from" onchange="FTRanking.col(${i}, 'src', this.value)">${opts.map(o => `<option value="${e(o[0])}"${(c.src || "") === o[0] ? " selected" : ""}>${e(o[1])}</option>`).join("")}</select>`
+      <span class="rk-src"><select title="Where ⤓ Fill takes this column's score from" onchange="FTRanking.col(${i}, 'src', this.value)">${opts.map(o => `<option value="${e(o[0])}"${(c.src || "") === o[0] ? " selected" : ""}>${e(o[1])}</option>`).join("")}</select>
+        ${c.src ? `<select title="⤓ Fill: this week's grades only, or the whole training's" onchange="FTRanking.col(${i}, 'period', this.value)">${PERIODS.map(o => `<option value="${o[0]}"${(c.period || "all") === o[0] ? " selected" : ""}>${o[1]}</option>`).join("")}</select>` : ""}</span>`
       : `<span></span><select title="Where ⤓ Fill takes this column's notes from" onchange="FTRanking.col(${i}, 'src', this.value)"><option value="">Typed by the trainer</option><option value="skills"${c.src === "skills" ? " selected" : ""}>🧪 Typing & Spelling log (the column’s dates)</option></select>`}
       <span class="rk-col-ad"><button class="btn btn-ghost btn-sm" title="Move left" ${i ? "" : "disabled"} onclick="FTRanking.moveCol(${i}, -1)">←</button><button class="btn btn-ghost btn-sm" title="Remove the column" onclick="FTRanking.delCol(${i})">🗑</button></span></div>`).join("")}
     <div class="rk-acts"><button class="btn btn-ghost btn-sm" onclick="FTRanking.addCol('score')">➕ Score column</button><button class="btn btn-ghost btn-sm" onclick="FTRanking.addCol('notes')">➕ Notes column</button>
@@ -524,6 +545,7 @@ ftAdminTab("ranking", "📊 Weekly Ranking", renderRanking);
 .rk-col{display:grid;grid-template-columns:150px minmax(140px,1.4fr) minmax(140px,1fr) 110px minmax(150px,1fr) auto;gap:6px;align-items:center;margin-bottom:6px;}
 .rk-col input,.rk-col select{padding:5px 8px;border:1px solid #D5DAE5;border-radius:7px;font:inherit;font-size:13px;min-width:0;}
 .rk-max{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-soft);}
+.rk-src{display:flex;flex-direction:column;gap:4px;} .rk-src select{width:100%;}
 .rk-max input{width:64px;}
 .rk-col-ad{display:flex;gap:4px;}
 /* the sheet: Excel's look — column letters, row numbers, gridlines, a formula bar, the header row and names frozen */

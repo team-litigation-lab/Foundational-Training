@@ -683,15 +683,16 @@ window.ftSessionItems = ctx => {
   // until the trainer reviews it; a session started again (not submitted yet) keeps the trainer's score of the last attempt
   return Object.entries(runs).filter(([k, v]) => v && (v.submittedAt || tScore(rv[k]) != null)).map(([k, v]) => { const [sid, mc] = k.split("|"), s = sessionById(sid);
     const t = tScore(forRun(v, rv[k])), name = (s ? s.title : sid) + (mc !== "-" ? " · " + mc : "");
-    if(t != null) return {name, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet"};
-    return {name, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer"}; });
+    const at = (rv[k] && rv[k].at) || v.submittedAt || "";
+    if(t != null) return {name, at, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet"};
+    return {name, at, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer"}; });
 };
 window.ftTrainerItems = ctx => {
   const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
   return list.filter(a => mine[a.id] && mine[a.id].status).map(a => { const r = mine[a.id], t = tScore(r);
     // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
     const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
-    return {name:a.title, pct:t != null ? t : r.status === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
+    return {name:a.title, at:r.at || "", pct:t != null ? t : r.status === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `
