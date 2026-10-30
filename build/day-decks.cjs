@@ -1040,8 +1040,9 @@ const ROWS = {
   },
   13: {
     // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
-    s3: [{id: "s3", h: "PM: Breakout Session & Document Detectives Exercise", parts: [[null, "<p><b>HIPAA Certificate Task</b></p>"]], post: UPSKILL + "\n"},
-      {id: "s3b", h: "HOMEWORK: HIPAA Training 101", parts: [["<p><b>HIPAA Certificate Task</b></p>", null]], fix: [[UPSKILL, ""],
+    // (the breakout itself is the Call Listening slide's, "Call Listening Session / Breakout Session": its own slide held only the
+    // reference files, now off it, so the section is the homework's slide, with the facilitators' notes)
+    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""],
         ['<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n',
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },
@@ -1164,8 +1165,8 @@ function stripLessonDeck(h, html, note = LESSON_NOTE){
 const EXERCISE = /<p>(?:<b>)?\s*[^<]*Exercise\s*(?:<\/b>)?<\/p>\n<div class="canva-frame" id="([^"]+)">[\s\S]*?<\/iframe><\/div><div class="actions">[\s\S]*?data-fullscreen="\1"[\s\S]*?<\/div><\/div>\n?/g;
 // a slide that keeps more than its exercise: its new name (and a fix to what it keeps)
 const EX_RENAME = {
-  // (Day 13: the breakout's Process Questions pointer, its sample recordings and documents, the communication upskill)
-  13: {s3: {h: "PM: Breakout Session"}}};
+  // (Day 13: the breakout's section keeps only the HIPAA homework: the breakout is the Call Listening slide's)
+  13: {s3: {h: "HOMEWORK: HIPAA Training 101"}}};
 // the mock calls and demos laid out as Day 4's: the preparation slide's id (the activity's + "p") and title
 const PREP = {
   8: {s3: "PM: Demo Preparation: Saving the Intake Packet and Extracted Intake Documents to SA"},

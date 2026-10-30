@@ -1448,9 +1448,8 @@ const LESSON_CARDS = {
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
       {t: "Buffer Time for the LOR Drafting Demo", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
-      {t: "Call Listening on the Provider Recordings", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
-      {t: "Breakout Session", sub: "Sample recordings & documents · the communication upskill", k: "interactive", d: 13, s: "s3"},
-      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3b"},
+      {t: "Call Listening / Breakout Session", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
+      {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
       {t: "Notes for Your Work Guide", sub: "Tools, naming, HIPAA & MedLOR, subject line", k: "read", d: 14, s: "s1b"},
       {t: "Sample Process Guide: the First 5 Steps", sub: "Matter, task, client details, DOL", k: "read", d: 14, s: "s1c"},
