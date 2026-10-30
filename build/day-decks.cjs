@@ -231,8 +231,9 @@ const TRIM = {1: {reading: html => {
   const url = re => `<p class="url-list ftdd-sa-kb">${tag(new RegExp(`<a [^>]*${re}[^>]*>[^<]*<\\/a>`))}</p>\n`;
   const win = url("71237633"), mac = url("876020096");
   const img = (f, alt, cap) => { if(!fs.existsSync(path.join(R, "ft/day1/img", f))) throw new Error("Day 1's Installation of SA is missing " + f);
-    // (?v: the screenshots were redrawn 3× sharper, the address changes so browsers fetch them anew)
-    const u = `/ft/day1/img/${f}${/^sa-/.test(f) ? "?v=3x" : ""}`;
+    // (?v: the screenshots were redrawn 3× sharper, the address changes so browsers fetch them anew; 7, 8, 15 and 16
+    // were redrawn again, sharp: 8 shot from the knowledge base page itself)
+    const u = `/ft/day1/img/${f}${/^sa-(07|08|15|16)\./.test(f) ? "?v=4" : /^sa-/.test(f) ? "?v=3x" : ""}`;
     return `  <figure><a href="${u}" target="_blank"><img src="${u}" alt="${alt}" loading="lazy"></a>${cap != null ? `<figcaption>${cap}</figcaption>` : ""}</figure>\n`; };
   const sa = n => `sa-${String(n).padStart(2, "0")}.png`;
   // a row of a step's screenshots, numbered from `first` under each (no number: `first` null)
