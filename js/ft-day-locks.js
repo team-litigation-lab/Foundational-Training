@@ -367,12 +367,16 @@ function held(l, kind){
   const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || stepOpen(x.n, x.k)) return false;
   toast(lockMsg(x.n, x.k)); return true;
 }
-// is a lesson's stop open to this trainee by its step (no toast: a slide asks while it draws)? null where the steps don't
-// hold them (not a trainee, the locks not in force, the day not held, or no such stop), so the caller keeps its own rule
+// is a lesson's stop open to this trainee, as the trainer's slide shows it (🔓 Open to trainees / 🔒 Locked for trainees)? No
+// toast: a slide asks while it draws. Locked only while its segment is: the lesson not open for the batch, or the day held
+// step by step and the segment not unlocked yet; open on a day the steps don't hold (a batch already under way when the
+// locks began, the locks not in force yet, a day the trainee has finished). null where nothing is known yet (not a trainee,
+// the decks or the open lessons not loaded, no such stop), so the caller keeps its own rule
 function stopOpen(l, kind){
-  if(!isTrainee() || !enforced() || !decksIn()) return null;
-  l = Number(l); const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || !active(x.n)) return null;
-  return stepOpen(x.n, x.k);
+  if(!isTrainee() || !decksIn() || !state.ftOpenDays) return null;
+  l = Number(l); const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x) return null;
+  if(!dayStarted(x.n)) return false;
+  return !active(x.n) || stepOpen(x.n, x.k);
 }
 // retry fn once the decks are in (or say they couldn't load)
 const later = fn => { loadDecks().then(x => x ? fn() : toast(NOLOAD)); };
