@@ -272,7 +272,10 @@ s3: html => {
   // the activity itself and its samples folder show in the slide (data-embed, js/ft-day-decks.js visual), under the instruction
   const act = [["1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP", "The Attorney Calendar Management Activity"], ["1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW", "Samples"]]
     .reduce((h, [id, t]) => { const re = new RegExp(`<a class="viewer-link"([^>]*?) data-title="[^"]*"(?=[^>]*${id})`); if(!re.test(h)) throw new Error(`Day 5's activity lost the link ${id}`);
-      return h.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); }, cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">'));
+      return h.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); }, cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">'))
+    // (the Samples folder large and centred: Drive's folder view zoomed, as Day 2's handouts are, in a box the width of
+    // its three files)
+    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="ftdd-embed ftdd-embed-folder ftdd-embed-folder-big ftdd-embed-folder-center"><iframe src="https://drive.google.com/embeddedfolderview?id=1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW#grid" title="Samples" loading="lazy"></iframe></div>`);
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const whole = cut("<p>When taking a screenshot of the entire calendar", "<p>You should have a total of 19");
   const up = cut("<p>You should have a total of 19", "<p><b><i>*** Free Communication");
