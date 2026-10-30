@@ -1091,6 +1091,25 @@ root.render = function(){
   const mid = document.querySelector("main.main-ftdd"); if(mid) mid.classList.add("ftdd-settling");
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); requestAnimationFrame(() => { const m = document.querySelector("main.main-ftdd"); if(m) m.classList.remove("ftdd-settling"); }); });
 };
+// 🎧 a recording card (Day 3's Listening Activity, .ftdd-acard: build/day-decks.cjs REF_RECS audio) plays in a pop-up
+// player over the slide; Esc, ✕ or a click outside closes it (and stops it)
+(() => {
+  let box = null;
+  const close = () => { if(box){ const au = box.querySelector("audio"); if(au) au.pause(); box.remove(); box = null; } };
+  document.addEventListener("click", ev => {
+    const c = ev.target.closest && ev.target.closest(".ftdd-acard");
+    if(!c) return;
+    ev.preventDefault(); close();
+    box = document.createElement("div"); box.className = "ftdd-zoom ftdd-apop";
+    box.innerHTML = '<div class="ftdd-apop-box" role="dialog" aria-modal="true"><p class="ftdd-apop-k">🎧 Listening Activity</p><b></b>' +
+      '<audio controls autoplay preload="auto"></audio></div><button type="button" class="ftdd-zoom-x" title="Close">✕</button>';
+    box.querySelector("b").textContent = c.getAttribute("data-title") || "";
+    box.querySelector("audio").src = c.getAttribute("data-audio");
+    box.addEventListener("click", e => { if(!e.target.closest(".ftdd-apop-box")) close(); });
+    document.body.appendChild(box);
+  });
+  document.addEventListener("keydown", ev => { if(box && ev.key === "Escape"){ close(); ev.preventDefault(); ev.stopImmediatePropagation(); } }, true);
+})();
 // 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
 (() => {
   let box = null, list = [], at = 0;
@@ -2627,6 +2646,16 @@ main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0
 main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
+/* 🎧 Day 3's Listening Activity: a card per recording, three to a row, each opening the pop-up player */
+.ftdd-acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin:8px 0 10px;}
+.ft-body button.ftdd-acard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:12px 14px;background:#fff;border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;box-shadow:0 2px 6px rgba(30,35,64,.10);cursor:pointer;font:inherit;color:#1E2340;}
+.ft-body button.ftdd-acard:hover{border-color:#E8590C;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+.ftdd-acard-ic{font-size:22px;line-height:1;} .ft-body .ftdd-acard b{font:700 16px/1.3 'Inter',sans-serif;}
+.ft-body .ftdd-acard small{font:700 13px/1.2 'Inter',sans-serif;color:#C2410C;}
+.ft-body .ftdd-acard-tag{font:600 13px/1.3 'Inter',sans-serif;color:#5B6178;}
+.ftdd-apop{cursor:default;} .ftdd-apop-box{background:#fff;border-radius:14px;border-top:5px solid #E8590C;padding:22px 26px;width:min(560px,92vw);display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.ftdd-apop-k{margin:0;font:800 12px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#C2410C;}
+.ftdd-apop-box b{font:800 20px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;} .ftdd-apop-box audio{width:100%;}
 .ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}
 .ftdd-zoom img{max-width:94vw;max-height:88vh;background:#fff;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
 .ftdd-zoom-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:14px;}

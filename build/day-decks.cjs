@@ -508,9 +508,20 @@ function piCallRows(compact){
    slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
    Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
 const REF_RECS = [
-  {h: "Carlos’ Reception Recordings", folders: ["1bP8yBy9WhPgUOnfh-IAvWI4V6UVeYyeI", "1S3L8ecBadvrN_AmGpeQD98mY1148Rvof"], recs: []},
-  {h: "Oscar’s Reception Recordings", folders: ["1ZGr22vm6RW4avTBCn8tCfGexkZMfsavX"], recs: []},
-  {h: "Oscar’s Reception Activity Recordings", folders: ["1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn"], recs: []}];
+  // (audio: recordings kept on the platform, ft/day3/audio, each a card that plays in a pop-up player: js/ft-day-decks.js
+  // ftdd-acard; [title, file, length]: Carlos's Calls 1–5 only, his other recordings not shown)
+  {h: "Carlos’ Reception Recordings", folders: ["1bP8yBy9WhPgUOnfh-IAvWI4V6UVeYyeI", "1S3L8ecBadvrN_AmGpeQD98mY1148Rvof"], recs: [], audio: [
+    ["Call 1", "carlos-1.mp3", "1:21"],
+    ["Call 2", "carlos-2.mp3", "1:15"],
+    ["Call 3", "carlos-3.mp3", "6:22"],
+    ["Call 4", "carlos-4.mp3", "0:42"],
+    ["Call 5", "carlos-5.mp3", "2:01"]]},
+  // the PI Reception Activity's six calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
+  // each with its challenge (piAudio: read from build/calls/pi-reception-calls.json once it is loaded, below)
+  {h: "PI Reception Calls: Harbor & Pine Injury Law", folders: [], recs: [], pi: true},
+  // (hide: kept for the build's check that the guide still has its folders, not shown on the slide)
+  {h: "Oscar’s Reception Recordings", folders: ["1ZGr22vm6RW4avTBCn8tCfGexkZMfsavX"], recs: [], hide: true},
+  {h: "Oscar’s Reception Activity Recordings", folders: ["1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn"], recs: [], hide: true}];
 function REF_RECS_HTML(){
   const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
     `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
@@ -518,7 +529,12 @@ function REF_RECS_HTML(){
   // CRM/CMS videos are, data-card: js/ft-day-decks.js visual; until then its folder plays in the slide)
   const rec = ([t, id]) => `<p><a class="viewer-link" data-card data-kind="video" data-title="${hx(t)}" href="https://drive.google.com/file/d/${id}/view">https://drive.google.com/file/d/${id}/view</a></p>\n`;
   const note = '<p class="ftdd-recs-note">These audio recordings are optional reference materials. Feel free to listen to them during your downtime or at your own pace—completing the entire series is not required.</p>\n';
-  return REF_RECS.map(g => `<p><b>${hx(g.h)}</b></p>\n` + (g.recs.length ? g.recs.map(rec).join("")
+  const acard = ([t, f, len, tag]) => `<button type="button" class="ftdd-acard" data-audio="${f.startsWith("/") ? f : "/ft/day3/audio/" + f}" data-title="${hx(t)}">` +
+    `<span class="ftdd-acard-ic">🎧</span><b>${hx(t)}</b>${tag ? `<span class="ftdd-acard-tag">${hx(tag)}</span>` : ""}<small>${len} · ▶ Play</small></button>`;
+  const mmss = n => `${Math.floor(n / 60)}:${String(Math.round(n % 60)).padStart(2, "0")}`;
+  REF_RECS.filter(g => g.pi).forEach(g => { g.audio = PI_CALLS.calls.map(c => [c.title, c.file, mmss(c.secs), `${c.challenge} · VA ${c.va}`]); });
+  return REF_RECS.filter(g => !g.hide).map(g => `<p><b>${hx(g.h)}</b></p>\n` + ((g.audio || []).length ? `<div class="ftdd-acards">${g.audio.map(acard).join("")}</div>\n`
+      : g.recs.length ? g.recs.map(rec).join("")
       : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
     note;
 }
