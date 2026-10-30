@@ -1675,7 +1675,7 @@ const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: 
 const DAY_OBJECTIVE = {
   1: "Understand the VA’s role in a US personal injury firm (jurisdiction, VA vs. in-house, the firm’s cultural values) and install the SA plug-ins you will use every day.",
   2: "Speak for the firm with confidence: use the common PI and auto liability terms, know what each party may be told, and when and how to escalate.",
-  3: "Follow a PI case from intake to settlement, and triage a reception call, capturing its key details.",
+  3: "Follow a PI case end to end, and triage a reception call.",
   4: "Take a reception call from greeting to transfer on your own, scored on the Reception Mock Calls Metrics.",
   5: "Manage an attorney’s calendar: book every event by the scheduling rules, in the right time zone, with the caller’s details complete.",
   6: "Set appointments on a live mock call, every booking checked against the scheduling rules.",
@@ -2431,7 +2431,7 @@ main.main-ftdd .ftdd-sheet p.ftdd-callout.ftdd-pick-foot::before{position:static
 .ftlc-obj{font-weight:600;color:#1B1E2E;}
 /* (the key takeaways are a few words each: two to a row, so the objective above them doesn't shrink the card) */
 .ftlc-focus ul.ftlc-tk{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;}
-.ftlc-file{margin-top:12px;background:#F4F1EA;border-radius:8px;padding:9px 12px;font-size:12.5px;}
+.ftlc-file{margin-top:8px;background:#F4F1EA;border-radius:8px;padding:6px 10px;font-size:12px;line-height:1.35;overflow-wrap:anywhere;}
 .ftlc-file p + p{margin-top:2px;}
 .ftlc-pq{margin-top:8px;border:0;background:none;padding:0;color:#B5651F;font:700 12.5px 'Inter',sans-serif;cursor:pointer;text-decoration:underline;}
 .ftlc-pqbox{margin-top:10px;} .ftlc-pqacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
