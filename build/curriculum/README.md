@@ -36,7 +36,7 @@ Changed by hand after the import, so redo these after re-running `convert.py`:
 - Day 5 `s2`: the Calendar Management Training Canva deck, at the top of the part.
 - Day 7 `s1`: the Intake Specialist Role Canva deck, at the top of the part.
 - Day 13 `s2`: the Medical Records Specialist Role Canva deck, at the top of the part.
-- Day 7 `s1`: GEICO in capitals in the Common Insurance Providers table.
+- Day 7 `s1`: GEICO in capitals in the Common Insurance Providers table, and its block is `ftdd-keep ftdd-carriers` (the slide's styling in `js/ft-day-decks.js`).
 - Day 8 `s1`: Topic 1 (Intake Process) updates monitoring item #15; Atty. Sandy Van's Intake Calling (MVC) video ends with "Task 2 - Update item #14 in your monitoring sheet." (the curriculum's numbers). Also in `build/day-decks.cjs` (Day 8's Topic 1 rule).
 - Day 10 `s1`: the two VA Call Recordings folders, each its own link with its own title.
 - Day 12 `s1`: the 3P line under the LOR naming convention ("3P LOR with an affidavit: … LOR with Affidavit mm.dd.yy (VA's name)").

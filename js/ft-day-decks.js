@@ -2157,6 +2157,8 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 :is(p,li,td,th,dd,dt,.ftdd-step-t,.ftdd-pq)
 main.main-ftdd .ftdd-sheet.ftdd-d615 :is(b,strong){font-weight:800;color:#000;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 > p:first-child:not([class]){font:800 24px/1.35 'Inter',system-ui,sans-serif;color:#141A3C;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 :is(h2,h3,h4,h5){font:800 21px/1.3 'Poppins','Inter',sans-serif !important;color:#141A3C !important;}
+/* (h3–h5 are white: they sit on the navy heading bar below, where the dark type was lost) */
+main.main-ftdd .ftdd-sheet.ftdd-d615 :is(h3,h4,h5){color:#fff !important;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 a{color:#0B3FA8;font-weight:700;text-decoration:underline;}
 main.main-ftdd .ftdd-sheet.ftdd-d615 .ftdd-name{font-size:17px;font-weight:700;color:#0B0D1A;}
 .ftdd-sheet.ftdd-d615 :is(ul,ol){display:inline-block;text-align:left;margin-left:auto;margin-right:auto;}
@@ -3006,6 +3008,15 @@ main.main-ftdd .ftdd-sheet.ftdd-d615 p.li{align-self:stretch;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
 /* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
 main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}
+/* Day 7's Common Insurance Providers: the slide starts at the top of the sheet, the lead-in bolder and darker, and the
+   table's header row white on navy, so it reads apart from the rows */
+main.main-ftdd .ftdd-sheet:has(.ftdd-carriers){justify-content:flex-start !important;}
+main.main-ftdd .ftdd-sheet .ftdd-carriers > h4{margin-top:0 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-carriers > p{font-weight:800 !important;color:#0B0D1A !important;}
+main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table th{background:#1E2340;color:#fff;font-weight:800;padding:8px 10px;border:1px solid #1E2340;}
+main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td{color:#0B0D1A;border-color:#C9CEE0;}
+main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td:first-child{font-weight:800;color:#141A3C;background:#F4F6FB;}
+main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table tr:nth-child(odd) td:not(:first-child){background:#FAFBFE;}
 /* ✕ instead of "← Back to Dashboard" on the slides (the orientation, a lesson's slides, an Activity deck, Know Your
    Tools): a round close button, fixed at the lower right of the window (under the side panel), so the deck takes the
    full height, white on navy so it stands out on the photo background (orange on hover). The words stay in the link for screen readers. */
