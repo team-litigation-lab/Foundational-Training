@@ -430,7 +430,13 @@ root.render = function(){
   wrapKC();
   const r = __render.apply(this, arguments);
   const d = root.FTDayDecks && FTDayDecks.state ? FTDayDecks.state() : null;
-  if(state.view === "daydeck" && d && active(d.day) && decksIn() && steps(d.day).length){
+  // (a day whose lesson the trainer hasn't opened is 🔒 as a whole, with the segment locks off too)
+  if(state.view === "daydeck" && d && isTrainee() && !enforced() && !dayStarted(d.day)){
+    const box = document.querySelector("main.main-ftdd .ftdd-slides");
+    if(box) ftLockSlides(box, `<b>🔒 Not open yet</b><span>This part of the training opens when your trainer opens it, or when you finish the lesson before it.</span>
+      <button type="button" class="btn btn-navy" onclick="goto('modules')">← Back to 📚 Dashboard</button>`);
+  }
+  else if(state.view === "daydeck" && d && active(d.day) && decksIn() && steps(d.day).length){
     const n = Number(d.day), k = stepAt(n, d.i), box = document.querySelector("main.main-ftdd .ftdd-slides");
     if(dayStarted(n) && k <= at(n)) keepPos(n, d.i);
     if(box && (!dayStarted(n) || k > at(n))){

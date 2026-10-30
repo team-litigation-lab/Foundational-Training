@@ -31,9 +31,15 @@ const segs = page => page.evaluate(() => Object.fromEntries([...document.querySe
     // holds nothing now
     await put(page, 'settings:opendays', { all: [1, 3], batches: {} });
     await put(page, 'settings:daysteps', { all: { 3: 1, 4: 0 }, batches: {}, legacy: { all: [], batches: {} } });
+    // ✍️ ten process questions at most on every answer sheet (from the Activity Locks test, gone with the locks)
+    const kc = await page.evaluate(() => DAYS.map(d => { const by = {}; ftKcQuestions(d.id).forEach(x => { by[x.set.id] = (by[x.set.id] || 0) + 1; }); return [d.id, by]; }));
+    kc.forEach(([l, by]) => Object.entries(by).forEach(([id, n]) => { if (n > 10) fail(`Lesson ${l}'s ${id} sheet asks ${n} process questions (ten at most)`); }));
     // nothing finished: Law Firm Communication waits for the trainer; Personal Injury Process Flow is open, both parts
     await done(page, []);
     let s = await segs(page);
+    // 📚 Dashboard: a segment per part (Start for a one-part lesson)
+    const labels = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.ftli')].map(c => [c.id, [...c.querySelectorAll('.mc-grid .ftseg .ftseg-b')].map(x => x.innerText.replace(/^[^A-Za-z]+/, '').trim()).join()])));
+    if (labels['dayl-1'] !== 'Start' || labels['dayl-3'] !== 'Part 1,Part 2' || labels['dayl-6'] !== 'Part 1,Part 2,Part 3' || labels['dayl-8'] !== 'Part 1,Part 2') fail(`the cards' parts don't match their days: ${JSON.stringify(labels)}`);
     if ((s['dayl-2'] || [])[0] !== 'locked') fail(`Law Firm Communication was open before VA Essentials was finished: ${JSON.stringify(s['dayl-2'])}`);
     if ((s['dayl-3'] || []).join() !== 'open,open') fail(`an open lesson's parts aren't all open: ${JSON.stringify(s['dayl-3'])}`);
     const steps = await page.evaluate(() => ({ s3: FTDayLocks.stepOpen(3, 5), s4: FTDayLocks.stepOpen(4, 3), d1: FTDay1.active() }));
@@ -72,5 +78,5 @@ const segs = page => page.evaluate(() => Object.fromEntries([...document.querySe
     await b.close();
   }
   if (failures.length) { console.error(`${failures.length} failure(s):\n` + failures.map((f, i) => `${i + 1}. ${f}`).join('\n')); process.exit(1); }
-  console.log('Next lesson test passed (no segment locks: an open lesson\'s parts, steps and slides all open, Day 1 included, an old record of steps holding nothing; VA Essentials finished opens Law Firm Communication, its Start opening the deck, and no lesson further on; a lesson half finished opens nothing, finished opens the next; the trainer has no 🔒 parts, no 🔓 Segment lock, chips or locked dots, and no lock screens in Admin).');
+  console.log('Next lesson test passed (ten process questions at most per sheet; Start or Part 1 · Part 2 … on the cards; no segment locks: an open lesson\'s parts, steps and slides all open, Day 1 included, an old record of steps holding nothing; VA Essentials finished opens Law Firm Communication, its Start opening the deck, and no lesson further on; a lesson half finished opens nothing, finished opens the next; the trainer has no 🔒 parts, no 🔓 Segment lock, chips or locked dots, and no lock screens in Admin).');
 })();
