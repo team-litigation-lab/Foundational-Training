@@ -338,11 +338,13 @@ s3: html => {
     `<div class="ftdd-tiles ftdd-sop-links"><a class="viewer-link ftdd-sop-open" data-kind="doc" data-title="Sample SOP" href="${SOP}"><span>📄</span><b>Sample SOP</b></a>` +
     `<a class="ftdd-sop-dl" href="https://docs.google.com/document/d/${SOP_ID}/export?format=docx" target="_blank" rel="noopener noreferrer" download>⬇ Download</a></div></div>\n`;
 },
-// Day 3's homework: the five CRM/CMS videos, each named, as cards with the video's preview (data-card: js/ft-day-decks.js
+// Day 3's homework: the five CRM/CMS videos, each named for its CMS, as cards with the video's preview (data-card: js/ft-day-decks.js
 // visual), a click playing it bigger in the pop-up viewer; and when they may be finished
 s2: html => {
+  // (in the curriculum's order: the first video is Captora's, as its preview shows)
+  const NAMES = ["Captora", "Clio Grow", "Clio", "Filevine", "Smart Advocate"];
   let k = 0;
-  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-card data-kind="video" data-title="CRM/CMS Training Video ${++k}"`)
+  const out = html.replace(/<p>\s*<a class="viewer-link" data-kind="video" data-title="[^"]*"/g, () => `<p><a class="viewer-link" data-card data-kind="video" data-title="${NAMES[k++] || "CRM/CMS Training Video " + k}"`)
     .replace(/<\/a>\s*,\s*<\/p>/g, "</a></p>");
   if(k !== 5) throw new Error(`Day 3's homework has ${k} CRM/CMS videos, not 5`);
   // (its opening line, watch the videos and update item #12, goes: the slide's pill says Watch & Do)
