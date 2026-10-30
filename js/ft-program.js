@@ -61,7 +61,7 @@ window.LSH_PROGRAM = {
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
-    lab: ["calscores", "sessions", "trainerinputs", "calcheck", "calrules", "calweek", "listening"],
+    lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]
   },
   sources: [
@@ -106,7 +106,7 @@ window.LSH_PROGRAM = {
       about:"Your Daily Task Tracker and Training Progress Monitoring Sheet in your main Google Drive: the system’s checks, or your trainer’s score where they gave one.",
       items: ctx => typeof window.ftDriveItems === "function" ? window.ftDriveItems(ctx) : []},
     {id:"skills", icon:"🧪", label:"Typing & Spelling", key:"skills:",
-      about:"Your daily tests, taken in the Practice Lab: your typing speed against the 60 WPM clients look for (the average of your last 10), and your spelling average.",
+      about:"Your daily tests (Typing twice a day, Spelling once), taken in the Practice Lab or saved as a screenshot in your Drive folder: your daily compliance, your typing speed against the 60 WPM clients look for (the average of your last 10), and your spelling average.",
       items: ctx => typeof window.ftSkillItems === "function" ? window.ftSkillItems(ctx) : []},
     {id:"drills", icon:"🏷", label:"Naming & Reporting Drills", key:"drills:",
       about:"Your best round on each set of drills: the file names, Notes and Tasks entries and subject lines every demo is scored on.",

@@ -26,7 +26,9 @@ const SETS = [
   {id:"reception", icon:"☎️", title:"Reception calls", day:3, lesson:4, n:10,
     folder:"https://drive.google.com/drive/folders/1l8_cBDRXnt-h8QvDZJWaZMO194DWtdSU?usp=sharing",
     about:"The ten sample call recordings from Day 3’s Reception Training discussion."},
-  {id:"intake", icon:"📋", title:"Intake calls", day:7, lesson:6, n:5,
+  // (titles: each recording's name in the log, until a trainer renames it; Day 7's are on the platform, ft/day7/audio)
+  {id:"intake", icon:"📋", title:"Intake calls", day:7, lesson:6, n:4,
+    titles:["Intake Call: MVA", "Intake Call: Premise Liability", "Intake Call: Dog Bite", "Intake Call: Medical Malpractice"],
     folder:"https://drive.google.com/drive/folders/16o9xsbY9dRIl8-fSBN2B3fNWuEXmo52q?usp=sharing",
     about:"The sample intake audio recordings from Day 7’s Intake Training discussion."},
   {id:"claims", icon:"📣", title:"Insurance communication calls", day:11, lesson:7, n:5,
@@ -63,7 +65,7 @@ function loadSets(force){
 function setLive(id){
   const s = setOf(id), own = ((X.data || {}).sets || {})[id] || {};
   const n = Math.max(1, Math.min(30, Number(own.n) || s.n)), folder = has(own.folder) ? own.folder : s.folder;
-  const recs = []; for(let i = 1; i <= n; i++){ const r = (own.recs || [])[i - 1] || {}; recs.push({n: i, title: has(r.title) ? r.title : `Recording ${i}`, url: has(r.url) ? r.url : ""}); }
+  const recs = []; for(let i = 1; i <= n; i++){ const r = (own.recs || [])[i - 1] || {}; recs.push({n: i, title: has(r.title) ? r.title : (s.titles || [])[i - 1] || `Recording ${i}`, url: has(r.url) ? r.url : ""}); }
   return Object.assign({}, s, {n, folder, recs});
 }
 
