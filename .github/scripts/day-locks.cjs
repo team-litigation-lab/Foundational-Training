@@ -93,18 +93,18 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     if (!(await page.evaluate(() => state.view === 'day' && Number(state.dayId) === 6))) fail('the Intake lesson deck didn\'t open with its step unlocked');
     if (!(await page.evaluate(() => FTDayLocks.held(6, 'video')))) fail('Intake\'s Handouts / Video opened before its step');
     // a count saved as the old slide steps (no rows flag) reads as the card-row steps it had opened … (Day 8's 2, its
-    // card and its whole morning, s1 and its parts: the five rows cut from the morning's text; Day 2's 6, up to its
+    // card and its whole morning, s1 and its parts: the six rows cut from the morning's text; Day 2's 6, up to its
     // Classroom Activity slide: the four rows before ✍️ Process Questions, now that its Buffer Time and the Escalation
     // Handling Exercise row that the slide's text was cut into are off the deck)
     await put(page, 'settings:daysteps', { all: { 9: 999 }, batches: { b102826: { 2: 6, 3: 2, 7: 2, 8: 2, 11: 2, 13: 3 } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => [2, 3, 7, 8, 9, 11, 13].map(n => FTDayLocks.at(n)));
-    if (v.join() !== '4,1,1,5,999,1,1') fail(`the old slide-step counts didn't read as the card-row steps they had opened: ${v.join()} (want 4,1,1,5,999,1,1)`);
+    if (v.join() !== '4,1,1,6,999,1,1') fail(`the old slide-step counts didn't read as the card-row steps they had opened: ${v.join()} (want 4,1,1,6,999,1,1)`);
     // … and the trainer's next save writes every count as card-row steps, flagged so
     await page.evaluate(async () => { state.isAdmin = true; state.ftOdBatch = 'b102826'; await FTDayLocks.set(11, 2); state.isAdmin = false; state.ftOdBatch = null; });
     const saved = await get(page, 'settings:daysteps'), sb = ((saved || {}).batches || {}).b102826 || {}, fb = (((saved || {}).rows || {}).batches || {}).b102826 || {};
-    if (sb[11] !== 2 || sb[8] !== 5 || sb[2] !== 4 || sb[3] !== 1 || !fb[11] || !fb[8] || !fb[2] || !(((saved || {}).rows || {}).all || {})[9] || saved.all[9] !== 999) fail(`the trainer's save didn't rewrite the old counts as card-row steps: ${JSON.stringify({ batches: saved && saved.batches, rows: saved && saved.rows, all: saved && saved.all })}`);
+    if (sb[11] !== 2 || sb[8] !== 6 || sb[2] !== 4 || sb[3] !== 1 || !fb[11] || !fb[8] || !fb[2] || !(((saved || {}).rows || {}).all || {})[9] || saved.all[9] !== 999) fail(`the trainer's save didn't rewrite the old counts as card-row steps: ${JSON.stringify({ batches: saved && saved.batches, rows: saved && saved.rows, all: saved && saved.all })}`);
     v = await page.evaluate(() => [2, 8, 11].map(n => FTDayLocks.at(n)));
-    if (v.join() !== '4,5,2') fail(`after the save Days 2, 8 and 11 read ${v.join()}, not 4,5,2`);
+    if (v.join() !== '4,6,2') fail(`after the save Days 2, 8 and 11 read ${v.join()}, not 4,6,2`);
     // ⏰ Day 8 on a schedule: the AM session has started, the PM breakout hasn't
     const past = new Date(Date.now() - 3600e3).toISOString(), later = new Date(Date.now() + 3600e3).toISOString(), last = new Date(Date.now() + 7200e3).toISOString();
     await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 7: 999 } }, sched: { all: {}, batches: { b102826: { 8: { am: past, pm: later, out: last } } } }, legacy: { all: [], batches: {} } });
@@ -178,6 +178,19 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
     v = await page.evaluate(() => [...document.querySelectorAll('#dayl-6 .ftseg-b')].map(x => x.classList.contains('tlocked') && !x.classList.contains('locked')));
     if (v.join() !== 'true,true,true') fail(`the trainer's 📚 Dashboard doesn't show Intake's locked days (still openable): ${JSON.stringify(v)}`);
+    // 👁 Trainee view: the slide's own 🔓 Unlock / 🔒 Lock button on every day's slides, and nothing else of the trainer's
+    v = await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; const miss = [];
+      for (let d = 1; d <= 16; d++) FTDayDecks.list(d).forEach((s, i) => { if (!FTDayLocks.chip(d, i)) miss.push(`${d}.${i}`); }); return miss; });
+    if (v.length) fail(`the slide's lock button is missing in Trainee view on ${v.slice(0, 10).join(', ')}`);
+    await page.evaluate(() => goto('modules')); await page.waitForTimeout(400);
+    await put(page, 'settings:daysteps', { all: { 7: 2 }, batches: {}, rows: { all: { 7: 1 } }, legacy: { all: [], batches: {} } });
+    await page.evaluate(() => { const st = FTDayLocks.steps(7); FTDayDecks.open(7, st[4].from); }); await page.waitForTimeout(1000);
+    if (await page.$('.ftdl-tpanel, .ftlk-over')) fail('Trainee view shows the trainer\'s side panel or a lock over the slide');
+    await page.click('.ftdd-bar .ftdl-chipbtn'); await page.waitForTimeout(1200);
+    if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 5) fail('the slide\'s 🔓 Unlock in Trainee view didn\'t unlock Day 7 up to the segment');
+    await page.click('.ftdd-bar .ftdl-chipbtn'); await page.waitForTimeout(1200);
+    if (((await get(page, 'settings:daysteps')) || { all: {} }).all[7] !== 4) fail('the slide\'s 🔒 Lock in Trainee view didn\'t lock Day 7 from the segment');
+    await page.evaluate(() => { state.adminPreview = false; });
     // a trainee's deck has none of it
     await page.evaluate(() => { state.isAdmin = false; FTDayDecks.open(2, 0); }); await page.waitForTimeout(800);
     if (await page.$('.ftdl-tpanel, .ftdl-chip, .ftdd-dot.lk')) fail('a trainee\'s deck shows the trainer\'s segment locks');

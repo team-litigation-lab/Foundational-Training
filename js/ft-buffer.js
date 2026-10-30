@@ -34,9 +34,10 @@ const ACTS = {
   // Day 4's Monitoring Sheet update after Julio's video: Day 2's panel and 📤 Submit, on a slide of its own (items #10–11)
   "4:s2m": {kind: "buffer", task: true, gate: true, title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
     submit: {items: [10, 11], activity: "Reception Training with Julio"}},
-  // (show: the trainee reads the slide's own content above the panel, here the Reception mock calls' preparation for whoever
-  // still has their one-on-one to do; a plain buffer shows the trainee only its panel)
-  "5:s1": {kind: "buffer", show: true},
+  // Day 5 opens on the same update, in place of its Buffer Time for Reception Mock Calls: under Day 4's key, so a trainee
+  // who submitted on Day 4 is done here too (the card's next stop is the lesson deck)
+  "5:s1": {kind: "buffer", task: true, gate: true, key: "4:s2m", title: "📒 Update items #10–11 in your Monitoring Sheet", lead: "Once done, hit Submit.",
+    submit: {items: [10, 11], activity: "Reception Training with Julio"}},
   // Day 5's Attorney Calendar Management Activity: "signify done" is its Done, at the end of its slides (s3, its text; s3b)
   // (its panel as Day 2's: what to do, "Once done, hit Submit." and 📤 Submit, which counts as the Done; label: the button)
   "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📸 Upload your 19 screenshots", lead: "Once done, hit Submit.", label: "📤 Submit"},
@@ -47,7 +48,9 @@ const ACTS = {
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
-  "6:s1b": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1"},
+  // (Day 6's as Day 4's: the mock calls on a slide of their own after the instructions, s1b, simple; no nextDay, the day's
+  // Additional Activity follows)
+  "6:s1b-2": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1", simple: true},
   // (Days 8–16 as Day 4: the instructions and metrics on the preparation slide before, build/day-decks.cjs PREP; here, simple;
   // nextDay, as Day 4's: mock calls and demos can run into the next day, so the debrief opens it for the batch)
   "9:s3b": {kind: "mock", name: "Intake", line: "Intake Mock Calls", act: "intake-live", when: "this afternoon", key: "9:s3", simple: true, nextDay: true},

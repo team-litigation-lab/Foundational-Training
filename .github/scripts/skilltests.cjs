@@ -143,9 +143,23 @@ async function workerChecks() {
   const sc = await page.evaluate(() => document.querySelector('main').innerText);
   if (!/Typing & Spelling/.test(sc) || !/target 60 WPM/.test(sc) || !/Spelling Test/.test(sc)) fail('🏅 My Performance has no Typing & Spelling scores');
 
-  await put('skills:' + id, null); await put(`ranking:${BATCH}:w1`, null);
+  // 📷 a Spelling Test screenshot found in the trainee's Drive (trackerreview:<id>.shots, written by the Worker's check) fills
+  // the seeded day's missing spelling test; the 📚 Dashboard's tiles and My Performance's Daily test compliance count it
+  await put('trackerreview:' + id, { days: {}, shots: { checkedAt: new Date().toISOString(), error: '', files: [{ kind: 'spelling', date: oldK, slot: 'AM', up: oldK, named: true, name: `Spelling Test ${oldMD}.png`, link: 'https://drive.google.com/file/d/ss1/view', created: old.toISOString() }] } });
+  await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1800);
+  await page.evaluate(() => goto('skills')); await page.waitForTimeout(1500);
+  const line2 = await page.evaluate(([f, t]) => FTSkills.complianceText(FTSkills.record(), f, t), [from, to]);
+  if (new RegExp(`Spelling Test – Complied; however, lacking ${wantSp} entr`).test(line2) || (wantSp === 1 ? !/^Spelling Test – Complete/.test(line2) : !new RegExp(`lacking ${wantSp - 1} entr`).test(line2))) fail(`the Spelling Test screenshot in Drive didn't fill its day: ${line2}`);
+  if (!/Spelling Test .*\.png/.test(await page.evaluate(() => (document.querySelector('.st-shots') || {}).innerText || ''))) fail('the tests page doesn\'t list the screenshot found in Drive');
+  await page.evaluate(() => goto('modules')); await page.waitForTimeout(2000);
+  const tiles = await page.evaluate(() => [...document.querySelectorAll('.st-dash')].map(t => t.innerText.replace(/\s+/g, ' ')).join(' | '));
+  if (!/Tests today/i.test(tiles) || !/Test compliance/i.test(tiles)) fail(`the Dashboard has no daily test tiles: ${tiles}`);
+  await page.evaluate(() => goto('scorecard')); await page.waitForTimeout(2500);
+  if (!/Daily test compliance/.test(await page.evaluate(() => document.querySelector('main').innerText))) fail('🏅 My Performance has no Daily test compliance');
+
+  await put('skills:' + id, null); await put(`ranking:${BATCH}:w1`, null); await put('trackerreview:' + id, null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Typing & Spelling test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Typing & Spelling test passed (the log append-only with the server\'s time, results kept in range, no deleting, no writing another\'s; no Skill Building section on the Practice Lab, ftsGotoSkills() opens the tests; typing with pasting off, saved with the date and slot; spelling with the corrections; today\'s card; a missed slot made up; the trainer\'s grid and the compliance line in the facilitator\'s wording; the Weekly Ranking\'s column filled from it; My Performance).');
+  console.log('Typing & Spelling test passed (the log append-only with the server\'s time, results kept in range, no deleting, no writing another\'s; no Skill Building section on the Practice Lab, ftsGotoSkills() opens the tests; typing with pasting off, saved with the date and slot; spelling with the corrections; today\'s card; a missed slot made up; the trainer\'s grid and the compliance line in the facilitator\'s wording; the Weekly Ranking\'s column filled from it; My Performance; a Spelling Test screenshot in Drive filling its day, listed on the page, the Dashboard\'s daily test tiles and the Daily test compliance).');
 })().catch(e => { console.error(e); process.exit(1); });
