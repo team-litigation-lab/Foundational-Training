@@ -474,11 +474,14 @@ function listenSlide(day, time){
 }
 /* 🎧 a day's recordings as cards on its Call Listening slide, each played on the slide (Day 3: the guide's ten sample
    calls; Day 7: the four intake recordings, in the pop-up player; the six practice calls made for the PI Reception Activity are on their own deck, Call Intake & Data Extraction).
-   A recording plays in the slide once it has a link: its file's id here (id), or the link a trainer gives it in Admin →
-   🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a Drive file plays in Drive's
-   player, an audio file in the browser's); until then its card opens the folder. */
-const LISTEN_CARDS = {3: ["Adjuster Call 1", "Adjuster Call 2", "Client Call 1", "Client Call 2", "Court Call", "Defense Counsel",
-  "Potential Client Call - Slip & Fall", "Provider Call 1", "Provider Call 2", "Sales Call"].map(t => ({t, id: "", kind: "Sample call"})),
+   A recording plays in the slide once it has a file: its own here (src: on the platform; id: a Drive file), or the link a
+   trainer gives it in Admin → 🛠 Practice Lab → 🎧 Call Listening (the set's recordings in order, js/ft-listening.js: a
+   Drive file plays in Drive's player, an audio file in the browser's); until then its card opens the folder. */
+// Day 3: the guide's ten sample calls, kept on the platform (ft/day3/audio/sample-*.mp3), each a card that plays in the pop-up player
+const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adjuster Call 2", "adjuster-call-2", "2:47"], ["Client Call 1", "client-call-1", "2:34"],
+  ["Client Call 2", "client-call-2", "5:13"], ["Court Call", "court-call", "3:24"], ["Defense Counsel", "defense-counsel", "2:35"],
+  ["Potential Client Call - Slip & Fall", "potential-client-slip-fall", "8:14"], ["Provider Call 1", "provider-call-1", "2:18"],
+  ["Provider Call 2", "provider-call-2", "2:29"], ["Sales Call", "sales-call", "1:58"]].map(([t, f, len]) => ({t, src: `/ft/day3/audio/sample-${f}.mp3`, len, pop: true, kind: "Sample call"})),
   // Day 7: the four intake recordings, kept on the platform (ft/day7/audio), each a card that plays in the pop-up player
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
