@@ -444,6 +444,7 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf-wait{border-color:#2F855A;}
 .ftbf-go{border-color:#E8590C;}
 .ftbf-status{display:flex;align-items:center;gap:10px;font-size:16px !important;color:#2F855A !important;}
+.ftbf-only .ftbf-status{justify-content:center;}
 .ftbf-dot{width:10px;height:10px;border-radius:50%;background:#2F855A;animation:ftbfPulse 1.4s ease-in-out infinite;}
 @keyframes ftbfPulse{0%,100%{opacity:1}50%{opacity:.25}}
 .ftbf-card{border:1.5px solid #D6DAE6;border-radius:12px;padding:12px 16px;margin:6px 0 12px;background:#F7F8FC;}
