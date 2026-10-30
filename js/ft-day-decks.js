@@ -1376,8 +1376,9 @@ const LESSON_CARDS = {
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
       {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity worksheet and its naming convention: on ✍️ Knowledge Check",
-      "Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
+      "The Reception Listening Activity worksheet and its naming convention: on ✍️ Knowledge Check"],
+    // (Part 2's own tools, on Day 4's card)
+    dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
@@ -1645,7 +1646,7 @@ const rowDay = (c, r) => Number(r.day != null ? r.day : r.d != null ? r.d : c.da
 const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring Activity", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
   11: "Insurance Communication Activities", 12: "Uploading & Sending 1P and 3P LORs", 13: "Medical Records Specialist Role",
   14: "Sending MedLOR & Requesting Records", 15: "Recorded Demonstration: MedLOR", 16: "Lien Balance Verification Request"};
-const DAY_FOCUS = {6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
+const DAY_FOCUS = {4: "Handling Reception Calls", 6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
   11: "Policy Disclosure, Claims & the LOR Letters", 12: "Saving & Sending the LORs", 14: "The MedLOR & Records Requests",
   15: "The MedLOR Demonstration", 16: "Lien Balance Verification"};
 /* THE DAY CARD: the first slide of each day's deck, in place of the Training Agenda. The day that opens a lesson
@@ -1714,7 +1715,7 @@ function dayCard(n, ex){
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
-        ${c.tools && c.tools.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${c.tools.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : ""}
+        ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul>${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
         ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(SUBMIT)}</p></div>` : ""}

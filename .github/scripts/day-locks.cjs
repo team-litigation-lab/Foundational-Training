@@ -113,10 +113,10 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     if (v.at !== v.am || v.pmOpen !== false) fail(`Day 8's schedule didn't open just its AM session: ${JSON.stringify(v)}`);
     // Day 3 discusses Lessons 3 and 4: its first step is the PI Workflow deck, its second the Reception deck (Lesson 4, the
     // row's lesson), so Lesson 4's deck and video wait for Day 3's second step, and open with it
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 1, 4: 0 } }, legacy: { all: [], batches: {} } });
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 1, 4: 0 } }, rows: { all: {}, batches: { b102826: { 3: 1, 4: 1 } } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ l3: FTDayLocks.held(3, 'lesson'), l4: FTDayLocks.held(4, 'lesson'), v4: FTDayLocks.held(4, 'video') }));
     if (v.l3 || v.l4 !== true || v.v4 !== true) fail(`Lesson 4's deck didn't wait for Day 3's Reception step: ${JSON.stringify(v)}`);
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 2, 4: 0 } }, legacy: { all: [], batches: {} } });
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 2, 4: 0 } }, rows: { all: {}, batches: { b102826: { 3: 1, 4: 1 } } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ l4: FTDayLocks.held(4, 'lesson') }));
     if (v.l4 !== false) fail(`Lesson 4's deck didn't open with Day 3's Reception step: ${JSON.stringify(v)}`);
     // a batch's own setting stands in for all batches': a batch can be locked behind the rest, and taken off their schedule
