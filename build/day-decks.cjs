@@ -757,8 +757,8 @@ const EDIT = {
     },
     // (its only line, the facilitator's timing note, is not shown: the shadowing slide had nothing on it)
     s2: h => borrow(14, "s2", "<p><b>Note: </b>If no shadowing buddy is available, recorded shadowing video/s will be provided to trainees instead.</p>", null).split("\n")[0] + "\n" + SHADOW_HOWTO + h},
-  16: {s2: h => rep(rep(h, "<p>Sending Lien Balance Verification request (Filevine, for reference only; use SmartAdvocate): <a ", "<p>Sending Lien Balance Verification request (Filevine, for reference only; use SmartAdvocate):</p>\n<p><a ", 1, "Day 16 s2"),
-    'data-kind="doc"', 'data-kind="video"', 6, "Day 16 s2")}
+  // (the recorded demos are SmartAdvocate's only: the Training Guide's Filevine demos are not on the platform)
+  16: {s2: h => rep(h, 'data-kind="doc"', 'data-kind="video"', 1, "Day 16 s2")}
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];

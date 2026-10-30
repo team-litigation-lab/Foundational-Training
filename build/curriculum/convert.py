@@ -6,7 +6,8 @@ Usage (see build/curriculum/README.md):
 
 Day 1 (build/days/day01.js and its "1:" notes) is kept as it is. Log-in credentials never
 leave the machine: they are replaced by a link to the credentials document, and the run
-stops if any would still reach the output.
+stops if any would still reach the output. Builder notes (instructions for building the
+platform, builder-notes.json) are taken out the same way, and the run stops if one is left.
 """
 import json, re, os, sys, shutil, html as H
 
@@ -67,6 +68,26 @@ def is_boundary(b, first):
     if b["style"].startswith("Heading") and hlevel(b) <= 2 and re.match(r"^\d+\.\s", t):
         return True
     return False
+
+# ---------- builder notes: instructions for building the platform are not content (builder_notes.py) ----------
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import builder_notes
+print("builder notes taken out:", builder_notes.strip_all(B, lambda b: is_boundary(b, False)))
+
+# ---------- corrections: the guide's typos the trainer confirmed ----------
+# HICF is the HCFA bill form; Day 8's GC reminder points at "Topic 3", but the guide numbers Intake Documents
+# (MVA Cases) as a second Topic 2 (and the trainee page, without Intake Calling, as Topic 2): name the topic instead
+FIXES = [(re.compile(r"\bHICF\b"), "HCFA"), (re.compile(r"\bTopic 3: (Task [12])\b"), r"Intake Documents (MVA Cases): \1")]
+def fix_runs(b):
+    for r in b.get("runs", []):
+        for rx, to in FIXES:
+            if "t" in r: r["t"] = rx.sub(to, r["t"])
+for b in B:
+    if b["k"] == "tbl":
+        for row in b["rows"]:
+            for cell in row:
+                for p in cell: fix_runs(p)
+    else: fix_runs(b)
 
 def roles(lo, hi):
     """Mark each block trainee/trainer. Returns list of 'trainer'|'trainee'."""
@@ -417,3 +438,12 @@ for root, _, files in os.walk(REPO):
 if leaks:
     sys.exit(f"STOP: credentials would be published: {leaks[:5]}")
 print("credential check: clean")
+
+# ---------- safety: no builder note may reach the output ----------
+left = []
+for f in [os.path.join(REPO, "build", "days", f"day{n:02d}.js") for n in range(2, 19)] + [os.path.join(REPO, "trainer", x) for x in ("notes.json", "curriculum.json")]:
+    for m in builder_notes.NOTE.finditer(open(f, encoding="utf8").read()):
+        left.append((os.path.basename(f), m.group(0)))
+if left:
+    sys.exit(f"STOP: builder notes would be published: {left[:5]}")
+print("builder note check: clean")
