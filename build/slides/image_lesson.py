@@ -48,7 +48,7 @@ DECKS = {
             "about": 'the "Law Firm Communication" deck (Canva design DAGnZlfVDg0), all 54 pages',
             "headings": {**{i: 'Invoice Follow-Up Calls' for i in range(30, 36)}, 54: 'Thank You'}},
     "piw": {"id": 3, "var": "DAY3", "file": "lesson03.js", "title": "Personal Injury Process Flow",
-            "video": "https://drive.google.com/file/d/1hRbuwwsTpccy0DCy7Rn90HZy_h8t4tbo/view",
+            "video": "https://drive.google.com/file/d/1x5sQybRLS_PDN_58ttVNN1MkAd2EviXG/view",
             "pdf": "Personal_Injury_Workflow.pdf (sent in chat)",
             "about": 'the "Personal Injury Workflow" deck (Canva design DAHWU4bkV0I), all 25 pages',
             # each page's own title (its largest text is the role label, e.g. "Role: Intake Specialist")
