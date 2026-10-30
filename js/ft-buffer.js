@@ -116,6 +116,7 @@ function traineePanel(h){
   // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     <p class="ftbf-lead">Hit Done when you are done with your ${a.what ? e(a.what) : a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
+    ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}
     <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
