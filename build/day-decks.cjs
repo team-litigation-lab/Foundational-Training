@@ -1333,7 +1333,9 @@ for(let n = 1; n <= 16; n++){
   for(const [id, h] of Object.entries(PREP[n] || {})){
     const i = slides.findIndex(x => x.id === id); if(i < 0) throw new Error(`Day ${n} has no ${id} for its mock call or demo preparation`);
     const x = slides[i];
-    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: ""});
+    // (Day 9's Intake mock calls: the trainer's slide lists every case, where to pick it on Ring Channel and its script,
+    // js/ft-intake.js .ftis-mockcall; a trainee sees only the panel, with their own case: js/ft-buffer.js)
+    slides.splice(i, 1, ...(h ? [Object.assign({}, x, {id: id + "p", h})] : []), {id, h: x.h, of: x.of, html: n === 9 && id === "s3b" ? '<div class="ftis-mockcall"></div>' : ""});
   }
   if(new Set(slides.map(x => x.id)).size !== slides.length) throw new Error(`Day ${n}: two slides share an id`);
   const extra = EXTRA[n] || [];
