@@ -29,10 +29,13 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
   5: ["s2"], 13: ["s2"],
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
-  8: ["s2"]};
+  // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
+  8: ["s2", "s3b"],
+  // (Day 9's Buffer Time for the Intake demo is off the deck: Part 3 opens on the Intake Mock Calls)
+  9: ["s1"]};
 // slide titles that named the Process Questions, which aren't on the slides
 const RENAME = {1: {pm: "Installation of SA (Smart Advocate) Plug-ins", reading: "Reading Task: Personal Injury"},
-  // (Day 8's afternoon is the demo, then Atty. Sandy's video on a slide of its own: ROWS[8].s3)
+  // (Day 8's afternoon is the demo; Atty. Sandy's video is off the deck: ROWS[8].s3)
   // (Day 2's Softphones and PPTs are a classroom activity, not homework: js/ft-day-decks.js LESSON_CARDS[2])
   2: {s2: "Common Terms Used & Auto Liability Insurance", s4: "Softphones and PPTs on Documents & Spreadsheets, Keyboard Shortcuts, and Shadowing Etiquette"},
   // (Day 3's first slide: the sample recordings and SOP, its card's 🎧 Call Listening Sessions row; "Call Listening" in its
@@ -454,19 +457,27 @@ s2: html => {
 // ready and the guide's Additional Reminder for Trainees, before its Facilitator's Guide (8:s3-1) and the Demo Metrics
 // Day 8's Topic 1 (Intake Process): the guide's lines as three numbered steps; its two videos as cards side by side (their
 // preview, a click playing it bigger in the pop-up viewer: data-card, js/ft-day-decks.js visual); the item #15 update
-// opening the trainee's own Monitoring Sheet; then the Knowledge Base articles in a card of their own
+// opening the trainee's own Monitoring Sheet. No Knowledge Base articles on Day 8's slides. Topic 2's naming-convention
+// reference sits between its steps 3 and 4; what follows it is the Other Intake Documents slide (ROWS[8].s1c)
 8: {s1: html => {
   const lead = /<p>After completing your spelling &amp; typing tests, kindly proceed right away to work on these sets of tasks for today’s training session\.\s*Thank you\.<\/p>\n/;
   const task1 = /<p>Task 1 - Please watch these two videos:<\/p>\n<p>A\. Intake Process Overview<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>B\. Saving intake documents and updating fields in the Intake Tab<\/p>\n(<p><a class="viewer-link" data-kind="video"[^\n]*<\/p>)\n<p>Task 2 - Update item #15 in your monitoring sheet\.<\/p>\n/;
   const kb = /<h4>📚 In the Knowledge Base<\/h4>\n([^]*?)(?=<p><b>Topic 2:|$)/;
-  if(!lead.test(html) || !task1.test(html) || !kb.test(html)) throw new Error("Day 8's Topic 1 is no longer where the build looks for it");
+  // (the naming-convention line and its reference, from the Additional Instruction after step 4, moved before step 4)
+  const naming = /(<div class="ftdd-step ftdd-step-check"><span class="ftdd-step-n">4<\/span>[^\n]*)\n<h4>Additional Instruction:<\/h4>\n(<p>Please don’t forget to rename each extracted document[^\n]*<\/p>)\n(<p><a class="viewer-link" data-embed data-fit data-kind="doc" data-title="Naming convention reference \(PDF\)"[^\n]*<\/p>)\n/;
+  const kbAll = /<h4>📚 In the Knowledge Base<\/h4>\n(?:<p>[^\n]*<\/p>\n)*?(?=<p><b>1\. CMS Demonstration<\/b><\/p>)/;
+  if(!lead.test(html) || !task1.test(html) || !kb.test(html) || !naming.test(html) || !kbAll.test(html)) throw new Error("Day 8's Topic 1 and 2 are no longer where the build looks for them");
   const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
   const mon = `<a href="#/monitoring" class="ftdd-monlink" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
   return html.replace(lead, "").replace(task1, (m, a, b) =>
       `<p class="li" style="--lvl:0"><span class="lbl">1.</span><span>Complete your Typing and Spelling Tests.</span></p>\n` +
       `<p class="li" style="--lvl:0"><span class="lbl">2.</span><span>Watch the videos.</span></p>\n${cardOf(a)}\n${cardOf(b)}\n` +
       `<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Update item #15 in your ${mon}.</span></p>\n`)
-    .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`);
+    .replace(kb, "").replace(naming, (m, step4, line, link) => `${line}\n${link}\n${step4}\n<!--other-intake-docs-->\n`)
+    .replace(/(<!--other-intake-docs-->\n<div class="trainer-slot" data-slot="8:s1-2"><\/div>\n)<div class="ftdd-pgbreak"><\/div>\n/, "$1")
+    .replace(kbAll, "").replace(/<div class="ftdd-pgbreak"><\/div>\n(?=<p><b>1\. CMS Demonstration<\/b><\/p>)/, "")
+    // (and the Knowledge Base line under the SA demonstration's video)
+    .replace(/<p>Knowledge Base: [^\n]*<\/p>\n<p><a href="https:\/\/lsh-knowledge-base\.[^\n]*<\/p>\n/g, "");
 },
 s3: html => {
   const from = html.indexOf('<p class="li" style="--lvl:0"><span class="lbl">•</span><span>Since there are 2 training accounts used in SA');
@@ -861,13 +872,13 @@ const ROWS = {
     // slides: the SA demonstration with its video in the slide, the Intake Mock Call Activity with the sample intake forms,
     // and the Prototype CMS and the Call Simulator. (The demo tutorial's own section, s2, is off the deck: SKIP[8])
     s1: [{id: "s1", h: "AM: Topic 1: Intake Process", parts: [[null, "<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>"]]},
-      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<h4>Additional Instruction:</h4>"]]},
-      {id: "s1c", h: "AM: Additional Instruction: Naming Convention & Additional Intake Documents", parts: [["<h4>Additional Instruction:</h4>", "<p><b>1. CMS Demonstration</b></p>"]]},
+      {id: "s1b", h: "AM: Topic 2: Intake Documents (MVA Cases)", parts: [["<p><b>Topic 2: Intake Documents (MVA Cases)</b></p>", "<!--other-intake-docs-->"]]},
+      {id: "s1c", h: "AM: Other Intake Documents", parts: [["<!--other-intake-docs-->", "<p><b>1. CMS Demonstration</b></p>"]]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
       {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
       {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
       {id: "s1g", h: "AM: Intake Mock Call: the Prototype CMS & the Call Simulator", parts: [["<p>You may also explore the Prototype CMS", null]]}],
-    // the demo (TRIM[8].s3), then Atty. Sandy Van's MVC intake-call video, a slide of its own after it
+    // the demo (TRIM[8].s3); Atty. Sandy Van's MVC intake-call video after it, s3b, is off the deck (SKIP[8])
     s3: [{id: "s3", parts: [[null, "<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>"]]},
       {id: "s3b", h: "PM: Atty. Sandy’s Video: Intake Calling (MVC)", parts: [["<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>", null]]}]
   },
@@ -1064,7 +1075,7 @@ for(let n = 1; n <= 16; n++){
     }
     // one slide per card row (ROWS above)
     const rows = (ROWS[n] || {})[s.id];
-    if(rows){ cut.add(s.id); slides.push(...cutRows(n, s.id, h, html, rows, carry)); continue; }
+    if(rows){ cut.add(s.id); slides.push(...cutRows(n, s.id, h, html, rows, carry).filter(x => !(SKIP[n] || []).includes(x.id))); continue; }
     slides.push({id: s.id, h, html});
   }
   if(Object.keys(carry).length) throw new Error(`Day ${n}: a fragment was meant for ${Object.keys(carry).join(", ")}, which the day doesn't have after it`);

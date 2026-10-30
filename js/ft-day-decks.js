@@ -513,11 +513,10 @@ const slidesOf = d => { const only = instructionOnlyDays().includes(Number(d.day
   const out = lessonOfDay(Number(d.day)) != null ? [{id: "agenda", h: "Activity card", agenda: true}] : [];   // (no Training Agenda slide)
   let listened = false;
   d.slides.forEach(s => {
-    // a lesson day's "To be added" slide has no slide of its own (no 🎲 Today's Task: the unannounced task lands in 🎲 Tasks)
-    if(s.placeholder && !only) return;
-    // a no-discussion day's 📌 From your trainer slide shows once the trainer has added something (a trainer always sees it, to add)
-    if(s.placeholder && only && !isAdminView() && !(X.data && (X.data.days[d.day] || []).length)){ if(!X.data) loadExtras(); return; }
-    const slide = only && s.placeholder ? {id: "trainer", h: "From your trainer: activities & instructions", trainer: true, html: ""} : s;
+    // the "To be added" placeholder has no slide of its own on any day: no 📌 From your trainer: activities & instructions
+    // slide at the end of a deck (no 🎲 Today's Task either: the unannounced task lands in 🎲 Tasks)
+    if(s.placeholder) return;
+    const slide = s;
     if(/call listening/i.test(String(s.h || "")) && !s.placeholder){
       const t = (String(s.h).match(/^(AM|PM|Entire Day)/i) || [])[1] || "AM";
       out.push(Object.assign({}, slide, {h: splitHeading(slide.h)}));
@@ -1402,22 +1401,22 @@ const LESSON_CARDS = {
       {t: "Insurance Providers", sub: "The eight carriers · Knowledge Base", k: "interactive", d: 7, s: "insurance"},
       {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
       {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
-      {t: "Intake Process", time: "AM", sub: "Two videos · Monitoring Sheet #14", k: "watch", d: 8, s: "s1"},
-      {t: "Intake Documents (MVA Cases)", sub: "📦 Your Intake Packet · #16", k: "interactive", d: 8, s: "s1b"},
-      {t: "Naming & More Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
-      {t: "Live Session Instructions", sub: "CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
-      {t: "SA Demonstration", sub: "The tutorial video", k: "watch", d: 8, s: "s1e"},
-      // (its second slide, s1g: the Prototype CMS and the Call Simulator)
-      {t: "Intake Mock Call Activity", sub: "Prototype CMS & Intake line", k: "read", d: 8, s: "s1f"},
+      // (Part 2: Intake Video, Intake Documents Video with the naming convention in its steps, Other Intake Documents,
+      // Instructions, CMS Demo and Mock Call, then the PM demo's preparation and the demo)
+      {t: "Intake Video", time: "AM", sub: "Two videos · update your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
+      {t: "Intake Documents Video", sub: "📦 Your Intake Packet · the naming convention · #16", k: "interactive", d: 8, s: "s1b"},
+      {t: "Other Intake Documents", sub: "14 more documents", k: "read", d: 8, s: "s1c"},
+      {t: "Instructions", sub: "The live session: CMS demo, then mock call", k: "read", d: 8, s: "s1d"},
+      // (its slides: the SA demonstration, the Intake Mock Call Activity, the Prototype CMS and the Call Simulator)
+      {t: "CMS Demo and Mock Call", sub: "SA tutorial video · Prototype CMS & Intake line", k: "watch", d: 8, s: "s1e"},
       {t: "Demo Preparation", time: "PM", sub: "How it runs · the Demo Metrics", k: "interactive", d: 8, s: "s3p"},
       {t: "Saving the Intake Packet to SA", time: "PM", sub: "One at a time · then Done", k: "demo", d: 8, s: "s3"},
-      {t: "Atty. Sandy: Intake Calling", time: "PM", sub: "MVC cases", k: "watch", d: 8, s: "s3b"},
-      {t: "Buffer Time", sub: "Carryover for completing the Intake demo", k: "buffer", d: 9, s: "s1"},
+      // (Part 3: the Mock Calls, then the Transcription Activity; no Buffer Time)
       {t: "Intake Mock Call Preparation", time: "AM", sub: "Practise on the Call Simulator’s Intake line", k: "mock", d: 9, s: "s2"},
-      {t: "PI Equivalent Transcription: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
-      {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"},
-      {t: "Intake Mock Call Instructions & Metrics", time: "PM", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
-      {t: "Intake Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"}],
+      {t: "Intake Mock Call Instructions & Metrics", sub: "How the one-on-one runs and the Intake Mock Calls Metrics", k: "interactive", d: 9, s: "s3bp"},
+      {t: "Intake Mock Calls (One-on-One)", sub: "Your graded call, with the trainer · hit Done when your call is over", k: "mock", d: 9, s: "s3b"},
+      {t: "Transcription Activity: the Sample Guide", time: "PM", sub: "Atty. Magdalena’s consultation: A / C transcript, sample minutes and the metrics", k: "listen", d: 9, s: "guide"},
+      {t: "Transcription Activity", time: "PM", sub: "Minutes of the meeting: client-to-attorney · Interview Recordings 1 & 2", k: "interactive", d: 9, s: "s3"}],
     discuss: {7: "s1"},
     tools: [["Tools:", "Prototype CMS, Call Simulator, Smart Advocate"], "Intake packet: <i>INTAKE - Packet (VA’s Name)</i>",
       "Transcriptions: <i>Transcription - Recording 1 / 2 (VA’s first name)</i>, saved in Assessments/Activities"],
