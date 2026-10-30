@@ -851,8 +851,8 @@ function sheetPages(sheet){
   kids.forEach(k => {
     const inner = [...k.children];
     // (a reading's text-and-chart row stays whole: it is one page's worth, scaled a little if it must)
-    // (and an embedded video or sheet stays with its name: ftdd-inline)
-    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4")) units.push(...inner); else units.push(k);
+    // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Activity Items stay one grid of cards)
+    if(hOf(k) > room && inner.length > 1 && !k.classList.contains("ftdd-pi-row") && !k.classList.contains("ftdd-inline") && !k.classList.contains("ftdd-card4") && !k.classList.contains("ftdd-cal-set")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -1101,6 +1101,33 @@ root.render = function(){
   const mid = document.querySelector("main.main-ftdd"); if(mid) mid.classList.add("ftdd-settling");
   requestAnimationFrame(() => { if(state.view === "daydeck") fitSheets(); requestAnimationFrame(() => { const m = document.querySelector("main.main-ftdd"); if(m) m.classList.remove("ftdd-settling"); }); });
 };
+// 🎧 a recording card (Day 3's Listening Activity, .ftdd-acard: build/day-decks.cjs REF_RECS audio) plays in a pop-up
+// player over the slide; Esc, ✕ or a click outside closes it (and stops it)
+(() => {
+  let box = null;
+  const close = () => { if(box){ const au = box.querySelector("audio"); if(au) au.pause(); box.remove(); box = null; } };
+  document.addEventListener("click", ev => {
+    const c = ev.target.closest && ev.target.closest(".ftdd-acard");
+    if(!c) return;
+    ev.preventDefault(); close();
+    box = document.createElement("div"); box.className = "ftdd-zoom ftdd-apop";
+    box.innerHTML = '<div class="ftdd-apop-box" role="dialog" aria-modal="true"><p class="ftdd-apop-k">🎧 Listening Activity</p><b></b>' +
+      '<audio controls autoplay preload="auto"></audio></div><button type="button" class="ftdd-zoom-x" title="Close">✕</button>';
+    box.querySelector("b").textContent = c.getAttribute("data-title") || "";
+    box.querySelector("audio").src = c.getAttribute("data-audio");
+    box.addEventListener("click", e => { if(!e.target.closest(".ftdd-apop-box")) close(); });
+    // (the player's own controls keep Esc for themselves once clicked: the focus goes back to the pop-up, so Esc closes it)
+    const pop = box.querySelector(".ftdd-apop-box"); pop.tabIndex = -1;
+    box.querySelector("audio").addEventListener("focus", () => setTimeout(() => { if(box) pop.focus({preventScroll: true}); }, 0));
+    document.body.appendChild(box); pop.focus({preventScroll: true});
+  });
+  // (before the deck's own ← / →: the slide behind doesn't turn while the player is open)
+  document.addEventListener("keydown", ev => {
+    if(!box) return;
+    if(ev.key === "Escape") close(); else if(ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+  }, true);
+})();
 // 🔍 a Sample SOP page (Day 3, .ftdd-sop-shots) opens bigger over the slide: ← / → turn its pages, Esc or a click closes
 (() => {
   let box = null, list = [], at = 0;
@@ -2210,7 +2237,18 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ft-body p.li .lbl .ftdd-sw{display:inline-block;width:18px;height:18px;border-radius:5px;vertical-align:-3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);}
 .ft-body .ftdd-cal-item{border-left:5px solid #E8590C;background:#F6F7FB;border-radius:0 10px 10px 0;padding:8px 14px 8px 14px;margin:0 0 12px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !important;color:#fff !important;}   /* (drawn as a heading bar, white on navy, in the reading too) */
-.ft-body .ftdd-calsim{margin:12px 0;} .ft-body .ftdd-calsim:empty{display:none;}
+/* (Day 5's Instructions as two cards side by side, and its ten Activity Items a card each, five to a slide under the
+   Calendar Simulator's link) */
+.ft-body .ftdd-cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin:0 0 14px;}
+.ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:span 2;columns:2;column-gap:18px;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p{break-inside:avoid;}
+.ft-body .ftdd-cal-grid > .ftdd-cal-wide > p.ftdd-cal-h{column-span:all;}
+.ft-body .ftdd-calsim{margin:0 0 12px;}
+@media(max-width:900px){ .ft-body .ftdd-cards2{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid{grid-template-columns:minmax(0,1fr);} .ft-body .ftdd-cal-grid > .ftdd-cal-wide{grid-column:auto;columns:1;} }
 .ftdd-card4{border:2px solid #343C66;border-radius:12px;background:#fff;padding:0 16px 14px;overflow:hidden;box-shadow:0 4px 12px rgba(30,35,64,.12);}
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
@@ -2640,6 +2678,16 @@ main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0
 main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
+/* 🎧 Day 3's Listening Activity: a card per recording, three to a row, each opening the pop-up player */
+.ftdd-acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin:8px 0 10px;}
+.ft-body button.ftdd-acard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:12px 14px;background:#fff;border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;box-shadow:0 2px 6px rgba(30,35,64,.10);cursor:pointer;font:inherit;color:#1E2340;}
+.ft-body button.ftdd-acard:hover{border-color:#E8590C;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+.ftdd-acard-ic{font-size:22px;line-height:1;} .ft-body .ftdd-acard b{font:700 16px/1.3 'Inter',sans-serif;}
+.ft-body .ftdd-acard small{font:700 13px/1.2 'Inter',sans-serif;color:#C2410C;}
+.ft-body .ftdd-acard-tag{font:600 13px/1.3 'Inter',sans-serif;color:#5B6178;}
+.ftdd-apop{cursor:default;} .ftdd-apop-box{background:#fff;border-radius:14px;border-top:5px solid #E8590C;padding:22px 26px;width:min(560px,92vw);display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.ftdd-apop-k{margin:0;font:800 12px/1 'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#C2410C;}
+.ftdd-apop-box b{font:800 20px/1.3 'Poppins','Inter',sans-serif;color:#1E2340;} .ftdd-apop-box audio{width:100%;}
 .ftdd-zoom{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(15,18,35,.86);cursor:zoom-out;}
 .ftdd-zoom img{max-width:94vw;max-height:88vh;background:#fff;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
 .ftdd-zoom-cap{position:absolute;top:14px;left:0;right:0;text-align:center;color:#fff;font-weight:700;font-size:14px;}
