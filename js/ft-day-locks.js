@@ -367,6 +367,13 @@ function held(l, kind){
   const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || stepOpen(x.n, x.k)) return false;
   toast(lockMsg(x.n, x.k)); return true;
 }
+// is a lesson's stop open to this trainee by its step (no toast: a slide asks while it draws)? null where the steps don't
+// hold them (not a trainee, the locks not in force, the day not held, or no such stop), so the caller keeps its own rule
+function stopOpen(l, kind){
+  if(!isTrainee() || !enforced() || !decksIn()) return null;
+  l = Number(l); const x = lessonStop(l, kind) || (kind === "video" ? lessonStop(l, "lesson") : null); if(!x || !active(x.n)) return null;
+  return stepOpen(x.n, x.k);
+}
 // retry fn once the decks are in (or say they couldn't load)
 const later = fn => { loadDecks().then(x => x ? fn() : toast(NOLOAD)); };
 // the platform tools a day's step opens: where each is, by slide
@@ -622,7 +629,7 @@ async function save(change, msg){
   state.ftDaySteps = next; toast(msg); render();
 }
 root.FTDayLocks = {
-  steps, at, active, stepOpen, dayStarted, mayGo, launch, segments, held, unlockedFor,
+  steps, at, active, stepOpen, dayStarted, mayGo, launch, segments, held, unlockedFor, stopOpen,
   // 🧑‍🏫 the trainer's deck (js/ft-day-decks.js): the slide's chip, the locked dots, 🔓 Segment lock, and its buttons
   chip, dotLocked, panel, segSet, segStatus,
   // a settings:daysteps record's counts as card-row steps (js/ft-buffer.js, before it writes one); one count of it

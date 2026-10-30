@@ -571,10 +571,12 @@ const HANDOUTS = {1: {items: [
   ["Intake Packet", "https://drive.google.com/file/d/1WFaxdzU3QDgl_jp2B8cpyWsgDC2hm1wC/view"],
   ["Intake Specialist Best Practices", "https://drive.google.com/file/d/1mKfndxxC80V3YW6A80qWtJ7gjix6Xkaa/view"]]}};
 function handoutsSlide(h){
-  // 🔒 until the trainer unlocks them (Day 1: Handouts and Videos, js/ft-day1-flow.js; a later lesson: its video), the
-  // handouts are blurred under a lock, with no address to open: not just a badge over cards that still open
+  // 🔒 until the trainer unlocks them, the handouts are blurred under a lock, with no address to open: not just a badge
+  // over cards that still open. Day 1: Handouts and Videos (js/ft-day1-flow.js); a later lesson: its Digital Handouts
+  // segment, where the day is held step by step (the trainer's 🔓 Unlock on the slide, or 🔓 Activity Locks), else its video
   const lid = lessonOfDay(DD.day);
-  const locked = forTrainee() && !state.adminPreview && typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid);
+  const bySeg = root.FTDayLocks && FTDayLocks.stopOpen ? FTDayLocks.stopOpen(lid, "video") : null;
+  const locked = forTrainee() && !state.adminPreview && (bySeg != null ? !bySeg : typeof root.ftVideoUnlocked === "function" && !root.ftVideoUnlocked(lid));
   const cards = h.items.map(([t, u], i) => locked
     ? `<span class="ftdd-ho"><span>${i + 1}</span><b>${e(t)}</b><i>🔒</i></span>`
     : `<a class="ftdd-ho viewer-link" data-kind="doc" data-title="${e(t)}" href="${e(u)}"><span>${i + 1}</span><b>${e(t)}</b><i>Open</i></a>`).join("");
