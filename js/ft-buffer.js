@@ -47,7 +47,7 @@ const ACTS = {
   // (simple: the trainee sees only "Mock Calls Ongoing", no Done: the trainer marks each trainee done; nextDay: the trainer's
   // Start Group Debrief also opens the next day's deck for the batch, its lesson and its first step: unlockNext)
   // (the mock calls have no tracker: the trainer scores each trainee on the 🧑‍🏫 Scoresheet, and a trainee whose scoresheet is saved
-  // is done; the next day opens as any day does, Admin → 📅 Open Lessons. noTracker; the demos keep theirs)
+  // is done; the next day opens as any day does, Admin → 📅 Open Lessons. noTracker, set on every mock call and demo below)
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true, noTracker: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
@@ -109,24 +109,25 @@ function traineePanel(h){
   if((d || a.simple) && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
+  // (a mock call with no tracker: done once the trainer has saved the trainee's scoresheet, js/ft-sessions.js FTMetrics.scored)
+  const sc = a.noTracker && a.act && root.FTMetrics && FTMetrics.scored ? FTMetrics.scored(a.act) : null;
+  if(sc) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Your ${a.what ? e(a.what) : a.kind === "mock" ? "mock call" : "demo"} is done</p>
+    <p>Your trainer has scored it${sc.status ? ": " + e(sc.status) : ""}. Your scores and the trainer’s remarks are on the Metrics and 📬 My Feedback.</p></div>`;
   // (corner: once submitted, what was checked, and nothing to wait for)
   if(d && a.corner) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Submitted</p></div>`;
   // (simple: no Debrief Prep screen, no scorecard: the Done and the wait for the debrief, in the middle of the slide)
-  if(d && a.simple) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Done</p>
+  // (a mock call or demo with no tracker ignores a Done the old tracker saved: no release can come any more, its scoresheet decides)
+  if(d && a.simple && !a.noTracker) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Done</p>
     <p class="ftbf-status"><span class="ftbf-dot"></span>Waiting for the group debrief to start…</p></div>`;
-  if(d) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
+  if(d && !a.noTracker) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
     <p class="ftbf-status"><span class="ftbf-dot"></span>${a.kind === "buffer" ? "Waiting for your trainer to unlock the next activity…" : "Waiting for the group debrief to start…"}</p></div>`;
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
-  // (a mock call with no tracker: done once the trainer has saved the trainee's scoresheet, js/ft-sessions.js FTMetrics.scored)
-  const sc = a.noTracker && a.act && root.FTMetrics && FTMetrics.scored ? FTMetrics.scored(a.act) : null;
-  if(sc) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Your ${a.what ? e(a.what) : a.kind === "mock" ? "mock call" : "demo"} is done</p>
-    <p>Your trainer has scored it${sc.status ? ": " + e(sc.status) : ""}. Your scores and the trainer’s remarks are on the Metrics and 📬 My Feedback.</p></div>`;
   // (in the middle of the slide: its heading only. No Done for the trainee while the mock calls and demos run: the
-  // trainer marks each trainee done on the tracker (a demo), or scores them (a mock call), then starts the group debrief)
+  // trainer scores each trainee on the 🧑‍🏫 Scoresheet, which makes their mock call or demo done: FTMetrics.scored above)
   if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.what ? e(a.what) + " Ongoing" : a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
     ${a.act === "intake-live" ? `<div class="ftis-mockcall"></div>` : ""}</div>`;
   const live = !a.rec;
@@ -185,7 +186,8 @@ function confirmBox(h){
 // or demo, simple, every trainee checks: the trainer marks them done, as they have no Done of their own)
 function watchRelease(){
   clearTimeout(M.timer);
-  const h = here(); if(!h || !trainee() || (!mine(h.k) && !h.a.simple) || released(h.k)) return;
+  // (no release comes on a slide with no tracker: nothing to wait for)
+  const h = here(); if(!h || !trainee() || h.a.noTracker || (!mine(h.k) && !h.a.simple) || released(h.k)) return;
   M.timer = setTimeout(async () => {
     const h2 = here(); if(!h2 || h2.k !== h.k || document.hidden){ if(h2 && h2.k === h.k) watchRelease(); return; }
     const was = !!mine(h.k);

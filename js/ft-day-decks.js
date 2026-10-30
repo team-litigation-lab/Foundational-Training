@@ -1780,9 +1780,9 @@ const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
 function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
-  // (an extra that linked the mock calls' calendar, sim "calsim", shows nothing: that link is off the decks)
-  if(x.sim === "calsim") return "";
-  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
+  // (an extra that linked the mock calls' calendar, sim "calsim": off the decks; a trainee doesn't see it, the trainer sees it to remove it)
+  if(x.sim === "calsim" && !isAdminView()) return "";
+  const tile = x.sim === "calsim" ? `<p class="ftdd-x-off">This linked the mock calls’ calendar, which is no longer on the decks. Remove it.</p>` : x.sim === "never" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -1795,7 +1795,8 @@ function itemHtml(x, n, i){
 function trainerSlide(n){
   if(!X.data){ loadExtras(); return `<p>Loading your trainer’s activities…</p>`; }
   const items = X.data.days[n] || [], f = X.form;
-  const list = items.length ? items.map((x, i) => itemHtml(x, n, i)).join("")
+  // (what is left to show: a trainee doesn't see an extra that linked the mock calls' calendar, so a day with only that one reads as empty)
+  const list = items.some(x => isAdminView() || x.sim !== "calsim") ? items.map((x, i) => itemHtml(x, n, i)).join("")
     : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : "More is on its way"}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
   return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to this slide <span>— every trainee sees it here</span></p>
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>

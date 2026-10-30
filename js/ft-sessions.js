@@ -640,7 +640,9 @@ function metricsTable(key, view){
 /* 🔔 A trainee's scored mock calls and demos: their labreview:<id> (the trainer's scoresheet saves there), read when a
    metrics table is drawn and about once a minute while they use the platform. A scoresheet the trainer saved since they last
    looked is announced once (a toast), and the read-only table on the slide shows their scores and remarks. */
-const MY = {rec: null, id: null, at: 0, loading: false};   // (id: whose record it is)
+const MY = {rec: null, id: null, at: 0, loading: false, told: new Set()};   // told: the results announced this session
+// a trainer's saved result on an activity: its scoresheet, or a score or result entered in Admin → 🧑‍🏫 Trainer Inputs
+const isScored = c => !!c && ((c.rubric && (c.rubric.scores || []).some(v => v != null)) || (c.score != null && c.score !== "") || (!!c.status && c.status !== "Not yet"));   // (id: whose record it is)
 const myScored = (act, key) => { if(MY.id !== state.traineeId){ MY.rec = null; MY.at = 0; } const c = (((MY.rec || {}).acts) || {})[act]; if(!MY.rec) loadMyReview(); return c && c.rubric && c.rubric.key === key && (c.rubric.scores || []).some(v => v != null) ? c : null; };
 function loadMyReview(){
   if(!state.traineeId || state.isAdmin || MY.loading || Date.now() - MY.at < 60000) return;
@@ -648,13 +650,17 @@ function loadMyReview(){
   sharedGet("labreview:" + id).then(v => {
     if(id !== state.traineeId) return;
     const was = JSON.stringify(MY.rec); MY.id = id; MY.rec = v && typeof v === "object" ? v : {acts: {}};
-    Object.entries(MY.rec.acts || {}).forEach(([id, c]) => {
-      if(!c || !c.rubric || !(c.rubric.scores || []).some(x => x != null) || !c.at) return;
-      const seen = "ft-scored:" + state.traineeId + ":" + id; let last = ""; try{ last = localStorage.getItem(seen) || ""; }catch(err){}
-      if(last === c.at) return;
-      try{ localStorage.setItem(seen, c.at); }catch(err){}
-      const a = acts().find(x => x.id === id), rb = a && RUB().forAct(a);
-      toast(`📋 Your trainer scored your ${a ? a.title : "mock call"}${c.rubric.avg != null ? `: ${Number(c.rubric.avg).toFixed(2)}/5` : ""}${tScore(c) != null ? ` (${tScore(c)}%)` : ""}. See it on the ${rb ? rb.title : ""} Metrics and 📬 My Feedback.`);
+    // (the first look on this device takes the results already there as seen, silently: only a new one is announced)
+    const init = "ft-scored-init:" + id; let first = false; try{ first = !localStorage.getItem(init); localStorage.setItem(init, "1"); }catch(err){ first = true; }
+    Object.entries(MY.rec.acts || {}).forEach(([act, c]) => {
+      if(!isScored(c) || !c.at) return;
+      const seen = "ft-scored:" + id + ":" + act, mark = act + "|" + c.at; let last = ""; try{ last = localStorage.getItem(seen) || ""; }catch(err){}
+      if(last === c.at || MY.told.has(mark)) return;
+      MY.told.add(mark); try{ localStorage.setItem(seen, c.at); }catch(err){}
+      if(first) return;
+      const id2 = act;
+      const a = acts().find(x => x.id === id2), rb = a && RUB().forAct(a);
+      toast(`📋 Your trainer scored your ${a ? a.title : "mock call"}${c.rubric && c.rubric.avg != null ? `: ${Number(c.rubric.avg).toFixed(2)}/5` : ""}${tScore(c) != null ? ` (${tScore(c)}%)` : ""}. See it on the ${rb ? rb.title : ""} Metrics and 📬 My Feedback.`);
     });
     if(JSON.stringify(MY.rec) !== was && state.view === "daydeck") render();
   }).catch(() => {}).then(() => { MY.loading = false; });
@@ -712,7 +718,7 @@ window.FTMetrics = {
   table: metricsTable, view: key => metricsTable(key, true), actOf: actOfRubric, sheet: metricsSheet,
   // a trainee's saved scoresheet for an activity (any of its rubrics), else null: what makes their mock call done (js/ft-buffer.js)
   scored(act){ if(!state.traineeId || state.isAdmin) return null; if(MY.id !== state.traineeId){ MY.rec = null; MY.at = 0; } if(!MY.rec) loadMyReview();
-    const c = (((MY.rec || {}).acts) || {})[act]; return c && c.rubric && (c.rubric.scores || []).some(v => v != null) ? c : null; },
+    const c = (((MY.rec || {}).acts) || {})[act]; return isScored(c) ? c : null; },
   open(key){ MS.open = key; drawSheet(); const f = document.querySelector("#ftmsModal select[aria-label=Trainee]"); if(f) f.focus(); },
   close(){ MS.open = null; drawSheet(); },
   batch(b){ MS.batch = b; redraw(); },

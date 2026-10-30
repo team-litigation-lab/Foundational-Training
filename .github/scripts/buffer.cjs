@@ -134,11 +134,15 @@ async function workerChecks() {
     for (let k = 0; k < 6 && !(await a.evaluate(() => !!document.querySelector('.ftbf-pv'))); k++) { await a.evaluate(() => FTDayDecks.go(1)); await a.waitForTimeout(400); }
     if (await a.evaluate(() => !!document.querySelector('.ftbf-tr'))) fail('the mock calls still have the Live Session tracker');
     if (!(await a.evaluate(() => /What trainees see/.test((document.querySelector('.ftbf-pv') || {}).innerText || '')))) fail('the trainer\'s mock call slide lost what trainees see');
-    await put(a, 'labreview:' + tia, { acts: { 'calendar-live': { status: 'Passed', score: 84, at: '2026-10-30T12:00:00.000Z', rubric: { key: 'calendar', scores: [4, 4, 5], feedback: ['', '', ''], avg: 4.2 } } } });
+    // (a Done the old tracker saved, with no release, is ignored; and a result entered only as a % in Trainer Inputs, no criteria, counts)
+    const tiaBuf = (await get(a, 'buffer:' + tia)) || { acts: {}, released: {} };
+    await put(a, 'buffer:' + tia, { acts: Object.assign({}, tiaBuf.acts, { '6:s1': { done: '2026-10-29T12:00:00.000Z', by: 'trainer' } }), released: tiaBuf.released || {} });
+    await put(a, 'labreview:' + tia, { acts: { 'calendar-live': { status: 'Passed', score: 84, at: '2026-10-30T12:00:00.000Z', comment: 'Good.' } } });
     await t.reload({ waitUntil: 'load' }); await t.waitForTimeout(1500);
     await open(t, 6, 's1b-2'); await t.waitForTimeout(1500); await open(t, 6, 's1b-2'); await toPanel(t);
     const s6 = await panel(t);
     if (!/✅ Your Calendaring Activity is done/.test(s6) || !/scored it: Passed/.test(s6)) fail(`a scored trainee's mock call panel reads: ${s6.slice(0, 200)}`);
+    await put(a, 'buffer:' + tia, tiaBuf);
 
     // ☎ the demos have no tracker either: Day 8's demo slide shows the trainer only what trainees see
     await open(a, 8, 's3'); await a.waitForTimeout(1500);

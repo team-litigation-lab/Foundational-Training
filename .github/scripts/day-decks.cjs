@@ -384,7 +384,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     if (await page.$('#ftmsModal')) fail('Esc doesn\'t close the scoresheet pop-up');
     // the trainee sees their scored sheet, read only (their scores and the remarks), and is told once that it is scored
     const mine = await page.evaluate(async id => { const was = { a: state.isAdmin, p: state.adminPreview, t: state.traineeId };
-      state.isAdmin = false; state.adminPreview = false; state.traineeId = id; try { localStorage.removeItem('ft-scored:' + id + ':reception-live'); } catch (e) {}
+      state.isAdmin = false; state.adminPreview = false; state.traineeId = id; try { localStorage.removeItem('ft-scored:' + id + ':reception-live'); localStorage.setItem('ft-scored-init:' + id, '1'); } catch (e) {}   // (not this device's first look: that one takes what is there as seen, silently)
       FTMetrics.view('reception'); await new Promise(r => setTimeout(r, 1500));
       const box = document.createElement('div'); box.innerHTML = FTMetrics.view('reception');
       const out = { cells: [...box.querySelectorAll('tbody tr:not(.ftms-avg) td:nth-child(2)')].map(td => td.textContent), remark: (box.querySelector('tbody tr td:nth-child(3)') || {}).textContent,
