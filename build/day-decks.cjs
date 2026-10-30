@@ -314,12 +314,12 @@ s3: html => {
 // not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
 // Training, as on Days 1 and 2), whose Next is ✍️ the Process Questions (named by the convention beside 📄 Save PDF to my
 // Folder), so neither the Process Questions note nor its naming convention is on the slide. The Confidentiality exercise
-// is off the deck; Carlos's and Oscar's recordings are a slide of their own (s1b, REF_RECS), then Call Intake & Data
-// Extraction (the PI practice calls) on two slides of its own (s1c, s1d). (ROWS[3].s1 places them as their card rows' slides)
+// is off the deck; Carlos's recordings are a slide of their own (s1b, REF_RECS), then the Reception
+// Listening Activity (the PI practice calls) on two slides of its own (s1c, s1d). (ROWS[3].s1 places them as their card rows' slides)
 3: {s1: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i + 1) : html.length; if(i < 0 || j < 0) throw new Error(`Day 3's slide no longer has "${from}"`); return html.slice(i, j); };
   const shots = cut('<div class="shots"><figure><a href="/ft/day3/img/image12.png"', '<p class="li" style="--lvl:0"><span class="lbl">3.</span>');
-  // (the Confidentiality exercise is off the deck; Carlos's and Oscar's recordings are a slide of their own, REF_RECS: the
+  // (the Confidentiality exercise is off the deck; Carlos's recordings are a slide of their own, REF_RECS: the
   // build stops if the guide no longer has their folders)
   REF_RECS.flatMap(g => g.folders).forEach(id => { if(!html.includes(id)) throw new Error(`Day 3's supplementary recordings lost the folder ${id}`); });
   // (Frontline Management: the call-handling decision trees drawn on the slide, two to a row, in place of the guide's two
@@ -535,9 +535,9 @@ s4: html => {
       "<p><b>Action:</b> Log your takeaways on your monitoring sheet.</p>\n<p><b>Note:</b> Finish the rest during your idle time for future client reference.</p>\n")
     .replace(mon, `<p>Update items #8–9 in your <a href="#/monitoring" onclick="goto('monitoring'); return false;">📒 Monitoring Sheet</a>.</p>`);
 }}};
-// 🎧 Call Intake & Data Extraction, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): five practice calls at the Practice Lab's
-// Harbor & Pine Injury Law, each with a challenge (VA Oscar's recordings redone for the firm: a wrong birth year, a frustrated
-// repeat caller, an unclear fax request, a short confirmation, a reschedule with a warm transfer), played on the slide. The calls,
+// 🎧 Reception Listening Activity, the PI practice calls (Day 3; replayed on Day 4 before the mock calls): five practice calls at the Practice Lab's
+// Harbor & Pine Injury Law, each with a challenge on the line (road noise, a line that breaks up and drops, a Spanish-speaking
+// caller, a speakerphone echo, a fast-talking adjuster in a loud call centre), played on the slide. The calls,
 // their audio (ft/day3/audio/) and the trainer's key come from build/calls/pi_reception_calls.py, which writes
 // build/calls/pi-reception-calls.json; this build turns that into the slides and the key's trainer-only slot (3:pi-calls).
 const PI_CALLS = JSON.parse(fs.readFileSync(path.join(R, "build/calls/pi-reception-calls.json"), "utf8"));
@@ -557,7 +557,7 @@ function piCallRows(compact){
   for(let i = 0; i < PI_CALLS.calls.length; i += 3) rows.push(`<div class="ftdd-pic-row">${PI_CALLS.calls.slice(i, i + 3).map(card).join("")}</div>`);
   return rows.join("\n") + "\n";
 }
-/* 🎧 Day 3's supplementary reception recordings (Carlos's and Oscar's), optional: one card per recording, played in the
+/* 🎧 Day 3's supplementary reception recordings (Carlos's), optional: one card per recording, played in the
    slide (Drive's player). A recording is [its title, its Drive file id]; a group with no recordings listed yet shows its
    Drive folders instead, each a card with the folder's recordings to play. Add the recordings' links here as they come. */
 const REF_RECS = [
@@ -572,9 +572,8 @@ const REF_RECS = [
   // the PI Reception Activity's five calls (Harbor & Pine Injury Law, build/calls/pi_reception_calls.py): the same cards,
   // each with its challenge (piAudio: read from build/calls/pi-reception-calls.json once it is loaded, below)
   {h: "PI Reception Calls: Harbor & Pine Injury Law", folders: [], recs: [], pi: true},
-  // (hide: kept for the build's check that the guide still has its folders, not shown on the slide)
-  {h: "Oscar’s Reception Recordings", folders: ["1ZGr22vm6RW4avTBCn8tCfGexkZMfsavX"], recs: [], hide: true},
-  {h: "Oscar’s Reception Activity Recordings", folders: ["1hRO-cnY1nabG8btm1U9OnZxvqYmiwLyn"], recs: [], hide: true}];
+  // (no recordings of VA Oscar's on the deck)
+  ];
 function REF_RECS_HTML(){
   const card = (h, src, link) => `<div class="ftdd-rec"><p class="ftdd-rec-h">${hx(h)}</p><div class="ftdd-rec-play"><iframe loading="lazy" title="${hx(h)}" src="${src}" allow="autoplay"></iframe></div>` +
     `<p class="ftdd-rec-go"><a href="${link}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a></p></div>`;
@@ -591,11 +590,11 @@ function REF_RECS_HTML(){
       : `<div class="ftdd-recs">` + g.folders.map((id, i) => card(`📁 ${g.h}${g.folders.length > 1 ? ` (folder ${i + 1})` : ""}`, `https://drive.google.com/embeddedfolderview?id=${id}#list`, `https://drive.google.com/drive/folders/${id}`)).join("") + "</div>\n")).join("") +
     note;
 }
-// the activity: Day 3's Call Intake & Data Extraction row (ROWS[3].s1), in place of VA Oscar's activity, on two slides:
+// the activity: Day 3's Reception Listening Activity row (ROWS[3].s1), on two slides:
 // s1c, the task in cards (Listen, Analyze, Extract; the 5 data points; the call's challenge; the worksheet), then s1d,
 // the five calls together, whose Next is ✍️ the day's Knowledge Check (js/ft-day-decks.js KC_NEXT)
-const PI_H = "AM: Call Intake & Data Extraction";
-const PI_CALLS_H = "AM: Call Intake & Data Extraction: the 5 Practice Calls";
+const PI_H = "AM: Reception Listening Activity";
+const PI_CALLS_H = "AM: Reception Listening Activity: the 5 Practice Calls";
 const piStep = (n, ic, t, body) => `<div class="ftdd-cix"><p class="ftdd-cix-h"><span class="ftdd-pic-n">${n}</span><span>${ic} ${t}</span></p><p>${body}</p></div>`;
 const PI_HTML =
   `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to five fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete intake information.</p>\n` +
@@ -615,14 +614,14 @@ const PI_HTML =
   `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
   // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
   // (js/ft-process.js WORKSHEETS): the slide only links there, and the way back is the calls' slide
-  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(3, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Call Intake &amp; Data Extraction worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
+  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(4, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
 // the five calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
   piCallRows(false) +
   `<div class="trainer-slot" data-slot="3:pi-calls"></div>\n`;
 // the trainer's key (trainer view only): each call's 5 data points, what the VA did with the challenge, and the transcript
-const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Call Intake &amp; Data Extraction: the 5 data points of each call</h4>\n` +
+const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +
   PI_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
@@ -788,10 +787,10 @@ const ROWS = {
   },
   3: {
     // Part 1 (TRIM[3].s1): the Call Listening Sessions, the
-    // sample recordings and SOP; Part 2: the supplementary recordings (Carlos's and Oscar's, his activity recordings
-    // among them: REF_RECS); then Call Intake & Data Extraction (the PI practice calls), in place of VA Oscar's activity
+    // sample recordings and SOP; Part 2: the supplementary recordings (Carlos's, and the PI practice calls: REF_RECS);
+    // then Reception Listening Activity (the PI practice calls)
     s1: [{id: "s1", parts: [[null, null]]},
-      // (Carlos's and Oscar's supplementary recordings, optional: one card per recording, played in the slide; the
+      // (Carlos's supplementary recordings and the PI practice calls, optional here: one card per recording, played in the slide; the
       // Confidentiality exercise is off the deck)
       {id: "s1b", h: "Listening Activity", pre: REF_RECS_HTML(), parts: []},
       // (none of the guide's section: the five practice calls are the activity now, its task in cards, then the calls)
