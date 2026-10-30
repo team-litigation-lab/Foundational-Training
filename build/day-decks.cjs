@@ -847,15 +847,16 @@ const ROWS = {
       {id: "s3b", h: "Attorney Calendar Management Activity: Time Zone & Submit", parts: [[SLOT(5, "s3-2"), null]]}]
   },
   6: {
-    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, then the videos to watch while waiting for a turn
+    // Part 2's flow: the Calendaring Mock Calls Instructions, their Metrics, the mock calls, then the videos
     // (where the guide's "@everyone" was: TRIM[6].s1 takes it off)
     // (the instructions open on how to reach the Call Simulator and practise, #322's six steps: TRIM[6].s1)
     s1: [{id: "s1", h: "Entire Day: Calendaring Mock Calls Instructions", parts: [["<p><b>☎ Mock Calls: how to access", MOCK_METRICS_CAL]]},
       {id: "s1m", h: "Entire Day: Calendar Management Mock Calls Metrics", parts: [[MOCK_METRICS_CAL, null]]},
-      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]},
       // the mock calls themselves, as Day 4's: a trainee's screen is only Mock Calls Ongoing and Done (js/ft-buffer.js "6:s1b-2"
       // simple); the line is the trainer's, over the tracker ("s1b-2": it continues s1b's card row)
-      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []}]
+      {id: "s1b-2", h: "Entire Day: Calendaring Activity (One-on-One)", pre: MOCK_ONE_CAL, parts: []},
+      // the Calendar Management Training Videos after the mock calls (the card puts them last, after the Mock Call Scenarios)
+      {id: "s1v", h: "Entire Day: Calendar Management Training Videos", parts: [[null, "<p><b>☎ Mock Calls: how to access"]]}]
   },
   7: {
     // (the classroom discussion's own slide is off, TRIM[7]: what is left of s1 is the Intake Scenario Exercise, off the decks)

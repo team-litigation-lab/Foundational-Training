@@ -1390,8 +1390,9 @@ const LESSON_CARDS = {
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
-      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1v"},
-      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
+      // (Day 6: the mock calls first, then the Calendar Management Training Videos)
+      {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
+      {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101", k: "watch", d: 6, s: "s1v"}],
     tools: [["Tools:", "Google Calendar Simulator, Calendar Activity Check, Booking Rule Check"], "Set the time zone on every appointment",
       "Collect from every caller: name, callback number, DOB and DOL"],
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
