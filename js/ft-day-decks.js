@@ -624,10 +624,7 @@ function handoutsSlide(h){
 function launchSlide(s){
   const c = cardOf(lessonOfDay(DD.day)), r = s.launch;
   if(/ftVideoOrAsk/.test(r.run || "") && HANDOUTS[DD.day]) return handoutsSlide(HANDOUTS[DD.day]);
-  // 🎬 a stop with play: its lesson's AI discussion video, played on the slide itself (Day 3)
-  if(r.play != null){ const d = (typeof DAYS !== "undefined" ? DAYS : []).find(x => x.id === Number(r.play)), src = d && d.video && typeof root.lvEmbedUrl === "function" ? root.lvEmbedUrl(d.video) : "";
-    if(src) return `<div class="ftdd-inline is-video is-bare"><div class="ftdd-embed ftdd-embed-player"><iframe src="${e(src)}" title="${e(r.t)}" allow="autoplay; fullscreen" allowfullscreen></iframe></div></div>`; }
-  // 🎬 otherwise the lesson's AI discussion video is not on the decks: it opens only from its lesson card's 🎬 Video on 📚 Dashboard,
+  // 🎬 the lesson's AI discussion video is not on the decks: it opens only from its lesson card's 🎬 Video on 📚 Dashboard,
   // once the trainer unlocks it at the end of the day
   if(/ftVideoOrAsk/.test(r.run || "")) return `<div class="ftdd-divider ftdd-launch"><p class="ftdd-dv-k">${e(PILLS[r.k] || r.k || "")}</p><h2 class="ftdd-dv-h">${e(r.t)}</h2>
     <p class="ftdd-dv-sub">The AI discussion video opens from its lesson card’s 🎬 Video on 📚 Dashboard, once your trainer unlocks it at the end of the day.</p></div>`;
@@ -1358,8 +1355,7 @@ const LESSON_CARDS = {
       // 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
       {t: "PI Workflow / Reception Training", sub: "▶ Start Training: the lesson deck, with your trainer · Next: ✍️ its Knowledge Check", k: "classroom", go: "lesson", kc: 3},
       {t: "Process Questions: Submit", sub: "Personal Injury Process Flow in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(3)"},
-      // (no Digital Handouts stop: the day has no handouts; 🎬 the lesson's AI discussion video plays on its own slide, no request)
-      {t: "AI Discussion Video", sub: "Personal Injury Process Flow · watch it on the slide", k: "watch", run: "ftOpenVideo(3)", play: 3},
+      // (no Digital Handouts stop: the day has no handouts, and the AI discussion video is its lesson card's 🎬 Video)
       {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
       {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
       // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
