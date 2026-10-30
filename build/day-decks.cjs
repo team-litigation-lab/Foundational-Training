@@ -659,10 +659,9 @@ const PI_HTML =
   `<div class="ftdd-pic-points"><p class="ftdd-pic-points-h">💭 Analyze the call’s challenge</p><p class="ftdd-cix-note">In the reflection section for each call, document:</p>` +
   `<div class="ftdd-cix-two"><div><b>🚧 The Obstacle</b>What made the call difficult? (e.g., emotional distress, missing details, language barriers, aggressive demeanor, or emergency legal deadlines)</div>` +
   `<div><b>🤝 The VA’s Response</b>How did the receptionist handle it? (e.g., active listening, de-escalation techniques, boundary setting, clarifying questions)</div></div></div></div>\n` +
-  // the worksheet (its Word file and naming convention) is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder
-  // (js/ft-process.js WORKSHEETS): the slide only links there, and the way back is the calls' slide
-  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTDayDecks.toKC(4, true)"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity worksheet</b><small>On ✍️ Knowledge Check: the Word file and its naming convention →</small></span></button></div>\n`;
-// the five calls on one slide (the trainer's key with them), then ✍️ Knowledge Check
+  // the answers are logged on the activity's own 📝 Answers page (js/ft-listening.js "recact"), after the calls
+  `<div class="ftdd-tiles"><button type="button" class="ftdd-tile k-doc" onclick="FTListen.open('recact')"><span class="ftdd-tile-ic">📝</span><span class="ftdd-tile-t"><b>Reception Listening Activity: Answers</b><small>Log each call’s 5 data points and its challenge →</small></span></button></div>\n`;
+// the five calls on one slide (the trainer's key with them), then the 📝 Answers page
 const PI_CALLS_HTML =
   `<p>Play each call, then log its <b>5 data points</b> and its <b>challenge</b> (the obstacle and the VA’s response) in your worksheet.</p>\n` +
   piCallRows(false) +

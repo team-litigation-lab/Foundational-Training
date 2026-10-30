@@ -469,7 +469,7 @@ function visual(html){
 let listenLoading = false;
 function listenSlide(day, time){
   const sets = (root.FTListen && FTListen.sets) || [];
-  const set = sets.find(x => Number(x.day) === Number(day)); if(!set) return null;
+  const set = sets.find(x => Number(x.day) === Number(day) && !x.activity); if(!set) return null;
   // (the trainer's links for its recordings: read once, and the slide is drawn again with them)
   if(FTListen.ready && !FTListen.ready() && FTListen.loadSets && !listenLoading){ listenLoading = true; FTListen.loadSets().then(() => { if(state.view === "daydeck") render(); }); }
   const live = FTListen.setLive(set.id);
@@ -1385,16 +1385,19 @@ const LESSON_CARDS = {
       {t: "Authorization Decision Tree", sub: "Who may be told what", k: "read", d: 3, s: "s1"},
       {t: "Sample SOP", sub: "Open it or ⬇ download it", k: "read", d: 3, s: "sop"},
       {t: "Sample Call Recordings", sub: "Listen and log each call", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT; then the optional
-      // Listening Activity, the same calls (build/day-decks.cjs REF_RECS), on the same step; Carlos's recordings are off it)
-      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · the 5 data points into the worksheet", k: "listendo", d: 3, s: "s1c"},
+      // (the optional Listening Activity, the calls with a challenge on the line, in place of Carlos's recordings; then the
+      // CRM/CMS videos; then the Reception Listening Activity, its task in cards and the five calls, its 📝 answers
+      // (js/ft-listening.js "recact") and the day's end: no ✍️ Knowledge Check between them)
+      {t: "Listening Activity: Harbor & Pine Calls (optional)", sub: "Five calls with a challenge on the line · in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
+      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
+      {t: "Reception Listening Activity: Answers", sub: "Log each call's 5 data points and its challenge · 💾 Save", k: "assessment", d: 3, run: "FTListen.open('recact')"},
       // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
       {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity worksheet and its naming convention: on ✍️ Knowledge Check"],
+      "The Reception Listening Activity: log each call's answers on its 📝 Answers page"],
     // (Part 2's own tools, on Day 4's card)
     dayTools: {4: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"]},
     takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
@@ -1505,7 +1508,7 @@ const LESSON_CARDS = {
 // 🎧 Day 3's Reception Listening Activity: the five calls' slide (s1d) goes on to ✍️ the day's Knowledge Check (no parts:
 // nothing to read first, and the way back is the slide after it)
 const KC_NEXT = {1: {"reading-8": {l: 1, parts: /^reading(-\d+)?$/, label: "Next: ✍️ Answer the Reading Task questions →"}},
-  3: {"s1d": {l: 4, label: "Next: ✍️ Knowledge Check →"}}};
+};
 const isPart = (k, id) => !!(k.parts && k.parts.test(id));
 // (and a card row's stop whose Next is its lesson's Knowledge Check, kc: Day 3's Classroom Discussion → ✍️ Personal Injury Process Flow)
 const kcOf = s => s && ((KC_NEXT[DD.day] || {})[s.id] || (s.launch && s.launch.kc != null && hasPQ(s.launch.kc) ? {l: Number(s.launch.kc), label: `Next: ✍️ Knowledge Check: ${lessonTitle(s.launch.kc)} →`} : null));
