@@ -473,6 +473,8 @@ function listenSlide(day, time){
   // (the trainer's links for its recordings: read once, and the slide is drawn again with them)
   if(FTListen.ready && !FTListen.ready() && FTListen.loadSets && !listenLoading){ listenLoading = true; FTListen.loadSets().then(() => { if(state.view === "daydeck") render(); }); }
   const live = FTListen.setLive(set.id);
+  // Day 7: the Call Listening Activity, the recordings only (no instructions on the slide)
+  if(LISTEN_BARE.includes(Number(day)) && LISTEN_CARDS[day]) return {id: "listen", h: `${time || "AM"}: Call Listening Activity`, html: listenCards(LISTEN_CARDS[day], live.folder, live.recs)};
   return {id: "listen", h: `${time || "AM"}: Call Listening Session`, html:
     `<p>Listen to ${live.n === 1 ? "the recording" : `the ${live.n} recordings`} for today, and log each call as you go: who called, what they wanted, how the VA handled it, one phrase worth reusing, and what you would do differently.</p>
      ${LISTEN_CARDS[day] ? `<div class="ftdd-listen">${listenCards(LISTEN_CARDS[day], live.folder, live.recs)}</div>` : live.folder ? `<p><a class="ftdd-tile k-folder" href="${e(live.folder)}" target="_blank" rel="noopener noreferrer"><span class="ftdd-tile-ic">📂</span><span class="ftdd-tile-t"><b>${e(set.title)} · ${live.n} recordings</b><small>Open the folder</small></span></a></p>` : ""}`};
@@ -491,6 +493,7 @@ const LISTEN_CARDS = {3: [["Adjuster Call 1", "adjuster-call-1", "2:19"], ["Adju
   // (pop: .ftdd-acard, as Day 3's Listening Activity)
   7: [["MVA", "intake-mva", "9:59"], ["Premise Liability", "intake-premise-liability-1", "16:04"], ["Dog Bite", "intake-dog-bite", "9:59"],
     ["Medical Malpractice", "intake-medical-malpractice", "10:28"]].map(([t, f, len]) => ({t: `Intake Call: ${t}`, src: `/ft/day7/audio/${f}.mp3`, len, pop: true, kind: "Intake call"}))};
+const LISTEN_BARE = [7];
 const driveId = u => (/\/file\/d\/([\w-]{10,})/.exec(String(u || "")) || /[?&]id=([\w-]{10,})/.exec(String(u || "")) || [])[1] || "";
 const audioUrl = u => /^https:\/\/\S+\.(mp3|m4a|wav|ogg|aac)(\?\S*)?$/i.test(String(u || "")) ? String(u) : "";
 function listenCards(cards, folder, recs){
@@ -1398,12 +1401,19 @@ const LESSON_CARDS = {
     takeaways: [], file: "Attorney Calendar Management Activity screenshots, in the order of the sample"},
   6: {days: [7, 8, 9], focus: "Intake Calls, Packets & Documents",
     rows: [
-      // (the day's Handouts / Video stop: the breakout's three digital handouts, HANDOUTS[7]; no AI video on the deck)
-      {t: "Breakout Session: Intake Specialist Best Practices", sub: "Group activity · the three digital handouts", k: "interactive", run: "ftVideoOrAsk(6)", day: 7},
-      {t: "Call Listening on the Intake Recordings", sub: "Log each call as you listen", k: "listen", d: 7, s: "listen", go: "listening"},
-      {t: "Insurance Providers", sub: "The eight carriers", k: "interactive", d: 7, s: "insurance"},
-      {t: "Evidence Checklist, Blank Forms & Sample Calls", sub: "The reference set · four more sample calls", k: "listen", d: 7, s: "forms"},
-      {t: "Scheduled Shadowing", time: "PM", sub: "Your shadow buddy, or the intake videos if unavailable", k: "shadow", d: 7, s: "s2"},
+      // Part 1 in the trainers' order: 💬 the classroom discussion (▶ Start Training), the breakout's three digital handouts (HANDOUTS[7]), ✍️ the
+      // Knowledge Check, the insurance providers, the checklist, the blank forms, the mock intake, the sample intake calls
+      // made for the platform, the other intake documents, then 🎧 the Call Listening Activity (the four intake recordings,
+      // no instructions) ends it. (No shadowing: Day 7's Scheduled Shadowing is off the training)
+      {t: "Digital Handouts", sub: "Breakout Session (Group Activity) · three handouts", k: "watch", run: "ftVideoOrAsk(6)", day: 7},
+      {t: "Knowledge Check", sub: "Process Questions · 📝 Submit for Grading", k: "assessment", run: "FTDayDecks.toKC(6)", day: 7},
+      {t: "Common Insurance Providers", sub: "The eight carriers", k: "interactive", d: 7, s: "insurance"},
+      {t: "Checklist", sub: "Claim documents & evidence", k: "read", d: 7, s: "forms", lead: false},
+      {t: "Blank Forms", sub: "The five blank PI intake forms", k: "read", d: 7, s: "formsb", lead: false},
+      {t: "Recording: Mock Intake", sub: "Played on the slide", k: "watch", d: 7, s: "formsc"},
+      {t: "Sample Intake Calls", sub: "Four practice calls · transcripts", k: "listen", d: 7, s: "formse"},
+      {t: "Other Intake-Related Documents", sub: "The folder", k: "read", d: 7, s: "formsd", lead: false},
+      {t: "Call Listening Activity", sub: "The intake audio recordings", k: "listen", d: 7, s: "listen", go: "listening"},
       // (Part 2: Intake Video, Intake Documents Video with the naming convention in its steps, Other Intake Documents,
       // Instructions, CMS Demo and Mock Call, then the PM demo's preparation and the demo)
       {t: "Intake Video", time: "AM", sub: "Two videos · update your Monitoring Sheet", k: "watch", d: 8, s: "s1"},
