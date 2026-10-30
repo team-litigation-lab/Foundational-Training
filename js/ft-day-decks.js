@@ -2179,15 +2179,15 @@ main.main-ftdd .ftdd-slides .trainer-slot{display:none !important;}
 /* the type, as the Case Management course's Case Flow slides set it: body text in Inter 500 at 17px, bold at 700
    (not the engine's 700 / 900 everywhere), the slide's opening line as a lead in the same Inter, bigger and bold (one
    type family on the sheet: a serif lead read as a different font), section headings in Poppins */
-main.main-ftdd .ftdd-sheet{font:500 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}
-main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:500;line-height:1.45;color:#1B1E2E;}
+main.main-ftdd .ftdd-sheet{font:700 17px/1.45 'Inter',system-ui,sans-serif;color:#1B1E2E;}   /* (the deck reads bold, every slide) */
+main.main-ftdd .ftdd-sheet:not(.ftdd-hw) :is(p,li,td,th,dd,dt){font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:700;line-height:1.45;color:#1B1E2E;}
 main.main-ftdd .ftdd-sheet :is(b,strong){font-weight:700;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-hw) > p:first-child:not([class]){font:700 20px/1.4 'Inter',system-ui,sans-serif;color:#1E2340;}
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 15.5px/1.3 'Poppins','Inter',sans-serif !important;color:#262B45 !important;letter-spacing:.01em;margin:14px 0 6px !important;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t{font-family:'Inter',system-ui,sans-serif;font-size:17px;font-weight:600;line-height:1.45;}
 main.main-ftdd .ftdd-sheet .ftdd-step-t b{font-weight:700;}
 main.main-ftdd .ftdd-sheet .ftdd-name{font:600 14.5px/1.4 'IBM Plex Mono',ui-monospace,monospace;}
-main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:500;}
+main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:16px;font-weight:700;}
 .ftdd-sheet > :first-child{margin-top:0 !important;}
 /* a slide with a line or two: its content sits in the middle of the sheet rather than alone at the top */
 .ftdd-sheet.ftdd-short{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;}
