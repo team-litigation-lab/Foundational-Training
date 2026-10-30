@@ -1224,10 +1224,9 @@ const LESSON_CARDS = {
       {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
     tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
     takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Questions (VA’s name)"},
-  5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
+  // (the card is the mock calls only: the Calendaring & Appointment Setting Training is off it, so no day buttons)
+  5: {days: [5, 6], focus: "Calendar Management Mock Calls", oneDay: true,
     rows: [
-      {t: "Buffer Time for Reception Mock Calls", time: "AM", sub: "Carryover for pending tasks · the mock call prep: Call Simulator, Ring Channel, CMS, AI listening, the metrics", k: "buffer", d: 5, s: "s1"},
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendar Management Mock Calls", time: "AM & PM", sub: "Your graded call, with the trainer", k: "mock", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"}],
@@ -1515,11 +1514,11 @@ function dayCard(n, ex){
       <span class="ftlc-t"><b>${e(r.t)}${when(r) ? ` · ${e(when(r))}` : ""}</b>${r.sub ? `<small>${e(r.sub)}</small>` : ""}</span>
       ${pill(r)}</button></li>`).join("");   // the kind pill at the row's right end, so a row is no taller than its text
   // (no outside-hours list on the card, as on Day 1's)
-  const of = c.days.length > 1 ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
+  const of = c.days.length > 1 && !c.oneDay ? ` · part ${c.days.indexOf(n) + 1} of ${c.days.length}` : "";   // (no "Day" on a slide)
   // the slide's ribbon already says "Day N · Classroom Activity" (or "Day N · Day card"), so the card's own title is the
   // lesson (or what the day holds), not the day and the label again
   const head = first ? title : (DAY_TITLES[n] || title);
-  const sub = first ? `Trainer-led discussion · opens the session${of}` : `${title}${of}`;
+  const sub = first ? `Trainer-led discussion · opens the session${of}` : c.oneDay ? "Your graded call, with the trainer" : `${title}${of}`;
   return `<article class="ftlc${open_ ? "" : " locked"}${rows.length > 6 ? " ftlc-wide" : ""}" data-day="${n}" data-first="${first ? 1 : 0}" data-lesson="${c.lesson}" data-days="${c.days.join(",")}">
     <header class="ftlc-head">
       <div class="ftlc-ht"><h3>${e(head)}</h3><p>${e(sub)}</p></div>
@@ -1530,7 +1529,7 @@ function dayCard(n, ex){
     </header>
     <div class="ftlc-body">
       <section class="ftlc-seq"><p class="ftlc-h">Activity &amp; task sequence</p><ol${rows.length > 6 ? ` class="ftlc-2col" style="--rows:${Math.ceil(rows.length / 2)}"` : ""}>${seq}</ol>
-        ${c.days.length > 1 ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
+        ${c.days.length > 1 && !c.oneDay ? `<div class="ftlc-days">${c.days.map(d => `<button type="button"${d === n ? ` class="on" aria-current="true"` : ""} onclick="FTDayDecks.open(${d})" title="${e((DAY_TITLES[d] || title) + ": its card")}">📋 ${e(DAY_TITLES[d] || (d === c.days[0] ? title : "Part " + (c.days.indexOf(d) + 1)))}</button>`).join("")}</div>` : ""}</section>
       <aside class="ftlc-focus">
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
@@ -1549,7 +1548,7 @@ function dayCard(n, ex){
    ② ▶ Start Training (the lesson deck), its 🎬 video (asked for and approved per trainee) and ③ 🏠 Classroom (the offline activity) share the row under it. */
 function introCard(l, cur, ex, tags){
   const c = cardOf(l.id); if(!c || typeof moduleCard !== "function") return "";
-  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.days[0];
+  const open_ = lessonOpen(l.id), title = lessonTitle(l.id), n = c.oneDay ? c.days[c.days.length - 1] : c.days[0];
   const t = document.createElement("template"); t.innerHTML = String(moduleCard(l)).trim();
   const card = t.content.firstElementChild; if(!card) return "";
   card.id = `dayl-${c.lesson}`; card.dataset.days = c.days.join(",");
