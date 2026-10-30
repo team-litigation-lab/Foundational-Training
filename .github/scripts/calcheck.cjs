@@ -199,6 +199,15 @@ async function workerChecks() {
   // (and the link opens the activity's own calendar: gcal.html?track=activity, not the Calendaring Simulators' list)
   const opened = await page.evaluate(() => { let u = ''; const o = window.open; window.open = (x) => { u = x; return null; }; ftsCalsim('activity'); window.open = o; return u; });
   if (!/\/simulators\/gcal\.html\?[^#]*program=FT[^#]*&track=activity$/.test(opened)) fail(`the activity's link should open its own calendar: ${opened}`);
+  // the Calendaring Simulator opened from a slide: ← Back to the slides returns to that slide (not the Simulators page)
+  { const from = await page.evaluate(() => { FTDayDecks.open(5, FTDayDecks.at(5, 's3')); const d = FTDayDecks.state(); return { day: d.day, i: d.i }; }); await page.waitForTimeout(800);
+    await page.evaluate(() => goto('calsim', 'attorney-activity')); await page.waitForTimeout(1500);
+    if (process.env.SHOTS) await page.screenshot({ path: require('path').join(process.env.SHOTS, 'ft-calsim.png') });
+    const back = await page.$('button:has-text("← Back to the slides")');
+    if (!back) fail('the Calendaring Simulator opened from a slide has no ← Back to the slides');
+    else { await back.click(); await page.waitForTimeout(1200);
+      const at = await page.evaluate(() => ({ view: state.view, day: FTDayDecks.state().day, i: FTDayDecks.state().i }));
+      if (at.view !== 'daydeck' || at.day !== from.day || at.i !== from.i) fail(`← Back to the slides should return to the slide it came from: ${JSON.stringify({ from, at })}`); } }
   await page.evaluate(() => { state.adminPreview = false; });
 
   // the trainee types: each field is checked in place, and the draft saves
