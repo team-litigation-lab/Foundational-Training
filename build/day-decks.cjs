@@ -828,8 +828,23 @@ const LOR_GUIDE = () => fs.readFileSync(path.join(R, "build/days/lor-drafting.ht
 const EDIT = {
   // Day 10's afternoon videos (the guide: "go over these videos and the job aid"): marked as videos, so they play in the
   // slide; the 3P Zurich sample and the VLF SOP stay documents
-  10: {s2: h => ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
-    .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h)},
+  // One page, Watch This Video: the four videos two by two, with the 3P Zurich sample and VLF's SOP embedded down the
+  // right (ftdd-three: one block, never split over two pages); the guide's "Kindly go over this job aid" line and its
+  // divider go
+  10: {s2: h => {
+    const x = ["OPENING CLAIMS &amp; SENDING LOR", "TOOLS OVERVIEW BY CYREL ALEGADO", "FAMILIARIZING INTAKE DOCUMENTS", "OBTAINING COVERAGE INFORMATION"]
+      .reduce((x, t) => rep(x, `<a class="viewer-link" data-kind="doc" data-title="${t} `, `<a class="viewer-link" data-kind="video" data-title="${t} `, 1, "Day 10 s2"), h);
+    const block = re => { const m = x.match(re); if(!m) throw new Error(`Day 10 s2: ${re} is no longer where the build looks for it`); return m[0]; };
+    const intro = block(/<p>For your tasks this afternoon[^\n]*<\/p>\n/), oc = block(/<p><b>OPENING CLAIMS &amp; SENDING LOR<\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      zu = block(/<p><b>SAMPLE OPENING A CLAIM W\/ 3P ZURICH<\/b><\/p>\n<p><a [^\n]*<\/p>\n/), to = block(/<p><b>TOOLS OVERVIEW BY CYREL ALEGADO <\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      fa = block(/<p><b>FAMILIARIZING INTAKE DOCUMENTS <\/b><\/p>\n<p><a [^\n]*<\/p>\n/), co = block(/<p><b>OBTAINING COVERAGE INFORMATION<\/b><\/p>\n<p><a [^\n]*<\/p>\n/),
+      aid = block(/<hr class="stars">\n<p>Kindly go over this job aid[^\n]*<\/p>\n/), sop = block(/<p><b>HOW TO OPEN A 3P AUTO INSURANCE CLAIM[^\n]*<\/p>\n<p><a [^\n]*<\/p>\n/);
+    // (embedded, the card's title is the title alone: the guide's data-title carries the start of the link after it)
+    const embed = b => b.replace('<a class="viewer-link" ', '<a class="viewer-link" data-embed ').replace(/(data-title="[^"]*?)\s*https?:[^"]*"/, '$1"');
+    const col = (b, cls) => `<div${cls ? ` class="${cls}"` : ""}>\n` + b + "</div>";
+    return [oc, to, zu, fa, co, aid, sop].reduce((y, b) => y.replace(b, ""), x.replace(intro, "\u0000"))
+      .replace("\u0000", '<div class="ftdd-three"><div class="ftdd-three-h">\n<p><b>Watch This Video</b></p>\n</div>' + col(oc) + col(to) + col(embed(zu), "ftdd-three-side") + col(fa) + col(co) + col(embed(sop), "ftdd-three-side") + "</div>\n");
+  }},
   // the guide's line to the trainer, in the trainee's words
   9: {s3: h => rep(h, "<p>Once each transcription is completed, they must save the file in their Assessments/Activities folder.</p>", "<p>Once each transcription is completed, save the file in your Assessments/Activities folder.</p>", 1, "Day 9 s3")},
   11: {

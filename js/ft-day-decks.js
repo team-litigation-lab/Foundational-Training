@@ -933,7 +933,7 @@ function sheetPages(sheet){
     // (and an embedded video or sheet stays with its name: ftdd-inline; Day 5's Instructions and Activity Items stay one row of
     // cards; and what the build puts together stays together, scaled to fit: Day 7's insurance card, its two folders, its calls
     // two to a slide)
-    if(!mid && hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-keep, .ftdd-two, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
+    if(!mid && hOf(k) > room && inner.length > 1 && !k.matches(".ftdd-pi-row, .ftdd-inline, .ftdd-card4, .ftdd-cal-set, .ftdd-cards2, .ftdd-keep, .ftdd-two, .ftdd-three, .ftis-calls, .ftdd-step")) units.push(...inner); else units.push(k);
   });
   // a page that would be less than about a third full (a section's last paragraph on its own) joins the page before it,
   // which fitSheets scales a little to hold it, rather than a near-empty page
@@ -2275,6 +2275,11 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 /* two things side by side on one slide (Day 7's two folders) */
 .ftdd-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:8px 0 12px;}
 @media(max-width:800px){.ftdd-two{grid-template-columns:minmax(0,1fr);}}
+.ftdd-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 14px;margin:8px auto 12px;align-items:start;width:1400px;max-width:none;}   /* (a set width: zoomed to fit, its cards shrink with it) */
+.ftdd-three > *{margin:0;}
+.ftdd-three .ftdd-three-h{grid-column:1 / -1;}
+.ftdd-three .ftdd-three-side{grid-column:3;}
+@media(max-width:800px){.ftdd-three{grid-template-columns:minmax(0,1fr);width:auto;}.ftdd-three .ftdd-three-side{grid-column:auto;grid-row:auto;}}
 .ftdd-vcard-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(201,116,43,.92);color:#fff;font-size:20px;line-height:48px;text-align:center;padding-left:3px;box-sizing:border-box;box-shadow:0 2px 8px rgba(0,0,0,.35);transition:transform .15s;}
 .ftdd-vcard:hover .ftdd-vcard-play{transform:translate(-50%,-50%) scale(1.12);}
 .ftdd-vcard .ftdd-tile-t{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;}
@@ -2864,7 +2869,9 @@ main.main-ftdd .ftdd-sheet .ftdd-inline-h :is(b,strong){color:#fff !important;} 
 /* sized to the page (data-fit): the slide's lines and the embed on one page */
 .ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-player{width:min(100%, calc((var(--ftdd-room, 70vh) - 210px) * 16 / 9));}
 .ft-body .ftdd-inline.is-fit .ftdd-embed.ftdd-embed-doc{height:max(220px, calc(var(--ftdd-room, 70vh) - 200px));}
-.ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}   /* a folder's file list is short: it doesn't shrink the slide around it */
+.ft-body .ftdd-embed.ftdd-embed-doc{height:44vh;margin-top:10px;border:2px solid #343C66;}
+/* (Day 10's videos page: an embedded document is the videos' size, so the six cards fit one screen) */
+.ft-body .ftdd-three .ftdd-embed, .ft-body .ftdd-three .ftdd-embed.ftdd-embed-doc{height:auto;aspect-ratio:2 / 1;margin:4px 0 0;}   /* a folder's file list is short: it doesn't shrink the slide around it */
 .ft-body .ftdd-embed.ftdd-embed-rec{height:240px;}   /* a recording: the player, not a page of document */
 .ft-body .ftdd-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;}
 /* a sheet cut to its first columns (fitCrops scales its frame to the box): the page's full height, under its name */
