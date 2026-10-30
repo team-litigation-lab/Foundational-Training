@@ -31,7 +31,8 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.goto(BASE); await signIn(page, 'Lock', 'Step', 'B102826'); await page.waitForTimeout(1200);
     openWas = await get(page, 'settings:opendays'); stepsWas = await get(page, 'settings:daysteps');
     await put(page, 'settings:opendays', { all: [1, 2, 3, 4, 5, 6, 7, 8], batches: {} });
-    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: {} } });
+    // (Day 7 locked by the trainer, 🔒 Lock the day: left unset, a lesson's first day opens on its first segment, below)
+    await put(page, 'settings:daysteps', { all: { 7: 0 }, batches: {}, legacy: { all: [], batches: {} } });
     await page.evaluate(() => FTDayDecks.load());
     // ✍️ ten process questions at most on every answer sheet
     const kc = await page.evaluate(() => [1, 2, 3, 4, 6, 7, 8].map(l => { const q = ftKcQuestions(l), by = {}; q.forEach(x => { by[x.set.id] = (by[x.set.id] || 0) + 1; }); return [l, by]; }));
@@ -57,6 +58,12 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(1200);
     const lab = await page.evaluate(() => [...document.querySelectorAll('.fts-card h3')].map(h => h.innerText).join(' | '));
     if (/Intake Mock Calls|MedLOR/.test(lab)) fail(`the Practice Lab shows sessions of days not opened yet: ${lab}`);
+    // ▶ left unset, a lesson's first day starts on its first segment (Day 3: the lesson; Day 7: Intake's Classroom
+    // Discussion), the rest 🔒 until the trainer unlocks each; a lesson's later days (Day 8) wait to be started
+    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: {} } });
+    const dv = await page.evaluate(() => ({ d3: FTDayLocks.at(3), d7: FTDayLocks.at(7), d8: FTDayLocks.at(8), s2: FTDayLocks.stepOpen(3, 2), l3: FTDayLocks.held(3, 'lesson') }));
+    if (dv.d3 !== 1 || dv.d7 !== 1 || dv.d8 !== 0 || dv.s2 || dv.l3) fail(`left unset, a lesson's first day didn't open on its first segment alone: ${JSON.stringify(dv)}`);
+    await put(page, 'settings:daysteps', { all: { 7: 0 }, batches: {}, legacy: { all: [], batches: {} } });
     // Days 2–16: one step per card row, labelled as the card labels it, each holding its own slides in the card's order
     const shape = await page.evaluate(() => { const out = []; for (let n = 2; n <= 16; n++) {
       const rows = FTDayDecks.dayRows(n).map(r => FTDayDecks.rowLabel(n, r)), st = FTDayLocks.steps(n), list = FTDayDecks.list(n);
@@ -104,8 +111,8 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     v = await page.evaluate(() => { const st = FTDayLocks.steps(8), am = st.filter(s => s.slot === 'am').length, pm = st.find(s => s.slot === 'pm');
       return { at: FTDayLocks.at(8), am, pmOpen: pm ? FTDayLocks.stepOpen(8, pm.n) : null, pmN: pm && pm.n }; });
     if (v.at !== v.am || v.pmOpen !== false) fail(`Day 8's schedule didn't open just its AM session: ${JSON.stringify(v)}`);
-    // Day 3 discusses Lessons 3 and 4: Lesson 4's deck, video and Knowledge Check wait for Day 4's steps, not Day 3's
-    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 999 } }, legacy: { all: [], batches: {} } });
+    // Day 3 discusses Lessons 3 and 4: Lesson 4's deck, video and Knowledge Check wait for Day 4's steps (locked), not Day 3's
+    await put(page, 'settings:daysteps', { all: {}, batches: { b102826: { 3: 999, 4: 0 } }, legacy: { all: [], batches: {} } });
     v = await page.evaluate(() => ({ l3: FTDayLocks.held(3, 'lesson'), l4: FTDayLocks.held(4, 'lesson'), v4: FTDayLocks.held(4, 'video') }));
     if (v.l3 || v.l4 !== true || v.v4 !== true) fail(`Lesson 4 went by Day 3's steps: ${JSON.stringify(v)}`);
     // a batch's own setting stands in for all batches': a batch can be locked behind the rest, and taken off their schedule
@@ -123,7 +130,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     await put(page, 'settings:daysteps', { all: {}, batches: {} });
     if (await page.evaluate(() => FTDayLocks.active(8) || !FTDayLocks.dayStarted(8))) fail('a day was held before the batches under way were recorded');
     // … and a lesson the batch had open then keeps its days open; one opened since is locked
-    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: { b102826: [6] } } });
+    await put(page, 'settings:daysteps', { all: { 10: 0 }, batches: {}, legacy: { all: [], batches: { b102826: [6] } } });
     v = await page.evaluate(() => ({ d8: FTDayLocks.active(8), d8open: FTDayLocks.dayStarted(8), d10: FTDayLocks.dayStarted(10) }));
     if (v.d8 || !v.d8open || v.d10) fail(`the batch under way didn't keep Intake's days open, or a new lesson's day wasn't locked: ${JSON.stringify(v)}`);
     // the first admin to load the open lessons records the batches under way, once
@@ -167,7 +174,7 @@ const get = (page, key) => page.evaluate(async key => { const r = await fetch('/
     // … Day 1 by its own steps, and 📚 Dashboard's segments show the trainer the batch's locks
     await page.evaluate(() => { state.ftOdBatch = null; FTDayDecks.open(1, 0); }); await page.waitForTimeout(800);
     if (!/Segment 3 of 8/.test(await page.evaluate(() => (document.querySelector('.ftdl-tpanel') || {}).innerText || ''))) fail('Day 1\'s deck doesn\'t show its own steps as the trainer\'s segments');
-    await put(page, 'settings:daysteps', { all: {}, batches: {}, legacy: { all: [], batches: {} } });
+    await put(page, 'settings:daysteps', { all: { 7: 0 }, batches: {}, legacy: { all: [], batches: {} } });
     await page.evaluate(() => goto('modules')); await page.waitForTimeout(1200);
     v = await page.evaluate(() => [...document.querySelectorAll('#dayl-6 .ftseg-b')].map(x => x.classList.contains('tlocked') && !x.classList.contains('locked')));
     if (v.join() !== 'true,true,true') fail(`the trainer's 📚 Dashboard doesn't show Intake's locked days (still openable): ${JSON.stringify(v)}`);
