@@ -188,9 +188,9 @@ function calActivity(){
 // ft/day3/img/image12.png and image17.png: Authorization, Payment Calls) and the PI firm's other frontline calls. Each:
 // what starts it, its steps (a question with what to do on YES and on NO, or a step to take), and its protocol
 const TREES = [
-  {h: "Authorization Decision Tree", tag: "Information Security Protocol", start: "Caller requests information", steps: [
+  {h: "Authorization Decision Tree", tag: "Information Security Protocol", start: "Caller requests Information", steps: [
     {q: "Is the caller listed as authorized in the CRM?", yes: ["Proceed per SOP"], no: ["Take a message", "Route to the attorney/paralegal", "Do NOT disclose information"]}]},
-  {h: "Payment Calls Decision Tree", tag: "Settlement & Payment Protocol", start: "Caller asks about payment/settlement", steps: [
+  {h: "Payment Calls Decision Tree", tag: "Settlement & Payment Protocol", start: "Caller asks about Payment/ Settlement", steps: [
     {do: "Authenticate name + case"},
     {q: "Is the caller requesting numbers or timelines?", yes: ["Do NOT answer", "Route to the legal team"], no: ["General inquiry", "Take a message", "Route"]}]},
   {h: "New Caller Decision Tree", tag: "Intake Protocol", start: "A new caller reports an accident or injury", steps: [
