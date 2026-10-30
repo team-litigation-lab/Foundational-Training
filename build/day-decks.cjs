@@ -284,8 +284,8 @@ s3: html => {
       return h.replace(re, `<a class="viewer-link" data-embed$1 data-title="${t}"`); }, cut("<p>Please answer the Attorney Calendar", '<div class="trainer-slot" data-slot="5:s3-2">'))
     // (the activity's own file is not on the slide: its items are the cards before it, s3i–s3l)
     .replace(/<p><a class="viewer-link" data-embed[^>]*1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP[^\n]*?<\/p>\n?/, "")
-    // (the Samples: a sample screenshot on the slide itself, not the Drive folder, which asks a trainee for access)
-    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="shots"><figure><a href="/ft/day5/img/image45.png" target="_blank"><img src="/ft/day5/img/image45.png" alt="Sample: an event with its time zone showing" loading="lazy"></a></figure></div>`);
+    // (the Samples: a finished event, Deposition Meeting, on the slide itself (the time zone's own sample, Recorded Statement Meeting, is drawn on the next page), not the Drive folder, which asks a trainee for access)
+    .replace(/<p><a class="viewer-link" data-embed[^>]*1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW[^\n]*?<\/p>/, `<div class="shots ftdd-shot-wide"><figure><a href="/ft/day5/img/sample-deposition.png" target="_blank"><img src="/ft/day5/img/sample-deposition.png" alt="Sample: a finished event, Deposition Meeting, with its time zone, location, reminder, colour, guests and notes" loading="lazy"></a></figure></div>`);
   const tz = cut("<p>REMINDER! Set the appropriate time zone", "<p>When taking a screenshot of the entire calendar");
   const card = (ic, h, body) => `<div class="ftdd-card4"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
   // the guide's two pictures, drawn as the slide's own (sharp at any size, readable): the event editor with its time zone
@@ -304,12 +304,12 @@ s3: html => {
   // after the items: the activity and the samples themselves, full size, then the time zone card and the Check one under the other (not a
   // grid), so a long one turns the page cleanly
   const lead = act.match(/^<p>[\s\S]*?<\/p>\n?/)[0];
-  // (the activity's Instructions on one slide, as two cards side by side: 1–4 and 5–9; its ten Activity Items on the next
+  // (the activity's Instructions on one slide, as two cards side by side, in bold: 1–5 and 6–9, so the two end level; its ten Activity Items on the next
   // four, sixteen cards: calItems. The "1. The activity" card is off: Done is at the end of the slides)
-  const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), five = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">5.</span>');
-  if(at < 0 || five < 0 || five > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
+  const text = calActivity(), at = text.indexOf("<h3>Activity Items</h3>\n"), six = text.indexOf('<p class="li" style="--lvl:0"><span class="lbl">6.</span>');
+  if(at < 0 || six < 0 || six > at) throw new Error("Day 5's activity text is no longer cut where the build expects");
   return '<div class="trainer-slot" data-slot="5:s3-1"></div>\n' +
-    '<div class="ftdd-cards2">' + card("📋", "Instructions 1–4", text.slice(0, five).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 5–9", text.slice(five, at)) + "</div>\n" +
+    '<div class="ftdd-cards2 ftdd-cards2-b">' + card("📋", "Instructions 1–5", text.slice(0, six).replace("<h3>Instructions</h3>\n", "")) + card("📋", "Instructions 6–9", text.slice(six, at)) + "</div>\n" +
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
       .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")) + "\n" +
