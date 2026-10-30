@@ -415,7 +415,7 @@ async function loadAdmin(quiet){
   try{
     let people = state.adminData;
     if(!people){ const keys = await sharedList("trainee:"); people = (await sharedGetMany(keys)).filter(Boolean); }
-    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected);
+    people = people.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected && !r.offboarded && !r.purgedAt);   // (an offboarded VA leaves the trainer's tabs and the deck's metrics sheet: js/ft-batch-admin.js)
     const keys = people.flatMap(r => ["sessions:" + r.id, "labreview:" + r.id]), vals = [];
     for(let i = 0; i < keys.length; i += 99) vals.push(...await sharedGetMany(keys.slice(i, i + 99)));
     AD.rows = people.map((r, i) => ({id:r.id, name:r.name || r.id, batch:r.batch || "", s:vals[i * 2] || {runs:{}}, rv:vals[i * 2 + 1] || {}}))
