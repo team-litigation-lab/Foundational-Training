@@ -722,7 +722,8 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
+  // (the trainer gets the criteria too, read only, over the scoresheet's launcher: its button moves to the bar under the slide)
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : admin ? M.view(rb.key) + M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 function waitBox(s, info){
   const h = String(s.h || "");

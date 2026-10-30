@@ -862,7 +862,13 @@ const EDIT = {
   16: {s1: h => rep(rep(rep(h, "<p><b>Topic: Lien Balance Verification Request</b></p>\n<p>Tutorial Video: </p>", "<p><b><i>Tutorial Video: Lien Balance Verification Request</i></b></p>", 1, "Day 16 s1"),
       'data-title="Tutorial Video: https://drive.google.com/file/d/1wRXRh8TySsosyxurXzhtCYwbXDJyN9A9/view?usp"', 'data-title="Tutorial Video: Lien Balance Verification Request"', 1, "Day 16 s1"),
       "<p>NOTE: Please don&#x27;t forget to take down notes for your guide later.</p>\n", "", 1, "Day 16 s1"),
-    s2: h => rep(h, 'data-kind="doc"', 'data-kind="video"', 1, "Day 16 s2")}
+    // (the demo's preparation: the recorded demo only, none of the chat reminders around it, and no ⏳ While you wait box: data-nowait)
+    s2: h => ["<p>Please be reminded to type &#x27;done&#x27; here as soon as you are done watching the video and have finalized your process guide. Thank you.</p>\n",
+      "<p>While waiting for your turn to perform, you may watch the following recorded demos below. Thank you.</p>\n",
+      "<p>Sending Lien Balance Verification request using SA.     </p>\n",
+      // (and the 45-minute notice to @everyone after the Demo Metrics)
+      "<p>@everyone</p>\n<p>Please be informed that for the last metric of your LV Demo, Time Management &amp; Efficiency, the ideal completion time is 45 minutes. Going beyond the allotted time will result in a significant deduction under this metric. Please be guided and manage your time accordingly.</p>\n"]
+      .reduce((x, from) => rep(x, from, "", 1, "Day 16 s2"), rep(h, 'class="viewer-link" data-kind="doc"', 'class="viewer-link" data-nowait data-kind="video"', 1, "Day 16 s2"))}
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
@@ -1062,8 +1068,8 @@ const ROWS = {
           ["<p><b>-----------------</b></p>\n<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>", KEEP[1].trimStart()]]}],
     s2: [{id: "s2", parts: [[null, SLOT(16, "s2-3")]]},
       {id: "s2b", h: "PM: Before Your Demo: Rules, Metrics & Time Limit", parts: [[SLOT(16, "s2-3"), null]],
-        // (the e-mail's subject line from the Notes for Your Guide, ahead of the rules)
-        fix: [["<h3>5. All trainees must be fully prepared", KEEP[0] + "<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>" + KEEP[1] + "\n<h3>All trainees must be fully prepared"], ["<h4>6. Demo Metrics</h4>", "<h4>Demo Metrics</h4>"]]}]
+        // (the e-mail's subject line from the Notes for Your Guide, ahead of the rules; no ⏳ While you wait box: data-nowait)
+        fix: [["<h3>5. All trainees must be fully prepared", KEEP[0].replace('"ftdd-keep"', '"ftdd-keep" data-nowait') + "<p><b>Sending request: E-mail/E-filing</b></p>\n<p>Subject Line:  </p>\n<p>Name of the client - Name of the lien holder(medical provider) - Request for Lien Verification</p>" + KEEP[1] + "\n<h3>All trainees must be fully prepared"], ["<h4>6. Demo Metrics</h4>", "<h4>Demo Metrics</h4>"]]}]
   }
 };
 // a section cut into its rows' slides (ROWS above); carry holds the fragments that go to a later section
