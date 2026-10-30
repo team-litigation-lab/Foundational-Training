@@ -282,8 +282,9 @@ main.main-tfb{max-width:980px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .tfb-badge{background:#DB8437;color:#fff;border-radius:999px;font-size:10.5px;font-weight:800;padding:1px 7px;}
 .tfb-score{font-weight:800;color:#1E7F4F;background:#E7F5EE;border-radius:999px;padding:1px 8px;font-size:12.5px;}
 .tfb-when{margin-left:auto;color:var(--ink-soft);font-size:12px;}
-.tfb-row{padding:12px 16px;display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:4px;}
-.tfb-row > *{width:100%;} .tfb-row.tfb-new{border-left:5px solid #DB8437;}
+/* (.card.tfb-row: the engine's Trainee Feedback form has rows of stars named tfb-row too, which keep their own layout) */
+.card.tfb-row{padding:12px 16px;display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:4px;}
+.card.tfb-row > *{width:100%;} .card.tfb-row.tfb-new{border-left:5px solid #DB8437;}
 .tfb-kicker{font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#B5651F;}
 .tfb-rub{margin-top:6px;font-size:13px;} .tfb-rub summary{cursor:pointer;color:var(--navy);font-weight:700;}
 .tfb-rub table{border-collapse:collapse;margin-top:6px;width:100%;} .tfb-rub td{border:1px solid #E3E7F0;padding:3px 8px;}

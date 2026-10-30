@@ -333,13 +333,15 @@ function ftFillSlots(){
     const html = on && FT.notes ? (FT.notes[el.getAttribute("data-slot")] || "") : "";
     if(el.innerHTML !== html) el.innerHTML = html;
     // a trainer's note right under a resource card (the 🎬 Recorded Lecture and its Facilitator Training Deck link)
-    // goes inside that card, as one card
-    const prev = el.previousElementSibling, card = prev && prev.matches(".cards") ? prev.querySelector(":scope > .res-card:last-child") : null;
+    // goes inside that card, as one card (not on a day deck's slide: there the notes open in a drawer beside it,
+    // js/ft-day-decks.js, and the slide is laid out as the trainee's)
+    const prev = el.previousElementSibling, card = prev && prev.matches(".cards") && !el.closest(".ftdd-slides") ? prev.querySelector(":scope > .res-card:last-child") : null;
     if(html && card && !card.contains(el)){
       el.classList.add("trainer-slot-in"); card.appendChild(el);
       el.addEventListener("click", ev => ev.stopPropagation()); el.addEventListener("keydown", ev => ev.stopPropagation());
     }
   });
+  if(window.FTDayDecks && FTDayDecks.notesPaint) FTDayDecks.notesPaint();
 }
 const __ftAfterRender = window.afterRender;
 window.afterRender = function(){

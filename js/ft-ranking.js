@@ -103,7 +103,8 @@ function parseRange(s){
 }
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
-  return [["", "Typed by the trainer"]].concat(S.map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
+  // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
+  return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
     [["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
@@ -130,12 +131,18 @@ async function fillFromPortal(){
         const cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;          // never over what the trainer typed
         const [sid, words] = [c.src.split(":")[0], c.src.split(":").slice(1).join(":").trim()];
         const src = sc.rows.find(r => r.s.id === sid); if(!src) return;
-        let pct = null;
+        let pct = null, mark5 = null;
         if(!words) pct = src.avg;
-        else { const it = src.items.find(x => typeof x.pct === "number" && String(x.name).toLowerCase().includes(words.toLowerCase())); pct = it ? it.pct : null; }
+        else {
+          // the item named so first (the Monitoring Sheet itself, not "Monitoring Sheet items #5, #7"), else the first that
+          // names the words
+          const w = words.toLowerCase(), graded = src.items.filter(x => typeof x.pct === "number"), nm = x => String(x.name).toLowerCase();
+          const it = graded.find(x => nm(x) === w || nm(x).endsWith(" " + w) || nm(x).startsWith(w + " ·")) || graded.find(x => nm(x).includes(w));
+          pct = it ? it.pct : null; mark5 = it && typeof it.mark5 === "number" ? it.mark5 : null;
+        }
         if(pct == null) return;
         const max = num(c.max) || 5;
-        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * max), auto: true}); n++;
+        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), auto: true}); n++;
       });
     });
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)

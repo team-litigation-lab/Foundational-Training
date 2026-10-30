@@ -313,11 +313,29 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (/Today.s lesson|How you read|Split screen|To-Do/i.test(rail)) fail(`the deck's side panel still has its sections: ${rail.replace(/\s+/g, ' ').trim()}`);
   // no ▶ Autoplay on a deck: the trainee turns the slides
   if (await page.$('.ftdd-rail button:has-text("Autoplay")')) fail('the deck still offers ▶ Autoplay');
-  // the metrics screenshot is drawn out as the scorecard the call is marked on
-  await page.evaluate(() => { state.isAdmin = true; FTDayDecks.open(4, 0); }); await page.waitForTimeout(1300);
-  const score = await page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
-    for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-score'); if (b) return { h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftdd-score-l li').length, shot: !!b.querySelector('img') }; } return null; });
-  if (!score || score.items < 10 || /How this call is scored/.test(score.h)) fail(`the Reception metrics aren't drawn as a scorecard: ${JSON.stringify(score)}`);
+  // the metrics screenshot is drawn as the guide's table (criterion | Score, the WEIGHTED AVERAGE last): a trainee reads it
+  await page.evaluate(() => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(4, 0); }); await page.waitForTimeout(1300);
+  const findScore = () => page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
+    for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-sheet .ftdd-score'); if (b) return { i, h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length, avg: /WEIGHTED AVERAGE/.test(b.textContent), remarks: /Remarks/.test(b.textContent), pick: !!b.querySelector('.ftms-pick select'), shot: !!b.querySelector('img') }; } return null; });
+  const score = await findScore();
+  if (!score || score.items !== 14 || !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
+  // a trainer scores on it: the batch's trainees to pick, a Remarks column, 💾 Save to the trainee's scores (labreview acts)
+  const me = await page.evaluate(() => state.traineeId);
+  await page.evaluate(id => fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id }) }).then(r => r.json()).then(j => { const rec = JSON.parse(j.value); rec.approved = true; return fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id, value: JSON.stringify(rec) }) }); }), me);
+  await page.evaluate(() => { state.isAdmin = true; state.adminPreview = false; state.adminData = null; window.__tid = state.traineeId; state.traineeId = null; });
+  await page.evaluate(i => FTDayDecks.open(4, i || 0), score && score.i);
+  await page.waitForFunction(() => document.querySelector('.ftdd-sheet .ftms-pick'), null, { timeout: 15000 }).catch(() => {});
+  const tsc = await findScore();
+  if (!tsc || !tsc.remarks || !tsc.pick) fail(`the trainer's metrics sheet has no trainee pick or Remarks column: ${JSON.stringify(tsc)}`);
+  else {
+    await page.evaluate(id => FTMetrics.who('reception', id), me); await page.waitForTimeout(600);
+    await page.evaluate(() => { const b = document.querySelector('.ftdd-sheet .ftms'); b.querySelectorAll('[data-crit]').forEach(x => { x.value = '4'; FTMetrics.calc(x); }); const r = b.querySelector('[data-fb="0"]'); r.value = 'Clear greeting'; FTMetrics.calc(r); b.querySelector('[data-status]').value = 'Passed'; FTMetrics.save(b.querySelector('.ftms-save')); });
+    await page.waitForTimeout(1500);
+    const lr = await page.evaluate(async id => JSON.parse((await fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'labreview:' + id }) }).then(r => r.json())).value || 'null'), me);
+    const a = lr && lr.acts && lr.acts['reception-live'];
+    if (!a || a.status !== 'Passed' || a.score !== 80 || !a.rubric || a.rubric.avg !== 4 || a.rubric.feedback[0] !== 'Clear greeting') fail(`the trainer's metrics sheet didn't save to the trainee's scores: ${JSON.stringify(a)}`);
+  }
+  await page.evaluate(() => { state.traineeId = window.__tid; });
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   // Day 6's Mock Call Scenarios read in the guide's wording, as text and lists (not a heading bar per line)
@@ -332,7 +350,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
   // Day 9's mock call preparation is no longer a blank slide
   await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, FT_DAY_DECKS[9].slides[1].id))); await page.waitForTimeout(1500);
-  const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score-l li').length }));
+  const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
   if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
 

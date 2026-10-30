@@ -417,7 +417,9 @@ async function loadAdmin(quiet){
     AD.at = Date.now();
   }catch(err){ if(!AD.rows) AD.rows = []; }
   AD.loading = false;
-  if(state.view === "admin" && ["sessions", "trainerinputs"].includes(state.adminTab) && !(quiet && document.activeElement && /TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName))) render();
+  // (a deck redraws for its metrics sheet unless the trainer is typing in it)
+  const typing = document.activeElement && /TEXTAREA|INPUT|SELECT/.test(document.activeElement.tagName);
+  if(state.view === "daydeck" ? !(typing && document.activeElement.closest(".ftms")) : state.view === "admin" && ["sessions", "trainerinputs"].includes(state.adminTab) && !(quiet && typing)) render();
 }
 function liveRows(){
   return (AD.rows || []).filter(r => r.s && r.s.live && Date.now() - new Date(r.s.live.startedAt) < 4 * 3600000);
@@ -487,9 +489,9 @@ function rubricForm(a, c){
   const got = (c.rubric && c.rubric.key === rb.key) ? c.rubric : {scores:[], feedback:[]}, avg = RUB().average(rb, got.scores);
   return `<div class="fss-wide ti-rub" data-rubric="${e(rb.key)}"><div class="ti-rub-h"><b>📋 ${e(rb.title)} — scorecard</b><span class="fss-muted">Each criterion 0–5 (half points allowed). The weighted average becomes the score.</span></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
-    <table class="ti-rub-tbl"><thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>${rb.feedback ? "<th>Feedback</th>" : ""}</tr></thead><tbody>
+    <table class="ti-rub-tbl"><thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>${rb.feedback ? "<th>Remarks</th>" : ""}</tr></thead><tbody>
       ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" oninput="FTInputs.calc(this)"></td>
-        ${rb.feedback ? `<td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="feedback"></td>` : ""}</tr>`).join("")}
+        ${rb.feedback ? `<td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks"></td>` : ""}</tr>`).join("")}
       <tr class="ti-rub-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avgTxt(avg)}</td>${rb.feedback ? "<td></td>" : ""}</tr></tbody></table></div>`;
 }
 function rubricRead(box){
@@ -594,6 +596,64 @@ Return ONLY JSON: {"comment":"..."}`;
 };
 ftAdminTab("trainerinputs", "🧑‍🏫 Trainer Inputs", renderTrainerInputs);
 
+/* 📋 The metrics on a mock-call or demo slide (js/ft-day-decks.js): the Training Guide's table, criterion | Score, and its
+   WEIGHTED AVERAGE. A trainee reads it as the guide prints it. A trainer scores on it during the mock calls and the demos:
+   the batch and a trainee from it, each criterion 0–5 with a Remarks column, the result, and 💾 Save, which writes the
+   same record as Admin → 🧑‍🏫 Trainer Inputs (labreview:<id> acts[<activity>]: the scores, the remarks, the weighted
+   average and the score in %), so it reaches the trainee's Scorecard, 📬 My Feedback and ⤓ the Weekly Ranking. */
+const MS = {batch:"", who:{}, draft:{}};   // (draft: what is typed and not saved yet, per sheet and trainee, kept across redraws)
+const actOfRubric = key => acts().find(a => { const rb = RUB().forAct(a); return rb && rb.key === key; }) || null;
+function metricsTable(key){
+  const rb = RUB().list[key]; if(!rb) return "";
+  const head = `<thead><tr><th>${e(rb.title.toUpperCase())}</th><th>Score</th>`;
+  const trainer = !!state.isAdmin && !state.adminPreview, a = actOfRubric(key);
+  if(!trainer || !a) return `<table class="ftms-tbl">${head}</tr></thead><tbody>
+    ${rb.criteria.map(k => `<tr><td>${e(k.n)}</td><td>0</td></tr>`).join("")}
+    <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td>0</td></tr></tbody></table>`;
+  if(!AD.rows){ if(!AD.loading) loadAdmin(true); return `<div class="ftms ftms-trainer"><p class="fss-muted">Loading the trainees…</p></div>`; }
+  if(!AD.loading && Date.now() - (AD.at || 0) > 60000) loadAdmin(true);   // (the batch's trainees and their saved scores, kept fresh)
+  const batches = [...new Set(AD.rows.map(r => r.batch).filter(Boolean))].sort();
+  if(!MS.batch || !batches.includes(MS.batch)) MS.batch = AD.batch && batches.includes(AD.batch) ? AD.batch : batches[batches.length - 1] || "";
+  const people = AD.rows.filter(r => !MS.batch || r.batch === MS.batch);
+  const id = people.some(r => r.id === MS.who[key]) ? MS.who[key] : "", row = people.find(r => r.id === id);
+  const c = row ? ((((row.rv || {}).acts) || {})[a.id] || {}) : {}, got = MS.draft[key + "|" + id] || (c.rubric && c.rubric.key === key ? c.rubric : {scores:[], feedback:[]});
+  const avg = RUB().average(rb, got.scores);
+  return `<div class="ftms ftms-trainer" data-ms="${e(key)}" data-act="${e(a.id)}">
+    <div class="ftms-pick"><b>🧑‍🏫 Score a trainee</b>
+      <select aria-label="Batch" onchange="FTMetrics.batch(this.value)">${batches.map(b => `<option ${b === MS.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select>
+      <select aria-label="Trainee" onchange="FTMetrics.who('${e(key)}', this.value)"><option value="">Choose a trainee…</option>${people.map(r => `<option value="${e(r.id)}" ${r.id === id ? "selected" : ""}>${e(r.name)}</option>`).join("")}</select>
+      ${row && c.status ? `<span class="fss-pill ${c.status === "Passed" ? "ok" : c.status === "Redo" ? "mid" : ""}">Saved: ${e(c.status)}${tScore(c) != null ? " · " + tScore(c) + "%" : ""}</span>` : ""}
+      <label>Result <select data-status ${row ? "" : "disabled"}>${STATUSES.map(x => `<option ${x === (c.status || "Not yet") ? "selected" : ""}>${x}</option>`).join("")}</select></label>
+      <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
+    ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
+    <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
+      ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
+        <td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td></tr>`).join("")}
+      <tr class="ftms-avg"><td>WEIGHTED AVERAGE</td><td data-avg>${avg == null ? "0" : (Math.round(avg * 100) / 100).toFixed(2)}</td><td></td></tr></tbody></table></div>`;
+}
+window.FTMetrics = {
+  table: metricsTable, actOf: actOfRubric,
+  batch(b){ MS.batch = b; render(); },
+  who(key, id){ MS.who[key] = id; render(); },
+  calc(inp){ const box = inp.closest(".ftms"), r = rubricRead(box); if(!r) return;
+    box.querySelector("[data-avg]").textContent = r.avg == null ? "0" : (Math.round(r.avg * 100) / 100).toFixed(2);
+    const key = box.getAttribute("data-ms"); if(MS.who[key]) MS.draft[key + "|" + MS.who[key]] = {scores:r.scores, feedback:r.feedback}; },
+  async save(btn){
+    const box = btn.closest(".ftms"), key = box.getAttribute("data-ms"), act = box.getAttribute("data-act"), id = MS.who[key];
+    const row = (AD.rows || []).find(r => r.id === id), rr = rubricRead(box); if(!row || !rr) return;
+    if(!rr.scores.some(v => v != null)){ toast("Score at least one criterion first."); return; }
+    btn.disabled = true;
+    try{
+      await writeReview(id, cur => { cur.acts = cur.acts || {}; const prev = cur.acts[act] || {};
+        cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
+          date:prev.date || new Date().toISOString().slice(0, 10), at:new Date().toISOString(),
+          rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}}); });
+      delete MS.draft[key + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
+    }catch(err){ toast("Couldn’t save. Check your connection."); }
+    btn.disabled = false; render();
+  }
+};
+
 // 📬 My Feedback (js/ft-trainer-feedback.js) names the trainer-led activities and the sessions
 FTSessions.trainerActs = () => acts();
 FTSessions.sessionTitle = id => (sessionById(id) || {}).title || id;
@@ -601,13 +661,20 @@ FTSessions.sessionTitle = id => (sessionById(id) || {}).title || id;
 // the Scorecard's sources (js/ft-program.js): the sessions (the trainer's score, else the automated %) and the trainer inputs
 window.ftSessionItems = ctx => {
   const runs = ((ctx.rec["sessions:"] || {}).runs) || {}, rv = ((ctx.rec["labreview:"] || {}).sessions) || {};
-  return Object.entries(runs).filter(([k, v]) => v && v.submittedAt).map(([k, v]) => { const [sid, mc] = k.split("|"), s = sessionById(sid), t = tScore(rv[k]);
-    return {name:(s ? s.title : sid) + (mc !== "-" ? " · " + mc : ""), pct:t != null ? t : (v.auto ? v.auto.pct : null), note:t != null ? "Trainer’s score" : "Automated checks · waiting for your trainer"}; });
+  // a review counts for the attempt it was given on: a session submitted again after it is the new attempt's automated checks
+  // until the trainer reviews it; a session started again (not submitted yet) keeps the trainer's score of the last attempt
+  const newer = (v, r) => !!(v.submittedAt && r && r.at && Date.parse(v.submittedAt) > Date.parse(r.at));
+  return Object.entries(runs).filter(([k, v]) => v && (v.submittedAt || tScore(rv[k]) != null)).map(([k, v]) => { const [sid, mc] = k.split("|"), s = sessionById(sid);
+    const t = newer(v, rv[k]) ? null : tScore(rv[k]), name = (s ? s.title : sid) + (mc !== "-" ? " · " + mc : "");
+    if(t != null) return {name, pct:t, note:v.submittedAt ? "Trainer’s score" : "Trainer’s score · started again, not submitted yet"};
+    return {name, pct:v.auto ? v.auto.pct : null, note:tScore(rv[k]) != null ? "New attempt · automated checks · waiting for your trainer" : "Automated checks · waiting for your trainer"}; });
 };
 window.ftTrainerItems = ctx => {
   const mine = ((ctx.rec["labreview:"] || {}).acts) || {}, list = ((ctx.shared["settings:trainer-acts"] || {}).acts) || DEFAULT_ACTS;
   return list.filter(a => mine[a.id] && mine[a.id].status).map(a => { const r = mine[a.id], t = tScore(r);
-    return {name:a.title, pct:t != null ? t : r.status === "Passed" ? 100 : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
+    // (mark5: the scorecard's own weighted average out of 5, which ⤓ Fill in the Weekly Ranking takes as it is, unrounded)
+    const avg = r.rubric && r.rubric.avg != null && isFinite(Number(r.rubric.avg)) ? Number(r.rubric.avg) : null;
+    return {name:a.title, pct:t != null ? t : r.status === "Passed" ? 100 : null, mark5:avg != null && t != null && Math.abs(t - avg / 5 * 100) <= 0.6 ? avg : null, note:r.status + (r.rubric && r.rubric.avg != null ? " · scorecard " + Number(r.rubric.avg).toFixed(2) + "/5" : "") + (r.date ? " · " + r.date : "")}; });
 };
 
 (function(){ const s = document.createElement("style"); s.id = "ft-sessions"; s.textContent = `

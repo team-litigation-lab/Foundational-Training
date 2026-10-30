@@ -126,12 +126,13 @@ const failures = []; const fail = m => failures.push(m);
   if (!/REDUCTION \/ CLOSING & SETTLEMENT DEMO/.test(await page.evaluate(() => (document.querySelector('.ti-rub-tbl th') || {}).innerText || ''))) fail('the Reduction / Closing & Settlement Demo has no scorecard in Trainer Inputs');
   await page.evaluate(() => FTInputs.cell()); 
 
-  // ⤓ fill: Sam's Reception Mock Calls from that scorecard (83% = 4.15/5); Rhea's typed scores untouched
+  // ⤓ fill: Sam's Reception Mock Calls from that scorecard, its own weighted average (4.14/5, as the trainee's card reads, not
+  // 83% turned back into 4.15); Rhea's typed scores untouched
   await page.evaluate(() => { state.adminTab = 'ranking'; render(); }); await page.waitForTimeout(800);
   await page.evaluate(() => FTRanking.fill()); await page.waitForTimeout(2500);
   if ((await rowOf('Rhea Rank').locator('.rk-avg').innerText()) !== '4.32') fail('⤓ Fill changed a score the trainer typed');
   const samRec = await rowOf('Sam Second').locator('.xl-num').nth(6).inputValue();
-  if (samRec !== '4.15') fail(`⤓ Fill didn't take Sam's Reception Mock Calls from the trainer's scorecard: ${JSON.stringify(samRec)}`);
+  if (samRec !== '4.14') fail(`⤓ Fill didn't take Sam's Reception Mock Calls from the trainer's scorecard: ${JSON.stringify(samRec)}`);
   if ((await rowOf('Sam Second').locator('.rk-avg').innerText()) !== '3.38') fail(`Sam's average after the fill is ${await rowOf('Sam Second').locator('.rk-avg').innerText()} (3.38 expected)`);
 
   // Week 2 starts from Week 1's columns, with no scores

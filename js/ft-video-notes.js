@@ -98,7 +98,7 @@ document.addEventListener("keydown", ev => { if(ev.key === "Escape" && document.
 
 /* ---------- 🎬 Video Notes page: every video of the days reached ---------- */
 function daysReached(){
-  const n = (root().FTDays && FTDays.COUNT) || 18, out = [];
+  const n = (root().FTDays && FTDays.COUNT) || 16, out = [];
   for(let d = 1; d <= n; d++) if(!root().FTDayDecks || FTDayDecks.dayOpen(d)) out.push(d);
   return out;
 }
