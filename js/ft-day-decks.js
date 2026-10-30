@@ -1353,35 +1353,36 @@ const LESSON_CARDS = {
     tools: ["Softphones: watch ONE sample type from the video for your Monitoring Sheet takeaways",
       "Upload both assessments to your Assessments/Activities subfolder"],
     takeaways: ["Softphones", "Attorney-client privilege", "What each party may be told"], file: "Law_Firm_Communications_Training_Process_Question_Answers (VA First Name)"},
-  3: {days: [3], focus: "The PI Workflow & Reception Calls",
+  // Personal Injury Process Flow and Receptionist Training: one card, Part 1 (Day 3) and Part 2 (Day 4). Receptionist Training
+  // has no card of its own: its deck opens from Part 1's Reception row, and its Knowledge Check is the two lessons' one
+  3: {days: [3, 4], focus: "The PI Workflow & Reception Calls",
     rows: [
       // Part 1: 💬 the PI Workflow deck, then 💬 the Reception deck (▶ Start Training: each lesson's deck, as on Days 1 and 2),
-      // then their one ✍️ Knowledge Check (Receptionist Training's, with Personal Injury Process Flow's questions first:
-      // js/ft-process.js kc), then the 🎧 Call Listening Sessions (the sample recordings and SOP); Part 2: the activities
+      // then their one ✍️ Knowledge Check (Receptionist Training's, ten questions, Personal Injury Process Flow's first:
+      // js/ft-process.js kc), the decision trees, the sample SOP, the sample call recordings, the Reception Listening
+      // Activity (the Harbor & Pine calls, then the optional reference recordings) and the CRM/CMS videos
       {t: "PI Workflow Discussion Deck", sub: "▶ Start Training: the Personal Injury Process Flow deck, with your trainer · Next: the Reception deck", k: "classroom", go: "lesson"},
       {t: "Reception Discussion Deck", sub: "▶ Start Training: the Receptionist Training deck, with your trainer · Next: ✍️ the Knowledge Check", k: "classroom", go: "lesson", lesson: 4, kc: 4},
-      {t: "Process Questions: Submit", sub: "PI Workflow & Receptionist Training in ✍️ Knowledge Check, ten questions · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(4)"},
+      {t: "Knowledge Check: 10 Process Questions", sub: "PI Workflow & Receptionist Training in ✍️ Knowledge Check · 📝 Submit for Grading · 📄 Save PDF to my Folder", k: "assessment", run: "FTDayDecks.toKC(4)"},
       // (no Digital Handouts stop: the day has no handouts)
-      {t: "Frontline Management: Operations, Logistics, and Escalations Protocols", sub: "Decision trees · the sample SOP", k: "listen", d: 3, s: "s1"},
-      {t: "Call Listening Session", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
-      // (optional: one card per recording, build/day-decks.cjs REF_RECS; the Confidentiality exercise is off the deck)
-      {t: "Listening Activity", sub: "Optional reference recordings, one card each: listen during your downtime", k: "listendo", d: 3, s: "s1b"},
-      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT)
-      {t: "Reception Listening Activity: 5 Practice Calls", sub: "Read the task, listen to the calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check) · Next: ✍️ Knowledge Check", k: "listendo", d: 3, s: "s1c"},
-      {t: "CRM/CMS Training Videos", sub: "Watch them, then update item #12 on your Monitoring Sheet · finish in idle time if need be", k: "watch", d: 3, s: "s2"}],
+      {t: "Authorization Decision Tree", sub: "The call-handling decision trees: who may be told what", k: "read", d: 3, s: "s1"},
+      {t: "Sample SOP", sub: "The sample SOP's pages · open it or ⬇ download it", k: "read", d: 3, s: "sop"},
+      {t: "Sample Call Recordings", sub: "A card per recording · log each call", k: "listen", d: 3, s: "listen", go: "listening"},
+      // (its task in cards, then the five calls on one slide, whose Next is ✍️ Knowledge Check: KC_NEXT; then the optional
+      // reference recordings, build/day-decks.cjs REF_RECS, on the same step)
+      {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Listen to the five calls and extract each call’s 5 data points and challenge into the worksheet (on ✍️ Knowledge Check)", k: "listendo", d: 3, s: "s1c"},
+      {t: "CRM/CMS Training Videos", sub: "Choose one video and watch it now · watch the rest during your idle time · then update item #12 on your Monitoring Sheet", k: "watch", d: 3, s: "s2"},
+      // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
+      {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
+      {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
-      "The Reception Listening Activity worksheet and its naming convention: on ✍️ Knowledge Check"],
-    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
-  4: {days: [4], focus: "Handling Reception Calls",
-    rows: [
-      {t: "Training Video Viewing", sub: "Reception Training with Julio (1:49:49) · update items #10–11 on your Monitoring Sheet and hit 📤 Submit", k: "watch", d: 4, s: "s2"},
-      {t: "Mock Call Preparation", sub: "The Call Simulator, the Ring Channel and the CMS · how the one-on-one runs and its fourteen metrics", k: "interactive", d: 4, s: "s2b"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "Your graded call, with the trainer · scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s3"}],
-    tools: ["Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
-    takeaways: ["First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
+      "The Reception Listening Activity worksheet and its naming convention: on ✍️ Knowledge Check",
+      "Call Simulator: practise reception calls while you wait for your turn", "Reception Mock Calls Metrics: how your call is scored"],
+    takeaways: ["The stages of a PI case", "Missing documentation", "Efficient intake", "First impressions", "Call triage", "Screening before a transfer"], file: "PI_Workflow_and_Reception_Training_Process_Question_Answers (VA First Name)"},
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
-      {t: "Update Your Monitoring Sheet", time: "AM", sub: "Items #10–11 · hit 📤 Submit · Next: ▶ the lesson deck", k: "read", d: 5, s: "s1", lead: true},
+      // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
       {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, screenshot each appointment, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
       {t: "Calendaring Activity", time: "AM & PM", sub: "Your graded activity on the Calendar Simulator, with the trainer", k: "interactive", d: 6, s: "s1b"},
       {t: "Calendar Management Training Videos", sub: "Parts 1–2 and Calendaring 101, while you wait for your turn", k: "watch", d: 6, s: "s1"},
@@ -1632,7 +1633,7 @@ const offlineRow = c => c.rows.find(r => r.k === "homework") || c.rows[c.rows.le
 // the day a row belongs to: its slide's day, else the day it names (the LOR activity is Day 11's), else the lesson's first
 const rowDay = (c, r) => Number(r.day != null ? r.day : r.d != null ? r.d : c.days[0]);
 // a day after the discussion is named for what it holds
-const DAY_TITLES = {6: "Calendaring Activity", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
+const DAY_TITLES = {4: "Julio’s Video & Reception Mock Calls", 6: "Calendaring Activity", 8: "Intake Process & the Intake Packet Demo", 9: "Intake Mock Calls & Transcription",
   11: "Insurance Communication Activities", 12: "Uploading & Sending 1P and 3P LORs", 13: "Medical Records Specialist Role",
   14: "Sending MedLOR & Requesting Records", 15: "Recorded Demonstration: MedLOR", 16: "Lien Balance Verification Request"};
 const DAY_FOCUS = {6: "Calendaring Activity", 8: "The Intake Packet & Documents", 9: "Intake Mock Calls & Transcription",
@@ -2419,6 +2420,12 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-item > p.ftdd-cal-h{margin:0 0 6px !importa
 .ft-body .ftdd-cal-grid{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:14px;align-items:start;margin:0 0 8px;}
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid p{font-size:16px !important;line-height:1.4 !important;margin:0 0 4px !important;}
 .ft-body .ftdd-cal-grid > .ftdd-cal-item{border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 4px 12px rgba(30,35,64,.12);padding:0 12px 8px;margin:0;overflow:hidden;}
+/* (Day 5's item 8: its four parts of the trip side by side on its card, each a box under its ➢ heading) */
+.ftdd-cal-parts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:6px 0 2px;}
+.ftdd-cal-partbox{border:1px solid #C9CFE6;border-radius:10px;background:#F6F7FB;padding:6px 10px 8px;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part{margin:-6px -10px 6px !important;padding:6px 10px !important;border-radius:10px 10px 0 0;background:#E8EBF5 !important;color:#1E2340 !important;font-weight:800;}
+main.main-ftdd .ftdd-sheet .ftdd-cal-partbox > p.ftdd-cal-part b{color:#1E2340 !important;}
+@media(max-width:900px){ .ftdd-cal-parts{grid-template-columns:repeat(2,minmax(0,1fr));} }
 main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin:0 -12px 8px !important;padding:8px 12px !important;font-size:17px !important;background:#1E2340 !important;border-bottom:3px solid #E8590C;}
 .ft-body .ftdd-calsim{margin:0 0 12px;}
 /* (a card's dates, moved to the trainee's own weeks: hidden until their anchor is known, calDates; the trainer's note on them) */

@@ -35,10 +35,11 @@ for (let n = 1; n <= 16; n++) {
   if (!d.slides.some(s => s.placeholder || /^extra-/.test(s.id))) fail(`Day ${n}: no "To be added" slide`);
 }
 if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'monitoring'].includes(s.id))) fail('Day 1 still has Training Reminders, the Nitro Pro homework, the Monitoring Sheet set-up or Setting of Expectations');
-// Day 3's CRM/CMS Training Videos: the five videos played in the slide (data-embed: a player each), no comma after a link
-// (it reads as part of the address when copied), without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
+// Day 3's CRM/CMS Training Videos: the five videos on one slide as small cards (data-card: a preview each, played bigger in the
+// pop-up viewer), with "choose one now, the rest in idle time"; no comma after a link (it reads as part of the address when
+// copied), and without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
 const crm = D[3] && D[3].slides.find(s => s.id === 's2');
-if (!crm || (crm.html.match(/<a class="viewer-link" data-embed data-kind="video"/g) || []).length !== 5 || /<\/a>\s*,/.test(crm.html) || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five embedded players, a link is followed by a comma, or the slide still has its 'Please watch' line");
+if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || !/Choose one video/.test(crm.html) || /<\/a>\s*,/.test(crm.html) || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards with the choose-one line, a link is followed by a comma, or the slide still has its 'Please watch' line");
 // Day 10's two VA-recording folders and Day 11's Astred 09/20 shadowing recording: one link each, whole, played in the slide
 for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15OCezerotGu4tql8gOOxleQYN4uVSWJJ', 1], [11, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 1]]) {
   const all = D[n] ? D[n].slides.map(s => s.html).join('\n') : '';
@@ -74,21 +75,22 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   const s2b = sl(4, 's2b'), at = s2b.indexOf('<p><b>How the mock calls run (one-on-one)</b></p>'), mon5 = (D[5] || { slides: [] }).slides[0] || {};
   if (s2b.indexOf('<p>Step 1 - ') < 0 || at < 0 || !/ftdd-mockpage ftdd-steps7/.test(s2b) || !/class="ftdd-mock-btns"/.test(s2b.slice(at)) || sl(4, 's2b-2') || /ftdd-biglinks/.test(s2b) || sl(4, 's2c'))
     fail("Day 4's mock call preparation and metrics aren't on its slide");
-  if (mon5.id !== 's1' || mon5.h !== 'Update Your Monitoring Sheet' || mon5.html.trim())
-    fail(`Day 5 doesn't open on its Monitoring Sheet update alone: ${JSON.stringify({ id: mon5.id, h: mon5.h, len: (mon5.html || '').length })}`);
-  // (its Activity Items as sixteen cards, four to a slide: an item a card, 6's two travel blocks and 8's four parts of the
-  // trip cards of their own, each named after its item; every activity date marked for moving to the trainee's weeks)
+  // (the Monitoring Sheet's items #10–11 close Reception Part 2, Day 4; Calendaring's Day 5 no longer opens on them)
+  if (mon5.id === 's1' || !(D[4] || { slides: [] }).slides.some(s => s.id === 's2m'))
+    fail(`Day 5 still opens on the Monitoring Sheet update, or Day 4 lost it: ${JSON.stringify({ id: mon5.id, h: mon5.h })}`);
+  // (its Activity Items as ten cards, an item a card with its own on it (6's two travel blocks; 8's four parts of the trip,
+  // side by side, 8 on a slide of its own); every activity date marked for moving to the trainee's weeks)
   const txt = sl(5, 's3'), its = ['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id));
   const ins = (txt.match(/<p class="li" style="--lvl:0"><span class="lbl">\d\.<\/span>/g) || []).length, items = its.map(h => (h.match(/class="ftdd-cal-item[ "]/g) || []).length);
   const cards = its.map(h => (h.match(/data-card="([^"]+)"/g) || []).map(x => x.slice(11, -1)).join(' ')).join(' | '), heads = (D[5].slides || []).filter(s => /^s3[ijkl]$/.test(s.id)).map(s => s.h);
   const dated = its.join('').match(/<span class="ftdd-cal-date" data-cal-date="2026-07-\d\d">July \d\d, 2026<\/span>/g) || [];
   if (ins !== 9 || (txt.match(/class="ftdd-card4"/g) || []).length !== 2 || /1\. The activity|ftdd-cal-item|data-cal-date/.test(txt) || (txt.match(/class="ftdd-sw"/g) || []).length !== 7 || !/john\.delacruz@legalsupporthelp\.com/.test(txt)
-    || items.join() !== '4,4,4,4' || cards !== '1 2 3 4 | 5 6 6a 6b | 7 8 8a 8b | 8c 8d 9 10' || its.some(h => (h.match(/data-calsim-activity/g) || []).length !== 1 || !h.includes('#/calsim/attorney-activity'))
-    || heads.join() !== ['1–4', '5–6b', '7–8b', '8c–10'].map(r => 'Attorney Calendar Management Activity: Activity Items ' + r).join()
-    || !/<b>6\. Court Appearance · Travel Block: to court<\/b>/.test(its[1]) || !/<b>8\. Networking Dinner Event · Return Travel to Seattle<\/b>/.test(its[3])
-    || dated.length !== 16 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
-    fail(`Day 5's activity isn't its Instructions in two cards, then its sixteen cards four to a slide with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
-  if (!/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/ftdd-seq/.test(sl(5, 's3b'))) fail('Day 5\'s activity file, samples and drawn pictures are no longer on its second slide');
+    || items.join() !== '4,3,1,2' || cards !== '1 2 3 4 | 5 6 7 | 8 | 9 10' || its.some(h => (h.match(/data-calsim-activity/g) || []).length !== 1 || !h.includes('#/calsim/attorney-activity'))
+    || heads.join() !== ['Items 1–4', 'Items 5–7', 'Item 8', 'Items 9–10'].map(r => 'Attorney Calendar Management Activity: Activity ' + r).join()
+    || !/for travel to court\./.test(its[1]) || (its[2].match(/class="ftdd-cal-partbox"/g) || []).length !== 4 || !/➢ Return Travel to Seattle/.test(its[2])
+    || dated.length !== 12 || /July \d\d, 2026(?!<\/span>)/.test(its.join('')) || /ftdd-cal-wide/.test(its.join('')))
+    fail(`Day 5's activity isn't its Instructions in two cards, then its ten cards (8 on a slide of its own) with the Calendar Simulator's link and its dates marked: ${JSON.stringify({ ins, items, cards, heads, dated: dated.length })}`);
+  if (/1VNgbFDn3PgkPwkE6g0PwXYxo-7DmU3MP/.test(sl(5, 's3b')) || /1lLquhtY5XQd85X5IEXJcRCkpV39UA8wW/.test(sl(5, 's3b')) || !/ft\/day5\/img\/image45\.png/.test(sl(5, 's3b')) || !/ftdd-gcal/.test(sl(5, 's3b')) || !/ftdd-seq/.test(sl(5, 's3b'))) fail('Day 5\'s second slide still embeds the activity file or the Samples folder, or lost its sample screenshot or drawn pictures');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
 }
@@ -121,15 +123,15 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
     days: c.dataset.days.split(',').map(Number), h: (c.querySelector('.mh-title') || {}).innerText || '',
     segs: [...c.querySelectorAll('.mc-grid > .ftseg > .ftseg-b')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()),
     steps: [...c.querySelectorAll('.mc-grid > button')].map(b => b.innerText.replace(/^[^A-Za-z]+/, '').trim()), first: (c.querySelector('.module-body.ftli-days') || {}).id })));
-  if (grid.length !== 8) fail(`📚 Dashboard draws ${grid.length} lesson cards, not 8`);
-  if (grid.map(c => c.id).join() !== 'dayl-1,dayl-2,dayl-3,dayl-4,dayl-5,dayl-6,dayl-7,dayl-8') fail(`the lesson cards run ${grid.map(c => c.id).join()}`);
+  // (Personal Injury Process Flow and Receptionist Training are one card, Part 1 Day 3 and Part 2 Day 4: no card of Lesson 4's)
+  if (grid.length !== 7) fail(`📚 Dashboard draws ${grid.length} lesson cards, not 7`);
+  if (grid.map(c => c.id).join() !== 'dayl-1,dayl-2,dayl-3,dayl-5,dayl-6,dayl-7,dayl-8') fail(`the lesson cards run ${grid.map(c => c.id).join()}`);
   const all = grid.flatMap(c => c.days);
   if (all.join() !== Array.from({ length: 16 }, (_, i) => i + 1).join()) fail(`the cards don't hold Days 1–16 once each, in order: ${all.join()}`);
   if (await page.$('.ftdd-daycard, .ftdd-daycol, main.main-dash .ftlc')) fail('the old day grid or the full card is still on the dashboard');
   grid.forEach(c => {
     if (!c.h) fail(`${c.id} has no lesson name`);
-    // (Personal Injury Process Flow and Receptionist Training: Day 3's session is Part 1 on the first, Day 4 Part 2 on the second)
-    const want = { 'dayl-3': ['Part 1'], 'dayl-4': ['Part 2'] }[c.id] || (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
+    const want = (n => n === 1 ? ['Start'] : Array.from({ length: n }, (_, k) => 'Part ' + (k + 1)))({ 'dayl-8': 2 }[c.id] || c.days.length);
     if (c.segs.join() !== want.join() || !/^(Video|Request Video|Requested)$/.test(c.steps[0] || '') || c.steps.length !== 1) fail(`${c.id}'s buttons are ${c.segs.concat(c.steps).join(' | ')}`);
     if (c.first !== 'dayd-' + c.days[0]) fail(`${c.id}'s icon doesn't open its day card (#${c.first})`);
   });
@@ -162,7 +164,7 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   }
   dayCards.forEach((c, i) => { const n = i + 1;
     if (!c || c.day !== n || c.rows < 1) fail(`Day ${n}'s deck doesn't open on its own day card: ${JSON.stringify(c)}`);
-    else if ([1, 2, 3, 4, 5, 7, 10, 13].includes(n) !== c.first || /^(Classroom Activity|Day \d+):/.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}" (first day: ${c.first})`); });
+    else if ([1, 2, 3, 5, 7, 10, 13].includes(n) !== c.first || /^(Classroom Activity|Day \d+):/.test(c.h)) fail(`Day ${n}'s card is headed "${c.h}" (first day: ${c.first})`); });
   // 📋 Days 2–16 in Day 1's shape: every row of a day's card leads to its own slide(s), in the card's order, each row's slides
   // one run, the deck ending on ✅ End of Module; a row's slides have something on them; the day's Activity Locks steps are its
   // rows, named as the card names them. Day 1's deck is as it was.
