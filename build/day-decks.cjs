@@ -637,10 +637,10 @@ const PI_H = "AM: Reception Listening Activity";
 const PI_CALLS_H = "AM: Reception Listening Activity: the 5 Practice Calls";
 const piStep = (n, ic, t, body) => `<div class="ftdd-cix"><p class="ftdd-cix-h"><span class="ftdd-pic-n">${n}</span><span>${ic} ${t}</span></p><p>${body}</p></div>`;
 const PI_HTML =
-  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to five fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete intake information.</p>\n` +
+  `<p class="ftdd-cix-lead">In this simulation exercise, you will listen to five fictional inbound phone calls to <b>${hx(PI_CALLS.firm.replace(/\s*\(fictional\)$/, ""))}</b>, a personal injury law firm located in Tampa, Florida. Each scenario demonstrates a distinct challenge front-desk staff frequently encounter on the line, ranging from upset or injured callers to incomplete caller information.</p>\n` +
   `<div class="ftdd-cix-row">` +
   piStep(1, "🎧", "Listen", "Play each audio track carefully. You may pause, rewind, and replay each recording as many times as necessary.") +
-  piStep(2, "🔍", "Analyze", "Identify the specific intake challenge and caller scenario presented in each recording.") +
+  piStep(2, "🔍", "Analyze", "Identify the specific reception challenge and caller scenario presented in each recording.") +
   piStep(3, "📝", "Extract", "Capture the <b>5 required data points</b> for each caller and log them directly into your designated worksheet.") +
   `</div>\n` +
   `<div class="ftdd-cix-grid"><div class="ftdd-pic-points"><p class="ftdd-pic-points-h">📋 The 5 data points of every call</p><ol>` +

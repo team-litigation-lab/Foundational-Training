@@ -218,11 +218,11 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (ho2.cards !== 4 || ho2.video || !/Breakout Session/.test(ho2.ribbon) || ho2.rows !== 1) fail(`Day 2's Breakout Session isn't its four handouts on one stop, without the video: ${JSON.stringify(ho2)}`);
   await page.evaluate(() => { state.adminPreview = false; });
   await page.evaluate(() => FTDayDecks.open(1)); await page.waitForTimeout(800);
-  // Day 1's card runs the trainers' order: Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA
+  // Day 1's card runs the trainers' order: Reading Task → Discussion → Process Questions (straight after it) → Digital Handouts → Installation of SA
   // (no AI Discussion Video stop on any deck: the lesson card's 🎬 Video on 📚 Dashboard plays it)
   const d1rows = await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].map(r => (r.querySelector('b, .ftlc-t') || r).innerText.split('\n')[0].trim()));
-  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Digital Handouts/, /^Process Questions/, /^Installation of SA/];
-  if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Digital Handouts → Process Questions → Installation of SA: ${JSON.stringify(d1rows)}`);
+  const want1 = [/^Reading Task/, /^Classroom Discussion/, /^Process Questions/, /^Digital Handouts/, /^Installation of SA/];
+  if (d1rows.length !== 5 || !want1.every((re, i) => re.test(d1rows[i] || ''))) fail(`Day 1's card doesn't run Reading Task → Discussion → Process Questions → Digital Handouts → Installation of SA: ${JSON.stringify(d1rows)}`);
   if (await page.evaluate(() => [...Array(17).keys()].slice(1).some(n => FTDayDecks.list(n).some(s => s.launch && s.launch.play != null)))) fail('a day deck still has an AI Discussion Video stop');
   await page.click('.ftdd-lcslide .ftlc-row:has-text("Reading Task")'); await page.waitForTimeout(1500);
   const row = await page.evaluate(() => ({ view: state.view, h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '' }));
