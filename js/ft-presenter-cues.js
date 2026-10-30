@@ -32,14 +32,8 @@
   const FTQ = {data:null, loading:null, tried:false, mark:{}, people:null, loadingPeople:false, acts:null};
   // What the facilitator has set on a scorecard, kept across re-renders of the drawer.
   const markOf = key => FTQ.mark[key] || (FTQ.mark[key] = {scores:{}, ticks:{}, note:"", who:"", act:"", status:""});
-  const DEFAULT_ACTS = [
-    {id:"reception-live", title:"Reception Mock Call with the trainer"},
-    {id:"calendar-live", title:"Calendar Management Mock Call with the trainer"},
-    {id:"intake-live", title:"Intake Mock Call with the trainer"},
-    {id:"intake-packet-demo", title:"Saving Intake Packet and Extracted Intake Documents Demo"},
-    {id:"lor-demo", title:"LOR Uploading and Sending Demo (1P & 3P)"},
-    {id:"medlor-demo", title:"Sending MedLOR and Requesting Medical Bills & Records Demo"},
-    {id:"lv-demo", title:"LV (Lien Verification) Request Demo"}];
+  // (the starting list is Trainer Inputs' own, js/ft-sessions.js, so the two never drift apart)
+  const DEFAULT_ACTS = (window.FTSessions && typeof FTSessions.trainerActs === "function" ? FTSessions.trainerActs() : []).map(a => ({id:a.id, title:a.title}));
   // The roster and the activity list, for logging a scorecard. Same sources as Admin → 🧑‍🏫 Trainer Inputs.
   function loadPeople(then){
     if(FTQ.people || FTQ.loadingPeople) return;

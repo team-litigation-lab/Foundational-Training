@@ -629,12 +629,14 @@ const KC = {grading:false, shown:{}};
    notes: {"<set id>|<question>": comment}, at, by}}}. Admins write it (Admin → ✍️ Process Questions); the trainee reads it.
    A trainer's score is the lesson's final Knowledge Check score: it replaces the graded best (higher or lower), and a
    passing one finishes the lesson. */
-const KR = {id:null, data:null, at:0, loading:null};
+const KR = {id:null, data:null, at:0, loading:null, read:false};
 function loadReview(force){
   if(!state.traineeId || state.isAdmin || KR.loading) return KR.loading;
   if(!force && KR.id === state.traineeId && Date.now() - KR.at < 120000) return null;
   const id = state.traineeId; KR.at = Date.now();
-  KR.loading = sharedGet("kcreview:" + id).then(v=>{ KR.id = id; KR.data = v && v.lessons ? v : {lessons:{}}; applyReviews(); })
+  // (KR.read: a record really came back. sharedGet answers null for a failed read as for no record, and a failed read must never
+  // be taken for the trainer clearing their scores)
+  KR.loading = sharedGet("kcreview:" + id).then(v=>{ KR.id = id; KR.data = v && v.lessons ? v : {lessons:{}}; KR.read = !!(v && v.lessons); applyReviews(); })
     .catch(()=>{}).then(()=>{ KR.loading = null; if(["kc","process"].includes(state.view)) render(); });
   return KR.loading;
 }
@@ -643,14 +645,29 @@ const trainerScore = r => r && r.score != null && r.score !== "" && isFinite(Num
 // The lesson's Knowledge Check score: the trainer's when they gave one, else the best graded attempt.
 function kcBest(id){ const t = trainerScore(kcReview(id)); if(t != null) return t; const r = kcRec(id); return r && r.attempts ? r.best : null; }
 // A trainer's score reaches the lesson's progress (and the trainee's record): a passing one finishes the lesson.
+// (the graded best is kept beside it, gradedScore, so a trainer's score taken away again gives the graded best back)
 function applyReviews(){
   let changed = false;
   Object.keys((KR.data && KR.data.lessons) || {}).forEach(k=>{
     const id = Number(k), t = trainerScore(KR.data.lessons[k]); if(t == null || !DAYS.find(d=>d.id===id)) return;
     const prev = state.progress[id] || {};
     if(prev.trainerScore === t) return;
-    state.progress[id] = Object.assign({}, prev, {score:t, trainerScore:t}, t >= KC_PASS ? {done:true, date:prev.date || new Date().toISOString()} : {done:prev.done && t >= KC_PASS});
+    const graded = prev.trainerScore == null ? prev.score : prev.gradedScore;
+    state.progress[id] = Object.assign({}, prev, {score:t, trainerScore:t, gradedScore:typeof graded === "number" ? graded : null}, t >= KC_PASS ? {done:true, date:prev.date || new Date().toISOString()} : {done:prev.done && t >= KC_PASS});
     changed = true;
+  });
+  // a trainer's score cleared: the lesson's score is the graded best again (and a lesson only that score had finished isn't).
+  // Only from a record that was read and lists the lesson with its score emptied: never on a failed read or a missing record
+  if(KR.read) Object.keys(state.progress || {}).forEach(k=>{
+    const id = Number(k), prev = state.progress[k] || {};
+    const rv = ((KR.data && KR.data.lessons) || {})[k];
+    if(prev.trainerScore == null || !rv || trainerScore(rv) != null) return;
+    const r = kcRec(id), best = r && r.attempts ? r.best : (typeof prev.gradedScore === "number" ? prev.gradedScore : null);
+    if(best == null && !FP.data) return;   // (the graded attempts not read yet: wait for them rather than drop the score)
+    const next = Object.assign({}, prev, {score:best == null ? undefined : best});
+    delete next.trainerScore; delete next.gradedScore; if(next.score === undefined) delete next.score;
+    if(prev.trainerScore >= KC_PASS && !(best >= KC_PASS)) next.done = false;
+    state.progress[id] = next; changed = true;
   });
   if(changed){ storeSet("day-progress", state.progress); try{ syncToLedger(); }catch(err){} }
 }
@@ -767,7 +784,7 @@ Return ONLY a JSON object, no other text:
       queueSave();
       const prev = state.progress[id] || {};
       const tScore = trainerScore(kcReview(id));
-      state.progress[id] = Object.assign({}, prev, {score:tScore != null ? tScore : Math.max(prev.score||0, pct), kcAttempts:rec.attempts}, (tScore != null ? tScore : pct) >= KC_PASS ? {done:true, date:prev.done && prev.date ? prev.date : r.at} : {});
+      state.progress[id] = Object.assign({}, prev, {score:tScore != null ? tScore : rec.best, kcAttempts:rec.attempts}, tScore != null ? {gradedScore:rec.best} : {}, (tScore != null ? tScore : pct) >= KC_PASS ? {done:true, date:prev.done && prev.date ? prev.date : r.at} : {});
       await storeSet("day-progress", state.progress);
       try{ syncToLedger(); }catch(err){}
       KC.shown[id] = r;
