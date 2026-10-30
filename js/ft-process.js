@@ -57,12 +57,12 @@ const PROCESS_SETS = [
     "Compare the communication protocols and tone required when interacting with clients vs. defense counsel or court staff."]},
   // two lessons discussed on Day 3, each its own Knowledge Check: Personal Injury Process Flow's three questions (Day 3's,
   // after its Classroom Discussion), Receptionist Training's seven (its own); one file for both, the guide's
-  // PI_Workflow_and_Reception_Training_Process_Questions (VA's name): 💾 Save PDF writes both sheets into it
-  {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Questions", questions:[
+  // PI_Workflow_and_Reception_Training_Process_Question_Answers (VA's first name): 💾 Save PDF writes both sheets into it
+  {id:"pi-workflow", lesson:3, title:"Personal Injury Process Flow", file:"PI_Workflow_and_Reception_Training_Process_Question_Answers", questions:[
     "Analyze the step-by-step process of a personal injury case from client intake to settlement. What tasks should a Legal VA expect to support at each stage?",
     "Examine how missing documentation (e.g., police reports, medical records) at the intake or treatment stage could affect the value and outcome of a case.",
     "Evaluate how efficient case intake impacts the strength and pace of a personal injury claim. What are the potential legal and financial consequences of a disorganized intake?"]},
-  {id:"reception-training", lesson:4, title:"Receptionist Training", file:"PI_Workflow_and_Reception_Training_Process_Questions", questions:[
+  {id:"reception-training", lesson:4, title:"Receptionist Training", file:"PI_Workflow_and_Reception_Training_Process_Question_Answers", questions:[
     "Analyze the role of a receptionist in shaping a law firm’s first impression. What verbal and non-verbal cues matter most?",
     "Evaluate how poor receptionist behavior can affect client trust and case intake efficiency.",
     "Assess the importance of triaging calls and visitors correctly. What are the consequences of misdirecting a client or opposing counsel?",
@@ -103,7 +103,7 @@ const PROCESS_SETS = [
     "Analyze the difference between medical bills, treatment records, diagnostic reports, and discharge summaries. What role does each play in a demand letter?",
     "Compare E-Portals from two major healthcare networks. What features should Legal VAs prioritize?",
     "Judge the security and compliance measures of portal usage for PHI. What risks still exist?"]},
-  {id:"lien-negotiator", lesson:9, title:"Lien Negotiator Training", file:"Lien_Negotiator_Process_Questions_Answers", questions:[
+  {id:"lien-negotiator", lesson:9, title:"Lien Negotiator Training", file:"Lien_Negotiator_Training_Process_Question_Answers", questions:[
     "Analyze the specific responsibilities of a lien negotiator in relation to the post-settlement process. How do they interact with attorneys, clients, and providers?",
     "Analyze the difference between statutory, contractual, and medical provider liens. What are the legal implications of each?",
     "Compare the documentation required for a simple case with one that includes third-party liens, child support obligations, and extensive treatment.",
@@ -199,7 +199,7 @@ const lessonFiles = lesson => { const all = kcQuestionsFor(Number(lesson)), qs =
 /* 📝 A day's worksheet, done in Word, embedded with the answer sheet it goes with (by the sheet's file): its download and
    its naming convention live here, beside 📄 Save PDF to my Folder, not on the deck (the deck's slide links here,
    FTDayDecks.toKC). Day 3's Call Intake & Data Extraction (PI Reception Activity): the five practice calls' data points (build/calls/pi_reception_calls.py). */
-const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Questions": {t: "Call Intake & Data Extraction worksheet",
+const WORKSHEETS = {"PI_Workflow_and_Reception_Training_Process_Question_Answers": {t: "Call Intake & Data Extraction worksheet",
   href: "/handouts/LSH_Day3_PI_Reception_Activity_Worksheet.docx", file: "PI_Reception_Activity"}};
 function worksheetBox(set){
   const w = WORKSHEETS[set.file]; if(!w) return "";

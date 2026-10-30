@@ -1412,7 +1412,7 @@
     ],
     "keys": [
      "This lesson's Process Questions (the PI Workflow set) are on the trainee's Process Questions page; the Receptionist Training set belongs to Lesson 4. Each has its own answer sheet and file name.",
-     "PI Workflow answer sheet: PI_Workflow_Process_Question_Answers_[VA's first name], saved in Assessments/Activities.",
+     "PI Workflow answer sheet: PI_Workflow_and_Reception_Training_Process_Question_Answers_[VA's first name], saved in Assessments/Activities.",
      "Priority track when time is short: the lifecycle with VA tasks, the effect of missing documentation, and the cost of a disorganized intake.",
      "Answer anchor — missing documentation: without the police report liability is contested; without records the damages cannot be proven, so the demand is understated or delayed and the claim's value drops.",
      "Answer anchor — disorganized intake: duplicated work, missed deadlines including the UM/UIM notice, lost evidence, and a client who loses confidence; the financial consequence is a lower settlement or a dropped case."
@@ -1667,7 +1667,7 @@
     "gc": [
      {
       "label": "Process Questions — Receptionist Training",
-      "text": "Please answer the Receptionist Training Process Questions on your Process Questions page, then upload your answer sheet to your Assessments/Activities folder using the file name shown there:\nReceptionist_Training_Process_Question_Answers_[your first name]\n\nType \"done\" here once uploaded. Thank you."
+      "text": "Please answer the Receptionist Training Process Questions on your Process Questions page, then upload your answer sheet to your Assessments/Activities folder using the file name shown there:\nPI_Workflow_and_Reception_Training_Process_Question_Answers_[your first name]\n\nType \"done\" here once uploaded. Thank you."
      },
      {
       "label": "Tomorrow — Reception Mock Calls",
