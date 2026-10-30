@@ -424,8 +424,7 @@ s3: html => {
   const mock = "<p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n" +
     lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
     lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
-    // (the Portal's Calendaring Simulators card for the mock calls: Standard Training - Mock Call, track=standard)
-    lnk("📅 The Calendaring Tool: the Google Calendar Simulator’s Standard Training - Mock Call", sim + "calsim.html?program=FT&track=standard") +
+    // (no link to the mock calls' calendar on the deck: the trainer runs the mock calls)
     "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
     "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
     "<p>Step 3 - Clarify the meeting type (phone, video or in-person) and check the attorney’s rules (the Mock Call Scenarios slide) before you offer a time; offer 2–3 alternatives when the requested slot is unavailable.</p>\n" +

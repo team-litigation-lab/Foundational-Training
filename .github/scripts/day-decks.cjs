@@ -99,10 +99,10 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (!portal.test(sl(5, 's3')) || [...['s3i', 's3j', 's3k', 's3l'].map(id => sl(5, id)), sl(5, 's3b')].some(h => /ftsCalsim|#\/calsim\/attorney-activity|goto\(\\?'calcheck/.test(h)))
     fail('Day 5\'s activity should link its calendar once, on the Instructions slide, and nowhere after');
   // Day 6's mock calls are booked on the Google Calendar Simulator: its reminders ask for no screenshots, and its Calendaring
-  // Tool link names the Portal card (Standard Training - Mock Call)
+  // (the mock calls' calendar, Standard Training - Mock Call, has no link on the deck)
   const d6 = sl(6, 's1');
-  if (/screenshot/i.test(d6) || !/Make sure to be specific with your event titles\./.test(d6) || !/Standard Training - Mock Call<\/p>\n<p><a href="[^"]*calsim\.html\?program=FT&track=standard"/.test(d6))
-    fail('Day 6\'s reminders still ask for screenshots, lost the event titles line, or its Calendaring Tool link doesn\'t name Standard Training - Mock Call');
+  if (/screenshot/i.test(d6) || !/Make sure to be specific with your event titles\./.test(d6) || /track=standard|Standard Training - Mock Call/.test(d6))
+    fail('Day 6\'s reminders still ask for screenshots, lost the event titles line, or still links the mock calls\' calendar');
   [5, 13].forEach(n => { if ((D[n] || { slides: [] }).slides.some(s => s.html.replace(/<div class="trainer-slot"[^>]*><\/div>/g, '').trim() === '<div class="ftdd-pq">📘 <b>Today’s lesson deck</b> opens from <b>▶ Start Training</b> on 📚 Dashboard, or the 📘 lesson button above — it is not on this slide.</div>'))
     fail(`Day ${n} still has the slide that only says the lesson deck opens from Start Training`); });
 }
