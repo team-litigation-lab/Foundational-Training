@@ -297,9 +297,8 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   await put('settings:dayextras', { days: { 4: [{ kind: 'instruction', title: 'Wait for your turn', text: 'Keep your camera on.' }] } });
   await page.evaluate(([tid]) => { state.isAdmin = false; state.traineeId = tid; for (let l = 1; l <= 4; l++) state.progress[l] = { done: true, studied: true }; }, [id]);
   await put('settings:opendays', { all: [1, 2, 3, 4, 5], batches: {} });
-  await page.evaluate(() => goto('modules')); await page.waitForTimeout(1500);
-  await page.click('#dayl-3 .ftseg-b[data-day="4"]'); await page.waitForTimeout(1500);
-  const noTrainer = await page.evaluate(() => ({ row: [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(r => /From your trainer/.test(r.innerText)),
+  await page.evaluate(() => FTDayDecks.open(4)); await page.waitForTimeout(1200);
+  const noTrainer = await page.evaluate(() => ({ row: Array.from({ length: 16 }, (_, i) => i + 1).some(n => FTDayDecks.dayRows(n).some(r => /From your trainer/.test(r.t))),
     slides: Array.from({ length: 16 }, (_, i) => i + 1).filter(n => FTDayDecks.list(n).some(s => s.trainer || s.placeholder || /From your trainer/i.test(s.h || ''))) }));
   if (noTrainer.row || noTrainer.slides.length) fail(`a "From your trainer" row or slide is still on the decks: ${JSON.stringify(noTrainer)}`);
   // a slide too long even at half size is read in pages, and Next turns the page before the slide (Day 8's Topic 2, the
@@ -361,7 +360,8 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (await page.evaluate(() => /Free Communication Upskill/.test(document.body.innerText))) fail('the facilitator\'s timing note is still on a slide');
 
   const flow6 = await page.evaluate(() => FT_DAY_DECKS[6].slides.slice(0, 3).map(s => s.h).join(' | '));
-  if (!/Calendaring Mock Calls Instructions \| .*Mock Calls Metrics \| .*Training Videos/.test(flow6)) fail(`Day 6 (Part 2) doesn't run Instructions, Metrics, Videos: ${flow6}`);
+  // (the mock calls first: the instructions, their metrics, the one-on-one; the Calendar Management videos last)
+  if (!/Calendaring Mock Calls Instructions \| .*Mock Calls Metrics \| .*Calendaring Activity \(One-on-One\)/.test(flow6)) fail(`Day 6 (Part 2) doesn't run Instructions, Metrics, the one-on-one: ${flow6}`);
   // the Reception mock calls and Day 6's Metrics slide (Part 2: Instructions, Metrics, Videos): a trainee sees the metrics (read only), not the ⏳ While you wait box
   for (const [d, id, what] of [[4, 's3', 'Reception'], [6, 's1m', 'Calendar Management']]) {
     await page.evaluate(([d, id]) => { state.isAdmin = false; state.adminPreview = true; FTDayDecks.open(d, FTDayDecks.at(d, id)); }, [d, id]); await page.waitForTimeout(1500);
@@ -380,9 +380,9 @@ if (!lor || lor.length !== 2 || !/<h3>Activity 1: Letter of Representation/.test
   if (await page.$('.ftdd-ag')) fail("Day 2's second slide is still a Training Agenda");
   if (await page.evaluate(() => [...document.querySelectorAll('.ftdd-lcslide .ftlc-row')].some(li => /Shadowing Etiquette/.test(li.innerText) && /Log/.test(li.innerText)))) fail('the Shadowing Etiquette PPT is offered as a shadowing session');
   // Day 9's mock call preparation is no longer a blank slide
-  await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, FT_DAY_DECKS[9].slides[1].id))); await page.waitForTimeout(1500);
+  await page.evaluate(() => FTDayDecks.open(9, FTDayDecks.at(9, 's2'))); await page.waitForTimeout(1500);
   const d9 = await page.evaluate(() => ({ h: (document.querySelector('.ftdd-ribbon span') || {}).textContent || '', text: (document.querySelector('.ftdd-sheet') || {}).textContent || '', score: document.querySelectorAll('.ftdd-score .ftms-tbl tbody tr:not(.ftms-avg)').length }));
-  if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's third slide is "${d9.h}"`);
+  if (!/Intake Mock Call Preparation/.test(d9.h)) fail(`Day 9's mock call preparation slide is "${d9.h}"`);
   if (!/Call Simulator/.test(d9.text) || !/debrief/i.test(d9.text) || d9.score < 10) fail(`it doesn't carry the practice, the debrief and the metrics: ${JSON.stringify({ len: d9.text.length, score: d9.score })}`);
 
   // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are off for now
