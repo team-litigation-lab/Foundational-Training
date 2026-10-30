@@ -458,9 +458,9 @@ s2: html => {
   const cardOf = v => v.replace('<a class="viewer-link" data-kind="video"', '<a class="viewer-link" data-card data-kind="video"');
   const mon = `<a href="#/monitoring" class="ftdd-monlink" onclick="window.FTDrive ? FTDrive.openMonitor() : goto('monitoring'); return false;">📒 Monitoring Sheet</a>`;
   return html.replace(lead, "").replace(task1, (m, a, b) =>
-      `<p class="li" style="--lvl:0"><span class="lbl">1.</span><span>Complete your Typing and Spelling Tests.</span></p>\n` +
-      `<p class="li" style="--lvl:0"><span class="lbl">2.</span><span>Watch the videos.</span></p>\n${cardOf(a)}\n${cardOf(b)}\n` +
-      `<p class="li" style="--lvl:0"><span class="lbl">3.</span><span>Update item #15 in your ${mon}.</span></p>\n`)
+      // (no numbered instructions over the videos: the two videos, then the Monitoring Sheet's item)
+      `${cardOf(a)}\n${cardOf(b)}\n` +
+      `<p>Update item #15 in your ${mon}.</p>\n`)
     .replace(kb, (m, links) => `<div class="ftdd-card4"><p class="ftdd-card4-h">📚 In the Knowledge Base</p>\n${links}</div>\n`);
 },
 s3: html => {
