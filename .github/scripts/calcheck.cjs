@@ -190,17 +190,25 @@ async function workerChecks() {
   await page.evaluate(() => { state.adminPreview = true; FTDayDecks.open(5, FTDayDecks.at(5, 's3b')); }); await page.waitForTimeout(1600);
   const deck = await page.evaluate(() => ({ bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length, tile: !!document.querySelector('button.ftdd-tile[onclick*="calcheck"]'), portal: !!document.querySelector('button.ftdd-tile[onclick*="ftsCalsim(\'activity\')"]'), h: (document.querySelector('main') || {}).innerText.slice(0, 2000) }));
   if (deck.bar) fail('Day 5\'s Attorney Calendar Management Activity slide still has link pills on its bar');
-  if (!deck.tile) fail('Day 5\'s Time Zone & Submit slide has no 📅 Calendar Activity Check tile');
-  // (and the same activity on the Main Portal's Google Calendar Simulator, its Standard Training - Calendar Management Activity track)
-  if (!deck.portal) fail('Day 5\'s activity slide doesn\'t link the Portal\'s Standard Training - Calendar Management Activity');
+  // (the activity's one link is on its Instructions slide: its Time Zone & Submit slide has no tiles)
+  if (deck.tile || deck.portal) fail('Day 5\'s Time Zone & Submit slide still has the Check\'s or the Portal\'s tile');
   // the Instructions slide links the activity's simulator (the Main Portal's Calendaring Activity calendar), under the instructions
   await page.evaluate(() => FTDayDecks.open(5, FTDayDecks.at(5, 's3'))); await page.waitForTimeout(1200);
   const ins = await page.evaluate(() => ({ link: !!document.querySelector('.ftdd-calsim-ins button[onclick*="ftsCalsim(\'activity\')"]'), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
   if (!ins.link || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should link the Portal's simulator (and carry no link pills): ${JSON.stringify(ins)}`);
-  // (the slide is read in pages: the tile comes last)
-  for (let k = 0; k < 8 && !(await page.isVisible('button.ftdd-tile[onclick*="calcheck"]')); k++) { await page.evaluate(() => FTDayDecks.go(1)); await page.waitForTimeout(600); }
-  await page.evaluate(() => { state.adminPreview = false; }); await page.click('button.ftdd-tile[onclick*="calcheck"]'); await page.waitForTimeout(1200);
-  if (await page.evaluate(() => state.view) !== 'calcheck') fail('the Day 5 tile doesn\'t open #/calcheck');
+  // (and the link opens the activity's own calendar: gcal.html?track=activity, not the Calendaring Simulators' list)
+  const opened = await page.evaluate(() => { let u = ''; const o = window.open; window.open = (x) => { u = x; return null; }; ftsCalsim('activity'); window.open = o; return u; });
+  if (!/\/simulators\/gcal\.html\?[^#]*program=FT[^#]*&track=activity$/.test(opened)) fail(`the activity's link should open its own calendar: ${opened}`);
+  // the Calendaring Simulator opened from a slide: ← Back to the slides returns to that slide (not the Simulators page)
+  { const from = await page.evaluate(() => { FTDayDecks.open(5, FTDayDecks.at(5, 's3')); const d = FTDayDecks.state(); return { day: d.day, i: d.i }; }); await page.waitForTimeout(800);
+    await page.evaluate(() => goto('calsim', 'attorney-activity')); await page.waitForTimeout(1500);
+    if (process.env.SHOTS) await page.screenshot({ path: require('path').join(process.env.SHOTS, 'ft-calsim.png') });
+    const back = await page.$('button:has-text("← Back to the slides")');
+    if (!back) fail('the Calendaring Simulator opened from a slide has no ← Back to the slides');
+    else { await back.click(); await page.waitForTimeout(1200);
+      const at = await page.evaluate(() => ({ view: state.view, day: FTDayDecks.state().day, i: FTDayDecks.state().i }));
+      if (at.view !== 'daydeck' || at.day !== from.day || at.i !== from.i) fail(`← Back to the slides should return to the slide it came from: ${JSON.stringify({ from, at })}`); } }
+  await page.evaluate(() => { state.adminPreview = false; });
 
   // the trainee types: each field is checked in place, and the draft saves
   await page.evaluate(() => goto('calcheck')); await page.waitForTimeout(1200);

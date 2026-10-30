@@ -122,9 +122,10 @@ const CALSIM_ACTIVITY = {label: "📅 Open the Calendar Simulator: the Attorney�
 // beside it, the same activity on the Main Portal's Google Calendar Simulator: its Calendaring Simulators' Standard Training -
 // Calendar Management Activity track (calsim.html?program=FT&track=activity, js/ft-simulators.js ftsCalsim), in its own tab;
 // where ftsCalsim isn't loaded, the Practice Lab
-const CALSIM_PORTAL = {label: "📅 Standard Training - Calendar Management Activity", track: "activity"};
+const CALSIM_PORTAL = {label: "📅 Standard Training - Calendaring Activity", track: "activity"};
 const calsimPortal = cls => `<button type="button" class="${cls}" title="Opens on the Main Portal’s Google Calendar Simulator, in its own tab" onclick="window.ftsCalsim ? ftsCalsim('${CALSIM_PORTAL.track}') : goto('simulators')">${hx(CALSIM_PORTAL.label)}</button>`;
-const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}"><div class="ftdd-calsim" data-calsim-activity="5:s3"><a class="btn btn-navy" href="${hx(CALSIM_ACTIVITY.href)}">${hx(CALSIM_ACTIVITY.label)}</a>${calsimPortal("btn btn-ghost")}</div>\n`;
+// (the activity's one link is on its Instructions slide: the items' slides carry none, so no one picks the wrong calendar)
+const CAL_HEAD = ([a, b]) => `<div class="ftdd-cal-set" data-items="${CAL_CARDS[a]}-${CAL_CARDS[b - 1]}">\n`;
 // 6's travel blocks: the guide's own lines under "Travel Blocks:" (each on 6's card, under it)
 const CAL_BLOCKS = [[/for travel to court\.$/, "Travel Block: to court"], [/for return travel\.$/, "Travel Block: return"]];
 // "July 06, 2026": the activity's date, marked with its day so the slide shows it moved to the trainee's own weeks
@@ -297,7 +298,7 @@ const TRIM = {1: {reading: html => {
 // Day 5's Attorney Calendar Management Activity: the activity's own text, its Instructions as two cards and its ten
 // Activity Items as ten cards (calItems), under each Calendar Simulator's link (CAL_HEAD); then the samples, the time zone card
 // and the 📅 Calendar Activity Check (no screenshots are taken or uploaded: the guide's whole-calendar screenshot and
-// 19-screenshot upload are off the slide), ending on ✅ Done ("signify done": js/ft-buffer.js "5:s3b").
+// 19-screenshot upload are off the slide), ending on its Time Zone & Submit slide (the activity is submitted on the Main Portal's Calendaring Activity calendar).
 // ROWS[5].s3 cuts it into s3 (the Instructions), s3i–s3l (the cards 1–4, 5–7, 8 alone, 9–10) and s3b (from the second trainer slot).
 s3: html => {
   const cut = (from, to) => { const i = html.indexOf(from), j = to ? html.indexOf(to, i) : html.length; if(i < 0 || j < 0) throw new Error("Day 5's Attorney Calendar Management Activity is no longer where the build looks for it: " + from); return html.slice(i, j); };
@@ -346,7 +347,7 @@ s3: html => {
     calItems(text.slice(at + "<h3>Activity Items</h3>\n".length)) +
     '<div class="trainer-slot" data-slot="5:s3-2"></div>\n' + act.slice(lead.length) + card("🕒", "2. Set the time zone", tz.replace(shot("image28.png"), editor)
       .replace(/ BEFORE saving each appointment, make sure to take a screenshot to capture the correct time zone, as shown in the sample below\./, " Check it BEFORE saving each appointment, as shown in the sample below.")) + "\n" +
-    check + cut("<p><b><i>*** Free Communication");
+    cut("<p><b><i>*** Free Communication");
 }},
 // Day 3, in the guide's two parts. Part 1: the Call Listening Sessions, the sample recordings and SOP as links (a new tab,
 // not the viewer). The discussion itself is the lesson deck, opened from the card's 💬 Classroom Discussion stop (▶ Start
@@ -463,8 +464,8 @@ s3: html => {
   const mock = '<div class="ftdd-one"><p><b>☎ Mock Calls: how to access the Call Simulator (Ring Channel) and practise on the Calendaring Tool</b></p>\n' +
     '<div class="ftdd-linkbtns">' + lnk("📞 Practice a caller: the Call Simulator’s Calendar Management line (an AI caller)", sim + "call.html?program=FT&line=Calendar+Management+Mock+Calls") +
     lnk("☎ The Ring Channel: the training phone your mock call rings on", sim + "call.html?program=FT") +
-    // (the Portal's Calendaring Simulators card for the mock calls: Standard Training - Mock Call, track=standard)
-    lnk("📅 The Calendaring Tool: the Google Calendar Simulator’s Standard Training - Mock Call", sim + "calsim.html?program=FT&track=standard") + "</div>\n" +
+    // (no link to the mock calls' calendar on the deck: the trainer runs the mock calls)
+    "</div>\n" +
     '<div class="ftdd-steps2">\n' +
     "<p>Step 1 - Open the Call Simulator’s Calendar Management line and put your headset on. Take practice calls from the AI caller as often as you like: practice calls are not graded.</p>\n" +
     "<p>Step 2 - On each call, collect the minimum information: the caller’s name, callback number, date of birth (DOB) and date of loss (DOL).</p>\n" +
@@ -722,6 +723,20 @@ const PI_CALLS_HTML =
 const PI_KEY = `<div class="facilitator"><h4>Facilitator’s Note: Reception Listening Activity: the 5 data points of each call</h4>\n` +
   ACT_CALLS.calls.map(c => `<p><b>Call ${c.id}: ${hx(c.title)}</b> (${hx(c.challenge)})</p>\n<ol>${c.key.map(x => `<li><b>${hx(x.k)}:</b> ${hx(x.v)}</li>`).join("")}</ol>\n` +
     `<p><i>The challenge:</i> ${hx(c.handled)}</p>\n<details><summary>Transcript</summary>${c.transcript.map(t => `<p>${t.who ? `<b>${hx(t.who)}:</b> ` : ""}${hx(t.text)}</p>`).join("")}</details>`).join("\n") + "</div>";
+// Day 8's afternoon: the SA demonstration's and the Intake Mock Call Activity's instructions on one slide (DAY8_INS: the video, the
+// sample forms and the tools' links are taken out of it), the video on a slide of its own, then Practice Intake Calls
+const DAY8_VIDEO = '<p><a class="viewer-link" data-embed data-fit data-nowait data-kind="video" data-title="How to Save the Intake Packet and Extracted Intake Documents in SA" href="https://drive.google.com/file/d/19nLaPeT0PLq2fBSqtC6S2dVYfUYek3pK/view?usp=sharing">https://drive.google.com/file/d/19nLaPeT0PLq2fBSqtC6S2dVYfUYek3pK/view?usp=sharing</a></p>\n';
+function DAY8_INS(x){
+  const out = [DAY8_VIDEO.trim(), /<div class="ftis-forms"[^\n]*<\/div>\n?/, /<p>Prototype CMS: Intake \(a blank intake to fill in as you ask\)<\/p>\n<p><a [^\n]*<\/a><\/p>\n?/,
+    /<p>Intake Call Simulator \(the Intake Line on LSH Ring Channel\)<\/p>\n<p><a [^\n]*<\/a><\/p>\n?/];
+  for(const m of out){ const y = typeof m === "string" ? x.replace(m, "") : x.replace(m, ""); if(y === x) throw new Error(`Day 8's instructions no longer hold ${String(m).slice(0, 60)}`); x = y; }
+  return x.replace("please use your idle time to practice handling intake calls through the Call Simulator.", "please use your idle time to practice handling intake calls: see <b>Practice Intake Calls</b>, after the video.");
+}
+const DAY8_PRACTICE = '<p><b>☎ Practice Intake Calls</b></p>\n' +
+  '<p>While waiting for your scheduled turn for the Intake Mock Call Activity, practise intake calls with these tools. Each opens in a new tab.</p>\n' +
+  '<div class="ftdd-calsim ftdd-practice"><a class="btn btn-navy" href="https://lshcasemanagementtraining-trainingcrm.pages.dev/?program=intake&amp;from=standard" target="_blank" rel="noopener noreferrer">🗂 Prototype CMS: Intake</a>' +
+  '<a class="btn btn-navy" href="https://cm-training-activity.pages.dev/simulators/call.html?program=FT&amp;track=intake" target="_blank" rel="noopener noreferrer">☎ Ring Channel: Intake Calls</a></div>\n' +
+  '<p>On Ring Channel, take the calls on the <b>Intake Line</b>: answer, ask the intake questions, and enter what the caller tells you in the Prototype CMS, as in the mock call.</p>\n';
 // Day 8's Trainer Facilitated Demo (TRIM[8].s3): what the trainee reads, and the facilitator's notes for the trainer's slot
 const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
   `<p>Your demonstration of saving your assigned Intake Packet and its extracted intake documents in SA (Smart Advocate) is run by your trainer, one trainee at a time. If your shadow buddy confirms a shadowing session, the demo runs at the same time: your trainer pulls you from the session for your turn. Without live shadowing, you watch a recorded shadowing session while you wait.</p>\n` +
@@ -729,8 +744,8 @@ const DEMO_SLIDE = `<p><b>🧑‍🏫 Trainer Facilitated Demo</b></p>\n` +
   `<li>Every intake document is extracted from your assigned Intake Packet, and every file, the Intake Packet itself included, is renamed under the firm’s naming convention. These are the exact files you upload and report on SA, so this is done before the demo.</li>` +
   `<li>Your task is posted in SA’s Tasks tab: <i>Intake Packet and Intake Documents Saving Tasks</i>, naming the Intake Packets to save.</li>` +
   `<li>SA lets only one user in at a time: your trainer gives you access for your turn, with 10–15 minutes first to explore it.</li></ul>\n` +
-  // (the Additional Reminder opens the next page: a heading never ends one)
-  `<div class="ftdd-pgbreak"></div>\n<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n`;
+  // (the Additional Reminder on the first page, with Before your turn; the metrics open the next page on their own)
+  `<p><b>Additional Reminder</b></p>\n<p>The same process should be repeated for all extracted intake documents until all available files are uploaded and verified.</p>\n<div class="ftdd-pgbreak"></div>\n`;
 const DEMO_NOTE = `<div class="facilitator"><h4>Facilitator’s Notes: Trainer Facilitated Demo, Saving the Intake Packet and Extracted Intake Documents to SA</h4>\n` +
   `<ul><li>The demo runs at the same time as the shadowing when a shadow buddy confirms a session: pull the trainees from it one by one for their individual demonstration. Without live shadowing, provide a recorded shadowing session.</li>` +
   `<li>Provide the SA credentials, the <b>2nd</b> one listed. Change it back to the 1st one at the end of each shift, and to the 2nd again whenever trainees need the CMS: this keeps the active cases in the CMS safe from unsupervised exploring, and follows the firm’s policy, as directed by the Operations Manager, that VAs are not permitted to alter it.</li>` +
@@ -984,8 +999,8 @@ const ROWS = {
   4: {
     // Julio's video; the mock call preparation with its tools; how the one-on-one mock calls run and are scored (TRIM[4].s2)
     s2: [{id: "s2", parts: [[null, MOCK_WARM_AT]]},
-      // the Monitoring Sheet's items #10–11 on a slide of their own: its panel says it, with 📤 Submit (js/ft-buffer.js ACTS["4:s2m"])
-      {id: "s2m", h: "Update Your Monitoring Sheet", parts: []},
+      // (the Monitoring Sheet's items #10–11 are no longer a slide of their own: their card and 📤 Submit sit at the lower right of
+      // the metrics page, s2b's last, js/ft-buffer.js ACTS["4:s2b"])
       // (one slide, in pages: the warm-up; the seven steps; how the one-on-one runs with the tools' buttons; the metrics)
       {id: "s2b", h: "Mock Call Preparation: the Call Simulator, Ring Channel and CMS", parts: [[MOCK_WARM_AT, null]]}]
   },
@@ -1054,11 +1069,11 @@ const ROWS = {
         // (the day file's page break before the documents was Topic 2's: here they open the slide)
         fix: [['<div class="ftdd-pgbreak"></div>\n<div class="ftis-docs"', '<div class="ftis-docs"']]},
       {id: "s1d", h: "AM: Additional Instruction: Live Session Instructions", parts: [["<p><b>1. CMS Demonstration</b></p>", "<p><b>1. Smart Advocate (SA) Demonstration"]]},
-      {id: "s1e", h: "AM: This Afternoon’s Activities: Smart Advocate (SA) Demonstration", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", "<p><b>2. Intake Mock Call Activity"]]},
-      {id: "s1f", h: "AM: This Afternoon’s Activities: Intake Mock Call Activity", parts: [["<p><b>2. Intake Mock Call Activity", "<p>You may also explore the Prototype CMS"]]},
-      {id: "s1g", h: "AM: Intake Mock Call: the Prototype CMS & the Call Simulator", parts: [["<p>You may also explore the Prototype CMS", null]],
-        // (the trainee's assigned case, the same call on Ring Channel and in the CMS: js/ft-intake.js .ftis-mockcall)
-        post: '\n<div class="ftis-mockcall"></div>\n'}],
+      // (the afternoon's instructions on one slide, the SA video on a slide of its own, then Practice Intake Calls with its tools;
+      // no Sample Intake Forms here, they are on the slides before, and no mock-call cases box)
+      {id: "s1e", h: "AM: Smart Advocate (SA) Demonstration & Intake Mock Call: Instructions", parts: [["<p><b>1. Smart Advocate (SA) Demonstration", null]], fix: [DAY8_INS]},
+      {id: "s1v", h: "AM: Video: How to Save the Intake Packet and Extracted Intake Documents in SA", parts: [], pre: DAY8_VIDEO},
+      {id: "s1g", h: "AM: Practice Intake Calls", parts: [], pre: DAY8_PRACTICE}],
     // the demo (TRIM[8].s3); Atty. Sandy Van's MVC intake-call video after it, s3b, is off the deck (SKIP[8])
     s3: [{id: "s3", parts: [[null, "<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>"]]},
       {id: "s3b", h: "PM: Atty. Sandy’s Video: Intake Calling (MVC)", parts: [["<p><b>Atty. Sandy’s Video: Intake Calling (MVC)</b></p>", null]]}]

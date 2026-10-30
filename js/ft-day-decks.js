@@ -719,7 +719,9 @@ function scoreBox(s, info, body){
   const rb = dayRubric(h);
   if(!rb) return "";
   const M = root.FTMetrics;
-  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${admin || !M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
+  // (the trainer's slide carries only the Scoresheet's marker, hidden: the 🧑‍🏫 Scoresheet button is in the bar under the slide)
+  if(admin) return M.table(rb.key);
+  return `<div class="ftdd-score"><p class="ftdd-score-h"><b>📋 ${e(rb.title)} Metrics</b></p>${!M.view ? M.table(rb.key) : M.view(rb.key)}</div>`;
 }
 const WAIT_OFF = true;
 function waitBox(s, info){
@@ -831,10 +833,7 @@ function renderDeck(){
       ${root.FTDayLocks && FTDayLocks.panel ? FTDayLocks.panel(DD.day, DD.i) : ""}
       ${nNotes ? `<p class="ftdd-rail-h">🧑‍🏫 Facilitator notes</p>
         <button type="button" class="btn btn-ghost btn-sm ftdd-ctl ftdd-notes-btn${DD.notes ? " on" : ""}" onclick="FTDayDecks.notes()">📝 ${DD.notes ? "Hide" : "Show"} the notes for this slide (${nNotes})</button>` : ""}
-      ${isAdminView() && root.FTSlideEdit && FTSlideEdit.editable(DD.day, (list[DD.i] || {}).id) ? `<p class="ftdd-rail-h">This slide</p>
-        <button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.open(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">✏️ Edit this slide</button>
-        ${FTSlideEdit.html(DD.day, (list[DD.i] || {}).id) != null ? `<button type="button" class="btn btn-ghost btn-sm ftdd-ctl" onclick="FTSlideEdit.reset(${DD.day}, '${e((list[DD.i] || {}).id || "")}')">↩︎ Undo my edits</button>
-        <p class="ftdd-rail-note">${e(FTSlideEdit.note(DD.day, (list[DD.i] || {}).id))}</p>` : ""}` : ""}`}
+      `}
     </aside>
   </div>`;
 }
@@ -1373,10 +1372,9 @@ const LESSON_CARDS = {
       {t: "Listening Activity (optional)", sub: "Five more calls, in your own time", k: "listen", d: 3, s: "s1b"},
       {t: "Reception Listening Activity: Harbor & Pine Calls", sub: "Five calls · their 5 data points and challenge", k: "listendo", d: 3, s: "s1c"},
       {t: "CRM/CMS Training Videos", sub: "Choose one now · the rest in idle time", k: "watch", d: 3, s: "s2"},
-      // Part 2: Julio's video, the mock calls (their preparation slide first), then the Monitoring Sheet's items #10–11
+      // Part 2: Julio's video, then the mock calls (their preparation slide, whose metrics page carries the Monitoring Sheet's items #10–11)
       {t: "Julio’s Training Video", sub: "Reception Training with Julio (1:49:49)", k: "watch", d: 4, s: "s2"},
-      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics", k: "mock", d: 4, s: "s2b"},
-      {t: "Update Your Monitoring Sheet", sub: "Items #10–11 · hit 📤 Submit", k: "read", d: 4, s: "s2m"}],
+      {t: "Reception Mock Calls (One-on-One)", time: "PM", sub: "The Call Simulator, the Ring Channel and the CMS · your graded call, with the trainer, scored on the Mock Calls Metrics · then items #10–11 of your Monitoring Sheet, 📤 Submit", k: "mock", d: 4, s: "s2b"}],
     tools: ["The sample SOP and the 10 sample call recordings are links on the day’s slide",
       "The Reception Listening Activity: log each call's answers on its 📝 Answer Sheet, on the calls' slide, and 📝 Submit for Grading"],
     // (Part 2's own tools, on Day 4's card)
@@ -1385,7 +1383,7 @@ const LESSON_CARDS = {
   5: {days: [5, 6], focus: "Appointment Setting & Calendar Management",
     rows: [
       // (Day 5's Monitoring Sheet slide is off its deck: items #10–11 close Reception Part 2, Day 4's s2m)
-      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · set the time zone, 📅 Calendar Activity Check each event, ✅ Done", k: "interactive", d: 5, s: "s3"},
+      {t: "Attorney Calendar Management Activity", sub: "The instructions and the ten items · plot them on the Calendaring Activity simulator, set the time zone, 📤 Submit for evaluation there", k: "interactive", d: 5, s: "s3"},
       {t: "Calendaring Activity", time: "AM & PM", sub: "The mock calls' instructions and metrics, then your graded mock call with the trainer", k: "interactive", d: 6, s: "s1"},
       // (Day 6: the mock calls first, then the Calendar Management Training Videos)
       {t: "Mock Call Scenarios", sub: "Each booking checked against the scheduling rules", k: "interactive", d: 6, s: "s2"},
@@ -1796,7 +1794,6 @@ const PRESETS = [
   {label: "☎ Reception calls", kind: "practice", title: "Practise reception calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise on the Call Simulator’s Reception line. Take a few practice callers, then try a graded call.", url: callSim("Reception Mock Calls")},
   {label: "☎ Intake calls", kind: "practice", title: "Practise intake calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise handling intake calls on the Call Simulator’s Intake line: ask every intake question and record the details.", url: callSim("Intake Mock Calls")},
   {label: "☎ Calendar calls", kind: "practice", title: "Practise calendar management calls on the Call Simulator", text: "While you wait for your turn in the mock calls, practise scheduling calls on the Call Simulator’s Calendar Management line, then set the appointment in the calendar.", url: callSim("Calendar Management Mock Calls")},
-  {label: "📅 Calendar Simulator", kind: "practice", title: "Practise on the Google Calendar Simulator", text: "Practise setting appointments on the Google Calendar Simulator under the firm’s calendar rules.", sim: "calsim"},
   {label: "🛠 Practice Lab", kind: "practice", title: "Practise in the Practice Lab", text: "Use your idle time in the 🛠 Practice Lab: open today’s Practice Session or a drafting tool.", sim: "lab"}
 ];
 function loadExtras(force){
@@ -1810,7 +1807,9 @@ const isAdminView = () => !!state.isAdmin && !state.adminPreview;
 const safeUrl = u => /^https:\/\//i.test(String(u || "").trim()) ? String(u).trim() : "";
 function itemHtml(x, n, i){
   const k = kindOfX(x.kind), url = safeUrl(x.url);
-  const tile = x.sim === "calsim" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
+  // (an extra that linked the mock calls' calendar, sim "calsim": off the decks; a trainee doesn't see it, the trainer sees it to remove it)
+  if(x.sim === "calsim" && !isAdminView()) return "";
+  const tile = x.sim === "calsim" ? `<p class="ftdd-x-off">This linked the mock calls’ calendar, which is no longer on the decks. Remove it.</p>` : x.sim === "never" ? `<button type="button" class="ftdd-tile ftdd-simbtn k-video" onclick="window.ftsCalsim ? ftsCalsim('standard') : goto('simulators')"><span class="ftdd-tile-ic">📅</span><span class="ftdd-tile-t"><b>Google Calendar Simulator</b><small>Standard Training - Mock Call ↗</small></span></button>`
     : x.sim === "lab" ? `<button type="button" class="ftdd-tile ftdd-simbtn" onclick="goto('simulators')"><span class="ftdd-tile-ic">🛠</span><span class="ftdd-tile-t"><b>Practice Lab</b><small>Open</small></span></button>`
     // (a video the platform can play is embedded on the slide, like the guide's own videos)
     : url && x.kind === "video" && typeof root.lvEmbedUrl === "function" && root.lvEmbedUrl(url) ? `<div class="ftdd-inline is-video"><div class="ftdd-inline-h"><b>🎬 ${e(x.title)}</b></div><div class="ftdd-embed ftdd-embed-player"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen src="${e(root.lvEmbedUrl(url))}" title="${e(x.title)}"></iframe></div></div>`
@@ -1823,7 +1822,8 @@ function itemHtml(x, n, i){
 function trainerSlide(n){
   if(!X.data){ loadExtras(); return `<p>Loading your trainer’s activities…</p>`; }
   const items = X.data.days[n] || [], f = X.form;
-  const list = items.length ? items.map((x, i) => itemHtml(x, n, i)).join("")
+  // (what is left to show: a trainee doesn't see an extra that linked the mock calls' calendar, so a day with only that one reads as empty)
+  const list = items.some(x => isAdminView() || x.sim !== "calsim") ? items.map((x, i) => itemHtml(x, n, i)).join("")
     : `<div class="ftdd-ph ftdd-ph-blank"><span class="ftdd-ph-ic">📌</span><div><b>${isAdminView() ? "Nothing added for this day yet" : "More is on its way"}</b><p>${isAdminView() ? "Add the day’s activities and instructions below — they show here for every trainee." : "Your trainer adds today’s activities and instructions here. Until then, follow the slides before this one and the training GC."}</p></div></div>`;
   return `${list}${isAdminView() ? `<div class="ftdd-xform"><p class="ftdd-xform-h">🧑‍🏫 Add to this slide <span>— every trainee sees it here</span></p>
       <div class="ftdd-presets"><span>Mock-call day? One click:</span>${PRESETS.map((p, i) => `<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.preset(${n}, ${i})">${p.label}</button>`).join("")}</div>
@@ -2452,6 +2452,11 @@ button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;
 .ftdd-chip-i{background:#FBF1E6;border:1px solid #EBD9C2;border-radius:999px;padding:5px 12px;font:600 13px 'Inter',sans-serif;color:#262B45;}
 /* the scorecard sits on the slide itself: a card inside the slide's own card is a card too many */
 .ftdd-score{margin:6px 0 12px;}
+/* the metrics read as the guide's table everywhere: each criterion left-aligned (a centred short slide doesn't centre them) */
+.ft-body .ftdd-score .ftms-tbl td:first-child, .ft-body .ftdd-score .ftms-tbl th:first-child{text-align:left !important;}
+/* Day 8's Practice Intake Calls: the tools as buttons, white on navy (not the slide's blue link style) */
+.ft-body .ftdd-practice{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:10px 0 14px;}
+.ft-body .ftdd-practice a.btn{color:#fff !important;text-decoration:none !important;font-weight:800;}
 /* the metrics as the guide's table (green header, banded rows, the WEIGHTED AVERAGE last); the trainer's has Remarks */
 .ftdd-score-h{margin:0 0 6px;font-size:15px;color:#262B45;}
 .ftms-tbl{width:100%;border-collapse:collapse;font-size:13px;}
@@ -2714,8 +2719,8 @@ main.main-ftdd.ftdd-settling .ftdd-sheet > *{opacity:0;}   /* (opacity, not visi
   main.main-ftdd .ftdd-sheet, main.main-ftdd .ftdd-onnavy{flex:1 1 auto;min-height:0;}
 }
 /* 📐 the deck takes the page's whole width: no side panel (its day and title are on the slide already). The presenter
-   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. A trainer's
-   ✏️ Edit this slide still gets its panel, and so does the 🔓 Segment lock or the Hide panel link: a panel holding only those
+   keeps her place at the lower right of the screen, so only the Previous / Next bar leaves her that room. The trainer's
+   🔓 Segment lock or the Hide panel link still gets its panel (✏️ Edit this slide is gone): a panel holding only those
    (a day past its locks, with no buttons in it) was squeezed to no width, its words stacked a letter to a line. */
 @media(min-width:1001px){
   main.main-ftdd .ftdd-stage:not(:has(> .ftdd-rail :is(.ftdd-ctl, .ftdl-tpanel, .ftdd-rail-hide))){grid-template-columns:minmax(0,1fr);}
