@@ -74,7 +74,7 @@ DECKS = {
                          84: 'Joint Acceptance of Common Legal Representation & Waiver of Conflict of Interest',
                          94: 'ISO Claim Search Disclosure Request', 96: '3rd Party Insurance Affidavit', 105: 'Thank You'}},
     "csr": {"id": 7, "var": "DAY7", "file": "lesson07.js", "title": "Claims Specialist Training",
-            "video": "https://drive.google.com/file/d/1uRyK-iR-Ja4pqmk_Nw6-Z--6hkxhR48J/view",
+            "video": "https://drive.google.com/file/d/1mKuFbskHeSmN8BzYVzNXKseEltLgN_4q/view",
             "pdf": "V_Claims_Specialist_compressed.pdf (sent in chat)",
             "about": 'the "V. Claims Specialist" deck (Canva design DAHWU-Wq2mQ), all 77 pages',
             "headings": {24: 'LOR Recipients', 25: 'Case Specifics', 26: 'Case Specifics',
