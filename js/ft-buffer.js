@@ -43,9 +43,9 @@ const ACTS = {
   "5:s3b": {kind: "buffer", task: true, key: "5:s3", title: "📸 Upload your 19 screenshots", lead: "Once done, hit Submit.", label: "📤 Submit"},
   "9:s1": {kind: "buffer"},
   "13:s1": {kind: "buffer"},
-  // (wait: while the mock calls run, the trainee's screen is only ⏳ Buffer Time and Done, as a buffer's is; after Done, the
-  // mock call's Debrief Prep as any other's)
-  "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", wait: true},
+  // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done; nextDay: the trainer's
+  // Start Group Debrief also opens the next day's deck for the batch, its lesson and its first step: unlockNext)
+  "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true, nextDay: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
   // its own slide; its records keep the key they were saved under)
   "6:s1b": {kind: "mock", name: "Calendar Management", line: "Calendar Management Mock Calls", act: "calendar-live", when: "today", key: "6:s1"},
@@ -97,17 +97,20 @@ function traineePanel(h){
   if(d && rel) return `<div class="ftbf ftbf-go">${graded(a)}<p class="ftbf-h">${a.kind === "buffer" ? "🔓 The next activity is open" : "▶ The group debrief has started"}</p>
     <p>${a.kind === "buffer" ? "Your trainer has unlocked the next activity for your batch." : more ? "Your trainer has started the debrief. Follow along." : "Your trainer has started the debrief: follow your trainer’s screen."}</p>
     ${more ? `<div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.next()">Go to the next activity →</button></div>` : ""}</div>`;
+  // (simple: no Debrief Prep screen, no scorecard: the Done and the wait for the debrief, in the middle of the slide)
+  if(d && a.simple) return `<div class="ftbf ftbf-wait"><p class="ftbf-h">✅ Done</p>
+    <p class="ftbf-status"><span class="ftbf-dot"></span>Waiting for the group debrief to start…</p></div>`;
   if(d) return `<div class="ftbf ftbf-wait">${graded(a)}<p class="ftbf-h">✅ Done${a.kind === "buffer" ? "" : " · Debrief Prep"}</p>
     <p>${a.kind === "buffer" ? "Thank you. Your trainer unlocks the next activity once everyone in your batch is done." : `Great work. While the rest of your batch finishes, review how your ${w} is scored: your trainer is entering your scorecard.`}</p>
     ${a.kind === "buffer" ? "" : scorecard(a)}
     <p class="ftbf-status"><span class="ftbf-dot"></span>${a.kind === "buffer" ? "Waiting for your trainer to unlock the next activity…" : "Waiting for the group debrief to start…"}</p></div>`;
-  // (a mock call's wait: its Done asks first, as the mock call's own does)
-  if(a.wait) return `<div class="ftbf"><p class="ftbf-h">⏳ Buffer Time</p>
-    <p class="ftbf-lead">Use this buffer to finish all your pending tasks. Hit Done when you are.</p>
-    <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   if(a.kind === "buffer") return `<div class="ftbf"><p class="ftbf-h">${e(a.title || (a.task ? "✅ Finished the tasks above?" : "⏳ Buffer Time"))}</p>
     <p class="ftbf-lead">${e(a.lead || (a.task ? "Hit Done when you are." : "Use this buffer to finish all your pending tasks. Hit Done when you are."))}</p>
     <div class="ftbf-foot">${a.submit ? `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.submit()">📤 Submit</button>` : `<button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.done()">${e(a.label || "Done")}</button>`}</div></div>`;
+  // (Day 2's Submit panel, in the middle of the slide: its heading, one line and the big button)
+  if(a.simple) return `<div class="ftbf"><p class="ftbf-h">${a.kind === "mock" ? "Mock Calls Ongoing" : "Demos Ongoing"}</p>
+    <p class="ftbf-lead">Hit Done when you are done with your ${a.kind === "mock" ? "Mock Call" : "Demo"}.</p>
+    <div class="ftbf-foot"><button type="button" class="btn btn-primary ftbf-done" onclick="FTBuffer.ask()">Done</button></div></div>`;
   const live = !a.rec;
   const steps = a.kind === "mock" ? [
       `While waiting for your turn, practice using the <a href="${e(callSim(a.line))}" target="_blank" rel="noopener">${e(a.name)} Call Simulator</a>.`,
@@ -211,7 +214,7 @@ function trackerHtml(h){
   return `<div class="ftbf ftbf-tr" data-k="${e(h.k)}"><div class="ftbf-tr-top"><p class="ftbf-h">Live Session: ${trTitle(a)}</p>
       <label class="ftbf-batch">Batch <select onchange="FTBuffer.batch(this.value)">${batches().map(b => `<option ${b === T.batch ? "selected" : ""}>${e(b)}</option>`).join("") || "<option>No batch</option>"}</select></label></div>
     <div class="ftbf-sum"><p class="ftbf-count">Completed: <b>${done} / ${total}</b> Trainees</p><div class="ftbf-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}"><span style="width:${pct}%"></span></div></div>
-    ${all && !rel ? `<p class="ftbf-banner">🎉 ${a.kind === "buffer" ? "All trainees are done! You can unlock the next activity." : `All trainees have completed their ${w}s! You are ready to begin the debrief.`}</p>` : ""}
+    ${all && !rel ? `<p class="ftbf-banner">🎉 ${a.kind === "buffer" ? "All trainees are done! You can unlock the next activity." : `All trainees have completed their ${w}s! You are ready to begin the debrief.${a.nextDay ? ` Start Group Debrief also opens Day ${h.day + 1}’s deck for the batch.` : ""}`}</p>` : ""}
     ${rel ? `<p class="ftbf-banner ftbf-banner-ok">✓ Released at ${e(tm(rel))}: every trainee’s slide has moved on to the next activity.</p>` : ""}
     ${total ? `<table class="ftbf-tbl"><thead><tr><th>Trainee Name</th><th>Status</th><th>Time Completed</th><th></th></tr></thead><tbody>
       ${rows.map(r => { const d = (r.rec.acts || {})[h.k]; const ok = d && d.done;
@@ -253,16 +256,44 @@ async function writeRec(id, mut){
 // where Activity Locks are in (js/ft-day-locks.js), the batch's next step of the day opens with the release
 async function unlockNext(h){
   if(!root.FTDayLocks || typeof FTDayLocks.steps !== "function" || h.day < 2) return;
-  const list = FTDayDecks.list(h.day) || [], nx = h.i + 1; if(nx >= list.length) return;
-  const st = FTDayLocks.steps(h.day).find(s => nx >= s.from && nx <= s.to); if(!st) return;
+  const list = FTDayDecks.list(h.day) || [], nx = h.i + 1;
+  const st = nx < list.length ? FTDayLocks.steps(h.day).find(s => nx >= s.from && nx <= s.to) : null;
+  // the day's last activity (ACTS[…].nextDay): the next day's deck opens too, unless the batch already has it
+  const n2 = h.day + 1, next = !!h.a.nextDay && n2 <= 16;
+  if(!st && !next) return;
+  // (what the batch has unlocked, read fresh: the all-batches count and a schedule count too, not only its own)
+  try{ if(typeof ftLoadOpenDays === "function") await ftLoadOpenDays(); }catch(err){}
+  const step = st && FTDayLocks.unlockedFor(h.day, T.batch) < st.n, day2 = next && !(FTDayLocks.unlockedFor(n2, T.batch) >= 1);
+  if(next) await openLesson(n2);
+  if(!step && !day2) return;
+  // (the record read strictly: a server that doesn't answer throws, so a failed read is never written back as an empty
+  // record, which would drop the other batches' counts, the schedules and the legacy record that keeps the locks on)
+  const cur = await strict("settings:daysteps"), b = ftKey(T.batch);
+  // (no record, or none with the legacy record yet: the locks aren't on, so no trainee is held and there is nothing to write)
+  if(!cur || typeof cur !== "object" || !cur.legacy) return;
   // (the record's counts read, and written, as card-row steps: FTDayLocks.migrate flags them so)
-  const cur = (await sharedGet("settings:daysteps")) || {}, b = ftKey(T.batch);
   if(typeof FTDayLocks.migrate === "function") FTDayLocks.migrate(cur);
   cur.batches = cur.batches || {}; cur.batches[b] = cur.batches[b] || {};
-  if((Number(cur.batches[b][h.day]) || 0) >= st.n) return;
-  cur.batches[b][h.day] = st.n;
+  // (never below what the batch had, its own count or the all-batches one: its own count stands in for both from now on)
+  const atLeast = (n, k) => Math.max(k, Number(FTDayLocks.stepNum(cur, null, n)) || 0, Number(FTDayLocks.stepNum(cur, T.batch, n)) || 0);
+  if(step) cur.batches[b][h.day] = atLeast(h.day, st.n);
+  if(day2) cur.batches[b][n2] = atLeast(n2, 1);
   if(typeof FTDayLocks.migrate === "function") FTDayLocks.migrate(cur, true);
-  if(await sharedSet("settings:daysteps", cur) !== false) state.ftDaySteps = cur;
+  if(await sharedSet("settings:daysteps", cur) === false) throw new Error("save");
+  state.ftDaySteps = Object.assign({}, state.ftDaySteps, cur);
+}
+const strict = k => typeof sharedGetStrict === "function" ? sharedGetStrict(k) : sharedGet(k);
+// the next day's lesson, opened for the batch (Admin → 📅 Open Lessons) if it isn't open for it yet
+async function openLesson(n){
+  const l = FTDayDecks.lessonOfDay ? FTDayDecks.lessonOfDay(n) : null; if(l == null || typeof ftOpenFor !== "function") return;
+  if(ftOpenFor(T.batch).has(Number(l))) return;
+  // (read strictly, as above: a failed read must never be written back as "no lesson open")
+  const o = await strict("settings:opendays"), b = ftKey(T.batch);
+  if(!o || typeof o !== "object") throw new Error("read");
+  o.all = o.all || []; o.batches = o.batches || {};
+  o.batches[b] = [...new Set((o.batches[b] || []).map(Number).concat(Number(l)))].sort((x, y) => x - y);
+  if(await sharedSet("settings:opendays", o) === false) throw new Error("save");
+  state.ftOpenDays = {all: o.all, batches: o.batches};
 }
 
 /* ---------- drawn on the slide ---------- */
@@ -294,7 +325,7 @@ function paint(){
   box.innerHTML = traineePanel(h); if(h.a.gate) sheet.insertBefore(box, sheet.firstChild); else sheet.appendChild(box);
   // a buffer slide shows the trainee only its panel: ⏳ Buffer Time and Done, centred on the sheet (the slide's own lines,
   // the carryover note and the next item's name, are the trainer's); a gate, until its Done is in
-  if((h.a.kind === "buffer" && (!h.a.task || (h.a.gate && !mine(h.k)))) || (h.a.wait && !mine(h.k))){ sheet.classList.add("ftbf-only");
+  if((h.a.kind === "buffer" && (!h.a.task || (h.a.gate && !mine(h.k)))) || h.a.simple){ sheet.classList.add("ftbf-only");
     // (one page: the hidden content's page breaks go)
     if(h.a.gate) sheet.querySelectorAll(":scope > .ftdd-pgbreak").forEach(x => x.remove()); }
   const sig = () => `${!!mine(h.k)}|${!!released(h.k)}`, was = sig();
@@ -360,7 +391,7 @@ root.FTBuffer = {
       await unlockNext(h);
       const at = new Date().toISOString();
       for(const r of rows) await writeRec(r.id, cur => { cur.released[h.k] = at; });
-      toast(h.a.kind === "buffer" ? `🔓 Next activity unlocked for ${T.batch}.` : `▶ Group debrief started for ${T.batch}: every trainee’s slide moves on.`);
+      toast(h.a.kind === "buffer" ? `🔓 Next activity unlocked for ${T.batch}.` : `▶ Group debrief started for ${T.batch}: every trainee’s slide moves on${h.a.nextDay ? `, and Day ${h.day + 1}’s deck is open` : ""}.`);
     }catch(err){ toast("Couldn’t release everyone. Check your connection and try again."); }
     T.busy = false; paintTracker(h);
   },
@@ -414,6 +445,7 @@ main.main-ftdd .ftdd-sheet.ftbf-only > .ftbf-slot{margin:0 auto !important;width
 .ftbf-wait{border-color:#2F855A;}
 .ftbf-go{border-color:#E8590C;}
 .ftbf-status{display:flex;align-items:center;gap:10px;font-size:16px !important;color:#2F855A !important;}
+.ftbf-only .ftbf-status{justify-content:center;}
 .ftbf-dot{width:10px;height:10px;border-radius:50%;background:#2F855A;animation:ftbfPulse 1.4s ease-in-out infinite;}
 @keyframes ftbfPulse{0%,100%{opacity:1}50%{opacity:.25}}
 .ftbf-card{border:1.5px solid #D6DAE6;border-radius:12px;padding:12px 16px;margin:6px 0 12px;background:#F7F8FC;}
