@@ -16,7 +16,8 @@
                                     firm's calendar rules. Beside it, its own card: 📅 Standard Training - Calendaring
                                     Activity (js/ft-calweek.js), the standalone next-week calendar.
      📋 Intake Mock Calls           lesson 6 (Days 8–9): Ring Channel's Intake Line, the details entered in the Prototype
-                                    CMS; the intake recorded here — no case handed out, the caller is the lead
+                                    CMS; the intake recorded here. The graded call with the trainer is played on the case
+                                    the trainer assigned (js/ft-intake.js .ftis-mockcall), the same call on Ring Channel and in the CMS
      (Claims, lesson 7, is not a Practice Session: the Claims Specialist work is the 🧰 Drafting Tools'
       LOR Drafting Activity, js/ft-lor.js — the trainee drafts the 1P and 3P letters in the firm's own
       templates, with no CMS case file.)
@@ -643,6 +644,7 @@ function metricsTable(key, view){
       <label>Result <select data-status ${row ? "" : "disabled"} onchange="FTMetrics.calc(this)">${STATUSES.map(x => `<option ${x === status ? "selected" : ""}>${x}</option>`).join("")}</select></label>
       <button type="button" class="btn btn-navy btn-sm ftms-save" title="The weighted average becomes the score in %, saved to the trainee’s scores (🧑‍🏫 Trainer Inputs)" ${row ? "" : "disabled"} onclick="FTMetrics.save(this)">💾 Save to ${row ? e(String(row.name).split(/\s+/)[0]) + "’s" : "the trainee’s"} scores</button></div>
     ${rb.time ? `<p class="ti-rub-time">⏱ ${e(rb.time)}</p>` : ""}
+    ${a.id === "intake-live" && row ? `<div class="ftis-mcase" data-trainee="${e(id)}"></div>` : ""}
     <table class="ftms-tbl" data-rubric="${e(key)}">${head}<th>Remarks</th></tr></thead><tbody>
       ${rb.criteria.map((k, i) => `<tr><td>${e(k.n)}</td><td><input type="number" min="0" max="5" step="0.5" data-crit="${i}" value="${e((got.scores || [])[i] == null ? "" : got.scores[i])}" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td>
         <td><input data-fb="${i}" value="${e((got.feedback || [])[i] || "")}" placeholder="Remarks" ${row ? "" : "disabled"} oninput="FTMetrics.calc(this)"></td></tr>`).join("")}
@@ -663,11 +665,15 @@ window.FTMetrics = {
     const row = (AD.rows || []).find(r => r.id === id), rr = rubricRead(box); if(!row || !rr) return;
     if(!rr.scores.some(v => v != null)){ toast("Score at least one criterion first."); return; }
     btn.disabled = true;
+    // (the Intake Mock Call: the case it was played on, read fresh; undefined keeps the saved one when it can't be known)
+    const played = act === "intake-live" && window.FTIntake && FTIntake.callOf ? await FTIntake.callOf(id) : undefined;
     try{
       await writeReview(id, cur => { cur.acts = cur.acts || {}; const prev = cur.acts[act] || {};
         cur.acts[act] = Object.assign({}, prev, {status:box.querySelector("[data-status]").value, score:rr.avg == null ? null : Math.round(rr.avg / 5 * 100),
           date:prev.date || new Date().toISOString().slice(0, 10), at:new Date().toISOString(),
-          rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}}); });
+          rubric:{key:rr.key, scores:rr.scores, feedback:rr.feedback, avg:rr.avg == null ? null : Math.round(rr.avg * 100) / 100}},
+          // (the CMS call the trainee was assigned, js/ft-intake.js; null when none, so an earlier case isn't carried over)
+          played !== undefined ? {case:played} : {}); });
       delete MS.draft[key + "|" + act + "|" + id]; toast(`✓ Saved to ${row.name}’s scores.`);
     }catch(err){ toast("Couldn’t save. Check your connection."); }
     btn.disabled = false; render();
