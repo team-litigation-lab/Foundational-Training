@@ -985,7 +985,7 @@ window.lvTab = function(i){
   document.querySelectorAll("#lecture-viewer-tabs button").forEach((b, k) => b.classList.toggle("on", k === i));
 };
 function lvOpen(item){
-  if(item.kind !== "doc" && !confirm(`Do you want to watch this ${item.kind==="lecture"?"lecture":"video"}?\n\n"${item.title}"`)) return;
+  // (a video opens straight away: no "Do you want to watch this video?" prompt first)
   LV.kind = item.kind === "doc" ? "doc" : "video";
   const p = document.getElementById("lecture-viewer-pane"), holder = document.getElementById("lecture-viewer-frame-holder"), link = document.getElementById("lecture-viewer-open-link");
   document.getElementById("lecture-viewer-title").textContent = item.title || "Recorded Lecture";

@@ -84,7 +84,7 @@ function loadDecks(){
 const dayInfo = n => (root.FTDays && FTDays.of(n)) || {day: n, role: "", lessons: []};
 /* A slide's own HTML, as the trainer has it. js/ft-slide-editor.js lets a trainer rewrite any slide of any day
    (settings:dayslides); the edit stands in for what build/day-decks.cjs built, for trainers and trainees alike, and
-   everything downstream — the agenda, the slide's buttons, 🎬 Video Notes — reads the slide through here. */
+   everything downstream — the agenda, the slide's buttons — reads the slide through here. */
 const slideSrc = (n, s) => { try{ const v = root.FTSlideEdit && FTSlideEdit.html(n, s && s.id); return v == null ? (s || {}).html : v; }catch(err){ return (s || {}).html; } };
 // a lesson is open when the trainer has opened it for the batch (Admin → 📅 Open Lessons)
 const lessonOpen = l => { try{ return typeof dayUnlocked === "function" ? !!dayUnlocked(Number(l)) : true; }catch(err){ return true; } };
@@ -231,8 +231,6 @@ const cleanTitle = t => { const s = String(t || "").replace(/https?:\/\/\S+/g, "
 function visual(html){
   const t = document.createElement("template"); t.innerHTML = html;
   const root = t.content;
-  // (a slide the build marks ftdd-nolearn, Day 2's Common Terms, has no "📝 What I learned" beside its videos)
-  const learnOn = !root.querySelector(".ftdd-nolearn");
   // 1. a line that is only a link (or links) becomes tiles; the short line before it names the tile
   // (the lines just before each, read before any is replaced: a video played in the slide no longer carries the "watch
   // these videos" line that told what the links after it are)
@@ -274,19 +272,8 @@ function visual(html){
       btn.innerHTML = `<span class="ftdd-tile-ic">🎧</span><span class="ftdd-tile-t"><b>Transcribe Interview Recording ${m[1]}</b><small>Open the Transcription Activity →</small></span>`;
       tiles[j] = btn;
     });
-    // 🎬 a video gets "📝 What I learned" beside it (js/ft-video-notes.js): watching is an activity, not a link
-    // (except a link the build marks data-nolearn: Day 8's SA tutorial, played on the demonstration's slide)
-    const wrapped = tiles.map((x, j) => {
-      if(!x.classList.contains("k-video") || !window.FTVideoNotes || !learnOn || (as[j] && as[j].hasAttribute("data-nolearn"))) return x;
-      const w = document.createElement("div"); w.className = "ftdd-vwrap"; w.appendChild(x);
-      const b = document.createElement("button"); b.type = "button"; b.className = "ftdd-learn";
-      b.setAttribute("data-url", x.getAttribute("href")); b.setAttribute("data-title", x.querySelector("b").textContent);
-      b.setAttribute("onclick", "FTVideoNotes.openFrom(this)");
-      b.textContent = "📝 What I learned"; w.appendChild(b); return w;
-    });
-    tiles.length = 0; wrapped.forEach(x => tiles.push(x));
     // 🎞 videos the build marks data-card (Day 3's five CRM/CMS videos) are cards side by side: the video's own preview,
-    // its name and "📝 What I learned" under it. A click anywhere on the card plays it bigger in the pop-up viewer (the
+    // and its name under it. A click anywhere on the card plays it bigger in the pop-up viewer (the
     // preview only shows it: it takes no clicks)
     const prevSrc = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
     if(as.every(a => a.hasAttribute("data-card") && prevSrc(a)) && tiles.every(x => x.matches(".ftdd-vwrap, .ftdd-tile.k-video"))){
@@ -306,8 +293,7 @@ function visual(html){
       if(last) p.remove(); else p.replaceWith(grid);
       return;
     }
-    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it, and a video keeps its
-    // "📝 What I learned". So does every video the platform can play (Drive, Loom, YouTube): it is watched on the slide, not
+    // ▶ a link the build marks data-embed plays (or shows) in the slide itself, its name above it. So does every video the platform can play (Drive, Loom, YouTube): it is watched on the slide, not
     // through a link (a line of several videos, a player each); an interview recording keeps its 🎧 Transcribe tile
     const embedOf = a => typeof window.lvEmbedUrl === "function" ? window.lvEmbedUrl(a.getAttribute("href")) : null;
     const isVid = x => !!(x && x.matches && (x.matches(".ftdd-tile.k-video") || (x.matches(".ftdd-vwrap") && x.querySelector(".ftdd-tile.k-video"))));
@@ -316,7 +302,7 @@ function visual(html){
     if(embeds.length){
       const boxes = embeds.map(j => {
       const a = as[j], src = embedOf(a);
-      const x = tiles[j], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video"), learn0 = x.querySelector && x.querySelector(".ftdd-learn");
+      const x = tiles[j], tile = x.matches(".ftdd-vwrap") ? x.querySelector(".ftdd-tile") : x, vid = tile.classList.contains("k-video");
       const box = document.createElement("div"); box.className = "ftdd-inline" + (vid ? " is-video" : " is-doc");
       box.innerHTML = `<div class="ftdd-inline-h"><b></b></div><div class="ftdd-embed ftdd-embed-${vid ? "player" : "doc"}"><iframe loading="lazy" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
       // (its name: the one the build gave it, else the tile's; a name that is only the guide's address reads as the tile's)
@@ -332,14 +318,11 @@ function visual(html){
       if(a.hasAttribute("data-full")) box.querySelector(".ftdd-embed").classList.add("ftdd-embed-full");
       // (data-fit: sized to the page, so the lines around it stay on the same page: Day 8's SA tutorial and naming reference)
       if(a.hasAttribute("data-fit")) box.classList.add("is-fit");
-      if(a.hasAttribute("data-nolearn")) box.setAttribute("data-nolearn", "");
       // 📊 Day 2's Common Terms Used reference sheet: the platform's own table in place of the embed (refTerms below),
       // the embed while its data loads
       if(REF_SHEET.test(href)) box.setAttribute("data-sheet", REF_SHEET.source);
       const terms = REF_SHEET.test(href) && refTermsInto(box);
       if(crop > 0 && !terms){ const em = box.querySelector(".ftdd-embed"); em.classList.add("ftdd-embed-crop"); em.setAttribute("data-crop", crop); box.classList.add("is-crop"); }
-      if(learn0) learn0.setAttribute("data-title", nm);
-      const learn = x.querySelector && x.querySelector(".ftdd-learn"); if(learn) box.querySelector(".ftdd-inline-h").appendChild(learn);
       // (data-bare: no name bar over it, the slide's ribbon names it, and a video plays as large as the page allows:
       // Day 2's Common Terms and Auto Liability videos)
       if(a.hasAttribute("data-bare")){ box.querySelector(".ftdd-inline-h").remove(); box.classList.add("is-bare"); }
@@ -462,6 +445,13 @@ function visual(html){
     p.classList.add("ftdd-name-h");
     const n = p.nextElementSibling;
     if(n && n.tagName === "P" && n.textContent.trim().length < 200) n.classList.add("ftdd-name");
+  });
+  // 4. a run of bullet points is one block, centred on the slide with its bullets lined up (the sheet's text is centred)
+  [...root.children].forEach(x => {
+    if(!(x.tagName === "P" && x.classList.contains("li")) || x.parentNode !== root) return;
+    const prev = x.previousElementSibling;
+    if(prev && prev.classList.contains("ftdd-li-run")){ prev.appendChild(x); return; }
+    const run = document.createElement("div"); run.className = "ftdd-li-run"; x.replaceWith(run); run.appendChild(x);
   });
   const box = document.createElement("div"); box.appendChild(root);
   return box.innerHTML;
@@ -728,9 +718,6 @@ function slideActions(s, info, body, i){
   if(has(/calendar management/i) && root.FTCalRules) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('calrules')">📅 Booking Rule Check</button>`);
   if(/^Attorney Calendar Management Activity/i.test(h) && root.FTCalCheck) out.push(`<button type="button" class="btn btn-navy btn-sm" onclick="goto('calcheck')">📅 Calendar Activity Check</button>`);
   if(has(/transcription/i) && root.FTTranscribe) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="goto('transcribe')">🎧 Transcription Activity</button>`);
-  // (a video that plays in the slide counts too: ftdd-inline)
-  const vids = (String(body || "").match(/ftdd-tile k-video|ftdd-inline is-video/g) || []).length;
-  if(vids && root.FTVideoNotes && !/ftdd-nolearn|data-nolearn/.test(String(body || ""))) out.push(`<button type="button" class="btn btn-ghost btn-sm" onclick="FTDayDecks.learn(${Number(i) || 0})">📝 What I learned${vids > 1 ? ` (${vids} videos)` : ""}</button>`);
   return out.length ? `<div class="ftdd-acts">${out.join("")}</div>` : "";
 }
 /* ⏳ While you wait for your turn: a mock-call or demo slide (or its buffer time) carries the tools to review with while the
@@ -1285,24 +1272,6 @@ document.addEventListener("keydown", ev => {
   else if(ev.key === "ArrowLeft"){ ev.preventDefault(); go(-1); }
 });
 
-// every video a day's deck links to, for 🎬 Video Notes: [{url, title, day, slide}]
-function videos(n){
-  const d = decks() && decks()[n]; if(!d) return [];
-  const out = [], seen = new Set();
-  d.slides.forEach((s, i) => {
-    const t = document.createElement("template"); t.innerHTML = visual(slideSrc(n, s));
-    t.content.querySelectorAll("a.ftdd-tile.k-video").forEach(a => {
-      const url = a.getAttribute("href"); if(seen.has(url)) return; seen.add(url);
-      out.push({url, title: (a.querySelector("b") || {}).textContent || "Video", day: n, slide: i + 1});
-    });
-    // (and a video that plays in the slide: its 📝 What I learned button carries its address and name)
-    t.content.querySelectorAll(".ftdd-inline.is-video .ftdd-learn").forEach(b => {
-      const url = b.getAttribute("data-url"); if(!url || seen.has(url)) return; seen.add(url);
-      out.push({url, title: b.getAttribute("data-title") || "Video", day: n, slide: i + 1});
-    });
-  });
-  return out;
-}
 /* ---------- 📚 Dashboard: the instruction decks beside the lessons ----------
    A day with a classroom discussion is the day its lesson is taught: its instructions deck goes with that lesson
    (📋 Day N beside the lesson card's Start). A day without one has only its instructions: it gets a deck of its own,
@@ -2010,14 +1979,6 @@ root.FTDayDecks = {open, go, next: nextKC,
   dayRows, rowLabel,
   at: (n, id) => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => s.id === id) : -1; },
   first: n => { const d = decks() && decks()[Number(n)]; return d ? slidesOf(d).findIndex(s => !s.agenda) : 1; },
-  // 📝 What I learned for a video on this slide, from the button above the sheet
-  learn(n){
-    const card = document.querySelector(`main.main-ftdd .ftdd-deck[data-slide="${Number(n) || 0}"]`) || document;
-    const b = card.querySelector(".ftdd-sheet .ftdd-learn");
-    if(!b || !root.FTVideoNotes) return;
-    FTDayDecks.reveal(b);
-    FTVideoNotes.openFrom(b);
-  },
   // turn to the page of the slide that holds this element (a tile, a button): paging a long slide hides the rest
   reveal(elOrSel){
     const el = typeof elOrSel === "string" ? document.querySelector(elOrSel) : elOrSel;
@@ -2026,7 +1987,7 @@ root.FTDayDecks = {open, go, next: nextKC,
     const top = [...sheet.children].find(k => k === el || k.contains(el)); if(!top) return false;
     for(let p = 0; p < (DD.pages || 1); p++){ DD.page = p; fitSheets(); if(el.offsetParent) return true; }
     return false;
-  }, dayOpen, currentDay, load: loadDecks, videos, day: () => DD.day, discussionDay, instructionOnlyDays,
+  }, dayOpen, currentDay, load: loadDecks, day: () => DD.day, discussionDay, instructionOnlyDays,
   // the no-discussion day's last slide, "From your trainer"
   // (its own slide: the deck now ends on its end slide, after it)
   trainer(n){ loadDecks().then(() => { const d = decks() && decks()[Number(n)], i = d ? slidesOf(d).findIndex(s => s.trainer) : -1; open(n, i >= 0 ? i : 999); }); },
@@ -2210,7 +2171,7 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 /* A LINK IS A LINK, NOT A CARD.
    A slide is already a card: boxing every video and document inside it put cards over cards and filled the
    screen with chrome rather than the day's work. Each link is one line on the slide — its icon, the title as
-   the link, and what it opens — with "📝 What I learned" beside a video as another small link. */
+   the link, and what it opens. */
 .ftdd-tiles{display:flex;flex-direction:column;gap:4px;margin:8px 0 12px;}
 .ft-body a.ftdd-tile, .ft-body button.ftdd-tile{display:inline-flex;align-items:baseline;gap:8px;padding:2px 0;border:0;border-radius:0;background:none;box-shadow:none;color:var(--ink);text-decoration:none;text-align:left;font:inherit;cursor:pointer;overflow-wrap:break-word;}
 .ft-body a.ftdd-tile:hover .ftdd-tile-t b, .ft-body button.ftdd-tile:hover .ftdd-tile-t b{color:#B5651F;}
@@ -2243,12 +2204,7 @@ main.main-ftdd .ftdd-sheet .ftdd-tool-txt p.ftdd-tool-what b, main.main-ftdd .ft
 .ftdd-vcard .ftdd-tile-t{display:flex;align-items:baseline;justify-content:space-between;gap:6px;flex-wrap:wrap;}
 .ftdd-vcard .ftdd-tile-t b{font-size:14.5px;}
 .ftdd-vcard .ftdd-tile-t small{margin-left:0;}
-.ftdd-vcard .ftdd-learn{align-self:flex-start;}
 .ftdd-monlink{color:#1F5B39;font-weight:700;text-decoration:underline;text-underline-offset:2px;cursor:pointer;}
-.ftdd-learn{border:0;background:none;color:#1F5B39;font:700 12.5px 'Inter',sans-serif;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
-.ftdd-learn:hover{color:#2E7D4F;}
-.ftdd-learn.done{color:#2E7D4F;text-decoration:none;}
-.ftdd-learn.done::before{content:"✓ ";}
 /* 📚 Dashboard: a lesson's day deck beside its Start, and the instruction-only days' own decks under the lessons */
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck{flex:0 0 auto;border-radius:0 !important;margin:0 !important;padding:5px 9px !important;font-size:12px !important;font-weight:700;background:#FFF4E8 !important;color:#B5651F !important;border:none !important;border-left:1px solid #9CA3B8 !important;min-height:0 !important;}
 main.main-dash .module-card.mc-compact > .mc-startrow > .mc-daydeck:hover{background:#FBE3CB !important;}
@@ -2724,6 +2680,10 @@ main.main-ftdd .ftdd-sheet.ftdd-read .ftdd-pi-row:has(.ftdd-pi-legend):not(.ftdd
 .ft-body .ftdd-embed.ftdd-embed-folder-big{height:max(360px, calc(var(--ftdd-room, 70vh) - 170px));}
 .ft-body .ftdd-embed.ftdd-embed-folder-big iframe{width:50%;height:50%;transform:scale(2);transform-origin:0 0;}
 .ft-body .ftdd-embed.ftdd-embed-folder-center{max-width:1280px;margin-left:auto;margin-right:auto;}
+/* Day 2's three PPT decks (ftdd-hw-ppts, build/day-decks.cjs s4): the folder's grid as one row of large thumbnails under
+   its Task 2, cropped to the row (Drive's empty band above the files is cut off) and never scrolled */
+.ft-body .ftdd-embed.ftdd-embed-folder-strip{height:300px;max-width:1100px;margin:6px auto 0;overflow:hidden;position:relative;border:0;background:transparent;}
+.ft-body .ftdd-embed.ftdd-embed-folder-strip iframe{position:absolute;left:0;top:-160px;width:62.5%;height:287px;transform:scale(1.6);transform-origin:0 0;border:0;overflow:hidden;pointer-events:auto;}
 /* ▶ a video or sheet in the slide itself: its name in the deck's navy bar, the player 16:9 under it, as big as the page allows */
 /* 📅 Day 5's sample event editor, drawn (Google Calendar's dark editor): the time zone boxed in red, as the guide's picture */
 .ft-body .ftdd-gcal{background:#1F1F1F;border-radius:10px;padding:12px 14px;margin:8px 0;color:#E3E3E3;font:500 14px/1.3 'Inter',system-ui,sans-serif;}
@@ -2776,7 +2736,6 @@ main.main-ftdd .ftdd-sheet p.ftdd-ev-perm{margin:10px 0 4px !important;font-size
 .ft-body .ftdd-inline{margin:12px 0 16px;}
 .ft-body .ftdd-inline-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#1E2340;border-left:5px solid #E8590C;border-radius:8px;padding:8px 14px;}
 .ft-body .ftdd-inline-h b{font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
-.ft-body .ftdd-inline-h .ftdd-learn{margin:0;background:#fff;color:#1E2340;border-radius:999px;padding:4px 12px;font:700 14px/1.2 'Inter',sans-serif;}
 .ft-body .ftdd-embed.ftdd-embed-player{height:auto;aspect-ratio:16/9;width:min(100%, calc(44vh * 16 / 9));margin:10px auto 0;border:2px solid #343C66;background:#000;}
 /* a video with no name bar over it (data-bare): the page's full height */
 .ft-body .ftdd-inline.is-bare{margin:0;}
@@ -2871,6 +2830,8 @@ main.main-ftdd .ftdd-sheet .ftdd-mockpage > p.ftdd-hbar:first-child{margin-top:0
 main.main-ftdd .ftdd-sheet p.ftdd-warm-lead{font-weight:700;color:#1E2340;}
 .ft-body a.ftdd-sop-dl{display:inline-flex;align-items:center;padding:8px 16px;border-radius:8px;background:#1F5B39;color:#fff;font-size:15px;font-weight:700;text-decoration:none;}
 .ft-body a.ftdd-sop-dl:hover{background:#174A2E;}
+/* (white over the slide's own link colour, which is more specific) */
+main.main-ftdd .ftdd-sheet a.ftdd-sop-dl, main.main-ftdd .ftdd-sheet a.ftdd-sop-dl:hover, main.main-ftdd .ftdd-sheet a.ftdd-sop-dl:visited{color:#fff !important;text-decoration:none !important;}
 /* 🎧 Day 3's Listening Activity: a card per recording, three to a row, each opening the pop-up player */
 .ftdd-acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:12px;margin:8px 0 10px;}
 .ft-body button.ftdd-acard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:12px 14px;background:#fff;border:2px solid #343C66;border-left:5px solid #E8590C;border-radius:12px;box-shadow:0 2px 6px rgba(30,35,64,.10);cursor:pointer;font:inherit;color:#1E2340;}
@@ -2952,6 +2913,12 @@ main.main-ftdd .ftdd-sheet.ftdd-sa .ftdd-sa-contacts p::before{display:none !imp
 }
 /* a Note's 💡 sits in its own space at the left of the bar, never over the word */
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout{padding-left:46px !important;}
+/* every slide's content centred on its sheet: headings, heading bars, lines, notes and the name to copy; a run of bullet
+   points (ftdd-li-run, visual) is one block centred as a whole, its bullets lined up on the left */
+main.main-ftdd .ftdd-sheet > :is(p, h1, h2, h3, h4, h5){text-align:center;}
+main.main-ftdd .ftdd-sheet > p.ftdd-name{margin-left:auto;margin-right:auto;width:fit-content;max-width:100%;}
+main.main-ftdd .ftdd-sheet > .ftdd-li-run{width:fit-content;max-width:100%;margin:6px auto;text-align:left;}
+main.main-ftdd .ftdd-sheet > .ftdd-li-run > p.li{text-align:left;}
 main.main-ftdd .ftdd-sheet p.ftdd-hbar.ftdd-callout::before{left:14px;top:50%;transform:translateY(-50%);}
 /* the body text bold on every Activity deck sheet (the standard across the decks: js/ft-rules.js does the same on the orientation) */
 main.main-ftdd .ftdd-sheet :where(p, li, td){font-weight:600;}
