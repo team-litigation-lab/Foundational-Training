@@ -1183,7 +1183,9 @@ export default {
           // trainer, with no second password here. Their ticket works once, so a copy of the link (browser history,
           // a forwarded URL) can't sign anyone in again inside its 5 minutes.
           if (!(await useTicketOnce(kv, ticket))) return json({ error: "This sign-in link was already used. Open the program again from the LSH Training Portal.", code: "used" }, 401);
-          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "admin", 12) });
+          // (the token keeps the trainer's name, hub:<name>: a trainer who came from the main Hub gets the Portal's simulators
+          // signed in too, /api/auth/tool-ticket)
+          return json({ admin: true, name: who.name, token: await makeToken(env, "a", "hub:" + String(who.name || "").slice(0, 60), 12) });
         }
         const res = await traineeSession(who.name, who.batch, "");
         if (!res.ok) return res;   // (offboarded, or their batch archived and cleared)
@@ -1312,10 +1314,16 @@ export default {
         // A trainer (an admin, or the 👁 Trainee view, which sends the admin token) opening the Knowledge Base: the same
         // admin ticket { r: "a" } the Portal's /api/launch gives an administrator. The KB accepts each one once and signs
         // the trainer in as an admin there (no password). Knowledge Base only, and never in open mode (no admin password).
+        // A trainer who came from the main Hub (signed in here from its ticket: hub:<name>) opening a Portal simulator: the
+        // Portal's admin ticket with their name { r: "a", n }, which signs them in to their own admin account there, once
+        // (single sign-on). A trainer signed in here with this program's password gets none: the Portal asks for theirs.
         if (tok.role === "a") {
           const b = await request.json().catch(() => ({}));
-          if (!secure || tok.id === "open-mode" || b.tool !== "kb") return json({ error: "not-available" }, 403);
-          return json({ ticket: await signTicket({ r: "a", exp: Date.now() + 5 * 60 * 1000 }) });
+          if (!secure || tok.id === "open-mode") return json({ error: "not-available" }, 403);
+          if (b.tool === "kb") return json({ ticket: await signTicket({ r: "a", exp: Date.now() + 5 * 60 * 1000 }) });
+          const hub = /^hub:(.+)$/.exec(String(tok.id || ""));
+          if (b.tool === "portal" && hub && hub[1].trim()) return json({ ticket: await signTicket({ r: "a", n: hub[1].trim(), exp: Date.now() + 5 * 60 * 1000 }) });
+          return json({ error: "not-available" }, 403);
         }
         if (tok.role !== "t") return json({ error: "not-available" }, 403);
         const rec = JSON.parse((await kv.get(`trainee:${tok.id}`)) || "null");

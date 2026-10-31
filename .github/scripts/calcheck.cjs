@@ -197,14 +197,9 @@ async function workerChecks() {
   const ins = await page.evaluate(() => ({ link: !!document.querySelector('.ftdd-calsim-ins button[onclick*="ftsCalsim(\'activity\')"]'), bar: document.querySelectorAll('.ftdd-acts, .ftdd-time').length }));
   if (!ins.link || ins.bar) fail(`Day 5's Attorney Calendar Management Activity: Instructions slide should link the Portal's simulator (and carry no link pills): ${JSON.stringify(ins)}`);
   // (and the link opens the activity's own calendar: gcal.html?track=activity, not the Calendaring Simulators' list)
-  // (a trainee's opens it directly, their ticket signing them in; a trainer's, here the 👁 Trainee view, opens the Portal's admin
-  // sign-in, which comes back to it: the Portal never takes a trainer's sign-in from a course)
-  const openAs = (preview) => page.evaluate((preview) => { const was = [state.isAdmin, state.adminPreview]; state.isAdmin = false; state.adminPreview = preview;
-    let u = ''; const o = window.open; window.open = (x) => { u = x; return null; }; ftsCalsim('activity'); window.open = o; [state.isAdmin, state.adminPreview] = was; return u; }, preview);
-  const opened = await openAs(false);
+  // (for a trainee and a trainer alike: each is signed in there by their ticket, js/lsh-tool-links.js)
+  const opened = await page.evaluate(() => { let u = ''; const o = window.open; window.open = (x) => { u = x; return null; }; ftsCalsim('activity'); window.open = o; return u; });
   if (!/\/simulators\/gcal\.html\?[^#]*program=FT[^#]*&track=activity$/.test(opened)) fail(`the activity's link should open its own calendar: ${opened}`);
-  const trainerOpened = await openAs(true), nxt = (() => { try { const u = new URL(trainerOpened); return u.pathname === '/admin-login.html' ? u.searchParams.get('next') : ''; } catch (e) { return ''; } })();
-  if (!/^\/simulators\/gcal\.html\?[^#]*program=FT[^#]*&track=activity$/.test(nxt || '')) fail(`a trainer's link should open the Portal's admin sign-in, back to the calendar: ${trainerOpened}`);
   // the Calendaring Simulator opened from a slide: ← Back to the slides returns to that slide (not the Simulators page)
   { const from = await page.evaluate(() => { FTDayDecks.open(5, FTDayDecks.at(5, 's3')); const d = FTDayDecks.state(); return { day: d.day, i: d.i }; }); await page.waitForTimeout(800);
     await page.evaluate(() => goto('calsim', 'attorney-activity')); await page.waitForTimeout(1500);
