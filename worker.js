@@ -281,7 +281,8 @@ const TRAINER_OWNED = (id) => [`kcreview:${id}`, `labreview:${id}`, `simresults:
 // The trainee reads it, but never writes it (traineeWrite refuses keys it doesn't know).
 function canRead(tok, key) {
   if (tok.role === "a") return true;
-  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key === `buffer:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
+  // calweek:<id>: read-only here (its own scorecard row); only calweek-api.js writes it
+  return OWN(tok.id).includes(key) || TRAINER_OWNED(tok.id).includes(key) || key === `callsim:${tok.id}` || key === `calweek:${tok.id}` || key === `buffer:${tok.id}` || key.startsWith(`actup:${tok.id}:`) || key.startsWith(`guide:${tok.id}:`) || PUBLIC_READ.some((re) => re.test(key));
 }
 // Day 5's Attorney Calendar Management Activity: an anchor Monday (js/ft-calsim-core.js okAnchor) is a real YYYY-MM-DD date,
 // a Monday, on or after the activity's own July 6, 2026; anchorsOk keeps only those of a record's anchors.

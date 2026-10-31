@@ -14,6 +14,7 @@
      🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
+     📅 Calendaring Activity    calweek:<id>, the automated check of the submitted next-week calendar (js/ft-calweek.js)
      🧰 Portal simulators       simresults:<id>, the best result per Training Portal simulator (written by the Portal's /api/sim-results)
    (The Daily Activities page was taken off: the Practice Lab and the Knowledge Checks cover that work.)
    ============================================================ */
@@ -112,6 +113,9 @@ window.LSH_PROGRAM = {
     {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:",
       about:"Your calendar mock-call bookings, each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart.",
       items: ctx => typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) : []},
+    {id:"calweek", icon:"📅", label:"Calendaring Activity", key:"calweek:",
+      about:"Standard Training - Calendaring Activity (Days 5–6): the tasks you booked on the attorney’s calendar for next week, checked against the attorney’s rules (the score of your submitted calendar).",
+      items: ctx => typeof window.ftCalWeekItems === "function" ? window.ftCalWeekItems(ctx) : []},
     {id:"kcgames", icon:"🎮", label:"Knowledge Games", key:"kcgames:",
       about:"Your best game on each lesson’s Knowledge Games (practice only: the graded Knowledge Check is the score that counts).",
       items: ctx => typeof window.ftKCGameItems === "function" ? window.ftKCGameItems(ctx) : []},
