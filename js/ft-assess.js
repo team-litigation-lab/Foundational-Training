@@ -104,11 +104,21 @@ async function answersPdf(doc){
 // (the trainee's Assessment and Activities Folder, from 📁 My Drive links: opened when the PDF has to be dropped in by hand)
 async function folderUrl(){ try{ const d = await sharedGet("drive:" + state.traineeId); return (d && d.folder) || ""; }catch(err){ return ""; } }
 const mineKey = () => "assess:" + state.traineeId;
-async function load(){
-  if(!state.traineeId || A.loading || A.id === state.traineeId) return;
-  A.loading = true;
-  try{ A.rec = (await sharedGet(mineKey())) || {v: 1, docs: {}}; A.review = (await sharedGet("trackerreview:" + state.traineeId)) || {}; A.id = state.traineeId; }catch(err){}
-  A.loading = false; render();
+function load(){
+  if(!state.traineeId || A.id === state.traineeId) return Promise.resolve();
+  if(A.loading) return A.loading;
+  return A.loading = (async () => {
+    try{ A.rec = (await sharedGet(mineKey())) || {v: 1, docs: {}}; A.review = (await sharedGet("trackerreview:" + state.traineeId)) || {}; A.id = state.traineeId; }catch(err){}
+    A.loading = null; render();
+  })();
+}
+// (saves the answers, then has the Worker grade them: the result is read back into A.review)
+async function post(doc){
+  clearTimeout(A.t); if(await sharedSet(mineKey(), A.rec) === false) throw new Error("save");
+  const r = await authFetch("/api/assess/grade", {id: state.traineeId, doc}), j = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(j.error || "send");
+  A.review = (await sharedGet("trackerreview:" + state.traineeId)) || A.review;
+  return j;
 }
 const answers = doc => ((((A.rec || {}).docs || {})[doc]) || {}).answers || {};
 const graded = doc => ((A.review || {}).assess || {})[doc] || null;
@@ -162,10 +172,7 @@ root.FTAssess = {
     if(left > 0 && !confirm(`${left} of ${want} items are still blank. Submit for grading anyway?`)) return;
     A.sending = true; render();
     try{
-      clearTimeout(A.t); if(await sharedSet(mineKey(), A.rec) === false) throw new Error("save");
-      const r = await authFetch("/api/assess/grade", {id: state.traineeId, doc}), j = await r.json().catch(() => ({}));
-      if(!r.ok) throw new Error(j.error || "send");
-      A.review = (await sharedGet("trackerreview:" + state.traineeId)) || A.review;
+      await post(doc);
       toast("✓ Submitted for grading. Your score is on 🏅 My Performance.");
     }catch(err){ toast(err.message && !/^(save|send)$/.test(err.message) ? err.message : "Couldn’t submit. Check your connection and try again."); }
     A.sending = false; render();
@@ -184,6 +191,12 @@ root.FTAssess = {
       toast(`${DRIVE_WHY[j.error] || "Couldn’t reach Google Drive."} Your PDF downloaded as “${name}”: upload it to your Assessment and Activities Folder${f ? " (it just opened)" : ""}.`); }
     A.saving = false; render();
   },
+  // another page's graded activity kept in the same record (js/ft-claims-email.js): one copy of assess:<id> on the page,
+  // so neither overwrites the other's answers
+  ready: () => load(),
+  answers: doc => answers(doc),
+  graded: doc => graded(doc),
+  grade: doc => post(doc),
   // the result, for 🏅 My Performance (js/ft-drive.js ftDriveItems)
   title: doc => (FORMS[doc] || {}).title || "Assessment"
 };
