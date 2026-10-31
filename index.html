@@ -14426,13 +14426,15 @@ function renderAdmin(){
 
   const sort = state.adminSort || "completion_desc";
 
-  const totalTrainees = state.adminData.length;
-  const avgCompletion = totalTrainees ? Math.round(state.adminData.reduce((a,r)=>a+adminDayStats(r).done,0)/totalTrainees/DAYS.length*100) : 0;
+  // the figures count the active (current) batch only: archived batches are left out
+  const active = state.adminData.filter(r=>!r.archived);
+  const totalTrainees = active.length;
+  const avgCompletion = totalTrainees ? Math.round(active.reduce((a,r)=>a+adminDayStats(r).done,0)/totalTrainees/DAYS.length*100) : 0;
   const avgScoreAll = (()=>{
-    const all = state.adminData.flatMap(r=>Object.values(r.dayProgress||{}).filter(p=>p&&typeof p.score==="number").map(p=>p.score));
+    const all = active.flatMap(r=>Object.values(r.dayProgress||{}).filter(p=>p&&typeof p.score==="number").map(p=>p.score));
     return all.length ? Math.round(all.reduce((a,b)=>a+b,0)/all.length) : 0;
   })();
-  const fullyDone = state.adminData.filter(r=>adminDayStats(r).done===DAYS.length).length;
+  const fullyDone = active.filter(r=>adminDayStats(r).done===DAYS.length).length;
 
   return tabBar + `
     <div class="audit-page-head" style="display:flex;gap:12px 16px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;">
@@ -18920,7 +18922,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-calsim-core.js?v=ft-2026.10.30-guest-names"></script>
 <script src="/js/ft-calendar.js?v=ft-2026.10.30-merge450"></script>
 <script src="/js/ft-cases-data.js?v=ft-2026.10.08-firms"></script>
-<script src="/js/ft-firms.js?v=ft-2026.10.27-noassign"></script>
+<script src="/js/ft-firms.js?v=ft-2026.10.31-nofirmstab"></script>
 <script src="/js/ft-day-activities.js?v=ft-2026.10.30-no-carlos"></script>
 <script src="/js/ft-simulators.js?v=ft-2026.10.30-merge450"></script>
 <script src="/js/ft-rubrics.js?v=ft-2026.10.29-intake"></script>
@@ -18949,7 +18951,7 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-drive.js?v=ft-2026.10.30-fill-week"></script>
 <script src="/js/ft-facilitator-dna.js?v=ft-2026.10.05-1744"></script>
 <script src="/js/ft-activities.js?v=ft-2026.10.15-dashboard"></script>
-<script src="/js/ft-admin-ops.js?v=ft-2026.10.30-intake4"></script>
+<script src="/js/ft-admin-ops.js?v=ft-2026.10.31-trainer-map"></script>
 <script src="/js/ft-batch-admin.js?v=ft-2026.10.30-batch-admin"></script>
 <script src="/js/portal-link.js?v=ft-2026.10.08-topbar"></script>
 <script src="/js/show-password.js?v=1"></script>
@@ -18961,8 +18963,8 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/ft-card-grid.js?v=ft-2026.10.30-color"></script>
 <script src="/js/lsh-card-frame.js?v=ft-2026.10.30-contrast"></script>
 <script src="/js/lsh-topbar.js?v=2"></script>
-<script src="/js/ft-program.js?v=ft-2026.10.30-fill-week"></script>
-<script src="/js/lsh-program.js?v=ft-2026.10.30-trainer-merge"></script>
+<script src="/js/ft-program.js?v=ft-2026.10.31-unlock-segments"></script>
+<script src="/js/lsh-program.js?v=ft-2026.10.31-focus-trainee"></script>
 <script src="/js/ft-my-pages.js?v=ft-2026.10.26-notasks"></script>
 <script src="/js/ft-day1-flow.js?v=ft-2026.10.30-no-segment-locks"></script>
 <script src="/js/ft-day-locks.js?v=ft-2026.10.30-contrast"></script>
@@ -18974,5 +18976,6 @@ window.addEventListener("error", (ev)=>{ if(state.isAdmin && ev && ev.message &&
 <script src="/js/lsh-one-screen.js?v=1"></script>
 <script src="/js/ft-screen-fit.js?v=ft-2026.10.26-onescreen"></script>
 <script src="/js/ft-buffer.js?v=ft-2026.10.30-merge455"></script>
+<script src="/js/ft-admin-tidy.js?v=ft-2026.10.31-tidy"></script>
 </body>
 </html>

@@ -40,8 +40,13 @@ window.LSH_PROGRAM = {
   labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calcheck", "calrules", "calweek", "calpractice", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts", "settings:listening"],   // the trainer-led activities' names; the Call Listening sets as the trainer set them (how many recordings each)
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
+  // the Admin screen's sections renamed for this program
+  adminGroupLabels: {modules:"🔓 Unlock Segments"},
+  // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
+  adminTopScorecards: false,
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
+    admin: ["audit", "batches", "tfeedback", "sops", "dbmaint"],   // (no 🏛 Law Firms tab)
+      // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
     scorecard: ["scorecards", "ranking", "sendfeedback", "skilltests"]

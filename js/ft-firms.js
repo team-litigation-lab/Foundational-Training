@@ -123,7 +123,7 @@ function firmFacts(f){
       <div><h4>Team</h4>${(f.team || []).map(a => `<p><b>${e(a.name)}</b><span>${e(a.role)}${a.ext ? " · ext " + e(a.ext) : ""}</span></p>`).join("")}</div></div>`;
 }
 function renderMyFirm(){
-  if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Every trainee works for the first profile in <a class="ff-link" onclick="state.adminTab='firms'; goto('admin')">🏛 Law Firms</a>, on its caseload — its profile and its rules are what they see here.</p></div>`;
+  if(adminOn()) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>Every trainee works for the first saved firm profile, on its caseload — its profile and its rules are what they see here.</p></div>`;
   const f = myFirm();
   if(!f) return `<div class="card ff-card"><h1>🏛 My Firm</h1><p>No firm profile is set up yet. A trainer adds one in Admin → 🏛 Law Firms, and it reaches every trainee at once.</p></div>`;
   const ack = window.FTSessions && FTSessions.ack();
@@ -264,7 +264,7 @@ window.FTFirmsAdmin = {
     render();
   },
 };
-ftAdminTab("firms", "🏛 Law Firms", renderAdminFirms);
+// (no 🏛 Law Firms admin tab: taken off the Admin screen. The saved profiles in settings:firms are what My Firm shows.)
 (function(){ const s = document.createElement("style"); s.id = "ft-firms"; s.textContent = `
 main.main-ff{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .ff-hero h1{margin:0 0 6px;color:var(--navy);font-size:28px;} .ff-hero > p{margin:0 0 16px;color:var(--ink-soft);font-size:15px;}

@@ -41,6 +41,75 @@ async function sopSave(items){
 }
 function sopDraft(){ return SOP.draft || (SOP.draft = {id:"", title:"", area:SOP_AREAS[0], body:""}); }
 
+/* 🧭 Trainer Assistance Map: built in, above the trainers' own SOPs — each stage of a trainee's
+   journey, what the trainee does, what the trainer does, and where (section → tab) on the Admin screen.
+   A "go" link opens that tab. Update it here when a tab is renamed or moved. */
+const go = (tab, label) => `<a class="ops-go" onclick="setAdminTab('${tab}')">${label}</a>`;
+const SEC = {adm:"🛡 Admin Master Control", seg:"🔓 Unlock Segments", lab:"🛠 Practice Lab", sc:"🏅 Scorecard"};
+const MAP = [
+  {stage:"1 · Before the batch starts", trainee:"Nothing yet: they have only the portal link.",
+   steps:[`Read the run-book for each segment: ${SEC.seg} → ${go("curriculum","📘 Curriculum")}.`,
+     `Set the certificate signatories once: ${SEC.adm} → ${go("audit","Trainee Audit")}.`,
+     `Check the new batch is the only active one; older batches are archived automatically, and you can open them on the 📦 Archive shelf in ${go("batches","📁 Batch Folders")}.`,
+     `Use 👁 Switch View (top bar) to walk through what a trainee will see.`]},
+  {stage:"2 · Registration and approval", trainee:"Registers with their name and the batch code, then waits for approval.",
+   steps:[`Approve each new registration: ${SEC.adm} → ${go("audit","Trainee Audit")}. Approve only names on the batch list.`,
+     `Fix the spelling of the name now: the certificate uses the registered name exactly.`]},
+  {stage:"3 · Opening each segment", trainee:"Sees only the lessons a trainer has opened.",
+   steps:[`Open the day's segment before the session: ${SEC.seg} → ${go("opendays","📅 Open Lessons")}.`,
+     `Is one trainee behind or absent? Open days for that one trainee in Trainee Audit → View Detail → 🔓 Unlock days.`]},
+  {stage:"4 · Live session", trainee:"Follows the slides, answers Quick Checks and handles random tasks.",
+   steps:[`Teach from the lesson's 🖥 Presenter view, which shows the speaker notes slide by slide. The day plan is in ${go("sop","SOP Reference")}.`,
+     `Keep to the order in ${go("curriculum","📘 Curriculum")}, so every trainer teaches the same way.`]},
+  {stage:"5 · Knowledge Check", trainee:"Answers the segment's Knowledge Check; 70% passes the lesson.",
+   steps:[`Grade the answer sheets: top bar → ✍️ Knowledge Check. Your final score replaces their best attempt.`,
+     `For anyone under 70%: set a 🎯 Focus item and book a retake before the next segment.`]},
+  {stage:"6 · Practice Lab", trainee:"Runs the simulators, mock calls, calendaring and Practice Sessions.",
+   steps:[`Review and score Practice Sessions: ${SEC.lab} → ${go("sessions","🟢 Practice Sessions")}.`,
+     `Record live demos and mock calls with you: ${go("trainerinputs","🧑‍🏫 Trainer Inputs")} and ${go("mockscores","📋 Mock Call Scorecards")}.`,
+     `Calendaring work: ${go("calweek","📅 Calendaring Activity")}, ${go("calcheck","✅ Calendar Activity Check")}, ${go("calrules","📅 Booking Rules")} and ${go("calscores","📅 Calendar Scores")}.`,
+     `Listening and shadowing: ${go("listening","🎧 Call Listening")} and ${go("shadowing","👥 Shadowing & To-Do")}.`,
+     `Is a trainee out of repeat attempts because of a technical problem? Use Trainee Audit → ↺ Reset Attempts. A trainee who asked for more shows "🙋 asked for more attempts".`]},
+  {stage:"7 · Daily records", trainee:"Fills in the Daily Task Tracker and the Monitoring Sheet, and takes the typing and spelling tests.",
+   steps:[`Check them every day: ${SEC.seg} → ${go("trackers","📋 Task Trackers")}, ${go("monitor","📒 Monitoring Sheets")} and ${go("drivetrackers","📁 Drive Trackers")}.`,
+     `Typing and spelling compliance: ${SEC.sc} → ${go("skilltests","🧪 Typing & Spelling")}.`]},
+  {stage:"8 · Feedback, the same day", trainee:"Sees only the feedback a trainer has sent.",
+   steps:[`Write and send the Day-by-Day Feedback: ${go("audit","Trainee Audit")} → View Detail → ✍ Write feedback → Send to trainee.`,
+     `Score transcriptions, video notes, process guides and letters in ${SEC.sc} → ${go("sendfeedback","📝 Send Feedback")}. Write it in the house voice set in ${go("fbstyle","🗣 Feedback Style")}.`,
+     `Give one clear next step as a 🎯 Focus item. The trainee works on it and you see when they have acted on it.`]},
+  {stage:"9 · Weekly review", trainee:"Gets their weekly average and rank.",
+   steps:[`Build and share the week's results in ${SEC.sc} → ${go("ranking","📊 Weekly Ranking")}.`,
+     `See every grade in one table in ${go("scorecards","🏅 Scorecards")}. It shows the current batch only. Coach anyone in the red before the next week.`,
+     `Read what trainees say about the program in ${go("tfeedback","Trainee Feedback")} and adjust the next sessions.`]},
+  {stage:"10 · Program close", trainee:"Gets a certificate once every Knowledge Check is passed.",
+   steps:[`Check names and the trainer on the certificate in Trainee Audit → View Detail → Certificate details.`,
+     `Download the batch's records in ${go("batches","📁 Batch Folders")}: ⬇ Records (CSV) and ⬇ Full backup (JSON).`,
+     `The batch is archived automatically when the next batch registers. Nothing is deleted, and ↩ Restore brings it back.`,
+     `Once a month, clear the temporary data in ${go("dbmaint","🗄 Database Maintenance")}.`]}
+];
+const HELP = [
+  ["“I can’t see today’s lesson.”", `Check it is open in ${go("opendays","📅 Open Lessons")}, or unlock it for that trainee (Trainee Audit → View Detail).`],
+  ["“My registration is still pending.”", `Approve them in ${go("audit","Trainee Audit")}.`],
+  ["“I’m out of attempts.”", `If it was a technical problem, use Trainee Audit → ↺ Reset Attempts. If not, coach them first.`],
+  ["“My score didn’t update.”", `Click ↻ Refresh in ${go("scorecards","🏅 Scorecards")}. A Knowledge Check uses your final score once you have given one.`],
+  ["“I don’t know what to work on.”", `Add a 🎯 Focus item in Trainee Audit → View Detail.`],
+  ["“Something looks wrong on my screen.”", `Use 👁 Switch View to see their view, then compare.`]
+];
+function renderTrainerMap(){
+  return `
+    <div class="card ops-card ops-map">
+      <h3>🧭 Trainer Assistance Map: how to support a trainee on this platform</h3>
+      <p class="ops-lead">Use one rhythm with every trainee: <b>open → teach → check → practise → review → feed back → follow up</b>. Each row lists what the trainee is doing at that stage, what you do, and where to do it. Click a tab name to open it.</p>
+      <div class="ops-scroll"><table class="ops-table ops-maptbl"><thead><tr><th>Stage</th><th>The trainee</th><th>You, the trainer: where and what</th></tr></thead><tbody>
+        ${MAP.map(m => `<tr><td class="ops-stage">${m.stage}</td><td>${m.trainee}</td><td><ol>${m.steps.map(x => `<li>${x}</li>`).join("")}</ol></td></tr>`).join("")}
+      </tbody></table></div>
+    </div>
+    <div class="card ops-card ops-map">
+      <h3>🙋 When a trainee says…</h3>
+      <table class="ops-table ops-maptbl"><tbody>${HELP.map(([q, a]) => `<tr><td class="ops-stage">${q}</td><td>${a}</td></tr>`).join("")}</tbody></table>
+    </div>`;
+}
+
 function renderAdminSOPs(){
   if(!adminOn()) return `<div class="card" style="padding:28px;">Trainers only.</div>`;
   if(SOP.items === null){ sopLoad(); return `<div class="card" style="padding:28px;">Loading the SOPs…</div>`; }
@@ -65,7 +134,7 @@ function renderAdminSOPs(){
   return `
     <div class="ops-hero">
       <p class="lp-eyebrow">🛡 Admin · Operations</p><h1>📋 SOPs</h1>
-      <p>This program’s standard operating procedures, written and kept by its trainers: the steps a trainee is held to, in one place, so every trainer teaches and grades the same way. The trainer’s run-book for the sessions themselves is <b>📘 Curriculum</b>; the rules a trainee reads are in <b>📌 Setting of Training Expectations and Company Policies</b>.</p>
+      <p>How trainers run this program and support each trainee, all in one place, so every trainer teaches, grades and follows up the same way. The <b>🧭 Trainer Assistance Map</b> below covers the whole platform. Under it are the procedures your trainers wrote. The minute-by-minute run-book for each session is in <b>🔓 Unlock Segments → 📘 Curriculum</b>. The rules trainees read are in <b>📌 Setting of Training Expectations and Company Policies</b>.</p>
       ${SOP.err ? `<p class="ops-err">${e(SOP.err)}</p>` : ""}
       <div class="ops-row">
         <button class="btn btn-navy btn-sm" onclick="FTOps.sopNew()">＋ New SOP</button>
@@ -73,6 +142,8 @@ function renderAdminSOPs(){
         ${items.length ? `<button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>` : ""}
       </div>
     </div>
+    ${renderTrainerMap()}
+    <h2 class="ops-sub">📋 Our written procedures</h2>
     ${form}
     ${items.length ? items.map(s => `
       <div class="card ops-card">
@@ -299,6 +370,16 @@ css.textContent = `
 .ops-table th{text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);border-bottom:1px solid var(--line);padding:0 10px 7px 0;}
 .ops-table td{border-bottom:1px solid var(--line);padding:9px 10px 9px 0;vertical-align:top;}
 .ops-table tr:last-child td{border-bottom:none;}
+.ops-map{border-left:4px solid var(--orange);}
+.ops-lead{font-size:13.5px;color:#1B2033;font-weight:600;line-height:1.6;margin:0 0 12px;max-width:90ch;}
+.ops-scroll{overflow-x:auto;}
+.ops-maptbl td{color:#1B2033;font-weight:600;font-size:13px;line-height:1.55;}
+.ops-maptbl th{color:#353B57;font-weight:800;}
+.ops-maptbl ol{margin:0;padding-left:18px;} .ops-maptbl li{margin-bottom:4px;}
+.ops-stage{font-weight:800 !important;color:var(--navy) !important;white-space:nowrap;}
+.ops-go{color:#8A4A00;font-weight:800;text-decoration:underline;cursor:pointer;}
+.ops-sub{color:var(--navy);font-size:19px;font-weight:800;margin:22px 0 10px;}
+@media(max-width:760px){ .ops-stage{white-space:normal;} }
 @media(max-width:760px){ .ops-task{max-width:none;} .ops-table{font-size:12.5px;} }`;
 document.head.appendChild(css);
 })();

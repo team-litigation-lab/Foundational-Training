@@ -131,7 +131,7 @@ window.renderTopbar = function(){
     + btn("lab", "🛠 Practice Lab", "goto('simulators')")
     + btn("process", "✍️ Knowledge Check", processGo, adminOn() ? "Every trainee's answer sheets" : "Each module's answer sheet, graded out of 100")
     + pagesMenu()
-    + (adminOn() ? btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard") : focusBtn());
+    + (adminOn() ? (CFG.adminTopScorecards === false ? "" : btn("scorecard", "🏅 Scorecards", "lshProgram.scorecard()", "Every trainee's scorecard")) : state.traineeId && !state.isAdmin ? focusBtn() : "");   // 🎯 Focus: a signed-in trainee only, never an admin (nor an admin's 👁 Switch View)
   const portal = `<button type="button" class="lp-sec lp-portal" onclick="location.href='${PORTAL_HOME}'" title="The LSH Training Portal — it holds the log out">🏠 Main Portal</button>`;
   const home = [...nav.children].find(b => viewOf(b) === "dashboard");
   if(home) home.insertAdjacentHTML("beforebegin", secs), home.remove();
@@ -164,6 +164,7 @@ const lessonTags = d => hooks("LSH_HOME_LESSON_TAGS", d);
 // keeps its height for the lesson cards. 🎯 Focus is already its own button in the bar, so it isn't repeated.
 // The menu uses js/lsh-topbar.js's .lsh-grp markup and styles (its outside-click close included).
 function pagesMenu(){
+  if(state.adminPreview) return "";   // an admin's 👁 Switch View: no 📂 My Pages (Notes, My Performance are a trainee's own)
   const items = pages().filter(m => (m.view || m.run) && m.run !== "openFocusPanel()");
   if(!items.length) return "";
   let total = 0, on = false;
@@ -407,6 +408,7 @@ const GROUPS = [
   {id:"admin", label:"🛡 Admin Master Control"}, {id:"modules", label:"📚 Dashboard"},
   {id:"lab", label:"🛠 Practice Lab"}, {id:"scorecard", label:"🏅 Scorecard"}
 ];
+Object.entries(CFG.adminGroupLabels || {}).forEach(([id, label]) => { const g = GROUPS.find(x => x.id === id); if(g) g.label = label; });
 const groupOf = tab => { const g = CFG.adminGroups || {}; return Object.keys(g).find(k => (g[k] || []).includes(tab)) || "admin"; };
 function groupTabs(out){
   const a = out.indexOf('<div class="admin-tabs"'); if(a < 0) return out;
