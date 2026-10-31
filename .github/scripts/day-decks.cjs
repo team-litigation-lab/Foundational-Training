@@ -40,12 +40,12 @@ if (D[1] && D[1].slides.some(s => ['reminders', 'expectations', 'homework', 'mon
 // copied), and without the guide's "Please watch … update item #12" line (the slide's pill says Watch & Do)
 const crm = D[3] && D[3].slides.find(s => s.id === 's2');
 if (!crm || (crm.html.match(/<a class="viewer-link" data-card data-kind="video"/g) || []).length !== 5 || !/Choose one video/.test(crm.html) || /<\/a>\s*,/.test(crm.html) || /Please watch the CRM\/CMS training videos/.test(crm.html)) fail("Day 3's CRM/CMS videos aren't five cards with the choose-one line, a link is followed by a comma, or the slide still has its 'Please watch' line");
-// Day 10's two VA-recording folders: one link each, whole, played in the slide (Day 11's Astred 09/20 shadowing recording is off its deck)
-for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15OCezerotGu4tql8gOOxleQYN4uVSWJJ', 1]]) {
+// Day 10's two VA-recording folders and the Astred 09/20 shadowing recording (Day 11's, now on Day 12): one link each, whole, played in the slide
+for (const [n, id, k] of [[10, '1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr', 1], [10, '15OCezerotGu4tql8gOOxleQYN4uVSWJJ', 1], [12, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 1], [11, '1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8', 0]]) {
   const all = D[n] ? D[n].slides.map(s => s.html).join('\n') : '';
   if ((all.match(new RegExp(`<a class="viewer-link" data-embed [^>]*href="[^"]*${id}`, 'g')) || []).length !== k || /usp=dri<|>ve_link<|usp=drive_link,/.test(all)) fail(`Day ${n}: the ${id} link isn't one whole embedded link`);
 }
-if (D[11] && D[11].slides.some(s => s.id === 's2' || /Shadowing/i.test(s.h))) fail("Day 11 still has its Shadowing slide");
+if (D[11] && D[11].slides.some(s => /Shadowing/i.test(s.h))) fail("Day 11 still has its Shadowing slide");
 // Day 1's Installation of SA keeps only the Smart Advocate steps: no Nitro Pro installation on the deck (its help line names Sanders for Nitro Pro)
 const sa = D[1] && D[1].slides.find(s => s.id === 'pm');
 if (!sa || !/Installation of SA/.test(sa.h) || /<h[2-4][^>]*>[^<]*Nitro/i.test(sa.html) || !/Smart Advocate/.test(sa.html)) fail(`Day 1's Installation of SA slide is missing or still has the Nitro Pro installation: ${sa && sa.h}`);
@@ -54,6 +54,9 @@ if (D[17] || D[18]) fail('the Lien Negotiator days (17–18) are still built');
 // 💬 Classroom Discussion stops are those), and no slide left with only that: Day 10's classroom discussion slide is off
 for (let n = 1; n <= 16; n++) (D[n] ? D[n].slides : []).forEach(s => { if (/Today’s Process Questions|Today’s lesson deck/.test(s.html)) fail(`Day ${n} ${s.id}: a Process Questions or lesson deck pointer on the slide`); });
 if (D[10] && D[10].slides.some(s => s.id === 's1')) fail("Day 10's classroom discussion slide, only pointers, is still on the deck");
+// Day 11's afternoon is the ✉️ Insurance Email Simulator (js/ft-claims-email.js), not shadowing
+{ const s2 = D[11] && D[11].slides.find(s => s.id === 's2');
+  if (!s2 || s2.h !== 'PM: Insurance Email Simulator' || !/FTClaimsMail\.fromDeck\(\)/.test(s2.html) || /shadow/i.test(s2.html)) fail("Day 11's afternoon isn't the Insurance Email Simulator, or still mentions shadowing"); }
 if (D[13] && !D[13].pq) fail('Day 13 no longer has its Process Questions (its card loses the Process Questions: Submit stop)');
 // a section cut into one slide per card row (build/day-decks.cjs ROWS): a new slide's id never reads as a continuation of
 // the one it was cut from, and every trainer slot is on exactly one slide
