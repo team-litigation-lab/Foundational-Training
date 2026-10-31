@@ -87,23 +87,20 @@ const toolOn = id => { const days = window.FTDays ? FTDays.forTool(id) : []; ret
 window.ftsToolOn = toolOn;   // for links between tools (js/ft-calweek.js): the same gate as the tool's card
 function renderSimulators(){
   const tool = (fn, id) => typeof window[fn] === "function" && toolOn(id) ? window[fn]() : "";
-  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalActivityCard", "calactivity") + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalPracticeCard", "calpractice") + tool("ftCalRulesCard", "calrules") : "";
+  const sessions = window.FTSessions ? FTSessions.cards() + tool("ftCalActivityCard", "calactivity") + tool("ftCalCheckCard", "calcheck") + tool("ftCalWeekCard", "calweek") + tool("ftCalRulesCard", "calrules") : "";
   const drafting = window.ftLorCard ? tool("ftLorCard", "lor") + tool("ftGuideCard", "guide") + tool("ftTranscribeCard", "transcribe") + tool("ftDrillsCard", "drills") : "";
   const trainer = window.FTSessions ? FTSessions.trainerCards() : "";
-  // 📚 the Knowledge Base: a card beside the Drafting Tools (its own section when there are none yet), so the Lab fits one screen
-  const KB = `<div class="card fts-card"><div class="fts-kicker">Any day</div><h3>📚 LSH Knowledge Base</h3>
-        <p class="fts-note">SOPs, guides and training videos, searchable, in one place. It opens signed in.</p>
-        <div class="fts-tool-act"><a class="btn btn-navy btn-sm" href="https://lsh-knowledge-base.legalsupporthelp.workers.dev/" target="_blank" rel="noopener">Open the Knowledge Base ↗</a></div></div>`;
+  // (only scored work is on the Practice Lab: no 🧪 Calendar Practice (VA Practice Only) and no 📚 Knowledge Base card)
   const more = !seesAll() ? `<p class="fts-sub fts-more">📅 More of the Practice Lab opens as your training goes on, day by day.</p>` : "";
   return `<div class="fts-hero"><h1>🛠 Practice Lab</h1>
       <p>Real work, in real time, for your law firm. Start a Practice Session, do the task live in the CMS on your assigned case, record what you did and submit it: it’s checked against your case and your firm’s rules, evaluated, and reviewed by your trainer. Each session opens with its lesson.</p></div>
     ${window.FTSessions ? `${sessions ? `<section class="fts-group"><h2>🟢 Practice Sessions</h2><p class="fts-sub">Reception and intake calls, calendaring, your case’s place in the PI process, claims and medical records requests: done live, for your firm, on your own cases.</p>
       <div class="fts-grid">${sessions}</div></section>` : ""}
     ${drafting ? `<section class="fts-group"><h2>🧰 Drafting Tools</h2><p class="fts-sub">Tools you draft in here, on this platform. You fill in the firm’s own template on the page and download the finished document as a PDF, named by the trainers’ convention — yours to edit before you download. Nothing you draft here becomes a case file in the CMS.</p>
-      <div class="fts-grid">${drafting}${KB}</div></section>` : ""}
+      <div class="fts-grid">${drafting}</div></section>` : ""}
     ${trainer ? `<section class="fts-group"><h2>🧑‍🏫 With your trainer</h2><p class="fts-sub">The demos and mock calls you do live with your trainer. Your trainer records your result here.</p>
       <div class="fts-grid">${trainer}</div></section>` : ""}` : ""}
-    ${drafting ? "" : `<section class="fts-group"><h2>📚 Knowledge Base</h2><p class="fts-sub">The LSH library of SOPs, guides and training videos. Look up how a task is done before you ask.</p><div class="fts-grid">${KB}</div></section>`}
+
     ${window.ftCasesSection ? ftCasesSection() : ""}
     ${tool("ftListenSection", "listening")}${more}`;
 }
