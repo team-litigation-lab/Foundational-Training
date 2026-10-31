@@ -867,6 +867,25 @@ const LOR_GUIDE = () => {
 };
 // the platform's LOR Drafting tool, where Day 11's 1P and 3P letters are drafted
 const LOR_TOOL = `<div class="ftdd-pq">🧰 <b>Draft your 1P and 3P letters</b> in the platform’s LOR Drafting tool.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="goto('lor')">🧰 Open the LOR Drafting tool →</button></div></div>\n`;
+// Day 10's What to Share, in cards on one page: Do NOT share, What you CAN share (with what the 3P check may also take), and
+// the note; the guide's wording, and the build stops if it changes under it
+function D10_SHARE(x){
+  for(const t of ["Do NOT share the following sensitive information:", "Vehicle Identification Number (VIN)", "What you CAN share:", "First and Last only – no middle name",
+    "To check under the 3P insurance, you may also provide:", "Give the law firm’s number", "typically available in the police report"])
+    if(!x.includes(t)) throw new Error(`Day 10's What to Share changed: "${t}" is missing`);
+  const slot = x.match(/^<div class="trainer-slot"[^>]*><\/div>\n/); if(!slot) throw new Error("Day 10's What to Share no longer opens on its trainer slot");
+  const card = (ic, h, body, cls) => `<div class="ftdd-card4${cls ? " " + cls : ""}"><p class="ftdd-card4-h">${ic} ${h}</p>${body}</div>`;
+  const ul = xs => "<ul>" + xs.map(i => `<li>${i}</li>`).join("") + "</ul>";
+  return slot[0] + '<div class="ftdd-one">' +
+    "<p>If you’re opening a claim or checking for an existing claim with the 3P&#x27;s insurance, please take note of the following:</p>\n" +
+    '<div class="ftdd-cards2">' +
+    card("⛔", "Do NOT share this sensitive information", ul(["Date of Birth (DOB)", "Email Address", "Social Security Number (SSN)", "Vehicle Identification Number (VIN)"])) +
+    card("✅", "What you CAN share", ul(["Client’s Name (First and Last only – no middle name)", "Vehicle Information (e.g., License Plate Number)"]) +
+      "<p><b>To check under the 3P insurance, you may also provide:</b></p>" + ul(["Client’s Address (City and State only)", "Phone Number (Give the law firm’s number)"])) +
+    "</div>\n" +
+    card("💡", "Note", "<p>The pieces of information you’re allowed to share are typically available in the police report, something the adjuster would likely already have access to.</p>") +
+    "</div>\n";
+}
 // Day 12's updated SA steps (1P and 3P insurance) and its tools and naming convention, in cards on one slide: the guide's
 // wording, each heading a card; the build stops if the guide's text changes under it
 function D12_CARDS(x){
@@ -1096,7 +1115,7 @@ const ROWS = {
       {id: "s1b", h: "AM: Claims Terminology Exercise", parts: [["<p> Claims Terminology Exercise</p>", SLOT(10, "s1-3")]]},
       // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
-      {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]]},
+      {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]], fix: [D10_SHARE]},
       {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
         fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]}]
   },
