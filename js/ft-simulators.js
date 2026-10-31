@@ -126,6 +126,7 @@ function ftsPanel(){
 // The Calendaring Simulators run on the Main Portal (own tab, the trainee's Portal sign-in); grading comes back to this program's progress.
 window.ftsShowTool = (url, name)=>ftsShow(url, name);
 // (the Calendaring Activity opens straight on its own calendar, gcal.html?track=activity, not the Calendaring Simulators' list)
+// (opened signed in: a trainee's link carries their ticket, and a trainer's who came from the main Hub, theirs, js/lsh-tool-links.js)
 window.ftsCalsim = function(track, scores){ window.open(track === "activity" && !scores ? portalHref("gcal.html") + "&track=activity"
   : portalHref("calsim.html") + "&track=" + encodeURIComponent(track) + (scores ? "&view=scores" : ""), "_blank", "noopener"); };
 // Trainee Evaluations (trainers: the submissions with their AI review and feedback, and the trainees' calendars) and My Evaluations (a trainee's own calendars and the reports their trainer sent) are on the Portal.
