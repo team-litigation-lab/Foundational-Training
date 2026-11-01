@@ -1,6 +1,6 @@
 {
   "firm": "Harbor & Pine Injury Law",
-  "note": "Fictional people, firm and cases, written for training. build/audio/make_audio.py renders each one to ft/day7/audio/<id>.mp3 (Kokoro voices; the consultation is still the Piper recording) and writes js/ft-intake-samples.js.",
+  "note": "Fictional people, firm and cases, written for training. build/audio/make_audio.py renders each one to ft/day7/audio/<id>.mp3 (Kokoro voices through build/audio/speech.py) and writes js/ft-intake-samples.js.",
   "calls": [
     {
       "id": "intake-work-premises",
