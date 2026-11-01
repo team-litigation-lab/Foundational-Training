@@ -1987,7 +1987,7 @@ const TOOLS = [
       "✍️ Email Replies: one email at a time, answered in the sender’s style",
       "Every reply is scored on the same five metrics: urgency, answering what was asked, accuracy, a clear next step and tone",
       "One submission grades filing, security, triage and your replies"]},
-  {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulator", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
+  {ic: "📅", name: "Google Calendar Simulator", short: "Calendar Simulators", img: "calendar-simulator", go: "goto('calsim')", where: "🛠 Practice Lab → 📅 Calendaring Simulators",
     what: "A Google Calendar look-alike: you build an attorney’s week under the attorney’s own rules.",
     feats: ["Create or drag out an event; give it a title, a description, Google Meet and the email reminder",
       "Eastern Time on a 15-minute grid, with 15 minutes between events",
