@@ -366,7 +366,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   const findScore = () => page.evaluate(() => { const n = document.querySelectorAll('.ftdd-dot').length;
     for (let i = 0; i < n; i++) { FTDayDecks.to(i); const b = document.querySelector('.ftdd-sheet .ftdd-score'); if (b) return { i, h: b.innerText.slice(0, 120), items: b.querySelectorAll('.ftms-tbl tbody tr:not(.ftms-avg)').length, avg: /WEIGHTED AVERAGE/.test(b.textContent), remarks: /Remarks/.test(b.textContent), pick: !!b.querySelector('.ftms-pick select'), shot: !!b.querySelector('img') }; } return null; });
   const score = await findScore();
-  if (!score || score.items !== 14 || !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
+  if (!score || score.items !== 15 || !score.avg || score.shot || score.remarks || score.pick) fail(`the Reception metrics aren't drawn as the guide's table for a trainee: ${JSON.stringify(score)}`);
   // a trainer scores on it: the batch's trainees to pick, a Remarks column, 💾 Save to the trainee's scores (labreview acts)
   const me = await page.evaluate(() => state.traineeId);
   await page.evaluate(id => fetch('/api/storage/get', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id }) }).then(r => r.json()).then(j => { const rec = JSON.parse(j.value); rec.approved = true; return fetch('/api/storage/set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'trainee:' + id, value: JSON.stringify(rec) }) }); }), me);
@@ -382,7 +382,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
     return m ? { pick: !!m.querySelector('.ftms-pick select[aria-label=Trainee]'), remarks: m.querySelectorAll('[data-fb]').length, crit: m.querySelectorAll('[data-crit]').length,
       fits: bx.getBoundingClientRect().bottom <= innerHeight && bx.scrollHeight <= innerHeight, zoom: getComputedStyle(m.querySelector('.ftms-pick select')).fontSize } : null; });
   if (!tsc.launch || tsc.inline) fail(`the trainer's deck has no 🧑‍🏫 Scoresheet button in the bar under the slide (or still draws the sheet inline): ${JSON.stringify(tsc)}`);
-  if (!pop || !pop.pick || pop.crit !== 14 || pop.remarks !== 14 || !pop.fits) fail(`the scoresheet pop-up isn't one screen with the trainee pick, 14 scores and Remarks: ${JSON.stringify(pop)}`);
+  if (!pop || !pop.pick || pop.crit !== 15 || pop.remarks !== 15 || !pop.fits) fail(`the scoresheet pop-up isn't one screen with the trainee pick, 15 scores (the guide's 14 and ✍️ Writing) and Remarks: ${JSON.stringify(pop)}`);
   else {
     await page.evaluate(id => FTMetrics.who('reception', id), me); await page.waitForTimeout(600);
     if (!(await page.evaluate(() => !!document.querySelector('#ftmsModal [data-crit]:not([disabled])')))) fail('picking a trainee in the pop-up doesn\'t open the scores for editing');
