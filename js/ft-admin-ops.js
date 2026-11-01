@@ -335,6 +335,12 @@ window.FTOps = {
 
 ftAdminTab("sops", "📋 SOPs", renderAdminSOPs);
 ftAdminTab("dbmaint", "🗄 Database Maintenance", renderAdminDbMaint);
+// 🧭 Orientation, on the admin side: a tab of 🛡 Admin → Admin Master Control (it was the admin's 📂 My Pages menu,
+// gone from the top bar: js/ft-my-pages.js)
+ftAdminTab("orientation", "🧭 Orientation", () => `<div class="card" style="padding:22px 24px;max-width:760px;">
+  <p class="lp-eyebrow">🛡 Admin · Orientation</p><h2 style="margin:0 0 6px;color:var(--navy);">🧭 Platform Orientation</h2>
+  <p style="margin:0 0 14px;color:var(--ink-soft);">The platform orientation slides (the Blueprint PDF): how the training platform works, page by page.</p>
+  <button type="button" class="btn btn-primary" onclick="goto('orientation')">▶ Open the Orientation</button></div>`);
 
 /* (🎲 Tasks for the trainee: no live-task card on 📚 Dashboard and no looking for one; the unannounced tasks are gone
    from the trainee's side of this program) */

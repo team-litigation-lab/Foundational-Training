@@ -416,6 +416,10 @@ Each day is `{day, role, lessons, items}`; each activity is `{t, kind, at, id}`,
 
 **The monitoring sheet covers all 18 days.** `MONITOR_TOPICS` (`js/ft-tracker-rules.js`, imported by `worker.js` too, so the page and the Worker grade against the same list) now carries **18** classroom discussions: the Lien Negotiator days (17–18) close the programme and run only when the training hours permit, so their two discussions (`OPTIONAL_MONITOR_TOPICS`) stay on the list grayed out and count toward the total only once the trainee writes them: a sheet complete through Day 16 reads 16 of 16, not 16 of 18. A trainer who has already saved their own list in Admin → 📒 Monitoring Sheets → *Discussions and key points* (`settings:monitor`) keeps it — the 18 are the default, not an overwrite.
 
+## 🎞 Deck motion (`js/ft-deck-motion.js`)
+
+The lesson decks and the Day decks animate as you move through them. A lesson's deck page (an image) glides in from the side you're moving toward, a native slide's parts and a Day deck slide's blocks come in one after another, and a Day deck's progress line grows to its new place. Turning a page of a long Day deck slide brings that page in the same way. The motion runs only when the slide itself changes (deck, slide or page), never when the same slide is redrawn, so nothing blinks. That blink is why the lesson pages' own CSS slide-in is off in `js/ft-slides.js`. It uses the Web Animations API, only fades and scales elements down (so a slide never overflows while it's measured), and it's off for anyone whose system asks for reduced motion.
+
 ## 📋 Day decks (`js/ft-day-decks.js`)
 
 Every training day has its own deck: **Days 1–18**, one slide per part of the day, with the day's instructions and the videos, documents and Canva decks the trainee opens (embedded viewer links, so they open on the platform). Each lesson's card on 📚 Dashboard opens them.
