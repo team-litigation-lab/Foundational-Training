@@ -6,6 +6,7 @@
    criterion). Admin → 🧑‍🏫 Trainer Inputs fills these in (js/ft-sessions.js): each criterion 0–5, the weighted
    average out of 5, and the activity's score is that average as a percentage (4.25/5 = 85%), which reaches the
    trainee's Scorecard and ⤓ the 📊 Weekly Ranking. Every criterion weighs 1 unless a weight is set here (`w`).
+   Every scorecard ends with ✍️ Writing: Grammar, Spelling & Format (WRITING, below).
    ============================================================ */
 (function(root){
 "use strict";
@@ -48,6 +49,13 @@ const R = {
     "Attention to Detail & Accuracy", "Adherence to Instructions", "Independent Execution & Organization", "Communication & Process Explanation",
     "Drafting (Reduction Letter, Closing Statement & Email)")}
 };
+// ✍️ Writing skills on every scorecard: the trainee's written work for the activity (notes, recap, emails, letters, task
+// reports, minutes) checked for grammar, spelling and format. The last criterion of each rubric (the Transcription
+// Activity's own "Grammar, Spelling & Professional Wording" already is it), so the criteria scored before keep their place.
+// Trainer Inputs' ✍️ Check the writing (js/ft-writing.js) suggests its score.
+const WRITING = "Writing: Grammar, Spelling & Format";
+Object.keys(R).forEach(k => { if(!R[k].criteria.some(c => /grammar|spelling/i.test(c.n))) R[k].criteria.push({n: WRITING, w: 1}); });
+const writingIndex = rb => (rb && rb.criteria || []).findIndex(c => /grammar|spelling/i.test(c.n));
 // an activity's rubric: the one it names (`rubric` in Trainer Inputs' list), else the one listing its id, else by its title
 const BY_TITLE = [[/reception.*mock|mock.*reception/i, "reception"], [/calendar.*mock|mock.*calendar/i, "calendar"], [/intake.*mock|mock.*intake/i, "intake"],
   [/intake packet/i, "intake-packet"], [/\bLOR\b.*(upload|send|saving)|saving LORs/i, "lor"], [/medlor/i, "medlor"], [/\bLV\b|lien verification/i, "lv"],
@@ -65,5 +73,5 @@ function average(rubric, scores){
   (rubric.criteria || []).forEach((c, i) => { const v = parseFloat((scores || [])[i]); if(isFinite(v)){ sum += Math.max(0, Math.min(5, v)) * (c.w || 1); w += c.w || 1; } });
   return w ? sum / w : null;
 }
-root.FT_RUBRICS = {list: R, forAct, average, keys: () => Object.keys(R)};
+root.FT_RUBRICS = {list: R, forAct, average, writingIndex, WRITING, keys: () => Object.keys(R)};
 })(typeof window !== "undefined" ? window : this);

@@ -156,9 +156,28 @@ async function workerChecks() {
   if (v('Professional Introduction') !== '') fail('a call criterion was filled from the booking check');
   if (!/\d/.test(await page.evaluate(() => (document.querySelector('[data-avg]') || {}).innerText || ''))) fail('the weighted average didn\'t follow the filled criteria');
 
+  // ✍️ Writing skills (js/ft-writing.js): the scorecard ends with the Writing criterion, and under it the check of the
+  // trainee's pasted writing suggests a score that ⤓ Use this score puts in (the AI answer is stubbed: no AI on the test server)
+  const wIdx = await page.evaluate(() => FT_RUBRICS.writingIndex(FT_RUBRICS.list.calendar));
+  if (wIdx !== (await page.evaluate(() => FT_RUBRICS.list.calendar.criteria.length)) - 1) fail('the Writing criterion is not the scorecard\'s last');
+  if (!(await page.$('.wr-assist textarea'))) fail('Trainer Inputs has no ✍️ writing check under the scorecard');
+  if (!(await page.$('.cr-assist'))) fail('the writing check replaced the booking rule check');
+  let asked = '';
+  await page.evaluate(() => { window.__ai = window.callAIJson; window.callAIJson = async p => { window.__asked = p; return { score: 3.7, grammar: ['"he dont" → "he doesn\'t"'], spelling: ['"HIPPA" → "HIPAA"'], format: [], summary: 'Clear but with slips.' }; }; });
+  await page.fill('.wr-assist textarea', 'Client called, he dont have the HIPPA form yet. Booked the deposition for 11/05/2026 at 10 AM.');
+  await page.click('.wr-assist .wr-act button'); await page.waitForTimeout(800);
+  asked = await page.evaluate(() => window.__asked || '');
+  if (!/GRAMMAR[\s\S]*SPELLING[\s\S]*FORMAT/.test(asked) || !/HIPPA form/.test(asked)) fail('the writing check didn\'t send the trainee\'s text for grammar, spelling and format');
+  const wout = await page.evaluate(() => (document.querySelector('.wr-out') || {}).innerText || '');
+  if (!/Suggested: 3\.5\/5/.test(wout) || !/HIPAA/.test(wout) || !/doesn/.test(wout)) fail(`the writing check's findings aren't shown (half points): ${wout}`);
+  await page.click('.wr-out button'); await page.waitForTimeout(300);
+  if ((await page.inputValue(`.ti-rub-tbl input[data-crit="${wIdx}"]`)) !== '3.5') fail('⤓ Use this score didn\'t fill the Writing criterion');
+  if (!/HIPAA/.test(await page.inputValue(`.ti-rub-tbl input[data-fb="${wIdx}"]`))) fail('the Writing criterion\'s Remarks don\'t carry the findings');
+  await page.evaluate(() => { window.callAIJson = window.__ai; });
+
   await put('calrules:' + id, null);
   const r2 = await get('trainee:' + id); r2.archived = true; await put('trainee:' + id, r2);
   await browser.close();
   if (failures.length) { console.error('Booking Rule Check test FAILED:\n- ' + failures.join('\n- ')); process.exit(1); }
-  console.log('Booking Rule Check test passed (every scheduling rule on crafted bookings; the Practice Lab card and Day 6; a booking recorded, checked, saved and on My Performance; the trainer\'s tab and Trainer Inputs filling the rule criteria, never over a typed score; the worker\'s rules).');
+  console.log('Booking Rule Check test passed (every scheduling rule on crafted bookings; the Practice Lab card and Day 6; a booking recorded, checked, saved and on My Performance; the trainer\'s tab and Trainer Inputs filling the rule criteria; the ✍️ writing check suggesting the Writing score, never over a typed score; the worker\'s rules).');
 })().catch(e => { console.error(e); process.exit(1); });

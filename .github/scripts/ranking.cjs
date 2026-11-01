@@ -117,7 +117,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.evaluate(b => FTSessionsAdmin.batch(b), BATCH); await page.waitForTimeout(500);   // the batch that sorts last may be another test's
   await page.evaluate(id => FTInputs.cell(id, 'reception-live'), ids.Sam); await page.waitForTimeout(600);
   const crit = await page.$$eval('.ti-rub-tbl tbody tr:not(.ti-rub-avg) td:first-child', t => t.map(x => x.innerText));
-  if (crit.length !== 14 || crit[0] !== 'Introduction of Law Firm and Name' || crit[13] !== 'Tone of Voice') fail(`the Reception Mock Call scorecard isn't the Training Guide's: ${JSON.stringify(crit)}`);
+  if (crit.length !== 15 || crit[0] !== 'Introduction of Law Firm and Name' || crit[13] !== 'Tone of Voice' || crit[14] !== 'Writing: Grammar, Spelling & Format') fail(`the Reception Mock Call scorecard isn't the Training Guide's: ${JSON.stringify(crit)}`);
   if (!(await page.$('.ti-rub-tbl input[data-fb="0"]'))) fail('the mock call scorecard has no feedback column');
   for (let i = 0; i < 14; i++) await page.fill(`.ti-rub-tbl input[data-crit="${i}"]`, i < 2 ? '5' : '4');
   await page.fill('.ti-rub-tbl input[data-fb="7"]', 'Resolved the caller’s concern but missed the claim number.');
@@ -126,7 +126,7 @@ const failures = []; const fail = m => failures.push(m);
   await page.click('.fss-cellform >> text=Save'); await page.waitForTimeout(1500);
   const lr = ((await get('labreview:' + ids.Sam)) || {}).acts || {};
   const rec = lr['reception-live'] || {};
-  if (rec.score !== 83 || !rec.rubric || rec.rubric.key !== 'reception' || rec.rubric.avg !== 4.14 || rec.rubric.scores.length !== 14 || !/claim number/.test(rec.rubric.feedback[7])) fail(`the scorecard wasn't saved: ${JSON.stringify(rec)}`);
+  if (rec.score !== 83 || !rec.rubric || rec.rubric.key !== 'reception' || rec.rubric.avg !== 4.14 || rec.rubric.scores.length !== 15 || !/claim number/.test(rec.rubric.feedback[7])) fail(`the scorecard wasn't saved: ${JSON.stringify(rec)}`);
   // the Day 18 demo has its scorecard too
   await page.evaluate(id => FTInputs.cell(id, 'settlement-demo'), ids.Sam); await page.waitForTimeout(500);
   if (!/REDUCTION \/ CLOSING & SETTLEMENT DEMO/.test(await page.evaluate(() => (document.querySelector('.ti-rub-tbl th') || {}).innerText || ''))) fail('the Reduction / Closing & Settlement Demo has no scorecard in Trainer Inputs');
