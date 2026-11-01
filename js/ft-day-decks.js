@@ -135,7 +135,7 @@ function go(step){
   // a long slide is read in pages: turn those first, then move to the next slide
   if(!DD.split && Math.abs(step) === 1 && (DD.pages || 1) > 1){
     const p = DD.page + step;
-    if(p >= 0 && p < DD.pages){ DD.page = p; fitSheets(); return; }
+    if(p >= 0 && p < DD.pages){ DD.page = p; fitSheets(); if(root.FTDeckMotion) FTDeckMotion.page(step); return; }
   }
   const by = DD.split && Math.abs(step) === 1 ? step * 2 : step;
   const i = Math.max(0, Math.min(n - 1, DD.i + by));
