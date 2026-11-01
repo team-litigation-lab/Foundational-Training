@@ -3319,5 +3319,21 @@ body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mi
 /* (every slide's body text bold, on every day: the Days 6–15 and exercise rules that set it at 600 give way; the heading
    bars and the lines set bolder keep their own weight) */
 main.main-ftdd .ftdd-sheet :is(p,li,td,dd,dt,.ftdd-step-t,.ftdd-pq,.ftis-about):not(.ftdd-hbar):not(.ftdd-cix-h):not(.ftis-lf-h){font-weight:700 !important;}
+/* (readable everywhere on a slide: no small or grey labels under the body text, measured over every deck. The Day 5
+   event editor, .ftdd-ev-*, keeps Google Calendar's own type: it is drawn as the screen the trainee works in) */
+main.main-ftdd .ftdd-divider p.ftdd-dv-k{font-size:15px !important;color:#B23C0A !important;}
+main.main-ftdd .ftdd-sheet .ftdd-tile-t small{font-size:14.5px !important;font-weight:700 !important;}
+main.main-ftdd .ftdd-sheet th:not([class*="ftdd-ev"]){font-weight:700 !important;}
+main.main-ftdd .ftdd-sheet small:not([class*="ftdd-ev"]){font-weight:700 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pic-len{font-size:15px;font-weight:700;color:#E6E9F5;}
+main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font-size:15px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-sop-shots figcaption{font-size:15px;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub{font-weight:700;}
+main.main-ftdd .ftdd-sheet .ftdd-lor-tag{background:#C2410C;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link, main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link a{color:#B23C0A !important;}
+main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:13.5px;color:#3A4060;}
+main.main-ftdd .ftdd-sheet .ftdd-topic{font-size:15.5px;}
+main.main-ftdd .ftdd-sheet a.ftdd-doctile small{font-size:14.5px !important;}
+main.main-ftdd .ftdd-sheet a.ftdd-tile.k-file .ftdd-tile-t small{color:#9A4A0C !important;}
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);

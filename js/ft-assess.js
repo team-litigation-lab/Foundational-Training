@@ -242,7 +242,7 @@ root.FTAssess = {
 
 (function(){ const s = document.createElement("style"); s.id = "ft-assess"; s.textContent = `
 .fa-form{padding:18px 20px;} .fa-part{margin:0 0 22px;} .fa-part h3{margin:0 0 6px;color:var(--navy);font-size:19px;}
-.fa-intro{padding:14px 16px;background:#F4F6FB;border:1px solid #DCE0EA;border-left:5px solid #1E2340;border-radius:10px;} .fa-intro p,.fa-intro li{margin:0 0 8px;color:var(--ink);font-size:16px;font-weight:600;line-height:1.5;} .fa-intro ol{margin:0 0 8px 22px;padding:0;} .fa-intro p:last-child{margin-bottom:0;}
+.fa-intro{padding:14px 16px;background:#F4F6FB;border:1px solid #DCE0EA;border-left:5px solid #1E2340;border-radius:10px;} .fa-intro p,.fa-intro li{margin:0 0 8px;color:var(--ink);font-size:16px;font-weight:700;line-height:1.5;} .fa-intro ol{margin:0 0 8px 22px;padding:0;} .fa-intro p:last-child{margin-bottom:0;}
 .fa-intro .fa-intro-note{padding:8px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
 .fa-lead{margin:0 0 10px;color:var(--ink);font-size:15px;line-height:1.5;} .fa-scn{margin:0 0 10px;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;font-size:15px;line-height:1.5;}
 .fa-match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;align-items:start;}
