@@ -145,6 +145,10 @@ Trainees see **the lessons**. Lessons 1–8 show their training deck page by pag
 
 The curriculum (the Training Guide, with the day-by-day tasks, links and facilitator's notes) is for trainers and admins only, in **Admin → 📘 Curriculum**. It is not on the trainee pages.
 
+## ⏳ New registration popup (trainers approve from any page)
+
+When a trainee registers and waits for approval, every trainer account that is signed in gets a popup **on every page** of the program (👁 Trainee view and full-screen pages included): each waiting registration with **✓ Approve** and **✕ Decline**. It can't be closed (no ✕, Esc and clicking outside do nothing) and stays open while the trainer moves around, until every registration in it is approved or declined; someone new who registers meanwhile is added to it. **Open Trainee Audit →** goes to Admin → Trainee Audit with the popup still showing. It saves exactly what the Trainee Audit's Approve / Reject save (`trainee:<id>` approved / rejected), so a registration handled there or by another trainer leaves the popup too. It checks the server at most once a minute (`POLL.admin`) and only while the tab is visible. `js/ft-approval-popup.js`.
+
 ## Lessons
 
 | # | Lesson | On the platform |

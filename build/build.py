@@ -200,6 +200,7 @@ s = s[:m.end()] + (f'\n<script src="/js/ft-updates.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-facilitator-dna.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-activities.js?v={build_tag}"></script>'
      f'\n<script src="/js/ft-orientation.js?v={build_tag}"></script>'
+     f'\n<script src="/js/ft-approval-popup.js?v={build_tag}"></script>'   # ⏳ new registration popup for trainers
      f'\n<script src="/js/attendance.js?v={build_tag}"></script>') + s[m.end():]
 # The EA/PA page's server request meter (js/request-budget.js and its RequestBudget.start call): this
 # program removed it (no budget is set up), so its script tags don't come across (they'd 404 and throw).
