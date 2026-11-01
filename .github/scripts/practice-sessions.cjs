@@ -98,10 +98,10 @@ const failures = []; const fail = (m) => failures.push(m);
     if (!signed.skipped && !signed.isTool) fail('the Portal\'s Drafting page is not recognised as a training tool, so it would open signed out');
     await page.evaluate(() => goto('simulators')); await page.waitForTimeout(800);
 
-    // 1. Admin → 🏛 Law Firms: the profiles, and nobody assigned to them
-    await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'firms'; goto('admin'); }); await page.waitForTimeout(2500);
-    const firmsTxt = await page.evaluate(() => document.querySelector('.ff-admin') ? document.querySelector('.ff-admin').innerText : '');
-    ['LSH Training Law Group', 'Harbor & Pine Injury Law', 'Summit Trial Attorneys'].forEach(n => { if (firmsTxt.indexOf(n) < 0) fail(`Admin → Law Firms doesn't list ${n}`); });
+    // 1. Admin: no 🏛 Law Firms tab any more (the saved profiles are what My Firm shows), and nobody assigned to a firm
+    await page.evaluate(() => { state.isAdmin = true; state.adminTab = 'audit'; goto('admin'); }); await page.waitForTimeout(2500);
+    if (await page.evaluate(() => (LSH_PROGRAM.adminGroups.admin || []).includes('firms') || [...document.querySelectorAll('.admin-tab-btn')].some(b => /Law Firms/.test(b.textContent))))
+      fail('Admin still has a 🏛 Law Firms tab');
     // The per-trainee assignment is gone: no firm picker, no case picker, no bulk or spread buttons.
     const adminAll = await page.evaluate(() => document.querySelector('main').innerText);
     if (/Assign this firm to all|Spread cases/.test(adminAll)) fail('Admin → Law Firms still offers the removed assignment actions');
@@ -231,10 +231,11 @@ const failures = []; const fail = (m) => failures.push(m);
         bar: [...document.querySelectorAll('.topbar .nav button')].map(b => b.textContent.trim()).join(' | ') }));
     if (tv.isAdmin || !tv.preview) fail(`Trainee view should be isAdmin=false, adminPreview=true: ${JSON.stringify(tv)}`);
     // the trainee's bar, as the platform spec names it (no Client Profile, no Scorecards, no Admin, no search, no full screen)
-    ['Dashboard', 'Practice Lab', 'Knowledge Check', 'Focus', 'Main Portal'].forEach(n => {
+    ['Dashboard', 'Practice Lab', 'Knowledge Check', 'Main Portal'].forEach(n => {
         if (tv.bar.indexOf(n) < 0) fail(`Trainee view's top bar has no ${n}: ${tv.bar}`);
     });
-    ['Client Profile', 'Scorecards', 'Process Questions', 'My Dashboard'].forEach(n => {
+    // (🎯 Focus is a signed-in trainee's own: not in an admin's Trainee view)
+    ['Client Profile', 'Scorecards', 'Process Questions', 'My Dashboard', 'Focus'].forEach(n => {
         if (tv.bar.indexOf(n) >= 0) fail(`Trainee view's top bar should not have ${n}: ${tv.bar}`);
     });
     // My Firm (js/ft-firms.js) is still reachable, just not from its own top bar button any more
