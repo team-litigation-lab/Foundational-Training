@@ -22,9 +22,12 @@ const adminOn = () => !!state.isAdmin && !state.adminPreview && !state.traineeId
 const saves = () => isTrainee();
 const ATTY = "Atty. Magdalena";
 const DRIVE = id => `https://drive.google.com/file/d/${id}/view?usp=sharing`;
+// the two interviews: fictional personal injury consultations with Atty. Magdalena, in the sample guide's style and her voice,
+// played here (build/audio/interviews.json → build/audio/make_interviews.py → ft/day9/audio; the guide's Drive recordings were
+// not PI cases)
 const RECS = {
-  1: {id: "1N_cSvNZRWaamyBOwtOijyH-MnmOgRaIi", title: "Interview Recording 1"},
-  2: {id: "1lCC6wYca8Pxgqdw2sos-Bo95JdKtUsT5", title: "Interview Recording 2"}
+  1: {src: "/ft/day9/audio/interview-recording-1.mp3", title: "Interview Recording 1", dur: "5:44"},
+  2: {src: "/ft/day9/audio/interview-recording-2.mp3", title: "Interview Recording 2", dur: "4:15"}
 };
 const SAMPLE = "1CAGSbA5_REY8UqvCAfn2khyDEL4QMR0m";
 // the minutes, in the order the document runs
@@ -180,11 +183,10 @@ function renderTrainee(){
       <p>Please prepare the <b>minutes of my meeting with the client</b> from the attached recording (<b>${e(RECS[n].title)}</b>). Capture the discussion as thoroughly as you can — what the client told me, their concerns, what I advised, and the next steps — so I can rely on them without listening again.</p>
       <p>Save the minutes as a Word document named <b>${e(fileWant(n))}</b> in your <b>Assessments/Activities</b> folder, and let me know once they are there.</p>
       <p>Thank you!<br>${ATTY}</p>
-      <div class="tr-attach"><span>📎</span><b>${e(RECS[n].title)}</b><small>Recording · Google Drive</small></div></div>
+      <div class="tr-attach"><span>📎</span><b>${e(RECS[n].title)}</b><small>Recording · ${RECS[n].dur}</small></div></div>
     ${guide()}
       <aside class="card tr-side"><h3>🎧 Listen</h3>
-        ${r.startedAt ? `<div class="tr-player"><iframe src="https://drive.google.com/file/d/${RECS[n].id}/preview" allow="autoplay" title="${e(RECS[n].title)}"></iframe></div>
-          <a class="tr-open" href="${DRIVE(RECS[n].id)}" target="_blank" rel="noopener noreferrer">Open the recording in a new tab ↗</a>
+        ${r.startedAt ? `<div class="tr-player"><audio controls preload="metadata" src="${RECS[n].src}" title="${e(RECS[n].title)}"></audio><small>${e(RECS[n].title)} · ${RECS[n].dur}</small></div>
           <div class="tr-sw"><span class="tr-sw-l">⏱ Your stopwatch, kept with the recording</span><b id="trSw">${fmt(swMs())}</b>
             <div class="tr-sw-b"><button type="button" class="btn btn-navy btn-sm" id="trSwGo" onclick="FTTranscribe.sw()">${T.sw.on ? "⏸ Pause" : "▶ Start"}</button>
               <button type="button" class="btn btn-ghost btn-sm" onclick="FTTranscribe.swReset()">↺ Reset</button>
@@ -388,8 +390,8 @@ main.main-tr{max-width:1240px;margin:0 auto;padding:18px 20px 48px;display:flex;
 .tr-col-l .tr-attach{display:flex;flex-wrap:wrap;}
 .tr-side h3, .tr-box h3{margin:0 0 8px;color:#262B45;font-size:16px;display:flex;align-items:center;gap:8px;}
 .tr-side h3 + *{margin-top:0;} .tr-side h3:not(:first-child){margin-top:14px;}
-.tr-player{position:relative;padding-top:56.25%;border-radius:10px;overflow:hidden;background:#161829;}
-.tr-player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.tr-player{border-radius:10px;background:#1E2340;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.tr-player audio{width:100%;} .tr-player small{color:#E6E9F5;font-weight:700;font-size:12.5px;}
 .tr-open{display:inline-block;margin:6px 0 0;font-size:12.5px;color:#B5651F;}
 .tr-sw{margin-top:10px;padding:10px 12px;border-radius:12px;background:#F6F7FB;display:flex;flex-direction:column;gap:6px;}
 .tr-sw-l{font-size:12px;font-weight:700;color:var(--ink-soft);}
