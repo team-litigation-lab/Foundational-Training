@@ -385,12 +385,12 @@ const SLIDES = [
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
     ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
 `],
-  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
+  ["generalist", "You’re a General VA, Ready for Any Role", ()=>`<div class="ftr-calm">
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
       <p>This standard, foundational training gives you the general, basic knowledge of the roles clients most often ask for and what they do. When a client picks you, you can take on the role with ease.</p></div>
     ${rule("🙋 Take Initiative", "Knowing every role lets you take on other work when your tasks run low or what you’re assigned is limited.")}
     ${rule("🛡 Stay Placed", "When a firm restructures, you can move into a different role instead of being laid off.")}
-    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}`],
+    ${rule("🧱 A Foundation, Not Mastery", "This training gives you the foundation only. Mastery comes once a role is assigned to you: you get further training for it then, or during the Free Trial period, when you do actual client tasks.")}</div>`],
   ["work", "Rules: Your Work and the Use of AI", ()=>
     rule("📛 Follow the Naming Conventions Strictly", "Name your Hubstaff To-Dos, test screenshots and files exactly as given.") +
     rule("🤖 Don’t Rely on AI to Draft or Complete Your Work", "As Legal VAs, you’re trained to draft legal documents from actual case information, instructions and established legal processes. Training develops your own legal reasoning, attention to detail, writing skills and understanding of the case lifecycle. If AI drafts for you, you may produce something that looks correct without understanding why it’s correct, or fail to spot its errors. You may use AI to improve your grammar, spelling and sentence structure.") +
@@ -762,6 +762,12 @@ body.ft-orient #lessonSlideWrap .ftr-sub{color:#1E2340 !important;font-weight:60
 body.ft-orient #lessonSlideWrap .ftr-why{border:1.5px solid #E8590C;border-left:5px solid #E8590C;color:#1B1E2E;}
 body.ft-orient #lessonSlideWrap .ftr-goal{border:1.5px solid #E8590C;border-left:5px solid #E8590C;}
 body.ft-orient #lessonSlideWrap .ftr-rule{border:1.5px solid #C0392B;border-left:5px solid #C0392B;}
+/* You're a General VA: these are benefits, not warnings, so they read calm: soft white cards, navy text, one gentle accent each */
+.ftr-calm .ftr-goal, body.ft-orient #lessonSlideWrap .ftr-calm .ftr-goal{background:#F2F5FA !important;background-image:none !important;border:1px solid #D5DCEA !important;border-left:5px solid #34508C !important;}
+.ftr-calm .ftr-goal b{color:#1E2340 !important;} .ftr-calm .ftr-goal p{color:#2B2F45 !important;}
+.ftr-calm .ftr-rule, body.ft-orient #lessonSlideWrap .ftr-calm .ftr-rule{--c:#2E8A6A;background:#FFFFFF !important;background-image:none !important;border:1px solid #E1E4EE !important;border-left:5px solid var(--c) !important;box-shadow:0 1px 4px rgba(30,35,64,.05);}
+.ftr-calm .ftr-rule:nth-of-type(3){--c:#3A78B8;} .ftr-calm .ftr-rule:nth-of-type(4){--c:#7A62B0;}
+.ftr-calm .ftr-rule b{color:#1E2340 !important;} .ftr-calm .ftr-rule span{color:#2B2F45 !important;}
 body.ft-orient #lessonSlideWrap :is(.ftr-chan p, .ftr-tip, .ftr-aux small, .ftr-sub){color:#2B2F45;}
 /* Send Your EOD Email: the card beside the embedded Training Matrix */
 /* Your Training Matrix: the matrix embedded on the left, its cover picture on the right */
