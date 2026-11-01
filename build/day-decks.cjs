@@ -1000,6 +1000,8 @@ const EDIT = {
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
+// Day 11: where its evaluation's introduction ends and the evaluation begins (the guide's "Thank you." and the folder's name)
+const EVAL_11 = "<p>Thank you.</p>\n<p>Assessment Activities</p>";
 // 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms or dir, made from the PDFs:
 // read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
 // (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
@@ -1172,12 +1174,15 @@ const ROWS = {
     // (the evaluation's introduction is one block, read on one page, without the guide's opening line; it ends on the
     // LOR drafting that follows Activities 1 & 2, pointed at the platform's LOR Drafting tool, not the guide's screenshot
     // of the Word files)
-    s1: [{id: "s1", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, SLOT(11, "s1-3")]],
-        fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""],
+    // (two slides, so each reads large: the evaluation's introduction, then the evaluation itself, a link to ✍️ Knowledge
+    // Check, not a panel on the deck, with the Dec Pages' folder and the LOR drafting that follows Activities 1 & 2)
+    s1: [{id: "s1", pre: KEEP[0], post: KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, EVAL_11]],
+        fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""]]},
+      // (the evaluation is answered on the platform, in ✍️ Knowledge Check, js/ft-assess.js "policy-disclosure": the link
+      // opens it, js/ft-day-decks.js ASSESS_NEXT[11]; the folder still holds the Dec Pages its Part I is answered from)
+      {id: "s1e", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Your Evaluation: Policy Disclosure, Claim & Liability", parts: [[EVAL_11, SLOT(11, "s1-3")]],
+        fix: [[EVAL_11 + "\n", '<p class="ftdd-kclink"><a class="ftdd-link" role="button" tabindex="0" onclick="FTDayDecks.next()">✍️ Answer the evaluation in Knowledge Check →</a></p>\n<p>Part I from the Dec Pages in the Assessment Activities folder below, Part II from your training. Your answers save as you type; then hit 📝 Submit for Grading.</p>\n<p>Assessment Activities (the Dec Pages)</p>\n'],
           ['<hr class="stars">\n', ""],
-          // (the evaluation is answered on the platform, in ✍️ Knowledge Check, js/ft-assess.js "policy-disclosure"; the folder
-          // still holds the Dec Pages its Part I is answered from)
-          ['<p>Thank you.</p>\n<p>Assessment Activities</p>\n', '<div class="ftdd-pq">✍️ <b>Answer the evaluation in Knowledge Check</b>: Part I from the Dec Pages in the Assessment Activities folder below, Part II from your training. Your answers save as you type; then hit 📝 Submit for Grading.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.next()">📄 Open the evaluation →</button></div></div>\n<p>Assessment Activities (the Dec Pages)</p>\n'],
           ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
       // (one slide: the instructions on its first page, its first card opening the LOR Drafting tool, which holds the
       // templates and the case notes, so the guide's links to them are not on it; the reminders on "F/E" on the second)

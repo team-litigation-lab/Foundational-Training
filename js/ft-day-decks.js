@@ -1035,11 +1035,15 @@ function fitCrops(sheet){
     Object.assign(f.style, {width: cw + "px", height: Math.round(h / k) + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
   // a Drive folder's row (ftdd-embed-row): Drive lays its grid out FOLDER_ROW[0] wide (seven files to a row), scaled down to
-  // the box, and the box is one row of files tall
-  sheet.querySelectorAll(".ftdd-embed-row").forEach(em => {
-    const f = em.querySelector("iframe"), w = em.clientWidth, [fw, fh] = FOLDER_ROW;
+  // the box, and the box is one row of files tall. Folders side by side (Day 10's Opening Claims and Checking for Existing
+  // Claims) share the widest one's scale, so their files are drawn the same size and the boxes the same height
+  const rows = [...sheet.querySelectorAll(".ftdd-embed-row")], [fw] = FOLDER_ROW;
+  const top = em => Math.round(em.getBoundingClientRect().top), kOf = em => Math.min(1, em.clientWidth / fw);
+  const shared = em => Math.max(...rows.filter(o => o.clientWidth && Math.abs(top(o) - top(em)) < 4).map(kOf), kOf(em));
+  rows.forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth, fh = FOLDER_ROW[1];
     if(!f || !w) return;
-    const k = Math.min(1, w / fw);
+    const k = shared(em);
     em.style.height = Math.round(fh * k) + "px";
     Object.assign(f.style, {width: Math.round(w / k) + "px", height: fh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
@@ -1505,8 +1509,9 @@ const ASSESS_NEXT = {2: {
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
   s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
-  // (Day 11's Policy Disclosure, Claim & Liability Evaluation, answered on the platform: js/ft-assess.js "policy-disclosure")
-  11: {s1: {l: 7, doc: "policy-disclosure", t: "Policy Disclosure, Claim & Liability Evaluation"}}};
+  // (Day 11's Policy Disclosure, Claim & Liability Evaluation, answered on the platform: js/ft-assess.js "policy-disclosure";
+  // opened from its second slide, s1e, the one with the link)
+  11: {s1e: {l: 7, doc: "policy-disclosure", t: "Policy Disclosure, Claim & Liability Evaluation"}}};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
@@ -3301,5 +3306,11 @@ body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mi
   main.main-dash:has(.ftdd-daycell) .dash-side-inner b, main.main-dash:has(.ftdd-daycell) .dash-side-inner strong{font-size:17px !important;line-height:1.1 !important;}
   main.main-dash:has(.ftdd-daycell) .dash-side-inner small, main.main-dash:has(.ftdd-daycell) .dash-side-inner span{font-size:9.5px !important;}
 }
+/* (every slide's body text bold, on every day: the Days 6–15 and exercise rules that set it at 600 give way; the heading
+   bars and the lines set bolder keep their own weight) */
+main.main-ftdd .ftdd-sheet :is(p,li,td,dd,dt,.ftdd-step-t,.ftdd-pq,.ftis-about):not(.ftdd-hbar):not(.ftdd-cix-h):not(.ftis-lf-h){font-weight:700 !important;}
+/* (Day 11's evaluation: a plain link to ✍️ Knowledge Check in place of a panel on the deck) */
+main.main-ftdd .ftdd-sheet p.ftdd-kclink{margin:4px 0 6px;} main.main-ftdd .ftdd-sheet p.ftdd-kclink a.ftdd-link{font:800 22px/1.35 'Poppins','Inter',sans-serif;color:#C2410C !important;text-decoration:underline;cursor:pointer;}
+main.main-ftdd .ftdd-sheet p.ftdd-kclink a.ftdd-link:hover{color:#9A3412 !important;}
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -73,7 +73,10 @@ if (!lor || lor.length !== 1 || (lor[0].html.match(/<div class="ftdd-card4"><p c
   || !/ftdd-pgbreak[^]*Additional Reminders/.test(lor[0].html) || /Objective|1aRMbhtBTZ3wxDDo5Ww1sERL5frjdNNHw|Before saving your LOR|training GC/.test(lor[0].html)
   || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
   fail(`Day 11's LOR Drafting guidelines aren't one slide of cards with the LOR Drafting tool: ${JSON.stringify((lor || []).map(s => s.id))}`);
-if (!ev || !/^<div class="ftdd-keep">/.test(ev.html) || /Insurance Claim Specialist|image26/.test(ev.html) || !/goto\('lor'\)/.test(ev.html)) fail("Day 11's evaluation slide isn't one block ending on the LOR Drafting tool");
+// (two slides: the introduction, then the evaluation's ✍️ Knowledge Check link, the Dec Pages and the LOR Drafting tool)
+const ev2 = D[11] && D[11].slides.find(s => s.id === 's1e');
+if (!ev || !ev2 || ![ev, ev2].every(x => /^<div class="ftdd-keep">/.test(x.html)) || [ev, ev2].some(x => /Insurance Claim Specialist|image26|Thank you\./.test(x.html))
+  || /goto\('lor'\)|ftdd-pq/.test(ev.html) || !/goto\('lor'\)/.test(ev2.html) || !/ftdd-kclink/.test(ev2.html)) fail("Day 11's evaluation isn't its introduction, then a slide with the Knowledge Check link ending on the LOR Drafting tool");
 if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.test(s.html))) fail("Day 11's shadowing slide still has the TAM update line");
 // Day 4: its mock call preparation on one slide (s2b), in pages, the tools as buttons under the run; Day 5 opens on the
 // Monitoring Sheet's items #10–11, its panel only (no mock call preparation); the Attorney Calendar Management Activity's
