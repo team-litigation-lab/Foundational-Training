@@ -68,15 +68,15 @@ for (let n = 2; n <= 16; n++) { const d = D[n]; if (!d) continue;
 // (eight steps, 1P / 3P marked), the first opening the LOR Drafting tool, which holds the templates and case notes (so no
 // links to them), the "F/E" reminders on a page of their own; and the evaluation's slide is one block, without the guide's
 // opening line and with no LOR screenshot
-const lor = D[11] && D[11].slides.filter(s => /LOR Drafting Activity/.test(s.h)), ev = D[11] && D[11].slides.find(s => s.id === 's1');
+const lor = D[11] && D[11].slides.filter(s => /LOR Drafting Activity/.test(s.h));
 if (!lor || lor.length !== 1 || (lor[0].html.match(/<div class="ftdd-card4"><p class="ftdd-card4-h">\d\. /g) || []).length !== 8 || !/goto\('lor'\)/.test(lor[0].html)
   || !/ftdd-pgbreak[^]*Additional Reminders/.test(lor[0].html) || /Objective|1aRMbhtBTZ3wxDDo5Ww1sERL5frjdNNHw|Before saving your LOR|training GC/.test(lor[0].html)
   || D[11].slides.some(s => /11N15MFcvSedCvByQ4GqHqt9BKZqlSxVu/.test(s.html)))
   fail(`Day 11's LOR Drafting guidelines aren't one slide of cards with the LOR Drafting tool: ${JSON.stringify((lor || []).map(s => s.id))}`);
-// (two slides: the introduction, then the evaluation's ✍️ Knowledge Check link, the Dec Pages and the LOR Drafting tool)
-const ev2 = D[11] && D[11].slides.find(s => s.id === 's1e');
-if (!ev || !ev2 || ![ev, ev2].every(x => /^<div class="ftdd-keep">/.test(x.html)) || [ev, ev2].some(x => /Insurance Claim Specialist|image26|Thank you\./.test(x.html))
-  || /goto\('lor'\)|ftdd-pq/.test(ev.html) || !/goto\('lor'\)/.test(ev2.html) || !/ftdd-kclink/.test(ev2.html)) fail("Day 11's evaluation isn't its introduction, then a slide with the Knowledge Check link ending on the LOR Drafting tool");
+// (the evaluation is off the deck: its card row opens it in ✍️ Knowledge Check, js/ft-assess.js, whose intro carries the
+// guide's objective and reminder; the LOR Drafting Activity opens the day, with the evaluation's facilitator's notes)
+if (!D[11] || D[11].slides.some(s => /Objective: To assess|policy-disclosure|ftdd-kclink/.test(s.html)) || D[11].slides[0].id !== 's1' || !/goto\('lor'\)/.test(D[11].slides[0].html)
+  || !/11:s1-1[^]*11:s1-2/.test(D[11].slides[0].html)) fail("Day 11's evaluation is still on the deck, or the LOR Drafting Activity doesn't open the day with its facilitator's notes");
 if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.test(s.html))) fail("Day 11's shadowing slide still has the TAM update line");
 // Day 4: its mock call preparation on one slide (s2b), in pages, the tools as buttons under the run; Day 5 opens on the
 // Monitoring Sheet's items #10–11, its panel only (no mock call preparation); the Attorney Calendar Management Activity's

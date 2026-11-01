@@ -1000,8 +1000,6 @@ const EDIT = {
 };
 // what a slide holds as one block, read on one page (js/ft-day-decks.js pages: an .ftdd-keep is never dealt out)
 const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
-// Day 11: where its evaluation's introduction ends and the evaluation begins (the guide's "Thank you." and the folder's name)
-const EVAL_11 = "<p>Thank you.</p>\n<p>Assessment Activities</p>";
 // 📄 a document read on the slide, page by page: its pages side by side (images in ft/day7/forms or dir, made from the PDFs:
 // read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
 // (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
@@ -1171,22 +1169,19 @@ const ROWS = {
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
-    // (the evaluation's introduction is one block, read on one page, without the guide's opening line; it ends on the
-    // LOR drafting that follows Activities 1 & 2, pointed at the platform's LOR Drafting tool, not the guide's screenshot
-    // of the Word files)
-    // (two slides, so each reads large: the evaluation's introduction, then the evaluation itself, a link to ✍️ Knowledge
-    // Check, not a panel on the deck, with the Dec Pages' folder and the LOR drafting that follows Activities 1 & 2)
-    s1: [{id: "s1", pre: KEEP[0], post: KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, EVAL_11]],
-        fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""]]},
-      // (the evaluation is answered on the platform, in ✍️ Knowledge Check, js/ft-assess.js "policy-disclosure": the link
-      // opens it, js/ft-day-decks.js ASSESS_NEXT[11]; the folder still holds the Dec Pages its Part I is answered from)
-      {id: "s1e", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Your Evaluation: Policy Disclosure, Claim & Liability", parts: [[EVAL_11, SLOT(11, "s1-3")]],
-        fix: [[EVAL_11 + "\n", '<p class="ftdd-kclink"><a class="ftdd-link" role="button" tabindex="0" onclick="FTDayDecks.next()">✍️ Answer the evaluation in Knowledge Check →</a></p>\n<p>Part I from the Dec Pages in the Assessment Activities folder below, Part II from your training. Your answers save as you type; then hit 📝 Submit for Grading.</p>\n<p>Assessment Activities (the Dec Pages)</p>\n'],
-          ['<hr class="stars">\n', ""],
-          ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
+    // (the Policy Disclosure, Claim & Liability Evaluation is off the deck: the Day 11 card's row opens it in ✍️ Knowledge
+    // Check, with its objective, components and reminder at its head, js/ft-assess.js "policy-disclosure" intro. Its two
+    // facilitator's notes, the timing and the answer keys, open the LOR slide for the trainer)
+    s1: [
       // (one slide: the instructions on its first page, its first card opening the LOR Drafting tool, which holds the
       // templates and the case notes, so the guide's links to them are not on it; the reminders on "F/E" on the second)
-      {id: "s1b", h: "AM: LOR Drafting Activity", parts: [[SLOT(11, "s1-3"), null]], fix: [h => {
+      // (its id is the section's, s1: the evaluation that was s1 is off the deck)
+      {id: "s1", h: "AM: LOR Drafting Activity", parts: [[null, null]], fix: [h => {
+        // (the section from its LOR slot on: the evaluation before it is off the deck, its two facilitator's notes kept)
+        const at = h.indexOf(SLOT(11, "s1-3"));
+        if(at < 0 || !h.includes(SLOT(11, "s1-1")) || !h.includes(SLOT(11, "s1-2"))) throw new Error("Day 11's evaluation and its facilitator's notes are no longer where the build looks for them");
+        return SLOT(11, "s1-1") + "\n" + SLOT(11, "s1-2") + "\n" + h.slice(at);
+      }, h => {
         // (and only the reminders on "F/E": not the before-saving checklist or the final-draft list)
         const i = h.indexOf("<p>1P LOR Template</p>"), j = h.indexOf("<p><b>Additional Reminders for Drafting Your LOR:</b></p>\n"),
           k = h.indexOf("<p> <b>Before saving your LOR in your Assessments folder:</b></p>"), end = h.indexOf(SLOT(11, "s1-5"));

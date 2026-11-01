@@ -1454,8 +1454,9 @@ const LESSON_CARDS = {
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
-      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
-      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
+      // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
+      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages · in ✍️ Knowledge Check", k: "assessment", run: "FTDayDecks.assessDoc(11, 7, 'policy-disclosure', 's1')", day: 11},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1", go: "lor"},
       {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
@@ -1509,9 +1510,8 @@ const ASSESS_NEXT = {2: {
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
   s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
-  // (Day 11's Policy Disclosure, Claim & Liability Evaluation, answered on the platform: js/ft-assess.js "policy-disclosure";
-  // opened from its second slide, s1e, the one with the link)
-  11: {s1e: {l: 7, doc: "policy-disclosure", t: "Policy Disclosure, Claim & Liability Evaluation"}}};
+  // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
+};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
@@ -1625,6 +1625,16 @@ function openStop(n, run){
 }
 // 📄 an assessment opened from a slide (Day 2's, under each video): ✍️ Knowledge Check shows only that assessment, and
 // its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), named `h`
+// 📄 an assessment opened straight from a day card's row (Day 11's evaluation, js/ft-assess.js): its own Knowledge Check
+// page, the assessment alone, whose way back is the deck's slide `back`
+function assessDoc(day, l, doc, back){
+  loadDecks().then(() => {
+    const d = decks() && decks()[day], s = d ? slidesOf(d).find(x => x.id === back) : null;
+    const h = String((s && s.h) || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+    try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: Number(day), id: back || "", h, l: Number(l), sheet: "pq", assess: doc, only: true})); }catch(err){}
+    if(root.FTProcess) FTProcess.openLesson(l);
+  });
+}
 function toAssess(l, doc, at, h){
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
@@ -2067,7 +2077,7 @@ root.FTDayDecks = {open, go, next: nextKC,
     if(on){ (doc.exitFullscreen || doc.webkitExitFullscreen || (() => {})).call(doc); return; }
     const req = em.requestFullscreen || em.webkitRequestFullscreen; if(req) req.call(em);
   },
-  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, assessDoc, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   // 🧑‍🏫 the facilitator's notes drawer, and the trainer's side panel shown or hidden (the slide keeps its page: its size is
   // unchanged by the drawer, and the panel only gives it its width back, so it is dealt again)
@@ -3309,8 +3319,5 @@ body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mi
 /* (every slide's body text bold, on every day: the Days 6–15 and exercise rules that set it at 600 give way; the heading
    bars and the lines set bolder keep their own weight) */
 main.main-ftdd .ftdd-sheet :is(p,li,td,dd,dt,.ftdd-step-t,.ftdd-pq,.ftis-about):not(.ftdd-hbar):not(.ftdd-cix-h):not(.ftis-lf-h){font-weight:700 !important;}
-/* (Day 11's evaluation: a plain link to ✍️ Knowledge Check in place of a panel on the deck) */
-main.main-ftdd .ftdd-sheet p.ftdd-kclink{margin:4px 0 6px;} main.main-ftdd .ftdd-sheet p.ftdd-kclink a.ftdd-link{font:800 22px/1.35 'Poppins','Inter',sans-serif;color:#C2410C !important;text-decoration:underline;cursor:pointer;}
-main.main-ftdd .ftdd-sheet p.ftdd-kclink a.ftdd-link:hover{color:#9A3412 !important;}
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);
