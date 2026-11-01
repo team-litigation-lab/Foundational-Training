@@ -1004,8 +1004,10 @@ const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
 // read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
 // (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
 const PDOC_DIR = "/ft/day7/forms";
-const pdocHtml = ([slug, title, n, dir = PDOC_DIR]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
-  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
+// (big: the form's name alone on its bar, no page count or new-tab link, and its pages in one row, as large as the
+// slide allows: Day 7's blank intake forms)
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR], big) => `<div class="ftdd-pdoc${big ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
+  (big ? "</div>" : `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>`) +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
   `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
 // Day 8's naming convention reference (Topic 2, between steps 3 and 4)
@@ -1092,10 +1094,10 @@ const ROWS = {
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
       {id: "formsb", h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]], fix: [x => {
-        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each)
+        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each, with no lead line)
         const shot = /<a class="ftdd-shot"[^\n]*1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF[^\n]*<\/a>\n/;
         if(!shot.test(x)) throw new Error("Day 7's Blank PI Intake Forms are no longer where the build looks for them");
-        return x.replace(shot, () => '<p>Read each form here: the fillable forms are in the CMS.</p>\n' + INTAKE_FORMS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n'));
+        return x.replace(shot, () => INTAKE_FORMS.map(f => pdocHtml(f, true)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],

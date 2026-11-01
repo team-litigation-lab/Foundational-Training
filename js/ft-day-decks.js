@@ -3231,6 +3231,9 @@ main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:70
 .ftdd-sheet a.ftdd-pdoc-pg:hover img{border-color:#E8590C;box-shadow:0 4px 14px rgba(232,89,12,.30);}
 main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-serif;color:#262B45 !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
+/* (Day 7's blank intake forms, .ftdd-pdoc-big: a form's pages in one row, each as wide as the row allows and as tall as the slide's room) */
+.ftdd-sheet .ftdd-pdoc-big .ftdd-pdoc-pages, .ftdd-sheet .ftdd-pdoc-big[data-pages] .ftdd-pdoc-pages{grid-template-columns:repeat(var(--n),minmax(0,1fr));justify-content:stretch;gap:10px 12px;}
+.ftdd-sheet .ftdd-pdoc-big a.ftdd-pdoc-pg img{width:100%;height:auto;max-height:calc(var(--ftdd-room, 70vh) - 90px);min-height:0;}
 /* a set of video cards (data-card): the card is the button, so no "▶ Watch" under the name; two videos (Day 8's Topic 1)
    share the slide's width, so their previews are large */
 .ft-body .ftdd-vcard .ftdd-tile-t small{display:none;}
