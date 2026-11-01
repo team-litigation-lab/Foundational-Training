@@ -402,7 +402,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
       const out = { cells: [...box.querySelectorAll('tbody tr:not(.ftms-avg) td:nth-child(2)')].map(td => td.textContent), remark: (box.querySelector('tbody tr td:nth-child(3)') || {}).textContent,
         inputs: box.querySelectorAll('input, select').length, mine: (box.querySelector('.ftms-mine') || {}).textContent || '', toast: document.body.innerText.includes('Your trainer scored your') };
       state.isAdmin = was.a; state.adminPreview = was.p; state.traineeId = was.t; return out; }, me);
-    if (mine.cells.length !== 14 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
+    if (mine.cells.length !== 15 || mine.cells.some(c => c !== '4') || mine.remark !== 'Clear greeting' || mine.inputs || !/Scored by your trainer: Passed · 80%/.test(mine.mine) || !mine.toast)
       fail(`the trainee should see their scored sheet, read only, and be told it is scored: ${JSON.stringify(mine)}`);
   }
   await page.evaluate(() => { FTMetrics.close(); state.traineeId = window.__tid; });
