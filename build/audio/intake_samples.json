@@ -624,8 +624,8 @@
     "title": "Sample Guide: PI Consultation with Atty. Magdalena",
     "about": "A personal injury consultation between Atty. Magdalena (A) and a new client (C) after a rear-end collision. The PI equivalent of the interview recordings: listen, read the A / C transcript, and compare your minutes with the sample minutes.",
     "voices": {
-      "A": "lessac",
-      "C": "john"
+      "A": "af_kore:0.6+af_sarah:0.4",
+      "C": "am_puck"
     },
     "lines": [
       [
