@@ -14,6 +14,7 @@
      🟢 Practice Sessions       sessions:<id> + labreview:<id>, the trainer's score on each session, else its automated checks (js/ft-sessions.js)
      🧑‍🏫 With your trainer       labreview:<id>, the trainer's recorded result on each trainer-led activity (js/ft-sessions.js)
      📋 Task Tracker & Monitoring  trackerreview:<id>, the Drive files' checks (or the trainer's score) (js/ft-drive.js)
+     📅 Calendaring Activity    calweek:<id>, the automated check of the submitted next-week calendar (js/ft-calweek.js)
      🧰 Portal simulators       simresults:<id>, the best result per Training Portal simulator (written by the Portal's /api/sim-results)
    (The Daily Activities page was taken off: the Practice Lab and the Knowledge Checks cover that work.)
    ============================================================ */
@@ -40,9 +41,14 @@ window.LSH_PROGRAM = {
   labViews: ["simulators", "calsim", "firm", "session", "lor", "transcribe", "guide", "skills", "drills", "calcheck", "calrules", "calweek", "calpractice", "listening", "shadowing"],  // 🛠 Practice Lab: its page, a Practice Session, 🏛 My Firm, the 🧰 Drafting Tools' LOR Drafting Activity (and the older Calendaring Simulators page)
   shared: ["settings:trainer-acts", "settings:listening"],   // the trainer-led activities' names; the Call Listening sets as the trainer set them (how many recordings each)
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
+  // the Admin screen's sections renamed for this program
+  adminGroupLabels: {modules:"🔓 Unlock Segments"},
+  // no 🏅 Scorecards button in an admin's top bar: Admin → 🏅 Scorecard → 🏅 Scorecards is the same table
+  adminTopScorecards: false,
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint", "orientation"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
-    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
+    admin: ["audit", "batches", "tfeedback", "sops", "dbmaint", "orientation"],   // (no 🏛 Law Firms tab)
+      // no "attendance": it is the Training Portal's /attendance.html, per program per batch
+    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
     scorecard: ["scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
   },
@@ -107,9 +113,9 @@ window.LSH_PROGRAM = {
     {id:"calrules", icon:"📅", label:"Calendar booking rules", key:"calrules:",
       about:"Your calendar mock-call bookings, each checked against the guide’s scheduling rules: the share of rules met, practice calls and mock calls with your trainer apart.",
       items: ctx => typeof window.ftCalRuleItems === "function" ? window.ftCalRuleItems(ctx) : []},
-    {id:"kcgames", icon:"🎮", label:"Knowledge Games", key:"kcgames:",
-      about:"Your best game on each lesson’s Knowledge Games (practice only: the graded Knowledge Check is the score that counts).",
-      items: ctx => typeof window.ftKCGameItems === "function" ? window.ftKCGameItems(ctx) : []},
+    {id:"calweek", icon:"📅", label:"Calendaring Activity", key:"calweek:",
+      about:"Standard Training - Calendaring Activity (Days 5–6): the tasks you booked on the attorney’s calendar for next week, checked against the attorney’s rules (the score of your submitted calendar).",
+      items: ctx => typeof window.ftCalWeekItems === "function" ? window.ftCalWeekItems(ctx) : []},
     {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
       about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
       items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},
