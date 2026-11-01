@@ -402,7 +402,7 @@ const SLIDES = [
     ${rule("🙋 Missed a Session? Take the Initiative to Catch Up", "Reach out to your trainers to find out what was covered, review the materials or exercises, and complete the practice on your own time. Missing a session doesn’t mean the lesson no longer applies to you.")}`],
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
   ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
-      {h:"Name It", steps:["Use the name the Knowledge Check shows.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
+      {h:"Name It", steps:["Naming Conventions are provided by trainers.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
       {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends.",
         ["Your daily output is automatically monitored and scored on:", ["Naming Convention", "Timely Submission", "Accuracy and Attention to Detail", "Quality of Output"]]]},
       {h:"It Is Checked", steps:["You are expected to consistently follow this workflow all throughout your training."]},
