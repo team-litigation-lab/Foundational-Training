@@ -261,7 +261,7 @@ const MON_PARTS = [
     "Upload it to your Google Drive.",
     "You link it in Part 5."]},
   {h:"Update It", steps:[
-    "Update your Monitoring Sheet after each discussion or activity.",
+    "Update your Monitoring Sheet and Task Tracker after each discussion or activity.",
     "Finish before your shift ends.",
     "It is checked at 5:00 PM ET.",
     "Your trainer adds feedback."]}
