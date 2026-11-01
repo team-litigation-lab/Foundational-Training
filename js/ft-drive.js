@@ -93,7 +93,18 @@ function renderTrackerPage(){
       <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDrive.addLink()">＋ Another link</button>
         <button class="btn btn-navy btn-sm" onclick="FTDrive.saveDay()">📤 Submit the day’s links</button></div>
       ${(D.drive.days[d] || {}).submittedAt ? `<p class="fdr-muted">Submitted ${e(new Date(D.drive.days[d].submittedAt).toLocaleString())}.</p>` : ""}
+      ${eodHtml(d)}
       <h3>📊 The day’s check</h3>${rulesHtml(res)}</div>`;
+}
+// 📧 the day's EOD email, as sent (pasted here so the end-of-shift check can count it: the email itself can't be read):
+// drive:<id>.days[<date>].eod = {text, at}
+function eodHtml(d){
+  const x = (D.drive.days[d] || {}).eod || {};
+  return `<h3>📧 Your EOD email</h3>
+      <p class="fdr-muted">Before your shift ends, send your EOD email (the template is in Setting of Training Expectations), then paste what you sent here: the subject and the message.</p>
+      <textarea id="fdrEod" class="fdr-eod" rows="5" placeholder="Subject: EOD Report – [Date] – [Your Name]&#10;&#10;Tasks completed today: …">${e(x.text || "")}</textarea>
+      <div class="fp-actions"><button class="btn btn-navy btn-sm" onclick="FTDrive.saveEod()">📤 Submit today’s EOD</button></div>
+      ${x.at ? `<p class="fdr-muted">EOD submitted ${e(new Date(x.at).toLocaleString())}.</p>` : ""}`;
 }
 function linkRow(l, i){
   return `<div class="fdr-row fdr-link" data-i="${i}"><input class="fdr-label" placeholder="What it is (e.g. Typing Test AM)" value="${e(l.label || "")}"><input class="fdr-url" type="url" placeholder="https://drive.google.com/file/d/…" value="${e(l.url || "")}">
@@ -182,8 +193,16 @@ window.FTDrive = {
     const links = [...document.querySelectorAll("#fdrLinks .fdr-link")].map(r => ({label:r.querySelector(".fdr-label").value.trim(), url:r.querySelector(".fdr-url").value.trim()})).filter(l => l.url);
     if(links.some(l => !isGoogle(l.url))){ toast("Each output link must be a Google Drive link from your Assessment and Activities Folder."); return; }
     if(!links.length){ toast("Add at least one link to the day’s outputs."); return; }
-    const d = day(); D.drive.days[d] = {links, submittedAt:new Date().toISOString()};
+    // (the day's EOD, submitted on its own, stays)
+    const d = day(); D.drive.days[d] = Object.assign({}, D.drive.days[d] || {}, {links, submittedAt:new Date().toISOString()});
     toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ The day’s links are submitted."); render();
+  },
+  async saveEod(){
+    if(previewOnly()) return;
+    const t = String((document.getElementById("fdrEod") || {}).value || "").trim();
+    if(t.length < 40){ toast("Paste the EOD email you sent: its subject and the message."); return; }
+    const d = day(); D.drive.days[d] = Object.assign({}, D.drive.days[d] || {}, {eod: {text: t.slice(0, 8000), at: new Date().toISOString()}});
+    toast(await save() === false ? "Couldn’t save. Check your connection." : "✓ Today’s EOD is submitted."); render();
   },
   async check(){
     if(D.busy || previewOnly()) return;
@@ -331,6 +350,7 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
 .fdr-row{display:flex;gap:8px;align-items:center;margin:4px 0;} .fdr-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fdr-row .fdr-label{flex:0 1 240px;} .fdr-row a.btn{text-decoration:none;}
+.fdr-eod{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;}
 .fdr-day{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;} .fdr-day select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;}
 .fdr-res-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0;} .fdr-pct{font-size:22px;font-weight:800;} .fdr-pct.ok{color:var(--success);} .fdr-pct.mid{color:#B7791F;} .fdr-pct.bad{color:var(--danger);}
 .fdr-pill{font-size:12.5px;font-weight:800;border-radius:999px;padding:3px 10px;background:#FFF3E6;color:var(--orange-deep);}

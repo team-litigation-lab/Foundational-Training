@@ -19,13 +19,13 @@
 (function(){
 "use strict";
 const e = v => esc(String(v == null ? "" : v));
-const R = {sort: "name", act: null, people: null, loading: false, batch: "", week: 1, data: null, key: "", dataLoading: false, saveT: null, saved: true, fill: false, drafting: {}, edit: false};
+const R = {sort: "name", act: null, people: null, loading: false, batch: "", week: 1, data: null, key: "", dataLoading: false, saveT: null, saved: true, fill: false, drafting: {}, edit: false, auto: null, weekSet: false};
 const bLabel = b => typeof batchLabel === "function" ? batchLabel(b) : String(b || "");
 const keyOf = (b, w) => `ranking:${String(b || "none").replace(/[^A-Za-z0-9_-]/g, "_")}:w${w}`;
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 // the report's columns: the compliance one, the marks out of 5, and the activities scored on their own points
-const COL = (label, sub, max, src) => ({id: uid(), label, sub: sub || "", max: max == null ? 5 : max, type: "score", src: src || ""});
+const COL = (label, sub, max, src, period) => Object.assign({id: uid(), label, sub: sub || "", max: max == null ? 5 : max, type: "score", src: src || ""}, period ? {period} : {});
 const BASE = () => [
   {id: uid(), label: "Spelling & Typing Tests", sub: "", type: "notes", src: "skills"},
   COL("Monitoring Sheet", "", 5, "drive:Monitoring Sheet"), COL("Tracker", "", 5, "drive:Tracker")];
@@ -70,6 +70,8 @@ async function loadPeople(){
     R.people = list.filter(r => r && r.id && r.approved === true && !r.archived && !r.rejected).map(r => ({id: r.id, name: r.name || r.id, batch: r.batch || "", progress: r.dayProgress || {}, since: String(r.registeredAt || "").slice(0, 10)}))
       .sort((a, b) => String(a.name).localeCompare(String(b.name)));
     if(!R.batch){ const bs = batches(); R.batch = bs[bs.length - 1] || ""; }
+    // (opened on the batch's week now)
+    if(!R.weekSet && R.batch){ R.week = weekNow(); R.weekSet = true; }
   }catch(err){ R.people = []; }
   R.loading = false; rerender();
 }
@@ -104,18 +106,30 @@ function parseRange(s){
 // ⤓ Fill's week: the dates a column of the report names (the Spelling & Typing column's "9/28 to 10/06"), else the batch's
 // own week N: a Batch ID is the day it started (B + MMDDYY), and week N is the seven days from start + 7 × (N − 1)
 function weekRange(){
-  const named = R.data.cols.map(c => parseRange(c.sub)).find(Boolean); if(named) return named;
+  const named = ((R.data || {}).cols || []).map(c => parseRange(c.sub)).find(Boolean); if(named) return named;
   const startOf = b => { const m = /^b(\d{2})(\d{2})(\d{2})$/i.exec(String(b || "").trim()); return m ? `20${m[3]}-${m[1]}-${m[2]}` : null; };
   const start = [R.batch].concat(people().map(p => p.batch)).map(startOf).find(Boolean); if(!start) return null;
   const t = Date.parse(start + "T00:00:00Z") + (R.week - 1) * 7 * 864e5, iso = ms => new Date(ms).toISOString().slice(0, 10);
   return [iso(t), iso(t + 6 * 864e5)];
 }
 const PERIODS = [["all", "Whole training"], ["week", "This week only"]];
+// the batch's week now: from its start (the Batch ID's date), 1 to 6
+function weekNow(){
+  const R0 = R.week; R.week = 1; const r = weekRange(); R.week = R0; if(!r) return 1;
+  return Math.max(1, Math.min(6, Math.floor((Date.parse(ptToday() + "T00:00:00Z") - Date.parse(r[0] + "T00:00:00Z")) / (7 * 864e5)) + 1));
+}
+const ptToday = () => window.FTTrackerRules ? FTTrackerRules.ptDate() : new Date().toISOString().slice(0, 10);
+// a week is over once its Friday's shift has ended (the nightly check has run: 22:05 UTC), or any day after it
+function weekOver(){
+  const r = weekRange(); if(!r) return false;
+  const fri = new Date(Date.parse(r[0] + "T00:00:00Z") + 4 * 864e5).toISOString().slice(0, 10), now = new Date();
+  return ptToday() > fri || (ptToday() === fri && now.getUTCHours() * 60 + now.getUTCMinutes() >= 22 * 60 + 30);
+}
 function srcOptions(){
   const S = (window.LSH_PROGRAM || {}).sources || [];
   // (not the 📊 Weekly Ranking itself: a week's report filled from the reports before it would count them twice)
   return [["", "Typed by the trainer"]].concat(S.filter(s => !s.noOverall).map(s => [s.id + ":", `${s.icon} ${s.label} (average)`]),
-    [["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
+    [["compliance", "✅ Daily compliance (the nightly check: tracker, Monitoring Sheet, tests, outputs, EOD)"], ["drive:Tracker", "📋 Daily Task Tracker"], ["drive:Monitoring Sheet", "📋 Training Progress Monitoring Sheet"], ["calls:Reception", "🎯 Call Simulator · Reception"], ["calls:Calendar", "🎯 Call Simulator · Calendar"], ["calls:Intake", "🎯 Call Simulator · Intake"],
      // the trainer-facilitated activities' scorecards (Admin → 🧑‍🏫 Trainer Inputs: the weighted average, as a %)
      ["trainer:Reception Mock Call", "🧑‍🏫 Reception Mock Call scorecard"], ["trainer:Calendar Management Mock Call", "🧑‍🏫 Calendar Management Mock Call scorecard"],
      ["trainer:Intake Mock Call", "🧑‍🏫 Intake Mock Call scorecard"], ["trainer:Intake Packet", "🧑‍🏫 Intake Packet Demo scorecard"], ["trainer:LOR Uploading", "🧑‍🏫 LOR Demo scorecard"],
@@ -124,7 +138,8 @@ function srcOptions(){
 async function fillFromPortal(){
   if(!R.data || R.fill) return;
   const notesCols = R.data.cols.filter(c => c.type === "notes" && c.src === "skills");
-  const cols = R.data.cols.filter(c => c.type === "score" && c.src); if(!cols.length && !notesCols.length){ toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
+  const compCols = R.data.cols.filter(c => c.type === "score" && c.src === "compliance");
+  const cols = R.data.cols.filter(c => c.type === "score" && c.src && c.src !== "compliance"); if(!cols.length && !notesCols.length && !compCols.length){ toast("No column is set to fill from the platform: pick a source in ✎ Columns."); return; }
   const S = ((window.LSH_PROGRAM || {}).sources || []).filter(s => s.key), ppl = people(); if(!ppl.length) return;
   R.fill = true; rerender();
   try{
@@ -164,11 +179,23 @@ async function fillFromPortal(){
         row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(mark5 != null ? mark5 / 5 * max : pct / 100 * max), auto: true, period: week ? "week" : "all"}); n++;
       });
     });
+    // ✅ the Daily Compliance column: the average of the nightly check's days (trackerreview:<id>.compliance, worker.js
+    // dailyCompliance) in the week (a column set to "Whole training": every day so far)
+    if(compCols.length){
+      const rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id)), wk = weekRange();
+      compCols.forEach(c => ppl.forEach((p, i) => {
+        const row = rowOf(p.id), cur = row.cells[c.id]; if(cur && num(cur.raw) != null) return;
+        const days = Object.entries((rvs[i] || {}).compliance || {}).filter(([d, x]) => x && typeof x.pct === "number" && (c.period !== "week" || (wk && d >= wk[0] && d <= wk[1])));
+        if(!days.length) return;
+        const pct = days.reduce((a, [, x]) => a + x.pct, 0) / days.length, max = num(c.max) || 5;
+        row.cells[c.id] = Object.assign({}, cur || {}, {raw: fmt(pct / 100 * max), auto: true, period: c.period === "week" ? "week" : "all", days: days.length}); n++;
+      }));
+    }
     // 🧪 the Spelling & Typing column: the compliance line for the column's dates (js/ft-skilltests.js)
     if(notesCols.length && window.FTSkills){
       const recs = await sharedGetMany(ppl.map(p => "skills:" + p.id)), rvs = await sharedGetMany(ppl.map(p => "trackerreview:" + p.id));
       notesCols.forEach(c => {
-        const range = parseRange(c.sub);
+        const range = parseRange(c.sub) || (R.data.auto ? weekRange() : null);
         if(!range){ toast(`Put the dates in the “${c.label}” column first (✎ Columns), e.g. 9/28 to 10/06.`); return; }
         ppl.forEach((p, i) => { const row = rowOf(p.id), cur = row.cells[c.id];
           if(cur && String(cur.note || "").trim()) return;                                  // never over what the trainer typed
@@ -184,8 +211,9 @@ async function fillFromPortal(){
 }
 
 /* ---------- ✨ Additional Notes in the facilitator's feedback DNA ---------- */
-async function draftNotes(id){
-  const p = people().find(x => x.id === id); if(!p || R.drafting[id]) return;
+async function draftNotes(id, quiet){
+  const p = people().find(x => x.id === id); if(!p || R.drafting[id]) return false;
+  let ok = false;
   const row = rowOf(id), avg = average(id);
   const lines = R.data.cols.map(c => {
     const cell = row.cells[c.id] || {};
@@ -211,9 +239,10 @@ ${String(((window.FT_FACILITATOR_DNA || {}).guide) || "").slice(0, 3000)}
 Return ONLY JSON: {"notes":"..."}`;
     const out = await callAIJson(prompt, 500, undefined, "grading");
     const t = String((out && out.notes) || "").trim().slice(0, 1200);
-    if(t){ row.notes = row.notes ? row.notes + "\n" + t : t; save(); } else toast("The AI returned nothing. Try again.");
-  }catch(err){ toast("The AI isn’t available right now. Type the notes yourself."); }
+    if(t){ row.notes = row.notes ? row.notes + "\n" + t : t; save(); ok = true; } else if(!quiet) toast("The AI returned nothing. Try again.");
+  }catch(err){ if(!quiet) toast("The AI isn’t available right now. Type the notes yourself."); }
   R.drafting[id] = false; rerender();
+  return ok;
 }
 
 /* ---------- the report, as the facilitator writes it (Word, copy, print) ---------- */
@@ -439,7 +468,9 @@ function renderRanking(){
       <select onchange="FTRanking.week(this.value)">${[1, 2, 3, 4, 5, 6].map(w => `<option value="${w}" ${w === R.week ? "selected" : ""}>Week ${w}</option>`).join("")}</select></span></div>`;
   if(!R.batch) return `<div class="card rk">${top}<p class="sc-empty">No approved trainees yet.</p></div>`;
   if(R.dataLoading) return `<div class="card rk">${top}<p class="sc-empty">Opening ${e(title())}…</p></div>`;
-  if(!R.data) return `<div class="card rk">${top}<div class="rk-start"><b>${e(title())}</b> hasn’t been started. Start it with:
+  // (a week that is over drafts its own report: autoDraft)
+  if(!R.data && weekOver()){ setTimeout(autoDraft, 0); return `<div class="card rk">${top}<p class="sc-empty">🤖 Week ${R.week} is over: drafting ${e(title())} from the platform…</p></div>`; }
+  if(!R.data) return `<div class="card rk">${top}<div class="rk-start"><b>${e(title())}</b> hasn’t been started. It drafts itself once the week’s Friday shift is over, or start it now with:
       <div class="rk-acts">${Object.keys(TEMPLATES).map(k => `<button class="btn btn-ghost btn-sm" onclick="FTRanking.start('${k}')">${TEMPLATES[k].label}</button>`).join("")}
         ${R.week > 1 ? `<button class="btn btn-navy btn-sm" onclick="FTRanking.start('last')">↻ Week ${R.week - 1}’s columns</button>` : ""}</div>
       <p class="sc-about">The columns can be changed any time (✎ Columns). Nothing about a trainee is filled in until you type it or ⤓ fill it from the platform.</p></div></div>`;
@@ -452,13 +483,50 @@ function renderRanking(){
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.download()">⬇ Word</button><button class="btn btn-navy btn-sm" onclick="FTRanking.excel()">⬇ Excel</button>
         <button class="btn btn-ghost btn-sm" onclick="FTRanking.share(this)" title="Each trainee sees their own row only: their marks, notes, average and rank">📤 ${R.data.sharedAt ? "Share again" : "Share with the trainees"}</button></span></div>
     ${R.data.sharedAt ? `<p class="rk-shared">📤 Shared with the trainees ${e(new Date(R.data.sharedAt).toLocaleString())}: each sees their own row on 📬 My Feedback and 🏅 My Performance. Changes since then reach them when you share again.</p>` : ""}
-    ${R.edit ? columnsEditor() : ""}${grid()}
+    ${autoBanner()}${R.edit ? columnsEditor() : ""}${grid()}
     <p class="sc-how">Type a score in its cell (Tab or → to the next, Enter or ↓ to the trainee below). A score out of its points gets its mark out of 5 in the grey ÷ 5 column beside it; a column out of 5 is already a mark. The grey cells are worked out (select one to see its formula in the bar): the final average is the average of the row’s marks (empty cells don’t count) and the rank follows it. A score’s note goes in the bar above the sheet (a red corner marks it). ⬇ Excel keeps the formulas; ⬇ Word is the facilitator’s report layout, ranked.</p></div>`;
 }
 
+/* ---------- 🤖 the week's report, drafted by itself ----------
+   Once a batch's week is over (its Friday's shift has ended, weekOver) and nobody has started that week's report, opening it
+   drafts it: last week's columns (Week 1's on the first), the Daily Compliance column in, the Spelling & Typing dates the week's,
+   every empty score ⤓ filled from the platform, and each trainee's Additional Notes ✨ drafted in the facilitator's feedback DNA.
+   It is marked a draft (auto: {at, state, approved: false}) until the trainer, having checked it, ✓ Approves it: only then can it
+   be 📤 shared with the trainees. Opened from 📈 Overall Performance or a trainer's dashboard card too (FTRanking.open). */
+const md = iso => { const [, m, d] = String(iso).split("-"); return `${+m}/${+d}`; };
+async function autoDraft(){
+  const key = R.key; if(!R.batch || R.auto === key) return; R.auto = key;
+  let cols = R.week > 1 ? await prevWeek() : null;
+  if(R.key !== key || R.data) return;
+  cols = (cols || (R.week === 1 ? TEMPLATES.week1.cols() : BASE())).map(c => Object.assign({}, c, {id: uid()}));
+  if(!cols.some(c => c.src === "compliance")) cols.splice(1, 0, COL("Daily Compliance", "", 5, "compliance", "week"));
+  const r = weekRange();
+  // (the week's own dates on the Spelling & Typing column, not last week's)
+  if(r) cols.forEach(c => { if(c.src === "skills") c.sub = `${md(r[0])} to ${md(r[1])}`; });
+  R.data = {batch: R.batch, week: R.week, cols, rows: {}, createdAt: new Date().toISOString(), auto: {at: new Date().toISOString(), state: "filling", approved: false}};
+  save(); rerender();
+  await fillFromPortal();
+  if(R.key !== key) return;
+  R.data.auto.state = "notes"; rerender();
+  // (the AI unavailable: the first trainee's notes fail, and the rest are left for the trainer rather than each waiting on it)
+  for(const p of people()){ if(R.key !== key) return; if(!String((rowOf(p.id).notes) || "").trim() && !(await draftNotes(p.id, true))){ R.data.auto.noNotes = true; break; } }
+  if(R.key !== key) return;
+  R.data.auto.state = "done"; save(); rerender();
+}
+const autoBanner = () => {
+  const a = R.data && R.data.auto; if(!a) return "";
+  if(a.approved) return `<p class="rk-shared">🤖 Drafted automatically ${e(new Date(a.at).toLocaleString())} · ✓ approved ${e(new Date(a.approvedAt).toLocaleString())}.</p>`;
+  const st = a.state === "filling" ? "⤓ filling the scores from the platform…" : a.state === "notes" ? "✨ drafting each trainee’s notes…" : a.noNotes ? "ready for your review · the AI wasn’t available, so the Additional Notes are yours to write (✨ drafts one)" : "ready for your review";
+  return `<div class="rk-auto"><b>🤖 Drafted automatically</b> ${e(new Date(a.at).toLocaleString())}: the week’s columns, every score filled from the platform (⤓) and each trainee’s notes in the facilitator’s voice. <i>${st}</i>
+    <span class="rk-acts">${a.state === "done" ? `<button class="btn btn-navy btn-sm" onclick="FTRanking.approve()">✓ Approve the report</button>` : ""}</span>
+    <small>Check the scores and notes, change what needs changing, then approve it. Only an approved report can be shared with the trainees.</small></div>`;
+};
 const prevWeek = async () => { try{ const v = await sharedGet(keyOf(R.batch, R.week - 1)); return v && Array.isArray(v.cols) ? v.cols : null; }catch(err){ return null; } };
 window.FTRanking = {
-  batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; render(); },
+  batch(b){ R.batch = b; R.key = ""; R.data = null; R.edit = false; R.week = weekNow(); render(); },
+  approve(){ if(!R.data || !R.data.auto) return; R.data.auto.approved = true; R.data.auto.approvedAt = new Date().toISOString(); save(); toast("✓ Approved: you can 📤 share it with the trainees now."); render(); },
+  // opened on a batch's week from elsewhere (📈 Overall Performance, the trainer's dashboard card)
+  open(batch, week){ if(batch) R.batch = batch; if(week){ R.week = Number(week); R.weekSet = true; } R.key = ""; R.data = null; state.adminTab = "ranking"; goto("admin"); },
   week(w){ R.week = Number(w) || 1; R.key = ""; R.data = null; R.edit = false; render(); },
   async start(k){
     let cols = k === "last" ? await prevWeek() : (TEMPLATES[k] || TEMPLATES.blank).cols();
@@ -490,6 +558,7 @@ window.FTRanking = {
   sort(){ R.sort = R.sort === "rank" ? "name" : "rank"; render(); },
   // 📤 each trainee gets their own row of this week (rankshare:<id>, which only they and the trainers read)
   async share(btn){
+    if(R.data && R.data.auto && !R.data.auto.approved){ toast("Approve the drafted report first (✓ Approve the report)."); return; }
     const list = ranked(), of = list.filter(x => x.rank).length;
     if(!of){ toast("Score the trainees first."); return; }
     if(!confirm(`Share ${title()} with the ${list.length} trainee${list.length === 1 ? "" : "s"} of ${R.batch}? Each sees only their own row: marks, notes, average and rank.`)) return;
@@ -539,6 +608,8 @@ ftAdminTab("ranking", "📊 Weekly Ranking", renderRanking);
 .rk-title .rk-acts{margin:0 0 0 auto;}
 .rk-saved{font-size:12px;color:var(--ink-soft);}
 .rk-shared{margin:0;font-size:12.5px;color:#1E7F4F;background:#E7F5EE;border-radius:8px;padding:6px 10px;}
+.rk-auto{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;background:#FFF7ED;border:1px solid #F4B77A;border-radius:10px;padding:8px 12px;}
+.rk-auto small{flex-basis:100%;color:var(--ink-soft);} .rk-auto .rk-acts{margin:0 0 0 auto;}
 .rk-cols{border:1px solid #E3E7F0;border-radius:12px;padding:12px;background:#F8F9FC;}
 .rk-h{margin:0 0 8px;font-weight:800;}
 .rk-h span{font-weight:400;color:var(--ink-soft);font-size:12.5px;}

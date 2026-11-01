@@ -999,7 +999,65 @@ async function runTrackerChecks(env, opts) {
     try { const r = await checkDrive(env, id, D, { criteria, voice }); if (r) done.push(Object.assign({ drive: true }, r)); } catch (e) { /* the next trainee */ }
     try { const r = await checkShots(env, id); if (r) done.push(Object.assign({ tests: true }, r)); } catch (e) { /* the next trainee */ }
   }
+  // ✅ then each approved trainee's day, in one record: what they were to do and what was found (dailyCompliance)
+  const people = o.id ? [`trainee:${o.id}`] : await listAll(env, "trainee:");
+  for (const k of people) {
+    const id = k.slice("trainee:".length);
+    const rec = JSON.parse((await kv.get(k)) || "null");
+    if (!rec || (!o.id && (rec.approved !== true || rec.archived || rec.offboarded))) continue;
+    try { const r = await dailyCompliance(env, id, D); if (r) done.push({ id, compliance: r.pct }); } catch (e) { /* the next trainee */ }
+  }
   return { date: D, checked: done.length, results: done };
+}
+
+/* ✅ A trainee's daily compliance: at the end of every shift (the cron, runTrackerChecks, and an admin's ✅ Check now), what the
+   day asked of them and what was found, kept in trackerreview:<id>.compliance[<date>] = {pct, parts: {tracker, monitor, tests,
+   outputs, eod}, submissions, checkedAt}. Each part is a % (null where the day had nothing to check, e.g. no Drive links yet):
+     • tracker  — the Daily Task Tracker's check for the day (the Daily Notes and the day's output links), its %;
+     • monitor  — the Training Progress Monitoring Sheet's latest check, its %;
+     • tests    — the AM and PM Typing Tests and the Spelling Test, taken on the platform (skills:<id>) or a screenshot in Drive;
+     • outputs  — the day's outputs: links submitted on 📋 Task Tracker, or files saved in their Assessment and Activities Folder that day;
+     • eod      — the day's EOD email, pasted on 📋 Task Tracker (drive:<id>.days[<date>].eod).
+   pct is the average of the parts that have one; submissions counts what the trainee submitted on the platform that day (answer
+   sheets, assessments, transcriptions). 📈 Overall Performance and 📊 Weekly Ranking read it (js/ft-ranking.js). */
+async function dailyCompliance(env, id, D) {
+  const kv = kvOf(env);
+  const get = async (k) => JSON.parse((await kv.get(k)) || "null");
+  const [drive, skills, proc, tr] = await Promise.all([get(`drive:${id}`), get(`skills:${id}`), get(`process:${id}`), get(`transcribe:${id}`)]);
+  const rk = `trackerreview:${id}`, cur = (await get(rk)) || { days: {} };
+  const onD = (t) => !!t && TR.ptDate(new Date(t)) === D;
+  // the tests: the AM and PM typing and the spelling, a make-up counting for the slot it was taken for
+  const slots = {};
+  ((skills || {}).typing || []).forEach((t) => { const [d, sl] = t.makeup ? String(t.makeup).split(" ") : [t.date, t.slot]; if (d === D) slots[sl === "PM" ? "PM" : "AM"] = true; });
+  ((skills || {}).spelling || []).forEach((x) => { const d = x.makeup ? String(x.makeup).split(" ")[0] : x.date; if (d === D) slots.SP = true; });
+  (((cur.shots || {}).files) || []).forEach((f) => { if (f && f.date === D) slots[f.kind === "spelling" ? "SP" : f.slot === "PM" ? "PM" : "AM"] = true; });
+  const tests = { AM: !!slots.AM, PM: !!slots.PM, SP: !!slots.SP };
+  // the day's outputs: links submitted, or files saved in the folder that day
+  const day = ((drive || {}).days || {})[D] || {};
+  let saved = 0, folderError = "";
+  if (drive && drive.folder) { const res = await folderFiles(env, drive.folder); if (res.error) folderError = res.error; else saved = (res.files || []).filter((f) => onD(f.modified || f.created)).length; }
+  const links = (day.links || []).length;
+  // what they submitted on the platform that day
+  const subs = [];
+  Object.entries((proc || {}).sets || {}).forEach(([sid, x]) => { if (x && onD(x.submittedAt)) subs.push("Process Questions: " + sid); });
+  Object.entries((tr || {}).r || {}).forEach(([n, x]) => { if (x && onD(x.submittedAt)) subs.push("Transcription · Recording " + n); });
+  Object.entries(cur.assess || {}).forEach(([doc, x]) => { if (x && onD(x.at)) subs.push("Assessment: " + (x.title || doc)); });
+  const tk = (cur.days || {})[D];
+  const parts = {
+    tracker: tk && typeof tk.pct === "number" ? tk.pct : (drive && drive.tracker ? 0 : null),
+    monitor: drive && drive.monitor && cur.monitor && typeof cur.monitor.pct === "number" ? cur.monitor.pct : (drive && drive.monitor ? 0 : null),
+    tests: Math.round(100 * Object.values(tests).filter(Boolean).length / 3),
+    outputs: links || saved ? 100 : 0,
+    eod: day.eod && String(day.eod.text || "").trim() ? 100 : 0
+  };
+  const vals = Object.values(parts).filter((v) => typeof v === "number");
+  const pct = vals.length ? Math.round(vals.reduce((a, v) => a + v, 0) / vals.length) : null;
+  cur.compliance = cur.compliance || {};
+  cur.compliance[D] = { pct, parts, tests, links, saved, folderError, eodAt: (day.eod || {}).at || "", submissions: subs.slice(0, 30), checkedAt: new Date().toISOString() };
+  // (kept for the training: the last 120 days)
+  const keep = Object.keys(cur.compliance).sort().slice(-120); cur.compliance = Object.fromEntries(keep.map((k) => [k, cur.compliance[k]]));
+  await kv.put(rk, JSON.stringify(cur));
+  return cur.compliance[D];
 }
 
 /* ---------- 🕘 automatic Time In (read by the Training Portal /attendance.html) ----------
@@ -1370,6 +1428,8 @@ export default {
         const critRaw = await kv.get("settings:trackercriteria");
         const r = await checkDrive(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate(), { criteria: (critRaw && (JSON.parse(critRaw).text || "").trim()) || TR.DEFAULT_CRITERIA });
         if (!r) return json({ error: "Save your Google Drive links first.", code: "no-links" }, 400);
+        // (and the day's compliance, with the new checks in: dailyCompliance)
+        try { await dailyCompliance(env, id, b.date && /^\d{4}-\d\d-\d\d$/.test(b.date) ? b.date : TR.ptDate()); } catch (e) { /* the checks above still stand */ }
         if (tok.role !== "a") { const cur = JSON.parse((await kv.get(`trackerreview:${id}`)) || "{}"); cur.selfCheckAt = new Date().toISOString(); await kv.put(`trackerreview:${id}`, JSON.stringify(cur)); }
         return json({ ok: true, result: r, review: JSON.parse((await kv.get(`trackerreview:${id}`)) || "null") });
       }
