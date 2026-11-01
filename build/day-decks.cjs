@@ -31,7 +31,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
   // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
   // (Day 5's Monitoring Sheet slide too: items #10–11 close Reception Part 2, Day 4's s2m, js/ft-day-decks.js LESSON_CARDS[3])
-  5: ["s1", "s2"], 13: ["s2"],
+  5: ["s1", "s2"],
+  // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: Part 1 opens on the Call Listening)
+  13: ["s1", "s2"],
   // (Day 11's Shadowing is off the training: its section is the ✉️ Insurance Email Simulator's slide instead, EDIT[11].s2)
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
@@ -1002,8 +1004,9 @@ const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
 // read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
 // (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
 const PDOC_DIR = "/ft/day7/forms";
-const pdocHtml = ([slug, title, n, dir = PDOC_DIR]) => `<div class="ftdd-pdoc" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
-  `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>` +
+// (the document's name alone on its bar: no page count or new-tab link. big: its pages in one row, as large as the
+// slide allows: Day 7's blank intake forms)
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR], big) => `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
   `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
 // Day 8's naming convention reference (Topic 2, between steps 3 and 4)
@@ -1090,21 +1093,26 @@ const ROWS = {
     // (KEEP: a slide's picture or calls stay on one page with the lines over them, scaled to fit)
     forms: [{id: "forms", pre: KEEP[0], post: KEEP[1], h: "AM: Reference: Accident or Injury Claim Documents and Evidence Checklist", parts: [[null, "<h4>📄 Blank PI Intake Forms"]]},
       {id: "formsb", h: "AM: Reference: Blank PI Intake Forms", parts: [["<h4>📄 Blank PI Intake Forms", "<p>Mock Intake (non-VLF) recording</p>"]], fix: [x => {
-        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each)
+        // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each, with no lead line)
         const shot = /<a class="ftdd-shot"[^\n]*1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF[^\n]*<\/a>\n/;
         if(!shot.test(x)) throw new Error("Day 7's Blank PI Intake Forms are no longer where the build looks for them");
-        return x.replace(shot, () => '<p>Read each form here: the fillable forms are in the CMS.</p>\n' + INTAKE_FORMS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n'));
+        // (and the guide's heading over all five goes: each page opens on its own form's name bar)
+        const head = /<h4>📄 Blank PI Intake Forms[^\n]*<\/h4>\n/;
+        if(!head.test(x)) throw new Error("Day 7's Blank PI Intake Forms heading is no longer where the build looks for it");
+        return x.replace(head, "").replace(shot, () => INTAKE_FORMS.map(f => pdocHtml(f, true)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]},
-      {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
+      // (data-bare: no name bar over the recording, the slide's ribbon names it, and it plays as large as the page allows)
+      // (named without the guide's "(non-VLF)")
+      {id: "formsc", h: "AM: Reference: Mock Intake Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']],
+        fix: [["<p>Mock Intake (non-VLF) recording</p>", "<p>Mock Intake recording</p>"], ['data-title="Mock Intake (non-VLF) recording"', 'data-bare data-title="Mock Intake recording"']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
         fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
       {id: "formse-2", h: "AM: Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]},
       {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
-        // (the Other Intake-Related Documents folder: its documents read on the slide, the folder linked under them)
-        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n') +
-          '<p class="ftdd-pdoc-more">The rest of the folder: <a href="https://drive.google.com/drive/folders/1UrLBiX0ntxzvyxvRkHBhdTevtoP2jLzX?usp=sharing" target="_blank" rel="noopener noreferrer">Other Intake-Related Documents ↗</a></p>\n');
+        // (the Other Intake-Related Documents folder: its documents read on the slide, with no link to the Drive folder)
+        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(f => pdocHtml(f)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]}]
   },
   8: {
@@ -1161,19 +1169,19 @@ const ROWS = {
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
-    // (the evaluation's introduction is one block, read on one page, without the guide's opening line; it ends on the
-    // LOR drafting that follows Activities 1 & 2, pointed at the platform's LOR Drafting tool, not the guide's screenshot
-    // of the Word files)
-    s1: [{id: "s1", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, SLOT(11, "s1-3")]],
-        fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""],
-          ['<hr class="stars">\n', ""],
-          // (the evaluation is answered on the platform, in ✍️ Knowledge Check, js/ft-assess.js "policy-disclosure"; the folder
-          // still holds the Dec Pages its Part I is answered from)
-          ['<p>Thank you.</p>\n<p>Assessment Activities</p>\n', '<div class="ftdd-pq">✍️ <b>Answer the evaluation in Knowledge Check</b>: Part I from the Dec Pages in the Assessment Activities folder below, Part II from your training. Your answers save as you type; then hit 📝 Submit for Grading.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.next()">📄 Open the evaluation →</button></div></div>\n<p>Assessment Activities (the Dec Pages)</p>\n'],
-          ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
+    // (the Policy Disclosure, Claim & Liability Evaluation is off the deck: the Day 11 card's row opens it in ✍️ Knowledge
+    // Check, with its objective, components and reminder at its head, js/ft-assess.js "policy-disclosure" intro. Its two
+    // facilitator's notes, the timing and the answer keys, open the LOR slide for the trainer)
+    s1: [
       // (one slide: the instructions on its first page, its first card opening the LOR Drafting tool, which holds the
       // templates and the case notes, so the guide's links to them are not on it; the reminders on "F/E" on the second)
-      {id: "s1b", h: "AM: LOR Drafting Activity", parts: [[SLOT(11, "s1-3"), null]], fix: [h => {
+      // (its id is the section's, s1: the evaluation that was s1 is off the deck)
+      {id: "s1", h: "AM: LOR Drafting Activity", parts: [[null, null]], fix: [h => {
+        // (the section from its LOR slot on: the evaluation before it is off the deck, its two facilitator's notes kept)
+        const at = h.indexOf(SLOT(11, "s1-3"));
+        if(at < 0 || !h.includes(SLOT(11, "s1-1")) || !h.includes(SLOT(11, "s1-2"))) throw new Error("Day 11's evaluation and its facilitator's notes are no longer where the build looks for them");
+        return SLOT(11, "s1-1") + "\n" + SLOT(11, "s1-2") + "\n" + h.slice(at);
+      }, h => {
         // (and only the reminders on "F/E": not the before-saving checklist or the final-draft list)
         const i = h.indexOf("<p>1P LOR Template</p>"), j = h.indexOf("<p><b>Additional Reminders for Drafting Your LOR:</b></p>\n"),
           k = h.indexOf("<p> <b>Before saving your LOR in your Assessments folder:</b></p>"), end = h.indexOf(SLOT(11, "s1-5"));
@@ -1195,7 +1203,8 @@ const ROWS = {
     // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
     // (the breakout itself is the Call Listening slide's, "Call Listening Session / Breakout Session": its own slide held only the
     // reference files, now off it, so the section is the homework's slide, with the facilitators' notes)
-    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""],
+    // (its stray "Thank you." line is off the slide)
+    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""], ["<p>Thank you.  </p>\n", ""],
         ['<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n',
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },

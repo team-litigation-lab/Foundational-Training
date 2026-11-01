@@ -75,7 +75,16 @@ const FORMS = {
   // Dec Pages of the Assessment Activities folder's zipped file (ref), Part II from the training. Every item is graded as an
   // essay in the facilitator's voice (assess-keys.js "policy-disclosure"): an identification out of 1, an explanation
   // (long) out of 5
-  "policy-disclosure": {title: "Policy Disclosure, Claim & Liability Evaluation", file: "Policy_Disclosure_Claims_Liability_Evaluation", max: 87, parts: [
+  // (intro: the guide's objective, its two components and its reminder, read at the head of the page: they are not on the
+  // Day 11 deck, whose card row opens this page)
+  "policy-disclosure": {title: "Policy Disclosure, Claim & Liability Evaluation", file: "Policy_Disclosure_Claims_Liability_Evaluation", max: 87,
+    intro: `<p><b>Objective:</b> To assess your ability to accurately review, analyze, interpret, and extract relevant insurance policy information from Dec Pages (Declarations Pages), demonstrate an understanding of insurance coverages, fault, negligence, and liability, and apply this knowledge to the claim-handling process, including identifying the essential information and documentation required to open a claim.</p>
+      <p>This evaluation consists of 2 components:</p>
+      <ol class="fa-intro-parts"><li><b>Policy Disclosure</b> (Part I): use the <b>zipped file containing the Dec Page</b> in the <a href="https://drive.google.com/drive/folders/1LX_skojUHS2NbxKMd_lrJvfiXuFZI2bD?usp=sharing" target="_blank" rel="noopener noreferrer">📁 Assessment Activities folder</a> as your source material.</li>
+      <li><b>Claim &amp; Liability Evaluation</b> (Part II): complete this component based on your understanding of the concepts and processes covered during training.</li></ol>
+      <p class="fa-intro-note">💡 <b>Important:</b> Before starting the evaluation, <b>download all required files</b> and make sure you are referring to the correct Dec Page for each Policy Disclosure activity.</p>
+      <p>As soon as you’re done with Activities 1 &amp; 2 of your Claim and Liability Evaluation, please proceed right away to drafting your LORs.</p>`,
+    parts: [
     {kind: "short", h: "Part I – Policy Disclosure · Activity #1: Identification + Short Answer", id: "a", long: [8, 10],
       lead: "Answer each item from the Dec Page named below.", scenario: "Refer to the 3P Commercial Policy Dec Page.", ref: "https://drive.google.com/drive/folders/1LX_skojUHS2NbxKMd_lrJvfiXuFZI2bD?usp=sharing",
       qs: ["Name of the insurance carrier.", "Policy number.", "Policy period.", "Name of insured.", "Listed driver/s.", "Number of insured vehicle/s under this policy.",
@@ -181,7 +190,7 @@ root.FTAssess = {
     const f = FORMS[doc]; if(!f) return "";
     if(!A.rec || A.id !== state.traineeId) load();
     const g = graded(doc);
-    return `<div class="card fp-set fa-form">${f.parts.map(p => partHtml(doc, p)).join("")}
+    return `<div class="card fp-set fa-form">${f.intro ? `<section class="fa-part fa-intro">${f.intro}</section>` : ""}${f.parts.map(p => partHtml(doc, p)).join("")}
       <div class="fa-foot">${g ? `<p class="fa-done">✓ Graded ${e(g.when || "")}${g.pending ? " · your trainer grades the essays" : ""}. Your score is on 🏅 My Performance. You can correct your answers and submit again.</p>` : `<p class="fa-muted">Your answers save as you type.</p>`}
         <button type="button" class="btn btn-primary fa-submit" onclick="FTAssess.submit('${doc}')"${A.sending ? " disabled" : ""}>${A.sending ? "Grading…" : "📝 Submit for Grading"}</button></div>
       <div class="fp-pdf"><p class="fp-pdf-rule"><span>Naming convention:</span> <code>${e(fileName(doc))}</code></p>
@@ -233,6 +242,8 @@ root.FTAssess = {
 
 (function(){ const s = document.createElement("style"); s.id = "ft-assess"; s.textContent = `
 .fa-form{padding:18px 20px;} .fa-part{margin:0 0 22px;} .fa-part h3{margin:0 0 6px;color:var(--navy);font-size:19px;}
+.fa-intro{padding:14px 16px;background:#F4F6FB;border:1px solid #DCE0EA;border-left:5px solid #1E2340;border-radius:10px;} .fa-intro p,.fa-intro li{margin:0 0 8px;color:var(--ink);font-size:16px;font-weight:700;line-height:1.5;} .fa-intro ol{margin:0 0 8px 22px;padding:0;} .fa-intro p:last-child{margin-bottom:0;}
+.fa-intro .fa-intro-note{padding:8px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;}
 .fa-lead{margin:0 0 10px;color:var(--ink);font-size:15px;line-height:1.5;} .fa-scn{margin:0 0 10px;padding:10px 12px;border-left:4px solid var(--orange);background:#FFF7ED;border-radius:8px;font-size:15px;line-height:1.5;}
 .fa-match{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px;align-items:start;}
 @media(max-width:900px){ .fa-match{grid-template-columns:minmax(0,1fr);} }

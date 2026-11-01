@@ -1035,11 +1035,15 @@ function fitCrops(sheet){
     Object.assign(f.style, {width: cw + "px", height: Math.round(h / k) + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
   // a Drive folder's row (ftdd-embed-row): Drive lays its grid out FOLDER_ROW[0] wide (seven files to a row), scaled down to
-  // the box, and the box is one row of files tall
-  sheet.querySelectorAll(".ftdd-embed-row").forEach(em => {
-    const f = em.querySelector("iframe"), w = em.clientWidth, [fw, fh] = FOLDER_ROW;
+  // the box, and the box is one row of files tall. Folders side by side (Day 10's Opening Claims and Checking for Existing
+  // Claims) share the widest one's scale, so their files are drawn the same size and the boxes the same height
+  const rows = [...sheet.querySelectorAll(".ftdd-embed-row")], [fw] = FOLDER_ROW;
+  const top = em => Math.round(em.getBoundingClientRect().top), kOf = em => Math.min(1, em.clientWidth / fw);
+  const shared = em => Math.max(...rows.filter(o => o.clientWidth && Math.abs(top(o) - top(em)) < 4).map(kOf), kOf(em));
+  rows.forEach(em => {
+    const f = em.querySelector("iframe"), w = em.clientWidth, fh = FOLDER_ROW[1];
     if(!f || !w) return;
-    const k = Math.min(1, w / fw);
+    const k = shared(em);
     em.style.height = Math.round(fh * k) + "px";
     Object.assign(f.style, {width: Math.round(w / k) + "px", height: fh + "px", transform: `scale(${k})`, transformOrigin: "0 0", right: "auto", bottom: "auto"});
   });
@@ -1450,8 +1454,9 @@ const LESSON_CARDS = {
       {t: "Opening Claims & Sending LOR", time: "PM", sub: "The videos and the job aid", k: "watch", d: 10, s: "s2"},
       // Part 2 (Day 11): the Policy Disclosure assessment, then LOR drafting; then the ✉️ Insurance Email Simulator (graded, in
       // place of the shadowing: js/ft-claims-email.js) and Day 12, which ends on the recorded shadowing session
-      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages", k: "assessment", d: 11, s: "s1"},
-      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1b", go: "lor"},
+      // (the evaluation is off the deck: its row opens it in ✍️ Knowledge Check, the way back the LOR Drafting Activity)
+      {t: "Policy Disclosure, Claim & Liability Evaluation", time: "AM", sub: "Assessment activities 1 & 2, from the Dec Pages · in ✍️ Knowledge Check", k: "assessment", run: "FTDayDecks.assessDoc(11, 7, 'policy-disclosure', 's1')", day: 11},
+      {t: "LOR Drafting Activity", sub: "The 1P and 3P letters · instructions & reminders, in the LOR Drafting tool", k: "interactive", d: 11, s: "s1", go: "lor"},
       {t: "Insurance Email Simulator", time: "PM", sub: "3 cases: send the LOR, request the Dec Pages & claim info, get the claim number from the adjuster · graded", k: "interactive", d: 11, s: "s2"},
       {t: "Tutorial Demo Recording", time: "AM", sub: "Saving LORs to SA and sending them to the 1P & 3P insurers", k: "watch", d: 12, s: "s1"},
       {t: "Adding 1P and 3P Insurance Information, Tools & Naming Convention", sub: "The updated SA steps for your process guide · Smart Advocate, Notepad, Nitro Pro · the LOR file names", k: "read", d: 12, s: "s1b"},
@@ -1465,7 +1470,7 @@ const LESSON_CARDS = {
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
-      {t: "Buffer Time for the LOR Drafting Demo", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
+      // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: build/day-decks.cjs SKIP[13])
       {t: "Call Listening / Breakout Session", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
@@ -1505,8 +1510,8 @@ const ASSESS_NEXT = {2: {
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
   s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
-  // (Day 11's Policy Disclosure, Claim & Liability Evaluation, answered on the platform: js/ft-assess.js "policy-disclosure")
-  11: {s1: {l: 7, doc: "policy-disclosure", t: "Policy Disclosure, Claim & Liability Evaluation"}}};
+  // (Day 11's Policy Disclosure, Claim & Liability Evaluation is off the deck: its card row opens it, assessDoc below)
+};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
@@ -1620,6 +1625,16 @@ function openStop(n, run){
 }
 // 📄 an assessment opened from a slide (Day 2's, under each video): ✍️ Knowledge Check shows only that assessment, and
 // its way back is to this slide's page that holds `at` (a selector: Day 2's reference sheet), named `h`
+// 📄 an assessment opened straight from a day card's row (Day 11's evaluation, js/ft-assess.js): its own Knowledge Check
+// page, the assessment alone, whose way back is the deck's slide `back`
+function assessDoc(day, l, doc, back){
+  loadDecks().then(() => {
+    const d = decks() && decks()[day], s = d ? slidesOf(d).find(x => x.id === back) : null;
+    const h = String((s && s.h) || "").replace(/^(AM|PM|Entire Day)\s*:\s*/i, "");
+    try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: Number(day), id: back || "", h, l: Number(l), sheet: "pq", assess: doc, only: true})); }catch(err){}
+    if(root.FTProcess) FTProcess.openLesson(l);
+  });
+}
 function toAssess(l, doc, at, h){
   try{ sessionStorage.setItem("ftKCBack", JSON.stringify({day: DD.day, id: (slidesOf(decks()[DD.day])[DD.i] || {}).id || "", h, l: Number(l), sheet: "pq", assess: doc, at})); }catch(e){}
   if(root.FTProcess) FTProcess.openLesson(l);
@@ -2062,7 +2077,7 @@ root.FTDayDecks = {open, go, next: nextKC,
     if(on){ (doc.exitFullscreen || doc.webkitExitFullscreen || (() => {})).call(doc); return; }
     const req = em.requestFullscreen || em.webkitRequestFullscreen; if(req) req.call(em);
   },
-  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
+  refTab(k){ DD.refTab = Number(k) || 0; document.querySelectorAll(".ftdd-embed-terms").forEach(em => { em.innerHTML = refTermsHtml(DD.refTab); }); }, toKC, toAssess, assessDoc, to: i => { if(!deckMayGo(DD.day, Number(i) || 0)) return; DD.i = Number(i) || 0; DD.page = 0; DD.pages = 1; render(); },
   split(){ DD.split = !DD.split; setPref("split", DD.split); DD.page = 0; DD.pages = 1; render(); },
   // 🧑‍🏫 the facilitator's notes drawer, and the trainer's side panel shown or hidden (the slide keeps its page: its size is
   // unchanged by the drawer, and the panel only gives it its width back, so it is dealt again)
@@ -2635,6 +2650,8 @@ main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw) > *{flex:0 0 auto;}
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
+/* (selected text on the navy headings: no pale yellow selection under the white text) */
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5)::selection, main.main-ftdd .ftdd-sheet :is(h3,h4,h5) *::selection{background:rgba(232,89,12,.55);color:#fff;}
 main.main-ftdd .ftdd-sheet .ftdd-step{padding:10px 14px;margin:10px 0;border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36px;font-size:16px;}
 main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
@@ -3086,6 +3103,7 @@ main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard small{font-size:16px;col
 .ft-body .ftdd-listen button.ftdd-acard:hover{background:#2A3160;border-color:#E8590C;}
 .ftdd-listen .ftdd-acard-ic{font-size:30px;}
 .ft-body .ftdd-listen .ftdd-acard b{font:800 20px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+main.main-ftdd .ftdd-sheet .ftdd-listen button.ftdd-acard b{color:#fff !important;}
 .ft-body .ftdd-listen .ftdd-acard-tag{font:600 15px/1.3 'Inter',sans-serif;color:#C9CFE6;}
 .ft-body .ftdd-listen .ftdd-acard small{font:800 16px/1.2 'Inter',sans-serif;color:#FDBA74;}
 @media(max-width:1000px){ .ftdd-listen .ftdd-acards{grid-template-columns:repeat(2,minmax(0,1fr));} }
@@ -3191,6 +3209,11 @@ main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table th{background:#1E2340;c
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td{color:#0B0D1A;border-color:#C9CEE0;}
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td:first-child{font-weight:800;color:#141A3C;background:#F4F6FB;}
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table tr:nth-child(odd) td:not(:first-child){background:#FAFBFE;}
+/* (Day 7's carriers: the lead, the headings and the carrier names in bold, over the sheet's own text rules) */
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers > p, html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers > p *{font-weight:800 !important;color:#0B0D1A !important;}
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table th{background:#1E2340 !important;color:#fff !important;font-weight:800 !important;}
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:first-child, html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:first-child *{font-weight:800 !important;}
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:nth-child(3){font-weight:700 !important;}
 /* Day 7's Accident or Injury Claim Documents and Evidence Checklist, on the slide as cards (build/days/day07.js): a card
    for each kind of document, its name white on navy over the documents to ask for, each with an empty box to tick */
 main.main-ftdd .ftdd-sheet:has(.ftdd-evl){justify-content:flex-start !important;}
@@ -3223,6 +3246,9 @@ main.main-ftdd .ftdd-sheet .ftdd-pdoc-h a.ftdd-pdoc-tab{margin-left:auto;font:70
 .ftdd-sheet a.ftdd-pdoc-pg:hover img{border-color:#E8590C;box-shadow:0 4px 14px rgba(232,89,12,.30);}
 main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font:700 13px/1.2 'Inter',sans-serif;color:#262B45 !important;}
 main.main-ftdd .ftdd-sheet p.ftdd-pdoc-more{font-size:16px !important;margin-top:8px;}
+/* (Day 7's blank intake forms, .ftdd-pdoc-big: a form's pages in one row, each as wide as the row allows and as tall as the slide's room) */
+.ftdd-sheet .ftdd-pdoc-big .ftdd-pdoc-pages, .ftdd-sheet .ftdd-pdoc-big[data-pages] .ftdd-pdoc-pages{grid-template-columns:repeat(var(--n),minmax(0,1fr));justify-content:stretch;gap:10px 12px;}
+.ftdd-sheet .ftdd-pdoc-big a.ftdd-pdoc-pg img{width:100%;height:auto;max-height:calc(var(--ftdd-room, 70vh) - 90px);min-height:0;}
 /* a set of video cards (data-card): the card is the button, so no "▶ Watch" under the name; two videos (Day 8's Topic 1)
    share the slide's width, so their previews are large */
 .ft-body .ftdd-vcard .ftdd-tile-t small{display:none;}
@@ -3290,5 +3316,24 @@ body.one-screen main:has(#lessonSlideWrap) > a.back-link:hover::before, .ftdd-mi
   main.main-dash:has(.ftdd-daycell) .dash-side-inner b, main.main-dash:has(.ftdd-daycell) .dash-side-inner strong{font-size:17px !important;line-height:1.1 !important;}
   main.main-dash:has(.ftdd-daycell) .dash-side-inner small, main.main-dash:has(.ftdd-daycell) .dash-side-inner span{font-size:9.5px !important;}
 }
+/* (every slide's body text bold, on every day: the Days 6–15 and exercise rules that set it at 600 give way; the heading
+   bars and the lines set bolder keep their own weight) */
+main.main-ftdd .ftdd-sheet :is(p,li,td,dd,dt,.ftdd-step-t,.ftdd-pq,.ftis-about):not(.ftdd-hbar):not(.ftdd-cix-h):not(.ftis-lf-h){font-weight:700 !important;}
+/* (readable everywhere on a slide: no small or grey labels under the body text, measured over every deck. The Day 5
+   event editor, .ftdd-ev-*, keeps Google Calendar's own type: it is drawn as the screen the trainee works in) */
+main.main-ftdd .ftdd-divider p.ftdd-dv-k{font-size:15px !important;color:#B23C0A !important;}
+main.main-ftdd .ftdd-sheet .ftdd-tile-t small{font-size:14.5px !important;font-weight:700 !important;}
+main.main-ftdd .ftdd-sheet th:not([class*="ftdd-ev"]){font-weight:700 !important;}
+main.main-ftdd .ftdd-sheet small:not([class*="ftdd-ev"]){font-weight:700 !important;}
+main.main-ftdd .ftdd-sheet .ftdd-pic-len{font-size:15px;font-weight:700;color:#E6E9F5;}
+main.main-ftdd .ftdd-sheet a.ftdd-pdoc-pg span{font-size:15px !important;}
+main.main-ftdd .ftdd-sheet .ftdd-sop-shots figcaption{font-size:15px;}
+main.main-ftdd .ftdd-sheet .ftdd-evl-i.ftdd-evl-sub{font-weight:700;}
+main.main-ftdd .ftdd-sheet .ftdd-lor-tag{background:#C2410C;}
+main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link, main.main-ftdd .ftdd-sheet.ftdd-sa p.ftdd-sa-link a{color:#B23C0A !important;}
+main.main-ftdd .ftdd-sheet .ftdt .ftdt-tag{font-size:13.5px;color:#3A4060;}
+main.main-ftdd .ftdd-sheet .ftdd-topic{font-size:15.5px;}
+main.main-ftdd .ftdd-sheet a.ftdd-doctile small{font-size:14.5px !important;}
+main.main-ftdd .ftdd-sheet a.ftdd-tile.k-file .ftdd-tile-t small{color:#9A4A0C !important;}
 `; document.head.appendChild(st); })();
 })(typeof globalThis !== "undefined" ? globalThis : this);
