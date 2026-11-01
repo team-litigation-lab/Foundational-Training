@@ -1101,7 +1101,10 @@ const ROWS = {
         if(!head.test(x)) throw new Error("Day 7's Blank PI Intake Forms heading is no longer where the build looks for it");
         return x.replace(head, "").replace(shot, () => INTAKE_FORMS.map(f => pdocHtml(f, true)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]},
-      {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
+      // (data-bare: no name bar over the recording, the slide's ribbon names it, and it plays as large as the page allows)
+      // (named without the guide's "(non-VLF)")
+      {id: "formsc", h: "AM: Reference: Mock Intake Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']],
+        fix: [["<p>Mock Intake (non-VLF) recording</p>", "<p>Mock Intake recording</p>"], ['data-title="Mock Intake (non-VLF) recording"', 'data-bare data-title="Mock Intake recording"']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
         fix: [["<h4>More sample intake calls</h4>\n<p>Four more practice recordings,", "<h4>Sample intake calls</h4>\n<p>Four practice recordings,"]]},
       {id: "formse-2", h: "AM: Sample Intake Calls: Agitated Dog Bite (1P) & Medical Malpractice Fees", parts: [['<div class="ftis-calls" data-calls="3,4">', null]]},
