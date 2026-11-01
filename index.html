@@ -2582,9 +2582,10 @@ body:not(.ft-fit) .lesson-stage:not(:fullscreen) .topic-separator{color:var(--or
   --surface-blur:saturate(118%) blur(10px);
 }
 /* The photo was at .20, which the opaque cards then covered almost entirely.
-   At .40 it reads through the glass without the text on top of it losing
-   contrast — the page's own measurement, not a guess. */
-body::before{opacity:.40;}
+   At .40 it read through the glass without the text on top of it losing
+   contrast; raised to .50 so it shows a little more (the text sits on the
+   glass cards, which keep it readable). */
+body::before{opacity:.50;}
 .module-card,
 .card{
   background:var(--surface-glass);
