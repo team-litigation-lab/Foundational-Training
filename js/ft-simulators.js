@@ -194,10 +194,7 @@ function renderSimulators(){
   if(isTrainee()) loadDone();
   const items = labItems();
   const any = [];
-  if(typeof window.ftCalPracticeCard === "function" && toolOn("calpractice")) any.push(...mark(ftCalPracticeCard(), {days: [], status: "todo", type: "calendar"}));
-  any.push(...mark(`<div class="card fts-card"><div class="fts-kicker">Any day</div><h3>📚 LSH Knowledge Base</h3>
-        <p class="fts-note">SOPs, guides and training videos, searchable, in one place. It opens signed in.</p>
-        <div class="fts-tool-act"><a class="btn btn-navy btn-sm" href="https://lsh-knowledge-base.legalsupporthelp.workers.dev/" target="_blank" rel="noopener">Open the Knowledge Base ↗</a></div></div>`, {days: [], status: "todo", type: "any"}));
+  // (only scored work is on the Practice Lab: no 🧪 Calendar Practice (VA Practice Only) and no 📚 Knowledge Base card)
   // by the first day a card is worked on (Reception's Days 4–5 is under Day 4); a card the trainer can't place goes to Any day
   const byDay = {};
   items.forEach(x => { const d = x.days.length ? Math.min(...x.days) : 0; if(!d){ any.push(x); return; } (byDay[d] = byDay[d] || []).push(x); });

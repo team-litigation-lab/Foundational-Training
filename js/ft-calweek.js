@@ -160,6 +160,10 @@ function make(cfg){
 }
 make({view: "calweek", api: "/api/calweek/", week: C.WEEK, global: "FTCalWeek", card: "ftCalWeekCard", icon: "📅",
   kicker: "Days 5–6 · next week’s calendar", note: `Book ${C.WEEK.tasks.length} tasks on ${C.WEEK.attorney}’s calendar for next week, under the attorney’s rules. It follows the Attorney Calendar Management Activity (Day 5).`});
+// 🏅 Scorecard (js/ft-program.js): the submitted calendar's check, as calweek-api.js saved it. Practice is never on it.
+window.ftCalWeekItems = ctx => { const r = ctx.rec["calweek:"]; if(!r || !r.submittedAt || r.pct == null || !isFinite(Number(r.pct))) return [];
+  return [{name: "📅 Standard Training - Calendaring Activity", at: r.submittedAt, pct: Number(r.pct),
+    note: `${Number(r.done) || 0} of ${C.WEEK.tasks.length} tasks booked right · submitted ${new Date(String(r.submittedAt)).toLocaleDateString()}`}]; };
 // 🧪 VA Practice Only: the clone for practice (Week 2 · Attorney Chen), never graded or seen by the trainer
 make({view: "calpractice", api: "/api/calpractice/", week: C.PRACTICE, global: "FTCalPractice", card: "ftCalPracticeCard", icon: "🧪", practice: true,
   kicker: "Any time · VA Practice Only", note: `Practise booking ${C.PRACTICE.tasks.length} tasks on ${C.PRACTICE.attorney}’s calendar for next week. Nothing here is graded or sent to your trainer, and you can start over any time.`});

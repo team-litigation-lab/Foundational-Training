@@ -83,7 +83,9 @@ async function workerChecks({ perfect, practice }) {
   if (saved.body.placed[0].at.monday !== now.body.next.monday) fail('the saved bookings are not placed on next week');
   // calweek:<id> is the controller's alone
   if ((await call('/api/storage/set', { key: 'calweek:ana-cruz--b1', value: JSON.stringify({ events: [] }) }, t)).status === 200) fail('a trainee wrote calweek:<id> around the controller');
-  if ((await call('/api/storage/get', { key: 'calweek:ana-cruz--b1' }, t)).status === 200) fail('the storage API reads calweek:<id> for a trainee');
+  // (the trainee reads their own, for their own 🏅 Scorecard row, and no one else's)
+  if ((await call('/api/storage/get', { key: 'calweek:ana-cruz--b1' }, t)).status !== 200) fail('a trainee cannot read their own calweek:<id> for their scorecard');
+  if ((await call('/api/storage/get', { key: 'calweek:ben-diaz--b1' }, t)).status === 200) fail('the storage API reads another trainee\'s calweek:<id>');
   if ((await call('/api/calweek/list', { ids: ['ana-cruz--b1'] }, t)).status !== 403) fail('a trainee lists everyone\'s calendars');
   const at = (await call('/api/auth/admin', { passphrase: 'ci-pass' })).body.token;
   const list = await call('/api/calweek/list', { ids: ['ana-cruz--b1', 'nobody--b1'] }, at);
@@ -142,7 +144,8 @@ async function workerChecks({ perfect, practice }) {
   if (!lab.some(t => /Standard Training - Appointment Setting Mock Calls/.test(t))) fail(`the Practice Session isn't renamed: ${JSON.stringify(lab)}`);
   if (lab.some(t => /Calendaring Practice Lab/.test(t))) fail('the old name is still on the Practice Lab');
   if (!lab.some(t => /Standard Training - Calendaring Activity/.test(t))) fail(`no Calendaring Activity card: ${JSON.stringify(lab)}`);
-  if (!lab.some(t => /VA Practice Only/.test(t))) fail(`no VA Practice Only card: ${JSON.stringify(lab)}`);
+  // (only scored work on the Practice Lab: the unscored 🧪 Calendar Practice (VA Practice Only) isn't there)
+  if (lab.some(t => /VA Practice Only/.test(t))) fail(`the unscored VA Practice Only card is on the Practice Lab: ${JSON.stringify(lab)}`);
 
   // the page opens on this week, from the server's clock
   await page.evaluate(() => goto('calweek')); await page.waitForTimeout(1200);
