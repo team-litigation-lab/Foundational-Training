@@ -1,7 +1,7 @@
 const DAY2 = {
   id: 2,
-  title: "VA Essentials",
-  heading: "DAY 2 VA Essentials",
+  title: "Law Firm Communication",
+  heading: "DAY 2 Law Firm Communication",
   sections: [
     {
       "id": "s1",

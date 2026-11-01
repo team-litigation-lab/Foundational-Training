@@ -121,7 +121,7 @@ const TESTS = [
 // Paste into Hubstaff one by one, as each session comes up (Day 1: Hubstaff To-Do Set-up).
 const TODOS = [
   "Classroom Discussion: Virtual Assistant Essentials - Day 1",
-  "Classroom Discussion: Virtual Assistant Essentials - Day 2",
+  "Classroom Discussion: Law Firm Communication",
   "Classroom Discussion: Reception Training Day 1",
   "Classroom Discussion: Reception Training Day 2",
   "Classroom Discussion: Reception Training Day 3",

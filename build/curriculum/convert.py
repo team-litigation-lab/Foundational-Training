@@ -417,6 +417,10 @@ TEXT_FIXES = [
     ("Buffer Time (1–2 hrs) for LOR Drafting Demo", "Buffer Time (1–2 hrs) for the Saving and Sending 1P &amp; 3P LORs Demo"),
     (" using Filevine:", " (Filevine, for reference only; use SmartAdvocate):"),
     ("1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=dri</a>", "1fbrRvkeisnNF7EfVxCKTGtEodR7MY0A8/view?usp=drive_link</a>"),
+    # Day 2 is Law Firm Communication everywhere (its deck, lesson, card, To-Do and monitoring line), not the guide's
+    # "VA Essentials — Part 2"
+    ('"heading": "DAY 2: VA Essentials — Part 2"', '"heading": "DAY 2: Law Firm Communication"'),
+    ('title: "VA Essentials",\n  heading: "DAY 2 VA Essentials"', 'title: "Law Firm Communication",\n  heading: "DAY 2 Law Firm Communication"'),
 ]
 def apply_fixes(path):
     body = open(path, encoding="utf8").read()
