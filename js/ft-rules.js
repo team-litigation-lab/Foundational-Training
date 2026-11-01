@@ -34,7 +34,7 @@ const CAMERA = [
     "No sleepwear, sleeveless tops, tank tops, caps, or clothes with large prints, logos or slogans."]},
   {h:"🖼 Framing", rows:["Your camera at eye level, your head and shoulders in the middle of the frame.",
     "Light in front of you, not behind you, so your face is clearly seen.",
-    "A plain, tidy background, or a professional virtual background."]}
+    "Your LSH standard backdrop, sent through Discord by your trainer."]}
 ];
 
 // Auxes: where and what to type in Discord.
@@ -383,7 +383,7 @@ const SLIDES = [
     <div class="ftr-stakes"><b>🎯 Training Is Not the End Goal: You Need to Pass</b>
       <p>Training is your chance to show what you can do, so give it your best every day. Your progress is reviewed each week, and those reviews help decide whether you continue on to your project.</p></div>
     ${rule("💪 Training Is Hard on Purpose, and You Can Overcome It", "The program is intentionally challenging. It prepares you for future client tasks and gives you a feel for the challenges VAs face working in a law firm.")}
-    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure and how well you manage your time.")}
+    ${rule("🤝 Your Trainers Are Your First Clients", "Training is a simulation of working with a client. For all intents and purposes, your trainers are your first clients: they see if you can really thrive in the legal VA environment. It tests your resilience, how you handle pressure, how well you manage your time, the quality of your output and your progression.")}
 `],
   ["generalist", "You’re a General VA, Ready for Any Role", ()=>`
     <div class="ftr-goal"><b>🧭 Tagged as General VAs, but You May Be Assigned to Different Roles</b>
