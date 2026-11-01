@@ -266,11 +266,10 @@ const MON_PARTS = [
     "It is checked at 5:00 PM ET.",
     "Your trainer adds feedback."]}
 ];
-// ⬇ the Monitoring Sheet's own file (Drive: its download, and the file to look at first)
+// ⬇ the Monitoring Sheet's own file (its Drive download)
 function monGet(){
   const d = window.FT_MONITOR_DOC, m = d && String(d.view || "").match(/\/d\/([a-zA-Z0-9_-]{20,})/); if(!m) return "";
-  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="https://drive.google.com/uc?export=download&id=${esc(m[1])}" target="_blank" rel="noopener noreferrer">⬇ Download the Monitoring Sheet</a>
-    <a class="btn btn-ghost btn-sm" href="${esc(d.view)}" target="_blank" rel="noopener noreferrer">Open it ↗</a></div>`;
+  return `<div class="ftr-links ftr-mon"><a class="btn btn-navy btn-sm" href="https://drive.google.com/uc?export=download&id=${esc(m[1])}" target="_blank" rel="noopener noreferrer">⬇ Download the Monitoring Sheet</a></div>`;
 }
 // On a phone the picture keeps its size and scrolls sideways in its box.
 const fig = svg => `<figure class="ftr-fig"><div class="ftr-fig-scroll">${svg}</div><figcaption class="ftr-swipe">↔ Swipe sideways to see the whole picture.</figcaption></figure>`;
