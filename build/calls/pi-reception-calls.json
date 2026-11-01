@@ -12,7 +12,7 @@
    "about": "An existing client calls from the side of a busy road, with trucks and horns behind him.",
    "va": "Rina",
    "file": "/ft/day3/audio/pi-call-1.mp3",
-   "secs": 172,
+   "secs": 161,
    "key": [
     {
      "k": "Caller",
@@ -75,7 +75,7 @@
     },
     {
      "who": "Rina (VA)",
-     "text": "I understand. So the tow yard is asking for about six hundred dollars in storage fees, and the property damage adjuster left you a message. Is that right?"
+     "text": "I'm sorry, Mr. Bell, that's a lot to deal with on top of the accident. So the tow yard is asking for about six hundred dollars in storage fees, and the property damage adjuster left you a message. Is that right?"
     },
     {
      "who": "Marcus Bell",
@@ -146,7 +146,7 @@
    "about": "A potential new client calls from her car on the interstate; the line breaks up, then drops.",
    "va": "Paolo",
    "file": "/ft/day3/audio/pi-call-2.mp3",
-   "secs": 151,
+   "secs": 141,
    "key": [
     {
      "k": "Caller",
@@ -284,7 +284,7 @@
    "about": "A Spanish-speaking client with very little English calls about a letter she received.",
    "va": "Rina",
    "file": "/ft/day3/audio/pi-call-3.mp3",
-   "secs": 167,
+   "secs": 142,
    "key": [
     {
      "k": "Caller",
@@ -367,7 +367,7 @@
     },
     {
      "who": "Rina (VA)",
-     "text": "I understand. A bill from the hospital. Please wait one moment, Ms. Delgado. One moment. I will get Mara, she speaks Spanish."
+     "text": "I understand. I'm sorry, I know a bill is scary. A bill from the hospital. Please wait one moment, Ms. Delgado. One moment. I will get Mara, she speaks Spanish."
     },
     {
      "who": "Rosa Delgado",
@@ -418,7 +418,7 @@
    "about": "A provider's billing office calls on a speakerphone in a big room: an echo, a faint voice, a lot of numbers.",
    "va": "Paolo",
    "file": "/ft/day3/audio/pi-call-4.mp3",
-   "secs": 130,
+   "secs": 126,
    "key": [
     {
      "k": "Caller",
@@ -481,7 +481,7 @@
     },
     {
      "who": "Paolo (VA)",
-     "text": "Understood. A signed copy of the letter of protection, and the current balance is four thousand, eight hundred fifty dollars. I'm not able to discuss the details of a file on this call, but I'll pass this to our records coordinator, Devin Shaw, who handles letters of protection and balances. Where should the letter be sent?"
+     "text": "Understood. Let me make sure I have it right: a signed copy of the letter of protection, and the current balance is four thousand, eight hundred fifty dollars. I'm not able to discuss the details of a file on this call, but I'll pass this to our records coordinator, Devin Shaw, who handles letters of protection and balances. Where should the letter be sent?"
     },
     {
      "who": "Janelle Ortiz",
@@ -537,7 +537,7 @@
    "about": "A third-party adjuster calls from a loud call centre, talks fast, and pushes for details about the client.",
    "va": "Rina",
    "file": "/ft/day3/audio/pi-call-5.mp3",
-   "secs": 113,
+   "secs": 110,
    "key": [
     {
      "k": "Caller",
