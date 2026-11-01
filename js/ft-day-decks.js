@@ -185,6 +185,8 @@ function kindOf(s, html){
   if(/homework/i.test(h)) return {ic: "🏠", label: "Homework"};
   // (Day 3's Frontline Management: its decision trees and SOP are to listen and do by, not a discussion)
   if(/^Frontline Management/i.test(h)) return {ic: "🎧", label: "Listen & Do"};
+  // (Day 10's sample recordings of opening claims are listened to, with the documents beside them)
+  if(/^(AM: |PM: )?Sample Recordings/i.test(h)) return {ic: "🎧", label: "Listen & Do"};
   if(/discussion|shadowing/i.test(h)) return {ic: "💬", label: "Classroom Activity"};
   if(/k-video|ftdd-inline is-video/.test(html)) return {ic: "🎬", label: "Watch & Do"};
   // Day 2's Common Terms Used & Auto Liability Insurance: its two videos play on the slide (build/day-decks.cjs TRIM[2].s2)
@@ -1501,7 +1503,9 @@ const ASSESS_NEXT = {2: {
   s2: {l: 2, doc: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw", t: "Common Terms Used – Assessment", back: "s2r"},
   // (next: what its way back calls the slide it goes to, when that slide opens on something else: the readings open on
   // the 📒 Monitoring Sheet update and its 📤 Submit)
-  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}}};
+  s2l: {l: 2, doc: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C", t: "Auto Liability Insurance – Assessment", next: "Update Monitoring Sheet"}},
+  // (Day 11's Policy Disclosure, Claim & Liability Evaluation, answered on the platform: js/ft-assess.js "policy-disclosure")
+  11: {s1: {l: 7, doc: "policy-disclosure", t: "Policy Disclosure, Claim & Liability Evaluation"}}};
 const asOf = s => s && (ASSESS_NEXT[DD.day] || {})[s.id];
 function kcNext(s){
   const a = asOf(s);
@@ -1757,7 +1761,7 @@ function dayCard(n, ex){
         <p class="ftlc-fh">Today’s focus</p>
         <p class="ftlc-focus-t">Focus on ${e(first ? c.focus : DAY_FOCUS[n] || c.focus)}</p>
         ${DAY_OBJECTIVE[n] ? `<p class="ftlc-h2">🎯 Objective</p><p class="ftlc-obj">${e(DAY_OBJECTIVE[n])}</p>` : ""}
-        ${(t => t && t.length ? `<p class="ftlc-h2">Activity instructions &amp; tools</p><ul>${t.map(x => `<li>${tip(x)}</li>`).join("")}</ul>` : "")((c.dayTools || {})[n] || c.tools)}
+        ${""/* (no Activity instructions & tools on a day card: the slides carry them) */}
         ${first && c.takeaways.length ? `<p class="ftlc-h2">Process questions / key takeaways</p><ul class="ftlc-tk">${c.takeaways.map(x => `<li>${e(x)}</li>`).join("")}</ul>` : ""}
         ${""/* a lesson's Process Questions file: its naming convention is on ✍️ Knowledge Check, beside 📄 Save PDF to my Folder, not on the deck */}
         ${first && !hasPQ(c.lesson) ? `<div class="ftlc-file"><p><b>File name:</b> ${e(c.file)}</p><p><b>Submit to:</b> ${e(c.submit || SUBMIT)}</p></div>` : ""}
@@ -2541,6 +2545,10 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (Day 10's two recording folders side by side, the first with its six recordings wider: one page with the documents) */
+.ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
+.ft-body .ftdd-fold2 > *{margin:0 !important;min-width:0;}
+.ft-body .ftdd-fold2 .ftdd-embed{height:240px !important;}   /* (one height for both: a row of the folder's recordings, named) */
 /* (Day 11's LOR Drafting instructions: a card each, four to a row, bigger and bold) */
 .ft-body .ftdd-lor-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch;margin:0;}
 .ftdd-sheet .ftdd-lor-cards .ftdd-card4{padding-bottom:8px;} .ftdd-sheet .ftdd-lor-cards .ftdd-pq-go{margin-top:6px;text-align:center;}

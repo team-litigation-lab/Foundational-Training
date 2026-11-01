@@ -395,13 +395,17 @@ function moduleRow(lesson){
 // order they follow their videos on the day's slide; open whether or not the lesson's questions are yet
 const ASSESSMENTS = {2: [
   {t: "Common Terms Used – Assessment", id: "14sz5f3HTQKmryc7Upvlc6qua008rPnmw"},
-  {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"}]};
+  {t: "Auto Liability Insurance – Assessment", id: "11K7q6M8-mbtOU9OYA6wGe-vAKU6HKq6C"}],
+  // (Day 11's, answered on the platform: js/ft-assess.js)
+  7: [{t: "Policy Disclosure, Claim & Liability Evaluation", id: "policy-disclosure"}]};
 function assessCard(lesson){
   // (opened from the assessment's own link on the slide, FTDayDecks.toAssess: that one only)
   let back = null; try{ back = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); }catch(err){}
   const xs = (ASSESSMENTS[lesson] || []).filter(x => !(back && back.assess && Number(back.l) === Number(lesson)) || x.id === back.assess); if(!xs.length) return "";
-  return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">Answer each in its document, then upload it to your Assessments/Activities subfolder</span></div>
-    <div class="fp-body">${xs.map(x => `<div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
+  // (one answered on the platform, js/ft-assess.js: a button to its own page, FTProcess.openAssess)
+  const here = x => window.FTAssess && FTAssess.has(x.id);
+  return `<div class="card fp-set fp-assess"><div class="fp-head"><b>📄 Assessments</b><span class="fp-count">${xs.every(here) ? "Answer each on its own page, then 📝 Submit for Grading" : "Answer each in its document, then upload it to your Assessments/Activities subfolder"}</span></div>
+    <div class="fp-body">${xs.map(x => here(x) ? `<div class="fp-assess-h"><b>${e(x.t)}</b><button class="btn btn-navy btn-sm" type="button" onclick="FTProcess.openAssess(${Number(lesson)}, '${e(x.id)}')">📄 Open the assessment →</button></div>` : `<div class="fp-assess-h"><b>${e(x.t)}</b><a class="btn btn-ghost btn-sm" href="https://docs.google.com/document/d/${x.id}/edit" target="_blank" rel="noopener noreferrer">Open ↗</a></div>
       <div class="fp-assess-doc"><iframe src="https://docs.google.com/document/d/${x.id}/preview" title="${e(x.t)}" loading="lazy"></iframe></div>`).join("")}</div></div>`;
 }
 
@@ -462,6 +466,11 @@ window.FTProcess = {
   backToClass(){
     let b = null; try{ b = JSON.parse(sessionStorage.getItem("ftKCBack") || "null"); sessionStorage.removeItem("ftKCBack"); }catch(err){}
     if(b && b.day && window.FTDayDecks) FTDayDecks.slide(Number(b.day), String(b.id || ""), "", b.at || ""); else goto("process");
+  },
+  // an on-platform assessment opened from its lesson's Knowledge Check: its own page, as from the deck (with no way back to a deck)
+  openAssess(lesson, doc){
+    try{ sessionStorage.setItem("ftKCBack", JSON.stringify({l: Number(lesson), sheet: "pq", assess: String(doc), only: true})); }catch(err){}
+    goto("process", Number(lesson));
   },
   openLesson(lesson){
     const l = Number(lesson);

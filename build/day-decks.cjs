@@ -1134,7 +1134,14 @@ const ROWS = {
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]], fix: [D10_SHARE]},
       {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
-        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"]]}]
+        fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"],
+          // (the two recording folders named by what they hold: folder 1 opening claims, folder 2 checking for existing claims)
+          ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],
+          ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 2)"', 'data-title="Checking for Existing Claims"'],
+          // (and side by side, one block, so the recordings and the documents are one page: ftdd-fold2)
+          h => h.replace(/(<p><a class="viewer-link" data-embed[^\n]*1-v5NyBlz4dupb3L6aMx4PWRdyx5iAIAr[^\n]*\n<p><a class="viewer-link" data-embed[^\n]*15OCezerotGu4tql8gOOxleQYN4uVSWJJ[^\n]*\n)/,
+            (m, two) => '<div class="ftdd-keep ftdd-fold2">\n' + two + '</div>\n')]}]
   },
   11: {
     // the LOR Drafting Activity on one slide: its instructions, its reminders and the platform's LOR Drafting tool
@@ -1144,6 +1151,9 @@ const ROWS = {
     s1: [{id: "s1", pre: KEEP[0], post: LOR_TOOL + KEEP[1], h: "AM: Policy Disclosure, Claim & Liability Evaluation", parts: [[null, SLOT(11, "s1-3")]],
         fix: [["<p>Proceed to the assessment activity designed to evaluate your understanding of key responsibilities as an Insurance Claim Specialist.</p>\n", ""],
           ['<hr class="stars">\n', ""],
+          // (the evaluation is answered on the platform, in ✍️ Knowledge Check, js/ft-assess.js "policy-disclosure"; the folder
+          // still holds the Dec Pages its Part I is answered from)
+          ['<p>Thank you.</p>\n<p>Assessment Activities</p>\n', '<div class="ftdd-pq">✍️ <b>Answer the evaluation in Knowledge Check</b>: Part I from the Dec Pages in the Assessment Activities folder below, Part II from your training. Your answers save as you type; then hit 📝 Submit for Grading.<div class="ftdd-pq-go"><button type="button" class="btn btn-navy" onclick="FTDayDecks.next()">📄 Open the evaluation →</button></div></div>\n<p>Assessment Activities (the Dec Pages)</p>\n'],
           ['<div class="shots"><figure><a href="/ft/day11/img/image26.png" target="_blank"><img src="/ft/day11/img/image26.png" alt="" loading="lazy"></a></figure></div>\n', ""]]},
       // (one slide: the instructions on its first page, its first card opening the LOR Drafting tool, which holds the
       // templates and the case notes, so the guide's links to them are not on it; the reminders on "F/E" on the second)
