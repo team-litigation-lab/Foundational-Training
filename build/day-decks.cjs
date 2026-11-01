@@ -816,6 +816,14 @@ const MOCK_RUN = mockPage("ftdd-mock-run",
      • each fragment drops a divider left at its edges (the stars rule, a "-----" line). */
 // (Day 10's sample-documents line, where its opening-claims slide is cut: ROWS[10].s1)
 const SAMPLE_DOCS_10 = "<p>Sample Insurance Communication-Related Documents and VA Recordings</p>";
+// 📄 the folder's sample documents, a tile each (rows of 4, 4 and 3): each opens /ft/day10/docs/ on its document in a tab of its own,
+// read page by page with a dropdown of all of them (ft/day10/docs/index.html; the pages are images, the people's names blacked out)
+const DOCS_10 = [["sample-lor", "Sample LOR", 2], ["sample-ack-lor", "Sample Acknowledgment of LOR", 1], ["pip-lor", "PIP Letter of Representation", 2],
+  ["bi-lor", "BI Letter of Representation (blank)", 2], ["lor-preservation", "LOR & Preservation (Company) Template", 2], ["lop-agreement", "LOP Agreement 2020 (blank)", 1],
+  ["dec-um-selection-state-farm", "Dec Page with UM Selection Form: State Farm", 4], ["dec-um-rejection-uaic", "Dec Page with UM Rejection Form: UAIC", 2],
+  ["dec-no-bi", "Dec Page with No BI Coverage", 3], ["commercial-policy", "Commercial Policy", 5], ["ccop", "CCOP: Certified Copy of the Policy", 4]];
+const DOC_TILES_10 = '<div class="ftdd-doctiles">' + DOCS_10.map(([slug, t, n]) => `<a class="ftdd-doctile" href="/ft/day10/docs/?doc=${slug}" target="_blank" rel="noopener noreferrer">` +
+  `<span class="ftdd-doctile-ic">📄</span><b>${t.replace(/&/g, "&amp;")}</b><small>${n} page${n === 1 ? "" : "s"} · opens in a new tab ↗</small></a>`).join("") + "</div>\n";
 const SLOT = (n, k) => `<div class="trainer-slot" data-slot="${n}:${k}"></div>`;
 const UPSKILL = "<p><b><i>*** Free Communication Upskill for 1 or 1 ½ hours</i></b></p>";
 // a shadowing slide's own line on how the session runs on the platform
@@ -1138,8 +1146,11 @@ const ROWS = {
       // (the opening-claims slide in two, each a card row of its own: what to share, then the VA call recordings with the
       // sample documents' folder under them, js/ft-day-decks.js LESSON_CARDS[7])
       {id: "s1c", h: "AM: Additional Information: What to Share", parts: [[SLOT(10, "s1-3"), SAMPLE_DOCS_10]], fix: [D10_SHARE]},
-      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
+      // (one block, one page: the two recording folders and the documents' tiles)
+      {id: "s1e", h: "AM: Sample Recordings & Documents: Opening Claims", pre: KEEP[0], post: KEEP[1], parts: [["<p><b>VA Call Recordings", null], [SAMPLE_DOCS_10, "<p><b>VA Call Recordings"]],
         fix: [[SAMPLE_DOCS_10, "<p><b>Sample Insurance Communication-Related Documents</b></p>"],
+          // (the documents, a tile each, in place of the Drive folder: DOC_TILES_10)
+          h => { const re = /<p><a class="viewer-link" [^\n]*14jCcagQ9mGag2DyRxFPCN-bWds5tl_bU[^\n]*<\/p>\n?/; if(!re.test(h)) throw new Error("Day 10's sample documents folder is no longer where the build looks for it"); return h.replace(re, DOC_TILES_10); },
           // (the two recording folders named by what they hold: folder 1 opening claims, folder 2 checking for existing claims)
           ["<p><b>VA Call Recordings: Opening Claims/Checking For Existing Claims </b></p>", "<p><b>VA Call Recordings</b></p>"],
           ['data-title="VA Call Recordings: Opening Claims/Checking For Existing Claims (folder 1)"', 'data-title="Opening Claims"'],

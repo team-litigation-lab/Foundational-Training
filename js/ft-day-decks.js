@@ -2546,6 +2546,14 @@ main.main-ftdd .ftdd-sheet .ftdd-cal-grid > .ftdd-cal-item > p.ftdd-cal-h{margin
 .ftdd-sheet .ftdd-card4 > p.ftdd-card4-h{margin:0 -16px 10px !important;padding:10px 16px !important;background:#1E2340 !important;color:#fff !important;font:800 18px/1.3 'Poppins','Inter',sans-serif !important;border-bottom:3px solid #E8590C;}
 .ftdd-sheet .ftdd-card4 p{margin:0 0 8px;font-size:17px !important;line-height:1.45 !important;}
 .ftdd-sheet .ftdd-cards2-b .ftdd-card4 p{font-weight:700;}   /* (Day 5's Instructions cards, in bold) */
+/* (Day 10's sample documents: a tile each, four to a row, white on navy with an orange edge; each opens in a new tab) */
+.ft-body .ftdd-doctiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin:8px 0 4px;}
+.ft-body a.ftdd-doctile{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:#1E2340;border-left:5px solid #E8590C;color:#fff !important;text-decoration:none !important;box-shadow:0 3px 10px rgba(30,35,64,.2);}
+.ft-body a.ftdd-doctile:hover, .ft-body a.ftdd-doctile:focus-visible{background:#2C335C;outline:3px solid #FFB27A;}
+.ft-body .ftdd-doctile-ic{grid-row:1 / span 2;font-size:22px;}
+.ftdd-sheet a.ftdd-doctile b{font:800 15px/1.25 'Poppins','Inter',sans-serif;color:#fff !important;}
+.ftdd-sheet a.ftdd-doctile small{font:700 12.5px/1.3 'Inter',sans-serif;color:#FFD3A8 !important;}
+@media(max-width:900px){ .ft-body .ftdd-doctiles{grid-template-columns:repeat(2,minmax(0,1fr));} }
 /* (Day 10's two recording folders side by side, the first with its six recordings wider: one page with the documents) */
 .ft-body .ftdd-fold2{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 10px;}
 .ft-body .ftdd-fold2 > *{margin:0 !important;min-width:0;}
