@@ -151,7 +151,8 @@ function mark(html, meta){
     const top = document.createElement("div"); top.className = "fts-card-top";
     const tag = document.createElement("span"); tag.className = "fts-type"; tag.textContent = typeTag[type] || ""; top.appendChild(tag);
     const chip = document.createElement("span"); chip.className = "fts-chip fts-chip-" + status;
-    chip.textContent = {done: "✓ Done", live: "🟢 In progress", redo: "🔁 Redo", locked: "🔒 Locked", todo: isTrainee() ? "Not started" : ""}[status] || "";
+    // (a trainer-led activity isn't the trainee's to start: it waits for the session with the trainer, who records the result)
+    chip.textContent = {done: "✓ Done", live: "🟢 In progress", redo: "🔁 Redo", locked: "🔒 Locked", todo: !isTrainee() ? "" : type === "trainer" ? "⏳ With your trainer" : "Not started"}[status] || "";
     if(chip.textContent) top.appendChild(chip);
     el.insertBefore(top, el.firstChild);
     if(status === "done"){
@@ -202,7 +203,7 @@ function renderSimulators(){
   items.forEach(x => { const d = x.days.length ? Math.min(...x.days) : 0; if(!d){ any.push(x); return; } (byDay[d] = byDay[d] || []).push(x); });
   const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
   const order = {session: 0, calendar: 1, drafting: 2, listening: 3, tool: 4, trainer: 5};
-  const flt = state.ftsFilter || "all", counted = x => x.status !== "locked" && x.type !== "any";
+  const flt = (isTrainee() && state.ftsFilter) || "all", counted = x => x.status !== "locked" && x.type !== "any";
   const pass = x => flt === "all" || (flt === "done" ? x.status === "done" : x.status !== "done");
   const all = items.filter(counted), doneN = all.filter(x => x.status === "done").length;
   const last = days.length ? days[days.length - 1] : 0;
@@ -227,7 +228,7 @@ function renderSimulators(){
       <p>Your live practice, day by day. Each training day lists its Practice Sessions, activities, drafting tools, Call Listening and the work you do with your trainer. Finished work is marked <b>✓ Done</b>: open it again with <b>👁 Review</b> to look over what you handed in.</p></div>
     <div class="fts-bar card">
       ${isTrainee() && all.length ? `<div class="fts-prog"><b>${doneN} of ${all.length} done</b><span class="fts-prog-bar"><i style="width:${Math.round(doneN / all.length * 100)}%"></i></span></div>` : ""}
-      <div class="fts-filter" role="group" aria-label="Show">${[["all", "All"], ["todo", "To do"], ["done", "✓ Done"]].map(([k, l]) => `<button type="button" class="btn btn-sm ${flt === k ? "btn-navy" : "btn-ghost"}" onclick="ftsFilter('${k}')">${l}</button>`).join("")}</div>
+      ${isTrainee() ? `<div class="fts-filter" role="group" aria-label="Show">${[["all", "All"], ["todo", "To do"], ["done", "✓ Done"]].map(([k, l]) => `<button type="button" class="btn btn-sm ${flt === k ? "btn-navy" : "btn-ghost"}" onclick="ftsFilter('${k}')">${l}</button>`).join("")}</div>` : ""}
       ${days.length ? `<nav class="fts-jumps" aria-label="Jump to a day">${chips}${anyShown.length ? `<a class="fts-jump" onclick="ftsJump(0)">Any day</a>` : ""}</nav>` : ""}
     </div>
     ${days.map(section).join("") || (flt !== "all" ? `<p class="fts-sub">${flt === "done" ? "Nothing marked done yet." : "Everything open so far is done. 🎉"}</p>` : "")}
