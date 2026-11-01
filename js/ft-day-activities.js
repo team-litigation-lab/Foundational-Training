@@ -62,7 +62,7 @@ const DAYS = [
     {t:"Process Questions", kind:"Process questions", at:"tool", id:"process"},
     {t:"Client Identification Exercise", kind:"Exercise", at:"gc"}
   ]},
-  {day:2, role:"VA Essentials", lessons:[1, 2], items:[
+  {day:2, role:"Law Firm Communication", lessons:[1, 2], items:[
     {t:"Buffer Time: Day 1 carryover", kind:"Buffer", at:"room"},
     {t:"Common Terms Used — Assessment", kind:"Assessment", at:"drive"},
     {t:"Auto Liability Insurance — Assessment", kind:"Assessment", at:"drive"},

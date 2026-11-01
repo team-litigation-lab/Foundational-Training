@@ -31,7 +31,7 @@ const PROGRAM = {"VA Essentials": "Virtual Assistant Essentials"};
 function discussionLine(d){
   const days = DAYS().filter(x => x.role === d.role), n = days.findIndex(x => x.day === d.day) + 1;
   const name = PROGRAM[d.role] || d.role;
-  if(days.length < 2) return `Classroom Discussion: ${name}`;
+  if(days.length < 2 && !PROGRAM[d.role]) return `Classroom Discussion: ${name}`;   // (VA Essentials keeps "- Day 1", as its To-Do always read)
   return `Classroom Discussion: ${name}${PROGRAM[d.role] ? " - Day " : " Day "}${n}`;
 }
 // Recorded shadowing videos shipped with a day, for when no buddy is free (none now: Day 7's intake shadowing videos are
