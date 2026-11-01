@@ -1,5 +1,6 @@
 /* ============================================================
-   📄 The assessments answered on the platform: Day 2's Common Terms Used and Auto Liability Insurance
+   📄 The assessments answered on the platform: Day 2's Common Terms Used and Auto Liability Insurance, and Day 11's Policy
+   Disclosure, Claim & Liability Evaluation
    Loaded after js/ft-process.js. Each opens from its video's Next on Day 2's deck (js/ft-day-decks.js ASSESS_NEXT), on a
    Knowledge Check page of its own (js/ft-process.js assessPage), where the assessment is drawn here, to answer in place
    of the Word document: the answers save as the trainee types (assess:<id> = {v, docs: {"<doc id>": {answers,
@@ -69,7 +70,35 @@ const FORMS = {
         {note: "For questions no. 4–6, refer to the second Declaration Page in the assessment’s document.", qs: [
           "The above image is the insurance coverage of Mr. John Doe who was involved in an accident on July 17, 2019. He decided to use his collision coverage in paying the repair costs of his car but the insurance company said they cannot grant Mr. Doe his coverage for now since he has not shown evidence that he already reached the deductible required in his insurance. How would you explain this to Mr. Doe?",
           "Let’s say that the image above shows the 1P insurance, and the 3P has 25-50 policy limit. When computing the total medical expenses so far, you noticed that necessary treatment costs has already reached $27,000 and immediately informed the case manager. Anticipate the CM’s next instructions and explain why you think the CM would have you do those steps.",
-          "Assume that the Dec Page above is of the 3P coverage. Our client is the primary in this case with two secondaries involved with the following medical treatment billed: Primary – $55,000; First Secondary – $25,000; Second Secondary – $31,000. Would the above expenses suit the 3P insurance coverage? Explain your answer."]}]}]}
+          "Assume that the Dec Page above is of the 3P coverage. Our client is the primary in this case with two secondaries involved with the following medical treatment billed: Primary – $55,000; First Secondary – $25,000; Second Secondary – $31,000. Would the above expenses suit the 3P insurance coverage? Explain your answer."]}]}]},
+  // 📄 Day 11's Policy Disclosure, Claim & Liability Evaluation (the guide's activity document, answered here): Part I on the
+  // Dec Pages of the Assessment Activities folder's zipped file (ref), Part II from the training. Every item is graded as an
+  // essay in the facilitator's voice (assess-keys.js "policy-disclosure"): an identification out of 1, an explanation
+  // (long) out of 5
+  "policy-disclosure": {title: "Policy Disclosure, Claim & Liability Evaluation", file: "Policy_Disclosure_Claims_Liability_Evaluation", max: 87, parts: [
+    {kind: "short", h: "Part I – Policy Disclosure · Activity #1: Identification + Short Answer", id: "a", long: [8, 10],
+      lead: "Answer each item from the Dec Page named below.", scenario: "Refer to the 3P Commercial Policy Dec Page.", ref: "https://drive.google.com/drive/folders/1LX_skojUHS2NbxKMd_lrJvfiXuFZI2bD?usp=sharing",
+      qs: ["Name of the insurance carrier.", "Policy number.", "Policy period.", "Name of insured.", "Listed driver/s.", "Number of insured vehicle/s under this policy.",
+        "Policy limit.", "What does CSL mean?", "What are the other coverage under this policy?", "Why do you think UM/UIM coverage was rejected?"]},
+    {kind: "short", h: "Part I – Policy Disclosure · Activity #2: Identification", id: "b", long: [7, 8],
+      lead: "Answer each item from the Dec Page named below.", scenario: "Refer to the 3P Esurance Dec Page.", ref: "https://drive.google.com/drive/folders/1LX_skojUHS2NbxKMd_lrJvfiXuFZI2bD?usp=sharing",
+      qs: ["Name of the insurance carrier.", "Policy number.", "Policy period.", "Name of insured.", "Listed driver/s.", "Number of insured vehicle/s under this policy.",
+        "What does 100/300/50 mean?", "What coverage should you take note of?"]},
+    {kind: "short", h: "Part I – Policy Disclosure · Activity #3: Short Answer / Comprehension", id: "c", long: [1, 2],
+      lead: "Answer each item from the Dec Page named below.", scenario: "Refer to the 1P Geico Dec Page.", ref: "https://drive.google.com/drive/folders/1LX_skojUHS2NbxKMd_lrJvfiXuFZI2bD?usp=sharing",
+      qs: ["What coverage should you look for when reviewing dec page of the plaintiff?", "What does non-stacked mean?",
+        "How much is the out-of-pocket of the client should be in order for his comprehensive coverage to kick in?",
+        "What coverage will kick in when client bumps into a fence or tree?", "How much is his PIP deductible?"]},
+    {kind: "short", h: "Part I – Policy Disclosure · Activity #4: Essay", id: "d", long: [1, 2, 3, 4],
+      lead: "Write a brief explanation of how each pair of coverages differs from one another.",
+      qs: ["Bodily Injury Liability and Property Damage Liability", "Medical Payments Coverage (MedPay) and Personal Injury Protection Coverage (PIP)",
+        "Uninsured Motorist Coverage (UM) and Underinsured Motorist Coverage (UIM)", "Collision Coverage and Comprehensive Coverage"]},
+    {kind: "short", h: "Part II – Claims & Liability · Activity #1: Essay", id: "e", long: [1, 2, 3],
+      lead: "Write a brief explanation for each of the following questions.",
+      qs: ["What is “fault” and why does proving fault matter after a car accident?", "What is negligence?", "What is “no-doubt” liability?"]},
+    {kind: "short", h: "Part II – Claims & Liability · Activity #2: Enumeration", id: "f", long: [1],
+      lead: "Make a list of the documents and information you will need to open a claim (at least five).",
+      qs: ["The documents and information you need to open a claim."]}]}
 };
 
 const A = {rec: null, id: null, loading: false, t: null, sending: false, review: null, saving: false};
@@ -136,8 +165,9 @@ function partHtml(doc, p){
       ${p.terms.map((t, i) => `<tr><td>${field(doc, "m" + (i + 1), "match", t)}</td><td><b>${i + 1}. ${e(t)}</b></td></tr>`).join("")}</tbody></table>
     <table class="fa-tbl fa-defs"><thead><tr><th colspan="2">Column B · Definition</th></tr></thead><tbody>
       ${p.defs.map((d, i) => `<tr><td class="fa-l">${L[i]}.</td><td>${e(d)}</td></tr>`).join("")}</tbody></table></div></section>`;
-  if(p.kind === "short") return `<section class="fa-part"><h3>${e(p.h)}</h3><p class="fa-lead">${e(p.lead)}</p>${p.scenario ? `<p class="fa-scn">${e(p.scenario)}</p>` : ""}
-    <ol class="fa-qs">${p.qs.map((q, i) => `<li><p>${e(q)}</p>${field(doc, p.id + (i + 1), "short")}</li>`).join("")}</ol></section>`;
+  // (long: the items answered in a few sentences, in a box; ref: the folder of the files the part is answered from)
+  if(p.kind === "short") return `<section class="fa-part"><h3>${e(p.h)}</h3><p class="fa-lead">${e(p.lead)}</p>${p.scenario ? `<p class="fa-scn">${e(p.scenario)}${p.ref ? ` <a href="${e(p.ref)}" target="_blank" rel="noopener noreferrer">📁 Open the Assessment Activities folder ↗</a>` : ""}</p>` : ""}
+    <ol class="fa-qs">${p.qs.map((q, i) => `<li><p>${e(q)}</p>${field(doc, p.id + (i + 1), (p.long || []).includes(i + 1) ? "essay" : "short")}</li>`).join("")}</ol></section>`;
   let n = 0;
   return `<section class="fa-part"><h3>${e(p.h)}</h3><p class="fa-lead">${e(p.lead)}</p>
     ${p.groups.map(g => `<div class="fa-grp"><p class="fa-scn">${e(g.note)} <a href="https://docs.google.com/document/d/${doc}/preview" target="_blank" rel="noopener noreferrer">Open the document ↗</a></p>
