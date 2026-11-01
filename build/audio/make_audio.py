@@ -7,23 +7,27 @@ and writes js/ft-intake-samples.js (the transcripts, each line's start time, and
 
 The model and voices are Kokoro v1.0 (github.com/thewh1teagle/kokoro-onnx, release model-files-v1.0:
 kokoro-v1.0.onnx saved as kokoro.onnx, voices-v1.0.bin saved as voices.bin). Each item's "voices" names a Kokoro
-voice per speaker (af_heart, am_michael, …); a speaker's "speed" is optional. Given ids, only those items are
-rendered again and the others keep their recording and timings from js/ft-intake-samples.js.
+voice (or a blend, "af_heart:0.7+af_bella:0.3") per speaker; a speaker's "speed" is optional. Given ids, only those
+items are rendered again and the others keep their recording and timings from js/ft-intake-samples.js.
 
-So the calls sound like people and not a machine reading lines: the pause before a line varies (shorter after a
-quick reply, longer before a long answer), each line's speed varies a little around its speaker's, and the calls
-sit on a quiet phone-line hiss with a telephone band-pass instead of dead digital silence. Needs ffmpeg."""
+So the calls sound like people and not a machine reading lines: build/audio/speech.py speaks each line sentence by
+sentence, and Amy, the VA, speaks like an effective intake specialist (ROLES["intake"]: calm and unhurried, softer
+and slower when she says she's sorry, slow and clear when she reads back a number or a spelling); the attorney in
+the consultation is assured and unhurried (ROLES["professional"]). The pause before a line varies (shorter after a
+quick reply, longer before a long answer), and the calls sit on a quiet phone-line hiss with a telephone band-pass
+instead of dead digital silence. Needs ffmpeg."""
 import json, os, random, re, subprocess, sys, tempfile
 import numpy as np, soundfile as sf
-from kokoro_onnx import Kokoro
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SRC = os.path.join(R, "build/audio/intake_samples.json")
 OUT = os.path.join(R, "ft/day7/audio")
 JS = os.path.join(R, "js/ft-intake-samples.js")
-MODELS = sys.argv[1] if len(sys.argv) > 1 else "voices"
+os.environ["KOKORO_DIR"] = sys.argv[1] if len(sys.argv) > 1 else "voices"
 ONLY = set(sys.argv[2:])
-TTS = Kokoro(os.path.join(MODELS, "kokoro.onnx"), os.path.join(MODELS, "voices.bin"))
+import speech
+ROLE = {"VA": "intake", "A": "professional"}   # who speaks as a professional, and in which role (ROLES in speech.py)
 
 def gap(prev, nxt, same):
     """Seconds of silence before the next line: a quick reply comes quickly, a long answer after a breath."""
@@ -41,12 +45,8 @@ def render(item, phone):
         if i:
             g = gap(lines[i - 1][1], text, lines[i - 1][0] == who)
             parts.append(np.zeros(int(g * rate), dtype=np.float32)); t += g
-        sp = speeds.get(who, 1.0) * random.uniform(0.97, 1.03)
-        audio, rate = TTS.create(text, voice=item["voices"][who], speed=sp, lang="en-us")
-        audio = np.asarray(audio, dtype=np.float32)
-        # trim the model's own leading and trailing silence, so the pauses are the ones chosen above
-        loud = np.where(np.abs(audio) > 0.01)[0]
-        if len(loud): audio = audio[max(0, loud[0] - int(0.03 * rate)): loud[-1] + int(0.08 * rate)]
+        audio = speech.speak(text, item["voices"][who], speeds.get(who, 1.0), ROLE.get(who), first=(i == 0), seed=f"{item['id']}/{i}")
+        rate = speech.RATE
         times.append(round(t, 1)); parts.append(audio); t += len(audio) / rate
     with tempfile.TemporaryDirectory() as tmp:
         raw = os.path.join(tmp, "all.wav"); sf.write(raw, np.concatenate(parts), rate)

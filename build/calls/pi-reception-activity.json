@@ -12,7 +12,7 @@
    "about": "An older client never got the email about the doctor's appointment her case manager set up, and gives the wrong birth year at first.",
    "va": "Oscar",
    "file": "/ft/day3/audio/pi-activity-1.mp3",
-   "secs": 149,
+   "secs": 166,
    "key": [
     {
      "k": "Caller",
@@ -91,7 +91,7 @@
     },
     {
      "who": "Oscar (VA)",
-     "text": "Thank you. So that's g, dot, benton, six zero, at mail dot com. That explains the missing email. I'll note the correct address on your file. In the meantime, would you like the clinic's address now?"
+     "text": "Thank you. So that's g, dot, benton, six zero, at mail dot com. That explains the missing email, and I'm sorry for the trouble it caused you. I'll note the correct address on your file. In the meantime, would you like the clinic's address now?"
     },
     {
      "who": "Gloria Benton",
@@ -138,7 +138,7 @@
    "about": "A client in pain calls again about the letter his pain clinic needs before it will book his injection.",
    "va": "Oscar",
    "file": "/ft/day3/audio/pi-activity-2.mp3",
-   "secs": 123,
+   "secs": 124,
    "key": [
     {
      "k": "Caller",
@@ -264,7 +264,7 @@
    "about": "An imaging centre's front desk wants a fax number for the firm's other office and doesn't say who the records are for.",
    "va": "Oscar",
    "file": "/ft/day3/audio/pi-activity-3.mp3",
-   "secs": 97,
+   "secs": 104,
    "key": [
     {
      "k": "Caller",
@@ -362,7 +362,7 @@
    "about": "A client calls to confirm tomorrow's meeting with her attorney: a quick call where it's easy to skip a step.",
    "va": "Oscar",
    "file": "/ft/day3/audio/pi-activity-4.mp3",
-   "secs": 61,
+   "secs": 65,
    "key": [
     {
      "k": "Caller",
@@ -456,7 +456,7 @@
    "about": "A client whose usual ride fell through can't get to tomorrow's doctor's appointment and asks to reschedule.",
    "va": "Oscar",
    "file": "/ft/day3/audio/pi-activity-5.mp3",
-   "secs": 123,
+   "secs": 137,
    "key": [
     {
      "k": "Caller",
@@ -515,7 +515,7 @@
     },
     {
      "who": "Oscar (VA)",
-     "text": "I'm sorry about that. I see your follow-up with Doctor Herrera at Bayview Orthopedics tomorrow, October twenty-ninth, at ten thirty AM. Your case manager, Mara Quintero, coordinates your appointments, so let me connect you with her. Before I do, what's the best number in case we get disconnected?"
+     "text": "Oh, I'm sorry your ride fell through, Mr. Pryce. That's stressful the day before an appointment, so let's get it sorted out. I see your follow-up with Doctor Herrera at Bayview Orthopedics tomorrow, October twenty-ninth, at ten thirty AM. Your case manager, Mara Quintero, coordinates your appointments, so let me connect you with her. Before I do, what's the best number in case we get disconnected?"
     },
     {
      "who": "Darnell Pryce",

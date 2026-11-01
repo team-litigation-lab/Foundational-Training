@@ -1,6 +1,6 @@
 {
   "note": "The Transcription Activity's two client-to-attorney interviews (js/ft-transcribe.js RECS): fictional personal injury consultations with Atty. Magdalena, in the style of the sample guide (intake_samples.json consult). Rendered by build/audio/make_interviews.py to ft/day9/audio/<id>.mp3. Not served (build/ is not on the site): the trainees hear the recordings only.",
-  "voices": {"A": "en_US-lessac-medium", "C1": "en_US-amy-medium", "C2": "en_US-ryan-medium"},
+  "voices": {"A": "af_kore:0.6+af_sarah:0.4", "C1": "af_bella", "C2": "am_fenrir"},
   "speed": {"A": 1.0, "C1": 1.0, "C2": 0.97},
   "interviews": [
     {"id": "interview-recording-1", "title": "Interview Recording 1", "client": "C1", "lines": [
