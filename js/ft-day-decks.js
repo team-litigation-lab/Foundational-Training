@@ -1465,7 +1465,7 @@ const LESSON_CARDS = {
     takeaways: ["UM/UIM claims", "Comparative liability", "Rideshare coverage"], file: "Claims_Specialist_Training_Process_Question_Answers (VA First Name)"},
   8: {days: [13, 14, 15, 16], focus: "MedLOR, Records Requests & Lien Verification",
     rows: [
-      {t: "Buffer Time for the LOR Drafting Demo", sub: "Carryover for completing the demo", k: "buffer", d: 13, s: "s1"},
+      // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: build/day-decks.cjs SKIP[13])
       {t: "Call Listening / Breakout Session", sub: "Log each call on the platform as you listen", k: "listen", d: 13, s: "listen", go: "listening"},
       {t: "HIPAA Training 101", sub: "Complete the series and send the screenshot of its last page", k: "homework", d: 13, s: "s3"},
       {t: "Sending MedLOR & Requesting Bills and Records", time: "AM", sub: "Tutorial video · your work guide", k: "watch", d: 14, s: "s1"},
@@ -2635,6 +2635,8 @@ main.main-ftdd .ftdd-sheet .ftdd-step-t{font-size:21px;color:#11131F;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw){display:flex;flex-direction:column;justify-content:safe center;}
 main.main-ftdd .ftdd-sheet:not(.ftdd-sheet-edit):not(.ftdd-hw) > *{flex:0 0 auto;}
 main.main-ftdd .ftdd-sheet :is(h3,h4,h5){font:800 19px/1.3 'Poppins','Inter',sans-serif !important;color:#fff !important;background:#1E2340;padding:8px 14px;border-left:5px solid #E8590C;border-radius:8px;}
+/* (selected text on the navy headings: no pale yellow selection under the white text) */
+main.main-ftdd .ftdd-sheet :is(h3,h4,h5)::selection, main.main-ftdd .ftdd-sheet :is(h3,h4,h5) *::selection{background:rgba(232,89,12,.55);color:#fff;}
 main.main-ftdd .ftdd-sheet .ftdd-step{padding:10px 14px;margin:10px 0;border:2px solid #343C66;border-radius:12px;background:#fff;box-shadow:0 3px 10px rgba(30,35,64,.10);}
 main.main-ftdd .ftdd-sheet .ftdd-step-n{background:#E8590C;width:36px;height:36px;font-size:16px;}
 main.main-ftdd .ftdd-sheet .ftdd-pq{font-size:20px;color:#11131F;background:#EEF1F8;border:2px solid #343C66;border-left:6px solid #343C66;}
@@ -3086,6 +3088,7 @@ main.main-ftdd .ftdd-sheet .ftdd-acards-2x2 .ftdd-acard small{font-size:16px;col
 .ft-body .ftdd-listen button.ftdd-acard:hover{background:#2A3160;border-color:#E8590C;}
 .ftdd-listen .ftdd-acard-ic{font-size:30px;}
 .ft-body .ftdd-listen .ftdd-acard b{font:800 20px/1.25 'Poppins','Inter',sans-serif;color:#fff;}
+main.main-ftdd .ftdd-sheet .ftdd-listen button.ftdd-acard b{color:#fff !important;}
 .ft-body .ftdd-listen .ftdd-acard-tag{font:600 15px/1.3 'Inter',sans-serif;color:#C9CFE6;}
 .ft-body .ftdd-listen .ftdd-acard small{font:800 16px/1.2 'Inter',sans-serif;color:#FDBA74;}
 @media(max-width:1000px){ .ftdd-listen .ftdd-acards{grid-template-columns:repeat(2,minmax(0,1fr));} }
@@ -3191,6 +3194,11 @@ main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table th{background:#1E2340;c
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td{color:#0B0D1A;border-color:#C9CEE0;}
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table td:first-child{font-weight:800;color:#141A3C;background:#F4F6FB;}
 main.main-ftdd .ftdd-sheet .ftdd-carriers table.ft-table tr:nth-child(odd) td:not(:first-child){background:#FAFBFE;}
+/* (Day 7's carriers: the lead, the headings and the carrier names in bold, over the sheet's own text rules) */
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers > p, html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers > p *{font-weight:800 !important;color:#0B0D1A !important;}
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table th{background:#1E2340 !important;color:#fff !important;font-weight:800 !important;}
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:first-child, html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:first-child *{font-weight:800 !important;}
+html body main.main-ftdd .ftdd-sheet .ftdd-keep.ftdd-carriers table.ft-table td:nth-child(3){font-weight:700 !important;}
 /* Day 7's Accident or Injury Claim Documents and Evidence Checklist, on the slide as cards (build/days/day07.js): a card
    for each kind of document, its name white on navy over the documents to ask for, each with an empty box to tick */
 main.main-ftdd .ftdd-sheet:has(.ftdd-evl){justify-content:flex-start !important;}

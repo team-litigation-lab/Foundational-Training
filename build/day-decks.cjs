@@ -31,7 +31,9 @@ const SKIP = {1: ["expectations", "reminders", "hubstaff", "homework", "monitori
   // card's own 💬 Classroom Discussion stop, as Day 1's is; its trainer slot was the same deck's link. Day 13's 🎧 Call
   // Listening slide is placed by its card row instead, js/ft-day-decks.js slidesOf)
   // (Day 5's Monitoring Sheet slide too: items #10–11 close Reception Part 2, Day 4's s2m, js/ft-day-decks.js LESSON_CARDS[3])
-  5: ["s1", "s2"], 13: ["s2"],
+  5: ["s1", "s2"],
+  // (Day 13's Buffer Time for the LOR Drafting Demo is off the deck: Part 1 opens on the Call Listening)
+  13: ["s1", "s2"],
   // (Day 11's Shadowing is off the training: its section is the ✉️ Insurance Email Simulator's slide instead, EDIT[11].s2)
   // (Day 8's Demo Tutorial Viewing and Demo Preparation: its video plays on the SA demonstration's slide, ROWS[8].s1e)
   // (and Atty. Sandy's MVC intake-call video, cut from the afternoon's section by ROWS[8].s3)
@@ -1195,7 +1197,8 @@ const ROWS = {
     // the breakout's exercise this afternoon; the HIPAA series is the homework (the timing note stays with the afternoon)
     // (the breakout itself is the Call Listening slide's, "Call Listening Session / Breakout Session": its own slide held only the
     // reference files, now off it, so the section is the homework's slide, with the facilitators' notes)
-    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""],
+    // (its stray "Thank you." line is off the slide)
+    s3: [{id: "s3", h: "HOMEWORK: HIPAA Training 101", parts: [[null, null]], fix: [[UPSKILL, ""], ["<p>Thank you.  </p>\n", ""],
         ['<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n',
           '<p>HIPAA Training 101 series</p>\n<p><a href="https://compliancy-group.com/free-hipaa-training/hipaa-introduction/" target="_blank" rel="noopener noreferrer">https://compliancy-group.com/free-hipaa-training/hipaa-introduction/</a> </p>\n<p><b>Naming Convention:  </b>HIPAA Certificate_[Your Name]</p>\n']]}]
   },

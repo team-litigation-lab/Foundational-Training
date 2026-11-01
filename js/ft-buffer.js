@@ -35,7 +35,7 @@ const ACTS = {
   // (Day 5's Attorney Calendar Management Activity has no Submit panel here: it is submitted on the Main Portal's
   // Calendaring Activity calendar, 📤 Submit for evaluation, and its scores come back to the Scorecard: simresults)
   // (Day 9's Buffer Time is off the deck: build/day-decks.cjs SKIP[9])
-  "13:s1": {kind: "buffer"},
+  // (Day 13's Buffer Time is off the deck too: build/day-decks.cjs SKIP[13])
   // (simple: the trainee sees only "Mock Calls Ongoing", "Hit Done when you are done with your Mock Call." and Done)
   "4:s3": {kind: "mock", name: "Reception", line: "Reception Mock Calls", act: "reception-live", when: "this afternoon", simple: true},
   // (key: where a day's guide section was cut into one slide per card row, build/day-decks.cjs ROWS, the activity moved to
