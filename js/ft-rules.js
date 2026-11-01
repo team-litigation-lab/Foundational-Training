@@ -412,7 +412,8 @@ const SLIDES = [
       ${p.tip ? `<p class="ftr-tip">💡 ${esc(p.tip)}</p>` : ""}
     </div>`).join("")}</div>`],
   // The 4 daily deliverables: an overview (the tests on the sites the training uses, TESTS), the Daily Task Tracker, the Monitoring Sheet and the EOD email
-  ["deliverables", "Your 4 Daily Deliverables", ()=>`
+  // (the shift wrap-up, deliverables to the filled-in entry: one heading on every slide of it)
+  ["deliverables", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <p class="ftr-sub">Every training day, these four are yours to deliver. Your EOD email, your tracker and your Monitoring Sheet each have their own slides next, in that order; the tests are on the sites below. Every output of the day (test screenshots, answer sheets, documents) is saved that day in your Assessment and Activities Folder, named by its convention.</p>
     <div class="ftr-lessons ftr-two"><div class="ftr-lesson ftr-tests"><b>🧪 1. Typing and Spelling Tests</b>
       <span>Typing twice a day (in the morning and before the end of your shift), spelling once. Screenshot each result and save it in your Assessment and Activities Folder as <b>Typing Test [date taken][AM/PM]</b> or <b>Spelling Test [date taken][AM/PM]</b>.</span>
@@ -423,7 +424,7 @@ const SLIDES = [
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
     <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
-  ["eod", "Your EOD Email: The Template", ()=>`
+  ["eod", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <div class="ftr-part ftr-eod">
       <div class="ftr-part-h">📧 Your EOD Email</div>
       ${copyRow("Subject", EOD.subject, "or: " + EOD.subjectAlt)}
@@ -433,22 +434,22 @@ const SLIDES = [
     <p class="ftr-sub ftr-after">Replace mm/dd/yy with today’s date. Fill in every part. Your detailed learnings go in your tracker.</p>`],
   // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
   // Sheet (before its own)
-  ["habits-trackers", "Your Daily Task Tracker: Update It Every Day", ()=>`
+  ["habits-trackers", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
-  ["tracker", "Your Daily Task Tracker", ()=>`
+  ["tracker", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
     <div class="ftr-cols2"><div class="ftr-parts">${tpart("The Three Sections", TRACKER_PARTS.sections)}</div>
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   // (the tracker's Other Tabs slide is off the orientation; its Daily Check is read with the Monitoring Sheet slide next)
-  ["habits-monitoring", "Your Daily Monitoring Sheet: Update It After Each Activity", ()=>`
+  ["habits-monitoring", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`
     <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   // the Monitoring Sheet: a drawn preview of a filled-in entry (where to get it, and how it is kept, are on the last slide:
   // MON_PARTS)
   // the sheet with numbered arrows, and beside it what goes at each number
-  ["monitoring-entry", "Your Training Progress Monitoring Sheet: A Filled-In Entry", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
+  ["monitoring-entry", "Daily Routine: Shift Wrap-Up - Updating Monitoring Sheets and Task Trackers and sending EODs", ()=>`<div class="ftr-mon-entry">${fig(FIGS.monitor())}
     <ol class="ftr-mon-steps">${[["The discussion and its date", "The classroom discussion’s title, as on your To-Do, and the date it was covered."],
       ["5 Major Takeaways", "Five things you learned, each a complete, specific sentence in your own words."],
       ["3 Questions You Still Have", "What is still unclear to you. Your trainer reads them and answers in the next session."],

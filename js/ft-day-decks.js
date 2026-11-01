@@ -1971,7 +1971,7 @@ const TOOLS = [
       "Blueprint and My Evaluations in its top bar"]},
   {ic: "🗂", name: "LSH Case Management System (CMS)", short: "Case Management System", img: "cms", href: "https://lshcasemanagementtraining-trainingcrm.pages.dev/", where: "🛠 Practice Lab → a Practice Session’s CMS link (it opens signed in)",
     what: "The practice CRM every LSH program uses: case files you search, open and update the way a real firm’s case manager does.",
-    feats: ["🔍 Search cases by client name (Ctrl / Cmd + K); when names match, it asks for the date of the accident and the date of birth",
+    feats: ["🔍 Search cases by client name; when names match, it asks for the date of the accident and the date of birth",
       "One case file in tabs: Profile, Parties Involved, Police Report, Insurance, Treatment, Notes, Tasks, Liens and more",
       "📝 New Intake: the intake form for the case type, graded on how much you gathered",
       "💾 Save Case keeps your work on a file as your own case, to reopen any time"]},
