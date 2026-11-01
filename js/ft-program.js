@@ -41,7 +41,7 @@ window.LSH_PROGRAM = {
   shared: ["settings:trainer-acts", "settings:listening"],   // the trainer-led activities' names; the Call Listening sets as the trainer set them (how many recordings each)
   // the Admin screen's tabs by section (any other tab sits under 🛡 Admin Master Control)
   adminGroups: {
-    admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
+    admin: ["audit", "batches", "tfeedback", "firms", "sops", "dbmaint", "orientation"],   // no "attendance": it is the Training Portal's /attendance.html, per program per batch
     modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
     scorecard: ["scorecards", "ranking", "overall", "sendfeedback", "skilltests"]

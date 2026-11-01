@@ -46,7 +46,7 @@ window.LSH_BLUEPRINT = {
           'Your scores on top: program complete, lessons finished (of 8), today\'s tests, test compliance, your Task Tracker and Monitoring Sheet, graded calls and your certificate.',
           '📌 Setting of Training Expectations and Company Policies and 🧰 Know Your Tools, then the 8 lesson cards in day order: Start or Part 1, Part 2… · 🔒 until your trainer opens it.',
           'Each card\'s 🎬 Video, and 💬 Your feedback for the program.',
-          'Under 📂 My Pages / the top bar: 🗒 Notes and 🏅 My Performance.'],
+          'In the top bar: 🗒 Notes and 🏅 My Performance.'],
         where: '📚 Dashboard in the top bar \u2014 on this platform and on every other LSH platform.',
         tip: 'Opening the training from the LSH Training Portal brings you straight here, already signed in.' },
       { icon: '🧭', title: 'Getting around', points: [
@@ -106,7 +106,7 @@ window.LSH_BLUEPRINT = {
     slides: [
       { icon: '🔑', title: 'Signing in as a trainer', points: [
           'Admin sign-in with the admin password. Trainees don\'t sign in here: they open the program from the LSH Training Portal.',
-          'Your top bar: 📚 Dashboard, 🛠 Practice Lab, ✍️ Knowledge Check, 📂 My Pages (🧭 Orientation), 🏅 Scorecards, 👁 Switch View, 🛡 Admin and 🏠 Main Portal.',
+          'Your top bar: 📚 Dashboard, 🛠 Practice Lab, ✍️ Knowledge Check, 🏅 Scorecards, 👁 Switch View, 🛡 Admin and 🏠 Main Portal.',
           '📚 Dashboard is the landing page: every sign-in, trainer or trainee, opens it. A trainee sees the same bar without 🏅 Scorecards, 👁 Switch View and 🛡 Admin, and with 🗒 Notes, 🏅 My Performance and 🎯 Focus.',
           'Admin is your trainer dashboard: the Trainee Audit and every trainer tab.',
           'Every lesson is open to you, so you can preview it before you teach it.'],

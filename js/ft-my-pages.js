@@ -1,9 +1,10 @@
 /* ============================================================
    🗒 Notes and 🏅 My Performance in the top bar, and My Performance as the trainee's one page about how they're doing
    Loaded after js/lsh-program.js (whose top bar and 🏅 My Performance it adjusts, for this program only).
-     • The top bar: no 📂 My Pages menu and no 🎯 Focus button for a trainee. Two buttons instead: 🗒 Notes and
+     • The top bar: no 📂 My Pages menu for anyone (an admin's 🧭 Orientation is a tab of 🛡 Admin → Admin Master Control),
+       and no 🎯 Focus button for a trainee. Two buttons instead: 🗒 Notes and
        🏅 My Performance. (The Task Tracker, the Monitoring Sheet, Video Notes and Tasks are no longer listed; the
-       Task Tracker and Monitoring Sheet tiles on 📚 Dashboard still open their pages.) An admin's bar is as it was.
+       Task Tracker and Monitoring Sheet tiles on 📚 Dashboard still open their pages.) An admin's bar is otherwise as it was.
      • 🏅 My Performance holds what was three places, on one screen: 🎯 Focus (what to work on next, the trainer's focus items and
        their feedback by day) on top, the scorecard, then 📬 My Feedback (everything the trainer sent, newest first).
      • 🎲 Random Tasks are abolished: no Tasks page, no looking for a task (the admin tab is gone too: js/ft-admin-ops.js).
@@ -14,11 +15,12 @@ const GONE = ["tracker", "monitoring", "learn", "tasks", "myfeedback", "notes", 
 const __top = window.renderTopbar;
 window.renderTopbar = function(){
   const html = __top.apply(this, arguments);
-  if(!isTrainee()) return html;
   const t = document.createElement("template"); t.innerHTML = html;
   const nav = t.content.querySelector(".topbar .nav"); if(!nav) return html;
   const onc = b => b.getAttribute("onclick") || "";
+  // no 📂 My Pages menu for anyone: an admin's only page in it, 🧭 Orientation, is a tab of 🛡 Admin (js/ft-admin-ops.js)
   [...nav.querySelectorAll(":scope > .lsh-grp")].filter(g => /My Pages/.test(g.textContent)).forEach(g => g.remove());
+  if(!isTrainee()) return t.innerHTML;
   [...nav.children].forEach(b => { const v = (onc(b).match(/goto\('([a-z]+)'\)/) || [])[1];
     if(b.classList.contains("lp-focus") || b.classList.contains("nav-focus") || /openFocusPanel/.test(onc(b)) || (v && GONE.includes(v))) b.remove(); });
   const btn = (v, label, title) => `<button type="button" class="lp-sec${state.view === v ? " active" : ""}" onclick="goto('${v}')" title="${title}">${label}</button>`;
