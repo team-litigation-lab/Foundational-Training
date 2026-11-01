@@ -120,6 +120,8 @@ const DAYS = [
     {t:"Buffer Time for the Intake Demo", kind:"Buffer", at:"trainer", id:"intake-packet-demo"},
     {t:"Intake Mock Call Preparation", kind:"Activity", at:"room"},
     {t:"Minutes of the Meeting Transcription Activity: Client-to-Attorney", kind:"Activity", at:"tool", id:"transcribe"},
+    {t:"Minutes Transcription: Recording 1 (the trainer scores it)", kind:"Activity", at:"trainer", id:"transcription-1"},
+    {t:"Minutes Transcription: Recording 2 (the trainer scores it)", kind:"Activity", at:"trainer", id:"transcription-2"},
     {t:"Intake Mock Call with the trainer", kind:"Mock call", at:"trainer", id:"intake-live"},
     {t:"Intake Mock Calls Metrics (how the call is scored)", kind:"Activity", at:"gc"}
   ]},

@@ -172,6 +172,9 @@ const failures = []; const fail = m => failures.push(m);
   await signIn(page, 'Una', 'Auto', PAST);
   const una = await page.evaluate(() => state.traineeId);
   { const r = await get('trainee:' + una); r.approved = true; r.archived = false; await put('trainee:' + una, r); }
+  // (PAST is older than this test's other batch, so js/ft-admin-tidy.js would archive it on the next admin load: kept
+  // active here as a batch a trainer restored is, settings:autoarchive's done list)
+  { const a = (await get('settings:autoarchive')) || {}; a.done = Object.assign({}, a.done, { [PAST]: new Date().toISOString() }); await put('settings:autoarchive', a); }
   { const m = /^B(\d\d)(\d\d)(\d\d)$/.exec(PAST), st = Date.parse(`20${m[3]}-${m[1]}-${m[2]}T00:00:00Z`), d = k => new Date(st + k * 864e5).toISOString().slice(0, 10);
     await put('trackerreview:' + una, { days: {}, compliance: { [d(0)]: { pct: 80, parts: { tests: 100, eod: 60 } }, [d(1)]: { pct: 60, parts: { tests: 67, eod: 53 } } } }); }
   await put(`ranking:${PAST}:w1`, null);

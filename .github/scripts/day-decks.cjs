@@ -449,8 +449,8 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   if (await page.$('.ftdd-sheet .ftdd-score')) fail("Day 9's Intake Mock Calls slide still has a metrics bar");
   if (await page.evaluate(() => FTDayDecks.list(9).some(s => s.id === 's3bp'))) fail("Day 9 still has its Instructions & Metrics slide");
 
-  // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are off for now
-  // (js/ft-kcgames.js GAMES_ON): no 🎮 button anywhere, and #/kcgames goes to ✍️ Knowledge Check
+  // no ✍️ Knowledge Check button on any day card (the day goes in the deck's order); 🎮 Knowledge Games are removed:
+  // no 🎮 button anywhere, and #/kcgames is no page of the platform
   const pqDays = [];
   for (let d = 1; d <= 16; d++) {
     await page.evaluate(d => FTDayDecks.open(d, 0), d); await page.waitForTimeout(400);
@@ -459,8 +459,7 @@ if (D[11] && D[11].slides.some(s => /update this section of your TAM|image32/.te
   }
   if (pqDays.length) fail(`a ✍️ Knowledge Check button still shows on the day card of days ${pqDays.join(', ')}`);
   if (await page.evaluate(() => typeof window.FTKCGames !== 'undefined')) fail('the Knowledge Games are still offered (window.FTKCGames)');
-  await page.evaluate(() => goto('kcgames')); await page.waitForTimeout(800);
-  if (await page.evaluate(() => state.view) !== 'process') fail('#/kcgames doesn\'t go to ✍️ Knowledge Check while the games are off');
+  if (await page.evaluate(() => (window.EXTRA_ROUTE_VIEWS || []).includes('kcgames'))) fail('#/kcgames is still a page of the platform');
 
   await put('settings:dayextras', extrasBefore || { days: {} });
   await put('settings:opendays', openBefore || { all: [], batches: {} });
