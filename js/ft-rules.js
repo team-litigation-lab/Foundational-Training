@@ -403,7 +403,7 @@ const SLIDES = [
   // the answer sheets, in the Hubstaff how-tos' way: saved daily in the Assessment and Activities Folder, named by the convention; the platform finds and checks them
   ["answer-sheets", "Setting Expectations: Save Your Answer Sheets", ()=>`<div class="ftr-parts ftr-mon-how">${[
       {h:"Name It", steps:["Naming Conventions are provided by trainers.", "Example: PI Overview_Answers (Your First Name)."], tip:"Spaces, underscores and capitals all count."},
-      {h:"Save It", steps:["Save it in your Assessment and Activities Folder.", "Do it the same day, before your shift ends.",
+      {h:"Save It", steps:["Save it in your Assessment and Activities Folder. Link your outputs on the platform so trainers can monitor them.", "Do it the same day, before your shift ends.",
         ["Your daily output is automatically monitored and scored on:", ["Naming Convention", "Timely Submission", "Accuracy and Attention to Detail", "Quality of Output"]]]},
       {h:"It Is Checked", steps:["You are expected to consistently follow this workflow all throughout your training."]},
     ].map((p,i)=>`<div class="ftr-part">
