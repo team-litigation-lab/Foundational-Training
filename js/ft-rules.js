@@ -421,7 +421,7 @@ const SLIDES = [
       ["📒", "3. Your Training Progress Monitoring Sheet", "Every time a discussion or an activity is done, following its specific instructions: the date and 5 takeaways in complete, specific sentences. For your training only."],
       ["📧", "4. Your EOD Email", "Before the end of every shift, with the template: your accomplishments, 3 learnings and tomorrow’s queue."]].map(([i, t, d])=>`<div class="ftr-lesson"><b>${i} ${esc(t)}</b><span>${esc(d)}</span></div>`).join("")}</div>`],
   ["habits", `Building Your Habits: ${HABITS[0].name}`, ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(HABITS[0])}</div>`],
   ["eod", "Your EOD Email: The Template", ()=>`
     <div class="ftr-part ftr-eod">
@@ -434,7 +434,7 @@ const SLIDES = [
   // Update Your Trackers, in two, so each fits one screen: the Task Tracker (before its two slides), then the Monitoring
   // Sheet (before its own)
   ["habits-trackers", "Your Daily Task Tracker: Update It Every Day", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {name:"Update Your Task Tracker", lines:HABITS[1].lines.slice(0, 2), links:HABITS[1].links.slice(0, 1)}))}</div>`],
   ["tracker", "Your Daily Task Tracker", ()=>`
     <p class="ftr-sub ftr-sub-big">Make your tracker as comprehensive as possible: fill in every part, for every task, every day.</p>
@@ -442,7 +442,7 @@ const SLIDES = [
     <div class="ftr-parts">${tpart("The Columns, Left to Right", TRACKER_PARTS.cols)}</div></div>`],
   // (the tracker's Other Tabs slide is off the orientation; its Daily Check is read with the Monitoring Sheet slide next)
   ["habits-monitoring", "Your Daily Monitoring Sheet: Update It After Each Activity", ()=>`
-    <p class="ftr-sub">Every training day, before the end of your shift. These build your habits, so that once you start working with your clients it’s easier to adapt.</p>
+    <p class="ftr-sub">Complete these steps every training day before your shift ends. Building consistent habits now ensures seamless execution with live clients.</p>
     <div class="ftr-grid ftr-habit">${habitCard(Object.assign({}, HABITS[1], {icon:"📒", name:"Update Your Monitoring Sheet", lines:HABITS[1].lines.slice(2), example:null, links:HABITS[1].links.slice(1)}))}</div>
     <div class="ftr-why" style="margin-top:14px;"><b>The Daily Check:</b> ${esc(TRACKER_PARTS.check)}</div>`],
   // the Monitoring Sheet: a drawn preview of a filled-in entry (where to get it, and how it is kept, are on the last slide:
