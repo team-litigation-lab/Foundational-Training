@@ -672,15 +672,13 @@ window.ftLorCard = function(){
   const medT = window.FTDays ? FTDays.label(FTDays.forTool("medlor")) : "", lvT = window.FTDays ? FTDays.label(FTDays.forTool("lienbv")) : "";
   return `<div class="card fts-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}Claims Specialist Training${open ? "" : " · opens with this lesson"}</div>
     <h3>📄 LOR Drafting Activity</h3>
-    <p class="fts-note">Each letter opens on the Training Portal as the firm’s own original, letterhead and all. Edit it on your own computer: <b>✎ Edit in Word</b> for Word or any word processor (LibreOffice Writer, WPS Office, Google Docs), or <b>✎ Edit in PDF</b> for any PDF editor, then upload it back: it is checked and the score goes to your progress. The MedLOR goes out as the firm sends it: one PDF with the client’s signed HIPAA in front, and the HIPAA is shown under the letter. The file is named by the trainers’ convention, ready to upload into the Smart Advocate demo: nothing here becomes a CMS case file.</p>
+    <p class="fts-note">The 1P and 3P letters open on the Training Portal as the firm’s own originals, letterhead and all. Edit one in Word or a PDF editor, upload it back, and it is checked: the score goes to your progress. (The MedLOR and the Lien Balance Verification open from their own days, 14 and 16.)</p>
     ${note ? `<p class="fss-case">${note}</p>` : ""}
     <div class="fts-label">Templates in this tool</div>
     <ul class="fts-tpl">${TEMPLATES.map(t => `<li>${e(String(t.title).replace(/^Activity \d+:\s*/, ""))}</li>`).join("")}
       <li>MedLOR with Unsworn COR + the client’s signed HIPAA, merged into one PDF${medT ? ` (${e(medT)})` : ""}</li>
       <li>Lien Balance Verification${lvT ? ` (${e(lvT)})` : ""}</li></ul>
-    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="lshOpenPortalDrafting()">Open the tool &rarr;</button>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="lshOpenPortalDrafting('medlor')">MedLOR + HIPAA</button>
-      <button class="btn btn-ghost btn-sm" type="button" onclick="lshOpenPortalDrafting('lienbv')">Lien BV</button>`
+    <div class="fts-tool-act">${open ? `<button class="btn btn-navy btn-sm" type="button" onclick="lshOpenPortalDrafting()">Open the tool &rarr;</button>`
       : `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`}</div></div>`;
 };
 
