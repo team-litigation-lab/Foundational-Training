@@ -1004,10 +1004,9 @@ const KEEP = ['<div class="ftdd-keep">\n', "\n</div>"];
 // read on the platform, not downloaded, as the fillable forms are in the CMS). A page opens bigger on the slide
 // (js/ft-day-decks.js pageViewer), and the whole document opens in a tab of its own (ft/day7/forms/<slug>.html)
 const PDOC_DIR = "/ft/day7/forms";
-// (big: the form's name alone on its bar, no page count or new-tab link, and its pages in one row, as large as the
+// (the document's name alone on its bar: no page count or new-tab link. big: its pages in one row, as large as the
 // slide allows: Day 7's blank intake forms)
-const pdocHtml = ([slug, title, n, dir = PDOC_DIR], big) => `<div class="ftdd-pdoc${big ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b>` +
-  (big ? "</div>" : `<span>${n} pages · click a page to view it bigger</span><a class="ftdd-pdoc-tab" href="${dir}/${slug}.html" target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a></div>`) +
+const pdocHtml = ([slug, title, n, dir = PDOC_DIR], big) => `<div class="ftdd-pdoc${big === true ? " ftdd-pdoc-big" : ""}" data-pages="${n}"><div class="ftdd-pdoc-h"><b>📄 ${title}</b></div>` +
   `<div class="ftdd-pdoc-pages" style="--n:${n}">${Array.from({length: n}, (_, i) => `<a class="ftdd-pdoc-pg" href="${dir}/${slug}-${i + 1}.webp" target="_blank" rel="noopener noreferrer">` +
   `<img src="${dir}/${slug}-${i + 1}.webp" alt="${title}, page ${i + 1}" loading="lazy"><span>Page ${i + 1}</span></a>`).join("")}</div></div>\n`;
 // Day 8's naming convention reference (Topic 2, between steps 3 and 4)
@@ -1109,9 +1108,8 @@ const ROWS = {
       {id: "formsd", h: "AM: Other Intake-Related Documents", parts: [['<div class="ftdd-two">', "<h4>More sample intake calls</h4>"]], fix: [x => {
         const two = /<div class="ftdd-two"><div>\n<p>Sample Intake Audio Recordings<\/p>\n<p>[^\n]*<\/p>\n<\/div><div>\n(<p>Other Intake-Related Documents<\/p>\n<p>[^\n]*<\/p>)\n<\/div><\/div>\n?/;
         if(!two.test(x)) throw new Error("Day 7's two folders are no longer what the build looks for");
-        // (the Other Intake-Related Documents folder: its documents read on the slide, the folder linked under them)
-        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(pdocHtml).join('<div class="ftdd-pgbreak"></div>\n') +
-          '<p class="ftdd-pdoc-more">The rest of the folder: <a href="https://drive.google.com/drive/folders/1UrLBiX0ntxzvyxvRkHBhdTevtoP2jLzX?usp=sharing" target="_blank" rel="noopener noreferrer">Other Intake-Related Documents ↗</a></p>\n');
+        // (the Other Intake-Related Documents folder: its documents read on the slide, with no link to the Drive folder)
+        return x.replace(two, () => '<h4>📁 Other Intake-Related Documents</h4>\n' + INTAKE_DOCS.map(f => pdocHtml(f)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]}]
   },
   8: {
