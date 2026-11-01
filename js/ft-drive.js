@@ -245,7 +245,7 @@ window.render = function(){
 });
 
 /* ---------- Admin → 📁 Drive Trackers: links, checks and the trainer's score and comment ---------- */
-const DA = {rows:null, loading:false, batch:"", open:{}, busy:{}};
+const DA = {rows:null, loading:false, batch:"", open:{}, busy:{}, edit:false, saving:false};
 async function loadAdmin(){
   DA.loading = true;
   try{
@@ -266,12 +266,32 @@ function scoreForm(id, which, res){
     <label class="fss-wide">Your comment<textarea rows="2" data-comment placeholder="The trainee sees it under the check">${e((res && res.comment) || "")}</textarea></label>
     <button class="btn btn-navy btn-sm" onclick="FTDriveAdmin.save('${e(id)}', '${e(which)}', this)">Save</button></div>`;
 }
+/* 🔗 the trainer sets a batch's Drive links for its trainees (the shared folders and files the batch was given), in one place:
+   a row per trainee with their four links, typed or pasted from a sheet (a row per trainee: their name, then the folder, the
+   tracker, the Monitoring Sheet and the TAM, tab- or comma-separated, as copied from Google Sheets). 💾 Save writes each
+   trainee's drive:<id> (their days and start date kept): their 📁 My Drive links show them filled in, and the nightly check
+   reads them from then on. */
+const LINK_KEYS = [["folder", "📁 Assessment and Activities Folder"], ["tracker", "📋 Daily Task Tracker"], ["monitor", "📒 Monitoring Sheet"], ["tam", "📘 TAM"]];
+function linksEditor(rows){
+  if(!DA.batch) return `<p class="fdr-err">Pick a batch first.</p>`;
+  return `<div class="fdr-bulk"><h4>🔗 ${e(DA.batch)}’s Drive links</h4>
+    <p class="fdr-muted">Each trainee’s four links: the folder and files shared with them. Type or paste them below, or paste a block copied from a sheet (a row per trainee: <b>name, folder, Task Tracker, Monitoring Sheet, TAM</b>), then 💾 Save. A trainee’s links show filled in on their 📁 My Drive links, and the end-of-shift check reads them.</p>
+    <textarea id="fdrBulkPaste" rows="3" placeholder="Jamie Cruz	https://drive.google.com/drive/folders/…	https://docs.google.com/spreadsheets/d/…	https://docs.google.com/document/d/…	https://docs.google.com/document/d/…"></textarea>
+    <div class="fp-actions"><button class="btn btn-ghost btn-sm" onclick="FTDriveAdmin.paste()">⤓ Fill from the pasted rows</button></div>
+    <div class="fdr-bulk-wrap"><table class="fdr-bulk-t"><thead><tr><th>Trainee</th>${LINK_KEYS.map(([, t]) => `<th>${t}</th>`).join("")}</tr></thead><tbody>
+      ${rows.map(r => `<tr data-id="${e(r.id)}"><td><b>${e(r.name)}</b></td>${LINK_KEYS.map(([k]) => `<td><input type="url" data-k="${k}" value="${e((r.drive || {})[k] || "")}" placeholder="https://…"></td>`).join("")}</tr>`).join("")}</tbody></table></div>
+    <div class="fp-actions"><button class="btn btn-navy btn-sm" ${DA.saving ? "disabled" : ""} onclick="FTDriveAdmin.saveAll()">${DA.saving ? "Saving…" : "💾 Save the batch’s links"}</button>
+      <button class="btn btn-ghost btn-sm" onclick="FTDriveAdmin.edit()">Close</button></div></div>`;
+}
 function renderAdminDrive(){
   if(!DA.rows){ if(!DA.loading) loadAdmin(); return `<div class="card" style="padding:24px;">Loading the trainees’ Drive links…</div>`; }
   const batches = [...new Set(DA.rows.map(r => r.batch).filter(Boolean))].sort(), rows = DA.rows.filter(r => !DA.batch || r.batch === DA.batch);
   const lk = (u, t) => u ? `<a href="${e(u)}" target="_blank" rel="noopener noreferrer">${t} ↗</a>` : `<span class="fdr-muted">${t}: —</span>`;
   return `<div class="card fss-admin"><div class="ff-bar"><div><h3>📁 Drive Trackers</h3><p class="fdr-muted">Each trainee’s Task Tracker and Monitoring Sheet, kept in their main Google Drive: the links, the automated checks (automatically at the end of every shift, or ✅ Check now) and your score and comment for each day and for the Monitoring Sheet.</p></div>
       <span><select onchange="FTDriveAdmin.batch(this.value)"><option value="">All batches</option>${batches.map(b => `<option ${b === DA.batch ? "selected" : ""}>${e(b)}</option>`).join("")}</select><button class="btn btn-ghost btn-sm" onclick="FTDriveAdmin.refresh()">↻</button></span></div>
+    <div class="fp-actions"><button class="btn ${DA.edit ? "btn-ghost" : "btn-navy"} btn-sm" onclick="FTDriveAdmin.edit()">🔗 ${DA.edit ? "Close the links editor" : "Set the batch’s links"}</button>
+      <span class="fdr-muted">${rows.filter(r => (r.drive || {}).folder).length} of ${rows.length} with a folder linked</span></div>
+    ${DA.edit ? linksEditor(rows) : ""}
     ${rows.length ? rows.map(r => { const dv = r.drive || {}, t = (r.rv.days || {})[today()], m = r.rv.monitor, open = !!DA.open[r.id];
       const days = [...new Set(Object.keys(dv.days || {}).concat(Object.keys(r.rv.days || {})))].sort().reverse().slice(0, 10);
       return `<div class="fss-arow"><div class="fss-arow-h" onclick="FTDriveAdmin.open('${e(r.id)}')">${open ? "▾" : "▸"} <b>${e(r.name)}</b> <span class="fdr-muted">${e(r.batch)}</span>
@@ -290,6 +310,42 @@ function renderAdminDrive(){
 }
 window.FTDriveAdmin = {
   batch(b){ DA.batch = b; render(); },
+  edit(){ DA.edit = !DA.edit; render(); },
+  // a block copied from a sheet: a row per trainee, their name then the four links (tabs or commas between); matched by name
+  paste(){
+    const t = String((document.getElementById("fdrBulkPaste") || {}).value || "").trim(); if(!t){ toast("Paste the rows first."); return; }
+    const norm = x => String(x || "").toLowerCase().replace(/[^a-z]/g, "");
+    const trs = [...document.querySelectorAll(".fdr-bulk-t tbody tr")];
+    let n = 0; const miss = [];
+    t.split(/\r?\n/).map(l => l.split(/\t|,(?=\s*https?:)/).map(x => x.trim())).filter(c => c[0]).forEach(c => {
+      const name = c[0], urls = c.slice(1).filter(u => /^https?:/.test(u));
+      const row = DA.rows.find(r => r.batch === DA.batch && (norm(r.name) === norm(name) || norm(r.name).startsWith(norm(name)) || norm(name).startsWith(norm(r.name))));
+      const tr = row && trs.find(x => x.getAttribute("data-id") === row.id);
+      if(!tr){ miss.push(name); return; }
+      LINK_KEYS.forEach(([k], i) => { if(urls[i]){ tr.querySelector(`input[data-k="${k}"]`).value = urls[i]; } }); n++;
+    });
+    toast(`⤓ Filled ${n} trainee${n === 1 ? "" : "s"}${miss.length ? `. Not found in ${DA.batch}: ${miss.slice(0, 5).join(", ")}${miss.length > 5 ? "…" : ""}` : ""}. Check them, then 💾 Save.`);
+  },
+  async saveAll(){
+    const trs = [...document.querySelectorAll(".fdr-bulk-t tbody tr")]; if(!trs.length) return;
+    const bad = [];
+    trs.forEach(tr => LINK_KEYS.forEach(([k]) => { const v = tr.querySelector(`input[data-k="${k}"]`).value.trim(); if(v && !isGoogle(v)) bad.push(tr.querySelector("b").textContent); }));
+    if(bad.length){ toast(`Each link must be a Google Drive / Docs link: check ${[...new Set(bad)].slice(0, 4).join(", ")}.`); return; }
+    DA.saving = true; render();
+    let n = 0, fail = 0;
+    for(const tr of trs){
+      const id = tr.getAttribute("data-id"), row = DA.rows.find(r => r.id === id); if(!row) continue;
+      const cur = Object.assign({days: {}}, row.drive || {}), next = Object.assign({}, cur);
+      LINK_KEYS.forEach(([k]) => { const v = tr.querySelector(`input[data-k="${k}"]`).value.trim(); if(v) next[k] = v; else delete next[k]; });
+      if(JSON.stringify(next) === JSON.stringify(cur)) continue;
+      if(!next.startDate) next.startDate = today();
+      next.updatedAt = new Date().toISOString(); next.linkedBy = "trainer";
+      if(await sharedSet("drive:" + id, next) === false) fail++; else { row.drive = next; n++; }
+    }
+    DA.saving = false;
+    toast(fail ? `Couldn’t save ${fail} trainee(s). Try again.` : n ? `✓ Saved ${n} trainee${n === 1 ? "" : "s"}’ links. They’re checked at the end of every shift from now on.` : "Nothing changed.");
+    render();
+  },
   open(id){ DA.open[id] = !DA.open[id]; render(); },
   refresh(){ DA.rows = null; render(); },
   async check(id){
@@ -350,6 +406,12 @@ main.main-fdr{max-width:1000px;margin:0 auto;padding:24px 16px 40px;}
 .fdr-l{display:block;margin:10px 0;} .fdr-l > span{display:block;font-weight:700;color:var(--navy);font-size:14px;margin-bottom:4px;} .fdr-l small{color:var(--ink-soft);font-size:12.5px;}
 .fdr-row{display:flex;gap:8px;align-items:center;margin:4px 0;} .fdr-row input{flex:1;min-width:0;font:inherit;font-weight:500;font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;}
 .fdr-row .fdr-label{flex:0 1 240px;} .fdr-row a.btn{text-decoration:none;}
+.fdr-bulk{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#F8F9FC;margin:8px 0 12px;}
+.fdr-bulk h4{margin:0 0 4px;} .fdr-bulk textarea{width:100%;box-sizing:border-box;font:12.5px 'IBM Plex Mono',ui-monospace,monospace;padding:8px;border:1px solid var(--line);border-radius:8px;}
+.fdr-bulk-wrap{overflow:auto;max-height:55vh;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:#fff;}
+.fdr-bulk-t{border-collapse:collapse;width:100%;font-size:13px;} .fdr-bulk-t th{position:sticky;top:0;background:#1E2340;color:#fff;text-align:left;padding:6px 8px;font-weight:700;white-space:nowrap;}
+.fdr-bulk-t td{border-bottom:1px solid var(--line);padding:4px 6px;} .fdr-bulk-t td:first-child{white-space:nowrap;}
+.fdr-bulk-t input{width:100%;min-width:200px;box-sizing:border-box;font:inherit;padding:5px 7px;border:1px solid #D5DAE5;border-radius:6px;}
 .fdr-eod{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;resize:vertical;}
 .fdr-day{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;} .fdr-day select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;}
 .fdr-res-h{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0;} .fdr-pct{font-size:22px;font-weight:800;} .fdr-pct.ok{color:var(--success);} .fdr-pct.mid{color:#B7791F;} .fdr-pct.bad{color:var(--danger);}
