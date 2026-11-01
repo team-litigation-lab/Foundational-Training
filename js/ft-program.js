@@ -48,7 +48,7 @@ window.LSH_PROGRAM = {
   adminGroups: {
     admin: ["audit", "batches", "tfeedback", "sops", "dbmaint"],   // (no 🏛 Law Firms tab)
       // no "attendance": it is the Training Portal's /attendance.html, per program per batch
-    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle", "kcgames"],
+    modules: ["opendays", "curriculum", "trackers", "monitor", "drivetrackers", "fbstyle"],   // (no 🎮 Knowledge Games: removed)
     lab: ["calscores", "sessions", "trainerinputs", "mockscores", "calcheck", "calrules", "calweek", "listening", "shadowing"],
     scorecard: ["scorecards", "ranking", "overall", "sendfeedback", "skilltests"]
   },
@@ -116,9 +116,6 @@ window.LSH_PROGRAM = {
     {id:"calweek", icon:"📅", label:"Calendaring Activity", key:"calweek:",
       about:"Standard Training - Calendaring Activity (Days 5–6): the tasks you booked on the attorney’s calendar for next week, checked against the attorney’s rules (the score of your submitted calendar).",
       items: ctx => typeof window.ftCalWeekItems === "function" ? window.ftCalWeekItems(ctx) : []},
-    {id:"kcgames", icon:"🎮", label:"Knowledge Games", key:"kcgames:",
-      about:"Your best game on each lesson’s Knowledge Games (practice only: the graded Knowledge Check is the score that counts).",
-      items: ctx => typeof window.ftKCGameItems === "function" ? window.ftKCGameItems(ctx) : []},
     {id:"feedback", icon:"📝", label:"Trainer feedback", key:"trainerfb:",
       about:"The score your trainer gave each piece of work they reviewed: your transcriptions, video notes, process guides and letters (Admin → 📝 Send Feedback).",
       items: ctx => typeof window.ftTrainerFeedbackItems === "function" ? window.ftTrainerFeedbackItems(ctx) : []},
