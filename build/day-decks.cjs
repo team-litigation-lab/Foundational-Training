@@ -1097,7 +1097,10 @@ const ROWS = {
         // (the folder's Drive preview gives way to the five forms read on the slide, a page of the slide each, with no lead line)
         const shot = /<a class="ftdd-shot"[^\n]*1sdpjU_vYPuuvP1U07uHuHYiBcy2uG3kF[^\n]*<\/a>\n/;
         if(!shot.test(x)) throw new Error("Day 7's Blank PI Intake Forms are no longer where the build looks for them");
-        return x.replace(shot, () => INTAKE_FORMS.map(f => pdocHtml(f, true)).join('<div class="ftdd-pgbreak"></div>\n'));
+        // (and the guide's heading over all five goes: each page opens on its own form's name bar)
+        const head = /<h4>📄 Blank PI Intake Forms[^\n]*<\/h4>\n/;
+        if(!head.test(x)) throw new Error("Day 7's Blank PI Intake Forms heading is no longer where the build looks for it");
+        return x.replace(head, "").replace(shot, () => INTAKE_FORMS.map(f => pdocHtml(f, true)).join('<div class="ftdd-pgbreak"></div>\n'));
       }]},
       {id: "formsc", h: "AM: Reference: Mock Intake (non-VLF) Recording", parts: [["<p>Mock Intake (non-VLF) recording</p>", '<div class="ftdd-two">']]},
       {id: "formse", pre: KEEP[0], post: KEEP[1], h: "AM: Sample Intake Calls: Work Premises Accident & Demanding Slip and Fall Client", parts: [["<h4>More sample intake calls</h4>", '<div class="ftis-calls" data-calls="3,4">']],
