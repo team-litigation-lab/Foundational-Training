@@ -276,14 +276,16 @@ FTSessions.cards = function(){
     const status = !run ? "" : run.submittedAt ? `<span class="fss-pill ${sc >= PASS ? "ok" : "mid"}">${tScore(rv) != null ? "🧑‍🏫 " : ""}${sc}%</span>` : run.startedAt ? `<span class="fss-pill live">🟢 In progress</span>` : "";
     const lessonT = (DAYS.find(d => d.id === s.lesson) || {}).title || "";
     const dayT = window.FTDays ? FTDays.label(FTDays.forSession(s.id)) : "";
-    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
+    // (✓ done: submitted; the Practice Lab files the card under its first day and shows Done / Review: js/ft-simulators.js)
+    const st = !open ? "locked" : run && run.submittedAt ? "done" : run && run.startedAt ? "live" : "todo";
+    return `<div class="card fts-card fss-card ${open ? "" : "fts-locked"}" data-days="${window.FTDays ? FTDays.forSession(s.id).join(",") : ""}" data-status="${st}" data-type="session"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(lessonT)}${open ? "" : " · opens with this lesson"}</div>
       <h3>${s.icon} ${e(s.title)} ${status}</h3><p class="fts-note">${e(s.about)}</p>
       ${window.ftsGradedLine ? ftsGradedLine(s.lesson) : ""}
       ${s.area && isTrainee() ? `<p class="fss-case">${c ? `🗂 Your case: <b>${e(c.id)}</b> · ${e(c.client.name)}` : "🗂 This session works on a case, and your firm has none in its caseload yet — ask in the training GC."}</p>` : ""}
       <div class="fts-tool-act">${!open ? `<button class="btn btn-ghost btn-sm" disabled>🔒 Locked</button>`
         : isTrainee() && !f ? `<button class="btn btn-ghost btn-sm" disabled>Waiting for your firm</button>`
         : isTrainee() && s.area && !c ? `<button class="btn btn-ghost btn-sm" disabled title="Your firm has no case for this session yet">No case yet</button>`
-        : `<button class="btn btn-navy btn-sm" onclick="FTSessions.open('${s.id}')">${run && run.submittedAt ? "Review / redo" : run && run.startedAt ? "▶ Continue" : "▶ Start the session"}</button>`}</div></div>`;
+        : `<button class="btn ${run && run.submittedAt ? "btn-ghost" : "btn-navy"} btn-sm" onclick="FTSessions.open('${s.id}')">${run && run.submittedAt ? "👁 Review" : run && run.startedAt ? "▶ Continue" : "▶ Start the session"}</button>`}</div></div>`;
   }).join("");
 };
 
@@ -393,6 +395,15 @@ FTSessions.forDay = function(day){
     return {kind:x.at, id:x.id, icon:s ? s.icon : "🧑‍🏫", title:(s && s.title) || (a && a.title) || x.t, as:x.t, why:x.kind};
   });
 };
+// The days a trainer-led activity is done on: the day map's, else (the transcriptions, which the map lists under the tool)
+// the Transcription Activity's day, else the last day of its lesson.
+function actDays(a){
+  if(!window.FTDays) return [];
+  const d = FTDays.forAct(a.id); if(d.length) return d;
+  if(/^transcription/.test(a.id)) return FTDays.forTool("transcribe");
+  const l = a.lesson ? FTDays.forLesson(a.lesson) : [];
+  return l.length ? [l[l.length - 1]] : [];
+}
 FTSessions.trainerCards = function(){
   if(isTrainee()) load();
   const mine = ((S.review || {}).acts) || {};
@@ -400,8 +411,9 @@ FTSessions.trainerCards = function(){
   const shown = a => !isTrainee() || state.adminPreview || ((a.lesson ? window.dayUnlocked(a.lesson) : (window.ftsReached ? ftsReached(window.FTDays ? FTDays.forAct(a.id) : []) : true))
     && (!window.FTDayLocks || FTDayLocks.labOpen(window.FTDays ? FTDays.forAct(a.id) : [])));
   return acts().filter(a => DAYS.find(d => d.id === a.lesson) || !a.lesson).filter(shown).map(a => { const r = mine[a.id] || {}, sc = tScore(r);
-    const dayT = window.FTDays ? FTDays.label(FTDays.forAct(a.id)) : "";
-    return `<div class="card fts-card"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
+    const dayT = window.FTDays ? FTDays.label(actDays(a)) : "";
+    const st = !isTrainee() ? "todo" : r.status === "Passed" ? "done" : r.status === "Redo" ? "redo" : "todo";
+    return `<div class="card fts-card" data-days="${actDays(a).join(",")}" data-status="${st}" data-type="trainer"><div class="fts-kicker">${dayT ? e(dayT) + " · " : ""}${e(a.kind || "With your trainer")}${a.lesson ? " · " + e((DAYS.find(d => d.id === a.lesson) || {}).title || "") : ""}</div>
       <h3>${e(a.title)} ${r.status ? `<span class="fss-pill ${r.status === "Passed" ? "ok" : r.status === "Redo" ? "mid" : ""}">${e(r.status)}${sc != null ? " · " + sc + "%" : ""}</span>` : ""}</h3>
       <p class="fts-note${isTrainee() && has(r.comment) ? "" : " fts-note-std"}">${isTrainee() ? (has(r.comment) ? `🧑‍🏫 ${e(r.comment)}` : "You do this live with your trainer, who records your result here.") : "Trainers record each trainee’s result in Admin → 🧑‍🏫 Trainer Inputs."}</p>
       ${(() => { const rb = RUB().forAct(a); if(!rb) return "";
