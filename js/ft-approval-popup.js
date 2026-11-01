@@ -3,8 +3,9 @@
 
    When a new trainee registers, every trainer account that is signed in (the trainers who come in from
    the LSH Training Portal, and the admin password) gets a popup listing the registrations waiting for
-   approval, each with ✓ Approve and ✕ Decline. It shows on every page of the program, 👁 Trainee view
-   included, as long as the trainer is signed in.
+   approval, each with ✓ Approve and ✕ Decline. It shows on every page of the program as long as the
+   trainer is signed in, except in 👁 Trainee view (a trainer may be presenting it to the room: no
+   trainee names on a shared screen). It comes back as soon as they switch back to the trainer view.
 
    - It does not go away until every registration in it is approved or declined: there is no close
      button, Esc and clicking outside do nothing, and it stays on top while the trainer moves between
@@ -23,7 +24,8 @@
   let busy = false, lastFetch = 0, cache = null;
 
   // Every trainer sign-in sets state.isAdmin; a trainee session never does (state.traineeId).
-  const trainerOn = () => !!state.isAdmin && !state.traineeId;
+  // 👁 Trainee view (state.adminPreview) hides it: that view may be on a projector.
+  const trainerOn = () => !!state.isAdmin && !state.traineeId && !state.adminPreview;
   const pendingOf = list => (list || []).filter(r => r && r.id && r.approved !== true && !r.rejected && !r.archived && !r.offboarded);
   const title = n => `⏳ New registration${n === 1 ? "" : "s"} waiting for approval (${n})`;
 
@@ -129,7 +131,7 @@
 
   async function tick(){
     if(busy || document.visibilityState === "hidden") return;
-    if(!trainerOn() || state.view === "login"){ close(); return; }   // signed out / 👁 Trainee view
+    if(!trainerOn() || state.view === "login"){ close(); return; }   // signed out / 👁 Trainee view (shown again on return)
     busy = true;
     try{
       sync(await loadPending());   // on top of whatever page or dialog is open
@@ -156,5 +158,11 @@
   setTimeout(tick, 4000);                                     // soon after sign-in / page load
   setInterval(tick, POLL.live || 15000);                      // cheap: the server is asked at most once a minute
   document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") tick(); });
+  // Switching into 👁 Trainee view hides it at once (not at the next check): every page change re-draws.
+  if(typeof render === "function" && !render.__ftap){
+    const orig = render;
+    window.render = render = function(){ const out = orig.apply(this, arguments); if(document.getElementById(ID) && !trainerOn()) close(); return out; };
+    render.__ftap = true;
+  }
   window.ftApprovalPopupCheck = tick;
 })();
