@@ -239,7 +239,7 @@
   // One entry per classroom discussion, in the order the Training Guide runs them: all 18 days of
   // the Revised 18-Day Foundational Training Program (js/ft-day-activities.js maps the days).
   // The Lien Negotiator days close the programme, so their discussions are monitored like the rest.
-  const MONITOR_TOPICS = ["Virtual Assistant Essentials - Day 1", "Virtual Assistant Essentials - Day 2",
+  const MONITOR_TOPICS = ["Virtual Assistant Essentials - Day 1", "Law Firm Communication",
     "Reception Training Day 1", "Reception Training Day 2", "Reception Training Day 3", "Calendar Management Training",
     "Intake Training Day 1", "Intake Training Day 2", "Intake Training Day 3",
     "Insurance Communication Training Day 1", "Insurance Communication Training Day 2", "Insurance Communication Training Day 3",
@@ -250,10 +250,13 @@
   const OPTIONAL_MONITOR_TOPICS = ["Lien Negotiator Training Day 1", "Lien Negotiator Training Day 2"];
   const optionalTopic = (t) => !!(t && t.optional) || OPTIONAL_MONITOR_TOPICS.includes(String((t && t.title) || t));
   const RATING_HINTS = ["really don", "on my own but", "confident that i can", "can teach this"];
+  // a discussion's earlier title, still found on the sheets written under it (Day 2 was "Virtual Assistant Essentials - Day 2")
+  const TOPIC_ALIASES = {"Law Firm Communication": ["Virtual Assistant Essentials - Day 2"]};
   function gradeMonitorText(text, topics){
     const lines = String(text || "").split(/\r?\n/).map((l) => l.replace(/^[\s,]+|[\s,]+$/g, "")).filter(Boolean);
     const low = lines.map((l) => l.toLowerCase());
-    const starts = (topics || []).map((t) => ({t, at: low.findIndex((l) => l.includes(String(t.title || t).toLowerCase()))})).filter((x) => x.at >= 0).sort((a, b) => a.at - b.at);
+    const names = (t) => [String(t.title || t)].concat(TOPIC_ALIASES[String(t.title || t)] || []).map((x) => x.toLowerCase());
+    const starts = (topics || []).map((t) => ({t, at: low.findIndex((l) => names(t).some((n) => l.includes(n)))})).filter((x) => x.at >= 0).sort((a, b) => a.at - b.at);
     const entries = starts.map((x, k) => {
       const seg = lines.slice(x.at + 1, k + 1 < starts.length ? starts[k + 1].at : lines.length), segLow = seg.map((l) => l.toLowerCase());
       const qi = segLow.findIndex((l) => /question/.test(l)), ri = segLow.findIndex((l) => /rate your understanding|understanding/.test(l));

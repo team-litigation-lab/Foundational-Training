@@ -58,7 +58,7 @@ async function workerChecks() {
   // every day's line, and the shadowing line on the shadowing days
   const lines = await page.evaluate(() => { const out = {}; (FTDays.DAYS || []).forEach(d => { out[d.day] = FTShadow.lines(d.day); }); return out; });
   const want = {
-    1: 'Classroom Discussion: Virtual Assistant Essentials - Day 1', 2: 'Classroom Discussion: Virtual Assistant Essentials - Day 2',
+    1: 'Classroom Discussion: Virtual Assistant Essentials - Day 1', 2: 'Classroom Discussion: Law Firm Communication',
     3: 'Classroom Discussion: Reception Training Day 1', 5: 'Classroom Discussion: Reception Training Day 3',
     6: 'Classroom Discussion: Calendar Management Training', 7: 'Classroom Discussion: Intake Training Day 1',
     11: 'Classroom Discussion: Insurance Communication Training Day 2', 16: 'Classroom Discussion: Provider Communication Training Day 4' };
