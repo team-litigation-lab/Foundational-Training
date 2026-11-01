@@ -4,7 +4,7 @@
                       a demanding slip-and-fall client, an agitated dog-bite 1P caller, a medical-malpractice caller
                       worried about fees), each a recording with what to listen for and its transcript, every line's
                       [m:ss] a button that plays the recording from there.
-     • .ftis-consult  Day 9 (Part 3) and 🎧 the Transcription Activity: the PI equivalent sample guide, Atty.
+     • .ftis-consult  Day 9 (Part 3, its Sample Transcription Guide slide): the PI equivalent sample guide, Atty.
                       Magdalena's consultation with a new client, as a recording, its A / C transcript (A for
                       Attorney, C for Client) and the sample minutes made from it.
      • .ftis-packet   Day 8 (Part 2), Topic 2: Your Assigned Packet, the one the trainer assigned in Admin → 📦 Intake

@@ -126,4 +126,54 @@ export const ASSESS_KEYS = {
       s3_adj: { pts: 5, essay: true, answer: "A reply to adjuster Tom Rinaldi (trinaldi@allstate.example), keeping the subject (Re:). Declines to give the client's phone number or email and does not allow direct contact: the client is represented, so all communication goes through the firm. Asks him to open the bodily injury claim (or BI feature) on existing claim 0627-881-AL for Marcus Bell, and to confirm the BI claim number and the assigned BI adjuster with contact details. Courteous, professional, signature." }
     }
   }
+  ,
+  // 📄 Day 11's Policy Disclosure, Claim & Liability Evaluation (js/ft-assess.js "policy-disclosure"): Part I on the Dec Pages,
+  // its answers the facilitator's key (Policy Disclosure – Key Answer); Part II from the training. Every item is an essay,
+  // graded by the AI in the facilitator's voice against its key (an identification out of 1, an explanation out of 5);
+  // without the AI, the trainer grades it. 87 points.
+  // (Part II has no key of its own: e1–e3 are written from what the training teaches, f1 from Lesson 7's "Information to
+  // Prepare Before Opening a Claim" slides; a trainer corrects them here)
+  "policy-disclosure": {
+    title: "Policy Disclosure, Claim & Liability Evaluation",
+    context: "evaluation on policy disclosure and claims: the trainee read three auto insurance Declarations (Dec) Pages (a 3P commercial policy, a 3P Esurance personal auto policy and the client's 1P Geico policy) and answered identification and short-answer items from them, explained how pairs of auto coverages differ, and explained fault, negligence and liability and what is needed to open a claim. An identification answer is right when it gives the key's fact (the same name, number, date range, list or amount, in any format); an explanation is scored on how fully and accurately it covers the key's points",
+    items: {
+      // Activity #1: the 3P Commercial Policy Dec Page
+      a1: { pts: 1, essay: true, answer: "Infinity Assurance Insurance Company" },
+      a2: { pts: 1, essay: true, answer: "509-82004-7962-001" },
+      a3: { pts: 1, essay: true, answer: "06/16/2022 – 06/16/2023" },
+      a4: { pts: 1, essay: true, answer: "2 Brothers Landscaping Inc." },
+      a5: { pts: 1, essay: true, answer: "Jeffery Sergio, Giovanni Arroyo and Alma Sergio (all three)" },
+      a6: { pts: 1, essay: true, answer: "6 vehicles" },
+      a7: { pts: 1, essay: true, answer: "$300,000 CSL (combined single limit)" },
+      a8: { pts: 5, essay: true, answer: "Combined Single Limit: the maximum amount the policy pays for any combination of bodily injuries and property damage in one accident (one limit, not split per person / per accident / property damage)." },
+      a9: { pts: 1, essay: true, answer: "Basic PIP (Personal Injury Protection)" },
+      a10: { pts: 5, essay: true, answer: "Commercial policyholders often opt out of UM/UIM: their employees are usually covered by workers' compensation for work-related injuries, and UM/UIM statutes in most states do not allow duplication of workers' compensation payments; employees with a personal auto policy likely have UM/UIM there, which would be primary; and commercial policyholders often own a fleet of autos, so UM/UIM would increase the cost." },
+      // Activity #2: the 3P Esurance Dec Page
+      b1: { pts: 1, essay: true, answer: "Esurance Property and Casualty Insurance Company" },
+      b2: { pts: 1, essay: true, answer: "PAFL-009351106" },
+      b3: { pts: 1, essay: true, answer: "01/22/2023 – 07/22/2023" },
+      b4: { pts: 1, essay: true, answer: "Jean Dorval" },
+      b5: { pts: 1, essay: true, answer: "Jean-Vilaire Dorval" },
+      b6: { pts: 1, essay: true, answer: "2 vehicles" },
+      b7: { pts: 5, essay: true, answer: "The bodily injury liability limit is $100,000 per person and $300,000 per accident, and the property damage liability limit is $50,000." },
+      b8: { pts: 5, essay: true, answer: "On the 3P's Dec Page, look only for the bodily injury and property damage (liability) coverage. PIP and UM/UIM coverage are looked for only under the plaintiff's (client's, 1P) policy." },
+      // Activity #3: the 1P Geico Dec Page
+      c1: { pts: 5, essay: true, answer: "PIP, UM/UIM, Comprehensive, Collision, Emergency Road Service and Rental Reimbursement." },
+      c2: { pts: 5, essay: true, answer: "The uninsured and underinsured motorist coverage limits are not combined (stacked), even if the insured insures multiple vehicles or lives with another driver who insures their vehicle." },
+      c3: { pts: 1, essay: true, answer: "$1,000 (the comprehensive deductible)" },
+      c4: { pts: 1, essay: true, answer: "Collision" },
+      c5: { pts: 1, essay: true, answer: "$1,000" },
+      // Activity #4: how each pair differs
+      d1: { pts: 5, essay: true, answer: "Bodily injury liability pays damages for bodily injury or death resulting from an accident for which the insured is at fault, while property damage liability pays for damage to someone else's property resulting from an accident for which the insured is at fault." },
+      d2: { pts: 5, essay: true, answer: "Medical payments coverage may pay medical expenses related to a car accident, while personal injury protection coverage may pay for medical treatment, lost wages or other accident-related expenses, regardless of who caused the accident." },
+      d3: { pts: 5, essay: true, answer: "Uninsured motorist coverage may compensate for injuries or property damage caused by a driver without insurance, while underinsured motorist coverage protects against at-fault drivers whose insurance is insufficient to pay the claim." },
+      d4: { pts: 5, essay: true, answer: "Collision coverage may pay for damage to the insured's car when it hits, or is hit by, another vehicle or other object, while comprehensive coverage may pay for damage to the car from theft, vandalism, flood or other covered losses (not a collision)." },
+      // Part II, Activity #1
+      e1: { pts: 5, essay: true, answer: "Fault is legal responsibility for causing the accident: the party whose careless or wrongful act caused it. Proving fault matters because, in an at-fault (tort) state, the at-fault driver and their liability insurer pay the injured party's damages (medical bills, lost wages, pain and suffering, property damage); the degree of fault, including the client's own (comparative fault), decides whether and how much the client can recover, which claims are opened (3P bodily injury vs. 1P coverage) and how strong the case is." },
+      e2: { pts: 5, essay: true, answer: "Negligence is the failure to use the care a reasonably careful person would use in the same situation (e.g. speeding, running a red light, distracted driving). It is shown by four elements: a duty of care, a breach of that duty, causation (the breach caused the accident and injuries) and damages; it is the basis of most personal injury claims." },
+      e3: { pts: 5, essay: true, answer: "No-doubt (clear) liability: a case where it is plain that the other party is at fault, so liability is not disputed (e.g. the client was rear-ended while stopped, or the other driver ran a red light, was cited by the police, or admitted fault). The insurer typically accepts liability quickly, so the case moves to proving damages." },
+      // Part II, Activity #2
+      f1: { pts: 5, essay: true, answer: "At least five of what the training lists to prepare before opening a claim: the client's basic information (full name, date of birth, contact number, email, mailing/physical address, ID or driver's license); the involved parties (names and contact information of all drivers, vehicle information: make, model, plate; their insurance information from the police report or client; witnesses); the supporting documents (police report or report number, photos of the accident/vehicles/injuries, insurance declarations, signed retainer and intake form); the injuries and medical treatment (injuries reported at the scene, hospital or urgent care visits, ongoing treatment); and the accident details / facts of loss (date and time, location, type of accident, how it happened)." }
+    }
+  }
 };

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sample Insurance Communication Documents</title>
+<!-- Day 10's sample insurance communication documents, read page by page in a tab of their own (build/day-decks.cjs
+     SAMPLE_DOCS_10: a tile each on the Sample Recordings & Documents slide opens this page on its document, ?doc=<slug>).
+     The pages are images (the guide's Drive files, the people's names blacked out): read here, not downloaded. -->
+<style>
+:root{--navy:#1E2340;--orange:#E8590C;--ink:#0B0D1A;}
+*{box-sizing:border-box;}
+body{margin:0;background:#E9ECF4;font:600 15px/1.4 'Inter',system-ui,sans-serif;color:var(--ink);}
+header{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--navy);color:#fff;border-bottom:4px solid var(--orange);padding:12px 16px;}
+header h1{margin:0;font:800 18px/1.3 'Poppins','Inter',sans-serif;color:#fff;}
+header label{display:flex;align-items:center;gap:8px;margin-left:auto;font-weight:700;color:#fff;}
+select{font:700 15px 'Inter',system-ui,sans-serif;color:var(--ink);background:#fff;border:2px solid var(--orange);border-radius:8px;padding:7px 10px;max-width:min(520px,80vw);}
+select:focus{outline:3px solid #FFD3A8;}
+.nav{display:flex;gap:6px;}
+.nav button{font:800 14px 'Inter',system-ui,sans-serif;color:#fff;background:var(--orange);border:0;border-radius:8px;padding:8px 12px;cursor:pointer;}
+.nav button:disabled{background:#5A607E;color:#D9DCE8;cursor:default;}
+main{max-width:920px;margin:0 auto;padding:16px;}
+h2{margin:4px 0 14px;font:800 20px/1.3 'Poppins','Inter',sans-serif;color:var(--navy);}
+figure{margin:0 0 18px;}
+img{display:block;width:100%;height:auto;background:#fff;border:1px solid #9AA1BC;border-radius:6px;box-shadow:0 4px 14px rgba(30,35,64,.18);}
+figcaption{text-align:center;margin-top:6px;color:var(--navy);font-weight:700;}
+</style>
+</head>
+<body>
+<header><h1>📄 Sample Insurance Communication Documents</h1>
+  <label for="doc">Document <select id="doc"></select></label>
+  <span class="nav"><button type="button" id="prev">← Previous</button><button type="button" id="next">Next →</button></span></header>
+<main><h2 id="title"></h2><div id="pages"></div></main>
+<script>
+// (slug, the document's name, its pages: ft/day10/docs/<slug>-<n>.webp)
+var DOCS = [
+  ["sample-lor", "Sample Letter of Representation (LOR)", 2],
+  ["sample-ack-lor", "Sample Acknowledgment of LOR", 1],
+  ["pip-lor", "PIP Letter of Representation: Client · Claim # · Insurance", 2],
+  ["bi-lor", "BI Letter of Representation: Client · Claim # · Insurance (blank)", 2],
+  ["lor-preservation", "LOR & Preservation (Company): Blank, Revised Template", 2],
+  ["lop-agreement", "LOP Agreement 2020 (blank)", 1],
+  ["dec-um-selection-state-farm", "Declaration Page with UM Selection Form: State Farm", 4],
+  ["dec-um-rejection-uaic", "Declaration Page with UM Rejection Form: UAIC", 2],
+  ["dec-no-bi", "Declaration Page with No BI Coverage", 3],
+  ["commercial-policy", "Commercial Policy", 5],
+  ["ccop", "CCOP: Certified Copy of the Policy", 4]
+];
+var sel = document.getElementById("doc");
+DOCS.forEach(function(d){ var o = document.createElement("option"); o.value = d[0]; o.textContent = d[1]; sel.appendChild(o); });
+function show(slug){
+  var i = DOCS.findIndex(function(d){ return d[0] === slug; }); if(i < 0) i = 0;
+  var d = DOCS[i], html = "";
+  sel.value = d[0]; document.getElementById("title").textContent = d[1]; document.title = d[1] + " · Sample Documents";
+  for(var n = 1; n <= d[2]; n++) html += '<figure><img src="' + d[0] + "-" + n + '.webp" alt="' + d[1] + ", page " + n + '"><figcaption>Page ' + n + " of " + d[2] + "</figcaption></figure>";
+  document.getElementById("pages").innerHTML = html;
+  document.getElementById("prev").disabled = i === 0; document.getElementById("next").disabled = i === DOCS.length - 1;
+  history.replaceState(null, "", "?doc=" + d[0]); window.scrollTo(0, 0);
+}
+function step(k){ var i = DOCS.findIndex(function(d){ return d[0] === sel.value; }) + k; if(DOCS[i]) show(DOCS[i][0]); }
+sel.addEventListener("change", function(){ show(sel.value); });
+document.getElementById("prev").addEventListener("click", function(){ step(-1); });
+document.getElementById("next").addEventListener("click", function(){ step(1); });
+show(new URLSearchParams(location.search).get("doc") || DOCS[0][0]);
+</script>
+</body>
+</html>
