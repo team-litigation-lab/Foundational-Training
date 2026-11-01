@@ -15,7 +15,7 @@
      • Trainees: a card opens with its lesson (Admin → 📅 Open Lessons).
      • 📅 By the day: every card is filed under the first training day it is worked on (Day 3, Day 4 …), each day a
        section that folds away once all its work is ✓ Done. A card is ✓ Done when its work is in (a session or activity
-       submitted, the trainer's Passed, every recording logged, a letter uploaded and checked), and its button becomes
+       submitted, the trainer's Passed, every recording logged, a letter uploaded and checked at 70%+, a drill round at 70%+), and its button becomes
        👁 Review: the same page, on what was handed in. Filters: All · To do · ✓ Done; the day chips jump to a day.
      • The main landing page (the dashboard) has no Simulators or Blueprint card: 🛠 Practice Lab is in the top bar.
    ============================================================ */
@@ -114,6 +114,8 @@ function loadDone(force){
 window.addEventListener("focus", () => { if(state.view === "simulators" && Date.now() - DONE.at > 60000) loadDone(true); });
 const R = k => DONE.rec[k] || null;
 const st = (done, live) => done ? "done" : live ? "live" : "todo";
+// ✓ Done needs a passing result, not just an attempt: 70%, the platform's pass mark (a booking: 80%, the Booking Rule Check's own green)
+const PASS_PCT = 70;
 const prov = () => ((R("simresults:") || {}).results || []).filter(x => x && x.simulator === "Drafting — Medical Provider");
 // each tool's state (todo / live / done) from its record
 const TOOL_STATUS = {
@@ -121,14 +123,15 @@ const TOOL_STATUS = {
     return st(!!b["Calendaring Activity"] || (c.submissions || []).some(x => /attorney/.test(String(x.scn || ""))), (c.autos || []).some(x => /attorney/.test(String(x.scn || "")))); },
   calcheck: () => { const c = R("calcheck:") || {}; return st(Array.isArray(c.submits) && c.submits.length > 0, c.entries && Object.keys(c.entries).length > 0); },
   calweek: () => { const w = DONE.calweek; return st(!!(w && w.submittedAt), !!(w && Array.isArray(w.events) && w.events.length)); },
-  calrules: () => { const c = R("calrules:") || {}; return st(Array.isArray(c.bookings) && c.bookings.length > 0, false); },
+  calrules: () => { const b = (R("calrules:") || {}).bookings; return st(Array.isArray(b) && b.some(x => (x.pct || 0) >= 80), Array.isArray(b) && b.length > 0); },
   transcribe: () => { const r = ((R("transcribe:") || {}).r) || {}; return st(!!((r[1] || {}).submittedAt && (r[2] || {}).submittedAt), !!((r[1] || {}).startedAt || (r[2] || {}).startedAt)); },
-  lor: () => st(!!(((R("simresults:") || {}).best || {})["Drafting — LOR"]), false),
-  medlor: () => st(prov().some(x => !/Lien Balance/i.test(String(x.scenario || ""))), false),
-  lienbv: () => st(prov().some(x => /Lien Balance/i.test(String(x.scenario || ""))), false)
+  lor: () => { const b = ((R("simresults:") || {}).best || {})["Drafting — LOR"]; return st(!!b && Number(b.score) >= PASS_PCT, !!b); },
+  medlor: () => { const r = prov().filter(x => !/Lien Balance/i.test(String(x.scenario || ""))); return st(r.some(x => Number(x.score) >= PASS_PCT), r.length > 0); },
+  lienbv: () => { const r = prov().filter(x => /Lien Balance/i.test(String(x.scenario || ""))); return st(r.some(x => Number(x.score) >= PASS_PCT), r.length > 0); }
 };
 const guideStatus = gid => { const g = R("guide:" + gid) || {}; return st(!!g.submittedAt, !!g.html); };
-const drillStatus = sid => { const runs = ((R("drills:") || {}).runs) || []; return st(runs.some(r => r.set === sid), false); };
+const drillStatus = sid => { const runs = (((R("drills:") || {}).runs) || []).filter(r => r.set === sid);
+  return st(runs.some(r => r.total && r.score / r.total * 100 >= PASS_PCT), runs.length > 0); };
 
 /* ---------- the cards, filed by training day ---------- */
 const typeTag = {session: "🟢 Practice Session", trainer: "🧑‍🏫 With your trainer", tool: "🧰 Activity", listening: "🎧 Call Listening", calendar: "📅 Calendar", drafting: "🧰 Drafting Tools", any: "📚 Any day"};

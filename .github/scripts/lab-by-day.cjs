@@ -22,7 +22,8 @@ const failures = []; const fail = m => failures.push(m);
   // work handed in: Day 8's Process Guide and Intake Packet drill, Day 9's two transcriptions, Day 5's Calendar Activity Check
   const at = new Date().toISOString();
   await put(`guide:${id}:intake-packet`, { html: '<p>My guide</p>', submittedAt: at });
-  await put('drills:' + id, { runs: [{ set: 'intake', score: 9, total: 10, at }] });
+  // (a drill round passes at 70%: Intake Packet's 9 of 10 is done, LORs' 5 of 10 is only in progress)
+  await put('drills:' + id, { runs: [{ set: 'intake', score: 9, total: 10, at }, { set: 'lor', score: 5, total: 10, at }] });
   await put('transcribe:' + id, { v: 1, r: { 1: { startedAt: at, submittedAt: at, f: {} }, 2: { startedAt: at, submittedAt: at, f: {} } } });
   await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1500);
   await page.evaluate(() => goto('simulators')); await page.waitForTimeout(2500);
@@ -44,6 +45,8 @@ const failures = []; const fail = m => failures.push(m);
   if (!g || g.st !== 'done' || !/Review/.test(g.btn)) fail(`Day 8's submitted Process Guide isn't ✓ Done with 👁 Review: ${JSON.stringify(g)}`);
   if (!dr || dr.st !== 'done') fail(`Day 8's finished drill isn't ✓ Done: ${JSON.stringify(dr)}`);
   if (!tr || tr.st !== 'done' || !/Review/.test(tr.btn)) fail(`Day 9's submitted Transcription Activity isn't ✓ Done: ${JSON.stringify(tr)}`);
+  const lorDrill = find(12, /Drill: LORs/);
+  if (!lorDrill || lorDrill.st !== 'live') fail(`a drill round under 70% should be in progress, not done: ${JSON.stringify(lorDrill)}`);
   const s4 = find(4, /Reception Mock Calls/);
   if (s4 && s4.st === 'done') fail('a session never started shows ✓ Done');
 
